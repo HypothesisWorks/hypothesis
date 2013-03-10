@@ -2,6 +2,9 @@ from hypothesis.generate import generator
 from hypothesis.minimize import minimize_such_that 
 from itertools import islice
 
+def assume(condition):
+    if not condition: raise UnsatisfiedAssumption()
+
 def falsify(hypothesis, *argument_types, **kwargs):
     def default_argument(name, value):
         try:
@@ -20,6 +23,8 @@ def falsify(hypothesis, *argument_types, **kwargs):
             return not hypothesis(*args)
         except AssertionError:
             return True
+        except UnsatisfiedAssumption:
+            return False
 
     size = 1
     falsifying_example = None
@@ -30,7 +35,7 @@ def falsify(hypothesis, *argument_types, **kwargs):
                 break
         size *= 2
 
-    if not falsifying_example: raise Unfalsifiable()
+    if not falsifying_example: raise Unfalsifiable(hypothesis)
 
     while size > 1:
         size /= 2
@@ -42,7 +47,12 @@ def falsify(hypothesis, *argument_types, **kwargs):
             break
 
     return minimize_such_that(falsifying_example, falsifies) 
-   
-class Unfalsifiable(Exception):
+  
+class UnsatisfiedAssumption(Exception):
     def __init__(self):
-        Exception.__init__(self, "Unable to falsify hypothesis")
+        Exception.__init__(self, "Unsatisfied assumption")
+
+ 
+class Unfalsifiable(Exception):
+    def __init__(self,hypothesis):
+        Exception.__init__(self, "Unable to falsify hypothesis %s"% hypothesis)
