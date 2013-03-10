@@ -27,6 +27,8 @@ def generator(typ):
     
         gen = one_of(*map(generator,typ)) 
         return list_generator(gen)   
+    elif isinstance(typ,dict):
+        return dict_generator(typ)
     else:
         raise ValueError("I don't understand the argument %typ")
 
@@ -53,6 +55,16 @@ def list_generator(elements):
         while True:
             length = abs(length_generator.next())
             yield list(islice(element_generator, length))
+    return gen
+
+def dict_generator(generator_dict):
+    def gen(size):
+        generators = [(k,generator(v)(size)) for (k,v) in generator_dict.items()]
+        while True:
+            result = {}
+            for k,g in generators:
+                result[k] = g.next()
+            yield result
     return gen
 
 def repeatedly_yield(f):
