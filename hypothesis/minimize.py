@@ -104,6 +104,7 @@ def minimize_string(x):
     if len(x) == 0:
         return
     elif len(x) == 1:
+        yield ''
         for i in minimizer(ord(x)):
             yield chr(i)
     else:

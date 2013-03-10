@@ -36,6 +36,19 @@ def foo(size):
 def test_can_falsify_types_without_minimizers():
     assert isinstance(falsify(lambda x: False, Foo)[0], Foo)
 
+def test_can_falsify_mixed_lists():
+    def is_pure(xs):
+        for a in xs:
+            for b in xs:
+                if a.__class__ != b.__class__:
+                    return False
+        return True
+
+    xs = falsify(is_pure, [int,str])[0]
+    assert len(xs) == 2
+    assert 0 in xs
+    assert "" in xs
+
 def test_can_falsify_tuples():
     def out_of_order_positive_tuple(x):
         a,b = x
@@ -60,6 +73,7 @@ def test_can_falsify_string_matching():
 def test_can_find_short_strings():
     assert falsify(lambda x: len(x) > 0, str)[0] == ""
     assert len(falsify(lambda x: len(x) <= 1, str)[0]) == 2
+    assert falsify(lambda x : len(x) < 10, [str])[0] == [""] * 10
 
 def test_can_falsify_assertions():
     def is_good(x):
@@ -72,7 +86,10 @@ def test_can_falsify_floats():
     assert (x + y) + z != x + (y + z)
 
 def test_can_falsify_ints():
-   assert falsify(lambda x: x != 0, int) == (0,)
+    assert falsify(lambda x: x != 0, int)[0] == 0
+
+def test_can_find_negative_ints():
+    assert falsify(lambda x: x >= 0, int)[0] == -1 
 
 def test_can_falsify_int_pairs():
     assert falsify(lambda x,y: x > y, int,int) == (0,0)

@@ -119,15 +119,6 @@ def generate_string(size):
     for l in length_generator:
         yield ''.join((choice(characters) for _ in xrange(l)))
 
-def draw_from_distribution(dist):
-    tot = sum(x[1] for x in dist)
-    r = randint(0, tot-1)
-    for x, n in dist:
-        r -= n
-        if r < 0:
-            return x
-    assert False
-
 def flip_coin():
     return random() <= 0.5
 
