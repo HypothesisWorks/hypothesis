@@ -1,6 +1,7 @@
 from random import random, choice
 from math import log
 from inspect import isclass
+from itertools import islice
 
 __generators__ = {}
 
@@ -18,8 +19,16 @@ def generator(typ):
 
     if isclass(typ):
         return __generators__[typ]
-    else:
+    elif isinstance(typ,tuple):
         return tuple_generator(map(generator, typ))
+    elif isinstance(typ, list):
+        if not typ:
+            raise ValueError("Array arguments must be non-empty")
+    
+        gen = one_of(*map(generator,typ)) 
+        return list_generator(gen)   
+    else:
+        raise ValueError("I don't understand the argument %typ")
 
 def generate(typs, size=DEFAULT_GENERATOR_SIZE,):
     if size <= 0 or not isinstance(size,int):
@@ -37,6 +46,15 @@ def tuple_generator(tup):
             yield tuple((g.next() for g in generators))
     return gen
 
+def list_generator(elements):
+    def gen(size):
+        element_generator = elements(size)
+        length_generator = generate(int, size)
+        while True:
+            length = abs(length_generator.next())
+            yield list(islice(element_generator, length))
+    return gen
+
 def repeatedly_yield(f):
     def gen(size):
         while True:
@@ -44,10 +62,17 @@ def repeatedly_yield(f):
     return gen
 
 def one_of(*args):
+    """
+    Takes n generators as arguments, returns a generator which calls each
+    with equal probability
+    """
+    if len(args) == 1:
+        return args[0]
     def gen(size):
         generators = map(lambda a: a(size), args)
         while True:
             yield choice(generators).next()
+    return gen
 
 def random_float(size):
     if random() <= 0.05:

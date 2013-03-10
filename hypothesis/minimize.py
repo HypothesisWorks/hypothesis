@@ -39,11 +39,10 @@ def nothing_to_minimize(x):
 @minimizes(int)
 def minimize_integer(x):
     if x < 0:
-        return xrange(x+1, 1)
+        yield -x
+        for y in xrange(x+1, 1): yield y
     elif x > 0:
-        return xrange(x-1,-1,-1)
-    else: 
-        return []
+        for y in xrange(x-1,-1,-1): yield y
 
 @minimizes(list)
 def minimize_list(x):

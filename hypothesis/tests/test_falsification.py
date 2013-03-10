@@ -24,6 +24,14 @@ def test_can_falsify_ints():
 def test_can_falsify_int_pairs():
     assert falsify(lambda x,y: x > y, int,int) == (0,0)
 
+def test_can_falsify_lists():
+    assert falsify(lambda x: len(x) < 3, [int])[0] == [0] * 3
+    assert falsify(lambda x: len(x) < 50, [int])[0] == [0] * 50 
+
+def test_can_find_unsorted_lists():
+    unsorted = falsify(lambda x: sorted(x) == x, [int])[0] 
+    assert unsorted == [1,0] or unsorted == [0,-1]
+
 def test_stops_loop_pretty_quickly():
     with pytest.raises(Unfalsifiable):
         with timeout(5):

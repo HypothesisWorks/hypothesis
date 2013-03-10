@@ -10,32 +10,39 @@ def falsify(hypothesis, *argument_types, **kwargs):
             kwargs[name] = value
 
     default_argument("max_size", 1024)
-    default_argument("probe_size", 10)
+    default_argument("first_probe_size", 10)
+    default_argument("second_probe_size", 50)
 
     gen = generator(argument_types)
 
     def falsifies(args):
-        for x,t in zip(args, argument_types):
-            assert isinstance(x,t)
         try:
             return not hypothesis(*args)
         except AssertionError:
             return True
 
-    def find_falsifier():
-        size = 1
-        while size <= kwargs["max_size"]:
-            for x in islice(gen(size),kwargs["probe_size"]):
-                if falsifies(x): 
-                    return x
-            size *= 2
-        raise Unfalsifiable()
+    size = 1
+    falsifying_example = None
+    while not falsifying_example and size <= kwargs["max_size"]:
+        for x in islice(gen(size),kwargs["first_probe_size"]):
+            if falsifies(x): 
+                falsifying_example = x
+                break
+        size *= 2
 
-    starting_point = find_falsifier()
+    if not falsifying_example: raise Unfalsifiable()
 
-    return minimize_such_that(starting_point, falsifies) 
+    while size > 1:
+        size /= 2
+        for x in islice(gen(size),kwargs["second_probe_size"]):
+            if falsifies(x): 
+                falsifying_example = x
+                break
+        else:
+            break
+
+    return minimize_such_that(falsifying_example, falsifies) 
    
-
 class Unfalsifiable(Exception):
     def __init__(self):
         Exception.__init__(self, "Unable to falsify hypothesis")
