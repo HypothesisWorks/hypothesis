@@ -21,7 +21,7 @@ setup(
     url='https://github.com/DRMacIver/hypothesis',
     license='LICENSE.txt',
     description='Tools for falsifying hypothesis with random data generation',
-    long_description=open('README.txt').read(),
+    long_description=open('README.rst').read(),
     tests_require=['pytest'],
     cmdclass = {'test': PyTest},
 )
