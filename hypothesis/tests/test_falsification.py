@@ -1,7 +1,7 @@
 from hypothesis.testing import falsify, Unfalsifiable
 from contextlib import contextmanager
 import pytest
-
+import re
 import signal
 
 class TimeoutError(Exception):
@@ -17,6 +17,11 @@ def timeout(time):
     signal.alarm(time)
     yield
     signal.alarm(0)
+
+def test_can_falsify_string_matching():
+    # Note that just doing a match("foo",x) will never find a good solution
+    # because the state space is too large
+    assert falsify(lambda x: not re.match(".*f.*o.*o.*",x), str)[0] == "foo"
 
 def test_can_falsify_ints():
    assert falsify(lambda x: x != 0, int) == (0,)

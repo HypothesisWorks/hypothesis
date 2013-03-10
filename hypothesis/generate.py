@@ -1,4 +1,4 @@
-from random import random, choice
+from random import random, choice,sample
 from math import log
 from inspect import isclass
 from itertools import islice
@@ -87,8 +87,6 @@ def random_float(size):
         if flip_coin():
             x = -x
     return x
-            
-    
 
 def geometric_int(size):
     """
@@ -100,6 +98,14 @@ def geometric_int(size):
     if random() <= 0.5:
         n = -n
     return n
+
+characters = map(chr,range(0,127))
+
+@generates(str)
+def generate_string(size):
+    length_generator = generate(int,size)
+    for l in length_generator:
+        yield ''.join((choice(characters) for _ in xrange(l)))
 
 def draw_from_distribution(dist):
     tot = sum(x[1] for x in dist)

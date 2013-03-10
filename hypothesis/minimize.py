@@ -60,12 +60,14 @@ def minimize_list(x):
 
 @minimizes(str)
 def minimize_string(x):
-    x = list(x) 
-    indices = xrange(0, len(x)) 
-    for i in indices:
-        y = list(x)
-        del y[i]
-        yield ''.join(y)
+    if len(x) == 0:
+        return
+    elif len(x) == 1:
+        for i in minimizer(ord(x)):
+            yield chr(i)
+    else:
+        for y in minimizer(list(x)):
+            yield ''.join(y)
 
 @minimizes(tuple)
 def minimize_tuple(x):
