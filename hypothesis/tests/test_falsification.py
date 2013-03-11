@@ -70,6 +70,9 @@ def test_can_falsify_string_matching():
     # because the state space is too large
     assert falsify(lambda x: not re.search("a.*b",x), str)[0] == "ab"
 
+def test_minimizes_strings_to_zeroes():
+    assert falsify(lambda x: len(x) < 3, str)[0] == "000"
+
 def test_can_find_short_strings():
     assert falsify(lambda x: len(x) > 0, str)[0] == ""
     assert len(falsify(lambda x: len(x) <= 1, str)[0]) == 2

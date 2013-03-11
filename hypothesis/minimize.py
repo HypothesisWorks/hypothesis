@@ -105,8 +105,13 @@ def minimize_string(x):
         return
     elif len(x) == 1:
         yield ''
-        for i in minimizer(ord(x)):
-            yield chr(i)
+        n = ord(x)
+        if n < 48:
+            for i in xrange(n,49):
+                yield chr(i)
+        elif n > 48:
+            for i in xrange(n,47,-1):
+                yield chr(i)
     else:
         for y in minimizer(list(x)):
             yield ''.join(y)
