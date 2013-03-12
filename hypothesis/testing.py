@@ -1,20 +1,21 @@
 from hypothesis.produce import producer
-from hypothesis.simplify import simplify_such_that 
+from hypothesis.simplify import Simplifiers
 from itertools import islice
 
 def assume(condition):
     if not condition: raise UnsatisfiedAssumption()
 
 def falsify(hypothesis, *argument_types, **kwargs):
-    def default_argument(name, value):
+    def option(name, value):
         try:
-            kwargs[name]
+            return kwargs[name]
         except KeyError:
-            kwargs[name] = value
+            return value
 
-    default_argument("max_size", 1024)
-    default_argument("first_probe_size", 10)
-    default_argument("second_probe_size", 50)
+    max_size = option("max_size", 1024)
+    first_probe_size = option("first_probe_size", 10)
+    second_probe_size = option("second_probe_size", 50)
+    simplifiers = option("simplifiers", Simplifiers())
 
     gen = producer(argument_types)
 
@@ -28,8 +29,8 @@ def falsify(hypothesis, *argument_types, **kwargs):
 
     size = 1
     falsifying_example = None
-    while not falsifying_example and size <= kwargs["max_size"]:
-        for _ in xrange(kwargs["first_probe_size"]):
+    while not falsifying_example and size <= max_size:
+        for _ in xrange(first_probe_size):
             x = gen(size)
             if falsifies(x): 
                 falsifying_example = x
@@ -40,7 +41,7 @@ def falsify(hypothesis, *argument_types, **kwargs):
 
     while size > 1:
         size /= 2
-        for _ in xrange(kwargs["second_probe_size"]):
+        for _ in xrange(second_probe_size):
             x = gen(size)
             if falsifies(x): 
                 falsifying_example = x
@@ -48,7 +49,7 @@ def falsify(hypothesis, *argument_types, **kwargs):
         else:
             break
 
-    return simplify_such_that(falsifying_example, falsifies) 
+    return simplifiers.simplify_such_that(falsifying_example, falsifies) 
   
 class UnsatisfiedAssumption(Exception):
     def __init__(self):
