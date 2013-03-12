@@ -75,8 +75,9 @@ def test_can_falsify_types_without_default_productions():
     simplifiers = Simplifiers()
     simplifiers.define_simplifier_for(Bar, simplify_bar) 
 
-    assert falsify(lambda x : False, Bar,producers=producers, simplifiers=simplifiers)[0] == Bar()
-    assert falsify(lambda x : x.size() < 3, Bar, producers=producers, simplifiers=simplifiers)[0] == Bar(Bar(Bar()))
+    verifier = Verifier(producers=producers, simplifiers=simplifiers)
+    assert verifier.falsify(lambda x : False, Bar,)[0] == Bar()
+    assert verifier.falsify(lambda x : x.size() < 3, Bar)[0] == Bar(Bar(Bar()))
     
 
 def test_can_falsify_mixed_lists():
@@ -144,7 +145,7 @@ def test_can_falsify_lists():
     assert falsify(lambda x: len(x) < 3, [int])[0] == [0] * 3
 
 def test_can_falsify_long_lists():
-    assert falsify(lambda x: len(x) < 50, [int])[0] == [0] * 50 
+    assert falsify(lambda x: len(x) < 50, [int],starting_size=100)[0] == [0] * 50 
 
 def test_can_find_unsorted_lists():
     unsorted = falsify(lambda x: sorted(x) == x, [int])[0] 

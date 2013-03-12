@@ -8,11 +8,13 @@ def assume(condition):
 class Verifier:
     def __init__(self,  simplifiers=None,
                         producers = None,
+                        starting_size = 1,
                         first_probe_size=10,
                         second_probe_size = 50,
                         max_size = 1024):
         self.simplifiers = simplifiers or Simplifiers()
         self.producers = producers or Producers()
+        self.starting_size = starting_size
         self.first_probe_size = first_probe_size
         self.second_probe_size = second_probe_size
         self.max_size = max_size
@@ -28,7 +30,7 @@ class Verifier:
             except UnsatisfiedAssumption:
                 return False
 
-        size = 1
+        size = self.starting_size
         falsifying_example = None
         while not falsifying_example and size <= self.max_size:
             for _ in xrange(self.first_probe_size):
