@@ -141,6 +141,15 @@ def test_can_find_negative_ints():
 def test_can_falsify_int_pairs():
     assert falsify(lambda x,y: x > y, int,int) == (0,0)
 
+def test_can_falsify_sets():
+    assert falsify(lambda x: not x, {int})[0] == {0}
+
+def test_can_falsify_list_inclusion():
+    assert falsify(lambda x,y: x not in y, int, [int]) == (0,[0])
+
+def test_can_falsify_set_inclusion():
+    assert falsify(lambda x,y: x not in y, int, {int}) == (0,{0})
+
 def test_can_falsify_lists():
     assert falsify(lambda x: len(x) < 3, [int])[0] == [0] * 3
 

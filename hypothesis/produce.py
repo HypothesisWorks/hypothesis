@@ -64,6 +64,13 @@ def list_producer(elements):
     element_producer = one_of(*elements)
     return lambda self,size: [element_producer(self,size) for _ in xrange(self.produce(int, size))]
 
+@produces_from_instances(set)
+def set_producer(elements):
+    return map_producer(set, list_producer(elements))
+    
+def map_producer(f, producer):
+    return lambda ps,size: f(producer(ps, size))
+
 @produces_from_instances(dict)
 def dict_producer(producer_dict):
     def gen(self,size):

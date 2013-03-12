@@ -49,6 +49,8 @@ def _convert_key(x):
         return tuple(map(_convert_key,x))
     if isinstance(x, dict):
         return tuple(sorted(map(_convert_key,x.items())))
+    if isinstance(x, set):
+        return frozenset(map(_convert_key, x))
     return x
 
 class Tracker():
@@ -112,6 +114,11 @@ def simplify_list(simplifiers, x):
             z[i] = s
             yield z 
 
+@simplifies(set)
+def simplify_set(simplifiers, x):
+    for y in simplifiers.simplify(list(x)):
+        yield set(y)
+
 @simplifies(str)
 def simplify_string(simplifiers,x):
     if len(x) == 0:
@@ -131,11 +138,26 @@ def simplify_string(simplifiers,x):
 
 @simplifies(tuple)
 def simplify_tuple(simplifiers, x):
+    """
+    Defined simplification for tuples: We don't change the length of the tuple
+    we only try to simplify individual elements of it.
+    We first try simplifying each index. We then try pairs of indices.
+    After that we stop because it's getting silly. 
+    """
     for i in xrange(0, len(x)):
         for s in simplifiers.simplify(x[i]):
             z = list(x)
             z[i] = s
             yield tuple(z)
+    for i in xrange(0, len(x)):
+        for j in xrange(0, len(x)):
+            if i == j: continue
+            for s in simplifiers.simplify(x[i]):
+                for t in simplifiers.simplify(x[j]):
+                    z = list(x)
+                    z[i] = s
+                    z[j] = t
+                    yield tuple(z)
 
 @simplifies(dict)
 def simplify_dict(simplifiers, x):
