@@ -10,9 +10,16 @@ def produces(typ):
         return fn
     return accept_function
 
+def produces_from_instances(typ):
+    def accept_function(fn):
+        DEFAULT_PRODUCERS.define_producer_for_instances(typ, fn)
+        return fn
+    return accept_function
+
 class Producers:
     def __init__(self):
         self.__producers = {}
+        self.__instance_producers = {}
 
     def producer(self, typ):
         if not typ:
@@ -20,23 +27,19 @@ class Producers:
         if isinstance(typ, FunctionType):
             return typ
 
-        if isclass(typ):
-            try:
+        try:
+            if isclass(typ):
                 return self.__producers[typ]
-            except KeyError as e:
-                if self is DEFAULT_PRODUCERS:
+            else:
+                return self.__instance_producers[typ.__class__](typ)
+        except KeyError as e:
+            if self is DEFAULT_PRODUCERS:
+                if isclass(typ):
                     raise ValueError("No producer defined for type %s" % str(typ))
                 else:
-                    return DEFAULT_PRODUCERS.producer(typ)
-        elif isinstance(typ,tuple):
-            return tuple_producer(typ)
-        elif isinstance(typ, list):
-            gen = one_of(*typ) 
-            return list_producer(gen)   
-        elif isinstance(typ,dict):
-            return dict_producer(typ)
-        else:
-            raise ValueError("I don't understand the argument %s" % str(typ))
+                    raise ValueError("No instance producers defined for %s" % str(typ))
+            else:
+                return DEFAULT_PRODUCERS.producer(typ)
 
     def produce(self,typs, size):
         if size <= 0 or not isinstance(size,int):
@@ -47,14 +50,21 @@ class Producers:
     def define_producer_for(self,t, m):
         self.__producers[t] = m
 
+    def define_producer_for_instances(self,t, m):
+        self.__instance_producers[t] = m
+
 DEFAULT_PRODUCERS = Producers()
 
+@produces_from_instances(tuple)
 def tuple_producer(tup):
     return lambda self,size: tuple([self.producer(g)(self,size) for g in tup])
 
+@produces_from_instances(list)
 def list_producer(elements):
-    return lambda self,size: [elements(self,size) for _ in xrange(self.produce(int, size))]
+    element_producer = one_of(*elements)
+    return lambda self,size: [element_producer(self,size) for _ in xrange(self.produce(int, size))]
 
+@produces_from_instances(dict)
 def dict_producer(producer_dict):
     def gen(self,size):
         result = {}
