@@ -2,6 +2,7 @@ from random import random, choice,sample
 from math import log
 from inspect import isclass
 from itertools import islice
+from types import FunctionType
 
 def produces(typ):
     def accept_function(fn):
@@ -16,6 +17,8 @@ class Producers:
     def producer(self, typ):
         if not typ:
             raise ValueError("producer requires at least one type argument")
+        if isinstance(typ, FunctionType):
+            return typ
 
         if isclass(typ):
             try:
@@ -33,7 +36,7 @@ class Producers:
         elif isinstance(typ,dict):
             return dict_producer(typ)
         else:
-            raise ValueError("I don't understand the argument %typ")
+            raise ValueError("I don't understand the argument %s" % str(typ))
 
     def produce(self,typs, size):
         if size <= 0 or not isinstance(size,int):

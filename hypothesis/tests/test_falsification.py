@@ -1,4 +1,4 @@
-from hypothesis.verifier import falsify, Unfalsifiable,assume
+from hypothesis.verifier import falsify, Unfalsifiable,assume, Verifier
 from hypothesis.produce import produces, Producers, DEFAULT_PRODUCERS;
 from hypothesis.simplify import Simplifiers
 from contextlib import contextmanager
@@ -151,7 +151,19 @@ def test_can_find_unsorted_lists():
     unsorted = falsify(lambda x: sorted(x) == x, [int])[0] 
     assert unsorted == [1,0] or unsorted == [0,-1]
 
+
+from hypothesis.produce import one_of
+def test_can_falsify_alternating_types():
+    falsify(lambda x: isinstance(x, int), one_of(int, str))[0] == ""
+
 def test_stops_loop_pretty_quickly():
     with pytest.raises(Unfalsifiable):
         with timeout(5):
             falsify(lambda x: x == x, int)
+
+def test_good_errors_on_bad_values():
+    some_string = "I am the very model of a modern major general"
+    with pytest.raises(ValueError) as e:
+        falsify(lambda x: False, some_string)
+
+    assert some_string in e.value.message
