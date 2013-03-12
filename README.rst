@@ -58,8 +58,8 @@ Fundamentally it knows how to do two things with types:
 
 The relevant operations are defined in hypothesis.produce and hypothesis.simplify
 
-A producer is a function, Producers x int -> value, while a simplifier is a function
-Simplifiers x value -> generator(value).
+A producer is a function, (Producers, int) -> value, while a simplifier is a function
+(Simplifiers, value) -> generator(value).
 
 The idea is that the Producers and Simplifiers objects are "context objects" that
 know how to map types to things which produce or simplify them. Passing these around
