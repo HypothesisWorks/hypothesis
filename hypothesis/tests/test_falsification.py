@@ -1,5 +1,5 @@
 from hypothesis.testing import falsify, Unfalsifiable,assume
-from hypothesis.generate import generates;
+from hypothesis.produce import generates;
 from contextlib import contextmanager
 import pytest
 import re

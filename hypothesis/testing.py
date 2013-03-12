@@ -1,5 +1,5 @@
-from hypothesis.generate import generator
-from hypothesis.minimize import minimize_such_that 
+from hypothesis.produce import generator
+from hypothesis.simplify import minimize_such_that 
 from itertools import islice
 
 def assume(condition):
