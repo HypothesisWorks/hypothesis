@@ -1,5 +1,5 @@
 from hypothesis.testing import falsify, Unfalsifiable,assume
-from hypothesis.produce import generates;
+from hypothesis.produce import produces;
 from contextlib import contextmanager
 import pytest
 import re
@@ -28,7 +28,7 @@ def test_can_make_assumptions():
 class Foo():
     pass
 
-@generates(Foo)
+@produces(Foo)
 def foo(size):
     while True:
         yield Foo()

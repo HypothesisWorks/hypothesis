@@ -1,4 +1,4 @@
-from hypothesis.produce import generator
+from hypothesis.produce import producer
 from hypothesis.simplify import simplify_such_that 
 from itertools import islice
 
@@ -16,7 +16,7 @@ def falsify(hypothesis, *argument_types, **kwargs):
     default_argument("first_probe_size", 10)
     default_argument("second_probe_size", 50)
 
-    gen = generator(argument_types)
+    gen = producer(argument_types)
 
     def falsifies(args):
         try:
