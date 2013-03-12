@@ -42,35 +42,17 @@ def define_producer_for(t, m):
     __producers__[t] = m
 
 def tuple_producer(tup):
-    def gen(size):
-        producers = [g(size) for g in tup]
-        while True:
-            yield tuple((g.next() for g in producers))
-    return gen
+    return lambda size: tuple([g(size) for g in tup])
 
 def list_producer(elements):
-    def gen(size):
-        element_producer = elements(size)
-        length_producer = produce(int, size)
-        while True:
-            length = abs(length_producer.next())
-            yield list(islice(element_producer, length))
-    return gen
+    return lambda size: [elements(size) for _ in xrange(produce(int, size))]
 
 def dict_producer(producer_dict):
     def gen(size):
-        producers = [(k,producer(v)(size)) for (k,v) in producer_dict.items()]
-        while True:
-            result = {}
-            for k,g in producers:
-                result[k] = g.next()
-            yield result
-    return gen
-
-def repeatedly_yield(f):
-    def gen(size):
-        while True:
-            yield f(size)
+        result = {}
+        for k,g in producer_dict.items():
+            result[k] = g(size)
+        return result
     return gen
 
 def one_of(*args):
@@ -80,11 +62,7 @@ def one_of(*args):
     """
     if len(args) == 1:
         return args[0]
-    def gen(size):
-        producers = map(lambda a: a(size), args)
-        while True:
-            yield choice(producers).next()
-    return gen
+    return lambda size: choice(args)(size)
 
 def random_float(size):
     if random() <= 0.05:
@@ -115,12 +93,10 @@ characters = map(chr,range(0,127))
 
 @produces(str)
 def produce_string(size):
-    length_producer = produce(int,size)
-    for l in length_producer:
-        yield ''.join((choice(characters) for _ in xrange(l)))
+    return ''.join((choice(characters) for _ in xrange(produce(int,size))))
 
 def flip_coin():
     return random() <= 0.5
 
-define_producer_for(int, repeatedly_yield(geometric_int))
-define_producer_for(float, repeatedly_yield(random_float))
+define_producer_for(int, geometric_int)
+define_producer_for(float, random_float)

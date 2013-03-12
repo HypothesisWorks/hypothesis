@@ -29,7 +29,8 @@ def falsify(hypothesis, *argument_types, **kwargs):
     size = 1
     falsifying_example = None
     while not falsifying_example and size <= kwargs["max_size"]:
-        for x in islice(gen(size),kwargs["first_probe_size"]):
+        for _ in xrange(kwargs["first_probe_size"]):
+            x = gen(size)
             if falsifies(x): 
                 falsifying_example = x
                 break
@@ -39,7 +40,8 @@ def falsify(hypothesis, *argument_types, **kwargs):
 
     while size > 1:
         size /= 2
-        for x in islice(gen(size),kwargs["second_probe_size"]):
+        for _ in xrange(kwargs["second_probe_size"]):
+            x = gen(size)
             if falsifies(x): 
                 falsifying_example = x
                 break

@@ -30,8 +30,7 @@ class Foo():
 
 @produces(Foo)
 def foo(size):
-    while True:
-        yield Foo()
+    return Foo()
 
 def test_can_falsify_types_without_minimizers():
     assert isinstance(falsify(lambda x: False, Foo)[0], Foo)
