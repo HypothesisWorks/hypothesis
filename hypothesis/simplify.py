@@ -127,6 +127,7 @@ def simplify_string(simplifiers,x):
         yield ''
         n = ord(x)
         if n < 48:
+            yield chr(48 * 2 - n)
             for i in xrange(n,49):
                 yield chr(i)
         elif n > 48:
