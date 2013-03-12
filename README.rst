@@ -53,8 +53,8 @@ How does it work?
 
 Fundamentally it knows how to do two things with types: 
 
-    1. Produce them
-    2. Simplify them
+1. Produce them
+2. Simplify them
 
 The relevant operations are defined in hypothesis.produce and hypothesis.simplify
 
@@ -69,8 +69,8 @@ fine grained way.
 The specific behaviour requirements are deliberately vague and poorly defined.
 Approximately:
 
-    * Producers should produce values which are "of about this level of complexity". What that actually means is completely implementation defined. Additionally, it should ideally be possible to produce any value at any size. All that should change is the expected complexity.
-    * Simplifiers should produce a generator with a finite number of elements, each of which is simpler than the starting element in some completely implementation defined sense.
+* Producers should produce values which are "of about this level of complexity". What that actually means is completely implementation defined. Additionally, it should ideally be possible to produce any value at any size. All that should change is the expected complexity.
+* Simplifiers should produce a generator with a finite number of elements, each of which is simpler than the starting element in some completely implementation defined sense.
 
 WARNING: This software should be considered super pre alpha. It probably works
 pretty well, maybe, perhaps, but the API is still heavily under flux and the 
