@@ -18,7 +18,7 @@ Examples!
     In [1]: from hypothesis import falsify
 
     In [2]: falsify(lambda x,y,z: (x + y) + z == x + (y +z), float,float,float)
-    Out[2]: (1.0, 2.0507190744664223, -10.940188909437985)
+    Out[2]: (1.0, 1.0, 0.0387906318128606)
 
     In [3]: falsify(lambda x: sum(x) < 100, [int])
     Out[3]: ([6, 29, 65],)
@@ -26,21 +26,24 @@ Examples!
     In [4]: falsify(lambda x: sum(x) < 100, [int,float])
     Out[4]: ([18.0, 82],)
 
-    In [12]: falsify(lambda x: "a" not in x, str)
-    Out[12]: ('a',)
+    In [5]: falsify(lambda x: "a" not in x, str)
+    Out[5]: ('a',)
+
+    In [6]: falsify(lambda x: "a" not in x, {str})
+    Out[6]: (set(['a']),)
 
 Sometimes we ask it to falsify things that are true:
 
 .. code:: python
 
-    In [13]: falsify(lambda x: x + 1 == 1 + x, int)
+    In [7]: falsify(lambda x: x + 1 == 1 + x, int)
     Unfalsifiable: Unable to falsify hypothesis <function <lambda> at 0x2efb1b8>
 
 of course sometimes we ask it to falsify things that are false but hard to find:
 
 .. code:: python
 
-    In [16]: falsify(lambda x: x != "I am the very model of a modern major general", str)
+    In [8]: falsify(lambda x: x != "I am the very model of a modern major general", str)
     Unfalsifiable: Unable to falsify hypothesis <function <lambda> at 0x2efb398>
 
 It's not magic, and when the search space is large it won't be able to do very much
@@ -50,22 +53,27 @@ How does it work?
 
 Fundamentally it knows how to do two things with types: 
 
-    1. Generate them
-    2. Minimize them
+    1. Produce them
+    2. Simplify them
 
-The API for generation is that you give it a generator specification and a 
-size parameter and it generates values of "about that size", for some completely 
-unspecified interpretation of that meaning (each type is permitted to interpret 
-it differently).
+The relevant operations are defined in hypothesis.produce and hypothesis.simplify
 
-Mininimizing takes a value and returns an iterator over "minimized forms of that
-value". Again for some completely unspecified and fuzzy meaning.
+A producer is a function, Producers x int -> value, while a simplifier is a function
+Simplifiers x value -> generator(value).
 
-Falsification feeds various size parameters into the generation until it finds
-a counter example it likes, then minimizes that counter-example in a depth first
-manner to produce its end results. 
+The idea is that the Producers and Simplifiers objects are "context objects" that
+know how to map types to things which produce or simplify them. Passing these around
+allows you to configure your production and simplification of types in a fairly 
+fine grained way.
+
+The specific behaviour requirements are deliberately vague and poorly defined.
+Approximately:
+
+    * Producers should produce values which are "of about this level of complexity". What that actually means is completely implementation defined. Additionally, it should ideally be possible to produce any value at any size. All that should change is the expected complexity.
+    * Simplifiers should produce a generator with a finite number of elements, each of which is simpler than the starting element in some completely implementation defined sense.
 
 WARNING: This software should be considered super pre alpha. It probably works
-pretty well, maybe, perhaps, but the API has had almost zero design gone into
-it and is likely to change radically once I actually start thinking about what
-it should look like.
+pretty well, maybe, perhaps, but the API is still heavily under flux and the 
+internals are liable to change significantly. I'd estimate you currently have 
+about an 80% chance of hitting a bug or other rough edge if you were to try and
+use it in anger.
