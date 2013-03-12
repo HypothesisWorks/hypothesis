@@ -5,53 +5,56 @@ from itertools import islice
 def assume(condition):
     if not condition: raise UnsatisfiedAssumption()
 
-def falsify(hypothesis, *argument_types, **kwargs):
-    def option(name, value):
-        try:
-            return kwargs[name]
-        except KeyError:
-            return value
+class Verifier:
+    def __init__(self,  simplifiers=None,
+                        producers = None,
+                        first_probe_size=10,
+                        second_probe_size = 50,
+                        max_size = 1024):
+        self.simplifiers = simplifiers or Simplifiers()
+        self.producers = producers or Producers()
+        self.first_probe_size = first_probe_size
+        self.second_probe_size = second_probe_size
+        self.max_size = max_size
+                        
+    def falsify(self, hypothesis, *argument_types):
+        gen = self.producers.producer(argument_types)
 
-    max_size = option("max_size", 1024)
-    first_probe_size = option("first_probe_size", 10)
-    second_probe_size = option("second_probe_size", 50)
-    simplifiers = option("simplifiers", Simplifiers())
-    producers = option("producers", Producers())
+        def falsifies(args):
+            try:
+                return not hypothesis(*args)
+            except AssertionError:
+                return True
+            except UnsatisfiedAssumption:
+                return False
 
-    gen = producers.producer(argument_types)
+        size = 1
+        falsifying_example = None
+        while not falsifying_example and size <= self.max_size:
+            for _ in xrange(self.first_probe_size):
+                x = gen(self.producers,size)
+                if falsifies(x): 
+                    falsifying_example = x
+                    break
+            size *= 2
 
-    def falsifies(args):
-        try:
-            return not hypothesis(*args)
-        except AssertionError:
-            return True
-        except UnsatisfiedAssumption:
-            return False
+        if not falsifying_example: raise Unfalsifiable(hypothesis)
 
-    size = 1
-    falsifying_example = None
-    while not falsifying_example and size <= max_size:
-        for _ in xrange(first_probe_size):
-            x = gen(producers,size)
-            if falsifies(x): 
-                falsifying_example = x
+        while size > 1:
+            size /= 2
+            for _ in xrange(self.second_probe_size):
+                x = gen(self.producers,size)
+                if falsifies(x): 
+                    falsifying_example = x
+                    break
+            else:
                 break
-        size *= 2
 
-    if not falsifying_example: raise Unfalsifiable(hypothesis)
+        return self.simplifiers.simplify_such_that(falsifying_example, falsifies) 
 
-    while size > 1:
-        size /= 2
-        for _ in xrange(second_probe_size):
-            x = gen(producers,size)
-            if falsifies(x): 
-                falsifying_example = x
-                break
-        else:
-            break
-
-    return simplifiers.simplify_such_that(falsifying_example, falsifies) 
-  
+def falsify(*args, **kwargs):
+    return Verifier(**kwargs).falsify(*args)
+ 
 class UnsatisfiedAssumption(Exception):
     def __init__(self):
         Exception.__init__(self, "Unsatisfied assumption")

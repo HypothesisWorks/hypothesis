@@ -1,4 +1,4 @@
-from hypothesis.testing import falsify, Unfalsifiable,assume
+from hypothesis.verifier import falsify, Unfalsifiable,assume
 from hypothesis.produce import produces, Producers, DEFAULT_PRODUCERS;
 from hypothesis.simplify import Simplifiers
 from contextlib import contextmanager
@@ -142,6 +142,8 @@ def test_can_falsify_int_pairs():
 
 def test_can_falsify_lists():
     assert falsify(lambda x: len(x) < 3, [int])[0] == [0] * 3
+
+def test_can_falsify_long_lists():
     assert falsify(lambda x: len(x) < 50, [int])[0] == [0] * 50 
 
 def test_can_find_unsorted_lists():
