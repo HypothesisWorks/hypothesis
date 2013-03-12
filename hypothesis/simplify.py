@@ -25,10 +25,9 @@ class Simplifiers:
 
         while True:
             for s in self.simplify(t):
-                if tracker.seen(s): 
+                if tracker.already_seen(s): 
                     continue
-                else:
-                    tracker.add(s)
+
                 if f(s):
                     t = s
                     break
@@ -56,20 +55,27 @@ class Tracker():
     def __init__(self):
         self.contents = {}
 
-    def seen_set(self,x):
+    def already_seen(self,x):
         ck = x.__class__
+        x = _convert_key(x)
         try:
             seen_set = self.contents[ck]
+            present = x in seen_set
+            if not present:
+                if isinstance(seen_set, set):
+                    seen_set.add(x)
+                else: 
+                    seen_set.append(x)
+            return present
         except KeyError:
-            seen_set = []
-            self.contents[ck] = seen_set
-        return seen_set
+            try:
+                seen_set = set(x)
+            except TypeError:
+                seen_set = [x] 
 
-    def add(self,x):
-        self.seen_set(x).append(_convert_key(x))
-    
-    def seen(self,x):
-        return _convert_key(x) in self.seen_set(x)
+            self.contents[ck] = seen_set
+            return False
+        return seen_set
 
 def no_simplifications(s,x):
     return []
