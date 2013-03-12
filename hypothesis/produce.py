@@ -5,8 +5,6 @@ from itertools import islice
 
 __producers__ = {}
 
-DEFAULT_producer_SIZE=10
-
 def produces(typ):
     def accept_function(fn):
         define_producer_for(typ, fn)
@@ -32,7 +30,7 @@ def producer(typ):
     else:
         raise ValueError("I don't understand the argument %typ")
 
-def produce(typs, size=DEFAULT_producer_SIZE,):
+def produce(typs, size):
     if size <= 0 or not isinstance(size,int):
         raise ValueError("Size  %s should be a positive integer" % size)
 
