@@ -1,6 +1,8 @@
 from hypothesis.testing import falsify, Unfalsifiable,assume
-from hypothesis.produce import produces;
+from hypothesis.produce import produces, Producers, DEFAULT_PRODUCERS;
+from hypothesis.simplify import Simplifiers
 from contextlib import contextmanager
+import random
 import pytest
 import re
 import signal
@@ -29,11 +31,53 @@ class Foo():
     pass
 
 @produces(Foo)
-def foo(size):
+def foo(self,size):
     return Foo()
 
 def test_can_falsify_types_without_minimizers():
     assert isinstance(falsify(lambda x: False, Foo)[0], Foo)
+
+class Bar():
+    def __init__(self,bar=None):
+        self.bar = bar
+
+    def size(self):
+        s = 0
+        while self:
+            self = self.bar
+            s += 1
+        return s
+
+    def __repr__(self):
+        return "Bar(%s)" % self.size()
+ 
+    def __eq__(self,other): 
+        return isinstance(other, Bar) and self.size() == other.size()
+
+def produce_bar(producers, size):
+    x = Bar()
+    for _ in xrange(producers.produce(int,size)):
+        x = Bar(x)
+    return x
+
+def simplify_bar(minimizers, bar):
+    while True:
+        bar = bar.bar
+        if bar: yield bar
+        else: return 
+     
+def test_can_falsify_types_without_default_productions():
+    producers = Producers()
+    producers.define_producer_for(Bar, produce_bar)
+    with pytest.raises(ValueError):
+        DEFAULT_PRODUCERS.produce(Bar, 1)
+
+    simplifiers = Simplifiers()
+    simplifiers.define_simplifier_for(Bar, simplify_bar) 
+
+    assert falsify(lambda x : False, Bar,producers=producers, simplifiers=simplifiers)[0] == Bar()
+    assert falsify(lambda x : x.size() < 3, Bar, producers=producers, simplifiers=simplifiers)[0] == Bar(Bar(Bar()))
+    
 
 def test_can_falsify_mixed_lists():
     def is_pure(xs):

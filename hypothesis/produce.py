@@ -3,53 +3,61 @@ from math import log
 from inspect import isclass
 from itertools import islice
 
-__producers__ = {}
-
 def produces(typ):
     def accept_function(fn):
-        define_producer_for(typ, fn)
+        DEFAULT_PRODUCERS.define_producer_for(typ, fn)
         return fn
     return accept_function
 
-def producer(typ):
-    if not typ:
-        raise ValueError("producer requires at least one type argument")
+class Producers:
+    def __init__(self):
+        self.__producers = {}
 
-    if isclass(typ):
-        return __producers__[typ]
-    elif isinstance(typ,tuple):
-        return tuple_producer(map(producer, typ))
-    elif isinstance(typ, list):
+    def producer(self, typ):
         if not typ:
-            raise ValueError("Array arguments must be non-empty")
-    
-        gen = one_of(*map(producer,typ)) 
-        return list_producer(gen)   
-    elif isinstance(typ,dict):
-        return dict_producer(typ)
-    else:
-        raise ValueError("I don't understand the argument %typ")
+            raise ValueError("producer requires at least one type argument")
 
-def produce(typs, size):
-    if size <= 0 or not isinstance(size,int):
-        raise ValueError("Size  %s should be a positive integer" % size)
+        if isclass(typ):
+            try:
+                return self.__producers[typ]
+            except KeyError as e:
+                if self is DEFAULT_PRODUCERS:
+                    raise ValueError("No producer defined for type %s" % str(typ))
+                else:
+                    return DEFAULT_PRODUCERS.producer(typ)
+        elif isinstance(typ,tuple):
+            return tuple_producer(typ)
+        elif isinstance(typ, list):
+            gen = one_of(*typ) 
+            return list_producer(gen)   
+        elif isinstance(typ,dict):
+            return dict_producer(typ)
+        else:
+            raise ValueError("I don't understand the argument %typ")
 
-    return producer(typs)(size)
+    def produce(self,typs, size):
+        if size <= 0 or not isinstance(size,int):
+            raise ValueError("Size  %s should be a positive integer" % size)
 
-def define_producer_for(t, m):
-    __producers__[t] = m
+        return self.producer(typs)(self,size)
+
+    def define_producer_for(self,t, m):
+        self.__producers[t] = m
+
+DEFAULT_PRODUCERS = Producers()
 
 def tuple_producer(tup):
-    return lambda size: tuple([g(size) for g in tup])
+    return lambda self,size: tuple([self.producer(g)(self,size) for g in tup])
 
 def list_producer(elements):
-    return lambda size: [elements(size) for _ in xrange(produce(int, size))]
+    return lambda self,size: [elements(self,size) for _ in xrange(self.produce(int, size))]
 
 def dict_producer(producer_dict):
-    def gen(size):
+    def gen(self,size):
         result = {}
         for k,g in producer_dict.items():
-            result[k] = g(size)
+            print k, self, size
+            result[k] = self.producer(g)(self,size)
         return result
     return gen
 
@@ -58,11 +66,10 @@ def one_of(*args):
     Takes n producers as arguments, returns a producer which calls each
     with equal probability
     """
-    if len(args) == 1:
-        return args[0]
-    return lambda size: choice(args)(size)
+    return lambda self,size: self.producer(choice(args))(self,size)
 
-def random_float(size):
+@produces(float)
+def random_float(self,size):
     if random() <= 0.05:
         if flip_coin():
             return -0.0
@@ -76,7 +83,8 @@ def random_float(size):
             x = -x
     return x
 
-def geometric_int(size):
+@produces(int)
+def geometric_int(self,size):
     """
     produce a geometric integer with expected absolute value size and sign
     negative or positive with equal probability
@@ -90,11 +98,9 @@ def geometric_int(size):
 characters = map(chr,range(0,127))
 
 @produces(str)
-def produce_string(size):
-    return ''.join((choice(characters) for _ in xrange(produce(int,size))))
+def produce_string(self,size):
+    return ''.join((choice(characters) for _ in xrange(self.produce(int,size))))
 
+@produces(bool)
 def flip_coin():
     return random() <= 0.5
-
-define_producer_for(int, geometric_int)
-define_producer_for(float, random_float)

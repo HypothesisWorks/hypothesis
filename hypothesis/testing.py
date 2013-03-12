@@ -1,4 +1,4 @@
-from hypothesis.produce import producer
+from hypothesis.produce import Producers
 from hypothesis.simplify import Simplifiers
 from itertools import islice
 
@@ -16,8 +16,9 @@ def falsify(hypothesis, *argument_types, **kwargs):
     first_probe_size = option("first_probe_size", 10)
     second_probe_size = option("second_probe_size", 50)
     simplifiers = option("simplifiers", Simplifiers())
+    producers = option("producers", Producers())
 
-    gen = producer(argument_types)
+    gen = producers.producer(argument_types)
 
     def falsifies(args):
         try:
@@ -31,7 +32,7 @@ def falsify(hypothesis, *argument_types, **kwargs):
     falsifying_example = None
     while not falsifying_example and size <= max_size:
         for _ in xrange(first_probe_size):
-            x = gen(size)
+            x = gen(producers,size)
             if falsifies(x): 
                 falsifying_example = x
                 break
@@ -42,7 +43,7 @@ def falsify(hypothesis, *argument_types, **kwargs):
     while size > 1:
         size /= 2
         for _ in xrange(second_probe_size):
-            x = gen(size)
+            x = gen(producers,size)
             if falsifies(x): 
                 falsifying_example = x
                 break

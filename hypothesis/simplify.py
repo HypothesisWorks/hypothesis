@@ -61,12 +61,12 @@ class Tracker():
         try:
             seen_set = self.contents[ck]
         except KeyError:
-            seen_set = set()
+            seen_set = []
             self.contents[ck] = seen_set
         return seen_set
 
     def add(self,x):
-        self.seen_set(x).add(_convert_key(x))
+        self.seen_set(x).append(_convert_key(x))
     
     def seen(self,x):
         return _convert_key(x) in self.seen_set(x)
