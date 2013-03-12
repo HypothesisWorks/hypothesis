@@ -1,22 +1,22 @@
-__minimizers__ = {}
+__simplifiers__ = {}
 
-def minimizes(typ):
+def simplifies(typ):
     def accept_function(fn):
-        define_minimizer_for(typ, fn)
+        define_simplifier_for(typ, fn)
         return fn
     return accept_function
 
-def __minimizer_key(t):
+def __simplifier_key(t):
     return t.__class__
 
-def minimizer_for(t):
+def simplifier_for(t):
     try:
-        return __minimizers__[__minimizer_key(t)]
+        return __simplifiers__[__simplifier_key(t)]
     except KeyError:
-        return nothing_to_minimize
+        return no_simplifications
 
-def minimizer(t):
-    return minimizer_for(t)(t)
+def simplifier(t):
+    return simplifier_for(t)(t)
 
 def _convert_key(x):
     if isinstance(x, list):
@@ -46,11 +46,11 @@ class Tracker():
     def seen(self,x):
         return _convert_key(x) in self.seen_set(x)
 
-def minimize_such_that(t, f):
+def simplify_such_that(t, f):
     tracker = Tracker()
 
     while True:
-        for s in minimizer(t):
+        for s in simplifier(t):
             if tracker.seen(s): 
                 continue
             else:
@@ -61,32 +61,32 @@ def minimize_such_that(t, f):
         else:
             return t  
 
-def define_minimizer_for(t, m):
-    __minimizers__[t] = m
+def define_simplifier_for(t, m):
+    __simplifiers__[t] = m
 
-def nothing_to_minimize(x):
+def no_simplifications(x):
     return []
 
-@minimizes(float)
-def minimize_float(x):
+@simplifies(float)
+def simplify_float(x):
     yield 0.0
     if x < 0: yield -x
     n = int(x)
     yield float(n)
-    for m in minimizer(n):
+    for m in simplifier(n):
         yield float(m)    
         yield (m - n) + x
 
-@minimizes(int)
-def minimize_integer(x):
+@simplifies(int)
+def simplify_integer(x):
     if x < 0:
         yield -x
         for y in xrange(x+1, 1): yield y
     elif x > 0:
         for y in xrange(x-1,-1,-1): yield y
 
-@minimizes(list)
-def minimize_list(x):
+@simplifies(list)
+def simplify_list(x):
     indices = xrange(0, len(x)) 
     for i in indices:
         y = list(x)
@@ -94,13 +94,13 @@ def minimize_list(x):
         yield y
 
     for i in indices:
-        for s in minimizer(x[i]):
+        for s in simplifier(x[i]):
             z = list(x)
             z[i] = s
             yield z 
 
-@minimizes(str)
-def minimize_string(x):
+@simplifies(str)
+def simplify_string(x):
     if len(x) == 0:
         return
     elif len(x) == 1:
@@ -113,25 +113,25 @@ def minimize_string(x):
             for i in xrange(n,47,-1):
                 yield chr(i)
     else:
-        for y in minimizer(list(x)):
+        for y in simplifier(list(x)):
             yield ''.join(y)
 
-@minimizes(tuple)
-def minimize_tuple(x):
+@simplifies(tuple)
+def simplify_tuple(x):
     for i in xrange(0, len(x)):
-        for s in minimizer(x[i]):
+        for s in simplifier(x[i]):
             z = list(x)
             z[i] = s
             yield tuple(z)
 
-@minimizes(dict)
-def minimize_dict(x):
+@simplifies(dict)
+def simplify_dict(x):
     for k in x:
         y = dict(x)
         del y[k]
         yield y
     for k in x:
-        for v in minimizer(x[k]):
+        for v in simplifier(x[k]):
             y = dict(x)
             y[k] = v
             yield y

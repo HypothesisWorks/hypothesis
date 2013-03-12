@@ -1,5 +1,5 @@
 from hypothesis.produce import generator
-from hypothesis.simplify import minimize_such_that 
+from hypothesis.simplify import simplify_such_that 
 from itertools import islice
 
 def assume(condition):
@@ -46,7 +46,7 @@ def falsify(hypothesis, *argument_types, **kwargs):
         else:
             break
 
-    return minimize_such_that(falsifying_example, falsifies) 
+    return simplify_such_that(falsifying_example, falsifies) 
   
 class UnsatisfiedAssumption(Exception):
     def __init__(self):
