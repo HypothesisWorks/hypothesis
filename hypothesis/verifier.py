@@ -9,15 +9,17 @@ class Verifier:
     def __init__(self,  simplifiers=None,
                         producers = None,
                         starting_size = 1,
-                        first_probe_size=10,
-                        second_probe_size = 50,
-                        max_size = 1024):
+                        warming_rate = 0.05,
+                        cooling_rate = 0.01,
+                        max_size = 1024,
+                        max_failed_runs = 10):
         self.simplifiers = simplifiers or Simplifiers()
         self.producers = producers or Producers()
         self.starting_size = starting_size
-        self.first_probe_size = first_probe_size
-        self.second_probe_size = second_probe_size
+        self.warming_rate = warming_rate
+        self.cooling_rate = cooling_rate
         self.max_size = max_size
+        self.max_failed_runs = max_failed_runs 
                         
     def falsify(self, hypothesis, *argument_types):
         gen = self.producers.producer(argument_types)
@@ -30,28 +32,33 @@ class Verifier:
             except UnsatisfiedAssumption:
                 return False
 
-        size = self.starting_size
+        temperature = self.starting_size
         falsifying_example = None
-        while not falsifying_example and size <= self.max_size:
-            for _ in xrange(self.first_probe_size):
-                x = gen(self.producers,size)
-                if falsifies(x): 
-                    falsifying_example = x
-                    break
-            size *= 2
+
+        def look_for_a_falsifying_example(size):
+            x = gen(self.producers,size)
+            if falsifies(x): 
+                return x
+
+        while temperature < self.max_size:
+            falsifying_example = look_for_a_falsifying_example(int(temperature))
+            if falsifying_example:
+                break
+            temperature *= (1 + self.warming_rate)
 
         if not falsifying_example: raise Unfalsifiable(hypothesis)
 
-        while size > 1:
-            size /= 2
-            for _ in xrange(self.second_probe_size):
-                x = gen(self.producers,size)
-                if falsifies(x): 
-                    falsifying_example = x
-                    break
+        failed_runs = 0
+        while temperature > 1 and failed_runs < self.max_failed_runs:
+            new_example = look_for_a_falsifying_example(int(temperature))
+            if new_example:
+                failed_runs = 0
+                falsifying_example = new_example
             else:
-                break
+                failed_runs += 1
 
+            temperature *= (1 - self.cooling_rate) 
+        
         return self.simplifiers.simplify_such_that(falsifying_example, falsifies) 
 
 def falsify(*args, **kwargs):
