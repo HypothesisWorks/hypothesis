@@ -50,7 +50,7 @@ It's not magic, and when the search space is large it won't be able to do very m
 for hard to find examples.
 
 You can also use it to drive tests. I've only tested it with py.test, but it has no 
-specific dependencies on it: You just write normal tests which raise AssertionErrors
+specific dependencies on it: You just write normal tests which raise exceptions 
 on failures and it will transform those into randomized tests.
 
 So the following test will pass:

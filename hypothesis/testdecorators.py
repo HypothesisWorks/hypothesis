@@ -12,7 +12,13 @@ def given(*generator_arguments,**kwargs):
         def wrapped_test(*arguments):
             # The only thing we accept in falsifying the test are assertion
             # errors. Anything is a pass.
-            to_falsify = lambda *xs: test(*(arguments + xs)) or True
+            def to_falsify(*xs): 
+                try:
+                    test(*(arguments + xs)) 
+                    return True
+                except:
+                    return False
+
             try:
                 falsifying_example = verifier.falsify(to_falsify, *generator_arguments)
             except Unfalsifiable:
