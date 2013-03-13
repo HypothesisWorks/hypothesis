@@ -105,8 +105,10 @@ Approximately:
 * Producers should produce values which are "of about this level of complexity". What that actually means is completely implementation defined. Additionally, it should ideally be possible to produce any value at any size. All that should change is the expected complexity.
 * Simplifiers should produce a generator with a finite number of elements, each of which is simpler than the starting element in some completely implementation defined sense.
 
-WARNING: This software should be considered super pre alpha. It probably works
-pretty well, maybe, perhaps, but the API is still heavily under flux and the 
-internals are liable to change significantly. I'd estimate you currently have 
-about an 80% chance of hitting a bug or other rough edge if you were to try and
-use it in anger.
+WARNING: This code is about one step removed from being a proof of concept. It's passed 
+out of the "the internals are ropy as hell and the API is all wrong" stage but is now in the
+"this probably works, but is likely to see some major changes before it stabilizes".
+
+The main entry points to the API are unlikely to change too radically, and it's well enough tested
+that I expect simple use cases will work fine. I don't imagine it's terribly hard to trigger bugs
+in it at the moment though, so I'd recomend using with some degree of caution. 

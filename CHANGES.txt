@@ -1,3 +1,4 @@
 v0.0.1, 10/03/2013 -- Initial release. Basic working prototype. Demonstrates idea, probably shouldn't be used.
 v0.0.2, 12/03/2013 -- Starting to tighten up on the internals. Change API to allow more flexibility in configuration. More testing. 
+v0.0.3  13/03/2013 -- Improved a few internals. Opened up creating generators from instances as a general API. Test integration.
 

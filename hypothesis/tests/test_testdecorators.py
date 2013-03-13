@@ -14,7 +14,6 @@ def fails(f):
 def test_int_addition_is_commutative(x,y):
     assert x + y == y + x
 
-@fails
 @given(str,str)
 def test_str_addition_is_commutative(x,y):
     assert x + y == y + x
