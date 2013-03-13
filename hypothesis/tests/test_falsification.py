@@ -157,7 +157,7 @@ def test_can_falsify_lists():
     assert falsify(lambda x: len(x) < 3, [int])[0] == [0] * 3
 
 def test_can_falsify_long_lists():
-    assert falsify(lambda x: len(x) < 50, [int],starting_size=100)[0] == [0] * 50 
+    assert falsify(lambda x: len(x) < 20, [int],warming_rate=0.5)[0] == [0] * 20 
 
 def test_can_find_unsorted_lists():
     unsorted = falsify(lambda x: sorted(x) == x, [int])[0] 
