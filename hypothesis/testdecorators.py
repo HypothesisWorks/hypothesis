@@ -1,5 +1,5 @@
 from functools import wraps
-from hypothesis.verifier import Verifier, Unfalsifiable
+from hypothesis.verifier import Verifier, Unfalsifiable, UnsatisfiedAssumption
 
 def given(*generator_arguments,**kwargs):
     try:
@@ -16,6 +16,8 @@ def given(*generator_arguments,**kwargs):
                 try:
                     test(*(arguments + xs)) 
                     return True
+                except UnsatisfiedAssumption as e:
+                    raise e
                 except:
                     return False
 
@@ -23,7 +25,7 @@ def given(*generator_arguments,**kwargs):
                 falsifying_example = verifier.falsify(to_falsify, *generator_arguments)
             except Unfalsifiable:
                 return
-           
+          
             # We run this one final time so we get good errors 
             # Otherwise we would have swallowed all the reports of it actually
             # having gone wrong.

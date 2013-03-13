@@ -1,5 +1,5 @@
 from hypothesis.testdecorators import given
-from hypothesis.verifier import Verifier
+from hypothesis.verifier import Verifier, assume
 from functools import wraps
 
 import pytest
@@ -49,6 +49,11 @@ def test_still_minimizes_on_non_assertion_failures():
         is_not_too_large()
 
     assert " 10 " in exinfo.value.message
+
+@given(int)
+def test_integer_division_shrinks_positive_integers(n):
+    assume(n > 0)
+    assert n/2 < n
 
 class TestCases:
     @given(int)
