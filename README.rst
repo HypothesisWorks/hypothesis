@@ -49,7 +49,40 @@ of course sometimes we ask it to falsify things that are false but hard to find:
 It's not magic, and when the search space is large it won't be able to do very much
 for hard to find examples.
 
-How does it work?
+You can also use it to drive tests. I've only tested it with py.test, but it has no 
+specific dependencies on it: You just write normal tests which raise AssertionErrors
+on failures and it will transform those into randomized tests.
+
+So the following test will pass:
+
+.. code:: python
+
+    @given(int,int)
+    def test_int_addition_is_commutative(x,y):
+        assert x + y == y + x
+
+And the following will fail:
+
+.. code:: python
+
+    @given(str,str)
+    def test_str_addition_is_commutative(x,y):
+        assert x + y == y + x
+
+With an error message something like:
+ 
+.. code:: python
+
+        x = '0', y = '1'
+        @given(str,str)
+        def test_str_addition_is_commutative(x,y):
+            assert x + y == y + x
+    E       assert '01' == '10'
+    E         - 01
+    E         + 10
+
+
+How does hypothesis work?
 
 Fundamentally it knows how to do two things with types: 
 
