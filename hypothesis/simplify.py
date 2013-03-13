@@ -1,3 +1,5 @@
+from hypothesis.tracker import Tracker
+
 class Simplifiers:
     def __init__(self):
         self.__simplifiers = {} 
@@ -41,44 +43,6 @@ def simplifies(typ):
         DEFAULT_SIMPLIFIERS.define_simplifier_for(typ, fn)
         return fn
     return accept_function
-
-def _convert_key(x):
-    if isinstance(x, list):
-        return tuple(map(_convert_key,x))
-    if isinstance(x, tuple):
-        return tuple(map(_convert_key,x))
-    if isinstance(x, dict):
-        return tuple(sorted(map(_convert_key,x.items())))
-    if isinstance(x, set):
-        return frozenset(map(_convert_key, x))
-    return x
-
-class Tracker():
-    def __init__(self):
-        self.contents = {}
-
-    def already_seen(self,x):
-        ck = x.__class__
-        x = _convert_key(x)
-        try:
-            seen_set = self.contents[ck]
-            present = x in seen_set
-            if not present:
-                if isinstance(seen_set, set):
-                    seen_set.add(x)
-                else: 
-                    seen_set.append(x)
-            return present
-        except KeyError:
-            try:
-                seen_set = set(x)
-            except TypeError:
-                seen_set = [x] 
-
-            self.contents[ck] = seen_set
-            return False
-        return seen_set
-
 def no_simplifications(s,x):
     return []
 
