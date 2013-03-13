@@ -2,4 +2,5 @@ v0.0.1, 10/03/2013 -- Initial release. Basic working prototype. Demonstrates ide
 v0.0.2, 12/03/2013 -- Starting to tighten up on the internals. Change API to allow more flexibility in configuration. More testing. 
 v0.0.3  13/03/2013 -- Improved a few internals. Opened up creating generators from instances as a general API. Test integration.
 v0.0.4  13/03/2013 -- No changes except that I checked in a failing test case for 0.0.3 so had to replace the release. Doh
+v0.0.5  13/03/2013 -- No changes except trying to fix packaging
 

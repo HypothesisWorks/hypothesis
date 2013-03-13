@@ -14,14 +14,14 @@ class PyTest(TestCommand):
 
 setup(
     name='hypothesis',
-    version='0.0.4',
+    version='0.0.5',
     author='David R. MacIver',
     author_email='david@drmaciver.com',
     packages=['hypothesis'],
     url='https://github.com/DRMacIver/hypothesis',
     license='LICENSE.txt',
     description='Tools for falsifying hypothesis with random data generation',
-    long_description=open('README.rst').read(),
+    long_description=open('README').read(),
     tests_require=['pytest'],
     cmdclass = {'test': PyTest},
 )
