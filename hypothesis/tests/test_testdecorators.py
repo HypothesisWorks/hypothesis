@@ -17,5 +17,5 @@ def test_int_addition_is_commutative(x,y):
 
 @fails
 @hypothesis(float,float,float)
-def test_float_addition_is_distributive(x,y,z):
+def test_float_addition_is_associative(x,y,z):
     assert x + (y + z) == (x + y) + z
