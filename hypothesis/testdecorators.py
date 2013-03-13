@@ -1,7 +1,7 @@
 from functools import wraps
 from hypothesis.verifier import Verifier, Unfalsifiable
 
-def hypothesis(*generator_arguments,**kwargs):
+def given(*generator_arguments,**kwargs):
     try:
         verifier = kwargs["verifier"]
     except KeyError:
