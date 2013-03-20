@@ -120,19 +120,13 @@ def one_of(*args):
 
 @produces(float)
 def random_float(self,size):
-    allow_negatives = self.is_flag_enabled("allow_negative_numbers", size)
-
-    if random() <= 0.05:
-        if allow_negatives and flip_coin():
-            return -0.0
-        else:
-            return 0.0
-    else:
-        x = -log(random()) * size
-        if flip_coin():
-            x = 1/x
-        if allow_negatives and flip_coin():
-            x = -x
+    may_be_negative = size > 1 and self.is_flag_enabled("allow_negative_numbers", size)
+    if may_be_negative:
+        size -= 1
+    mean = math.exp(size - 1)
+    x = -log(random()) * mean
+    if may_be_negative and flip_coin():
+        x = -x
     return x
 
 def geometric_probability_for_entropy(desired_entropy):
