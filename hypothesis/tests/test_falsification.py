@@ -18,8 +18,10 @@ def timeout(time):
         
     signal.signal(signal.SIGALRM, timed_out)
     signal.alarm(time)
-    yield
-    signal.alarm(0)
+    try:
+        yield
+    finally:
+        signal.alarm(0)
 
 def test_can_make_assumptions():
     def is_good(x):
