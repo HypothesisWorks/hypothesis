@@ -78,6 +78,14 @@ def simplify_list(simplifiers, x):
             z[i] = s
             yield z 
 
+    for i in xrange(0,len(x) - 1):
+        for j in xrange(i,len(x) - 1):
+            y = list(x)
+            del y[i]
+            del y[j]
+            yield y
+           
+
 @simplifies(set)
 def simplify_set(simplifiers, x):
     for y in simplifiers.simplify(list(x)):
