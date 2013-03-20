@@ -16,3 +16,8 @@ def test_leaves_producer_methods_untouched():
     assert prods.producer(Foo.g) == Foo.g
     x = Foo()
     assert prods.producer(x.g) == x.g
+
+def test_produces_an_empty_tuple():
+    prods = p.Producers()
+    assert prods.produce((), 1) == ()
+

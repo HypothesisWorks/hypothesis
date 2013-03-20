@@ -1,4 +1,4 @@
-from hypothesis.statefultesting import StatefulTest, step, precondition, integrity_test
+from hypothesis.statefultesting import *
 from hypothesis.verifier import assume
 
 
@@ -37,7 +37,7 @@ class BrokenCounter(StatefulTest):
         assert self.value == start_value - 1
 
 def test_finds_broken_example():
-    assert [x.__name__ for x in BrokenCounter.breaking_example()] == ['inc'] * 5 + ['dec']
+    assert [x[0].__name__ for x in BrokenCounter.breaking_example()] == ['inc'] * 5 + ['dec']
 
 class AlwaysBroken(StatefulTest):
     @step
@@ -68,3 +68,13 @@ class QuicklyBroken(StatefulTest):
 def test_runs_integrity_checks_after_each_step():
     assert len(QuicklyBroken.breaking_example()) == 2
 
+class FiveHater(StatefulTest):
+    @requires(int)
+    @step
+    def hates_fives(self, n):
+        assert n < 5
+
+def test_minimizes_arguments_to_steps():
+    steps = FiveHater.breaking_example()
+    assert len(steps) == 1
+    assert steps[0][1][0] == 5

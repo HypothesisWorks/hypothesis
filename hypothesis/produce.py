@@ -22,8 +22,6 @@ class Producers:
         self.__instance_producers = {}
 
     def producer(self, typ):
-        if not typ:
-            raise ValueError("producer requires at least one type argument")
         if isinstance(typ, FunctionType) or isinstance(typ, MethodType):
             return typ
 

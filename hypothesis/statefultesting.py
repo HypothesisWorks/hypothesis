@@ -11,6 +11,12 @@ def integrity_test(f):
     f.hypothesis_integrity_tests = True
     return f
 
+def requires(*args):
+    def alter_function(f):
+        f.hypothesis_test_requirements = args
+        return f
+    return alter_function
+
 
 class PreconditionNotMet(Exception):
     def __init__(self):
@@ -34,7 +40,12 @@ class StatefulTest:
         
     @classmethod
     def produce_step(cls, producers, size):
-        return choice(cls.test_steps())
+        step = choice(cls.test_steps())
+        try:
+            requirements = step.hypothesis_test_requirements
+        except AttributeError:
+            requirements = ()
+        return (step,producers.produce(requirements, size))
 
     @classmethod
     def run_sequence(cls, steps):
@@ -44,9 +55,9 @@ class StatefulTest:
             for t in tests:
                 t(value)
         run_integrity_tests()
-        for s in steps:
+        for step, args in steps:
             try:
-                s(value)
+                step(value, *args)
                 run_integrity_tests()
             except PreconditionNotMet:
                 pass
