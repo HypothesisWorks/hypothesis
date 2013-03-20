@@ -39,3 +39,32 @@ class BrokenCounter(StatefulTest):
 def test_finds_broken_example():
     assert [x.__name__ for x in BrokenCounter.breaking_example()] == ['inc'] * 5 + ['dec']
 
+class AlwaysBroken(StatefulTest):
+    @step
+    def do_something(self):
+        pass
+
+    @integrity_test
+    def go_boom(self):
+        assert False
+
+
+def test_runs_integrity_checks_initially():
+    assert len(AlwaysBroken.breaking_example()) == 0
+
+
+class QuicklyBroken(StatefulTest):
+    def __init__(self):
+        self.value = 0
+
+    @step
+    def inc(self):
+        self.value += 1
+
+    @integrity_test
+    def is_small(self):
+        assert self.value < 2
+
+def test_runs_integrity_checks_after_each_step():
+    assert len(QuicklyBroken.breaking_example()) == 2
+

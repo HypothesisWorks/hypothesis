@@ -182,3 +182,4 @@ def test_good_errors_on_bad_values():
 
 def test_can_falsify_bools():
     assert falsify(lambda x: x, bool)[0] == False
+

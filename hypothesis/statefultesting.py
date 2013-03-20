@@ -38,10 +38,16 @@ class StatefulTest:
 
     @classmethod
     def run_sequence(cls, steps):
+        tests = cls.integrity_tests()
         value = cls()
+        def run_integrity_tests():
+            for t in tests:
+                t(value)
+        run_integrity_tests()
         for s in steps:
             try:
                 s(value)
+                run_integrity_tests()
             except PreconditionNotMet:
                 pass
         return True
