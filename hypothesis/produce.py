@@ -1,5 +1,6 @@
 from random import random, choice,sample
-from math import log
+import math
+from math import log, log1p
 from inspect import isclass
 from itertools import islice
 from types import FunctionType, MethodType
@@ -134,17 +135,36 @@ def random_float(self,size):
             x = -x
     return x
 
+def geometric_probability_for_entropy(desired_entropy):
+    def h(p):
+        if p <= 0:
+            return float('inf')
+        if p >= 1:
+            return 0
+        try:
+            q = 1 - p
+            return -(q * log(q) + p * log(p))/(log(2) * p)
+        except ValueError:
+            return 0.0
+    lower = 0.0
+    upper = 1.0
+    for _ in xrange(max(int(desired_entropy * 2), 1024)):
+        mid = (lower + upper) / 2
+        if h(mid) > desired_entropy:
+            lower = mid
+        else:
+            upper = mid
+    return mid
+
 @produces(int)
 def produce_int(self,size):
-    """
-    produce a geometric integer with expected absolute value size and sign
-    negative or positive with equal probability
-    """
+    can_be_negative = size > 1 and self.is_flag_enabled("allow_negative_numbers", size)
+    if can_be_negative:
+        size -= 1
     p = 1.0 / (size + 1)
-    n =  int(log(random()) / log(1 - p))
-    if self.is_flag_enabled("allow_negative_numbers", size):
-        if random() <= 0.5:
-            n = -n
+    n =  int(log(random()) / log1p(- p))
+    if can_be_negative and random() <= 0.5:
+        n = -n
     return n
 
 characters = map(chr,range(0,127))

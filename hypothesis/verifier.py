@@ -9,9 +9,9 @@ class Verifier:
     def __init__(self,  simplifiers=None,
                         producers = None,
                         starting_size = 1,
-                        warming_rate = 0.05,
-                        cooling_rate = 0.01,
-                        max_size = 1024,
+                        warming_rate = 0.5,
+                        cooling_rate = 0.1,
+                        max_size = 512,
                         max_failed_runs = 10):
         self.simplifiers = simplifiers or Simplifiers()
         self.producers = producers or Producers()
@@ -43,7 +43,7 @@ class Verifier:
             falsifying_example = look_for_a_falsifying_example(int(temperature))
             if falsifying_example:
                 break
-            temperature *= (1 + self.warming_rate)
+            temperature += self.warming_rate
 
         if not falsifying_example: raise Unfalsifiable(hypothesis)
 
@@ -56,7 +56,7 @@ class Verifier:
             else:
                 failed_runs += 1
 
-            temperature *= (1 - self.cooling_rate) 
+            temperature -= self.cooling_rate
         
         return self.simplifiers.simplify_such_that(falsifying_example, falsifies) 
 
