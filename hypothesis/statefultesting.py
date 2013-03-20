@@ -111,7 +111,11 @@ class StatefulTest:
         
     @classmethod
     def produce_step(cls, producers, size):
-        step = choice(cls.test_steps())
+        base_choices = [t for t in cls.test_steps() if producers.is_flag_enabled(t, size)]
+        if not base_choices:
+            base_choices = cls.test_steps()
+
+        step = choice(base_choices)
         try:
             requirements = step.hypothesis_test_requirements
         except AttributeError:

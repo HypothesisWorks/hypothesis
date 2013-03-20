@@ -3,6 +3,19 @@ from math import log
 from inspect import isclass
 from itertools import islice
 from types import FunctionType, MethodType
+from contextlib import contextmanager
+
+
+@contextmanager
+def reset_on_exit(x):
+    x.current_depth += 1
+    try:
+        yield
+    finally:
+        x.current_depth -= 1
+        if not x.current_depth:
+            x.reset_state()
+
 
 def produces(typ):
     def accept_function(fn):
@@ -20,6 +33,23 @@ class Producers:
     def __init__(self):
         self.__producers = {}
         self.__instance_producers = {}
+        self.current_depth = 0
+        self.enabled_flags = {}
+
+    def reset_state(self):
+        self.enabled_flags = {}
+
+    def flag_probability(self, size):
+        x = size / 50.0
+        return x / (1 + x) 
+
+    def is_flag_enabled(self, flag, size):
+        if flag in self.enabled_flags:
+            return self.enabled_flags[flag]
+
+        result = random() <= self.flag_probability(size) 
+        self.enabled_flags[flag] = result
+        return result
 
     def producer(self, typ):
         if isinstance(typ, FunctionType) or isinstance(typ, MethodType):
@@ -40,10 +70,11 @@ class Producers:
                 return DEFAULT_PRODUCERS.producer(typ)
 
     def produce(self,typs, size):
-        if size <= 0 or not isinstance(size,int):
-            raise ValueError("Size  %s should be a positive integer" % size)
+        with reset_on_exit(self):
+            if size <= 0 or not isinstance(size,int):
+                raise ValueError("Size  %s should be a positive integer" % size)
 
-        return self.producer(typs)(self,size)
+            return self.producer(typs)(self,size)
 
     def define_producer_for(self,t, m):
         self.__producers[t] = m
@@ -88,8 +119,10 @@ def one_of(*args):
 
 @produces(float)
 def random_float(self,size):
+    allow_negatives = self.is_flag_enabled("allow_negative_numbers", size)
+
     if random() <= 0.05:
-        if flip_coin():
+        if allow_negatives and flip_coin():
             return -0.0
         else:
             return 0.0
@@ -97,7 +130,7 @@ def random_float(self,size):
         x = -log(random()) * size
         if flip_coin():
             x = 1/x
-        if flip_coin():
+        if allow_negatives and flip_coin():
             x = -x
     return x
 
@@ -109,8 +142,9 @@ def geometric_int(self,size):
     """
     p = 1.0 / (size + 1)
     n =  int(log(random()) / log(1 - p))
-    if random() <= 0.5:
-        n = -n
+    if self.is_flag_enabled("allow_negative_numbers", size):
+        if random() <= 0.5:
+            n = -n
     return n
 
 characters = map(chr,range(0,127))
