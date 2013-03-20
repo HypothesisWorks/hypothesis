@@ -37,7 +37,7 @@ class BrokenCounter(StatefulTest):
         assert self.value == start_value - 1
 
 def test_finds_broken_example():
-    assert [x[0].__name__ for x in BrokenCounter.breaking_example()] == ['inc'] * 5 + ['dec']
+    assert [x[0] for x in BrokenCounter.breaking_example()] == ['inc'] * 5 + ['dec']
 
 class AlwaysBroken(StatefulTest):
     @step
@@ -76,7 +76,7 @@ class FiveHater(StatefulTest):
 def test_minimizes_arguments_to_steps():
     steps = FiveHater.breaking_example()
     assert len(steps) == 1
-    assert steps[0][1][0] == 5
+    assert steps[0][1] == 5
 
 class BadSet:
     def __init__(self):
@@ -115,4 +115,4 @@ def test_bad_set_finds_minimal_break():
     for _ in xrange(10):
         breaking_example = BadSetTester.breaking_example()
         assert len(breaking_example) == 3
-        assert [s[1] for s in breaking_example] == [(0,)] * 3
+        assert [s[1] for s in breaking_example] == [0] * 3

@@ -124,4 +124,5 @@ class StatefulTest:
 
     @classmethod
     def breaking_example(cls):
-       return hypothesis.falsify(TestRun.run, cls.produce_testrun)[0]
+        test_run = hypothesis.falsify(TestRun.run, cls.produce_testrun)[0]
+        return [(f.__name__,) + args for f, args in test_run]
