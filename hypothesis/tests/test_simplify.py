@@ -1,6 +1,6 @@
 from hypothesis.simplify import DEFAULT_SIMPLIFIERS
 
-def test_can_remove_pairs():
+def test_can_remove_pairs_from_lists():
     def two_more_falses(xs):
         nt = len([x for x in xs if x])
         nf = len(xs) - nt
@@ -9,3 +9,6 @@ def test_can_remove_pairs():
     simplified = DEFAULT_SIMPLIFIERS.simplify_such_that([False, True,False,True,False,True,False], two_more_falses) 
 
     assert len(simplified) == 2
+
+def test_can_simplify_pairs_of_ints():
+    assert DEFAULT_SIMPLIFIERS.simplify_such_that((5,-5), lambda p: sum(p) == 0) == (0,0)
