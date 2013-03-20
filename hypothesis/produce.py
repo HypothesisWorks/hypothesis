@@ -2,7 +2,7 @@ from random import random, choice,sample
 from math import log
 from inspect import isclass
 from itertools import islice
-from types import FunctionType
+from types import FunctionType, MethodType
 
 def produces(typ):
     def accept_function(fn):
@@ -24,7 +24,7 @@ class Producers:
     def producer(self, typ):
         if not typ:
             raise ValueError("producer requires at least one type argument")
-        if isinstance(typ, FunctionType):
+        if isinstance(typ, FunctionType) or isinstance(typ, MethodType):
             return typ
 
         try:
