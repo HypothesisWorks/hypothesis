@@ -122,5 +122,5 @@ def produce_string(self,size):
     return ''.join((choice(characters) for _ in xrange(self.produce(int,size))))
 
 @produces(bool)
-def flip_coin():
+def flip_coin(*args):
     return random() <= 0.5

@@ -179,3 +179,6 @@ def test_good_errors_on_bad_values():
         falsify(lambda x: False, some_string)
 
     assert some_string in e.value.message
+
+def test_can_falsify_bools():
+    assert falsify(lambda x: x, bool)[0] == False
