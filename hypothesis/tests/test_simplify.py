@@ -18,3 +18,7 @@ def test_can_simplify_pairs_in_lists():
 def test_can_simplify_pairs_of_ints():
     assert DEFAULT_SIMPLIFIERS.simplify_such_that((5,-5), lambda p: sum(p) == 0) == (0,0)
 
+def test_can_simplify_identical_values_at_once():
+    def has_only_one_value(xs): return len(set(xs)) == 1
+
+    assert DEFAULT_SIMPLIFIERS.simplify_such_that((1,1,1,1,1), has_only_one_value) == (0,0,0,0,0)

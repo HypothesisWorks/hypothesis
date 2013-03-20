@@ -52,7 +52,6 @@ class AlwaysBroken(StatefulTest):
 def test_runs_integrity_checks_initially():
     assert len(AlwaysBroken.breaking_example()) == 0
 
-
 class QuicklyBroken(StatefulTest):
     def __init__(self):
         self.value = 0
@@ -78,3 +77,42 @@ def test_minimizes_arguments_to_steps():
     steps = FiveHater.breaking_example()
     assert len(steps) == 1
     assert steps[0][1][0] == 5
+
+class BadSet:
+    def __init__(self):
+        self.data = []
+
+    def add(self, arg):
+        self.data.append(arg)
+
+    def remove(self, arg):
+        for i in xrange(0, len(self.data)):
+            if self.data[i] == arg:
+                del self.data[i]
+                break
+
+    def contains(self, arg):
+        return arg in self.data
+
+class BadSetTester(StatefulTest):
+    def __init__(self):
+        self.target = BadSet()
+
+    @step
+    @requires(int)
+    def add(self,i):
+        self.target.add(i)
+        assert self.target.contains(i)
+
+    @step
+    @requires(int)
+    def remove(self,i):
+        self.target.remove(i)
+        assert not self.target.contains(i)
+
+def test_bad_set_finds_minimal_break():
+    # Try it a lot to make sure this isn't passing by coincidence
+    for _ in xrange(10):
+        breaking_example = BadSetTester.breaking_example()
+        assert len(breaking_example) == 3
+        assert [s[1] for s in breaking_example] == [(0,)] * 3

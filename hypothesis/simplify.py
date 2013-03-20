@@ -27,7 +27,7 @@ class Simplifiers:
 
         while True:
             for s in self.simplify(t):
-                if tracker.already_seen(s): 
+                if tracker.track(s) > 1: 
                     continue
 
                 if f(s):
@@ -131,6 +131,19 @@ def simplify_tuple(simplifiers, x):
                     z[i] = s
                     z[j] = t
                     yield tuple(z)
+
+    # Interesting things can happen with duplicate values. We now look for any
+    # values which appear in the tuple more than twice (we covered ones which 
+    # appear only twice before) and try to simplify them in lockstep.
+    t = Tracker()
+    for v in x:
+        t.track(v)
+
+    for v, n in t:
+        if n > 2:
+            for s in simplifiers.simplify(v):
+                yield tuple((s if y == v else y for y in x))
+            
 
 @simplifies(dict)
 def simplify_dict(simplifiers, x):
