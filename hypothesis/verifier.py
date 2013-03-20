@@ -22,7 +22,6 @@ class Verifier:
         self.max_failed_runs = max_failed_runs 
                         
     def falsify(self, hypothesis, *argument_types):
-        gen = self.producers.producer(argument_types)
 
         def falsifies(args):
             try:
@@ -36,7 +35,7 @@ class Verifier:
         falsifying_example = None
 
         def look_for_a_falsifying_example(size):
-            x = gen(self.producers,size)
+            x = self.producers.produce(argument_types,size)
             if falsifies(x): 
                 return x
 
