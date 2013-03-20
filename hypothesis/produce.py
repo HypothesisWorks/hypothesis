@@ -135,7 +135,7 @@ def random_float(self,size):
     return x
 
 @produces(int)
-def geometric_int(self,size):
+def produce_int(self,size):
     """
     produce a geometric integer with expected absolute value size and sign
     negative or positive with equal probability
