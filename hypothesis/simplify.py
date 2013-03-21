@@ -60,9 +60,19 @@ def simplify_float(simplifiers, x):
 def simplify_integer(simplifiers, x):
     if x < 0:
         yield -x
-        for y in xrange(x+1, 1): yield y
-    elif x > 0:
-        for y in xrange(x-1,-1,-1): yield y
+        for y in simplify_integer(simplifiers, -x): yield -y
+    elif x == 2:
+        yield 1
+        yield 0
+    elif x == 1:
+        yield 0
+    elif x == 0:
+        pass
+    else:
+        yield x - 1
+        yield x / 2
+        for y in simplify_integer(simplifiers, x - 1): yield y
+        for y in simplify_integer(simplifiers, x / 2): yield y
 
 @simplifies(list)
 def simplify_list(simplifiers, x):
