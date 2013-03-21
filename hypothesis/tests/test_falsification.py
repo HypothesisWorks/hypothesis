@@ -1,5 +1,6 @@
 from hypothesis.verifier import falsify, Unfalsifiable,assume, Verifier
-from hypothesis.produce import produces, Producers, DEFAULT_PRODUCERS;
+from hypothesis.produce import produces, Producers;
+from hypothesis.specmapper import MissingSpecification
 from hypothesis.simplify import Simplifiers
 from contextlib import contextmanager
 import random
@@ -70,9 +71,9 @@ def simplify_bar(minimizers, bar):
      
 def test_can_falsify_types_without_default_productions():
     producers = Producers()
-    producers.define_producer_for(Bar, produce_bar)
-    with pytest.raises(ValueError):
-        DEFAULT_PRODUCERS.produce(Bar, 1)
+    producers.define_specification_for(Bar, produce_bar)
+    with pytest.raises(MissingSpecification):
+        Producers.default().produce(Bar, 1)
 
     simplifiers = Simplifiers()
     simplifiers.define_simplifier_for(Bar, simplify_bar) 
@@ -180,7 +181,7 @@ def test_stops_loop_pretty_quickly():
 
 def test_good_errors_on_bad_values():
     some_string = "I am the very model of a modern major general"
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(MissingSpecification) as e:
         falsify(lambda x: False, some_string)
 
     assert some_string in e.value.message

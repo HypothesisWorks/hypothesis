@@ -1,3 +1,4 @@
+from hypothesis.specmapper import SpecificationMapper
 from random import random, choice,sample
 import math
 from math import log, log1p
@@ -21,20 +22,19 @@ def reset_on_exit(x):
 
 def produces(typ):
     def accept_function(fn):
-        DEFAULT_PRODUCERS.define_producer_for(typ, fn)
+        Producers.default().define_specification_for(typ, fn)
         return fn
     return accept_function
 
 def produces_from_instances(typ):
     def accept_function(fn):
-        DEFAULT_PRODUCERS.define_producer_for_instances(typ, fn)
+        Producers.default().define_specification_for_instances(typ, fn)
         return fn
     return accept_function
 
-class Producers:
+class Producers(SpecificationMapper):
     def __init__(self):
-        self.__producers = {}
-        self.__instance_producers = {}
+        SpecificationMapper.__init__(self)
         self.current_depth = 0
         self.enabled_flags = {}
 
@@ -53,42 +53,24 @@ class Producers:
         self.enabled_flags[flag] = result
         return result
 
-    def producer(self, typ):
-        if isinstance(typ, FunctionType) or isinstance(typ, MethodType):
-            return typ
+    def producer(self, descriptor):
+        return self.specification_for(descriptor)
 
-        try:
-            if isclass(typ):
-                return self.__producers[typ]
-            else:
-                return self.__instance_producers[typ.__class__](typ)
-        except KeyError as e:
-            if self is DEFAULT_PRODUCERS:
-                if isclass(typ):
-                    raise ValueError("No producer defined for type %s" % str(typ))
-                else:
-                    raise ValueError("No instance producers defined for %s" % str(typ))
-            else:
-                return DEFAULT_PRODUCERS.producer(typ)
+    def missing_specification(self, descriptor):
+        if isinstance(descriptor, FunctionType) or isinstance(descriptor, MethodType):
+            return descriptor
+        return SpecificationMapper.missing_specification(self, descriptor)
 
     def produce(self,typs, size):
         with reset_on_exit(self):
             return self.producer(typs)(self,size)
 
-    def define_producer_for(self,t, m):
-        self.__producers[t] = m
-
-    def define_producer_for_instances(self,t, m):
-        self.__instance_producers[t] = m
-
-DEFAULT_PRODUCERS = Producers()
-
 @produces_from_instances(tuple)
-def tuple_producer(tup):
+def tuple_producer(producers, tup):
     return lambda self,size: tuple([self.produce(g,size/len(tup)) for g in tup])
 
 @produces_from_instances(list)
-def list_producer(elements):
+def list_producer(producers, elements):
     element_producer = one_of(*elements)
 
     def produce_list(producers, size):
@@ -105,14 +87,14 @@ def list_producer(elements):
     return produce_list
 
 @produces_from_instances(set)
-def set_producer(elements):
-    return map_producer(set, list_producer(elements))
+def set_producer(producers, elements):
+    return map_producer(set, list_producer(producers, elements))
     
 def map_producer(f, producer):
     return lambda ps,size: f(producer(ps, size))
 
 @produces_from_instances(dict)
-def dict_producer(producer_dict):
+def dict_producer(producers, producer_dict):
     def gen(self,size):
         result = {}
         for k,g in producer_dict.items():
