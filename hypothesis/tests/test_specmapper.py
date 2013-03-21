@@ -47,3 +47,18 @@ def test_raises_missing_specification_with_no_spec():
     sm = SpecificationMapper()
     with pytest.raises(MissingSpecification):
         sm.specification_for("hi")
+
+def test_can_create_children():
+    sm = SpecificationMapper()
+    child = sm.new_child_mapper()
+    sm.define_specification_for("foo", 1)
+    assert child.specification_for("foo") == 1
+
+def test_can_override_in_children():
+    sm = SpecificationMapper()
+    child = sm.new_child_mapper()
+    sm.define_specification_for("foo", 1)
+    child.define_specification_for("foo", 2)
+
+    assert sm.specification_for("foo") == 1
+    assert child.specification_for("foo") == 2
