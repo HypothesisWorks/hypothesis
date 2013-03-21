@@ -147,7 +147,7 @@ def test_can_find_negative_floats():
 def test_can_falsify_int_pairs():
     assert falsify(lambda x,y: x > y, int,int) == (0,0)
 
-def test_can_falisfy_string_commutativity():
+def test_can_falsify_string_commutativity():
     assert tuple(sorted(falsify(lambda x,y: x + y == y + x,str,str))) == ('0','1')
 
 def test_can_falsify_sets():

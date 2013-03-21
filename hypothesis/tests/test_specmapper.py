@@ -62,3 +62,14 @@ def test_can_override_in_children():
 
     assert sm.specification_for("foo") == 1
     assert child.specification_for("foo") == 2
+
+class ChildMapper(SpecificationMapper):
+  pass
+
+def test_does_not_inherit_default():
+  assert ChildMapper.default() != SpecificationMapper.default()
+
+  SpecificationMapper.default().define_specification_for("foo", 1)
+
+  with pytest.raises(MissingSpecification):
+    ChildMapper.default().specification_for("foo")

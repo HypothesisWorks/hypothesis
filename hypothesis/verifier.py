@@ -1,5 +1,6 @@
 from hypothesis.produce import Producers
 from hypothesis.simplify import Simplifiers
+from hypothesis.searchstrategy import SearchStrategy
 from itertools import islice
 
 def assume(condition):
@@ -22,6 +23,9 @@ class Verifier:
         self.max_failed_runs = max_failed_runs 
                         
     def falsify(self, hypothesis, *argument_types):
+        search_strategy = SearchStrategy(argument_types,
+                                         producers = self.producers,
+                                         simplifiers = self.simplifiers)
 
         def falsifies(args):
             try:
@@ -35,7 +39,7 @@ class Verifier:
         falsifying_example = None
 
         def look_for_a_falsifying_example(size):
-            x = self.producers.produce(argument_types,size)
+            x = search_strategy.produce(size)
             if falsifies(x): 
                 return x
 
@@ -58,7 +62,7 @@ class Verifier:
 
             temperature -= self.cooling_rate
         
-        return self.simplifiers.simplify_such_that(falsifying_example, falsifies) 
+        return search_strategy.simplify_such_that(falsifying_example, falsifies) 
 
 def falsify(*args, **kwargs):
     return Verifier(**kwargs).falsify(*args)

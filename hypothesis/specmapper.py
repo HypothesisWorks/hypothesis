@@ -1,10 +1,16 @@
-def safe_in(x, ys):
-    try:
-        return x in ys
-    except TypeError:
-        return False
-
 class SpecificationMapper:
+    """
+    Maps descriptions of some type to a type. Has configurable handlers for what a description
+    may look like. Handlers for descriptions may take either a specific value or all instances
+    of a type and have access to the mapper to look up types.
+
+    Also supports prototype based inheritance, with children being able to override specific handlers
+    
+    There is a single default() object per subclass of SpecificationMapper which everything has
+    as a prototype if it's not assigned any other prototype. This allows you to easily define the
+    mappers 
+    """
+
     @classmethod
     def default(cls):
         try:
@@ -49,6 +55,16 @@ class SpecificationMapper:
 
     def missing_specification(self, descriptor):
         raise MissingSpecification(descriptor)
+
+def safe_in(x, ys):
+    """
+    Test if x is present in ys even if x is unhashable.
+    """
+    try:
+        return x in ys
+    except TypeError:
+        return False
+
 
 class MissingSpecification(Exception):
     def __init__(self, descriptor):
