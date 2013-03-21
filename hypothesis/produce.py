@@ -6,6 +6,7 @@ from itertools import islice
 from types import FunctionType, MethodType
 from contextlib import contextmanager
 
+def log2(x): return log(x) / log(2)
 
 @contextmanager
 def reset_on_exit(x):
@@ -107,14 +108,29 @@ def dict_producer(producer_dict):
         return result
     return gen
 
-def one_of(*args):
+def one_of(*choices):
     """
     Takes n producers as arguments, returns a producer which calls each
-    with equal probability
+    with equal probability when there is enough entropy to do so and then
+    starts taking initial segments in situations of reduced entropy.
+
+    Note that the entropy calculations assume that the choices are disjoint.
+    If they are not this will still work fine, but the entropy values will be
+    a bit off.
     """
-    if len(args) == 1:
-        return args[0]
-    return lambda self,size: self.producer(choice(args))(self,size)
+    if len(choices) == 1:
+        return choices[0]
+
+    def produce_one_of(producers, size):
+        if size <= log2(len(choices)):
+            n = int(2 ** size)
+            restricted_choices = choices[0:n]
+        else:
+            restricted_choices = choices
+        size -= log2(len(restricted_choices))
+        return producers.produce(choice(restricted_choices), size)
+            
+    return produce_one_of
 
 @produces(float)
 def random_float(self,size):
@@ -151,7 +167,10 @@ def geometric_probability_for_entropy(desired_entropy):
 @produces(int)
 def produce_int(self,size):
     can_be_negative = size > 1 and self.is_flag_enabled("allow_negative_numbers", size)
-    
+  
+    if size <= 0:
+        return 0
+ 
     if can_be_negative:
         size -= 1
     p = 1.0 / (size + 1)
