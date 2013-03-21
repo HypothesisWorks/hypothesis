@@ -8,7 +8,7 @@ def assume(condition):
 class Verifier:
     def __init__(self,  simplifiers=None,
                         producers = None,
-                        starting_size = 1,
+                        starting_size = 1.0,
                         warming_rate = 0.5,
                         cooling_rate = 0.1,
                         max_size = 512,
@@ -40,7 +40,7 @@ class Verifier:
                 return x
 
         while temperature < self.max_size:
-            falsifying_example = look_for_a_falsifying_example(int(temperature))
+            falsifying_example = look_for_a_falsifying_example(temperature)
             if falsifying_example:
                 break
             temperature += self.warming_rate
@@ -49,7 +49,7 @@ class Verifier:
 
         failed_runs = 0
         while temperature > 1 and failed_runs < self.max_failed_runs:
-            new_example = look_for_a_falsifying_example(int(temperature))
+            new_example = look_for_a_falsifying_example(temperature)
             if new_example:
                 failed_runs = 0
                 falsifying_example = new_example

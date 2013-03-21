@@ -72,9 +72,6 @@ class Producers:
 
     def produce(self,typs, size):
         with reset_on_exit(self):
-            if size <= 0 or not isinstance(size,int):
-                raise ValueError("Size  %s should be a positive integer" % size)
-
             return self.producer(typs)(self,size)
 
     def define_producer_for(self,t, m):
@@ -87,7 +84,7 @@ DEFAULT_PRODUCERS = Producers()
 
 @produces_from_instances(tuple)
 def tuple_producer(tup):
-    return lambda self,size: tuple([self.producer(g)(self,size) for g in tup])
+    return lambda self,size: tuple([self.produce(g,size/len(tup)) for g in tup])
 
 @produces_from_instances(list)
 def list_producer(elements):
@@ -106,7 +103,6 @@ def dict_producer(producer_dict):
     def gen(self,size):
         result = {}
         for k,g in producer_dict.items():
-            print k, self, size
             result[k] = self.producer(g)(self,size)
         return result
     return gen
@@ -153,6 +149,7 @@ def geometric_probability_for_entropy(desired_entropy):
 @produces(int)
 def produce_int(self,size):
     can_be_negative = size > 1 and self.is_flag_enabled("allow_negative_numbers", size)
+    
     if can_be_negative:
         size -= 1
     p = 1.0 / (size + 1)
