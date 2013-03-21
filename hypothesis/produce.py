@@ -9,16 +9,6 @@ from contextlib import contextmanager
 
 def log2(x): return log(x) / log(2)
 
-@contextmanager
-def reset_on_exit(x):
-    x.current_depth += 1
-    try:
-        yield
-    finally:
-        x.current_depth -= 1
-        if not x.current_depth:
-            x.reset_state()
-
 
 def produces(typ):
     def accept_function(fn):
@@ -36,22 +26,6 @@ class Producers(SpecificationMapper):
     def __init__(self):
         SpecificationMapper.__init__(self)
         self.current_depth = 0
-        self.enabled_flags = {}
-
-    def reset_state(self):
-        self.enabled_flags = {}
-
-    def flag_probability(self, size):
-        x = size / 50.0
-        return x / (1 + x) 
-
-    def is_flag_enabled(self, flag, size):
-        if flag in self.enabled_flags:
-            return self.enabled_flags[flag]
-
-        result = random() <= self.flag_probability(size) 
-        self.enabled_flags[flag] = result
-        return result
 
     def producer(self, descriptor):
         return self.specification_for(descriptor)
@@ -62,8 +36,7 @@ class Producers(SpecificationMapper):
         return SpecificationMapper.missing_specification(self, descriptor)
 
     def produce(self,typs, size):
-        with reset_on_exit(self):
-            return self.producer(typs)(self,size)
+        return self.producer(typs)(self,size)
 
 @produces_from_instances(tuple)
 def tuple_producer(producers, tup):
@@ -128,7 +101,7 @@ def one_of(*choices):
 
 @produces(float)
 def random_float(self,size):
-    may_be_negative = size > 1 and self.is_flag_enabled("allow_negative_numbers", size)
+    may_be_negative = size > 1
     if may_be_negative:
         size -= 1
     mean = math.exp(size - 1)
@@ -160,7 +133,7 @@ def geometric_probability_for_entropy(desired_entropy):
 
 @produces(int)
 def produce_int(self,size):
-    can_be_negative = size > 1 and self.is_flag_enabled("allow_negative_numbers", size)
+    can_be_negative = size > 1
   
     if size <= 0:
         return 0

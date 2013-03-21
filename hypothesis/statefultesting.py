@@ -111,7 +111,7 @@ class StatefulTest:
         
     @classmethod
     def produce_step(cls, producers, size):
-        base_choices = [t for t in cls.test_steps() if producers.is_flag_enabled(t, size)]
+        base_choices = [t for t in cls.test_steps()]
         if not base_choices:
             base_choices = cls.test_steps()
 
