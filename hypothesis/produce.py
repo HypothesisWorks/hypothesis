@@ -89,7 +89,7 @@ def tuple_producer(tup):
 @produces_from_instances(list)
 def list_producer(elements):
     element_producer = one_of(*elements)
-    return lambda self,size: [element_producer(self,size) for _ in xrange(self.produce(int, size))]
+    return lambda self,size: [self.produce(element_producer,size) for _ in xrange(self.produce(int, size))]
 
 @produces_from_instances(set)
 def set_producer(elements):
@@ -112,6 +112,8 @@ def one_of(*args):
     Takes n producers as arguments, returns a producer which calls each
     with equal probability
     """
+    if len(args) == 1:
+        return args[0]
     return lambda self,size: self.producer(choice(args))(self,size)
 
 @produces(float)
