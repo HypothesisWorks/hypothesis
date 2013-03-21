@@ -90,7 +90,19 @@ def tuple_producer(tup):
 @produces_from_instances(list)
 def list_producer(elements):
     element_producer = one_of(*elements)
-    return lambda self,size: [self.produce(element_producer,size) for _ in xrange(self.produce(int, size))]
+
+    def produce_list(producers, size):
+        # We allocate a larger fraction of the entropy to elements because it's
+        # going to spread out more. Also because shorter lists are easier to work
+        # with.
+        entropy_for_length = 0.25 * size
+        length = producers.produce(int, entropy_for_length)
+        if length == 0:
+            return []
+        entropy_for_elements = (size - entropy_for_length) / length
+        
+        return [producers.produce(element_producer,entropy_for_elements) for _ in xrange(length)]
+    return produce_list
 
 @produces_from_instances(set)
 def set_producer(elements):
