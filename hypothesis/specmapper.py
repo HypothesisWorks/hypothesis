@@ -20,8 +20,6 @@ class SpecificationMapper:
         self.instance_mappers[cls] = specification_builder
 
     def specification_for(self, descriptor, originating_mapper=None):
-        print self.value_mappers
-        print self.instance_mappers
         originating_mapper = originating_mapper or self
         cls = descriptor.__class__
         if descriptor in self.value_mappers:
