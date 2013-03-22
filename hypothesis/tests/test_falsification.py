@@ -86,19 +86,6 @@ def test_can_falsify_types_without_default_productions():
     assert verifier.falsify(lambda x : x.size() < 3, Bar)[0] == Bar(Bar(Bar()))
     
 
-def test_can_falsify_mixed_lists():
-    def is_pure(xs):
-        for a in xs:
-            for b in xs:
-                if a.__class__ != b.__class__:
-                    return False
-        return True
-
-    xs = falsify(is_pure, [int,str])[0]
-    assert len(xs) == 2
-    assert 0 in xs
-    assert "" in xs
-
 def test_can_falsify_tuples():
     def out_of_order_positive_tuple(x):
         a,b = x
@@ -172,8 +159,20 @@ def test_can_find_unsorted_lists():
     unsorted = falsify(lambda x: sorted(x) == x, [int])[0] 
     assert unsorted == [1,0] or unsorted == [0,-1]
 
+def test_can_falsify_mixed_lists():
+    def is_pure(xs):
+        for a in xs:
+            for b in xs:
+                if a.__class__ != b.__class__:
+                    return False
+        return True
 
-from hypothesis.produce import one_of
+    xs = falsify(is_pure, [int,str])[0]
+    assert len(xs) == 2
+    assert 0 in xs
+    assert "" in xs
+
+
 def test_can_falsify_alternating_types():
     falsify(lambda x: isinstance(x, int), one_of(int, str))[0] == ""
 

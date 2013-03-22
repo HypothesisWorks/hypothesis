@@ -104,16 +104,3 @@ def simplify_string(simplifiers,x):
                 yield tuple((s if y == v else y for y in x))
             
 
-@simplifies(dict)
-def simplify_dict(simplifiers, x):
-    for k in x:
-        y = dict(x)
-        del y[k]
-        yield y
-    for k in x:
-        for v in simplifiers.simplify(x[k]):
-            y = dict(x)
-            y[k] = v
-            yield y
-
-
