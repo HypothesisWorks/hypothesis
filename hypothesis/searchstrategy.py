@@ -149,6 +149,27 @@ class TupleStrategy(SearchStrategy):
                         z[j] = t
                         yield tuple(z)
 
+@strategy_for_instances(list)
+class ListStrategy(SearchStrategy):
+    def __init__(   self,
+                    strategies,
+                    descriptor,
+                    **kwargs):
+        SearchStrategy.__init__(self, strategies, descriptor,**kwargs)
+        if len(descriptor) != 1:
+            raise ValueError("Cannot produce instances from lists of length != 1: (%s)" % str(descriptor))
+
+        self.element_strategy = strategies.strategy(descriptor[0])
+        self.length_strategy = strategies.strategy(int)
+        self.length_entropy = kwargs.get("length_entropy", 0.25)
+
+    def produce(self, size):
+        length = self.length_strategy.produce(size * self.length_entropy)
+        if length == 0:
+            return []
+        element_entropy = (1.0 - self.length_entropy) / length
+        return [self.element_strategy.produce(element_entropy) for _ in xrange(length)]
+
 class OneCharStringStrategy(SearchStrategy):
     def __init__(   self,
                     strategies,
@@ -212,7 +233,7 @@ class FixedKeysDictStrategy(SearchStrategy):
                     strategies,
                     descriptor,
                     **kwargs):
-        SearchStrategy.__init__(self, strategies, descriptor)
+        SearchStrategy.__init__(self, strategies, descriptor,**kwargs)
         self.strategy_dict = {}
         for k, v in descriptor.items():
             self.strategy_dict[k] = strategies.strategy(v)
@@ -232,5 +253,3 @@ class FixedKeysDictStrategy(SearchStrategy):
                 y = dict(x)
                 y[k] = s
                 yield y
-
-

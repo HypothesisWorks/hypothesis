@@ -102,19 +102,6 @@ def test_can_falsify_dicts():
     assert falsify(is_good, {"foo": int, "bar" : int})[0] == {"foo" : 0, "bar" : 0}
    
 
-def test_can_falsify_string_matching():
-    # Note that just doing a match("foo",x) will never find a good solution
-    # because the state space is too large
-    assert falsify(lambda x: not re.search("a.*b",x), str)[0] == "ab"
-
-def test_minimizes_strings_to_zeroes():
-    assert falsify(lambda x: len(x) < 3, str)[0] == "000"
-
-def test_can_find_short_strings():
-    assert falsify(lambda x: len(x) > 0, str)[0] == ""
-    assert len(falsify(lambda x: len(x) <= 1, str)[0]) == 2
-    assert falsify(lambda x : len(x) < 10, [str])[0] == [""] * 10
-
 def test_can_falsify_assertions():
     def is_good(x):
         assert x < 3
@@ -175,6 +162,20 @@ def test_can_falsify_mixed_lists():
 
 def test_can_falsify_alternating_types():
     falsify(lambda x: isinstance(x, int), one_of(int, str))[0] == ""
+
+def test_can_falsify_string_matching():
+    # Note that just doing a match("foo",x) will never find a good solution
+    # because the state space is too large
+    assert falsify(lambda x: not re.search("a.*b",x), str)[0] == "ab"
+
+def test_minimizes_strings_to_zeroes():
+    assert falsify(lambda x: len(x) < 3, str)[0] == "000"
+
+def test_can_find_short_strings():
+    assert falsify(lambda x: len(x) > 0, str)[0] == ""
+    assert len(falsify(lambda x: len(x) <= 1, str)[0]) == 2
+    assert falsify(lambda x : len(x) < 10, [str])[0] == [""] * 10
+
 
 def test_stops_loop_pretty_quickly():
     with pytest.raises(Unfalsifiable):
