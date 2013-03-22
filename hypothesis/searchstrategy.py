@@ -56,32 +56,37 @@ class SearchStrategy:
             else:
                 return t  
 
+
+def geometric_probability_for_entropy(desired_entropy):
+    def h(p):
+        if p <= 0:
+            return float('inf')
+        if p >= 1:
+            return 0
+        try:
+            q = 1 - p
+            return -(q * log(q) + p * log(p))/(log(2) * p)
+        except ValueError:
+            return 0.0
+    lower = 0.0
+    upper = 1.0
+    for _ in xrange(max(int(desired_entropy * 2), 1024)):
+        mid = (lower + upper) / 2
+        if h(mid) > desired_entropy:
+            lower = mid
+        else:
+            upper = mid
+    return mid
+
+def geometric_int(p):
+    return int(log(rand()) / log1p(- p))
+
 @strategy_for(int)
 class IntStrategy(SearchStrategy):
     def complexity(self, value):
         if value >= 0: return value
         else: return 1 - value
 
-    def geometric_probability_for_entropy(desired_entropy):
-        def h(p):
-            if p <= 0:
-                return float('inf')
-            if p >= 1:
-                return 0
-            try:
-                q = 1 - p
-                return -(q * log(q) + p * log(p))/(log(2) * p)
-            except ValueError:
-                return 0.0
-        lower = 0.0
-        upper = 1.0
-        for _ in xrange(max(int(desired_entropy * 2), 1024)):
-            mid = (lower + upper) / 2
-            if h(mid) > desired_entropy:
-                lower = mid
-            else:
-                upper = mid
-        return mid
 
     def produce(self,size):
         can_be_negative = size > 1
@@ -89,10 +94,13 @@ class IntStrategy(SearchStrategy):
         if size <= 0:
             return 0
      
+        if size >= 32:
+            return random.randint(-2**32,2**32)
+
         if can_be_negative:
             size -= 1
-        p = 1.0 / (size + 1)
-        n =  int(log(rand()) / log1p(- p))
+        
+        n = geometric_int(geometric_probability_for_entropy(size))
         if can_be_negative and rand() <= 0.5:
             n = -n
         return n
@@ -178,6 +186,7 @@ class TupleStrategy(SearchStrategy):
                         z[j] = t
                         yield tuple(z)
 
+
 @strategy_for_instances(list)
 class ListStrategy(SearchStrategy):
     def __init__(   self,
@@ -189,14 +198,23 @@ class ListStrategy(SearchStrategy):
             raise ValueError("Cannot produce instances from lists of length != 1: (%s)" % str(descriptor))
 
         self.element_strategy = strategies.strategy(descriptor[0])
-        self.length_strategy = strategies.strategy(int)
-        self.length_entropy = kwargs.get("length_entropy", 0.5)
+        self.length_entropy = kwargs.get("length_entropy", 0.05)
+
+    def entropy_allocated_for_length(self, size):
+        clamp = 1 if size > 2 else size * 0.5
+        return max(clamp, min(6, size * self.length_entropy))
+
+    def entropy_allocated_for_emptiness(self, size):
+        return min(1, size * 0.5)
 
     def produce(self, size):
-        length = abs(self.length_strategy.produce(size * self.length_entropy))
+        hempty = self.entropy_allocated_for_length(size)
+        le = self.entropy_allocated_for_length(size)
+        lp = geometric_probability_for_entropy(le)
+        length = geometric_int(lp)
         if length == 0:
             return []
-        element_entropy = (1.0 - self.length_entropy) / length
+        element_entropy = (size - le) / length
         return [self.element_strategy.produce(element_entropy) for _ in xrange(length)]
 
     def simplify(self, x):
