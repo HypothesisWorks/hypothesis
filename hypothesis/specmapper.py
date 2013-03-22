@@ -45,7 +45,7 @@ class SpecificationMapper:
     def specification_for(self, descriptor, originating_mapper=None):
         originating_mapper = originating_mapper or self
         if safe_in(descriptor, self.value_mappers):
-            return self.value_mappers[descriptor]
+            return self.value_mappers[descriptor](originating_mapper)
         elif hasattr(descriptor, '__class__') and descriptor.__class__ in self.instance_mappers:
             return self.instance_mappers[descriptor.__class__](originating_mapper, descriptor)
         elif self.prototype():

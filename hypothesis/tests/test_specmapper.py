@@ -7,12 +7,12 @@ def setup_function(fn):
 
 def test_can_define_specifications():
     sm = SpecificationMapper()
-    sm.define_specification_for("foo", 1)
+    sm.define_specification_for("foo", lambda _: 1)
     assert sm.specification_for("foo") == 1
 
 def test_can_define_specifications_on_the_default():
     sm = SpecificationMapper()
-    SpecificationMapper.default().define_specification_for("foo", 1)
+    SpecificationMapper.default().define_specification_for("foo", lambda _: 1)
     assert sm.specification_for("foo") == 1
 
 class Bar:
@@ -20,12 +20,12 @@ class Bar:
 
 def test_can_define_specifications_for_classes():
     sm = SpecificationMapper()
-    sm.define_specification_for(Bar, 1)
+    sm.define_specification_for(Bar, lambda _: 1)
     assert sm.specification_for(Bar) == 1
     
 def test_can_define_specifications_for_built_in_types():
     sm = SpecificationMapper()
-    sm.define_specification_for(Bar, 1)
+    sm.define_specification_for(Bar, lambda _: 1)
     assert sm.specification_for(Bar) == 1
 
 def test_can_define_instance_specifications():
@@ -51,14 +51,14 @@ def test_raises_missing_specification_with_no_spec():
 def test_can_create_children():
     sm = SpecificationMapper()
     child = sm.new_child_mapper()
-    sm.define_specification_for("foo", 1)
+    sm.define_specification_for("foo", lambda _: 1)
     assert child.specification_for("foo") == 1
 
 def test_can_override_in_children():
     sm = SpecificationMapper()
     child = sm.new_child_mapper()
-    sm.define_specification_for("foo", 1)
-    child.define_specification_for("foo", 2)
+    sm.define_specification_for("foo", lambda _: 1)
+    child.define_specification_for("foo", lambda _: 2)
 
     assert sm.specification_for("foo") == 1
     assert child.specification_for("foo") == 2
@@ -68,8 +68,19 @@ class ChildMapper(SpecificationMapper):
 
 def test_does_not_inherit_default():
   assert ChildMapper.default() != SpecificationMapper.default()
-
-  SpecificationMapper.default().define_specification_for("foo", 1)
-
+  SpecificationMapper.default().define_specification_for("foo", lambda _: 1)
   with pytest.raises(MissingSpecification):
     ChildMapper.default().specification_for("foo")
+
+def test_can_call_other_specs():
+    s = SpecificationMapper()
+    s.define_specification_for("foo", lambda _: 1)
+    s.define_specification_for("bar", lambda t: t.specification_for("foo") + 1)
+    assert s.specification_for("bar") == 2
+    
+def test_child_can_call_other_specs_on_prototype():
+    s = SpecificationMapper()
+    s.define_specification_for("bar", lambda t: t.specification_for("foo") + 1)
+    s2 = s.new_child_mapper()
+    s2.define_specification_for("foo", lambda _: 1)
+    assert s2.specification_for("bar") == 2

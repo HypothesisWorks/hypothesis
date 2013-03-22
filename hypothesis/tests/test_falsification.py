@@ -71,7 +71,7 @@ def simplify_bar(minimizers, bar):
      
 def test_can_falsify_types_without_default_productions():
     producers = Producers()
-    producers.define_specification_for(Bar, produce_bar)
+    producers.define_specification_for(Bar, lambda _: produce_bar)
     with pytest.raises(MissingSpecification):
         Producers.default().produce(Bar, 1)
 

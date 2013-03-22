@@ -9,10 +9,9 @@ from contextlib import contextmanager
 
 def log2(x): return log(x) / log(2)
 
-
 def produces(typ):
     def accept_function(fn):
-        Producers.default().define_specification_for(typ, fn)
+        Producers.default().define_specification_for(typ, lambda _: fn)
         return fn
     return accept_function
 
