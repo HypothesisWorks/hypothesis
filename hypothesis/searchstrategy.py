@@ -148,3 +148,21 @@ class TupleStrategy(SearchStrategy):
                         z[i] = s
                         z[j] = t
                         yield tuple(z)
+
+@strategy_for(str)
+class StringStrategy(SearchStrategy):
+    def __init__(   self,
+                    strategies,
+                    descriptor,
+                    **kwargs):
+        SearchStrategy.__init__(self, strategies, descriptor)
+        self.length_strategy = strategies.strategy(int)
+        self.length_entropy = kwargs.get("length_entropy", 0.75)
+
+    characters = map(chr,range(0,127))
+
+    def produce(self, size):
+        length = self.length_strategy.produce(self.length_entropy * size)
+        # TODO: Make letter distribution respect entropy
+        return ''.join((choice(characters) for _ in length))
+        

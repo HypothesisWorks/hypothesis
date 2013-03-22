@@ -70,29 +70,6 @@ def dict_producer(producers, producer_dict):
         return result
     return gen
 
-def one_of(*choices):
-    """
-    Takes n producers as arguments, returns a producer which calls each
-    with equal probability when there is enough entropy to do so and then
-    starts taking initial segments in situations of reduced entropy.
-
-    Note that the entropy calculations assume that the choices are disjoint.
-    If they are not this will still work fine, but the entropy values will be
-    a bit off.
-    """
-    if len(choices) == 1:
-        return choices[0]
-
-    def produce_one_of(producers, size):
-        if size <= log2(len(choices)):
-            n = int(2 ** size)
-            restricted_choices = choices[0:n]
-        else:
-            restricted_choices = choices
-        size -= log2(len(restricted_choices))
-        return producers.produce(choice(restricted_choices), size)
-            
-    return produce_one_of
 
 @produces(float)
 def random_float(self,size):
@@ -105,11 +82,6 @@ def random_float(self,size):
         x = -x
     return x
 
-characters = map(chr,range(0,127))
-
-@produces(str)
-def produce_string(self,size):
-    return ''.join((choice(characters) for _ in xrange(self.produce(int,size))))
 
 @produces(bool)
 def flip_coin(*args):
