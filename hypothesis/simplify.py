@@ -22,19 +22,6 @@ class Simplifiers:
     def define_simplifier_for(self, t, m):
         self.__simplifiers[t] = m
 
-    def simplify_such_that(self, t, f):
-        tracker = Tracker()
-
-        while True:
-            for s in self.simplify(t):
-                if tracker.track(s) > 1: 
-                    continue
-
-                if f(s):
-                    t = s
-                    break
-            else:
-                return t  
 
 DEFAULT_SIMPLIFIERS = Simplifiers()
 
@@ -57,22 +44,6 @@ def simplify_float(simplifiers, x):
         yield (m - n) + x
 
 @simplifies(int)
-def simplify_integer(simplifiers, x):
-    if x < 0:
-        yield -x
-        for y in simplify_integer(simplifiers, -x): yield -y
-    elif x == 2:
-        yield 1
-        yield 0
-    elif x == 1:
-        yield 0
-    elif x == 0:
-        pass
-    else:
-        yield x - 1
-        yield x / 2
-        for y in simplify_integer(simplifiers, x - 1): yield y
-        for y in simplify_integer(simplifiers, x / 2): yield y
 
 @simplifies(list)
 def simplify_list(simplifiers, x):
@@ -119,28 +90,6 @@ def simplify_string(simplifiers,x):
         for y in simplifiers.simplify(list(x)):
             yield ''.join(y)
 
-@simplifies(tuple)
-def simplify_tuple(simplifiers, x):
-    """
-    Defined simplification for tuples: We don't change the length of the tuple
-    we only try to simplify individual elements of it.
-    We first try simplifying each index. We then try pairs of indices.
-    After that we stop because it's getting silly. 
-    """
-    for i in xrange(0, len(x)):
-        for s in simplifiers.simplify(x[i]):
-            z = list(x)
-            z[i] = s
-            yield tuple(z)
-    for i in xrange(0, len(x)):
-        for j in xrange(0, len(x)):
-            if i == j: continue
-            for s in simplifiers.simplify(x[i]):
-                for t in simplifiers.simplify(x[j]):
-                    z = list(x)
-                    z[i] = s
-                    z[j] = t
-                    yield tuple(z)
 
     # Interesting things can happen with duplicate values. We now look for any
     # values which appear in the tuple more than twice (we covered ones which 

@@ -42,16 +42,22 @@ class SpecificationMapper:
     def new_child_mapper(self):
       return self.__class__(prototype = self)
 
-    def specification_for(self, descriptor, originating_mapper=None):
-        originating_mapper = originating_mapper or self
-        if safe_in(descriptor, self.value_mappers):
-            return self.value_mappers[descriptor](originating_mapper)
-        elif hasattr(descriptor, '__class__') and descriptor.__class__ in self.instance_mappers:
-            return self.instance_mappers[descriptor.__class__](originating_mapper, descriptor)
-        elif self.prototype():
-            return self.prototype().specification_for(descriptor, originating_mapper=originating_mapper)
+    def specification_for(self, descriptor):
+        specification = self.__find_specification_for(descriptor)
+        if specification:
+            return specification(self, descriptor)
         else:
-            return originating_mapper.missing_specification(descriptor)
+            return self.missing_specification(descriptor)
+
+    def __find_specification_for(self, descriptor):
+        if safe_in(descriptor, self.value_mappers):
+            return self.value_mappers[descriptor]
+        elif hasattr(descriptor, '__class__') and descriptor.__class__ in self.instance_mappers:
+            return self.instance_mappers[descriptor.__class__]
+        elif self.prototype():
+            return self.prototype().__find_specification_for(descriptor)
+        else:
+            return None
 
     def missing_specification(self, descriptor):
         raise MissingSpecification(descriptor)

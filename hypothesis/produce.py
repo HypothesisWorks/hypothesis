@@ -37,10 +37,6 @@ class Producers(SpecificationMapper):
     def produce(self,typs, size):
         return self.producer(typs)(self,size)
 
-@produces_from_instances(tuple)
-def tuple_producer(producers, tup):
-    return lambda self,size: tuple([self.produce(g,size/len(tup)) for g in tup])
-
 @produces_from_instances(list)
 def list_producer(producers, elements):
     element_producer = one_of(*elements)
@@ -108,42 +104,6 @@ def random_float(self,size):
     if may_be_negative and flip_coin():
         x = -x
     return x
-
-def geometric_probability_for_entropy(desired_entropy):
-    def h(p):
-        if p <= 0:
-            return float('inf')
-        if p >= 1:
-            return 0
-        try:
-            q = 1 - p
-            return -(q * log(q) + p * log(p))/(log(2) * p)
-        except ValueError:
-            return 0.0
-    lower = 0.0
-    upper = 1.0
-    for _ in xrange(max(int(desired_entropy * 2), 1024)):
-        mid = (lower + upper) / 2
-        if h(mid) > desired_entropy:
-            lower = mid
-        else:
-            upper = mid
-    return mid
-
-@produces(int)
-def produce_int(self,size):
-    can_be_negative = size > 1
-  
-    if size <= 0:
-        return 0
- 
-    if can_be_negative:
-        size -= 1
-    p = 1.0 / (size + 1)
-    n =  int(log(random()) / log1p(- p))
-    if can_be_negative and random() <= 0.5:
-        n = -n
-    return n
 
 characters = map(chr,range(0,127))
 

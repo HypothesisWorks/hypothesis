@@ -1,7 +1,6 @@
 from hypothesis.verifier import falsify, Unfalsifiable,assume, Verifier
-from hypothesis.produce import produces, Producers;
 from hypothesis.specmapper import MissingSpecification
-from hypothesis.simplify import Simplifiers
+from hypothesis.searchstrategy import SearchStrategy,strategy_for, SearchStrategies
 from contextlib import contextmanager
 import random
 import pytest
@@ -33,9 +32,10 @@ def test_can_make_assumptions():
 class Foo():
     pass
 
-@produces(Foo)
-def foo(self,size):
-    return Foo()
+@strategy_for(Foo)
+class FooStrategy(SearchStrategy):
+    def produce(self,size):
+        return Foo()
 
 def test_can_falsify_types_without_minimizers():
     assert isinstance(falsify(lambda x: False, Foo)[0], Foo)
@@ -57,28 +57,31 @@ class Bar():
     def __eq__(self,other): 
         return isinstance(other, Bar) and self.size() == other.size()
 
-def produce_bar(producers, size):
-    x = Bar()
-    for _ in xrange(producers.produce(int,size)):
-        x = Bar(x)
-    return x
+class BarStrategy(SearchStrategy):
+    def __init__(self,strategies,descriptor):
+        SearchStrategy.__init__(self,strategies,descriptor)
+        self.int_strategy = strategies.strategy(int)
 
-def simplify_bar(minimizers, bar):
-    while True:
-        bar = bar.bar
-        if bar: yield bar
-        else: return 
+    def produce(self, size):
+        x = Bar()
+        for _ in xrange(self.int_strategy.produce(size)):
+            x = Bar(x)
+        return x
+
+    def simplify(self, bar):
+        while True:
+            bar = bar.bar
+            if bar: yield bar
+            else: return 
      
 def test_can_falsify_types_without_default_productions():
-    producers = Producers()
-    producers.define_specification_for(Bar, lambda _: produce_bar)
+    strategies = SearchStrategies()
+    strategies.define_specification_for(Bar, BarStrategy)
+
     with pytest.raises(MissingSpecification):
-        Producers.default().produce(Bar, 1)
+        SearchStrategies.default().strategy(Bar)
 
-    simplifiers = Simplifiers()
-    simplifiers.define_simplifier_for(Bar, simplify_bar) 
-
-    verifier = Verifier(producers=producers, simplifiers=simplifiers)
+    verifier = Verifier(search_strategies = strategies)
     assert verifier.falsify(lambda x : False, Bar,)[0] == Bar()
     assert verifier.falsify(lambda x : x.size() < 3, Bar)[0] == Bar(Bar(Bar()))
     
