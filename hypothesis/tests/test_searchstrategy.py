@@ -1,4 +1,5 @@
 import hypothesis.searchstrategy as ss
+from hypothesis.flags import Flags
 from hypothesis.tracker import Tracker
 
 def strategy(*args,**kwargs):
@@ -53,5 +54,5 @@ def test_float_lists_no_duplicates_in_simplify():
 
 def test_just_works():
     s = strategy(ss.just("giving"))
-    assert s.produce(10) == "giving"
+    assert s.produce(10,Flags()) == "giving"
     assert s.simplify_such_that("giving", lambda _ : True) == "giving"

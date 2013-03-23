@@ -20,6 +20,7 @@ class Verifier:
                         
     def falsify(self, hypothesis, *argument_types):
         search_strategy = self.search_strategies.specification_for(argument_types)
+        flags = search_strategy.flags()
 
         def falsifies(args):
             try:
@@ -33,7 +34,7 @@ class Verifier:
         falsifying_example = None
 
         def look_for_a_falsifying_example(size):
-            x = search_strategy.produce(size)
+            x = search_strategy.produce(size, flags)
             if falsifies(x): 
                 return x
 

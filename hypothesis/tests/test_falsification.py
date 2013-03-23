@@ -34,7 +34,7 @@ class Foo():
 
 @strategy_for(Foo)
 class FooStrategy(SearchStrategy):
-    def produce(self,size):
+    def produce(self, size, flags):
         return Foo()
 
 def test_can_falsify_types_without_minimizers():
@@ -62,9 +62,9 @@ class BarStrategy(SearchStrategy):
         SearchStrategy.__init__(self,strategies,descriptor)
         self.int_strategy = strategies.strategy(int)
 
-    def produce(self, size):
+    def produce(self, size, flags):
         x = Bar()
-        for _ in xrange(self.int_strategy.produce(size)):
+        for _ in xrange(self.int_strategy.produce(size,flags)):
             x = Bar(x)
         return x
 
