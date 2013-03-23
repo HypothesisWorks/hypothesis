@@ -204,7 +204,7 @@ class TupleStrategy(SearchStrategy):
     def could_have_produced(self,xs):
         if not SearchStrategy.could_have_produced(self,xs): return False
         if len(xs) != len(self.element_strategies): return False
-        return any((s.could_have_produced(x) for s,x in zipped(self.element_strategies, xs)))
+        return all((s.could_have_produced(x) for s,x in zip(self.element_strategies, xs)))
 
     def complexity(self, xs):
         return sum((s.complexity(x) for s,x in zip(self.element_strategies, xs)))
@@ -404,6 +404,9 @@ class OneOfStrategy(SearchStrategy):
         SearchStrategy.__init__(self, strategies, descriptor,**kwargs)
         self.element_strategies = [strategies.strategy(x) for x in descriptor.elements]
 
+    def could_have_produced(self, x):
+        return any((s.could_have_produced(x) for s in self.element_strategies))
+
     def how_many_elements_to_pick(self, size):
         max_entropy_to_use = size / 2
         n = len(self.element_strategies)
@@ -415,4 +418,14 @@ class OneOfStrategy(SearchStrategy):
         size -= log2(m)
         return choice(self.element_strategies[0:m]).produce(size)
 
+    def find_first_strategy(self, x):
+        for s in self.element_strategies:
+            if s.could_have_produced(x): return s
+        else:
+            return ValueError("Value %s could not have been produced from %s" % (x, self))
 
+    def complexity(self, x):
+        return self.find_first_strategy(x).complexity(x)
+
+    def simplify(self, x):
+        return self.find_first_strategy(x).simplify(x)
