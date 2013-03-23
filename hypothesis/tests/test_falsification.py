@@ -190,7 +190,7 @@ def test_good_errors_on_bad_values():
     with pytest.raises(MissingSpecification) as e:
         falsify(lambda x: False, some_string)
 
-    assert some_string in e.value.message
+    assert some_string in e.value.args[0]
 
 def test_can_falsify_bools():
     assert falsify(lambda x: x, bool)[0] == False
