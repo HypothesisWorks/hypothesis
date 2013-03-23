@@ -83,7 +83,9 @@ def geometric_probability_for_entropy(desired_entropy):
     return mid
 
 def geometric_int(p):
-    return int(log(rand()) / log1p(- p))
+    denom = log1p(- p)
+    if denom >= 0: return 0
+    return int(log(rand()) / denom)
 
 @strategy_for(int)
 class IntStrategy(SearchStrategy):
