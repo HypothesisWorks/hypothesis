@@ -206,3 +206,16 @@ and likely to still be in flux.
 Warning: This library is still very much in flux, and no release of it right now should be
 considered to be stable. It's emerged out of the initial hack stage, and is probably not too
 broken, but proceed with caution.
+
+---------
+ Testing
+---------
+
+This version of hypothesis has been tested using Python series 2.6, 2.7,
+3.2, 3.3 and pypy.  Builds are checked with `travis`_:
+
+.. _travis: https://travis-ci.org/DRMaciver/hypothesis
+
+.. image:: https://travis-ci.org/DRMaciver/hypothesis.png?branch=master
+   :target: https://travis-ci.org/DRMaciver/hypothesis
+
