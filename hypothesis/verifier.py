@@ -1,21 +1,17 @@
-from hypothesis.produce import Producers
-from hypothesis.simplify import Simplifiers
-from hypothesis.searchstrategy import SearchStrategy
+from hypothesis.searchstrategy import SearchStrategy, SearchStrategies
 from itertools import islice
 
 def assume(condition):
     if not condition: raise UnsatisfiedAssumption()
 
 class Verifier:
-    def __init__(self,  simplifiers=None,
-                        producers = None,
+    def __init__(self,  search_strategies=None,
                         starting_size = 1.0,
                         warming_rate = 0.5,
                         cooling_rate = 0.1,
                         max_size = 512,
                         max_failed_runs = 10):
-        self.simplifiers = simplifiers or Simplifiers()
-        self.producers = producers or Producers()
+        self.search_strategies = search_strategies or SearchStrategies()
         self.starting_size = starting_size
         self.warming_rate = warming_rate
         self.cooling_rate = cooling_rate
@@ -23,9 +19,7 @@ class Verifier:
         self.max_failed_runs = max_failed_runs 
                         
     def falsify(self, hypothesis, *argument_types):
-        search_strategy = SearchStrategy(argument_types,
-                                         producers = self.producers,
-                                         simplifiers = self.simplifiers)
+        search_strategy = self.search_strategies.specification_for(argument_types)
 
         def falsifies(args):
             try:

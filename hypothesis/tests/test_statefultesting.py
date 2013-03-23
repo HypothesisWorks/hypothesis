@@ -115,4 +115,4 @@ def test_bad_set_finds_minimal_break():
     for _ in xrange(10):
         breaking_example = BadSetTester.breaking_example()
         assert len(breaking_example) == 3
-        assert [s[1] for s in breaking_example] == [0] * 3
+        assert len(set([s[1] for s in breaking_example])) == 1

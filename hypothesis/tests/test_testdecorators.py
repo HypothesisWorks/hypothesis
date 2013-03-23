@@ -39,7 +39,7 @@ def test_reversing_preserves_integer_addition(xs):
 
 @fails()
 @given([float])
-def test_reversing_does_not_preserve_integer_addition(xs):
+def test_reversing_does_not_preserve_float_addition(xs):
     assert sum(xs) == sum(reversed(xs))
 
 def test_still_minimizes_on_non_assertion_failures():
