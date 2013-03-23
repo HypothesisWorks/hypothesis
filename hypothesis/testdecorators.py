@@ -1,4 +1,3 @@
-from functools import wraps
 from hypothesis.verifier import Verifier, Unfalsifiable, UnsatisfiedAssumption
 
 def given(*generator_arguments,**kwargs):
@@ -8,7 +7,6 @@ def given(*generator_arguments,**kwargs):
         verifier = Verifier()
 
     def run_test_with_generator(test):
-        @wraps(test)
         def wrapped_test(*arguments):
             # The only thing we accept in falsifying the test are exceptions 
             # Returning successfully is always a pass.
@@ -30,5 +28,7 @@ def given(*generator_arguments,**kwargs):
             # Otherwise we would have swallowed all the reports of it actually
             # having gone wrong.
             test(*(arguments + falsifying_example))
+        wrapped_test.__name__ = test.__name__
+        wrapped_test.__doc__  = test.__doc__
         return wrapped_test
     return run_test_with_generator
