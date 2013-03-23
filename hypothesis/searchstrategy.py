@@ -436,3 +436,12 @@ class OneOfStrategy(SearchStrategy):
 
     def simplify(self, x):
         return self.find_first_strategy(x).simplify(x)
+
+
+Just = namedtuple('Just', 'value')
+just = Just
+
+@strategy_for_instances(Just)
+class JustStrategy(SearchStrategy):
+    def produce(self, size):
+        return self.descriptor.value

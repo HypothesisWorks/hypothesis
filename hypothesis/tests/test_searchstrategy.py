@@ -50,3 +50,8 @@ def test_int_lists_no_duplicates_in_simplify():
 
 def test_float_lists_no_duplicates_in_simplify():
     assert_no_duplicates_in_simplify([float], [0.5154278802175156, 555.0, 1281.8556018727038])
+
+def test_just_works():
+    s = strategy(ss.just("giving"))
+    assert s.produce(10) == "giving"
+    assert s.simplify_such_that("giving", lambda _ : True) == "giving"
