@@ -181,9 +181,15 @@ class FloatStrategy(SearchStrategy):
         SearchStrategy.__init__(self, strategies, descriptor,**kwargs)
         self.int_strategy = strategies.strategy(int)
 
+    def own_flags(self):
+        return ("allow_negative_floats",)
+
     def produce(self, size, flags):
-        s2 = math.exp(2 * size) / (2 * math.pi * math.e)
-        return random.gauss(0, s2)
+        if flags.enabled("allow_negative_floats"):
+            s2 = math.exp(2 * size) / (2 * math.pi * math.e)
+            return random.gauss(0, s2)
+        else:
+            return random.expovariate(math.exp(1 - size))
 
     def complexity(self, x):
         return x if x >= 0 else 1 - x
