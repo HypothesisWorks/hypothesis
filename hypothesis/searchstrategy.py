@@ -137,7 +137,7 @@ class IntStrategy(SearchStrategy):
         else: return 1 - value
 
     def produce(self, size, flags):
-        can_be_negative = size > 1
+        can_be_negative = flags.enabled("allow_negative_ints") and size > 1
       
         if size <= 0:
             return 0
@@ -298,9 +298,14 @@ class ListStrategy(SearchStrategy):
         le = self.entropy_allocated_for_length(size)
         lp = geometric_probability_for_entropy(le)
         length = geometric_int(lp)
+        empty_allowed = flags.enabled('allow_empty_arrays')
+        if not empty_allowed:
+            length += 1
+
         if length == 0:
             return []
-        element_entropy = (size - le) / (length * (1.0 - lp))
+        multiplier = 1.0/(1.0 - lp) if empty_allowed else 1.0
+        element_entropy = multiplier * (size - le) / length
         return [self.element_strategy.produce(element_entropy,flags) for _ in xrange(length)]
 
     def simplify(self, x):
