@@ -245,7 +245,7 @@ class ListStrategy(SearchStrategy):
 
     def entropy_allocated_for_length(self, size):
         if size <= 2: return 0.5 * size;
-        else: return 0.05 * (size - 2.0) + 2.0
+        else: return min(0.05 * (size - 2.0) + 2.0, 6)
 
     def produce(self, size):
         le = self.entropy_allocated_for_length(size)
