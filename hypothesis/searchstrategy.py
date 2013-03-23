@@ -37,7 +37,7 @@ class SearchStrategies(SpecificationMapper):
 
 def nice_string(xs, history=None):
     history = history or []
-    if xs in history: return '<recursion>'
+    if xs in history: return '(...)'
     history = history + [xs]
     recurse = lambda t: nice_string(t, history)
     if isinstance(xs, list):
