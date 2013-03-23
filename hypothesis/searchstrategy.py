@@ -131,8 +131,19 @@ class IntStrategy(SearchStrategy):
         if x < 0:
             yield -x
             for y in self.simplify(-x): yield -y
-        else:
-            for y in xrange(x-1,-1,-1): yield y
+        elif x > 0:
+            #FIXME: This is a stupid way to do it
+            seen = {0}
+            yield 0
+            max_not_seen = x - 1
+            while max_not_seen > 0:
+                n = random.randint(0, max_not_seen)
+                if n not in seen:
+                    seen.add(n)
+                    if n == max_not_seen:
+                        while max_not_seen in seen:
+                            max_not_seen -= 1
+                    yield n
 
 @strategy_for(float)
 class FloatStrategy(SearchStrategy):
