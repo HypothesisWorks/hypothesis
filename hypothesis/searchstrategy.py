@@ -2,6 +2,7 @@ from hypothesis.produce import Producers
 from hypothesis.simplify import DEFAULT_SIMPLIFIERS
 from hypothesis.specmapper import SpecificationMapper
 from hypothesis.tracker import Tracker
+from inspect import isclass
 
 from abc import abstractmethod
 from math import log, log1p
@@ -55,7 +56,10 @@ class SearchStrategy:
                     break
             else:
                 return t  
-
+    def could_have_produced(self, x):
+        d = self.descriptor
+        c = d if isclass(d) else d.__class__
+        return isinstance(x, c)
 
 def geometric_probability_for_entropy(desired_entropy):
     def h(p):
@@ -156,6 +160,11 @@ class TupleStrategy(SearchStrategy):
         SearchStrategy.__init__(self, strategies, descriptor,**kwargs)
         self.element_strategies = tuple((strategies.strategy(x) for x in descriptor))
 
+    def could_have_produced(self,xs):
+        if not SearchStrategy.could_have_produced(self,xs): return False
+        if len(xs) != len(self.element_strategies): return False
+        return any((s.could_have_produced(x) for s,x in zipped(self.element_strategies, xs)))
+
     def complexity(self, xs):
         return sum((s.complexity(x) for s,x in zip(self.element_strategies, xs)))
 
@@ -198,23 +207,18 @@ class ListStrategy(SearchStrategy):
             raise ValueError("Cannot produce instances from lists of length != 1: (%s)" % str(descriptor))
 
         self.element_strategy = strategies.strategy(descriptor[0])
-        self.length_entropy = kwargs.get("length_entropy", 0.05)
 
     def entropy_allocated_for_length(self, size):
-        clamp = 1 if size > 2 else size * 0.5
-        return max(clamp, min(6, size * self.length_entropy))
-
-    def entropy_allocated_for_emptiness(self, size):
-        return min(1, size * 0.5)
+        if size <= 2: return 0.5 * size;
+        else: return 0.05 * (size - 2.0) + 2.0
 
     def produce(self, size):
-        hempty = self.entropy_allocated_for_length(size)
         le = self.entropy_allocated_for_length(size)
         lp = geometric_probability_for_entropy(le)
         length = geometric_int(lp)
         if length == 0:
             return []
-        element_entropy = (size - le) / length
+        element_entropy = (size - le) / (length * (1.0 - lp))
         return [self.element_strategy.produce(element_entropy) for _ in xrange(length)]
 
     def simplify(self, x):
