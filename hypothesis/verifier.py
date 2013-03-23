@@ -60,7 +60,6 @@ class Verifier:
             if falsifying_example:
                     break
             temperature += self.warming_rate
-
         if not falsifying_example: raise Unfalsifiable(hypothesis)
 
         failed_runs = 0

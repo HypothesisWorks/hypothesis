@@ -46,6 +46,9 @@ class SearchStrategy:
         self.add_flags_to(r)
         return Flags(r)
 
+    def personal_flag(self, flag):
+        return (self, str(flag))
+
     def add_flags_to(self, s,history=None):
         history = history or []
         if self in history: return
@@ -467,6 +470,9 @@ class OneOfStrategy(SearchStrategy):
         SearchStrategy.__init__(self, strategies, descriptor,**kwargs)
         self.element_strategies = [strategies.strategy(x) for x in descriptor.elements]
 
+    def own_flags(self):
+        return tuple((self.personal_flag(d) for d in self.descriptor.elements))
+
     def child_strategies(self):
         return self.element_strategies
 
@@ -480,9 +486,13 @@ class OneOfStrategy(SearchStrategy):
         else: return int(2 ** max_entropy_to_use) 
 
     def produce(self, size, flags):
-        m = self.how_many_elements_to_pick(size)
+        def enabled(c):
+            return flags.enabled(self.personal_flag(c.descriptor))
+        enabled_strategies = [es for es in self.element_strategies if enabled(es)]
+        enabled_strategies = enabled_strategies or self.element_strategies
+        m = min(self.how_many_elements_to_pick(size), len(enabled_strategies))
         size -= log2(m)
-        return choice(self.element_strategies[0:m]).produce(size, flags)
+        return choice(enabled_strategies[0:m]).produce(size, flags)
 
     def find_first_strategy(self, x):
         for s in self.element_strategies:
