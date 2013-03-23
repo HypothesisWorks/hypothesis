@@ -35,11 +35,31 @@ class SearchStrategies(SpecificationMapper):
         else:
             return SpecificationMapper.missing_specification(self, descriptor)
 
+def nice_string(xs, history=None):
+    history = history or []
+    if xs in history: return '<recursion>'
+    history = history + [xs]
+    recurse = lambda t: nice_string(t, history)
+    if isinstance(xs, list):
+        return '[' + ', '.join(map(recurse, xs)) + ']'
+    if isinstance(xs, tuple):
+        return '(' + ', '.join(map(recurse, xs)) + ')'
+    if isinstance(xs, dict):
+        return '{' + ', '.join((repr(k) + ':' + recurse(v) for k,v in xs.items())) + '}'
+    try:
+        return xs.__name__
+    except AttributeError:
+        return repr(xs)
+
 class SearchStrategy:
     def __init__(   self,
                     strategies,
                     descriptor):
         self.descriptor = descriptor
+
+    def __repr__(self):
+        return "%s(%s)" % (self.__class__.__name__, nice_string(self.descriptor))
+        
 
     def flags(self):
         r = set()
