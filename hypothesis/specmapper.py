@@ -34,30 +34,32 @@ class SpecificationMapper:
       return self.default()
     
     def define_specification_for(self, value, specification):
-        self.value_mappers[value] = specification
+        self.value_mappers.setdefault(value,[]).append(specification)
 
-    def define_specification_for_instances(self, cls, specification_builder):
-        self.instance_mappers[cls] = specification_builder
+    def define_specification_for_instances(self, cls, specification):
+        self.instance_mappers.setdefault(cls,[]).append(specification)
 
     def new_child_mapper(self):
       return self.__class__(prototype = self)
 
     def specification_for(self, descriptor):
-        specification = self.__find_specification_for(descriptor)
-        if specification:
-            return specification(self, descriptor)
-        else:
-            return self.missing_specification(descriptor)
+        for h in self.__find_specification_handlers_for(descriptor):
+            try:
+                return h(self, descriptor)
+            except NextInChain:
+                pass
+        return self.missing_specification(descriptor)
 
-    def __find_specification_for(self, descriptor):
+    def __find_specification_handlers_for(self, descriptor):
         if safe_in(descriptor, self.value_mappers):
-            return self.value_mappers[descriptor]
-        elif hasattr(descriptor, '__class__') and descriptor.__class__ in self.instance_mappers:
-            return self.instance_mappers[descriptor.__class__]
-        elif self.prototype():
-            return self.prototype().__find_specification_for(descriptor)
-        else:
-            return None
+            for h in reversed(self.value_mappers[descriptor]):
+                yield h 
+        if hasattr(descriptor, '__class__') and descriptor.__class__ in self.instance_mappers:
+            for h in reversed(self.instance_mappers[descriptor.__class__]):
+                yield h
+        if self.prototype():
+            for h in self.prototype().__find_specification_handlers_for(descriptor):
+                yield h
 
     def missing_specification(self, descriptor):
         raise MissingSpecification(descriptor)
@@ -71,6 +73,12 @@ def safe_in(x, ys):
     except TypeError:
         return False
 
+def next_in_chain():
+    raise NextInChain()
+
+class NextInChain(Exception):
+    def __init__(self):
+        Exception.__init__(self, "Not handled. Call next in chain. You shouldn't have seen this exception.")
 
 class MissingSpecification(Exception):
     def __init__(self, descriptor):

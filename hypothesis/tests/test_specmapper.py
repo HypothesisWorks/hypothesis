@@ -1,4 +1,4 @@
-from hypothesis.specmapper import SpecificationMapper, MissingSpecification
+from hypothesis.specmapper import SpecificationMapper, MissingSpecification, next_in_chain
 import pytest
 
 def setup_function(fn):
@@ -86,3 +86,22 @@ def test_child_can_call_other_specs_on_prototype():
     s2 = s.new_child_mapper()
     s2.define_specification_for("foo", const(1))
     assert s2.specification_for("bar") == 2
+
+def test_can_override_specifications():
+    s = SpecificationMapper()
+    s.define_specification_for("foo", const(1))
+    s.define_specification_for("foo", const(2))
+    assert s.specification_for("foo") == 2
+
+def test_can_override_instance_specifications():
+    s = SpecificationMapper()
+    s.define_specification_for_instances(str, const(1))
+    s.define_specification_for_instances(str, const(2))
+    assert s.specification_for("foo") == 2
+
+def test_can_call_previous_in_overridden_specifications():
+    s = SpecificationMapper()
+    s.define_specification_for_instances(str, lambda _, s: len(s))
+    s.define_specification_for_instances(str, lambda _, s: 5 if len(s) > 5 else next_in_chain())
+    assert s.specification_for("foo") == 3
+    assert s.specification_for("I am the very model of a modern major general") == 5
