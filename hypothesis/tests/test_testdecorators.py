@@ -50,7 +50,7 @@ def test_still_minimizes_on_non_assertion_failures():
     with pytest.raises(ValueError) as exinfo:
         is_not_too_large()
 
-    assert " 10 " in exinfo.value.message
+    assert " 10 " in exinfo.value.args[0]
 
 @given(int)
 def test_integer_division_shrinks_positive_integers(n):
