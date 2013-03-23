@@ -1,6 +1,6 @@
 from hypothesis.verifier import falsify, Unfalsifiable,assume, Verifier
 from hypothesis.specmapper import MissingSpecification
-from hypothesis.searchstrategy import SearchStrategy,strategy_for, SearchStrategies
+from hypothesis.searchstrategy import SearchStrategy,strategy_for, SearchStrategies, one_of
 from contextlib import contextmanager
 import random
 import pytest
@@ -161,7 +161,7 @@ def test_can_falsify_mixed_lists():
 
 
 def test_can_falsify_alternating_types():
-    falsify(lambda x: isinstance(x, int), one_of(int, str))[0] == ""
+    falsify(lambda x: isinstance(x, int), one_of([int, str]))[0] == ""
 
 def test_can_falsify_string_matching():
     # Note that just doing a match("foo",x) will never find a good solution

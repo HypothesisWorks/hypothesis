@@ -3,6 +3,7 @@ from hypothesis.simplify import DEFAULT_SIMPLIFIERS
 from hypothesis.specmapper import SpecificationMapper
 from hypothesis.tracker import Tracker
 from inspect import isclass
+from collections import namedtuple
 
 from abc import abstractmethod
 from math import log, log1p
@@ -10,6 +11,8 @@ import math
 
 from random import random as rand,choice
 import random
+
+def log2(x): return log(x) / log(2)
 
 def strategy_for(typ):
     def accept_function(fn):
@@ -241,10 +244,8 @@ class ListStrategy(SearchStrategy):
                     descriptor,
                     **kwargs):
         SearchStrategy.__init__(self, strategies, descriptor,**kwargs)
-        if len(descriptor) != 1:
-            raise ValueError("Cannot produce instances from lists of length != 1: (%s)" % str(descriptor))
 
-        self.element_strategy = strategies.strategy(descriptor[0])
+        self.element_strategy = strategies.strategy(one_of(descriptor))
 
     def entropy_allocated_for_length(self, size):
         if size <= 2: return 0.5 * size;
@@ -385,3 +386,33 @@ class FixedKeysDictStrategy(SearchStrategy):
                 y = dict(x)
                 y[k] = s
                 yield y
+
+OneOf = namedtuple('OneOf', 'elements')
+def one_of(args):
+    if not args:
+        raise ValueError("one_of requires at least one value to choose from")
+    if len(args) == 1:
+        return args[0]
+    return OneOf(args)
+
+@strategy_for_instances(OneOf)
+class OneOfStrategy(SearchStrategy):
+    def __init__(   self,
+                    strategies,
+                    descriptor,
+                    **kwargs):
+        SearchStrategy.__init__(self, strategies, descriptor,**kwargs)
+        self.element_strategies = [strategies.strategy(x) for x in descriptor.elements]
+
+    def how_many_elements_to_pick(self, size):
+        max_entropy_to_use = size / 2
+        n = len(self.element_strategies)
+        if max_entropy_to_use >= log2(n): return n
+        else: return int(2 ** max_entropy_to_use) 
+
+    def produce(self, size):
+        m = self.how_many_elements_to_pick(size)
+        size -= log2(m)
+        return choice(self.element_strategies[0:m]).produce(size)
+
+
