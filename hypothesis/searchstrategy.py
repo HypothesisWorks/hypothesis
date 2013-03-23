@@ -200,7 +200,7 @@ class TupleStrategy(SearchStrategy):
 
     def produce(self, size):
         es = self.element_strategies
-        return tuple([g.produce(size/len(es)) for g in es])
+        return tuple([g.produce(float(size)/len(es)) for g in es])
 
     def simplify(self, x):
         """
