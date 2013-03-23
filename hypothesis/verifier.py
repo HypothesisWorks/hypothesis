@@ -36,12 +36,15 @@ class Verifier:
                 return False
 
         temperature = self.starting_size
-        falsifying_example = None
+        falsifying_examples = []
 
         def look_for_a_falsifying_example(size):
             x = search_strategy.produce(size, flags)
             if falsifies(x): 
-                return x
+                falsifying_examples.append(x)
+                return True
+            else:
+                return False
 
         while temperature < self.max_size:
             rtf = self.runs_to_explore_flags
@@ -54,26 +57,25 @@ class Verifier:
                 # run
                 p = float(i + 1)/(rtf + 1)
                 flags = Flags([x for x in search_strategy.flags().flags if random() <= p])
-                falsifying_example = look_for_a_falsifying_example(temperature)
-                if falsifying_example:
+                look_for_a_falsifying_example(temperature)
+                if falsifying_examples:
                     break
-            if falsifying_example:
+            if falsifying_examples:
                     break
             temperature += self.warming_rate
-        if not falsifying_example: raise Unfalsifiable(hypothesis)
+
+        if not falsifying_examples: raise Unfalsifiable(hypothesis)
 
         failed_runs = 0
         while temperature > 1 and failed_runs < self.max_failed_runs:
-            new_example = look_for_a_falsifying_example(temperature)
-            if new_example:
-                failed_runs = 0
-                falsifying_example = new_example
-            else:
+            if not look_for_a_falsifying_example(temperature):
                 failed_runs += 1
 
             temperature -= self.cooling_rate
-        
-        return search_strategy.simplify_such_that(falsifying_example, falsifies) 
+      
+        best_example = min(falsifying_examples, key=search_strategy.complexity)
+
+        return search_strategy.simplify_such_that(best_example, falsifies) 
 
 def falsify(*args, **kwargs):
     return Verifier(**kwargs).falsify(*args)

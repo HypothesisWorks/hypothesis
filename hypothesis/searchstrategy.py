@@ -441,7 +441,7 @@ class FixedKeysDictStrategy(SearchStrategy):
         return result
 
     def complexity(self,x):
-        return sum((v.complexity(x[k]) for k,v in self.strategy_dict))
+        return sum((v.complexity(x[k]) for k,v in self.strategy_dict.items()))
 
     def simplify(self,x):
         for k,v in x.items():
