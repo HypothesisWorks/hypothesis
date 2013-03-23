@@ -12,10 +12,12 @@ The primary entry point into the library is the hypothesis.falsify method.
 
 What does it do?
 
-You give it a predicate and a specification for how to generate arguments to
+You give it a predicate and a specification for how to generate arguments to test
 that predicate and it gives you a counterexample.
 
-Examples!
+-----------------
+ Basic examples
+-----------------
 
 .. code:: python
 
@@ -86,33 +88,121 @@ With an error message something like:
     E         + 10
 
 
+------------------
+ Stateful testing
+------------------
+
+You can also use hypothesis for a more stateful style of testing, to generate
+sequences of operations to break your code.
+
+Considering the following broken implementation of a set:
+
+.. code:: python
+
+    class BadSet:
+        def __init__(self):
+            self.data = []
+
+        def add(self, arg):
+            self.data.append(arg)
+
+        def remove(self, arg):
+            for i in xrange(0, len(self.data)):
+                if self.data[i] == arg:
+                    del self.data[i]
+                    break
+
+        def contains(self, arg):
+            return arg in self.data
+
+Can we use hypothesis to demonstrate that it's broken? We can indeed!
+
+We can put together a stateful test as follows:
+
+.. code:: python
+
+    class BadSetTester(StatefulTest):
+        def __init__(self):
+            self.target = BadSet()
+
+        @step
+        @requires(int)
+        def add(self,i):
+            self.target.add(i)
+            assert self.target.contains(i)
+
+        @step
+        @requires(int)
+        def remove(self,i):
+            self.target.remove(i)
+            assert not self.target.contains(i)
+
+The @step decorator says that this method is to be used as a test step.
+The @requires decorator says what argument types it needs when it is 
+(you can omit @requires if you don't need any arguments).
+
+We can now ask hypothesis for an example of this being broken:
+
+    In [7]: BadSetTester.breaking_example()
+    Out[7]: (('add', 1), ('add', 1), ('remove', 1)]
+
+What does this mean? It means that if we were to do:
+
+.. code:: python
+
+    x = BadSetTester()
+    x.add(1)
+    x.add(1)
+    x.remove(1)
+
+then we would get an assertion failure. Which indeed we would because the
+assertion that removing results in the element no longer being in the set
+would now be failing.
+
+----------------
+ Under the hood
+----------------
+
 How does hypothesis work?
 
-Fundamentally it knows how to do two things with types: 
+The core object of hypothesis is the SearchStrategy. It knows how to explore a 
+state space, and has the following operations.
 
-1. Produce them
-2. Simplify them
+  * produce(size,flags). Generate a random element of the state space subject to the flags provided.
+  * flags(). Return a set of flags that may be used to control the production of elements.
+  * could_have_produced(element). Say whether it's plausible that this element was produced by this strategy.
+  * complexity(element). Return a float saying roughly how "complex" this element is. There's no meaning attached to this except that hypothesis will try to generate elements of lower complexity.
+  * simplify(element). Return a generator over a simplified versions of this element.
 
-The relevant operations are defined in hypothesis.produce and hypothesis.simplify
+These satisfy the following invariants:
 
-A producer is a function, (Producers, int) -> value, while a simplifier is a function
-(Simplifiers, value) -> generator(value).
+  * produce(size,flags) should produce a distribution with about 'size' bits of entropy.
+  * Any element produced by produce must return true when passed to could_have_produced
+  * Any element for which could_have_produced returns true must not throw an exception when passed to complexity or simplify
+  * The expected complexity of produce(size) should be monotonic increasing in size
+  * for y in simplify(x), complexity(y) <= complexity(x)
+  * simplify(x) should return a sequence of unique values
+  * There shold be no chain x_1, x_2, ..., x_n with x_{i+1} in simplify(x_i) and x_1 in simplify(x_n). 
 
-The idea is that the Producers and Simplifiers objects are "context objects" that
-know how to map types to things which produce or simplify them. Passing these around
-allows you to configure your production and simplification of types in a fairly 
-fine grained way.
+These are used to explore the state space. produce is called with a number of sizes and flags to
+generate examples that falsify the hypothesis. The lowest complexity of these examples is then
+taken, then repeatedly simplified until an example is found with no simplification of it falsifying
+the hypothesis. This is taken as the end result.
 
-The specific behaviour requirements are deliberately vague and poorly defined.
-Approximately:
+SearchStrategy objects are produced from a descriptor value (which can be anything) a SearchStrategies 
+object. 
 
-* Producers should produce values which are "of about this level of complexity". What that actually means is completely implementation defined. Additionally, it should ideally be possible to produce any value at any size. All that should change is the expected complexity.
-* Simplifiers should produce a generator with a finite number of elements, each of which is simpler than the starting element in some completely implementation defined sense.
+So for example you can do
 
-WARNING: This code is about one step removed from being a proof of concept. It's passed 
-out of the "the internals are ropy as hell and the API is all wrong" stage but is now in the
-"this probably works, but is likely to see some major changes before it stabilizes".
+.. code:: python
 
-The main entry points to the API are unlikely to change too radically, and it's well enough tested
-that I expect simple use cases will work fine. I don't imagine it's terribly hard to trigger bugs
-in it at the moment though, so I'd recomend using with some degree of caution. 
+    In [35]: SearchStrategies().strategy((int,int,[str]))
+    Out[35]: TupleStrategy((int, int, [str]))
+
+There are some reasonably complicated and subtle things you can do in terms of overriding 
+the defined search strategies. I'm not going to go into them here because it's all a bit weird
+and likely to still be in flux.
+
+Warning: This library is still very much in flux, and no release of it right now should be
+considered to be stable. It's emerged out of the initial hack stage, and is probably not too
+broken, but proceed with caution.
