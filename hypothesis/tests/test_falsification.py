@@ -34,7 +34,7 @@ class Foo():
 
 @strategy_for(Foo)
 class FooStrategy(SearchStrategy):
-    def produce(self,size):
+    def produce(self, size, flags):
         return Foo()
 
 def test_can_falsify_types_without_minimizers():
@@ -62,9 +62,9 @@ class BarStrategy(SearchStrategy):
         SearchStrategy.__init__(self,strategies,descriptor)
         self.int_strategy = strategies.strategy(int)
 
-    def produce(self, size):
+    def produce(self, size, flags):
         x = Bar()
-        for _ in xrange(self.int_strategy.produce(size)):
+        for _ in xrange(self.int_strategy.produce(size,flags)):
             x = Bar(x)
         return x
 
@@ -146,19 +146,22 @@ def test_can_find_unsorted_lists():
     unsorted = falsify(lambda x: sorted(x) == x, [int])[0] 
     assert unsorted == [1,0] or unsorted == [0,-1]
 
-def test_can_falsify_mixed_lists():
-    def is_pure(xs):
-        for a in xs:
-            for b in xs:
-                if a.__class__ != b.__class__:
-                    return False
-        return True
+def is_pure(xs):
+    return len(set([a.__class__ for a in xs])) <= 1
 
+def test_can_falsify_mixed_lists():
     xs = falsify(is_pure, [int,str])[0]
     assert len(xs) == 2
     assert 0 in xs
     assert "" in xs
 
+def test_can_produce_long_mixed_lists_with_only_a_subset():
+    def is_good(xs):
+        if len(xs) < 20: return True 
+        if any((isinstance(x, int) for x in xs)): return True
+        return False
+        
+    falsify(is_good, [int,str])
 
 def test_can_falsify_alternating_types():
     falsify(lambda x: isinstance(x, int), one_of([int, str]))[0] == ""

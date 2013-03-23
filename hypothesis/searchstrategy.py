@@ -1,8 +1,9 @@
 from hypothesis.specmapper import SpecificationMapper
 from hypothesis.tracker import Tracker
+from hypothesis.flags import Flags
+
 from inspect import isclass
 from collections import namedtuple
-
 from abc import abstractmethod
 from math import log, log1p
 import math
@@ -40,8 +41,31 @@ class SearchStrategy:
                     descriptor):
         self.descriptor = descriptor
 
+    def flags(self):
+        r = set()
+        self.add_flags_to(r)
+        return Flags(r)
+
+    def personal_flag(self, flag):
+        return (self, str(flag))
+
+    def add_flags_to(self, s,history=None):
+        history = history or []
+        if self in history: return
+        history.append(self)
+        for f in self.own_flags():
+            s.add(f)
+        for c in self.child_strategies():
+            c.add_flags_to(s,history)
+        
+    def own_flags(self):
+        return ()
+
+    def child_strategies(self):
+        return ()
+
     @abstractmethod
-    def produce(self,size):
+    def produce(self, size, flags):
         pass
 
     def complexity(self,value):
@@ -108,13 +132,15 @@ def geometric_int(p):
 
 @strategy_for(int)
 class IntStrategy(SearchStrategy):
+    def own_flags(self):
+        return ("allow_negative_ints",)
+
     def complexity(self, value):
         if value >= 0: return value
         else: return 1 - value
 
-
-    def produce(self,size):
-        can_be_negative = size > 1
+    def produce(self, size, flags):
+        can_be_negative = flags.enabled("allow_negative_ints") and size > 1
       
         if size <= 0:
             return 0
@@ -158,9 +184,15 @@ class FloatStrategy(SearchStrategy):
         SearchStrategy.__init__(self, strategies, descriptor,**kwargs)
         self.int_strategy = strategies.strategy(int)
 
-    def produce(self, size):
-        s2 = math.exp(2 * size) / (2 * math.pi * math.e)
-        return random.gauss(0, s2)
+    def own_flags(self):
+        return ("allow_negative_floats",)
+
+    def produce(self, size, flags):
+        if flags.enabled("allow_negative_floats"):
+            s2 = math.exp(2 * size) / (2 * math.pi * math.e)
+            return random.gauss(0, s2)
+        else:
+            return random.expovariate(math.exp(1 - size))
 
     def complexity(self, x):
         return x if x >= 0 else 1 - x
@@ -197,7 +229,7 @@ class BoolStrategy(SearchStrategy):
         if x: return 1
         else: return 0
     
-    def produce(self, size):
+    def produce(self, size,flags):
         if size >= 1: p = 0.5
         else: p = inverse_h(size)
         if rand() >= p: return False
@@ -212,6 +244,9 @@ class TupleStrategy(SearchStrategy):
         SearchStrategy.__init__(self, strategies, descriptor,**kwargs)
         self.element_strategies = tuple((strategies.strategy(x) for x in descriptor))
 
+    def child_strategies(self):
+        return self.element_strategies
+   
     def could_have_produced(self,xs):
         if not SearchStrategy.could_have_produced(self,xs): return False
         if len(xs) != len(self.element_strategies): return False
@@ -220,9 +255,9 @@ class TupleStrategy(SearchStrategy):
     def complexity(self, xs):
         return sum((s.complexity(x) for s,x in zip(self.element_strategies, xs)))
 
-    def produce(self, size):
+    def produce(self, size, flags):
         es = self.element_strategies
-        return tuple([g.produce(float(size)/len(es)) for g in es])
+        return tuple([g.produce(float(size)/len(es),flags) for g in es])
 
     def simplify(self, x):
         """
@@ -258,18 +293,29 @@ class ListStrategy(SearchStrategy):
 
         self.element_strategy = strategies.strategy(one_of(descriptor))
 
+    def own_flags(self):
+        return ('allow_empty_arrays',)
+
+    def child_strategies(self):
+        return (self.element_strategy,)
+
     def entropy_allocated_for_length(self, size):
         if size <= 2: return 0.5 * size;
         else: return min(0.05 * (size - 2.0) + 2.0, 6)
 
-    def produce(self, size):
+    def produce(self, size, flags):
         le = self.entropy_allocated_for_length(size)
         lp = geometric_probability_for_entropy(le)
         length = geometric_int(lp)
+        empty_allowed = flags.enabled('allow_empty_arrays')
+        if not empty_allowed:
+            length += 1
+
         if length == 0:
             return []
-        element_entropy = (size - le) / (length * (1.0 - lp))
-        return [self.element_strategy.produce(element_entropy) for _ in xrange(length)]
+        multiplier = 1.0/(1.0 - lp) if empty_allowed else 1.0
+        element_entropy = multiplier * (size - le) / length
+        return [self.element_strategy.produce(element_entropy,flags) for _ in xrange(length)]
 
     def simplify(self, x):
         indices = xrange(0, len(x)) 
@@ -300,8 +346,11 @@ class MappedSearchStrategy(SearchStrategy):
     def unpack(self, x):
         pass
 
-    def produce(self, size):
-        return self.pack(self.mapped_strategy.produce(size))
+    def child_strategies(self):
+        return (self.mapped_strategy,)
+
+    def produce(self, size, flags):
+        return self.pack(self.mapped_strategy.produce(size,flags))
 
     def complexity(self, x):
         return self.mapped_strategy.complexity(self.unpack(x))
@@ -334,7 +383,7 @@ class OneCharStringStrategy(SearchStrategy):
         self.characters = kwargs.get('characters', map(chr,range(0,127)))
         self.zero_point = ord(kwargs.get('zero_point', '0'))
 
-    def produce(self, size):
+    def produce(self, size, flags):
         return choice(self.characters)
 
     def complexity(self, x):
@@ -382,14 +431,17 @@ class FixedKeysDictStrategy(SearchStrategy):
         for k, v in descriptor.items():
             self.strategy_dict[k] = strategies.strategy(v)
 
-    def produce(self,size):
+    def child_strategies(self):
+        return self.strategy_dict.values()
+
+    def produce(self, size, flags):
         result = {}
         for k,g in self.strategy_dict.items():
-            result[k] = g.produce(size / len(self.strategy_dict))
+            result[k] = g.produce(size / len(self.strategy_dict),flags)
         return result
 
     def complexity(self,x):
-        return sum((v.complexity(x[k]) for k,v in self.strategy_dict))
+        return sum((v.complexity(x[k]) for k,v in self.strategy_dict.items()))
 
     def simplify(self,x):
         for k,v in x.items():
@@ -402,6 +454,7 @@ OneOf = namedtuple('OneOf', 'elements')
 
 
 def one_of(args):
+    args = list(args)
     if not args:
         raise ValueError("one_of requires at least one value to choose from")
     if len(args) == 1:
@@ -417,6 +470,12 @@ class OneOfStrategy(SearchStrategy):
         SearchStrategy.__init__(self, strategies, descriptor,**kwargs)
         self.element_strategies = [strategies.strategy(x) for x in descriptor.elements]
 
+    def own_flags(self):
+        return tuple((self.personal_flag(d) for d in self.descriptor.elements))
+
+    def child_strategies(self):
+        return self.element_strategies
+
     def could_have_produced(self, x):
         return any((s.could_have_produced(x) for s in self.element_strategies))
 
@@ -426,10 +485,14 @@ class OneOfStrategy(SearchStrategy):
         if max_entropy_to_use >= log2(n): return n
         else: return int(2 ** max_entropy_to_use) 
 
-    def produce(self, size):
-        m = self.how_many_elements_to_pick(size)
+    def produce(self, size, flags):
+        def enabled(c):
+            return flags.enabled(self.personal_flag(c.descriptor))
+        enabled_strategies = [es for es in self.element_strategies if enabled(es)]
+        enabled_strategies = enabled_strategies or self.element_strategies
+        m = min(self.how_many_elements_to_pick(size), len(enabled_strategies))
         size -= log2(m)
-        return choice(self.element_strategies[0:m]).produce(size)
+        return choice(enabled_strategies[0:m]).produce(size, flags)
 
     def find_first_strategy(self, x):
         for s in self.element_strategies:
@@ -449,5 +512,5 @@ just = Just
 
 @strategy_for_instances(Just)
 class JustStrategy(SearchStrategy):
-    def produce(self, size):
+    def produce(self, size, flags):
         return self.descriptor.value
