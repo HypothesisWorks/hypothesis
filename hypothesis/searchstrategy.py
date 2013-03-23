@@ -56,6 +56,7 @@ class SearchStrategy:
                     break
             else:
                 return t  
+
     def could_have_produced(self, x):
         d = self.descriptor
         c = d if isclass(d) else d.__class__
