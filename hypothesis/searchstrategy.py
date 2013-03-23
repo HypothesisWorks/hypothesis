@@ -64,7 +64,11 @@ class SearchStrategy:
         c = d if isclass(d) else d.__class__
         return isinstance(x, c)
 
+entropy_to_geom_cache = {}
 def geometric_probability_for_entropy(desired_entropy):
+    if desired_entropy in entropy_to_geom_cache:
+        return entropy_to_geom_cache[desired_entropy]
+
     def h(p):
         if p <= 0:
             return float('inf')
@@ -83,6 +87,8 @@ def geometric_probability_for_entropy(desired_entropy):
             lower = mid
         else:
             upper = mid
+
+    entropy_to_geom_cache[desired_entropy] = mid
     return mid
 
 def arbitrary_int():
