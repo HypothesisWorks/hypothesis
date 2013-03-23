@@ -1,7 +1,6 @@
 from functools import wraps
 from random import choice
 from hypothesis.verifier import Verifier
-from hypothesis.simplify import simplifies
 import hypothesis
 
 def step(f):
@@ -82,7 +81,6 @@ class TestRun:
     def __getitem__(self, i):
         return self.steps[i]
 
-@simplifies(TestRun)
 def simplify_test_run(simplifiers, test_run):
     pruned = test_run.prune()
     if pruned:

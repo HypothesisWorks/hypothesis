@@ -1,5 +1,3 @@
-from hypothesis.produce import Producers
-from hypothesis.simplify import Simplifiers
 from hypothesis.searchstrategy import SearchStrategy, SearchStrategies
 from itertools import islice
 

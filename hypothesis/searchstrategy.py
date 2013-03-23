@@ -1,5 +1,3 @@
-from hypothesis.produce import Producers
-from hypothesis.simplify import DEFAULT_SIMPLIFIERS
 from hypothesis.specmapper import SpecificationMapper
 from hypothesis.tracker import Tracker
 from inspect import isclass
