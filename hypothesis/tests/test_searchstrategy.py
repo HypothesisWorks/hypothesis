@@ -1,4 +1,5 @@
 import hypothesis.searchstrategy as ss
+from hypothesis.tracker import Tracker
 
 def strategy(*args,**kwargs):
     return ss.SearchStrategies().strategy(*args,**kwargs)
@@ -18,12 +19,7 @@ def alternating(*args):
     return strategy(ss.one_of(args))
 
 def minimize(s, x):
-    while True:
-        try:
-            x = next(s.simplify(x))
-        except StopIteration:
-            break
-    return x
+    return s.simplify_such_that(x, lambda _: True)
 
 def test_can_minimize_component_types():
     ios = alternating(str, int)
@@ -34,3 +30,23 @@ def test_can_minimize_nested_component_types():
     ios = alternating((int,str), (int,int))
     assert (0,"") == minimize(ios, (42, "I like kittens"))
     assert (0,0)  == minimize(ios, (42, 666))
+
+def test_can_minimize_tuples():
+    ts = strategy((int,int,int))
+    assert minimize(ts, (10,10,10)) == (0,0,0)
+
+def assert_no_duplicates_in_simplify(s, x):
+    s = strategy(s)
+    t = Tracker()
+    t.track(x)
+    for y in s.simplify(x):
+        assert t.track(y) == 1
+
+def test_ints_no_duplicates_in_simplify():
+    assert_no_duplicates_in_simplify(int, 555)
+
+def test_int_lists_no_duplicates_in_simplify():
+    assert_no_duplicates_in_simplify([int], [0, 555, 1281])
+
+def test_float_lists_no_duplicates_in_simplify():
+    assert_no_duplicates_in_simplify([float], [0.5154278802175156, 555.0, 1281.8556018727038])

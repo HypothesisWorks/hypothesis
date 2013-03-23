@@ -53,7 +53,6 @@ class SearchStrategy:
             for s in self.simplify(t):
                 if tracker.track(s) > 1: 
                     continue
-
                 if f(s):
                     t = s
                     break
@@ -126,18 +125,8 @@ class IntStrategy(SearchStrategy):
         if x < 0:
             yield -x
             for y in self.simplify(-x): yield -y
-        elif x == 2:
-            yield 1
-            yield 0
-        elif x == 1:
-            yield 0
-        elif x == 0:
-            pass
         else:
-            yield x - 1
-            yield x / 2
-            for y in self.simplify(x - 1): yield y
-            for y in self.simplify(x / 2): yield y
+            for y in xrange(x-1,-1,-1): yield y
 
 @strategy_for(float)
 class FloatStrategy(SearchStrategy):
@@ -160,7 +149,8 @@ class FloatStrategy(SearchStrategy):
             yield -x
 
         n = int(x)
-        yield float(n)
+        y = float(n)
+        if x != y: yield y
         for m in self.int_strategy.simplify(n):
             yield x + (m - n)
 
