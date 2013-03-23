@@ -1,10 +1,15 @@
 from functools import wraps
 from random import choice
 from hypothesis.verifier import Verifier
+from hypothesis.searchstrategy import *
+from collections import namedtuple
 import hypothesis
 
 def step(f):
     f.hypothesis_test_step = True
+
+    if not hasattr(f, 'hypothesis_test_requirements'):
+        f.hypothesis_test_requirements = ()
     return f
 
 def integrity_test(f):
@@ -68,7 +73,7 @@ class TestRun:
         return self.cls == that.cls and self.steps == that.steps
 
     def __hash__(self):
-        # Were we want to hash this we want to rely on Tracker's logic for
+        # Where we want to hash this we want to rely on Tracker's logic for
         # hashing collections anyway
         raise TypeError("unhashable type 'testrun'")
 
@@ -92,8 +97,6 @@ def simplify_test_run(simplifiers, test_run):
     for sargs in simplifiers.simplify(arguments):
         yield  TestRun(test_run.cls, zip(methods, sargs))
 
-
-
 class StatefulTest:
     @classmethod
     def test_steps(cls):
@@ -108,23 +111,45 @@ class StatefulTest:
         return [v for v in cls.__dict__.values() if hasattr(v, attr)]
         
     @classmethod
-    def produce_step(cls, producers, size):
-        base_choices = [t for t in cls.test_steps()]
-        if not base_choices:
-            base_choices = cls.test_steps()
-
-        step = choice(base_choices)
-        try:
-            requirements = step.hypothesis_test_requirements
-        except AttributeError:
-            requirements = ()
-        return (step,producers.produce(requirements, size))
-
-    @classmethod
-    def produce_testrun(cls,producers,size):
-        return TestRun(cls, producers.produce([cls.produce_step], size)) 
-
-    @classmethod
     def breaking_example(cls):
-        test_run = hypothesis.falsify(TestRun.run, cls.produce_testrun)[0]
+        test_run = hypothesis.falsify(TestRun.run, cls)[0]
         return [(f.__name__,) + args for f, args in test_run]
+
+Step = namedtuple("Step", ("target", "arguments"))
+
+class StepStrategy(MappedSearchStrategy):
+    def __init__(   self,
+                    strategies,
+                    descriptor,
+                    **kwargs):
+        SearchStrategy.__init__(self, strategies, descriptor,**kwargs)
+        self.mapped_strategy = strategies.strategy(descriptor.hypothesis_test_requirements)
+
+    def could_have_produced(self, x):
+        return isinstance(x,Step)
+
+    def pack(self, x):
+        return Step(self.descriptor,x)
+    
+    def unpack(self,x):
+        return x.arguments
+        
+
+class StatefulStrategy(MappedSearchStrategy):
+    def __init__(   self,
+                    strategies,
+                    descriptor,
+                    **kwargs):
+        SearchStrategy.__init__(self, strategies, descriptor,**kwargs)
+        step_strategies = [StepStrategy(strategies, s) for s in descriptor.test_steps()]
+        child_mapper = strategies.new_child_mapper()
+        child_mapper.define_specification_for(Step, lambda sgs, _: sgs.strategy(one_of(step_strategies)))
+        self.mapped_strategy = child_mapper.strategy([Step])
+
+    def pack(self, x):
+        return TestRun(self.descriptor, x)
+
+    def unpack(self, x):
+        return x.steps
+        
+SearchStrategies.default().define_specification_for_classes(StatefulStrategy, subclasses_of=StatefulTest)

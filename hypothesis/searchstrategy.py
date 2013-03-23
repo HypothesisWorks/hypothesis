@@ -28,6 +28,12 @@ class SearchStrategies(SpecificationMapper):
     def strategy(self, *args, **kwargs):
         return self.specification_for(*args, **kwargs)
 
+    def missing_specification(self, descriptor):
+        if isinstance(descriptor,SearchStrategy):
+            return descriptor
+        else:
+            return SpecificationMapper.missing_specification(self, descriptor)
+
 class SearchStrategy:
     def __init__(   self,
                     strategies,
@@ -393,6 +399,8 @@ class FixedKeysDictStrategy(SearchStrategy):
                 yield y
 
 OneOf = namedtuple('OneOf', 'elements')
+
+
 def one_of(args):
     if not args:
         raise ValueError("one_of requires at least one value to choose from")
@@ -425,9 +433,10 @@ class OneOfStrategy(SearchStrategy):
 
     def find_first_strategy(self, x):
         for s in self.element_strategies:
+            print s, x
             if s.could_have_produced(x): return s
         else:
-            return ValueError("Value %s could not have been produced from %s" % (x, self))
+            raise ValueError("Value %s could not have been produced from %s" % (x, self))
 
     def complexity(self, x):
         return self.find_first_strategy(x).complexity(x)
