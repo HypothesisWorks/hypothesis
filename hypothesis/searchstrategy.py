@@ -46,11 +46,14 @@ class SearchStrategy:
         self.add_flags_to(r)
         return Flags(r)
 
-    def add_flags_to(self, s):
+    def add_flags_to(self, s,history=None):
+        history = history or []
+        if self in history: return
+        history.append(self)
         for f in self.own_flags():
             s.add(f)
         for c in self.child_strategies():
-            c.add_flags_to(s)
+            c.add_flags_to(s,history)
         
     def own_flags(self):
         return ()
