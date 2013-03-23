@@ -105,3 +105,11 @@ def test_can_call_previous_in_overridden_specifications():
     s.define_specification_for_instances(str, lambda _, s: 5 if len(s) > 5 else next_in_chain())
     assert s.specification_for("foo") == 3
     assert s.specification_for("I am the very model of a modern major general") == 5
+
+class Foo:
+    pass
+
+def test_can_define_class_specifications():
+    s = SpecificationMapper()
+    s.define_specification_for_classes(lambda _, c: c())
+    assert s.specification_for(Foo).__class__ == Foo

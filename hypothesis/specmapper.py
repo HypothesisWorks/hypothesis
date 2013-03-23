@@ -39,6 +39,9 @@ class SpecificationMapper:
     def define_specification_for_instances(self, cls, specification):
         self.instance_mappers.setdefault(cls,[]).append(specification)
 
+    def define_specification_for_classes(self, specification):
+        self.define_specification_for_instances(typekey(SpecificationMapper), specification)
+
     def new_child_mapper(self):
       return self.__class__(prototype = self)
 
@@ -54,8 +57,9 @@ class SpecificationMapper:
         if safe_in(descriptor, self.value_mappers):
             for h in reversed(self.value_mappers[descriptor]):
                 yield h 
-        if hasattr(descriptor, '__class__') and descriptor.__class__ in self.instance_mappers:
-            for h in reversed(self.instance_mappers[descriptor.__class__]):
+        tk = typekey(descriptor)
+        if tk in self.instance_mappers:
+            for h in reversed(self.instance_mappers[tk]):
                 yield h
         if self.prototype():
             for h in self.prototype().__find_specification_handlers_for(descriptor):
@@ -63,6 +67,12 @@ class SpecificationMapper:
 
     def missing_specification(self, descriptor):
         raise MissingSpecification(descriptor)
+
+def typekey(x):
+    try:
+        return x.__class__
+    except AttributeError:
+        return type(x)
 
 def safe_in(x, ys):
     """
