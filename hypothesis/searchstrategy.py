@@ -433,7 +433,6 @@ class OneOfStrategy(SearchStrategy):
 
     def find_first_strategy(self, x):
         for s in self.element_strategies:
-            print s, x
             if s.could_have_produced(x): return s
         else:
             raise ValueError("Value %s could not have been produced from %s" % (x, self))
