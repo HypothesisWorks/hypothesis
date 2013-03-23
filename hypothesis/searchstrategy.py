@@ -83,9 +83,15 @@ def geometric_probability_for_entropy(desired_entropy):
             upper = mid
     return mid
 
+def arbitrary_int():
+    return random.randint(-2**32,2**32)
+        
 def geometric_int(p):
+    if p >= 1: return 0
     denom = log1p(- p)
-    if denom >= 0: return 0
+    if denom >= 0:
+        return arbitrary_int
+
     return int(log(rand()) / denom)
 
 @strategy_for(int)
@@ -102,12 +108,13 @@ class IntStrategy(SearchStrategy):
             return 0
      
         if size >= 32:
-            return random.randint(-2**32,2**32)
+            return arbitrary_int()
 
         if can_be_negative:
             size -= 1
-        
-        n = geometric_int(geometric_probability_for_entropy(size))
+       
+        p = geometric_probability_for_entropy(size)
+        n = geometric_int(p)
         if can_be_negative and rand() <= 0.5:
             n = -n
         return n
