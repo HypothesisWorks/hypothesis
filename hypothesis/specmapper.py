@@ -1,3 +1,5 @@
+from functools import wraps
+
 class SpecificationMapper:
     """
     Maps descriptions of some type to a type. Has configurable handlers for what a description
@@ -39,7 +41,17 @@ class SpecificationMapper:
     def define_specification_for_instances(self, cls, specification):
         self.instance_mappers.setdefault(cls,[]).append(specification)
 
-    def define_specification_for_classes(self, specification):
+    def define_specification_for_classes(self, specification,subclasses_of=None):
+        if subclasses_of:
+            original_specification = specification
+            @wraps(specification)
+            def restricted(sms, descriptor):
+                if issubclass(descriptor,subclasses_of):
+                    return original_specification(sms,descriptor)
+                else:
+                    return next_in_chain()
+            specification = restricted
+
         self.define_specification_for_instances(typekey(SpecificationMapper), specification)
 
     def new_child_mapper(self):

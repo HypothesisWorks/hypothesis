@@ -109,7 +109,22 @@ def test_can_call_previous_in_overridden_specifications():
 class Foo:
     pass
 
+class Bar(Foo):
+    pass
+
+class Baz:
+    pass
+
 def test_can_define_class_specifications():
     s = SpecificationMapper()
     s.define_specification_for_classes(lambda _, c: c())
     assert s.specification_for(Foo).__class__ == Foo
+
+def test_can_define_class_specifications_for_subclasses():
+    s = SpecificationMapper()
+    s.define_specification_for_classes(const(1))
+    s.define_specification_for_classes(const(2), subclasses_of=Foo)
+    assert s.specification_for(Foo) == 2
+    assert s.specification_for(Bar) == 2
+    assert s.specification_for(Baz) == 1
+
