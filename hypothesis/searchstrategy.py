@@ -153,6 +153,34 @@ class FloatStrategy(SearchStrategy):
         for m in self.int_strategy.simplify(n):
             yield x + (m - n)
 
+def h(p):
+    return -(p * log(p) + (1-p) * log1p(-p))
+
+def inverse_h(hd):
+    if hd < 0: raise ValueError("Entropy h cannot be negative: %s" % h)
+    if hd > 1: raise ValueError("Single bit entropy cannot be > 1: %s" % h)
+    low = 0.0
+    high = 0.5
+    
+    for _ in xrange(10):
+        mid = (low + high) * 0.5
+        if h(mid) < hd: low = mid
+        else: high = mid
+
+    return mid
+
+@strategy_for(bool)
+class BoolStrategy(SearchStrategy):
+    def complexity(self,x):
+        if x: return 1
+        else: return 0
+    
+    def produce(self, size):
+        if size >= 1: p = 0.5
+        else: p = inverse_h(size)
+        if rand() >= p: return False
+        return True
+
 @strategy_for_instances(tuple)
 class TupleStrategy(SearchStrategy):
     def __init__(   self,
