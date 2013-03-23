@@ -7,7 +7,7 @@ from random import random
 def assume(condition):
     if not condition: raise UnsatisfiedAssumption()
 
-class Verifier:
+class Verifier(object):
     def __init__(self,  search_strategies=None,
                         starting_size = 1.0,
                         warming_rate = 0.5,

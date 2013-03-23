@@ -12,7 +12,7 @@ def hash_everything(l):
             h = h ^ hash_everything(x)
         return h
 
-class HashItAnyway:
+class HashItAnyway(object):
     def __init__(self, wrapped):
         self.wrapped = wrapped
         self.h = hash_everything(wrapped)
@@ -24,7 +24,7 @@ class HashItAnyway:
         return self.h
 
 
-class Tracker():
+class Tracker(object):
     def __init__(self):
         self.contents = {}
 

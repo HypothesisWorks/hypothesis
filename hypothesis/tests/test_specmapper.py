@@ -17,7 +17,7 @@ def test_can_define_specifications_on_the_default():
     SpecificationMapper.default().define_specification_for("foo", const(1))
     assert sm.specification_for("foo") == 1
 
-class Bar:
+class Bar(object):
     pass
 
 def test_can_define_specifications_for_classes():
@@ -106,13 +106,13 @@ def test_can_call_previous_in_overridden_specifications():
     assert s.specification_for("foo") == 3
     assert s.specification_for("I am the very model of a modern major general") == 5
 
-class Foo:
+class Foo(object):
     pass
 
 class Bar(Foo):
     pass
 
-class Baz:
+class Baz(object):
     pass
 
 def test_can_define_class_specifications():

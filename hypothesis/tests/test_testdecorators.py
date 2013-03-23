@@ -57,7 +57,7 @@ def test_integer_division_shrinks_positive_integers(n):
     assume(n > 0)
     assert n/2 < n
 
-class TestCases:
+class TestCases(object):
     @given(int)
     def test_abs_non_negative(self,x):
         assert abs(x) >= 0

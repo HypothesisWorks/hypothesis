@@ -51,7 +51,7 @@ def nice_string(xs, history=None):
     except AttributeError:
         return repr(xs)
 
-class SearchStrategy:
+class SearchStrategy(object):
     def __init__(   self,
                     strategies,
                     descriptor):

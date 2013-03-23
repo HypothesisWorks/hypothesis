@@ -29,7 +29,7 @@ def test_can_make_assumptions():
         return x % 2 == 0
     assert falsify(is_good, int)[0] == 7    
 
-class Foo():
+class Foo(object):
     pass
 
 @strategy_for(Foo)
@@ -40,7 +40,7 @@ class FooStrategy(SearchStrategy):
 def test_can_falsify_types_without_minimizers():
     assert isinstance(falsify(lambda x: False, Foo)[0], Foo)
 
-class Bar():
+class Bar(object):
     def __init__(self,bar=None):
         self.bar = bar
 

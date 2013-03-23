@@ -31,7 +31,7 @@ def precondition(t):
     if not t: raise PreconditionNotMet()
 
 
-class TestRun:
+class TestRun(object):
     def __init__(self,cls, steps):
         self.cls = cls
         self.steps = steps
@@ -97,7 +97,7 @@ def simplify_test_run(simplifiers, test_run):
     for sargs in simplifiers.simplify(arguments):
         yield  TestRun(test_run.cls, zip(methods, sargs))
 
-class StatefulTest:
+class StatefulTest(object):
     @classmethod
     def test_steps(cls):
         return cls.functions_with_attributes('hypothesis_test_step')

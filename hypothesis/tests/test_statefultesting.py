@@ -78,7 +78,7 @@ def test_minimizes_arguments_to_steps():
     assert len(steps) == 1
     assert steps[0][1] == 5
 
-class BadSet:
+class BadSet(object):
     def __init__(self):
         self.data = []
 

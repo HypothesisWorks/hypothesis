@@ -1,6 +1,6 @@
 from functools import wraps
 
-class SpecificationMapper:
+class SpecificationMapper(object):
     """
     Maps descriptions of some type to a type. Has configurable handlers for what a description
     may look like. Handlers for descriptions may take either a specific value or all instances
