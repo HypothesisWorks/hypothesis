@@ -28,7 +28,7 @@ def test_enabling_flags_leaves_original_unchanged():
     assert not flags.enabled("foo")
     assert flags2.enabled("foo")
 
-def can_disable_flags():
+def test_can_disable_flags():
     flags = Flags(["foo"])
     assert flags.enabled("foo")
     flags2 = flags.with_disabled("foo")

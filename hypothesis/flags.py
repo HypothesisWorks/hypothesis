@@ -17,7 +17,7 @@ class Flags(object):
     def with_disabled(self, *flags):
         x = set(self.flags)
         for f in flags:
-            x.remove(y)
+            x.remove(f)
         return Flags(x)
 
     def clone(self):
