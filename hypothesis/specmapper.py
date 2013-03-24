@@ -1,4 +1,5 @@
 from functools import wraps
+from hypothesis.hashitanyway import HashItAnyway
 
 class SpecificationMapper(object):
     """
@@ -27,6 +28,7 @@ class SpecificationMapper(object):
         self.value_mappers = {}
         self.instance_mappers = {}
         self.__prototype = prototype
+        self.__descriptor_cache = {}
 
     def prototype(self):
       if self.__prototype: 
@@ -37,9 +39,11 @@ class SpecificationMapper(object):
     
     def define_specification_for(self, value, specification):
         self.value_mappers.setdefault(value,[]).append(specification)
+        self.__descriptor_cache = {}
 
     def define_specification_for_instances(self, cls, specification):
         self.instance_mappers.setdefault(cls,[]).append(specification)
+        self.__descriptor_cache = {}
 
     def define_specification_for_classes(self, specification,subclasses_of=None):
         if subclasses_of:
@@ -58,12 +62,21 @@ class SpecificationMapper(object):
       return self.__class__(prototype = self)
 
     def specification_for(self, descriptor):
+        k = HashItAnyway(descriptor)
+        if k in self.__descriptor_cache:
+            return self.__descriptor_cache[k]
+        
         for h in self.__find_specification_handlers_for(descriptor):
             try:
-                return h(self, descriptor)
+                r = h(self, descriptor)
+                break
             except NextInChain:
                 pass
-        return self.missing_specification(descriptor)
+        else: 
+            r = self.missing_specification(descriptor)
+
+        self.__descriptor_cache[k] = r
+        return r
 
     def __find_specification_handlers_for(self, descriptor):
         if safe_in(descriptor, self.value_mappers):
