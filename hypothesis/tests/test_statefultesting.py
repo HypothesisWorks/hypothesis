@@ -94,6 +94,9 @@ class BadSet(object):
     def contains(self, arg):
         return arg in self.data
 
+    def clear(self):
+        self.data = []
+
 class BadSetTester(StatefulTest):
     def __init__(self):
         self.target = BadSet()
@@ -109,6 +112,10 @@ class BadSetTester(StatefulTest):
     def remove(self,i):
         self.target.remove(i)
         assert not self.target.contains(i)
+
+    @step
+    def clear(self):
+        self.target.clear()
 
 def test_bad_set_finds_minimal_break():
     # Try it a lot to make sure this isn't passing by coincidence

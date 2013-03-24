@@ -126,7 +126,9 @@ class StepStrategy(MappedSearchStrategy):
         self.mapped_strategy = strategies.strategy(descriptor.hypothesis_test_requirements)
 
     def could_have_produced(self, x):
-        return isinstance(x,Step)
+        if not isinstance(x,Step): return False
+        if x.target != self.descriptor: return False
+        return self.mapped_strategy.could_have_produced(x.arguments)
 
     def pack(self, x):
         return Step(self.descriptor,x)
