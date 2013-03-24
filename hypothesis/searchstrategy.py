@@ -130,7 +130,7 @@ def geometric_probability_for_entropy(desired_entropy):
             return 0.0
     lower = 0.0
     upper = 1.0
-    for _ in xrange(max(int(desired_entropy * 2), 1024)):
+    for _ in xrange(max(int(desired_entropy * 2), 64)):
         mid = (lower + upper) / 2
         if h(mid) > desired_entropy:
             lower = mid
