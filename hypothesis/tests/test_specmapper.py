@@ -128,3 +128,19 @@ def test_can_define_class_specifications_for_subclasses():
     assert s.specification_for(Bar) == 2
     assert s.specification_for(Baz) == 1
 
+def test_multiple_calls_return_same_value():
+    s = SpecificationMapper()
+    s.define_specification_for_instances(str, lambda *_: Foo())
+
+    assert s.specification_for("foo") is s.specification_for("foo")
+    assert s.specification_for("foo") is not s.specification_for("bar")
+
+def test_defining_new_handlers_resets_cache():
+    s = SpecificationMapper()
+    s.define_specification_for_instances(str, lambda *_: Foo())
+    x = s.specification_for("foo")
+    s.define_specification_for_instances(str, lambda *_: Bar())
+    y = s.specification_for("foo")
+    assert y is not x
+    assert isinstance(y, Bar)
+
