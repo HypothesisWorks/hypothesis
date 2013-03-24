@@ -1,7 +1,6 @@
-from hypothesis.searchstrategy import SearchStrategy, SearchStrategies
+from hypothesis.searchstrategy import SearchStrategies
 from hypothesis.flags import Flags
 
-from itertools import islice
 from random import random
 
 def assume(condition):

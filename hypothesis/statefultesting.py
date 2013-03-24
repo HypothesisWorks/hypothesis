@@ -1,7 +1,9 @@
-from functools import wraps
-from random import choice
-from hypothesis.verifier import Verifier
-from hypothesis.searchstrategy import *
+from hypothesis.searchstrategy import (
+        SearchStrategy,
+        SearchStrategies,
+        MappedSearchStrategy,
+        one_of,
+)
 from collections import namedtuple
 import hypothesis
 
