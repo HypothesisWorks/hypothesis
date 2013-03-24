@@ -322,7 +322,7 @@ class ListStrategy(SearchStrategy):
         self.element_strategy = strategies.strategy(one_of(descriptor))
 
     def own_flags(self):
-        return ('allow_empty_arrays',)
+        return ('allow_empty_lists',)
 
     def child_strategies(self):
         return (self.element_strategy,)
@@ -335,7 +335,7 @@ class ListStrategy(SearchStrategy):
         le = self.entropy_allocated_for_length(size)
         lp = geometric_probability_for_entropy(le)
         length = geometric_int(lp)
-        empty_allowed = flags.enabled('allow_empty_arrays')
+        empty_allowed = flags.enabled('allow_empty_lists')
         if not empty_allowed:
             length += 1
 
