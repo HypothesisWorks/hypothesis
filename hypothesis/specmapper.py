@@ -1,4 +1,4 @@
-from functools import wraps
+from functools import wraps, total_ordering
 from hypothesis.hashitanyway import HashItAnyway
 
 class SpecificationMapper(object):
@@ -86,15 +86,34 @@ class SpecificationMapper(object):
             for h in reversed(self.value_mappers[descriptor]):
                 yield h 
         tk = typekey(descriptor)
-        if tk in self.instance_mappers:
-            for h in reversed(self.instance_mappers[tk]):
-                yield h
+        for h in self.__instance_handlers(tk):
+            yield h
         if self.prototype():
             for h in self.prototype().__find_specification_handlers_for(descriptor):
                 yield h
 
+    def __instance_handlers(self, tk):
+        for c, hs in sorted(self.instance_mappers.items(), key = lambda x: ClassSorter(x[0])):
+            if issubclass(tk, c):
+                for h in reversed(hs):
+                    yield h
+
     def missing_specification(self, descriptor):
         raise MissingSpecification(descriptor)
+
+@total_ordering
+class ClassSorter(object):
+    def __init__(self, cls):
+        self.cls = cls
+
+    def __eq__(self, that):
+        return self.cls == that.cls
+
+    def __lt__(self, that):
+        if self.cls == that.cls: return False
+        elif issubclass(self.cls, that.cls): return True
+        elif issubclass(that.clls, self.cls): return False
+        else: return self.__name__ < that.__name__ 
 
 def typekey(x):
     try:

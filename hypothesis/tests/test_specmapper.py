@@ -1,5 +1,6 @@
 from hypothesis.specmapper import SpecificationMapper, MissingSpecification, next_in_chain
 import pytest
+from collections import namedtuple
 
 def setup_function(fn):
     SpecificationMapper.default_mapper = None
@@ -154,3 +155,18 @@ def test_cache_correctly_handles_inheritance():
     y = t.specification_for(["foo"])[0]
     assert x is y
 
+Litter = namedtuple("Litter", ("kitten1", "kitten2"))
+def test_can_handle_subtypes_of_instances():
+    s = SpecificationMapper()
+    s.define_specification_for_instances(tuple, lambda s, d: sum(d))
+
+    assert s.specification_for((1,2)) == 3
+    assert s.specification_for(Litter(2,2)) == 4
+
+def test_can_override_handlers_for_supertypes():
+    s = SpecificationMapper()
+    s.define_specification_for_instances(tuple, lambda s, d: sum(d))
+    s.define_specification_for_instances(Litter, lambda s, d: len(d))
+
+    assert s.specification_for((1,2)) == 3
+    assert s.specification_for(Litter(2,2)) == 2
