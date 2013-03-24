@@ -12,6 +12,10 @@ class PyTest(TestCommand):
         errno = pytest.main(self.test_args)
         sys.exit(errno)
 
+extra = {}
+if sys.version_info >= (3,):
+    extra['use_2to3'] = True
+
 setup(
     name='hypothesis',
     version='0.1.0',
@@ -22,7 +26,7 @@ setup(
     license='LICENSE.txt',
     description='Tools for falsifying hypothesis with random data generation',
     long_description=open('README').read(),
-    use_2to3 = True,
     tests_require=['pytest','pytest-timeout'],
     cmdclass = {'test': PyTest},
+    **extra
 )
