@@ -14,22 +14,6 @@ import pytest
 import re
 import signal
 
-class TimeoutError(Exception):
-    pass
-
-@contextmanager
-def timeout(time):
-    def timed_out(signum,frame):
-        signal.alarm(0)
-        raise TimeoutError()
-        
-    signal.signal(signal.SIGALRM, timed_out)
-    signal.alarm(time)
-    try:
-        yield
-    finally:
-        signal.alarm(0)
-
 def test_can_make_assumptions():
     def is_good(x):
         assume(x > 5)
@@ -189,8 +173,7 @@ def test_can_find_short_strings():
 
 def test_stops_loop_pretty_quickly():
     with pytest.raises(Unfalsifiable):
-        with timeout(5):
-            falsify(lambda x: x == x, int)
+        falsify(lambda x: x == x, int)
 
 def test_good_errors_on_bad_values():
     some_string = "I am the very model of a modern major general"
