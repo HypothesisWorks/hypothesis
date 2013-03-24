@@ -49,7 +49,17 @@ def nice_string(xs, history=None):
     try:
         return xs.__name__
     except AttributeError:
+        pass
+
+    try:
+        d = xs.__dict__
+    except AttributeError:
         return repr(xs)
+
+    return "%s(%s)" % (
+        xs.__class__.__name__,
+        ', '.join(["%s=%s" % (k, nice_string(v, history)) for k, v in d.items()])
+    )
 
 class SearchStrategy(object):
     def __init__(   self,

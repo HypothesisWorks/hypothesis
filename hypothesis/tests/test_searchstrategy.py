@@ -68,3 +68,45 @@ def test_named_tuples_always_produce_named_tuples():
 
     for x in s.simplify(Litter(100,100)):
         assert isinstance(x, Litter)
+
+def test_strategy_repr_handles_dicts():
+    s = repr(strategy({"foo" : int, "bar": str}))
+    assert "foo" in s
+    assert "bar" in s
+    assert "int" in s
+    assert "str" in s
+
+def test_strategy_repr_handles_tuples():
+    s = repr(strategy((str, str)))
+    assert "(str, str)" in s
+
+def test_strategy_repr_handles_bools():
+    s = repr(strategy(bool))
+    assert "(bool)" in s
+
+class X(object):
+    def __init__(self, x):
+        self.x = x
+
+    def __repr__(self):
+        return "X(%s)" % str(self.x)
+
+@ss.strategy_for_instances(X)
+class XStrategy(ss.MappedSearchStrategy):
+    def __init__(self,strategies,descriptor):
+        ss.SearchStrategy.__init__(self,strategies,descriptor)
+        self.mapped_strategy = strategies.strategy(descriptor.x)
+
+    def pack(self,x):
+        return Foo(x)
+
+    def unpack(self,x):
+        return x.x
+
+def test_strategy_repr_handles_custom_types():
+    assert "X(x=str)" in repr(ss.SearchStrategies().strategy(X(str)))
+
+def test_strategy_repr_handles_recursion():
+    x = [str]
+    x.append(x)
+    assert "str" in repr(strategy(x))
