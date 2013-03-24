@@ -214,8 +214,8 @@ broken, but proceed with caution.
 This version of hypothesis has been tested using Python series 2.6, 2.7,
 3.2, 3.3 and pypy.  Builds are checked with `travis`_:
 
-.. _travis: https://travis-ci.org/DRMaciver/hypothesis
+.. _travis: https://travis-ci.org/DRMacIver/hypothesis
 
-.. image:: https://travis-ci.org/DRMaciver/hypothesis.png?branch=master
-   :target: https://travis-ci.org/DRMaciver/hypothesis
+.. image:: https://travis-ci.org/DRMacIver/hypothesis.png?branch=master
+   :target: https://travis-ci.org/DRMacIver/hypothesis
 
