@@ -70,7 +70,9 @@ class TestRun(object):
             return TestRun(self.cls,results)
                 
     def __eq__(self,that):
-        return self.cls == that.cls and self.steps == that.steps
+        return (isinstance(that, TestRun) and 
+                self.cls == that.cls and 
+                self.steps == that.steps)
 
     def __hash__(self):
         # Where we want to hash this we want to rely on Tracker's logic for
