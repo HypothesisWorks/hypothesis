@@ -19,6 +19,3 @@ class Flags(object):
         for f in flags:
             x.remove(f)
         return Flags(x)
-
-    def clone(self):
-        return Flags(self.flags)
