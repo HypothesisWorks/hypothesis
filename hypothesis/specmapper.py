@@ -36,6 +36,9 @@ class SpecificationMapper(object):
       if self is self.default():
         return None
       return self.default()
+
+    def cache_specification_for_descriptor(self, descriptor, spec):
+        self.__descriptor_cache[HashItAnyway(descriptor)] = spec
     
     def define_specification_for(self, value, specification):
         self.value_mappers.setdefault(value,[]).append(specification)

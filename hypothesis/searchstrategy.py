@@ -26,8 +26,8 @@ def strategy_for_instances(typ):
     return accept_function
 
 class SearchStrategies(SpecificationMapper):
-    def strategy(self, *args, **kwargs):
-        return self.specification_for(*args, **kwargs)
+    def strategy(self, descriptor, **kwargs):
+        return self.specification_for(descriptor, **kwargs)
 
     def missing_specification(self, descriptor):
         if isinstance(descriptor,SearchStrategy):
@@ -56,6 +56,7 @@ class SearchStrategy(object):
                     strategies,
                     descriptor):
         self.descriptor = descriptor
+        strategies.cache_specification_for_descriptor(descriptor, self)
 
     def __repr__(self):
         return "%s(%s)" % (self.__class__.__name__, nice_string(self.descriptor))
