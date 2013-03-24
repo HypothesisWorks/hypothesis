@@ -18,9 +18,16 @@ class HashItAnyway(object):
         self.h = hash_everything(wrapped)
 
     def __eq__(self, other): 
-        return isinstance(other,HashItAnyway) and self.wrapped == other.wrapped
+        return (isinstance(other,HashItAnyway) and
+                self.wrapped.__class__ == other.wrapped.__class__ and
+                self.wrapped == other.wrapped)
+
+    def __ne__(self,other):
+        return not(self == other)
+
 
     def __hash__(self):
         return self.h
 
-
+    def __repr__(self):
+        return "HashItAnyway(%s)" % repr(self.wrapped)

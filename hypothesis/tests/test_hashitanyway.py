@@ -1,11 +1,12 @@
 from hypothesis.hashitanyway import HashItAnyway
+from collections import namedtuple
 
 def hia(x):
     return HashItAnyway(x)
 
 def test_respects_equality_of_ints():
     assert hia(1) == hia(1)
-    assert hia(1) != hia(1)
+    assert hia(1) != hia(2)
 
 def test_respects_equality_of_lists_of_ints():
     assert hia([1,1]) == hia([1,1])
@@ -25,10 +26,15 @@ def test_hashes_lists_deterministically():
 def test_works_correctly_as_a_dict_key():
     k1 = hia([int,str]) 
     k2 = hia([int,str]) 
-
     d = {}
     d[k1]  = "hi"
     assert d[k2] == "hi"
     d[k2] = "bye"
     assert d[k1] == "bye"
     assert len(d) == 1
+
+Hi = namedtuple("Hi", ("a", "b"))
+
+def test_should_regard_named_tuples_as_distinct_from_unnamed():
+    assert Hi(1,2) == (1,2)
+    assert hia(Hi(1,2)) != hia((1,2))
