@@ -5,4 +5,5 @@ v0.0.4  13/03/2013 -- No changes except that I checked in a failing test case fo
 v0.0.5  13/03/2013 -- No changes except trying to fix packaging
 v0.1.0  23/03/2013 -- Introduce stateful testing. Massive rewrite of internals to add flags and strategies.
 v0.1.1  24/03/2013 -- Python 3.x support via 2to3. Use new style classes (oops). 
+v0.1.2  24/03/2013 -- Bugfix: Stateful testing was not minimizing correctly and could throw exceptions. Features: Better support for recursive strategies. Support for named tuples. Performance: Much faster integer generation.
 
