@@ -34,3 +34,7 @@ def test_can_disable_flags():
     flags2 = flags.with_disabled("foo")
     assert not flags2.enabled("foo")
 
+def test_str_contains_flags():
+    assert "foo" in str(Flags(["foo"]))
+    assert "foo" in str(Flags(["foo", "bar"]))
+    assert "bar" in str(Flags(["foo", "bar"]))
