@@ -170,3 +170,17 @@ def test_can_override_handlers_for_supertypes():
 
     assert s.specification_for((1,2)) == 3
     assert s.specification_for(Litter(2,2)) == 2
+
+def test_can_handle_large_numbers_of_instance_mappers():
+    def f(s,x): return str(x)
+
+    s = SpecificationMapper()
+    s.define_specification_for_instances(tuple, f)
+    s.define_specification_for_instances(Litter, f)
+    s.define_specification_for_instances(list, f)
+    s.define_specification_for_instances(set, f)
+    s.define_specification_for_instances(str, f)
+    s.define_specification_for_instances(int, f)
+
+    assert s.specification_for((1,1)) == "(1, 1)"
+    

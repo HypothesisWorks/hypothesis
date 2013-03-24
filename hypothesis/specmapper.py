@@ -112,8 +112,8 @@ class ClassSorter(object):
     def __lt__(self, that):
         if self.cls == that.cls: return False
         elif issubclass(self.cls, that.cls): return True
-        elif issubclass(that.clls, self.cls): return False
-        else: return self.__name__ < that.__name__ 
+        elif issubclass(that.cls, self.cls): return False
+        else: return self.cls.__name__ < that.cls.__name__ 
 
 def typekey(x):
     try:
