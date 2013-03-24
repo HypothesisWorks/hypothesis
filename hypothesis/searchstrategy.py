@@ -183,7 +183,7 @@ class IntStrategy(SearchStrategy):
             for y in self.simplify(-x): yield -y
         elif x > 0:
             #FIXME: This is a stupid way to do it
-            seen = {0}
+            seen = set((0,))
             yield 0
             max_not_seen = x - 1
             while max_not_seen > 0:
