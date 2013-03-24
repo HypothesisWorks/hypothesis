@@ -144,3 +144,13 @@ def test_defining_new_handlers_resets_cache():
     assert y is not x
     assert isinstance(y, Bar)
 
+def test_cache_correctly_handles_inheritance():
+    s = SpecificationMapper()
+    s.define_specification_for_instances(list, lambda s, d: [s.specification_for(d[0])] )
+    t = s.new_child_mapper()
+    t.define_specification_for_instances(str, lambda *_: Foo())
+
+    x = t.specification_for("foo")
+    y = t.specification_for(["foo"])[0]
+    assert x is y
+
