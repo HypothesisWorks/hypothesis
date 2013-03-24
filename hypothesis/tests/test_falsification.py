@@ -1,6 +1,6 @@
 from hypothesis.verifier import falsify, Unfalsifiable,assume, Verifier
 from hypothesis.specmapper import MissingSpecification
-from hypothesis.searchstrategy import *
+from hypothesis.searchstrategy import SearchStrategy,strategy_for, SearchStrategies, one_of
 from contextlib import contextmanager
 import random
 import pytest
@@ -197,89 +197,3 @@ def test_can_falsify_bools():
 
 def test_can_falsify_empty_tuples():
     assert falsify(lambda x: False, ())[0] == ()
-
-
-class BinaryTree(object):
-    pass
-
-class Leaf(BinaryTree):
-    def __init__(self, label):
-        self.label = label
-
-    def depth(self):
-        return 0
-
-    def breadth(self):
-        return 1
-
-    def __eq__(self, that):
-        return isinstance(that, Leaf) and self.label == that.label
-
-    def __hash__(self):
-        return hash(self.label)
-
-class Split(BinaryTree):
-    def __init__(self,left,right):
-        self.left = left
-        self.right = right
-
-    def depth(self):
-        return 1 + max(self.left.depth(), self.right.depth())
-
-    def breadth(self):
-        return self.left.breadth() + self.right.breadth()
-
-    def __eq__(self, that):
-        return isinstance(that, Split) and that.left == self.left and that.right == self.right
-
-    def __hash__(self):
-        return hash(self.left) ^ hash(self.right)
-
-@strategy_for(Leaf)
-class LeafStrategy(MappedSearchStrategy):
-    def __init__(   self,
-                    strategies,
-                    descriptor,
-                    **kwargs):
-        SearchStrategy.__init__(self, strategies, descriptor,**kwargs)
-        self.mapped_strategy = strategies.strategy(int)
-
-    def pack(self, x):
-        return Leaf(x)
-    def unpack(self,x):
-        return x.label
-    
-@strategy_for(Split)
-class SplitStrategy(MappedSearchStrategy):
-    def __init__(   self,
-                    strategies,
-                    descriptor,
-                    **kwargs):
-        SearchStrategy.__init__(self, strategies, descriptor,**kwargs)
-        self.mapped_strategy = strategies.strategy((BinaryTree, BinaryTree))
-                       
-    def pack(self, x):
-        return Split(*x)
-    def unpack(self,x):
-        return (x.left, x.right)
-
-@strategy_for(BinaryTree)
-class BinaryTreeStrategy(MappedSearchStrategy):
-    def __init__(   self,
-                    strategies,
-                    descriptor,
-                    **kwargs):
-        SearchStrategy.__init__(self, strategies, descriptor,**kwargs)
-        self.mapped_strategy = strategies.strategy(one_of([Leaf, Split]))
-       
-    def child_strategies(self):
-        return ()
- 
-    def pack(self,x):
-        return x
-
-    def unpack(self,x):
-        return x
-
-def test_can_produce_deep_binary_trees():
-    falsify(lambda x: x.depth() <= 2, BinaryTree)
