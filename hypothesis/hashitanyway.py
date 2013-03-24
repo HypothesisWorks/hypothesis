@@ -2,12 +2,13 @@ def hash_everything(l):
     try:
         return hash(l)
     except TypeError:
+        h = hash(l.__class__)
+        
         try:
             xs = iter(l)
         except TypeError:
-            return 0
+            return h
 
-        h = 0
         for x in xs:
             h = h ^ hash_everything(x)
         return h
