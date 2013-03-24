@@ -1,7 +1,7 @@
 def hash_everything(l,stack=None):
     stack = stack or []
     starting_length = len(stack)
-    if l in stack:
+    if any((x is l for x in stack)):
         return 0
     stack.append(l)
     try:
