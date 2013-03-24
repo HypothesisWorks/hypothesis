@@ -97,7 +97,7 @@ class SearchStrategy(object):
 
     @abstractmethod
     def produce(self, size, flags):
-        pass
+        pass # pragma: no coverass  # pragma: no cover
 
     def complexity(self,value):
         return 0
@@ -129,15 +129,9 @@ def geometric_probability_for_entropy(desired_entropy):
         return entropy_to_geom_cache[desired_entropy]
 
     def h(p):
-        if p <= 0:
-            return float('inf')
-        if p >= 1:
-            return 0
-        try:
-            q = 1 - p
-            return -(q * log(q) + p * log(p))/(log(2) * p)
-        except ValueError:
-            return 0.0
+        q = 1 - p
+        return -(q * log(q) + p * log(p))/(log(2) * p)
+
     lower = 0.0
     upper = 1.0
     for _ in xrange(max(int(desired_entropy * 2), 64)):
@@ -156,9 +150,6 @@ def arbitrary_int():
 def geometric_int(p):
     if p >= 1: return 0
     denom = log1p(- p)
-    if denom >= 0:
-        return arbitrary_int
-
     return int(log(rand()) / denom)
 
 @strategy_for(int)
@@ -377,11 +368,11 @@ class ListStrategy(SearchStrategy):
 class MappedSearchStrategy(SearchStrategy):
     @abstractmethod
     def pack(self, x):
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def unpack(self, x):
-        pass
+        pass  # pragma: no cover
 
     def child_strategies(self):
         return (self.mapped_strategy,)
