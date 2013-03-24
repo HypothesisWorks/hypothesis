@@ -185,6 +185,9 @@ def test_good_errors_on_bad_values():
 def test_can_falsify_bools():
     assert falsify(lambda x: x, bool)[0] == False
 
+def test_can_falsify_lists_of_bools():
+    falsify(lambda x : len([y for y in x if not y]) <= 5, [bool])
+
 def test_can_falsify_empty_tuples():
     assert falsify(lambda x: False, ())[0] == ()
 

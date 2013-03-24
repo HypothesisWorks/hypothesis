@@ -106,6 +106,17 @@ class XStrategy(ss.MappedSearchStrategy):
 def test_strategy_repr_handles_custom_types():
     assert "X(x=str)" in repr(ss.SearchStrategies().strategy(X(str)))
 
+class TrivialStrategy(ss.SearchStrategy):
+    def produce(size, flags):
+        return 0
+
+def test_strategy_repr_handles_instances_without_dicts():
+    strats = ss.SearchStrategies()
+    strats.define_specification_for_instances(int, TrivialStrategy)
+    
+    assert repr(strats.strategy(42)) == "TrivialStrategy(42)"
+    
+
 def test_strategy_repr_handles_recursion():
     x = [str]
     x.append(x)
