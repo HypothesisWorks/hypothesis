@@ -1,6 +1,7 @@
 import hypothesis.searchstrategy as ss
 from hypothesis.flags import Flags
 from hypothesis.tracker import Tracker
+from collections import namedtuple
 
 def strategy(*args,**kwargs):
     return ss.SearchStrategies().strategy(*args,**kwargs)
@@ -57,3 +58,13 @@ def test_just_works():
     assert s.produce(10,Flags()) == "giving"
     assert s.simplify_such_that("giving", lambda _ : True) == "giving"
 
+
+Litter = namedtuple("Litter", ("kitten1", "kitten2"))
+def test_named_tuples_always_produce_named_tuples():
+    s = strategy(Litter(int,int))
+
+    for i in xrange(100):
+        assert isinstance(s.produce(i, Flags()), Litter)
+
+    for x in s.simplify(Litter(100,100)):
+        assert isinstance(x, Litter)

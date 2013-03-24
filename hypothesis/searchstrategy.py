@@ -298,7 +298,7 @@ class TupleStrategy(SearchStrategy):
             for s in self.element_strategies[i].simplify(x[i]):
                 z = list(x)
                 z[i] = s
-                yield tuple(z)
+                yield self.newtuple(z)
         for i in xrange(0, len(x)):
             for j in xrange(0, len(x)):
                 if i == j: continue
@@ -307,7 +307,7 @@ class TupleStrategy(SearchStrategy):
                         z = list(x)
                         z[i] = s
                         z[j] = t
-                        yield tuple(z)
+                        yield self.newtuple(z)
 
 
 @strategy_for_instances(list)
