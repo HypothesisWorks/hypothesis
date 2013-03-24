@@ -276,9 +276,15 @@ class TupleStrategy(SearchStrategy):
     def complexity(self, xs):
         return sum((s.complexity(x) for s,x in zip(self.element_strategies, xs)))
 
+    def newtuple(self, xs):
+        if self.descriptor.__class__ == tuple:
+            return tuple(xs)
+        else:
+            return self.descriptor.__class__(*xs)
+
     def produce(self, size, flags):
         es = self.element_strategies
-        return tuple([g.produce(float(size)/len(es),flags) for g in es])
+        return self.newtuple([g.produce(float(size)/len(es),flags) for g in es])
 
     def simplify(self, x):
         """

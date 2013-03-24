@@ -7,6 +7,7 @@ from hypothesis.searchstrategy import (
     SearchStrategies,
     strategy_for
 )
+from collections import namedtuple
 from contextlib import contextmanager
 import random
 import pytest
@@ -289,3 +290,9 @@ class BinaryTreeStrategy(MappedSearchStrategy):
 
 def test_can_produce_deep_binary_trees():
     falsify(lambda x: x.depth() <= 2, BinaryTree)
+
+Litter = namedtuple("Litter", ("kitten1", "kitten2"))
+def test_can_falsify_named_tuples():
+    pair = falsify(lambda x: x.kitten1 < x.kitten2, Litter(str,str))[0]
+    assert isinstance(pair,Litter)
+    assert pair == Litter("","")
