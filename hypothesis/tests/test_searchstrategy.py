@@ -56,3 +56,4 @@ def test_just_works():
     s = strategy(ss.just("giving"))
     assert s.produce(10,Flags()) == "giving"
     assert s.simplify_such_that("giving", lambda _ : True) == "giving"
+
