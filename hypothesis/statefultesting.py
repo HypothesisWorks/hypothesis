@@ -88,16 +88,6 @@ class TestRun(object):
     def __getitem__(self, i):
         return self.steps[i]
 
-def simplify_test_run(simplifiers, test_run):
-    pruned = test_run.prune()
-    if pruned:
-        yield pruned
-    for x in simplifiers.simplify(test_run.steps):
-        yield TestRun(test_run.cls, x)
-    methods =  tuple((s[0] for s in test_run))
-    arguments = tuple((s[1] for s in test_run))
-    for sargs in simplifiers.simplify(arguments):
-        yield  TestRun(test_run.cls, zip(methods, sargs))
 
 class StatefulTest(object):
     @classmethod
@@ -156,4 +146,12 @@ class StatefulStrategy(MappedSearchStrategy):
     def unpack(self, x):
         return x.steps
         
+    def simplify(self, x):
+        pruned = x.prune()
+        if pruned:
+            yield pruned
+
+        for y in MappedSearchStrategy.simplify(self, x):
+            yield y
+    
 SearchStrategies.default().define_specification_for_classes(StatefulStrategy, subclasses_of=StatefulTest)
