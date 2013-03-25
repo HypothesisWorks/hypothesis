@@ -61,7 +61,7 @@ class TestRun(object):
                 results.append(s)
             except PreconditionNotMet:
                 continue
-            except:
+            except Exception:
                 results.append(s)
                 break
         if len(results) == len(self): 
