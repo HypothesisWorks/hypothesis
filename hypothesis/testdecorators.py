@@ -18,7 +18,7 @@ def given(*generator_arguments,**kwargs):
                     return True
                 except UnsatisfiedAssumption as e:
                     raise e
-                except:
+                except Exception:
                     return False
 
             try:
