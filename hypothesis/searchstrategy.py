@@ -70,7 +70,24 @@ class SearchStrategy(object):
 
     def __repr__(self):
         return "%s(%s)" % (self.__class__.__name__, nice_string(self.descriptor))
+
+    def may_call_self_recursively(self):
+        if not hasattr(self, '__may_call_self_recursively'):
+            self.__may_call_self_recursively = any((self is x for x in self.all_child_strategies()))
+        return self.__may_call_self_recursively
+
+    def all_child_strategies(self):
+        stack = [self]
+        seen = []
         
+        while stack:
+            head = stack.pop()
+            for c in head.child_strategies():
+                if any((s is c for s in seen)):
+                    continue
+                yield c
+                stack.append(c)
+                seen.append(c)
 
     def flags(self):
         r = set()
@@ -339,7 +356,7 @@ class ListStrategy(SearchStrategy):
         le = self.entropy_allocated_for_length(size)
         lp = geometric_probability_for_entropy(le)
         length = geometric_int(lp)
-        empty_allowed = flags.enabled('allow_empty_lists')
+        empty_allowed = self.may_call_self_recursively() or flags.enabled('allow_empty_lists')
         if not empty_allowed:
             length += 1
 
@@ -483,7 +500,6 @@ class FixedKeysDictStrategy(SearchStrategy):
                 yield y
 
 OneOf = namedtuple('OneOf', 'elements')
-
 
 def one_of(args):
     args = list(args)

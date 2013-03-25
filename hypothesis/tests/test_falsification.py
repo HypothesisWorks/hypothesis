@@ -157,7 +157,6 @@ def test_can_produce_long_mixed_lists_with_only_a_subset():
 def test_can_falsify_alternating_types():
     falsify(lambda x: isinstance(x, int), one_of([int, str]))[0] == ""
 
-@pytest.mark.skipif("platform.python_implementation() == 'PyPy'")
 def test_can_go_deep_into_recursive_descriptors():
     foo = [str]
     foo.append(foo)
