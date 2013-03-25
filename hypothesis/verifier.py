@@ -1,6 +1,5 @@
 from hypothesis.searchstrategy import SearchStrategy, SearchStrategies
 from hypothesis.flags import Flags
-
 from itertools import islice
 from random import random
 
@@ -26,6 +25,7 @@ class Verifier(object):
     def falsify(self, hypothesis, *argument_types):
         search_strategy = self.search_strategies.specification_for(argument_types)
         flags = None
+        flag_blacklist = set()
 
         def falsifies(args):
             try:
@@ -39,7 +39,13 @@ class Verifier(object):
         falsifying_examples = []
 
         def look_for_a_falsifying_example(size):
-            x = search_strategy.produce(size, flags)
+            try:
+                x = search_strategy.produce(size, flags)
+            except:
+                if len(flag_blacklist) > 5: raise
+                flag_blacklist.add(flags)
+                return False
+
             if falsifies(x): 
                 falsifying_examples.append(x)
                 return True
@@ -56,7 +62,11 @@ class Verifier(object):
                 # flags, those are the flags we'll be using for the rest of the
                 # run
                 p = float(i + 1)/(rtf + 1)
-                flags = Flags([x for x in search_strategy.flags().flags if random() <= p])
+                def generate_flags():
+                    return Flags([x for x in search_strategy.flags().flags if random() <= p])
+                flags = generate_flags() 
+                while flags in flag_blacklist:
+                    flags = generate_flags()
                 look_for_a_falsifying_example(temperature)
                 if falsifying_examples:
                     break

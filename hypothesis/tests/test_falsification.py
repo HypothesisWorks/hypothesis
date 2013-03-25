@@ -157,6 +157,15 @@ def test_can_produce_long_mixed_lists_with_only_a_subset():
 def test_can_falsify_alternating_types():
     falsify(lambda x: isinstance(x, int), one_of([int, str]))[0] == ""
 
+def test_can_go_deep_into_recursive_descriptors():
+    foo = [str]
+    foo.append(foo)
+    def depth(x):
+        if isinstance(x, str): return 1
+        elif not x: return 0
+        else: return max(map(depth, x)) + 1
+    falsify(lambda x: depth(x) <= 5, foo)
+
 def test_can_falsify_string_matching():
     # Note that just doing a match("foo",x) will never find a good solution
     # because the state space is too large

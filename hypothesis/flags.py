@@ -5,6 +5,15 @@ class Flags(object):
     def __repr__(self):
         return "Flags(%s)" % ', '.join(map(str,self.flags))
 
+    def __hash__(self):
+        return hash(self.flags)
+
+    def __eq__(self, other):
+        return isinstance(other, Flags) and self.flags == other.flags
+
+    def __ne__(self, other):
+        return not (self == other)
+
     def enabled(self, flag):
         return flag in self.flags
 

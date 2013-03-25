@@ -125,12 +125,15 @@ class SearchStrategy(object):
 
 entropy_to_geom_cache = {}
 def geometric_probability_for_entropy(desired_entropy):
+    if desired_entropy <= 1e-8:
+        return 0.0
+
     if desired_entropy in entropy_to_geom_cache:
         return entropy_to_geom_cache[desired_entropy]
 
     def h(p):
         q = 1 - p
-        return -(q * log(q) + p * log(p))/(log(2) * p)
+        return -(q * log1p(-p) + p * log(p))/(log(2) * p)
 
     lower = 0.0
     upper = 1.0
@@ -148,7 +151,8 @@ def arbitrary_int():
     return random.randint(-2**32,2**32)
         
 def geometric_int(p):
-    if p >= 1: return 0
+    if p <= 0: return arbitrary_int()
+    elif p >= 1: return 0
     denom = log1p(- p)
     return int(log(rand()) / denom)
 
@@ -164,7 +168,7 @@ class IntStrategy(SearchStrategy):
     def produce(self, size, flags):
         can_be_negative = flags.enabled("allow_negative_ints") and size > 1
       
-        if size <= 0:
+        if size <= 1e-8:
             return 0
      
         if size >= 32:
