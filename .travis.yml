@@ -13,4 +13,4 @@ before_script:
   - pip install --use-mirrors pytest pytest-timeout
 
 script:
-  - py.test
+  - py.test -v hypothesis
