@@ -71,3 +71,9 @@ class TestCases(object):
     @given(float,float)
     def test_float_addition_cancels(self,x,y):
         assert x + (y - x) == y
+
+@fails()
+@given(int, name=str)
+def test_can_be_given_keyword_args(x, name):
+    assume(x > 0)
+    assert len(name) < x
