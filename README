@@ -168,21 +168,21 @@ How does hypothesis work?
 The core object of hypothesis is the SearchStrategy. It knows how to explore a 
 state space, and has the following operations.
 
-  * produce(size,flags). Generate a random element of the state space subject to the flags provided.
-  * flags(). Return a set of flags that may be used to control the production of elements.
-  * could_have_produced(element). Say whether it's plausible that this element was produced by this strategy.
-  * complexity(element). Return a float saying roughly how "complex" this element is. There's no meaning attached to this except that hypothesis will try to generate elements of lower complexity.
-  * simplify(element). Return a generator over a simplified versions of this element.
+* produce(size,flags). Generate a random element of the state space subject to the flags provided.
+* flags(). Return a set of flags that may be used to control the production of elements.
+* could_have_produced(element). Say whether it's plausible that this element was produced by this strategy.
+* complexity(element). Return a float saying roughly how "complex" this element is. There's no meaning attached to this except that hypothesis will try to generate elements of lower complexity.
+* simplify(element). Return a generator over a simplified versions of this element.
 
 These satisfy the following invariants:
 
-  * produce(size,flags) should produce a distribution with about 'size' bits of entropy.
-  * Any element produced by produce must return true when passed to could_have_produced
-  * Any element for which could_have_produced returns true must not throw an exception when passed to complexity or simplify
-  * The expected complexity of produce(size) should be monotonic increasing in size
-  * for y in simplify(x), complexity(y) <= complexity(x)
-  * simplify(x) should return a sequence of unique values
-  * There shold be no chain x_1, x_2, ..., x_n with x_{i+1} in simplify(x_i) and x_1 in simplify(x_n). 
+* produce(size,flags) should produce a distribution with about 'size' bits of entropy.
+* Any element produced by produce must return true when passed to could_have_produced
+* Any element for which could_have_produced returns true must not throw an exception when passed to complexity or simplify
+* The expected complexity of produce(size) should be monotonic increasing in size
+* for y in simplify(x), complexity(y) <= complexity(x)
+* simplify(x) should return a sequence of unique values
+* There shold be no chain x_1, x_2, ..., x_n with x_{i+1} in simplify(x_i) and x_1 in simplify(x_n). 
 
 These are used to explore the state space. produce is called with a number of sizes and flags to
 generate examples that falsify the hypothesis. The lowest complexity of these examples is then

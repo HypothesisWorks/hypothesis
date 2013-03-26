@@ -98,7 +98,7 @@ class XStrategy(ss.MappedSearchStrategy):
         self.mapped_strategy = strategies.strategy(descriptor.x)
 
     def pack(self,x):
-        return Foo(x)
+        return X(x)
 
     def unpack(self,x):
         return x.x
