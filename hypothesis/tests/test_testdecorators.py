@@ -4,21 +4,19 @@ from functools import wraps
 
 import pytest
 
-def fails(ex=AssertionError):
-    def invert_test(f):
-        @wraps(f)
-        def inverted_test(*arguments,**kwargs):
-            with pytest.raises(ex):
-                f(*arguments,**kwargs)
-        return inverted_test
-    return invert_test
+def fails(f):
+    @wraps(f)
+    def inverted_test(*arguments,**kwargs):
+        with pytest.raises(AssertionError):
+            f(*arguments,**kwargs)
+    return inverted_test
         
 @given(int,int)
 def test_int_addition_is_commutative(x,y):
     assert x + y == y + x
 
 
-@fails()
+@fails
 @given(str,str)
 def test_str_addition_is_commutative(x,y):
     assert x + y == y + x
@@ -28,7 +26,7 @@ def test_str_addition_is_commutative(x,y):
 def test_int_addition_is_associative(x,y,z):
     assert x + (y + z) == (x + y) + z
 
-@fails()
+@fails
 @given(float,float,float)
 def test_float_addition_is_associative(x,y,z):
     assert x + (y + z) == (x + y) + z
@@ -37,7 +35,7 @@ def test_float_addition_is_associative(x,y,z):
 def test_reversing_preserves_integer_addition(xs):
     assert sum(xs) == sum(reversed(xs))
 
-@fails()
+@fails
 @given([float])
 def test_reversing_does_not_preserve_float_addition(xs):
     assert sum(xs) == sum(reversed(xs))
@@ -62,17 +60,17 @@ class TestCases(object):
     def test_abs_non_negative(self,x):
         assert abs(x) >= 0
 
-    @fails()
+    @fails
     @given(int)
     def test_int_is_always_negative(self,x):
         assert x < 0
 
-    @fails()
+    @fails
     @given(float,float)
     def test_float_addition_cancels(self,x,y):
         assert x + (y - x) == y
 
-@fails()
+@fails
 @given(int, name=str)
 def test_can_be_given_keyword_args(x, name):
     assume(x > 0)
