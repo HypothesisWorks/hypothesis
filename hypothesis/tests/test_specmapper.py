@@ -110,7 +110,7 @@ def test_can_call_previous_in_overridden_specifications():
 class Foo(object):
     pass
 
-class Bar(Foo):
+class Fooc(Foo):
     pass
 
 class Baz(object):
@@ -126,7 +126,7 @@ def test_can_define_class_specifications_for_subclasses():
     s.define_specification_for_classes(const(1))
     s.define_specification_for_classes(const(2), subclasses_of=Foo)
     assert s.specification_for(Foo) == 2
-    assert s.specification_for(Bar) == 2
+    assert s.specification_for(Fooc) == 2
     assert s.specification_for(Baz) == 1
 
 def test_multiple_calls_return_same_value():
@@ -140,10 +140,10 @@ def test_defining_new_handlers_resets_cache():
     s = SpecificationMapper()
     s.define_specification_for_instances(str, lambda *_: Foo())
     x = s.specification_for("foo")
-    s.define_specification_for_instances(str, lambda *_: Bar())
+    s.define_specification_for_instances(str, lambda *_: Fooc())
     y = s.specification_for("foo")
     assert y is not x
-    assert isinstance(y, Bar)
+    assert isinstance(y, Fooc)
 
 def test_cache_correctly_handles_inheritance():
     s = SpecificationMapper()

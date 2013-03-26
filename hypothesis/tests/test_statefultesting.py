@@ -1,6 +1,10 @@
-from hypothesis.statefultesting import *
-from hypothesis.verifier import assume
-
+from hypothesis.statefultesting import (
+    StatefulTest, 
+    step, 
+    requires,
+    precondition,
+    integrity_test
+)
 
 class Foo(StatefulTest):
     @integrity_test

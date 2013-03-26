@@ -8,11 +8,8 @@ from hypothesis.searchstrategy import (
     strategy_for
 )
 from collections import namedtuple
-from contextlib import contextmanager
-import random
 import pytest
 import re
-import platform
 
 def test_can_make_assumptions():
     def is_good(x):

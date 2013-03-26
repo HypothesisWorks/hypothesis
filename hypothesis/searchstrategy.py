@@ -45,7 +45,7 @@ def nice_string(xs, history=None):
     if isinstance(xs, tuple):
         return '(' + ', '.join(map(recurse, xs)) + ')'
     if isinstance(xs, dict):
-        return '{' + ', '.join((repr(k) + ':' + recurse(v) for k,v in xs.items())) + '}'
+        return '{' + ', '.join((repr(k1) + ':' + recurse(v1) for k1,v1 in xs.items())) + '}'
     try:
         return xs.__name__
     except AttributeError:
@@ -58,7 +58,7 @@ def nice_string(xs, history=None):
 
     return "%s(%s)" % (
         xs.__class__.__name__,
-        ', '.join(["%s=%s" % (k, nice_string(v, history)) for k, v in d.items()])
+        ', '.join(["%s=%s" % (k2, nice_string(v2, history)) for k2, v2 in d.items()])
     )
 
 class SearchStrategy(object):
