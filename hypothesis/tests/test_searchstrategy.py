@@ -116,11 +116,6 @@ def test_strategy_repr_handles_instances_without_dicts():
     
     assert repr(strats.strategy(42)) == "TrivialStrategy(42)"
     
-def test_strategy_repr_handles_recursion():
-    x = [str]
-    x.append(x)
-    assert "str" in repr(strategy(x))
-
 def test_returns_all_child_strategies_from_list():
     strat = ss.SearchStrategies().strategy([int,[str,float]])
 
@@ -135,26 +130,3 @@ def test_returns_no_duplicate_child_strategies():
     strat = ss.SearchStrategies().strategy([int,[int,float]])
     children = [s.descriptor for s in strat.all_child_strategies()]
     assert len([x for x in children if x == int]) == 1
-
-def test_normal_list_does_not_call_self_recursively():
-    strat = ss.SearchStrategies().strategy([int,[int,float]])
-    assert not strat.may_call_self_recursively()
-
-def test_self_list_does_not_call_self_recursively():
-    x = []
-    x.append(x)
-    strat = ss.SearchStrategies().strategy(x)
-    assert strat.may_call_self_recursively()
-
-def test_recursive_lists_always_permit_empty_lists():
-    x = []
-    x.append(x)
-    strat = ss.SearchStrategies().strategy(x)
-
-    for _ in xrange(100):
-        x = strat.produce(100, Flags())
-        if not x:
-            break
-    else:
-        assert(False)
-

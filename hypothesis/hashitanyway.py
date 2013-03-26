@@ -1,9 +1,4 @@
-def hash_everything(l,stack=None):
-    stack = stack or []
-    starting_length = len(stack)
-    if any((x is l for x in stack)):
-        return 0
-    stack.append(l)
+def hash_everything(l):
     try:
         return hash(l)
     except TypeError:
@@ -15,11 +10,8 @@ def hash_everything(l,stack=None):
             return h
 
         for x in xs:
-            h = h ^ hash_everything(x, stack)
+            h = h ^ hash_everything(x)
         return h
-    finally:
-        stack.pop()
-        assert starting_length == len(stack)
 
 class HashItAnyway(object):
     def __init__(self, wrapped):

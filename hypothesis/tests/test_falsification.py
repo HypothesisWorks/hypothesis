@@ -157,14 +157,33 @@ def test_can_produce_long_mixed_lists_with_only_a_subset():
 def test_can_falsify_alternating_types():
     falsify(lambda x: isinstance(x, int), one_of([int, str]))[0] == ""
 
-def test_can_go_deep_into_recursive_descriptors():
-    foo = [str]
-    foo.append(foo)
-    def depth(x):
-        if isinstance(x, str): return 1
-        elif not x: return 0
-        else: return max(map(depth, x)) + 1
-    falsify(lambda x: depth(x) <= 5, foo)
+class HeavilyBranchingTree(object):
+    def __init__(self, children):
+        self.children = children
+
+    def depth(self):
+        if not self.children:
+            return 1
+        else:
+            return 1 + max(map(HeavilyBranchingTree.depth, self.children))
+
+@strategy_for(HeavilyBranchingTree)
+class HeavilyBranchingTreeStrategy(MappedSearchStrategy):
+    def __init__(   self,
+                    strategies,
+                    descriptor,
+                    **kwargs):
+        SearchStrategy.__init__(self, strategies, descriptor,**kwargs)
+        self.mapped_strategy = strategies.strategy([HeavilyBranchingTree])
+
+    def pack(self, x):
+        return HeavilyBranchingTree(x)
+
+    def unpack(self, x):
+        return x.children
+
+def test_can_go_deep_into_recursive_strategies():
+    falsify(lambda x: x.depth() <= 5, HeavilyBranchingTree)
 
 def test_can_falsify_string_matching():
     # Note that just doing a match("foo",x) will never find a good solution

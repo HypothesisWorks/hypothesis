@@ -63,11 +63,3 @@ def test_has_a_sensible_string_representation():
     x = str(hia("kittens"))
     assert "HashItAnyway" in x
     assert "kittens" in x
-
-def test_can_hash_recursive_structures():
-    x = []
-    x.append(x)
-    x = hia(x)
-    d = {}
-    d[x] = 1
-    assert d[x] == 1
