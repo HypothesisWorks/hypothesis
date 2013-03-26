@@ -189,8 +189,8 @@ generate examples that falsify the hypothesis. The lowest complexity of these ex
 taken, then repeatedly simplified until an example is found with no simplification of it falsifying
 the hypothesis. This is taken as the end result.
 
-SearchStrategy objects are produced from a descriptor value (which can be anything) a SearchStrategies 
-object. 
+SearchStrategy objects are produced from a descriptor value (which can be anything) and a SearchStrategies 
+object, which has user definable rules for producing strategies.
 
 So for example you can do
 
