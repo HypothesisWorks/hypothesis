@@ -307,3 +307,9 @@ def test_can_falsify_named_tuples():
     pair = falsify(lambda x: x.kitten1 < x.kitten2, Litter(str,str))[0]
     assert isinstance(pair,Litter)
     assert pair == Litter("","")
+
+def test_can_falsify_complex_numbers():
+    falsify(lambda x: x == (x ** 2) ** 0.5, complex)
+
+    with pytest.raises(Unfalsifiable):
+        falsify(lambda x,y: (x * y).conjugate() == x.conjugate() * y.conjugate(), complex, complex)

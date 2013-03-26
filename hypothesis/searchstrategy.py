@@ -408,6 +408,21 @@ class MappedSearchStrategy(SearchStrategy):
         for y in self.mapped_strategy.simplify(self.unpack(x)):
             yield self.pack(y)
 
+@strategy_for(complex)
+class ComplexStrategy(MappedSearchStrategy):
+    def __init__(   self,
+                    strategies,
+                    descriptor,
+                    **kwargs):
+        SearchStrategy.__init__(self, strategies, descriptor,**kwargs)
+        self.mapped_strategy = strategies.strategy((float,float))
+
+    def pack(self, x):
+        return complex(*x)
+
+    def unpack(self, x):
+        return (x.real, x.imag)
+
 @strategy_for_instances(set)
 class SetStrategy(MappedSearchStrategy):
     def __init__(   self,
