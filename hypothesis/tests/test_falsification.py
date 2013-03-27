@@ -1,4 +1,10 @@
-from hypothesis.verifier import falsify, Unfalsifiable,assume, Verifier
+from hypothesis.verifier import (
+    falsify, 
+    assume, 
+    Unfalsifiable, 
+    Unsatisfiable, 
+    Verifier
+)
 from hypothesis.specmapper import MissingSpecification
 from hypothesis.searchstrategy import (
     SearchStrategy, 
@@ -313,3 +319,7 @@ def test_can_falsify_complex_numbers():
 
     with pytest.raises(Unfalsifiable):
         falsify(lambda x,y: (x * y).conjugate() == x.conjugate() * y.conjugate(), complex, complex)
+
+def test_raises_on_unsatisfiable_assumption():
+    with pytest.raises(Unsatisfiable):
+        falsify(lambda x: assume(False), int)

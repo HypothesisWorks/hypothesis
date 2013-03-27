@@ -11,9 +11,11 @@ class Verifier(object):
                         warming_rate = 0.5,
                         cooling_rate = 0.1,
                         runs_to_explore_flags = 3,
+                        min_satisfying_examples = 5,
                         max_size = 512,
                         max_failed_runs = 10):
         self.search_strategies = search_strategies or SearchStrategies()
+        self.min_satisfying_examples = min_satisfying_examples
         self.starting_size = starting_size
         self.warming_rate = warming_rate
         self.cooling_rate = cooling_rate
@@ -25,13 +27,18 @@ class Verifier(object):
         search_strategy = self.search_strategies.specification_for(argument_types)
         flags = None
         flag_blacklist = set()
+        # TODO: This is a sign that I should be pulling some of this out into
+        # an object.
+        examples_found = [0]
 
         def falsifies(args):
             try:
+                examples_found[0] += 1
                 return not hypothesis(*args)
             except AssertionError:
                 return True
             except UnsatisfiedAssumption:
+                examples_found[0] -= 1
                 return False
 
         temperature = self.starting_size
@@ -73,7 +80,12 @@ class Verifier(object):
                     break
             temperature += self.warming_rate
 
-        if not falsifying_examples: raise Unfalsifiable(hypothesis)
+        if not falsifying_examples:
+            ef = examples_found[0]
+            if ef < self.min_satisfying_examples:
+                raise Unsatisfiable(hypothesis, ef)
+            else:
+                raise Unfalsifiable(hypothesis)
 
         failed_runs = 0
         while temperature > 1 and failed_runs < self.max_failed_runs:
@@ -97,3 +109,7 @@ class UnsatisfiedAssumption(Exception):
 class Unfalsifiable(Exception):
     def __init__(self,hypothesis):
         Exception.__init__(self, "Unable to falsify hypothesis %s"% hypothesis)
+
+class Unsatisfiable(Exception):
+    def __init__(self,hypothesis, examples):
+        Exception.__init__(self, "Unable to satisfy assumptions of hypothesis %s. Only %s examples found "% (hypothesis, str(examples)))
