@@ -26,7 +26,6 @@ class Verifier(object):
     def falsify(self, hypothesis, *argument_types):
         search_strategy = self.search_strategies.specification_for(argument_types)
         flags = None
-        flag_blacklist = set()
         # TODO: This is a sign that I should be pulling some of this out into
         # an object.
         examples_found = [0]
@@ -45,12 +44,7 @@ class Verifier(object):
         falsifying_examples = []
 
         def look_for_a_falsifying_example(size):
-            try:
-                x = search_strategy.produce(size, flags)
-            except:
-                if len(flag_blacklist) > 5: raise
-                flag_blacklist.add(flags)
-                return False
+            x = search_strategy.produce(size, flags)
 
             if falsifies(x): 
                 falsifying_examples.append(x)
@@ -71,8 +65,6 @@ class Verifier(object):
                 def generate_flags():
                     return Flags([x for x in search_strategy.flags().flags if random() <= p])
                 flags = generate_flags() 
-                while flags in flag_blacklist:
-                    flags = generate_flags()
                 look_for_a_falsifying_example(temperature)
                 if falsifying_examples:
                     break
