@@ -1,12 +1,14 @@
-from distutils.core import setup, Command
+from distutils.core import setup
 from setuptools.command.test import test as TestCommand
 import sys
+
 
 class PyTest(TestCommand):
     def finalize_options(self):
         TestCommand.finalize_options(self)
         self.test_args = []
         self.test_suite = True
+
     def run_tests(self):
         import pytest
         errno = pytest.main(self.test_args)
@@ -26,7 +28,7 @@ setup(
     license='LICENSE.txt',
     description='Tools for falsifying hypothesis with random data generation',
     long_description=open('README').read(),
-    tests_require=['pytest','pytest-timeout'],
-    cmdclass = {'test': PyTest},
+    tests_require=['pytest', 'pytest-timeout'],
+    cmdclass={'test': PyTest},
     **extra
 )
