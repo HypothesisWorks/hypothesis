@@ -18,7 +18,7 @@ if sys.version_info >= (3,):
 
 setup(
     name='hypothesis',
-    version='0.1.2',
+    version='0.1.3',
     author='David R. MacIver',
     author_email='david@drmaciver.com',
     packages=['hypothesis'],
