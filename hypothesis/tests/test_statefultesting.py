@@ -56,6 +56,18 @@ class AlwaysBroken(StatefulTest):
 def test_runs_integrity_checks_initially():
     assert len(AlwaysBroken.breaking_example()) == 0
 
+class SubclassAlwaysBroken(AlwaysBroken):
+    pass
+
+class SubclassBrokenCounter(BrokenCounter):
+    pass
+
+def test_subclassing_tests_inherits_steps_and_checks():
+    SubclassAlwaysBroken.breaking_example()
+    SubclassBrokenCounter.breaking_example()
+    
+
+
 class QuicklyBroken(StatefulTest):
     def __init__(self):
         self.value = 0

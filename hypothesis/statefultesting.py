@@ -5,6 +5,8 @@ from hypothesis.searchstrategy import (
         one_of,
 )
 from collections import namedtuple
+from inspect import getmembers
+
 import hypothesis
 
 def step(f):
@@ -102,7 +104,7 @@ class StatefulTest(object):
 
     @classmethod
     def functions_with_attributes(cls, attr):
-        return [v for v in cls.__dict__.values() if hasattr(v, attr)]
+        return [v for _, v in getmembers(cls) if hasattr(v, attr)]
         
     @classmethod
     def breaking_example(cls):
