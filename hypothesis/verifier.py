@@ -120,5 +120,5 @@ class Unsatisfiable(Exception):
         Exception.__init__(
             self,
             ("Unable to satisfy assumptions of hypothesis %s. " +
-             "Only %s examples found) " % (hypothesis, str(examples)))
+             "Only %s examples found ") % (hypothesis, str(examples))
         )
