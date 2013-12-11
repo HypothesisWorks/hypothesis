@@ -21,7 +21,9 @@ def alternating(*args):
     return strategy(ss.one_of(args))
 
 def minimize(s, x):
-    return s.simplify_such_that(x, lambda _: True)
+    for t in s.simplify_such_that(x, lambda _: True):
+        x = t
+    return x
 
 def test_can_minimize_component_types():
     ios = alternating(str, int)
@@ -44,19 +46,23 @@ def assert_no_duplicates_in_simplify(s, x):
     for y in s.simplify(x):
         assert t.track(y) == 1
 
+
 def test_ints_no_duplicates_in_simplify():
     assert_no_duplicates_in_simplify(int, 555)
+
 
 def test_int_lists_no_duplicates_in_simplify():
     assert_no_duplicates_in_simplify([int], [0, 555, 1281])
 
+
 def test_float_lists_no_duplicates_in_simplify():
     assert_no_duplicates_in_simplify([float], [0.5154278802175156, 555.0, 1281.8556018727038])
 
+
 def test_just_works():
     s = strategy(ss.just("giving"))
-    assert s.produce(10,Flags()) == "giving"
-    assert s.simplify_such_that("giving", lambda _ : True) == "giving"
+    assert s.produce(10, Flags()) == "giving"
+    assert list(s.simplify_such_that("giving", lambda _: True)) == ["giving"]
 
 
 Litter = namedtuple("Litter", ("kitten1", "kitten2"))

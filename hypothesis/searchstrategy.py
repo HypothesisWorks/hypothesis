@@ -139,16 +139,18 @@ class SearchStrategy(object):
 
     def simplify_such_that(self, t, f):
         tracker = Tracker()
+        yield t
 
         while True:
             for s in self.simplify(t):
                 if tracker.track(s) > 1:
                     continue
                 if f(s):
+                    yield s
                     t = s
                     break
             else:
-                return t
+                break
 
     def could_have_produced(self, x):
         d = self.descriptor

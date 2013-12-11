@@ -1,6 +1,7 @@
 from hypothesis.searchstrategy import SearchStrategies
 from hypothesis.flags import Flags
 from random import random
+import time
 
 
 def assume(condition):
@@ -17,7 +18,8 @@ class Verifier(object):
                  runs_to_explore_flags=3,
                  min_satisfying_examples=5,
                  max_size=512,
-                 max_failed_runs=10):
+                 max_failed_runs=10,
+                 timeout=60):
         self.search_strategies = search_strategies or SearchStrategies()
         self.min_satisfying_examples = min_satisfying_examples
         self.starting_size = starting_size
@@ -26,11 +28,17 @@ class Verifier(object):
         self.max_size = max_size
         self.max_failed_runs = max_failed_runs
         self.runs_to_explore_flags = runs_to_explore_flags
+        self.timeout = timeout
+        self.start_time = time.time()
+
+    def time_to_call_it_a_day(self):
+        return time.time() > self.start_time + self.timeout
 
     def falsify(self, hypothesis, *argument_types):
         search_strategy = (self.search_strategies
                                .specification_for(argument_types))
         flags = None
+        timed_out = False
         # TODO: This is a sign that I should be pulling some of this out into
         # an object.
         examples_found = [0]
@@ -57,6 +65,9 @@ class Verifier(object):
                 return False
 
         while temperature < self.max_size:
+            if self.time_to_call_it_a_day():
+                timed_out = True
+                break
             rtf = self.runs_to_explore_flags
             for i in xrange(self.runs_to_explore_flags):
                 # Try a number of degrees of turning flags on, spaced evenly
@@ -84,6 +95,8 @@ class Verifier(object):
             ef = examples_found[0]
             if ef < self.min_satisfying_examples:
                 raise Unsatisfiable(hypothesis, ef)
+            elif timed_out:
+                raise Timeout(hypothesis, self.timeout)
             else:
                 raise Unfalsifiable(hypothesis)
 
@@ -96,29 +109,44 @@ class Verifier(object):
 
         best_example = min(falsifying_examples, key=search_strategy.complexity)
 
-        return search_strategy.simplify_such_that(best_example, falsifies)
+        for t in search_strategy.simplify_such_that(best_example, falsifies):
+            best_example = t
+            if self.time_to_call_it_a_day():
+                break
+
+        return best_example
 
 
 def falsify(*args, **kwargs):
     return Verifier(**kwargs).falsify(*args)
 
 
-class UnsatisfiedAssumption(Exception):
+class HypothesisException(Exception):
+    pass
+
+
+class UnsatisfiedAssumption(HypothesisException):
     def __init__(self):
-        Exception.__init__(self, "Unsatisfied assumption")
+        super(UnsatisfiedAssumption, self).__init__("Unsatisfied assumption")
 
 
-class Unfalsifiable(Exception):
-    def __init__(self, hypothesis):
-        Exception.__init__(
-            self, "Unable to falsify hypothesis %s" % hypothesis
+class Unfalsifiable(HypothesisException):
+    def __init__(self, hypothesis, extra=''):
+        super(Unfalsifiable, self).__init__(
+            "Unable to falsify hypothesis %s%s" % (hypothesis, extra)
         )
 
 
-class Unsatisfiable(Exception):
+class Unsatisfiable(HypothesisException):
     def __init__(self, hypothesis, examples):
-        Exception.__init__(
-            self,
+        super(Unsatisfiable, self).__init__(
             ("Unable to satisfy assumptions of hypothesis %s. " +
-             "Only %s examples found ") % (hypothesis, str(examples))
+             "Only %s examples found ") % (hypothesis, str(examples)))
+
+
+class Timeout(Unfalsifiable):
+    def __init__(self, hypothesis, timeout):
+        super(Timeout, self).__init__(
+            hypothesis,
+            " after %.2fs" % (timeout,)
         )
