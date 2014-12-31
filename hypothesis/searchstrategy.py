@@ -617,3 +617,21 @@ just = Just
 class JustStrategy(SearchStrategy):
     def produce(self, size, flags):
         return self.descriptor.value
+
+from datetime import date, datetime
+
+
+@strategy_for(datetime)
+class DateTimeStrategy(MappedSearchStrategy):
+
+    def __init__(self, strategies, descriptor, **kwargs):
+        SearchStrategy.__init__(self, strategies, descriptor, **kwargs)
+        self.mapped_strategy = strategies.strategy(int)
+
+    def pack(self, seconds):
+        return datetime.fromtimestamp(seconds)
+
+    def unpack(self, dt):
+        epoch = datetime.utcfromtimestamp(0)
+        delta = dt - epoch
+        return delta.total_seconds()

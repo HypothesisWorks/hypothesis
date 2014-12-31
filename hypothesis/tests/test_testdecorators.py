@@ -1,6 +1,8 @@
 from hypothesis.testdecorators import given
 from hypothesis.verifier import Verifier, assume
 from functools import wraps
+from datetime import datetime
+
 import pytest
 
 
@@ -84,3 +86,10 @@ class TestCases(object):
 def test_can_be_given_keyword_args(x, name):
     assume(x > 0)
     assert len(name) < x
+
+@given(datetime, datetime)
+def test_datetime(dt1, dt2):
+    epoch = datetime.utcfromtimestamp(0)
+    delta1 = dt1 - epoch
+    delta2 = dt2 - epoch
+    assert delta1 + delta2 == delta2 + delta1
