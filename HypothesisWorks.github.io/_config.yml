@@ -1,0 +1,18 @@
+# Site settings
+title: Site Title
+email: somename@somedomain.com
+description: "Site Description"
+logo_location: "http://placehold.it/100x100&text=LOGO"
+
+#baseurl: "" # the subpath of your site, e.g. /blog/
+#url: "" # the base hostname & protocol for your site
+
+# Build settings
+markdown: kramdown
+kramdown:
+  input: GFM
+
+highlighter: null
+
+#Other Global Configuration
+exclude: ['README.md']

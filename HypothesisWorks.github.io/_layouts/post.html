@@ -1,0 +1,38 @@
+---
+layout: default
+---
+
+<div class="row">
+  <div class="col-xs-12 col-sm-12 col-md-offset-1 col-md-10 col-lg-offset-2 col-lg-8">
+    <div class="page">
+
+      <header class="page-header">
+        <h3 class="page-title">{{ page.title }}</h3>
+        <!-- {% if page.subtitle %}
+          <h5 class="page-subtitle"> {{ page.subtitle }} </h5>
+        {% endif %} -->
+        <div class="post-metadata">
+          <div> <i class="fa fa-calendar"></i>
+            <time>
+              {% if page.lastmodified %}
+                {{ page.lastmodified | date:'%A, %B %d, %Y'}}
+              {% else %}
+                {{ page.date | date:'%A, %B %d, %Y'}}
+              {% endif %}
+            </time>
+          </div>
+          <div> <i class="fa fa-tag"></i>
+              {% for tag in page.tags %}
+                <span class="label label-primary">{{tag}}</span>
+              {% endfor %}
+          </div>
+        </div>
+
+      </header>
+
+      <article class="page-content">
+        {{ content }}
+      </article>
+    </div>
+  </div>
+</div>
