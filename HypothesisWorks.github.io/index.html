@@ -8,6 +8,26 @@ lastmodified: 2014-10-19 23:51
     {% for post in site.posts %}
       <div class="blog-short">
         <h3><a href="{{post.url | prepend: site.baseurl}}">{{post.title}}</a></h3>
+		<div>
+		  <small>
+			<i class="fa fa-calendar"></i>
+			<time>
+			  {% if page.lastmodified %}
+				{{ page.lastmodified | date:'%A, %B %d, %Y'}}
+			  {% else %}
+				{{ page.date | date:'%A, %B %d, %Y'}}
+			  {% endif %}
+			</time>
+		  </small>
+         </div>
+		<div class="margin10">
+          <small>
+            <i class="fa fa-tag"></i>
+            {% for tag in post.tags %}
+              <span class="label label-primary">{{tag}}</span>
+            {% endfor %}
+          </small>
+        </div>
         {% if post.thumbnail %}
           <img src="{{post.thumbnail}}"
           alt="{{post.title}}"  class="pull-left img-responsive thumb margin10 img-thumbnail" />
