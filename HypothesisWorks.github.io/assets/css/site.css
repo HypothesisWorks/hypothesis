@@ -76,9 +76,10 @@ body {
 .footer {
     background-color: #f5f5f5;
     bottom: 0;
-    min-height: 50px;
+    min-height: 10px;
     position: fixed;
     width: 100%;
+    font-weight: bold;
 }
 
 
