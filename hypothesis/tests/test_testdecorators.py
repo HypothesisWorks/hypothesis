@@ -58,21 +58,22 @@ def test_still_minimizes_on_non_assertion_failures():
     @given(int, verifier=Verifier(starting_size=500))
     def is_not_too_large(x):
         if x >= 10:
-            raise ValueError("No, %s is just too large. Sorry" % x)
+            raise ValueError('No, %s is just too large. Sorry' % x)
 
     with pytest.raises(ValueError) as exinfo:
         is_not_too_large()
 
-    assert " 10 " in exinfo.value.args[0]
+    assert ' 10 ' in exinfo.value.args[0]
 
 
 @given(int)
 def test_integer_division_shrinks_positive_integers(n):
     assume(n > 0)
-    assert n/2 < n
+    assert n / 2 < n
 
 
 class TestCases(object):
+
     @given(int)
     def test_abs_non_negative(self, x):
         assert abs(x) >= 0
@@ -110,7 +111,7 @@ calls = [0, 0, 0, 0]
 @fails
 @given(int, verifier_kwargs={'timeout': 3})
 def test_slow_failing_test_1(x):
-    print "call test_slow_failing_test_1"
+    print 'call test_slow_failing_test_1'
     time.sleep(1)
     assert not calls[0]
     calls[0] = 1

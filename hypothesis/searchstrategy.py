@@ -27,6 +27,7 @@ def strategy_for_instances(typ):
 
 
 class SearchStrategies(SpecificationMapper):
+
     def strategy(self, descriptor, **kwargs):
         return self.specification_for(descriptor, **kwargs)
 
@@ -62,15 +63,16 @@ def nice_string(xs, history=None):
     except AttributeError:
         return repr(xs)
 
-    return "%s(%s)" % (
+    return '%s(%s)' % (
         xs.__class__.__name__,
         ', '.join(
-            "%s=%s" % (k2, nice_string(v2, history)) for k2, v2 in d.items()
+            '%s=%s' % (k2, nice_string(v2, history)) for k2, v2 in d.items()
         )
     )
 
 
 class SearchStrategy(object):
+
     def __init__(self,
                  strategies,
                  descriptor):
@@ -78,7 +80,7 @@ class SearchStrategy(object):
         strategies.cache_specification_for_descriptor(descriptor, self)
 
     def __repr__(self):
-        return "%s(%s)" % (
+        return '%s(%s)' % (
             self.__class__.__name__,
             nice_string(self.descriptor)
         )
@@ -169,7 +171,7 @@ def geometric_probability_for_entropy(desired_entropy):
 
     def h(p):
         q = 1 - p
-        return -(q * log1p(-p) + p * log(p))/(log(2) * p)
+        return -(q * log1p(-p) + p * log(p)) / (log(2) * p)
 
     lower = 0.0
     upper = 1.0
@@ -185,7 +187,7 @@ def geometric_probability_for_entropy(desired_entropy):
 
 
 def arbitrary_int():
-    return random.randint(-2**32, 2**32)
+    return random.randint(-2 ** 32, 2 ** 32)
 
 
 def geometric_int(p):
@@ -199,8 +201,9 @@ def geometric_int(p):
 
 @strategy_for(int)
 class IntStrategy(SearchStrategy):
+
     def own_flags(self):
-        return ("allow_negative_ints",)
+        return ('allow_negative_ints',)
 
     def complexity(self, value):
         if value >= 0:
@@ -209,7 +212,7 @@ class IntStrategy(SearchStrategy):
             return 1 - value
 
     def produce(self, size, flags):
-        can_be_negative = flags.enabled("allow_negative_ints") and size > 1
+        can_be_negative = flags.enabled('allow_negative_ints') and size > 1
 
         if size <= 1e-8:
             return 0
@@ -232,7 +235,7 @@ class IntStrategy(SearchStrategy):
             for y in self.simplify(-x):
                 yield -y
         elif x > 0:
-            #FIXME: This is a stupid way to do it
+            # FIXME: This is a stupid way to do it
             seen = {0}
             yield 0
             max_not_seen = x - 1
@@ -248,6 +251,7 @@ class IntStrategy(SearchStrategy):
 
 @strategy_for(float)
 class FloatStrategy(SearchStrategy):
+
     def __init__(self,
                  strategies,
                  descriptor,
@@ -256,10 +260,10 @@ class FloatStrategy(SearchStrategy):
         self.int_strategy = strategies.strategy(int)
 
     def own_flags(self):
-        return ("allow_negative_floats",)
+        return ('allow_negative_floats',)
 
     def produce(self, size, flags):
-        if flags.enabled("allow_negative_floats"):
+        if flags.enabled('allow_negative_floats'):
             # Cap size to avoid overflow errors
             size = min(100, size)
             s2 = math.exp(2 * size) / (2 * math.pi * math.e)
@@ -276,57 +280,78 @@ class FloatStrategy(SearchStrategy):
 
         n = int(x)
         y = float(n)
-        if x != y: yield y
+        if x != y:
+            yield y
         for m in self.int_strategy.simplify(n):
             yield x + (m - n)
 
+
 def h(p):
-    return -(p * log(p) + (1-p) * log1p(-p))
+    return -(p * log(p) + (1 - p) * log1p(-p))
+
 
 def inverse_h(hd):
-    if hd < 0: raise ValueError("Entropy h cannot be negative: %s" % h)
-    if hd > 1: raise ValueError("Single bit entropy cannot be > 1: %s" % h)
+    if hd < 0:
+        raise ValueError('Entropy h cannot be negative: %s' % h)
+    if hd > 1:
+        raise ValueError('Single bit entropy cannot be > 1: %s' % h)
     low = 0.0
     high = 0.5
 
     for _ in xrange(10):
         mid = (low + high) * 0.5
-        if h(mid) < hd: low = mid
-        else: high = mid
+        if h(mid) < hd:
+            low = mid
+        else:
+            high = mid
 
     return mid
 
+
 @strategy_for(bool)
 class BoolStrategy(SearchStrategy):
-    def complexity(self,x):
-        if x: return 1
-        else: return 0
 
-    def produce(self, size,flags):
-        if size >= 1: p = 0.5
-        else: p = inverse_h(size)
-        if rand() >= p: return False
+    def complexity(self, x):
+        if x:
+            return 1
+        else:
+            return 0
+
+    def produce(self, size, flags):
+        if size >= 1:
+            p = 0.5
+        else:
+            p = inverse_h(size)
+        if rand() >= p:
+            return False
         return True
+
 
 @strategy_for_instances(tuple)
 class TupleStrategy(SearchStrategy):
-    def __init__(   self,
-                    strategies,
-                    descriptor,
-                    **kwargs):
-        SearchStrategy.__init__(self, strategies, descriptor,**kwargs)
-        self.element_strategies = tuple((strategies.strategy(x) for x in descriptor))
+
+    def __init__(self,
+                 strategies,
+                 descriptor,
+                 **kwargs):
+        SearchStrategy.__init__(self, strategies, descriptor, **kwargs)
+        self.element_strategies = tuple(
+            (strategies.strategy(x) for x in descriptor))
 
     def child_strategies(self):
         return self.element_strategies
 
-    def could_have_produced(self,xs):
-        if not SearchStrategy.could_have_produced(self,xs): return False
-        if len(xs) != len(self.element_strategies): return False
-        return all((s.could_have_produced(x) for s,x in zip(self.element_strategies, xs)))
+    def could_have_produced(self, xs):
+        if not SearchStrategy.could_have_produced(self, xs):
+            return False
+        if len(xs) != len(self.element_strategies):
+            return False
+        return all((s.could_have_produced(x)
+                    for s, x in zip(self.element_strategies, xs)))
 
     def complexity(self, xs):
-        return sum((s.complexity(x) for s,x in zip(self.element_strategies, xs)))
+        return sum((s.complexity(x)
+                    for s, x in zip(self.element_strategies, xs)))
 
     def newtuple(self, xs):
         if self.descriptor.__class__ == tuple:
@@ -336,7 +361,8 @@ class TupleStrategy(SearchStrategy):
 
     def produce(self, size, flags):
         es = self.element_strategies
-        return self.newtuple([g.produce(float(size)/len(es),flags) for g in es])
+        return self.newtuple(
+            [g.produce(float(size) / len(es), flags) for g in es])
 
     def simplify(self, x):
         """
@@ -353,7 +379,8 @@ class TupleStrategy(SearchStrategy):
                 yield self.newtuple(z)
         for i in xrange(0, len(x)):
             for j in xrange(0, len(x)):
-                if i == j: continue
+                if i == j:
+                    continue
                 for s in self.element_strategies[i].simplify(x[i]):
                     for t in self.element_strategies[j].simplify(x[j]):
                         z = list(x)
@@ -364,11 +391,12 @@ class TupleStrategy(SearchStrategy):
 
 @strategy_for_instances(list)
 class ListStrategy(SearchStrategy):
-    def __init__(   self,
-                    strategies,
-                    descriptor,
-                    **kwargs):
-        SearchStrategy.__init__(self, strategies, descriptor,**kwargs)
+
+    def __init__(self,
+                 strategies,
+                 descriptor,
+                 **kwargs):
+        SearchStrategy.__init__(self, strategies, descriptor, **kwargs)
 
         self.element_strategy = strategies.strategy(one_of(descriptor))
 
@@ -379,22 +407,26 @@ class ListStrategy(SearchStrategy):
         return (self.element_strategy,)
 
     def entropy_allocated_for_length(self, size):
-        if size <= 2: return 0.5 * size;
-        else: return min(0.05 * (size - 2.0) + 2.0, 6)
+        if size <= 2:
+            return 0.5 * size
+        else:
+            return min(0.05 * (size - 2.0) + 2.0, 6)
 
     def produce(self, size, flags):
         le = self.entropy_allocated_for_length(size)
         lp = geometric_probability_for_entropy(le)
         length = geometric_int(lp)
-        empty_allowed = self.may_call_self_recursively() or flags.enabled('allow_empty_lists')
+        empty_allowed = self.may_call_self_recursively() or flags.enabled(
+            'allow_empty_lists')
         if not empty_allowed:
             length += 1
 
         if length == 0:
             return []
-        multiplier = 1.0/(1.0 - lp) if empty_allowed else 1.0
+        multiplier = 1.0 / (1.0 - lp) if empty_allowed else 1.0
         element_entropy = multiplier * (size - le) / length
-        return [self.element_strategy.produce(element_entropy,flags) for _ in xrange(length)]
+        return [self.element_strategy.produce(
+            element_entropy, flags) for _ in xrange(length)]
 
     def simplify(self, x):
         indices = xrange(0, len(x))
@@ -409,14 +441,16 @@ class ListStrategy(SearchStrategy):
                 z[i] = s
                 yield z
 
-        for i in xrange(0,len(x) - 1):
-            for j in xrange(i,len(x) - 1):
+        for i in xrange(0, len(x) - 1):
+            for j in xrange(i, len(x) - 1):
                 y = list(x)
                 del y[i]
                 del y[j]
                 yield y
 
+
 class MappedSearchStrategy(SearchStrategy):
+
     @abstractmethod
     def pack(self, x):
         pass  # pragma: no cover
@@ -429,7 +463,7 @@ class MappedSearchStrategy(SearchStrategy):
         return (self.mapped_strategy,)
 
     def produce(self, size, flags):
-        return self.pack(self.mapped_strategy.produce(size,flags))
+        return self.pack(self.mapped_strategy.produce(size, flags))
 
     def complexity(self, x):
         return self.mapped_strategy.complexity(self.unpack(x))
@@ -441,6 +475,7 @@ class MappedSearchStrategy(SearchStrategy):
 
 @strategy_for(complex)
 class ComplexStrategy(MappedSearchStrategy):
+
     def __init__(self,
                  strategies,
                  descriptor,
@@ -457,6 +492,7 @@ class ComplexStrategy(MappedSearchStrategy):
 
 @strategy_for_instances(set)
 class SetStrategy(MappedSearchStrategy):
+
     def __init__(self,
                  strategies,
                  descriptor,
@@ -472,6 +508,7 @@ class SetStrategy(MappedSearchStrategy):
 
 
 class OneCharStringStrategy(SearchStrategy):
+
     def __init__(self,
                  strategies,
                  descriptor,
@@ -490,7 +527,7 @@ class OneCharStringStrategy(SearchStrategy):
         c = ord(x)
         if c < self.zero_point:
             yield chr(2 * self.zero_point - c)
-            for d in xrange(c+1, self.zero_point + 1):
+            for d in xrange(c + 1, self.zero_point + 1):
                 yield chr(d)
         elif c > self.zero_point:
             for d in xrange(c - 1, self.zero_point - 1, -1):
@@ -499,13 +536,14 @@ class OneCharStringStrategy(SearchStrategy):
 
 @strategy_for(str)
 class StringStrategy(MappedSearchStrategy):
+
     def __init__(self,
                  strategies,
                  descriptor,
                  **kwargs):
         SearchStrategy.__init__(self, strategies, descriptor, **kwargs)
         self.length_strategy = strategies.strategy(int)
-        char_strategy = kwargs.get("char_strategy",
+        char_strategy = kwargs.get('char_strategy',
                                    OneCharStringStrategy)
 
         cs = strategies.new_child_mapper()
@@ -521,6 +559,7 @@ class StringStrategy(MappedSearchStrategy):
 
 @strategy_for_instances(dict)
 class FixedKeysDictStrategy(SearchStrategy):
+
     def __init__(self,
                  strategies,
                  descriptor,
@@ -551,22 +590,26 @@ class FixedKeysDictStrategy(SearchStrategy):
 
 OneOf = namedtuple('OneOf', 'elements')
 
+
 def one_of(args):
     args = list(args)
     if not args:
-        raise ValueError("one_of requires at least one value to choose from")
+        raise ValueError('one_of requires at least one value to choose from')
     if len(args) == 1:
         return args[0]
     return OneOf(args)
 
+
 @strategy_for_instances(OneOf)
 class OneOfStrategy(SearchStrategy):
-    def __init__(   self,
-                    strategies,
-                    descriptor,
-                    **kwargs):
-        SearchStrategy.__init__(self, strategies, descriptor,**kwargs)
-        self.element_strategies = [strategies.strategy(x) for x in descriptor.elements]
+
+    def __init__(self,
+                 strategies,
+                 descriptor,
+                 **kwargs):
+        SearchStrategy.__init__(self, strategies, descriptor, **kwargs)
+        self.element_strategies = [
+            strategies.strategy(x) for x in descriptor.elements]
 
     def own_flags(self):
         return tuple((self.personal_flag(d) for d in self.descriptor.elements))
@@ -602,7 +645,7 @@ class OneOfStrategy(SearchStrategy):
                 return s
         else:
             raise ValueError(
-                "Value %s could not have been produced from %s" % (x, self)
+                'Value %s could not have been produced from %s' % (x, self)
             )
 
     def complexity(self, x):
@@ -615,7 +658,9 @@ class OneOfStrategy(SearchStrategy):
 Just = namedtuple('Just', 'value')
 just = Just
 
+
 @strategy_for_instances(Just)
 class JustStrategy(SearchStrategy):
+
     def produce(self, size, flags):
         return self.descriptor.value

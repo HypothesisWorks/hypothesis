@@ -5,11 +5,11 @@ from hypothesis.verifier import Verifier, Unfalsifiable, UnsatisfiedAssumption
 def given(*generator_arguments, **kwargs):
     def run_test_with_generator(test):
         def wrapped_test(*arguments):
-            if "verifier" in kwargs:
-                verifier = kwargs.pop("verifier")
+            if 'verifier' in kwargs:
+                verifier = kwargs.pop('verifier')
                 verifier.start_time = time.time()
-            elif "verifier_kwargs" in kwargs:
-                verifier = Verifier(**kwargs.pop("verifier_kwargs"))
+            elif 'verifier_kwargs' in kwargs:
+                verifier = Verifier(**kwargs.pop('verifier_kwargs'))
             else:
                 verifier = Verifier()
 
@@ -18,7 +18,7 @@ def given(*generator_arguments, **kwargs):
             def to_falsify(xs):
                 testargs, testkwargs = xs
                 try:
-                    test(*(arguments + testargs), **testkwargs) 
+                    test(*(arguments + testargs), **testkwargs)
                     return True
                 except UnsatisfiedAssumption as e:
                     raise e
@@ -26,15 +26,16 @@ def given(*generator_arguments, **kwargs):
                     return False
 
             try:
-                falsifying_example = verifier.falsify(to_falsify, (generator_arguments, kwargs))[0]
+                falsifying_example = verifier.falsify(
+                    to_falsify, (generator_arguments, kwargs))[0]
             except Unfalsifiable:
                 return
-         
-            # We run this one final time so we get good errors 
+
+            # We run this one final time so we get good errors
             # Otherwise we would have swallowed all the reports of it actually
             # having gone wrong.
             test(*(arguments + falsifying_example[0]), **falsifying_example[1])
         wrapped_test.__name__ = test.__name__
-        wrapped_test.__doc__  = test.__doc__
+        wrapped_test.__doc__ = test.__doc__
         return wrapped_test
     return run_test_with_generator

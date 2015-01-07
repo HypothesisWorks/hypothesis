@@ -18,14 +18,14 @@ def const(x):
 
 def test_can_define_specifications():
     sm = SpecificationMapper()
-    sm.define_specification_for("foo", const(1))
-    assert sm.specification_for("foo") == 1
+    sm.define_specification_for('foo', const(1))
+    assert sm.specification_for('foo') == 1
 
 
 def test_can_define_specifications_on_the_default():
     sm = SpecificationMapper()
-    SpecificationMapper.default().define_specification_for("foo", const(1))
-    assert sm.specification_for("foo") == 1
+    SpecificationMapper.default().define_specification_for('foo', const(1))
+    assert sm.specification_for('foo') == 1
 
 
 class Bar(object):
@@ -46,17 +46,17 @@ def test_can_define_specifications_for_built_in_types():
 
 def test_can_define_instance_specifications():
     sm = SpecificationMapper()
-    sm.define_specification_for_instances(str, lambda _, i: i + "bar")
-    assert sm.specification_for("foo") == "foobar"
+    sm.define_specification_for_instances(str, lambda _, i: i + 'bar')
+    assert sm.specification_for('foo') == 'foobar'
 
 
 def test_can_define_instance_specifications_on_the_default():
     sm = SpecificationMapper()
     SpecificationMapper.default().define_specification_for_instances(
         str,
-        lambda _, i: i + "bar"
+        lambda _, i: i + 'bar'
     )
-    assert sm.specification_for("foo") == "foobar"
+    assert sm.specification_for('foo') == 'foobar'
 
 
 def test_can_define_instance_specifications_for_lists():
@@ -68,23 +68,23 @@ def test_can_define_instance_specifications_for_lists():
 def test_raises_missing_specification_with_no_spec():
     sm = SpecificationMapper()
     with pytest.raises(MissingSpecification):
-        sm.specification_for("hi")
+        sm.specification_for('hi')
 
 
 def test_can_create_children():
     sm = SpecificationMapper()
     child = sm.new_child_mapper()
-    sm.define_specification_for("foo", const(1))
-    assert child.specification_for("foo") == 1
+    sm.define_specification_for('foo', const(1))
+    assert child.specification_for('foo') == 1
 
 
 def test_can_override_in_children():
     sm = SpecificationMapper()
     child = sm.new_child_mapper()
-    sm.define_specification_for("foo", const(1))
-    child.define_specification_for("foo", const(2))
-    assert sm.specification_for("foo") == 1
-    assert child.specification_for("foo") == 2
+    sm.define_specification_for('foo', const(1))
+    child.define_specification_for('foo', const(2))
+    assert sm.specification_for('foo') == 1
+    assert child.specification_for('foo') == 2
 
 
 class ChildMapper(SpecificationMapper):
@@ -93,44 +93,44 @@ class ChildMapper(SpecificationMapper):
 
 def test_does_not_inherit_default():
     assert ChildMapper.default() != SpecificationMapper.default()
-    SpecificationMapper.default().define_specification_for("foo", const(1))
+    SpecificationMapper.default().define_specification_for('foo', const(1))
     with pytest.raises(MissingSpecification):
-        ChildMapper.default().specification_for("foo")
+        ChildMapper.default().specification_for('foo')
 
 
 def test_can_call_other_specs():
     s = SpecificationMapper()
-    s.define_specification_for("foo", const(1))
+    s.define_specification_for('foo', const(1))
     s.define_specification_for(
-        "bar",
-        lambda t, _: t.specification_for("foo") + 1
+        'bar',
+        lambda t, _: t.specification_for('foo') + 1
     )
-    assert s.specification_for("bar") == 2
+    assert s.specification_for('bar') == 2
 
 
 def test_child_can_call_other_specs_on_prototype():
     s = SpecificationMapper()
     s.define_specification_for(
-        "bar",
-        lambda t, d: t.specification_for("foo") + 1
+        'bar',
+        lambda t, d: t.specification_for('foo') + 1
     )
     s2 = s.new_child_mapper()
-    s2.define_specification_for("foo", const(1))
-    assert s2.specification_for("bar") == 2
+    s2.define_specification_for('foo', const(1))
+    assert s2.specification_for('bar') == 2
 
 
 def test_can_override_specifications():
     s = SpecificationMapper()
-    s.define_specification_for("foo", const(1))
-    s.define_specification_for("foo", const(2))
-    assert s.specification_for("foo") == 2
+    s.define_specification_for('foo', const(1))
+    s.define_specification_for('foo', const(2))
+    assert s.specification_for('foo') == 2
 
 
 def test_can_override_instance_specifications():
     s = SpecificationMapper()
     s.define_specification_for_instances(str, const(1))
     s.define_specification_for_instances(str, const(2))
-    assert s.specification_for("foo") == 2
+    assert s.specification_for('foo') == 2
 
 
 def test_can_call_previous_in_overridden_specifications():
@@ -140,9 +140,9 @@ def test_can_call_previous_in_overridden_specifications():
         str,
         lambda _, s: 5 if len(s) > 5 else next_in_chain()
     )
-    assert s.specification_for("foo") == 3
+    assert s.specification_for('foo') == 3
     assert s.specification_for(
-        "I am the very model of a modern major general"
+        'I am the very model of a modern major general'
     ) == 5
 
 
@@ -177,16 +177,16 @@ def test_multiple_calls_return_same_value():
     s = SpecificationMapper()
     s.define_specification_for_instances(str, lambda *_: Foo())
 
-    assert s.specification_for("foo") is s.specification_for("foo")
-    assert s.specification_for("foo") is not s.specification_for("bar")
+    assert s.specification_for('foo') is s.specification_for('foo')
+    assert s.specification_for('foo') is not s.specification_for('bar')
 
 
 def test_defining_new_handlers_resets_cache():
     s = SpecificationMapper()
     s.define_specification_for_instances(str, lambda *_: Foo())
-    x = s.specification_for("foo")
+    x = s.specification_for('foo')
     s.define_specification_for_instances(str, lambda *_: Fooc())
-    y = s.specification_for("foo")
+    y = s.specification_for('foo')
     assert y is not x
     assert isinstance(y, Fooc)
 
@@ -200,12 +200,12 @@ def test_cache_correctly_handles_inheritance():
     t = s.new_child_mapper()
     t.define_specification_for_instances(str, lambda *_: Foo())
 
-    x = t.specification_for("foo")
-    y = t.specification_for(["foo"])[0]
+    x = t.specification_for('foo')
+    y = t.specification_for(['foo'])[0]
     assert x is y
 
 
-Litter = namedtuple("Litter", ("kitten1", "kitten2"))
+Litter = namedtuple('Litter', ('kitten1', 'kitten2'))
 
 
 def test_can_handle_subtypes_of_instances():
@@ -237,4 +237,4 @@ def test_can_handle_large_numbers_of_instance_mappers():
     s.define_specification_for_instances(str, f)
     s.define_specification_for_instances(int, f)
 
-    assert s.specification_for((1, 1)) == "(1, 1)"
+    assert s.specification_for((1, 1)) == '(1, 1)'

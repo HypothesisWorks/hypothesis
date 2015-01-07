@@ -31,8 +31,9 @@ def requires(*args):
 
 
 class PreconditionNotMet(Exception):
+
     def __init__(self):
-        Exception.__init__(self, "Precondition not met")
+        Exception.__init__(self, 'Precondition not met')
 
 
 def precondition(t):
@@ -41,6 +42,7 @@ def precondition(t):
 
 
 class TestRun(object):
+
     def __init__(self, cls, steps):
         self.cls = cls
         self.steps = steps
@@ -99,6 +101,7 @@ class TestRun(object):
 
 
 class StatefulTest(object):
+
     @classmethod
     def test_steps(cls):
         return cls.functions_with_attributes('hypothesis_test_step')
@@ -116,10 +119,11 @@ class StatefulTest(object):
         test_run = hypothesis.falsify(TestRun.run, cls)[0]
         return [(f.__name__,) + args for f, args in test_run]
 
-Step = namedtuple("Step", ("target", "arguments"))
+Step = namedtuple('Step', ('target', 'arguments'))
 
 
 class StepStrategy(MappedSearchStrategy):
+
     def __init__(self,
                  strategies,
                  descriptor,
@@ -144,6 +148,7 @@ class StepStrategy(MappedSearchStrategy):
 
 
 class StatefulStrategy(MappedSearchStrategy):
+
     def __init__(self,
                  strategies,
                  descriptor,

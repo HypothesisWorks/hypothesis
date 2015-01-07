@@ -1,9 +1,10 @@
 class Flags(object):
+
     def __init__(self, flags=None):
         self.flags = frozenset(flags or {})
 
     def __repr__(self):
-        return "Flags(%s)" % ', '.join(map(str,self.flags))
+        return 'Flags(%s)' % ', '.join(map(str, self.flags))
 
     def __hash__(self):
         return hash(self.flags)

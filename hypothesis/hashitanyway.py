@@ -14,6 +14,7 @@ def hash_everything(l):
 
 
 class HashItAnyway(object):
+
     def __init__(self, wrapped):
         self.wrapped = wrapped
         self.h = hash_everything(wrapped)
@@ -31,4 +32,4 @@ class HashItAnyway(object):
         return self.h
 
     def __repr__(self):
-        return "HashItAnyway(%s)" % repr(self.wrapped)
+        return 'HashItAnyway(%s)' % repr(self.wrapped)

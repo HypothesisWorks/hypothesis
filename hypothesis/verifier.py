@@ -10,6 +10,7 @@ def assume(condition):
 
 
 class Verifier(object):
+
     def __init__(self,
                  search_strategies=None,
                  starting_size=1.0,
@@ -76,7 +77,7 @@ class Verifier(object):
                 # Note that as soon as we find a falsifying example with a set
                 # of flags, those are the flags we'll be using for the rest of
                 # the run
-                p = float(i + 1)/(rtf + 1)
+                p = float(i + 1) / (rtf + 1)
 
                 def generate_flags():
                     return Flags([
@@ -88,7 +89,7 @@ class Verifier(object):
                 if falsifying_examples:
                     break
             if falsifying_examples:
-                    break
+                break
             temperature += self.warming_rate
 
         if not falsifying_examples:
@@ -126,27 +127,31 @@ class HypothesisException(Exception):
 
 
 class UnsatisfiedAssumption(HypothesisException):
+
     def __init__(self):
-        super(UnsatisfiedAssumption, self).__init__("Unsatisfied assumption")
+        super(UnsatisfiedAssumption, self).__init__('Unsatisfied assumption')
 
 
 class Unfalsifiable(HypothesisException):
+
     def __init__(self, hypothesis, extra=''):
         super(Unfalsifiable, self).__init__(
-            "Unable to falsify hypothesis %s%s" % (hypothesis, extra)
+            'Unable to falsify hypothesis %s%s' % (hypothesis, extra)
         )
 
 
 class Unsatisfiable(HypothesisException):
+
     def __init__(self, hypothesis, examples):
         super(Unsatisfiable, self).__init__(
-            ("Unable to satisfy assumptions of hypothesis %s. " +
-             "Only %s examples found ") % (hypothesis, str(examples)))
+            ('Unable to satisfy assumptions of hypothesis %s. ' +
+             'Only %s examples found ') % (hypothesis, str(examples)))
 
 
 class Timeout(Unfalsifiable):
+
     def __init__(self, hypothesis, timeout):
         super(Timeout, self).__init__(
             hypothesis,
-            " after %.2fs" % (timeout,)
+            ' after %.2fs' % (timeout,)
         )
