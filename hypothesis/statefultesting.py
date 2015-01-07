@@ -44,16 +44,15 @@ def precondition(t):
 
 
 class TestRun(object):
-
-    def __init__(self, cls, steps):
+    def __init__(self, cls, steps, init_args=None, init_kwargs=None):
         self.cls = cls
         if len(steps) >= 1 and steps[0].target.__name__ == '__init__':
             self.init_args = steps[0].arguments
             self.init_kwargs = steps[0].kwargs
             steps = steps[1:]
         else:
-            self.init_args = ()
-            self.init_kwargs = {}
+            self.init_args = init_args or ()
+            self.init_kwargs = init_kwargs or {}
         self.steps = steps
 
     def new_value(self):
@@ -91,7 +90,11 @@ class TestRun(object):
         if len(results) == len(self):
             return None
         else:
-            return TestRun(self.cls, results)
+            return TestRun(
+                self.cls, results,
+                init_args=self.init_args,
+                init_kwargs=self.init_kwargs,
+            )
 
     def __eq__(self, that):
         return (isinstance(that, TestRun) and
