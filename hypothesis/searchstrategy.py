@@ -10,8 +10,7 @@ from abc import abstractmethod
 from six.moves import xrange
 from six import text_type, binary_type
 import string
-
-import random
+import random as r
 
 
 def strategy_for(typ):
@@ -193,18 +192,12 @@ class IntStrategy(SearchStrategy):
             for y in self.simplify(-x):
                 yield -y
         elif x > 0:
-            # FIXME: This is a stupid way to do it
-            seen = {0}
             yield 0
-            max_not_seen = x - 1
-            while max_not_seen > 0:
-                n = random.randint(0, max_not_seen)
-                if n not in seen:
-                    seen.add(n)
-                    if n == max_not_seen:
-                        while max_not_seen in seen:
-                            max_not_seen -= 1
-                    yield n
+            random = r.Random(x)
+            values = range(1, x)
+            random.shuffle(values)
+            for v in values:
+                yield v
 
 
 @strategy_for(float)
