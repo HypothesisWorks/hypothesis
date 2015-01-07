@@ -123,9 +123,7 @@ class SearchStrategy(object):
         yield t
 
         while True:
-            print self
             for s in self.simplify(t):
-                print "simplifying %r to %r" % (t, s)
                 if tracker.track(s) > 1:
                     continue
                 if f(s):

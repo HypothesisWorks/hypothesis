@@ -56,7 +56,6 @@ class TestRun(object):
         self.steps = steps
 
     def new_value(self):
-        print self.init_args, self.init_kwargs
         return self.cls(*self.init_args, **self.init_kwargs)
 
     def run(self):
@@ -225,9 +224,7 @@ class StatefulStrategy(MappedSearchStrategy):
             return steps
 
     def simplify(self, x):
-        print "x=", x
         pruned = x.prune()
-        print "x.prune()=", pruned
         if pruned:
             yield pruned
 
