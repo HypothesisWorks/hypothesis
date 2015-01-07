@@ -1,6 +1,6 @@
 from hypothesis.testdecorators import given
 from hypothesis.verifier import Verifier, assume, Unsatisfiable
-from hypothesis.searchstrategy import one_of
+from hypothesis.searchstrategy import one_of, just
 from functools import wraps
 import pytest
 import time
@@ -145,3 +145,7 @@ def test_slow_failing_test_4(x):
 @given(one_of([int, str]), one_of([int, str]))
 def test_one_of_produces_different_values(x, y):
     assert type(x) == type(y)
+
+@given(just(42))
+def test_is_the_answer(x):
+    assert x == 42
