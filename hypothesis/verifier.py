@@ -1,8 +1,6 @@
 from hypothesis.searchstrategy import SearchStrategies
-from hypothesis.flags import Flags
-from random import random
+from random import Random
 import time
-from six.moves import xrange
 
 
 def assume(condition):
@@ -14,24 +12,17 @@ class Verifier(object):
 
     def __init__(self,
                  search_strategies=None,
-                 starting_size=1.0,
-                 warming_rate=0.5,
-                 cooling_rate=0.1,
-                 runs_to_explore_flags=3,
                  min_satisfying_examples=5,
-                 max_size=512,
-                 max_failed_runs=10,
-                 timeout=60):
+                 max_examples=100,
+                 max_falsifying_examples=5,
+                 timeout=60, random=None):
         self.search_strategies = search_strategies or SearchStrategies()
         self.min_satisfying_examples = min_satisfying_examples
-        self.starting_size = starting_size
-        self.warming_rate = warming_rate
-        self.cooling_rate = cooling_rate
-        self.max_size = max_size
-        self.max_failed_runs = max_failed_runs
-        self.runs_to_explore_flags = runs_to_explore_flags
+        self.max_falsifying_examples = max_falsifying_examples
+        self.max_examples = max_examples
         self.timeout = timeout
         self.start_time = time.time()
+        self.random = random or Random()
 
     def time_to_call_it_a_day(self):
         return time.time() > self.start_time + self.timeout
@@ -39,75 +30,50 @@ class Verifier(object):
     def falsify(self, hypothesis, *argument_types):
         search_strategy = (self.search_strategies
                                .specification_for(argument_types))
-        flags = None
-        timed_out = False
         # TODO: This is a sign that I should be pulling some of this out into
         # an object.
         examples_found = [0]
 
         def falsifies(args):
             try:
-                examples_found[0] += 1
                 return not hypothesis(*args)
             except AssertionError:
                 return True
             except UnsatisfiedAssumption:
-                examples_found[0] -= 1
                 return False
 
-        temperature = self.starting_size
         falsifying_examples = []
+        examples_found = 0
+        satisfying_examples = 0
+        timed_out = False
 
-        def look_for_a_falsifying_example(size):
-            x = search_strategy.produce(size, flags)
-            if falsifies(x):
-                falsifying_examples.append(x)
-                return True
-            else:
-                return False
-
-        while temperature < self.max_size:
+        while not (
+            examples_found >= self.max_examples or
+            len(falsifying_examples) >= self.max_falsifying_examples
+        ):
             if self.time_to_call_it_a_day():
                 timed_out = True
                 break
-            rtf = self.runs_to_explore_flags
-            for i in xrange(self.runs_to_explore_flags):
-                # Try a number of degrees of turning flags on, spaced evenly
-                # but with the lowest probability of a flag being on being > 0
-                # and the highest < 1.
-                # Note that as soon as we find a falsifying example with a set
-                # of flags, those are the flags we'll be using for the rest of
-                # the run
-                p = float(i + 1) / (rtf + 1)
-
-                def generate_flags():
-                    return Flags([
-                        x
-                        for x in search_strategy.flags().flags
-                        if random() <= p])
-                flags = generate_flags()
-                look_for_a_falsifying_example(temperature)
-                if falsifying_examples:
-                    break
-            if falsifying_examples:
-                break
-            temperature += self.warming_rate
+            examples_found += 1
+            pv = search_strategy.parameter.draw(self.random)
+            args = search_strategy.produce(self.random, pv)
+            try:
+                is_falsifying_example = not hypothesis(*args)
+            except AssertionError:
+                is_falsifying_example = True
+            except UnsatisfiedAssumption:
+                continue
+            satisfying_examples += 1
+            if is_falsifying_example:
+                falsifying_examples.append(args)
 
         if not falsifying_examples:
-            ef = examples_found[0]
-            if ef < self.min_satisfying_examples:
-                raise Unsatisfiable(hypothesis, ef)
+            if satisfying_examples < self.min_satisfying_examples:
+                raise Unsatisfiable(hypothesis, examples_found)
             elif timed_out:
                 raise Timeout(hypothesis, self.timeout)
             else:
                 raise Unfalsifiable(hypothesis)
-
-        failed_runs = 0
-        while temperature > 1 and failed_runs < self.max_failed_runs:
-            if not look_for_a_falsifying_example(temperature):
-                failed_runs += 1
-
-            temperature -= self.cooling_rate
 
         best_example = min(falsifying_examples, key=search_strategy.complexity)
 

@@ -1,5 +1,4 @@
 import hypothesis.searchstrategy as ss
-from hypothesis.flags import Flags
 from hypothesis.internal.tracker import Tracker
 from collections import namedtuple
 from six.moves import xrange
@@ -73,7 +72,7 @@ def test_float_lists_no_duplicates_in_simplify():
 
 def test_just_works():
     s = strategy(ss.just('giving'))
-    assert s.produce(10, Flags()) == 'giving'
+    assert s.produce(random, s.parameter.draw(random)) == 'giving'
     assert list(s.simplify_such_that('giving', lambda _: True)) == ['giving']
 
 
@@ -84,7 +83,7 @@ def test_named_tuples_always_produce_named_tuples():
     s = strategy(Litter(int, int))
 
     for i in xrange(100):
-        assert isinstance(s.produce(i, Flags()), Litter)
+        assert isinstance(s.produce(random, s.parameter.draw(random)), Litter)
 
     for x in s.simplify(Litter(100, 100)):
         assert isinstance(x, Litter)
@@ -167,9 +166,12 @@ def test_returns_no_duplicate_child_strategies():
 
 def test_float_strategy_does_not_overflow():
     strategy = ss.SearchStrategies().strategy(float)
-    flags = strategy.flags().flags
 
     for _ in xrange(100):
-        these_flags = [f for f in flags if random.randint(0, 1)]
-        size = random.randint(0, 1000)
-        strategy.produce(size, Flags(these_flags))
+        strategy.produce(random, strategy.parameter.draw(random))
+
+
+def test_does_not_shrink_tuple_length():
+    bools = ss.SearchStrategies().strategy((bool,))
+    t = minimize(bools, (False,))
+    assert len(t) == 1

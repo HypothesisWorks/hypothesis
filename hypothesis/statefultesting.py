@@ -56,6 +56,7 @@ class TestRun(object):
         self.steps = steps
 
     def new_value(self):
+        print self.init_args, self.init_kwargs
         return self.cls(*self.init_args, **self.init_kwargs)
 
     def run(self):
@@ -114,6 +115,11 @@ class TestRun(object):
             yield Step(self.cls.__init__, self.init_args, self.init_kwargs)
         for s in self.steps:
             yield s
+
+    def __repr__(self):
+        return 'TestRun(%r, %r)' % (
+            self.init_args, self.init_kwargs,
+        )
 
     def __getitem__(self, i):
         return self.steps[i]
@@ -219,7 +225,9 @@ class StatefulStrategy(MappedSearchStrategy):
             return steps
 
     def simplify(self, x):
+        print "x=", x
         pruned = x.prune()
+        print "x.prune()=", pruned
         if pruned:
             yield pruned
 

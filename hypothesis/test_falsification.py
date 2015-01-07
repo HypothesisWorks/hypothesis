@@ -17,6 +17,7 @@ from collections import namedtuple
 import pytest
 import re
 from six.moves import xrange
+import hypothesis.internal.params as params
 
 
 def test_can_make_assumptions():
@@ -32,6 +33,7 @@ class Foo(object):
 
 @strategy_for(Foo)
 class FooStrategy(SearchStrategy):
+    parameter = params.CompositeParameter()
 
     def produce(self, size, flags):
         return Foo()
@@ -61,14 +63,14 @@ class Bar(object):
 
 
 class BarStrategy(SearchStrategy):
-
     def __init__(self, strategies, descriptor):
         SearchStrategy.__init__(self, strategies, descriptor)
         self.int_strategy = strategies.strategy(int)
+        self.parameter = self.int_strategy.parameter
 
-    def produce(self, size, flags):
+    def produce(self, random, pv):
         x = Bar()
-        for _ in xrange(self.int_strategy.produce(size, flags)):
+        for _ in xrange(self.int_strategy.produce(random, pv)):
             x = Bar(x)
         return x
 
@@ -175,8 +177,7 @@ def test_can_falsify_lists():
 def test_can_falsify_long_lists():
     assert falsify(
         lambda x: len(x) < 20,
-        [int],
-        warming_rate=0.5)[0] == [0] * 20
+        [int])[0] == [0] * 20
 
 
 def test_can_find_unsorted_lists():
@@ -220,27 +221,6 @@ class HeavilyBranchingTree(object):
             return 1
         else:
             return 1 + max(map(HeavilyBranchingTree.depth, self.children))
-
-
-@strategy_for(HeavilyBranchingTree)
-class HeavilyBranchingTreeStrategy(MappedSearchStrategy):
-
-    def __init__(self,
-                 strategies,
-                 descriptor,
-                 **kwargs):
-        SearchStrategy.__init__(self, strategies, descriptor, **kwargs)
-        self.mapped_strategy = strategies.strategy([HeavilyBranchingTree])
-
-    def pack(self, x):
-        return HeavilyBranchingTree(x)
-
-    def unpack(self, x):
-        return x.children
-
-
-def test_can_go_deep_into_recursive_strategies():
-    falsify(lambda x: x.depth() <= 5, HeavilyBranchingTree)
 
 
 def test_can_falsify_string_matching():
@@ -328,63 +308,6 @@ class Split(BinaryTree):
     def __hash__(self):
         return hash(self.left) ^ hash(self.right)
 
-
-@strategy_for(Leaf)
-class LeafStrategy(MappedSearchStrategy):
-
-    def __init__(self,
-                 strategies,
-                 descriptor,
-                 **kwargs):
-        SearchStrategy.__init__(self, strategies, descriptor, **kwargs)
-        self.mapped_strategy = strategies.strategy(int)
-
-    def pack(self, x):
-        return Leaf(x)
-
-    def unpack(self, x):
-        return x.label
-
-
-@strategy_for(Split)
-class SplitStrategy(MappedSearchStrategy):
-
-    def __init__(self,
-                 strategies,
-                 descriptor,
-                 **kwargs):
-        SearchStrategy.__init__(self, strategies, descriptor, **kwargs)
-        self.mapped_strategy = strategies.strategy((BinaryTree, BinaryTree))
-
-    def pack(self, x):
-        return Split(*x)
-
-    def unpack(self, x):
-        return (x.left, x.right)
-
-
-@strategy_for(BinaryTree)
-class BinaryTreeStrategy(MappedSearchStrategy):
-
-    def __init__(self,
-                 strategies,
-                 descriptor,
-                 **kwargs):
-        SearchStrategy.__init__(self, strategies, descriptor, **kwargs)
-        self.mapped_strategy = strategies.strategy(one_of([Leaf, Split]))
-
-    def child_strategies(self):
-        return ()
-
-    def pack(self, x):
-        return x
-
-    def unpack(self, x):
-        return x
-
-
-def test_can_produce_deep_binary_trees():
-    falsify(lambda x: x.depth() <= 2, BinaryTree)
 
 Litter = namedtuple('Litter', ('kitten1', 'kitten2'))
 
