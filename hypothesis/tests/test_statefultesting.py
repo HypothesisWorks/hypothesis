@@ -179,3 +179,19 @@ class NeedsKeywordArgs(StatefulTest):
 def test_passes_keyword_args():
     example = NeedsKeywordArgs.breaking_example()
     assert example == [('do_stuff', 0)]
+
+
+class RequiresInit(StatefulTest):
+
+    @requires(bool)
+    def __init__(self, x):
+        self.x = x
+
+    @step
+    def assert_self(self):
+        assert self.x
+
+
+def test_can_generate_for_init():
+    example = RequiresInit.breaking_example()
+    assert example == [('__init__', False), ('assert_self',)]
