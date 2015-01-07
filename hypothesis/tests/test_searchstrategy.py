@@ -3,6 +3,7 @@ from hypothesis.flags import Flags
 from hypothesis.tracker import Tracker
 from collections import namedtuple
 from six.moves import xrange
+import random
 
 
 def strategy(*args, **kwargs):
@@ -162,3 +163,13 @@ def test_returns_no_duplicate_child_strategies():
     strat = ss.SearchStrategies().strategy([int, [int, float]])
     children = [s.descriptor for s in strat.all_child_strategies()]
     assert len([x for x in children if x == int]) == 1
+
+
+def test_float_strategy_does_not_overflow():
+    strategy = ss.SearchStrategies().strategy(float)
+    flags = strategy.flags().flags
+
+    for _ in xrange(100):
+        these_flags = [f for f in flags if random.randint(0, 1)]
+        size = random.randint(0, 1000)
+        strategy.produce(size, Flags(these_flags))

@@ -270,7 +270,11 @@ class FloatStrategy(SearchStrategy):
             s2 = math.exp(2 * size) / (2 * math.pi * math.e)
             return random.gauss(0, s2)
         else:
-            return random.expovariate(math.exp(1 - size))
+            l = math.exp(1 - size)
+            if l > 0.0:
+                return random.expovariate(l)
+            else:
+                return float(random.randint(0, 1 << 64))
 
     def complexity(self, x):
         return x if x >= 0 else 1 - x
