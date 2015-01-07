@@ -57,7 +57,7 @@ def test_reversing_does_not_preserve_float_addition(xs):
 
 
 def test_still_minimizes_on_non_assertion_failures():
-    @given(int, verifier=Verifier(starting_size=500))
+    @given(int)
     def is_not_too_large(x):
         if x >= 10:
             raise ValueError('No, %s is just too large. Sorry' % x)
