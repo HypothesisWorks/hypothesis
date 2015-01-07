@@ -273,7 +273,7 @@ def test_good_errors_on_bad_values():
 
 
 def test_can_falsify_bools():
-    assert falsify(lambda x: x, bool)[0] == False
+    assert not falsify(lambda x: x, bool)[0]
 
 
 def test_can_falsify_lists_of_bools():
@@ -319,8 +319,11 @@ class Split(BinaryTree):
         return self.left.breadth() + self.right.breadth()
 
     def __eq__(self, that):
-        return isinstance(
-            that, Split) and that.left == self.left and that.right == self.right
+        return (
+            isinstance(that, Split) and
+            that.left == self.left and
+            that.right == self.right
+        )
 
     def __hash__(self):
         return hash(self.left) ^ hash(self.right)
@@ -398,7 +401,8 @@ def test_can_falsify_complex_numbers():
     with pytest.raises(Unfalsifiable):
         falsify(
             lambda x, y: (
-                x * y).conjugate() == x.conjugate() * y.conjugate(), complex, complex)
+                x * y
+            ).conjugate() == x.conjugate() * y.conjugate(), complex, complex)
 
 
 def test_raises_on_unsatisfiable_assumption():

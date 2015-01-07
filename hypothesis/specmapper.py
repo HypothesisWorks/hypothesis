@@ -3,18 +3,17 @@ from hypothesis.hashitanyway import HashItAnyway
 
 
 class SpecificationMapper(object):
-
     """Maps descriptions of some type to a type. Has configurable handlers for
     what a description may look like. Handlers for descriptions may take either
     a specific value or all instances of a type and have access to the mapper
     to look up types.
 
-    Also supports prototype based inheritance, with children being able to override specific handlers
+    Also supports prototype based inheritance, with children being able to
+    override specific handlers
 
-    There is a single default() object per subclass of SpecificationMapper which everything has
-    as a prototype if it's not assigned any other prototype. This allows you to easily define the
-    mappers
-
+    There is a single default() object per subclass of SpecificationMapper
+    which everything has as a prototype if it's not assigned any other
+    prototype. This allows you to easily define the mappers
     """
 
     @classmethod
@@ -102,7 +101,8 @@ class SpecificationMapper(object):
 
     def __instance_handlers(self, tk):
         for c, hs in sorted(
-                self.instance_mappers.items(), key=lambda x: ClassSorter(x[0])):
+                self.instance_mappers.items(), key=lambda x: ClassSorter(x[0])
+        ):
             if issubclass(tk, c):
                 for h in reversed(hs):
                     yield h
@@ -151,11 +151,11 @@ def next_in_chain():
 
 
 class NextInChain(Exception):
-
     def __init__(self):
         Exception.__init__(
             self,
-            "Not handled. Call next in chain. You shouldn't have seen this exception.")
+            "Not handled. Call next in chain. You shouldn't have seen this"
+            "exception.")
 
 
 class MissingSpecification(Exception):

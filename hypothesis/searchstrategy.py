@@ -366,8 +366,8 @@ class TupleStrategy(SearchStrategy):
 
     def simplify(self, x):
         """
-        Defined simplification for tuples: We don't change the length of the tuple
-        we only try to simplify individual elements of it.
+        Defined simplification for tuples: We don't change the length of the
+        tuple we only try to simplify individual elements of it.
         We first try simplifying each index. We then try pairs of indices.
         After that we stop because it's getting silly.
         """
