@@ -1,1 +1,0 @@
-../test_searchstrategy.py

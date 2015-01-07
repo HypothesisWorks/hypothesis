@@ -1,1 +1,0 @@
-../internal/test_specmapper.py
