@@ -9,12 +9,14 @@ from inspect import getmembers
 
 import hypothesis
 
+from hypothesis.utils.reflection import convert_keyword_arguments
+
 
 def step(f):
     f.hypothesis_test_step = True
 
     if not hasattr(f, 'hypothesis_test_requirements'):
-        f.hypothesis_test_requirements = ()
+        f.hypothesis_test_requirements = ((), {})
     return f
 
 
@@ -23,9 +25,9 @@ def integrity_test(f):
     return f
 
 
-def requires(*args):
+def requires(*args, **kwargs):
     def alter_function(f):
-        f.hypothesis_test_requirements = args
+        f.hypothesis_test_requirements = (args, kwargs)
         return f
     return alter_function
 
@@ -55,9 +57,9 @@ class TestRun(object):
             for t in tests:
                 t(value)
         run_integrity_tests()
-        for step, args in self.steps:
+        for step, args, kwargs in self.steps:
             try:
-                step(value, *args)
+                step(value, *args, **kwargs)
                 run_integrity_tests()
             except PreconditionNotMet:
                 pass
@@ -117,9 +119,14 @@ class StatefulTest(object):
     @classmethod
     def breaking_example(cls):
         test_run = hypothesis.falsify(TestRun.run, cls)[0]
-        return [(f.__name__,) + args for f, args in test_run]
+        result = []
+        for f, args, kwargs in test_run:
+            args, kwargs = convert_keyword_arguments(f, (None,) + args, kwargs)
+            args = args[1:]
+            result.append((f.__name__,) + args)
+        return result
 
-Step = namedtuple('Step', ('target', 'arguments'))
+Step = namedtuple('Step', ('target', 'arguments', 'kwargs'))
 
 
 class StepStrategy(MappedSearchStrategy):
@@ -138,13 +145,14 @@ class StepStrategy(MappedSearchStrategy):
             return False
         if x.target != self.descriptor:
             return False
-        return self.mapped_strategy.could_have_produced(x.arguments)
+        return self.mapped_strategy.could_have_produced(
+            (x.arguments, x.kwargs))
 
     def pack(self, x):
-        return Step(self.descriptor, x)
+        return Step(self.descriptor, x[0], x[1])
 
     def unpack(self, x):
-        return x.arguments
+        return (x.arguments, x.kwargs)
 
 
 class StatefulStrategy(MappedSearchStrategy):

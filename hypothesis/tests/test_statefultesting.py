@@ -166,3 +166,16 @@ def test_bad_set_finds_minimal_break():
         breaking_example = BadSetTester.breaking_example()
         assert len(breaking_example) == 3
         assert len(set([s[1] for s in breaking_example])) == 1
+
+
+class NeedsKeywordArgs(StatefulTest):
+
+    @step
+    @requires(x=int)
+    def do_stuff(self, x):
+        assert x > 0
+
+
+def test_passes_keyword_args():
+    example = NeedsKeywordArgs.breaking_example()
+    assert example == [('do_stuff', 0)]
