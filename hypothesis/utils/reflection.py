@@ -24,7 +24,12 @@ def convert_keyword_arguments(function, args, kwargs):
         if i < len(args):
             new_args.append(args[i])
         elif i < len(argspec.args):
-            new_args.append(kwargs.pop(argspec.args[i]))
+            try:
+                new_args.append(kwargs.pop(argspec.args[i]))
+            except KeyError:
+                raise TypeError("No value provided for argument %r" % (
+                    argspec.args[i],
+                ))
     new_args += list(kwargs.pop(argspec.varargs, ()))
 
     if kwargs and not argspec.keywords:

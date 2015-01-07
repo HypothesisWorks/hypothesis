@@ -47,3 +47,11 @@ def test_passes_varargs_correctly():
     assert convert_keyword_arguments(foo, (1, 2, 3), {}) == ((1, 2, 3), {})
     assert convert_keyword_arguments(foo, (), {'args': (1, 2, 3)}) == (
         (1, 2, 3), {})
+
+
+def test_errors_if_not_enough_args():
+    def foo(a, b, c, d=1):
+        pass
+
+    with pytest.raises(TypeError):
+        assert convert_keyword_arguments(foo, (1, 2), {'d': 4})
