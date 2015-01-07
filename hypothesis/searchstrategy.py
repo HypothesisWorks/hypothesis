@@ -170,7 +170,7 @@ class IntStrategy(SearchStrategy):
         elif x > 0:
             yield 0
             random = r.Random(x)
-            values = range(1, x)
+            values = list(xrange(1, x))
             random.shuffle(values)
             for v in values:
                 yield v
