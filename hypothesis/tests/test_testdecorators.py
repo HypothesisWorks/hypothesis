@@ -111,7 +111,6 @@ calls = [0, 0, 0, 0]
 @fails
 @given(int, verifier_kwargs={'timeout': 3})
 def test_slow_failing_test_1(x):
-    print 'call test_slow_failing_test_1'
     time.sleep(1)
     assert not calls[0]
     calls[0] = 1

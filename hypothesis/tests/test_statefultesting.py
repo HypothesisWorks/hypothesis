@@ -6,6 +6,8 @@ from hypothesis.statefultesting import (
     integrity_test
 )
 
+from six.moves import xrange
+
 
 class Foo(StatefulTest):
 

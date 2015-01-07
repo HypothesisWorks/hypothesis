@@ -14,10 +14,6 @@ class PyTest(TestCommand):
         errno = pytest.main(self.test_args)
         sys.exit(errno)
 
-extra = {}
-if sys.version_info >= (3,):
-    extra['use_2to3'] = True
-
 setup(
     name='hypothesis',
     version='0.1.4',
@@ -29,6 +25,6 @@ setup(
     description='Tools for falsifying hypothesis with random data generation',
     long_description=open('README').read(),
     tests_require=['pytest', 'pytest-timeout', 'flake8'],
+    install_requires=['six'],
     cmdclass={'test': PyTest},
-    **extra
 )

@@ -7,6 +7,7 @@ from collections import namedtuple
 from abc import abstractmethod
 from math import log, log1p
 import math
+from six.moves import xrange
 
 from random import random as rand, choice
 import random
@@ -514,7 +515,8 @@ class OneCharStringStrategy(SearchStrategy):
                  descriptor,
                  **kwargs):
         SearchStrategy.__init__(self, strategies, descriptor, **kwargs)
-        self.characters = kwargs.get('characters', map(chr, range(0, 127)))
+        self.characters = list(
+            kwargs.get('characters', map(chr, range(0, 127))))
         self.zero_point = ord(kwargs.get('zero_point', '0'))
 
     def produce(self, size, flags):

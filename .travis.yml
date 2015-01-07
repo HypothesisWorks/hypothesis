@@ -4,12 +4,12 @@ python:
   - 2.7
   - 3.2
   - 3.3
+  - 3.4
   - pypy
 
 install: python setup.py install
 
 before_script:
-  - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then 2to3 hypothesis -w; fi
   - pip install --use-mirrors pytest pytest-timeout flake8
 
 script:

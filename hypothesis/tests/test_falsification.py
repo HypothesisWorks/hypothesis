@@ -17,6 +17,7 @@ from collections import namedtuple
 import pytest
 import re
 import math
+from six.moves import xrange
 
 
 def test_can_make_assumptions():
