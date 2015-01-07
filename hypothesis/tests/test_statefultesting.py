@@ -103,18 +103,29 @@ def test_runs_integrity_checks_after_each_step():
     assert len(QuicklyBroken.breaking_example()) == 2
 
 
-class FiveHater(StatefulTest):
-
+class NumberHater(StatefulTest):
     @requires(int)
     @step
     def hates_fives(self, n):
-        assert n < 5
+        assert n < self.hated_number
+
+
+class FiveHater(NumberHater):
+    hated_number = 5
+
+
+class EightHater(NumberHater):
+    hated_number = 8
 
 
 def test_minimizes_arguments_to_steps():
     steps = FiveHater.breaking_example()
     assert len(steps) == 1
     assert steps[0][1] == 5
+
+    steps = EightHater.breaking_example()
+    assert len(steps) == 1
+    assert steps[0][1] == 8
 
 
 class BadSet(object):
