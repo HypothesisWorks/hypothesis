@@ -529,7 +529,7 @@ class OneCharStringStrategy(SearchStrategy):
         SearchStrategy.__init__(self, strategies, descriptor, **kwargs)
         self.characters = kwargs.get(
             "characters",
-            u"0123456789" + text_type(string.ascii_letters))
+            text_type("0123456789") + text_type(string.ascii_letters))
 
     def produce(self, size, flags):
         return choice(self.characters)
@@ -572,10 +572,10 @@ class BinaryStringStrategy(MappedSearchStrategy):
     base_descriptor = text_type
 
     def pack(self, x):
-        return binary_type(x)
+        return x.encode('utf-8')
 
     def unpack(self, x):
-        return text_type(x)
+        return x.decode('utf-8')
 
 
 @strategy_for_instances(dict)
