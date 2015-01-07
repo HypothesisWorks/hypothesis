@@ -1,15 +1,19 @@
+import time
 from hypothesis.verifier import Verifier, Unfalsifiable, UnsatisfiedAssumption
 
-def given(*generator_arguments,**kwargs):
-    if "verifier" in kwargs:
-        verifier = kwargs["verifier"]
-        del kwargs["verifier"]
-    else:
-        verifier = Verifier()
 
+def given(*generator_arguments, **kwargs):
     def run_test_with_generator(test):
         def wrapped_test(*arguments):
-            # The only thing we accept in falsifying the test are exceptions 
+            if "verifier" in kwargs:
+                verifier = kwargs.pop("verifier")
+                verifier.start_time = time.time()
+            elif "verifier_kwargs" in kwargs:
+                verifier = Verifier(**kwargs.pop("verifier_kwargs"))
+            else:
+                verifier = Verifier()
+
+            # The only thing we accept in falsifying the test are exceptions
             # Returning successfully is always a pass.
             def to_falsify(xs):
                 testargs, testkwargs = xs

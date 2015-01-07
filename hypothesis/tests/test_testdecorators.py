@@ -1,13 +1,22 @@
 from hypothesis.testdecorators import given
-from hypothesis.verifier import Verifier, assume
+from hypothesis.verifier import Verifier, assume, Unsatisfiable
 from functools import wraps
 import pytest
+import time
 
 
 def fails(f):
     @wraps(f)
     def inverted_test(*arguments, **kwargs):
         with pytest.raises(AssertionError):
+            f(*arguments, **kwargs)
+    return inverted_test
+
+
+def unsatisfiable(f):
+    @wraps(f)
+    def inverted_test(*arguments, **kwargs):
+        with pytest.raises(Unsatisfiable):
             f(*arguments, **kwargs)
     return inverted_test
 
@@ -84,3 +93,48 @@ class TestCases(object):
 def test_can_be_given_keyword_args(x, name):
     assume(x > 0)
     assert len(name) < x
+
+
+@unsatisfiable
+@given(int, verifier_kwargs={'timeout': 1})
+def test_slow_test_times_out(x):
+    time.sleep(2)
+
+
+# Cheap hack to make test functions which fail on their second invocation
+calls = [0, 0, 0, 0]
+
+
+# The following tests exist to test that verifiers start their timeout
+# from when the test first executes, not from when it is defined.
+@fails
+@given(int, verifier_kwargs={'timeout': 3})
+def test_slow_failing_test_1(x):
+    print "call test_slow_failing_test_1"
+    time.sleep(1)
+    assert not calls[0]
+    calls[0] = 1
+
+
+@fails
+@given(int, verifier_kwargs={'timeout': 3})
+def test_slow_failing_test_2(x):
+    time.sleep(1)
+    assert not calls[1]
+    calls[1] = 1
+
+
+@fails
+@given(int, verifier=Verifier(timeout=3))
+def test_slow_failing_test_3(x):
+    time.sleep(1)
+    assert not calls[2]
+    calls[2] = 1
+
+
+@fails
+@given(int, verifier=Verifier(timeout=3))
+def test_slow_failing_test_4(x):
+    time.sleep(1)
+    assert not calls[3]
+    calls[3] = 1
