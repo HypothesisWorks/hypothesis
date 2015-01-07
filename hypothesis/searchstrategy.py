@@ -260,6 +260,8 @@ class FloatStrategy(SearchStrategy):
 
     def produce(self, size, flags):
         if flags.enabled("allow_negative_floats"):
+            # Cap size to avoid overflow errors
+            size = min(100, size)
             s2 = math.exp(2 * size) / (2 * math.pi * math.e)
             return random.gauss(0, s2)
         else:

@@ -16,6 +16,7 @@ from hypothesis.searchstrategy import (
 from collections import namedtuple
 import pytest
 import re
+import math
 
 def test_can_make_assumptions():
     def is_good(x):
@@ -323,3 +324,7 @@ def test_can_falsify_complex_numbers():
 def test_raises_on_unsatisfiable_assumption():
     with pytest.raises(Unsatisfiable):
         falsify(lambda x: assume(False), int)
+
+
+def test_float_strategy_does_not_raise():
+    falsify(lambda x: abs(math.cos(x)) > 0.001, float)
