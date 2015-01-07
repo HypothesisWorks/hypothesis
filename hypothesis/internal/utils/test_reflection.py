@@ -1,4 +1,4 @@
-from hypothesis.utils.reflection import convert_keyword_arguments
+from hypothesis.internal.utils.reflection import convert_keyword_arguments
 import pytest
 
 
