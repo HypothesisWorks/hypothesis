@@ -8,6 +8,8 @@ from abc import abstractmethod
 from math import log, log1p
 import math
 from six.moves import xrange
+from six import text_type, binary_type
+import string
 
 from random import random as rand, choice
 import random
@@ -455,6 +457,12 @@ class ListStrategy(SearchStrategy):
 
 
 class MappedSearchStrategy(SearchStrategy):
+    def __init__(self,
+                 strategies,
+                 descriptor,
+                 **kwargs):
+        SearchStrategy.__init__(self, strategies, descriptor, **kwargs)
+        self.mapped_strategy = strategies.strategy(self.base_descriptor)
 
     @abstractmethod
     def pack(self, x):
@@ -519,28 +527,24 @@ class OneCharStringStrategy(SearchStrategy):
                  descriptor,
                  **kwargs):
         SearchStrategy.__init__(self, strategies, descriptor, **kwargs)
-        self.characters = list(
-            kwargs.get('characters', map(chr, range(0, 127))))
-        self.zero_point = ord(kwargs.get('zero_point', '0'))
+        self.characters = kwargs.get(
+            "characters",
+            u"0123456789" + text_type(string.ascii_letters))
 
     def produce(self, size, flags):
         return choice(self.characters)
 
     def complexity(self, x):
-        return abs(ord(x) - self.zero_point)
+        result = self.characters.index(x)
+        assert result >= 0
+        return result
 
     def simplify(self, x):
-        c = ord(x)
-        if c < self.zero_point:
-            yield chr(2 * self.zero_point - c)
-            for d in xrange(c + 1, self.zero_point + 1):
-                yield chr(d)
-        elif c > self.zero_point:
-            for d in xrange(c - 1, self.zero_point - 1, -1):
-                yield chr(d)
+        for i in xrange(self.complexity(x), -1, -1):
+            yield self.characters[i]
 
 
-@strategy_for(str)
+@strategy_for(text_type)
 class StringStrategy(MappedSearchStrategy):
 
     def __init__(self,
@@ -561,6 +565,17 @@ class StringStrategy(MappedSearchStrategy):
 
     def unpack(self, s):
         return list(s)
+
+
+@strategy_for(binary_type)
+class BinaryStringStrategy(MappedSearchStrategy):
+    base_descriptor = text_type
+
+    def pack(self, x):
+        return binary_type(x)
+
+    def unpack(self, x):
+        return text_type(x)
 
 
 @strategy_for_instances(dict)

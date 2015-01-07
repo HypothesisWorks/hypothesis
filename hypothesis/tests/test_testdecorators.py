@@ -4,6 +4,7 @@ from hypothesis.searchstrategy import one_of, just
 from functools import wraps
 import pytest
 import time
+from six import text_type, binary_type
 
 
 def fails(f):
@@ -146,6 +147,19 @@ def test_slow_failing_test_4(x):
 def test_one_of_produces_different_values(x, y):
     assert type(x) == type(y)
 
+
 @given(just(42))
 def test_is_the_answer(x):
     assert x == 42
+
+
+@fails
+@given(text_type, text_type)
+def test_text_addition_is_not_commutative(x, y):
+    assert x + y == y + x
+
+
+@fails
+@given(binary_type, binary_type)
+def test_binary_addition_is_not_commutative(x, y):
+    assert x + y == y + x
