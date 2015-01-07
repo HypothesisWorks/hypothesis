@@ -28,7 +28,7 @@ setup(
     license='LICENSE.txt',
     description='Tools for falsifying hypothesis with random data generation',
     long_description=open('README').read(),
-    tests_require=['pytest', 'pytest-timeout'],
+    tests_require=['pytest', 'pytest-timeout', 'flake8'],
     cmdclass={'test': PyTest},
     **extra
 )
