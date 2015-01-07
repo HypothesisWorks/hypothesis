@@ -7,13 +7,10 @@ import hypothesis.internal.utils.distributions as dist
 from inspect import isclass
 from collections import namedtuple
 from abc import abstractmethod
-from math import log, log1p
-import math
 from six.moves import xrange
 from six import text_type, binary_type
 import string
 
-from random import random as rand, choice
 import random
 
 
@@ -249,28 +246,6 @@ class FloatStrategy(SearchStrategy):
             yield x + (m - n)
 
 
-def h(p):
-    return -(p * log(p) + (1 - p) * log1p(-p))
-
-
-def inverse_h(hd):
-    if hd < 0:
-        raise ValueError('Entropy h cannot be negative: %s' % h)
-    if hd > 1:
-        raise ValueError('Single bit entropy cannot be > 1: %s' % h)
-    low = 0.0
-    high = 0.5
-
-    for _ in xrange(10):
-        mid = (low + high) * 0.5
-        if h(mid) < hd:
-            low = mid
-        else:
-            high = mid
-
-    return mid
-
-
 @strategy_for(bool)
 class BoolStrategy(SearchStrategy):
 
@@ -486,7 +461,7 @@ class OneCharStringStrategy(SearchStrategy):
         self.parameter = params.CompositeParameter()
 
     def produce(self, random, pv):
-        return choice(self.characters)
+        return random.choice(self.characters)
 
     def complexity(self, x):
         result = self.characters.index(x)

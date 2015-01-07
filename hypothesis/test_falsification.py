@@ -8,7 +8,6 @@ from hypothesis.verifier import (
 from hypothesis.internal.specmapper import MissingSpecification
 from hypothesis.searchstrategy import (
     SearchStrategy,
-    MappedSearchStrategy,
     one_of,
     SearchStrategies,
     strategy_for
