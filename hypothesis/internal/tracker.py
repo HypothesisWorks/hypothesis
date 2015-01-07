@@ -1,4 +1,4 @@
-from hypothesis.hashitanyway import HashItAnyway
+from hypothesis.internal.utils.hashitanyway import HashItAnyway
 
 
 class Tracker(object):

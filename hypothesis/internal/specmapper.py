@@ -1,5 +1,5 @@
 from functools import wraps, total_ordering
-from hypothesis.hashitanyway import HashItAnyway
+from hypothesis.internal.utils.hashitanyway import HashItAnyway
 
 
 class SpecificationMapper(object):

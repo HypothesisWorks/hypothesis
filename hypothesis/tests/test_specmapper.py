@@ -1,4 +1,4 @@
-from hypothesis.specmapper import (
+from hypothesis.internal.specmapper import (
     SpecificationMapper,
     MissingSpecification,
     next_in_chain

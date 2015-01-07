@@ -1,4 +1,4 @@
-from hypothesis.tracker import Tracker
+from hypothesis.internal.tracker import Tracker
 
 
 def test_track_ints():

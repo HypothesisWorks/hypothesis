@@ -1,6 +1,6 @@
 import hypothesis.searchstrategy as ss
 from hypothesis.flags import Flags
-from hypothesis.tracker import Tracker
+from hypothesis.internal.tracker import Tracker
 from collections import namedtuple
 from six.moves import xrange
 import random

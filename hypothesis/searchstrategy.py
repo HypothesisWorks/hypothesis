@@ -1,5 +1,5 @@
-from hypothesis.specmapper import SpecificationMapper
-from hypothesis.tracker import Tracker
+from hypothesis.internal.specmapper import SpecificationMapper
+from hypothesis.internal.tracker import Tracker
 from hypothesis.flags import Flags
 
 from inspect import isclass

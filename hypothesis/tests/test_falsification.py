@@ -5,7 +5,7 @@ from hypothesis.verifier import (
     Unsatisfiable,
     Verifier
 )
-from hypothesis.specmapper import MissingSpecification
+from hypothesis.internal.specmapper import MissingSpecification
 from hypothesis.searchstrategy import (
     SearchStrategy,
     MappedSearchStrategy,
