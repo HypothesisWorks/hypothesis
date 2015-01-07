@@ -16,7 +16,7 @@ class PyTest(TestCommand):
 
 setup(
     name='hypothesis',
-    version='0.2.0',
+    version='0.2.1',
     author='David R. MacIver',
     author_email='david@drmaciver.com',
     packages=['hypothesis'],

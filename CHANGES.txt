@@ -52,3 +52,8 @@
     * Allow stateful testing to request constructor args.
     * Fix for issue where test annotations would timeout based on when the 
       module was loaded instead of when the test started
+
+0.2.1 - 07/01/2015
+    * Fix a bug in the new stateful testing feature where you could make
+      __init__ a @requires method. Simplification would not always work if the
+      prune method was able to successfully shrink the test.
