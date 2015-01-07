@@ -161,6 +161,38 @@ then we would get an assertion failure. Which indeed we would because the
 assertion that removing results in the element no longer being in the set
 would now be failing.
 
+---------------------
+ Adding custom types
+---------------------
+
+Hypothesis comes with support for a lot of common built-in types out of the
+box, but you may want to test over spaces that involve your own data types.
+The easiest way to accomplish this is to derive a ``SearchStrategy`` from an
+existing strategy by extending ``MappedSearchStrategy``.
+
+The following example defines a search strategy for ``Decimal``.
+It maps ``int`` values by dividing 100, so the generated values have
+two digits after the decimal point.
+
+.. code:: python
+
+    from decimal import Decimal
+    from hypothesis.searchstrategy import \
+        SearchStrategy, MappedSearchStrategy, strategy_for
+
+    @strategy_for(Decimal)
+    class DecimalStrategy(MappedSearchStrategy):
+
+        def __init__(self, strategies, descriptor, **kwargs):
+            SearchStrategy.__init__(self, strategies, descriptor, **kwargs)
+            self.mapped_strategy = strategies.strategy(int)
+
+        def pack(self, x):
+            return Decimal(x) / 100
+
+        def unpack(self, x):
+            return int(x * 100)
+
 ----------------
  Under the hood
 ----------------
