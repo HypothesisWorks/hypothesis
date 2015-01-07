@@ -15,8 +15,8 @@ class Verifier(object):
                  min_satisfying_examples=5,
                  max_examples=100,
                  max_falsifying_examples=5,
-                 max_runs_per_parameter_value=10,
-                 max_unsatisfied_per_parameter_value=3,
+                 max_runs_per_parameter_value=5,
+                 max_unsatisfied_per_parameter_value=2,
                  timeout=60, random=None):
         self.search_strategies = search_strategies or SearchStrategies()
         self.min_satisfying_examples = min_satisfying_examples
