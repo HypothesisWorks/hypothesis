@@ -1,10 +1,54 @@
-v0.0.1, 10/03/2013 -- Initial release. Basic working prototype. Demonstrates idea, probably shouldn't be used.
-v0.0.2, 12/03/2013 -- Starting to tighten up on the internals. Change API to allow more flexibility in configuration. More testing. 
-v0.0.3  13/03/2013 -- Improved a few internals. Opened up creating generators from instances as a general API. Test integration.
-v0.0.4  13/03/2013 -- No changes except that I checked in a failing test case for 0.0.3 so had to replace the release. Doh
-v0.0.5  13/03/2013 -- No changes except trying to fix packaging
-v0.1.0  23/03/2013 -- Introduce stateful testing. Massive rewrite of internals to add flags and strategies.
-v0.1.1  24/03/2013 -- Python 3.x support via 2to3. Use new style classes (oops). 
-v0.1.2  24/03/2013 -- Bugfix: Stateful testing was not minimizing correctly and could throw exceptions. Features: Better support for recursive strategies. Support for named tuples. Performance: Much faster integer generation.
-v0.1.3  03/05/2013 -- Bugfix: Stateful testing behaved incorrectly with subclassing. Features: Complex number support, support for recursive strategies, different error for hypotheses with unsatisfiable assumptions
-v0.1.4  14/12/2013 -- Make verification runs time bounded with a configurable timeout
+0.0.1 - 10/03/2013
+    * Initial release.
+    * Basic working prototype. Demonstrates idea, probably shouldn't be used.
+
+0.0.2 - 12/03/2013 
+    * Starting to tighten up on the internals.
+    * Change API to allow more flexibility in configuration.
+    * More testing. 
+
+0.0.3 - 13/03/2013
+    * Improved a few internals.
+    * Opened up creating generators from instances as a general API.
+    * Test integration.
+
+0.0.4 - 13/03/2013 
+    * No changes except that I checked in a failing test case for 0.0.3
+      so had to replace the release. Doh
+
+0.0.5 - 13/03/2013
+    * No changes except trying to fix packaging
+
+0.1.0 - 23/03/2013
+    * Introduce stateful testing.
+    * Massive rewrite of internals to add flags and strategies.
+
+0.1.1 - 24/03/2013 
+    * Python 3.x support via 2to3.
+    * Use new style classes (oops). 
+
+
+0.1.2 - 24/03/2013
+    * Bugfix: Stateful testing was not minimizing correctly and could
+      throw exceptions.
+    * Better support for recursive strategies.
+    * Support for named tuples.
+    * Much faster integer generation.
+
+0.1.3 - 03/05/2013
+    * Bugfix: Stateful testing behaved incorrectly with subclassing.
+    * Complex number support
+    * support for recursive strategies
+    * different error for hypotheses with unsatisfiable assumptions
+
+0.1.4 - 14/12/2013 fu
+    * Make verification runs time bounded with a configurable timeout
+
+0.2.0 - 07/01/2015
+    * It's aliiive.
+    * Improve python 3 support using six.
+    * Distinguish between byte and unicode types.
+    * Fix issues where FloatStrategy could raise.
+    * Allow stateful testing to request constructor args.
+    * Fix for issue where test annotations would timeout based on when the 
+      module was loaded instead of when the test started
