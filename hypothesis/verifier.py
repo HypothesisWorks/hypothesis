@@ -35,9 +35,6 @@ class Verifier(object):
     def falsify(self, hypothesis, *argument_types):
         search_strategy = (self.search_strategies
                                .specification_for(argument_types))
-        # TODO: This is a sign that I should be pulling some of this out into
-        # an object.
-        examples_found = [0]
 
         def falsifies(args):
             try:
