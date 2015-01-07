@@ -63,16 +63,16 @@ So the following test will pass:
 
 .. code:: python
 
-    @given(int,int)
-    def test_int_addition_is_commutative(x,y):
+    @given(int, int)
+    def test_int_addition_is_commutative(x, y):
         assert x + y == y + x
 
 And the following will fail:
 
 .. code:: python
 
-    @given(str,str)
-    def test_str_addition_is_commutative(x,y):
+    @given(str, str)
+    def test_str_addition_is_commutative(x, y):
         assert x + y == y + x
 
 With an error message something like:
@@ -81,7 +81,7 @@ With an error message something like:
 
         x = '0', y = '1'
         @given(str,str)
-        def test_str_addition_is_commutative(x,y):
+        def test_str_addition_is_commutative(x, y):
             assert x + y == y + x
     E       assert '01' == '10'
     E         - 01
@@ -127,7 +127,7 @@ We can put together a stateful test as follows:
 
         @step
         @requires(int)
-        def add(self,i):
+        def add(self, i):
             self.target.add(i)
             assert self.target.contains(i)
 
@@ -182,10 +182,7 @@ two digits after the decimal point.
 
     @strategy_for(Decimal)
     class DecimalStrategy(MappedSearchStrategy):
-
-        def __init__(self, strategies, descriptor, **kwargs):
-            SearchStrategy.__init__(self, strategies, descriptor, **kwargs)
-            self.mapped_strategy = strategies.strategy(int)
+        base_descriptor = int
 
         def pack(self, x):
             return Decimal(x) / 100
@@ -202,24 +199,25 @@ How does hypothesis work?
 The core object of hypothesis is the SearchStrategy. It knows how to explore a 
 state space, and has the following operations.
 
-* produce(size,flags). Generate a random element of the state space subject to the flags provided.
-* flags(). Return a set of flags that may be used to control the production of elements.
+* How to generate a parameter. This is an object of type Parameter that controls random data generation
+* produce(random, parameter). Generate a random element of the state space given a value from its class of parameters.
 * could_have_produced(element). Say whether it's plausible that this element was produced by this strategy.
 * complexity(element). Return a float saying roughly how "complex" this element is. There's no meaning attached to this except that hypothesis will try to generate elements of lower complexity.
 * simplify(element). Return a generator over a simplified versions of this element.
 
 These satisfy the following invariants:
 
-* produce(size,flags) should produce a distribution with about 'size' bits of entropy.
 * Any element produced by produce must return true when passed to could_have_produced
 * Any element for which could_have_produced returns true must not throw an exception when passed to complexity or simplify
-* The expected complexity of produce(size) should be monotonic increasing in size
 * for y in simplify(x), complexity(y) <= complexity(x)
 * simplify(x) should return a sequence of unique values
 * There shold be no chain x_1, x_2, ..., x_n with x_{i+1} in simplify(x_i) and x_1 in simplify(x_n). 
 
-These are used to explore the state space. produce is called with a number of sizes and flags to
-generate examples that falsify the hypothesis. The lowest complexity of these examples is then
+These are used to explore the state space. Parameter values are generated and then fed to produce -
+generally the same parameter will be used several times, with parameters being changed more frequently
+when they are producing lots of examples that do not satisfy the proecondition. 
+
+When we hit have explored enough examples, if any of them falsify the hypothesis the lowest complexity of these examples is then
 taken, then repeatedly simplified until an example is found with no simplification of it falsifying
 the hypothesis. This is taken as the end result.
 
@@ -237,16 +235,16 @@ There are some reasonably complicated and subtle things you can do in terms of o
 the defined search strategies. I'm not going to go into them here because it's all a bit weird
 and likely to still be in flux.
 
-Warning: This library is still very much in flux, and no release of it right now should be
-considered to be stable. It's emerged out of the initial hack stage, and is probably not too
-broken, but proceed with caution.
+Warning: The details of strategies are liable to change. If you depend on them your code
+will probably be broken in future releases. The goal is to have a stable public API by the
+1.0 release but until then I'll try not to break too much but make no promises.
 
 ---------
  Testing
 ---------
 
 This version of hypothesis has been tested using Python series 2.7,
-3.2, 3.3 and pypy.  Builds are checked with `travis`_:
+3.2, 3.3, 3.4 and pypy.  Builds are checked with `travis`_:
 
 .. _travis: https://travis-ci.org/DRMacIver/hypothesis
 
