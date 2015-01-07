@@ -1,6 +1,5 @@
 from hypothesis.internal.specmapper import SpecificationMapper
 from hypothesis.internal.tracker import Tracker
-from hypothesis.flags import Flags
 import hypothesis.internal.params as params
 import hypothesis.internal.utils.distributions as dist
 
@@ -106,32 +105,11 @@ class SearchStrategy(object):
                 stack.append(c)
                 seen.append(c)
 
-    def flags(self):
-        r = set()
-        self.add_flags_to(r)
-        return Flags(r)
-
-    def personal_flag(self, flag):
-        return (self, str(flag))
-
-    def add_flags_to(self, s, history=None):
-        history = history or []
-        if self in history:
-            return
-        history.append(self)
-        for f in self.own_flags():
-            s.add(f)
-        for c in self.child_strategies():
-            c.add_flags_to(s, history)
-
-    def own_flags(self):
-        return ()
-
     def child_strategies(self):
         return ()
 
     @abstractmethod
-    def produce(self, size, flags):
+    def produce(self, random, parameter_value):
         pass  # pragma: no coverass  # pragma: no cover
 
     def complexity(self, value):
@@ -214,9 +192,6 @@ class FloatStrategy(SearchStrategy):
                  **kwargs):
         SearchStrategy.__init__(self, strategies, descriptor, **kwargs)
         self.int_strategy = strategies.strategy(int)
-
-    def own_flags(self):
-        return ('allow_negative_floats',)
 
     def produce(self, random, pv):
         if pv.may_be_negative:
@@ -397,8 +372,8 @@ class MappedSearchStrategy(SearchStrategy):
     def child_strategies(self):
         return (self.mapped_strategy,)
 
-    def produce(self, size, flags):
-        return self.pack(self.mapped_strategy.produce(size, flags))
+    def produce(self, random, pv):
+        return self.pack(self.mapped_strategy.produce(random, pv))
 
     def complexity(self, x):
         return self.mapped_strategy.complexity(self.unpack(x))
@@ -598,5 +573,5 @@ just = Just
 class JustStrategy(SearchStrategy):
     parameter = params.CompositeParameter()
 
-    def produce(self, size, flags):
+    def produce(self, random, pv):
         return self.descriptor.value

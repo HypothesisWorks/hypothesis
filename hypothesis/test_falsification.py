@@ -34,7 +34,7 @@ class Foo(object):
 class FooStrategy(SearchStrategy):
     parameter = params.CompositeParameter()
 
-    def produce(self, size, flags):
+    def produce(self, random, pv):
         return Foo()
 
 

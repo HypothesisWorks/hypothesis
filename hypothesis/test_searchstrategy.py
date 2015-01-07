@@ -136,7 +136,7 @@ def test_strategy_repr_handles_custom_types():
 
 class TrivialStrategy(ss.SearchStrategy):
 
-    def produce(size, flags):
+    def produce(self, random, pv):
         return 0
 
 
