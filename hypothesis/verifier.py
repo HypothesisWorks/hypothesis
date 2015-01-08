@@ -13,7 +13,7 @@ class Verifier(object):
     def __init__(self,
                  search_strategies=None,
                  min_satisfying_examples=5,
-                 max_examples=100,
+                 max_examples=200,
                  max_falsifying_examples=5,
                  max_runs_per_parameter_value=5,
                  max_unsatisfied_per_parameter_value=2,
