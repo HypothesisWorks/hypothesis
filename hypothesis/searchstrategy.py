@@ -181,7 +181,7 @@ class FloatStrategy(SearchStrategy):
     parameter = params.CompositeParameter(
         sign=params.UniformIntegerParameter(-1, 1),
         exponential_mean=params.GammaParameter(2, 50),
-        gaussian_mean=params.NormalParameter(0, 100),
+        gaussian_mean=params.NormalParameter(0, 1),
     )
 
     def __init__(self,
