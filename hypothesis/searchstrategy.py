@@ -85,29 +85,6 @@ class SearchStrategy(object):
             nice_string(self.descriptor)
         )
 
-    def may_call_self_recursively(self):
-        if not hasattr(self, '__may_call_self_recursively'):
-            self.__may_call_self_recursively = any(
-                self is x for x in self.all_child_strategies()
-            )
-        return self.__may_call_self_recursively
-
-    def all_child_strategies(self):
-        stack = [self]
-        seen = []
-
-        while stack:
-            head = stack.pop()
-            for c in head.child_strategies():
-                if any((s is c for s in seen)):
-                    continue
-                yield c
-                stack.append(c)
-                seen.append(c)
-
-    def child_strategies(self):
-        return ()
-
     @abstractmethod
     def produce(self, random, parameter_value):
         pass  # pragma: no coverass  # pragma: no cover
@@ -242,9 +219,6 @@ class TupleStrategy(SearchStrategy):
             x.parameter for x in self.element_strategies
         )
 
-    def child_strategies(self):
-        return self.element_strategies
-
     def could_have_produced(self, xs):
         if not SearchStrategy.could_have_produced(self, xs):
             return False
@@ -309,9 +283,6 @@ class ListStrategy(SearchStrategy):
             child_parameter=self.element_strategy.parameter,
         )
 
-    def child_strategies(self):
-        return (self.element_strategy,)
-
     def entropy_allocated_for_length(self, size):
         if size <= 2:
             return 0.5 * size
@@ -365,9 +336,6 @@ class MappedSearchStrategy(SearchStrategy):
     @abstractmethod
     def unpack(self, x):
         pass  # pragma: no cover
-
-    def child_strategies(self):
-        return (self.mapped_strategy,)
 
     def produce(self, random, pv):
         return self.pack(self.mapped_strategy.produce(random, pv))
@@ -478,9 +446,6 @@ class FixedKeysDictStrategy(SearchStrategy):
             in self.strategy_dict.items()
         })
 
-    def child_strategies(self):
-        return self.strategy_dict.values()
-
     def produce(self, random, pv):
         result = {}
         for k, g in self.strategy_dict.items():
@@ -525,9 +490,6 @@ class OneOfStrategy(SearchStrategy):
                 e.parameter for e in self.element_strategies
             )
         )
-
-    def child_strategies(self):
-        return self.element_strategies
 
     def could_have_produced(self, x):
         return any((s.could_have_produced(x) for s in self.element_strategies))

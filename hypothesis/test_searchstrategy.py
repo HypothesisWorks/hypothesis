@@ -147,23 +147,6 @@ def test_strategy_repr_handles_instances_without_dicts():
     assert repr(strats.strategy(42)) == 'TrivialStrategy(42)'
 
 
-def test_returns_all_child_strategies_from_list():
-    strat = ss.SearchStrategies().strategy([int, [str, float]])
-
-    children = [s.descriptor for s in strat.all_child_strategies()]
-
-    assert int in children
-    assert str in children
-    assert float in children
-    assert [str, float] in children
-
-
-def test_returns_no_duplicate_child_strategies():
-    strat = ss.SearchStrategies().strategy([int, [int, float]])
-    children = [s.descriptor for s in strat.all_child_strategies()]
-    assert len([x for x in children if x == int]) == 1
-
-
 def test_float_strategy_does_not_overflow():
     strategy = ss.SearchStrategies().strategy(float)
 
