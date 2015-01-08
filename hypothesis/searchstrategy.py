@@ -28,8 +28,8 @@ def strategy_for_instances(typ):
 
 class SearchStrategies(SpecificationMapper):
 
-    def strategy(self, descriptor, **kwargs):
-        return self.specification_for(descriptor, **kwargs)
+    def strategy(self, descriptor):
+        return self.specification_for(descriptor)
 
     def missing_specification(self, descriptor):
         if isinstance(descriptor, SearchStrategy):
@@ -186,9 +186,8 @@ class FloatStrategy(SearchStrategy):
 
     def __init__(self,
                  strategies,
-                 descriptor,
-                 **kwargs):
-        SearchStrategy.__init__(self, strategies, descriptor, **kwargs)
+                 descriptor):
+        SearchStrategy.__init__(self, strategies, descriptor)
         self.int_strategy = strategies.strategy(int)
 
     def produce(self, random, pv):
@@ -235,9 +234,8 @@ class TupleStrategy(SearchStrategy):
 
     def __init__(self,
                  strategies,
-                 descriptor,
-                 **kwargs):
-        SearchStrategy.__init__(self, strategies, descriptor, **kwargs)
+                 descriptor):
+        SearchStrategy.__init__(self, strategies, descriptor)
         self.element_strategies = tuple(
             (strategies.strategy(x) for x in descriptor))
         self.parameter = params.CompositeParameter(
@@ -302,9 +300,8 @@ class ListStrategy(SearchStrategy):
 
     def __init__(self,
                  strategies,
-                 descriptor,
-                 **kwargs):
-        SearchStrategy.__init__(self, strategies, descriptor, **kwargs)
+                 descriptor):
+        SearchStrategy.__init__(self, strategies, descriptor)
 
         self.element_strategy = strategies.strategy(one_of(descriptor))
         self.parameter = params.CompositeParameter(
@@ -353,9 +350,8 @@ class ListStrategy(SearchStrategy):
 class MappedSearchStrategy(SearchStrategy):
     def __init__(self,
                  strategies,
-                 descriptor,
-                 **kwargs):
-        SearchStrategy.__init__(self, strategies, descriptor, **kwargs)
+                 descriptor):
+        SearchStrategy.__init__(self, strategies, descriptor)
         self.mapped_strategy = strategies.strategy(self.base_descriptor)
 
     @property
@@ -389,9 +385,8 @@ class ComplexStrategy(MappedSearchStrategy):
 
     def __init__(self,
                  strategies,
-                 descriptor,
-                 **kwargs):
-        SearchStrategy.__init__(self, strategies, descriptor, **kwargs)
+                 descriptor):
+        SearchStrategy.__init__(self, strategies, descriptor)
         self.mapped_strategy = strategies.strategy((float, float))
 
     def pack(self, x):
@@ -406,10 +401,9 @@ class SetStrategy(MappedSearchStrategy):
 
     def __init__(self,
                  strategies,
-                 descriptor,
-                 **kwargs):
+                 descriptor):
         self.base_descriptor = list(descriptor)
-        super(SetStrategy, self).__init__(strategies, descriptor, **kwargs)
+        super(SetStrategy, self).__init__(strategies, descriptor)
 
     def pack(self, x):
         return set(x)
@@ -421,11 +415,9 @@ class SetStrategy(MappedSearchStrategy):
 class OneCharStringStrategy(SearchStrategy):
     def __init__(self,
                  strategies,
-                 descriptor,
-                 **kwargs):
-        SearchStrategy.__init__(self, strategies, descriptor, **kwargs)
-        self.characters = kwargs.get(
-            "characters",
+                 descriptor):
+        SearchStrategy.__init__(self, strategies, descriptor)
+        self.characters = (
             text_type("0123456789") + text_type(string.ascii_letters))
         self.parameter = params.CompositeParameter()
 
@@ -446,13 +438,10 @@ class OneCharStringStrategy(SearchStrategy):
 class StringStrategy(MappedSearchStrategy):
     def __init__(self,
                  strategies,
-                 descriptor,
-                 **kwargs):
-        SearchStrategy.__init__(self, strategies, descriptor, **kwargs)
-        char_strategy = kwargs.get('char_strategy',
-                                   OneCharStringStrategy)
+                 descriptor):
+        SearchStrategy.__init__(self, strategies, descriptor)
         cs = strategies.new_child_mapper()
-        cs.define_specification_for(str, char_strategy)
+        cs.define_specification_for(str, OneCharStringStrategy)
         self.mapped_strategy = cs.strategy([str])
 
     def pack(self, ls):
@@ -478,9 +467,8 @@ class FixedKeysDictStrategy(SearchStrategy):
 
     def __init__(self,
                  strategies,
-                 descriptor,
-                 **kwargs):
-        SearchStrategy.__init__(self, strategies, descriptor, **kwargs)
+                 descriptor):
+        SearchStrategy.__init__(self, strategies, descriptor)
         self.strategy_dict = {}
         for k, v in descriptor.items():
             self.strategy_dict[k] = strategies.strategy(v)
@@ -526,9 +514,8 @@ class OneOfStrategy(SearchStrategy):
 
     def __init__(self,
                  strategies,
-                 descriptor,
-                 **kwargs):
-        SearchStrategy.__init__(self, strategies, descriptor, **kwargs)
+                 descriptor):
+        SearchStrategy.__init__(self, strategies, descriptor)
         self.element_strategies = [
             strategies.strategy(x) for x in descriptor.elements]
         n = len(self.element_strategies)
