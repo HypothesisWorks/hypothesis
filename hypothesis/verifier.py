@@ -1,6 +1,7 @@
 from hypothesis.searchstrategy import SearchStrategies
 from random import Random
 import time
+from six.moves import xrange
 
 
 def assume(condition):
