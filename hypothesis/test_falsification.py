@@ -330,3 +330,17 @@ def test_can_falsify_complex_numbers():
 def test_raises_on_unsatisfiable_assumption():
     with pytest.raises(Unsatisfiable):
         falsify(lambda x: assume(False), int)
+
+
+def test_gravitates_towards_good_parameter_values():
+    good_value_counts = [0]
+
+    def just_being_awkward(xs):
+        assume(len(xs) >= 50)
+        assume(all(x >= 0 for x in xs))
+        good_value_counts[0] += 1
+        return True
+    with pytest.raises(Unfalsifiable):
+        falsify(just_being_awkward, [float], max_examples=500)
+
+    assert good_value_counts[0] >= 100
