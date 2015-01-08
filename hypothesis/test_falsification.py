@@ -17,6 +17,7 @@ import pytest
 import re
 from six.moves import xrange
 import hypothesis.internal.params as params
+import hypothesis.settings as hs
 
 
 def test_can_make_assumptions():
@@ -341,6 +342,8 @@ def test_gravitates_towards_good_parameter_values():
         good_value_counts[0] += 1
         return True
     with pytest.raises(Unfalsifiable):
-        falsify(just_being_awkward, [float], max_examples=500)
+        falsify(
+            just_being_awkward, [float], settings=hs.Settings(max_examples=500)
+        )
 
     assert good_value_counts[0] >= 100

@@ -2,6 +2,7 @@ from hypothesis.searchstrategy import SearchStrategies
 from random import Random
 import time
 from six.moves import xrange
+import hypothesis.settings as hs
 
 
 def assume(condition):
@@ -10,19 +11,20 @@ def assume(condition):
 
 
 class Verifier(object):
-
-    def __init__(self,
-                 search_strategies=None,
-                 min_satisfying_examples=5,
-                 max_examples=200,
-                 max_falsifying_examples=5,
-                 timeout=60, random=None):
+    def __init__(
+        self,
+        search_strategies=None,
+        random=None,
+        settings=None,
+    ):
+        if settings is None:
+            settings = hs.default
         self.search_strategies = search_strategies or SearchStrategies()
-        self.min_satisfying_examples = min_satisfying_examples
-        self.max_falsifying_examples = max_falsifying_examples
-        self.n_parameter_values = int(float(max_examples) / 10) + 1
-        self.max_examples = max_examples
-        self.timeout = timeout
+        self.min_satisfying_examples = settings.min_satisfying_examples
+        self.max_falsifying_examples = settings.max_falsifying_examples
+        self.n_parameter_values = int(float(settings.max_examples) / 10) + 1
+        self.max_examples = settings.max_examples
+        self.timeout = settings.timeout
         self.start_time = time.time()
         self.random = random or Random()
 
