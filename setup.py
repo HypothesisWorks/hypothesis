@@ -19,7 +19,9 @@ setup(
     version='0.2.1',
     author='David R. MacIver',
     author_email='david@drmaciver.com',
-    packages=['hypothesis'],
+    packages=[
+        'hypothesis', 'hypothesis.internal', 'hypothesis.internal.utils'
+    ],
     url='https://github.com/DRMacIver/hypothesis',
     license='LICENSE.txt',
     description='Tools for falsifying hypothesis with random data generation',
