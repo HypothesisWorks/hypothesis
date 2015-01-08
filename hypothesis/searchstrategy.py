@@ -179,7 +179,7 @@ class IntStrategy(SearchStrategy):
 @strategy_for(float)
 class FloatStrategy(SearchStrategy):
     parameter = params.CompositeParameter(
-        may_be_negative=params.BiasedCoin(0.5),
+        sign=params.UniformIntegerParameter(-1, 1),
         exponential_mean=params.GammaParameter(2, 50),
         gaussian_mean=params.NormalParameter(0, 100),
     )
@@ -192,8 +192,11 @@ class FloatStrategy(SearchStrategy):
         self.int_strategy = strategies.strategy(int)
 
     def produce(self, random, pv):
-        if pv.may_be_negative:
-            return random.expovariate(1.0 / pv.exponential_mean)
+        if pv.sign:
+            result = random.expovariate(1.0 / pv.exponential_mean)
+            if pv.sign < 0:
+                result = -result
+            return result
         else:
             return random.normalvariate(pv.gaussian_mean, 1.0)
 
