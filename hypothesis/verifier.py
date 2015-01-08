@@ -25,11 +25,7 @@ class Verifier(object):
         self.n_parameter_values = int(float(settings.max_examples) / 10) + 1
         self.max_examples = settings.max_examples
         self.timeout = settings.timeout
-        self.start_time = time.time()
         self.random = random or Random()
-
-    def time_to_call_it_a_day(self):
-        return time.time() > self.start_time + self.timeout
 
     def falsify(self, hypothesis, *argument_types):
         search_strategy = (self.search_strategies
@@ -56,11 +52,16 @@ class Verifier(object):
         accepted_examples = [0] * self.n_parameter_values
         rejected_examples = [0] * self.n_parameter_values
 
+        start_time = time.time()
+
+        def time_to_call_it_a_day():
+            return time.time() >= start_time + self.timeout
+
         while not (
             examples_found >= self.max_examples or
             len(falsifying_examples) >= self.max_falsifying_examples
         ):
-            if self.time_to_call_it_a_day():
+            if time_to_call_it_a_day():
                 timed_out = True
                 break
             i = max(
@@ -93,11 +94,15 @@ class Verifier(object):
             else:
                 raise Unfalsifiable(hypothesis)
 
+        for x in falsifying_examples:
+            if not falsifies(x):
+                raise Flaky(hypothesis, x)
+
         best_example = min(falsifying_examples, key=search_strategy.complexity)
 
         for t in search_strategy.simplify_such_that(best_example, falsifies):
             best_example = t
-            if self.time_to_call_it_a_day():
+            if time_to_call_it_a_day():
                 break
 
         return best_example
@@ -131,6 +136,14 @@ class Unsatisfiable(HypothesisException):
         super(Unsatisfiable, self).__init__(
             ('Unable to satisfy assumptions of hypothesis %s. ' +
              'Only %s examples found ') % (hypothesis, str(examples)))
+
+
+class Flaky(HypothesisException):
+    def __init__(self, hypothesis, example):
+        super(Flaky, self).__init__((
+            "Hypothesis %r produces unreliable results: %r falsified it on the"
+            " first call but did not on a subsequent one"
+        ) % (hypothesis, example))
 
 
 class Timeout(Unfalsifiable):

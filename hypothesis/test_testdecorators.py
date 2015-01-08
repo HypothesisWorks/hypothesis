@@ -100,15 +100,15 @@ def test_can_be_given_keyword_args(x, name):
 
 
 @unsatisfiable
-@given(int, verifier_kwargs={'settings': hs.Settings(timeout=2)})
+@given(int, verifier_kwargs={'settings': hs.Settings(timeout=0.1)})
 def test_slow_test_times_out(x):
-    time.sleep(2)
+    time.sleep(0.5)
 
 
 # Cheap hack to make test functions which fail on their second invocation
 calls = [0, 0, 0, 0]
 
-timeout_settings = hs.Settings(timeout=3)
+timeout_settings = hs.Settings(timeout=0.2)
 
 
 # The following tests exist to test that verifiers start their timeout
@@ -116,7 +116,7 @@ timeout_settings = hs.Settings(timeout=3)
 @fails
 @given(int, verifier_kwargs={'settings': timeout_settings})
 def test_slow_failing_test_1(x):
-    time.sleep(1)
+    time.sleep(0.05)
     assert not calls[0]
     calls[0] = 1
 
@@ -124,7 +124,7 @@ def test_slow_failing_test_1(x):
 @fails
 @given(int, verifier_kwargs={'settings': timeout_settings})
 def test_slow_failing_test_2(x):
-    time.sleep(1)
+    time.sleep(0.05)
     assert not calls[1]
     calls[1] = 1
 
@@ -132,7 +132,7 @@ def test_slow_failing_test_2(x):
 @fails
 @given(int, verifier=Verifier(settings=timeout_settings))
 def test_slow_failing_test_3(x):
-    time.sleep(1)
+    time.sleep(0.05)
     assert not calls[2]
     calls[2] = 1
 
@@ -140,7 +140,7 @@ def test_slow_failing_test_3(x):
 @fails
 @given(int, verifier=Verifier(settings=timeout_settings))
 def test_slow_failing_test_4(x):
-    time.sleep(1)
+    time.sleep(0.05)
     assert not calls[3]
     calls[3] = 1
 

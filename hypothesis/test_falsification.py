@@ -3,6 +3,7 @@ from hypothesis.verifier import (
     assume,
     Unfalsifiable,
     Unsatisfiable,
+    Flaky,
     Verifier
 )
 from hypothesis.internal.specmapper import MissingSpecification
@@ -347,3 +348,15 @@ def test_gravitates_towards_good_parameter_values():
         )
 
     assert good_value_counts[0] >= 100
+
+
+def test_detects_flaky_failure():
+    calls = [0]
+
+    def flaky(x):
+        result = calls != [0]
+        calls[0] = 1
+        return result
+
+    with pytest.raises(Flaky):
+        falsify(flaky, int)
