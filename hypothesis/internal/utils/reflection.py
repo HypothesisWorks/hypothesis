@@ -12,25 +12,29 @@ def convert_keyword_arguments(function, args, kwargs):
     new_args = []
     kwargs = dict(kwargs)
 
+    defaults = {}
+
     if argspec.defaults:
         for name, value in zip(
             argspec.args[-len(argspec.defaults):], argspec.defaults
         ):
-            kwargs.setdefault(name, value)
+            defaults[name] = value
 
     n = max(len(args), len(argspec.args))
 
     for i in xrange(n):
         if i < len(args):
             new_args.append(args[i])
-        elif i < len(argspec.args):
-            try:
-                new_args.append(kwargs.pop(argspec.args[i]))
-            except KeyError:
+        else:
+            arg_name = argspec.args[i]
+            if arg_name in kwargs:
+                new_args.append(kwargs.pop(arg_name))
+            elif arg_name in defaults:
+                new_args.append(defaults[arg_name])
+            else:
                 raise TypeError("No value provided for argument %r" % (
-                    argspec.args[i],
+                    arg_name
                 ))
-    new_args += list(kwargs.pop(argspec.varargs, ()))
 
     if kwargs and not argspec.keywords:
         if len(kwargs) > 1:
