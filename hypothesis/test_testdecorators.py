@@ -1,6 +1,6 @@
 from hypothesis.testdecorators import given
 from hypothesis.verifier import Verifier, assume, Unsatisfiable
-from hypothesis.searchstrategy import one_of, just
+from hypothesis.descriptors import one_of, just
 from functools import wraps
 import pytest
 import time

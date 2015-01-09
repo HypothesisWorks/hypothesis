@@ -9,8 +9,8 @@ from hypothesis.verifier import (
 from hypothesis.internal.specmapper import MissingSpecification
 from hypothesis.searchstrategy import (
     SearchStrategy,
-    one_of,
 )
+from hypothesis.descriptors import one_of
 from hypothesis.searchstrategies import (
     SearchStrategies,
     strategy_for,

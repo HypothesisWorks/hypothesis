@@ -1,6 +1,7 @@
 from hypothesis.internal.specmapper import SpecificationMapper
 import hypothesis.searchstrategy as strat
 from six import text_type, binary_type
+import hypothesis.descriptors as descriptors
 
 
 def convert_strategy(fn):
@@ -76,7 +77,7 @@ def define_complex_strategy(strategies, descriptor):
     return strat.ComplexStrategy(strategies.strategy((float, float)))
 
 
-@strategy_for_instances(strat.Just)
+@strategy_for_instances(descriptors.Just)
 def define_just_strategy(strategies, descriptor):
     return strat.JustStrategy(descriptor.value)
 
@@ -102,6 +103,6 @@ def define_dict_strategy(strategies, descriptor):
     return strat.FixedKeysDictStrategy(strategy_dict)
 
 
-@strategy_for_instances(strat.OneOf)
+@strategy_for_instances(descriptors.OneOf)
 def define_one_of_strategy(strategies, descriptor):
     return strat.OneOfStrategy(map(strategies.strategy, descriptor.elements))

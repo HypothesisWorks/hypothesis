@@ -3,12 +3,12 @@ import hypothesis.internal.params as params
 import hypothesis.internal.utils.distributions as dist
 
 import inspect
-from collections import namedtuple
 from abc import abstractmethod
 from six.moves import xrange
 from six import text_type
 import string
 import random as r
+import hypothesis.descriptors as descriptors
 
 
 def nice_string(xs, history=None):
@@ -464,17 +464,6 @@ class FixedKeysDictStrategy(SearchStrategy):
                 y[k] = s
                 yield y
 
-OneOf = namedtuple('OneOf', 'elements')
-
-
-def one_of(args):
-    args = list(args)
-    if not args:
-        raise ValueError('one_of requires at least one value to choose from')
-    if len(args) == 1:
-        return args[0]
-    return OneOf(args)
-
 
 class OneOfStrategy(SearchStrategy):
 
@@ -494,7 +483,7 @@ class OneOfStrategy(SearchStrategy):
         if len(descriptor) == 1:
             descriptor = descriptor[0]
         else:
-            descriptor = OneOf(descriptor)
+            descriptor = descriptors.OneOf(descriptor)
         self.descriptor = descriptor
         self.element_strategies = list(strategies)
         n = len(self.element_strategies)
@@ -529,13 +518,9 @@ class OneOfStrategy(SearchStrategy):
         return self.find_first_strategy(x).simplify(x)
 
 
-Just = namedtuple('Just', 'value')
-just = Just
-
-
 class JustStrategy(SearchStrategy):
     def __init__(self, value):
-        self.descriptor = Just(value)
+        self.descriptor = descriptors.Just(value)
 
     parameter = params.CompositeParameter()
 

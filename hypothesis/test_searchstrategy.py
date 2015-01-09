@@ -1,5 +1,6 @@
 import hypothesis.searchstrategies as ss
 import hypothesis.searchstrategy as strat
+import hypothesis.descriptors as descriptors
 from hypothesis.internal.tracker import Tracker
 from collections import namedtuple
 from six.moves import xrange
@@ -29,7 +30,7 @@ def test_tuples_inspect_component_types_for_production():
 
 
 def alternating(*args):
-    return strategy(strat.one_of(args))
+    return strategy(descriptors.one_of(args))
 
 
 def minimize(s, x):
@@ -78,7 +79,7 @@ def test_float_lists_no_duplicates_in_simplify():
 
 
 def test_just_works():
-    s = strategy(strat.just('giving'))
+    s = strategy(descriptors.just('giving'))
     assert s.produce(random, s.parameter.draw(random)) == 'giving'
     assert list(s.simplify_such_that('giving', lambda _: True)) == ['giving']
 
