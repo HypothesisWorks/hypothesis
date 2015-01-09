@@ -2,6 +2,7 @@ set -e
 
 TARGET=hypothesis-testing-chamber
 
+rm -rf ./dist
 rm -rf ./$TARGET
 mkdir -p $TARGET
 virtualenv $TARGET/venv
