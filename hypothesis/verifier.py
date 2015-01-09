@@ -21,7 +21,6 @@ class Verifier(object):
             settings = hs.default
         self.search_strategies = search_strategies or StrategyTable()
         self.min_satisfying_examples = settings.min_satisfying_examples
-        self.max_falsifying_examples = settings.max_falsifying_examples
         self.n_parameter_values = int(float(settings.max_examples) / 10) + 1
         self.max_examples = settings.max_examples
         self.timeout = settings.timeout
@@ -61,7 +60,7 @@ class Verifier(object):
 
         while not (
             examples_found >= self.max_examples or
-            len(falsifying_examples) >= self.max_falsifying_examples
+            len(falsifying_examples) >= 1
         ):
             if time_to_call_it_a_day():
                 timed_out = True
