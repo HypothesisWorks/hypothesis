@@ -15,4 +15,4 @@ before_script:
 script:
   - py.test -v hypothesis
   - flake8 hypothesis 
-  - mkdir -p hypothesis-testing-chamber; cd hypothesis-testing-chamber; python -c 'from hypothesis import falsify; falsify(lambda x, y: x + y == y + x, str, str)'
+  - ./installer-test.sh
