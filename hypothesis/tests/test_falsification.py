@@ -200,14 +200,15 @@ def test_can_falsify_mixed_lists():
 
 
 def test_can_produce_long_mixed_lists_with_only_a_subset():
-    def is_good(xs):
-        if len(xs) < 20:
-            return True
-        if any((isinstance(x, int) for x in xs)):
-            return True
-        return False
+    def short_or_includes(t):
+        def is_good(xs):
+            if len(xs) < 20:
+                return True
+            return any(isinstance(x, t) for x in xs)
+        return is_good
 
-    falsify(is_good, [int, str])
+    falsify(short_or_includes(str), [int, str])
+    falsify(short_or_includes(int), [int, str])
 
 
 def test_can_falsify_alternating_types():
