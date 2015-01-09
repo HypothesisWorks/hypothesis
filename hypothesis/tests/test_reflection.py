@@ -80,5 +80,10 @@ def test_errors_on_extra_kwargs():
     def foo(a):
         pass  # pragma: no cover
 
-    with pytest.raises(TypeError):
-        convert_keyword_arguments(foo, (), {'b': 1})
+    with pytest.raises(TypeError) as e:
+        convert_keyword_arguments(foo, (1,), {'b': 1})
+    assert 'keyword' in e.value[0]
+
+    with pytest.raises(TypeError) as e2:
+        convert_keyword_arguments(foo, (1,), {'b': 1, 'c': 2})
+    assert 'keyword' in e2.value[0]
