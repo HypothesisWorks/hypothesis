@@ -1,5 +1,5 @@
 from hypothesis.testdecorators import given
-from hypothesis.verifier import Verifier, assume, Unsatisfiable
+from hypothesis.verifier import Verifier, assume, Timeout
 from hypothesis.descriptors import one_of, just
 from functools import wraps
 import pytest
@@ -8,20 +8,16 @@ from six import text_type, binary_type
 import hypothesis.settings as hs
 
 
-def fails(f):
-    @wraps(f)
-    def inverted_test(*arguments, **kwargs):
-        with pytest.raises(AssertionError):
-            f(*arguments, **kwargs)
-    return inverted_test
+def fails_with(e):
+    def accepts(f):
+        @wraps(f)
+        def inverted_test(*arguments, **kwargs):
+            with pytest.raises(e):
+                f(*arguments, **kwargs)
+        return inverted_test
+    return accepts
 
-
-def unsatisfiable(f):
-    @wraps(f)
-    def inverted_test(*arguments, **kwargs):
-        with pytest.raises(Unsatisfiable):
-            f(*arguments, **kwargs)
-    return inverted_test
+fails = fails_with(AssertionError)
 
 
 @given(int, int)
@@ -99,10 +95,10 @@ def test_can_be_given_keyword_args(x, name):
     assert len(name) < x
 
 
-@unsatisfiable
-@given(int, verifier_kwargs={'settings': hs.Settings(timeout=0.1)})
+@fails_with(Timeout)
+@given(int, verifier_kwargs={'settings': hs.Settings(timeout=0.05)})
 def test_slow_test_times_out(x):
-    time.sleep(0.5)
+    time.sleep(0.05)
 
 
 # Cheap hack to make test functions which fail on their second invocation

@@ -153,7 +153,7 @@ class Flaky(HypothesisException):
         ) % (hypothesis, example))
 
 
-class Timeout(Unfalsifiable):
+class Timeout(HypothesisException):
 
     def __init__(self, hypothesis, timeout):
         super(Timeout, self).__init__(
