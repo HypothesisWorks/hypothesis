@@ -52,11 +52,10 @@ def define_text_type_strategy(strategies, descriptor):
 
 @strategy_for(float)
 def define_float_strategy(strategies, descriptor):
-    int_strategy = strategies.strategy(int)
     return (
-        strat.GaussianFloatStrategy(int_strategy) |
-        strat.BoundedFloatStrategy(int_strategy) |
-        strat.ExponentialFloatStrategy(int_strategy))
+        strat.GaussianFloatStrategy() |
+        strat.BoundedFloatStrategy() |
+        strat.ExponentialFloatStrategy())
 
 
 @strategy_for(binary_type)

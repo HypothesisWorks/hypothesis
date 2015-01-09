@@ -131,15 +131,9 @@ class IntStrategy(SearchStrategy):
 class FloatStrategy(SearchStrategy):
     descriptor = float
 
-    parameter = params.CompositeParameter(
-        sign=params.UniformIntegerParameter(-1, 1),
-        exponential_mean=params.GammaParameter(2, 50),
-        gaussian_mean=params.NormalParameter(0, 1),
-    )
-
-    def __init__(self, int_strategy):
+    def __init__(self):
         SearchStrategy.__init__(self)
-        self.int_strategy = int_strategy
+        self.int_strategy = IntStrategy()
 
     def complexity(self, x):
         return x if x >= 0 else 1 - x
