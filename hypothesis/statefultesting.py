@@ -116,14 +116,6 @@ class TestRun(object):
         for s in self.steps:
             yield s
 
-    def __repr__(self):
-        return 'TestRun(%r, %r)' % (
-            self.init_args, self.init_kwargs,
-        )
-
-    def __getitem__(self, i):
-        return self.steps[i]
-
 
 class StatefulTest(object):
 
