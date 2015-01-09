@@ -6,7 +6,7 @@ import inspect
 from collections import namedtuple
 from abc import abstractmethod
 from six.moves import xrange
-from six import text_type, binary_type
+from six import text_type
 import string
 import random as r
 
