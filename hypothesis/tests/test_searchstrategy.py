@@ -82,7 +82,9 @@ def test_float_lists_no_duplicates_in_simplify():
 def test_just_works():
     s = strategy(descriptors.just('giving'))
     assert s.produce(random, s.parameter.draw(random)) == 'giving'
-    assert list(s.simplify_such_that('giving', lambda _: True)) == ['giving']
+    simplifications = list(s.simplify_such_that('giving', lambda _: True))
+    assert len(simplifications) == 1
+    assert simplifications[0] == 'giving'
 
 
 Litter = namedtuple('Litter', ('kitten1', 'kitten2'))
@@ -96,6 +98,13 @@ def test_named_tuples_always_produce_named_tuples():
 
     for x in s.simplify(Litter(100, 100)):
         assert isinstance(x, Litter)
+
+
+def test_simplifying_something_that_does_not_satisfy_errors():
+    s = strategy(int)
+    f = lambda x: x > 100
+    with pytest.raises(ValueError):
+        next(s.simplify_such_that(1, f))
 
 
 def test_strategy_repr_handles_dicts():
@@ -121,17 +130,10 @@ class X(object):
     def __init__(self, x):
         self.x = x
 
-    def __repr__(self):
-        return 'X(%s)' % str(self.x)
-
 
 @ss.strategy_for_instances(X)
 class XStrategy(strat.MappedSearchStrategy):
-    def pack(self, x):
-        return X(x)
-
-    def unpack(self, x):
-        return x.x
+    pass
 
 
 @ss.strategy_for_instances(X)
@@ -149,9 +151,6 @@ def test_strategy_repr_handles_custom_types():
 class TrivialStrategy(strat.SearchStrategy):
     def __init__(self, descriptor):
         self.descriptor = descriptor
-
-    def produce(self, random, pv):
-        return 0
 
 
 def test_strategy_repr_handles_instances_without_dicts():

@@ -22,7 +22,7 @@ class Foo(StatefulTest):
         pass
 
     def bar(self):
-        pass
+        pass  # pragma: no cover
 
     @step
     def baz(self):

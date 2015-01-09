@@ -60,6 +60,9 @@ class SearchStrategy(object):
         return iter(())
 
     def simplify_such_that(self, t, f):
+        if not f(t):
+            raise ValueError(
+                "%r does not satisfy predicate %s" % (t, f))
         tracker = Tracker()
         yield t
 
