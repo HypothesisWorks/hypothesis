@@ -1,8 +1,9 @@
 SELF=$(readlink -f $0)
-python -m pytest --maxfail=1 $(
-    find hypothesis -name "test_*.py"  -printf '%T@ %p\n' |
-    sort -k 1nr | 
-    sed 's/^[^ ]* //'
-)
+
+coverage run --branch --include 'hypothesis/*'\
+    $(which py.test) -v hypothesis --capture=no 
+
+coverage html
+
 inotifywait -qe modify $(find hypothesis -name "*.py") $SELF pytest.ini
 exec $SELF
