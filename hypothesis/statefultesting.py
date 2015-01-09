@@ -2,7 +2,7 @@ from hypothesis.searchstrategy import (
     MappedSearchStrategy,
     one_of_strategies,
 )
-from hypothesis.searchstrategies import (
+from hypothesis.strategytable import (
     SearchStrategies,
 )
 from collections import namedtuple

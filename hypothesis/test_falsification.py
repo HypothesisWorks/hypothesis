@@ -11,7 +11,7 @@ from hypothesis.searchstrategy import (
     SearchStrategy,
 )
 from hypothesis.descriptors import one_of
-from hypothesis.searchstrategies import (
+from hypothesis.strategytable import (
     SearchStrategies,
     strategy_for,
 )

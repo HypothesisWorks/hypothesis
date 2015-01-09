@@ -1,4 +1,4 @@
-import hypothesis.searchstrategies as ss
+import hypothesis.strategytable as ss
 import hypothesis.searchstrategy as strat
 import hypothesis.descriptors as descriptors
 from hypothesis.internal.tracker import Tracker

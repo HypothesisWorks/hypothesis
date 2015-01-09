@@ -1,4 +1,4 @@
-from hypothesis.searchstrategies import SearchStrategies
+from hypothesis.strategytable import SearchStrategies
 from random import Random
 import time
 from six.moves import xrange
