@@ -56,7 +56,7 @@ class SearchStrategy(object):
 
     @abstractmethod
     def produce(self, random, parameter_value):
-        pass  # pragma: no coverass  # pragma: no cover
+        pass  # pragma: no cover
 
     def complexity(self, value):
         return 0
