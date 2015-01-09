@@ -14,4 +14,8 @@ $PYTHON setup.py sdist
 $PIP install dist/*
 
 cd $TARGET
-$PYTHON -c 'from __future__ import print_function; from hypothesis import falsify; print(falsify(lambda x, y: x + y == y + x, str, str))'
+$PYTHON -c '
+from __future__ import print_function
+from hypothesis import falsify
+print(falsify(lambda x, y: x + y == y + x, str, str))
+'
