@@ -4,7 +4,8 @@ from hypothesis.verifier import (
     Unfalsifiable,
     Unsatisfiable,
     Flaky,
-    Verifier
+    Verifier,
+    Timeout,
 )
 from hypothesis.internal.specmapper import MissingSpecification
 from hypothesis.searchstrategy import (
@@ -20,6 +21,8 @@ import pytest
 import re
 from six.moves import xrange
 import hypothesis.params as params
+import hypothesis.settings as hs
+import time
 
 
 def test_can_make_assumptions():
@@ -367,3 +370,12 @@ def test_detects_flaky_failure():
 
     with pytest.raises(Flaky):
         falsify(flaky, int)
+
+
+def test_raises_timeout_on_timeout():
+    def good_but_slow(x):
+        time.sleep(0.01)
+        return True
+    verifier = Verifier(settings=hs.Settings(timeout=0.02))
+    with pytest.raises(Timeout):
+        verifier.falsify(good_but_slow, int)

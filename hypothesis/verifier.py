@@ -94,10 +94,10 @@ class Verifier(object):
                 falsifying_examples.append(args)
 
         if not falsifying_examples:
-            if satisfying_examples < self.min_satisfying_examples:
-                raise Unsatisfiable(hypothesis, satisfying_examples)
-            elif timed_out:
+            if timed_out:
                 raise Timeout(hypothesis, self.timeout)
+            elif satisfying_examples < self.min_satisfying_examples:
+                raise Unsatisfiable(hypothesis, satisfying_examples)
             else:
                 raise Unfalsifiable(hypothesis)
 
