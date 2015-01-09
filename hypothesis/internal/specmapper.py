@@ -115,13 +115,8 @@ class ClassSorter(object):
     def __init__(self, cls):
         self.cls = cls
 
-    def __eq__(self, that):
-        return self.cls == that.cls
-
     def __lt__(self, that):
-        if self.cls == that.cls:
-            return False
-        elif issubclass(self.cls, that.cls):
+        if issubclass(self.cls, that.cls):
             return True
         elif issubclass(that.cls, self.cls):
             return False
@@ -130,10 +125,7 @@ class ClassSorter(object):
 
 
 def typekey(x):
-    try:
-        return x.__class__
-    except AttributeError:
-        return type(x)
+    return x.__class__
 
 
 def safe_in(x, ys):

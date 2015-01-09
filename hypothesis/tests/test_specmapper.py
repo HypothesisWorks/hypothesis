@@ -238,3 +238,57 @@ def test_can_handle_large_numbers_of_instance_mappers():
     s.define_specification_for_instances(int, f)
 
     assert s.specification_for((1, 1)) == '(1, 1)'
+
+
+def test_invokes_missing_if_all_handlers_defer():
+    s = SpecificationMapper()
+    s.define_specification_for(int, lambda ss, d: next_in_chain())
+    s.missing_specification = lambda d: 11
+    assert s.specification_for(int) == 11
+
+
+class Parent(object):
+    pass
+
+
+class Child(Parent):
+    pass
+
+
+class Grandchild(Child):
+    pass
+
+
+class GreatGrandchild(Grandchild):
+    pass
+
+
+def test_specifications_will_match_on_subclasses():
+    s = SpecificationMapper()
+
+    def trivial(x):
+        return lambda s, d: x
+
+    s.define_specification_for_instances(Parent, trivial(1))
+    assert s.specification_for(Parent()) == 1
+    assert s.specification_for(Child()) == 1
+    assert s.specification_for(Grandchild()) == 1
+    assert s.specification_for(GreatGrandchild()) == 1
+
+    s.define_specification_for_instances(Grandchild, trivial(2))
+    assert s.specification_for(Parent()) == 1
+    assert s.specification_for(Child()) == 1
+    assert s.specification_for(Grandchild()) == 2
+    assert s.specification_for(GreatGrandchild()) == 2
+
+    s.define_specification_for_instances(Child, trivial(3))
+    assert s.specification_for(Parent()) == 1
+    assert s.specification_for(Child()) == 3
+    assert s.specification_for(Grandchild()) == 2
+    assert s.specification_for(GreatGrandchild()) == 2
+
+    s.define_specification_for_instances(GreatGrandchild, trivial(4))
+    assert s.specification_for(Parent()) == 1
+    assert s.specification_for(Child()) == 3
+    assert s.specification_for(Grandchild()) == 2
+    assert s.specification_for(GreatGrandchild()) == 4
