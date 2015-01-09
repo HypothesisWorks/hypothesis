@@ -186,3 +186,8 @@ def test_or_errors_when_given_non_strategy():
     bools = ss.StrategyTable().strategy((bool,))
     with pytest.raises(ValueError):
         bools | "foo"
+
+
+def test_joining_zero_strategies_fails():
+    with pytest.raises(ValueError):
+        strat.one_of_strategies(())

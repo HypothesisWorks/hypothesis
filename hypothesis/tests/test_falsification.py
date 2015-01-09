@@ -379,3 +379,7 @@ def test_raises_timeout_on_timeout():
     verifier = Verifier(settings=hs.Settings(timeout=0.02))
     with pytest.raises(Timeout):
         verifier.falsify(good_but_slow, int)
+
+
+def test_can_falsify_with_true_boolean():
+    assert falsify(lambda x: not x, bool)[0] is True

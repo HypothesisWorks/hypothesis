@@ -292,12 +292,6 @@ class ListStrategy(SearchStrategy):
             child_parameter=self.element_strategy.parameter,
         )
 
-    def entropy_allocated_for_length(self, size):
-        if size <= 2:
-            return 0.5 * size
-        else:
-            return min(0.05 * (size - 2.0) + 2.0, 6)
-
     def produce(self, random, pv):
         length = dist.geometric(random, 1.0 / (1 + pv.average_length))
         result = []
