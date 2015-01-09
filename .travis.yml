@@ -10,9 +10,12 @@ python:
 install: python setup.py install
 
 before_script:
-  - pip install --use-mirrors pytest pytest-timeout flake8
+  - pip install --use-mirrors pytest pytest-timeout flake8 coveralls
 
 script:
   - py.test -v hypothesis
   - flake8 hypothesis 
   - ./installer-test.sh
+
+after_success:
+    - coveralls
