@@ -279,5 +279,3 @@ This version of hypothesis has been tested using Python series 2.7,
 
 .. image:: https://travis-ci.org/DRMacIver/hypothesis.png?branch=master
    :target: https://travis-ci.org/DRMacIver/hypothesis
-
-.. image:: https://coveralls.io/repos/DRMacIver/hypothesis/badge.png :target: https://coveralls.io/r/DRMacIver/hypothesis
