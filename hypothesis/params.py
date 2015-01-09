@@ -8,31 +8,7 @@ class Parameter(object):
         pass
 
     def draw(self, random):
-        raise NotImplemented()
-
-    def redraw(self, random, value):
-        return self.draw(random)
-
-
-class GeometricParameter(Parameter):
-    def __init__(self, p):
-        Parameter.__init__(self)
-        if not (0 < p < 1):
-            raise ValueError("Value %f out of valid range (0, 1)" % (p,))
-        self.p = p
-
-    def draw(self, random):
-        return dist.geometric(random, self.p)
-
-
-class UniformIntegerParameter(Parameter):
-    def __init__(self, lower_bound, upper_bound):
-        Parameter.__init__(self)
-        self.lower_bound = lower_bound
-        self.upper_bound = upper_bound
-
-    def draw(self, random):
-        return random.randint(self.lower_bound, self.upper_bound)
+        raise NotImplemented()  # pragma: no cover
 
 
 class ExponentialParameter(Parameter):
@@ -122,12 +98,12 @@ class CompositeParameter(Parameter):
             name = "arg%d" % (i,)
             if name in kwargs:
                 raise ValueError("Duplicate parameter name %s" % (name,))
-            if hasattr(self, name):
-                raise ValueError("Invalid parameter name %s" % (name,))
             kwargs[name] = x
             children.append(name)
 
         for k, v in sorted(kwargs.items()):
+            if hasattr(self, k):
+                raise ValueError("Invalid parameter name %s" % (k,))
             if k not in children:
                 children.append(k)
             setattr(self, k, v)
@@ -136,12 +112,6 @@ class CompositeParameter(Parameter):
             self.Result = tuple
         else:
             self.Result = collections.namedtuple('Result', self.children)
-
-    def __repr__(self):
-        return "CompositeParameter(%s)" % (', '.join(
-            "%s=%r" % (name, getattr(self, name))
-            for name in self.children
-        ))
 
     def draw(self, random):
         bits = [

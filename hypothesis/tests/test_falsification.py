@@ -63,9 +63,6 @@ class Bar(object):
             s += 1
         return s
 
-    def __repr__(self):
-        return 'Bar(%s)' % self.size()
-
     def __eq__(self, other):
         return isinstance(other, Bar) and self.size() == other.size()
 
@@ -156,17 +153,13 @@ def test_can_falsify_int_pairs():
 
 
 def test_can_falsify_string_commutativity():
-    assert tuple(
-        sorted(
-            falsify(
-                lambda x,
-                y: x +
-                y == y +
-                x,
-                str,
-                str))) == (
-        '0',
-        '1')
+    def commutes(x, y):
+        return x + y == y + x
+
+    non_commuting = falsify(commutes, str, str)
+    x, y = sorted(non_commuting)
+    assert x == '0'
+    assert y == '1'
 
 
 def test_can_falsify_sets():
@@ -186,9 +179,8 @@ def test_can_falsify_lists():
 
 
 def test_can_falsify_long_lists():
-    assert falsify(
-        lambda x: len(x) < 20,
-        [int])[0] == [0] * 20
+    long_list = falsify(lambda x: len(x) < 20, [int])[0]
+    assert len(long_list) == 20
 
 
 def test_can_find_unsorted_lists():
@@ -222,18 +214,6 @@ def test_can_falsify_alternating_types():
     falsify(lambda x: isinstance(x, int), one_of([int, str]))[0] == ''
 
 
-class HeavilyBranchingTree(object):
-
-    def __init__(self, children):
-        self.children = children
-
-    def depth(self):
-        if not self.children:
-            return 1
-        else:
-            return 1 + max(map(HeavilyBranchingTree.depth, self.children))
-
-
 def test_can_falsify_string_matching():
     # Note that just doing a match("foo",x) will never find a good solution
     # because the state space is too large
@@ -258,7 +238,7 @@ def test_stops_loop_pretty_quickly():
 def test_good_errors_on_bad_values():
     some_string = 'I am the very model of a modern major general'
     with pytest.raises(MissingSpecification) as e:
-        falsify(lambda x: False, some_string)
+        falsify(lambda x: False, some_string)  # pragma: no branch
 
     assert some_string in e.value.args[0]
 
@@ -273,51 +253,6 @@ def test_can_falsify_lists_of_bools():
 
 def test_can_falsify_empty_tuples():
     assert falsify(lambda x: False, ())[0] == ()
-
-
-class BinaryTree(object):
-    pass
-
-
-class Leaf(BinaryTree):
-
-    def __init__(self, label):
-        self.label = label
-
-    def depth(self):
-        return 0
-
-    def breadth(self):
-        return 1
-
-    def __eq__(self, that):
-        return isinstance(that, Leaf) and self.label == that.label
-
-    def __hash__(self):
-        return hash(self.label)
-
-
-class Split(BinaryTree):
-
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-
-    def depth(self):
-        return 1 + max(self.left.depth(), self.right.depth())
-
-    def breadth(self):
-        return self.left.breadth() + self.right.breadth()
-
-    def __eq__(self, that):
-        return (
-            isinstance(that, Split) and
-            that.left == self.left and
-            that.right == self.right
-        )
-
-    def __hash__(self):
-        return hash(self.left) ^ hash(self.right)
 
 
 Litter = namedtuple('Litter', ('kitten1', 'kitten2'))

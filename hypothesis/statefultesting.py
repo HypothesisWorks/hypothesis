@@ -146,8 +146,9 @@ Step = namedtuple('Step', ('target', 'arguments', 'kwargs'))
 
 class StepStrategy(MappedSearchStrategy):
     def could_have_produced(self, x):
-        if not isinstance(x, Step):
-            return False
+        # There's really no sensible way you could get here without this being
+        # a Step because of how much this is an implementation detail
+        assert isinstance(x, Step)  # pragma: no cover
         if x.target != self.descriptor:
             return False
         return self.mapped_strategy.could_have_produced(
