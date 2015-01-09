@@ -1,11 +1,6 @@
-import random as r
 import collections
 import hypothesis.internal.utils.distributions as dist
 import inspect
-
-
-def gen_id():
-    return hex(r.getrandbits(64))[2:-1]
 
 
 class Parameter(object):
@@ -84,13 +79,23 @@ class GammaParameter(Parameter):
 
 class NonEmptySubset(Parameter):
     def __init__(self, elements):
-        self.elements = elements
+        self.elements = tuple(elements)
         if not elements:
             raise ValueError("Must have at least one element")
+        # TODO: This should have a more principled choice. It seesm to be good
+        # in practice though.
+        desired_expected_value = 1.0 if len(elements) <= 3 else 2.0
+        self.p = desired_expected_value / len(elements)
 
     def draw(self, random):
-        n = random.randint(1, len(self.elements))
-        return random.sample(self.elements, n)
+        if len(self.elements) == 1:
+            return self.elements[0]
+        result = []
+        while not result:
+            result = [
+                x for x in self.elements if dist.biased_coin(random, self.p)
+            ]
+        return result
 
 
 class BiasedCoin(Parameter):

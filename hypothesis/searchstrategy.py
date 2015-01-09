@@ -84,6 +84,11 @@ class SearchStrategy(object):
         c = d if inspect.isclass(d) else d.__class__
         return isinstance(x, c)
 
+    def __or__(self, other):
+        if not isinstance(other, SearchStrategy):
+            raise ValueError("Cannot | a SearchStrategy with %r" % (other,))
+        return one_of_strategies((self, other))
+
 
 class IntStrategy(SearchStrategy):
     descriptor = int
@@ -136,15 +141,6 @@ class FloatStrategy(SearchStrategy):
         SearchStrategy.__init__(self)
         self.int_strategy = int_strategy
 
-    def produce(self, random, pv):
-        if pv.sign:
-            result = random.expovariate(1.0 / pv.exponential_mean)
-            if pv.sign < 0:
-                result = -result
-            return result
-        else:
-            return random.normalvariate(pv.gaussian_mean, 1.0)
-
     def complexity(self, x):
         return x if x >= 0 else 1 - x
 
@@ -158,6 +154,39 @@ class FloatStrategy(SearchStrategy):
             yield y
         for m in self.int_strategy.simplify(n):
             yield x + (m - n)
+
+
+class BoundedFloatStrategy(FloatStrategy):
+    parameter = params.CompositeParameter(
+        left=params.NormalParameter(0, 1),
+        length=params.ExponentialParameter(1)
+    )
+
+    def produce(self, random, pv):
+        return pv.left + random.random() * pv.length
+
+
+class GaussianFloatStrategy(FloatStrategy):
+    parameter = params.CompositeParameter(
+        mean=params.NormalParameter(0, 1),
+    )
+
+    def produce(self, random, pv):
+        return random.normalvariate(pv.mean, 1)
+
+
+class ExponentialFloatStrategy(FloatStrategy):
+    parameter = params.CompositeParameter(
+        mean=params.GammaParameter(2, 50),
+        zero_point=params.NormalParameter(0, 1),
+        negative=params.BiasedCoin(0.5),
+    )
+
+    def produce(self, random, pv):
+        value = random.expovariate(1.0 / pv.mean)
+        if pv.negative:
+            value = -value
+        return pv.zero_point + value
 
 
 class BoolStrategy(SearchStrategy):
@@ -458,7 +487,13 @@ class OneOfStrategy(SearchStrategy):
     def __init__(self,
                  strategies):
         super(OneOfStrategy, self).__init__()
-        strategies = tuple(strategies)
+        flattened_strategies = []
+        for s in strategies:
+            if isinstance(s, OneOfStrategy):
+                flattened_strategies += s.element_strategies
+            else:
+                flattened_strategies.append(s)
+        strategies = tuple(flattened_strategies)
         if len(strategies) <= 1:
             raise ValueError("Need at least 2 strategies to choose amongst")
         descriptor = _unique(s.descriptor for s in strategies)
