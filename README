@@ -255,6 +255,19 @@ it didn't seem worth the bother. Again, let me know if you really want this and 
 
 I haven't even tried it on Jython, IronPython, etc. Do people really use those?
 
+------------
+Contributing
+------------
+
+I'm generally super happy to accept contributions. The main requirement is that the travis
+build passes.
+
+This will in particular require you to maintain 100% branch coverage of the code and flake8
+cleanliness.
+
+I'm also generally delighted with people providing issues, documentation, usage reports, etc.
+so if that sounds a bit too hardcore, don't worry! There's plenty of other things you can do.
+
 ---------
  Testing
 ---------
