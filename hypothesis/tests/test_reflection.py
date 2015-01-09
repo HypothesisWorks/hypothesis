@@ -73,4 +73,12 @@ def test_errors_if_not_enough_args():
         pass  # pragma: no cover
 
     with pytest.raises(TypeError):
-        assert convert_keyword_arguments(foo, (1, 2), {'d': 4})
+        convert_keyword_arguments(foo, (1, 2), {'d': 4})
+
+
+def test_errors_on_extra_kwargs():
+    def foo(a):
+        pass  # pragma: no cover
+
+    with pytest.raises(TypeError):
+        convert_keyword_arguments(foo, (), {'b': 1})
