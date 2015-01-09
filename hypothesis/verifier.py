@@ -57,6 +57,8 @@ class Verifier(object):
         def time_to_call_it_a_day():
             return time.time() >= start_time + self.timeout
 
+        initial_run = 0
+
         while not (
             examples_found >= self.max_examples or
             len(falsifying_examples) >= self.max_falsifying_examples
@@ -64,12 +66,17 @@ class Verifier(object):
             if time_to_call_it_a_day():
                 timed_out = True
                 break
-            i = max(
-                xrange(len(parameter_values)),
-                key=lambda k: self.random.betavariate(
-                    accepted_examples[k] + 1, rejected_examples[k] + 1
+
+            if initial_run < len(parameter_values):
+                i = initial_run
+                initial_run += 1
+            else:
+                i = max(
+                    xrange(len(parameter_values)),
+                    key=lambda k: self.random.betavariate(
+                        accepted_examples[k] + 1, rejected_examples[k] + 1
+                    )
                 )
-            )
             pv = parameter_values[i]
 
             args = search_strategy.produce(self.random, pv)
