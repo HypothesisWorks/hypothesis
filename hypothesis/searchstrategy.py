@@ -1,41 +1,14 @@
-from hypothesis.internal.specmapper import SpecificationMapper
 from hypothesis.internal.tracker import Tracker
 import hypothesis.internal.params as params
 import hypothesis.internal.utils.distributions as dist
 
-from inspect import isclass
+import inspect
 from collections import namedtuple
 from abc import abstractmethod
 from six.moves import xrange
 from six import text_type, binary_type
 import string
 import random as r
-
-
-def strategy_for(typ):
-    def accept_function(fn):
-        SearchStrategies.default().define_specification_for(typ, fn)
-        return fn
-    return accept_function
-
-
-def strategy_for_instances(typ):
-    def accept_function(fn):
-        SearchStrategies.default().define_specification_for_instances(typ, fn)
-        return fn
-    return accept_function
-
-
-class SearchStrategies(SpecificationMapper):
-
-    def strategy(self, descriptor):
-        return self.specification_for(descriptor)
-
-    def missing_specification(self, descriptor):
-        if isinstance(descriptor, SearchStrategy):
-            return descriptor
-        else:
-            return SpecificationMapper.missing_specification(self, descriptor)
 
 
 def nice_string(xs, history=None):
@@ -72,12 +45,8 @@ def nice_string(xs, history=None):
 
 
 class SearchStrategy(object):
-
-    def __init__(self,
-                 strategies,
-                 descriptor):
-        self.descriptor = descriptor
-        strategies.cache_specification_for_descriptor(descriptor, self)
+    def __init__(self):
+        pass
 
     def __repr__(self):
         return '%s(%s)' % (
@@ -112,12 +81,13 @@ class SearchStrategy(object):
 
     def could_have_produced(self, x):
         d = self.descriptor
-        c = d if isclass(d) else d.__class__
+        c = d if inspect.isclass(d) else d.__class__
         return isinstance(x, c)
 
 
-@strategy_for(int)
 class IntStrategy(SearchStrategy):
+    descriptor = int
+
     parameter = params.CompositeParameter(
         may_be_negative=params.BiasedCoin(0.5),
         negative_probability=params.UniformFloatParameter(0, 1),
@@ -153,19 +123,18 @@ class IntStrategy(SearchStrategy):
                 yield v
 
 
-@strategy_for(float)
 class FloatStrategy(SearchStrategy):
+    descriptor = float
+
     parameter = params.CompositeParameter(
         sign=params.UniformIntegerParameter(-1, 1),
         exponential_mean=params.GammaParameter(2, 50),
         gaussian_mean=params.NormalParameter(0, 1),
     )
 
-    def __init__(self,
-                 strategies,
-                 descriptor):
-        SearchStrategy.__init__(self, strategies, descriptor)
-        self.int_strategy = strategies.strategy(int)
+    def __init__(self, int_strategy):
+        SearchStrategy.__init__(self)
+        self.int_strategy = int_strategy
 
     def produce(self, random, pv):
         if pv.sign:
@@ -191,8 +160,8 @@ class FloatStrategy(SearchStrategy):
             yield x + (m - n)
 
 
-@strategy_for(bool)
 class BoolStrategy(SearchStrategy):
+    descriptor = bool
 
     parameter = params.UniformFloatParameter(0, 1)
 
@@ -206,21 +175,21 @@ class BoolStrategy(SearchStrategy):
         return dist.biased_coin(random, p)
 
 
-@strategy_for_instances(tuple)
 class TupleStrategy(SearchStrategy):
 
     def __init__(self,
-                 strategies,
-                 descriptor):
-        SearchStrategy.__init__(self, strategies, descriptor)
-        self.element_strategies = tuple(
-            (strategies.strategy(x) for x in descriptor))
+                 strategies, tuple_type):
+        SearchStrategy.__init__(self)
+        strategies = tuple(strategies)
+        self.tuple_type = tuple_type
+        self.descriptor = self.newtuple([s.descriptor for s in strategies])
+        self.element_strategies = strategies
         self.parameter = params.CompositeParameter(
             x.parameter for x in self.element_strategies
         )
 
     def could_have_produced(self, xs):
-        if not SearchStrategy.could_have_produced(self, xs):
+        if not isinstance(xs, self.tuple_type):
             return False
         if len(xs) != len(self.element_strategies):
             return False
@@ -232,10 +201,10 @@ class TupleStrategy(SearchStrategy):
                     for s, x in zip(self.element_strategies, xs)))
 
     def newtuple(self, xs):
-        if self.descriptor.__class__ == tuple:
+        if self.tuple_type == tuple:
             return tuple(xs)
         else:
-            return self.descriptor.__class__(*xs)
+            return self.tuple_type(*xs)
 
     def produce(self, random, pv):
         es = self.element_strategies
@@ -269,15 +238,32 @@ class TupleStrategy(SearchStrategy):
                         yield self.newtuple(z)
 
 
-@strategy_for_instances(list)
+def one_of_strategies(xs):
+    xs = tuple(xs)
+    if not xs:
+        raise ValueError("Cannot join an empty list of strategies")
+    if len(xs) == 1:
+        return xs[0]
+    return OneOfStrategy(xs)
+
+
+def _unique(xs):
+    result = []
+    for x in xs:
+        if x not in result:
+            result.append(x)
+    result.sort()
+    return result
+
+
 class ListStrategy(SearchStrategy):
 
     def __init__(self,
-                 strategies,
-                 descriptor):
-        SearchStrategy.__init__(self, strategies, descriptor)
+                 strategies):
+        SearchStrategy.__init__(self)
 
-        self.element_strategy = strategies.strategy(one_of(descriptor))
+        self.descriptor = _unique(x.descriptor for x in strategies)
+        self.element_strategy = one_of_strategies(strategies)
         self.parameter = params.CompositeParameter(
             average_length=params.ExponentialParameter(50.0),
             child_parameter=self.element_strategy.parameter,
@@ -319,11 +305,10 @@ class ListStrategy(SearchStrategy):
 
 
 class MappedSearchStrategy(SearchStrategy):
-    def __init__(self,
-                 strategies,
-                 descriptor):
-        SearchStrategy.__init__(self, strategies, descriptor)
-        self.mapped_strategy = strategies.strategy(self.base_descriptor)
+    def __init__(self, descriptor, strategy):
+        SearchStrategy.__init__(self)
+        self.mapped_strategy = strategy
+        self.descriptor = descriptor
 
     @property
     def parameter(self):
@@ -348,14 +333,13 @@ class MappedSearchStrategy(SearchStrategy):
             yield self.pack(y)
 
 
-@strategy_for(complex)
 class ComplexStrategy(MappedSearchStrategy):
 
-    def __init__(self,
-                 strategies,
-                 descriptor):
-        SearchStrategy.__init__(self, strategies, descriptor)
-        self.mapped_strategy = strategies.strategy((float, float))
+    def __init__(self, float_tuple_strategy):
+        super(ComplexStrategy, self).__init__(
+            strategy=float_tuple_strategy,
+            descriptor=complex,
+        )
 
     def pack(self, x):
         return complex(*x)
@@ -364,14 +348,13 @@ class ComplexStrategy(MappedSearchStrategy):
         return (x.real, x.imag)
 
 
-@strategy_for_instances(set)
 class SetStrategy(MappedSearchStrategy):
 
-    def __init__(self,
-                 strategies,
-                 descriptor):
-        self.base_descriptor = list(descriptor)
-        super(SetStrategy, self).__init__(strategies, descriptor)
+    def __init__(self, list_strategy):
+        super(SetStrategy, self).__init__(
+            strategy=list_strategy,
+            descriptor=set(list_strategy.descriptor)
+        )
 
     def pack(self, x):
         return set(x)
@@ -381,11 +364,15 @@ class SetStrategy(MappedSearchStrategy):
 
 
 class OneCharStringStrategy(SearchStrategy):
-    def __init__(self,
-                 strategies,
-                 descriptor):
-        SearchStrategy.__init__(self, strategies, descriptor)
-        self.characters = (
+    descriptor = text_type
+
+    def __init__(self, characters=None):
+        SearchStrategy.__init__(self)
+        if characters is not None and not isinstance(characters, text_type):
+            raise ValueError("Invalid characters %r: Not a %s" % (
+                characters, text_type
+            ))
+        self.characters = characters or (
             text_type("0123456789") + text_type(string.ascii_letters))
         self.parameter = params.CompositeParameter()
 
@@ -402,27 +389,21 @@ class OneCharStringStrategy(SearchStrategy):
             yield self.characters[i]
 
 
-@strategy_for(text_type)
 class StringStrategy(MappedSearchStrategy):
-    def __init__(self,
-                 strategies,
-                 descriptor):
-        SearchStrategy.__init__(self, strategies, descriptor)
-        cs = strategies.new_child_mapper()
-        cs.define_specification_for(str, OneCharStringStrategy)
-        self.mapped_strategy = cs.strategy([str])
+    def __init__(self, list_of_one_char_strings_strategy):
+        return super(StringStrategy, self).__init__(
+            descriptor=text_type,
+            strategy=list_of_one_char_strings_strategy
+        )
 
     def pack(self, ls):
-        return ''.join(ls)
+        return text_type('').join(ls)
 
     def unpack(self, s):
         return list(s)
 
 
-@strategy_for(binary_type)
 class BinaryStringStrategy(MappedSearchStrategy):
-    base_descriptor = text_type
-
     def pack(self, x):
         return x.encode('utf-8')
 
@@ -430,21 +411,19 @@ class BinaryStringStrategy(MappedSearchStrategy):
         return x.decode('utf-8')
 
 
-@strategy_for_instances(dict)
 class FixedKeysDictStrategy(SearchStrategy):
 
-    def __init__(self,
-                 strategies,
-                 descriptor):
-        SearchStrategy.__init__(self, strategies, descriptor)
-        self.strategy_dict = {}
-        for k, v in descriptor.items():
-            self.strategy_dict[k] = strategies.strategy(v)
+    def __init__(self, strategy_dict):
+        SearchStrategy.__init__(self)
+        self.strategy_dict = dict(strategy_dict)
         self.parameter = params.CompositeParameter(**{
             k: v.parameter
             for k, v
             in self.strategy_dict.items()
         })
+        self.descriptor = {}
+        for k, v in self.strategy_dict.items():
+            self.descriptor[k] = v.descriptor
 
     def produce(self, random, pv):
         result = {}
@@ -474,15 +453,21 @@ def one_of(args):
     return OneOf(args)
 
 
-@strategy_for_instances(OneOf)
 class OneOfStrategy(SearchStrategy):
 
     def __init__(self,
-                 strategies,
-                 descriptor):
-        SearchStrategy.__init__(self, strategies, descriptor)
-        self.element_strategies = [
-            strategies.strategy(x) for x in descriptor.elements]
+                 strategies):
+        super(OneOfStrategy, self).__init__()
+        strategies = tuple(strategies)
+        if len(strategies) <= 1:
+            raise ValueError("Need at least 2 strategies to choose amongst")
+        descriptor = _unique(s.descriptor for s in strategies)
+        if len(descriptor) == 1:
+            descriptor = descriptor[0]
+        else:
+            descriptor = OneOf(descriptor)
+        self.descriptor = descriptor
+        self.element_strategies = list(strategies)
         n = len(self.element_strategies)
         self.parameter = params.CompositeParameter(
             enabled_children=params.NonEmptySubset(range(n)),
@@ -519,8 +504,10 @@ Just = namedtuple('Just', 'value')
 just = Just
 
 
-@strategy_for_instances(Just)
 class JustStrategy(SearchStrategy):
+    def __init__(self, value):
+        self.descriptor = Just(value)
+
     parameter = params.CompositeParameter()
 
     def produce(self, random, pv):

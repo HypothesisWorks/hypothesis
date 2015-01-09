@@ -1,4 +1,5 @@
-import hypothesis.searchstrategy as ss
+import hypothesis.searchstrategies as ss
+import hypothesis.searchstrategy as strat
 from hypothesis.internal.tracker import Tracker
 from collections import namedtuple
 from six.moves import xrange
@@ -7,6 +8,12 @@ import random
 
 def strategy(*args, **kwargs):
     return ss.SearchStrategies().strategy(*args, **kwargs)
+
+
+def test_string_strategy_produces_strings():
+    strings = strategy(str)
+    result = strings.produce(random, strings.parameter.draw(random))
+    assert result is not None
 
 
 def test_tuples_inspect_component_types_for_production():
@@ -22,7 +29,7 @@ def test_tuples_inspect_component_types_for_production():
 
 
 def alternating(*args):
-    return strategy(ss.one_of(args))
+    return strategy(strat.one_of(args))
 
 
 def minimize(s, x):
@@ -71,7 +78,7 @@ def test_float_lists_no_duplicates_in_simplify():
 
 
 def test_just_works():
-    s = strategy(ss.just('giving'))
+    s = strategy(strat.just('giving'))
     assert s.produce(random, s.parameter.draw(random)) == 'giving'
     assert list(s.simplify_such_that('giving', lambda _: True)) == ['giving']
 
@@ -117,12 +124,7 @@ class X(object):
 
 
 @ss.strategy_for_instances(X)
-class XStrategy(ss.MappedSearchStrategy):
-
-    def __init__(self, strategies, descriptor):
-        ss.SearchStrategy.__init__(self, strategies, descriptor)
-        self.mapped_strategy = strategies.strategy(descriptor.x)
-
+class XStrategy(strat.MappedSearchStrategy):
     def pack(self, x):
         return X(x)
 
@@ -130,11 +132,21 @@ class XStrategy(ss.MappedSearchStrategy):
         return x.x
 
 
+@ss.strategy_for_instances(X)
+def define_x_strategy(strategies, descriptor):
+    return XStrategy(
+        strategy=strategies.strategy(descriptor.x),
+        descriptor=descriptor,
+    )
+
+
 def test_strategy_repr_handles_custom_types():
     assert 'X(x=str)' in repr(ss.SearchStrategies().strategy(X(str)))
 
 
-class TrivialStrategy(ss.SearchStrategy):
+class TrivialStrategy(strat.SearchStrategy):
+    def __init__(self, descriptor):
+        self.descriptor = descriptor
 
     def produce(self, random, pv):
         return 0
@@ -142,9 +154,11 @@ class TrivialStrategy(ss.SearchStrategy):
 
 def test_strategy_repr_handles_instances_without_dicts():
     strats = ss.SearchStrategies()
-    strats.define_specification_for_instances(int, TrivialStrategy)
+    strats.define_specification_for_instances(
+        int, lambda s, d: TrivialStrategy(d))
 
     assert repr(strats.strategy(42)) == 'TrivialStrategy(42)'
+    assert repr(strats.strategy(23)) == 'TrivialStrategy(23)'
 
 
 def test_float_strategy_does_not_overflow():

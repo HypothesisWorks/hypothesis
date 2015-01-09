@@ -1,8 +1,9 @@
 from hypothesis.searchstrategy import (
-    SearchStrategy,
-    SearchStrategies,
     MappedSearchStrategy,
-    one_of,
+    one_of_strategies,
+)
+from hypothesis.searchstrategies import (
+    SearchStrategies,
 )
 from collections import namedtuple
 from inspect import getmembers
@@ -152,16 +153,6 @@ Step = namedtuple('Step', ('target', 'arguments', 'kwargs'))
 
 
 class StepStrategy(MappedSearchStrategy):
-
-    def __init__(self,
-                 strategies,
-                 descriptor,
-                 **kwargs):
-        SearchStrategy.__init__(self, strategies, descriptor, **kwargs)
-        self.mapped_strategy = strategies.strategy(
-            descriptor.hypothesis_test_requirements
-        )
-
     def could_have_produced(self, x):
         if not isinstance(x, Step):
             return False
@@ -177,33 +168,42 @@ class StepStrategy(MappedSearchStrategy):
         return (x.arguments, x.kwargs)
 
 
-class StatefulStrategy(MappedSearchStrategy):
-
-    def __init__(self,
-                 strategies,
-                 descriptor,
-                 **kwargs):
-        SearchStrategy.__init__(self, strategies, descriptor, **kwargs)
-        step_strategies = [
-            StepStrategy(strategies, s)
-            for s in descriptor.test_steps()
-        ]
-        try:
-            init_requirements = (
-                descriptor.__init__.hypothesis_test_requirements)
-        except AttributeError:
-            init_requirements = None
-        self.requires_init = init_requirements is not None
-        child_mapper = strategies.new_child_mapper()
-        child_mapper.define_specification_for(
-            Step,
-            lambda sgs, _: sgs.strategy(one_of(step_strategies))
+def define_stateful_strategy(strategies, descriptor):
+    step_strategies = [
+        StepStrategy(
+            descriptor=s,
+            strategy=strategies.strategy(s.hypothesis_test_requirements)
         )
-        if self.requires_init:
-            self.mapped_strategy = child_mapper.strategy((
-                init_requirements, [Step]))
-        else:
-            self.mapped_strategy = child_mapper.strategy([Step])
+        for s in descriptor.test_steps()
+    ]
+    try:
+        init_requirements = (
+            descriptor.__init__.hypothesis_test_requirements)
+    except AttributeError:
+        init_requirements = None
+    requires_init = init_requirements is not None
+    child_mapper = strategies.new_child_mapper()
+    child_mapper.define_specification_for(
+        Step,
+        lambda sgs, _: sgs.strategy(one_of_strategies(step_strategies))
+    )
+    if requires_init:
+        mapped_strategy = child_mapper.strategy((
+            init_requirements, [Step]))
+    else:
+        mapped_strategy = child_mapper.strategy([Step])
+    return StatefulStrategy(
+        descriptor=descriptor, strategy=mapped_strategy,
+        requires_init=requires_init
+    )
+
+
+class StatefulStrategy(MappedSearchStrategy):
+    def __init__(self, descriptor, strategy, requires_init):
+        super(StatefulStrategy, self).__init__(
+            descriptor=descriptor, strategy=strategy
+        )
+        self.requires_init = requires_init
 
     def pack(self, steps):
         if self.requires_init:
@@ -232,6 +232,6 @@ class StatefulStrategy(MappedSearchStrategy):
             yield y
 
 SearchStrategies.default().define_specification_for_classes(
-    StatefulStrategy,
+    define_stateful_strategy,
     subclasses_of=StatefulTest
 )

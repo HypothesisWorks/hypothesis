@@ -10,8 +10,10 @@ from hypothesis.internal.specmapper import MissingSpecification
 from hypothesis.searchstrategy import (
     SearchStrategy,
     one_of,
+)
+from hypothesis.searchstrategies import (
     SearchStrategies,
-    strategy_for
+    strategy_for,
 )
 from collections import namedtuple
 import pytest
@@ -32,12 +34,15 @@ class Foo(object):
     pass
 
 
-@strategy_for(Foo)
 class FooStrategy(SearchStrategy):
+    descriptor = Foo
     parameter = params.CompositeParameter()
 
     def produce(self, random, pv):
         return Foo()
+
+
+strategy_for(Foo)(FooStrategy())
 
 
 def test_can_falsify_types_without_minimizers():
@@ -64,9 +69,11 @@ class Bar(object):
 
 
 class BarStrategy(SearchStrategy):
-    def __init__(self, strategies, descriptor):
-        SearchStrategy.__init__(self, strategies, descriptor)
-        self.int_strategy = strategies.strategy(int)
+    descriptor = Bar
+
+    def __init__(self, int_strategy):
+        super(BarStrategy, self).__init__()
+        self.int_strategy = int_strategy
         self.parameter = self.int_strategy.parameter
 
     def produce(self, random, pv):
@@ -86,7 +93,8 @@ class BarStrategy(SearchStrategy):
 
 def test_can_falsify_types_without_default_productions():
     strategies = SearchStrategies()
-    strategies.define_specification_for(Bar, BarStrategy)
+    strategies.define_specification_for(
+        Bar, lambda s, d: BarStrategy(s.strategy(int)))
 
     with pytest.raises(MissingSpecification):
         SearchStrategies.default().strategy(Bar)
