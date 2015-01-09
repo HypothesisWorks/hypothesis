@@ -9,7 +9,7 @@ python:
 install: python setup.py install
 
 before_script:
-  - pip install --use-mirrors pytest pytest-timeout flake8 coveralls
+  - pip install pytest pytest-timeout flake8 coveralls
 
 script:
   - coverage run --branch --include 'hypothesis/*' $(which py.test) -v hypothesis
