@@ -191,3 +191,29 @@ def test_or_errors_when_given_non_strategy():
 def test_joining_zero_strategies_fails():
     with pytest.raises(ValueError):
         strat.one_of_strategies(())
+
+
+def test_directly_joining_one_strategy_also_fails():
+    with pytest.raises(ValueError):
+        strat.OneOfStrategy([strat.IntStrategy()])
+
+
+def test_list_strategy_reprs_as_list():
+    x = ss.StrategyTable.default().strategy([int])
+    assert repr(x) == "ListStrategy([int])"
+
+
+def test_can_distinguish_amongst_tuples_of_mixed_length():
+    st = ss.StrategyTable()
+    mixed_strategy = st.strategy((int, int, int)) | st.strategy((int, int))
+    assert mixed_strategy.could_have_produced((1, 1))
+    assert mixed_strategy.could_have_produced((1, 1, 1))
+    assert not mixed_strategy.could_have_produced((1, 1, 1, 1))
+    assert not mixed_strategy.could_have_produced((1, "foo"))
+    assert not mixed_strategy.could_have_produced((1, 1, "foo"))
+    assert not mixed_strategy.could_have_produced([1, 1])
+
+
+def test_one_char_string_strategy_must_be_given_chars():
+    with pytest.raises(ValueError):
+        strat.OneCharStringStrategy([1, 2, 3])

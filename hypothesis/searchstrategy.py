@@ -11,19 +11,14 @@ import random as r
 import hypothesis.descriptors as descriptors
 
 
-def nice_string(xs, history=None):
-    history = history or []
-    if xs in history:
-        return '(...)'
-    history = history + [xs]
-    recurse = lambda t: nice_string(t, history)
+def nice_string(xs):
     if isinstance(xs, list):
-        return '[' + ', '.join(map(recurse, xs)) + ']'
+        return '[' + ', '.join(map(nice_string, xs)) + ']'
     if isinstance(xs, tuple):
-        return '(' + ', '.join(map(recurse, xs)) + ')'
+        return '(' + ', '.join(map(nice_string, xs)) + ')'
     if isinstance(xs, dict):
         return '{' + ', '.join(
-            repr(k1) + ':' + recurse(v1)
+            repr(k1) + ':' + nice_string(v1)
             for k1, v1 in xs.items()
         ) + '}'
     try:
@@ -39,7 +34,7 @@ def nice_string(xs, history=None):
     return '%s(%s)' % (
         xs.__class__.__name__,
         ', '.join(
-            '%s=%s' % (k2, nice_string(v2, history)) for k2, v2 in d.items()
+            '%s=%s' % (k2, nice_string(v2)) for k2, v2 in d.items()
         )
     )
 
@@ -500,10 +495,9 @@ class OneOfStrategy(SearchStrategy):
         for s in self.element_strategies:
             if s.could_have_produced(x):
                 return s
-        else:
-            raise ValueError(
-                'Value %s could not have been produced from %s' % (x, self)
-            )
+        assert False, (
+            'Value %s could not have been produced from %s' % (x, self)
+        )  # pragma: no cover
 
     def complexity(self, x):
         return self.find_first_strategy(x).complexity(x)
