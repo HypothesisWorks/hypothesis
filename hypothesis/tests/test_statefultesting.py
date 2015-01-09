@@ -5,6 +5,8 @@ from hypothesis.statefultesting import (
     precondition,
     integrity_test
 )
+import pytest
+from hypothesis import Unfalsifiable
 
 from six.moves import xrange
 
@@ -30,6 +32,11 @@ class Foo(StatefulTest):
 def test_picks_up_only_annotated_methods_as_operations():
     assert len(Foo.test_steps()) == 2
     assert len(Foo.integrity_tests()) == 1
+
+
+def test_raises_on_no_example():
+    with pytest.raises(Unfalsifiable):
+        Foo.breaking_example()
 
 
 class BrokenCounter(StatefulTest):
