@@ -13,7 +13,8 @@ class SpecificationMapper(object):
 
     There is a single default() object per subclass of SpecificationMapper
     which everything has as a prototype if it's not assigned any other
-    prototype. This allows you to easily define the mappers
+    prototype. This allows you to define the mappers on the default object
+    and have them inherited by any custom mappers you want.
     """
 
     @classmethod
