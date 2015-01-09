@@ -13,7 +13,7 @@ before_script:
   - pip install --use-mirrors pytest pytest-timeout flake8 coveralls
 
 script:
-  - coverage $(which py.test) -v hypothesis
+  - coverage run $(which py.test) -v hypothesis
   - flake8 hypothesis 
   - ./installer-test.sh
 
