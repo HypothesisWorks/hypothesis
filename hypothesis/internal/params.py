@@ -84,6 +84,8 @@ class NonEmptySubset(Parameter):
             raise ValueError("Must have at least one element")
         # TODO: This should have a more principled choice. It seesm to be good
         # in practice though.
+        # Note: The actual expected value is slightly higher because we're
+        # conditioning on the result being non-empty.
         desired_expected_value = 1.0 if len(elements) <= 3 else 2.0
         self.p = desired_expected_value / len(elements)
 
