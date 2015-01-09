@@ -275,7 +275,7 @@ def _unique(xs):
     for x in xs:
         if x not in result:
             result.append(x)
-    result.sort()
+    result.sort(key=repr)
     return result
 
 
