@@ -12,7 +12,7 @@ def convert_strategy(fn):
 
 def strategy_for(typ):
     def accept_function(fn):
-        SearchStrategies.default().define_specification_for(
+        StrategyTable.default().define_specification_for(
             typ, convert_strategy(fn))
         return fn
     return accept_function
@@ -20,13 +20,13 @@ def strategy_for(typ):
 
 def strategy_for_instances(typ):
     def accept_function(fn):
-        SearchStrategies.default().define_specification_for_instances(
+        StrategyTable.default().define_specification_for_instances(
             typ, convert_strategy(fn))
         return fn
     return accept_function
 
 
-class SearchStrategies(SpecificationMapper):
+class StrategyTable(SpecificationMapper):
     def strategy(self, descriptor):
         return self.specification_for(descriptor)
 

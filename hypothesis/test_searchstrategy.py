@@ -8,7 +8,7 @@ import random
 
 
 def strategy(*args, **kwargs):
-    return ss.SearchStrategies().strategy(*args, **kwargs)
+    return ss.StrategyTable().strategy(*args, **kwargs)
 
 
 def test_string_strategy_produces_strings():
@@ -142,7 +142,7 @@ def define_x_strategy(strategies, descriptor):
 
 
 def test_strategy_repr_handles_custom_types():
-    assert 'X(x=str)' in repr(ss.SearchStrategies().strategy(X(str)))
+    assert 'X(x=str)' in repr(ss.StrategyTable().strategy(X(str)))
 
 
 class TrivialStrategy(strat.SearchStrategy):
@@ -154,7 +154,7 @@ class TrivialStrategy(strat.SearchStrategy):
 
 
 def test_strategy_repr_handles_instances_without_dicts():
-    strats = ss.SearchStrategies()
+    strats = ss.StrategyTable()
     strats.define_specification_for_instances(
         int, lambda s, d: TrivialStrategy(d))
 
@@ -163,13 +163,13 @@ def test_strategy_repr_handles_instances_without_dicts():
 
 
 def test_float_strategy_does_not_overflow():
-    strategy = ss.SearchStrategies().strategy(float)
+    strategy = ss.StrategyTable().strategy(float)
 
     for _ in xrange(100):
         strategy.produce(random, strategy.parameter.draw(random))
 
 
 def test_does_not_shrink_tuple_length():
-    bools = ss.SearchStrategies().strategy((bool,))
+    bools = ss.StrategyTable().strategy((bool,))
     t = minimize(bools, (False,))
     assert len(t) == 1

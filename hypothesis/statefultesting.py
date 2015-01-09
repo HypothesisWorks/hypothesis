@@ -3,7 +3,7 @@ from hypothesis.searchstrategy import (
     one_of_strategies,
 )
 from hypothesis.strategytable import (
-    SearchStrategies,
+    StrategyTable,
 )
 from collections import namedtuple
 from inspect import getmembers
@@ -231,7 +231,7 @@ class StatefulStrategy(MappedSearchStrategy):
         for y in MappedSearchStrategy.simplify(self, x):
             yield y
 
-SearchStrategies.default().define_specification_for_classes(
+StrategyTable.default().define_specification_for_classes(
     define_stateful_strategy,
     subclasses_of=StatefulTest
 )

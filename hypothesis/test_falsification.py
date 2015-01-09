@@ -12,7 +12,7 @@ from hypothesis.searchstrategy import (
 )
 from hypothesis.descriptors import one_of
 from hypothesis.strategytable import (
-    SearchStrategies,
+    StrategyTable,
     strategy_for,
 )
 from collections import namedtuple
@@ -91,12 +91,12 @@ class BarStrategy(SearchStrategy):
 
 
 def test_can_falsify_types_without_default_productions():
-    strategies = SearchStrategies()
+    strategies = StrategyTable()
     strategies.define_specification_for(
         Bar, lambda s, d: BarStrategy(s.strategy(int)))
 
     with pytest.raises(MissingSpecification):
-        SearchStrategies.default().strategy(Bar)
+        StrategyTable.default().strategy(Bar)
 
     verifier = Verifier(search_strategies=strategies)
     assert verifier.falsify(lambda x: False, Bar,)[0] == Bar()

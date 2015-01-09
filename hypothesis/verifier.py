@@ -1,4 +1,4 @@
-from hypothesis.strategytable import SearchStrategies
+from hypothesis.strategytable import StrategyTable
 from random import Random
 import time
 from six.moves import xrange
@@ -19,7 +19,7 @@ class Verifier(object):
     ):
         if settings is None:
             settings = hs.default
-        self.search_strategies = search_strategies or SearchStrategies()
+        self.search_strategies = search_strategies or StrategyTable()
         self.min_satisfying_examples = settings.min_satisfying_examples
         self.max_falsifying_examples = settings.max_falsifying_examples
         self.n_parameter_values = int(float(settings.max_examples) / 10) + 1
