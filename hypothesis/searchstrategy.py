@@ -1,5 +1,5 @@
 from hypothesis.internal.tracker import Tracker
-import hypothesis.internal.params as params
+import hypothesis.params as params
 import hypothesis.internal.utils.distributions as dist
 
 import inspect

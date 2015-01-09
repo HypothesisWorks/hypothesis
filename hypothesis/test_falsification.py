@@ -19,7 +19,7 @@ from collections import namedtuple
 import pytest
 import re
 from six.moves import xrange
-import hypothesis.internal.params as params
+import hypothesis.params as params
 
 
 def test_can_make_assumptions():
