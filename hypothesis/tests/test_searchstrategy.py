@@ -5,6 +5,7 @@ from hypothesis.internal.tracker import Tracker
 from collections import namedtuple
 from six.moves import xrange
 import random
+import pytest
 
 
 def strategy(*args, **kwargs):
@@ -173,3 +174,15 @@ def test_does_not_shrink_tuple_length():
     bools = ss.StrategyTable().strategy((bool,))
     t = minimize(bools, (False,))
     assert len(t) == 1
+
+
+def test_or_does_not_change_descriptor_given_single_descriptor():
+    bools = ss.StrategyTable().strategy((bool,))
+    b = bools | bools
+    assert b.descriptor == bools.descriptor
+
+
+def test_or_errors_when_given_non_strategy():
+    bools = ss.StrategyTable().strategy((bool,))
+    with pytest.raises(ValueError):
+        bools | "foo"
