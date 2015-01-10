@@ -74,8 +74,6 @@ def args_for_lambda_ast(l):
 
 
 def find_offset(string, line, column):
-    if line < 1:
-        raise ValueError("Line out of range: %d < 1" % (line,))
     current_line = 1
     current_line_offset = 0
     while current_line < line:
@@ -115,7 +113,7 @@ def extract_lambda_source(f):
     all_lambdas = extract_all_lambdas(tree)
     aligned_lambdas = [
         l for l in all_lambdas
-        if args_for_lambda_ast
+        if args_for_lambda_ast(l) == args
     ]
     if len(aligned_lambdas) != 1:
         return if_confused
