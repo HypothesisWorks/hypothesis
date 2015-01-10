@@ -470,7 +470,12 @@ class OneOfStrategy(SearchStrategy):
         )  # pragma: no cover
 
     def simplify(self, x):
-        return self.find_first_strategy(x).simplify(x)
+        t = Tracker()
+        for cs in self.element_strategies:
+            if cs.could_have_produced(x):
+                for y in cs.simplify(x):
+                    if t.track(y) == 1:
+                        yield y
 
 
 class JustStrategy(SearchStrategy):

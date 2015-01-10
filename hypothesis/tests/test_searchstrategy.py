@@ -237,3 +237,17 @@ def test_distinguishes_named_and_unnamed_tuples():
 
     for x in unnamed.simplify((1, 1)):
         assert type(x) == tuple
+
+
+class IntStrategyWithBrokenSimplify(strat.IntStrategy):
+    def simplify(self, value):
+        return ()
+
+
+def test_can_use_simplify_from_all_children():
+    table = ss.StrategyTable()
+    bad_strategy = IntStrategyWithBrokenSimplify()
+    assert list(bad_strategy.simplify_such_that(42, lambda x: True)) == [42]
+    hybrid_strategy = bad_strategy | table.strategy(int)
+    assert list(
+        hybrid_strategy.simplify_such_that(42, lambda x: True))[-1] == 0
