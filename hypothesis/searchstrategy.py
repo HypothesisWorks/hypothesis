@@ -88,21 +88,6 @@ class SearchStrategy(object):
 class IntStrategy(SearchStrategy):
     descriptor = int
 
-    parameter = params.CompositeParameter(
-        may_be_negative=params.BiasedCoin(0.5),
-        negative_probability=params.UniformFloatParameter(0, 1),
-        p=params.BetaFloatParameter(alpha=0.1, beta=0.9),
-    )
-
-    def produce(self, random, parameter):
-        value = dist.geometric(random, parameter.p)
-        if (
-            parameter.may_be_negative and
-            dist.biased_coin(random, parameter.negative_probability)
-        ):
-            value = -value
-        return value
-
     def simplify(self, x):
         if x < 0:
             yield -x
@@ -123,6 +108,30 @@ class IntStrategy(SearchStrategy):
                     if i not in seen:
                         yield i
                     seen.add(i)
+
+
+class VeryLargeUniformIntegerStrategy(IntStrategy):
+    parameter = params.CompositeParameter()
+
+    def produce(self, random, pv):
+        return random.randint(-2**64, 2**63)
+
+
+class RandomGeometricIntStrategy(IntStrategy):
+    parameter = params.CompositeParameter(
+        may_be_negative=params.BiasedCoin(0.5),
+        negative_probability=params.UniformFloatParameter(0, 1),
+        p=params.BetaFloatParameter(alpha=0.1, beta=0.9),
+    )
+
+    def produce(self, random, parameter):
+        value = dist.geometric(random, parameter.p)
+        if (
+            parameter.may_be_negative and
+            dist.biased_coin(random, parameter.negative_probability)
+        ):
+            value = -value
+        return value
 
 
 class BoundedIntStrategy(SearchStrategy):

@@ -30,7 +30,9 @@ class StrategyTable(SpecificationMapper):
     def strategy(self, descriptor):
         return self.specification_for(descriptor)
 
-strategy_for(int)(strat.IntStrategy())
+strategy_for(int)(
+    strat.RandomGeometricIntStrategy() |
+    strat.VeryLargeUniformIntegerStrategy())
 strategy_for(bool)(strat.BoolStrategy())
 
 

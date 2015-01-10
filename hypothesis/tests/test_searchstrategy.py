@@ -194,7 +194,7 @@ def test_joining_zero_strategies_fails():
 
 def test_directly_joining_one_strategy_also_fails():
     with pytest.raises(ValueError):
-        strat.OneOfStrategy([strat.IntStrategy()])
+        strat.OneOfStrategy([strat.VeryLargeUniformIntegerStrategy()])
 
 
 def test_list_strategy_reprs_as_list():
@@ -239,7 +239,7 @@ def test_distinguishes_named_and_unnamed_tuples():
         assert type(x) == tuple
 
 
-class IntStrategyWithBrokenSimplify(strat.IntStrategy):
+class IntStrategyWithBrokenSimplify(strat.VeryLargeUniformIntegerStrategy):
     def simplify(self, value):
         return ()
 
