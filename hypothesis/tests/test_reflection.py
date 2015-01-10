@@ -163,3 +163,15 @@ def test_is_not_confused_by_tuples():
     p = (lambda x: x > 1, 2)[0]
 
     assert get_pretty_function_description(p) == 'lambda x: x > 1'
+
+
+def test_does_not_error_on_confused_sources():
+    def ed(f, *args):
+        return f
+
+    x = ed(
+        lambda x, y: (
+            x * y
+        ).conjugate() == x.conjugate() * y.conjugate(), complex, complex)
+
+    get_pretty_function_description(x)

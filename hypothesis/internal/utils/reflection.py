@@ -109,7 +109,7 @@ def extract_lambda_source(f):
             source = "with 0:\n" + source
             tree = ast.parse(source)
     except SyntaxError:
-        raise if_confused
+        return if_confused
 
     all_lambdas = extract_all_lambdas(tree)
     aligned_lambdas = [
