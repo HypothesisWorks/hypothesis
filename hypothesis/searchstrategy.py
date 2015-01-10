@@ -217,13 +217,13 @@ class GaussianFloatStrategy(FloatStrategy):
 
 class ExponentialFloatStrategy(FloatStrategy):
     parameter = params.CompositeParameter(
-        mean=params.GammaParameter(2, 50),
+        lambd=params.GammaParameter(2, 50),
         zero_point=params.NormalParameter(0, 1),
         negative=params.BiasedCoin(0.5),
     )
 
     def produce(self, random, pv):
-        value = random.expovariate(1.0 / pv.mean)
+        value = random.expovariate(pv.lambd)
         if pv.negative:
             value = -value
         return pv.zero_point + value
