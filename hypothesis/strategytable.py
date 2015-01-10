@@ -109,3 +109,8 @@ def define_strategy_strategy(strategies, descriptor):
 @strategy_for_instances(descriptors.IntegerRange)
 def define_stragy_for_integer_Range(strategies, descriptor):
     return strat.BoundedIntStrategy(descriptor.start, descriptor.end)
+
+
+@strategy_for_instances(descriptors.FloatRange)
+def define_strategy_for_float_Range(strategies, descriptor):
+    return strat.FixedBoundedFloatStrategy(descriptor.start, descriptor.end)

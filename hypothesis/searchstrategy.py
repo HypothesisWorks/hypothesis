@@ -167,14 +167,43 @@ class FloatStrategy(SearchStrategy):
             yield x + (m - n)
 
 
-class BoundedFloatStrategy(FloatStrategy):
+class FixedBoundedFloatStrategy(SearchStrategy):
+    descriptor = float
+
     parameter = params.CompositeParameter(
-        left=params.NormalParameter(0, 1),
-        length=params.ExponentialParameter(1)
+        alpha=params.ExponentialParameter(1),
+        beta=params.ExponentialParameter(1),
     )
 
+    def __init__(self, lower_bound, upper_bound):
+        self.lower_bound = lower_bound
+        self.upper_bound = upper_bound
+
     def produce(self, random, pv):
-        return pv.left + random.random() * pv.length
+        return self.lower_bound + (
+            self.upper_bound - self.lower_bound
+        ) * random.betavariate(pv.alpha, pv.beta)
+
+    def simplify(self, value):
+        yield self.lower_bound
+        yield self.upper_bound
+        yield (self.lower_bound + self.upper_bound) * 0.5
+
+
+class BoundedFloatStrategy(FloatStrategy):
+    def __init__(self):
+        super(BoundedFloatStrategy, self).__init__()
+        self.inner_strategy = FixedBoundedFloatStrategy(0, 1)
+        self.parameter = params.CompositeParameter(
+            left=params.NormalParameter(0, 1),
+            length=params.ExponentialParameter(1),
+            spread=self.inner_strategy.parameter,
+        )
+
+    def produce(self, random, pv):
+        return pv.left + self.inner_strategy.produce(
+            random,  pv.spread
+        ) * pv.length
 
 
 class GaussianFloatStrategy(FloatStrategy):

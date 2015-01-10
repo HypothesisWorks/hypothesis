@@ -25,3 +25,7 @@ def integers_in_range(start, end):
 
 
 FloatRange = namedtuple('FloatRange', ('start', 'end'))
+
+
+def floats_in_range(start, end):
+    return FloatRange(start, end)
