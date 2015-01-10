@@ -168,8 +168,8 @@ def get_pretty_function_description(f):
         # In python 3 qualname will give you the class too. In python 2 this is
         # not a function object but is in fact an unbound method so this
         # doesn't matter
-        if six.PY3:
-            try:  # pragma: no branch
+        if six.PY3:  # pragma: no branch
+            try:  # pragma: no cover
                 return f.__qualname__  # pragma: no cover
             except AttributeError:  # pragma: no cover
                 # oh god python 3.1 or 3.2. There's no non-horrendous way to
