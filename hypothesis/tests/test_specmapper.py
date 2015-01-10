@@ -5,6 +5,7 @@ from hypothesis.internal.specmapper import (
 )
 import pytest
 from collections import namedtuple
+import random
 
 
 def setup_function(fn):
@@ -292,3 +293,15 @@ def test_specifications_will_match_on_subclasses():
     assert s.specification_for(Child()) == 3
     assert s.specification_for(Grandchild()) == 2
     assert s.specification_for(GreatGrandchild()) == 4
+
+    choices = [Parent, Child, Grandchild, GreatGrandchild]
+    values = {
+        Parent: 1, Child: 3, Grandchild: 2, GreatGrandchild: 4
+    }
+
+    for i in xrange(5, 200):
+        c = random.choice(choices)
+        assert s.specification_for(c()) == values[c]
+        s.define_specification_for_instances(c, trivial(i))
+        assert s.specification_for(c()) == i
+        values[c] = i

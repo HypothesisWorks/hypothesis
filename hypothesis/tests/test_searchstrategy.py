@@ -245,9 +245,10 @@ class IntStrategyWithBrokenSimplify(strat.IntStrategy):
 
 
 def test_can_use_simplify_from_all_children():
+    always = lambda x: True
     table = ss.StrategyTable()
     bad_strategy = IntStrategyWithBrokenSimplify()
-    assert list(bad_strategy.simplify_such_that(42, lambda x: True)) == [42]
+    assert list(bad_strategy.simplify_such_that(42, always)) == [42]
     hybrid_strategy = bad_strategy | table.strategy(int)
     assert list(
-        hybrid_strategy.simplify_such_that(42, lambda x: True))[-1] == 0
+        hybrid_strategy.simplify_such_that(42, always))[-1] == 0
