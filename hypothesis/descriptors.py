@@ -15,3 +15,13 @@ def one_of(args):
     if len(args) == 1:
         return args[0]
     return OneOf(args)
+
+
+IntegerRange = namedtuple('IntegerRange', ('start', 'end'))
+
+
+def integers_in_range(start, end):
+    return IntegerRange(start, end)
+
+
+FloatRange = namedtuple('FloatRange', ('start', 'end'))

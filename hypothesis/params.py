@@ -54,16 +54,18 @@ class GammaParameter(Parameter):
 
 
 class NonEmptySubset(Parameter):
-    def __init__(self, elements):
+    def __init__(self, elements, activation_chance=None):
         self.elements = tuple(elements)
         if not elements:
             raise ValueError("Must have at least one element")
-        # TODO: This should have a more principled choice. It seesm to be good
-        # in practice though.
-        # Note: The actual expected value is slightly higher because we're
-        # conditioning on the result being non-empty.
-        desired_expected_value = 1.0 if len(elements) <= 3 else 2.0
-        self.p = desired_expected_value / len(elements)
+        if activation_chance is None:
+            # TODO: This should have a more principled choice. It seems to be
+            # good in practice though.
+            # Note: The actual expected value is slightly higher because we're
+            # conditioning on the result being non-empty.
+            desired_expected_value = 1.0 if len(elements) <= 3 else 2.0
+            activation_chance = desired_expected_value / len(elements)
+        self.p = activation_chance
 
     def draw(self, random):
         if len(self.elements) == 1:

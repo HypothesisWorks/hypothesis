@@ -117,6 +117,37 @@ class IntStrategy(SearchStrategy):
                 yield v
 
 
+class BoundedIntStrategy(SearchStrategy):
+    descriptor = int
+    parameter = params.CompositeParameter()
+
+    def __init__(self, start, end):
+        self.start = start
+        self.end = end
+        if start > end:
+            raise ValueError("Invalid range [%d, %d]" % (start, end))
+        self.parameter = params.NonEmptySubset(
+            tuple(range(start, end + 1)),
+            activation_chance=min(0.5, 3.0 / (end - start + 1))
+        )
+
+    def produce(self, random, parameter):
+        if self.start == self.end:
+            return self.start
+        return random.choice(parameter)
+
+    def simplify(self, x):
+        if x == self.start:
+            return
+        for t in xrange(x - 1, self.start - 1, -1):
+            yield t
+        mid = (self.start + self.end) // 2
+        if x > mid:
+            yield mid - (x - mid)
+            for t in xrange(x + 1, self.end + 1):
+                yield t
+
+
 class FloatStrategy(SearchStrategy):
     descriptor = float
 

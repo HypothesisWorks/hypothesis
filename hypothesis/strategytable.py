@@ -104,3 +104,8 @@ def define_one_of_strategy(strategies, descriptor):
 @strategy_for_instances(strat.SearchStrategy)
 def define_strategy_strategy(strategies, descriptor):
     return descriptor
+
+
+@strategy_for_instances(descriptors.IntegerRange)
+def define_stragy_for_integer_Range(strategies, descriptor):
+    return strat.BoundedIntStrategy(descriptor.start, descriptor.end)

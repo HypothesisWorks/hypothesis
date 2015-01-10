@@ -7,6 +7,7 @@ from hypothesis.verifier import (
     Verifier,
     Timeout,
 )
+import hypothesis.descriptors as descriptors
 from hypothesis.internal.specmapper import MissingSpecification
 from hypothesis.searchstrategy import (
     SearchStrategy,
@@ -325,3 +326,12 @@ def test_falsification_contains_function_string():
     with pytest.raises(Unfalsifiable) as e:
         assert falsify(lambda x: True, int)
     assert "lambda x: True" in e.value.args[0]
+
+
+def test_can_produce_and_minimize_long_lists_of_only_one_element():
+    def is_a_monoculture(xs):
+        assume(len(xs) >= 10)
+        return len(set(xs)) > 1
+
+    falsify(
+        is_a_monoculture, [descriptors.integers_in_range(0, 10)])

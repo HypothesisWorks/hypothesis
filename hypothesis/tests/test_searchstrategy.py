@@ -252,3 +252,65 @@ def test_can_use_simplify_from_all_children():
     hybrid_strategy = bad_strategy | table.strategy(int)
     assert list(
         hybrid_strategy.simplify_such_that(42, always))[-1] == 0
+
+
+def test_strategy_for_integer_range_produces_only_integers_in_that_range():
+    table = ss.StrategyTable()
+    just_one_integer = table.strategy(descriptors.IntegerRange(1, 1))
+    for _ in xrange(100):
+        pv = just_one_integer.parameter.draw(random)
+        x = just_one_integer.produce(random, pv)
+        assert x == 1
+    some_integers = table.strategy(descriptors.IntegerRange(1, 10))
+    for _ in xrange(100):
+        pv = some_integers.parameter.draw(random)
+        x = some_integers.produce(random, pv)
+        assert 1 <= x <= 10
+
+
+def test_strategy_for_integer_range_can_produce_end_points():
+    table = ss.StrategyTable()
+    some_integers = table.strategy(descriptors.IntegerRange(1, 10))
+    found = set()
+    for _ in xrange(1000):  # pragma: no branch
+        pv = some_integers.parameter.draw(random)
+        x = some_integers.produce(random, pv)
+        found.add(x)
+        if 1 in found and 10 in found:
+            break
+    else:
+        assert False  # pragma: no cover
+    assert 1 in found
+    assert 10 in found
+
+
+def last(xs):
+    t = None
+    for x in xs:
+        t = x
+    return t
+
+
+def test_simplify_integer_range_can_push_to_near_boundaries():
+    table = ss.StrategyTable()
+    some_integers = table.strategy(descriptors.IntegerRange(1, 10))
+
+    predicates = [
+        (lambda x: True, 1),
+        (lambda x: x > 1, 2),
+        (lambda x: x > 5, 10),
+        (lambda x: x > 5 and x < 10, 9),
+    ]
+
+    for p, v in predicates:
+        some = False
+        for i in xrange(1, 10):
+            if p(i):
+                some = True
+                assert last(some_integers.simplify_such_that(i, p)) == v
+        assert some
+
+
+def test_rejects_invalid_ranges():
+    with pytest.raises(ValueError):
+        strat.BoundedIntStrategy(10, 9)

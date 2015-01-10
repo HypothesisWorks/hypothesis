@@ -1,6 +1,6 @@
 from hypothesis.testdecorators import given
 from hypothesis.verifier import Verifier, assume, Timeout
-from hypothesis.descriptors import one_of, just
+from hypothesis.descriptors import one_of, just, integers_in_range
 from functools import wraps
 import pytest
 import time
@@ -162,3 +162,8 @@ def test_text_addition_is_not_commutative(x, y):
 @given(binary_type, binary_type)
 def test_binary_addition_is_not_commutative(x, y):
     assert x + y == y + x
+
+
+@given(integers_in_range(1, 10))
+def test_integers_are_in_range(x):
+    assert 1 <= x <= 10
