@@ -216,3 +216,24 @@ def test_can_distinguish_amongst_tuples_of_mixed_length():
 def test_one_char_string_strategy_must_be_given_chars():
     with pytest.raises(ValueError):
         strat.OneCharStringStrategy([1, 2, 3])
+
+
+SomeNamedTuple = namedtuple('SomeNamedTuple', ('a', 'b'))
+
+
+def test_distinguishes_named_and_unnamed_tuples():
+    table = ss.StrategyTable()
+    named = table.strategy(SomeNamedTuple(int, int))
+    unnamed = table.strategy((int, int))
+
+    assert unnamed.could_have_produced((1, 1))
+    assert not named.could_have_produced((1, 1))
+
+    assert not unnamed.could_have_produced(SomeNamedTuple(1, 1))
+    assert named.could_have_produced(SomeNamedTuple(1, 1))
+
+    for x in named.simplify(SomeNamedTuple(1, 1)):
+        assert type(x) == SomeNamedTuple
+
+    for x in unnamed.simplify((1, 1)):
+        assert type(x) == tuple

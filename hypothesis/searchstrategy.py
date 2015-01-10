@@ -210,7 +210,7 @@ class TupleStrategy(SearchStrategy):
         )
 
     def could_have_produced(self, xs):
-        if not isinstance(xs, self.tuple_type):
+        if xs.__class__ != self.tuple_type:
             return False
         if len(xs) != len(self.element_strategies):
             return False
