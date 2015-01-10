@@ -124,13 +124,11 @@ def extract_lambda_source(f):
 
     source = source[source.index("lambda"):]
 
-    for i in xrange(len(source), -1, -1):
+    for i in xrange(len(source), -1, -1):  # pragma: no branch
         try:
             parsed = ast.parse(source[:i])
-            if len(parsed.body) > 1:
-                continue
-            if not parsed.body:
-                return if_confused
+            assert len(parsed.body) == 1
+            assert parsed.body
             if not isinstance(parsed.body[0].value, ast.Lambda):
                 continue
             source = source[:i]
@@ -143,8 +141,6 @@ def extract_lambda_source(f):
 
     source = WHITESPACE.sub(" ", source)
     source = source.strip()
-    if source[0] == '(' and source[-1] == ')':
-        source = source[1:-1]
     return source
 
 
