@@ -2,11 +2,27 @@
  Hypothesis
 ================
 
-Hypothesis is a library for falsifying its namesake. It is inspired by libraries
+Hypothesis is a testing library, designed around a core concept of finding examples
+which falsify predicates. It is inspired by and strongly based on libraries
 for testing like `Quickcheck <http://en.wikipedia.org/wiki/QuickCheck>`_, with
 its most direct ancestor being `ScalaCheck <https://github.com/rickynils/scalacheck>`_
 from which it acquired its approach to test case minimization. It is not itself a
 test framework, but it provides decorators for easy integration with test frameworks
+
+
+----------
+Discussion
+----------
+
+If you use or are interested in using Hypothesis, we have `a mailing list <https://groups.google.com/forum/#!forum/hypothesis-users>.
+Feel free to use it to ask for help, provide feedback, or discuss anything remotely
+Hypothesis related at all.
+
+
+------
+Usage
+------
+
 
 The primary entry point into the library is the hypothesis.falsify method.
 
