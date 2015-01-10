@@ -5,16 +5,9 @@ from hypothesis.internal.utils.reflection import (
 import pytest
 
 
-def result(f, args, kwargs):
-    try:
-        return (0, f(*args, **kwargs))
-    except Exception as e:
-        return (1, e.__class__, e.args)
-
-
 def do_conversion_test(f, args, kwargs):
     cargs, ckwargs = convert_keyword_arguments(f, args, kwargs)
-    assert result(f, args, kwargs) == result(f, cargs, ckwargs)
+    assert f(*args, **kwargs) == f(*cargs, **ckwargs)
 
 
 def test_simple_conversion():
@@ -138,12 +131,16 @@ def test_repr_is_included_in_bound_method_prettiness():
     assert get_pretty_function_description(Foo().baz) == 'SoNotFoo().baz'
 
 
+# Note: All of these no branch pragmas are because we don't actually ever want
+# to call these lambdas. We're just inspecting their source.
+
 def test_source_of_lambda_is_pretty():
-    assert get_pretty_function_description(lambda x: True) == 'lambda x: True'
+    assert get_pretty_function_description(
+        lambda x: True) == 'lambda x: True'  # pragma: no cover
 
 
 def test_variable_names_are_not_pretty():
-    t = lambda x: True
+    t = lambda x: True  # pragma: no cover
     assert get_pretty_function_description(t) == 'lambda x: True'
 
 
@@ -154,13 +151,13 @@ def test_does_not_error_on_dynamically_defined_functions():
 
 def test_collapses_whitespace_nicely():
     t = (
-        lambda x,       y:           1
+        lambda x,       y:           1  # pragma: no cover
     )
     assert get_pretty_function_description(t) == 'lambda x, y: 1'
 
 
 def test_is_not_confused_by_tuples():
-    p = (lambda x: x > 1, 2)[0]
+    p = (lambda x: x > 1, 2)[0]  # pragma: no cover
 
     assert get_pretty_function_description(p) == 'lambda x: x > 1'
 
@@ -170,8 +167,18 @@ def test_does_not_error_on_confused_sources():
         return f
 
     x = ed(
-        lambda x, y: (
+        lambda x, y: (  # pragma: no cover
             x * y
         ).conjugate() == x.conjugate() * y.conjugate(), complex, complex)
 
     get_pretty_function_description(x)
+
+
+def test_strips_comments_from_the_end():
+    t = lambda x: 1  # pragma: no cover
+    assert get_pretty_function_description(t) == "lambda x: 1"
+
+
+def test_does_not_strip_hashes_within_a_string():
+    t = lambda x: "#"  # pragma: no cover
+    assert get_pretty_function_description(t) == 'lambda x: "#"'

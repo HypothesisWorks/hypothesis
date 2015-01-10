@@ -85,6 +85,7 @@ def find_offset(string, line, column):
 
 
 WHITESPACE = re.compile('\s+')
+PROBABLY_A_COMMENT = re.compile("""#[^'"]*$""")
 
 
 def extract_lambda_source(f):
@@ -138,6 +139,10 @@ def extract_lambda_source(f):
             break
         except SyntaxError:
             pass
+    lines = source.split("\n")
+    lines = [PROBABLY_A_COMMENT.sub("", l) for l in lines]
+    source = '\n'.join(lines)
+
     source = WHITESPACE.sub(" ", source)
     source = source.strip()
     if source[0] == '(' and source[-1] == ')':
