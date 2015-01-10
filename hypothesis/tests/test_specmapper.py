@@ -6,6 +6,7 @@ from hypothesis.internal.specmapper import (
 import pytest
 from collections import namedtuple
 import random
+from six.moves import xrange
 
 
 def setup_function(fn):
