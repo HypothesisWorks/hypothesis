@@ -157,3 +157,9 @@ def test_collapses_whitespace_nicely():
         lambda x,       y:           1
     )
     assert get_pretty_function_description(t) == 'lambda x, y: 1'
+
+
+def test_is_not_confused_by_tuples():
+    p = (lambda x: x > 1, 2)[0]
+
+    assert get_pretty_function_description(p) == 'lambda x: x > 1'

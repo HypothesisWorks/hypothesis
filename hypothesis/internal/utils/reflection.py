@@ -127,7 +127,13 @@ def extract_lambda_source(f):
 
     for i in xrange(len(source), -1, -1):
         try:
-            ast.parse(source[:i])
+            parsed = ast.parse(source[:i])
+            if len(parsed.body) > 1:
+                continue
+            if not parsed.body:
+                return if_confused
+            if not isinstance(parsed.body[0].value, ast.Lambda):
+                continue
             source = source[:i]
             break
         except SyntaxError:
