@@ -3,9 +3,10 @@ from hypothesis.verifier import (
     assume,
     Unfalsifiable,
     Unsatisfiable,
+    Exhausted,
+    Timeout,
     Flaky,
     Verifier,
-    Timeout,
 )
 import hypothesis.descriptors as descriptors
 from hypothesis.internal.specmapper import MissingSpecification
@@ -373,6 +374,6 @@ def test_does_not_call_twice_with_same_passing_parameter():
     def count_calls(x):
         calls[0] += 1
         return True
-    with pytest.raises(Unfalsifiable):
+    with pytest.raises(Exhausted):
         falsify(count_calls, bool)
     assert calls == [2]

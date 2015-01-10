@@ -95,7 +95,12 @@ class Verifier(object):
                 if skipped_examples >= self.max_skipped_examples:
                     raise Exhausted(hypothesis, examples_found)
                 else:
-                    continue
+                    # This really is covered. I suspect a bug in coverage that
+                    # I have not yet narroed down. It is impossible to execute
+                    # the other branch without first executing this one and
+                    # there is a test that cannot pass without executing the
+                    # other branch.
+                    continue  # pragma: no cover
             else:
                 skipped_examples = 0
             examples_found += 1
