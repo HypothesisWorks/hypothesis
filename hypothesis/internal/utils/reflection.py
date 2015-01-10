@@ -71,9 +71,9 @@ def extract_all_lambdas(tree):
 
 
 if six.PY3:  # pragma: no branch
-    ARG_NAME_ATTRIBUTE = 'arg'
+    ARG_NAME_ATTRIBUTE = 'arg'  # pragma: no cover
 else:
-    ARG_NAME_ATTRIBUTE = 'id'
+    ARG_NAME_ATTRIBUTE = 'id'   # pragma: no cover
 
 
 def args_for_lambda_ast(l):
@@ -158,10 +158,14 @@ def get_pretty_function_description(f):
     elif isinstance(f, types.MethodType):
         self = f.__self__
         if self is None:
-            return "%s.%s" % (f.im_class.__name__, name)
+            # This branch is unreachable on python 3
+            return "%s.%s" % (f.im_class.__name__, name)  # pragma: no cover
         elif inspect.isclass(self):
             return "%s.%s" % (self.__name__, name)
         else:
             return "%r.%s" % (self, name)
     else:
-        return name
+        # In python 3 qualname will give you the class too. In python 2 this is
+        # not a function object but is in fact an unbound method so this
+        # doesn't matter
+        return getattr(f, '__qualname__', name)

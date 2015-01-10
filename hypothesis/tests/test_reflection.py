@@ -118,6 +118,10 @@ def test_repr_is_included_in_bound_method_prettiness():
     assert get_pretty_function_description(Foo().baz) == 'SoNotFoo().baz'
 
 
+def test_class_is_included_in_unbound_method_prettiness():
+    assert get_pretty_function_description(Foo.baz) == 'Foo.baz'
+
+
 # Note: All of these no branch pragmas are because we don't actually ever want
 # to call these lambdas. We're just inspecting their source.
 
