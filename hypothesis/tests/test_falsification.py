@@ -24,7 +24,7 @@ from six.moves import xrange
 import hypothesis.params as params
 import hypothesis.settings as hs
 import time
-from six import binary_type
+from six import binary_type, text_type
 
 
 def test_can_make_assumptions():
@@ -158,7 +158,7 @@ def test_can_falsify_string_commutativity():
     def commutes(x, y):
         return x + y == y + x
 
-    non_commuting = falsify(commutes, str, str)
+    non_commuting = falsify(commutes, text_type, text_type)
     x, y = sorted(non_commuting)
     assert x == '0'
     assert y == '1'
@@ -195,7 +195,7 @@ def is_pure(xs):
 
 
 def test_can_falsify_mixed_lists():
-    xs = falsify(is_pure, [int, str])[0]
+    xs = falsify(is_pure, [int, text_type])[0]
     assert len(xs) == 2
     assert 0 in xs
     assert '' in xs
@@ -209,28 +209,28 @@ def test_can_produce_long_mixed_lists_with_only_a_subset():
             return any(isinstance(x, t) for x in xs)
         return is_good
 
-    falsify(short_or_includes(str), [int, str])
-    falsify(short_or_includes(int), [int, str])
+    falsify(short_or_includes(text_type), [int, text_type])
+    falsify(short_or_includes(int), [int, text_type])
 
 
 def test_can_falsify_alternating_types():
-    falsify(lambda x: isinstance(x, int), one_of([int, str]))[0] == ''
+    falsify(lambda x: isinstance(x, int), one_of([int, text_type]))[0] == ''
 
 
 def test_can_falsify_string_matching():
     # Note that just doing a match("foo",x) will never find a good solution
     # because the state space is too large
-    assert falsify(lambda x: not re.search('a.*b', x), str)[0] == 'ab'
+    assert falsify(lambda x: not re.search('a.*b', x), text_type)[0] == 'ab'
 
 
 def test_minimizes_strings_to_zeroes():
-    assert falsify(lambda x: len(x) < 3, str)[0] == '000'
+    assert falsify(lambda x: len(x) < 3, text_type)[0] == '000'
 
 
 def test_can_find_short_strings():
-    assert falsify(lambda x: len(x) > 0, str)[0] == ''
-    assert len(falsify(lambda x: len(x) <= 1, str)[0]) == 2
-    assert falsify(lambda x: len(x) < 10, [str])[0] == [''] * 10
+    assert falsify(lambda x: len(x) > 0, text_type)[0] == ''
+    assert len(falsify(lambda x: len(x) <= 1, text_type)[0]) == 2
+    assert falsify(lambda x: len(x) < 10, [text_type])[0] == [''] * 10
 
 
 def test_stops_loop_pretty_quickly():
@@ -262,7 +262,8 @@ Litter = namedtuple('Litter', ('kitten1', 'kitten2'))
 
 
 def test_can_falsify_named_tuples():
-    pair = falsify(lambda x: x.kitten1 < x.kitten2, Litter(str, str))[0]
+    pair = falsify(
+        lambda x: x.kitten1 < x.kitten2, Litter(text_type, text_type))[0]
     assert isinstance(pair, Litter)
     assert pair == Litter('', '')
 
