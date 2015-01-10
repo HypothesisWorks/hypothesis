@@ -30,13 +30,6 @@ class StrategyTable(SpecificationMapper):
     def strategy(self, descriptor):
         return self.specification_for(descriptor)
 
-    def missing_specification(self, descriptor):
-        if isinstance(descriptor, strat.SearchStrategy):
-            return descriptor
-        else:
-            return SpecificationMapper.missing_specification(self, descriptor)
-
-
 strategy_for(int)(strat.IntStrategy())
 strategy_for(bool)(strat.BoolStrategy())
 
@@ -106,3 +99,8 @@ def define_dict_strategy(strategies, descriptor):
 @strategy_for_instances(descriptors.OneOf)
 def define_one_of_strategy(strategies, descriptor):
     return strat.OneOfStrategy(map(strategies.strategy, descriptor.elements))
+
+
+@strategy_for_instances(strat.SearchStrategy)
+def define_strategy_strategy(strategies, descriptor):
+    return descriptor
