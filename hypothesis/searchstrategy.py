@@ -461,14 +461,6 @@ class OneOfStrategy(SearchStrategy):
         return self.element_strategies[child].produce(
             random, pv.child_parameters[child])
 
-    def find_first_strategy(self, x):
-        for s in self.element_strategies:
-            if s.could_have_produced(x):
-                return s
-        assert False, (
-            'Value %s could not have been produced from %s' % (x, self)
-        )  # pragma: no cover
-
     def simplify(self, x):
         t = Tracker()
         for cs in self.element_strategies:
