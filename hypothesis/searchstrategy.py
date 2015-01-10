@@ -5,7 +5,7 @@ import hypothesis.internal.utils.distributions as dist
 import inspect
 from abc import abstractmethod
 from six.moves import xrange
-from six import text_type
+from six import text_type, binary_type
 import string
 import random as r
 import hypothesis.descriptors as descriptors
@@ -143,7 +143,7 @@ class BoundedIntStrategy(SearchStrategy):
             yield t
         mid = (self.start + self.end) // 2
         if x > mid:
-            yield mid - (x - mid)
+            yield self.start + (self.end - x)
             for t in xrange(x + 1, self.end + 1):
                 yield t
 
@@ -421,10 +421,10 @@ class StringStrategy(MappedSearchStrategy):
 
 class BinaryStringStrategy(MappedSearchStrategy):
     def pack(self, x):
-        return x.encode('utf-8')
+        return binary_type(bytearray(x))
 
     def unpack(self, x):
-        return x.decode('utf-8')
+        return list(bytearray(x))
 
 
 class FixedKeysDictStrategy(SearchStrategy):

@@ -314,3 +314,10 @@ def test_simplify_integer_range_can_push_to_near_boundaries():
 def test_rejects_invalid_ranges():
     with pytest.raises(ValueError):
         strat.BoundedIntStrategy(10, 9)
+
+
+def test_does_not_simplify_outside_range():
+    n = 3
+    s = strat.BoundedIntStrategy(0, n)
+    for t in s.simplify(n):
+        assert 0 <= t <= n

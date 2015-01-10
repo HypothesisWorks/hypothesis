@@ -24,6 +24,7 @@ from six.moves import xrange
 import hypothesis.params as params
 import hypothesis.settings as hs
 import time
+from six import binary_type
 
 
 def test_can_make_assumptions():
@@ -335,3 +336,14 @@ def test_can_produce_and_minimize_long_lists_of_only_one_element():
 
     falsify(
         is_a_monoculture, [descriptors.integers_in_range(0, 10)])
+
+
+def test_can_produce_things_that_are_not_utf8():
+    def is_utf8(x):
+        try:
+            x.decode('utf-8')
+            return True
+        except UnicodeDecodeError:
+            return False
+
+    falsify(is_utf8, binary_type)

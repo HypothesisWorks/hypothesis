@@ -55,7 +55,7 @@ def define_float_strategy(strategies, descriptor):
 @strategy_for(binary_type)
 def define_binary_strategy(strategies, descriptor):
     return strat.BinaryStringStrategy(
-        strategy=strategies.strategy(text_type),
+        strategy=strategies.strategy([descriptors.integers_in_range(0, 255)]),
         descriptor=binary_type,
     )
 
