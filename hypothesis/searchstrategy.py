@@ -91,7 +91,7 @@ class IntStrategy(SearchStrategy):
     parameter = params.CompositeParameter(
         may_be_negative=params.BiasedCoin(0.5),
         negative_probability=params.UniformFloatParameter(0, 1),
-        p=params.UniformFloatParameter(0, 1),
+        p=params.BetaFloatParameter(alpha=0.1, beta=0.9),
     )
 
     def produce(self, random, parameter):
@@ -110,11 +110,19 @@ class IntStrategy(SearchStrategy):
                 yield -y
         elif x > 0:
             yield 0
-            random = r.Random(x)
-            values = list(xrange(1, x))
-            random.shuffle(values)
-            for v in values:
-                yield v
+            yield x // 2
+            max_iters = 100
+            if x <= max_iters:
+                for i in xrange(x - 1, 0, -1):
+                    yield i
+            else:
+                random = r.Random(x)
+                seen = {0, x // 2}
+                for _ in xrange(max_iters):
+                    i = random.randint(0, x - 1)
+                    if i not in seen:
+                        yield i
+                    seen.add(i)
 
 
 class BoundedIntStrategy(SearchStrategy):
@@ -324,7 +332,7 @@ class ListStrategy(SearchStrategy):
         self.descriptor = _unique(x.descriptor for x in strategies)
         self.element_strategy = one_of_strategies(strategies)
         self.parameter = params.CompositeParameter(
-            average_length=params.ExponentialParameter(50.0),
+            average_length=params.ExponentialParameter(100.0),
             child_parameter=self.element_strategy.parameter,
         )
 

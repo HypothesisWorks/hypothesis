@@ -6,6 +6,7 @@ import hypothesis.settings as hs
 from hypothesis.internal.utils.reflection import (
     get_pretty_function_description
 )
+from hypothesis.internal.tracker import Tracker
 
 
 def assume(condition):
@@ -24,10 +25,12 @@ class Verifier(object):
             settings = hs.default
         self.search_strategies = search_strategies or StrategyTable()
         self.min_satisfying_examples = settings.min_satisfying_examples
-        self.n_parameter_values = int(float(settings.max_examples) / 10) + 1
+        self.max_skipped_examples = settings.max_skipped_examples
         self.max_examples = settings.max_examples
+        self.n_parameter_values = settings.max_examples
         self.timeout = settings.timeout
         self.random = random or Random()
+        self.max_regenerations = 0
 
     def falsify(self, hypothesis, *argument_types):
         search_strategy = (self.search_strategies
@@ -46,13 +49,16 @@ class Verifier(object):
         satisfying_examples = 0
         timed_out = False
 
-        parameter_values = [
-            search_strategy.parameter.draw(self.random)
-            for _ in xrange(self.n_parameter_values)
-        ]
+        def generate_parameter_values():
+            return [
+                search_strategy.parameter.draw(self.random)
+                for _ in xrange(self.n_parameter_values)
+            ]
 
+        parameter_values = generate_parameter_values()
         accepted_examples = [0] * self.n_parameter_values
         rejected_examples = [0] * self.n_parameter_values
+        track_seen = Tracker()
 
         start_time = time.time()
 
@@ -60,6 +66,7 @@ class Verifier(object):
             return time.time() >= start_time + self.timeout
 
         initial_run = 0
+        skipped_examples = 0
 
         while not (
             examples_found >= self.max_examples or
@@ -82,6 +89,15 @@ class Verifier(object):
             pv = parameter_values[i]
 
             args = search_strategy.produce(self.random, pv)
+            if track_seen.track(args) > 1:
+                rejected_examples[i] += 1
+                skipped_examples += 1
+                if skipped_examples >= self.max_skipped_examples:
+                    raise Exhausted(hypothesis, examples_found)
+                else:
+                    continue
+            else:
+                skipped_examples = 0
             examples_found += 1
             try:
                 is_falsifying_example = not hypothesis(*args)
@@ -137,6 +153,15 @@ class Unfalsifiable(HypothesisException):
         super(Unfalsifiable, self).__init__(
             'Unable to falsify hypothesis %s%s' % (
                 get_pretty_function_description(hypothesis), extra)
+        )
+
+
+class Exhausted(Unfalsifiable):
+    def __init__(self, hypothesis, n_examples):
+        super(Exhausted, self).__init__(
+            hypothesis, " exhausted parameter space after %d examples" % (
+                n_examples,
+            )
         )
 
 

@@ -11,3 +11,7 @@ class Tracker(object):
         n = self.contents.get(k, 0) + 1
         self.contents[k] = n
         return n
+
+    def __contains__(self, item):
+        k = HashItAnyway(item)
+        return k in self.contents

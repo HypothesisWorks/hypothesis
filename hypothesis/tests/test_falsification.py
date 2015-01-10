@@ -95,7 +95,8 @@ class BarStrategy(SearchStrategy):
 def test_can_falsify_types_without_default_productions():
     strategies = StrategyTable()
     strategies.define_specification_for(
-        Bar, lambda s, d: BarStrategy(s.strategy(int)))
+        Bar, lambda s, d: BarStrategy(
+            s.strategy(descriptors.integers_in_range(0, 100))))
 
     with pytest.raises(MissingSpecification):
         StrategyTable.default().strategy(Bar)
@@ -364,3 +365,14 @@ def test_can_produce_long_lists_with_floats_at_right():
         return any(x <= 0.8 for x in xs)
 
     falsify(is_small_given_large, [descriptors.floats_in_range(0, 1)])
+
+
+def test_does_not_call_twice_with_same_passing_parameter():
+    calls = [0]
+
+    def count_calls(x):
+        calls[0] += 1
+        return True
+    with pytest.raises(Unfalsifiable):
+        falsify(count_calls, bool)
+    assert calls == [2]

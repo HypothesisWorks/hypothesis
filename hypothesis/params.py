@@ -23,6 +23,15 @@ class ExponentialParameter(Parameter):
         return random.expovariate(self.lambd)
 
 
+class BetaFloatParameter(Parameter):
+    def __init__(self, alpha, beta):
+        self.alpha = alpha
+        self.beta = beta
+
+    def draw(self, random):
+        return random.betavariate(alpha=self.alpha, beta=self.beta)
+
+
 class UniformFloatParameter(Parameter):
     def __init__(self, lower_bound, upper_bound):
         Parameter.__init__(self)
