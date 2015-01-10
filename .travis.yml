@@ -8,7 +8,7 @@ python:
 install: python setup.py install
 
 before_script:
-  - pip install pytest pytest-timeout flake8
+  - pip install pytest pytest-timeout flake8 coverage
 
 script:
   - python -u -m pytest -v hypothesis
