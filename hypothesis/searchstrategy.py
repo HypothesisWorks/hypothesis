@@ -53,9 +53,6 @@ class SearchStrategy(object):
     def produce(self, random, parameter_value):
         pass  # pragma: no cover
 
-    def complexity(self, value):
-        return 0
-
     def simplify(self, value):
         return iter(())
 
@@ -97,12 +94,6 @@ class IntStrategy(SearchStrategy):
         p=params.UniformFloatParameter(0, 1),
     )
 
-    def complexity(self, value):
-        if value >= 0:
-            return value
-        else:
-            return 1 - value
-
     def produce(self, random, parameter):
         value = dist.geometric(random, parameter.p)
         if (
@@ -132,9 +123,6 @@ class FloatStrategy(SearchStrategy):
     def __init__(self):
         SearchStrategy.__init__(self)
         self.int_strategy = IntStrategy()
-
-    def complexity(self, x):
-        return x if x >= 0 else 1 - x
 
     def simplify(self, x):
         if x < 0:
@@ -186,12 +174,6 @@ class BoolStrategy(SearchStrategy):
 
     parameter = params.UniformFloatParameter(0, 1)
 
-    def complexity(self, x):
-        if x:
-            return 1
-        else:
-            return 0
-
     def produce(self, random, p):
         return dist.biased_coin(random, p)
 
@@ -215,10 +197,6 @@ class TupleStrategy(SearchStrategy):
         if len(xs) != len(self.element_strategies):
             return False
         return all((s.could_have_produced(x)
-                    for s, x in zip(self.element_strategies, xs)))
-
-    def complexity(self, xs):
-        return sum((s.complexity(x)
                     for s, x in zip(self.element_strategies, xs)))
 
     def newtuple(self, xs):
@@ -340,9 +318,6 @@ class MappedSearchStrategy(SearchStrategy):
     def produce(self, random, pv):
         return self.pack(self.mapped_strategy.produce(random, pv))
 
-    def complexity(self, x):
-        return self.mapped_strategy.complexity(self.unpack(x))
-
     def simplify(self, x):
         for y in self.mapped_strategy.simplify(self.unpack(x)):
             yield self.pack(y)
@@ -394,13 +369,8 @@ class OneCharStringStrategy(SearchStrategy):
     def produce(self, random, pv):
         return random.choice(self.characters)
 
-    def complexity(self, x):
-        result = self.characters.index(x)
-        assert result >= 0
-        return result
-
     def simplify(self, x):
-        for i in xrange(self.complexity(x), -1, -1):
+        for i in xrange(self.characters.index(x), -1, -1):
             yield self.characters[i]
 
 
@@ -445,9 +415,6 @@ class FixedKeysDictStrategy(SearchStrategy):
         for k, g in self.strategy_dict.items():
             result[k] = g.produce(random, getattr(pv, k))
         return result
-
-    def complexity(self, x):
-        return sum((v.complexity(x[k]) for k, v in self.strategy_dict.items()))
 
     def simplify(self, x):
         for k, v in x.items():
@@ -501,9 +468,6 @@ class OneOfStrategy(SearchStrategy):
         assert False, (
             'Value %s could not have been produced from %s' % (x, self)
         )  # pragma: no cover
-
-    def complexity(self, x):
-        return self.find_first_strategy(x).complexity(x)
 
     def simplify(self, x):
         return self.find_first_strategy(x).simplify(x)

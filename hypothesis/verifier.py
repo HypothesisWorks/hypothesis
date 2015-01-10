@@ -104,7 +104,7 @@ class Verifier(object):
             if not falsifies(x):
                 raise Flaky(hypothesis, x)
 
-        best_example = min(falsifying_examples, key=search_strategy.complexity)
+        best_example = falsifying_examples[0]
 
         for t in search_strategy.simplify_such_that(best_example, falsifies):
             best_example = t
