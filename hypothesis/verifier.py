@@ -3,6 +3,9 @@ from random import Random
 import time
 from six.moves import xrange
 import hypothesis.settings as hs
+from hypothesis.internal.utils.reflection import (
+    get_pretty_function_description
+)
 
 
 def assume(condition):
@@ -132,7 +135,8 @@ class Unfalsifiable(HypothesisException):
 
     def __init__(self, hypothesis, extra=''):
         super(Unfalsifiable, self).__init__(
-            'Unable to falsify hypothesis %s%s' % (hypothesis, extra)
+            'Unable to falsify hypothesis %s%s' % (
+                get_pretty_function_description(hypothesis), extra)
         )
 
 
@@ -141,7 +145,8 @@ class Unsatisfiable(HypothesisException):
     def __init__(self, hypothesis, examples):
         super(Unsatisfiable, self).__init__(
             ('Unable to satisfy assumptions of hypothesis %s. ' +
-             'Only %s examples found ') % (hypothesis, str(examples)))
+             'Only %s examples found ') % (
+                get_pretty_function_description(hypothesis), str(examples)))
 
 
 class Flaky(HypothesisException):
@@ -149,7 +154,7 @@ class Flaky(HypothesisException):
         super(Flaky, self).__init__((
             "Hypothesis %r produces unreliable results: %r falsified it on the"
             " first call but did not on a subsequent one"
-        ) % (hypothesis, example))
+        ) % (get_pretty_function_description(hypothesis), example))
 
 
 class Timeout(HypothesisException):

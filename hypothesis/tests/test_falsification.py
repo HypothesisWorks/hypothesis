@@ -319,3 +319,9 @@ def test_raises_timeout_on_timeout():
 
 def test_can_falsify_with_true_boolean():
     assert falsify(lambda x: not x, bool)[0] is True
+
+
+def test_falsification_contains_function_string():
+    with pytest.raises(Unfalsifiable) as e:
+        assert falsify(lambda x: True, int)
+    assert "lambda x: True" in e.value.args[0]
