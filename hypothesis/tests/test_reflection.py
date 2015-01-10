@@ -150,3 +150,10 @@ def test_variable_names_are_not_pretty():
 def test_does_not_error_on_dynamically_defined_functions():
     x = eval('lambda t: 1')
     get_pretty_function_description(x)
+
+
+def test_collapses_whitespace_nicely():
+    t = (
+        lambda x,       y:           1
+    )
+    assert get_pretty_function_description(t) == 'lambda x, y: 1'

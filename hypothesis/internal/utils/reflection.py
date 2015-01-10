@@ -103,10 +103,13 @@ def extract_lambda_source(f):
         return if_confused
 
     try:
-        tree = ast.parse(source)
-    except IndentationError:
-        source = "with 0:\n" + source
-        tree = ast.parse(source)
+        try:
+            tree = ast.parse(source)
+        except IndentationError:
+            source = "with 0:\n" + source
+            tree = ast.parse(source)
+    except SyntaxError:
+        raise if_confused
 
     all_lambdas = extract_all_lambdas(tree)
     aligned_lambdas = [
@@ -129,7 +132,7 @@ def extract_lambda_source(f):
             break
         except SyntaxError:
             pass
-    source = WHITESPACE.sub(source, " ")
+    source = WHITESPACE.sub(" ", source)
     source = source.strip()
     if source[0] == '(' and source[-1] == ')':
         source = source[1:-1]
