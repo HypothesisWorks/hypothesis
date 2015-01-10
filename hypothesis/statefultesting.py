@@ -56,6 +56,11 @@ class TestRun(object):
             self.init_kwargs = init_kwargs or {}
         self.steps = steps
 
+    def __repr__(self):
+        return "TestRun(%r, %r, %r)" % (
+            self.init_args, self.init_kwargs, self.steps
+        )
+
     def new_value(self):
         return self.cls(*self.init_args, **self.init_kwargs)
 

@@ -5,7 +5,7 @@ import hypothesis.internal.utils.distributions as dist
 import inspect
 from abc import abstractmethod
 from six.moves import xrange
-from six import text_type, binary_type
+from six import text_type, binary_type, integer_types
 import string
 import random as r
 import hypothesis.descriptors as descriptors
@@ -40,14 +40,15 @@ def nice_string(xs):
 
 
 class SearchStrategy(object):
-    def __init__(self):
-        pass
 
     def __repr__(self):
         return '%s(%s)' % (
             self.__class__.__name__,
             nice_string(self.descriptor)
         )
+
+    def __init__(self):
+        pass
 
     @abstractmethod
     def produce(self, random, parameter_value):
@@ -88,6 +89,9 @@ class SearchStrategy(object):
 class IntStrategy(SearchStrategy):
     descriptor = int
 
+    def could_have_produced(self, x):
+        return isinstance(x, integer_types)
+
     def simplify(self, x):
         if x < 0:
             yield -x
@@ -110,18 +114,11 @@ class IntStrategy(SearchStrategy):
                     seen.add(i)
 
 
-class VeryLargeUniformIntegerStrategy(IntStrategy):
-    parameter = params.CompositeParameter()
-
-    def produce(self, random, pv):
-        return random.randint(-2**64, 2**63)
-
-
 class RandomGeometricIntStrategy(IntStrategy):
     parameter = params.CompositeParameter(
         may_be_negative=params.BiasedCoin(0.5),
         negative_probability=params.UniformFloatParameter(0, 1),
-        p=params.BetaFloatParameter(alpha=0.1, beta=0.9),
+        p=params.BetaFloatParameter(alpha=0.2, beta=1.8),
     )
 
     def produce(self, random, parameter):

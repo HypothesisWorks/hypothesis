@@ -18,5 +18,5 @@ default = Settings(
     min_satisfying_examples=5,
     max_examples=200,
     timeout=60,
-    max_skipped_examples=10,
+    max_skipped_examples=50,
 )

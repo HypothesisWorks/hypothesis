@@ -194,7 +194,7 @@ def test_joining_zero_strategies_fails():
 
 def test_directly_joining_one_strategy_also_fails():
     with pytest.raises(ValueError):
-        strat.OneOfStrategy([strat.VeryLargeUniformIntegerStrategy()])
+        strat.OneOfStrategy([strat.RandomGeometricIntStrategy()])
 
 
 def test_list_strategy_reprs_as_list():
@@ -239,7 +239,7 @@ def test_distinguishes_named_and_unnamed_tuples():
         assert type(x) == tuple
 
 
-class IntStrategyWithBrokenSimplify(strat.VeryLargeUniformIntegerStrategy):
+class IntStrategyWithBrokenSimplify(strat.RandomGeometricIntStrategy):
     def simplify(self, value):
         return ()
 
@@ -321,3 +321,16 @@ def test_does_not_simplify_outside_range():
     s = strat.BoundedIntStrategy(0, n)
     for t in s.simplify(n):
         assert 0 <= t <= n
+
+
+def test_can_simplify_large_ints():
+    ints = ss.StrategyTable().strategy(int)
+    x = 2 ** 63
+    assert ints.could_have_produced(x)
+    assert minimize(ints, x) == 0
+    assert minimize(ints, 100000) == 0
+
+
+def test_can_simplify_dicts_of_ints():
+    ints = ss.StrategyTable().strategy({'a': int, 'b': int})
+    assert minimize(ints, {'a': 100000000000000, 'b': 2}) == {'a': 0, 'b': 0}
