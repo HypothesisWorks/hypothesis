@@ -92,19 +92,6 @@ def test_errors_on_extra_kwargs():
     assert 'keyword' in e2.value.args[0]
 
 
-def destructure_my_arguments((a, b), c):
-    return a, b, c
-
-
-def test_can_handle_destructuring_functions():
-    do_conversion_test(
-        destructure_my_arguments,
-        ((1, 2,),), {'c': 3})
-    do_conversion_test(
-        destructure_my_arguments,
-        ((1, 2,), 3), {})
-
-
 def test_names_of_functions_are_pretty():
     assert get_pretty_function_description(
         test_names_of_functions_are_pretty
