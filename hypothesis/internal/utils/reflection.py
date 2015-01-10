@@ -168,4 +168,14 @@ def get_pretty_function_description(f):
         # In python 3 qualname will give you the class too. In python 2 this is
         # not a function object but is in fact an unbound method so this
         # doesn't matter
-        return getattr(f, '__qualname__', name)
+        if six.PY3:
+            try:
+                return f.__qualname__  # pragma: no cover
+            except AttributeError:
+                # oh god python 3.1 or 3.2. There's no non-horrendous way to
+                # support this.
+                # Note: This gives the wrong answer, but is better than an
+                # error and should still be readable.
+                return name  # pragma: no cover
+        else:
+            return name  # pragma: no cover

@@ -118,8 +118,11 @@ def test_repr_is_included_in_bound_method_prettiness():
     assert get_pretty_function_description(Foo().baz) == 'SoNotFoo().baz'
 
 
-def test_class_is_included_in_unbound_method_prettiness():
-    assert get_pretty_function_description(Foo.baz) == 'Foo.baz'
+def test_class_is_included_in_unbound_method():  # pragma: no cover
+    assert (
+        get_pretty_function_description(Foo.baz)  # pragma: no cover
+        == 'Foo.baz'  # pragma: no cover
+    )
 
 
 # Note: All of these no branch pragmas are because we don't actually ever want

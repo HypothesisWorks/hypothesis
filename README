@@ -243,15 +243,13 @@ will probably be broken in future releases. The goal is to have a stable public 
 Supported versions
 ------------------
 
-All versions of python 2.7+ should work correctly and I consider it a bug if they don't. Travis
-currently builds 2.7, 3.2, 3.3 and 3.4.
+2.7.x, 3.3.x and 3.4.x are all fully supported and should work correctly.
 
-pypy should work but has some weird performance problems which I've not got to the bottom of. It's
-not considered officially suppported right now, but if you need it let me know and I'm happy to spend
-some time on it.
+Earlier than 2.7 will not work and will probably never be supported.
 
-Python prior to 2.7 definitely will not work. It's probably not that much work to make 2.6 work but
-it didn't seem worth the bother. Again, let me know if you really want this and I'll look into it.
+pypy, 3.1.x and 3.2.x will *probably* work but have some known quirks and I'm not that
+bothered about putting in the effort to support them without some user demand for me to do
+so. If you have a requirement for them to work, let me know.
 
 I haven't even tried it on Jython, IronPython, etc. Do people really use those?
 
@@ -273,7 +271,7 @@ so if that sounds a bit too hardcore, don't worry! There's plenty of other thing
 ---------
 
 This version of hypothesis has been tested using Python series 2.7,
-3.2, 3.3, 3.4.  Builds are checked with `travis`_:
+3.3, 3.4.  Builds are checked with `travis`_:
 
 .. _travis: https://travis-ci.org/DRMacIver/hypothesis
 
