@@ -8,7 +8,7 @@ python:
 install: python setup.py install
 
 before_script:
-  - pip install pytest pytest-timeout flake8 coveralls
+  - pip install pytest pytest-timeout flake8
 
 script:
   - python -u -m pytest -v hypothesis
@@ -16,6 +16,3 @@ script:
   - coverage report -m --fail-under=100
   - flake8 hypothesis 
   - ./installer-test.sh
-
-after_success:
-    - coveralls
