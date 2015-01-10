@@ -169,9 +169,9 @@ def get_pretty_function_description(f):
         # not a function object but is in fact an unbound method so this
         # doesn't matter
         if six.PY3:
-            try:
+            try:  # pragma: no branch
                 return f.__qualname__  # pragma: no cover
-            except AttributeError:
+            except AttributeError:  # pragma: no cover
                 # oh god python 3.1 or 3.2. There's no non-horrendous way to
                 # support this.
                 # Note: This gives the wrong answer, but is better than an
