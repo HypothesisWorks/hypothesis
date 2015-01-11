@@ -476,7 +476,7 @@ class FixedKeysDictStrategy(SearchStrategy):
     def __init__(self, strategy_dict):
         SearchStrategy.__init__(self)
         self.strategy_dict = dict(strategy_dict)
-        self.parameter = params.CompositeParameter(**{
+        self.parameter = params.DictParameter({
             k: v.parameter
             for k, v
             in self.strategy_dict.items()
@@ -488,7 +488,7 @@ class FixedKeysDictStrategy(SearchStrategy):
     def produce(self, random, pv):
         result = {}
         for k, g in self.strategy_dict.items():
-            result[k] = g.produce(random, getattr(pv, k))
+            result[k] = g.produce(random, pv[k])
         return result
 
     def simplify(self, x):

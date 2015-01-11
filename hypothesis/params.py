@@ -98,6 +98,17 @@ class BiasedCoin(Parameter):
         return dist.biased_coin(random, self.p)
 
 
+class DictParameter(Parameter):
+    def __init__(self, dict_of_parameters):
+        Parameter.__init__(self)
+        self.dict_of_parameters = dict(dict_of_parameters)
+
+    def draw(self, random):
+        result = {}
+        for k, v in self.dict_of_parameters.items():
+            result[k] = v.draw(random)
+        return result 
+
 class CompositeParameter(Parameter):
     def __init__(self, *args, **kwargs):
         Parameter.__init__(self)
