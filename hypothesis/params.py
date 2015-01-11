@@ -12,12 +12,12 @@ class Parameter(object):
 
 
 class ExponentialParameter(Parameter):
-    def __init__(self, mean):
+    def __init__(self, lambd):
         Parameter.__init__(self)
-        if mean <= 0:
+        if lambd <= 0:
             raise ValueError(
-                "Invalid mean %f for exponential distribution" % (mean,))
-        self.lambd = 1.0 / mean
+                "Invalid lambda %f for exponential distribution" % (lambd,))
+        self.lambd = lambd
 
     def draw(self, random):
         return random.expovariate(self.lambd)

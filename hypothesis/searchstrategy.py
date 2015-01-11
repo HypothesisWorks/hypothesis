@@ -116,15 +116,13 @@ class IntStrategy(SearchStrategy):
 
 class RandomGeometricIntStrategy(IntStrategy):
     parameter = params.CompositeParameter(
-        may_be_negative=params.BiasedCoin(0.5),
-        negative_probability=params.UniformFloatParameter(0, 1),
+        negative_probability=params.BetaFloatParameter(0.5, 0.5),
         p=params.BetaFloatParameter(alpha=0.2, beta=1.8),
     )
 
     def produce(self, random, parameter):
         value = dist.geometric(random, parameter.p)
         if (
-            parameter.may_be_negative and
             dist.biased_coin(random, parameter.negative_probability)
         ):
             value = -value
@@ -185,8 +183,8 @@ class FixedBoundedFloatStrategy(SearchStrategy):
     descriptor = float
 
     parameter = params.CompositeParameter(
-        alpha=params.ExponentialParameter(1),
-        beta=params.ExponentialParameter(1),
+        p=params.UniformFloatParameter(0, 1),
+        n=params.ExponentialParameter(0.5),
     )
 
     def __init__(self, lower_bound, upper_bound):
@@ -194,9 +192,12 @@ class FixedBoundedFloatStrategy(SearchStrategy):
         self.upper_bound = upper_bound
 
     def produce(self, random, pv):
-        return self.lower_bound + (
+        alpha = pv.p * pv.n
+        beta = (1 - pv.p) * pv.n
+        result = self.lower_bound + (
             self.upper_bound - self.lower_bound
-        ) * random.betavariate(pv.alpha, pv.beta)
+        ) * random.betavariate(alpha, beta)
+        return result
 
     def simplify(self, value):
         yield self.lower_bound
@@ -338,7 +339,7 @@ class ListStrategy(SearchStrategy):
         self.descriptor = _unique(x.descriptor for x in strategies)
         self.element_strategy = one_of_strategies(strategies)
         self.parameter = params.CompositeParameter(
-            average_length=params.ExponentialParameter(100.0),
+            average_length=params.ExponentialParameter(1 / 100.0),
             child_parameter=self.element_strategy.parameter,
         )
 
