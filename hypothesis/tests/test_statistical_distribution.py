@@ -17,7 +17,8 @@ import re
 import pytest
 
 REQUIRED_P = 10e-3
-N_RUNS = 10000
+MIN_RUNS = 500
+MAX_RUNS = MIN_RUNS * 20
 
 
 def cumulative_normal(x):
@@ -37,28 +38,66 @@ def cumulative_binomial_probability(n, p, k):
 INITIAL_LAMBDA = re.compile("^lambda[^:]*:\s*")
 
 
-def define_test(descriptor, q, predicate):
+def strip_lambda(s):
+    return INITIAL_LAMBDA.sub("", s)
+
+
+class HypothesisFalsified(AssertionError):
+    pass
+
+
+class ConditionTooHard(Exception):
+    pass
+
+
+def define_test(descriptor, q, predicate, condition=None):
     def run_test():
+        if condition is None:
+            condition_string = ""
+            _condition = lambda x: True
+        else:
+            condition_string = strip_lambda(
+                reflection.get_pretty_function_description(condition))
+            _condition = condition
+
         count = 0
+        successful_runs = 0
         strategy = StrategyTable.default().strategy(descriptor)
-        for _ in xrange(N_RUNS):
+        for _ in xrange(MAX_RUNS):
             pv = strategy.parameter.draw(random)
             x = strategy.produce(random, pv)
+            if not _condition(x):
+                continue
+            successful_runs += 1
             if predicate(x):
                 count += 1
-        p = cumulative_binomial_probability(N_RUNS, q, count)
+        if successful_runs < MIN_RUNS:
+            raise ConditionTooHard((
+                "Unable to find enough examples satisfying predicate %s "
+                "only found %d but required at least %d for validity"
+            ) % (
+                condition_string, successful_runs, MIN_RUNS
+            ))
+
+        p = cumulative_binomial_probability(successful_runs, q, count)
         # The test passes if we fail to reject the null hypothesis that
         # the probability is at least q
-        assert p >= REQUIRED_P, ((
-            "p = %g < %g. Occurred in %d / %d = %g of runs. "
-            "Hypothesis that P(%s) >= %f rejected"
-            ) % (
-                p, REQUIRED_P, count, N_RUNS, float(count) / N_RUNS,
-                INITIAL_LAMBDA.sub(
-                    "", reflection.get_pretty_function_description(predicate)),
-                q
+        if p < REQUIRED_P:
+            conditional = " | " + condition_string if condition_string else ""
+
+            raise HypothesisFalsified((
+                "p = %g < %g. Occurred in %d / %d = %g of runs. "
+                "Hypothesis that P(%s%s) >= %f rejected"
+                ) % (
+                    p, REQUIRED_P, count, successful_runs,
+                    float(count) / successful_runs,
+                    INITIAL_LAMBDA.sub(
+                        "",
+                        reflection.get_pretty_function_description(predicate)),
+                    conditional,
+                    q
+                )
             )
-        )
     return run_test
 
 
@@ -75,6 +114,27 @@ def test_assertion_error_message():
     assert 'rejected' in message
 
 
+def test_raises_an_error_on_impossible_conditions():
+    with pytest.raises(ConditionTooHard) as e:
+        define_test(float, 0.5, lambda x: True, condition=lambda x: False)()
+    assert "only found 0 " in e.value.args[0]
+
+
+def test_puts_the_condition_in_the_error_message():
+    def positive(x):
+        return x >= 0
+
+    with pytest.raises(AssertionError) as e:
+        define_test(
+            float, 0.5, lambda x: x == 0.0,
+            condition=positive)()
+    message = e.value.args[0]
+    assert 'x == 0.0' in message
+    assert 'lambda not in message'
+    assert 'rejected' in message
+    assert 'positive' in message
+
+
 test_can_produce_zero = define_test(int, 0.01, lambda x: x == 0)
 test_can_produce_large_magnitude_integers = define_test(
     int, 0.1, lambda x: abs(x) > 1000
@@ -86,12 +146,19 @@ test_can_produce_large_negative_integers = define_test(
     int, 0.05, lambda x: x < -1000
 )
 
+
+def long_list(xs):
+    return len(xs) >= 20
+
+
 test_can_produce_long_lists_of_positive_integers = define_test(
-    [int], 0.01, lambda x: len(x) >= 20 and all(t >= 0 for t in x)
+    [int], 0.01, lambda x: all(t >= 0 for t in x),
+    condition=long_list
 )
 
 test_can_produce_long_lists_of_negative_integers = define_test(
-    [int], 0.01, lambda x: len(x) >= 20 and all(t <= 0 for t in x)
+    [int], 0.01, lambda x: all(t <= 0 for t in x),
+    condition=lambda x: len(x) >= 20
 )
 
 test_can_produce_floats_near_left = define_test(
@@ -110,7 +177,7 @@ test_can_produce_floats_in_middle = define_test(
 )
 
 test_can_produce_long_lists = define_test(
-    [int], 0.05, lambda xs: len(xs) >= 20
+    [int], 0.05, lambda xs: long_list
 )
 
 test_can_produce_lists_bunched_near_left = define_test(
