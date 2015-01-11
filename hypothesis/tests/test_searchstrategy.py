@@ -18,6 +18,17 @@ def test_string_strategy_produces_strings():
     assert result is not None
 
 
+def test_unary_tuple_strategy_has_trailing_comma():
+    assert repr(strategy((str,))) == "TupleStrategy((str,))"
+
+
+Blah = namedtuple('Blah', ('hi',))
+
+
+def test_named_tuple_strategy_has_tuple_in_name_and_no_trailing_comma():
+    assert repr(strategy(Blah(str))) == "TupleStrategy(Blah(hi=str))"
+
+
 def test_tuples_inspect_component_types_for_production():
     strxint = strategy((str, int))
 

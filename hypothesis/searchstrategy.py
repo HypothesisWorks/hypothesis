@@ -14,8 +14,11 @@ import hypothesis.descriptors as descriptors
 def nice_string(xs):
     if isinstance(xs, list):
         return '[' + ', '.join(map(nice_string, xs)) + ']'
-    if isinstance(xs, tuple):
-        return '(' + ', '.join(map(nice_string, xs)) + ')'
+    if type(xs) == tuple:
+        if len(xs) == 1:
+            return '(%s,)' % (nice_string(xs[0]),)
+        else:
+            return '(' + ', '.join(map(nice_string, xs)) + ')'
     if isinstance(xs, dict):
         return '{' + ', '.join(
             repr(k1) + ':' + nice_string(v1)

@@ -107,7 +107,8 @@ class DictParameter(Parameter):
         result = {}
         for k, v in self.dict_of_parameters.items():
             result[k] = v.draw(random)
-        return result 
+        return result
+
 
 class CompositeParameter(Parameter):
     def __init__(self, *args, **kwargs):
