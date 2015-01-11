@@ -24,6 +24,12 @@ def nice_string(xs):
             repr(k1) + ':' + nice_string(v1)
             for k1, v1 in xs.items()
         ) + '}'
+    if isinstance(xs, set):
+        return '{%s}' % (
+            ', '.join(
+                map(nice_string, xs)
+            )
+        )
     try:
         return xs.__name__
     except AttributeError:

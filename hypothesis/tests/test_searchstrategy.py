@@ -29,6 +29,10 @@ def test_named_tuple_strategy_has_tuple_in_name_and_no_trailing_comma():
     assert repr(strategy(Blah(str))) == "TupleStrategy(Blah(hi=str))"
 
 
+def test_class_names_are_simplified_in_sets():
+    assert repr(strategy({float})) == "SetStrategy({float})"
+
+
 def test_tuples_inspect_component_types_for_production():
     strxint = strategy((str, int))
 
