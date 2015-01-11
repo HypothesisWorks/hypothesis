@@ -513,11 +513,8 @@ class OneOfStrategy(SearchStrategy):
         strategies = tuple(flattened_strategies)
         if len(strategies) <= 1:
             raise ValueError("Need at least 2 strategies to choose amongst")
-        descriptor = _unique(s.descriptor for s in strategies)
-        if len(descriptor) == 1:
-            descriptor = descriptor[0]
-        else:
-            descriptor = descriptors.OneOf(descriptor)
+        descriptor = descriptors.one_of(
+            _unique(s.descriptor for s in strategies))
         self.descriptor = descriptor
         self.element_strategies = list(strategies)
         n = len(self.element_strategies)

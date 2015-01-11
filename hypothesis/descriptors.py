@@ -9,7 +9,7 @@ OneOf = namedtuple('OneOf', 'elements')
 
 
 def one_of(args):
-    args = list(args)
+    args = tuple(args)
     if not args:
         raise ValueError('one_of requires at least one value to choose from')
     if len(args) == 1:
