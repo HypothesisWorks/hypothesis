@@ -105,7 +105,7 @@ test_can_produce_floats_near_right = define_test(
 )
 
 test_can_produce_floats_in_middle = define_test(
-    descriptors.floats_in_range(0, 1), 0.3,
+    descriptors.floats_in_range(0, 1), 0.25,
     lambda t: 0.2 <= t <= 0.8
 )
 
