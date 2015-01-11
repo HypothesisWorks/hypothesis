@@ -177,7 +177,11 @@ test_can_produce_floats_in_middle = define_test(
 )
 
 test_can_produce_long_lists = define_test(
-    [int], 0.05, lambda xs: long_list
+    [int], 0.05, long_list
+)
+
+test_can_produce_short_lists = define_test(
+    [int], 0.1, lambda x: len(x) <= 10
 )
 
 test_can_produce_lists_bunched_near_left = define_test(
