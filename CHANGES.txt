@@ -61,3 +61,15 @@
 0.2.2 - 08/01/2015
     * Fix an embarassing complete failure of the installer caused by my being
       bad at version control
+
+0.3.0 - 12/01/2015
+    * Complete redesign of the data generation system. Extreme breaking change
+      for anyone who was previously writing their own SearchStrategy
+      implementations. These will not work any more and you'll need to modify
+      them.
+    * New settings system allowing more global and modular control of Verifier
+      behaviour.
+    * Expanded available descriptors, allowing for generating integers or
+      floats in a specific range.
+    * Significantly more robust. A very large number of small bug fixes, none
+      of which anyone is likely to have ever noticed.
