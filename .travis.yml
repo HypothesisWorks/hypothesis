@@ -5,10 +5,8 @@ python:
   - 3.3
   - 3.4
 
-install: python setup.py install
-
 before_script:
-  - pip install pytest pytest-timeout flake8 coverage restructuredtext_lint pygments
+  - pip six install pytest pytest-timeout flake8 coverage restructuredtext_lint pygments
 
 script:
   - PYTHONPATH=src python -u -m coverage run --branch --include 'src/hypothesis/*' $(which py.test) -v tests
