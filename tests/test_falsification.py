@@ -409,3 +409,17 @@ def test_falsifies_integer_keyed_dictionary():
 def test_falsifies_sets_of_union_types():
     assert falsify(always_false, {
         one_of([text_type, binary_type])})[0] == set()
+
+
+def test_can_falsify_methods_which_mutate_data_without_proving_flaky():
+    def pop_single(xs):
+        if len(xs) == 1:
+            xs.pop()
+            return False
+        return True
+
+    assert falsify(pop_single, [int]) == ([0],)
+
+
+def test_can_find_an_element_in_a_list():
+    falsify(lambda x, ys: x not in ys, int, [int])

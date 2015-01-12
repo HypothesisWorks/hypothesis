@@ -9,6 +9,7 @@ from six import text_type, binary_type, integer_types
 import string
 import random as r
 import hypothesis.descriptors as descriptors
+from copy import deepcopy
 
 
 def mix_generators(*generators):
@@ -60,6 +61,7 @@ def nice_string(xs):
 
 
 class SearchStrategy(object):
+    has_immutable_data = True
 
     def __repr__(self):
         return '%s(%s)' % (
@@ -73,6 +75,12 @@ class SearchStrategy(object):
     @abstractmethod
     def produce(self, random, parameter_value):
         pass  # pragma: no cover
+
+    def copy(self, value):
+        if self.has_immutable_data:
+            return value
+        else:
+            return deepcopy(value)
 
     def simplify(self, value):
         return iter(())
@@ -285,6 +293,7 @@ class TupleStrategy(SearchStrategy):
         self.parameter = params.CompositeParameter(
             x.parameter for x in self.element_strategies
         )
+        self.has_immutable_data = all(s.has_immutable_data for s in strategies)
 
     def could_have_produced(self, xs):
         if xs.__class__ != self.tuple_type:
@@ -351,6 +360,7 @@ def _unique(xs):
 
 
 class ListStrategy(SearchStrategy):
+    has_immutable_data = False
 
     def __init__(self,
                  strategies, average_length=100.0):
@@ -472,6 +482,7 @@ class ComplexStrategy(SearchStrategy):
 
 
 class SetStrategy(MappedSearchStrategy):
+    has_immutable_data = False
 
     def __init__(self, list_strategy):
         super(SetStrategy, self).__init__(
@@ -530,6 +541,7 @@ class BinaryStringStrategy(MappedSearchStrategy):
 
 
 class FixedKeysDictStrategy(SearchStrategy):
+    has_immutable_data = False
 
     def __init__(self, strategy_dict):
         SearchStrategy.__init__(self)
@@ -582,6 +594,8 @@ class OneOfStrategy(SearchStrategy):
                 e.parameter for e in self.element_strategies
             )
         )
+        self.has_immutable_data = all(
+            s.has_immutable_data for s in self.element_strategies)
 
     def could_have_produced(self, x):
         return any((s.could_have_produced(x) for s in self.element_strategies))
@@ -605,6 +619,11 @@ class OneOfStrategy(SearchStrategy):
 
 
 class JustStrategy(SearchStrategy):
+    # We could do better here but it's probably not worth it
+    # deepcopy has optimisations that will probably work just as well as
+    # our check
+    has_immutable_data = False
+
     def __init__(self, value):
         self.descriptor = descriptors.Just(value)
 

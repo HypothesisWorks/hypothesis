@@ -167,3 +167,49 @@ UNDESIRABLE_STRINGS = re.compile('|'.join(
 def test_does_not_use_nasty_type_reprs_in_nice_string(desc):
     s = nice_string(desc)
     assert not UNDESIRABLE_STRINGS.findall(s)
+
+
+def tree_contains_match(t, f):
+    if f(t):
+        return True
+    if isinstance(t, (text_type, binary_type)):
+        # Workaround for stupid one element string behaviour
+        return f(t)
+    l = -1
+    try:
+        l = len(t)
+    except TypeError:
+        return False
+    if l == 0:
+        return False
+    if l == 1:
+        return tree_contains_match(t[0], f)
+    return any(tree_contains_match(s, f) for s in t)
+
+
+def is_immutable_data(t):
+    return not tree_contains_match(
+        t, lambda x: isinstance(x, (list, set, dict)))
+
+
+def test_basic_tree_matching():
+    """
+    Just an integrity check to make sure we're testing the right thing here
+    """
+
+    assert not is_immutable_data([1])
+    assert not is_immutable_data(([1],))
+    assert not is_immutable_data({'foo': 1})
+    assert is_immutable_data((1, 1))
+    assert is_immutable_data("foo")
+
+
+@timeout(5)
+@given(descriptor_strategy, verifier=verifier)
+def test_cannot_generate_mutable_data_from_an_immutable_strategy(d):
+    strategy = test_table.strategy(d)
+    assume(strategy.has_immutable_data)
+    with pytest.raises(Unfalsifiable):
+        print(
+            nice_string(d),
+            verifier.falsify(is_immutable_data, d))

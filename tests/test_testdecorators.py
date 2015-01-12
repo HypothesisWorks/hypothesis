@@ -203,3 +203,23 @@ def test_contains_the_test_function_name_in_the_exception_string():
     assert (
         Foo.this_has_a_unique_name_and_lives_on_a_class.__name__
     ) in e.value.args[0]
+
+
+@given([int], int)
+def test_removing_an_element_from_a_unique_list(xs, y):
+    assume(len(set(xs)) == len(xs))
+
+    try:
+        xs.remove(y)
+    except ValueError:
+        pass
+
+    assert y not in xs
+
+
+@fails
+@given([int], int)
+def test_removing_an_element_from_a_non_unique_list(xs, y):
+    assume(y in xs)
+    xs.remove(y)
+    assert y not in xs

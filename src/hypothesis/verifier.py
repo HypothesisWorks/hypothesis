@@ -37,7 +37,7 @@ class Verifier(object):
 
         def falsifies(args):
             try:
-                return not hypothesis(*args)
+                return not hypothesis(*search_strategy.copy(args))
             except AssertionError:
                 return True
             except UnsatisfiedAssumption:
@@ -102,7 +102,7 @@ class Verifier(object):
                     raise Exhausted(hypothesis, examples_found)
                 else:
                     # This really is covered. I suspect a bug in coverage that
-                    # I have not yet narroed down. It is impossible to execute
+                    # I have not yet narrowed down. It is impossible to execute
                     # the other branch without first executing this one and
                     # there is a test that cannot pass without executing the
                     # other branch.
@@ -111,7 +111,8 @@ class Verifier(object):
                 skipped_examples = 0
             examples_found += 1
             try:
-                is_falsifying_example = not hypothesis(*args)
+                is_falsifying_example = not hypothesis(
+                    *search_strategy.copy(args))
             except AssertionError:
                 is_falsifying_example = True
             except UnsatisfiedAssumption:
