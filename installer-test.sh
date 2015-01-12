@@ -1,10 +1,13 @@
 set -e
+set -o xtrace
 
 VENV=hypothesis-testing-chamber
 
+CURRENT_PYTHON=$(which python)
+
 rm -rf ./dist
 rm -rf ./$VENV
-virtualenv $VENV
+virtualenv $VENV --python=$CURRENT_PYTHON
 BINDIR=$(pwd)/$VENV/bin
 PYTHON=$BINDIR/python
 PIP=$BINDIR/pip
