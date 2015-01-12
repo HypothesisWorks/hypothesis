@@ -96,7 +96,7 @@ def test_can_be_given_keyword_args(x, name):
 
 
 @fails_with(Timeout)
-@given(int, verifier_kwargs={'settings': hs.Settings(timeout=0.05)})
+@given(int, verifier_settings=hs.Settings(timeout=0.05))
 def test_slow_test_times_out(x):
     time.sleep(0.05)
 
@@ -110,7 +110,7 @@ timeout_settings = hs.Settings(timeout=0.2)
 # The following tests exist to test that verifiers start their timeout
 # from when the test first executes, not from when it is defined.
 @fails
-@given(int, verifier_kwargs={'settings': timeout_settings})
+@given(int, verifier_settings=timeout_settings)
 def test_slow_failing_test_1(x):
     time.sleep(0.05)
     assert not calls[0]
@@ -118,7 +118,7 @@ def test_slow_failing_test_1(x):
 
 
 @fails
-@given(int, verifier_kwargs={'settings': timeout_settings})
+@given(int, verifier_settings=timeout_settings)
 def test_slow_failing_test_2(x):
     time.sleep(0.05)
     assert not calls[1]
