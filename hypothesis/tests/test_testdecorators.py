@@ -1,5 +1,5 @@
 from hypothesis.testdecorators import given
-from hypothesis.verifier import Verifier, assume, Timeout
+from hypothesis.verifier import Verifier, assume, Timeout, Unsatisfiable
 from hypothesis.descriptors import one_of, just, integers_in_range
 from functools import wraps
 import pytest
@@ -180,3 +180,26 @@ def test_does_not_catch_interrupt_during_falsify():
     with pytest.raises(KeyboardInterrupt):
         flaky_base_exception()
 
+
+def test_contains_the_test_function_name_in_the_exception_string():
+
+    @given(int)
+    def this_has_a_totally_unique_name(x):
+        assume(False)
+
+    with pytest.raises(Unsatisfiable) as e:
+        this_has_a_totally_unique_name()
+
+    assert this_has_a_totally_unique_name.__name__ in e.value.args[0]
+
+    class Foo(object):
+        @given(int)
+        def this_has_a_unique_name_and_lives_on_a_class(self, x):
+            assume(False)
+
+    with pytest.raises(Unsatisfiable) as e:
+        Foo().this_has_a_unique_name_and_lives_on_a_class()
+
+    assert "Foo.%s" % (
+        Foo.this_has_a_unique_name_and_lives_on_a_class.__name__,
+    ) in e.value.args[0]

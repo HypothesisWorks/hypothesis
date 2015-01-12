@@ -25,6 +25,10 @@ def given(*generator_arguments, **kwargs):
                 except Exception:
                     return False
 
+            to_falsify.__name__ = test.__name__
+            to_falsify.__qualname__ = getattr(
+                test, '__qualname__', test.__name__)
+
             try:
                 falsifying_example = verifier.falsify(
                     to_falsify, (generator_arguments, kwargs))[0]
