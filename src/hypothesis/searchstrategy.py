@@ -470,9 +470,6 @@ class ComplexStrategy(SearchStrategy):
         for t in self.float_strategy.simplify(x.imag):
             yield complex(x.real, t)
 
-    def unpack(self, x):
-        return (x.real, x.imag)
-
 
 class SetStrategy(MappedSearchStrategy):
 

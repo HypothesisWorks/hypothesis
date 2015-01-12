@@ -349,3 +349,11 @@ def test_can_simplify_large_ints():
 def test_can_simplify_dicts_of_ints():
     ints = ss.StrategyTable().strategy({'a': int, 'b': int})
     assert minimize(ints, {'a': 100000000000000, 'b': 2}) == {'a': 0, 'b': 0}
+
+
+def test_can_simplify_imaginary_component():
+    cs = ss.StrategyTable().strategy(complex)
+    t = complex(1.0, 10.0)
+    for s in cs.simplify_such_that(t, lambda x: x.real >= 0 and x.imag >= 1):
+        t = s
+    assert t.imag == 1.0

@@ -1,11 +1,11 @@
 SELF=$(readlink -f $0)
 
-coverage run --branch --include 'hypothesis/*'\
-    $(which py.test) -v hypothesis --capture=no 
+PYTHONPATH=src coverage run --branch --include 'src/hypothesis/*'\
+    $(which py.test) -v tests --capture=no 
 
 rm -rf htmlcov
 
 coverage html
 
-inotifywait -qe modify $(find hypothesis -name "*.py") $SELF pytest.ini
+inotifywait -qe modify $(find src tests -name "*.py") $SELF pytest.ini
 exec $SELF
