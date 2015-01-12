@@ -122,7 +122,7 @@ def size(descriptor):
 
 
 MAX_SIZE = 15
-settings = hs.Settings(max_examples=100, timeout=4.5)
+settings = hs.Settings(max_examples=100, timeout=4)
 
 verifier = Verifier(
     settings=settings,
@@ -130,7 +130,7 @@ verifier = Verifier(
 )
 
 
-@given(descriptor_strategy)
+@given(descriptor_strategy, verifier=verifier)
 @timeout(5)
 def test_can_falsify_false_things(desc):
     assume(size(desc) <= MAX_SIZE)
@@ -139,7 +139,7 @@ def test_can_falsify_false_things(desc):
     assert not list(strategy.simplify(x))
 
 
-@given([descriptor_strategy])
+@given([descriptor_strategy], verifier=verifier)
 @timeout(5)
 def test_can_falsify_false_things_with_many_args(descs):
     assume(len(descs) > 0)
@@ -150,7 +150,7 @@ def test_can_falsify_false_things_with_many_args(descs):
     assert not list(strategy.simplify(x))
 
 
-@given(descriptor_strategy)
+@given(descriptor_strategy, verifier=verifier)
 @timeout(5)
 def test_can_not_falsify_true_things(desc):
     assume(size(desc) <= MAX_SIZE)
@@ -163,7 +163,7 @@ UNDESIRABLE_STRINGS = re.compile('|'.join(
 
 
 @timeout(5)
-@given(descriptor_strategy)
+@given(descriptor_strategy, verifier=verifier)
 def test_does_not_use_nasty_type_reprs_in_nice_string(desc):
     s = nice_string(desc)
     assert not UNDESIRABLE_STRINGS.findall(s)
