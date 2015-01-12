@@ -385,10 +385,22 @@ def test_works_with_zero_arguments():
     falsify(lambda: False)
 
 
+always_false = lambda *args: False
+
+
 @pytest.mark.parametrize("desc", [
     int, float, complex, text_type, binary_type, bool
 ])
 def test_minimizes_to_empty(desc):
-    x = falsify(lambda x: False, desc)[0]
+    x = falsify(always_false, desc)[0]
     s = StrategyTable.default().strategy(desc)
     assert not list(s.simplify(x))
+
+
+def test_falsifies_integer_keyed_dictionary():
+    falsify(always_false, {1: int})
+
+
+def test_falsifies_sets_of_union_types():
+    assert falsify(always_false, {
+        one_of([text_type, binary_type])})[0] == set()
