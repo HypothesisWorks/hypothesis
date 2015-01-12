@@ -167,3 +167,16 @@ def test_binary_addition_is_not_commutative(x, y):
 @given(integers_in_range(1, 10))
 def test_integers_are_in_range(x):
     assert 1 <= x <= 10
+
+
+def test_does_not_catch_interrupt_during_falsify():
+    calls = [0]
+
+    @given(int)
+    def flaky_base_exception(x):
+        if not calls[0]:
+            calls[0] = 1
+            raise KeyboardInterrupt()
+    with pytest.raises(KeyboardInterrupt):
+        flaky_base_exception()
+
