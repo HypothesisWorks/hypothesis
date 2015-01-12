@@ -363,6 +363,9 @@ class ListStrategy(SearchStrategy):
     def simplify(self, x):
         indices = xrange(0, len(x))
         for i in indices:
+            yield [x[i]]
+
+        for i in indices:
             y = list(x)
             del y[i]
             yield y
