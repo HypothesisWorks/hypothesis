@@ -361,14 +361,18 @@ class ListStrategy(SearchStrategy):
         return result
 
     def simplify(self, x):
+        if len(x) == 1:
+            yield []
+
         indices = xrange(0, len(x))
         for i in indices:
             yield [x[i]]
 
-        for i in indices:
-            y = list(x)
-            del y[i]
-            yield y
+        if len(x) > 2:
+            for i in indices:
+                y = list(x)
+                del y[i]
+                yield y
 
         for i in indices:
             for s in self.element_strategy.simplify(x[i]):
@@ -376,12 +380,13 @@ class ListStrategy(SearchStrategy):
                 z[i] = s
                 yield z
 
-        for i in xrange(0, len(x) - 1):
-            for j in xrange(i, len(x) - 1):
-                y = list(x)
-                del y[i]
-                del y[j]
-                yield y
+        if len(x) > 3:
+            for i in xrange(0, len(x) - 1):
+                for j in xrange(i, len(x) - 1):
+                    y = list(x)
+                    del y[i]
+                    del y[j]
+                    yield y
 
 
 class MappedSearchStrategy(SearchStrategy):
