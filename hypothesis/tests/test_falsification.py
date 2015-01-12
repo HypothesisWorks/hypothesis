@@ -314,10 +314,15 @@ def test_detects_flaky_failure():
 
 
 def test_raises_timeout_on_timeout():
+    # slow enough that it won't get a full set of examples but fast enough
+    # that it will get at least min_satisfying_examples
+    sleep_time = 0.001
+    timeout = sleep_time * hs.default.min_satisfying_examples * 2
+
     def good_but_slow(x):
-        time.sleep(0.01)
+        time.sleep(sleep_time)
         return True
-    verifier = Verifier(settings=hs.Settings(timeout=0.02))
+    verifier = Verifier(settings=hs.Settings(timeout=timeout))
     with pytest.raises(Timeout):
         verifier.falsify(good_but_slow, int)
 

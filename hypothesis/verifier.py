@@ -27,7 +27,6 @@ class Verifier(object):
         self.min_satisfying_examples = settings.min_satisfying_examples
         self.max_skipped_examples = settings.max_skipped_examples
         self.max_examples = settings.max_examples
-        self.n_parameter_values = settings.max_examples
         self.timeout = settings.timeout
         self.random = random or Random()
         self.max_regenerations = 0
@@ -48,16 +47,22 @@ class Verifier(object):
         examples_found = 0
         satisfying_examples = 0
         timed_out = False
+        if argument_types:
+            max_examples = self.max_examples
+            min_satisfying_examples = self.min_satisfying_examples
+        else:
+            max_examples = 1
+            min_satisfying_examples = 1
 
         def generate_parameter_values():
             return [
                 search_strategy.parameter.draw(self.random)
-                for _ in xrange(self.n_parameter_values)
+                for _ in xrange(max_examples)
             ]
 
         parameter_values = generate_parameter_values()
-        accepted_examples = [0] * self.n_parameter_values
-        rejected_examples = [0] * self.n_parameter_values
+        accepted_examples = [0] * max_examples
+        rejected_examples = [0] * max_examples
         track_seen = Tracker()
 
         start_time = time.time()
@@ -69,11 +74,10 @@ class Verifier(object):
         skipped_examples = 0
 
         while not (
-            examples_found >= self.max_examples or
+            examples_found >= max_examples or
             len(falsifying_examples) >= 1
         ):
             if time_to_call_it_a_day():
-                timed_out = True
                 break
 
             if initial_run < len(parameter_values):
@@ -115,12 +119,14 @@ class Verifier(object):
             satisfying_examples += 1
             if is_falsifying_example:
                 falsifying_examples.append(args)
+        run_time = time.time() - start_time
+        timed_out = run_time >= self.timeout
 
         if not falsifying_examples:
-            if timed_out:
-                raise Timeout(hypothesis, self.timeout)
-            elif satisfying_examples < self.min_satisfying_examples:
-                raise Unsatisfiable(hypothesis, satisfying_examples)
+            if satisfying_examples < min_satisfying_examples:
+                raise Unsatisfiable(hypothesis, satisfying_examples, run_time)
+            elif timed_out:
+                raise Timeout(hypothesis, satisfying_examples, run_time)
             else:
                 raise Unfalsifiable(hypothesis)
 
@@ -172,11 +178,12 @@ class Exhausted(Unfalsifiable):
 
 class Unsatisfiable(HypothesisException):
 
-    def __init__(self, hypothesis, examples):
+    def __init__(self, hypothesis, examples, run_time):
         super(Unsatisfiable, self).__init__(
             ('Unable to satisfy assumptions of hypothesis %s. ' +
-             'Only %s examples found ') % (
-                get_pretty_function_description(hypothesis), str(examples)))
+             'Only %s examples found after %g seconds') % (
+                get_pretty_function_description(hypothesis), str(examples),
+                run_time))
 
 
 class Flaky(HypothesisException):
@@ -187,10 +194,11 @@ class Flaky(HypothesisException):
         ) % (get_pretty_function_description(hypothesis), example))
 
 
-class Timeout(HypothesisException):
+class Timeout(Unfalsifiable):
 
-    def __init__(self, hypothesis, timeout):
+    def __init__(self, hypothesis, satisfying_examples, run_time):
         super(Timeout, self).__init__(
             hypothesis,
-            ' after %.2fs' % (timeout,)
+            ' after %gs (considered %d examples)' % (
+                run_time, satisfying_examples)
         )

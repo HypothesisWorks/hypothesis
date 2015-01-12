@@ -554,7 +554,11 @@ class OneOfStrategy(SearchStrategy):
         return any((s.could_have_produced(x) for s in self.element_strategies))
 
     def produce(self, random, pv):
-        child = random.choice(pv.enabled_children)
+        if len(pv.enabled_children) == 1:
+            child = pv.enabled_children[0]
+        else:
+            child = pv.enabled_children[
+                random.randint(0, len(pv.enabled_children) - 1)]
         return self.element_strategies[child].produce(
             random, pv.child_parameters[child])
 
