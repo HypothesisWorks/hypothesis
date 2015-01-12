@@ -47,14 +47,19 @@ def precondition(t):
 class TestRun(object):
     def __init__(self, cls, steps, init_args=None, init_kwargs=None):
         self.cls = cls
-        if len(steps) >= 1 and steps[0].target.__name__ == '__init__':
-            self.init_args = steps[0].arguments
-            self.init_kwargs = steps[0].kwargs
-            steps = steps[1:]
-        else:
-            self.init_args = init_args or ()
-            self.init_kwargs = init_kwargs or {}
+        self.init_args = tuple(init_args or ())
+        self.init_kwargs = dict(init_kwargs or {})
         self.steps = steps
+        assert all(s.target.__name__ != '__init__' for s in steps)
+        self.steps = steps
+
+    def __repr__(self):
+        return "TestRun(%s, init_args=%r, init_kwargs=%r, steps=%r)" % (
+            self.cls.__name__,
+            self.init_args,
+            self.init_kwargs,
+            self.steps,
+        )
 
     def new_value(self):
         return self.cls(*self.init_args, **self.init_kwargs)
@@ -201,18 +206,18 @@ class StatefulStrategy(MappedSearchStrategy):
     def pack(self, steps):
         if self.requires_init:
             (init_args, init_kwargs), steps = steps
-            steps = (
-                [Step(self.descriptor.__init__, init_args, init_kwargs)] +
-                steps
+            return TestRun(
+                cls=self.descriptor,
+                steps=steps,
+                init_args=init_args,
+                init_kwargs=init_kwargs
             )
         return TestRun(self.descriptor, steps)
 
     def unpack(self, x):
         steps = x.steps
         if self.requires_init:
-            init = steps[0]
-            steps = steps[1:]
-            return ((init.arguments, init.kwargs), steps)
+            return ((x.init_args, x.init_kwargs), steps)
         else:
             return steps
 
@@ -221,7 +226,7 @@ class StatefulStrategy(MappedSearchStrategy):
         if pruned:
             yield pruned
 
-        for y in MappedSearchStrategy.simplify(self, x):
+        for y in super(StatefulStrategy, self).simplify(x):
             yield y
 
 StrategyTable.default().define_specification_for_classes(
