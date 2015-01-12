@@ -3,7 +3,8 @@ from hypothesis.statefultesting import (
     step,
     requires,
     precondition,
-    integrity_test
+    integrity_test,
+    TestRun,
 )
 import pytest
 from hypothesis import Unfalsifiable
@@ -213,3 +214,8 @@ class RequiresInit(StatefulTest):
 def test_can_generate_for_init():
     example = RequiresInit.breaking_example()
     assert example == [('__init__', False), ('assert_self',)]
+
+
+def test_init_args_appear_in_repr():
+    tr = TestRun(RequiresInit, init_args=(), init_kwargs={'x': 42}, steps=[])
+    assert '42' in repr(tr)
