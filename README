@@ -2,19 +2,27 @@
  Hypothesis
 ================
 
-Hypothesis is a testing library, designed around a core concept of finding examples
-which falsify predicates. It is inspired by and strongly based on libraries
-for testing like `Quickcheck <http://en.wikipedia.org/wiki/QuickCheck>`_, with
-its most direct ancestor being `ScalaCheck <https://github.com/rickynils/scalacheck>`_
-from which it acquired its approach to test case minimization. It is not itself a
-test framework, but it provides decorators for easy integration with test frameworks
+Hypothesis is a library for property based testing.
 
+It is inspired by and strongly based on libraries
+for testing like `Quickcheck <http://en.wikipedia.org/wiki/QuickCheck>`_, but in comparison
+has a distinctly dynamic flavour and a novel approach to data generation.
 
-----------
-Discussion
-----------
+Its most direct ancestor is `ScalaCheck <https://github.com/rickynils/scalacheck>`_
+from which it acquired its original approach to test case minimization (modern Hypothesis
+uses a different one) and the concept of stateful testing.
 
-If you use or are interested in using Hypothesis, we have `a mailing list <https://groups.google.com/forum/#!forum/hypothesis-users>`.
+Hypothesis is not itself a testing framework (though it may grow one). It is a library
+for generating and minimizing data to falsify properties you believe to be true which
+should be easy to integrate into any testing library you use. Development and testing of
+Hypothesis itself is done with `Pytest <http://pytest.org/>`_ but there is no dependency
+on it and you should be able to use it just as easily with any other testing library.
+
+-------------------
+Discussion and help
+-------------------
+
+If you use or are interested in using Hypothesis, we have `a mailing list <https://groups.google.com/forum/#!forum/hypothesis-users>`_.
 Feel free to use it to ask for help, provide feedback, or discuss anything remotely
 Hypothesis related at all.
 
@@ -23,57 +31,14 @@ Hypothesis related at all.
 Usage
 ------
 
+The entry point you are mostly likely to use for Hypothesis, at least initially, are
+the test annotations. These can be used to wrap any test method which is parametrized
+by some argument and turn it into a randomized test.
 
-The primary entry point into the library is the hypothesis.falsify method.
-
-What does it do?
-
-You give it a predicate and a specification for how to generate arguments to test
-that predicate and it gives you a counterexample.
-
------------------
- Basic examples
------------------
-
-.. code:: python
-
-    In [1]: from hypothesis import falsify
-
-    In [2]: falsify(lambda x,y,z: (x + y) + z == x + (y +z), float,float,float)
-    Out[2]: (1.0, 1.0, 0.0387906318128606)
-
-    In [3]: falsify(lambda x: sum(x) < 100, [int])
-    Out[3]: ([6, 29, 65],)
-
-    In [4]: falsify(lambda x: sum(x) < 100, [int,float])
-    Out[4]: ([18.0, 82],)
-
-    In [5]: falsify(lambda x: "a" not in x, str)
-    Out[5]: ('a',)
-
-    In [6]: falsify(lambda x: "a" not in x, {str})
-    Out[6]: (set(['a']),)
-
-Sometimes we ask it to falsify things that are true:
-
-.. code:: python
-
-    In [7]: falsify(lambda x: x + 1 == 1 + x, int)
-    Unfalsifiable: Unable to falsify hypothesis <function <lambda> at 0x2efb1b8>
-
-of course sometimes we ask it to falsify things that are false but hard to find:
-
-.. code:: python
-
-    In [8]: falsify(lambda x: x != "I am the very model of a modern major general", str)
-    Unfalsifiable: Unable to falsify hypothesis <function <lambda> at 0x2efb398>
-
-It's not magic, and when the search space is large it won't be able to do very much
-for hard to find examples.
-
-You can also use it to drive tests. I've only tested it with py.test, but it has no 
-specific dependencies on it: You just write normal tests which raise exceptions 
-on failures and it will transform those into randomized tests.
+The way this works is that you provide a specification for what sort of arguments you
+want (currently only positional arguments are supported). Hypothesis then generates random
+examples matching that specification. If any of them cause an exception then the test fails,
+otherwise the test passes.
 
 So the following test will pass:
 
@@ -96,12 +61,86 @@ With an error message something like:
 .. code:: python
 
         x = '0', y = '1'
-        @given(str,str)
+        @given(str, str)
         def test_str_addition_is_commutative(x, y):
             assert x + y == y + x
     E       assert '01' == '10'
     E         - 01
     E         + 10
+
+
+(that's py.test output. You'll get whatever your test framework displays here)
+
+Note that the examples produced are quite simple. This is because as well as generating
+examples hypothesis knows how to simplify them. Once it's found an example that breaks
+the test it will try to turn that into a simpler example - e.g. by deleting characters,
+replacing them with simpler ones, etc.
+
+Not all tests which pass are neccessarily consistently going to pass. By its nature,
+hypothesis is a form of randomized testing. However if you have a flaky test as a result
+of using hypothesis then what you have is a test that sometimes gives you false negatives:
+If it's sometimes broken then the test genuinely is falsifiable, it's just that Hypothesis
+struggles to find an example.
+
+It can also be true that a test which is in theory falsifiable will always pass. For example:
+
+.. code:: python
+
+    @given(str)
+    def test_str_addition_is_commutative(x):
+        assert x != "I am the very model of a modern major general"
+
+Hypothesis is not magic and does not do any introspection on your code to find magic
+constants like this. All it knows is how to generate random instances and simplify values.
+It has a lot of careful tuning to create quite interesting distributions of values that
+should hit a lot of plausible areas, but when you're trying to find something as
+improbable as a single value you'll probably fail.
+
+-----------------
+Internals
+-----------------
+
+The main function which drives everything that Hypothesis does is falsify. This is essentially
+a slightly more direct version of what the test annotations above are doing: Given a function
+and a specification for how to call that function it tries to produce a value that makes
+that function return False.
+
+.. code:: python
+
+    In [1]: from hypothesis import falsify
+
+    In [2]: falsify(lambda x,y,z: (x + y) + z == x + (y + z), float,float,float)
+    Out[2]: (1.0, 1.0, 0.0387906318128606)
+
+    In [3]: falsify(lambda x: sum(x) < 100, [int])
+    Out[3]: ([6, 29, 65],)
+
+    In [4]: falsify(lambda x: sum(x) < 100, [int,float])
+    Out[4]: ([18.0, 82],)
+
+    In [5]: falsify(lambda x: "a" not in x, str)
+    Out[5]: ('a',)
+
+    In [6]: falsify(lambda x: "a" not in x, {str})
+    Out[6]: (set(['a']),)
+
+If you ask it to falsify things that are true:
+
+.. code:: python
+
+    In [7]: falsify(lambda x: x + 1 == 1 + x, int)
+    Unfalsifiable: Unable to falsify hypothesis lambda x: x + 1 == 1 + x
+
+(that's real output. Hypothesis goes to some length to nicely display the functions
+you're trying to falsify even when they're lambdas. This isn't always possible to do
+but it manages a lot of the time)
+
+And of course the same thing will happen if we ask it to falsify things that are false but hard to find:
+
+.. code:: python
+
+    In [8]: falsify(lambda x: x != "I am the very model of a modern major general", str)
+    Unfalsifiable: Unable to falsify hypothesis lambda x: x != "I am the very model of a modern major general"
 
 
 ------------------
@@ -177,6 +216,9 @@ then we would get an assertion failure. Which indeed we would because the
 assertion that removing results in the element no longer being in the set
 would now be failing.
 
+The stateful testing doesn't currently have a clean way for integrating it into
+a test suite, but you can always just run it and make assertions about the output.
+
 ---------------------
  Adding custom types
 ---------------------
@@ -193,91 +235,130 @@ two digits after the decimal point.
 .. code:: python
 
     from decimal import Decimal
-    from hypothesis.searchstrategy import \
-        SearchStrategy, MappedSearchStrategy, strategy_for
+    from hypothesis.searchstrategy import MappedSearchStrategy
 
-    @strategy_for(Decimal)
     class DecimalStrategy(MappedSearchStrategy):
-        base_descriptor = int
-
         def pack(self, x):
             return Decimal(x) / 100
 
         def unpack(self, x):
             return int(x * 100)
 
+You then need to register this strategy so that when you just refer to Decimal,
+Hypothesis knows that this is the one you intend to use:
+
+.. code:: python
+
+    from hypothesis.strategytable import StrategyTable
+    StrategyTable.default().define_specification_for(
+      Decimal,
+      lambda s, d: DecimalStrategy(
+        mapped_strategy=s.strategy(float),
+        descriptor=Decimal,
+      ))
+
+Given a StrategyTable x, this means that when you call x.strategy(Decimal), this will
+call your lambda as f(x, Decimal), which will build the relevant strategy.
+
 ----------------
  Under the hood
 ----------------
 
+~~~~~~~~~~~~~~~~~~
+Example generation
+~~~~~~~~~~~~~~~~~~
+
 How does hypothesis work?
 
-The core object of hypothesis is the SearchStrategy. It knows how to explore a 
-state space, and has the following operations.
+The core object of how hypothesis generates examples hypothesis is the SearchStrategy.
+It knows how to explore a state space, and has the following operations:
 
-* How to generate a parameter. This is an object of type Parameter that controls random data generation
+* How to generate a parameter. This is an object of type Parameter that controls random data generation. Parameters are used
+  to shape the search space to try to find better examples.
 * produce(random, parameter). Generate a random element of the state space given a value from its class of parameters.
-* could_have_produced(element). Say whether it's plausible that this element was produced by this strategy.
-* complexity(element). Return a float saying roughly how "complex" this element is. There's no meaning attached to this except that hypothesis will try to generate elements of lower complexity.
 * simplify(element). Return a generator over a simplified versions of this element.
+* could_have_produced(element). Say whether it's plausible that this element was produced by this strategy.
 
 These satisfy the following invariants:
 
 * Any element produced by produce must return true when passed to could_have_produced
-* Any element for which could_have_produced returns true must not throw an exception when passed to complexity or simplify
-* for y in simplify(x), complexity(y) <= complexity(x)
-* simplify(x) should return a sequence of unique values
-* There shold be no chain x_1, x_2, ..., x_n with x_{i+1} in simplify(x_i) and x_1 in simplify(x_n). 
+* Any element for which could_have_produced returns true must not throw an exception when passed to simplify
+* simplify(x) should return a generator over a sequence of unique values
 
-These are used to explore the state space. Parameter values are generated and then fed to produce -
-generally the same parameter will be used several times, with parameters being changed more frequently
-when they are producing lots of examples that do not satisfy the proecondition. 
+A mix of drawing parameters and calling produce is ued to explore the search space, producing a sequence of
+novel examples. If we ever find one which falsifies the hypothesis we stop there and proceed to simplification. 
+If after a configurable number of examples or length of time we have not found anything we stop and declare the
+hypothesis unfalsifiable.
 
-When we hit have explored enough examples, if any of them falsify the hypothesis the lowest complexity of these examples is then
-taken, then repeatedly simplified until an example is found with no simplification of it falsifying
-the hypothesis. This is taken as the end result.
+Simplification occurs as a straightforward greedy algorithm: If any of the elements produced by simplify(x) also
+falsify the hypothesis, replace x with that and try again. Stop when no simplified version of x falsifies the
+hypothesis.
 
-SearchStrategy objects are produced from a descriptor value (which can be anything) and a SearchStrategies 
-object, which has user definable rules for producing strategies.
+~~~~~~~~~~~~~~~
+Strategy lookup
+~~~~~~~~~~~~~~~
 
-So for example you can do
+Hypothesis converts from e.g. (Int, Int, Int) to a TupleStrategy by use of a StrategyTable object. You probably
+just want to use the default one, available at StrategyTable.default()
 
-.. code:: python
+You can define new strategies on it for descriptors from the above example.
 
-    In [35]: SearchStrategies().strategy((int,int,[str]))
-    Out[35]: TupleStrategy((int, int, [str]))
+If you want to customize the generation of your data you can create a new StrategyTable and tinker with it. Anything
+defined on the default StrategyTable will be inherited by it.
 
-There are some reasonably complicated and subtle things you can do in terms of overriding 
-the defined search strategies. I'm not going to go into them here because it's all a bit weird
-and likely to still be in flux.
+Talk to me if you actually want to do this beyond simple examples like the above. It's all a bit confusing and should
+probably be considered semi-internal until it gets a better API.
 
-Warning: The details of strategies are liable to change. If you depend on them your code
-will probably be broken in future releases. The goal is to have a stable public API by the
-1.0 release but until then I'll try not to break too much but make no promises.
+---------
+Stability
+---------
+
+In one sense, Hypothesis should be considered highly stable. In another it should be considered highly unstable.
+
+It's highly stable in the sense that it should mostly work very well. It's extremely solidly tested and while
+there are almost certainly bugs lurking in it, as with any non-trivial codebase, they should be few and far
+between.
+
+It's highly unstable in that until it reaches 1.0 I will free to break the API. 1.0 will occur when I have all
+the features I desperately want in here hammered out, have decided what the public vs private APIs look like and
+generally consider it a "This is likely to work very well and is ready for widespread use".
+
+In the mean time you should feel free to use it because it's great, but expect some incompatibilities between versions.
+
+Things that I am currently committed to keeping working exactly as they currently stand:
+
+  * The @given test annotations. The only thing that should ever break with these between versions is that your tests should
+    start failing if Hypothesis got better at data generation and can now find a counterexample where it didn't previously.
+  * The top level falsify interface accessed as falsify(f, param1, param2, etc.). Some of the keyword arguments for controlling
+    its behaviour in a fine grained way are up for grabs.
+
+Everything else should be considered somewhat provisional.
 
 ------------------
 Supported versions
 ------------------
 
-2.7.x, 3.3.x and 3.4.x are all fully supported and should work correctly.
+2.7.x, 3.3.x and 3.4.x are all fully supported and should work correctly. If you find a bug please
+let me know and I will fix it.
 
 Earlier than 2.7 will not work and will probably never be supported.
 
-pypy, 3.1.x and 3.2.x will *probably* work but have some known quirks and I'm not that
-bothered about putting in the effort to support them without some user demand for me to do
-so. If you have a requirement for them to work, let me know.
+pypy, 3.1.x and 3.2.x will *probably* work but are not part of CI and likely have some quirks.
+If you find a bug let me know but I make no promises I'll fix it if it's too hard to do. If you
+really really need hypothesis on one of these and find a bug that is preventing you, we can have
+a talk about what you can do to help me support them.
 
-I haven't even tried it on Jython, IronPython, etc. Do people really use those?
+I have no idea if Hypothesis works on Jython, IronPython, etc. Do people really use those?
 
 ------------
 Contributing
 ------------
 
-I'm generally super happy to accept contributions. The main requirement is that the travis
+I'm generally super happy to accept contributions. The main requirement is that the Travis
 build passes.
 
 This will in particular require you to maintain 100% branch coverage of the code and flake8
-cleanliness.
+cleanliness. The Hypothesis build is quite strict.
 
 I'm also generally delighted with people providing issues, documentation, usage reports, etc.
 so if that sounds a bit too hardcore, don't worry! There's plenty of other things you can do.
