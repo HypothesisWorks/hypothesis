@@ -377,3 +377,18 @@ def test_does_not_call_twice_with_same_passing_parameter():
     with pytest.raises(Exhausted):
         falsify(count_calls, bool)
     assert calls == [2]
+
+
+def test_works_with_zero_arguments():
+    with pytest.raises(Unfalsifiable):
+        falsify(lambda: True)
+    falsify(lambda: False)
+
+
+@pytest.mark.parametrize("desc", [
+    int, float, complex, text_type, binary_type, bool
+])
+def test_minimizes_to_empty(desc):
+    x = falsify(lambda x: False, desc)[0]
+    s = StrategyTable.default().strategy(desc)
+    assert not list(s.simplify(x))

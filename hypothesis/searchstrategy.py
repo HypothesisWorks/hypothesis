@@ -407,16 +407,32 @@ class MappedSearchStrategy(SearchStrategy):
             yield self.pack(y)
 
 
-class ComplexStrategy(MappedSearchStrategy):
+class ComplexStrategy(SearchStrategy):
+    descriptor = complex
 
-    def __init__(self, float_tuple_strategy):
-        super(ComplexStrategy, self).__init__(
-            strategy=float_tuple_strategy,
-            descriptor=complex,
+    def __init__(self, float_strategy):
+        super(ComplexStrategy, self).__init__()
+        self.parameter = params.CompositeParameter(
+            real=float_strategy.parameter,
+            imaginary=float_strategy.parameter,
+        )
+        self.float_strategy = float_strategy
+
+    def produce(self, random, pv):
+        return complex(
+            self.float_strategy.produce(random, pv.real),
+            self.float_strategy.produce(random, pv.imaginary),
         )
 
-    def pack(self, x):
-        return complex(*x)
+    def simplify(self, x):
+        if x.imag != 0:
+            yield complex(x.real, 0)
+        if x.real != 0:
+            yield complex(0, x.imag)
+        for t in self.float_strategy.simplify(x.real):
+            yield complex(t, x.imag)
+        for t in self.float_strategy.simplify(x.imag):
+            yield complex(x.real, t)
 
     def unpack(self, x):
         return (x.real, x.imag)
