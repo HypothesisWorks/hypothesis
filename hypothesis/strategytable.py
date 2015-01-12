@@ -68,7 +68,7 @@ def define_set_strategy(strategies, descriptor):
 
 @strategy_for(complex)
 def define_complex_strategy(strategies, descriptor):
-    return strat.ComplexStrategy(strategies.strategy((float, float)))
+    return strat.ComplexStrategy(strategies.strategy(float))
 
 
 @strategy_for_instances(descriptors.Just)
