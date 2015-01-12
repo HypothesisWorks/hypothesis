@@ -342,13 +342,13 @@ def _unique(xs):
 class ListStrategy(SearchStrategy):
 
     def __init__(self,
-                 strategies):
+                 strategies, average_length=100.0):
         SearchStrategy.__init__(self)
 
         self.descriptor = _unique(x.descriptor for x in strategies)
         self.element_strategy = one_of_strategies(strategies)
         self.parameter = params.CompositeParameter(
-            average_length=params.ExponentialParameter(1 / 100.0),
+            average_length=params.ExponentialParameter(1.0 / average_length),
             child_parameter=self.element_strategy.parameter,
         )
 
