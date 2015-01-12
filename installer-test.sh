@@ -1,5 +1,4 @@
-set -e
-set -o xtrace
+set -e -o xtrace
 
 VENV=hypothesis-testing-chamber
 
@@ -7,9 +6,18 @@ CURRENT_PYTHON=$(which python)
 
 rm -rf ./dist
 rm -rf ./$VENV
-virtualenv $VENV --python=$CURRENT_PYTHON
+virtualenv $VENV  --python=$CURRENT_PYTHON
 BINDIR=$(pwd)/$VENV/bin
 PYTHON=$BINDIR/python
+
+CURRENT_VERSION=$($CURRENT_PYTHON --version 2>&1)
+VENV_VERSION=$($PYTHON --version 2>&1)
+
+if [ "$CURRENT_VERSION" != "$VENV_VERSION" ]
+then
+  exit 1
+fi
+
 PIP=$BINDIR/pip
 
 $PIP install pytest pytest-timeout
