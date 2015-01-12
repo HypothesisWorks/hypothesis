@@ -11,6 +11,17 @@ import random as r
 import hypothesis.descriptors as descriptors
 
 
+def mix_generators(*generators):
+    generators = list(generators)
+    while generators:
+        for i in xrange(len(generators)):
+            try:
+                yield next(generators[i])
+            except StopIteration:
+                generators[i] = None
+        generators = [x for x in generators if x is not None]
+
+
 def nice_string(xs):
     if isinstance(xs, list):
         return '[' + ', '.join(map(nice_string, xs)) + ']'
@@ -361,32 +372,48 @@ class ListStrategy(SearchStrategy):
         return result
 
     def simplify(self, x):
-        if len(x) == 1:
-            yield []
+        if not x:
+            return iter(())
+        generators = []
+
+        generators.append(iter(([],)))
 
         indices = xrange(0, len(x))
-        for i in indices:
-            yield [x[i]]
 
-        if len(x) > 2:
+        generators.append(
+            [x[i]] for i in indices
+        )
+
+        def with_one_index_deleted():
             for i in indices:
                 y = list(x)
                 del y[i]
                 yield y
 
-        for i in indices:
-            for s in self.element_strategy.simplify(x[i]):
-                z = list(x)
-                z[i] = s
-                yield z
+        def with_one_index_simplified():
+            for i in indices:
+                for s in self.element_strategy.simplify(x[i]):
+                    z = list(x)
+                    z[i] = s
+                    yield z
 
-        if len(x) > 3:
+        if len(x) > 2:
+            generators.append(with_one_index_deleted())
+
+        generators.append(with_one_index_simplified())
+
+        def with_two_indices_deleted():
             for i in xrange(0, len(x) - 1):
                 for j in xrange(i, len(x) - 1):
                     y = list(x)
                     del y[i]
                     del y[j]
                     yield y
+
+        if len(x) > 3:
+            generators.append(with_two_indices_deleted())
+
+        return mix_generators(*generators)
 
 
 class MappedSearchStrategy(SearchStrategy):
@@ -411,7 +438,8 @@ class MappedSearchStrategy(SearchStrategy):
         return self.pack(self.mapped_strategy.produce(random, pv))
 
     def simplify(self, x):
-        for y in self.mapped_strategy.simplify(self.unpack(x)):
+        unpacked = self.unpack(x)
+        for y in self.mapped_strategy.simplify(unpacked):
             yield self.pack(y)
 
 
