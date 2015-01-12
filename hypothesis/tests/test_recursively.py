@@ -128,7 +128,6 @@ settings = hs.Settings(max_examples=100, timeout=4.5)
 @given(descriptor_strategy)
 @timeout(5)
 def test_can_falsify_false_things(desc):
-    print(nice_string(desc))
     assume(size(desc) <= MAX_SIZE)
     x = falsify(lambda x: False, desc, settings=settings)[0]
     strategy = test_table.strategy(desc)
