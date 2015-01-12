@@ -17,13 +17,13 @@ def assume(condition):
 class Verifier(object):
     def __init__(
         self,
-        search_strategies=None,
+        strategy_table=None,
         random=None,
         settings=None,
     ):
         if settings is None:
             settings = hs.default
-        self.search_strategies = search_strategies or StrategyTable()
+        self.strategy_table = strategy_table or StrategyTable()
         self.min_satisfying_examples = settings.min_satisfying_examples
         self.max_skipped_examples = settings.max_skipped_examples
         self.max_examples = settings.max_examples
@@ -32,7 +32,7 @@ class Verifier(object):
         self.max_regenerations = 0
 
     def falsify(self, hypothesis, *argument_types):
-        search_strategy = (self.search_strategies
+        search_strategy = (self.strategy_table
                                .specification_for(argument_types))
 
         def falsifies(args):
