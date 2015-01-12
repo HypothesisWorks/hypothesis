@@ -1,5 +1,5 @@
 from hypothesis.testdecorators import given
-from hypothesis.verifier import Verifier, assume, Timeout, Unsatisfiable
+from hypothesis.verifier import Verifier, assume, Unsatisfiable
 from hypothesis.descriptors import one_of, just, integers_in_range
 from functools import wraps
 import pytest
@@ -95,8 +95,8 @@ def test_can_be_given_keyword_args(x, name):
     assert len(name) < x
 
 
-@fails_with(Timeout)
-@given(int, verifier_settings=hs.Settings(timeout=0.05))
+@fails_with(Unsatisfiable)
+@given(int, verifier_settings=hs.Settings(timeout=0.1))
 def test_slow_test_times_out(x):
     time.sleep(0.05)
 
