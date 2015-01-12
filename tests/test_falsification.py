@@ -102,7 +102,7 @@ def test_can_falsify_types_without_default_productions():
     with pytest.raises(MissingSpecification):
         StrategyTable.default().strategy(Bar)
 
-    verifier = Verifier(search_strategies=strategies)
+    verifier = Verifier(strategy_table=strategies)
     assert verifier.falsify(lambda x: False, Bar,)[0] == Bar()
     assert verifier.falsify(lambda x: x.size() < 3, Bar)[0] == Bar(Bar(Bar()))
 
