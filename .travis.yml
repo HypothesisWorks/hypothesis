@@ -11,8 +11,8 @@ before_script:
   - pip install pytest pytest-timeout flake8 coverage restructuredtext_lint pygments
 
 script:
-  - PYTHONPATH=src python -u -m coverage run --branch --include 'hypothesis/*' $(which py.test) -v tests
+  - PYTHONPATH=src python -u -m coverage run --branch --include 'src/hypothesis/*' $(which py.test) -v tests
   - coverage report -m --fail-under=100
-  - flake8 hypothesis 
+  - flake8 src tests
   - rst-lint README.rst
   - ./installer-test.sh
