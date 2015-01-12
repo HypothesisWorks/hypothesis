@@ -7,7 +7,7 @@ from hypothesis.strategytable import StrategyTable
 import hypothesis.params as params
 from hypothesis.internal.utils.distributions import geometric, biased_coin
 from hypothesis.testdecorators import given
-from hypothesis import falsify, Unfalsifiable, assume
+from hypothesis import Verifier, Unfalsifiable, assume
 import pytest
 import re
 import signal
@@ -124,12 +124,17 @@ def size(descriptor):
 MAX_SIZE = 15
 settings = hs.Settings(max_examples=100, timeout=4.5)
 
+verifier = Verifier(
+    settings=settings,
+    strategy_table=test_table,
+)
+
 
 @given(descriptor_strategy)
 @timeout(5)
 def test_can_falsify_false_things(desc):
     assume(size(desc) <= MAX_SIZE)
-    x = falsify(lambda x: False, desc, settings=settings)[0]
+    x = verifier.falsify(lambda x: False, desc)[0]
     strategy = test_table.strategy(desc)
     assert not list(strategy.simplify(x))
 
@@ -140,7 +145,7 @@ def test_can_falsify_false_things_with_many_args(descs):
     assume(len(descs) > 0)
     assume(size(descs) <= MAX_SIZE)
     descs = tuple(descs)
-    x = falsify(lambda *args: False, *descs, settings=settings)
+    x = verifier.falsify(lambda *args: False, *descs)
     strategy = test_table.strategy(descs)
     assert not list(strategy.simplify(x))
 
@@ -150,7 +155,7 @@ def test_can_falsify_false_things_with_many_args(descs):
 def test_can_not_falsify_true_things(desc):
     assume(size(desc) <= MAX_SIZE)
     with pytest.raises(Unfalsifiable):
-        falsify(lambda x: True, desc, settings=settings)
+        verifier.falsify(lambda x: True, desc)
 
 UNDESIRABLE_STRINGS = re.compile('|'.join(
     re.escape(repr(t)) for t in primitive_types
