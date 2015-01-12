@@ -357,3 +357,11 @@ def test_can_simplify_imaginary_component():
     for s in cs.simplify_such_that(t, lambda x: x.real >= 0 and x.imag >= 1):
         t = s
     assert t.imag == 1.0
+
+
+def test_can_simplify_real_component():
+    cs = ss.StrategyTable().strategy(complex)
+    t = complex(10.0, 1.0)
+    for s in cs.simplify_such_that(t, lambda x: x.real >= 1 and x.imag >= 0):
+        t = s
+    assert t.real == 1.0
