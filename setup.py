@@ -1,5 +1,6 @@
 from distutils.core import setup
 from setuptools.command.test import test as TestCommand
+from setuptools import find_packages
 import sys
 
 
@@ -19,9 +20,8 @@ setup(
     version='0.2.2',
     author='David R. MacIver',
     author_email='david@drmaciver.com',
-    packages=[
-        'hypothesis', 'hypothesis.internal', 'hypothesis.internal.utils'
-    ],
+    packages=find_packages("src"),
+    package_dir={"": "src"},
     url='https://github.com/DRMacIver/hypothesis',
     license='LICENSE.txt',
     description='Tools for falsifying hypothesis with random data generation',
