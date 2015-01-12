@@ -200,6 +200,6 @@ def test_contains_the_test_function_name_in_the_exception_string():
     with pytest.raises(Unsatisfiable) as e:
         Foo().this_has_a_unique_name_and_lives_on_a_class()
 
-    assert "Foo.%s" % (
-        Foo.this_has_a_unique_name_and_lives_on_a_class.__name__,
+    assert (
+        Foo.this_has_a_unique_name_and_lives_on_a_class.__name__
     ) in e.value.args[0]

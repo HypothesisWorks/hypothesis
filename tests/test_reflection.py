@@ -110,18 +110,18 @@ class Foo(object):
         return "SoNotFoo()"
 
 
-def test_class_names_are_included_in_class_method_prettiness():
-    assert get_pretty_function_description(Foo.bar) == 'Foo.bar'
+def test_class_names_are_not_included_in_class_method_prettiness():
+    assert get_pretty_function_description(Foo.bar) == 'bar'
 
 
 def test_repr_is_included_in_bound_method_prettiness():
     assert get_pretty_function_description(Foo().baz) == 'SoNotFoo().baz'
 
 
-def test_class_is_included_in_unbound_method():  # pragma: no cover
+def test_class_is_not_included_in_unbound_method():
     assert (
-        get_pretty_function_description(Foo.baz)  # pragma: no cover
-        == 'Foo.baz'  # pragma: no cover
+        get_pretty_function_description(Foo.baz)
+        == 'baz'
     )
 
 

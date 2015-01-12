@@ -157,25 +157,6 @@ def get_pretty_function_description(f):
         return extract_lambda_source(f)
     elif isinstance(f, types.MethodType):
         self = f.__self__
-        if self is None:
-            # This branch is unreachable on python 3
-            return "%s.%s" % (f.im_class.__name__, name)  # pragma: no cover
-        elif inspect.isclass(self):
-            return "%s.%s" % (self.__name__, name)
-        else:
+        if not (self is None or inspect.isclass(self)):
             return "%r.%s" % (self, name)
-    else:
-        # In python 3 qualname will give you the class too. In python 2 this is
-        # not a function object but is in fact an unbound method so this
-        # doesn't matter
-        if six.PY3:  # pragma: no branch
-            try:  # pragma: no cover
-                return f.__qualname__  # pragma: no cover
-            except AttributeError:  # pragma: no cover
-                # oh god python 3.1 or 3.2. There's no non-horrendous way to
-                # support this.
-                # Note: This gives the wrong answer, but is better than an
-                # error and should still be readable.
-                return name  # pragma: no cover
-        else:
-            return name  # pragma: no cover
+    return name
