@@ -1,5 +1,4 @@
-from hypothesis.testdecorators import given
-from hypothesis.verifier import Verifier, assume, Unsatisfiable
+from hypothesis import Verifier, assume, Unsatisfiable, given
 from hypothesis.descriptors import one_of, just, integers_in_range
 from functools import wraps
 import pytest
