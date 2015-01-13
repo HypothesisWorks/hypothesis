@@ -9,7 +9,7 @@ For example:
 
 .. code:: python
 
-    from hypothesis.testdecorators import given
+    from hypothesis import given
 
     @given(str)
     def test_strings_are_palindromic(x):
@@ -138,7 +138,44 @@ your requirements and the generated data is too bad and you should redesign your
 accomodate it better. For example in the above you could just truncate the list you get to
 be of size 10 (though in this case Hypothesis should have no difficulty satisfying this requirement).
 
+Because of the way Hypothesis handles minimization it's important that the
+functions you test not depend on anything except their arguments as handled by
+Hypothesis. If you want to test randomized algorithms you can ask Hypothesis to
+provide you with a Random object:
 
+.. code:: python
+
+    @given(Random)
+    def test_randint_in_range(random):
+        assert 0 <= random.randint(0, 10) <= 9
+
+This results in:
+
+.. code:: python
+
+        assert 0 <= random.randint(0, 10) <= 9
+    E   assert 10 <= 9
+    E    +  where 10 = <bound method RandomWithSeed.randint of Random(211179787414642638728970637875071360079)>(0, 10)
+
+
+Note the seed is provided for you so you can easily reproduce the specific problem.
+
+As the use of Random demonstrates, side effects on arguments given to you by Hypothesis
+are completely fine. Hypothesis copies mutable data before giving it to you. For example the following is fine:
+
+.. code:: python
+
+    @given([int], int)
+    def test_deletion_results_in_element_not_in_list(xs, y):
+        assume(y in xs)
+        xs.remove(y)
+        assert y not in xs
+
+Unfortunately it runs into a problem with py.test where pytest does display the
+modified rather than original output (not entirely surprisingly), so the display
+can be a bit confusing. This is something that will improve when Hypothesis gets
+its own test runner. In the meantime though it will give you correct answers even
+if the display is a bit off.
 
 ---------
 Stability
@@ -366,17 +403,20 @@ How does hypothesis work?
 The core object of how hypothesis generates examples hypothesis is the SearchStrategy.
 It knows how to explore a state space, and has the following operations:
 
-* How to generate a parameter. This is an object of type Parameter that controls random data generation. Parameters are used
-  to shape the search space to try to find better examples.
 * produce(random, parameter). Generate a random element of the state space given a value from its class of parameters.
 * simplify(element). Return a generator over a simplified versions of this element.
 * could_have_produced(element). Say whether it's plausible that this element was produced by this strategy.
+* copy(element). Provide a mutation safe copy of this value. If the data is immutable it's OK to just return the value itself.
 
 These satisfy the following invariants:
 
 * Any element produced by produce must return true when passed to could_have_produced
 * Any element for which could_have_produced returns true must not throw an exception when passed to simplify
 * simplify(x) should return a generator over a sequence of unique values
+* x == copy(x) (but not necessarily x is copy(x))
+
+It also has a parameter. This is an object of type Parameter that controls random data generation. Parameters are used
+to shape the search space to try to find better examples.
 
 A mix of drawing parameters and calling produce is ued to explore the search space, producing a sequence of
 novel examples. If we ever find one which falsifies the hypothesis we stop there and proceed to simplification. 

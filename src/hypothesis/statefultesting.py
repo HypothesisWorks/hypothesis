@@ -203,6 +203,12 @@ class StatefulStrategy(MappedSearchStrategy):
         )
         self.requires_init = requires_init
 
+    def could_have_produced(self, value):
+        return (
+            isinstance(value, TestRun) and
+            value.cls == self.descriptor
+        )
+
     def pack(self, steps):
         if self.requires_init:
             (init_args, init_kwargs), steps = steps

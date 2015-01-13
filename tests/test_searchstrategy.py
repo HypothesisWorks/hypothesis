@@ -1,6 +1,7 @@
 import hypothesis.strategytable as ss
 import hypothesis.searchstrategy as strat
 import hypothesis.descriptors as descriptors
+import hypothesis.params as params
 from hypothesis.internal.tracker import Tracker
 from collections import namedtuple
 from six.moves import xrange
@@ -377,6 +378,27 @@ def test_is_immutable_given_basic_types(t):
     assert strategy(t).has_immutable_data
 
 
+def test_frozen_set_of_immutable_types_is_immutable():
+    assert strategy(frozenset([int])).has_immutable_data
+
+
+def test_frozen_set_of_mutable_types_is_mutable():
+    class Foo(object):
+        pass
+
+    class FooStrategy(strat.SearchStrategy):
+        descriptor = Foo
+        parameter = params.CompositeParameter()
+        has_immutable_data = False
+
+        def produce(self, random, pv):
+            return Foo()
+
+    table = ss.StrategyTable()
+    table.define_specification_for(Foo, lambda s, d: FooStrategy())
+    assert not table.strategy(frozenset([Foo])).has_immutable_data
+
+
 @pytest.mark.parametrize('c', [
     c([t])
     for c in mutable_collection_types
@@ -412,3 +434,30 @@ def test_one_of_mutable_is_mutable():
 def test_one_of_mutable_and_immutable_is_mutable():
     assert not strategy(
         descriptors.one_of([int, [float]])).has_immutable_data
+
+
+def test_random_is_mutable():
+    assert not strategy(random.Random).has_immutable_data
+
+
+def test_random_repr_has_seed():
+    rnd = strategy(random.Random).produce(random.Random(), None)
+    seed = rnd.seed
+    assert str(seed) in repr(rnd)
+
+
+def test_random_only_produces_special_random():
+    strat = strategy(random.Random)
+    assert not strat.could_have_produced(random.Random())
+    assert strat.could_have_produced(
+        strat.produce(random, strat.parameter.draw(random)))
+
+
+def test_randoms_with_same_seed_and_state_are_equal():
+    s = strat.RandomWithSeed(123)
+    t = strat.RandomWithSeed(123)
+    assert s == t
+    s.random()
+    assert s != t
+    t.random()
+    assert s == t

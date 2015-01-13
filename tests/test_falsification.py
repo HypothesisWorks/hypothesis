@@ -26,6 +26,7 @@ import hypothesis.params as params
 import hypothesis.settings as hs
 import time
 from six import binary_type, text_type
+from random import Random
 
 
 def test_can_make_assumptions():
@@ -423,3 +424,7 @@ def test_can_falsify_methods_which_mutate_data_without_proving_flaky():
 
 def test_can_find_an_element_in_a_list():
     falsify(lambda x, ys: x not in ys, int, [int])
+
+
+def test_can_randomize_random():
+    falsify(lambda x: x.randint(0, 10) != 10, Random)

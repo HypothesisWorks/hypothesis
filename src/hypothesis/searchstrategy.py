@@ -42,6 +42,8 @@ def nice_string(xs):
                 map(nice_string, xs)
             )
         )
+    if isinstance(xs, frozenset):
+        return "frozenset(%s)" % (nice_string(set(xs)),)
     try:
         return xs.__name__
     except AttributeError:
@@ -86,6 +88,7 @@ class SearchStrategy(object):
         return iter(())
 
     def simplify_such_that(self, t, f):
+        assert self.could_have_produced(t)
         if not f(t):
             raise ValueError(
                 "%r does not satisfy predicate %s" % (t, f))
@@ -94,6 +97,7 @@ class SearchStrategy(object):
 
         while True:
             for s in self.simplify(t):
+                assert self.could_have_produced(s)
                 if tracker.track(s) > 1:
                     continue
                 if f(s):
@@ -388,7 +392,7 @@ class ListStrategy(SearchStrategy):
 
         generators.append(iter(([],)))
 
-        indices = xrange(0, len(x))
+        indices = xrange(len(x) - 1, -1, -1)
 
         generators.append(
             [x[i]] for i in indices
@@ -492,6 +496,23 @@ class SetStrategy(MappedSearchStrategy):
 
     def pack(self, x):
         return set(x)
+
+    def unpack(self, x):
+        return list(x)
+
+
+class FrozenSetStrategy(MappedSearchStrategy):
+    def __init__(self, list_strategy):
+        super(FrozenSetStrategy, self).__init__(
+            strategy=list_strategy,
+            descriptor=frozenset(list_strategy.descriptor)
+        )
+        self.has_immutable_data = (
+            list_strategy.element_strategy.has_immutable_data
+        )
+
+    def pack(self, x):
+        return frozenset(x)
 
     def unpack(self, x):
         return list(x)
@@ -631,3 +652,42 @@ class JustStrategy(SearchStrategy):
 
     def produce(self, random, pv):
         return self.descriptor.value
+
+    def could_have_produced(self, value):
+        return self.descriptor.value == value
+
+
+class RandomWithSeed(r.Random):
+    def __init__(self, seed):
+        super(RandomWithSeed, self).__init__(seed)
+        self.seed = seed
+
+    def __repr__(self):
+        return "Random(%s)" % (self.seed,)
+
+    def __copy__(self):
+        r = RandomWithSeed(self.seed)
+        r.setstate(self.getstate())
+        return r
+
+    def __deepcopy__(self, d):
+        return self.__copy__()
+
+    def __eq__(self, other):
+        return self is other or (
+            isinstance(other, RandomWithSeed) and
+            self.seed == other.seed and
+            self.getstate() == other.getstate()
+        )
+
+
+class RandomStrategy(SearchStrategy):
+    descriptor = r.Random
+    parameter = params.CompositeParameter()
+    has_immutable_data = False
+
+    def produce(self, random, pv):
+        return RandomWithSeed(random.getrandbits(128))
+
+    def could_have_produced(self, value):
+        return isinstance(value, RandomWithSeed)
