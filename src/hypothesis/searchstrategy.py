@@ -88,6 +88,7 @@ class SearchStrategy(object):
         return iter(())
 
     def simplify_such_that(self, t, f):
+        assert self.could_have_produced(t)
         if not f(t):
             raise ValueError(
                 "%r does not satisfy predicate %s" % (t, f))
@@ -96,6 +97,7 @@ class SearchStrategy(object):
 
         while True:
             for s in self.simplify(t):
+                assert self.could_have_produced(s)
                 if tracker.track(s) > 1:
                     continue
                 if f(s):
@@ -650,6 +652,9 @@ class JustStrategy(SearchStrategy):
 
     def produce(self, random, pv):
         return self.descriptor.value
+
+    def could_have_produced(self, value):
+        return self.descriptor.value == value
 
 
 class RandomWithSeed(r.Random):

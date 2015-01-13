@@ -222,3 +222,10 @@ def test_copies_all_its_values_correctly(desc, random):
     strategy = test_table.strategy(desc)
     value = strategy.produce(random, strategy.parameter.draw(random))
     assert value == strategy.copy(value)
+
+
+@given(descriptor_strategy, verifier=verifier)
+def test_can_produce_what_it_produces(desc):
+    strategy = test_table.strategy(desc)
+    with pytest.raises(Unfalsifiable):
+        verifier.falsify(strategy.could_have_produced, desc)

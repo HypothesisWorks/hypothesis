@@ -95,6 +95,8 @@ class Verifier(object):
             pv = parameter_values[i]
 
             args = search_strategy.produce(self.random, pv)
+            assert search_strategy.could_have_produced(args)
+
             if track_seen.track(args) > 1:
                 rejected_examples[i] += 1
                 skipped_examples += 1
