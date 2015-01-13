@@ -83,3 +83,18 @@
       surprised to add pypy support back in later but I'm not going to do so
       until I know someone cares about it. In the meantime it will probably
       still work.
+
+0.3.1 - 13/01/2015
+    * Support for generation of frozenset and Random values
+    * Correct handling of the case where a called function mutates it argument.
+      This involved introducing a notion of a strategies knowing how to copy
+      their argument. The default method should be entirely acceptable and the
+      worst case is that it will continue to have the old behaviour if you
+      don't mark your strategy as mutable, so this shouldn't break anything.
+    * Fix for a bug where some strategies did not correctly implement
+      could_have_produced. It is very unlikely that any of these would have
+      been seen in the wild, and the consequences if they had been would have
+      bene minor.
+    * Re-export the @given decorator from the main hypothesis namespace. It's
+      still available at the old location too.
+    * Minor performance optimisation for simplifying long lists.
