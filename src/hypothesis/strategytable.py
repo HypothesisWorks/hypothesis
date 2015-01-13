@@ -2,6 +2,7 @@ from hypothesis.internal.specmapper import SpecificationMapper
 import hypothesis.searchstrategy as strat
 from six import text_type, binary_type
 import hypothesis.descriptors as descriptors
+from random import Random
 
 
 def convert_strategy(fn):
@@ -120,3 +121,8 @@ def define_stragy_for_integer_Range(strategies, descriptor):
 @strategy_for_instances(descriptors.FloatRange)
 def define_strategy_for_float_Range(strategies, descriptor):
     return strat.FixedBoundedFloatStrategy(descriptor.start, descriptor.end)
+
+
+@strategy_for(Random)
+def define_random_strategy(strategies, descriptor):
+    return strat.RandomStrategy()

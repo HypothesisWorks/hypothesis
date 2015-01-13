@@ -650,3 +650,39 @@ class JustStrategy(SearchStrategy):
 
     def produce(self, random, pv):
         return self.descriptor.value
+
+
+class RandomWithSeed(r.Random):
+    def __init__(self, seed):
+        super(RandomWithSeed, self).__init__(seed)
+        self.seed = seed
+
+    def __repr__(self):
+        return "Random(%s)" % (self.seed,)
+
+    def __copy__(self):
+        r = RandomWithSeed(self.seed)
+        r.setstate(self.getstate())
+        return r
+
+    def __deepcopy__(self, d):
+        return self.__copy__()
+
+    def __eq__(self, other):
+        return self is other or (
+            isinstance(other, RandomWithSeed) and
+            self.seed == other.seed and
+            self.getstate() == other.getstate()
+        )
+
+
+class RandomStrategy(SearchStrategy):
+    descriptor = r.Random
+    parameter = params.CompositeParameter()
+    has_immutable_data = False
+
+    def produce(self, random, pv):
+        return RandomWithSeed(random.getrandbits(128))
+
+    def could_have_produced(self, value):
+        return isinstance(value, RandomWithSeed)

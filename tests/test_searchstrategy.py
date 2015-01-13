@@ -434,3 +434,20 @@ def test_one_of_mutable_is_mutable():
 def test_one_of_mutable_and_immutable_is_mutable():
     assert not strategy(
         descriptors.one_of([int, [float]])).has_immutable_data
+
+
+def test_random_is_mutable():
+    assert not strategy(random.Random).has_immutable_data
+
+
+def test_random_repr_has_seed():
+    rnd = strategy(random.Random).produce(random.Random(), None)
+    seed = rnd.seed
+    assert str(seed) in repr(rnd)
+
+
+def test_random_only_produces_special_random():
+    strat = strategy(random.Random)
+    assert not strat.could_have_produced(random.Random())
+    assert strat.could_have_produced(
+        strat.produce(random, strat.parameter.draw(random)))

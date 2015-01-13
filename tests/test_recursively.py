@@ -14,6 +14,7 @@ import signal
 import time
 from functools import wraps
 import hypothesis.settings as hs
+from random import Random
 
 
 class Timeout(BaseException):
@@ -58,6 +59,7 @@ basic_types = list(primitive_types)
 basic_types.append(one_of(tuple(basic_types)))
 basic_types += [frozenset({x}) for x in basic_types]
 basic_types += [set({x}) for x in basic_types]
+basic_types.append(Random)
 branch_types = [dict, tuple, list]
 
 
@@ -118,7 +120,10 @@ def size(descriptor):
     elif isinstance(descriptor, Just):
         return 1
     else:
-        children = list(descriptor)
+        try:
+            children = list(descriptor)
+        except TypeError:
+            return 1
     return 1 + sum(map(size, children))
 
 
@@ -209,3 +214,11 @@ def test_cannot_generate_mutable_data_from_an_immutable_strategy(d):
         print(
             nice_string(d),
             verifier.falsify(is_immutable_data, d))
+
+
+@timeout(5)
+@given(descriptor_strategy, Random, verifier=verifier)
+def test_copies_all_its_values_correctly(desc, random):
+    strategy = test_table.strategy(desc)
+    value = strategy.produce(random, strategy.parameter.draw(random))
+    assert value == strategy.copy(value)
