@@ -366,17 +366,20 @@ How does hypothesis work?
 The core object of how hypothesis generates examples hypothesis is the SearchStrategy.
 It knows how to explore a state space, and has the following operations:
 
-* How to generate a parameter. This is an object of type Parameter that controls random data generation. Parameters are used
-  to shape the search space to try to find better examples.
 * produce(random, parameter). Generate a random element of the state space given a value from its class of parameters.
 * simplify(element). Return a generator over a simplified versions of this element.
 * could_have_produced(element). Say whether it's plausible that this element was produced by this strategy.
+* copy(element). Provide a mutation safe copy of this value. If the data is immutable it's OK to just return the value itself.
 
 These satisfy the following invariants:
 
 * Any element produced by produce must return true when passed to could_have_produced
 * Any element for which could_have_produced returns true must not throw an exception when passed to simplify
 * simplify(x) should return a generator over a sequence of unique values
+* x == copy(x) (but not necessarily x is copy(x))
+
+It also has a parameter. This is an object of type Parameter that controls random data generation. Parameters are used
+to shape the search space to try to find better examples.
 
 A mix of drawing parameters and calling produce is ued to explore the search space, producing a sequence of
 novel examples. If we ever find one which falsifies the hypothesis we stop there and proceed to simplification. 
