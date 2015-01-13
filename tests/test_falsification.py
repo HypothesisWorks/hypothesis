@@ -359,7 +359,7 @@ def test_can_produce_things_that_are_not_utf8():
 
 def test_can_produce_long_lists_with_floats_at_left():
     def is_small_given_large(xs):
-        assume(len(xs) >= 20)
+        assume(len(xs) >= 15)
         return any(x >= 0.2 for x in xs)
 
     falsify(is_small_given_large, [descriptors.floats_in_range(0, 1)])
@@ -367,7 +367,7 @@ def test_can_produce_long_lists_with_floats_at_left():
 
 def test_can_produce_long_lists_with_floats_at_right():
     def is_small_given_large(xs):
-        assume(len(xs) >= 20)
+        assume(len(xs) >= 15)
         return any(x <= 0.8 for x in xs)
 
     falsify(is_small_given_large, [descriptors.floats_in_range(0, 1)])
