@@ -451,3 +451,13 @@ def test_random_only_produces_special_random():
     assert not strat.could_have_produced(random.Random())
     assert strat.could_have_produced(
         strat.produce(random, strat.parameter.draw(random)))
+
+
+def test_randoms_with_same_seed_and_state_are_equal():
+    s = strat.RandomWithSeed(123)
+    t = strat.RandomWithSeed(123)
+    assert s == t
+    s.random()
+    assert s != t
+    t.random()
+    assert s == t
