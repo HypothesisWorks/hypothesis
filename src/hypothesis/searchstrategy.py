@@ -388,7 +388,7 @@ class ListStrategy(SearchStrategy):
 
         generators.append(iter(([],)))
 
-        indices = xrange(0, len(x))
+        indices = xrange(len(x) - 1, -1, -1)
 
         generators.append(
             [x[i]] for i in indices
