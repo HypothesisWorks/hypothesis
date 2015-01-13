@@ -5,6 +5,7 @@ from hypothesis.statefultesting import (
     precondition,
     integrity_test,
     TestRun,
+    Step,
 )
 import pytest
 from hypothesis import Unfalsifiable
@@ -217,3 +218,25 @@ def test_can_generate_for_init():
 def test_init_args_appear_in_repr():
     tr = TestRun(RequiresInit, init_args=(), init_kwargs={'x': 42}, steps=[])
     assert '42' in repr(tr)
+
+
+class HasOneBreakingMethod(StatefulTest):
+
+    @step
+    def all_good(self):
+        pass
+
+    @step
+    def not_so_good(self):
+        assert False
+
+
+def test_prune_immediately_removes_every_thing_after_a_bad_call():
+    tr = TestRun(HasOneBreakingMethod, steps=(
+        [Step(HasOneBreakingMethod.all_good, (), {})] * 10 +
+        [Step(HasOneBreakingMethod.not_so_good, (), {})] * 10 +
+        [Step(HasOneBreakingMethod.all_good, (), {})] * 10
+    ))
+    pruned = tr.prune()
+    assert len(pruned.steps) == 11
+    assert pruned.steps[-1].target == HasOneBreakingMethod.not_so_good
