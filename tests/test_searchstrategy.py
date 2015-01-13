@@ -4,6 +4,7 @@ import hypothesis.descriptors as descriptors
 from hypothesis.internal.tracker import Tracker
 from collections import namedtuple
 from six.moves import xrange
+from six import text_type, binary_type
 import random
 import pytest
 
@@ -365,3 +366,49 @@ def test_can_simplify_real_component():
     for s in cs.simplify_such_that(t, lambda x: x.real >= 1 and x.imag >= 0):
         t = s
     assert t.real == 1.0
+
+
+basic_types = [int, float, text_type, binary_type, complex, bool]
+mutable_collection_types = [set, list]
+
+
+@pytest.mark.parametrize('t', basic_types)
+def test_is_immutable_given_basic_types(t):
+    assert strategy(t).has_immutable_data
+
+
+@pytest.mark.parametrize('c', [
+    c([t])
+    for c in mutable_collection_types
+    for t in basic_types
+])
+def test_mutable_collection_types_have_mutable_data(c):
+    assert not strategy(c).has_immutable_data
+
+
+def test_dicts_are_mutable():
+    assert not strategy({1: int}).has_immutable_data
+
+
+def test_tuples_with_one_mutable_arg_are_mutable():
+    assert not strategy((int, [int])).has_immutable_data
+    assert not strategy(([int], str)).has_immutable_data
+
+
+def test_lists_of_tuples_are_mutable():
+    assert not strategy([(int, int)]).has_immutable_data
+
+
+def test_one_of_immutable_is_immutable():
+    assert strategy(descriptors.one_of(
+        [int, str, float, complex])).has_immutable_data
+
+
+def test_one_of_mutable_is_mutable():
+    assert not strategy(descriptors.one_of(
+        [[int], [float]])).has_immutable_data
+
+
+def test_one_of_mutable_and_immutable_is_mutable():
+    assert not strategy(
+        descriptors.one_of([int, [float]])).has_immutable_data
