@@ -50,14 +50,16 @@ class Verifier(object):
         if argument_types:
             max_examples = self.max_examples
             min_satisfying_examples = self.min_satisfying_examples
+            parameter_values = max(2, int(float(max_examples) / 5))
         else:
             max_examples = 1
             min_satisfying_examples = 1
+            parameter_values = 1
 
         def generate_parameter_values():
             return [
                 search_strategy.parameter.draw(self.random)
-                for _ in xrange(max_examples)
+                for _ in xrange(parameter_values)
             ]
 
         parameter_values = generate_parameter_values()

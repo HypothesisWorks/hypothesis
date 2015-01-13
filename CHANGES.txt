@@ -61,3 +61,25 @@
 0.2.2 - 08/01/2015
     * Fix an embarassing complete failure of the installer caused by my being
       bad at version control
+
+0.3.0 - 12/01/2015
+    * Complete redesign of the data generation system. Extreme breaking change
+      for anyone who was previously writing their own SearchStrategy
+      implementations. These will not work any more and you'll need to modify
+      them.
+    * New settings system allowing more global and modular control of Verifier
+      behaviour.
+    * Decouple SearchStrategy from the StrategyTable. This leads to much more
+      composable code which is a lot easier to understand.
+    * A significant amount of internal API renaming and moving. This may also
+      break your code.
+    * Expanded available descriptors, allowing for generating integers or
+      floats in a specific range.
+    * Significantly more robust. A very large number of small bug fixes, none
+      of which anyone is likely to have ever noticed.
+    * Deprecation of support for pypy and python 3 prior to 3.3. 3.3 and 3.4.
+      Supported versions are 2.7.x, 3.3.x, 3.4.x. I expect all of these to
+      remain officially supported for a very long time. I would not be
+      surprised to add pypy support back in later but I'm not going to do so
+      until I know someone cares about it. In the meantime it will probably
+      still work.
