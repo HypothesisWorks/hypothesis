@@ -42,6 +42,8 @@ def nice_string(xs):
                 map(nice_string, xs)
             )
         )
+    if isinstance(xs, frozenset):
+        return "frozenset(%s)" % (nice_string(set(xs)),)
     try:
         return xs.__name__
     except AttributeError:
@@ -492,6 +494,23 @@ class SetStrategy(MappedSearchStrategy):
 
     def pack(self, x):
         return set(x)
+
+    def unpack(self, x):
+        return list(x)
+
+
+class FrozenSetStrategy(MappedSearchStrategy):
+    def __init__(self, list_strategy):
+        super(FrozenSetStrategy, self).__init__(
+            strategy=list_strategy,
+            descriptor=frozenset(list_strategy.descriptor)
+        )
+        self.has_immutable_data = (
+            list_strategy.element_strategy.has_immutable_data
+        )
+
+    def pack(self, x):
+        return frozenset(x)
 
     def unpack(self, x):
         return list(x)

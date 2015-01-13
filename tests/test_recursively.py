@@ -56,6 +56,7 @@ test_table.define_specification_for_instances(
 primitive_types = [int, float, text_type, binary_type, bool, complex]
 basic_types = list(primitive_types)
 basic_types.append(one_of(tuple(basic_types)))
+basic_types += [frozenset({x}) for x in basic_types]
 basic_types += [set({x}) for x in basic_types]
 branch_types = [dict, tuple, list]
 
@@ -174,16 +175,11 @@ def tree_contains_match(t, f):
         return True
     if isinstance(t, (text_type, binary_type)):
         # Workaround for stupid one element string behaviour
-        return f(t)
-    l = -1
+        return False
     try:
-        l = len(t)
+        t = list(t)
     except TypeError:
         return False
-    if l == 0:
-        return False
-    if l == 1:
-        return tree_contains_match(t[0], f)
     return any(tree_contains_match(s, f) for s in t)
 
 

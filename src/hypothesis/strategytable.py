@@ -66,6 +66,11 @@ def define_set_strategy(strategies, descriptor):
     return strat.SetStrategy(strategies.strategy(list(descriptor)))
 
 
+@strategy_for_instances(frozenset)
+def define_frozen_set_strategy(strategies, descriptor):
+    return strat.FrozenSetStrategy(strategies.strategy(list(descriptor)))
+
+
 @strategy_for(complex)
 def define_complex_strategy(strategies, descriptor):
     return strat.ComplexStrategy(strategies.strategy(float))

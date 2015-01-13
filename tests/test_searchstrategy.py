@@ -1,6 +1,7 @@
 import hypothesis.strategytable as ss
 import hypothesis.searchstrategy as strat
 import hypothesis.descriptors as descriptors
+import hypothesis.params as params
 from hypothesis.internal.tracker import Tracker
 from collections import namedtuple
 from six.moves import xrange
@@ -375,6 +376,27 @@ mutable_collection_types = [set, list]
 @pytest.mark.parametrize('t', basic_types)
 def test_is_immutable_given_basic_types(t):
     assert strategy(t).has_immutable_data
+
+
+def test_frozen_set_of_immutable_types_is_immutable():
+    assert strategy(frozenset([int])).has_immutable_data
+
+
+def test_frozen_set_of_mutable_types_is_mutable():
+    class Foo(object):
+        pass
+
+    class FooStrategy(strat.SearchStrategy):
+        descriptor = Foo
+        parameter = params.CompositeParameter()
+        has_immutable_data = False
+
+        def produce(self, random, pv):
+            return Foo()
+
+    table = ss.StrategyTable()
+    table.define_specification_for(Foo, lambda s, d: FooStrategy())
+    assert not table.strategy(frozenset([Foo])).has_immutable_data
 
 
 @pytest.mark.parametrize('c', [
