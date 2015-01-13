@@ -143,7 +143,7 @@ functions you test not depend on anything except their arguments as handled by
 Hypothesis. If you want to test randomized algorithms you can ask Hypothesis to
 provide you with a Random object:
 
-.. code ::python
+.. code:: python
 
     @given(Random)
     def test_randint_in_range(random):
@@ -151,7 +151,7 @@ provide you with a Random object:
 
 This results in:
 
-.. code ::python
+.. code:: python
 
         assert 0 <= random.randint(0, 10) <= 9
     E   assert 10 <= 9
@@ -163,7 +163,7 @@ Note the seed is provided for you so you can easily reproduce the specific probl
 As the use of Random demonstrates, side effects on arguments given to you by Hypothesis
 are completely fine. Hypothesis copies mutable data before giving it to you. For example the following is fine:
 
-.. code ::python
+.. code:: python
 
     @given([int], int)
     def test_deletion_results_in_element_not_in_list(xs, y):
