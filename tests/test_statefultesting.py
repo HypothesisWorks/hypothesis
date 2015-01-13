@@ -180,11 +180,9 @@ class BadSetTester(StatefulTest):
 
 
 def test_bad_set_finds_minimal_break():
-    # Try it a lot to make sure this isn't passing by coincidence
-    for _ in xrange(10):
-        breaking_example = BadSetTester.breaking_example()
-        assert len(breaking_example) == 3
-        assert len(set([s[1] for s in breaking_example])) == 1
+    breaking_example = BadSetTester.breaking_example()
+    assert len(breaking_example) == 3
+    assert len(set([s[1] for s in breaking_example])) == 1
 
 
 class NeedsKeywordArgs(StatefulTest):
