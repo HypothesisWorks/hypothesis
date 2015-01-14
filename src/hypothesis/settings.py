@@ -5,6 +5,7 @@ class Settings(object):
         max_examples=None,
         max_skipped_examples=None,
         timeout=None,
+        derandomize=None,
     ):
         self.min_satisfying_examples = (
             min_satisfying_examples or default.min_satisfying_examples)
@@ -12,6 +13,10 @@ class Settings(object):
         self.timeout = timeout or default.timeout
         self.max_skipped_examples = (
             max_skipped_examples or default.max_skipped_examples)
+        if derandomize is None:
+            self.derandomize = default.derandomize
+        else:
+            self.derandomize = derandomize
 
 
 default = Settings(
@@ -19,4 +24,5 @@ default = Settings(
     max_examples=200,
     timeout=60,
     max_skipped_examples=50,
+    derandomize=False,
 )

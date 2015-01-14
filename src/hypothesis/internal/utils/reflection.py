@@ -9,6 +9,26 @@ import six
 import types
 import ast
 import re
+import hashlib
+
+
+def function_digest(function):
+    """
+    Returns a string that is stable across multiple invocations across multiple
+    processes and is prone to changing significantly in response to minor
+    changes to the function.
+
+    No guarantee of uniqueness though it usually will be.
+    """
+    hasher = hashlib.md5()
+    try:
+        hasher.update(inspect.getsource(function).encode('utf-8'))
+    # Different errors on different versions of python. What fun.
+    except (OSError, IOError):
+        pass
+    hasher.update(function.__name__.encode('utf-8'))
+    hasher.update(repr(inspect.getargspec(function)).encode('utf-8'))
+    return hasher.digest()
 
 
 def convert_keyword_arguments(function, args, kwargs):

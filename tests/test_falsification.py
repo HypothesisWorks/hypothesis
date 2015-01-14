@@ -428,3 +428,62 @@ def test_can_find_an_element_in_a_list():
 
 def test_can_randomize_random():
     falsify(lambda x: x.randint(0, 10) != 10, Random)
+
+
+class BrokenFloatStrategy(SearchStrategy):
+    descriptor = float
+    parameter = params.CompositeParameter()
+
+    def produce(self, random, pv):
+        return random.random()
+
+
+def test_two_verifiers_produce_different_results_in_normal_mode():
+    table = StrategyTable()
+    table.define_specification_for(float, lambda *_: BrokenFloatStrategy())
+    v1 = Verifier(strategy_table=table)
+    v2 = Verifier(strategy_table=table)
+    x1 = v1.falsify(lambda x: False, float)
+    x2 = v2.falsify(lambda x: False, float)
+    assert x1 != x2
+
+
+def test_two_verifiers_produce_the_same_results_in_derandomized_mode():
+    table = StrategyTable()
+    settings = hs.Settings(derandomize=True)
+    table.define_specification_for(float, lambda *_: BrokenFloatStrategy())
+    v1 = Verifier(strategy_table=table, settings=settings)
+    v2 = Verifier(strategy_table=table, settings=settings)
+    foo = lambda x: False
+
+    x1 = v1.falsify(foo, float)
+    x2 = v2.falsify(foo, float)
+    assert x1 == x2
+
+
+def test_a_derandomized_verifier_produces_the_same_results_called_twice():
+    table = StrategyTable()
+    settings = hs.Settings(derandomize=True)
+    table.define_specification_for(float, lambda *_: BrokenFloatStrategy())
+    v1 = Verifier(strategy_table=table, settings=settings)
+    foo = lambda x: False
+    x1 = v1.falsify(foo, float)
+    x2 = v1.falsify(foo, float)
+    assert x1 == x2
+
+
+def test_minor_variations_in_code_change_the_randomization():
+    table = StrategyTable()
+    settings = hs.Settings(derandomize=True)
+    table.define_specification_for(float, lambda *_: BrokenFloatStrategy())
+    v1 = Verifier(strategy_table=table, settings=settings)
+    x1 = v1.falsify(lambda x: x == 42, float)
+    x2 = v1.falsify(lambda x: x == 1, float)
+    assert x1 != x2
+
+
+def test_can_derandomize_on_evalled_functions():
+    table = StrategyTable()
+    settings = hs.Settings(derandomize=True)
+    v = Verifier(strategy_table=table, settings=settings)
+    assert v.falsify(eval('lambda x: x > 0'), int) == (0,)

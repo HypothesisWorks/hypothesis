@@ -1,6 +1,7 @@
 from hypothesis.internal.utils.reflection import (
     convert_keyword_arguments,
     get_pretty_function_description,
+    function_digest,
 )
 import pytest
 
@@ -188,3 +189,26 @@ def test_does_not_error_if_it_cannot_distinguish_between_two_lambdas():
     a, b = (lambda x: 1, lambda x: 2)  # pragma: no cover
     assert 'lambda x:' in get_pretty_function_description(a)
     assert 'lambda x:' in get_pretty_function_description(b)
+
+
+def test_digests_are_reasonably_unique():
+    assert (
+        function_digest(test_simple_conversion) !=
+        function_digest(test_does_not_error_on_dynamically_defined_functions)
+    )
+
+
+def test_digest_returns_the_same_value_for_two_calls():
+    assert (
+        function_digest(test_simple_conversion) ==
+        function_digest(test_simple_conversion)
+    )
+
+
+def test_digest_is_stable_across_process_runs():
+    # Hard coded as the only sensible way to check this doesn't change between
+    # process runs. There's nothing special about these values. If you update
+    # the code just update them to match.
+    digest = function_digest(test_digests_are_reasonably_unique)
+    print(repr(digest))
+    assert digest == b'\x8d\x07\xdb\xe1\xbeC\x92\xec-\xb4PWj\x0c%\x87'

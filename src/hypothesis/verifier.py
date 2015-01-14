@@ -4,7 +4,7 @@ import time
 from six.moves import xrange
 import hypothesis.settings as hs
 from hypothesis.internal.utils.reflection import (
-    get_pretty_function_description
+    get_pretty_function_description, function_digest
 )
 from hypothesis.internal.tracker import Tracker
 
@@ -28,10 +28,24 @@ class Verifier(object):
         self.max_skipped_examples = settings.max_skipped_examples
         self.max_examples = settings.max_examples
         self.timeout = settings.timeout
-        self.random = random or Random()
+        if settings.derandomize and random:
+            raise ValueError(
+                "A verifier cannot both be derandomized and have a random "
+                "generator")
+
+        if settings.derandomize:
+            self.random = None
+        else:
+            self.random = random or Random()
         self.max_regenerations = 0
 
     def falsify(self, hypothesis, *argument_types):
+        random = self.random
+        if random is None:
+            random = Random(
+                function_digest(hypothesis)
+            )
+
         search_strategy = (self.strategy_table
                                .specification_for(argument_types))
 
@@ -58,7 +72,7 @@ class Verifier(object):
 
         def generate_parameter_values():
             return [
-                search_strategy.parameter.draw(self.random)
+                search_strategy.parameter.draw(random)
                 for _ in xrange(parameter_values)
             ]
 
@@ -88,13 +102,13 @@ class Verifier(object):
             else:
                 i = max(
                     xrange(len(parameter_values)),
-                    key=lambda k: self.random.betavariate(
+                    key=lambda k: random.betavariate(
                         accepted_examples[k] + 1, rejected_examples[k] + 1
                     )
                 )
             pv = parameter_values[i]
 
-            args = search_strategy.produce(self.random, pv)
+            args = search_strategy.produce(random, pv)
             assert search_strategy.could_have_produced(args)
 
             if track_seen.track(args) > 1:
