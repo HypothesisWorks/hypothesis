@@ -215,8 +215,8 @@ class FixedBoundedFloatStrategy(SearchStrategy):
     descriptor = float
 
     parameter = params.CompositeParameter(
-        p=params.UniformFloatParameter(0, 1),
-        n=params.ExponentialParameter(0.5),
+        cut=params.UniformFloatParameter(0, 1),
+        leftwards=params.BiasedCoin(0.5),
     )
 
     def __init__(self, lower_bound, upper_bound):
@@ -224,12 +224,13 @@ class FixedBoundedFloatStrategy(SearchStrategy):
         self.upper_bound = upper_bound
 
     def produce(self, random, pv):
-        alpha = pv.p * pv.n
-        beta = (1 - pv.p) * pv.n
-        result = self.lower_bound + (
-            self.upper_bound - self.lower_bound
-        ) * random.betavariate(alpha, beta)
-        return result
+        if pv.leftwards:
+            left = self.lower_bound
+            right = pv.cut
+        else:
+            left = pv.cut
+            right = self.upper_bound
+        return left + random.random() * (right - left)
 
     def simplify(self, value):
         yield self.lower_bound
