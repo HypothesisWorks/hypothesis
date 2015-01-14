@@ -228,13 +228,13 @@ test_can_produce_long_lists_of_negative_integers = define_test(
 )
 
 test_can_produce_floats_near_left = define_test(
-    descriptors.floats_in_range(0, 1), 0.025,
-    lambda t: t < 0.05
+    descriptors.floats_in_range(0, 1), 0.1,
+    lambda t: t < 0.2
 )
 
 test_can_produce_floats_near_right = define_test(
-    descriptors.floats_in_range(0, 1), 0.025,
-    lambda t: t > 0.95
+    descriptors.floats_in_range(0, 1), 0.1,
+    lambda t: t > 0.8
 )
 
 test_can_produce_floats_in_middle = define_test(
@@ -251,11 +251,13 @@ test_can_produce_short_lists = define_test(
 )
 
 test_can_produce_lists_bunched_near_left = define_test(
-    [descriptors.floats_in_range(0, 1)], 0.003,
-    lambda ts: len(ts) >= 20 and all(t < 0.02 for t in ts)
+    [descriptors.floats_in_range(0, 1)], 0.1,
+    lambda ts: all(t < 0.2 for t in ts),
+    condition=long_list,
 )
 
 test_can_produce_lists_bunched_near_right = define_test(
-    [descriptors.floats_in_range(0, 1)], 0.003,
-    lambda ts: len(ts) >= 20 and all(t > 0.98 for t in ts)
+    [descriptors.floats_in_range(0, 1)], 0.1,
+    lambda ts: all(t > 0.8 for t in ts),
+    condition=long_list,
 )
