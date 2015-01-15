@@ -461,3 +461,27 @@ def test_randoms_with_same_seed_and_state_are_equal():
     assert s != t
     t.random()
     assert s == t
+
+
+def test_nice_string_for_sets_is_not_a_dict():
+    assert strat.nice_string(set()) == repr(set())
+    assert strat.nice_string(frozenset()) == repr(frozenset())
+
+
+def test_just_strategy_uses_repr():
+    class WeirdRepr(object):
+        def __repr__(self):
+            return "ABCDEFG"
+
+    assert repr(
+        strategy(descriptors.just(WeirdRepr()))
+    ) == "JustStrategy(value=%r)" % (WeirdRepr(),)
+
+
+def test_just_nice_string_should_respect_its_values_reprs():
+    class Stuff(object):
+        def __repr__(self):
+            return "Things()"
+    assert strat.nice_string(
+        descriptors.Just(Stuff())
+    ) == "Just(value=Things())"

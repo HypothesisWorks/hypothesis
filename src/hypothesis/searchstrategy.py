@@ -37,17 +37,24 @@ def nice_string(xs):
             for k1, v1 in xs.items()
         ) + '}'
     if isinstance(xs, set):
+        if not xs:
+            return repr(xs)
         return '{%s}' % (
             ', '.join(
                 map(nice_string, xs)
             )
         )
     if isinstance(xs, frozenset):
+        if not xs:
+            return repr(xs)
         return "frozenset(%s)" % (nice_string(set(xs)),)
     try:
         return xs.__name__
     except AttributeError:
         pass
+
+    if isinstance(xs, descriptors.Just):
+        return repr(xs)
 
     try:
         d = xs.__dict__
@@ -649,6 +656,9 @@ class JustStrategy(SearchStrategy):
     def __init__(self, value):
         self.descriptor = descriptors.Just(value)
 
+    def __repr__(self):
+        return "JustStrategy(value=%r)" % (self.descriptor.value,)
+
     parameter = params.CompositeParameter()
 
     def produce(self, random, pv):
@@ -664,7 +674,7 @@ class RandomWithSeed(r.Random):
         self.seed = seed
 
     def __repr__(self):
-        return "Random(%s)" % (self.seed,)
+        return "RandomWithSeed(%s)" % (self.seed,)
 
     def __copy__(self):
         r = RandomWithSeed(self.seed)

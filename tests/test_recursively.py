@@ -1,5 +1,8 @@
 from six import binary_type, text_type
-from hypothesis.descriptors import one_of, just, Just
+from hypothesis.descriptors import (
+    just, Just,
+    OneOf
+)
 from six.moves import xrange
 import hypothesis.searchstrategy as strat
 from hypothesis.searchstrategy import SearchStrategy, nice_string
@@ -15,6 +18,9 @@ import time
 from functools import wraps
 import hypothesis.settings as hs
 from random import Random
+from hypothesis.searchstrategy import RandomWithSeed
+
+RandomWithSeed(0)  # Placate flake8
 
 
 class Timeout(BaseException):
@@ -56,7 +62,7 @@ test_table.define_specification_for_instances(
 
 primitive_types = [int, float, text_type, binary_type, bool, complex]
 basic_types = list(primitive_types)
-basic_types.append(one_of(tuple(basic_types)))
+basic_types.append(OneOf(tuple(basic_types)))
 basic_types += [frozenset({x}) for x in basic_types]
 basic_types += [set({x}) for x in basic_types]
 basic_types.append(Random)
@@ -68,7 +74,7 @@ class DescriptorStrategy(SearchStrategy):
 
     def __init__(self):
         self.key_strategy = test_table.strategy(
-            one_of((text_type, binary_type, int, bool))
+            OneOf((text_type, binary_type, int, bool))
         )
         self.parameter = params.CompositeParameter(
             leaf_descriptors=params.NonEmptySubset(basic_types),
@@ -102,6 +108,8 @@ class DescriptorStrategy(SearchStrategy):
     def simplify(self, value):
         if isinstance(value, dict):
             children = list(value.values())
+        elif isinstance(value, Just):
+            return
         elif isinstance(value, (list, set, tuple)):
             children = list(value)
         else:
@@ -173,6 +181,8 @@ UNDESIRABLE_STRINGS = re.compile('|'.join(
 def test_does_not_use_nasty_type_reprs_in_nice_string(desc):
     s = nice_string(desc)
     assert not UNDESIRABLE_STRINGS.findall(s)
+    read_desc = eval(s)
+    assert desc == read_desc
 
 
 def tree_contains_match(t, f):
