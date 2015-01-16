@@ -123,6 +123,9 @@ class SearchStrategy(object):
     def __init__(self):
         pass
 
+    def draw_and_produce(self, random):
+        return self.produce(random, self.parameter.draw(random))
+
     @abstractmethod
     def produce(self, random, parameter_value):
         """Given a random number generator and a value drawn from
