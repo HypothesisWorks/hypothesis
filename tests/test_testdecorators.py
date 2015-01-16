@@ -243,3 +243,12 @@ def test_errors_even_if_does_not_error_on_final_call():
 def test_can_test_sets_sampled_from(xs):
     assert all(isinstance(x, int) for x in xs)
     assert all(0 <= x < 10 for x in xs)
+
+
+mix = one_of((sampled_from([1, 2, 3]), str))
+
+
+@fails
+@given(mix, mix)
+def test_can_mix_sampling_with_generating(x, y):
+    assert type(x) == type(y)

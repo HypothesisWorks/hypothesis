@@ -410,3 +410,17 @@ def test_class_sorter_topologically_sorts_wrt_subclassing(classes, random):
     for i in xrange(n):
         for j in xrange(i+1, n):
             assert not issubclass(in_order[j], in_order[i])
+
+
+def test_correctly_reports_specifications():
+    mapper = SpecificationMapper()
+    mapper.define_specification_for_instances(
+        list,
+        lambda s, d: s.specification_for(d[0]) + 1 if d else 0
+    )
+    mapper.define_specification_for(int, const(1))
+    assert mapper.has_specification_for(int)
+    assert mapper.has_specification_for([int])
+    assert mapper.has_specification_for([])
+    assert not mapper.has_specification_for(str)
+    assert not mapper.has_specification_for([str])
