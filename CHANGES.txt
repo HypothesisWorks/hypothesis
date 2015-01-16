@@ -100,7 +100,19 @@
     * Minor performance optimisation for simplifying long lists.
 
 0.3.2 - TBD
+    * Fix a bug where if you specified floats_in_range with integer arguments
+      Hypothesis would error in example simplification.
+    * Improve the statistical distribution of the floats you get for the
+      floats_in_range strategy. I'm not sure whether this will affect users in
+      practice but it took my tests for various conditions from flaky to rock
+      solid so it at the very least improves discovery of the artificial cases
+      I'm looking for.
+    * Improved repr() for strategies and RandomWithSeed instances.
     * Add detection for flaky test cases where hypothesis managed to find an
       example which breaks it but on the final invocation of the test it does
       not raise an error. This will typically happen with too much recursion
       errors but could conceivably happen in other circumstances too.
+    * Provide a "derandomized" mode. This allows you to run hypothesis with
+      zero real randomization, making your build nice and deterministic. The
+      tests run with a seed calculated from the function they're testing so you
+      should still get a good distribution of test cases.
