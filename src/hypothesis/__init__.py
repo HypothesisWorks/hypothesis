@@ -2,6 +2,7 @@ from hypothesis.verifier import (
     falsify,
     Unfalsifiable,
     Unsatisfiable,
+    Flaky,
     Verifier,
     assume,
 )
@@ -12,6 +13,7 @@ __all__ = [
     'falsify',
     'Unfalsifiable',
     'Unsatisfiable',
+    'Flaky',
     'Verifier',
     'assume',
     'given',

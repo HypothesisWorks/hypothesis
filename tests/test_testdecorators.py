@@ -1,10 +1,11 @@
-from hypothesis import Verifier, assume, Unsatisfiable, given
+from hypothesis import Verifier, assume, Unsatisfiable, given, Flaky
 from hypothesis.descriptors import one_of, just, integers_in_range
 from functools import wraps
 import pytest
 import time
 from six import text_type, binary_type
 import hypothesis.settings as hs
+import inspect
 
 
 def fails_with(e):
@@ -222,3 +223,15 @@ def test_removing_an_element_from_a_non_unique_list(xs, y):
     assume(y in xs)
     xs.remove(y)
     assert y not in xs
+
+
+def test_errors_even_if_does_not_error_on_final_call():
+    @given(int)
+    def rude(x):
+        assert not any(
+            t[3] == 'falsify'
+            for t in inspect.getouterframes(inspect.currentframe())
+        )
+
+    with pytest.raises(Flaky):
+        rude()

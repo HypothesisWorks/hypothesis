@@ -98,3 +98,9 @@
     * Re-export the @given decorator from the main hypothesis namespace. It's
       still available at the old location too.
     * Minor performance optimisation for simplifying long lists.
+
+0.3.2 - TBD
+    * Add detection for flaky test cases where hypothesis managed to find an
+      example which breaks it but on the final invocation of the test it does
+      not raise an error. This will typically happen with too much recursion
+      errors but could conceivably happen in other circumstances too.

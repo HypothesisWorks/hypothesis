@@ -1,5 +1,7 @@
 import time
-from hypothesis.verifier import Verifier, Unfalsifiable, UnsatisfiedAssumption
+from hypothesis.verifier import (
+    Verifier, Unfalsifiable, UnsatisfiedAssumption, Flaky
+)
 
 
 def given(*generator_arguments, **kwargs):
@@ -39,6 +41,10 @@ def given(*generator_arguments, **kwargs):
             # Otherwise we would have swallowed all the reports of it actually
             # having gone wrong.
             test(*(arguments + falsifying_example[0]), **falsifying_example[1])
+
+            # If we get here then something has gone wrong: We found a counter
+            # example but it didn't fail when we invoked it again.
+            raise Flaky(test, falsifying_example)
         wrapped_test.__name__ = test.__name__
         wrapped_test.__doc__ = test.__doc__
         return wrapped_test
