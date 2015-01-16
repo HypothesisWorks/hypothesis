@@ -227,8 +227,8 @@ class FixedBoundedFloatStrategy(SearchStrategy):
     )
 
     def __init__(self, lower_bound, upper_bound):
-        self.lower_bound = lower_bound
-        self.upper_bound = upper_bound
+        self.lower_bound = float(lower_bound)
+        self.upper_bound = float(upper_bound)
 
     def produce(self, random, pv):
         if pv.leftwards:

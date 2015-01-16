@@ -485,3 +485,9 @@ def test_just_nice_string_should_respect_its_values_reprs():
     assert strat.nice_string(
         descriptors.Just(Stuff())
     ) == "Just(value=Things())"
+
+
+def test_fixed_bounded_float_strategy_converts_its_args():
+    st = strat.FixedBoundedFloatStrategy(0, 1)
+    for t in st.simplify(0.5):
+        assert st.could_have_produced(t)
