@@ -85,6 +85,13 @@ class SpecificationMapper(object):
         self.__descriptor_cache[k] = r
         return r
 
+    def has_specification_for(self, descriptor):
+        try:
+            self.specification_for(descriptor)
+            return True
+        except MissingSpecification:
+            return False
+
     def __find_specification_handlers_for(self, descriptor):
         if safe_in(descriptor, self.value_mappers):
             for h in reversed(self.value_mappers[descriptor]):

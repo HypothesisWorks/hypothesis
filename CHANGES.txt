@@ -116,3 +116,5 @@
       zero real randomization, making your build nice and deterministic. The
       tests run with a seed calculated from the function they're testing so you
       should still get a good distribution of test cases.
+    * Add a mechanism for more conveniently defining tests which just sample
+      from some elements.

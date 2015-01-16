@@ -702,3 +702,16 @@ class RandomStrategy(SearchStrategy):
 
     def could_have_produced(self, value):
         return isinstance(value, RandomWithSeed)
+
+
+class SampledFromStrategy(SearchStrategy):
+    def __init__(self, elements):
+        self.elements = tuple(elements)
+        self.descriptor = descriptors.SampledFrom(self.elements)
+        self.parameter = params.NonEmptySubset(self.elements)
+
+    def produce(self, random, pv):
+        return random.choice(pv)
+
+    def could_have_produced(self, value):
+        return value in self.elements

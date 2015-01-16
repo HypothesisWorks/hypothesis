@@ -1,5 +1,7 @@
 from hypothesis import Verifier, assume, Unsatisfiable, given, Flaky
-from hypothesis.descriptors import one_of, just, integers_in_range
+from hypothesis.descriptors import (
+    one_of, just, integers_in_range, sampled_from
+)
 from functools import wraps
 import pytest
 import time
@@ -235,3 +237,9 @@ def test_errors_even_if_does_not_error_on_final_call():
 
     with pytest.raises(Flaky):
         rude()
+
+
+@given(set([sampled_from(list(range(10)))]))
+def test_can_test_sets_sampled_from(xs):
+    assert all(isinstance(x, int) for x in xs)
+    assert all(0 <= x < 10 for x in xs)

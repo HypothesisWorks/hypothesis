@@ -29,3 +29,10 @@ FloatRange = namedtuple('FloatRange', ('start', 'end'))
 
 def floats_in_range(start, end):
     return FloatRange(start, end)
+
+
+SampledFrom = namedtuple('SampledFrom', ('elements,'))
+
+
+def sampled_from(elements):
+    return SampledFrom(tuple(elements))

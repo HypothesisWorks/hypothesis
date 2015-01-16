@@ -126,3 +126,8 @@ def define_strategy_for_float_Range(strategies, descriptor):
 @strategy_for(Random)
 def define_random_strategy(strategies, descriptor):
     return strat.RandomStrategy()
+
+
+@strategy_for_instances(descriptors.SampledFrom)
+def define_sampled_strategy(strategies, descriptor):
+    return strat.SampledFromStrategy(descriptor.elements)
