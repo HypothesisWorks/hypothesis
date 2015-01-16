@@ -177,6 +177,36 @@ can be a bit confusing. This is something that will improve when Hypothesis gets
 its own test runner. In the meantime though it will give you correct answers even
 if the display is a bit off.
 
+You can also control the behaviour of Hypothesis by altering the settings
+object. You can either do this by passing in an explicit settings object or
+modifying the defaults:
+
+
+.. code:: python
+
+    import hypothesis.settings as hs
+
+    hs.settings.default.max_examples = 500
+
+    @given([int], settings=hs.Settings(timeout=10))
+    def test_something(xs):
+        something(hs)
+
+
+Any changes you make to the default parameter will be inherited in any settings
+you create unless you explicitly override them.
+
+The three settings which are available as part of the stable API are:
+
+    * timeout - try not to take more than this many seconds to falsify
+    * max_examples - stop looking for new examples after this many have been considered
+    * derandomize - run in deterministic mode, where the random seed for each run is
+      determined as a hash of the function to test. This allows you to run your builds
+      in such a way that failure is not random. It does decrease their power somewhat
+      in that it means they will never discover new examples, but it may make it
+      better to use in some situations where you e.g. have a large number of tests
+      running in CI. If you use this setting you may wish to raise timeout and max_examples.
+
 ---------
 Stability
 ---------

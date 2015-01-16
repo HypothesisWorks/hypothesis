@@ -1,4 +1,27 @@
 class Settings(object):
+    """
+    A settings object controls a variety of parameters that are used in
+    falsification. There is a single default settings object that all other
+    Settings will use as its values s defaults.
+
+    Not all settings parameters are guaranteed to be stable. However the
+    following are:
+
+    max_examples: Once this many examples have been considered without finding
+        any counter-example, falsify will terminate
+    timeout: Once this amount of time has passed, falsify will terminate even
+        if it has not found many examples. This is a soft rather than a hard
+        limit - Hypothesis won't e.g. interrupt execution of the called
+        function to stop it.
+    derandomize: If this is True then hypothesis will run in deterministic mode
+        where each falsification uses a random number generator that is seeded
+        based on the hypothesis to falsify, which will be consistent across
+        multiple runs. This has the advantage that it will eliminate any
+        randomness from your tests, which may be preferable for some situations
+        . It does have the disadvantage of making your tests less likely to
+        find novel breakages.
+
+    """
     def __init__(
         self,
         min_satisfying_examples=None,
