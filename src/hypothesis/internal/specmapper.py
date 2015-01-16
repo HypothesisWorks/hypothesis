@@ -105,8 +105,9 @@ class SpecificationMapper(object):
                 yield h
 
     def __instance_handlers(self, tk):
-        for c, hs in sorted(
-                self.instance_mappers.items(), key=lambda x: ClassSorter(x[0])
+        for c, hs in sort_in_subclass_order(
+                self.instance_mappers.items(),
+                lambda x: x[0],
         ):
             if issubclass(tk, c):
                 for h in reversed(hs):
@@ -116,19 +117,36 @@ class SpecificationMapper(object):
         raise MissingSpecification(descriptor)
 
 
-@total_ordering
-class ClassSorter(object):
+def sort_in_subclass_order(xs, get_class=lambda x: x):
+    if len(xs) <= 1:
+        return list(xs)
+    by_class = {}
+    for x in xs:
+        c = get_class(x)
+        by_class.setdefault(c, []).append(x)
+    classes = list(by_class.keys())
+    subclasses = {}
+    for c in classes:
+        children = subclasses.setdefault(c, [])
+        for d in classes:
+            if c != d and issubclass(d, c):
+                children.append(d)
+    in_order = []
 
-    def __init__(self, cls):
-        self.cls = cls
+    def recurse(c):
+        if c in in_order:
+            return
+        for d in subclasses[c]:
+            recurse(d)
+        in_order.append(c)
 
-    def __lt__(self, that):
-        if issubclass(self.cls, that.cls):
-            return True
-        elif issubclass(that.cls, self.cls):
-            return False
-        else:
-            return self.cls.__name__ < that.cls.__name__
+    while classes:
+        recurse(classes.pop())
+    return [
+        x
+        for c in in_order
+        for x in by_class[c]
+    ]
 
 
 def typekey(x):

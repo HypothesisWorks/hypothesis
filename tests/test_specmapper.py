@@ -1,8 +1,11 @@
 from hypothesis.internal.specmapper import (
     SpecificationMapper,
     MissingSpecification,
-    next_in_chain
+    next_in_chain,
+    sort_in_subclass_order,
 )
+from hypothesis import given
+from hypothesis.descriptors import sampled_from
 import pytest
 from collections import namedtuple
 import random
@@ -306,3 +309,104 @@ def test_specifications_will_match_on_subclasses():
         s.define_specification_for_instances(c, trivial(i))
         assert s.specification_for(c()) == i
         values[c] = i
+
+
+class A(object):
+    pass
+
+
+class AA(A):
+    pass
+
+
+class AAA(AA):
+    pass
+
+
+class AAB(AA):
+    pass
+
+
+class AB(A):
+    pass
+
+
+class ABA(AB):
+    pass
+
+
+class ABB(AB):
+    pass
+
+
+class B(object):
+    pass
+
+
+class BA(B):
+    pass
+
+
+class BAA(BA):
+    pass
+
+
+class BAB(BA):
+    pass
+
+
+class BB(B):
+    pass
+
+
+class BBA(BB):
+    pass
+
+
+class BBB(AB):
+    pass
+
+
+all_test_classes = [
+    A, AA, AAA, AAB, AB, ABA, ABB,
+    B, BA, BAA, BAB, BB, BBA, BBB
+]
+
+
+def find_most_specific(x, classes):
+    best = None
+    for c in classes:
+        if isinstance(x, c):
+            if best is None or issubclass(c, best):
+                best = c
+    return best
+
+
+@given({sampled_from(all_test_classes)}, random.Random)
+def test_chooses_most_specific_subclass(classes, r):
+    classes = list(classes)
+    random.shuffle(classes)
+    classes = tuple(classes)
+    mapper = SpecificationMapper()
+    for i in xrange(len(classes)):
+        mapper.define_specification_for_instances(
+            classes[i],
+            const(i),
+        )
+    for c in all_test_classes:
+        if issubclass(c, classes):
+            x = c()
+            correct_choice = find_most_specific(x, classes)
+            i = mapper.specification_for(x)
+            assert i == classes.index(correct_choice)
+
+
+@given({sampled_from(all_test_classes)}, random.Random)
+def test_class_sorter_topologically_sorts_wrt_subclassing(classes, random):
+    classes = list(classes)
+    random.shuffle(classes)
+    in_order = sort_in_subclass_order(classes)
+    n = len(classes)
+    for i in xrange(n):
+        for j in xrange(i+1, n):
+            assert not issubclass(in_order[j], in_order[i])

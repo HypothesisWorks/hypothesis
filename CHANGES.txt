@@ -117,4 +117,12 @@
       tests run with a seed calculated from the function they're testing so you
       should still get a good distribution of test cases.
     * Add a mechanism for more conveniently defining tests which just sample
-      from some elements.
+      from some collection.
+    * Fix for a really subtle bug deep in the internals of the strategy table.
+      In some circumstances if you were to define instance stratagies for both
+      a parent class and one or more of its subclasses you would under some
+      circumstances get the strategy for the wrong superclass of an instance.
+      It is very unlikely anyone has ever encountered this in the wild, but it
+      is conceivably possible given that a mix of namedtuple and tuple are used
+      fairly extensively inside hypothesis which do exhibit this pattern of
+      strategy.
