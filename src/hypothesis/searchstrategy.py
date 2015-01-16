@@ -4,8 +4,8 @@ import hypothesis.internal.utils.distributions as dist
 
 import inspect
 from abc import abstractmethod
-from six.moves import xrange
-from six import text_type, binary_type, integer_types
+from hypothesis.internal.compat import xrange
+from hypothesis.internal.compat import text_type, binary_type, integer_types
 import string
 import random as r
 import hypothesis.descriptors as descriptors

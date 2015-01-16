@@ -1,6 +1,6 @@
 from hypothesis.internal.specmapper import SpecificationMapper
 import hypothesis.searchstrategy as strat
-from six import text_type, binary_type
+from hypothesis.internal.compat import text_type, binary_type
 import hypothesis.descriptors as descriptors
 from random import Random
 

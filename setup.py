@@ -41,6 +41,5 @@ setup(
     ],
     long_description=open('README.rst').read(),
     tests_require=['pytest', 'pytest-timeout', 'flake8'],
-    install_requires=['six'],
     cmdclass={'test': PyTest},
 )

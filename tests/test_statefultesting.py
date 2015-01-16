@@ -10,7 +10,7 @@ from hypothesis.statefultesting import (
 import pytest
 from hypothesis import Unfalsifiable
 
-from six.moves import xrange
+from hypothesis.internal.compat import xrange
 
 
 class Foo(StatefulTest):

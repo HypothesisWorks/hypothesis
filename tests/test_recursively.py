@@ -1,9 +1,9 @@
-from six import binary_type, text_type
+from hypothesis.internal.compat import binary_type, text_type
 from hypothesis.descriptors import (
     just, Just,
     OneOf
 )
-from six.moves import xrange
+from hypothesis.internal.compat import xrange
 import hypothesis.searchstrategy as strat
 from hypothesis.searchstrategy import SearchStrategy, nice_string
 from hypothesis.strategytable import StrategyTable

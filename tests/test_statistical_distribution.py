@@ -15,7 +15,7 @@ import hypothesis.internal.utils.reflection as reflection
 import random
 from hypothesis.strategytable import StrategyTable
 import hypothesis.descriptors as descriptors
-from six.moves import xrange
+from hypothesis.internal.compat import xrange
 import re
 import pytest
 

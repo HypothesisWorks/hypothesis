@@ -4,8 +4,8 @@ import hypothesis.descriptors as descriptors
 import hypothesis.params as params
 from hypothesis.internal.tracker import Tracker
 from collections import namedtuple
-from six.moves import xrange
-from six import text_type, binary_type
+from hypothesis.internal.compat import xrange
+from hypothesis.internal.compat import text_type, binary_type
 import random
 import pytest
 

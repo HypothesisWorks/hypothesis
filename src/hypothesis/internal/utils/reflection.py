@@ -4,8 +4,7 @@ really unreasonable lengths to produce pretty output.
 """
 
 import inspect
-from six.moves import xrange
-import six
+from hypothesis.internal.compat import xrange, ARG_NAME_ATTRIBUTE
 import types
 import ast
 import re
@@ -88,12 +87,6 @@ def extract_all_lambdas(tree):
     Visitor().visit(tree)
 
     return lambdas
-
-
-if six.PY3:  # pragma: no branch
-    ARG_NAME_ATTRIBUTE = 'arg'  # pragma: no cover
-else:
-    ARG_NAME_ATTRIBUTE = 'id'   # pragma: no cover
 
 
 def args_for_lambda_ast(l):

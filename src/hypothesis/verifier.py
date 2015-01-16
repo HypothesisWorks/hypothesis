@@ -1,7 +1,7 @@
 from hypothesis.strategytable import StrategyTable
 from random import Random
 import time
-from six.moves import xrange
+from hypothesis.internal.compat import xrange
 import hypothesis.settings as hs
 from hypothesis.internal.utils.reflection import (
     get_pretty_function_description, function_digest

@@ -9,7 +9,7 @@ from hypothesis.descriptors import sampled_from
 import pytest
 from collections import namedtuple
 import random
-from six.moves import xrange
+from hypothesis.internal.compat import xrange
 
 
 def setup_function(fn):

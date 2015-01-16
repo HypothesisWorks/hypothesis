@@ -21,11 +21,11 @@ from hypothesis.strategytable import (
 from collections import namedtuple
 import pytest
 import re
-from six.moves import xrange
+from hypothesis.internal.compat import xrange
 import hypothesis.params as params
 import hypothesis.settings as hs
 import time
-from six import binary_type, text_type
+from hypothesis.internal.compat import binary_type, text_type
 from random import Random
 
 

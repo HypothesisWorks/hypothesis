@@ -5,7 +5,7 @@ from hypothesis.descriptors import (
 from functools import wraps
 import pytest
 import time
-from six import text_type, binary_type
+from hypothesis.internal.compat import text_type, binary_type
 import hypothesis.settings as hs
 import inspect
 
