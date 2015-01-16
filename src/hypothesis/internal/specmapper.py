@@ -1,4 +1,4 @@
-from functools import wraps, total_ordering
+from functools import wraps
 from hypothesis.internal.utils.hashitanyway import HashItAnyway
 
 
