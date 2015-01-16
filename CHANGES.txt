@@ -99,7 +99,7 @@
       still available at the old location too.
     * Minor performance optimisation for simplifying long lists.
 
-0.3.2 - TBD
+0.3.2 - 16/01/2015
     * Fix a bug where if you specified floats_in_range with integer arguments
       Hypothesis would error in example simplification.
     * Improve the statistical distribution of the floats you get for the
