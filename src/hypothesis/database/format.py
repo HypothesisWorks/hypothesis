@@ -206,12 +206,16 @@ class TupleFormat(Format):
         self.tuple_formats = tuple(tuple_formats)
 
     def to_json(self, value):
+        if len(self.tuple_formats) == 1:
+            return self.tuple_formats[0].to_json(value[0])
         return [
             f.to_json(v)
             for f, v in zip(self.tuple_formats, value)
         ]
 
     def from_json(self, value):
+        if len(self.tuple_formats) == 1:
+            return (self.tuple_formats[0].from_json(value),)
         return tuple(
             f.from_json(v)
             for f, v in zip(self.tuple_formats, value)

@@ -27,6 +27,7 @@ def run_round_trip(descriptor, value):
 
 @pytest.mark.parametrize(("descriptor", "value"), (
     (int, 1),
+    ((int,), (1,)),
     (complex, complex(1, 1)),
     ({int}, {1}),
     (str, ''),
@@ -41,7 +42,6 @@ def run_round_trip(descriptor, value):
         [[[]]]),
 ))
 def test_simple_example_set(descriptor, value):
-    print(descriptor, value)
     run_round_trip(descriptor, value)
 
 
