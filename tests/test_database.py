@@ -51,3 +51,11 @@ def test_simple_example_set(descriptor, value):
 ))
 def test_can_round_trip_a_single_value_through_the_database(dav):
     run_round_trip(dav.descriptor, dav.value)
+
+
+def test_a_verifier_saves_any_failing_examples_in_its_database():
+    database = ExampleDatabase()
+    verifier = Verifier(settings=hs.Settings(database=database))
+    counterexample = verifier.falsify(lambda x: x > 0, int)
+    saved = list(database.storage_for((int,)).fetch())
+    assert saved == [counterexample]

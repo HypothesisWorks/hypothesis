@@ -41,6 +41,7 @@ class Verifier(object):
         self.max_skipped_examples = settings.max_skipped_examples
         self.max_examples = settings.max_examples
         self.timeout = settings.timeout
+        self.database = settings.database
         if settings.derandomize and random:
             raise ValueError(
                 'A verifier cannot both be derandomized and have a random '
@@ -67,6 +68,10 @@ class Verifier(object):
 
         search_strategy = (
             self.strategy_table.specification_for(argument_types))
+        if self.database is None:
+            storage = None
+        else:
+            storage = self.database.storage_for(argument_types)
 
         def falsifies(args):  # pylint: disable=missing-docstring
             try:
@@ -179,6 +184,9 @@ class Verifier(object):
             best_example = simpler
             if time_to_call_it_a_day():
                 break
+
+        if storage is not None:
+            storage.save(best_example)
 
         return best_example
 

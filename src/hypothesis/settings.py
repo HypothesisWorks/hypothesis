@@ -39,11 +39,13 @@ class Settings(object):
             max_skipped_examples=None,
             timeout=None,
             derandomize=None,
+            database=None,
     ):
         self.min_satisfying_examples = (
             min_satisfying_examples or default.min_satisfying_examples)
         self.max_examples = max_examples or default.max_examples
         self.timeout = timeout or default.timeout
+        self.database = database or default.database
         self.max_skipped_examples = (
             max_skipped_examples or default.max_skipped_examples)
         if derandomize is None:
@@ -58,4 +60,8 @@ default = Settings(
     timeout=60,
     max_skipped_examples=50,
     derandomize=False,
+    # Silly hack so that we don't have it try to look up a value on itself
+    # before it has been assigned.
+    database=object(),
 )
+default.database = None
