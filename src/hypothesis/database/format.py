@@ -1,7 +1,7 @@
 from hypothesis.searchstrategy import RandomWithSeed
 from random import Random
 from hypothesis.strategytable import StrategyTable
-from hypothesis.descriptors import one_of, Just, OneOf
+from hypothesis.descriptors import one_of, Just, OneOf, SampledFrom
 from abc import abstractmethod
 from hypothesis.internal.specmapper import SpecificationMapper
 from hypothesis.internal.compat import text_type, binary_type, xrange
@@ -309,3 +309,21 @@ FormatTable.default().define_specification_for_instances(
 )
 
 
+class SampledFromFormat(Format):
+    """
+    A SampledFrom instance is simply stored as an integer index into the list
+    of values sampled from.
+    """
+    def __init__(self, choices):
+        self.choices = tuple(choices)
+
+    def to_json(self, value):
+        return self.choices.index(value)
+
+    def from_json(self, value):
+        return self.choices[value]
+
+
+FormatTable.default().define_specification_for_instances(
+    SampledFrom, lambda s, d: SampledFromFormat(d.elements)
+)

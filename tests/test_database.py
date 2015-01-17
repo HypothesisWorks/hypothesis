@@ -1,6 +1,6 @@
 from hypothesis.database import ExampleDatabase
 from hypothesis.searchstrategy import RandomWithSeed
-from hypothesis.descriptors import Just, one_of
+from hypothesis.descriptors import Just, one_of, sampled_from
 from random import Random
 from tests.common.descriptors import DescriptorWithValue
 from tests.common import small_table
@@ -40,6 +40,7 @@ def run_round_trip(descriptor, value):
         [{int}],
         [[{int}]]],
         [[[]]]),
+    (sampled_from(elements=(1,)), 1),
 ))
 def test_simple_example_set(descriptor, value):
     run_round_trip(descriptor, value)
