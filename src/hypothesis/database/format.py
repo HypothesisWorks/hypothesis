@@ -306,7 +306,6 @@ class OneOfFormat(Format):
         for i in hrange(len(self.formats)):
             if self.strategies[i].could_have_produced(value):
                 return [i, self.formats[i].to_json(value)]
-        raise ValueError("Invalid value %r for format" % (value,))
 
     def from_json(self, value):
         i, x = value
