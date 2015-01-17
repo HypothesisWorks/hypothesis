@@ -136,3 +136,5 @@
     * Drop dependency on six for cross-version compatibility. It was easy
       enough to write the shim for the small set of features that we care about
       and this lets us avoid a moderately complex dependency.
+    * Fix a bug where sampled_from would not work correctly on a single element
+      list.

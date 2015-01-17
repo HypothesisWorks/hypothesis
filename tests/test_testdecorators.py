@@ -291,3 +291,8 @@ def test_does_not_print_on_success():
     out = out.getvalue()
     lines = [l.strip() for l in out.split('\n')]
     assert all(not l for l in lines)
+
+
+@given(sampled_from([1]))
+def test_can_sample_from_single_element(x):
+    assert x == 1

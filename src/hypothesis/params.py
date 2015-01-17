@@ -126,7 +126,7 @@ class NonEmptySubset(Parameter):
 
     def draw(self, random):
         if len(self.elements) == 1:
-            return self.elements[0]
+            return [self.elements[0]]
         result = []
         while not result:
             result = [
