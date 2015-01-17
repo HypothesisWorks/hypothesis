@@ -252,3 +252,9 @@ mix = one_of((sampled_from([1, 2, 3]), str))
 @given(mix, mix)
 def test_can_mix_sampling_with_generating(x, y):
     assert type(x) == type(y)
+
+
+@fails
+@given(frozenset([int]))
+def test_can_find_large_sum_frozenset(xs):
+    assert sum(xs) < 100

@@ -468,6 +468,10 @@ def test_nice_string_for_sets_is_not_a_dict():
     assert strat.nice_string(frozenset()) == repr(frozenset())
 
 
+def test_non_empty_frozensets_should_use_set_representation():
+    assert strat.nice_string(frozenset([int])) == "frozenset({int})"
+
+
 def test_just_strategy_uses_repr():
     class WeirdRepr(object):
         def __repr__(self):
