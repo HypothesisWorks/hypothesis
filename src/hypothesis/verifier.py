@@ -2,6 +2,7 @@
 the various errors it may throw."""
 
 from hypothesis.strategytable import StrategyTable
+from hypothesis.database.format import NotSerializeable
 from random import Random
 import time
 from hypothesis.internal.compat import hrange
@@ -68,10 +69,12 @@ class Verifier(object):
 
         search_strategy = (
             self.strategy_table.specification_for(argument_types))
-        if self.database is None:
-            storage = None
-        else:
-            storage = self.database.storage_for(argument_types)
+        storage = None
+        if self.database is not None:
+            try:
+                storage = self.database.storage_for(argument_types)
+            except NotSerializeable:
+                pass
 
         def falsifies(args):  # pylint: disable=missing-docstring
             try:

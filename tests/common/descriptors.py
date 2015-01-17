@@ -1,4 +1,4 @@
-from hypothesis.internal.compat import binary_type, text_type, xrange
+from hypothesis.internal.compat import binary_type, text_type, hrange
 from hypothesis.descriptors import (
     just, Just,
     OneOf, sampled_from, SampledFrom
@@ -9,6 +9,7 @@ from hypothesis.internal.utils.distributions import geometric, biased_coin
 from random import Random
 from collections import namedtuple
 from tests.common import small_table
+from hypothesis.database.format import FormatTable
 
 primitive_types = [int, float, text_type, binary_type, bool, complex]
 basic_types = list(primitive_types)
@@ -21,6 +22,9 @@ branch_types = [dict, tuple, list]
 Descriptor = namedtuple('Descriptor', ('descriptor',))
 DescriptorWithValue = namedtuple(
     'DescriptorWithValue', ('descriptor', 'value', 'parameter', 'random'))
+
+FormatTable.default().mark_not_serializeable(Descriptor)
+FormatTable.default().mark_not_serializeable(DescriptorWithValue)
 
 
 class DescriptorStrategy(SearchStrategy):
@@ -56,7 +60,7 @@ class DescriptorStrategy(SearchStrategy):
             if elements:
                 return sampled_from(elements)
 
-        children = [self.produce(random, pv) for _ in xrange(n_children)]
+        children = [self.produce(random, pv) for _ in hrange(n_children)]
         combiner = random.choice(pv.branch_descriptors)
         if combiner != dict:
             return combiner(children)

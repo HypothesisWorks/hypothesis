@@ -1,10 +1,24 @@
 from hypothesis.searchstrategy import RandomWithSeed
 from random import Random
+from hypothesis.searchstrategy import nice_string
 from hypothesis.strategytable import StrategyTable
 from hypothesis.descriptors import one_of, Just, OneOf, SampledFrom
 from abc import abstractmethod
 from hypothesis.internal.specmapper import SpecificationMapper
-from hypothesis.internal.compat import text_type, binary_type, xrange
+from hypothesis.internal.compat import text_type, binary_type, hrange
+
+
+class NotSerializeable(Exception):
+    def __init__(self, descriptor):
+        super(NotSerializeable, self).__init__(
+            "%s does not describe a serializeable type" % (
+                nice_string(descriptor),
+            )
+        )
+
+
+def not_serializeable(s, d):
+    raise NotSerializeable(d)
 
 
 class FormatTable(SpecificationMapper):
@@ -16,6 +30,9 @@ class FormatTable(SpecificationMapper):
     def __init__(self, strategy_table=None):
         super(FormatTable, self).__init__()
         self.strategy_table = strategy_table or StrategyTable.default()
+
+    def mark_not_serializeable(self, descriptor):
+        self.define_specification_for(descriptor, not_serializeable)
 
     def missing_specification(self, descriptor):
         return generic_format
@@ -286,7 +303,7 @@ class OneOfFormat(Format):
         self.strategies = strategies
 
     def to_json(self, value):
-        for i in xrange(len(self.formats)):
+        for i in hrange(len(self.formats)):
             if self.strategies[i].could_have_produced(value):
                 return [i, self.formats[i].to_json(value)]
         raise ValueError("Invalid value %r for format" % (value,))
