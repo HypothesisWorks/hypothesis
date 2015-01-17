@@ -1,7 +1,7 @@
 from hypothesis.internal.compat import binary_type, text_type, xrange
 from hypothesis.descriptors import (
     just, Just,
-    OneOf
+    OneOf, sampled_from, SampledFrom
 )
 from hypothesis.searchstrategy import SearchStrategy, RandomWithSeed
 import hypothesis.params as params
@@ -30,12 +30,15 @@ class DescriptorStrategy(SearchStrategy):
         self.key_strategy = small_table.strategy(
             OneOf((text_type, binary_type, int, bool))
         )
+        self.sampling_strategy = small_table.strategy(primitive_types)
         self.parameter = params.CompositeParameter(
             leaf_descriptors=params.NonEmptySubset(basic_types),
             branch_descriptors=params.NonEmptySubset(branch_types),
             branch_factor=params.UniformFloatParameter(0.6, 0.99),
             key_parameter=self.key_strategy.parameter,
             just_probability=params.UniformFloatParameter(0, 0.45),
+            sampling_probability=params.UniformFloatParameter(0, 0.45),
+            sampling_param=self.sampling_strategy.parameter,
         )
 
     def produce(self, random, pv):
@@ -47,6 +50,11 @@ class DescriptorStrategy(SearchStrategy):
             child_strategy = small_table.strategy(new_desc)
             pv2 = child_strategy.parameter.draw(random)
             return just(child_strategy.produce(random, pv2))
+        elif n_children == 1 and biased_coin(random, pv.sampling_probability):
+            elements = self.sampling_strategy.produce(
+                random, pv.sampling_param)
+            if elements:
+                return sampled_from(elements)
 
         children = [self.produce(random, pv) for _ in xrange(n_children)]
         combiner = random.choice(pv.branch_descriptors)
@@ -62,7 +70,7 @@ class DescriptorStrategy(SearchStrategy):
     def simplify(self, value):
         if isinstance(value, dict):
             children = list(value.values())
-        elif isinstance(value, Just):
+        elif isinstance(value, (Just, SampledFrom)):
             return
         elif isinstance(value, (list, set, tuple)):
             children = list(value)

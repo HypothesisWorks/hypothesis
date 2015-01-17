@@ -1,6 +1,6 @@
 from hypothesis.internal.compat import binary_type, text_type
 from hypothesis.descriptors import (
-    Just, just, OneOf
+    Just, just, OneOf, SampledFrom
 )
 from hypothesis.searchstrategy import nice_string
 from hypothesis.testdecorators import given
@@ -17,7 +17,7 @@ from tests.common.descriptors import Descriptor, primitive_types
 from tests.common import small_table
 
 # Placate flake8
-[OneOf, just, Just, RandomWithSeed]
+[OneOf, just, Just, RandomWithSeed, SampledFrom]
 
 
 class Timeout(BaseException):
@@ -51,7 +51,7 @@ def size(descriptor):
         return 1
     elif isinstance(descriptor, dict):
         children = descriptor.values()
-    elif isinstance(descriptor, Just):
+    elif isinstance(descriptor, (Just, SampledFrom)):
         return 1
     else:
         try:
