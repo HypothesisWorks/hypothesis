@@ -437,6 +437,12 @@ class ListStrategy(SearchStrategy):
 
         return mix_generators(*generators)
 
+    def could_have_produced(self, value):
+        return isinstance(value, list) and all(
+            self.element_strategy.could_have_produced(x)
+            for x in value
+        )
+
 
 class MappedSearchStrategy(SearchStrategy):
     def __init__(self, descriptor, strategy):
@@ -450,14 +456,29 @@ class MappedSearchStrategy(SearchStrategy):
 
     @abstractmethod
     def pack(self, x):
+        """
+        Take a value produced by the underlying mapped_strategy and turn it
+        into a value suitable for outputting from this strategy
+        """
         pass  # pragma: no cover
 
     @abstractmethod
     def unpack(self, x):
+        """
+        Take a value produced from pack and convert it back to a value that
+        could have been produced by the underlying strategy
+        """
         pass  # pragma: no cover
 
     def produce(self, random, pv):
         return self.pack(self.mapped_strategy.produce(random, pv))
+
+    def could_have_produced(self, value):
+        return super(MappedSearchStrategy, self).could_have_produced(
+            value
+        ) and self.mapped_strategy.could_have_produced(
+            self.unpack(value)
+        )
 
     def simplify(self, x):
         unpacked = self.unpack(x)

@@ -491,3 +491,13 @@ def test_fixed_bounded_float_strategy_converts_its_args():
     st = strat.FixedBoundedFloatStrategy(0, 1)
     for t in st.simplify(0.5):
         assert st.could_have_produced(t)
+
+
+def test_list_distinguishes_on_elements():
+    s = strategy([int])
+    assert not s.could_have_produced([(1, 2)])
+
+
+def test_set_distinguishes_on_elements():
+    s = strategy({int})
+    assert not s.could_have_produced({(1, 2)})

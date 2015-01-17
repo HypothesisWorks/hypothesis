@@ -126,3 +126,10 @@
       is conceivably possible given that a mix of namedtuple and tuple are used
       fairly extensively inside hypothesis which do exhibit this pattern of
       strategy.
+
+0.3.3 - TBD
+    * could_have_produced for lists and other collections would not have
+      examined the elements and thus when using a union of different types of
+      list this could result in Hypothesis getting confused and passing a value
+      to the wrong strategy. This could potentially result in exceptions being
+      thrown from within simplification.
