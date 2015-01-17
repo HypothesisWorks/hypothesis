@@ -4,6 +4,7 @@ Either an explicit Settings object can be used or the default object on
 this module can be modified.
 
 """
+import os
 
 
 class Settings(object):
@@ -65,3 +66,12 @@ default = Settings(
     database=object(),
 )
 default.database = None
+
+DATABASE_OVERRIDE = os.getenv('HYPOTHESIS_DATABASE_FILE')
+
+if DATABASE_OVERRIDE:
+    from hypothesis.database import ExampleDatabase
+    from hypothesis.database.backend import SQLiteBackend
+    default.database = ExampleDatabase(
+        backend=SQLiteBackend(DATABASE_OVERRIDE)
+    )
