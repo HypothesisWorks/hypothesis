@@ -133,3 +133,6 @@
       list this could result in Hypothesis getting confused and passing a value
       to the wrong strategy. This could potentially result in exceptions being
       thrown from within simplification.
+    * Drop dependency on six for cross-version compatibility. It was easy
+      enough to write the shim for the small set of features that we care about
+      and this lets us avoid a moderately complex dependency.
