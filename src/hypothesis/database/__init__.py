@@ -2,7 +2,7 @@ from hypothesis.searchstrategy import nice_string
 import json
 from hypothesis.internal.utils.hashitanyway import HashItAnyway
 from hypothesis.database.format import FormatTable
-from hypothesis.database.backend import InMemoryBackend
+from hypothesis.database.backend import SQLiteBackend
 
 
 class Storage(object):
@@ -47,7 +47,7 @@ class ExampleDatabase(object):
     ):
         self.formats = formats or FormatTable.default()
         self.strategies = self.formats.strategy_table
-        self.backend = backend or InMemoryBackend()
+        self.backend = backend or SQLiteBackend()
         self.storage_cache = {}
 
     def storage_for(self, descriptor):

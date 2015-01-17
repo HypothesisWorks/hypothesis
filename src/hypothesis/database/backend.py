@@ -20,27 +20,8 @@ class Backend(object):
         """
 
 
-class InMemoryBackend(Backend):
-    """
-    The default implementation.
-
-    This backend simply saves the values in a dict. It's not very useful
-    except in that it may speed up cases where the same example can fail
-    multiple tests.
-    """
-    def __init__(self):
-        self.data = {}
-
-    def save(self, key, value):
-        self.data.setdefault(key, set()).add(value)
-
-    def fetch(self, key):
-        for v in self.data.get(key, ()):
-            yield v
-
-
 class SQLiteBackend(Backend):
-    def __init__(self, path):
+    def __init__(self, path=":memory:"):
         self.connection = sqlite3.connect(path)
         self.db_created = False
 
