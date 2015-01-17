@@ -69,7 +69,9 @@ default.database = None
 
 DATABASE_OVERRIDE = os.getenv('HYPOTHESIS_DATABASE_FILE')
 
-if DATABASE_OVERRIDE:
+# This is tested outside the main tests which run coverage because it is per
+# process
+if DATABASE_OVERRIDE:  # pragma: no branch
     from hypothesis.database import ExampleDatabase
     from hypothesis.database.backend import SQLiteBackend
     default.database = ExampleDatabase(

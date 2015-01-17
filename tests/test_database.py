@@ -1,4 +1,5 @@
 from hypothesis.database import ExampleDatabase
+from hypothesis.database.format import FormatTable
 from hypothesis.searchstrategy import RandomWithSeed
 from hypothesis.descriptors import Just, one_of, sampled_from
 from random import Random
@@ -7,6 +8,9 @@ from tests.common import small_table
 from hypothesis import given, Verifier
 import pytest
 import hypothesis.settings as hs
+from hypothesis.searchstrategy import SearchStrategy
+from hypothesis.strategytable import StrategyTable
+import hypothesis.params as params
 
 
 def test_deduplicates():
@@ -76,3 +80,41 @@ def test_a_verifier_retrieves_previous_failing_examples_from_the_database():
     verifier2.falsify(save_calls, int)
     assert called[0] == 11
     assert all(0 <= x <= 11 for x in called)
+
+
+def test_storage_errors_if_given_the_wrong_type():
+    database = ExampleDatabase()
+    ints = database.storage_for(int)
+    with pytest.raises(ValueError):
+        ints.save("hi")
+
+
+def test_storage_errors_if_the_database_is_invalid():
+    database = ExampleDatabase()
+    ints = database.storage_for(int)
+    database.backend.save(ints.key, "[false, false, true]")
+    with pytest.raises(ValueError):
+        list(ints.fetch())
+
+
+class Awkward(str):
+    pass
+
+FormatTable.default().mark_not_serializeable(Awkward)
+
+
+class AwkwardStrategy(SearchStrategy):
+    descriptor = Awkward
+    parameter = params.CompositeParameter()
+
+    def produce(self, random, pv):
+        return Awkward()
+
+StrategyTable.default().define_specification_for(
+    Awkward,
+    lambda s, d: AwkwardStrategy())
+
+
+def test_can_verify_a_non_serializale_type():
+    verifier = Verifier(settings=hs.Settings(database=ExampleDatabase()))
+    verifier.falsify(lambda x: len(x) > 0, Awkward)
