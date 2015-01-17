@@ -82,6 +82,11 @@ class Verifier(object):
                 return False
 
         falsifying_examples = []
+        if storage is not None:
+            for example in storage.fetch():
+                if falsifies(example):
+                    falsifying_examples.append(example)
+                    break
         examples_found = 0
         satisfying_examples = 0
         timed_out = False
