@@ -15,6 +15,9 @@ script:
   - pip install flake8 restructuredtext_lint pygments pyformat
   - find src tests -name "*.py" | xargs pyformat -i
   - git diff --exit-code
+  - HYPOTHESIS_DATABASE_FILE=hypothesis.db PYTHONPATH=src py.test -v tests/test_testdecorators.py
+  - PYTHONPATH=src python checkdb.py
+  - HYPOTHESIS_DATABASE_FILE=hypothesis.db PYTHONPATH=src py.test -v tests/test_testdecorators.py
   - flake8 src tests --exclude=compat.py
   - rst-lint README.rst
   - ./installer-test.sh
