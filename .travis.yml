@@ -12,7 +12,8 @@ script:
   - PYTHONPATH=src python -u -m coverage run --branch --include 'src/hypothesis/*' --omit 'src/hypothesis/internal/compat.py' $(which py.test) -v tests --ignore=tests/test_recursively.py
   - coverage report -m --fail-under=100
   - PYTHONPATH=src py.test -v tests/test_recursively.py
-  - pip install flake8 restructuredtext_lint pygments
+  - pip install flake8 restructuredtext_lint pygments pylint
+  - pylint src/hypothesis --disable=invalid-name,missing-docstring,too-few-public-methods,unused-argument
   - flake8 src tests --exclude=compat.py
   - rst-lint README.rst
   - ./installer-test.sh
