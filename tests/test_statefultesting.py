@@ -10,7 +10,7 @@ from hypothesis.statefultesting import (
 import pytest
 from hypothesis import Unfalsifiable
 
-from hypothesis.internal.compat import xrange
+from hypothesis.internal.compat import hrange
 
 
 class Foo(StatefulTest):
@@ -146,7 +146,7 @@ class BadSet(object):
         self.data.append(arg)
 
     def remove(self, arg):
-        for i in xrange(0, len(self.data)):
+        for i in hrange(0, len(self.data)):
             if self.data[i] == arg:
                 del self.data[i]
                 break

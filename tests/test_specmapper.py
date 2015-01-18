@@ -9,7 +9,7 @@ from hypothesis.descriptors import sampled_from
 import pytest
 from collections import namedtuple
 import random
-from hypothesis.internal.compat import xrange
+from hypothesis.internal.compat import hrange
 
 
 def setup_function(fn):
@@ -303,7 +303,7 @@ def test_specifications_will_match_on_subclasses():
         Parent: 1, Child: 3, Grandchild: 2, GreatGrandchild: 4
     }
 
-    for i in xrange(5, 200):
+    for i in hrange(5, 200):
         c = random.choice(choices)
         assert s.specification_for(c()) == values[c]
         s.define_specification_for_instances(c, trivial(i))
@@ -388,7 +388,7 @@ def test_chooses_most_specific_subclass(classes, r):
     random.shuffle(classes)
     classes = tuple(classes)
     mapper = SpecificationMapper()
-    for i in xrange(len(classes)):
+    for i in hrange(len(classes)):
         mapper.define_specification_for_instances(
             classes[i],
             const(i),
@@ -407,8 +407,8 @@ def test_class_sorter_topologically_sorts_wrt_subclassing(classes, random):
     random.shuffle(classes)
     in_order = sort_in_subclass_order(classes)
     n = len(classes)
-    for i in xrange(n):
-        for j in xrange(i+1, n):
+    for i in hrange(n):
+        for j in hrange(i+1, n):
             assert not issubclass(in_order[j], in_order[i])
 
 

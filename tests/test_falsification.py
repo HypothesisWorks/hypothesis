@@ -21,7 +21,7 @@ from hypothesis.strategytable import (
 from collections import namedtuple
 import pytest
 import re
-from hypothesis.internal.compat import xrange
+from hypothesis.internal.compat import hrange
 import hypothesis.params as params
 import hypothesis.settings as hs
 import time
@@ -81,7 +81,7 @@ class BarStrategy(SearchStrategy):
 
     def produce(self, random, pv):
         x = Bar()
-        for _ in xrange(self.int_strategy.produce(random, pv)):
+        for _ in hrange(self.int_strategy.produce(random, pv)):
             x = Bar(x)
         return x
 

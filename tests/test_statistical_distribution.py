@@ -15,7 +15,7 @@ import hypothesis.internal.utils.reflection as reflection
 import random
 from hypothesis.strategytable import StrategyTable
 import hypothesis.descriptors as descriptors
-from hypothesis.internal.compat import xrange
+from hypothesis.internal.compat import hrange
 import re
 import pytest
 
@@ -87,7 +87,7 @@ def teardown_module(module):
     test_results.sort(key=lambda x: x.p)
     n = len(test_results)
     k = 0
-    for i in xrange(n):
+    for i in hrange(n):
         if test_results[i].p < (FALSE_POSITIVE_RATE * (i + 1)) / n:
             k = i + 1
     rejected = [r for r in test_results[:k] if not r.failed]
@@ -133,7 +133,7 @@ def define_test(descriptor, q, predicate, condition=None):
         count = 0
         successful_runs = 0
         strategy = StrategyTable.default().strategy(descriptor)
-        for _ in xrange(MAX_RUNS):
+        for _ in hrange(MAX_RUNS):
             pv = strategy.parameter.draw(random)
             x = strategy.produce(random, pv)
             if not _condition(x):

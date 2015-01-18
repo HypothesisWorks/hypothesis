@@ -4,7 +4,7 @@ import hypothesis.internal.utils.distributions as dist
 
 import inspect
 from abc import abstractmethod
-from hypothesis.internal.compat import xrange
+from hypothesis.internal.compat import hrange
 from hypothesis.internal.compat import text_type, binary_type, integer_types
 import string
 import random as r
@@ -15,7 +15,7 @@ from copy import deepcopy
 def mix_generators(*generators):
     generators = list(generators)
     while generators:
-        for i in xrange(len(generators)):
+        for i in hrange(len(generators)):
             try:
                 yield next(generators[i])
             except StopIteration:
@@ -141,12 +141,12 @@ class IntStrategy(SearchStrategy):
             yield x // 2
             max_iters = 100
             if x <= max_iters:
-                for i in xrange(x - 1, 0, -1):
+                for i in hrange(x - 1, 0, -1):
                     yield i
             else:
                 random = r.Random(x)
                 seen = {0, x // 2}
-                for _ in xrange(max_iters):
+                for _ in hrange(max_iters):
                     i = random.randint(0, x - 1)
                     if i not in seen:
                         yield i
@@ -190,12 +190,12 @@ class BoundedIntStrategy(SearchStrategy):
     def simplify(self, x):
         if x == self.start:
             return
-        for t in xrange(x - 1, self.start - 1, -1):
+        for t in hrange(x - 1, self.start - 1, -1):
             yield t
         mid = (self.start + self.end) // 2
         if x > mid:
             yield self.start + (self.end - x)
-            for t in xrange(x + 1, self.end + 1):
+            for t in hrange(x + 1, self.end + 1):
                 yield t
 
 
@@ -336,13 +336,13 @@ class TupleStrategy(SearchStrategy):
         After that we stop because it's getting silly.
         """
 
-        for i in xrange(0, len(x)):
+        for i in hrange(0, len(x)):
             for s in self.element_strategies[i].simplify(x[i]):
                 z = list(x)
                 z[i] = s
                 yield self.newtuple(z)
-        for i in xrange(0, len(x)):
-            for j in xrange(0, len(x)):
+        for i in hrange(0, len(x)):
+            for j in hrange(0, len(x)):
                 if i == j:
                     continue
                 for s in self.element_strategies[i].simplify(x[i]):
@@ -388,7 +388,7 @@ class ListStrategy(SearchStrategy):
     def produce(self, random, pv):
         length = dist.geometric(random, 1.0 / (1 + pv.average_length))
         result = []
-        for _ in xrange(length):
+        for _ in hrange(length):
             result.append(
                 self.element_strategy.produce(random, pv.child_parameter))
         return result
@@ -400,7 +400,7 @@ class ListStrategy(SearchStrategy):
 
         generators.append(iter(([],)))
 
-        indices = xrange(len(x) - 1, -1, -1)
+        indices = hrange(len(x) - 1, -1, -1)
 
         generators.append(
             [x[i]] for i in indices
@@ -425,8 +425,8 @@ class ListStrategy(SearchStrategy):
         generators.append(with_one_index_simplified())
 
         def with_two_indices_deleted():
-            for i in xrange(0, len(x) - 1):
-                for j in xrange(i, len(x) - 1):
+            for i in hrange(0, len(x) - 1):
+                for j in hrange(i, len(x) - 1):
                     y = list(x)
                     del y[i]
                     del y[j]
@@ -564,7 +564,7 @@ class OneCharStringStrategy(SearchStrategy):
         return random.choice(self.characters)
 
     def simplify(self, x):
-        for i in xrange(self.characters.index(x), -1, -1):
+        for i in hrange(self.characters.index(x), -1, -1):
             yield self.characters[i]
 
 

@@ -3,7 +3,7 @@ from hypothesis.descriptors import (
     just, Just,
     OneOf
 )
-from hypothesis.internal.compat import xrange
+from hypothesis.internal.compat import hrange
 import hypothesis.searchstrategy as strat
 from hypothesis.searchstrategy import SearchStrategy, nice_string
 from hypothesis.strategytable import StrategyTable
@@ -94,7 +94,7 @@ class DescriptorStrategy(SearchStrategy):
             pv2 = child_strategy.parameter.draw(random)
             return just(child_strategy.produce(random, pv2))
 
-        children = [self.produce(random, pv) for _ in xrange(n_children)]
+        children = [self.produce(random, pv) for _ in hrange(n_children)]
         combiner = random.choice(pv.branch_descriptors)
         if combiner != dict:
             return combiner(children)

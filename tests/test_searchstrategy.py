@@ -4,7 +4,7 @@ import hypothesis.descriptors as descriptors
 import hypothesis.params as params
 from hypothesis.internal.tracker import Tracker
 from collections import namedtuple
-from hypothesis.internal.compat import xrange
+from hypothesis.internal.compat import hrange
 from hypothesis.internal.compat import text_type, binary_type
 import random
 import pytest
@@ -110,7 +110,7 @@ Litter = namedtuple('Litter', ('kitten1', 'kitten2'))
 def test_named_tuples_always_produce_named_tuples():
     s = strategy(Litter(int, int))
 
-    for i in xrange(100):
+    for i in hrange(100):
         assert isinstance(s.produce(random, s.parameter.draw(random)), Litter)
 
     for x in s.simplify(Litter(100, 100)):
@@ -182,7 +182,7 @@ def test_strategy_repr_handles_instances_without_dicts():
 def test_float_strategy_does_not_overflow():
     strategy = ss.StrategyTable().strategy(float)
 
-    for _ in xrange(100):
+    for _ in hrange(100):
         strategy.produce(random, strategy.parameter.draw(random))
 
 
@@ -274,12 +274,12 @@ def test_can_use_simplify_from_all_children():
 def test_strategy_for_integer_range_produces_only_integers_in_that_range():
     table = ss.StrategyTable()
     just_one_integer = table.strategy(descriptors.IntegerRange(1, 1))
-    for _ in xrange(100):
+    for _ in hrange(100):
         pv = just_one_integer.parameter.draw(random)
         x = just_one_integer.produce(random, pv)
         assert x == 1
     some_integers = table.strategy(descriptors.IntegerRange(1, 10))
-    for _ in xrange(100):
+    for _ in hrange(100):
         pv = some_integers.parameter.draw(random)
         x = some_integers.produce(random, pv)
         assert 1 <= x <= 10
@@ -289,7 +289,7 @@ def test_strategy_for_integer_range_can_produce_end_points():
     table = ss.StrategyTable()
     some_integers = table.strategy(descriptors.IntegerRange(1, 10))
     found = set()
-    for _ in xrange(1000):  # pragma: no branch
+    for _ in hrange(1000):  # pragma: no branch
         pv = some_integers.parameter.draw(random)
         x = some_integers.produce(random, pv)
         found.add(x)
@@ -321,7 +321,7 @@ def test_simplify_integer_range_can_push_to_near_boundaries():
 
     for p, v in predicates:
         some = False
-        for i in xrange(1, 10):
+        for i in hrange(1, 10):
             if p(i):
                 some = True
                 assert last(some_integers.simplify_such_that(i, p)) == v

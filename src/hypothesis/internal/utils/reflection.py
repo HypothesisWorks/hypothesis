@@ -4,7 +4,7 @@ really unreasonable lengths to produce pretty output.
 """
 
 import inspect
-from hypothesis.internal.compat import xrange, ARG_NAME_ATTRIBUTE
+from hypothesis.internal.compat import hrange, ARG_NAME_ATTRIBUTE
 import types
 import ast
 import re
@@ -50,7 +50,7 @@ def convert_keyword_arguments(function, args, kwargs):
 
     n = max(len(args), len(argspec.args))
 
-    for i in xrange(n):
+    for i in hrange(n):
         if i < len(args):
             new_args.append(args[i])
         else:
@@ -180,7 +180,7 @@ def extract_lambda_source(f):
 
     source = source[source.index("lambda"):]
 
-    for i in xrange(len(source), -1, -1):  # pragma: no branch
+    for i in hrange(len(source), -1, -1):  # pragma: no branch
         try:
             parsed = ast.parse(source[:i])
             assert len(parsed.body) == 1

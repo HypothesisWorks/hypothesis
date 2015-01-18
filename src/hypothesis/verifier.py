@@ -1,7 +1,12 @@
+"""
+The main entry point for Hypothesis, providing the falsify method and all
+the various errors it may throw.
+"""
+
 from hypothesis.strategytable import StrategyTable
 from random import Random
 import time
-from hypothesis.internal.compat import xrange
+from hypothesis.internal.compat import hrange
 import hypothesis.settings as hs
 from hypothesis.internal.utils.reflection import (
     get_pretty_function_description, function_digest
@@ -101,7 +106,7 @@ class Verifier(object):
                 initial_run += 1
             else:
                 i = max(
-                    xrange(len(parameter_values)),
+                    hrange(len(parameter_values)),
                     key=lambda k: random.betavariate(
                         accepted_examples[k] + 1, rejected_examples[k] + 1
                     )
