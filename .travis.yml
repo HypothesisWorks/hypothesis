@@ -9,7 +9,7 @@ before_script:
   - pip install pytest pytest-timeout coverage
 
 script:
-  - PYTHONPATH=src python -u -m coverage run --branch --include 'src/hypothesis/*' --omit 'src/hypothesis/settings.py' --omit 'src/hypothesis/internal/compat.py' $(which py.test) -v tests --ignore=tests/test_recursively.py
+  - PYTHONPATH=src python -u -m coverage run --branch --include 'src/hypothesis/*' --omit 'src/hypothesis/settings.py,src/hypothesis/internal/compat.py' $(which py.test) -v tests --ignore=tests/test_recursively.py
   - coverage report -m --fail-under=100
   - PYTHONPATH=src py.test -v tests/test_recursively.py
   - pip install flake8 restructuredtext_lint pygments pyformat
