@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from hypothesis.database import ExampleDatabase
 from hypothesis.database.format import FormatTable
 from hypothesis.searchstrategy import RandomWithSeed
@@ -11,6 +13,7 @@ import hypothesis.settings as hs
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.strategytable import StrategyTable
 import hypothesis.params as params
+from hypothesis.internal.compat import text_type, binary_type
 
 
 def test_deduplicates():
@@ -34,7 +37,8 @@ def run_round_trip(descriptor, value):
     ((int,), (1,)),
     (complex, complex(1, 1)),
     ({int}, {1}),
-    (str, ''),
+    (text_type, ''),
+    (binary_type, b''),
     (Random, RandomWithSeed(1)),
     (Just(frozenset({False})), frozenset({False})),
     (({str}, bool), (set(), True)),

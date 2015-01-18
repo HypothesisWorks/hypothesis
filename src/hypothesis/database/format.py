@@ -6,6 +6,7 @@ from hypothesis.descriptors import one_of, Just, OneOf, SampledFrom
 from abc import abstractmethod
 from hypothesis.internal.specmapper import SpecificationMapper
 from hypothesis.internal.compat import text_type, binary_type, hrange
+import base64
 
 
 class NotSerializeable(Exception):
@@ -166,10 +167,10 @@ class BinaryFormat(Format):
     """
 
     def to_json(self, c):
-        return c.encode('base64')
+        return base64.b64encode(c).decode('utf-8')
 
     def from_json(self, c):
-        return c.decode('base64')
+        return base64.b64decode(c.encode('utf-8'))
 
 FormatTable.default().define_specification_for(
     binary_type, lambda s, d: BinaryFormat()
