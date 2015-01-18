@@ -1,14 +1,23 @@
 from abc import abstractmethod
 import sqlite3
+from hypothesis.internal.compat import text_type
 
 
 class Backend(object):
 
     """Interface class for storage systems.
 
-    Simple key / multiple value store.
+    Simple text key -> value mapping. values are of the type returned by
+    data_type() but keys are always unicode text (str in python 3, unicode in
+    python 2).
 
+    Every (key, value) pair appears at most once. Saving a duplicate will just
+    silently do nothing.
     """
+
+    @abstractmethod
+    def data_type(self):
+        """Returns the type of data that is suitable for values in this DB"""
 
     @abstractmethod
     def save(self, key, value):
@@ -16,7 +25,7 @@ class Backend(object):
 
     @abstractmethod
     def fetch(self, key):
-        """yield the values matching this key, ignoring duplicates."""
+        """yield the values matching this key"""
 
 
 class SQLiteBackend(Backend):
@@ -24,6 +33,9 @@ class SQLiteBackend(Backend):
     def __init__(self, path=':memory:'):
         self.connection = sqlite3.connect(path)
         self.db_created = False
+
+    def data_type(self):
+        return text_type
 
     def save(self, key, value):
         self.create_db_if_needed()

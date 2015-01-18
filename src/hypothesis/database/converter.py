@@ -1,3 +1,26 @@
+"""
+This module introduces the concept of *basic data*.
+
+Basic data is:
+
+    * Any unicode string (str in python 3, unicode in python 2)
+    * Any data of type: float, bool, int, long (in python 2)
+    * None
+    * Any heterogenous list of basic data (including lists of lists, etc)
+
+The goal of basic data is to provide a small set of primitives that a format
+is responsible for marshalling and define formats for all other data in terms
+of conversion to and from basic data.
+
+A Converter is then responsible for converting data matching a particular
+description to and from basic data. It essentially designs a schema for
+representing values in a simpler form.
+
+This uses a mechanism essentially identical to that of SearchStrategy for
+mapping descriptors to converters.
+"""
+
+
 from hypothesis.searchstrategy import RandomWithSeed
 from random import Random
 from hypothesis.searchstrategy import nice_string

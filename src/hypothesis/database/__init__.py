@@ -1,7 +1,7 @@
 from hypothesis.searchstrategy import nice_string
-import json
 from hypothesis.internal.utils.hashitanyway import HashItAnyway
 from hypothesis.database.converter import ConverterTable
+from hypothesis.database.formats import JSONFormat
 from hypothesis.database.backend import SQLiteBackend
 
 
@@ -9,10 +9,11 @@ class Storage(object):
 
     """Handles saving and loading examples matching a particular descriptor."""
 
-    def __init__(self, backend, descriptor, converter, strategy):
+    def __init__(self, backend, descriptor, converter, strategy, format):
         self.backend = backend
         self.descriptor = descriptor
         self.converter = converter
+        self.format = format
         self.strategy = strategy
         self.key = nice_string(descriptor)
 
@@ -22,16 +23,18 @@ class Storage(object):
                 'Argument %r does not match description %s' % (
                     value, self.key))
         converted = self.converter.to_json(value)
-        serialized = json.dumps(converted)
+        serialized = self.format.serialize_basic(converted)
         self.backend.save(self.key, serialized)
 
     def fetch(self):
-        for value in self.backend.fetch(self.key):
-            deserialized = self.converter.from_json(json.loads(value))
+        for data in self.backend.fetch(self.key):
+            print("data=", data)
+            deserialized = self.converter.from_json(
+                self.format.deserialize_data(data))
             if not self.strategy.could_have_produced(deserialized):
                 raise ValueError(
                     'Value %r does not match description %s' % (
-                        value, self.key))
+                        data, self.key))
             yield deserialized
 
 
@@ -47,10 +50,18 @@ class ExampleDatabase(object):
         self,
         converters=None,
         backend=None,
+        format=None,
     ):
         self.converters = converters or ConverterTable.default()
         self.strategies = self.converters.strategy_table
         self.backend = backend or SQLiteBackend()
+        self.format = format or JSONFormat()
+        if self.format.data_type() != self.backend.data_type():
+            raise ValueError((
+                "Inconsistent data types: format provides data of type %s "
+                "but backend expects data of type %s" % (
+                    self.format.data_type(), self.backend.data_type()
+                )))
         self.storage_cache = {}
 
     def storage_for(self, descriptor):
@@ -69,6 +80,7 @@ class ExampleDatabase(object):
         result = Storage(
             descriptor=descriptor,
             backend=self.backend,
+            format=self.format,
             converter=self.converters.specification_for(descriptor),
             strategy=self.strategies.specification_for(descriptor),
         )
