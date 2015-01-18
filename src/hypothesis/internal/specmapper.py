@@ -73,7 +73,7 @@ class SpecificationMapper(object):
         if k in self.__descriptor_cache:
             return self.__descriptor_cache[k]
 
-        for h in self.__find_specification_handlers_for(descriptor):
+        for h in self.find_specification_handlers_for(descriptor):
             try:
                 r = h(self, descriptor)
                 break
@@ -92,7 +92,7 @@ class SpecificationMapper(object):
         except MissingSpecification:
             return False
 
-    def __find_specification_handlers_for(self, descriptor):
+    def find_specification_handlers_for(self, descriptor):
         if safe_in(descriptor, self.value_mappers):
             for h in reversed(self.value_mappers[descriptor]):
                 yield h
@@ -100,7 +100,7 @@ class SpecificationMapper(object):
         for h in self.__instance_handlers(tk):
             yield h
         if self.prototype():
-            for h in self.prototype().__find_specification_handlers_for(
+            for h in self.prototype().find_specification_handlers_for(
                     descriptor):
                 yield h
 
