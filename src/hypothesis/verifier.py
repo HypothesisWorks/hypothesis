@@ -24,7 +24,7 @@ def assume(condition):
         raise UnsatisfiedAssumption()
 
 
-class Verifier(object):  # pylint: disable=too-few-public-methods
+class Verifier(object):
     """
     A wrapper object holding state required for a falsify invocation.
     """
@@ -145,7 +145,6 @@ class Verifier(object):  # pylint: disable=too-few-public-methods
                 skipped_examples = 0
             examples_found += 1
             try:
-                # pylint: disable=star-args
                 is_falsifying_example = not hypothesis(
                     *search_strategy.copy(args))
             except AssertionError:

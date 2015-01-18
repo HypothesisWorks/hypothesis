@@ -1,4 +1,3 @@
-# pylint: disable=too-few-public-methods
 """
 This module defines a Parameter type which is used by search strategies to
 control the shape of their distribution. It also provides a variety of
@@ -195,7 +194,6 @@ class CompositeParameter(Parameter):
             self.Result = collections.namedtuple('Result', self.children)
 
     def draw(self, random):
-        # pylint: disable=star-args
         bits = [
             getattr(self, c).draw(random) for c in self.children
         ]
