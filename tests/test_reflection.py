@@ -210,7 +210,7 @@ def test_strips_comments_from_the_end():
 
 def test_does_not_strip_hashes_within_a_string():
     t = lambda x: '#'  # pragma: no cover
-    assert get_pretty_function_description(t) == 'lambda x: "#"'
+    assert get_pretty_function_description(t) == "lambda x: '#'"
 
 
 def test_can_distinguish_between_two_lambdas_with_different_args():
