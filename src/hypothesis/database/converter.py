@@ -74,11 +74,11 @@ class Converter(object):
     Does not actually serialize, only munges into a different shape.
     """
 
-    @abstractmethod
+    @abstractmethod  # pragma: no cover
     def to_json(self, value):
         """Turn this value into a JSON ready object."""
 
-    @abstractmethod
+    @abstractmethod  # pragma: no cover
     def from_json(self, value):
         """Convert this value into a JSON ready object from the original
         type."""
@@ -345,7 +345,7 @@ class OneOfConverter(Converter):
         self.strategies = strategies
 
     def to_json(self, value):
-        for i in hrange(len(self.converters)):
+        for i in hrange(len(self.converters)):  # pragma: no branch
             if self.strategies[i].could_have_produced(value):
                 return [i, self.converters[i].to_json(value)]
 

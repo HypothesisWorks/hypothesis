@@ -16,15 +16,15 @@ class Backend(object):
 
     """
 
-    @abstractmethod
+    @abstractmethod  # pragma: no cover
     def data_type(self):
         """Returns the type of data that is suitable for values in this DB."""
 
-    @abstractmethod
+    @abstractmethod  # pragma: no cover
     def save(self, key, value):
         """Save a single value matching this key."""
 
-    @abstractmethod
+    @abstractmethod  # pragma: no cover
     def fetch(self, key):
         """yield the values matching this key."""
 

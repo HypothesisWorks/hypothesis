@@ -13,21 +13,18 @@ class Format(object):
 
     """
 
-    @abstractmethod
+    @abstractmethod  # pragma: no cover
     def data_type(self):
         """The type of data that this format will serialize to."""
-        pass
 
-    @abstractmethod
+    @abstractmethod  # pragma: no cover
     def serialize_basic(self, value):
         """Take a basic value and convert it to data_type."""
-        pass
 
-    @abstractmethod
+    @abstractmethod  # pragma: no cover
     def deserialize_data(self, data):
         """Take something of type data_type and convert it back to a basic
         value."""
-        pass
 
 
 class JSONFormat(Format):

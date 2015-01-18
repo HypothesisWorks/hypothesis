@@ -148,6 +148,14 @@ def test_a_verifier_retrieves_previous_failing_examples_from_the_database():
     assert all(0 <= x <= 11 for x in called)
 
 
+def test_a_verifier_can_still_do_its_thing_if_a_saved_example_fails():
+    database = ExampleDatabase()
+    verifier = Verifier(settings=hs.Settings(database=database))
+    verifier.falsify(lambda x: x < 11, int)
+    verifier2 = Verifier(settings=hs.Settings(database=database))
+    verifier2.falsify(lambda x: x < 100, int)
+
+
 def test_storage_errors_if_given_the_wrong_type():
     database = ExampleDatabase()
     ints = database.storage_for(int)
