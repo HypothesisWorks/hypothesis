@@ -113,6 +113,7 @@ def test_runs_integrity_checks_after_each_step():
 
 
 class NumberHater(StatefulTest):
+
     @requires(int)
     @step
     def hates_fives(self, n):

@@ -1,7 +1,8 @@
-"""
-This module defines a Parameter type which is used by search strategies to
-control the shape of their distribution. It also provides a variety of
-implementations thereof.
+"""This module defines a Parameter type which is used by search strategies to
+control the shape of their distribution.
+
+It also provides a variety of implementations thereof.
+
 """
 import collections
 import hypothesis.internal.utils.distributions as dist
@@ -10,30 +11,31 @@ from abc import abstractmethod
 
 
 class Parameter(object):
+
+    """Represents a distribution of values of some type.
+
+    These values can be drawn given a random number generator.
+
     """
-    Represents a distribution of values of some type. These values can
-    be drawn given a random number generator.
-    """
+
     def __init__(self):
         pass
 
-    @abstractmethod # pragma: no cover
+    @abstractmethod  # pragma: no cover
     def draw(self, random):
-        """
-        Draw a value at random, using only state from the provided random
-        number generator.
-        """
+        """Draw a value at random, using only state from the provided random
+        number generator."""
 
 
 class ExponentialParameter(Parameter):
-    """
-    Parameter representing an exponential distribution over floats.
-    """
+
+    """Parameter representing an exponential distribution over floats."""
+
     def __init__(self, lambd):
         Parameter.__init__(self)
         if lambd <= 0:
             raise ValueError(
-                "Invalid lambda %f for exponential distribution" % (lambd,))
+                'Invalid lambda %f for exponential distribution' % (lambd,))
         self.lambd = lambd
 
     def draw(self, random):
@@ -41,9 +43,9 @@ class ExponentialParameter(Parameter):
 
 
 class BetaFloatParameter(Parameter):
-    """
-    Parameter representing a beta distribution over floats.
-    """
+
+    """Parameter representing a beta distribution over floats."""
+
     def __init__(self, alpha, beta):
         Parameter.__init__(self)
         self.alpha = alpha
@@ -54,10 +56,10 @@ class BetaFloatParameter(Parameter):
 
 
 class UniformFloatParameter(Parameter):
-    """
-    Parameter representing a uniform distribution over floats between a
-    provided lower and upper bound.
-    """
+
+    """Parameter representing a uniform distribution over floats between a
+    provided lower and upper bound."""
+
     def __init__(self, lower_bound, upper_bound):
         Parameter.__init__(self)
         self.lower_bound = lower_bound
@@ -70,10 +72,10 @@ class UniformFloatParameter(Parameter):
 
 
 class NormalParameter(Parameter):
-    """
-    Parameter representing a normal distribution over floats with a provided
-    mean and variance.
-    """
+
+    """Parameter representing a normal distribution over floats with a provided
+    mean and variance."""
+
     def __init__(self, mean, variance):
         Parameter.__init__(self)
         self.mean = mean
@@ -84,10 +86,13 @@ class NormalParameter(Parameter):
 
 
 class GammaParameter(Parameter):
+
+    """Parameter representing a gamma distribution over floats.
+
+    This is useful as e.g. a prior for an exponential distribution.
+
     """
-    Parameter representing a gamma distribution over floats. This is useful as
-    e.g. a prior for an exponential distribution.
-    """
+
     def __init__(self, alpha, beta):
         Parameter.__init__(self)
         self.alpha = alpha
@@ -98,16 +103,18 @@ class GammaParameter(Parameter):
 
 
 class NonEmptySubset(Parameter):
+
     """
     A parameter which draws non-empty subsets from some set. Each element of
     the set is drawn with equal probability and independently of all others.
     By default the probability is chosen to give very few elements.
     """
+
     def __init__(self, elements, activation_chance=None):
         Parameter.__init__(self)
         self.elements = tuple(elements)
         if not elements:
-            raise ValueError("Must have at least one element")
+            raise ValueError('Must have at least one element')
         if activation_chance is None:
             desired_expected_value = min(0.5 * len(elements), 2.0)
             activation_chance = desired_expected_value / len(elements)
@@ -127,15 +134,15 @@ class NonEmptySubset(Parameter):
 
 
 class BiasedCoin(Parameter):
-    """
-    A parameter which draws a boolean value which is True with some fixed
-    probability.
-    """
+
+    """A parameter which draws a boolean value which is True with some fixed
+    probability."""
+
     def __init__(self, probability):
         Parameter.__init__(self)
         if probability <= 0 or probability >= 1:
             raise ValueError(
-                "Value %f out of valid range (0, 1)" % (probability,))
+                'Value %f out of valid range (0, 1)' % (probability,))
         self.probability = probability
 
     def draw(self, random):
@@ -143,11 +150,13 @@ class BiasedCoin(Parameter):
 
 
 class DictParameter(Parameter):
+
     """
     A parameter which returns a dict with a fixed set of keys.
     Given an __init__ argument {k: v} this will return results from
     {k: v.draw}
     """
+
     def __init__(self, dict_of_parameters):
         Parameter.__init__(self)
         self.dict_of_parameters = dict(dict_of_parameters)
@@ -160,12 +169,15 @@ class DictParameter(Parameter):
 
 
 class CompositeParameter(Parameter):
+
+    """A parameter returning a record with attributes corresponding to some
+    other parameters.
+
+    The result will be either a tuple or a namedtuple specific to this
+    parameter depending on whether there are any kwargs passed.
+
     """
-    A parameter returning a record with attributes corresponding to some
-    other parameters. The result will be either a tuple or a namedtuple
-    specific to this parameter depending on whether there are any kwargs
-    passed.
-    """
+
     def __init__(self, *args, **kwargs):
         Parameter.__init__(self)
         if not kwargs and len(args) == 1 and inspect.isgenerator(args[0]):
@@ -173,15 +185,15 @@ class CompositeParameter(Parameter):
         is_pure_tuple = not kwargs
         children = []
         for index, param in enumerate(args):
-            name = "arg%d" % (index,)
+            name = 'arg%d' % (index,)
             if name in kwargs:
-                raise ValueError("Duplicate parameter name %s" % (name,))
+                raise ValueError('Duplicate parameter name %s' % (name,))
             kwargs[name] = param
             children.append(name)
 
         for key, value in sorted(kwargs.items()):
             if hasattr(self, key):
-                raise ValueError("Invalid parameter name %s" % (key,))
+                raise ValueError('Invalid parameter name %s' % (key,))
             if key not in children:
                 children.append(key)
             setattr(self, key, value)

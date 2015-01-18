@@ -21,18 +21,18 @@ def test_string_strategy_produces_strings():
 
 
 def test_unary_tuple_strategy_has_trailing_comma():
-    assert repr(strategy((str,))) == "TupleStrategy((str,))"
+    assert repr(strategy((str,))) == 'TupleStrategy((str,))'
 
 
 Blah = namedtuple('Blah', ('hi',))
 
 
 def test_named_tuple_strategy_has_tuple_in_name_and_no_trailing_comma():
-    assert repr(strategy(Blah(str))) == "TupleStrategy(Blah(hi=str))"
+    assert repr(strategy(Blah(str))) == 'TupleStrategy(Blah(hi=str))'
 
 
 def test_class_names_are_simplified_in_sets():
-    assert repr(strategy({float})) == "SetStrategy({float})"
+    assert repr(strategy({float})) == 'SetStrategy({float})'
 
 
 def test_tuples_inspect_component_types_for_production():
@@ -166,6 +166,7 @@ def test_strategy_repr_handles_custom_types():
 
 
 class TrivialStrategy(strat.SearchStrategy):
+
     def __init__(self, descriptor):
         self.descriptor = descriptor
 
@@ -201,7 +202,7 @@ def test_or_does_not_change_descriptor_given_single_descriptor():
 def test_or_errors_when_given_non_strategy():
     bools = ss.StrategyTable().strategy((bool,))
     with pytest.raises(ValueError):
-        bools | "foo"
+        bools | 'foo'
 
 
 def test_joining_zero_strategies_fails():
@@ -216,7 +217,7 @@ def test_directly_joining_one_strategy_also_fails():
 
 def test_list_strategy_reprs_as_list():
     x = ss.StrategyTable.default().strategy([int])
-    assert repr(x) == "ListStrategy([int])"
+    assert repr(x) == 'ListStrategy([int])'
 
 
 def test_can_distinguish_amongst_tuples_of_mixed_length():
@@ -225,8 +226,8 @@ def test_can_distinguish_amongst_tuples_of_mixed_length():
     assert mixed_strategy.could_have_produced((1, 1))
     assert mixed_strategy.could_have_produced((1, 1, 1))
     assert not mixed_strategy.could_have_produced((1, 1, 1, 1))
-    assert not mixed_strategy.could_have_produced((1, "foo"))
-    assert not mixed_strategy.could_have_produced((1, 1, "foo"))
+    assert not mixed_strategy.could_have_produced((1, 'foo'))
+    assert not mixed_strategy.could_have_produced((1, 1, 'foo'))
     assert not mixed_strategy.could_have_produced([1, 1])
 
 
@@ -257,6 +258,7 @@ def test_distinguishes_named_and_unnamed_tuples():
 
 
 class IntStrategyWithBrokenSimplify(strat.RandomGeometricIntStrategy):
+
     def simplify(self, value):
         return ()
 
@@ -469,26 +471,28 @@ def test_nice_string_for_sets_is_not_a_dict():
 
 
 def test_non_empty_frozensets_should_use_set_representation():
-    assert strat.nice_string(frozenset([int])) == "frozenset({int})"
+    assert strat.nice_string(frozenset([int])) == 'frozenset({int})'
 
 
 def test_just_strategy_uses_repr():
     class WeirdRepr(object):
+
         def __repr__(self):
-            return "ABCDEFG"
+            return 'ABCDEFG'
 
     assert repr(
         strategy(descriptors.just(WeirdRepr()))
-    ) == "JustStrategy(value=%r)" % (WeirdRepr(),)
+    ) == 'JustStrategy(value=%r)' % (WeirdRepr(),)
 
 
 def test_just_nice_string_should_respect_its_values_reprs():
     class Stuff(object):
+
         def __repr__(self):
-            return "Things()"
+            return 'Things()'
     assert strat.nice_string(
         descriptors.Just(Stuff())
-    ) == "Just(value=Things())"
+    ) == 'Just(value=Things())'
 
 
 def test_fixed_bounded_float_strategy_converts_its_args():

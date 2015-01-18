@@ -1,14 +1,14 @@
-"""
-A module controlling settings for Hypothesis to use in falsification.
+"""A module controlling settings for Hypothesis to use in falsification.
 
-Either an explicit Settings object can be used or the default object on this
-module can be modified.
+Either an explicit Settings object can be used or the default object on
+this module can be modified.
 
 """
+
 
 class Settings(object):
-    """
-    A settings object controls a variety of parameters that are used in
+
+    """A settings object controls a variety of parameters that are used in
     falsification. There is a single default settings object that all other
     Settings will use as its values s defaults.
 
@@ -31,6 +31,7 @@ class Settings(object):
 
     """
     # pylint: disable=too-many-arguments
+
     def __init__(
             self,
             min_satisfying_examples=None,

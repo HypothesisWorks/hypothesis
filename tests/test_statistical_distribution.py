@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""
-Statistical tests over the forms of the distributions in the standard set of
+"""Statistical tests over the forms of the distributions in the standard set of
 definitions.
 
 These tests all take the form of a classic hypothesis test with the null
 hypothesis being that the probability of some event occurring when drawing
 data from the distribution produced by some descriptor is >= REQUIRED_P
+
 """
 
 from __future__ import print_function
@@ -45,6 +45,7 @@ def cumulative_binomial_probability(n, p, k):
 
 
 class Result(object):
+
     def __init__(
         self,
         success_count,
@@ -65,9 +66,9 @@ class Result(object):
 
     def description(self):
         condition_string = (
-            " | " + self.condition_string if self.condition_string else "")
+            ' | ' + self.condition_string if self.condition_string else '')
         return (
-            "P(%s%s) >= %g: p = %g. Occurred in %d / %d = %g of runs. "
+            'P(%s%s) >= %g: p = %g. Occurred in %d / %d = %g of runs. '
         ) % (
             strip_lambda(
                 reflection.get_pretty_function_description(self.predicate)),
@@ -95,21 +96,21 @@ def teardown_module(module):
     if rejected:
         raise HypothesisFalsified(
             ((
-                "Although these tests were not significant at p < %g, "
-                "the Benjamini-Hochberg procedure demonstrates that the "
-                "following are rejected with a false discovery rate of %g: "
-                "\n\n"
+                'Although these tests were not significant at p < %g, '
+                'the Benjamini-Hochberg procedure demonstrates that the '
+                'following are rejected with a false discovery rate of %g: '
+                '\n\n'
             ) % (REQUIRED_P,  FALSE_POSITIVE_RATE)) + '\n'.join(
-                ("  " + p.description())
+                ('  ' + p.description())
                 for p in rejected
             ))
 
 
-INITIAL_LAMBDA = re.compile("^lambda[^:]*:\s*")
+INITIAL_LAMBDA = re.compile('^lambda[^:]*:\s*')
 
 
 def strip_lambda(s):
-    return INITIAL_LAMBDA.sub("", s)
+    return INITIAL_LAMBDA.sub('', s)
 
 
 class HypothesisFalsified(AssertionError):
@@ -124,7 +125,7 @@ def define_test(descriptor, q, predicate, condition=None):
     def run_test():
         if condition is None:
             _condition = lambda x: True
-            condition_string = ""
+            condition_string = ''
         else:
             _condition = condition
             condition_string = strip_lambda(
@@ -143,8 +144,8 @@ def define_test(descriptor, q, predicate, condition=None):
                 count += 1
         if successful_runs < MIN_RUNS:
             raise ConditionTooHard((
-                "Unable to find enough examples satisfying predicate %s "
-                "only found %d but required at least %d for validity"
+                'Unable to find enough examples satisfying predicate %s '
+                'only found %d but required at least %d for validity'
             ) % (
                 condition_string, successful_runs, MIN_RUNS
             ))
@@ -163,7 +164,7 @@ def define_test(descriptor, q, predicate, condition=None):
         # the probability is at least q
         if p < REQUIRED_P:
             result.failed = True
-            raise HypothesisFalsified(result.description() + " rejected")
+            raise HypothesisFalsified(result.description() + ' rejected')
     return run_test
 
 
@@ -183,7 +184,7 @@ def test_assertion_error_message():
 def test_raises_an_error_on_impossible_conditions():
     with pytest.raises(ConditionTooHard) as e:
         define_test(float, 0.5, lambda x: True, condition=lambda x: False)()
-    assert "only found 0 " in e.value.args[0]
+    assert 'only found 0 ' in e.value.args[0]
 
 
 def test_puts_the_condition_in_the_error_message():

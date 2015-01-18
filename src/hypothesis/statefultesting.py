@@ -45,6 +45,7 @@ def precondition(t):
 
 
 class TestRun(object):
+
     def __init__(self, cls, steps, init_args=None, init_kwargs=None):
         self.cls = cls
         self.init_args = tuple(init_args or ())
@@ -54,7 +55,7 @@ class TestRun(object):
         self.steps = steps
 
     def __repr__(self):
-        return "TestRun(%s, init_args=%r, init_kwargs=%r, steps=%r)" % (
+        return 'TestRun(%s, init_args=%r, init_kwargs=%r, steps=%r)' % (
             self.cls.__name__,
             self.init_args,
             self.init_kwargs,
@@ -150,6 +151,7 @@ Step = namedtuple('Step', ('target', 'arguments', 'kwargs'))
 
 
 class StepStrategy(MappedSearchStrategy):
+
     def could_have_produced(self, x):
         # There's really no sensible way you could get here without this being
         # a Step because of how much this is an implementation detail
@@ -197,6 +199,7 @@ def define_stateful_strategy(strategies, descriptor):
 
 
 class StatefulStrategy(MappedSearchStrategy):
+
     def __init__(self, descriptor, strategy, requires_init):
         super(StatefulStrategy, self).__init__(
             descriptor=descriptor, strategy=strategy

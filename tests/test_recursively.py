@@ -36,7 +36,7 @@ def timeout(seconds=1):
             start = time.time()
 
             def handler(signum, frame):
-                raise Timeout("Timed out after %.2fs" % (time.time() - start))
+                raise Timeout('Timed out after %.2fs' % (time.time() - start))
 
             old_handler = signal.signal(signal.SIGALRM, handler)
             signal.alarm(seconds)
@@ -204,15 +204,14 @@ def is_immutable_data(t):
 
 
 def test_basic_tree_matching():
-    """
-    Just an integrity check to make sure we're testing the right thing here
-    """
+    """Just an integrity check to make sure we're testing the right thing
+    here."""
 
     assert not is_immutable_data([1])
     assert not is_immutable_data(([1],))
     assert not is_immutable_data({'foo': 1})
     assert is_immutable_data((1, 1))
-    assert is_immutable_data("foo")
+    assert is_immutable_data('foo')
 
 
 @timeout(5)

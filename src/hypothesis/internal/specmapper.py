@@ -3,6 +3,7 @@ from hypothesis.internal.utils.hashitanyway import HashItAnyway
 
 
 class SpecificationMapper(object):
+
     """Maps descriptions of some type to a type. Has configurable handlers for
     what a description may look like. Handlers for descriptions may take either
     a specific value or all instances of a type and have access to the mapper
@@ -15,6 +16,7 @@ class SpecificationMapper(object):
     which everything has as a prototype if it's not assigned any other
     prototype. This allows you to define the mappers on the default object
     and have them inherited by any custom mappers you want.
+
     """
 
     @classmethod
@@ -166,11 +168,12 @@ def next_in_chain():
 
 
 class NextInChain(Exception):
+
     def __init__(self):
         Exception.__init__(
             self,
             "Not handled. Call next in chain. You shouldn't have seen this"
-            "exception.")
+            'exception.')
 
 
 class MissingSpecification(Exception):

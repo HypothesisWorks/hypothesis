@@ -1,7 +1,5 @@
-"""
-The main entry point for Hypothesis, providing the falsify method and all
-the various errors it may throw.
-"""
+"""The main entry point for Hypothesis, providing the falsify method and all
+the various errors it may throw."""
 
 from hypothesis.strategytable import StrategyTable
 from random import Random
@@ -15,19 +13,21 @@ from hypothesis.internal.tracker import Tracker
 
 
 def assume(condition):
-    """
-    Assert a precondition for this test. If this is not truthy then the
-    test will abort but not fail and Hypothesis will make a "best effort"
-    attempt to avoid similar examples in future.
+    """Assert a precondition for this test.
+
+    If this is not truthy then the test will abort but not fail and
+    Hypothesis will make a "best effort" attempt to avoid similar
+    examples in future.
+
     """
     if not condition:
         raise UnsatisfiedAssumption()
 
 
 class Verifier(object):
-    """
-    A wrapper object holding state required for a falsify invocation.
-    """
+
+    """A wrapper object holding state required for a falsify invocation."""
+
     def __init__(
             self,
             strategy_table=None,
@@ -43,8 +43,8 @@ class Verifier(object):
         self.timeout = settings.timeout
         if settings.derandomize and random:
             raise ValueError(
-                "A verifier cannot both be derandomized and have a random "
-                "generator")
+                'A verifier cannot both be derandomized and have a random '
+                'generator')
 
         if settings.derandomize:
             self.random = None
@@ -184,23 +184,22 @@ class Verifier(object):
 
 
 def falsify(*args, **kwargs):
-    """
-    A convenience wrapper function for Verifier.falsify
-    """
+    """A convenience wrapper function for Verifier.falsify."""
     return Verifier(**kwargs).falsify(*args)
 
 
 class HypothesisException(Exception):
-    """
-    Generic parent class for exceptions thrown by Hypothesis
-    """
+
+    """Generic parent class for exceptions thrown by Hypothesis."""
     pass
 
 
 class UnsatisfiedAssumption(HypothesisException):
-    """
-    An internal error raised by assume. If you're seeing this error something
-    has gone wrong.
+
+    """An internal error raised by assume.
+
+    If you're seeing this error something has gone wrong.
+
     """
 
     def __init__(self):
@@ -208,10 +207,12 @@ class UnsatisfiedAssumption(HypothesisException):
 
 
 class Unfalsifiable(HypothesisException):
-    """
-    The hypothesis we have been asked to falsify appears to be always true.
+
+    """The hypothesis we have been asked to falsify appears to be always true.
+
     This does not guarantee that no counter-example exists, only that we
     were unable to find one.
+
     """
 
     def __init__(self, hypothesis, extra=''):
@@ -222,42 +223,50 @@ class Unfalsifiable(HypothesisException):
 
 
 class Exhausted(Unfalsifiable):
+
+    """We appear to have considered the entire example space available before
+    we ran out of time or number of examples.
+
+    This does not guarantee that we have considered the whole example
+    space (it could just be a bad search strategy) but it makes it
+    pretty likely that this hypothesis is just always true.
+
     """
-    We appear to have considered the entire example space available before we
-    ran out of time or number of examples. This does not guarantee that we have
-    considered the whole example space (it could just be a bad search strategy)
-    but it makes it pretty likely that this hypothesis is just always true.
-    """
+
     def __init__(self, hypothesis, n_examples):
         super(Exhausted, self).__init__(
-            hypothesis, " exhausted parameter space after %d examples" % (
+            hypothesis, ' exhausted parameter space after %d examples' % (
                 n_examples,
             )
         )
 
 
 class Unsatisfiable(HypothesisException):
-    """
-    We ran out of time or examples before we could find enough examples which
-    satisfy the assumptions of this hypothesis. This could be because the
-    function is too slow. If so, try upping the timeout. It could also be
-    because the function is using assume in a way that is too hard to satisfy.
-    If so, try writing a custom strategy or using a better starting point (e.g
-    if you are requiring a list has unique values you could instead filter out
-    all duplicate values from the list)
+
+    """We ran out of time or examples before we could find enough examples
+    which satisfy the assumptions of this hypothesis.
+
+    This could be because the function is too slow. If so, try upping
+    the timeout. It could also be because the function is using assume
+    in a way that is too hard to satisfy. If so, try writing a custom
+    strategy or using a better starting point (e.g if you are requiring
+    a list has unique values you could instead filter out all duplicate
+    values from the list)
+
     """
 
     def __init__(self, hypothesis, examples, run_time):
         super(Unsatisfiable, self).__init__((
             'Unable to satisfy assumptions of hypothesis %s. ' +
             'Only %s examples found after %g seconds'
-            ) % (
-                get_pretty_function_description(hypothesis),
-                str(examples),
-                run_time))
+        ) % (
+            get_pretty_function_description(hypothesis),
+            str(examples),
+            run_time))
 
 
 class Flaky(HypothesisException):
+
     """
     This function appears to fail non-deterministically: We have seen it fail
     when passed this example at least once, but a subsequent invocation did not
@@ -273,18 +282,19 @@ class Flaky(HypothesisException):
            how long it takes. Try breaking it up into smaller functions which
            dont' do that and testing those instead.
     """
+
     def __init__(self, hypothesis, example):
         super(Flaky, self).__init__((
-            "Hypothesis %r produces unreliable results: %r falsified it on the"
-            " first call but did not on a subsequent one"
+            'Hypothesis %r produces unreliable results: %r falsified it on the'
+            ' first call but did not on a subsequent one'
         ) % (get_pretty_function_description(hypothesis), example))
 
 
 class Timeout(Unfalsifiable):
-    """
-    We were unable to find enough examples that satisfied the preconditions of
-    this hypothesis in the amount of time allotted to us.
-    """
+
+    """We were unable to find enough examples that satisfied the preconditions
+    of this hypothesis in the amount of time allotted to us."""
+
     def __init__(self, hypothesis, satisfying_examples, run_time):
         super(Timeout, self).__init__(
             hypothesis,

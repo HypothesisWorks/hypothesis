@@ -335,7 +335,7 @@ def test_can_falsify_with_true_boolean():
 def test_falsification_contains_function_string():
     with pytest.raises(Unfalsifiable) as e:
         assert falsify(lambda x: True, int)
-    assert "lambda x: True" in e.value.args[0]
+    assert 'lambda x: True' in e.value.args[0]
 
 
 def test_can_produce_and_minimize_long_lists_of_only_one_element():
@@ -394,7 +394,7 @@ def test_works_with_zero_arguments():
 always_false = lambda *args: False
 
 
-@pytest.mark.parametrize("desc", [
+@pytest.mark.parametrize('desc', [
     int, float, complex, text_type, binary_type, bool
 ])
 def test_minimizes_to_empty(desc):

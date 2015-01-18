@@ -408,7 +408,7 @@ def test_class_sorter_topologically_sorts_wrt_subclassing(classes, random):
     in_order = sort_in_subclass_order(classes)
     n = len(classes)
     for i in hrange(n):
-        for j in hrange(i+1, n):
+        for j in hrange(i + 1, n):
             assert not issubclass(in_order[j], in_order[i])
 
 

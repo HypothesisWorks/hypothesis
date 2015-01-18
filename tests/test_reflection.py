@@ -27,7 +27,7 @@ def test_simple_conversion():
         foo, (), {'a': 3, 'b': 2, 'c': 1}) == ((3, 2, 1), {})
 
     do_conversion_test(foo, (1, 0), {'c': 2})
-    do_conversion_test(foo, (1,), {'c': 2, 'b': "foo"})
+    do_conversion_test(foo, (1,), {'c': 2, 'b': 'foo'})
 
 
 def test_populates_defaults():
@@ -59,7 +59,7 @@ def test_errors_on_bad_kwargs():
         pass    # pragma: no cover
 
     with pytest.raises(TypeError):
-        convert_keyword_arguments(bar, (), {"foo": 1})
+        convert_keyword_arguments(bar, (), {'foo': 1})
 
 
 def test_passes_varargs_correctly():
@@ -133,6 +133,7 @@ def test_names_of_functions_are_pretty():
 
 
 class Foo(object):
+
     @classmethod
     def bar(cls):
         pass  # pragma: no cover
@@ -141,7 +142,7 @@ class Foo(object):
         pass  # pragma: no cover
 
     def __repr__(self):
-        return "SoNotFoo()"
+        return 'SoNotFoo()'
 
 
 def test_class_names_are_not_included_in_class_method_prettiness():
@@ -204,11 +205,11 @@ def test_does_not_error_on_confused_sources():
 
 def test_strips_comments_from_the_end():
     t = lambda x: 1  # pragma: no cover
-    assert get_pretty_function_description(t) == "lambda x: 1"
+    assert get_pretty_function_description(t) == 'lambda x: 1'
 
 
 def test_does_not_strip_hashes_within_a_string():
-    t = lambda x: "#"  # pragma: no cover
+    t = lambda x: '#'  # pragma: no cover
     assert get_pretty_function_description(t) == 'lambda x: "#"'
 
 
