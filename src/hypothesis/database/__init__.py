@@ -45,11 +45,11 @@ class ExampleDatabase(object):
 
     def __init__(
         self,
-        formats=None,
+        converters=None,
         backend=None,
     ):
-        self.formats = formats or ConverterTable.default()
-        self.strategies = self.formats.strategy_table
+        self.converters = converters or ConverterTable.default()
+        self.strategies = self.converters.strategy_table
         self.backend = backend or SQLiteBackend()
         self.storage_cache = {}
 
@@ -69,7 +69,7 @@ class ExampleDatabase(object):
         result = Storage(
             descriptor=descriptor,
             backend=self.backend,
-            format=self.formats.specification_for(descriptor),
+            format=self.converters.specification_for(descriptor),
             strategy=self.strategies.specification_for(descriptor),
         )
         self.storage_cache[key] = result

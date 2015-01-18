@@ -94,8 +94,8 @@ class ListConverter(Converter):
         return list(map(self.child_format.from_json, value))
 
 
-def define_list_format(formats, descriptor):
-    element_format = formats.specification_for(one_of(descriptor))
+def define_list_format(converters, descriptor):
+    element_format = converters.specification_for(one_of(descriptor))
     if element_format is generic_format:
         return generic_format
     else:
@@ -122,9 +122,9 @@ class CollectionConverter(Converter):
         return self.collection_type(self.list_format.from_json(value))
 
 
-def define_collection_format(formats, descriptor):
+def define_collection_format(converters, descriptor):
     return CollectionConverter(
-        formats.specification_for(list(descriptor)),
+        converters.specification_for(list(descriptor)),
         type(descriptor),
     )
 
@@ -170,7 +170,7 @@ class BinaryConverter(Converter):
 
     Note that this includes str in python 2.7
     because it has no associated encoding. Use unicode objects in 2.7 if you
-    care about human readable database formats.
+    care about human readable database converters.
 
     """
 
@@ -230,25 +230,25 @@ ConverterTable.default().define_specification_for_instances(
 class TupleConverter(Converter):
 
     """Tuples are stored as lists of the correct length with each coordinate
-    stored in its corresponding formats."""
+    stored in its corresponding converters."""
 
-    def __init__(self, tuple_formats):
-        self.tuple_formats = tuple(tuple_formats)
+    def __init__(self, tuple_converters):
+        self.tuple_converters = tuple(tuple_converters)
 
     def to_json(self, value):
-        if len(self.tuple_formats) == 1:
-            return self.tuple_formats[0].to_json(value[0])
+        if len(self.tuple_converters) == 1:
+            return self.tuple_converters[0].to_json(value[0])
         return [
             f.to_json(v)
-            for f, v in zip(self.tuple_formats, value)
+            for f, v in zip(self.tuple_converters, value)
         ]
 
     def from_json(self, value):
-        if len(self.tuple_formats) == 1:
-            return (self.tuple_formats[0].from_json(value),)
+        if len(self.tuple_converters) == 1:
+            return (self.tuple_converters[0].from_json(value),)
         return tuple(
             f.from_json(v)
-            for f, v in zip(self.tuple_formats, value)
+            for f, v in zip(self.tuple_converters, value)
         )
 
 
@@ -271,26 +271,26 @@ class FixedKeyDictConverter(Converter):
     in that order.
     """
 
-    def __init__(self, dict_of_formats):
+    def __init__(self, dict_of_converters):
         keys = tuple(
             sorted(
-                dict_of_formats.keys(),
+                dict_of_converters.keys(),
                 key=lambda t: (t.__class__.__name__, repr(t)))
         )
-        self.formats = tuple(
-            (k, dict_of_formats[k]) for k in keys
+        self.converters = tuple(
+            (k, dict_of_converters[k]) for k in keys
         )
 
     def to_json(self, value):
         return [
             f.to_json(value[k])
-            for k, f in self.formats
+            for k, f in self.converters
         ]
 
     def from_json(self, value):
         return {
             k: f.from_json(v)
-            for (k, f), v in zip(self.formats, value)
+            for (k, f), v in zip(self.converters, value)
         }
 
 
@@ -310,34 +310,34 @@ class OneOfConverter(Converter):
 
     There is some unavoidable ambiguity here where strategies can
     overlap but hopefully they have the property that on overlap their
-    formats agree. This is the case for all the built in formats. You'll
+    converters agree. This is the case for all the built in converters. You'll
     still get a result where it's not but it may result in some things
     being changed slightly.
 
     """
 
-    def __init__(self, formats, strategies):
-        assert len(formats) == len(strategies)
-        self.formats = formats
+    def __init__(self, converters, strategies):
+        assert len(converters) == len(strategies)
+        self.converters = converters
         self.strategies = strategies
 
     def to_json(self, value):
-        for i in hrange(len(self.formats)):
+        for i in hrange(len(self.converters)):
             if self.strategies[i].could_have_produced(value):
-                return [i, self.formats[i].to_json(value)]
+                return [i, self.converters[i].to_json(value)]
 
     def from_json(self, value):
         i, x = value
-        return self.formats[i].from_json(x)
+        return self.converters[i].from_json(x)
 
 
 def define_one_of_format(format_table, descriptor):
-    formats = [format_table.specification_for(v) for v in descriptor.elements]
+    converters = [format_table.specification_for(v) for v in descriptor.elements]
     strategies = [
         format_table.strategy_table.specification_for(v)
         for v in descriptor.elements
     ]
-    return OneOfConverter(formats, strategies)
+    return OneOfConverter(converters, strategies)
 
 ConverterTable.default().define_specification_for_instances(
     OneOf, define_one_of_format
