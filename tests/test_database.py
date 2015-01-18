@@ -69,7 +69,7 @@ def test_a_verifier_saves_any_failing_examples_in_its_database():
 def test_a_verifier_retrieves_previous_failing_examples_from_the_database():
     database = ExampleDatabase()
     verifier = Verifier(settings=hs.Settings(database=database))
-    verifier.falsify(lambda x: x != 11, int)
+    verifier.falsify(lambda x: x < 11, int)
     called = []
 
     def save_calls(t):
