@@ -116,7 +116,11 @@ class NonEmptySubset(Parameter):
         if not elements:
             raise ValueError('Must have at least one element')
         if activation_chance is None:
-            desired_expected_value = min(0.5 * len(elements), 2.0)
+            # TODO: This should have a more principled choice. It seems to be
+            # good in practice though.
+            # Note: The actual expected value is slightly higher because we're
+            # conditioning on the result being non-empty.
+            desired_expected_value = 1.0 if len(elements) <= 3 else 2.0
             activation_chance = desired_expected_value / len(elements)
         self.activation_chance = activation_chance
 
