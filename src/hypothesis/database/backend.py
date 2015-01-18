@@ -13,11 +13,12 @@ class Backend(object):
 
     Every (key, value) pair appears at most once. Saving a duplicate will just
     silently do nothing.
+
     """
 
     @abstractmethod
     def data_type(self):
-        """Returns the type of data that is suitable for values in this DB"""
+        """Returns the type of data that is suitable for values in this DB."""
 
     @abstractmethod
     def save(self, key, value):
@@ -25,7 +26,7 @@ class Backend(object):
 
     @abstractmethod
     def fetch(self, key):
-        """yield the values matching this key"""
+        """yield the values matching this key."""
 
 
 class SQLiteBackend(Backend):

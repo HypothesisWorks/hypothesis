@@ -28,7 +28,6 @@ class Storage(object):
 
     def fetch(self):
         for data in self.backend.fetch(self.key):
-            print("data=", data)
             deserialized = self.converter.from_json(
                 self.format.deserialize_data(data))
             if not self.strategy.could_have_produced(deserialized):
@@ -58,8 +57,8 @@ class ExampleDatabase(object):
         self.format = format or JSONFormat()
         if self.format.data_type() != self.backend.data_type():
             raise ValueError((
-                "Inconsistent data types: format provides data of type %s "
-                "but backend expects data of type %s" % (
+                'Inconsistent data types: format provides data of type %s '
+                'but backend expects data of type %s' % (
                     self.format.data_type(), self.backend.data_type()
                 )))
         self.storage_cache = {}

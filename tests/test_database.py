@@ -54,6 +54,7 @@ data_examples = (
 
 
 class InMemoryBackend(Backend):
+
     def __init__(self):
         self.data = {}
 
@@ -69,6 +70,7 @@ class InMemoryBackend(Backend):
 
 
 class ObjectFormat(Format):
+
     def data_type(self):
         return object
 
@@ -120,6 +122,7 @@ def test_errors_if_given_incompatible_format_and_backend():
         ExampleDatabase(
             backend=InMemoryBackend()
         )
+
 
 def test_a_verifier_saves_any_failing_examples_in_its_database():
     database = ExampleDatabase()
