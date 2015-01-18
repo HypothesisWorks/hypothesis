@@ -50,7 +50,7 @@ confidence=
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use"--disable=all --enable=classes
 # --disable=W"
-disable=invalid-name,missing-docstring,too-few-public-methods,unused-argument,bad-builtin,star-args,too-few-public-methods
+disable=invalid-name,missing-docstring,too-few-public-methods,unused-argument,bad-builtin,star-args,too-few-public-methods,invalid-name
 
 
 [REPORTS]
@@ -218,9 +218,6 @@ bad-names=foo,bar,baz,toto,tutu,tata
 # Colon-delimited sets of names that determine each other's naming style when
 # the name regexes allow several styles.
 name-group=
-
-# Include a hint for the correct naming format with invalid-name
-include-naming-hint=no
 
 # Regular expression matching correct argument names
 argument-rgx=[a-z_][a-z0-9_]{2,30}$

@@ -22,13 +22,14 @@ class Settings(object):
         find novel breakages.
 
     """
+    # pylint: disable=too-many-arguments
     def __init__(
-        self,
-        min_satisfying_examples=None,
-        max_examples=None,
-        max_skipped_examples=None,
-        timeout=None,
-        derandomize=None,
+            self,
+            min_satisfying_examples=None,
+            max_examples=None,
+            max_skipped_examples=None,
+            timeout=None,
+            derandomize=None,
     ):
         self.min_satisfying_examples = (
             min_satisfying_examples or default.min_satisfying_examples)

@@ -168,7 +168,6 @@ class CompositeParameter(Parameter):
     passed.
     """
     def __init__(self, *args, **kwargs):
-        # pylint: disable=invalid-name
         Parameter.__init__(self)
         if not kwargs and len(args) == 1 and inspect.isgenerator(args[0]):
             args = tuple(args[0])
