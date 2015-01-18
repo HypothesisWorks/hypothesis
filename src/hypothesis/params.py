@@ -23,7 +23,6 @@ class Parameter(object):
         Draw a value at random, using only state from the provided random
         number generator.
         """
-        pass
 
 
 class ExponentialParameter(Parameter):
