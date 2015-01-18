@@ -1,9 +1,10 @@
 from hypothesis import given
 from hypothesis.database.backend import SQLiteBackend
 from hypothesis.internal.compat import text_type
+from tests.common import small_verifier
 
 
-@given([(text_type, text_type)])
+@given([(text_type, text_type)], verifier=small_verifier)
 def test_backend_returns_what_you_put_in(xs):
     backend = SQLiteBackend(":memory:")
     mapping = {}
