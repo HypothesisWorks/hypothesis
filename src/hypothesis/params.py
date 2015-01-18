@@ -17,7 +17,7 @@ class Parameter(object):
     def __init__(self):
         pass
 
-    @abstractmethod
+    @abstractmethod # pragma: no cover
     def draw(self, random):
         """
         Draw a value at random, using only state from the provided random
