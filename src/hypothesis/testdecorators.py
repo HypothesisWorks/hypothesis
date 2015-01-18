@@ -46,10 +46,10 @@ def given(*generator_arguments, **kwargs):
             )
 
             print(
-                "Falsifying example: %s" % ', '.join(
+                'Falsifying example: %s' % ', '.join(
                     [repr(x) for x in cargs] +
                     sorted(
-                        ["%s=%s" % (k, repr(v)) for k, v in ckwargs.items()])
+                        ['%s=%s' % (k, repr(v)) for k, v in ckwargs.items()])
                 )
             )
 

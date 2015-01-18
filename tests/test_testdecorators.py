@@ -277,7 +277,7 @@ def test_prints_on_failure():
         with capture_out() as out:
             test_ints_are_sorted()
     out = out.getvalue()
-    lines = [l.strip() for l in out.split("\n")]
+    lines = [l.strip() for l in out.split('\n')]
     assert 'Falsifying example: balthazar=1, evans=0' in lines
 
 
@@ -289,5 +289,5 @@ def test_does_not_print_on_success():
     with capture_out() as out:
         test_is_an_int()
     out = out.getvalue()
-    lines = [l.strip() for l in out.split("\n")]
+    lines = [l.strip() for l in out.split('\n')]
     assert all(not l for l in lines)

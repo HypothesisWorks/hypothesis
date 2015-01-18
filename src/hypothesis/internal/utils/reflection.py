@@ -78,10 +78,12 @@ def convert_keyword_arguments(function, args, kwargs):
 
 
 def convert_positional_arguments(function, args, kwargs):
-    """
-    Return a tuple (new_args, new_kwargs) where all possible arguments have
-    been moved to kwargs. new_args will only be non-empty if function has a
+    """Return a tuple (new_args, new_kwargs) where all possible arguments have
+    been moved to kwargs.
+
+    new_args will only be non-empty if function has a
     variadic argument.
+
     """
     argspec = inspect.getargspec(function)
     kwargs = dict(kwargs)
@@ -89,12 +91,12 @@ def convert_positional_arguments(function, args, kwargs):
         for k in kwargs.keys():
             if k not in argspec.args:
                 raise TypeError(
-                    "%s() got an unexpected keyword argument %r" % (
+                    '%s() got an unexpected keyword argument %r' % (
                         function.__name__, k
                     ))
     if len(args) > len(argspec.args) and not argspec.varargs:
         raise TypeError(
-            "%s() takes at most %d positional arguments (%d given)" % (
+            '%s() takes at most %d positional arguments (%d given)' % (
                 function.__name__, len(argspec.args), len(args)
             )
         )
@@ -102,7 +104,7 @@ def convert_positional_arguments(function, args, kwargs):
     for arg, name in zip(args, argspec.args):
         if name in kwargs:
             raise TypeError(
-                "%s() got multiple values for keyword argument %r" % (
+                '%s() got multiple values for keyword argument %r' % (
                     function.__name__, name
                 ))
         else:
