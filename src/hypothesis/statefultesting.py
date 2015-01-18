@@ -73,9 +73,9 @@ class TestRun(object):
             for t in tests:
                 t(value)
         run_integrity_tests()
-        for step, args, kwargs in self.steps:
+        for s, args, kwargs in self.steps:
             try:
-                step(value, *args, **kwargs)
+                s(value, *args, **kwargs)
                 run_integrity_tests()
             except PreconditionNotMet:
                 pass
