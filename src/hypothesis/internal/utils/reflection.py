@@ -139,7 +139,7 @@ def find_offset(string, line, column):
     return current_line_offset + column
 
 
-WHITESPACE = re.compile('\s+')
+WHITESPACE = re.compile(r"\s+")
 PROBABLY_A_COMMENT = re.compile("""#[^'"]*$""")
 
 
