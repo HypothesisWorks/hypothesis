@@ -6,7 +6,7 @@ from tests.common import small_verifier
 
 @given([(text_type, text_type)], verifier=small_verifier)
 def test_backend_returns_what_you_put_in(xs):
-    backend = SQLiteBackend(":memory:")
+    backend = SQLiteBackend(':memory:')
     mapping = {}
     for key, value in xs:
         mapping.setdefault(key, set()).add(value)

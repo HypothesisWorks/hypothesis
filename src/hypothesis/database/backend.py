@@ -3,25 +3,25 @@ import sqlite3
 
 
 class Backend(object):
-    """
-    Interface class for storage systems. Simple key / multiple value store.
+
+    """Interface class for storage systems.
+
+    Simple key / multiple value store.
+
     """
 
     @abstractmethod
     def save(self, key, value):
-        """
-        Save a single value matching this key
-        """
+        """Save a single value matching this key."""
 
     @abstractmethod
     def fetch(self, key):
-        """
-        yield the values matching this key, ignoring duplicates
-        """
+        """yield the values matching this key, ignoring duplicates."""
 
 
 class SQLiteBackend(Backend):
-    def __init__(self, path=":memory:"):
+
+    def __init__(self, path=':memory:'):
         self.connection = sqlite3.connect(path)
         self.db_created = False
 

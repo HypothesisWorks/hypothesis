@@ -10,9 +10,10 @@ import base64
 
 
 class NotSerializeable(Exception):
+
     def __init__(self, descriptor):
         super(NotSerializeable, self).__init__(
-            "%s does not describe a serializeable type" % (
+            '%s does not describe a serializeable type' % (
                 nice_string(descriptor),
             )
         )
@@ -23,9 +24,12 @@ def not_serializeable(s, d):
 
 
 class FormatTable(SpecificationMapper):
-    """
-    Mapper defining how data is serialized from a descriptor. Will handle
-    anything it doesn't understand by just throwing it straight to JSON.
+
+    """Mapper defining how data is serialized from a descriptor.
+
+    Will handle anything it doesn't understand by just throwing it
+    straight to JSON.
+
     """
 
     def __init__(self, strategy_table=None):
@@ -40,6 +44,7 @@ class FormatTable(SpecificationMapper):
 
 
 class Format(object):
+
     """
     Interface for converting objects to and from an object system suitable
     for converting to the JSON-with-bigints format that Python uses. Note:
@@ -48,22 +53,22 @@ class Format(object):
 
     @abstractmethod
     def to_json(self, value):
-        """
-        Turn this value into a JSON ready object
-        """
+        """Turn this value into a JSON ready object."""
 
     @abstractmethod
     def from_json(self, value):
-        """
-        Convert this value into a JSON ready object from the original type
-        """
+        """Convert this value into a JSON ready object from the original
+        type."""
 
 
 class GenericFormat(Format):
+
+    """Trivial format that does no conversion.
+
+    In the absence of anything more specific this will be used.
+
     """
-    Trivial format that does no conversion. In the absence of anything
-    more specific this will be used.
-    """
+
     def to_json(self, value):
         return value
 
@@ -75,10 +80,9 @@ generic_format = GenericFormat()
 
 
 class ListFormat(Format):
-    """
-    Simply maps a child strategy over its elements as lists are natively
-    supported
-    """
+
+    """Simply maps a child strategy over its elements as lists are natively
+    supported."""
 
     def __init__(self, child_format):
         self.child_format = child_format
@@ -102,6 +106,7 @@ FormatTable.default().define_specification_for_instances(
 
 
 class CollectionFormat(Format):
+
     """
     Round-trips a collection type via a list
     """
@@ -130,9 +135,9 @@ FormatTable.default().define_specification_for_instances(
 
 
 class ComplexFormat(Format):
-    """
-    Encodes complex numbers as a list [real, imaginary]
-    """
+
+    """Encodes complex numbers as a list [real, imaginary]"""
+
     def to_json(self, c):
         return [c.real, c.imag]
 
@@ -144,10 +149,10 @@ FormatTable.default().define_specification_for(
 
 
 class TextFormat(Format):
-    """
-    Text types which are guaranteed to be unicode clean are stored as normal
-    JSON strings.
-    """
+
+    """Text types which are guaranteed to be unicode clean are stored as normal
+    JSON strings."""
+
     def to_json(self, c):
         return c
 
@@ -160,10 +165,13 @@ FormatTable.default().define_specification_for(
 
 
 class BinaryFormat(Format):
-    """
-    Binary types are base 64 encoded. Note that this includes str in python 2.7
+
+    """Binary types are base 64 encoded.
+
+    Note that this includes str in python 2.7
     because it has no associated encoding. Use unicode objects in 2.7 if you
     care about human readable database formats.
+
     """
 
     def to_json(self, c):
@@ -178,10 +186,10 @@ FormatTable.default().define_specification_for(
 
 
 class RandomFormat(Format):
-    """
-    Stores one of hypothesis's RandomWithSeed types just by storing it as its
-    seed value.
-    """
+
+    """Stores one of hypothesis's RandomWithSeed types just by storing it as
+    its seed value."""
+
     def to_json(self, c):
         return c.seed
 
@@ -194,10 +202,14 @@ FormatTable.default().define_specification_for(
 
 
 class JustFormat(Format):
+
+    """Just can only have a single value!
+
+    We just represent this as a  null object and recover it as the
+    value.
+
     """
-    Just can only have a single value! We just represent this as a  null object
-    and recover it as the value.
-    """
+
     def __init__(self, value):
         self.value = value
 
@@ -216,10 +228,10 @@ FormatTable.default().define_specification_for_instances(
 
 
 class TupleFormat(Format):
-    """
-    Tuples are stored as lists of the correct length with each coordinate
-    stored in its corresponding formats.
-    """
+
+    """Tuples are stored as lists of the correct length with each coordinate
+    stored in its corresponding formats."""
+
     def __init__(self, tuple_formats):
         self.tuple_formats = tuple(tuple_formats)
 
@@ -250,6 +262,7 @@ FormatTable.default().define_specification_for_instances(
 
 
 class FixedKeyDictFormat(Format):
+
     """
     Dicts are *not* stored as dicts. This is for a mix of reasons, but mostly
     that python supports a much greater range of keys than JSON does and we
@@ -257,6 +270,7 @@ class FixedKeyDictFormat(Format):
     arbitrary but well defined order and the dict is serialized as per a tuple
     in that order.
     """
+
     def __init__(self, dict_of_formats):
         keys = tuple(
             sorted(
@@ -290,14 +304,18 @@ FormatTable.default().define_specification_for_instances(
 
 
 class OneOfFormat(Format):
+
+    """OneOf stores its elements as pairs [integer tag, value] where the tag is
+    the position of the first strategy in the list that could have produced it.
+
+    There is some unavoidable ambiguity here where strategies can
+    overlap but hopefully they have the property that on overlap their
+    formats agree. This is the case for all the built in formats. You'll
+    still get a result where it's not but it may result in some things
+    being changed slightly.
+
     """
-    OneOf stores its elements as pairs [integer tag, value] where the tag
-    is the position of the first strategy in the list that could have produced
-    it. There is some unavoidable ambiguity here where strategies can overlap
-    but hopefully they have the property that on overlap their formats agree.
-    This is the case for all the built in formats. You'll still get a result
-    where it's not but it may result in some things being changed slightly.
-    """
+
     def __init__(self, formats, strategies):
         assert len(formats) == len(strategies)
         self.formats = formats
@@ -327,10 +345,10 @@ FormatTable.default().define_specification_for_instances(
 
 
 class SampledFromFormat(Format):
-    """
-    A SampledFrom instance is simply stored as an integer index into the list
-    of values sampled from.
-    """
+
+    """A SampledFrom instance is simply stored as an integer index into the
+    list of values sampled from."""
+
     def __init__(self, choices):
         self.choices = tuple(choices)
 

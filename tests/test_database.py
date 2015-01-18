@@ -32,7 +32,7 @@ def run_round_trip(descriptor, value):
     assert saved == [value]
 
 
-@pytest.mark.parametrize(("descriptor", "value"), (
+@pytest.mark.parametrize(('descriptor', 'value'), (
     (int, 1),
     ((int,), (1,)),
     (complex, complex(1, 1)),
@@ -90,13 +90,13 @@ def test_storage_errors_if_given_the_wrong_type():
     database = ExampleDatabase()
     ints = database.storage_for(int)
     with pytest.raises(ValueError):
-        ints.save("hi")
+        ints.save('hi')
 
 
 def test_storage_errors_if_the_database_is_invalid():
     database = ExampleDatabase()
     ints = database.storage_for(int)
-    database.backend.save(ints.key, "[false, false, true]")
+    database.backend.save(ints.key, '[false, false, true]')
     with pytest.raises(ValueError):
         list(ints.fetch())
 

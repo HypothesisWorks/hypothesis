@@ -6,9 +6,9 @@ from hypothesis.database.backend import SQLiteBackend
 
 
 class Storage(object):
-    """
-    Handles saving and loading examples matching a particular descriptor.
-    """
+
+    """Handles saving and loading examples matching a particular descriptor."""
+
     def __init__(self, backend, descriptor, format, strategy):
         self.backend = backend
         self.descriptor = descriptor
@@ -19,7 +19,7 @@ class Storage(object):
     def save(self, value):
         if not self.strategy.could_have_produced(value):
             raise ValueError(
-                "Argument %r does not match description %s" % (
+                'Argument %r does not match description %s' % (
                     value, self.key))
         converted = self.format.to_json(value)
         serialized = json.dumps(converted)
@@ -30,16 +30,19 @@ class Storage(object):
             deserialized = self.format.from_json(json.loads(value))
             if not self.strategy.could_have_produced(deserialized):
                 raise ValueError(
-                    "Value %r does not match description %s" % (
+                    'Value %r does not match description %s' % (
                         value, self.key))
             yield deserialized
 
 
 class ExampleDatabase(object):
+
+    """Object encapsulating all the things you need to get storage.
+
+    Maps descriptors to storage for them.
+
     """
-    Object encapsulating all the things you need to get storage. Maps
-    descriptors to storage for them.
-    """
+
     def __init__(
         self,
         formats=None,
@@ -51,10 +54,11 @@ class ExampleDatabase(object):
         self.storage_cache = {}
 
     def storage_for(self, descriptor):
-        """
-        Get a storage object corresponding to this descriptor. Will cache the
-        result so that x.storage_for(d) is x.storage_for(d). You can rely on
-        that behaviour.
+        """Get a storage object corresponding to this descriptor.
+
+        Will cache the result so that x.storage_for(d) is
+        x.storage_for(d). You can rely on that behaviour.
+
         """
         key = HashItAnyway(descriptor)
         try:
