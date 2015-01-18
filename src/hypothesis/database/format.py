@@ -261,7 +261,7 @@ class FixedKeyDictFormat(Format):
         keys = tuple(
             sorted(
                 dict_of_formats.keys(),
-                key=lambda t: (t.__class__, repr(t)))
+                key=lambda t: (t.__class__.__name__, repr(t)))
         )
         self.formats = tuple(
             (k, dict_of_formats[k]) for k in keys
