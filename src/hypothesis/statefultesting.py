@@ -5,11 +5,12 @@ from hypothesis.searchstrategy import (
 from hypothesis.strategytable import (
     StrategyTable,
 )
+from hypothesis.database.converter import Converter, ConverterTable
 from collections import namedtuple
 from inspect import getmembers
 
 import hypothesis
-
+from hypothesis.internal.compat import hrange
 from hypothesis.internal.utils.reflection import convert_keyword_arguments
 
 
@@ -168,6 +169,53 @@ class StepStrategy(MappedSearchStrategy):
         return (x.arguments, x.kwargs)
 
 
+class StatefulConverter(Converter):
+    def __init__(self, format_table, descriptor):
+        Converter.__init__(self)
+        self.descriptor = descriptor
+        self.steps = tuple(descriptor.test_steps())
+        self.formats = tuple(
+            format_table.specification_for(s.hypothesis_test_requirements)
+            for s in self.steps
+        )
+        self.init_format = format_table.specification_for(
+            getattr(
+                descriptor.__init__,
+                'hypothesis_test_requirements',
+                ((), {}),
+            )
+        )
+
+    def to_json(self, value):
+        init = self.init_format.to_json((value.init_args, value.init_kwargs))
+        steps = []
+        for s in value.steps:
+            i = self.steps.index(s.target)
+            steps.append([
+                s.target.__name__,
+                self.formats[i].to_json((s.arguments, s.kwargs))
+            ])
+        return [init, steps]
+
+    def from_json(self, data):
+        init, steps = data
+        init = self.init_format.from_json(init)
+        parsed_steps = []
+        for name, data in steps:
+            for i in hrange(len(self.steps)):
+                if self.steps[i].__name__ == name:
+                    parsed_steps.append(
+                        Step(self.steps[i], *self.formats[i].from_json(data))
+                    )
+                    break
+        return TestRun(
+            cls=self.descriptor,
+            steps=parsed_steps,
+            init_args=init[0],
+            init_kwargs=init[1],
+        )
+
+
 def define_stateful_strategy(strategies, descriptor):
     step_strategies = [
         StepStrategy(
@@ -240,5 +288,10 @@ class StatefulStrategy(MappedSearchStrategy):
 
 StrategyTable.default().define_specification_for_classes(
     define_stateful_strategy,
+    subclasses_of=StatefulTest
+)
+
+ConverterTable.default().define_specification_for_classes(
+    StatefulConverter,
     subclasses_of=StatefulTest
 )
