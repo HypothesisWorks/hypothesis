@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 from hypothesis.database import ExampleDatabase
-from hypothesis.database.format import FormatTable
+from hypothesis.database.converter import FormatTable
 from hypothesis.searchstrategy import RandomWithSeed
 from hypothesis.descriptors import Just, one_of, sampled_from
 from random import Random

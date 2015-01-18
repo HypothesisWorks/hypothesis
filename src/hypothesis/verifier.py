@@ -2,7 +2,7 @@
 the various errors it may throw."""
 
 from hypothesis.strategytable import StrategyTable
-from hypothesis.database.format import NotSerializeable
+from hypothesis.database.converter import NotSerializeable
 from random import Random
 import time
 from hypothesis.internal.compat import hrange

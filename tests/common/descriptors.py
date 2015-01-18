@@ -9,7 +9,7 @@ from hypothesis.internal.utils.distributions import geometric, biased_coin
 from random import Random
 from collections import namedtuple
 from tests.common import small_table
-from hypothesis.database.format import FormatTable
+from hypothesis.database.converter import FormatTable
 
 primitive_types = [int, float, text_type, binary_type, bool, complex]
 basic_types = list(primitive_types)

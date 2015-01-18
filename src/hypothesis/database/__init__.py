@@ -1,7 +1,7 @@
 from hypothesis.searchstrategy import nice_string
 import json
 from hypothesis.internal.utils.hashitanyway import HashItAnyway
-from hypothesis.database.format import FormatTable
+from hypothesis.database.converter import FormatTable
 from hypothesis.database.backend import SQLiteBackend
 
 
