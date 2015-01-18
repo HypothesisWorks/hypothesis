@@ -310,9 +310,9 @@ class OneOfConverter(Converter):
 
     There is some unavoidable ambiguity here where strategies can
     overlap but hopefully they have the property that on overlap their
-    converters agree. This is the case for all the built in converters. You'll
-    still get a result where it's not but it may result in some things
-    being changed slightly.
+    converters agree. This is the case for all the built in converters.
+    You'll still get a result where it's not but it may result in some
+    things being changed slightly.
 
     """
 
@@ -332,7 +332,8 @@ class OneOfConverter(Converter):
 
 
 def define_one_of_converter(converter_table, descriptor):
-    converters = [converter_table.specification_for(v) for v in descriptor.elements]
+    converters = [
+        converter_table.specification_for(v) for v in descriptor.elements]
     strategies = [
         converter_table.strategy_table.specification_for(v)
         for v in descriptor.elements
