@@ -1,7 +1,7 @@
 from hypothesis.searchstrategy import nice_string
 import json
 from hypothesis.internal.utils.hashitanyway import HashItAnyway
-from hypothesis.database.converter import FormatTable
+from hypothesis.database.converter import ConverterTable
 from hypothesis.database.backend import SQLiteBackend
 
 
@@ -48,7 +48,7 @@ class ExampleDatabase(object):
         formats=None,
         backend=None,
     ):
-        self.formats = formats or FormatTable.default()
+        self.formats = formats or ConverterTable.default()
         self.strategies = self.formats.strategy_table
         self.backend = backend or SQLiteBackend()
         self.storage_cache = {}

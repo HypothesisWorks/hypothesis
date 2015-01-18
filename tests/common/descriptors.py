@@ -9,7 +9,7 @@ from hypothesis.internal.utils.distributions import geometric, biased_coin
 from random import Random
 from collections import namedtuple
 from tests.common import small_table
-from hypothesis.database.converter import FormatTable
+from hypothesis.database.converter import ConverterTable
 
 primitive_types = [int, float, text_type, binary_type, bool, complex]
 basic_types = list(primitive_types)
@@ -23,8 +23,8 @@ Descriptor = namedtuple('Descriptor', ('descriptor',))
 DescriptorWithValue = namedtuple(
     'DescriptorWithValue', ('descriptor', 'value', 'parameter', 'random'))
 
-FormatTable.default().mark_not_serializeable(Descriptor)
-FormatTable.default().mark_not_serializeable(DescriptorWithValue)
+ConverterTable.default().mark_not_serializeable(Descriptor)
+ConverterTable.default().mark_not_serializeable(DescriptorWithValue)
 
 
 class DescriptorStrategy(SearchStrategy):

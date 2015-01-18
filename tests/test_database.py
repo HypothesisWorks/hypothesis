@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 from hypothesis.database import ExampleDatabase
-from hypothesis.database.converter import FormatTable
+from hypothesis.database.converter import ConverterTable
 from hypothesis.searchstrategy import RandomWithSeed
 from hypothesis.descriptors import Just, one_of, sampled_from
 from random import Random
@@ -104,7 +104,7 @@ def test_storage_errors_if_the_database_is_invalid():
 class Awkward(str):
     pass
 
-FormatTable.default().mark_not_serializeable(Awkward)
+ConverterTable.default().mark_not_serializeable(Awkward)
 
 
 class AwkwardStrategy(SearchStrategy):

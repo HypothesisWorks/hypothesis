@@ -23,7 +23,7 @@ def not_serializeable(s, d):
     raise NotSerializeable(d)
 
 
-class FormatTable(SpecificationMapper):
+class ConverterTable(SpecificationMapper):
 
     """Mapper defining how data is serialized from a descriptor.
 
@@ -33,7 +33,7 @@ class FormatTable(SpecificationMapper):
     """
 
     def __init__(self, strategy_table=None):
-        super(FormatTable, self).__init__()
+        super(ConverterTable, self).__init__()
         self.strategy_table = strategy_table or StrategyTable.default()
 
     def mark_not_serializeable(self, descriptor):
@@ -43,7 +43,7 @@ class FormatTable(SpecificationMapper):
         return generic_format
 
 
-class Format(object):
+class Converter(object):
 
     """
     Interface for converting objects to and from an object system suitable
@@ -61,7 +61,7 @@ class Format(object):
         type."""
 
 
-class GenericFormat(Format):
+class GenericConverter(Converter):
 
     """Trivial format that does no conversion.
 
@@ -76,10 +76,10 @@ class GenericFormat(Format):
         return value
 
 
-generic_format = GenericFormat()
+generic_format = GenericConverter()
 
 
-class ListFormat(Format):
+class ListConverter(Converter):
 
     """Simply maps a child strategy over its elements as lists are natively
     supported."""
@@ -99,13 +99,13 @@ def define_list_format(formats, descriptor):
     if element_format is generic_format:
         return generic_format
     else:
-        return ListFormat(element_format)
+        return ListConverter(element_format)
 
-FormatTable.default().define_specification_for_instances(
+ConverterTable.default().define_specification_for_instances(
     list, define_list_format)
 
 
-class CollectionFormat(Format):
+class CollectionConverter(Converter):
 
     """
     Round-trips a collection type via a list
@@ -123,18 +123,18 @@ class CollectionFormat(Format):
 
 
 def define_collection_format(formats, descriptor):
-    return CollectionFormat(
+    return CollectionConverter(
         formats.specification_for(list(descriptor)),
         type(descriptor),
     )
 
-FormatTable.default().define_specification_for_instances(
+ConverterTable.default().define_specification_for_instances(
     set, define_collection_format)
-FormatTable.default().define_specification_for_instances(
+ConverterTable.default().define_specification_for_instances(
     frozenset, define_collection_format)
 
 
-class ComplexFormat(Format):
+class ComplexConverter(Converter):
 
     """Encodes complex numbers as a list [real, imaginary]"""
 
@@ -144,11 +144,11 @@ class ComplexFormat(Format):
     def from_json(self, c):
         return complex(*c)
 
-FormatTable.default().define_specification_for(
-    complex, lambda s, d: ComplexFormat())
+ConverterTable.default().define_specification_for(
+    complex, lambda s, d: ComplexConverter())
 
 
-class TextFormat(Format):
+class TextConverter(Converter):
 
     """Text types which are guaranteed to be unicode clean are stored as normal
     JSON strings."""
@@ -159,12 +159,12 @@ class TextFormat(Format):
     def from_json(self, c):
         return text_type(c)
 
-FormatTable.default().define_specification_for(
-    text_type, lambda s, d: TextFormat()
+ConverterTable.default().define_specification_for(
+    text_type, lambda s, d: TextConverter()
 )
 
 
-class BinaryFormat(Format):
+class BinaryConverter(Converter):
 
     """Binary types are base 64 encoded.
 
@@ -180,12 +180,12 @@ class BinaryFormat(Format):
     def from_json(self, c):
         return base64.b64decode(c.encode('utf-8'))
 
-FormatTable.default().define_specification_for(
-    binary_type, lambda s, d: BinaryFormat()
+ConverterTable.default().define_specification_for(
+    binary_type, lambda s, d: BinaryConverter()
 )
 
 
-class RandomFormat(Format):
+class RandomConverter(Converter):
 
     """Stores one of hypothesis's RandomWithSeed types just by storing it as
     its seed value."""
@@ -196,12 +196,12 @@ class RandomFormat(Format):
     def from_json(self, c):
         return RandomWithSeed(c)
 
-FormatTable.default().define_specification_for(
-    Random, lambda s, d: RandomFormat()
+ConverterTable.default().define_specification_for(
+    Random, lambda s, d: RandomConverter()
 )
 
 
-class JustFormat(Format):
+class JustConverter(Converter):
 
     """Just can only have a single value!
 
@@ -221,13 +221,13 @@ class JustFormat(Format):
         return self.value
 
 
-FormatTable.default().define_specification_for_instances(
+ConverterTable.default().define_specification_for_instances(
     Just,
-    lambda s, d: JustFormat(d.value)
+    lambda s, d: JustConverter(d.value)
 )
 
 
-class TupleFormat(Format):
+class TupleConverter(Converter):
 
     """Tuples are stored as lists of the correct length with each coordinate
     stored in its corresponding formats."""
@@ -252,16 +252,16 @@ class TupleFormat(Format):
         )
 
 
-FormatTable.default().define_specification_for_instances(
+ConverterTable.default().define_specification_for_instances(
     tuple,
-    lambda s, d: TupleFormat(
+    lambda s, d: TupleConverter(
         s.specification_for(x)
         for x in d
     )
 )
 
 
-class FixedKeyDictFormat(Format):
+class FixedKeyDictConverter(Converter):
 
     """
     Dicts are *not* stored as dicts. This is for a mix of reasons, but mostly
@@ -294,16 +294,16 @@ class FixedKeyDictFormat(Format):
         }
 
 
-FormatTable.default().define_specification_for_instances(
+ConverterTable.default().define_specification_for_instances(
     dict,
-    lambda s, d: FixedKeyDictFormat({
+    lambda s, d: FixedKeyDictConverter({
         k: s.specification_for(v)
         for k, v in d.items()
     })
 )
 
 
-class OneOfFormat(Format):
+class OneOfConverter(Converter):
 
     """OneOf stores its elements as pairs [integer tag, value] where the tag is
     the position of the first strategy in the list that could have produced it.
@@ -337,14 +337,14 @@ def define_one_of_format(format_table, descriptor):
         format_table.strategy_table.specification_for(v)
         for v in descriptor.elements
     ]
-    return OneOfFormat(formats, strategies)
+    return OneOfConverter(formats, strategies)
 
-FormatTable.default().define_specification_for_instances(
+ConverterTable.default().define_specification_for_instances(
     OneOf, define_one_of_format
 )
 
 
-class SampledFromFormat(Format):
+class SampledFromConverter(Converter):
 
     """A SampledFrom instance is simply stored as an integer index into the
     list of values sampled from."""
@@ -359,6 +359,6 @@ class SampledFromFormat(Format):
         return self.choices[value]
 
 
-FormatTable.default().define_specification_for_instances(
-    SampledFrom, lambda s, d: SampledFromFormat(d.elements)
+ConverterTable.default().define_specification_for_instances(
+    SampledFrom, lambda s, d: SampledFromConverter(d.elements)
 )
