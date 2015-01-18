@@ -44,7 +44,8 @@ def convert_keyword_arguments(function, args, kwargs):
 
     if argspec.defaults:
         for name, value in zip(
-            argspec.args[-len(argspec.defaults):], argspec.defaults
+                argspec.args[-len(argspec.defaults):],
+                argspec.defaults
         ):
             defaults[name] = value
 
