@@ -40,14 +40,14 @@ class ConverterTable(SpecificationMapper):
         self.define_specification_for(descriptor, not_serializeable)
 
     def missing_specification(self, descriptor):
-        return generic_format
+        return generic_converter
 
 
 class Converter(object):
 
     """
     Interface for converting objects to and from an object system suitable
-    for converting to the JSON-with-bigints format that Python uses. Note:
+    for converting to the JSON-with-bigints converter that Python uses. Note:
     Does not actually serialize, only munges into a different shape.
     """
 
@@ -63,7 +63,7 @@ class Converter(object):
 
 class GenericConverter(Converter):
 
-    """Trivial format that does no conversion.
+    """Trivial converter that does no conversion.
 
     In the absence of anything more specific this will be used.
 
@@ -76,7 +76,7 @@ class GenericConverter(Converter):
         return value
 
 
-generic_format = GenericConverter()
+generic_converter = GenericConverter()
 
 
 class ListConverter(Converter):
@@ -84,25 +84,25 @@ class ListConverter(Converter):
     """Simply maps a child strategy over its elements as lists are natively
     supported."""
 
-    def __init__(self, child_format):
-        self.child_format = child_format
+    def __init__(self, child_converter):
+        self.child_converter = child_converter
 
     def to_json(self, value):
-        return list(map(self.child_format.to_json, value))
+        return list(map(self.child_converter.to_json, value))
 
     def from_json(self, value):
-        return list(map(self.child_format.from_json, value))
+        return list(map(self.child_converter.from_json, value))
 
 
-def define_list_format(converters, descriptor):
-    element_format = converters.specification_for(one_of(descriptor))
-    if element_format is generic_format:
-        return generic_format
+def define_list_converter(converters, descriptor):
+    element_converter = converters.specification_for(one_of(descriptor))
+    if element_converter is generic_converter:
+        return generic_converter
     else:
-        return ListConverter(element_format)
+        return ListConverter(element_converter)
 
 ConverterTable.default().define_specification_for_instances(
-    list, define_list_format)
+    list, define_list_converter)
 
 
 class CollectionConverter(Converter):
@@ -111,27 +111,27 @@ class CollectionConverter(Converter):
     Round-trips a collection type via a list
     """
 
-    def __init__(self, list_format, collection_type):
-        self.list_format = list_format
+    def __init__(self, list_converter, collection_type):
+        self.list_converter = list_converter
         self.collection_type = collection_type
 
     def to_json(self, value):
-        return self.list_format.to_json(list(value))
+        return self.list_converter.to_json(list(value))
 
     def from_json(self, value):
-        return self.collection_type(self.list_format.from_json(value))
+        return self.collection_type(self.list_converter.from_json(value))
 
 
-def define_collection_format(converters, descriptor):
+def define_collection_converter(converters, descriptor):
     return CollectionConverter(
         converters.specification_for(list(descriptor)),
         type(descriptor),
     )
 
 ConverterTable.default().define_specification_for_instances(
-    set, define_collection_format)
+    set, define_collection_converter)
 ConverterTable.default().define_specification_for_instances(
-    frozenset, define_collection_format)
+    frozenset, define_collection_converter)
 
 
 class ComplexConverter(Converter):
@@ -331,16 +331,16 @@ class OneOfConverter(Converter):
         return self.converters[i].from_json(x)
 
 
-def define_one_of_format(format_table, descriptor):
-    converters = [format_table.specification_for(v) for v in descriptor.elements]
+def define_one_of_converter(converter_table, descriptor):
+    converters = [converter_table.specification_for(v) for v in descriptor.elements]
     strategies = [
-        format_table.strategy_table.specification_for(v)
+        converter_table.strategy_table.specification_for(v)
         for v in descriptor.elements
     ]
     return OneOfConverter(converters, strategies)
 
 ConverterTable.default().define_specification_for_instances(
-    OneOf, define_one_of_format
+    OneOf, define_one_of_converter
 )
 
 

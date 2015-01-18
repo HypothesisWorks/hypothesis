@@ -9,10 +9,10 @@ class Storage(object):
 
     """Handles saving and loading examples matching a particular descriptor."""
 
-    def __init__(self, backend, descriptor, format, strategy):
+    def __init__(self, backend, descriptor, converter, strategy):
         self.backend = backend
         self.descriptor = descriptor
-        self.format = format
+        self.converter = converter
         self.strategy = strategy
         self.key = nice_string(descriptor)
 
@@ -21,13 +21,13 @@ class Storage(object):
             raise ValueError(
                 'Argument %r does not match description %s' % (
                     value, self.key))
-        converted = self.format.to_json(value)
+        converted = self.converter.to_json(value)
         serialized = json.dumps(converted)
         self.backend.save(self.key, serialized)
 
     def fetch(self):
         for value in self.backend.fetch(self.key):
-            deserialized = self.format.from_json(json.loads(value))
+            deserialized = self.converter.from_json(json.loads(value))
             if not self.strategy.could_have_produced(deserialized):
                 raise ValueError(
                     'Value %r does not match description %s' % (
@@ -69,7 +69,7 @@ class ExampleDatabase(object):
         result = Storage(
             descriptor=descriptor,
             backend=self.backend,
-            format=self.converters.specification_for(descriptor),
+            converter=self.converters.specification_for(descriptor),
             strategy=self.strategies.specification_for(descriptor),
         )
         self.storage_cache[key] = result
