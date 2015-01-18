@@ -77,6 +77,42 @@ def convert_keyword_arguments(function, args, kwargs):
     return tuple(new_args), kwargs
 
 
+def convert_positional_arguments(function, args, kwargs):
+    """
+    Return a tuple (new_args, new_kwargs) where all possible arguments have
+    been moved to kwargs. new_args will only be non-empty if function has a
+    variadic argument.
+    """
+    argspec = inspect.getargspec(function)
+    kwargs = dict(kwargs)
+    if not argspec.keywords:
+        for k in kwargs.keys():
+            if k not in argspec.args:
+                raise TypeError(
+                    "%s() got an unexpected keyword argument %r" % (
+                        function.__name__, k
+                    ))
+    if len(args) > len(argspec.args) and not argspec.varargs:
+        raise TypeError(
+            "%s() takes at most %d positional arguments (%d given)" % (
+                function.__name__, len(argspec.args), len(args)
+            )
+        )
+
+    for arg, name in zip(args, argspec.args):
+        if name in kwargs:
+            raise TypeError(
+                "%s() got multiple values for keyword argument %r" % (
+                    function.__name__, name
+                ))
+        else:
+            kwargs[name] = arg
+    return (
+        tuple(args[len(argspec.args):]),
+        kwargs,
+    )
+
+
 def extract_all_lambdas(tree):
     lambdas = []
 

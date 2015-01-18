@@ -8,6 +8,7 @@ import time
 from hypothesis.internal.compat import text_type, binary_type
 import hypothesis.settings as hs
 import inspect
+from tests.common.utils import capture_out
 
 
 def fails_with(e):
@@ -28,8 +29,14 @@ def test_int_addition_is_commutative(x, y):
 
 
 @fails
-@given(str, str)
+@given(text_type, text_type)
 def test_str_addition_is_commutative(x, y):
+    assert x + y == y + x
+
+
+@fails
+@given(binary_type, binary_type)
+def test_bytes_addition_is_commutative(x, y):
     assert x + y == y + x
 
 
@@ -258,3 +265,28 @@ def test_can_mix_sampling_with_generating(x, y):
 @given(frozenset([int]))
 def test_can_find_large_sum_frozenset(xs):
     assert sum(xs) < 100
+
+
+def test_prints_on_failure():
+    @given(int, int)
+    def test_ints_are_sorted(balthazar, evans):
+        assume(evans >= 0)
+        assert balthazar <= evans
+    with pytest.raises(AssertionError):
+        with capture_out() as out:
+            test_ints_are_sorted()
+    out = out.getvalue()
+    lines = [l.strip() for l in out.split("\n")]
+    assert 'Falsifying example: balthazar=1, evans=0' in lines
+
+
+def test_does_not_print_on_success():
+    @given(int)
+    def test_is_an_int(x):
+        return True
+
+    with capture_out() as out:
+        test_is_an_int()
+    out = out.getvalue()
+    lines = [l.strip() for l in out.split("\n")]
+    assert all(not l for l in lines)
