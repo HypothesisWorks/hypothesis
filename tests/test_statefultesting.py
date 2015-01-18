@@ -241,3 +241,25 @@ def test_prune_immediately_removes_every_thing_after_a_bad_call():
     pruned = tr.prune()
     assert len(pruned.steps) == 11
     assert pruned.steps[-1].target == HasOneBreakingMethod.not_so_good
+
+
+class IsPickyAboutPreconditions(StatefulTest):
+
+    def __init__(self):
+        self.lefts = 0
+        self.rights = 0
+
+    @step
+    def left(self):
+        precondition(self.rights >= self.lefts)
+        self.lefts += 1
+
+    @step
+    def right(self):
+        precondition(self.lefts >= self.rights)
+        self.rights += 1
+        assert self.rights < 3
+
+
+def test_can_find_a_breaking_example_with_lots_of_preconditions():
+    assert len(IsPickyAboutPreconditions.breaking_example()) == 5
