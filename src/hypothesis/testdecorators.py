@@ -26,7 +26,7 @@ def given(*generator_arguments, **kwargs):
                     return True
                 except UnsatisfiedAssumption as e:
                     raise e
-                except Exception:
+                except Exception: # pylint: disable=broad-except
                     return False
 
             to_falsify.__name__ = test.__name__

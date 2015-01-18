@@ -90,7 +90,7 @@ class TestRun(object):
                 results.append(s)
             except PreconditionNotMet:
                 continue
-            except Exception:
+            except Exception:  # pylint: disable=broad-except
                 results.append(s)
                 break
         if len(results) == len(self):
