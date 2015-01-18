@@ -1,3 +1,11 @@
+"""
+A module controlling settings for Hypothesis to use in falsification.
+
+Either an explicit Settings object can be used or the default object on this
+module can be modified.
+
+"""
+
 class Settings(object):
     """
     A settings object controls a variety of parameters that are used in
