@@ -548,3 +548,22 @@ def test_could_have_produced_distinguishes_on_values():
 def test_could_have_produced_distinguishes_on_keys():
     s = strategy({6: int})
     assert not s.could_have_produced({'': False})
+
+
+def test_string_tries_empty_string_first():
+    strat = strategy(text_type)
+    assert next(strat.simplify("kittens")) == ''
+
+
+def test_simplifies_quickly_to_list_of_empties():
+    x = ["foo%d" % (i,) for i in hrange(10)]
+    s = strategy([str])
+    call_counter = [0]
+
+    def count_long(xs):
+        call_counter[0] += 1
+        return len(xs) >= 10
+
+    list(s.simplify_such_that(x, count_long))
+    assert call_counter[0] > 0
+    assert call_counter[0] <= 30
