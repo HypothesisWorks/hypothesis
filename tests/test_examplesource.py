@@ -74,7 +74,7 @@ def test_can_grow_the_set_of_available_parameters_if_doing_badly():
 
 def test_example_source_needs_at_least_one_useful_argument():
     with pytest.raises(ValueError):
-        ExampleSource(random=random, storage=None, strategy=None)
+        ExampleSource(random=random.Random(), storage=None, strategy=None)
 
 
 def test_example_source_needs_random():
