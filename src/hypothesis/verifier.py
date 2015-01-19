@@ -108,7 +108,10 @@ class Verifier(object):
 
         skipped_examples = 0
         examples_seen = 0
-        for args in example_source:
+        # At present this loop will never exit normally . This needs proper
+        # testing when "database only" mode becomes available but right now
+        # it's not.
+        for args in example_source:  # pragma: no branch
             assert search_strategy.could_have_produced(args)
 
             if falsifying_examples:
