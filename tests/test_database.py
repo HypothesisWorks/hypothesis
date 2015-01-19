@@ -16,6 +16,7 @@ from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.strategytable import StrategyTable
 import hypothesis.params as params
 from hypothesis.internal.compat import text_type, binary_type, integer_types
+from collections import Counter
 
 
 def test_deduplicates():
@@ -192,3 +193,24 @@ StrategyTable.default().define_specification_for(
 def test_can_verify_a_non_serializale_type():
     verifier = Verifier(settings=hs.Settings(database=ExampleDatabase()))
     verifier.falsify(lambda x: len(x) > 0, Awkward)
+
+
+def test_verifier_deduplicates_on_coming_out_of_the_database():
+    db = ExampleDatabase()
+    storage = db.storage_for((frozenset({int}),))
+    db.backend.save(storage.key, "[1, 2, 3]")
+    db.backend.save(storage.key, "[3, 2, 1]")
+    counter = Counter()
+    calls = []
+    good = frozenset({1, 2, 3})
+
+    def count_and_object(x):
+        counter[x] += 1
+        if not calls:
+            calls.append(x)
+        return x == good
+
+    verifier = Verifier(settings=hs.Settings(database=db))
+    verifier.falsify(count_and_object, frozenset({int}))
+    assert calls[0] == good
+    assert counter[good] == 1
