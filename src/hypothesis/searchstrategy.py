@@ -50,16 +50,16 @@ def nice_string(xs):
         else:
             return '(' + ', '.join(map(nice_string, xs)) + ')'
     if isinstance(xs, dict):
-        return '{' + ', '.join(
+        return '{' + ', '.join(sorted([
             repr(k1) + ':' + nice_string(v1)
             for k1, v1 in xs.items()
-        ) + '}'
+        ])) + '}'
     if isinstance(xs, set):
         if not xs:
             return repr(xs)
         return '{%s}' % (
             ', '.join(
-                map(nice_string, xs)
+                sorted(map(nice_string, xs))
             )
         )
     if isinstance(xs, frozenset):

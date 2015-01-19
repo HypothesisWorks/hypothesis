@@ -509,3 +509,30 @@ def test_list_distinguishes_on_elements():
 def test_set_distinguishes_on_elements():
     s = strategy({int})
     assert not s.could_have_produced({(1, 2)})
+
+
+class AwkwardSet(set):
+    def __iter__(self):
+        results = list(super(AwkwardSet, self).__iter__())
+        random.shuffle(results)
+        for r in results:
+            yield r
+
+
+def test_set_descriptor_representation_is_stable_for_order():
+    x = AwkwardSet(list(hrange(100)))
+    assert repr(x) != repr(x)
+    assert strat.nice_string(x) == strat.nice_string(x)
+
+
+class AwkwardDict(dict):
+    def items(self):
+        results = list(super(AwkwardDict, self).items())
+        random.shuffle(results)
+        for r in results:
+            yield r
+
+
+def test_dict_descriptor_representation_is_stable_for_order():
+    x = AwkwardDict({i: i for i in hrange(100)})
+    assert strat.nice_string(x) == strat.nice_string(x)
