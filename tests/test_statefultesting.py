@@ -9,8 +9,9 @@ from hypothesis.statefultesting import (
 )
 import pytest
 from hypothesis import Unfalsifiable
-
+from hypothesis.database.converter import ConverterTable, WrongFormat
 from hypothesis.internal.compat import hrange
+from hypothesis import falsify
 
 
 class Foo(StatefulTest):
@@ -59,6 +60,8 @@ class BrokenCounter(StatefulTest):
         if(self.value != 5):
             self.value -= 1
         assert self.value == start_value - 1
+
+
 
 
 def test_finds_broken_example():
@@ -263,3 +266,23 @@ class IsPickyAboutPreconditions(StatefulTest):
 
 def test_can_find_a_breaking_example_with_lots_of_preconditions():
     assert len(IsPickyAboutPreconditions.breaking_example()) == 5
+
+
+class IsBadAndShouldFeelBad(StatefulTest):
+    @step
+    def bad(self):
+        assert False
+
+
+class IsBadButItsNotMyFault(StatefulTest):
+    @step
+    def bad(self):
+        assert False
+
+
+def test_cannot_save_an_example_in_the_wrong_format():
+    example = falsify(TestRun.run, IsBadAndShouldFeelBad)[0]
+    converter = ConverterTable.default().specification_for(
+        IsBadButItsNotMyFault)
+    with pytest.raises(WrongFormat):
+        converter.to_json(example)

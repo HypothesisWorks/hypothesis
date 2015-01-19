@@ -5,7 +5,8 @@ from hypothesis.searchstrategy import (
 from hypothesis.strategytable import (
     StrategyTable,
 )
-from hypothesis.database.converter import Converter, ConverterTable
+from hypothesis.database.converter import (
+    Converter, ConverterTable, check_type, WrongFormat)
 from collections import namedtuple
 from inspect import getmembers
 
@@ -188,6 +189,12 @@ class StatefulConverter(Converter):
         )
 
     def to_json(self, value):
+        check_type(TestRun, value)
+        if value.cls != self.descriptor:
+            raise WrongFormat(
+                "Tried to serialize a TestRun from %s as a TestRun from %s" % (
+                    value.cls.__name__, self.descriptor.__name__
+                ))
         init = self.init_format.to_json((value.init_args, value.init_kwargs))
         steps = []
         for s in value.steps:

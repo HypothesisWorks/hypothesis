@@ -3,7 +3,9 @@ from hypothesis.descriptors import (
     just, Just,
     OneOf, sampled_from, SampledFrom
 )
-from hypothesis.searchstrategy import SearchStrategy, RandomWithSeed
+from hypothesis.searchstrategy import (
+    SearchStrategy, RandomWithSeed, nice_string
+)
 import hypothesis.params as params
 from hypothesis.internal.utils.distributions import geometric, biased_coin
 from random import Random
@@ -20,8 +22,15 @@ basic_types.append(Random)
 branch_types = [dict, tuple, list]
 
 Descriptor = namedtuple('Descriptor', ('descriptor',))
-DescriptorWithValue = namedtuple(
-    'DescriptorWithValue', ('descriptor', 'value', 'parameter', 'random'))
+
+
+class DescriptorWithValue(namedtuple(
+        'DescriptorWithValue', ('descriptor', 'value', 'parameter', 'random'))
+):
+    def __repr__(self):
+        return "DescriptorWithValue(descriptor=%s, value=%r)" % (
+            nice_string(self.descriptor), self.value
+        )
 
 ConverterTable.default().mark_not_serializeable(Descriptor)
 ConverterTable.default().mark_not_serializeable(DescriptorWithValue)

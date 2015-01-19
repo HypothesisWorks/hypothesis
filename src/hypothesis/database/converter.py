@@ -33,6 +33,28 @@ from hypothesis.internal.compat import (
 import base64
 
 
+class WrongFormat(ValueError):
+    """
+    An exception indicating you have attempted to serialize a value that does
+    not match the type described by this format.
+    """
+    pass
+
+
+def check_matches(strategy, value):
+    if not strategy.could_have_produced(value):
+        raise WrongFormat("Value %r does not match description %s" % (
+            value, nice_string(strategy.descriptor)
+        ))
+
+
+def check_type(typ, value):
+    if not isinstance(value, typ):
+        raise WrongFormat("Value %r is not an instance of %s" % (
+            value, typ.__name__
+        ))
+
+
 class NotSerializeable(Exception):
 
     def __init__(self, descriptor):
@@ -71,7 +93,8 @@ for basic_type in (
     type(None), float, text_type, bool
 ) + integer_types:
     ConverterTable.default().define_specification_for(
-        basic_type, lambda s, d: generic_converter)
+        basic_type,
+        lambda s, d: GenericConverter(s.strategy_table.specification_for(d)))
 
 
 class Converter(object):
@@ -99,15 +122,15 @@ class GenericConverter(Converter):
     In the absence of anything more specific this will be used.
 
     """
+    def __init__(self, strategy):
+        self.strategy = strategy
 
     def to_json(self, value):
+        check_matches(self.strategy, value)
         return value
 
     def from_json(self, value):
         return value
-
-
-generic_converter = GenericConverter()
 
 
 class ListConverter(Converter):
@@ -119,6 +142,7 @@ class ListConverter(Converter):
         self.child_converter = child_converter
 
     def to_json(self, value):
+        check_type(list, value)
         return list(map(self.child_converter.to_json, value))
 
     def from_json(self, value):
@@ -127,8 +151,9 @@ class ListConverter(Converter):
 
 def define_list_converter(converters, descriptor):
     element_converter = converters.specification_for(one_of(descriptor))
-    if element_converter is generic_converter:
-        return generic_converter
+    if isinstance(element_converter, GenericConverter):
+        return GenericConverter(
+            converters.strategy_table.specification_for(descriptor))
     else:
         return ListConverter(element_converter)
 
@@ -147,6 +172,7 @@ class CollectionConverter(Converter):
         self.collection_type = collection_type
 
     def to_json(self, value):
+        check_type(self.collection_type, value)
         return self.list_converter.to_json(list(value))
 
     def from_json(self, value):
@@ -169,8 +195,9 @@ class ComplexConverter(Converter):
 
     """Encodes complex numbers as a list [real, imaginary]"""
 
-    def to_json(self, c):
-        return [c.real, c.imag]
+    def to_json(self, value):
+        check_type(complex, value)
+        return [value.real, value.imag]
 
     def from_json(self, c):
         return complex(*c)
@@ -185,6 +212,7 @@ class TextConverter(Converter):
     JSON strings."""
 
     def to_json(self, c):
+        check_type(text_type, c)
         return c
 
     def from_json(self, c):
@@ -205,11 +233,12 @@ class BinaryConverter(Converter):
 
     """
 
-    def to_json(self, c):
-        return base64.b64encode(c).decode('utf-8')
+    def to_json(self, value):
+        check_type(binary_type, value)
+        return base64.b64encode(value).decode('utf-8')
 
-    def from_json(self, c):
-        return base64.b64decode(c.encode('utf-8'))
+    def from_json(self, data):
+        return base64.b64decode(data.encode('utf-8'))
 
 ConverterTable.default().define_specification_for(
     binary_type, lambda s, d: BinaryConverter()
@@ -221,8 +250,9 @@ class RandomConverter(Converter):
     """Stores one of hypothesis's RandomWithSeed types just by storing it as
     its seed value."""
 
-    def to_json(self, c):
-        return c.seed
+    def to_json(self, value):
+        check_type(RandomWithSeed, value)
+        return value.seed
 
     def from_json(self, c):
         return RandomWithSeed(c)
@@ -245,6 +275,8 @@ class JustConverter(Converter):
         self.value = value
 
     def to_json(self, c):
+        if c != self.value:
+            raise WrongFormat("%r != %r" % (c, self.value))
         return None
 
     def from_json(self, c):
@@ -268,6 +300,7 @@ class TupleConverter(Converter):
         self.tuple_converters = tuple(tuple_converters)
 
     def to_json(self, value):
+        check_type(self.tuple_type, value)
         if len(self.tuple_converters) == 1:
             return self.tuple_converters[0].to_json(value[0])
         return [
@@ -321,6 +354,7 @@ class FixedKeyDictConverter(Converter):
         )
 
     def to_json(self, value):
+        check_type(dict, value)
         return [
             f.to_json(value[k])
             for k, f in self.converters
@@ -364,6 +398,9 @@ class OneOfConverter(Converter):
         for i in hrange(len(self.converters)):  # pragma: no branch
             if self.strategies[i].could_have_produced(value):
                 return [i, self.converters[i].to_json(value)]
+        raise WrongFormat("Value %r does not match any of %s" % (
+            value, ', '.join(
+                nice_string(s.descriptor) for s in self.strategies)))
 
     def from_json(self, value):
         i, x = value
@@ -393,7 +430,10 @@ class SampledFromConverter(Converter):
         self.choices = tuple(choices)
 
     def to_json(self, value):
-        return self.choices.index(value)
+        try:
+            return self.choices.index(value)
+        except ValueError:
+            raise WrongFormat("%r is not in %r" % (value, self.choices,))
 
     def from_json(self, value):
         return self.choices[value]
