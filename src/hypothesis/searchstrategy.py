@@ -767,6 +767,9 @@ class StringStrategy(MappedSearchStrategy):
     def unpack(self, s):
         return list(s)
 
+    def could_have_produced(self, value):
+        return isinstance(value, text_type)
+
 
 class BinaryStringStrategy(MappedSearchStrategy):
 
@@ -778,6 +781,9 @@ class BinaryStringStrategy(MappedSearchStrategy):
 
     def unpack(self, x):
         return list(bytearray(x))
+
+    def could_have_produced(self, value):
+        return isinstance(value, binary_type)
 
 
 class FixedKeysDictStrategy(SearchStrategy):
