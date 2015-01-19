@@ -28,7 +28,8 @@ from hypothesis.strategytable import StrategyTable
 from hypothesis.descriptors import one_of, Just, OneOf, SampledFrom
 from abc import abstractmethod
 from hypothesis.internal.specmapper import SpecificationMapper
-from hypothesis.internal.compat import text_type, binary_type, hrange
+from hypothesis.internal.compat import (
+    text_type, binary_type, hrange, integer_types)
 import base64
 
 
@@ -63,7 +64,14 @@ class ConverterTable(SpecificationMapper):
         self.define_specification_for(descriptor, not_serializeable)
 
     def missing_specification(self, descriptor):
-        return generic_converter
+        return not_serializeable(self, descriptor)
+
+
+for basic_type in (
+    type(None), float, text_type, bool
+) + integer_types:
+    ConverterTable.default().define_specification_for(
+        basic_type, lambda s, d: generic_converter)
 
 
 class Converter(object):
