@@ -5,12 +5,12 @@ from hypothesis.strategytable import StrategyTable
 from hypothesis.database.converter import NotSerializeable
 from random import Random
 import time
-from hypothesis.internal.compat import hrange
 import hypothesis.settings as hs
 from hypothesis.internal.utils.reflection import (
     get_pretty_function_description, function_digest
 )
 from hypothesis.internal.tracker import Tracker
+from hypothesis.examplesource import ExampleSource
 
 
 def assume(condition):
@@ -76,6 +76,10 @@ class Verifier(object):
             except NotSerializeable:
                 pass
 
+        example_source = ExampleSource(
+            random=random, strategy=search_strategy, storage=storage
+        )
+
         def falsifies(args):  # pylint: disable=missing-docstring
             try:
                 return not hypothesis(*search_strategy.copy(args))
@@ -86,38 +90,15 @@ class Verifier(object):
 
         track_seen = Tracker()
         falsifying_examples = []
-        if storage is not None:
-            for example in storage.fetch():
-                if track_seen.track(example) > 1:
-                    # This shouldn't happen but it can if e.g. a type's
-                    # representation depends on its iteration order so it may
-                    # have multiple distinct representations.
-                    # This also serves to register the example with the tracker
-                    # so we don't try to use it again later when generating new
-                    # examples.
-                    continue
-                if falsifies(example):
-                    falsifying_examples.append(example)
-                    break
         examples_found = 0
         satisfying_examples = 0
         timed_out = False
         if argument_types:
             max_examples = self.max_examples
             min_satisfying_examples = self.min_satisfying_examples
-            parameter_values = max(2, int(float(max_examples) / 5))
         else:
             max_examples = 1
             min_satisfying_examples = 1
-            parameter_values = 1
-
-        parameter_values = [
-            search_strategy.parameter.draw(random)
-            for _ in hrange(parameter_values)
-        ]
-
-        accepted_examples = [0] * max_examples
-        rejected_examples = [0] * max_examples
 
         start_time = time.time()
 
@@ -125,33 +106,21 @@ class Verifier(object):
             """Have we exceeded our timeout?"""
             return time.time() >= start_time + self.timeout
 
-        initial_run = 0
         skipped_examples = 0
-
-        while not (
-                examples_found >= max_examples or
-                len(falsifying_examples) >= 1
-        ):
-            if time_to_call_it_a_day():
-                break
-
-            if initial_run < len(parameter_values):
-                i = initial_run
-                initial_run += 1
-            else:
-                i = max(
-                    hrange(len(parameter_values)),
-                    key=lambda k: random.betavariate(
-                        accepted_examples[k] + 1, rejected_examples[k] + 1
-                    )
-                )
-            parameter = parameter_values[i]
-
-            args = search_strategy.produce(random, parameter)
+        examples_seen = 0
+        for args in example_source:
             assert search_strategy.could_have_produced(args)
 
+            if falsifying_examples:
+                break
+            if examples_seen >= max_examples:
+                break
+            if time_to_call_it_a_day():
+                break
+            examples_seen += 1
+
             if track_seen.track(args) > 1:
-                rejected_examples[i] += 1
+                example_source.mark_bad()
                 skipped_examples += 1
                 if skipped_examples >= self.max_skipped_examples:
                     raise Exhausted(hypothesis, examples_found)
@@ -171,9 +140,8 @@ class Verifier(object):
             except AssertionError:
                 is_falsifying_example = True
             except UnsatisfiedAssumption:
-                rejected_examples[i] += 1
+                example_source.mark_bad()
                 continue
-            accepted_examples[i] += 1
             satisfying_examples += 1
             if is_falsifying_example:
                 falsifying_examples.append(args)
