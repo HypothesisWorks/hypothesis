@@ -34,23 +34,22 @@ import base64
 
 
 class WrongFormat(ValueError):
-    """
-    An exception indicating you have attempted to serialize a value that does
-    not match the type described by this format.
-    """
+
+    """An exception indicating you have attempted to serialize a value that
+    does not match the type described by this format."""
     pass
 
 
 def check_matches(strategy, value):
     if not strategy.could_have_produced(value):
-        raise WrongFormat("Value %r does not match description %s" % (
+        raise WrongFormat('Value %r does not match description %s' % (
             value, nice_string(strategy.descriptor)
         ))
 
 
 def check_type(typ, value):
     if not isinstance(value, typ):
-        raise WrongFormat("Value %r is not an instance of %s" % (
+        raise WrongFormat('Value %r is not an instance of %s' % (
             value, typ.__name__
         ))
 
@@ -122,6 +121,7 @@ class GenericConverter(Converter):
     In the absence of anything more specific this will be used.
 
     """
+
     def __init__(self, strategy):
         self.strategy = strategy
 
@@ -276,7 +276,7 @@ class JustConverter(Converter):
 
     def to_json(self, c):
         if c != self.value:
-            raise WrongFormat("%r != %r" % (c, self.value))
+            raise WrongFormat('%r != %r' % (c, self.value))
         return None
 
     def from_json(self, c):
@@ -398,7 +398,7 @@ class OneOfConverter(Converter):
         for i in hrange(len(self.converters)):  # pragma: no branch
             if self.strategies[i].could_have_produced(value):
                 return [i, self.converters[i].to_json(value)]
-        raise WrongFormat("Value %r does not match any of %s" % (
+        raise WrongFormat('Value %r does not match any of %s' % (
             value, ', '.join(
                 nice_string(s.descriptor) for s in self.strategies)))
 
@@ -433,7 +433,7 @@ class SampledFromConverter(Converter):
         try:
             return self.choices.index(value)
         except ValueError:
-            raise WrongFormat("%r is not in %r" % (value, self.choices,))
+            raise WrongFormat('%r is not in %r' % (value, self.choices,))
 
     def from_json(self, value):
         return self.choices[value]

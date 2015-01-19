@@ -62,8 +62,6 @@ class BrokenCounter(StatefulTest):
         assert self.value == start_value - 1
 
 
-
-
 def test_finds_broken_example():
     assert [x[0]
             for x in BrokenCounter.breaking_example()] == ['inc'] * 5 + ['dec']
@@ -269,12 +267,14 @@ def test_can_find_a_breaking_example_with_lots_of_preconditions():
 
 
 class IsBadAndShouldFeelBad(StatefulTest):
+
     @step
     def bad(self):
         assert False
 
 
 class IsBadButItsNotMyFault(StatefulTest):
+
     @step
     def bad(self):
         assert False

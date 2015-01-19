@@ -192,7 +192,7 @@ class StatefulConverter(Converter):
         check_type(TestRun, value)
         if value.cls != self.descriptor:
             raise WrongFormat(
-                "Tried to serialize a TestRun from %s as a TestRun from %s" % (
+                'Tried to serialize a TestRun from %s as a TestRun from %s' % (
                     value.cls.__name__, self.descriptor.__name__
                 ))
         init = self.init_format.to_json((value.init_args, value.init_kwargs))

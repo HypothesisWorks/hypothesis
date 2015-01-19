@@ -27,8 +27,9 @@ Descriptor = namedtuple('Descriptor', ('descriptor',))
 class DescriptorWithValue(namedtuple(
         'DescriptorWithValue', ('descriptor', 'value', 'parameter', 'random'))
 ):
+
     def __repr__(self):
-        return "DescriptorWithValue(descriptor=%s, value=%r)" % (
+        return 'DescriptorWithValue(descriptor=%s, value=%r)' % (
             nice_string(self.descriptor), self.value
         )
 
