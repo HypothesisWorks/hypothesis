@@ -343,18 +343,19 @@ class FixedKeyDictConverter(Converter):
     in that order.
     """
 
-    def __init__(self, dict_of_converters):
+    def __init__(self, dict_strategy, dict_of_converters):
         keys = tuple(
             sorted(
                 dict_of_converters.keys(),
                 key=lambda t: (t.__class__.__name__, repr(t)))
         )
+        self.strategy = dict_strategy
         self.converters = tuple(
             (k, dict_of_converters[k]) for k in keys
         )
 
     def to_json(self, value):
-        check_type(dict, value)
+        check_matches(self.strategy, value)
         return [
             f.to_json(value[k])
             for k, f in self.converters
@@ -369,10 +370,12 @@ class FixedKeyDictConverter(Converter):
 
 ConverterTable.default().define_specification_for_instances(
     dict,
-    lambda s, d: FixedKeyDictConverter({
-        k: s.specification_for(v)
-        for k, v in d.items()
-    })
+    lambda s, d: FixedKeyDictConverter(
+        s.strategy_table.strategy(d),
+        {
+            k: s.specification_for(v)
+            for k, v in d.items()
+        })
 )
 
 

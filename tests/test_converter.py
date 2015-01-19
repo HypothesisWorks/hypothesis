@@ -27,7 +27,7 @@ from random import Random
     ({220: int, 437: int}, ''),
     ([binary_type], 0),
     (SampledFrom([1, 2, 3]), 0),
-
+    ({'6': int}, {False: set()}),
 ])
 def test_simple_conversions(descriptor, value):
     converter = ConverterTable.default().specification_for(descriptor)
