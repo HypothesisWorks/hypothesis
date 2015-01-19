@@ -439,10 +439,12 @@ class BrokenFloatStrategy(SearchStrategy):
 
 
 def test_two_verifiers_produce_different_results_in_normal_mode():
+    settings = hs.Settings()
+    settings.database = None
     table = StrategyTable()
     table.define_specification_for(float, lambda *_: BrokenFloatStrategy())
-    v1 = Verifier(strategy_table=table)
-    v2 = Verifier(strategy_table=table)
+    v1 = Verifier(strategy_table=table, settings=settings)
+    v2 = Verifier(strategy_table=table, settings=settings)
     x1 = v1.falsify(lambda x: False, float)
     x2 = v2.falsify(lambda x: False, float)
     assert x1 != x2
@@ -475,6 +477,7 @@ def test_a_derandomized_verifier_produces_the_same_results_called_twice():
 def test_minor_variations_in_code_change_the_randomization():
     table = StrategyTable()
     settings = hs.Settings(derandomize=True)
+    settings.database = None
     table.define_specification_for(float, lambda *_: BrokenFloatStrategy())
     v1 = Verifier(strategy_table=table, settings=settings)
     x1 = v1.falsify(lambda x: x == 42, float)
