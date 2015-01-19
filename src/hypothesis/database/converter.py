@@ -263,7 +263,8 @@ class TupleConverter(Converter):
     """Tuples are stored as lists of the correct length with each coordinate
     stored in its corresponding converters."""
 
-    def __init__(self, tuple_converters):
+    def __init__(self, tuple_converters, tuple_type):
+        self.tuple_type = tuple_type
         self.tuple_converters = tuple(tuple_converters)
 
     def to_json(self, value):
@@ -277,17 +278,24 @@ class TupleConverter(Converter):
     def from_json(self, value):
         if len(self.tuple_converters) == 1:
             return (self.tuple_converters[0].from_json(value),)
-        return tuple(
+        return self.new_tuple(
             f.from_json(v)
             for f, v in zip(self.tuple_converters, value)
         )
+
+    def new_tuple(self, value):
+        value = tuple(value)
+        if self.tuple_type == tuple:
+            return value
+        else:
+            return self.tuple_type(*value)
 
 
 ConverterTable.default().define_specification_for_instances(
     tuple,
     lambda s, d: TupleConverter(
-        s.specification_for(x)
-        for x in d
+        (s.specification_for(x) for x in d),
+        type(d),
     )
 )
 
