@@ -68,7 +68,7 @@ def test_can_grow_the_set_of_available_parameters_if_doing_badly():
         if len(source.parameters) > 10:
             number_grown_large += 1
 
-    assert number_grown == runs
+    assert number_grown >= 0.5 * runs
     assert number_grown_large <= 0.5 * runs
 
 
