@@ -1,4 +1,5 @@
 from random import Random
+from hypothesis.internal.compat import hrange
 
 
 class ExampleSource(object):
@@ -27,6 +28,7 @@ class ExampleSource(object):
         self.last_parameter_index = -1
         self.min_parameters = min_parameters
         self.bad_counts = []
+        self.counts = []
 
     def mark_bad(self):
         """
@@ -34,22 +36,32 @@ class ExampleSource(object):
         """
         if self.last_parameter_index < 0:
             return
-        while len(self.bad_counts) <= self.last_parameter_index:
-            self.bad_counts.append(0)
         self.bad_counts[self.last_parameter_index] += 1
 
     def new_parameter(self):
         result = self.strategy.parameter.draw(self.random)
         self.parameters.append(result)
+        self.bad_counts.append(0)
+        self.counts.append(0)
         return result
 
     def pick_a_parameter(self):
         if len(self.parameters) < self.min_parameters:
             return self.new_parameter()
         else:
-            self.last_parameter_index = self.random.randint(
-                0, len(self.parameters) - 1
-            )
+            best_score = -1
+            best_index = -1
+
+            for i in hrange(len(self.parameters)):
+                beta = 1 + self.bad_counts[i]
+                alpha = 1 + self.counts[i] - self.bad_counts[i]
+                score = self.random.betavariate(alpha, beta)
+                if score > best_score:
+                    best_score = score
+                    best_index = i
+            assert best_index >= 0
+            self.last_parameter_index = best_index
+            self.counts[self.last_parameter_index] += 1
             return self.parameters[self.last_parameter_index]
 
     def __iter__(self):
