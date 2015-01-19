@@ -84,9 +84,18 @@ class Verifier(object):
             except UnsatisfiedAssumption:
                 return False
 
+        track_seen = Tracker()
         falsifying_examples = []
         if storage is not None:
             for example in storage.fetch():
+                if track_seen.track(example) > 1:
+                    # This shouldn't happen but it can if e.g. a type's
+                    # representation depends on its iteration order so it may
+                    # have multiple distinct representations.
+                    # This also serves to register the example with the tracker
+                    # so we don't try to use it again later when generating new
+                    # examples.
+                    continue
                 if falsifies(example):
                     falsifying_examples.append(example)
                     break
@@ -109,7 +118,6 @@ class Verifier(object):
 
         accepted_examples = [0] * max_examples
         rejected_examples = [0] * max_examples
-        track_seen = Tracker()
 
         start_time = time.time()
 
