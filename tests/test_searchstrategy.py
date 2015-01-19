@@ -512,6 +512,7 @@ def test_set_distinguishes_on_elements():
 
 
 class AwkwardSet(set):
+
     def __iter__(self):
         results = list(super(AwkwardSet, self).__iter__())
         random.shuffle(results)
@@ -526,6 +527,7 @@ def test_set_descriptor_representation_is_stable_for_order():
 
 
 class AwkwardDict(dict):
+
     def items(self):
         results = list(super(AwkwardDict, self).items())
         random.shuffle(results)

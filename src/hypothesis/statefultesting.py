@@ -170,6 +170,7 @@ class StepStrategy(MappedSearchStrategy):
 
 
 class StatefulConverter(Converter):
+
     def __init__(self, format_table, descriptor):
         Converter.__init__(self)
         self.descriptor = descriptor

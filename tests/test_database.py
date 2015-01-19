@@ -198,8 +198,8 @@ def test_can_verify_a_non_serializale_type():
 def test_verifier_deduplicates_on_coming_out_of_the_database():
     db = ExampleDatabase()
     storage = db.storage_for((frozenset({int}),))
-    db.backend.save(storage.key, "[1, 2, 3]")
-    db.backend.save(storage.key, "[3, 2, 1]")
+    db.backend.save(storage.key, '[1, 2, 3]')
+    db.backend.save(storage.key, '[3, 2, 1]')
     counter = Counter()
     calls = []
     good = frozenset({1, 2, 3})
