@@ -552,11 +552,11 @@ def test_could_have_produced_distinguishes_on_keys():
 
 def test_string_tries_empty_string_first():
     strat = strategy(text_type)
-    assert next(strat.simplify("kittens")) == ''
+    assert next(strat.simplify('kittens')) == ''
 
 
 def test_simplifies_quickly_to_list_of_empties():
-    x = ["foo%d" % (i,) for i in hrange(10)]
+    x = ['foo%d' % (i,) for i in hrange(10)]
     s = strategy([str])
     call_counter = [0]
 
