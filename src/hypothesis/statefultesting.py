@@ -202,7 +202,7 @@ class StatefulConverter(Converter):
         init = self.init_format.from_json(init)
         parsed_steps = []
         for name, data in steps:
-            for i in hrange(len(self.steps)):
+            for i in hrange(len(self.steps)):  # pragma: no branch
                 if self.steps[i].__name__ == name:
                     parsed_steps.append(
                         Step(self.steps[i], *self.formats[i].from_json(data))
