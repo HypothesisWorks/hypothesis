@@ -42,24 +42,31 @@ class ExampleSource(object):
         result = self.strategy.parameter.draw(self.random)
         self.parameters.append(result)
         self.bad_counts.append(0)
-        self.counts.append(0)
+        self.counts.append(1)
         return result
 
     def pick_a_parameter(self):
         if len(self.parameters) < self.min_parameters:
             return self.new_parameter()
         else:
-            best_score = -1
+            best_score = self.random.random()
             best_index = -1
 
             for i in hrange(len(self.parameters)):
                 beta = 1 + self.bad_counts[i]
                 alpha = 1 + self.counts[i] - self.bad_counts[i]
+                assert self.counts[i] > 0
+                assert self.bad_counts[i] >= 0
+                assert self.bad_counts[i] <= self.counts[i]
+
                 score = self.random.betavariate(alpha, beta)
                 if score > best_score:
                     best_score = score
                     best_index = i
-            assert best_index >= 0
+            if best_index < 0:
+                self.last_parameter_index = len(self.parameters)
+                return self.new_parameter()
+
             self.last_parameter_index = best_index
             self.counts[self.last_parameter_index] += 1
             return self.parameters[self.last_parameter_index]
