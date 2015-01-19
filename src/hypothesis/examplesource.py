@@ -3,8 +3,8 @@ from hypothesis.internal.compat import hrange
 
 
 class ExampleSource(object):
-    """
-    An object that provides you with an a stream of examples to work with.
+
+    """An object that provides you with an a stream of examples to work with.
 
     Starts by fetching examples from storage if storage has been provided but
     if storage is None will happily continue without. Follows by generating new
@@ -13,13 +13,15 @@ class ExampleSource(object):
 
     This does not handle deduplication or make decisions as to when to stop.
     That's up to the caller.
+
     """
+
     def __init__(self, random, strategy, storage, min_parameters=100):
         if not isinstance(random, Random):
-            raise ValueError("A Random is required but got %r" % (random,))
+            raise ValueError('A Random is required but got %r' % (random,))
         if strategy is None and storage is None:
             raise ValueError(
-                "Cannot proceed without at least one way of getting examples"
+                'Cannot proceed without at least one way of getting examples'
             )
         self.strategy = strategy
         self.storage = storage
@@ -31,8 +33,10 @@ class ExampleSource(object):
         self.counts = []
 
     def mark_bad(self):
-        """
-        The last example was bad. If possible can we have less of that please?
+        """The last example was bad.
+
+        If possible can we have less of that please?
+
         """
         if self.last_parameter_index < 0:
             return
