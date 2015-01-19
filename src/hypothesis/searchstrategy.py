@@ -816,6 +816,18 @@ class FixedKeysDictStrategy(SearchStrategy):
                 y[k] = s
                 yield y
 
+    def could_have_produced(self, value):
+        if not isinstance(value, dict):
+            return False
+        if len(value) != len(self.descriptor):
+            return False
+        for k, v in self.strategy_dict.items():
+            if k not in value:
+                return False
+            if not v.could_have_produced(value[k]):
+                return False
+        return True
+
 
 class OneOfStrategy(SearchStrategy):
 

@@ -28,6 +28,8 @@ def test_deduplicates():
 
 
 def run_round_trip(descriptor, value, format=None, backend=None):
+    if backend is not None:
+        backend = backend()
     db = ExampleDatabase(format=format, backend=backend)
     storage = db.storage_for(descriptor)
     storage.save(value)
@@ -51,6 +53,8 @@ data_examples = (
         [[{int}]]],
         [[[]]]),
     (sampled_from(elements=(1,)), 1),
+    (one_of(({1: int}, {1: bool})), {1: 2}),
+    (one_of(({1: int}, {1: bool})), {1: False}),
 )
 
 
@@ -97,7 +101,7 @@ class ObjectFormat(Format):
 
 backend_format_pairs = (
     (None, None),
-    (InMemoryBackend(), ObjectFormat()),
+    (InMemoryBackend, ObjectFormat()),
 )
 
 

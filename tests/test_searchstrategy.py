@@ -538,3 +538,8 @@ class AwkwardDict(dict):
 def test_dict_descriptor_representation_is_stable_for_order():
     x = AwkwardDict({i: i for i in hrange(100)})
     assert strat.nice_string(x) == strat.nice_string(x)
+
+
+def test_could_have_produced_distinguishes_on_values():
+    s = strategy({u'': frozenset({int})})
+    assert not s.could_have_produced({'': set()})

@@ -117,6 +117,7 @@ class DescriptorWithValueStrategy(SearchStrategy):
         parameter = strategy.parameter.draw(random)
         value = strategy.produce(random, parameter)
         new_random = self.random_strategy.draw_and_produce(random)
+        assert strategy.could_have_produced(value)
         return DescriptorWithValue(
             descriptor=descriptor,
             parameter=parameter,
@@ -130,6 +131,7 @@ class DescriptorWithValueStrategy(SearchStrategy):
             strat = self.strategy_table.strategy(d)
             param = strat.parameter.draw(random)
             value = strat.produce(random, param)
+            assert strat.could_have_produced(value)
             yield DescriptorWithValue(
                 descriptor=d,
                 parameter=param,
