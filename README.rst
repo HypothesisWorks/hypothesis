@@ -361,7 +361,7 @@ We can now ask hypothesis for an example of this being broken:
 .. code:: python
 
     In [7]: BadSetTester.breaking_example()
-    Out[7]: (('add', 1), ('add', 1), ('remove', 1)]
+    Out[7]: [('add', 1), ('add', 1), ('remove', 1)]
 
 What does this mean? It means that if we were to do:
 
