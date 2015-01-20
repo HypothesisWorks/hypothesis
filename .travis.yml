@@ -2,6 +2,8 @@ language: python
 
 sudo: false
 
+env: PYTHONDONTWRITEBYTECODE=x
+
 python:
   - 2.7
   - 3.3
@@ -9,6 +11,7 @@ python:
 
 before_script:
   - pip install pytest pytest-timeout coverage
+  - find . -name "*.pyc" -delete
 
 script:
   - PYTHONPATH=src python -u -m coverage run -a --branch --include 'src/hypothesis/*' --omit 'src/hypothesis/settings.py,src/hypothesis/internal/compat.py' $(which py.test) -v tests --ignore=tests/test_recursively.py
