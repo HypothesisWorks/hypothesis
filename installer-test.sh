@@ -1,6 +1,6 @@
 set -e -o xtrace
 
-VENV=hypothesis-testing-chamber
+VENV=$(mktemp -d)
 
 CURRENT_PYTHON=$(which python)
 
