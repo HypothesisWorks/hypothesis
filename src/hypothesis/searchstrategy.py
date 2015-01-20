@@ -13,6 +13,7 @@ import string
 from random import Random
 import hypothesis.descriptors as descriptors
 from copy import deepcopy
+from hypothesis.internal.utils.fixers import actually_equal, actually_in
 
 
 def mix_generators(*generators):
@@ -920,7 +921,7 @@ class JustStrategy(SearchStrategy):
         return self.descriptor.value
 
     def could_have_produced(self, value):
-        return self.descriptor.value == value
+        return actually_equal(self.descriptor.value, value)
 
 
 class RandomWithSeed(Random):
@@ -996,4 +997,4 @@ class SampledFromStrategy(SearchStrategy):
         return random.choice(pv)
 
     def could_have_produced(self, value):
-        return value in self.elements
+        return actually_in(value, self.elements)
