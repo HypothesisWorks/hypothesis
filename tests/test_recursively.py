@@ -3,7 +3,6 @@ from hypothesis.descriptors import (
     Just, just, OneOf, SampledFrom
 )
 from hypothesis.searchstrategy import nice_string
-from hypothesis.strategytable import StrategyTable
 from hypothesis.testdecorators import given
 from hypothesis import Verifier, Unfalsifiable, assume, Unsatisfiable
 import pytest
@@ -15,7 +14,7 @@ import hypothesis.settings as hs
 from random import Random
 from hypothesis.searchstrategy import RandomWithSeed
 from tests.common.descriptors import (
-    Descriptor, primitive_types, DescriptorWithValue
+    Descriptor, primitive_types
 )
 from tests.common import small_table
 
