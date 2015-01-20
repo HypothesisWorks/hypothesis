@@ -3,8 +3,9 @@ from hypothesis.descriptors import (
     Just, just, OneOf, SampledFrom
 )
 from hypothesis.searchstrategy import nice_string
+from hypothesis.strategytable import StrategyTable
 from hypothesis.testdecorators import given
-from hypothesis import Verifier, Unfalsifiable, assume
+from hypothesis import Verifier, Unfalsifiable, assume, Unsatisfiable
 import pytest
 import re
 import signal
@@ -13,7 +14,9 @@ from functools import wraps
 import hypothesis.settings as hs
 from random import Random
 from hypothesis.searchstrategy import RandomWithSeed
-from tests.common.descriptors import Descriptor, primitive_types
+from tests.common.descriptors import (
+    Descriptor, primitive_types, DescriptorWithValue
+)
 from tests.common import small_table
 
 # Placate flake8
@@ -145,10 +148,14 @@ def test_basic_tree_matching():
 def test_cannot_generate_mutable_data_from_an_immutable_strategy(d):
     strategy = small_table.strategy(d)
     assume(strategy.has_immutable_data)
-    with pytest.raises(Unfalsifiable):
+    really_small_verifier = Verifier(
+        settings=hs.Settings(max_examples=50, timeout=5)
+    )
+
+    with pytest.raises((Unfalsifiable, Unsatisfiable)):
         print(
             nice_string(d),
-            verifier.falsify(is_immutable_data, d))
+            really_small_verifier.falsify(is_immutable_data, d))
 
 
 @timeout(5)
