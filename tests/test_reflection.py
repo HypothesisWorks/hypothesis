@@ -165,7 +165,8 @@ def test_class_is_not_included_in_unbound_method():
 
 def test_source_of_lambda_is_pretty():
     assert get_pretty_function_description(
-        lambda x: True) == 'lambda x: True'  # pragma: no cover
+        lambda x: True
+    ) == 'lambda x: True'  # pragma: no cover
 
 
 def test_variable_names_are_not_pretty():
