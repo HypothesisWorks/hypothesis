@@ -248,7 +248,7 @@ Contributing
 ------------
 
 I'm generally super happy to accept contributions. The main requirement is that the Travis
-build passes.
+build passes. You will also need to sign `a CLA assigning copyright to me <https://www.clahub.com/agreements/DRMacIver/hypothesis>`_
 
 This will in particular require you to maintain 100% branch coverage of the code and flake8
 cleanliness. The Hypothesis build is quite strict.
