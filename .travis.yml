@@ -10,7 +10,7 @@ python:
   - 3.4
 
 before_script:
-  - pip install pytest pytest-timeout coverage
+  - pip install pytest coverage
   - find . -name "*.pyc" -delete
 
 script:
