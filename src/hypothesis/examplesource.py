@@ -34,6 +34,7 @@ class ExampleSource(object):
         self.is_new_parameter = True
         self.new_parameter_bad = 0
         self.mark_set = False
+        self.started = False
 
     def mark_bad(self):
         """The last example was bad.
@@ -41,6 +42,8 @@ class ExampleSource(object):
         If possible can we have less of that please?
 
         """
+        if not self.started:
+            raise ValueError('No examples have been generated yet')
         if self.mark_set:
             raise ValueError('This parameter has already been marked')
         self.mark_set = True
@@ -89,8 +92,10 @@ class ExampleSource(object):
             return self.parameters[self.last_parameter_index]
 
     def __iter__(self):
+        self.started = True
         if self.storage is not None:
             for example in self.storage.fetch():
+                self.mark_set = False
                 yield example
 
         if self.strategy is not None:

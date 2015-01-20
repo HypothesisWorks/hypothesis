@@ -4,6 +4,7 @@ from hypothesis.strategytable import StrategyTable
 import random
 from hypothesis.internal.compat import hrange
 import pytest
+import hypothesis.settings as hs
 
 
 N_EXAMPLES = 1000
@@ -96,3 +97,31 @@ def test_example_source_terminates_if_just_from_db():
     assert next(its) == 1
     with pytest.raises(StopIteration):
         next(its)
+
+
+def test_errors_if_you_mark_bad_twice():
+    storage = None
+    if hs.default.database is not None:
+        storage = hs.default.database.storage_for(int)
+    source = ExampleSource(
+        random=random.Random(),
+        strategy=StrategyTable.default().strategy(int),
+        storage=storage,
+    )
+    next(iter(source))
+    source.mark_bad()
+    with pytest.raises(ValueError):
+        source.mark_bad()
+
+
+def test_errors_if_you_mark_bad_before_fetching():
+    storage = None
+    if hs.default.database is not None:
+        storage = hs.default.database.storage_for(int)
+    source = ExampleSource(
+        random=random.Random(),
+        strategy=StrategyTable.default().strategy(int),
+        storage=storage,
+    )
+    with pytest.raises(ValueError):
+        source.mark_bad()
