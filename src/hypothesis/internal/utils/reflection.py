@@ -158,7 +158,10 @@ def extract_lambda_source(f):
     try:
         source = inspect.getsource(f)
     except IOError:
+        print("No source :(")
         return if_confused
+
+    print("source=", source)
 
     try:
         try:
@@ -206,7 +209,8 @@ def extract_lambda_source(f):
 def get_pretty_function_description(f):
     name = f.__name__
     if name == '<lambda>':
-        return extract_lambda_source(f)
+        result = extract_lambda_source(f)
+        return result
     elif isinstance(f, types.MethodType):
         self = f.__self__
         if not (self is None or inspect.isclass(self)):

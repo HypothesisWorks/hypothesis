@@ -31,6 +31,7 @@ from hypothesis.internal.specmapper import SpecificationMapper
 from hypothesis.internal.compat import (
     text_type, binary_type, hrange, integer_types)
 import base64
+from hypothesis.internal.utils.fixers import actually_equal
 
 
 class WrongFormat(ValueError):
@@ -275,7 +276,7 @@ class JustConverter(Converter):
         self.value = value
 
     def to_json(self, c):
-        if c != self.value:
+        if not actually_equal(c, self.value):
             raise WrongFormat('%r != %r' % (c, self.value))
         return None
 

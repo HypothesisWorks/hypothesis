@@ -29,6 +29,7 @@ from random import Random
     (SampledFrom([1, 2, 3]), 0),
     ({'6': int}, {False: set()}),
     ((int, int), (1,)),
+    (Just(value=set()), frozenset()),
 ])
 def test_simple_conversions(descriptor, value):
     converter = ConverterTable.default().specification_for(descriptor)

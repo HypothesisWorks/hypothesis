@@ -160,6 +160,7 @@ class Verifier(object):
                 raise Unfalsifiable(hypothesis)
 
         for example in falsifying_examples:
+            print("Falsifying example", example)
             if not falsifies(example):
                 raise Flaky(hypothesis, example)
 
