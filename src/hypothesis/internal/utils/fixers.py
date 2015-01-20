@@ -32,8 +32,7 @@ def actually_equal(x, y):
     if x != y:
         return False
     # Now the bad part begins
-    t = type(x)
-    if t in primitives:
+    if isinstance(x, tuple(primitives)):
         return True
 
     lx = -1
@@ -48,7 +47,7 @@ def actually_equal(x, y):
     if lx >= 0 and lx != ly:
         return False
 
-    if t in unordered_collections:
+    if isinstance(x, tuple(unordered_collections)):
         for xe in x:
             if not actually_in(xe, y):
                 return False
@@ -59,7 +58,7 @@ def actually_equal(x, y):
     except TypeError:
         return True
 
-    if t in dict_like_collections:
+    if isinstance(x, tuple(dict_like_collections)):
         for xk in xi:
             xv = x[xk]
             try:
