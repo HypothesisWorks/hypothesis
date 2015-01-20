@@ -158,10 +158,7 @@ def extract_lambda_source(f):
     try:
         source = inspect.getsource(f)
     except IOError:
-        print("No source :(")
         return if_confused
-
-    print("source=", source)
 
     try:
         try:
