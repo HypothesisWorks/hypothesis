@@ -31,10 +31,9 @@ class Storage(object):
             deserialized = self.converter.from_json(
                 self.format.deserialize_data(data))
             if not self.strategy.could_have_produced(deserialized):
-                raise ValueError(
-                    'Value %r does not match description %s' % (
-                        data, self.key))
-            yield deserialized
+                self.backend.delete(self.key, data)
+            else:
+                yield deserialized
 
 
 class ExampleDatabase(object):

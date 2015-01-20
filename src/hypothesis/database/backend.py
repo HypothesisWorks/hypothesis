@@ -24,6 +24,12 @@ class Backend(object):
     def save(self, key, value):
         """Save a single value matching this key."""
 
+    def delete(self, key, value):
+        """Remove this value from this key. This method is optional but should
+        fail silently if not supported. Note that if you do not support it you
+        may see performance degradation over time as a number of values have to
+        be ignored on each run"""
+
     @abstractmethod  # pragma: no cover
     def fetch(self, key):
         """yield the values matching this key."""
@@ -50,6 +56,16 @@ class SQLiteBackend(Backend):
             self.connection.commit()
         except sqlite3.IntegrityError:
             pass
+
+    def delete(self, key, value):
+        self.create_db_if_needed()
+        cursor = self.connection.cursor()
+        cursor.execute("""
+            delete from hypothesis_data_mapping
+            where key = ? and value = ?
+        """, (key, value))
+        cursor.close()
+        self.connection.commit()
 
     def fetch(self, key):
         self.create_db_if_needed()

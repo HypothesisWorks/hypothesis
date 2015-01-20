@@ -168,12 +168,20 @@ def test_storage_errors_if_given_the_wrong_type():
         ints.save('hi')
 
 
-def test_storage_errors_if_the_database_is_invalid():
+def test_storage_does_not_error_if_the_database_is_invalid():
     database = ExampleDatabase()
     ints = database.storage_for(int)
     database.backend.save(ints.key, '[false, false, true]')
-    with pytest.raises(ValueError):
-        list(ints.fetch())
+    assert list(ints.fetch()) == []
+
+
+def test_storage_cleans_up_invalid_data_from_the_db():
+    database = ExampleDatabase()
+    ints = database.storage_for(int)
+    database.backend.save(ints.key, '[false, false, true]')
+    assert list(database.backend.fetch(ints.key)) != []
+    assert list(ints.fetch()) == []
+    assert list(database.backend.fetch(ints.key)) == []
 
 
 class Awkward(str):
