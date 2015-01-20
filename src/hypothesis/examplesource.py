@@ -16,7 +16,7 @@ class ExampleSource(object):
 
     """
 
-    def __init__(self, random, strategy, storage, min_parameters=10):
+    def __init__(self, random, strategy, storage, min_parameters=25):
         if not isinstance(random, Random):
             raise ValueError('A Random is required but got %r' % (random,))
         if strategy is None and storage is None:
