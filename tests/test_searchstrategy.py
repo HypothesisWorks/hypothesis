@@ -567,3 +567,10 @@ def test_simplifies_quickly_to_list_of_empties():
     list(s.simplify_such_that(x, count_long))
     assert call_counter[0] > 0
     assert call_counter[0] <= 30
+
+
+def test_can_distinguish_dicts_with_different_numbers_of_keys():
+    x = {1: int}
+    y = {1: int, 2: int}
+    assert not strategy(x).could_have_produced(y)
+    assert not strategy(y).could_have_produced(x)
