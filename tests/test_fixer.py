@@ -1,6 +1,7 @@
 from hypothesis.internal.utils.fixers import actually_equal
 import random
 
+
 def test_lists_of_same_elements_are_equal():
     assert actually_equal([1, 2, 3], [1, 2, 3])
 
@@ -35,6 +36,7 @@ def test_two_objects_are_not():
 
 
 class Inclusive(object):
+
     def __eq__(self, other):
         return isinstance(other, Inclusive)
 
@@ -52,6 +54,7 @@ def test_handles_ints_correctly():
 
 
 class LyingList(list):
+
     def __eq__(self, other):
         return True
 
@@ -84,6 +87,7 @@ def test_dicts_of_same_length_but_not_actually_equal_values_are_not_equal():
 
 
 class BrokenEqDict(dict):
+
     def __eq__(self, other):
         return isinstance(other, BrokenEqDict)
 

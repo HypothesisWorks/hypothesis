@@ -427,6 +427,7 @@ def test_correctly_reports_specifications():
 
 
 class Confused1(object):
+
     def __eq__(self, other):
         return isinstance(other, (Confused1, Confused2))
 
@@ -435,6 +436,7 @@ class Confused1(object):
 
 
 class Confused2(object):
+
     def __eq__(self, other):
         return isinstance(other, (Confused1, Confused2))
 

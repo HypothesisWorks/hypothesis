@@ -1,8 +1,8 @@
-"""
-This is a module for functions I consider to be designed to work around Python
-doing entirely the wrong thing.
+"""This is a module for functions I consider to be designed to work around
+Python doing entirely the wrong thing.
 
 You can imagine how grumpy I was when I wrote it.
+
 """
 
 from hypothesis.internal.compat import text_type, binary_type, integer_types
@@ -89,4 +89,4 @@ def real_index(xs, y):
             if actually_equal(xs[i], y):
                 return i
             i += 1
-        raise ValueError("%r is not in list" % (y))
+        raise ValueError('%r is not in list' % (y))

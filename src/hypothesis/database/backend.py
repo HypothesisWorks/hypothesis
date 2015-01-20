@@ -25,10 +25,14 @@ class Backend(object):
         """Save a single value matching this key."""
 
     def delete(self, key, value):
-        """Remove this value from this key. This method is optional but should
-        fail silently if not supported. Note that if you do not support it you
-        may see performance degradation over time as a number of values have to
-        be ignored on each run"""
+        """Remove this value from this key.
+
+        This method is optional but should fail silently if not
+        supported. Note that if you do not support it you may see
+        performance degradation over time as a number of values have to
+        be ignored on each run
+
+        """
 
     @abstractmethod  # pragma: no cover
     def fetch(self, key):
