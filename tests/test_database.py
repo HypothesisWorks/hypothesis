@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 
-from hypothesis.database.backend import Backend
+from hypothesis.database.backend import Backend, SQLiteBackend
 from hypothesis.database.formats import Format
 from hypothesis.database import ExampleDatabase
 from hypothesis.database.converter import ConverterTable
@@ -30,6 +30,8 @@ def test_deduplicates():
 def run_round_trip(descriptor, value, format=None, backend=None):
     if backend is not None:
         backend = backend()
+    else:
+        backend = SQLiteBackend()
     db = ExampleDatabase(format=format, backend=backend)
     storage = db.storage_for(descriptor)
     storage.save(value)
@@ -100,7 +102,7 @@ class ObjectFormat(Format):
             return data
 
 backend_format_pairs = (
-    (None, None),
+    (SQLiteBackend, None),
     (InMemoryBackend, ObjectFormat()),
 )
 
