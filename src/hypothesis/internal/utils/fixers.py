@@ -77,3 +77,16 @@ def actually_equal(x, y):
 
 def actually_in(x, ys):
     return any(actually_equal(x, y) for y in ys)
+
+
+def real_index(xs, y):
+    i = xs.index(y)
+    if actually_equal(xs[i], y):
+        return i
+    else:
+        i = 0
+        while i < len(xs):
+            if actually_equal(xs[i], y):
+                return i
+            i += 1
+        raise ValueError("%r is not in list" % (y))

@@ -31,7 +31,7 @@ from hypothesis.internal.specmapper import SpecificationMapper
 from hypothesis.internal.compat import (
     text_type, binary_type, hrange, integer_types)
 import base64
-from hypothesis.internal.utils.fixers import actually_equal
+from hypothesis.internal.utils.fixers import actually_equal, real_index
 
 
 class WrongFormat(ValueError):
@@ -442,7 +442,7 @@ class SampledFromConverter(Converter):
 
     def to_json(self, value):
         try:
-            return self.choices.index(value)
+            return real_index(self.choices, value)
         except ValueError:
             raise WrongFormat('%r is not in %r' % (value, self.choices,))
 
