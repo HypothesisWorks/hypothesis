@@ -76,10 +76,6 @@ class Verifier(object):
             except NotSerializeable:
                 pass
 
-        example_source = ExampleSource(
-            random=random, strategy=search_strategy, storage=storage
-        )
-
         def falsifies(args):  # pylint: disable=missing-docstring
             try:
                 return not hypothesis(*search_strategy.copy(args))
@@ -100,6 +96,10 @@ class Verifier(object):
             max_examples = 1
             min_satisfying_examples = 1
 
+        example_source = ExampleSource(
+            random=random, strategy=search_strategy, storage=storage,
+            min_parameters=max(2, int(float(max_examples) / 10))
+        )
         start_time = time.time()
 
         def time_to_call_it_a_day():
