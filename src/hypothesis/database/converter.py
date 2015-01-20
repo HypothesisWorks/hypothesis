@@ -301,6 +301,13 @@ class TupleConverter(Converter):
 
     def to_json(self, value):
         check_type(self.tuple_type, value)
+        if len(self.tuple_converters) != len(value):
+            raise WrongFormat((
+                "Value %r is of the wrong length. "
+                "Expected %d elements but got %d"
+                ) % (
+                value, len(self.tuple_converters), len(value),
+            ))
         if len(self.tuple_converters) == 1:
             return self.tuple_converters[0].to_json(value[0])
         return [
