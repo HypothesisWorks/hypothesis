@@ -191,32 +191,32 @@ class StatefulConverter(Converter):
             )
         )
 
-    def to_json(self, value):
+    def to_basic(self, value):
         check_type(TestRun, value)
         if value.cls != self.descriptor:
             raise WrongFormat(
                 'Tried to serialize a TestRun from %s as a TestRun from %s' % (
                     value.cls.__name__, self.descriptor.__name__
                 ))
-        init = self.init_format.to_json((value.init_args, value.init_kwargs))
+        init = self.init_format.to_basic((value.init_args, value.init_kwargs))
         steps = []
         for s in value.steps:
             i = self.steps.index(s.target)
             steps.append([
                 s.target.__name__,
-                self.formats[i].to_json((s.arguments, s.kwargs))
+                self.formats[i].to_basic((s.arguments, s.kwargs))
             ])
         return [init, steps]
 
-    def from_json(self, data):
+    def from_basic(self, data):
         init, steps = data
-        init = self.init_format.from_json(init)
+        init = self.init_format.from_basic(init)
         parsed_steps = []
         for name, data in steps:
             for i in hrange(len(self.steps)):  # pragma: no branch
                 if self.steps[i].__name__ == name:
                     parsed_steps.append(
-                        Step(self.steps[i], *self.formats[i].from_json(data))
+                        Step(self.steps[i], *self.formats[i].from_basic(data))
                     )
                     break
         return TestRun(

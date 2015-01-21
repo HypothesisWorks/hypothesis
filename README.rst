@@ -22,6 +22,12 @@ output:
 
     AssertionError: assert '01' == '10'
 
+Hypothesis will also print out the example for you:
+
+.. code:: python
+
+    Falsifying example: x='01'
+
 Hypothesis not only finds you counterexamples it finds you *simple* counter-examples.
 
 Hypothesis is inspired by and strongly based on libraries
@@ -171,13 +177,29 @@ are completely fine. Hypothesis copies mutable data before giving it to you. For
         xs.remove(y)
         assert y not in xs
 
-Unfortunately it runs into a problem with py.test where pytest does display the
-modified rather than original output (not entirely surprisingly), so the display
-can be a bit confusing. This is something that will improve when Hypothesis gets
-its own test runner. In the meantime though it will give you correct answers even
-if the display is a bit off.
+Running this then gives you:
 
-You can also control the behaviour of Hypothesis by altering the settings
+.. code:: python
+
+    Falsifying example: xs=[-10, -10], y=-10
+        (...)
+        assert y not in xs
+    AssertionError
+
+As a side note, the example is not as minimized as it could be. The reason for
+this is that it would require simultaneous minimization of three values, which
+is not something Hypothesis does currently - although it's obvious to a human
+observer that the interesting thing about those -10 values is just that they're
+the same, Hypothesis doesn't know anything about that and can't shrink it further.
+It did however produce a pleasantly small list at least, which is the main goal -
+examples will not necessarily be the simplest possible example but they should always
+be simple enough to understand.
+
+~~~~~~~~
+Settings
+~~~~~~~~
+
+You can control the behaviour of Hypothesis by altering the settings
 object. You can either do this by passing in an explicit settings object or
 modifying the defaults:
 
@@ -206,6 +228,55 @@ The three settings which are available as part of the stable API are:
       in that it means they will never discover new examples, but it may make it
       better to use in some situations where you e.g. have a large number of tests
       running in CI. If you use this setting you may wish to raise timeout and max_examples.
+    * database - specify the database object you wish to use. See next section
+      for what this means.
+
+~~~~~~~~~~~~
+The Database
+~~~~~~~~~~~~
+
+Hypothesis stores examples for reuse the next time you run your test suite (or
+inded for other tests in the same run). It attaches them to the type of the arguments
+rather than the test, so if for example you had two tests with @given(int, int)
+then these two would share the same pool of shared examples. This is a deliberate
+design choice: Generally if an example provokes a failure in one test it is in
+some sense "interesting" and thus is a good choice to try for other similar tests.
+
+A Hypothesis database is an instance of hypothesis.database.ExampleDatabase. It
+knows how to save most common types, and custom serializations can be defined if
+you need them.
+
+The default format is a very simple subset of JSON stored in an SQLite database.
+You can create a DB for this as follows:
+
+
+.. code:: python
+
+    from hypothesis.database import ExampleDatabase
+    import hypothesis.settings as hs
+
+    # This will create an in memory database. Examples will be shared between
+    # tests in the current run but will not be persisted to disk
+    hs.default.database = ExampleDatabase()
+
+    # This will create an on-disk database that will be used across runs at the
+    # specified path
+    from hypothesis.database.backend import SQLiteBackend
+    hs.default.databse = ExampleDatabase(
+        backend=SQLiteBackend('/path/to/my/example.db')
+    )
+
+The storage API is very straight forward (it's a key: unique multi value store)
+and it's easy to define other backends if you want to for operational reasons
+(e.g. having a common DB server storing your values across multiple runs), but
+this is the only one Hypothesis comes without of the box.
+
+Generally the example database should be entirely transparent: The only thing
+you should see is that Hypothesis gets a lot better at consistently finding
+examples. Some types are not serializable and will not be stored in the database
+
+If you want to write your own serializers it's not too hard to do so, but for
+now the best documentation on how is I'm afraid `the source code <https://github.com/DRMacIver/hypothesis/blob/master/src/hypothesis/database/converter.py>`_.
 
 ---------
 Stability

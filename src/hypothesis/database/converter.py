@@ -130,11 +130,11 @@ class Converter(object):
     """
 
     @abstractmethod  # pragma: no cover
-    def to_json(self, value):
+    def to_basic(self, value):
         """Turn this value into a JSON ready object."""
 
     @abstractmethod  # pragma: no cover
-    def from_json(self, value):
+    def from_basic(self, value):
         """Convert this value into a JSON ready object from the original
         type."""
 
@@ -150,11 +150,11 @@ class GenericConverter(Converter):
     def __init__(self, strategy):
         self.strategy = strategy
 
-    def to_json(self, value):
+    def to_basic(self, value):
         check_matches(self.strategy, value)
         return value
 
-    def from_json(self, value):
+    def from_basic(self, value):
         if not self.strategy.could_have_produced(value):
             raise BadData('Data %r does not match description %s' % (
                 value, nice_string(self.strategy.descriptor)
@@ -170,13 +170,13 @@ class ListConverter(Converter):
     def __init__(self, child_converter):
         self.child_converter = child_converter
 
-    def to_json(self, value):
+    def to_basic(self, value):
         check_type(list, value)
-        return list(map(self.child_converter.to_json, value))
+        return list(map(self.child_converter.to_basic, value))
 
-    def from_json(self, value):
+    def from_basic(self, value):
         check_data_type(list, value)
-        return list(map(self.child_converter.from_json, value))
+        return list(map(self.child_converter.from_basic, value))
 
 
 def define_list_converter(converters, descriptor):
@@ -201,13 +201,13 @@ class CollectionConverter(Converter):
         self.list_converter = list_converter
         self.collection_type = collection_type
 
-    def to_json(self, value):
+    def to_basic(self, value):
         check_type(self.collection_type, value)
-        return self.list_converter.to_json(list(value))
+        return self.list_converter.to_basic(list(value))
 
-    def from_json(self, value):
+    def from_basic(self, value):
         check_data_type(list, value)
-        return self.collection_type(self.list_converter.from_json(value))
+        return self.collection_type(self.list_converter.from_basic(value))
 
 
 def define_collection_converter(converters, descriptor):
@@ -226,11 +226,11 @@ class ComplexConverter(Converter):
 
     """Encodes complex numbers as a list [real, imaginary]"""
 
-    def to_json(self, value):
+    def to_basic(self, value):
         check_type(complex, value)
         return [value.real, value.imag]
 
-    def from_json(self, c):
+    def from_basic(self, c):
         check_length(2, c)
         check_data_type(float, c[0])
         check_data_type(float, c[1])
@@ -245,11 +245,11 @@ class TextConverter(Converter):
     """Text types which are guaranteed to be unicode clean are stored as normal
     JSON strings."""
 
-    def to_json(self, c):
+    def to_basic(self, c):
         check_type(text_type, c)
         return c
 
-    def from_json(self, c):
+    def from_basic(self, c):
         check_data_type(text_type, c)
         return text_type(c)
 
@@ -268,11 +268,11 @@ class BinaryConverter(Converter):
 
     """
 
-    def to_json(self, value):
+    def to_basic(self, value):
         check_type(binary_type, value)
         return base64.b64encode(value).decode('utf-8')
 
-    def from_json(self, data):
+    def from_basic(self, data):
         check_data_type(text_type, data)
         try:
             return base64.b64decode(data.encode('utf-8'))
@@ -289,12 +289,12 @@ class RandomConverter(Converter):
     """Stores one of hypothesis's RandomWithSeed types just by storing it as
     its seed value."""
 
-    def to_json(self, value):
+    def to_basic(self, value):
         check_type(RandomWithSeed, value)
         check_type(integer_types, value.seed)
         return value.seed
 
-    def from_json(self, c):
+    def from_basic(self, c):
         check_data_type(integer_types, c)
         return RandomWithSeed(c)
 
@@ -315,12 +315,12 @@ class JustConverter(Converter):
     def __init__(self, value):
         self.value = value
 
-    def to_json(self, c):
+    def to_basic(self, c):
         if not actually_equal(c, self.value):
             raise WrongFormat('%r != %r' % (c, self.value))
         return None
 
-    def from_json(self, c):
+    def from_basic(self, c):
         if c is not None:
             raise BadData('Expected None value but got %r' % (c,))
         return self.value
@@ -341,7 +341,7 @@ class TupleConverter(Converter):
         self.tuple_type = tuple_type
         self.tuple_converters = tuple(tuple_converters)
 
-    def to_json(self, value):
+    def to_basic(self, value):
         check_type(self.tuple_type, value)
         if len(self.tuple_converters) != len(value):
             raise WrongFormat((
@@ -351,18 +351,18 @@ class TupleConverter(Converter):
                 value, len(self.tuple_converters), len(value),
             ))
         if len(self.tuple_converters) == 1:
-            return self.tuple_converters[0].to_json(value[0])
+            return self.tuple_converters[0].to_basic(value[0])
         return [
-            f.to_json(v)
+            f.to_basic(v)
             for f, v in zip(self.tuple_converters, value)
         ]
 
-    def from_json(self, value):
+    def from_basic(self, value):
         if len(self.tuple_converters) == 1:
-            return (self.tuple_converters[0].from_json(value),)
+            return (self.tuple_converters[0].from_basic(value),)
         check_length(len(self.tuple_converters), value)
         return self.new_tuple(
-            f.from_json(v)
+            f.from_basic(v)
             for f, v in zip(self.tuple_converters, value)
         )
 
@@ -404,17 +404,17 @@ class FixedKeyDictConverter(Converter):
             (k, dict_of_converters[k]) for k in keys
         )
 
-    def to_json(self, value):
+    def to_basic(self, value):
         check_matches(self.strategy, value)
         return [
-            f.to_json(value[k])
+            f.to_basic(value[k])
             for k, f in self.converters
         ]
 
-    def from_json(self, value):
+    def from_basic(self, value):
         check_length(len(self.converters), value)
         return {
-            k: f.from_json(v)
+            k: f.from_basic(v)
             for (k, f), v in zip(self.converters, value)
         }
 
@@ -448,15 +448,15 @@ class OneOfConverter(Converter):
         self.converters = converters
         self.strategies = strategies
 
-    def to_json(self, value):
+    def to_basic(self, value):
         for i in hrange(len(self.converters)):  # pragma: no branch
             if self.strategies[i].could_have_produced(value):
-                return [i, self.converters[i].to_json(value)]
+                return [i, self.converters[i].to_basic(value)]
         raise WrongFormat('Value %r does not match any of %s' % (
             value, ', '.join(
                 nice_string(s.descriptor) for s in self.strategies)))
 
-    def from_json(self, value):
+    def from_basic(self, value):
         check_length(2, value)
         check_data_type(integer_types, value[0])
         i, x = value
@@ -464,7 +464,7 @@ class OneOfConverter(Converter):
             raise BadData('Invalid index %d into %d elements' % (
                 i, len(self.converters)
             ))
-        return self.converters[i].from_json(x)
+        return self.converters[i].from_basic(x)
 
 
 def define_one_of_converter(converter_table, descriptor):
@@ -489,13 +489,13 @@ class SampledFromConverter(Converter):
     def __init__(self, choices):
         self.choices = tuple(choices)
 
-    def to_json(self, value):
+    def to_basic(self, value):
         try:
             return real_index(self.choices, value)
         except ValueError:
             raise WrongFormat('%r is not in %r' % (value, self.choices,))
 
-    def from_json(self, value):
+    def from_basic(self, value):
         check_data_type(integer_types, value)
         if value < 0 or value >= len(self.choices):
             raise BadData('Invalid index %d into %d elements' % (

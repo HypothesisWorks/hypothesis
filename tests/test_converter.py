@@ -35,7 +35,7 @@ from random import Random
 def test_simple_conversions(descriptor, value):
     converter = ConverterTable.default().specification_for(descriptor)
     with pytest.raises(WrongFormat):
-        converter.to_json(value)
+        converter.to_basic(value)
 
 
 @given(DescriptorWithValue, DescriptorWithValue, verifier=Verifier(
@@ -52,7 +52,7 @@ def test_can_not_save_as_incompatible_examples(dav, dav2):
         assume(False)
 
     with pytest.raises(WrongFormat):
-        converter.to_json(dav2.value)
+        converter.to_basic(dav2.value)
 
 
 @pytest.mark.parametrize(('descriptor', 'data'), [
@@ -76,7 +76,7 @@ def test_can_not_save_as_incompatible_examples(dav, dav2):
 def test_simple_data_validation(descriptor, data):
     converter = ConverterTable.default().specification_for(descriptor)
     with pytest.raises(BadData):
-        converter.from_json(data)
+        converter.from_basic(data)
 
 
 @given(DescriptorWithValue, DescriptorWithValue, verifier=Verifier(
@@ -98,15 +98,15 @@ def test_validates_data_from_database(dav, dav2):
     It's hard to catch all the different behaviours you can get here.
     """
     converter = ConverterTable.default().specification_for(dav.descriptor)
-    basic = converter.to_json(dav.value)
+    basic = converter.to_basic(dav.value)
     converter2 = ConverterTable().default().specification_for(dav2.descriptor)
     try:
-        result = converter2.from_json(basic)
+        result = converter2.from_basic(basic)
     except BadData:
         return
 
-    basic2 = converter2.to_json(result)
+    basic2 = converter2.to_basic(result)
     try:
-        converter.from_json(basic2)
+        converter.from_basic(basic2)
     except BadData:
         pass

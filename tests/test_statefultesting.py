@@ -285,4 +285,4 @@ def test_cannot_save_an_example_in_the_wrong_format():
     converter = ConverterTable.default().specification_for(
         IsBadButItsNotMyFault)
     with pytest.raises(WrongFormat):
-        converter.to_json(example)
+        converter.to_basic(example)

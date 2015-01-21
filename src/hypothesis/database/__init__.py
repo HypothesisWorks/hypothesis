@@ -22,14 +22,14 @@ class Storage(object):
             raise ValueError(
                 'Argument %r does not match description %s' % (
                     value, self.key))
-        converted = self.converter.to_json(value)
+        converted = self.converter.to_basic(value)
         serialized = self.format.serialize_basic(converted)
         self.backend.save(self.key, serialized)
 
     def fetch(self):
         for data in self.backend.fetch(self.key):
             try:
-                deserialized = self.converter.from_json(
+                deserialized = self.converter.from_basic(
                     self.format.deserialize_data(data))
             except BadData:
                 self.backend.delete(self.key, data)
