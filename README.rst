@@ -256,6 +256,8 @@ In the meantime I'd rather you do any of the following
 * Write about Hypothesis
 * Build libraries and tools on top of Hypothesis outside the main repo
 
+If you need any help with any of these, get in touch and I'll be extremely happy to provide it.
+
 However if you really really want to submit code to Hypothesis, the process is as follows:
 
 You must own the copyright to the patch you're submitting as an individual. I'm not currently clear on how to accept patches from organisations and other legal entities.
