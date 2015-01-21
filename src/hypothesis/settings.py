@@ -6,6 +6,15 @@ this module can be modified.
 """
 import os
 
+USE_DEFAULT = object()
+
+
+def set_or_default(self, name, value):
+    if value != USE_DEFAULT:
+        setattr(self, name, value)
+    else:
+        setattr(self, name, getattr(default, name))
+
 
 class Settings(object):
 
@@ -35,24 +44,25 @@ class Settings(object):
 
     def __init__(
             self,
-            min_satisfying_examples=None,
-            max_examples=None,
-            max_skipped_examples=None,
-            timeout=None,
-            derandomize=None,
-            database=None,
+            min_satisfying_examples=USE_DEFAULT,
+            max_examples=USE_DEFAULT,
+            max_skipped_examples=USE_DEFAULT,
+            timeout=USE_DEFAULT,
+            derandomize=USE_DEFAULT,
+            database=USE_DEFAULT,
     ):
-        self.min_satisfying_examples = (
-            min_satisfying_examples or default.min_satisfying_examples)
-        self.max_examples = max_examples or default.max_examples
-        self.timeout = timeout or default.timeout
-        self.database = database or default.database
-        self.max_skipped_examples = (
-            max_skipped_examples or default.max_skipped_examples)
-        if derandomize is None:
-            self.derandomize = default.derandomize
-        else:
-            self.derandomize = derandomize
+        set_or_default(
+            self, 'min_satisfying_examples', min_satisfying_examples)
+        set_or_default(
+            self, 'max_examples', max_examples)
+        set_or_default(
+            self, 'max_skipped_examples', max_skipped_examples)
+        set_or_default(
+            self, 'timeout', timeout)
+        set_or_default(
+            self, 'derandomize', derandomize)
+        set_or_default(
+            self, 'database', database)
 
 
 default = Settings(
@@ -61,16 +71,11 @@ default = Settings(
     timeout=60,
     max_skipped_examples=50,
     derandomize=False,
-    # Silly hack so that we don't have it try to look up a value on itself
-    # before it has been assigned.
-    database=object(),
+    database=None
 )
-default.database = None
 
 DATABASE_OVERRIDE = os.getenv('HYPOTHESIS_DATABASE_FILE')
 
-# This is tested outside the main tests which run coverage because it is per
-# process
 if DATABASE_OVERRIDE:
     from hypothesis.database import ExampleDatabase
     from hypothesis.database.backend import SQLiteBackend
