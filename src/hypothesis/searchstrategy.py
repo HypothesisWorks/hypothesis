@@ -539,7 +539,7 @@ class ListStrategy(SearchStrategy):
     has_immutable_data = False
 
     def __init__(self,
-                 strategies, average_length=100.0):
+                 strategies, average_length=50.0):
         SearchStrategy.__init__(self)
 
         self.descriptor = _unique(x.descriptor for x in strategies)
