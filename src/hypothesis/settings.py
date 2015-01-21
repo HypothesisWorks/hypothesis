@@ -38,6 +38,9 @@ class Settings(object):
         randomness from your tests, which may be preferable for some situations
         . It does have the disadvantage of making your tests less likely to
         find novel breakages.
+    database: An instance of hypothesis.database.ExampleDatabase that will be
+        used to save examples to and load previous examples from. May be None
+        in which case no storage will be used.
 
     """
     # pylint: disable=too-many-arguments
