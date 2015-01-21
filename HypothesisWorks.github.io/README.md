@@ -1,7 +1,12 @@
 # README #
 
-A simple blog site template for jekyll based on twitter bootstrap 3.0
+A simple blog site template for jekyll.
 
-Here is the [Demo](http://itsrifat.github.io/rifyll/)
+Uses:
+* Twitter Bootstrap 3.2.0
+* Font Awesome 4.2.0
 
-Edit **_data/menu.yml** to change menu
+
+Here is a [Demo](http://itsrifat.github.io/rifyll/)
+
+Edit **_data/menu.yml** to edit menu
