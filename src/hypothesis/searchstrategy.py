@@ -315,6 +315,11 @@ class BoundedIntStrategy(SearchStrategy):
             for t in hrange(x + 1, self.end + 1):
                 yield t
 
+    def could_have_produced(self, i):
+        return isinstance(i, integer_types) and (
+            self.start <= i <= self.end
+        )
+
 
 class FloatStrategy(SearchStrategy):
 

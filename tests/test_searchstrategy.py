@@ -580,3 +580,9 @@ def test_just_random():
     s = strategy(
         descriptors.Just(strat.RandomWithSeed(1)))
     assert s.could_have_produced(strat.RandomWithSeed(1))
+
+
+def test_bounded_integer_strategy_only_produces_in_range():
+    s = strat.BoundedIntStrategy(1, 10)
+    assert not s.could_have_produced(0)
+    assert not s.could_have_produced(11)

@@ -4,7 +4,7 @@ from hypothesis.database.backend import Backend, SQLiteBackend
 from hypothesis.database.formats import Format
 from hypothesis.database import ExampleDatabase
 from hypothesis.database.converter import ConverterTable
-from hypothesis.searchstrategy import RandomWithSeed
+from hypothesis.searchstrategy import RandomWithSeed, BoundedIntStrategy
 from hypothesis.descriptors import Just, one_of, sampled_from
 from random import Random
 from tests.common.descriptors import DescriptorWithValue
@@ -174,6 +174,19 @@ def test_storage_does_not_error_if_the_database_is_invalid():
     database = ExampleDatabase()
     ints = database.storage_for(int)
     database.backend.save(ints.key, '[false, false, true]')
+    assert list(ints.fetch()) == []
+
+
+def test_storage_does_not_return_things_not_matching_strategy():
+    table = StrategyTable()
+    table.define_specification_for(
+        int, lambda s, d: BoundedIntStrategy(0, 10)
+    )
+    database = ExampleDatabase(converters=ConverterTable(
+        strategy_table=table,
+    ))
+    ints = database.storage_for(int)
+    database.backend.save(ints.key, '100')
     assert list(ints.fetch()) == []
 
 
