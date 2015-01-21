@@ -574,3 +574,9 @@ def test_can_distinguish_dicts_with_different_numbers_of_keys():
     y = {1: int, 2: int}
     assert not strategy(x).could_have_produced(y)
     assert not strategy(y).could_have_produced(x)
+
+
+def test_just_random():
+    s = strategy(
+        descriptors.Just(strat.RandomWithSeed(1)))
+    assert s.could_have_produced(strat.RandomWithSeed(1))

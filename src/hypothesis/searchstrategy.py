@@ -956,6 +956,9 @@ class RandomWithSeed(Random):
             self.getstate() == other.getstate()
         )
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
 
 class RandomStrategy(SearchStrategy):
 

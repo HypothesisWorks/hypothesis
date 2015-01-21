@@ -11,7 +11,7 @@ from hypothesis.verifier import (
 import hypothesis.descriptors as descriptors
 from hypothesis.internal.specmapper import MissingSpecification
 from hypothesis.searchstrategy import (
-    SearchStrategy,
+    SearchStrategy, RandomWithSeed
 )
 from hypothesis.descriptors import one_of
 from hypothesis.strategytable import (
