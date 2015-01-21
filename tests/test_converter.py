@@ -69,7 +69,7 @@ def test_can_not_save_as_incompatible_examples(dav, dav2):
     ((int, int, int), (1, 2)),
     (SampledFrom((1, 2, 3)), 'fish'),
     (OneOf((int, float)), 1),
-    (OneOf((int, float, unicode, str, bool, complex)), 'tv'),
+    (OneOf((int, float)), 'tv'),
     (binary_type, u"1"),
     ([frozenset({float}), frozenset({float})], [[8, 0], []]),
 ])
