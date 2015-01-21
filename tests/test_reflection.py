@@ -254,10 +254,10 @@ def test_arg_string_is_in_order():
     def foo(c, a, b, f, a1):
         pass
 
-    assert arg_string(foo, (1, 2, 3, 4, 5), {}) == "c=1, a=2, b=3, f=4, a1=5"
+    assert arg_string(foo, (1, 2, 3, 4, 5), {}) == 'c=1, a=2, b=3, f=4, a1=5'
     assert arg_string(
         foo, (1, 2),
-        {'b': 3, 'f': 4, 'a1': 5}) == "c=1, a=2, b=3, f=4, a1=5"
+        {'b': 3, 'f': 4, 'a1': 5}) == 'c=1, a=2, b=3, f=4, a1=5'
 
 
 def test_varkwargs_are_sorted_and_after_real_kwargs():
@@ -266,14 +266,14 @@ def test_varkwargs_are_sorted_and_after_real_kwargs():
 
     assert arg_string(
         foo, (), {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6}
-    ) == "d=4, e=5, f=6, a=1, b=2, c=3"
+    ) == 'd=4, e=5, f=6, a=1, b=2, c=3'
 
 
 def test_varargs_come_without_equals():
     def foo(a, *args):
         pass
 
-    assert arg_string(foo, (1, 2, 3, 4), {}) == "2, 3, 4, a=1"
+    assert arg_string(foo, (1, 2, 3, 4), {}) == '2, 3, 4, a=1'
 
 
 def test_can_mix_varargs_and_varkwargs():
@@ -281,7 +281,7 @@ def test_can_mix_varargs_and_varkwargs():
         pass
 
     assert arg_string(
-        foo, (1, 2, 3), {'c': "fish"}
+        foo, (1, 2, 3), {'c': 'fish'}
     ) == "1, 2, 3, c='fish'"
 
 
@@ -289,4 +289,4 @@ def test_arg_string_does_not_include_unprovided_defaults():
     def foo(a, b, c=9, d=10):
         pass
 
-    assert arg_string(foo, (1,), {'b': 1, 'd': 11}) == "a=1, b=1, d=11"
+    assert arg_string(foo, (1,), {'b': 1, 'd': 11}) == 'a=1, b=1, d=11'

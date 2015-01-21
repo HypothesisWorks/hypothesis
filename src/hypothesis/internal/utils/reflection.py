@@ -224,10 +224,10 @@ def arg_string(f, args, kwargs):
 
     for a in argspec.args:
         if a in kwargs:
-            bits.append("%s=%r" % (a, kwargs.pop(a)))
+            bits.append('%s=%r' % (a, kwargs.pop(a)))
     if kwargs:
         for a in sorted(kwargs):
-            bits.append("%s=%r" % (a, kwargs[a]))
+            bits.append('%s=%r' % (a, kwargs[a]))
 
     return ', '.join(
         [repr(x) for x in args] +
