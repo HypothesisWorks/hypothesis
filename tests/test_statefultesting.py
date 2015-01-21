@@ -9,8 +9,9 @@ from hypothesis.statefultesting import (
 )
 import pytest
 from hypothesis import Unfalsifiable
-
-from hypothesis.internal.compat import xrange
+from hypothesis.database.converter import ConverterTable, WrongFormat
+from hypothesis.internal.compat import hrange
+from hypothesis import falsify
 
 
 class Foo(StatefulTest):
@@ -113,6 +114,7 @@ def test_runs_integrity_checks_after_each_step():
 
 
 class NumberHater(StatefulTest):
+
     @requires(int)
     @step
     def hates_fives(self, n):
@@ -146,7 +148,7 @@ class BadSet(object):
         self.data.append(arg)
 
     def remove(self, arg):
-        for i in xrange(0, len(self.data)):
+        for i in hrange(0, len(self.data)):
             if self.data[i] == arg:
                 del self.data[i]
                 break
@@ -240,3 +242,47 @@ def test_prune_immediately_removes_every_thing_after_a_bad_call():
     pruned = tr.prune()
     assert len(pruned.steps) == 11
     assert pruned.steps[-1].target == HasOneBreakingMethod.not_so_good
+
+
+class IsPickyAboutPreconditions(StatefulTest):
+
+    def __init__(self):
+        self.lefts = 0
+        self.rights = 0
+
+    @step
+    def left(self):
+        precondition(self.rights >= self.lefts)
+        self.lefts += 1
+
+    @step
+    def right(self):
+        precondition(self.lefts >= self.rights)
+        self.rights += 1
+        assert self.rights < 3
+
+
+def test_can_find_a_breaking_example_with_lots_of_preconditions():
+    assert len(IsPickyAboutPreconditions.breaking_example()) == 5
+
+
+class IsBadAndShouldFeelBad(StatefulTest):
+
+    @step
+    def bad(self):
+        assert False
+
+
+class IsBadButItsNotMyFault(StatefulTest):
+
+    @step
+    def bad(self):
+        assert False
+
+
+def test_cannot_save_an_example_in_the_wrong_format():
+    example = falsify(TestRun.run, IsBadAndShouldFeelBad)[0]
+    converter = ConverterTable.default().specification_for(
+        IsBadButItsNotMyFault)
+    with pytest.raises(WrongFormat):
+        converter.to_json(example)

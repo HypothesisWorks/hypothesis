@@ -1,5 +1,6 @@
 from hypothesis.internal.utils.reflection import (
     convert_keyword_arguments,
+    convert_positional_arguments,
     get_pretty_function_description,
     function_digest,
 )
@@ -7,8 +8,13 @@ import pytest
 
 
 def do_conversion_test(f, args, kwargs):
+    result = f(*args, **kwargs)
+
     cargs, ckwargs = convert_keyword_arguments(f, args, kwargs)
-    assert f(*args, **kwargs) == f(*cargs, **ckwargs)
+    assert result == f(*cargs, **ckwargs)
+
+    cargs2, ckwargs2 = convert_positional_arguments(f, args, kwargs)
+    assert result == f(*cargs2, **ckwargs2)
 
 
 def test_simple_conversion():
@@ -21,7 +27,7 @@ def test_simple_conversion():
         foo, (), {'a': 3, 'b': 2, 'c': 1}) == ((3, 2, 1), {})
 
     do_conversion_test(foo, (1, 0), {'c': 2})
-    do_conversion_test(foo, (1,), {'c': 2, 'b': "foo"})
+    do_conversion_test(foo, (1,), {'c': 2, 'b': 'foo'})
 
 
 def test_populates_defaults():
@@ -53,7 +59,7 @@ def test_errors_on_bad_kwargs():
         pass    # pragma: no cover
 
     with pytest.raises(TypeError):
-        convert_keyword_arguments(bar, (), {"foo": 1})
+        convert_keyword_arguments(bar, (), {'foo': 1})
 
 
 def test_passes_varargs_correctly():
@@ -93,6 +99,33 @@ def test_errors_on_extra_kwargs():
     assert 'keyword' in e2.value.args[0]
 
 
+def test_positional_errors_if_too_many_args():
+    def foo(a):
+        pass
+
+    with pytest.raises(TypeError) as e:
+        convert_positional_arguments(foo, (1, 2), {})
+    assert '2 given' in e.value.args[0]
+
+
+def test_positional_errors_if_given_bad_kwargs():
+    def foo(a):
+        pass
+
+    with pytest.raises(TypeError) as e:
+        convert_positional_arguments(foo, (), {'b': 1})
+    assert 'unexpected keyword argument' in e.value.args[0]
+
+
+def test_positional_errors_if_given_duplicate_kwargs():
+    def foo(a):
+        pass
+
+    with pytest.raises(TypeError) as e:
+        convert_positional_arguments(foo, (2,), {'a': 1})
+    assert 'multiple values' in e.value.args[0]
+
+
 def test_names_of_functions_are_pretty():
     assert get_pretty_function_description(
         test_names_of_functions_are_pretty
@@ -100,6 +133,7 @@ def test_names_of_functions_are_pretty():
 
 
 class Foo(object):
+
     @classmethod
     def bar(cls):
         pass  # pragma: no cover
@@ -108,7 +142,7 @@ class Foo(object):
         pass  # pragma: no cover
 
     def __repr__(self):
-        return "SoNotFoo()"
+        return 'SoNotFoo()'
 
 
 def test_class_names_are_not_included_in_class_method_prettiness():
@@ -131,7 +165,8 @@ def test_class_is_not_included_in_unbound_method():
 
 def test_source_of_lambda_is_pretty():
     assert get_pretty_function_description(
-        lambda x: True) == 'lambda x: True'  # pragma: no cover
+        lambda x: True
+    ) == 'lambda x: True'  # pragma: no cover
 
 
 def test_variable_names_are_not_pretty():
@@ -171,12 +206,12 @@ def test_does_not_error_on_confused_sources():
 
 def test_strips_comments_from_the_end():
     t = lambda x: 1  # pragma: no cover
-    assert get_pretty_function_description(t) == "lambda x: 1"
+    assert get_pretty_function_description(t) == 'lambda x: 1'
 
 
 def test_does_not_strip_hashes_within_a_string():
-    t = lambda x: "#"  # pragma: no cover
-    assert get_pretty_function_description(t) == 'lambda x: "#"'
+    t = lambda x: '#'  # pragma: no cover
+    assert get_pretty_function_description(t) == "lambda x: '#'"
 
 
 def test_can_distinguish_between_two_lambdas_with_different_args():

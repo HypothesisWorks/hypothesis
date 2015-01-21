@@ -5,11 +5,13 @@ from hypothesis.searchstrategy import (
 from hypothesis.strategytable import (
     StrategyTable,
 )
+from hypothesis.database.converter import (
+    Converter, ConverterTable, check_type, WrongFormat)
 from collections import namedtuple
 from inspect import getmembers
 
 import hypothesis
-
+from hypothesis.internal.compat import hrange
 from hypothesis.internal.utils.reflection import convert_keyword_arguments
 
 
@@ -45,6 +47,7 @@ def precondition(t):
 
 
 class TestRun(object):
+
     def __init__(self, cls, steps, init_args=None, init_kwargs=None):
         self.cls = cls
         self.init_args = tuple(init_args or ())
@@ -54,7 +57,7 @@ class TestRun(object):
         self.steps = steps
 
     def __repr__(self):
-        return "TestRun(%s, init_args=%r, init_kwargs=%r, steps=%r)" % (
+        return 'TestRun(%s, init_args=%r, init_kwargs=%r, steps=%r)' % (
             self.cls.__name__,
             self.init_args,
             self.init_kwargs,
@@ -73,9 +76,9 @@ class TestRun(object):
             for t in tests:
                 t(value)
         run_integrity_tests()
-        for step, args, kwargs in self.steps:
+        for s, args, kwargs in self.steps:
             try:
-                step(value, *args, **kwargs)
+                s(value, *args, **kwargs)
                 run_integrity_tests()
             except PreconditionNotMet:
                 pass
@@ -90,7 +93,7 @@ class TestRun(object):
                 results.append(s)
             except PreconditionNotMet:
                 continue
-            except Exception:
+            except Exception:  # pylint: disable=broad-except
                 results.append(s)
                 break
         if len(results) == len(self):
@@ -106,6 +109,9 @@ class TestRun(object):
         return (isinstance(that, TestRun) and
                 self.cls == that.cls and
                 self.steps == that.steps)
+
+    def __ne__(self, that):
+        return not self.__eq__(that)
 
     def __hash__(self):
         # Where we want to hash this we want to rely on Tracker's logic for
@@ -150,6 +156,7 @@ Step = namedtuple('Step', ('target', 'arguments', 'kwargs'))
 
 
 class StepStrategy(MappedSearchStrategy):
+
     def could_have_produced(self, x):
         # There's really no sensible way you could get here without this being
         # a Step because of how much this is an implementation detail
@@ -164,6 +171,60 @@ class StepStrategy(MappedSearchStrategy):
 
     def unpack(self, x):
         return (x.arguments, x.kwargs)
+
+
+class StatefulConverter(Converter):
+
+    def __init__(self, format_table, descriptor):
+        Converter.__init__(self)
+        self.descriptor = descriptor
+        self.steps = tuple(descriptor.test_steps())
+        self.formats = tuple(
+            format_table.specification_for(s.hypothesis_test_requirements)
+            for s in self.steps
+        )
+        self.init_format = format_table.specification_for(
+            getattr(
+                descriptor.__init__,
+                'hypothesis_test_requirements',
+                ((), {}),
+            )
+        )
+
+    def to_json(self, value):
+        check_type(TestRun, value)
+        if value.cls != self.descriptor:
+            raise WrongFormat(
+                'Tried to serialize a TestRun from %s as a TestRun from %s' % (
+                    value.cls.__name__, self.descriptor.__name__
+                ))
+        init = self.init_format.to_json((value.init_args, value.init_kwargs))
+        steps = []
+        for s in value.steps:
+            i = self.steps.index(s.target)
+            steps.append([
+                s.target.__name__,
+                self.formats[i].to_json((s.arguments, s.kwargs))
+            ])
+        return [init, steps]
+
+    def from_json(self, data):
+        init, steps = data
+        init = self.init_format.from_json(init)
+        parsed_steps = []
+        for name, data in steps:
+            for i in hrange(len(self.steps)):  # pragma: no branch
+                if self.steps[i].__name__ == name:
+                    parsed_steps.append(
+                        Step(self.steps[i], *self.formats[i].from_json(data))
+                    )
+                    break
+        return TestRun(
+            cls=self.descriptor,
+            steps=parsed_steps,
+            init_args=init[0],
+            init_kwargs=init[1],
+        )
 
 
 def define_stateful_strategy(strategies, descriptor):
@@ -197,6 +258,7 @@ def define_stateful_strategy(strategies, descriptor):
 
 
 class StatefulStrategy(MappedSearchStrategy):
+
     def __init__(self, descriptor, strategy, requires_init):
         super(StatefulStrategy, self).__init__(
             descriptor=descriptor, strategy=strategy
@@ -237,5 +299,10 @@ class StatefulStrategy(MappedSearchStrategy):
 
 StrategyTable.default().define_specification_for_classes(
     define_stateful_strategy,
+    subclasses_of=StatefulTest
+)
+
+ConverterTable.default().define_specification_for_classes(
+    StatefulConverter,
     subclasses_of=StatefulTest
 )

@@ -2,7 +2,7 @@ import hypothesis.settings
 import resource
 
 hypothesis.settings.default.max_examples = 1000
-hypothesis.settings.default.timeout = 30
+hypothesis.settings.default.timeout = 120
 
 MAX_MEMORY = 10
 

@@ -10,9 +10,7 @@ from hypothesis.verifier import (
 )
 import hypothesis.descriptors as descriptors
 from hypothesis.internal.specmapper import MissingSpecification
-from hypothesis.searchstrategy import (
-    SearchStrategy,
-)
+from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.descriptors import one_of
 from hypothesis.strategytable import (
     StrategyTable,
@@ -21,7 +19,7 @@ from hypothesis.strategytable import (
 from collections import namedtuple
 import pytest
 import re
-from hypothesis.internal.compat import xrange
+from hypothesis.internal.compat import hrange
 import hypothesis.params as params
 import hypothesis.settings as hs
 import time
@@ -81,7 +79,7 @@ class BarStrategy(SearchStrategy):
 
     def produce(self, random, pv):
         x = Bar()
-        for _ in xrange(self.int_strategy.produce(random, pv)):
+        for _ in hrange(self.int_strategy.produce(random, pv)):
             x = Bar(x)
         return x
 
@@ -335,7 +333,7 @@ def test_can_falsify_with_true_boolean():
 def test_falsification_contains_function_string():
     with pytest.raises(Unfalsifiable) as e:
         assert falsify(lambda x: True, int)
-    assert "lambda x: True" in e.value.args[0]
+    assert 'lambda x: True' in e.value.args[0]
 
 
 def test_can_produce_and_minimize_long_lists_of_only_one_element():
@@ -394,7 +392,7 @@ def test_works_with_zero_arguments():
 always_false = lambda *args: False
 
 
-@pytest.mark.parametrize("desc", [
+@pytest.mark.parametrize('desc', [
     int, float, complex, text_type, binary_type, bool
 ])
 def test_minimizes_to_empty(desc):
@@ -439,10 +437,12 @@ class BrokenFloatStrategy(SearchStrategy):
 
 
 def test_two_verifiers_produce_different_results_in_normal_mode():
+    settings = hs.Settings()
+    settings.database = None
     table = StrategyTable()
     table.define_specification_for(float, lambda *_: BrokenFloatStrategy())
-    v1 = Verifier(strategy_table=table)
-    v2 = Verifier(strategy_table=table)
+    v1 = Verifier(strategy_table=table, settings=settings)
+    v2 = Verifier(strategy_table=table, settings=settings)
     x1 = v1.falsify(lambda x: False, float)
     x2 = v2.falsify(lambda x: False, float)
     assert x1 != x2
@@ -475,6 +475,7 @@ def test_a_derandomized_verifier_produces_the_same_results_called_twice():
 def test_minor_variations_in_code_change_the_randomization():
     table = StrategyTable()
     settings = hs.Settings(derandomize=True)
+    settings.database = None
     table.define_specification_for(float, lambda *_: BrokenFloatStrategy())
     v1 = Verifier(strategy_table=table, settings=settings)
     x1 = v1.falsify(lambda x: x == 42, float)

@@ -4,13 +4,13 @@ import pytest
 
 def test_non_empty_subset_on_one_element_does_not_call_random():
     x = params.NonEmptySubset([1])
-    x.draw("this is bogus")
+    x.draw('this is bogus')
 
 
 def test_non_empty_subset_errors_on_empty_set():
     with pytest.raises(ValueError) as e:
         params.NonEmptySubset([])
-    assert "at least one" in e.value.args[0]
+    assert 'at least one' in e.value.args[0]
 
 
 def test_biased_coin_only_accepts_proper_probabilities():

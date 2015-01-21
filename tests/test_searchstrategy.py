@@ -4,7 +4,7 @@ import hypothesis.descriptors as descriptors
 import hypothesis.params as params
 from hypothesis.internal.tracker import Tracker
 from collections import namedtuple
-from hypothesis.internal.compat import xrange
+from hypothesis.internal.compat import hrange
 from hypothesis.internal.compat import text_type, binary_type
 import random
 import pytest
@@ -21,18 +21,18 @@ def test_string_strategy_produces_strings():
 
 
 def test_unary_tuple_strategy_has_trailing_comma():
-    assert repr(strategy((str,))) == "TupleStrategy((str,))"
+    assert repr(strategy((str,))) == 'TupleStrategy((str,))'
 
 
 Blah = namedtuple('Blah', ('hi',))
 
 
 def test_named_tuple_strategy_has_tuple_in_name_and_no_trailing_comma():
-    assert repr(strategy(Blah(str))) == "TupleStrategy(Blah(hi=str))"
+    assert repr(strategy(Blah(str))) == 'TupleStrategy(Blah(hi=str))'
 
 
 def test_class_names_are_simplified_in_sets():
-    assert repr(strategy({float})) == "SetStrategy({float})"
+    assert repr(strategy({float})) == 'SetStrategy({float})'
 
 
 def test_tuples_inspect_component_types_for_production():
@@ -110,7 +110,7 @@ Litter = namedtuple('Litter', ('kitten1', 'kitten2'))
 def test_named_tuples_always_produce_named_tuples():
     s = strategy(Litter(int, int))
 
-    for i in xrange(100):
+    for i in hrange(100):
         assert isinstance(s.produce(random, s.parameter.draw(random)), Litter)
 
     for x in s.simplify(Litter(100, 100)):
@@ -166,6 +166,7 @@ def test_strategy_repr_handles_custom_types():
 
 
 class TrivialStrategy(strat.SearchStrategy):
+
     def __init__(self, descriptor):
         self.descriptor = descriptor
 
@@ -182,7 +183,7 @@ def test_strategy_repr_handles_instances_without_dicts():
 def test_float_strategy_does_not_overflow():
     strategy = ss.StrategyTable().strategy(float)
 
-    for _ in xrange(100):
+    for _ in hrange(100):
         strategy.produce(random, strategy.parameter.draw(random))
 
 
@@ -201,7 +202,7 @@ def test_or_does_not_change_descriptor_given_single_descriptor():
 def test_or_errors_when_given_non_strategy():
     bools = ss.StrategyTable().strategy((bool,))
     with pytest.raises(ValueError):
-        bools | "foo"
+        bools | 'foo'
 
 
 def test_joining_zero_strategies_fails():
@@ -216,7 +217,7 @@ def test_directly_joining_one_strategy_also_fails():
 
 def test_list_strategy_reprs_as_list():
     x = ss.StrategyTable.default().strategy([int])
-    assert repr(x) == "ListStrategy([int])"
+    assert repr(x) == 'ListStrategy([int])'
 
 
 def test_can_distinguish_amongst_tuples_of_mixed_length():
@@ -225,8 +226,8 @@ def test_can_distinguish_amongst_tuples_of_mixed_length():
     assert mixed_strategy.could_have_produced((1, 1))
     assert mixed_strategy.could_have_produced((1, 1, 1))
     assert not mixed_strategy.could_have_produced((1, 1, 1, 1))
-    assert not mixed_strategy.could_have_produced((1, "foo"))
-    assert not mixed_strategy.could_have_produced((1, 1, "foo"))
+    assert not mixed_strategy.could_have_produced((1, 'foo'))
+    assert not mixed_strategy.could_have_produced((1, 1, 'foo'))
     assert not mixed_strategy.could_have_produced([1, 1])
 
 
@@ -257,6 +258,7 @@ def test_distinguishes_named_and_unnamed_tuples():
 
 
 class IntStrategyWithBrokenSimplify(strat.RandomGeometricIntStrategy):
+
     def simplify(self, value):
         return ()
 
@@ -274,12 +276,12 @@ def test_can_use_simplify_from_all_children():
 def test_strategy_for_integer_range_produces_only_integers_in_that_range():
     table = ss.StrategyTable()
     just_one_integer = table.strategy(descriptors.IntegerRange(1, 1))
-    for _ in xrange(100):
+    for _ in hrange(100):
         pv = just_one_integer.parameter.draw(random)
         x = just_one_integer.produce(random, pv)
         assert x == 1
     some_integers = table.strategy(descriptors.IntegerRange(1, 10))
-    for _ in xrange(100):
+    for _ in hrange(100):
         pv = some_integers.parameter.draw(random)
         x = some_integers.produce(random, pv)
         assert 1 <= x <= 10
@@ -289,7 +291,7 @@ def test_strategy_for_integer_range_can_produce_end_points():
     table = ss.StrategyTable()
     some_integers = table.strategy(descriptors.IntegerRange(1, 10))
     found = set()
-    for _ in xrange(1000):  # pragma: no branch
+    for _ in hrange(1000):  # pragma: no branch
         pv = some_integers.parameter.draw(random)
         x = some_integers.produce(random, pv)
         found.add(x)
@@ -321,7 +323,7 @@ def test_simplify_integer_range_can_push_to_near_boundaries():
 
     for p, v in predicates:
         some = False
-        for i in xrange(1, 10):
+        for i in hrange(1, 10):
             if p(i):
                 some = True
                 assert last(some_integers.simplify_such_that(i, p)) == v
@@ -468,23 +470,29 @@ def test_nice_string_for_sets_is_not_a_dict():
     assert strat.nice_string(frozenset()) == repr(frozenset())
 
 
+def test_non_empty_frozensets_should_use_set_representation():
+    assert strat.nice_string(frozenset([int])) == 'frozenset({int})'
+
+
 def test_just_strategy_uses_repr():
     class WeirdRepr(object):
+
         def __repr__(self):
-            return "ABCDEFG"
+            return 'ABCDEFG'
 
     assert repr(
         strategy(descriptors.just(WeirdRepr()))
-    ) == "JustStrategy(value=%r)" % (WeirdRepr(),)
+    ) == 'JustStrategy(value=%r)' % (WeirdRepr(),)
 
 
 def test_just_nice_string_should_respect_its_values_reprs():
     class Stuff(object):
+
         def __repr__(self):
-            return "Things()"
+            return 'Things()'
     assert strat.nice_string(
         descriptors.Just(Stuff())
-    ) == "Just(value=Things())"
+    ) == 'Just(value=Things())'
 
 
 def test_fixed_bounded_float_strategy_converts_its_args():
@@ -501,3 +509,74 @@ def test_list_distinguishes_on_elements():
 def test_set_distinguishes_on_elements():
     s = strategy({int})
     assert not s.could_have_produced({(1, 2)})
+
+
+class AwkwardSet(set):
+
+    def __iter__(self):
+        results = list(super(AwkwardSet, self).__iter__())
+        random.shuffle(results)
+        for r in results:
+            yield r
+
+
+def test_set_descriptor_representation_is_stable_for_order():
+    x = AwkwardSet(list(hrange(100)))
+    assert repr(x) != repr(x)
+    assert strat.nice_string(x) == strat.nice_string(x)
+
+
+class AwkwardDict(dict):
+
+    def items(self):
+        results = list(super(AwkwardDict, self).items())
+        random.shuffle(results)
+        for r in results:
+            yield r
+
+
+def test_dict_descriptor_representation_is_stable_for_order():
+    x = AwkwardDict({i: i for i in hrange(100)})
+    assert strat.nice_string(x) == strat.nice_string(x)
+
+
+def test_could_have_produced_distinguishes_on_values():
+    s = strategy({u'': frozenset({int})})
+    assert not s.could_have_produced({'': set()})
+
+
+def test_could_have_produced_distinguishes_on_keys():
+    s = strategy({6: int})
+    assert not s.could_have_produced({'': False})
+
+
+def test_string_tries_empty_string_first():
+    strat = strategy(text_type)
+    assert next(strat.simplify('kittens')) == ''
+
+
+def test_simplifies_quickly_to_list_of_empties():
+    x = ['foo%d' % (i,) for i in hrange(10)]
+    s = strategy([str])
+    call_counter = [0]
+
+    def count_long(xs):
+        call_counter[0] += 1
+        return len(xs) >= 10
+
+    list(s.simplify_such_that(x, count_long))
+    assert call_counter[0] > 0
+    assert call_counter[0] <= 30
+
+
+def test_can_distinguish_dicts_with_different_numbers_of_keys():
+    x = {1: int}
+    y = {1: int, 2: int}
+    assert not strategy(x).could_have_produced(y)
+    assert not strategy(y).could_have_produced(x)
+
+
+def test_just_random():
+    s = strategy(
+        descriptors.Just(strat.RandomWithSeed(1)))
+    assert s.could_have_produced(strat.RandomWithSeed(1))

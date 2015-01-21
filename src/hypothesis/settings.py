@@ -1,6 +1,15 @@
+"""A module controlling settings for Hypothesis to use in falsification.
+
+Either an explicit Settings object can be used or the default object on
+this module can be modified.
+
+"""
+import os
+
+
 class Settings(object):
-    """
-    A settings object controls a variety of parameters that are used in
+
+    """A settings object controls a variety of parameters that are used in
     falsification. There is a single default settings object that all other
     Settings will use as its values s defaults.
 
@@ -22,18 +31,22 @@ class Settings(object):
         find novel breakages.
 
     """
+    # pylint: disable=too-many-arguments
+
     def __init__(
-        self,
-        min_satisfying_examples=None,
-        max_examples=None,
-        max_skipped_examples=None,
-        timeout=None,
-        derandomize=None,
+            self,
+            min_satisfying_examples=None,
+            max_examples=None,
+            max_skipped_examples=None,
+            timeout=None,
+            derandomize=None,
+            database=None,
     ):
         self.min_satisfying_examples = (
             min_satisfying_examples or default.min_satisfying_examples)
         self.max_examples = max_examples or default.max_examples
         self.timeout = timeout or default.timeout
+        self.database = database or default.database
         self.max_skipped_examples = (
             max_skipped_examples or default.max_skipped_examples)
         if derandomize is None:
@@ -48,4 +61,19 @@ default = Settings(
     timeout=60,
     max_skipped_examples=50,
     derandomize=False,
+    # Silly hack so that we don't have it try to look up a value on itself
+    # before it has been assigned.
+    database=object(),
 )
+default.database = None
+
+DATABASE_OVERRIDE = os.getenv('HYPOTHESIS_DATABASE_FILE')
+
+# This is tested outside the main tests which run coverage because it is per
+# process
+if DATABASE_OVERRIDE:
+    from hypothesis.database import ExampleDatabase
+    from hypothesis.database.backend import SQLiteBackend
+    default.database = ExampleDatabase(
+        backend=SQLiteBackend(DATABASE_OVERRIDE)
+    )

@@ -1,21 +1,32 @@
+"""Module defining SearchStrategy, which is the core type that Hypothesis uses
+to explore data."""
+
 from hypothesis.internal.tracker import Tracker
 import hypothesis.params as params
 import hypothesis.internal.utils.distributions as dist
 
 import inspect
 from abc import abstractmethod
-from hypothesis.internal.compat import xrange
+from hypothesis.internal.compat import hrange
 from hypothesis.internal.compat import text_type, binary_type, integer_types
 import string
-import random as r
+from random import Random
 import hypothesis.descriptors as descriptors
 from copy import deepcopy
+from hypothesis.internal.utils.fixers import actually_equal, actually_in
 
 
 def mix_generators(*generators):
+    """Return a generator which cycles through these generator arguments.
+
+    Will return all the same values as (x for g in generators for x in
+    g) but will do so in an order that mixes the different generators
+    up.
+
+    """
     generators = list(generators)
     while generators:
-        for i in xrange(len(generators)):
+        for i in hrange(len(generators)):
             try:
                 yield next(generators[i])
             except StopIteration:
@@ -24,6 +35,14 @@ def mix_generators(*generators):
 
 
 def nice_string(xs):
+    """Take a descriptor and produce a nicer string representation of it than
+    repr.
+
+    In particular this is designed to work around the problem that the
+    repr for type objects is nasty.
+
+    """
+    # pylint: disable=too-many-return-statements
     if isinstance(xs, list):
         return '[' + ', '.join(map(nice_string, xs)) + ']'
     if type(xs) == tuple:
@@ -32,22 +51,22 @@ def nice_string(xs):
         else:
             return '(' + ', '.join(map(nice_string, xs)) + ')'
     if isinstance(xs, dict):
-        return '{' + ', '.join(
+        return '{' + ', '.join(sorted([
             repr(k1) + ':' + nice_string(v1)
             for k1, v1 in xs.items()
-        ) + '}'
+        ])) + '}'
     if isinstance(xs, set):
         if not xs:
             return repr(xs)
         return '{%s}' % (
             ', '.join(
-                map(nice_string, xs)
+                sorted(map(nice_string, xs))
             )
         )
     if isinstance(xs, frozenset):
         if not xs:
             return repr(xs)
-        return "frozenset(%s)" % (nice_string(set(xs)),)
+        return 'frozenset(%s)' % (nice_string(set(xs)),)
     try:
         return xs.__name__
     except AttributeError:
@@ -70,7 +89,31 @@ def nice_string(xs):
 
 
 class SearchStrategy(object):
+
+    """A SearchStrategy is an object that knows how to explore data of a given
+    type.
+
+    A search strategy's data production is defined by two distributions: The
+    distribution if its parameter and the conditional distribution given a
+    specific parameter value. In general the exact shapes of these should not
+    be considered part of a class's contract and may change if a better choice
+    is found. Generally the shape of the parameter is highly likely to change
+    and the shape of the conditional distribution is quite likely to stay the
+    same.
+
+    """
+
+    # A subclass should override this if its data is mutable and must be
+    # copied before it is safe to pass to unknown functions.
     has_immutable_data = True
+
+    # This should be an object that describes the type of data that this
+    # SearchStrategy can produce.
+    descriptor = None
+
+    # This should be an object of type Parameter, values from which will be
+    # passed to produce to control the shape of the distribution.
+    parameter = None
 
     def __repr__(self):
         return '%s(%s)' % (
@@ -81,24 +124,68 @@ class SearchStrategy(object):
     def __init__(self):
         pass
 
+    def draw_and_produce(self, random):
+        return self.produce(random, self.parameter.draw(random))
+
     @abstractmethod
     def produce(self, random, parameter_value):
+        """Given a random number generator and a value drawn from
+        self.parameter, produce a value matching this search strategy's
+        descriptor."""
         pass  # pragma: no cover
 
     def copy(self, value):
+        """Return a version of value such that if it is mutated this will not
+        be reflected in value. If value is immutable it is perfectly acceptable
+        to just return value itself.
+
+        This version uses deepcopy and you can count on that remaining
+        the case but subclasses should feel free to override it if
+        providing copy hooks is not suitable for their needs.
+
+        """
         if self.has_immutable_data:
             return value
         else:
             return deepcopy(value)
 
     def simplify(self, value):
+        """Yield a number of values matching this descriptor that are in some
+        sense "simpelr" than value. What simpler means is entirely up to
+        subclasses and has no specified meaning. The intended interpretation is
+        that if you are given a choice between value and an element of
+        simplify(value) as an example you would rather one of the latter.
+
+        While it is perfectly acceptable to have cycles in simplify where
+        x{i+1} in simplify(xi) and x1 in simplify(x1) implementations should
+        try to make a "best effort" attempt not to do this because it will tend
+        to cause an unneccessarily large amount of time to be spent in
+        simplification as it walks up and down the search space. However it is
+        guaranteed to be safe and will not cause infinite loops.
+
+        The results of this function should be a deterministic function of its
+        input. If you want randomization, seed it off the value.
+
+        """
         return iter(())
 
     def simplify_such_that(self, t, f):
+        """Perform a greedy search to produce a "simplest" version of t that
+        satisfies the predicate s. As each simpler version is found, yield it
+        in turn. Stops when it has a value such that no value in simplify on
+        the last value found satisfies f.
+
+        Care is taken to avoid cycles in simplify.
+
+        f should produce the same result deterministically. This function may
+        raise an error given f such that f(t) returns False sometimes and True
+        some other times.
+
+        """
         assert self.could_have_produced(t)
         if not f(t):
             raise ValueError(
-                "%r does not satisfy predicate %s" % (t, f))
+                '%r does not satisfy predicate %s' % (t, f))
         tracker = Tracker()
         yield t
 
@@ -115,17 +202,35 @@ class SearchStrategy(object):
                 break
 
     def could_have_produced(self, x):
+        """Is this a value that feasibly could have resulted from produce on
+        this strategy.
+
+        It is not strictly required that this method is accurate and the only
+        invariant it *must* satisfy is that a value which returns True here
+        will never error when passed to simplify, but implementations should
+        try to make this as precise as possible as confusing behaviour may
+        arise in some cases if it is not, with values produced by one strategy
+        being passed to another for simplification when one_of is used.
+
+        """
         d = self.descriptor
         c = d if inspect.isclass(d) else d.__class__
         return isinstance(x, c)
 
     def __or__(self, other):
         if not isinstance(other, SearchStrategy):
-            raise ValueError("Cannot | a SearchStrategy with %r" % (other,))
+            raise ValueError('Cannot | a SearchStrategy with %r' % (other,))
         return one_of_strategies((self, other))
 
 
 class IntStrategy(SearchStrategy):
+
+    """A generic strategy for integer types that provides the basic methods
+    other than produce.
+
+    Subclasses should provide the produce method.
+
+    """
     descriptor = int
 
     def could_have_produced(self, x):
@@ -141,12 +246,12 @@ class IntStrategy(SearchStrategy):
             yield x // 2
             max_iters = 100
             if x <= max_iters:
-                for i in xrange(x - 1, 0, -1):
+                for i in hrange(x - 1, 0, -1):
                     yield i
             else:
-                random = r.Random(x)
+                random = Random(x)
                 seen = {0, x // 2}
-                for _ in xrange(max_iters):
+                for _ in hrange(max_iters):
                     i = random.randint(0, x - 1)
                     if i not in seen:
                         yield i
@@ -154,6 +259,15 @@ class IntStrategy(SearchStrategy):
 
 
 class RandomGeometricIntStrategy(IntStrategy):
+
+    """A strategy that produces integers whose magnitudes are a geometric
+    distribution and whose sign is randomized with some probability.
+
+    It will tend to be biased towards mostly negative or mostly
+    positive, and the size of the integers tends to be biased towards
+    the small.
+
+    """
     parameter = params.CompositeParameter(
         negative_probability=params.BetaFloatParameter(0.5, 0.5),
         p=params.BetaFloatParameter(alpha=0.2, beta=1.8),
@@ -161,22 +275,25 @@ class RandomGeometricIntStrategy(IntStrategy):
 
     def produce(self, random, parameter):
         value = dist.geometric(random, parameter.p)
-        if (
-            dist.biased_coin(random, parameter.negative_probability)
-        ):
+        if dist.biased_coin(random, parameter.negative_probability):
             value = -value
         return value
 
 
 class BoundedIntStrategy(SearchStrategy):
+
+    """A strategy for providing integers in some interval with inclusive
+    endpoints."""
+
     descriptor = int
     parameter = params.CompositeParameter()
 
     def __init__(self, start, end):
+        SearchStrategy.__init__(self)
         self.start = start
         self.end = end
         if start > end:
-            raise ValueError("Invalid range [%d, %d]" % (start, end))
+            raise ValueError('Invalid range [%d, %d]' % (start, end))
         self.parameter = params.NonEmptySubset(
             tuple(range(start, end + 1)),
             activation_chance=min(0.5, 3.0 / (end - start + 1))
@@ -190,21 +307,23 @@ class BoundedIntStrategy(SearchStrategy):
     def simplify(self, x):
         if x == self.start:
             return
-        for t in xrange(x - 1, self.start - 1, -1):
+        for t in hrange(x - 1, self.start - 1, -1):
             yield t
         mid = (self.start + self.end) // 2
         if x > mid:
             yield self.start + (self.end - x)
-            for t in xrange(x + 1, self.end + 1):
+            for t in hrange(x + 1, self.end + 1):
                 yield t
 
 
 class FloatStrategy(SearchStrategy):
+
+    """Generic superclass for strategies which produce floats."""
     descriptor = float
 
     def __init__(self):
         SearchStrategy.__init__(self)
-        self.int_strategy = IntStrategy()
+        self.int_strategy = RandomGeometricIntStrategy()
 
     def simplify(self, x):
         if x < 0:
@@ -219,6 +338,13 @@ class FloatStrategy(SearchStrategy):
 
 
 class FixedBoundedFloatStrategy(SearchStrategy):
+
+    """A strategy for floats distributed between two endpoints.
+
+    The conditional distribution tries to produce values clustered
+    closer to one of the ends.
+
+    """
     descriptor = float
 
     parameter = params.CompositeParameter(
@@ -227,6 +353,7 @@ class FixedBoundedFloatStrategy(SearchStrategy):
     )
 
     def __init__(self, lower_bound, upper_bound):
+        SearchStrategy.__init__(self)
         self.lower_bound = float(lower_bound)
         self.upper_bound = float(upper_bound)
 
@@ -246,6 +373,10 @@ class FixedBoundedFloatStrategy(SearchStrategy):
 
 
 class BoundedFloatStrategy(FloatStrategy):
+
+    """A float strategy such that every conditional distribution is bounded but
+    the endpoints may be arbitrary."""
+
     def __init__(self):
         super(BoundedFloatStrategy, self).__init__()
         self.inner_strategy = FixedBoundedFloatStrategy(0, 1)
@@ -257,11 +388,14 @@ class BoundedFloatStrategy(FloatStrategy):
 
     def produce(self, random, pv):
         return pv.left + self.inner_strategy.produce(
-            random,  pv.spread
+            random, pv.spread
         ) * pv.length
 
 
 class GaussianFloatStrategy(FloatStrategy):
+
+    """A float strategy such that every conditional distribution is drawn from
+    a gaussian."""
     parameter = params.CompositeParameter(
         mean=params.NormalParameter(0, 1),
     )
@@ -271,6 +405,12 @@ class GaussianFloatStrategy(FloatStrategy):
 
 
 class ExponentialFloatStrategy(FloatStrategy):
+
+    """
+    A float strategy such that every conditional distribution is of the form
+    aX + b where a = +/- 1 and X is an exponentially distributed random
+    variable.
+    """
     parameter = params.CompositeParameter(
         lambd=params.GammaParameter(2, 50),
         zero_point=params.NormalParameter(0, 1),
@@ -285,6 +425,9 @@ class ExponentialFloatStrategy(FloatStrategy):
 
 
 class BoolStrategy(SearchStrategy):
+
+    """A strategy that produces Booleans with a Bernoulli conditional
+    distribution."""
     descriptor = bool
 
     parameter = params.UniformFloatParameter(0, 1)
@@ -294,6 +437,13 @@ class BoolStrategy(SearchStrategy):
 
 
 class TupleStrategy(SearchStrategy):
+
+    """A strategy responsible for fixed length tuples based on heterogenous
+    strategies for each of their elements.
+
+    This also handles namedtuples
+
+    """
 
     def __init__(self,
                  strategies, tuple_type):
@@ -316,6 +466,7 @@ class TupleStrategy(SearchStrategy):
                     for s, x in zip(self.element_strategies, xs)))
 
     def newtuple(self, xs):
+        """Produce a new tuple of the correct type."""
         if self.tuple_type == tuple:
             return tuple(xs)
         else:
@@ -336,13 +487,13 @@ class TupleStrategy(SearchStrategy):
         After that we stop because it's getting silly.
         """
 
-        for i in xrange(0, len(x)):
+        for i in hrange(0, len(x)):
             for s in self.element_strategies[i].simplify(x[i]):
                 z = list(x)
                 z[i] = s
                 yield self.newtuple(z)
-        for i in xrange(0, len(x)):
-            for j in xrange(0, len(x)):
+        for i in hrange(0, len(x)):
+            for j in hrange(0, len(x)):
                 if i == j:
                     continue
                 for s in self.element_strategies[i].simplify(x[i]):
@@ -354,15 +505,18 @@ class TupleStrategy(SearchStrategy):
 
 
 def one_of_strategies(xs):
+    """Helper function for unioning multiple strategies."""
     xs = tuple(xs)
     if not xs:
-        raise ValueError("Cannot join an empty list of strategies")
+        raise ValueError('Cannot join an empty list of strategies')
     if len(xs) == 1:
         return xs[0]
     return OneOfStrategy(xs)
 
 
 def _unique(xs):
+    """Helper function for removing duplicates from a list whilst preserving
+    its order."""
     result = []
     for x in xs:
         if x not in result:
@@ -372,10 +526,20 @@ def _unique(xs):
 
 
 class ListStrategy(SearchStrategy):
+
+    """A strategy for lists which takes an intended average length and a
+    strategy for each of its element types and generates lists containing any
+    of those element types.
+
+    The conditional distribution of the length is geometric, and the
+    conditional distribution of each parameter is whatever their
+    strategies define.
+
+    """
     has_immutable_data = False
 
     def __init__(self,
-                 strategies, average_length=100.0):
+                 strategies, average_length=50.0):
         SearchStrategy.__init__(self)
 
         self.descriptor = _unique(x.descriptor for x in strategies)
@@ -388,7 +552,7 @@ class ListStrategy(SearchStrategy):
     def produce(self, random, pv):
         length = dist.geometric(random, 1.0 / (1 + pv.average_length))
         result = []
-        for _ in xrange(length):
+        for _ in hrange(length):
             result.append(
                 self.element_strategy.produce(random, pv.child_parameter))
         return result
@@ -400,19 +564,23 @@ class ListStrategy(SearchStrategy):
 
         generators.append(iter(([],)))
 
-        indices = xrange(len(x) - 1, -1, -1)
+        indices = hrange(len(x) - 1, -1, -1)
 
         generators.append(
             [x[i]] for i in indices
         )
 
         def with_one_index_deleted():
+            """yield lists that are the same as x but lacking a single
+            element."""
             for i in indices:
                 y = list(x)
                 del y[i]
                 yield y
 
         def with_one_index_simplified():
+            """yield lists that are the same as x but with a single element
+            simplified according to its defined strategy."""
             for i in indices:
                 for s in self.element_strategy.simplify(x[i]):
                     z = list(x)
@@ -425,8 +593,9 @@ class ListStrategy(SearchStrategy):
         generators.append(with_one_index_simplified())
 
         def with_two_indices_deleted():
-            for i in xrange(0, len(x) - 1):
-                for j in xrange(i, len(x) - 1):
+            """yield lists that are the same as x but lacking two elements."""
+            for i in hrange(0, len(x) - 1):
+                for j in hrange(i, len(x) - 1):
                     y = list(x)
                     del y[i]
                     del y[j]
@@ -445,29 +614,30 @@ class ListStrategy(SearchStrategy):
 
 
 class MappedSearchStrategy(SearchStrategy):
+
+    """A strategy which is defined purely by conversion to and from another
+    strategy.
+
+    Its parameter and distribution come from that other strategy.
+
+    """
+
     def __init__(self, descriptor, strategy):
         SearchStrategy.__init__(self)
         self.mapped_strategy = strategy
         self.descriptor = descriptor
-
-    @property
-    def parameter(self):
-        return self.mapped_strategy.parameter
+        self.parameter = self.mapped_strategy.parameter
 
     @abstractmethod
     def pack(self, x):
-        """
-        Take a value produced by the underlying mapped_strategy and turn it
-        into a value suitable for outputting from this strategy
-        """
+        """Take a value produced by the underlying mapped_strategy and turn it
+        into a value suitable for outputting from this strategy."""
         pass  # pragma: no cover
 
     @abstractmethod
     def unpack(self, x):
-        """
-        Take a value produced from pack and convert it back to a value that
-        could have been produced by the underlying strategy
-        """
+        """Take a value produced from pack and convert it back to a value that
+        could have been produced by the underlying strategy."""
         pass  # pragma: no cover
 
     def produce(self, random, pv):
@@ -487,6 +657,10 @@ class MappedSearchStrategy(SearchStrategy):
 
 
 class ComplexStrategy(SearchStrategy):
+
+    """A strategy over complex numbers, with real and imaginary values
+    distributed according to some provided strategy for floating point
+    numbers."""
     descriptor = complex
 
     def __init__(self, float_strategy):
@@ -515,6 +689,9 @@ class ComplexStrategy(SearchStrategy):
 
 
 class SetStrategy(MappedSearchStrategy):
+
+    """A strategy for sets of values, defined in terms of a strategy for lists
+    of values."""
     has_immutable_data = False
 
     def __init__(self, list_strategy):
@@ -531,6 +708,10 @@ class SetStrategy(MappedSearchStrategy):
 
 
 class FrozenSetStrategy(MappedSearchStrategy):
+
+    """A strategy for frozensets of values, defined in terms of a strategy for
+    lists of values."""
+
     def __init__(self, list_strategy):
         super(FrozenSetStrategy, self).__init__(
             strategy=list_strategy,
@@ -548,29 +729,35 @@ class FrozenSetStrategy(MappedSearchStrategy):
 
 
 class OneCharStringStrategy(SearchStrategy):
+
+    """A strategy which generates single character strings of text type."""
     descriptor = text_type
 
     def __init__(self, characters=None):
         SearchStrategy.__init__(self)
         if characters is not None and not isinstance(characters, text_type):
-            raise ValueError("Invalid characters %r: Not a %s" % (
+            raise ValueError('Invalid characters %r: Not a %s' % (
                 characters, text_type
             ))
         self.characters = characters or (
-            text_type("0123456789") + text_type(string.ascii_letters))
+            text_type('0123456789') + text_type(string.ascii_letters))
         self.parameter = params.CompositeParameter()
 
     def produce(self, random, pv):
         return random.choice(self.characters)
 
     def simplify(self, x):
-        for i in xrange(self.characters.index(x), -1, -1):
+        for i in hrange(self.characters.index(x), -1, -1):
             yield self.characters[i]
 
 
 class StringStrategy(MappedSearchStrategy):
+
+    """A strategy for text strings, defined in terms of a strategy for lists of
+    single character text strings."""
+
     def __init__(self, list_of_one_char_strings_strategy):
-        return super(StringStrategy, self).__init__(
+        super(StringStrategy, self).__init__(
             descriptor=text_type,
             strategy=list_of_one_char_strings_strategy
         )
@@ -581,16 +768,34 @@ class StringStrategy(MappedSearchStrategy):
     def unpack(self, s):
         return list(s)
 
+    def could_have_produced(self, value):
+        return isinstance(value, text_type)
+
 
 class BinaryStringStrategy(MappedSearchStrategy):
+
+    """A strategy for strings of bytes, defined in terms of a strategy for
+    lists of bytes."""
+
     def pack(self, x):
         return binary_type(bytearray(x))
 
     def unpack(self, x):
         return list(bytearray(x))
 
+    def could_have_produced(self, value):
+        return isinstance(value, binary_type)
+
 
 class FixedKeysDictStrategy(SearchStrategy):
+
+    """A strategy which produces dicts with a fixed set of keys, given a
+    strategy for each of their equivalent values.
+
+    e.g. {'foo' : some_int_strategy} would
+    generate dicts with the single key 'foo' mapping to some integer.
+
+    """
     has_immutable_data = False
 
     def __init__(self, strategy_dict):
@@ -618,12 +823,37 @@ class FixedKeysDictStrategy(SearchStrategy):
                 y[k] = s
                 yield y
 
+    def could_have_produced(self, value):
+        if not isinstance(value, dict):
+            return False
+        if len(value) != len(self.descriptor):
+            return False
+        for k, v in self.strategy_dict.items():
+            if k not in value:
+                return False
+            if not v.could_have_produced(value[k]):
+                return False
+        return True
+
 
 class OneOfStrategy(SearchStrategy):
 
+    """Implements a union of strategies. Given a number of strategies this
+    generates values which could have come from any of them.
+
+    The conditional distribution draws uniformly at random from some non-empty
+    subset of these strategies and then draws from the conditional distribution
+    of that strategy.
+
+    Note: If two strategies both return could_have_produced(x) as True then
+    when simplifying it is arbitrarily chosen which one gets passed x. The
+    specific choice is an implementation detail that should not be relied upon.
+
+    """
+
     def __init__(self,
                  strategies):
-        super(OneOfStrategy, self).__init__()
+        SearchStrategy.__init__(self)
         flattened_strategies = []
         for s in strategies:
             if isinstance(s, OneOfStrategy):
@@ -632,7 +862,7 @@ class OneOfStrategy(SearchStrategy):
                 flattened_strategies.append(s)
         strategies = tuple(flattened_strategies)
         if len(strategies) <= 1:
-            raise ValueError("Need at least 2 strategies to choose amongst")
+            raise ValueError('Need at least 2 strategies to choose amongst')
         descriptor = descriptors.one_of(
             _unique(s.descriptor for s in strategies))
         self.descriptor = descriptor
@@ -669,16 +899,21 @@ class OneOfStrategy(SearchStrategy):
 
 
 class JustStrategy(SearchStrategy):
+
+    """
+    A strategy which simply returns a single fixed value with probability 1.
+    """
     # We could do better here but it's probably not worth it
     # deepcopy has optimisations that will probably work just as well as
     # our check
     has_immutable_data = False
 
     def __init__(self, value):
+        SearchStrategy.__init__(self)
         self.descriptor = descriptors.Just(value)
 
     def __repr__(self):
-        return "JustStrategy(value=%r)" % (self.descriptor.value,)
+        return 'JustStrategy(value=%r)' % (self.descriptor.value,)
 
     parameter = params.CompositeParameter()
 
@@ -686,16 +921,25 @@ class JustStrategy(SearchStrategy):
         return self.descriptor.value
 
     def could_have_produced(self, value):
-        return self.descriptor.value == value
+        return actually_equal(self.descriptor.value, value)
 
 
-class RandomWithSeed(r.Random):
+class RandomWithSeed(Random):
+
+    """A subclass of Random designed to expose the seed it was initially
+    provided with.
+
+    We consistently use this instead of Random objects because it makes
+    examples much easier to recreate.
+
+    """
+
     def __init__(self, seed):
         super(RandomWithSeed, self).__init__(seed)
         self.seed = seed
 
     def __repr__(self):
-        return "RandomWithSeed(%s)" % (self.seed,)
+        return 'RandomWithSeed(%s)' % (self.seed,)
 
     def __copy__(self):
         r = RandomWithSeed(self.seed)
@@ -712,9 +956,19 @@ class RandomWithSeed(r.Random):
             self.getstate() == other.getstate()
         )
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
 
 class RandomStrategy(SearchStrategy):
-    descriptor = r.Random
+
+    """A strategy which produces Random objects.
+
+    The conditional distribution is simply a RandomWithSeed seeded with
+    a 128 bits of data chosen uniformly at random.
+
+    """
+    descriptor = Random
     parameter = params.CompositeParameter()
     has_immutable_data = False
 
@@ -726,7 +980,18 @@ class RandomStrategy(SearchStrategy):
 
 
 class SampledFromStrategy(SearchStrategy):
+
+    """A strategy which samples from a set of elements. This is essentially
+    equivalent to using a OneOfStrategy over Just strategies but may be more
+    efficient and convenient.
+
+    The conditional distribution chooses uniformly at random from some
+    non-empty subset of the elements.
+
+    """
+
     def __init__(self, elements):
+        SearchStrategy.__init__(self)
         self.elements = tuple(elements)
         self.descriptor = descriptors.SampledFrom(self.elements)
         self.parameter = params.NonEmptySubset(self.elements)
@@ -735,4 +1000,4 @@ class SampledFromStrategy(SearchStrategy):
         return random.choice(pv)
 
     def could_have_produced(self, value):
-        return value in self.elements
+        return actually_in(value, self.elements)

@@ -28,6 +28,7 @@ def strategy_for_instances(typ):
 
 
 class StrategyTable(SpecificationMapper):
+
     def strategy(self, descriptor):
         return self.specification_for(descriptor)
 

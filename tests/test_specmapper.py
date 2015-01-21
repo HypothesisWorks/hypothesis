@@ -9,7 +9,7 @@ from hypothesis.descriptors import sampled_from
 import pytest
 from collections import namedtuple
 import random
-from hypothesis.internal.compat import xrange
+from hypothesis.internal.compat import hrange
 
 
 def setup_function(fn):
@@ -303,7 +303,7 @@ def test_specifications_will_match_on_subclasses():
         Parent: 1, Child: 3, Grandchild: 2, GreatGrandchild: 4
     }
 
-    for i in xrange(5, 200):
+    for i in hrange(5, 200):
         c = random.choice(choices)
         assert s.specification_for(c()) == values[c]
         s.define_specification_for_instances(c, trivial(i))
@@ -388,7 +388,7 @@ def test_chooses_most_specific_subclass(classes, r):
     random.shuffle(classes)
     classes = tuple(classes)
     mapper = SpecificationMapper()
-    for i in xrange(len(classes)):
+    for i in hrange(len(classes)):
         mapper.define_specification_for_instances(
             classes[i],
             const(i),
@@ -407,8 +407,8 @@ def test_class_sorter_topologically_sorts_wrt_subclassing(classes, random):
     random.shuffle(classes)
     in_order = sort_in_subclass_order(classes)
     n = len(classes)
-    for i in xrange(n):
-        for j in xrange(i+1, n):
+    for i in hrange(n):
+        for j in hrange(i + 1, n):
             assert not issubclass(in_order[j], in_order[i])
 
 
@@ -424,3 +424,37 @@ def test_correctly_reports_specifications():
     assert mapper.has_specification_for([])
     assert not mapper.has_specification_for(str)
     assert not mapper.has_specification_for([str])
+
+
+class Confused1(object):
+
+    def __eq__(self, other):
+        return isinstance(other, (Confused1, Confused2))
+
+    def __hash__(self):
+        return 0
+
+
+class Confused2(object):
+
+    def __eq__(self, other):
+        return isinstance(other, (Confused1, Confused2))
+
+    def __hash__(self):
+        return 0
+
+
+def test_is_not_confused_by_equal_things_of_different_types():
+    mapper = SpecificationMapper()
+    mapper.define_specification_for_instances(
+        Confused1, lambda s, d: 1
+    )
+    mapper.define_specification_for_instances(
+        Confused2, lambda s, d: 2
+    )
+    mapper.define_specification_for_instances(
+        tuple,
+        lambda s, d: sum(s.specification_for(x) for x in d)
+    )
+    assert mapper.specification_for((Confused1(),)) == 1
+    assert mapper.specification_for((Confused2(),)) == 2
