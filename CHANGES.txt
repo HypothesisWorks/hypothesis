@@ -128,13 +128,34 @@
       strategy.
 
 0.4.0 - TBD
+    FLAGSHIP FEATURE: Hypothesis now persists examples for later use. It stores
+    data in a local SQLite database and will reuse it for all tests of the same
+    type.
+
+    Enhancements:
+
+    * Printing of failing examples. I was finding that the pytest runner was not
+      doing a good job of displaying these, and that Hypothesis itself could do
+      much better.
+    * Drop dependency on six for cross-version compatibility. It was easy
+      enough to write the shim for the small set of features that we care about
+      and this lets us avoid a moderately complex dependency.
+    * Some improvements to statistical distribution of selecting from small (<=
+      3 elements)
+    * Improvements to parameter selection for finding examples.
+
+    Bugs fixed:
+
     * could_have_produced for lists, dicts and other collections would not have
       examined the elements and thus when using a union of different types of
       list this could result in Hypothesis getting confused and passing a value
       to the wrong strategy. This could potentially result in exceptions being
       thrown from within simplification.
-    * Drop dependency on six for cross-version compatibility. It was easy
-      enough to write the shim for the small set of features that we care about
-      and this lets us avoid a moderately complex dependency.
-    * Fix a bug where sampled_from would not work correctly on a single element
-      list.
+    * sampled_from would not work correctly on a single element list.
+    * Hypothesis could get *very* confused by values which are
+      equal despite having different types being used in descriptors. Hypothesis
+      now has its own more specific version of equality it uses for descriptors
+      and tracking. It is always more fine grained than Python equality: Things
+      considered != are not considered equal by hypothesis, but some things that
+      are considered == are distinguished. If your test suite uses both frozenset
+      and set tests this bug is probably affecting you.
