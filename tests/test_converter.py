@@ -57,9 +57,9 @@ def test_can_not_save_as_incompatible_examples(dav, dav2):
 
 @pytest.mark.parametrize(('descriptor', 'data'), [
     ({text_type}, 0j),
-    (complex, {"hi"}),
+    (complex, {'hi'}),
     ([{bool}], 0),
-    (Just(1), "hi"),
+    (Just(1), 'hi'),
     (binary_type, 0.0),
     (binary_type, frozenset()),
     ({True: {int}}, []),
@@ -67,9 +67,9 @@ def test_can_not_save_as_incompatible_examples(dav, dav2):
     (int, ''),
     (text_type, []),
     ((int, int, int), (1, 2)),
-    (SampledFrom((1, 2, 3)), "fish"),
+    (SampledFrom((1, 2, 3)), 'fish'),
     (OneOf((int, float)), 1),
-    (OneOf((int, float, unicode, str, bool, complex)), "tv"),
+    (OneOf((int, float, unicode, str, bool, complex)), 'tv'),
     (binary_type, u"1"),
     ([frozenset({float}), frozenset({float})], [[8, 0], []]),
 ])

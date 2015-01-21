@@ -43,7 +43,7 @@ class WrongFormat(ValueError):
 class BadData(ValueError):
 
     """The data that we got out of the database does not seem to match the data
-    we could have put into the database given this schema"""
+    we could have put into the database given this schema."""
 
 
 def check_matches(strategy, value):
@@ -72,9 +72,9 @@ def check_length(l, value):
     try:
         actual = len(value)
     except TypeError:
-        raise BadData("Excepted list but got %r" % (value,))
+        raise BadData('Excepted list but got %r' % (value,))
     if actual != l:
-        raise BadData("Expected %d elements but got %d from %r" % (
+        raise BadData('Expected %d elements but got %d from %r' % (
             l, actual, value
         ))
 
@@ -322,7 +322,7 @@ class JustConverter(Converter):
 
     def from_json(self, c):
         if c is not None:
-            raise BadData("Expected None value but got %r" % (c,))
+            raise BadData('Expected None value but got %r' % (c,))
         return self.value
 
 
@@ -461,7 +461,7 @@ class OneOfConverter(Converter):
         check_data_type(integer_types, value[0])
         i, x = value
         if i < 0 or i >= len(self.converters):
-            raise BadData("Invalid index %d into %d elements" % (
+            raise BadData('Invalid index %d into %d elements' % (
                 i, len(self.converters)
             ))
         return self.converters[i].from_json(x)
@@ -498,7 +498,7 @@ class SampledFromConverter(Converter):
     def from_json(self, value):
         check_data_type(integer_types, value)
         if value < 0 or value >= len(self.choices):
-            raise BadData("Invalid index %d into %d elements" % (
+            raise BadData('Invalid index %d into %d elements' % (
                 value, len(self.choices)
             ))
         return self.choices[value]
