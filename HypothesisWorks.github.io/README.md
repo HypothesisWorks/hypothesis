@@ -7,6 +7,6 @@ Uses:
 * Font Awesome 4.2.0
 
 
-Here is a [Demo](http://itsrifat.github.io/rifyll/){:target="_blank"}
+Here is a <a href="http://itsrifat.github.io/rifyll/" target="_blank">Demo</a>
 
 Edit **_data/menu.yml** to edit menu
