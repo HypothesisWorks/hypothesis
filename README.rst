@@ -247,12 +247,35 @@ I have no idea if Hypothesis works on Jython, IronPython, etc. Do people really 
 Contributing
 ------------
 
-While I sort out the mess that are CLAs and licenses and stuff I'm not currently accepting contributions to
-Hypothesis, sorry. I hope to have this resolved soon, but it's almost certainly going to require you to assign
-copyright to me.
+I'm not incredibly keen on external contributions prior to the 1.0 release. I think you're going to have a hard time of it.
 
-If you want to build things on top of Hypothesis though I would outright encourage this and am actively
-prepared to help you do so. Do get in touch.
+In the meantime I'd rather you do any of the following
+
+  * Submit bug reports
+  * Submit feature requests
+  * Write about Hypothesis
+  * Build libraries and tools on top of Hypothesis outside the main repo
+
+However if you really really want to submit code to Hypothesis, the process is as follows:
+
+If you have not already done so, you must sign a CLA assigning copyright to me. Send an email to hypothesis@drmaciver.com with
+an attached copy of `the current version of the CLA <https://github.com/DRMacIver/hypothesis/blob/master/docs/Hypothesis-CLA.pdf?raw=true>`_
+and the text in the body "I, (your name), have read the attached CLA and agree to its terms" (you should in fact have actually read it)
+
+Then submit a pull request on Github. This will be checked by Travis to see if the build passes.
+
+Advance warning that passing the build requires:
+
+  1. Really quite a lot of tests to pass (it looks like it's only 300+ but many of these use Hypothesis itself to run 1000 examples through them, and the build is run in 4 configurations across 3 python versions).
+  2. Your code to have 100% branch coverage.
+  3. Your code to be flake8 clean.
+  4. Your code to have had pyformat run over it.
+
+It is a fairly strict process.
+
+(Unfortunately right now the build is a bit flaky. I'm working on fixing that, but in the meantime if a test fails and you don't understand why you should probably just run the build again to see what happens. Sorry)
+
+Once all this has happened I'll review your patch. I don't promise to accept it, but I do promise to review it as promptly as I can and to tell you why if I reject it.
 
 -----------------
 Internals
