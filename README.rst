@@ -247,14 +247,12 @@ I have no idea if Hypothesis works on Jython, IronPython, etc. Do people really 
 Contributing
 ------------
 
-I'm generally super happy to accept contributions. The main requirement is that the Travis
-build passes. You will also need to sign `a CLA assigning copyright to me <https://www.clahub.com/agreements/DRMacIver/hypothesis>`_
+While I sort out the mess that are CLAs and licenses and stuff I'm not currently accepting contributions to
+Hypothesis, sorry. I hope to have this resolved soon, but it's almost certainly going to require you to assign
+copyright to me.
 
-The Hypothesis build is quite strict. In particular it requires you to maintain 100% branch coverage of the code and flake8
-cleanliness and run pyformat over your code.
-
-I'm also generally delighted with people providing issues, documentation, usage reports, etc.
-so if that sounds a bit too hardcore, don't worry! There's plenty of other things you can do to help.
+If you want to build things on top of Hypothesis though I would outright encourage this and am actively
+prepared to help you do so. Do get in touch.
 
 -----------------
 Internals
