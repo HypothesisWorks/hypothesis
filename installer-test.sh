@@ -5,9 +5,8 @@ VENV=$(mktemp -d)
 CURRENT_PYTHON=$(which python)
 
 rm -rf ./dist
-rm -rf ./$VENV
 virtualenv $VENV  --python=$CURRENT_PYTHON
-BINDIR=$(pwd)/$VENV/bin
+BINDIR=$VENV/bin
 PYTHON=$BINDIR/python
 
 CURRENT_VERSION=$($CURRENT_PYTHON --version 2>&1)
