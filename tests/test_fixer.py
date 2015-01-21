@@ -1,5 +1,6 @@
-from hypothesis.internal.utils.fixers import actually_equal
+from hypothesis.internal.utils.fixers import actually_equal, real_index
 import random
+import pytest
 
 
 def test_lists_of_same_elements_are_equal():
@@ -109,3 +110,19 @@ def test_handles_strings_correctly():
     assert s is not rrs
     assert s == rrs, (rrs, s)
     assert actually_equal(s, rrs)
+
+
+def test_actually_index_does_not_index_not_actually_equal_things():
+    t = [frozenset()]
+    with pytest.raises(ValueError):
+        real_index(t, set())
+
+
+def test_actually_index_can_index_past_an_inequal_thing():
+    t = [frozenset(), set()]
+    assert real_index(t, set()) == 1
+
+
+def test_actually_index_can_use_real_index():
+    t = [set()]
+    assert real_index(t, set()) == 0
