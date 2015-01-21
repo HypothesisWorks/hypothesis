@@ -258,6 +258,8 @@ In the meantime I'd rather you do any of the following
 
 However if you really really want to submit code to Hypothesis, the process is as follows:
 
+You must own the copyright to the patch you're submitting as an individual. I'm not currently clear on how to accept patches from organisations and other legal entities.
+
 If you have not already done so, you must sign a CLA assigning copyright to me. Send an email to hypothesis@drmaciver.com with
 an attached copy of `the current version of the CLA <https://github.com/DRMacIver/hypothesis/blob/master/docs/Hypothesis-CLA.pdf?raw=true>`_
 and the text in the body "I, (your name), have read the attached CLA and agree to its terms" (you should in fact have actually read it).
