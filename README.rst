@@ -2,7 +2,7 @@
  Hypothesis
 ================
 
-Hypothesis is a library for property based testing. You write tests encoding some invariant
+Hypothesis is a library for property based testing in Python. You write tests encoding some invariant
 that you believe should always be true. Hypothesis then tries to prove you wrong.
 
 For example:
