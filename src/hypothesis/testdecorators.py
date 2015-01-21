@@ -3,7 +3,7 @@ import time
 from hypothesis.verifier import (
     Verifier, Unfalsifiable, UnsatisfiedAssumption, Flaky
 )
-from hypothesis.internal.utils.reflection import convert_positional_arguments
+from hypothesis.internal.utils.reflection import arg_string
 
 
 def given(*generator_arguments, **kwargs):
@@ -39,17 +39,13 @@ def given(*generator_arguments, **kwargs):
             except Unfalsifiable:
                 return
 
-            cargs, ckwargs = convert_positional_arguments(
-                test,
-                arguments + falsifying_example[0],
-                falsifying_example[1],
-            )
-
             print(
-                'Falsifying example: %s' % ', '.join(
-                    [repr(x) for x in cargs] +
-                    sorted(
-                        ['%s=%s' % (k, repr(v)) for k, v in ckwargs.items()])
+                'Falsifying example: %s' % (
+                    arg_string(
+                        test,
+                        arguments + falsifying_example[0],
+                        falsifying_example[1]
+                    )
                 )
             )
 
