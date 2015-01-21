@@ -286,9 +286,11 @@ def test_raises_on_unsatisfiable_assumption():
 
 def test_gravitates_towards_good_parameter_values():
     good_value_counts = [0]
+    all_value_counts = [0]
 
     def just_being_awkward(xs):
-        assume(len(xs) >= 50)
+        assume(len(xs) >= 10)
+        all_value_counts[0] += 1
         assume(all(x >= 0 for x in xs))
         good_value_counts[0] += 1
         return True
@@ -297,7 +299,8 @@ def test_gravitates_towards_good_parameter_values():
             just_being_awkward, [float]
         )
 
-    assert good_value_counts[0] >= 100
+    assert all_value_counts[0] >= 300
+    assert good_value_counts[0] >= 0.65 * all_value_counts[0]
 
 
 def test_detects_flaky_failure():
