@@ -127,10 +127,14 @@
       fairly extensively inside hypothesis which do exhibit this pattern of
       strategy.
 
-0.4.0 - TBD
+0.4.0 - 21/01/2015
     FLAGSHIP FEATURE: Hypothesis now persists examples for later use. It stores
     data in a local SQLite database and will reuse it for all tests of the same
     type.
+
+    LICENSING CHANGE: Hypothesis is now released under the Mozila Public License
+    2.0. This applies to all versions from 0.4.0 onwards until further notice.
+    The previous license remains applicable to all code prior to 0.4.0.
 
     Enhancements:
 

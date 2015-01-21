@@ -17,18 +17,18 @@ class PyTest(TestCommand):
 
 setup(
     name='hypothesis',
-    version='0.3.2',
+    version='0.4.0',
     author='David R. MacIver',
     author_email='david@drmaciver.com',
     packages=find_packages("src"),
     package_dir={"": "src"},
     url='https://github.com/DRMacIver/hypothesis',
-    license='BSD',
+    license='MPL v2',
     description='A library for property based testing',
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
-        "License :: OSI Approved :: BSD License",
+        "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)"
         "Operating System :: Unix",
         "Operating System :: POSIX",
         "Operating System :: Microsoft :: Windows",
