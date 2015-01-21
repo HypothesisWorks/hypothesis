@@ -262,3 +262,13 @@ test_can_produce_lists_bunched_near_right = define_test(
     lambda ts: all(t > 0.8 for t in ts),
     condition=long_list,
 )
+
+test_can_produce_the_same_int_twice = define_test(
+    ([int], int), 0.05,
+    lambda t: len([x for x in t[0] if x == t[1]]) > 1
+)
+
+test_non_empty_subset_of_two_is_usually_large = define_test(
+    {descriptors.sampled_from((1, 2))}, 0.6,
+    lambda t: len(t) == 2
+)

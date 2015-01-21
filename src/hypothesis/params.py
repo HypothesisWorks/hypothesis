@@ -120,7 +120,12 @@ class NonEmptySubset(Parameter):
             # good in practice though.
             # Note: The actual expected value is slightly higher because we're
             # conditioning on the result being non-empty.
-            desired_expected_value = 1.0 if len(elements) <= 3 else 2.0
+            if len(elements) == 1:
+                desired_expected_value = 1.0
+            elif len(elements) <= 3:
+                desired_expected_value = 1.75
+            else:
+                desired_expected_value = 2.0
             activation_chance = desired_expected_value / len(elements)
         self.activation_chance = activation_chance
 
