@@ -246,8 +246,8 @@ A Hypothesis database is an instance of hypothesis.database.ExampleDatabase. It
 knows how to save most common types, and custom serializations can be defined if
 you need them.
 
-The default format is a very simple subset of JSON stored in an SQLite database.
-You can create a DB for this as follows:
+The feature is not on by default as randomly creating a database for you would
+be surprising behaviour, but it's easy to turn on.
 
 
 .. code:: python
@@ -266,17 +266,22 @@ You can create a DB for this as follows:
         backend=SQLiteBackend('/path/to/my/example.db')
     )
 
-The storage API is very straight forward (it's a key: unique multi value store)
-and it's easy to define other backends if you want to for operational reasons
-(e.g. having a common DB server storing your values across multiple runs), but
-this is the only one Hypothesis comes without of the box.
+You can also set this by setting the environment variable HYPOTHESIS_DATABASE_FILE=/path/to/my/example.db
 
-Generally the example database should be entirely transparent: The only thing
-you should see is that Hypothesis gets a lot better at consistently finding
-examples. Some types are not serializable and will not be stored in the database
+This uses the default format (and the only one supported out of the box), which is
+a simple subset of JSON stored in an SQLite database. However the storage API is
+very straight forward (it's a key: unique multi value store) and it's easy to define other backends if you want to for operational reasons
+(e.g. having a common DB server storing your values across multiple runs).
 
 If you want to write your own serializers it's not too hard to do so, but for
 now the best documentation on how is I'm afraid `the source code <https://github.com/DRMacIver/hypothesis/blob/master/src/hypothesis/database/converter.py>`_.
+
+Generally the example database should be entirely transparent: The only thing
+you should see is that Hypothesis gets a lot better at consistently finding
+examples. Some types are not serializable and will not be stored in the database.
+However the feature is quite new and somewhat experimental, so although it has
+been well tested you can probably expect there to be some bugs lurking in there.
+
 
 ---------
 Stability
