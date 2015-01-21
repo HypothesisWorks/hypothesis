@@ -300,7 +300,7 @@ def test_gravitates_towards_good_parameter_values():
         )
 
     assert all_value_counts[0] >= 300
-    assert good_value_counts[0] >= 0.65 * all_value_counts[0]
+    assert good_value_counts[0] >= 0.6 * all_value_counts[0]
 
 
 def test_detects_flaky_failure():
