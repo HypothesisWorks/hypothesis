@@ -220,16 +220,16 @@ you create unless you explicitly override them.
 
 The three settings which are available as part of the stable API are:
 
-    * timeout - try not to take more than this many seconds to falsify
-    * max_examples - stop looking for new examples after this many have been considered
-    * derandomize - run in deterministic mode, where the random seed for each run is
-      determined as a hash of the function to test. This allows you to run your builds
-      in such a way that failure is not random. It does decrease their power somewhat
-      in that it means they will never discover new examples, but it may make it
-      better to use in some situations where you e.g. have a large number of tests
-      running in CI. If you use this setting you may wish to raise timeout and max_examples.
-    * database - specify the database object you wish to use. See next section
-      for what this means.
+* timeout - try not to take more than this many seconds to falsify
+* max_examples - stop looking for new examples after this many have been considered
+* derandomize - run in deterministic mode, where the random seed for each run is
+  determined as a hash of the function to test. This allows you to run your builds
+  in such a way that failure is not random. It does decrease their power somewhat
+  in that it means they will never discover new examples, but it may make it
+  better to use in some situations where you e.g. have a large number of tests
+  running in CI. If you use this setting you may wish to raise timeout and max_examples.
+* database - specify the database object you wish to use. See next section
+  for what this means.
 
 ~~~~~~~~~~~~
 The Database
