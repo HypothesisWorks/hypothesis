@@ -3,8 +3,8 @@ from __future__ import unicode_literals
 from hypothesis.database.backend import Backend, SQLiteBackend
 from hypothesis.database.formats import Format
 from hypothesis.database import ExampleDatabase
-from hypothesis.database.converter import ConverterTable
-from hypothesis.searchstrategy import RandomWithSeed, BoundedIntStrategy
+from hypothesis.database.converter import ConverterTable, JustConverter
+from hypothesis.searchstrategy import RandomWithSeed, JustStrategy
 from hypothesis.descriptors import Just, one_of, sampled_from
 from random import Random
 from tests.common.descriptors import DescriptorWithValue
@@ -177,17 +177,31 @@ def test_storage_does_not_error_if_the_database_is_invalid():
     assert list(ints.fetch()) == []
 
 
+class PickyStrategyLazyFormat():
+    pass
+
+
 def test_storage_does_not_return_things_not_matching_strategy():
     table = StrategyTable()
+    strategy = JustStrategy(PickyStrategyLazyFormat())
+
+    strategy.could_have_produced = lambda *args: False
     table.define_specification_for(
-        int, lambda s, d: BoundedIntStrategy(0, 10)
+        PickyStrategyLazyFormat, lambda s, d: strategy
     )
-    database = ExampleDatabase(converters=ConverterTable(
-        strategy_table=table,
-    ))
-    ints = database.storage_for(int)
-    database.backend.save(ints.key, '100')
-    assert list(ints.fetch()) == []
+    converters = ConverterTable(strategy_table=table)
+    converters.define_specification_for(
+        PickyStrategyLazyFormat,
+        lambda s, d: JustConverter(PickyStrategyLazyFormat()))
+    database = ExampleDatabase(
+        converters=converters,
+        backend=SQLiteBackend(),
+    )
+    stor = database.storage_for(PickyStrategyLazyFormat)
+    database.backend.save(stor.key, 'null')
+    assert list(database.backend.fetch(stor.key)) != []
+    assert list(stor.fetch()) == []
+    assert list(database.backend.fetch(stor.key)) == []
 
 
 def test_storage_cleans_up_invalid_data_from_the_db():
