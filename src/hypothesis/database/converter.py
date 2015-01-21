@@ -38,7 +38,12 @@ class WrongFormat(ValueError):
 
     """An exception indicating you have attempted to serialize a value that
     does not match the type described by this format."""
-    pass
+
+
+class BadData(ValueError):
+
+    """The data that we got out of the database does not seem to match the data
+    we could have put into the database given this schema"""
 
 
 def check_matches(strategy, value):
@@ -48,10 +53,29 @@ def check_matches(strategy, value):
         ))
 
 
-def check_type(typ, value):
+def check_type(typ, value, e=WrongFormat):
     if not isinstance(value, typ):
-        raise WrongFormat('Value %r is not an instance of %s' % (
-            value, typ.__name__
+        if isinstance(typ, tuple):
+            name = 'any of ' + ', '.join(t.__name__ for t in typ)
+        else:
+            name = typ.__name__
+        raise e('Value %r is not an instance of %s' % (
+            value, name
+        ))
+
+
+def check_data_type(typ, value):
+    check_type(typ, value, BadData)
+
+
+def check_length(l, value):
+    try:
+        actual = len(value)
+    except TypeError:
+        raise BadData("Excepted list but got %r" % (value,))
+    if actual != l:
+        raise BadData("Expected %d elements but got %d from %r" % (
+            l, actual, value
         ))
 
 
@@ -131,6 +155,10 @@ class GenericConverter(Converter):
         return value
 
     def from_json(self, value):
+        if not self.strategy.could_have_produced(value):
+            raise BadData('Data %r does not match description %s' % (
+                value, nice_string(self.strategy.descriptor)
+            ))
         return value
 
 
@@ -147,6 +175,7 @@ class ListConverter(Converter):
         return list(map(self.child_converter.to_json, value))
 
     def from_json(self, value):
+        check_data_type(list, value)
         return list(map(self.child_converter.from_json, value))
 
 
@@ -177,6 +206,7 @@ class CollectionConverter(Converter):
         return self.list_converter.to_json(list(value))
 
     def from_json(self, value):
+        check_data_type(list, value)
         return self.collection_type(self.list_converter.from_json(value))
 
 
@@ -201,6 +231,9 @@ class ComplexConverter(Converter):
         return [value.real, value.imag]
 
     def from_json(self, c):
+        check_length(2, c)
+        check_data_type(float, c[0])
+        check_data_type(float, c[1])
         return complex(*c)
 
 ConverterTable.default().define_specification_for(
@@ -217,6 +250,7 @@ class TextConverter(Converter):
         return c
 
     def from_json(self, c):
+        check_data_type(text_type, c)
         return text_type(c)
 
 ConverterTable.default().define_specification_for(
@@ -239,7 +273,11 @@ class BinaryConverter(Converter):
         return base64.b64encode(value).decode('utf-8')
 
     def from_json(self, data):
-        return base64.b64decode(data.encode('utf-8'))
+        check_data_type(text_type, data)
+        try:
+            return base64.b64decode(data.encode('utf-8'))
+        except Exception as e:
+            raise BadData(*e.args)
 
 ConverterTable.default().define_specification_for(
     binary_type, lambda s, d: BinaryConverter()
@@ -253,9 +291,11 @@ class RandomConverter(Converter):
 
     def to_json(self, value):
         check_type(RandomWithSeed, value)
+        check_type(integer_types, value.seed)
         return value.seed
 
     def from_json(self, c):
+        check_data_type(integer_types, c)
         return RandomWithSeed(c)
 
 ConverterTable.default().define_specification_for(
@@ -281,7 +321,8 @@ class JustConverter(Converter):
         return None
 
     def from_json(self, c):
-        assert c is None
+        if c is not None:
+            raise BadData("Expected None value but got %r" % (c,))
         return self.value
 
 
@@ -319,6 +360,7 @@ class TupleConverter(Converter):
     def from_json(self, value):
         if len(self.tuple_converters) == 1:
             return (self.tuple_converters[0].from_json(value),)
+        check_length(len(self.tuple_converters), value)
         return self.new_tuple(
             f.from_json(v)
             for f, v in zip(self.tuple_converters, value)
@@ -370,6 +412,7 @@ class FixedKeyDictConverter(Converter):
         ]
 
     def from_json(self, value):
+        check_length(len(self.converters), value)
         return {
             k: f.from_json(v)
             for (k, f), v in zip(self.converters, value)
@@ -414,7 +457,13 @@ class OneOfConverter(Converter):
                 nice_string(s.descriptor) for s in self.strategies)))
 
     def from_json(self, value):
+        check_length(2, value)
+        check_data_type(integer_types, value[0])
         i, x = value
+        if i < 0 or i >= len(self.converters):
+            raise BadData("Invalid index %d into %d elements" % (
+                i, len(self.converters)
+            ))
         return self.converters[i].from_json(x)
 
 
@@ -447,6 +496,11 @@ class SampledFromConverter(Converter):
             raise WrongFormat('%r is not in %r' % (value, self.choices,))
 
     def from_json(self, value):
+        check_data_type(integer_types, value)
+        if value < 0 or value >= len(self.choices):
+            raise BadData("Invalid index %d into %d elements" % (
+                value, len(self.choices)
+            ))
         return self.choices[value]
 
 

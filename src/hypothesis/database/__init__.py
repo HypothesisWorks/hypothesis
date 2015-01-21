@@ -1,6 +1,6 @@
 from hypothesis.searchstrategy import nice_string
 from hypothesis.internal.utils.hashitanyway import HashItAnyway
-from hypothesis.database.converter import ConverterTable
+from hypothesis.database.converter import ConverterTable, BadData
 from hypothesis.database.formats import JSONFormat
 from hypothesis.database.backend import SQLiteBackend
 
@@ -28,8 +28,12 @@ class Storage(object):
 
     def fetch(self):
         for data in self.backend.fetch(self.key):
-            deserialized = self.converter.from_json(
-                self.format.deserialize_data(data))
+            try:
+                deserialized = self.converter.from_json(
+                    self.format.deserialize_data(data))
+            except BadData:
+                self.backend.delete(self.key, data)
+                continue
             if not self.strategy.could_have_produced(deserialized):
                 self.backend.delete(self.key, data)
             else:
