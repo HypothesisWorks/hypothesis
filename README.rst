@@ -60,20 +60,22 @@ or
 
   easy_install hypothesis
 
-If you want to make changes and install from there then you can do
-
-.. code:: bash
-
-  python setup.py test 
-
-to run the tests (note this will install the test dependencies) and then
-once they pass you can install it with
+If you want to install directly from the source code (e.g. because you want to make changes and install the changed version)
+you can do this with:
 
 .. code:: bash
 
   python setup.py install
 
-You may wish to do this in a `virtualenv <https://virtualenv.pypa.io/en/latest/>`_. For example:
+You should probably run the tests first to make sure nothing is broken. You can do this with:
+
+.. code:: bash
+
+  python setup.py test 
+
+(note that if they're not already installed this will try to install the test dependencies)
+
+You may wish to do all of this in a `virtualenv <https://virtualenv.pypa.io/en/latest/>`_. For example:
 
 .. code:: bash
 
