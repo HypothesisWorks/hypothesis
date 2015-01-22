@@ -3,7 +3,7 @@
 ================
 
 Hypothesis is a library for property based testing in Python. You write tests encoding some invariant
-that you believe should always be true. Hypothesis then tries to prove you wrong.
+that you believe should always be true for a variety of inputs and then Hypothesis tries to prove you wrong.
 
 For example:
 
@@ -43,6 +43,46 @@ for generating and minimizing data to falsify properties you believe to be true 
 should be easy to integrate into any testing library you use. Development and testing of
 Hypothesis itself is done with `Pytest <http://pytest.org/>`_ but there is no dependency
 on it and you should be able to use it just as easily with any other testing library.
+
+----------
+Installing
+----------
+
+Hypothesis is `available on pypi as "hypothesis" <https://pypi.python.org/pypi/hypothesis>`_. You can install it with:
+
+.. code:: bash
+
+  pip install hypothesis
+
+or 
+
+.. code:: bash 
+
+  easy_install hypothesis
+
+If you want to make changes and install from there then you can do
+
+.. code:: bash
+
+  python setup.py test 
+
+to run the tests (note this will install the test dependencies) and then
+once they pass you can install it with
+
+.. code:: bash
+
+  python setup.py install
+
+You may wish to do this in a `virtualenv <https://virtualenv.pypa.io/en/latest/>`_. For example:
+
+.. code:: bash
+
+  virtualenv venv
+  source venv/bin/activate
+  pip install hypothesis
+
+Will create an isolated environment for you to try hypothesis out in without affecting your system
+installed packages.
 
 -------------------
 Discussion and help
