@@ -1,7 +1,9 @@
 from hypothesis.searchstrategy import nice_string
 from hypothesis.internal.utils.hashitanyway import HashItAnyway
 from hypothesis.internal.tracker import Tracker
-from hypothesis.database.converter import ConverterTable, BadData
+from hypothesis.database.converter import (
+    ConverterTable, BadData, NotSerializeable
+)
 from hypothesis.database.formats import JSONFormat
 from hypothesis.database.backend import SQLiteBackend
 
@@ -33,7 +35,10 @@ class Storage(object):
         def do_save(d, v):
             if tracker.track((d, v)) > 1:
                 return
-            s = self.database.storage_for(d)
+            try:
+                s = self.database.storage_for(d)
+            except NotSerializeable:
+                return
             converted = s.converter.to_basic(v)
             serialized = s.format.serialize_basic(converted)
             s.backend.save(s.key, serialized)
