@@ -549,6 +549,9 @@ two digits after the decimal point.
         def unpack(self, x):
             return int(x * 100)
 
+This strategy is going to wrap some strategy for producing integers. Pack takes
+an integer and returns a Decimal and unpack takes a Decimal and returns an integer.
+
 You then need to register this strategy so that when you just refer to Decimal,
 Hypothesis knows that this is the one you intend to use:
 
@@ -558,12 +561,76 @@ Hypothesis knows that this is the one you intend to use:
     StrategyTable.default().define_specification_for(
       Decimal,
       lambda s, d: DecimalStrategy(
-        mapped_strategy=s.strategy(float),
+        strategy=s.strategy(float),
         descriptor=Decimal,
       ))
 
 Given a StrategyTable x, this means that when you call x.strategy(Decimal), this will
 call your lambda as f(x, Decimal), which will build the relevant strategy.
+
+Note that it's important that pack returns a decimal here. A descriptor can be anything
+you like, but if it's not the type of the things you are returning then you may have problems.
+
+For example:
+
+.. code:: python
+
+    from hypothesis.searchstrategy import MappedSearchStrategy
+    class smallint(int):
+      pass
+
+    class SmallintStrategy(MappedSearchStrategy):
+        def pack(self, x):
+            return min(abs(x), 100)
+
+        def unpack(self, x):
+            return x
+
+
+(Note: This is a silly example chosen for simplicity. You should use integers_in_range(0, 100) for this)
+
+If you try to use the above strategy you will get errors! The problem is that
+the values produced by a strategy (in the case of a MappedSearchStrategy these
+will be the values returned by pack) have to return True when passed to the could_have_produced method
+of that strategy.
+
+You can fix this in one of two ways. You could either return something of the right type:
+
+.. code:: python
+
+    from hypothesis.searchstrategy import MappedSearchStrategy
+    class smallint(int):
+      pass
+
+    class SmallintStrategy(MappedSearchStrategy):
+        def pack(self, x):
+            return smallint(min(abs(x), 100))
+
+        def unpack(self, x):
+            return x
+
+
+Or if this is difficult for some reason you can also override could_have_produced instead:
+
+.. code:: python
+
+    from hypothesis.searchstrategy import MappedSearchStrategy
+    class smallint(int):
+      pass
+
+    class SmallintStrategy(MappedSearchStrategy):
+        def pack(self, x):
+            return smallint(min(abs(x), 100))
+
+        def unpack(self, x):
+            return x
+
+        def could_have_produced(self, value):
+            return isinstance(value, int)
+
+
+Descriptors can be anything you like as long as you're willing to define that
+custom could_have_produced.
 
 ----------------
  Under the hood
