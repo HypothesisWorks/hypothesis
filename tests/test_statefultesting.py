@@ -4,9 +4,10 @@ from hypothesis.statefultesting import (
     requires,
     precondition,
     integrity_test,
-    TestRun,
     Step,
 )
+# Otherwise py.test will treat this as a test class
+from hypothesis.statefultesting import TestRun as TR
 import pytest
 from hypothesis import Unfalsifiable
 from hypothesis.database.converter import ConverterTable, WrongFormat
@@ -218,7 +219,7 @@ def test_can_generate_for_init():
 
 
 def test_init_args_appear_in_repr():
-    tr = TestRun(RequiresInit, init_args=(), init_kwargs={'x': 42}, steps=[])
+    tr = TR(RequiresInit, init_args=(), init_kwargs={'x': 42}, steps=[])
     assert '42' in repr(tr)
 
 
@@ -234,7 +235,7 @@ class HasOneBreakingMethod(StatefulTest):
 
 
 def test_prune_immediately_removes_every_thing_after_a_bad_call():
-    tr = TestRun(HasOneBreakingMethod, steps=(
+    tr = TR(HasOneBreakingMethod, steps=(
         [Step(HasOneBreakingMethod.all_good, (), {})] * 10 +
         [Step(HasOneBreakingMethod.not_so_good, (), {})] * 10 +
         [Step(HasOneBreakingMethod.all_good, (), {})] * 10
@@ -281,7 +282,7 @@ class IsBadButItsNotMyFault(StatefulTest):
 
 
 def test_cannot_save_an_example_in_the_wrong_format():
-    example = falsify(TestRun.run, IsBadAndShouldFeelBad)[0]
+    example = falsify(TR.run, IsBadAndShouldFeelBad)[0]
     converter = ConverterTable.default().specification_for(
         IsBadButItsNotMyFault)
     with pytest.raises(WrongFormat):
