@@ -187,6 +187,22 @@ class SearchStrategy(object):
         """
         return iter(())
 
+    def could_have_produced(self, x):
+        """Is this a value that feasibly could have resulted from produce on
+        this strategy.
+
+        It is not strictly required that this method is accurate and the only
+        invariant it *must* satisfy is that a value which returns True here
+        will never error when passed to simplify, but implementations should
+        try to make this as precise as possible as confusing behaviour may
+        arise in some cases if it is not, with values produced by one strategy
+        being passed to another for simplification when one_of is used.
+
+        """
+        d = self.descriptor
+        c = d if inspect.isclass(d) else d.__class__
+        return isinstance(x, c)
+
     def simplify_such_that(self, t, f):
         """Perform a greedy search to produce a "simplest" version of t that
         satisfies the predicate s. As each simpler version is found, yield it
@@ -218,22 +234,6 @@ class SearchStrategy(object):
                     break
             else:
                 break
-
-    def could_have_produced(self, x):
-        """Is this a value that feasibly could have resulted from produce on
-        this strategy.
-
-        It is not strictly required that this method is accurate and the only
-        invariant it *must* satisfy is that a value which returns True here
-        will never error when passed to simplify, but implementations should
-        try to make this as precise as possible as confusing behaviour may
-        arise in some cases if it is not, with values produced by one strategy
-        being passed to another for simplification when one_of is used.
-
-        """
-        d = self.descriptor
-        c = d if inspect.isclass(d) else d.__class__
-        return isinstance(x, c)
 
     def __or__(self, other):
         if not isinstance(other, SearchStrategy):
@@ -1063,3 +1063,36 @@ class SampledFromStrategy(SearchStrategy):
 
     def could_have_produced(self, value):
         return actually_in(value, self.elements)
+
+
+class ExampleAugmentedStrategy(SearchStrategy):
+    def __init__(self, main_strategy, examples):
+        assert examples
+        assert all(main_strategy.could_have_produced(e) for e in examples)
+        self.examples = tuple(examples)
+        self.main_strategy = main_strategy
+        self.descriptor = main_strategy.descriptor
+        self.parameter = params.CompositeParameter(
+            examples=params.NonEmptySubset(examples),
+            example_probability=params.UniformFloatParameter(0.0, 0.5),
+            main=main_strategy.parameter
+        )
+        self.has_immutable_data = main_strategy.has_immutable_data
+
+    def produce(self, random, pv):
+        if dist.biased_coin(random, pv.example_probability):
+            return random.choice(pv.examples)
+        else:
+            return self.main_strategy.produce(random, pv.main)
+
+    def decompose(self, value):
+        return self.main_strategy.decompose(value)
+
+    def copy(self, value):
+        return self.main_strategy.copy(value)
+
+    def simplify(self, value):
+        return self.main_strategy.simplify(value)
+
+    def could_have_produced(self, value):
+        return self.main_strategy.could_have_produced(value)

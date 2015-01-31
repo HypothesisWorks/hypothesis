@@ -28,6 +28,26 @@ def strategy_for_instances(typ):
 
 
 class StrategyTable(SpecificationMapper):
+    def __init__(self, prototype=None, examples_for=None):
+        super(StrategyTable, self).__init__(prototype=prototype)
+        self.examples_for = examples_for or (lambda d: ())
+
+    def _calculate_specification_for(self, descriptor):
+        base_specification = super(
+            StrategyTable, self)._calculate_specification_for(descriptor)
+        examples = self.examples_for(descriptor)
+        if not examples:
+            return base_specification
+        else:
+            return strat.ExampleAugmentedStrategy(
+                main_strategy=base_specification,
+                examples=examples,
+            )
+
+    def augment_with_examples(self, examples_for):
+        c = self.new_child_mapper()
+        c.examples_for = examples_for
+        return c
 
     def strategy(self, descriptor):
         return self.specification_for(descriptor)

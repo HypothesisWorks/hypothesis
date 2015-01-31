@@ -37,12 +37,17 @@ class Verifier(object):
     ):
         if settings is None:
             settings = hs.default
+        self.database = settings.database
         self.strategy_table = strategy_table or StrategyTable()
+        if self.database is not None:
+            self.strategy_table = self.strategy_table.augment_with_examples(
+                self.examples_for
+            )
+
         self.min_satisfying_examples = settings.min_satisfying_examples
         self.max_skipped_examples = settings.max_skipped_examples
         self.max_examples = settings.max_examples
         self.timeout = settings.timeout
-        self.database = settings.database
         if settings.derandomize and random:
             raise ValueError(
                 'A verifier cannot both be derandomized and have a random '
@@ -53,6 +58,13 @@ class Verifier(object):
         else:
             self.random = random or Random()
         self.max_regenerations = 0
+
+    def examples_for(self, descriptor):
+        try:
+            storage = self.database.storage_for(descriptor)
+        except NotSerializeable:
+            return ()
+        return tuple(storage.fetch())
 
     def falsify(
             self, hypothesis, *argument_types

@@ -28,6 +28,7 @@ def test_deduplicates():
 
 
 def run_round_trip(descriptor, value, format=None, backend=None):
+    print(descriptor, value)
     if backend is not None:
         backend = backend()
     else:

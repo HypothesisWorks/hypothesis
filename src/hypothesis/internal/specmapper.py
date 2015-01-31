@@ -72,9 +72,15 @@ class SpecificationMapper(object):
 
     def specification_for(self, descriptor):
         k = HashItAnyway(descriptor)
-        if k in self.__descriptor_cache:
+        try:
             return self.__descriptor_cache[k]
+        except KeyError:
+            pass
+        r = self._calculate_specification_for(descriptor)
+        self.__descriptor_cache[k] = r
+        return r
 
+    def _calculate_specification_for(self, descriptor):
         for h in self.find_specification_handlers_for(descriptor):
             try:
                 r = h(self, descriptor)
@@ -84,7 +90,6 @@ class SpecificationMapper(object):
         else:
             r = self.missing_specification(descriptor)
 
-        self.__descriptor_cache[k] = r
         return r
 
     def has_specification_for(self, descriptor):
