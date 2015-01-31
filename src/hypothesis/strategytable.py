@@ -28,6 +28,7 @@ def strategy_for_instances(typ):
 
 
 class StrategyTable(SpecificationMapper):
+
     def __init__(self, prototype=None, examples_for=None):
         super(StrategyTable, self).__init__(prototype=prototype)
         self.examples_for = examples_for or (lambda d: ())

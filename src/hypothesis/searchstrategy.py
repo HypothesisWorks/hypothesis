@@ -135,9 +135,9 @@ class SearchStrategy(object):
         pass  # pragma: no cover
 
     def decompose(self, value):
-        """ Returns something iterable over pairs (descriptor, v) where
-        v is some value that could have been produced by an appropriate
-        strategy for descriptor
+        """Returns something iterable over pairs (descriptor, v) where v is
+        some value that could have been produced by an appropriate strategy for
+        descriptor.
 
         The idea is that this is supposed to highlight interesting features
         that were used to build the value passed in. e.g. elements of a
@@ -149,6 +149,7 @@ class SearchStrategy(object):
         Implementation detail: The current way this is used is that all of
         the values produced here will be saved in the database under the
         storage for the provided descriptor if the main value is.
+
         """
         return ()
 
@@ -1066,6 +1067,7 @@ class SampledFromStrategy(SearchStrategy):
 
 
 class ExampleAugmentedStrategy(SearchStrategy):
+
     def __init__(self, main_strategy, examples):
         assert examples
         assert all(main_strategy.could_have_produced(e) for e in examples)
