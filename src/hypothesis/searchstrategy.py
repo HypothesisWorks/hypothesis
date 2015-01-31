@@ -134,6 +134,24 @@ class SearchStrategy(object):
         descriptor."""
         pass  # pragma: no cover
 
+    def decompose(self, value):
+        """ Returns something iterable over pairs (descriptor, v) where
+        v is some value that could have been produced by an appropriate
+        strategy for descriptor
+
+        The idea is that this is supposed to highlight interesting features
+        that were used to build the value passed in. e.g. elements of a
+        collection. No specific behaviour is required of these values and you
+        can do whatever you want, but this can help guide finding interesting
+        examples for other tests so if there's something you can do it's worth
+        doing.
+
+        Implementation detail: The current way this is used is that all of
+        the values produced here will be saved in the database under the
+        storage for the provided descriptor if the main value is.
+        """
+        return ()
+
     def copy(self, value):
         """Return a version of value such that if it is mutated this will not
         be reflected in value. If value is immutable it is perfectly acceptable
@@ -470,6 +488,12 @@ class TupleStrategy(SearchStrategy):
         return all((s.could_have_produced(x)
                     for s, x in zip(self.element_strategies, xs)))
 
+    def decompose(self, value):
+        assert self.could_have_produced(value)
+        return [
+            (s.descriptor, v)
+            for s, v in zip(self.element_strategies, value)]
+
     def newtuple(self, xs):
         """Produce a new tuple of the correct type."""
         if self.tuple_type == tuple:
@@ -553,6 +577,13 @@ class ListStrategy(SearchStrategy):
             average_length=params.ExponentialParameter(1.0 / average_length),
             child_parameter=self.element_strategy.parameter,
         )
+
+    def decompose(self, value):
+        assert self.could_have_produced(value)
+        return [
+            (self.element_strategy.descriptor, v)
+            for v in value
+        ]
 
     def produce(self, random, pv):
         length = dist.geometric(random, 1.0 / (1 + pv.average_length))
@@ -644,6 +675,9 @@ class MappedSearchStrategy(SearchStrategy):
         """Take a value produced from pack and convert it back to a value that
         could have been produced by the underlying strategy."""
         pass  # pragma: no cover
+
+    def decompose(self, value):
+        return self.mapped_strategy.decompose(self.unpack(value))
 
     def produce(self, random, pv):
         return self.pack(self.mapped_strategy.produce(random, pv))
@@ -773,6 +807,9 @@ class StringStrategy(MappedSearchStrategy):
     def unpack(self, s):
         return list(s)
 
+    def decompose(self, value):
+        return ()
+
     def could_have_produced(self, value):
         return isinstance(value, text_type)
 
@@ -784,6 +821,9 @@ class BinaryStringStrategy(MappedSearchStrategy):
 
     def pack(self, x):
         return binary_type(bytearray(x))
+
+    def decompose(self, value):
+        return ()
 
     def unpack(self, x):
         return list(bytearray(x))
@@ -814,6 +854,12 @@ class FixedKeysDictStrategy(SearchStrategy):
         self.descriptor = {}
         for k, v in self.strategy_dict.items():
             self.descriptor[k] = v.descriptor
+
+    def decompose(self, value):
+        return [
+            (d, value[k])
+            for k, d in self.descriptor.items()
+        ]
 
     def produce(self, random, pv):
         result = {}
@@ -881,6 +927,15 @@ class OneOfStrategy(SearchStrategy):
         )
         self.has_immutable_data = all(
             s.has_immutable_data for s in self.element_strategies)
+
+    def decompose(self, value):
+        results = [
+            (s.descriptor, value)
+            for s in self.element_strategies
+            if s.could_have_produced(value)
+        ]
+        assert results
+        return results
 
     def could_have_produced(self, x):
         return any((s.could_have_produced(x) for s in self.element_strategies))
