@@ -779,7 +779,9 @@ class OneCharStringStrategy(SearchStrategy):
                 characters, text_type
             ))
         self.characters = characters or (
-            text_type('0123456789') + text_type(string.ascii_letters))
+            text_type('0123456789') + text_type(string.ascii_letters) +
+            ' \t\n'
+        )
         self.parameter = params.CompositeParameter()
 
     def produce(self, random, pv):
