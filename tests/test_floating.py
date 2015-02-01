@@ -64,18 +64,28 @@ def test_is_in_exact_int_range(x):
     assert x + 1 != x
 
 
+# Tests whether we can represent subnormal floating point numbers.
+# This is essentially a function of how the python interpreter
+# was compiled.
+# Everything is terrible
+if math.ldexp(0.25, -1022) > 0:
+    REALLY_SMALL_FLOAT = sys.float_info.min
+else:
+    REALLY_SMALL_FLOAT = sys.float_info.min * 2
+
+
 @fails
 @given(float)
 def test_can_generate_really_small_positive_floats(x):
     assume(x > 0)
-    assert x >= sys.float_info.min
+    assert x >= REALLY_SMALL_FLOAT
 
 
 @fails
 @given(float)
 def test_can_generate_really_small_negative_floats(x):
     assume(x < 0)
-    assert x <= -sys.float_info.min
+    assert x <= -REALLY_SMALL_FLOAT
 
 
 @fails
