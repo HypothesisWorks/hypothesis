@@ -25,6 +25,7 @@ import hypothesis.settings as hs
 import time
 from hypothesis.internal.compat import binary_type, text_type
 from random import Random
+from tests.test_statistical_distribution import cumulative_binomial_probability
 
 
 def test_can_make_assumptions():
@@ -301,7 +302,12 @@ def test_gravitates_towards_good_parameter_values():
         )
 
     assert all_value_counts[0] >= 300
-    assert good_value_counts[0] >= 0.6 * all_value_counts[0]
+    p = cumulative_binomial_probability(
+        n=all_value_counts[0],
+        k=good_value_counts[0],
+        p=0.6,
+    )
+    assert p >= 0.05
 
 
 def test_detects_flaky_failure():
