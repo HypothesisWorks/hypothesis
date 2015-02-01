@@ -29,7 +29,6 @@ def test_deduplicates():
 
 
 def run_round_trip(descriptor, value, format=None, backend=None):
-    print(descriptor, value)
     if backend is not None:
         backend = backend()
     else:
@@ -59,6 +58,7 @@ data_examples = (
     (sampled_from(elements=(1,)), 1),
     (one_of(({1: int}, {1: bool})), {1: 2}),
     (one_of(({1: int}, {1: bool})), {1: False}),
+    ({float}, {0.0460563451184767, -0.19420794805570227}),
 )
 
 

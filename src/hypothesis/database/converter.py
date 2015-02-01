@@ -32,6 +32,7 @@ from hypothesis.internal.compat import (
     text_type, binary_type, hrange, integer_types)
 import base64
 from hypothesis.internal.utils.fixers import actually_equal, real_index
+import struct
 
 
 class WrongFormat(ValueError):
@@ -114,7 +115,7 @@ class ConverterTable(SpecificationMapper):
 
 
 for basic_type in (
-    type(None), float, text_type, bool
+    type(None), text_type, bool
 ) + integer_types:
     ConverterTable.default().define_specification_for(
         basic_type,
@@ -160,6 +161,24 @@ class GenericConverter(Converter):
                 value, nice_string(self.strategy.descriptor)
             ))
         return value
+
+
+class FloatConverter(Converter):
+
+    def to_basic(self, value):
+        check_type(float, value)
+        return struct.unpack("!Q", struct.pack("!d", value))[0]
+
+    def from_basic(self, value):
+        check_data_type(integer_types, value)
+        try:
+            return struct.unpack("!d", struct.pack("!Q", value))[0]
+        except struct.error as e:
+            raise BadData(e.args[0])
+
+ConverterTable.default().define_specification_for(
+    float,
+    lambda s, d: FloatConverter())
 
 
 class ListConverter(Converter):

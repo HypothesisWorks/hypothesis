@@ -139,15 +139,6 @@ class DescriptorWithValueStrategy(SearchStrategy):
                 value=value,
                 random=RandomWithSeed(dav.random.seed)
             )
-        strategy = self.strategy_table.strategy(dav.descriptor)
-        for v in strategy.simplify(dav.value):
-            assert strategy.could_have_produced(v)
-            yield DescriptorWithValue(
-                descriptor=dav.descriptor,
-                parameter=dav.parameter,
-                value=v,
-                random=RandomWithSeed(dav.random.seed)
-            )
 
 
 small_table.define_specification_for(
