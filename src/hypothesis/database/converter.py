@@ -167,12 +167,12 @@ class FloatConverter(Converter):
 
     def to_basic(self, value):
         check_type(float, value)
-        return struct.unpack("!Q", struct.pack("!d", value))[0]
+        return struct.unpack('!Q', struct.pack('!d', value))[0]
 
     def from_basic(self, value):
         check_data_type(integer_types, value)
         try:
-            return struct.unpack("!d", struct.pack("!Q", value))[0]
+            return struct.unpack('!d', struct.pack('!Q', value))[0]
         except struct.error as e:
             raise BadData(e.args[0])
 
