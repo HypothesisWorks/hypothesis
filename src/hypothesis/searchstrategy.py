@@ -407,28 +407,40 @@ class JustIntFloats(FloatStrategy):
         return float(self.int_strategy.produce(random, pv))
 
 
+def compose_float(sign, exponent, fraction):
+    as_long = (sign << 63) | (exponent << 52) | fraction
+    return struct.unpack('d', struct.pack('L', as_long))[0]
+
+
 class FullRangeFloats(FloatStrategy):
-    parameter = params.CompositeParameter()
+    parameter = params.CompositeParameter(
+        negative_probability=params.UniformFloatParameter(0, 1)
+    )
 
     def produce(self, random, pv):
-        byte_values = binary_type(bytearray([
-            random.getrandbits(8)
-            for _ in hrange(8)
-        ]))
-        return struct.unpack('d', byte_values)[0]
+        sign = int(dist.biased_coin(random, pv.negative_probability))
+        return compose_float(
+            sign,
+            random.getrandbits(11),
+            random.getrandbits(52)
+        )
 
     def could_have_produced(self, value):
         return isinstance(value, float)
 
 
 class SubnormalFloatStrategy(FloatStrategy):
-    parameter = params.CompositeParameter()
+    parameter = params.CompositeParameter(
+        negative_probability=params.UniformFloatParameter(0, 1)
+    )
 
     def produce(self, random, pv):
-        sign = random.randint(0, 1)
-        fraction = random.getrandbits(52)
-        as_long = (sign << 63) | fraction
-        return struct.unpack('d', struct.pack('L', as_long))[0]
+        sign = int(dist.biased_coin(random, pv.negative_probability))
+        return compose_float(
+            sign,
+            0,
+            random.getrandbits(52)
+        )
 
     def could_have_produced(self, value):
         return isinstance(value, float)
