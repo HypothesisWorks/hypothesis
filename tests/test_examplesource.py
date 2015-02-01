@@ -70,7 +70,7 @@ def test_can_grow_the_set_of_available_parameters_if_doing_badly():
             number_grown_large += 1
 
     assert number_grown >= 0.5 * runs
-    assert number_grown_large <= 0.5 * runs
+    assert number_grown_large < runs
 
 
 def test_example_source_needs_at_least_one_useful_argument():
