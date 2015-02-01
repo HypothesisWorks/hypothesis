@@ -91,9 +91,18 @@ Discussion and help
 -------------------
 
 If you use or are interested in using Hypothesis, we have `a mailing list <https://groups.google.com/forum/#!forum/hypothesis-users>`_.
-Feel free to use it to ask for help, provide feedback, or discuss anything remotely
-Hypothesis related at all.
+We also have the IRC channel #hypothesis on freenode.
 
+Feel free to use these to ask for help, provide feedback, or discuss anything remotely
+Hypothesis related at all. When you do, please abide by the `Hacker School social rules <https://www.hackerschool.com/manual#sub-sec-social-rules>`_.
+
+In particular this is an inclusive environment for people from a variety of backgrounds and skill levels. Prejudice and aggression are unwelcome and everyone
+should be treated with respect.
+
+I'll do my best to pay attention to peoples' behaviour, but if you see anyone violating these rules and I haven't noticed, please alert me and I'll deal with it. Usually I will simply ask people to modify their behaviour,
+but for particularly severe transgressions, repeat offenders or those unwilling to change their ways I'll ban them from the community.
+
+(So far there have been absolutely zero problems of this sort, but it's important to set the right tone from the beginning)
 
 ------
 Usage
