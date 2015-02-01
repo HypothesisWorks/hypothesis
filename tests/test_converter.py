@@ -73,7 +73,7 @@ def test_can_not_save_as_incompatible_examples(dav, dav2):
     (SampledFrom((1, 2, 3)), 5),
     (OneOf((int, float)), 1),
     (OneOf((int, float)), 'tv'),
-    (binary_type, "1"),
+    (binary_type, '1'),
     ([frozenset({float}), frozenset({float})], [[8, 0], []]),
 ])
 def test_simple_data_validation(descriptor, data):
