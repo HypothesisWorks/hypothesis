@@ -111,7 +111,10 @@ class TestRun(object):
         raise TypeError("unhashable type 'testrun'")
 
     def __len__(self):
-        return len(self.steps)
+        if self.init_args or self.init_kwargs:
+            return 1 + len(self.steps)
+        else:
+            return len(self.steps)
 
     def __iter__(self):
         if self.init_args or self.init_kwargs:
