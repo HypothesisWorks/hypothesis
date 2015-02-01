@@ -502,3 +502,11 @@ def test_can_derandomize_on_evalled_functions():
     settings = hs.Settings(derandomize=True)
     v = Verifier(strategy_table=table, settings=settings)
     assert v.falsify(eval('lambda x: x > 0'), int) == (0,)
+
+
+def test_can_minimize_lists_of_floats():
+    v = Verifier(
+        random=Random(196269418687253827969443357943160693167)
+    )
+    x = v.falsify(lambda x, y: False, float, frozenset([bool]))
+    assert x == (0.0, frozenset())

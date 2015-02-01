@@ -15,6 +15,7 @@ import hypothesis.descriptors as descriptors
 from copy import deepcopy
 from hypothesis.internal.utils.fixers import actually_equal, actually_in
 import struct
+import sys
 
 
 def mix_generators(*generators):
@@ -1148,6 +1149,9 @@ class NastyFloats(SampledFromStrategy):
         super(NastyFloats, self).__init__(
             descriptor=float,
             elements=[
+                0.0,
+                sys.float_info.min,
+                -sys.float_info.min,
                 float('inf'),
                 -float('inf'),
                 float('nan'),
