@@ -21,13 +21,22 @@ class SpecificationMapper(object):
 
     @classmethod
     def default(cls):
+        key = '_%s_default_mapper' % (cls.__name__,)
+        print(key)
         try:
-            if cls.default_mapper:
-                return cls.default_mapper
+            return getattr(cls, key)
         except AttributeError:
             pass
-        cls.default_mapper = cls()
-        return cls.default_mapper
+        result = cls()
+        setattr(cls, key, result)
+        return result
+
+    @classmethod
+    def clear_default(cls):
+        try:
+            delattr(cls, '_%s_default_mapper' % (cls.__name__,))
+        except AttributeError:
+            pass
 
     def __init__(self, prototype=None):
         self.value_mappers = {}

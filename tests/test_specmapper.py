@@ -13,8 +13,7 @@ from hypothesis.internal.compat import hrange
 
 
 def setup_function(fn):
-    SpecificationMapper.default_mapper = None
-    fn()
+    SpecificationMapper.clear_default()
 
 
 def const(x):
@@ -458,3 +457,12 @@ def test_is_not_confused_by_equal_things_of_different_types():
     )
     assert mapper.specification_for((Confused1(),)) == 1
     assert mapper.specification_for((Confused2(),)) == 2
+
+
+class Submapper(SpecificationMapper):
+    pass
+
+
+def test_does_not_confuse_defaults():
+    x = SpecificationMapper.default()
+    assert Submapper.default() != x
