@@ -52,11 +52,14 @@ class SpecificationMapper(object):
 
     def define_specification_for(self, value, specification):
         self.value_mappers.setdefault(value, []).append(specification)
+        self.clear_cache()
+
+    def clear_cache(self):
         self.__descriptor_cache = {}
 
     def define_specification_for_instances(self, cls, specification):
         self.instance_mappers.setdefault(cls, []).append(specification)
-        self.__descriptor_cache = {}
+        self.clear_cache()
 
     def define_specification_for_classes(
             self, specification, subclasses_of=None):
@@ -74,7 +77,7 @@ class SpecificationMapper(object):
         self.define_specification_for_instances(
             typekey(SpecificationMapper),
             specification)
-        self.__descriptor_cache = {}
+        self.clear_cache()
 
     def new_child_mapper(self):
         return self.__class__(prototype=self)
