@@ -27,6 +27,7 @@ from hypothesis.internal.compat import binary_type, text_type
 from hypothesis.internal.utils.fixers import actually_equal
 from random import Random
 from tests.test_statistical_distribution import cumulative_binomial_probability
+import math
 
 
 def test_can_make_assumptions():
@@ -150,7 +151,7 @@ def test_can_find_negative_ints():
 
 
 def test_can_find_negative_floats():
-    assert falsify(lambda x: x > -1.0, float)[0] == -1.0
+    assert falsify(lambda x: math.isnan(x) or x > -1.0, float)[0] == -1.0
 
 
 def test_can_falsify_int_pairs():

@@ -35,6 +35,10 @@ def mix_generators(*generators):
         generators = [x for x in generators if x is not None]
 
 
+def is_nasty_float(x):
+    return math.isnan(x) or math.isinf(x)
+
+
 def nice_string(xs):
     """Take a descriptor and produce a nicer string representation of it than
     repr.
@@ -45,8 +49,15 @@ def nice_string(xs):
     """
     # pylint: disable=too-many-return-statements
     if isinstance(xs, float):
-        if math.isnan(xs) or math.isinf(xs):
+        if is_nasty_float(xs):
             return 'float(%r)' % (str(xs),)
+        else:
+            return repr(xs)
+    if isinstance(xs, complex):
+        if is_nasty_float(xs.real) or is_nasty_float(xs.imag):
+            return 'complex(%r)' % (str(xs)[1:-1],)
+        else:
+            return repr(xs)
 
     if isinstance(xs, list):
         return '[' + ', '.join(map(nice_string, xs)) + ']'
