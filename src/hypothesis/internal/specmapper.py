@@ -74,13 +74,7 @@ class SpecificationMapper(object):
     def specification_for(self, descriptor):
         k = HashItAnyway(descriptor)
         try:
-            r = self.__descriptor_cache[k]
-            if (
-                isinstance(descriptor, (set, frozenset)) and
-                hasattr(r, 'descriptor')
-            ):
-                print(descriptor, r.descriptor)
-            return r
+            return self.__descriptor_cache[k]
         except KeyError:
             pass
         r = self._calculate_specification_for(descriptor)
