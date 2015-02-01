@@ -4,6 +4,7 @@ Tests for specific string representations of values
 
 from hypothesis.searchstrategy import nice_string
 import hypothesis.descriptors as descriptors
+from collections import namedtuple
 
 
 def test_nice_string_for_nasty_floats():
@@ -44,3 +45,10 @@ def test_just_nice_string_should_respect_its_values_reprs():
     assert nice_string(
         descriptors.Just(Stuff())
     ) == 'Just(value=Things())'
+
+
+def test_uses_nice_string_inside_named_tuples():
+    Foo = namedtuple('Foo', ('b', 'a'))
+    assert nice_string(
+        Foo(1, float('nan'))
+    ) == "Foo(b=1, a=float('nan'))"
