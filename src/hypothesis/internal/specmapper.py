@@ -66,6 +66,7 @@ class SpecificationMapper(object):
         self.define_specification_for_instances(
             typekey(SpecificationMapper),
             specification)
+        self.__descriptor_cache = {}
 
     def new_child_mapper(self):
         return self.__class__(prototype=self)

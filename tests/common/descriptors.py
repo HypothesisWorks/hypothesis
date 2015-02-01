@@ -29,8 +29,8 @@ class DescriptorWithValue(namedtuple(
 ):
 
     def __repr__(self):
-        return 'DescriptorWithValue(descriptor=%s, value=%r)' % (
-            nice_string(self.descriptor), self.value
+        return 'DescriptorWithValue(descriptor=%s, value=%r, random=%r)' % (
+            nice_string(self.descriptor), self.value, self.random,
         )
 
 ConverterTable.default().mark_not_serializeable(Descriptor)
