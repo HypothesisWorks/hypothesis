@@ -3,9 +3,9 @@ numbers."""
 
 from hypothesis import given, assume
 from tests.common.utils import fails
+from hypothesis.internal.utils.fixers import actually_equal
 import math
 import sys
-from hypothesis.internal.utils.fixers import actually_equal
 
 
 @fails
