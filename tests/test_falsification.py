@@ -287,6 +287,7 @@ def test_raises_on_unsatisfiable_assumption():
 def test_gravitates_towards_good_parameter_values():
     good_value_counts = [0]
     all_value_counts = [0]
+    v = Verifier(settings=hs.Settings(database=None))
 
     def just_being_awkward(xs):
         assume(len(xs) >= 10)
@@ -295,7 +296,7 @@ def test_gravitates_towards_good_parameter_values():
         good_value_counts[0] += 1
         return True
     with pytest.raises(Unfalsifiable):
-        falsify(
+        v.falsify(
             just_being_awkward, [float]
         )
 
