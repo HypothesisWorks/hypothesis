@@ -374,8 +374,18 @@ class FloatStrategy(SearchStrategy):
         self.int_strategy = RandomGeometricIntStrategy()
 
     def simplify(self, x):
+        if x == 0.0:
+            return
+        if math.isnan(x):
+            yield 0.0
+            yield float('inf')
+            yield -float('inf')
+            return
+
         if x < 0:
             yield -x
+
+        yield 0.0
 
         y = x / 2
         if x != y:

@@ -590,3 +590,10 @@ def test_can_simplify_tuples_of_nan():
     x = list(
         s.simplify_such_that((float('nan'),), lambda x: math.isnan(x[0])))[-1]
     assert math.isnan(x[0])
+
+
+def test_nan_is_not_simpler_than_nan():
+    s = strategy(float)
+    simpler = list(s.simplify(float('nan')))
+    for x in simpler:
+        assert not math.isnan(x)
