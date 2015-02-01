@@ -68,6 +68,7 @@ def test_can_not_save_as_incompatible_examples(dav, dav2):
     (text_type, []),
     ((int, int, int), (1, 2)),
     (SampledFrom((1, 2, 3)), 'fish'),
+    (SampledFrom((1, 2, 3)), 5),
     (OneOf((int, float)), 1),
     (OneOf((int, float)), 'tv'),
     (binary_type, u"1"),
