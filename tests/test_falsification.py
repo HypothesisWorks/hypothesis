@@ -273,7 +273,7 @@ def test_can_falsify_named_tuples():
 
 
 def test_can_falsify_complex_numbers():
-    falsify(lambda x: x == (x ** 2) ** 0.5, complex)
+    falsify(lambda x: assume(abs(x) <= 1000) and x == (x ** 2) ** 0.5, complex)
 
     with pytest.raises(Unfalsifiable):
         falsify(

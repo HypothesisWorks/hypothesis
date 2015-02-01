@@ -23,6 +23,7 @@ def assume(condition):
     """
     if not condition:
         raise UnsatisfiedAssumption()
+    return True
 
 
 class Verifier(object):
