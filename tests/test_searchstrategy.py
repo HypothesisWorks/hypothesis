@@ -597,3 +597,11 @@ def test_nan_is_not_simpler_than_nan():
     simpler = list(s.simplify(float('nan')))
     for x in simpler:
         assert not math.isnan(x)
+
+
+def test_infinity_simplifies_to_finite():
+    s = strategy(float)
+    assert list(
+        s.simplify_such_that(float('inf'), lambda x: x >= 1))[-1] == 1.0
+    assert list(
+        s.simplify_such_that(float('-inf'), lambda x: x <= -1))[-1] == -1.0

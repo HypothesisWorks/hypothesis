@@ -381,25 +381,28 @@ class FloatStrategy(SearchStrategy):
             yield float('inf')
             yield -float('inf')
             return
+        if math.isinf(x):
+            yield math.copysign(
+                sys.float_info.max, x
+            )
+            return
 
         if x < 0:
             yield -x
 
         yield 0.0
-
+        try:
+            n = int(x)
+            y = float(n)
+            if x != y:
+                yield y
+            for m in self.int_strategy.simplify(n):
+                yield x + (m - n)
+        except (ValueError, OverflowError):
+            pass
         y = x / 2
         if x != y:
             yield y
-
-        try:
-            n = int(x)
-        except (ValueError, OverflowError):
-            return
-        y = float(n)
-        if x != y:
-            yield y
-        for m in self.int_strategy.simplify(n):
-            yield x + (m - n)
 
     def could_have_produced(self, value):
         return isinstance(value, float) and not (
