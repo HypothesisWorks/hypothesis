@@ -5,6 +5,7 @@ from hypothesis import given, assume
 from tests.common.utils import fails
 from hypothesis.internal.utils.fixers import actually_equal
 import math
+import sys
 
 
 @fails
@@ -65,9 +66,16 @@ def test_is_in_exact_int_range(x):
 
 @fails
 @given(float)
-def test_can_generate_really_small_floats(x):
+def test_can_generate_really_small_positive_floats(x):
     assume(x > 0)
-    assert x > 1e-200
+    assert x >= sys.float_info.min
+
+
+@fails
+@given(float)
+def test_can_generate_really_small_negative_floats(x):
+    assume(x < 0)
+    assert x <= -sys.float_info.min
 
 
 @fails

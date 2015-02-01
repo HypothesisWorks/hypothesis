@@ -414,6 +414,19 @@ class FullRangeFloats(FloatStrategy):
         return isinstance(value, float)
 
 
+class SubnormalFloatStrategy(FloatStrategy):
+    parameter = params.CompositeParameter()
+
+    def produce(self, random, pv):
+        sign = random.randint(0, 1)
+        fraction = random.getrandbits(52)
+        as_long = (sign << 63) | fraction
+        return struct.unpack('d', struct.pack('L', as_long))[0]
+
+    def could_have_produced(self, value):
+        return isinstance(value, float)
+
+
 class FixedBoundedFloatStrategy(SearchStrategy):
 
     """A strategy for floats distributed between two endpoints.
