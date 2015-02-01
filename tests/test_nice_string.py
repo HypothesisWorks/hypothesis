@@ -1,6 +1,4 @@
-"""
-Tests for specific string representations of values
-"""
+"""Tests for specific string representations of values."""
 
 from hypothesis.searchstrategy import nice_string
 import hypothesis.descriptors as descriptors
@@ -14,7 +12,7 @@ def test_nice_string_for_nasty_floats():
 
 
 def test_nice_string_for_nice_complex():
-    assert nice_string(1+1j) == "(1+1j)"
+    assert nice_string(1 + 1j) == '(1+1j)'
 
 
 def test_nice_string_for_nasty_complex():

@@ -67,10 +67,10 @@ def nice_string(xs):
         else:
             return '(' + ', '.join(map(nice_string, xs)) + ')'
     elif isinstance(xs, tuple) and hasattr(xs, '_fields'):
-        return "%s(%s)" % (
+        return '%s(%s)' % (
             xs.__class__.__name__,
             ', '.join(
-                "%s=%s" % (f, nice_string(getattr(xs, f)))
+                '%s=%s' % (f, nice_string(getattr(xs, f)))
                 for f in xs._fields))
 
     if isinstance(xs, dict):
