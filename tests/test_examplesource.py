@@ -49,7 +49,6 @@ def test_marking_negative_avoids_similar_examples():
 def test_can_grow_the_set_of_available_parameters_if_doing_badly():
     runs = 10
     number_grown = 0
-    number_grown_large = 0
     for _ in hrange(runs):
         source = ExampleSource(
             random=random.Random(),
@@ -66,11 +65,7 @@ def test_can_grow_the_set_of_available_parameters_if_doing_badly():
                 break
         if len(source.parameters) > 1:
             number_grown += 1
-        if len(source.parameters) > 10:
-            number_grown_large += 1
-
-    assert number_grown >= 0.5 * runs
-    assert number_grown_large < runs
+        assert len(source.parameters) < 100
 
 
 def test_example_source_needs_at_least_one_useful_argument():
