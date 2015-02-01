@@ -73,11 +73,11 @@ verifier = Verifier(
 )
 
 
-@given(Descriptor, verifier=verifier)
+@given(Descriptor, Random, verifier=verifier)
 @timeout(5)
-def test_can_falsify_false_things(desc):
+def test_can_falsify_false_things(desc, random):
     assume(size(desc) <= MAX_SIZE)
-
+    verifier.random = random
     x = verifier.falsify(lambda x: False, desc)[0]
     strategy = small_table.strategy(desc)
     assert not list(strategy.simplify(x))
