@@ -400,9 +400,7 @@ class FloatStrategy(SearchStrategy):
                 yield x + (m - n)
         except (ValueError, OverflowError):
             pass
-        y = x / 2
-        if x != y:
-            yield y
+        yield x / 2
 
     def could_have_produced(self, value):
         return isinstance(value, float) and not (
