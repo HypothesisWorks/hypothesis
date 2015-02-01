@@ -586,3 +586,12 @@ def test_bounded_integer_strategy_only_produces_in_range():
     s = strat.BoundedIntStrategy(1, 10)
     assert not s.could_have_produced(0)
     assert not s.could_have_produced(11)
+
+
+def test_example_augmented_strategy_decomposes_as_main():
+    s = strat.ExampleAugmentedStrategy(
+        main_strategy=strategy((int,)),
+        examples=[(1,)],
+    )
+    assert list(s.decompose((1,))) == [(int, 1)]
+    assert list(s.decompose((2,))) == [(int, 2)]
