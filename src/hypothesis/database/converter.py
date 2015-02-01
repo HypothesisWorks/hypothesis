@@ -4,7 +4,7 @@ This module introduces the concept of *basic data*.
 Basic data is:
 
     * Any unicode string (str in python 3, unicode in python 2)
-    * Any data of type: float, bool, int, long (in python 2)
+    * Any data of type: bool, int, (also long in python 2)
     * None
     * Any heterogenous list of basic data (including lists of lists, etc)
 
@@ -245,18 +245,22 @@ class ComplexConverter(Converter):
 
     """Encodes complex numbers as a list [real, imaginary]"""
 
+    def __init__(self, float_converter):
+        self.float_converter = float_converter
+
     def to_basic(self, value):
         check_type(complex, value)
-        return [value.real, value.imag]
+        return list(
+            map(self.float_converter.to_basic, [value.real, value.imag]))
 
     def from_basic(self, c):
         check_length(2, c)
-        check_data_type(float, c[0])
-        check_data_type(float, c[1])
-        return complex(*c)
+        check_data_type(integer_types, c[0])
+        check_data_type(integer_types, c[1])
+        return complex(*map(self.float_converter.from_basic, c))
 
 ConverterTable.default().define_specification_for(
-    complex, lambda s, d: ComplexConverter())
+    complex, lambda s, d: ComplexConverter(s.specification_for(float)))
 
 
 class TextConverter(Converter):
