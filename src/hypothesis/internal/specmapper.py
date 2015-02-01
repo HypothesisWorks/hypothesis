@@ -72,10 +72,12 @@ class SpecificationMapper(object):
         return self.__class__(prototype=self)
 
     def specification_for(self, descriptor):
-        return self._calculate_specification_for(descriptor)
         k = HashItAnyway(descriptor)
         try:
-            return self.__descriptor_cache[k]
+            r = self.__descriptor_cache[k]
+            if isinstance(descriptor, (set, frozenset)) and hasattr(r, 'descriptor'):
+                print(descriptor, r.descriptor)
+            return r
         except KeyError:
             pass
         r = self._calculate_specification_for(descriptor)
