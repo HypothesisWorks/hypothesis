@@ -75,7 +75,10 @@ class SpecificationMapper(object):
         k = HashItAnyway(descriptor)
         try:
             r = self.__descriptor_cache[k]
-            if isinstance(descriptor, (set, frozenset)) and hasattr(r, 'descriptor'):
+            if (
+                isinstance(descriptor, (set, frozenset)) and
+                hasattr(r, 'descriptor')
+            ):
                 print(descriptor, r.descriptor)
             return r
         except KeyError:
