@@ -414,31 +414,20 @@ def compose_float(sign, exponent, fraction):
 
 class FullRangeFloats(FloatStrategy):
     parameter = params.CompositeParameter(
-        negative_probability=params.UniformFloatParameter(0, 1)
+        negative_probability=params.UniformFloatParameter(0, 1),
+        subnormal_probability=params.UniformFloatParameter(0, 0.1),
     )
 
     def produce(self, random, pv):
         sign = int(dist.biased_coin(random, pv.negative_probability))
+        if dist.biased_coin(random, pv.subnormal_probability):
+            exponent = 0
+        else:
+            exponent = random.getrandbits(11)
+
         return compose_float(
             sign,
-            random.getrandbits(11),
-            random.getrandbits(52)
-        )
-
-    def could_have_produced(self, value):
-        return isinstance(value, float)
-
-
-class SubnormalFloatStrategy(FloatStrategy):
-    parameter = params.CompositeParameter(
-        negative_probability=params.UniformFloatParameter(0, 1)
-    )
-
-    def produce(self, random, pv):
-        sign = int(dist.biased_coin(random, pv.negative_probability))
-        return compose_float(
-            sign,
-            0,
+            exponent,
             random.getrandbits(52)
         )
 
