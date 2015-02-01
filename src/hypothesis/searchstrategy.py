@@ -89,19 +89,22 @@ def nice_string(xs):
         pass
 
     if isinstance(xs, descriptors.Just):
-        return repr(xs)
+        return "Just(value=%s)" % (nice_string(xs.value),)
 
     try:
         d = xs.__dict__
     except AttributeError:
         return repr(xs)
 
-    return '%s(%s)' % (
-        xs.__class__.__name__,
-        ', '.join(
-            '%s=%s' % (k2, nice_string(v2)) for k2, v2 in d.items()
+    if getattr(xs.__repr__, '__objclass__', None) != object:
+        return repr(xs)
+    else:
+        return '%s(%s)' % (
+            xs.__class__.__name__,
+            ', '.join(
+                '%s=%s' % (k2, nice_string(v2)) for k2, v2 in d.items()
+            )
         )
-    )
 
 
 class SearchStrategy(object):
