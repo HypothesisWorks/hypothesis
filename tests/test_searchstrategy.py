@@ -541,7 +541,7 @@ def test_dict_descriptor_representation_is_stable_for_order():
 
 
 def test_could_have_produced_distinguishes_on_values():
-    s = strategy({u'': frozenset({int})})
+    s = strategy({'': frozenset({int})})
     assert not s.could_have_produced({'': set()})
 
 

@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from tests.common.descriptors import DescriptorWithValue
 from tests.common import small_table
 from hypothesis import given, assume, Verifier
@@ -71,7 +73,7 @@ def test_can_not_save_as_incompatible_examples(dav, dav2):
     (SampledFrom((1, 2, 3)), 5),
     (OneOf((int, float)), 1),
     (OneOf((int, float)), 'tv'),
-    (binary_type, u"1"),
+    (binary_type, "1"),
     ([frozenset({float}), frozenset({float})], [[8, 0], []]),
 ])
 def test_simple_data_validation(descriptor, data):
