@@ -8,6 +8,7 @@ from hypothesis.internal.compat import hrange
 from hypothesis.internal.compat import text_type, binary_type
 import random
 import pytest
+import math
 
 
 def strategy(*args, **kwargs):
@@ -595,3 +596,16 @@ def test_example_augmented_strategy_decomposes_as_main():
     )
     assert list(s.decompose((1,))) == [(int, 1)]
     assert list(s.decompose((2,))) == [(int, 2)]
+
+
+def test_can_simplify_nan():
+    s = strategy(float)
+    x = list(s.simplify_such_that(float('nan'), math.isnan))[-1]
+    assert math.isnan(x)
+
+
+def test_can_simplify_tuples_of_nan():
+    s = strategy((float,))
+    x = list(
+        s.simplify_such_that((float('nan'),), lambda x: math.isnan(x[0])))[-1]
+    assert math.isnan(x[0])

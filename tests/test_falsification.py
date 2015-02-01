@@ -24,6 +24,7 @@ import hypothesis.params as params
 import hypothesis.settings as hs
 import time
 from hypothesis.internal.compat import binary_type, text_type
+from hypothesis.internal.utils.fixers import actually_equal
 from random import Random
 from tests.test_statistical_distribution import cumulative_binomial_probability
 
@@ -275,9 +276,11 @@ def test_can_falsify_complex_numbers():
 
     with pytest.raises(Unfalsifiable):
         falsify(
-            lambda x, y: (
-                x * y
-            ).conjugate() == x.conjugate() * y.conjugate(), complex, complex)
+            lambda x, y: actually_equal(
+                (x * y).conjugate(),
+                x.conjugate() * y.conjugate()
+            ), complex, complex
+        )
 
 
 def test_raises_on_unsatisfiable_assumption():

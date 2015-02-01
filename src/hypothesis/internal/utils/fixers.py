@@ -6,6 +6,7 @@ You can imagine how grumpy I was when I wrote it.
 """
 
 from hypothesis.internal.compat import text_type, binary_type, integer_types
+import math
 
 unordered_collections = [set, frozenset]
 dict_like_collections = [dict]
@@ -29,18 +30,30 @@ def actually_equal(x, y):
         return True
     if type(x) != type(y):
         return False
-    if x != y:
-        return False
+
     # Now the bad part begins
+
     if isinstance(x, tuple(primitives)):
-        return True
+        if x == y:
+            return True
+
+        if isinstance(x, float) and math.isnan(x) and math.isnan(y):
+            return True
+
+        return False
+
+    if isinstance(x, complex):
+        return (
+            actually_equal(x.real, y.real) and
+            actually_equal(x.imag, y.imag)
+        )
 
     lx = -1
     ly = -1
     try:
         lx = len(x)
         ly = len(y)
-    except TypeError:
+    except (TypeError, AttributeError):
         pass
 
     assert (lx < 0) == (ly < 0)
@@ -56,7 +69,7 @@ def actually_equal(x, y):
         xi = iter(x)
         yi = iter(y)
     except TypeError:
-        return True
+        return x == y
 
     if isinstance(x, tuple(dict_like_collections)):
         for xk in xi:

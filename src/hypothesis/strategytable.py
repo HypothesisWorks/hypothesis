@@ -73,7 +73,11 @@ def define_float_strategy(strategies, descriptor):
     return (
         strat.GaussianFloatStrategy() |
         strat.BoundedFloatStrategy() |
-        strat.ExponentialFloatStrategy())
+        strat.ExponentialFloatStrategy() |
+        strat.JustIntFloats(strategies.strategy(int)) |
+        strat.NastyFloats() |
+        strat.FullRangeFloats()
+    )
 
 
 @strategy_for(binary_type)

@@ -4,7 +4,7 @@ to explore data."""
 from hypothesis.internal.tracker import Tracker
 import hypothesis.params as params
 import hypothesis.internal.utils.distributions as dist
-
+import math
 import inspect
 from abc import abstractmethod
 from hypothesis.internal.compat import hrange
@@ -14,6 +14,7 @@ from random import Random
 import hypothesis.descriptors as descriptors
 from copy import deepcopy
 from hypothesis.internal.utils.fixers import actually_equal, actually_in
+import struct
 
 
 def mix_generators(*generators):
@@ -43,6 +44,10 @@ def nice_string(xs):
 
     """
     # pylint: disable=too-many-return-statements
+    if isinstance(xs, float):
+        if math.isnan(xs) or math.isinf(xs):
+            return 'float(%r)' % (str(xs),)
+
     if isinstance(xs, list):
         return '[' + ', '.join(map(nice_string, xs)) + ']'
     if type(xs) == tuple:
@@ -353,12 +358,49 @@ class FloatStrategy(SearchStrategy):
         if x < 0:
             yield -x
 
-        n = int(x)
+        y = x / 2
+        if x != y:
+            yield y
+
+        try:
+            n = int(x)
+        except (ValueError, OverflowError):
+            return
         y = float(n)
         if x != y:
             yield y
         for m in self.int_strategy.simplify(n):
             yield x + (m - n)
+
+    def could_have_produced(self, value):
+        return isinstance(value, float) and not (
+            math.isnan(value) or math.isinf(value)
+        )
+
+
+class JustIntFloats(FloatStrategy):
+
+    def __init__(self, int_strategy):
+        super(JustIntFloats, self).__init__()
+        self.int_strategy = int_strategy
+        self.parameter = self.int_strategy.parameter
+
+    def produce(self, random, pv):
+        return float(self.int_strategy.produce(random, pv))
+
+
+class FullRangeFloats(FloatStrategy):
+    parameter = params.CompositeParameter()
+
+    def produce(self, random, pv):
+        byte_values = binary_type(bytearray([
+            random.getrandbits(8)
+            for _ in hrange(8)
+        ]))
+        return struct.unpack('d', byte_values)[0]
+
+    def could_have_produced(self, value):
+        return isinstance(value, float)
 
 
 class FixedBoundedFloatStrategy(SearchStrategy):
@@ -1053,10 +1095,12 @@ class SampledFromStrategy(SearchStrategy):
 
     """
 
-    def __init__(self, elements):
+    def __init__(self, elements, descriptor=None):
         SearchStrategy.__init__(self)
         self.elements = tuple(elements)
-        self.descriptor = descriptors.SampledFrom(self.elements)
+        if descriptor is None:
+            descriptor = descriptors.SampledFrom(self.elements)
+        self.descriptor = descriptor
         self.parameter = params.NonEmptySubset(self.elements)
 
     def produce(self, random, pv):
@@ -1064,6 +1108,19 @@ class SampledFromStrategy(SearchStrategy):
 
     def could_have_produced(self, value):
         return actually_in(value, self.elements)
+
+
+class NastyFloats(SampledFromStrategy):
+
+    def __init__(self):
+        super(NastyFloats, self).__init__(
+            descriptor=float,
+            elements=[
+                float('inf'),
+                -float('inf'),
+                float('nan'),
+            ]
+        )
 
 
 class ExampleAugmentedStrategy(SearchStrategy):

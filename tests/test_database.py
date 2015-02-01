@@ -17,6 +17,7 @@ from hypothesis.strategytable import StrategyTable
 import hypothesis.params as params
 from hypothesis.internal.compat import text_type, binary_type, integer_types
 from collections import Counter
+from hypothesis.internal.utils.fixers import actually_equal
 
 
 def test_deduplicates():
@@ -37,7 +38,7 @@ def run_round_trip(descriptor, value, format=None, backend=None):
     storage = db.storage_for(descriptor)
     storage.save(value)
     saved = list(storage.fetch())
-    assert saved == [value]
+    assert actually_equal(saved, [value])
 
 data_examples = (
     (int, 1),
