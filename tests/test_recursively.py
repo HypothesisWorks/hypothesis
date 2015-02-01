@@ -17,6 +17,7 @@ from tests.common.descriptors import (
     Descriptor, primitive_types
 )
 from tests.common import small_table
+from hypothesis.internal.utils.fixers import actually_equal
 
 # Placate flake8
 [OneOf, just, Just, RandomWithSeed, SampledFrom]
@@ -76,17 +77,19 @@ verifier = Verifier(
 @timeout(5)
 def test_can_falsify_false_things(desc):
     assume(size(desc) <= MAX_SIZE)
+
     x = verifier.falsify(lambda x: False, desc)[0]
     strategy = small_table.strategy(desc)
     assert not list(strategy.simplify(x))
 
 
-@given([Descriptor], verifier=verifier)
+@given([Descriptor], Random, verifier=verifier)
 @timeout(5)
-def test_can_falsify_false_things_with_many_args(descs):
+def test_can_falsify_false_things_with_many_args(descs, random):
     assume(len(descs) > 0)
     assume(size(descs) <= MAX_SIZE)
     descs = tuple(descs)
+    verifier.random = random
     x = verifier.falsify(lambda *args: False, *descs)
     strategy = small_table.strategy(descs)
     assert not list(strategy.simplify(x))
@@ -109,8 +112,14 @@ UNDESIRABLE_STRINGS = re.compile('|'.join(
 def test_does_not_use_nasty_type_reprs_in_nice_string(desc):
     s = nice_string(desc)
     assert not UNDESIRABLE_STRINGS.findall(s)
+
+
+@timeout(5)
+@given(Descriptor, verifier=verifier)
+def test_nice_string_evals_as_descriptor(desc):
+    s = nice_string(desc)
     read_desc = eval(s)
-    assert desc == read_desc
+    assert actually_equal(desc, read_desc)
 
 
 def tree_contains_match(t, f):
