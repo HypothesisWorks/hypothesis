@@ -119,7 +119,7 @@ def test_does_not_use_nasty_type_reprs_in_nice_string(desc):
 def test_nice_string_evals_as_descriptor(desc):
     s = nice_string(desc)
     read_desc = eval(s)
-    assert actually_equal(desc, read_desc)
+    assert actually_equal(desc, read_desc, fuzzy=True)
 
 
 def tree_contains_match(t, f):
