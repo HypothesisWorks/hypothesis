@@ -415,7 +415,7 @@ def compose_float(sign, exponent, fraction):
 class FullRangeFloats(FloatStrategy):
     parameter = params.CompositeParameter(
         negative_probability=params.UniformFloatParameter(0, 1),
-        subnormal_probability=params.UniformFloatParameter(0, 0.1),
+        subnormal_probability=params.UniformFloatParameter(0, 0.5),
     )
 
     def produce(self, random, pv):
