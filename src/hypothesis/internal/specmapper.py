@@ -22,7 +22,6 @@ class SpecificationMapper(object):
     @classmethod
     def default(cls):
         key = '_%s_default_mapper' % (cls.__name__,)
-        print(key)
         try:
             return getattr(cls, key)
         except AttributeError:
