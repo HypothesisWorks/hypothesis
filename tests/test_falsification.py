@@ -311,7 +311,7 @@ def test_gravitates_towards_good_parameter_values():
         k=good_value_counts[0],
         p=0.6,
     )
-    assert p >= 0.05
+    assert p >= 0.01
 
 
 def test_detects_flaky_failure():
