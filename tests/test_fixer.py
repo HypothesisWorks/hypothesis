@@ -1,6 +1,7 @@
 from hypothesis.internal.utils.fixers import actually_equal, real_index
 import random
 import pytest
+from hypothesis import given
 
 
 def test_lists_of_same_elements_are_equal():
@@ -126,3 +127,13 @@ def test_actually_index_can_index_past_an_inequal_thing():
 def test_actually_index_can_use_real_index():
     t = [set()]
     assert real_index(t, set()) == 0
+
+
+@given(float)
+def test_a_float_is_fuzzy_equal_to_parsing_its_string(x):
+    assert actually_equal(x, float(str(x)), fuzzy=True)
+
+
+@given(complex)
+def test_a_complex_is_fuzzy_equal_to_parsing_its_string(x):
+    assert actually_equal(x, complex(str(x)), fuzzy=True)

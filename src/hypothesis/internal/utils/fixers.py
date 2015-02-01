@@ -35,17 +35,16 @@ def actually_equal(x, y, fuzzy=False):
         return False
 
     # Now the bad part begins
+    if isinstance(x, float):
+        if math.isnan(x) and math.isnan(y):
+            return True
+        if fuzzy:
+            return str(x) == str(y)
+        return x == y
 
     if isinstance(x, tuple(primitives)):
         if x == y:
             return True
-
-        if isinstance(x, float):
-            if math.isnan(x) and math.isnan(y):
-                return True
-            if fuzzy:
-                return str(x) == str(y)
-            return x == y
 
         return False
 
