@@ -127,16 +127,12 @@ class DescriptorWithValueStrategy(SearchStrategy):
 
     def simplify(self, dav):
         random = RandomWithSeed(dav.random.seed)
-        for d in self.descriptor_strategy.simplify(dav.descriptor):
-            strat = self.strategy_table.strategy(d)
-            param = strat.parameter.draw(random)
-            value = strat.produce(random, param)
-            if not strat.could_have_produced(value):
-                continue
+        strat = self.strategy_table.strategy(dav.descriptor)
+        for d, v in strat.decompose(dav.value):
             yield DescriptorWithValue(
                 descriptor=d,
-                parameter=param,
-                value=value,
+                parameter=strat.parameter.draw(random),
+                value=v,
                 random=RandomWithSeed(dav.random.seed)
             )
 
