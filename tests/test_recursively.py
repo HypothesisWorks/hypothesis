@@ -17,6 +17,7 @@ from tests.common.descriptors import (
     Descriptor, primitive_types
 )
 from tests.common import small_table
+from hypothesis.internal.utils.fixers import actually_equal
 
 # Placate flake8
 [OneOf, just, Just, RandomWithSeed, SampledFrom]
@@ -109,8 +110,15 @@ UNDESIRABLE_STRINGS = re.compile('|'.join(
 def test_does_not_use_nasty_type_reprs_in_nice_string(desc):
     s = nice_string(desc)
     assert not UNDESIRABLE_STRINGS.findall(s)
+
+
+@timeout(5)
+@given(Descriptor, verifier=verifier)
+def test_evals_as_the_original_descriptor(desc):
+    s = nice_string(desc)
+    assert not UNDESIRABLE_STRINGS.findall(s)
     read_desc = eval(s)
-    assert desc == read_desc
+    assert actually_equal(desc, read_desc, fuzzy=True)
 
 
 def tree_contains_match(t, f):

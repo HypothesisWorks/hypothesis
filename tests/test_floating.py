@@ -3,6 +3,7 @@ numbers."""
 
 from hypothesis import given, assume
 from tests.common.utils import fails
+from hypothesis.internal.utils.fixers import actually_equal
 import math
 
 
@@ -67,3 +68,10 @@ def test_is_in_exact_int_range(x):
 def test_can_generate_really_small_floats(x):
     assume(x > 0)
     assert x > 1e-200
+
+
+@fails
+@given(float)
+def test_can_find_floats_that_do_not_round_trip_through_strings(x):
+    assert float(str(x)) == x
+    assert not actually_equal(float(str(x)), x)

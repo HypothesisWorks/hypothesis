@@ -15,7 +15,7 @@ primitives = [
 ] + list(integer_types)
 
 
-def actually_equal(x, y):
+def actually_equal(x, y, fuzzy=False):
     """
     Look, this function is terrible. I know it's terrible. I'm sorry.
     Hypothesis relies on a more precise version of equality than python uses
@@ -25,6 +25,9 @@ def actually_equal(x, y):
     Unfortunately this means that we have to define our own equality. We do
     our best to respect the equality defined on types but there's only so much
     we can do.
+
+    If fuzzy is True takes a slightly laxer approach around e.g. floating point
+    equality.
     """
     if x is y:
         return True
@@ -37,15 +40,19 @@ def actually_equal(x, y):
         if x == y:
             return True
 
-        if isinstance(x, float) and math.isnan(x) and math.isnan(y):
-            return True
+        if isinstance(x, float):
+            if math.isnan(x) and math.isnan(y):
+                return True
+            if fuzzy:
+                return str(x) == str(y)
+            return x == y
 
         return False
 
     if isinstance(x, complex):
         return (
-            actually_equal(x.real, y.real) and
-            actually_equal(x.imag, y.imag)
+            actually_equal(x.real, y.real, fuzzy) and
+            actually_equal(x.imag, y.imag, fuzzy)
         )
 
     lx = -1
@@ -62,7 +69,7 @@ def actually_equal(x, y):
 
     if isinstance(x, tuple(unordered_collections)):
         for xe in x:
-            if not actually_in(xe, y):
+            if not actually_in(xe, y, fuzzy):
                 return False
         return True
     try:
@@ -78,28 +85,28 @@ def actually_equal(x, y):
                 yv = y[xk]
             except KeyError:
                 return False
-            if not actually_equal(xv, yv):
+            if not actually_equal(xv, yv, fuzzy):
                 return False
         return True
 
     for xv, yv in zip(xi, yi):
-        if not actually_equal(xv, yv):
+        if not actually_equal(xv, yv, fuzzy):
             return False
     return True
 
 
-def actually_in(x, ys):
-    return any(actually_equal(x, y) for y in ys)
+def actually_in(x, ys, fuzzy=False):
+    return any(actually_equal(x, y, fuzzy) for y in ys)
 
 
-def real_index(xs, y):
+def real_index(xs, y, fuzzy=False):
     i = xs.index(y)
-    if actually_equal(xs[i], y):
+    if actually_equal(xs[i], y, fuzzy):
         return i
     else:
         i = 0
         while i < len(xs):
-            if actually_equal(xs[i], y):
+            if actually_equal(xs[i], y, fuzzy):
                 return i
             i += 1
         raise ValueError('%r is not in list' % (y))
