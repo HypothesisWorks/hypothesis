@@ -163,9 +163,7 @@ def test_can_falsify_string_commutativity():
         return x + y == y + x
 
     non_commuting = falsify(commutes, text_type, text_type)
-    x, y = sorted(non_commuting)
-    assert x == '0'
-    assert y == '1'
+    assert sorted(non_commuting) == ['0', '1']
 
 
 def test_can_falsify_sets():
