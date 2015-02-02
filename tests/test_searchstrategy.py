@@ -579,6 +579,14 @@ def test_example_augmented_strategy_decomposes_as_main():
     assert list(s.decompose((2,))) == [(int, 2)]
 
 
+def test_decompose_does_not_confuse_sets_and_frozen_sets_in_a_list():
+    s = ss.StrategyTable().strategy([frozenset([int]), {int}])
+    l = list(s.decompose([{0}]))
+    assert len(l) == 1
+    d, v = l[0]
+    assert strategy(d).could_have_produced(v)
+
+
 def test_can_simplify_nan():
     s = strategy(float)
     x = list(s.simplify_such_that(float('nan'), math.isnan))[-1]
@@ -605,3 +613,9 @@ def test_infinity_simplifies_to_finite():
         s.simplify_such_that(float('inf'), lambda x: x >= 1))[-1] == 1.0
     assert list(
         s.simplify_such_that(float('-inf'), lambda x: x <= -1))[-1] == -1.0
+
+
+def test_one_of_descriptor_distinguishes_sets_and_frozensets():
+    d = descriptors.one_of(({int}, frozenset({int})))
+    s = strategy(d)
+    assert s.descriptor == d

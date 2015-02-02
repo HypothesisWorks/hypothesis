@@ -561,7 +561,7 @@ def _unique(xs):
     its order."""
     result = []
     for x in xs:
-        if x not in result:
+        if not actually_in(x, result):
             result.append(x)
     result.sort(key=repr)
     return result
