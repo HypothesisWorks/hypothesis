@@ -2,7 +2,6 @@ from hypothesis.internal.specmapper import (
     SpecificationMapper,
     MissingSpecification,
     next_in_chain,
-    sort_in_subclass_order,
 )
 from hypothesis import given
 from hypothesis.descriptors import sampled_from
@@ -398,17 +397,6 @@ def test_chooses_most_specific_subclass(classes, r):
             correct_choice = find_most_specific(x, classes)
             i = mapper.specification_for(x)
             assert i == classes.index(correct_choice)
-
-
-@given({sampled_from(all_test_classes)}, random.Random)
-def test_class_sorter_topologically_sorts_wrt_subclassing(classes, random):
-    classes = list(classes)
-    random.shuffle(classes)
-    in_order = sort_in_subclass_order(classes)
-    n = len(classes)
-    for i in hrange(n):
-        for j in hrange(i + 1, n):
-            assert not issubclass(in_order[j], in_order[i])
 
 
 def test_correctly_reports_specifications():

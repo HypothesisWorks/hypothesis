@@ -133,38 +133,6 @@ class SpecificationMapper(object):
         raise MissingSpecification(descriptor)
 
 
-def sort_in_subclass_order(xs, get_class=lambda x: x):
-    if len(xs) <= 1:
-        return list(xs)
-    by_class = {}
-    for x in xs:
-        c = get_class(x)
-        by_class.setdefault(c, []).append(x)
-    classes = list(by_class.keys())
-    subclasses = {}
-    for c in classes:
-        children = subclasses.setdefault(c, [])
-        for d in classes:
-            if c != d and issubclass(d, c):
-                children.append(d)
-    in_order = []
-
-    def recurse(c):
-        if c in in_order:
-            return
-        for d in subclasses[c]:
-            recurse(d)
-        in_order.append(c)
-
-    while classes:
-        recurse(classes.pop())
-    return [
-        x
-        for c in in_order
-        for x in by_class[c]
-    ]
-
-
 def typekey(x):
     return x.__class__
 
