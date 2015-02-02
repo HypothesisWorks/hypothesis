@@ -225,6 +225,7 @@ def test_actually_equal_things_have_same_type_shape(d, r):
 
 
 class BadCollection(object):
+
     def __init__(self, *values):
         self.values = values
 

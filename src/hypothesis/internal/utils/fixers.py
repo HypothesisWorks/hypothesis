@@ -189,13 +189,13 @@ def complex_string(x):
 
 @nice_string_method.extend(list)
 def list_string(xs):
-    return "[%s]" % (', '.join(map(nice_string, xs)))
+    return '[%s]' % (', '.join(map(nice_string, xs)))
 
 
 @nice_string_method.extend(set)
 def set_string(xs):
     if xs:
-        return "{%s}" % (', '.join(sorted(map(nice_string, xs))))
+        return '{%s}' % (', '.join(sorted(map(nice_string, xs))))
     else:
         return repr(xs)
 
@@ -203,7 +203,7 @@ def set_string(xs):
 @nice_string_method.extend(frozenset)
 def frozenset_string(xs):
     if xs:
-        return "frozenset({%s})" % (', '.join(sorted(map(nice_string, xs))))
+        return 'frozenset({%s})' % (', '.join(sorted(map(nice_string, xs))))
     else:
         return repr(xs)
 

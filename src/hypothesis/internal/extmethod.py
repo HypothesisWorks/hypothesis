@@ -1,12 +1,14 @@
-"""
-"external" methods. They're still single dispatch but are not defined
-on the class.
+""""external" methods.
+
+They're still single dispatch but are not defined on the class.
+
 """
 
 from hypothesis.internal.classmap import ClassMap
 
 
 class ExtMethod(object):
+
     def __init__(self):
         self.mapping = ClassMap()
 
@@ -26,6 +28,6 @@ class ExtMethod(object):
             f = self.mapping[typekey]
         except KeyError:
             raise NotImplementedError(
-                "No implementation available for %s" % (typekey.__name__,)
+                'No implementation available for %s' % (typekey.__name__,)
             )
         return f(*args, **kwargs)

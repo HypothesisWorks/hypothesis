@@ -1,4 +1,5 @@
 class ClassMap(object):
+
     def __init__(self):
         self.data = {}
 
