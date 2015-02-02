@@ -7,7 +7,7 @@ import hypothesis.internal.utils.distributions as dist
 import math
 import inspect
 from abc import abstractmethod
-from hypothesis.internal.compat import hrange
+from hypothesis.internal.compat import hrange, hunichr
 from hypothesis.internal.compat import text_type, binary_type, integer_types
 import string
 from random import Random
@@ -784,25 +784,29 @@ class OneCharStringStrategy(SearchStrategy):
 
     """A strategy which generates single character strings of text type."""
     descriptor = text_type
-
-    def __init__(self, characters=None):
-        SearchStrategy.__init__(self)
-        if characters is not None and not isinstance(characters, text_type):
-            raise ValueError('Invalid characters %r: Not a %s' % (
-                characters, text_type
-            ))
-        self.characters = characters or (
-            text_type('0123456789') + text_type(string.ascii_letters) +
-            ' \t\n'
-        )
-        self.parameter = params.CompositeParameter()
+    ascii_characters = (
+        text_type('0123456789') + text_type(string.ascii_letters) +
+        text_type(' \t\n')
+    )
+    parameter = params.CompositeParameter(
+        ascii_chance=params.UniformFloatParameter(0, 1)
+    )
 
     def produce(self, random, pv):
-        return random.choice(self.characters)
+        if dist.biased_coin(random, pv.ascii_chance):
+            return random.choice(self.ascii_characters)
+        else:
+            return hunichr(random.randint(0, 0xfff))
 
     def simplify(self, x):
-        for i in hrange(self.characters.index(x), -1, -1):
-            yield self.characters[i]
+        if x in self.ascii_characters:
+            for i in hrange(self.ascii_characters.index(x), -1, -1):
+                yield self.ascii_characters[i]
+        else:
+            o = ord(x)
+            yield text_type('0')
+            yield hunichr(o // 2)
+            yield hunichr(o - 1)
 
 
 class StringStrategy(MappedSearchStrategy):

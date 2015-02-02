@@ -510,3 +510,13 @@ def test_can_minimize_lists_of_floats():
     )
     x = v.falsify(lambda x, y: False, float, frozenset([bool]))
     assert x == (0.0, frozenset())
+
+
+def test_can_generate_non_ascii():
+    def is_ascii(s):
+        try:
+            s.encode('ascii')
+            return True
+        except UnicodeEncodeError:
+            return False
+    falsify(is_ascii, text_type)
