@@ -12,7 +12,7 @@ markdown: kramdown
 kramdown:
   input: GFM
 
-highlighter: null
+highlighter: pygments
 
 #Other Global Configuration
 exclude: ['README.md']
