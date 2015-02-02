@@ -810,7 +810,8 @@ class OneCharStringStrategy(SearchStrategy):
                 yield self.ascii_characters[i]
         else:
             o = ord(x)
-            yield text_type('0')
+            for c in reversed(self.ascii_characters):
+                yield text_type(c)
             if o > 0:
                 yield hunichr(o // 2)
                 yield hunichr(o - 1)
