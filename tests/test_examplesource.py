@@ -136,4 +136,5 @@ def test_tries_each_parameter_at_least_min_index_times():
             break
         if i % 2:
             source.mark_bad()
-    assert all(c >= 5 for c in source.counts)
+    # The last index may not have been fully populated
+    assert all(c >= 5 for c in source.counts[:-1])
