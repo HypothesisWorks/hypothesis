@@ -59,3 +59,13 @@ def test_prefers_first_parent_in_mro():
     x[C] = 3
     x[B] = 2
     assert x[BC] == 2
+
+
+def test_all_mappings_yields_all_mappings():
+    x = ClassMap()
+    x[object] = 1
+    x[BC] = 2
+    x[B] = 3
+    x[C] = 4
+    x[A] = 5
+    assert list(x.all_mappings(BC)) == [2, 3, 4, 5, 1]

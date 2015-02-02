@@ -124,6 +124,8 @@ nice_string_method = ExtMethod()
 
 @nice_string_method.extend(object)
 def generic_string(xs):
+    if hasattr(xs, '__name__'):
+        return xs.__name__
     try:
         d = xs.__dict__
     except AttributeError:
@@ -169,7 +171,7 @@ def list_string(xs):
 @nice_string_method.extend(set)
 def set_string(xs):
     if xs:
-        return "{%s}" % (', '.join(map(nice_string, xs)))
+        return "{%s}" % (', '.join(sorted(map(nice_string, xs))))
     else:
         return repr(xs)
 
@@ -177,7 +179,7 @@ def set_string(xs):
 @nice_string_method.extend(frozenset)
 def frozenset_string(xs):
     if xs:
-        return "frozenset({%s})" % (', '.join(map(nice_string, xs)))
+        return "frozenset({%s})" % (', '.join(sorted(map(nice_string, xs))))
     else:
         return repr(xs)
 

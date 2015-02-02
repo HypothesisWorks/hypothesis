@@ -1,5 +1,6 @@
 from functools import wraps
 from hypothesis.internal.utils.hashitanyway import HashItAnyway
+from hypothesis.internal.classmap import ClassMap
 
 
 class SpecificationMapper(object):
@@ -39,7 +40,7 @@ class SpecificationMapper(object):
 
     def __init__(self, prototype=None):
         self.value_mappers = {}
-        self.instance_mappers = {}
+        self.instance_mappers = ClassMap()
         self.__prototype = prototype
         self.__descriptor_cache = {}
 
@@ -124,13 +125,9 @@ class SpecificationMapper(object):
                 yield h
 
     def __instance_handlers(self, tk):
-        for c, hs in sort_in_subclass_order(
-                self.instance_mappers.items(),
-                lambda x: x[0],
-        ):
-            if issubclass(tk, c):
-                for h in reversed(hs):
-                    yield h
+        for hs in self.instance_mappers.all_mappings(tk):
+            for h in reversed(hs):
+                yield h
 
     def missing_specification(self, descriptor):
         raise MissingSpecification(descriptor)
