@@ -117,6 +117,8 @@ class Verifier(object):
 
         def time_to_call_it_a_day():
             """Have we exceeded our timeout?"""
+            if self.timeout <= 0:
+                return False
             return time.time() >= start_time + self.timeout
 
         skipped_examples = 0

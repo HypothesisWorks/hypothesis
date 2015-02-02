@@ -30,7 +30,8 @@ class Settings(object):
     timeout: Once this amount of time has passed, falsify will terminate even
         if it has not found many examples. This is a soft rather than a hard
         limit - Hypothesis won't e.g. interrupt execution of the called
-        function to stop it.
+        function to stop it. If this value is <= 0 then no timeout will be
+        applied.
     derandomize: If this is True then hypothesis will run in deterministic mode
         where each falsification uses a random number generator that is seeded
         based on the hypothesis to falsify, which will be consistent across
