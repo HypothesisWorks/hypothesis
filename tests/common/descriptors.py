@@ -141,6 +141,8 @@ class DescriptorWithValueStrategy(SearchStrategy):
     def simplify(self, dav):
         strat = self.strategy_table.strategy(dav.descriptor)
         for d, v in strat.decompose(dav.value):
+            stratd = self.strategy_table.strategy(d)
+            assert stratd.could_have_produced(v)
             yield DescriptorWithValue(
                 descriptor=d,
                 value=v,
