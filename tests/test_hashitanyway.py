@@ -6,6 +6,8 @@ from hypothesis import given, Verifier
 from hypothesis.settings import Settings
 from copy import deepcopy
 from hypothesis.searchstrategy import RandomWithSeed
+from random import Random
+from tests.common.mutate import mutate_slightly, mutate_maliciously
 
 
 def hia(x):
@@ -92,14 +94,16 @@ def test_hashing_random_with_seed():
     )
 
 
-@given([Descriptor], verifier=Verifier(
+@given([Descriptor], Random, verifier=Verifier(
     strategy_table=small_table,
     settings=Settings(
-        max_examples=2000,
+        max_examples=500,
         timeout=100
     )
 ))
-def test_can_put_and_retrieve_descriptors_from_a_list(ds):
+def test_can_put_and_retrieve_descriptors_from_a_list(ds, r):
+    ds += [mutate_slightly(r, d) for d in ds]
+    ds += [mutate_maliciously(r, d) for d in ds]
     mapping = {}
     for d in ds:
         mapping[HashItAnyway(d)] = d

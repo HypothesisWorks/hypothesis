@@ -1,7 +1,11 @@
 from hypothesis.internal.utils.fixers import actually_equal, real_index
+from hypothesis.internal.compat import hrange
 import random
 import pytest
-from hypothesis import given
+from hypothesis import given, Verifier
+from tests.common.descriptors import Descriptor
+from tests.common.mutate import mutate_slightly
+from tests.common import small_verifier, small_table
 
 
 def test_lists_of_same_elements_are_equal():
@@ -145,3 +149,76 @@ def test_a_float_is_fuzzy_equal_to_parsing_its_string(x):
 @given(complex)
 def test_a_complex_is_fuzzy_equal_to_parsing_its_string(x):
     assert actually_equal(x, complex(repr(x)), fuzzy=True)
+
+
+@given(Descriptor, random.Random, verifier=small_verifier)
+def test_equality_is_symmetric(d, r):
+    test_cases = [d]
+    for _ in hrange(10):
+        test_cases.append(mutate_slightly(r, d))
+    for x in test_cases:
+        for y in test_cases:
+            if actually_equal(x, y):
+                assert actually_equal(y, x)
+
+
+@given(Descriptor, random.Random, verifier=small_verifier)
+def test_equality_is_transitive(d, r):
+    test_cases = [d]
+    for _ in hrange(10):
+        test_cases.append(mutate_slightly(r, d))
+    for x in test_cases:
+        for y in test_cases:
+            if actually_equal(x, y):
+                for z in test_cases:
+                    if actually_equal(y, z):
+                        assert actually_equal(x, z)
+
+
+def type_shape(x):
+    if isinstance(x, dict):
+        return (
+            dict, {
+                k: type_shape(v)
+                for k, v in x.items()
+            }
+        )
+
+    if isinstance(x, (frozenset, set)):
+        return (
+            type(x),
+            type(x)(map(type_shape, x))
+        )
+
+    it = None
+    try:
+        it = iter(x)
+    except TypeError:
+        pass
+
+    if it is not None:
+        return (
+            type(x),
+            tuple(map(type_shape, it))
+        )
+    else:
+        return type(x)
+
+
+def test_type_shape_self_checks():
+    assert type_shape(1) == int
+    assert type_shape((1, 1.0)) == (tuple, (int, float))
+    assert type_shape({1, 2}) == (set, {int})
+    assert type_shape(frozenset({1, 2})) == (frozenset, frozenset({int}))
+    assert type_shape({1: {2}}) == (
+        dict, {1: (set, {int})})
+
+
+@given(Descriptor, random.Random, verifier=Verifier(
+    strategy_table=small_table,
+))
+def test_actually_equal_things_have_same_type_shape(d, r):
+    for _ in hrange(10):
+        d2 = mutate_slightly(r, d)
+        if actually_equal(d, d2):
+            assert type_shape(d) == type_shape(d2)

@@ -14,7 +14,7 @@ import hypothesis.settings as hs
 from random import Random
 from hypothesis.searchstrategy import RandomWithSeed
 from tests.common.descriptors import (
-    Descriptor, primitive_types
+    Descriptor, primitive_types, DescriptorWithValue
 )
 from tests.common import small_table
 from hypothesis.internal.utils.fixers import actually_equal
@@ -179,3 +179,9 @@ def test_can_produce_what_it_produces(desc):
     strategy = small_table.strategy(desc)
     with pytest.raises(Unfalsifiable):
         verifier.falsify(strategy.could_have_produced, desc)
+
+
+@given(DescriptorWithValue, verifier=verifier)
+def test_decomposing_produces_things_that_can_be_produced(dav):
+    for d, v in small_table.strategy(dav.descriptor).decompose(dav.value):
+        assert small_table.strategy(d).could_have_produced(v)
