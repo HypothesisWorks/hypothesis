@@ -620,4 +620,6 @@ def test_one_of_descriptor_distinguishes_sets_and_frozensets():
 
 
 def test_simplifies_0_char():
-    assert list(strategy(text_type).simplify('\x00')) == ['', '0']
+    xs = list(strategy(text_type).simplify('\x00'))
+    assert '' in xs
+    assert '0' in xs
