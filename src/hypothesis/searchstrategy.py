@@ -796,7 +796,7 @@ class OneCharStringStrategy(SearchStrategy):
         if dist.biased_coin(random, pv.ascii_chance):
             return random.choice(self.ascii_characters)
         else:
-            return hunichr(random.randint(0, 0xfff))
+            return hunichr(random.randint(0, 0x10ffff))
 
     def simplify(self, x):
         if x in self.ascii_characters:
