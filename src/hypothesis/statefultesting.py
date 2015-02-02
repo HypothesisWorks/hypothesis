@@ -105,11 +105,6 @@ class TestRun(object):
                 init_kwargs=self.init_kwargs,
             )
 
-    def __hash__(self):
-        # Where we want to hash this we want to rely on Tracker's logic for
-        # hashing collections anyway
-        raise TypeError("unhashable type 'testrun'")
-
     def __len__(self):
         if self.init_args or self.init_kwargs:
             return 1 + len(self.steps)
