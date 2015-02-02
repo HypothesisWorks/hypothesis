@@ -39,7 +39,7 @@ def actually_equal(x, y, fuzzy=False):
         if math.isnan(x) and math.isnan(y):
             return True
         if fuzzy:
-            return str(x) == str(y)
+            return repr(x) == repr(y)
         return x == y
 
     if isinstance(x, tuple(primitives)):

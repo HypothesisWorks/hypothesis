@@ -129,11 +129,19 @@ def test_actually_index_can_use_real_index():
     assert real_index(t, set()) == 0
 
 
+def test_fuzzy_equal_uses_full_repr_precision():
+    assert not actually_equal(
+        1113142313206.0,
+        1113142313208.0,
+        fuzzy=True,
+    )
+
+
 @given(float)
 def test_a_float_is_fuzzy_equal_to_parsing_its_string(x):
-    assert actually_equal(x, float(str(x)), fuzzy=True)
+    assert actually_equal(x, float(repr(x)), fuzzy=True)
 
 
 @given(complex)
 def test_a_complex_is_fuzzy_equal_to_parsing_its_string(x):
-    assert actually_equal(x, complex(str(x)), fuzzy=True)
+    assert actually_equal(x, complex(repr(x)), fuzzy=True)
