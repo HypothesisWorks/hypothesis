@@ -112,6 +112,7 @@ def test_can_put_and_retrieve_descriptors_from_a_list(ds, r):
 
 
 class BadHash(object):
+
     def __len__(x):
         return 2
 
