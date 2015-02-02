@@ -26,10 +26,9 @@ Descriptor = namedtuple('Descriptor', ('descriptor',))
 
 class DescriptorWithValue(object):
 
-    def __init__(self, descriptor, value, parameter, random):
+    def __init__(self, descriptor, value, random):
         self.descriptor = descriptor
         self.value = value
-        self.parameter = parameter
         self.random = random
         assert small_table.strategy(self.descriptor).could_have_produced(
             self.value
@@ -38,11 +37,10 @@ class DescriptorWithValue(object):
     def __iter__(self):
         yield self.descriptor
         yield self.value
-        yield self.parameter
         yield self.random
 
     def __len__(self):
-        return 4
+        return 3
 
     def __repr__(self):
         return 'DescriptorWithValue(descriptor=%s, value=%r, random=%r)' % (
@@ -136,18 +134,15 @@ class DescriptorWithValueStrategy(SearchStrategy):
         assert strategy.could_have_produced(value)
         return DescriptorWithValue(
             descriptor=descriptor,
-            parameter=parameter,
             value=value,
             random=new_random,
         )
 
     def simplify(self, dav):
-        random = RandomWithSeed(dav.random.seed)
         strat = self.strategy_table.strategy(dav.descriptor)
         for d, v in strat.decompose(dav.value):
             yield DescriptorWithValue(
                 descriptor=d,
-                parameter=strat.parameter.draw(random),
                 value=v,
                 random=RandomWithSeed(dav.random.seed)
             )
