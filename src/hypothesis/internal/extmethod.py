@@ -12,16 +12,12 @@ class ExtMethod(object):
     def __init__(self):
         self.mapping = ClassMap()
 
-    def extend(self, typ, fn=None):
-        if fn is None:
-            def accept(f):
-                self.mapping[typ] = f
-                return f
+    def extend(self, typ):
+        def accept(f):
+            self.mapping[typ] = f
+            return f
 
-            return accept
-        else:
-            self.mapping[typ] = fn
-            return fn
+        return accept
 
     def __call__(self, typekey, *args, **kwargs):
         try:
