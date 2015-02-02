@@ -261,3 +261,10 @@ def test_verifier_deduplicates_on_coming_out_of_the_database():
     verifier.falsify(count_and_object, frozenset({int}))
     assert calls[0] == good
     assert counter[good] == 1
+
+
+@given(text_type)
+def test_can_save_all_strings(s):
+    db = ExampleDatabase()
+    storage = db.storage_for(text_type)
+    storage.save(s)

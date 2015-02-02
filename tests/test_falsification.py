@@ -520,3 +520,14 @@ def test_can_generate_non_ascii():
         except UnicodeEncodeError:
             return False
     falsify(is_ascii, text_type)
+
+
+def test_only_generates_valid_unicode():
+    def is_valid(x):
+        try:
+            x.encode('utf-8')
+            return True
+        except UnicodeEncodeError:
+            return False
+    with pytest.raises(Unfalsifiable):
+        print(falsify(is_valid, text_type))
