@@ -1095,6 +1095,9 @@ class RandomWithSeed(Random):
         r.setstate(self.getstate())
         return r
 
+    def __hash__(self):
+        return hash(self.seed)
+
     def __deepcopy__(self, d):
         return self.__copy__()
 

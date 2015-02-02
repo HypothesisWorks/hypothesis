@@ -1,5 +1,11 @@
 from hypothesis.internal.utils.hashitanyway import HashItAnyway
 from collections import namedtuple
+from tests.common.descriptors import Descriptor
+from tests.common import small_table
+from hypothesis import given, Verifier
+from hypothesis.settings import Settings
+from copy import deepcopy
+from hypothesis.searchstrategy import RandomWithSeed
 
 
 def hia(x):
@@ -76,3 +82,26 @@ def test_has_a_sensible_string_representation():
     x = str(hia('kittens'))
     assert 'HashItAnyway' in x
     assert 'kittens' in x
+
+
+def test_hashing_random_with_seed():
+    assert hia(
+        RandomWithSeed(237230384214978941106830136598254622812)
+    ) == hia(
+        RandomWithSeed(237230384214978941106830136598254622812)
+    )
+
+
+@given([Descriptor], verifier=Verifier(
+    strategy_table=small_table,
+    settings=Settings(
+        max_examples=2000,
+        timeout=100
+    )
+))
+def test_can_put_and_retrieve_descriptors_from_a_list(ds):
+    mapping = {}
+    for d in ds:
+        mapping[HashItAnyway(d)] = d
+    for d in ds:
+        assert mapping[HashItAnyway(deepcopy(d))] == d
