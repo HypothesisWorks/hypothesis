@@ -120,3 +120,20 @@ def test_errors_if_you_mark_bad_before_fetching():
     )
     with pytest.raises(ValueError):
         source.mark_bad()
+
+
+def test_tries_each_parameter_at_least_min_index_times():
+    source = ExampleSource(
+        random=random.Random(),
+        strategy=StrategyTable.default().strategy(int),
+        storage=None,
+        min_tries=5
+    )
+    i = 0
+    for x in source:
+        i += 1
+        if i > 500:
+            break
+        if i % 2:
+            source.mark_bad()
+    assert all(c >= 5 for c in source.counts)
