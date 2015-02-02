@@ -27,6 +27,11 @@ Descriptor = namedtuple('Descriptor', ('descriptor',))
 class DescriptorWithValue(namedtuple(
         'DescriptorWithValue', ('descriptor', 'value', 'parameter', 'random'))
 ):
+    def __init__(self, *args, **kwargs):
+        super(DescriptorWithValue, self).__init__(*args, **kwargs)
+        assert small_table.strategy(self.descriptor).could_have_produced(
+            self.value
+        )
 
     def __repr__(self):
         return 'DescriptorWithValue(descriptor=%s, value=%r, random=%r)' % (
