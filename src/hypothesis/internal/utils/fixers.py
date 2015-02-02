@@ -7,12 +7,74 @@ You can imagine how grumpy I was when I wrote it.
 
 from hypothesis.internal.compat import text_type, binary_type, integer_types
 import math
+from hypothesis.internal.extmethod import ExtMethod
+
+
+equality = ExtMethod()
+
 
 unordered_collections = [set, frozenset]
 dict_like_collections = [dict]
 primitives = [
     int, float, bool, type, text_type, binary_type
 ] + list(integer_types)
+
+
+@equality.extend(object)
+@equality.extend(type)
+def generic_equality(x, y, fuzzy):
+    return x == y
+
+
+@equality.extend(float)
+def float_equality(x, y, fuzzy=False):
+    if math.isnan(x) and math.isnan(y):
+        return True
+    if fuzzy:
+        return repr(x) == repr(y)
+    return x == y
+
+
+@equality.extend(complex)
+def complex_equality(x, y, fuzzy=False):
+    return (
+        float_equality(x.real, y.real, fuzzy) and
+        float_equality(x.imag, y.imag, fuzzy)
+    )
+
+
+@equality.extend(tuple)
+@equality.extend(list)
+def sequence_equality(x, y, fuzzy=False):
+    if len(x) != len(y):
+        return False
+    for u, v in zip(x, y):
+        if not actually_equal(u, v, fuzzy):
+            return False
+    return True
+
+
+@equality.extend(set)
+@equality.extend(frozenset)
+def set_equality(x, y, fuzzy=False):
+    if len(x) != len(y):
+        return False
+    for u in x:
+        if not actually_in(u, y):
+            return False
+    return True
+
+
+@equality.extend(dict)
+def dict_equality(x, y, fuzzy=False):
+    if len(x) != len(y):
+        return False
+    for k, v in x.items():
+        if k not in y:
+            return False
+        if not actually_equal(x[k], y[k], fuzzy):
+            return False
+    return True
 
 
 def actually_equal(x, y, fuzzy=False):
@@ -33,65 +95,7 @@ def actually_equal(x, y, fuzzy=False):
         return True
     if type(x) != type(y):
         return False
-
-    # Now the bad part begins
-    if isinstance(x, float):
-        if math.isnan(x) and math.isnan(y):
-            return True
-        if fuzzy:
-            return repr(x) == repr(y)
-        return x == y
-
-    if isinstance(x, tuple(primitives)):
-        if x == y:
-            return True
-
-        return False
-
-    if isinstance(x, complex):
-        return (
-            actually_equal(x.real, y.real, fuzzy) and
-            actually_equal(x.imag, y.imag, fuzzy)
-        )
-
-    lx = -1
-    ly = -1
-    try:
-        lx = len(x)
-        ly = len(y)
-    except (TypeError, AttributeError):
-        pass
-
-    assert (lx < 0) == (ly < 0)
-    if lx >= 0 and lx != ly:
-        return False
-
-    if isinstance(x, tuple(unordered_collections)):
-        for xe in x:
-            if not actually_in(xe, y, fuzzy):
-                return False
-        return True
-    try:
-        xi = iter(x)
-        yi = iter(y)
-    except TypeError:
-        return x == y
-
-    if isinstance(x, tuple(dict_like_collections)):
-        for xk in xi:
-            xv = x[xk]
-            try:
-                yv = y[xk]
-            except KeyError:
-                return False
-            if not actually_equal(xv, yv, fuzzy):
-                return False
-        return True
-
-    for xv, yv in zip(xi, yi):
-        if not actually_equal(xv, yv, fuzzy):
-            return False
-    return True
+    return equality(type(x), x, y, fuzzy)
 
 
 def actually_in(x, ys, fuzzy=False):
