@@ -1030,8 +1030,7 @@ class RandomWithSeed(Random):
     def __eq__(self, other):
         return self is other or (
             isinstance(other, RandomWithSeed) and
-            self.seed == other.seed and
-            self.getstate() == other.getstate()
+            self.seed == other.seed
         )
 
     def __ne__(self, other):

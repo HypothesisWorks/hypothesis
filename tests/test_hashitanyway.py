@@ -122,3 +122,10 @@ class BadHash(object):
 
 def test_uses_collection_hashing_even_when_hash_is_defined():
     assert hia(BadHash()) == hia(BadHash())
+
+
+def test_using_a_random_does_not_break_its_hash():
+    r = RandomWithSeed(2)
+    x = hia(r)
+    r.getrandbits(128)
+    assert x == hia(RandomWithSeed(2))
