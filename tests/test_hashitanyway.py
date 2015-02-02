@@ -109,3 +109,16 @@ def test_can_put_and_retrieve_descriptors_from_a_list(ds, r):
         mapping[HashItAnyway(d)] = d
     for d in ds:
         assert mapping[HashItAnyway(deepcopy(d))] == d
+
+
+class BadHash(object):
+    def __len__(x):
+        return 2
+
+    def __iter__(x):
+        yield 1
+        yield 2
+
+
+def test_uses_collection_hashing_even_when_hash_is_defined():
+    assert hia(BadHash()) == hia(BadHash())

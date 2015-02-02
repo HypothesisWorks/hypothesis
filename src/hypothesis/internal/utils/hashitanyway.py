@@ -1,19 +1,43 @@
 from hypothesis.internal.utils.fixers import actually_equal
+from hypothesis.internal.compat import text_type, binary_type
+from hypothesis.internal.extmethod import ExtMethod
+
+hash_everything_method = ExtMethod()
+
+
+@hash_everything_method.extend(int)
+@hash_everything_method.extend(float)
+@hash_everything_method.extend(binary_type)
+@hash_everything_method.extend(text_type)
+@hash_everything_method.extend(bool)
+def normal_hash(x):
+    return hash(x)
+
+
+@hash_everything_method.extend(type)
+def type_hash(x):
+    return hash(x.__name__)
+
+
+@hash_everything_method.extend(object)
+def generic_hash(x):
+    h = hash(type(x).__name__)
+    try:
+        h ^= hash(len(x))
+    except (TypeError, AttributeError):
+        pass
+    try:
+        iter(x)
+    except (TypeError, AttributeError):
+        return h
+
+    for y in x:
+        h ^= hash_everything(y)
+    return h
 
 
 def hash_everything(l):
-    try:
-        return hash(l)
-    except TypeError:
-        h = hash(l.__class__)
-        try:
-            xs = iter(l)
-        except TypeError:
-            return h
-
-        for x in xs:
-            h = h ^ hash_everything(x)
-        return h
+    return hash_everything_method(type(l), l)
 
 
 class HashItAnyway(object):
