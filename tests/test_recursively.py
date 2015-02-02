@@ -185,3 +185,12 @@ def test_can_produce_what_it_produces(desc):
 def test_decomposing_produces_things_that_can_be_produced(dav):
     for d, v in small_table.strategy(dav.descriptor).decompose(dav.value):
         assert small_table.strategy(d).could_have_produced(v)
+
+
+@given(
+    DescriptorWithValue,
+    verifier=verifier,
+)
+def test_can_minimize_descriptor_with_value(dav):
+    s = small_table.strategy(DescriptorWithValue)
+    list(s.simplify_such_that(dav, lambda x: True))
