@@ -95,10 +95,16 @@ def test_can_find_floats_that_do_not_round_trip_through_strings(x):
     assert actually_equal(float(str(x)), x)
 
 
+@fails
+@given(float)
+def test_can_find_floats_that_do_not_round_trip_through_reprs(x):
+    assert float(repr(x)) == x
+
+
 @given(float)
 def test_printing_and_parsing_is_fuzzy_equal(x):
     assert actually_equal(
         x,
-        float(str(x)),
+        float(repr(x)),
         fuzzy=True,
     )
