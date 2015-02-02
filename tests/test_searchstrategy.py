@@ -18,20 +18,20 @@ def strategy(*args, **kwargs):
 
 
 def test_string_strategy_produces_strings():
-    strings = strategy(str)
+    strings = strategy(text_type)
     result = strings.produce(random, strings.parameter.draw(random))
     assert result is not None
 
 
 def test_unary_tuple_strategy_has_trailing_comma():
-    assert repr(strategy((str,))) == 'TupleStrategy((str,))'
+    assert repr(strategy((int,))) == 'TupleStrategy((int,))'
 
 
 Blah = namedtuple('Blah', ('hi',))
 
 
 def test_named_tuple_strategy_has_tuple_in_name_and_no_trailing_comma():
-    assert repr(strategy(Blah(str))) == 'TupleStrategy(Blah(hi=str))'
+    assert repr(strategy(Blah(int))) == 'TupleStrategy(Blah(hi=int))'
 
 
 def test_class_names_are_simplified_in_sets():
@@ -39,7 +39,7 @@ def test_class_names_are_simplified_in_sets():
 
 
 def test_tuples_inspect_component_types_for_production():
-    strxint = strategy((str, int))
+    strxint = strategy((text_type, int))
 
     assert strxint.could_have_produced(('', 2))
     assert not strxint.could_have_produced((2, 2))
@@ -61,13 +61,13 @@ def minimize(s, x):
 
 
 def test_can_minimize_component_types():
-    ios = alternating(str, int)
+    ios = alternating(text_type, int)
     assert 0 == minimize(ios, 10)
     assert '' == minimize(ios, 'I like kittens')
 
 
 def test_can_minimize_nested_component_types():
-    ios = alternating((int, str), (int, int))
+    ios = alternating((int, text_type), (int, int))
     assert (0, '') == minimize(ios, (42, 'I like kittens'))
     assert (0, 0) == minimize(ios, (42, 666))
 
@@ -165,7 +165,7 @@ def define_x_strategy(strategies, descriptor):
 
 
 def test_strategy_repr_handles_custom_types():
-    assert 'X(x=str)' in repr(ss.StrategyTable().strategy(X(str)))
+    assert 'X(x=int)' in repr(ss.StrategyTable().strategy(X(int)))
 
 
 class TrivialStrategy(strat.SearchStrategy):
@@ -423,7 +423,7 @@ def test_lists_of_tuples_are_mutable():
 
 def test_one_of_immutable_is_immutable():
     assert strategy(descriptors.one_of(
-        [int, str, float, complex])).has_immutable_data
+        [int, text_type, float, complex])).has_immutable_data
 
 
 def test_one_of_mutable_is_mutable():
@@ -443,7 +443,7 @@ def test_random_is_mutable():
 def test_random_repr_has_seed():
     rnd = strategy(random.Random).produce(random.Random(), None)
     seed = rnd.seed
-    assert str(seed) in repr(rnd)
+    assert text_type(seed) in repr(rnd)
 
 
 def test_random_only_produces_special_random():
@@ -537,7 +537,7 @@ def test_string_tries_empty_string_first():
 
 def test_simplifies_quickly_to_list_of_empties():
     x = ['foo%d' % (i,) for i in hrange(10)]
-    s = strategy([str])
+    s = strategy([text_type])
     call_counter = [0]
 
     def count_long(xs):

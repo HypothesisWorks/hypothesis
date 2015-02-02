@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 """Module defining SearchStrategy, which is the core type that Hypothesis uses
 to explore data."""
 
@@ -347,7 +349,7 @@ class JustIntFloats(FloatStrategy):
 
 def compose_float(sign, exponent, fraction):
     as_long = (sign << 63) | (exponent << 52) | fraction
-    return struct.unpack('d', struct.pack('L', as_long))[0]
+    return struct.unpack(b'd', struct.pack(b'L', as_long))[0]
 
 
 class FullRangeFloats(FloatStrategy):
