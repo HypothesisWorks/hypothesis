@@ -25,6 +25,7 @@ Descriptor = namedtuple('Descriptor', ('descriptor',))
 
 
 class DescriptorWithValue(object):
+
     def __init__(self, descriptor, value, parameter, random):
         self.descriptor = descriptor
         self.value = value
