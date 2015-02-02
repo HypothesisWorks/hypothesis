@@ -456,14 +456,15 @@ def test_random_only_produces_special_random():
         strat.produce(random, strat.parameter.draw(random)))
 
 
-def test_randoms_with_same_seed_and_state_are_equal():
+def test_randoms_with_same_seed_are_equal():
     s = strat.RandomWithSeed(123)
     t = strat.RandomWithSeed(123)
     assert s == t
     s.random()
-    assert s != t
+    assert s == t
     t.random()
     assert s == t
+    assert t != strat.RandomWithSeed(124)
 
 
 def test_just_strategy_uses_repr():
