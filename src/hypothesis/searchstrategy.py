@@ -615,9 +615,10 @@ class ListStrategy(SearchStrategy):
 
         indices = hrange(len(x) - 1, -1, -1)
 
-        generators.append(
-            [x[i]] for i in indices
-        )
+        if len(x) > 1:
+            generators.append(
+                [x[i]] for i in indices
+            )
 
         def with_one_index_deleted():
             """yield lists that are the same as x but lacking a single
@@ -652,7 +653,6 @@ class ListStrategy(SearchStrategy):
 
         if len(x) > 3:
             generators.append(with_two_indices_deleted())
-
         return mix_generators(*generators)
 
     def could_have_produced(self, value):
@@ -805,8 +805,9 @@ class OneCharStringStrategy(SearchStrategy):
         else:
             o = ord(x)
             yield text_type('0')
-            yield hunichr(o // 2)
-            yield hunichr(o - 1)
+            if o > 0:
+                yield hunichr(o // 2)
+                yield hunichr(o - 1)
 
 
 class StringStrategy(MappedSearchStrategy):

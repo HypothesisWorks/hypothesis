@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import hypothesis.strategytable as ss
 import hypothesis.searchstrategy as strat
 import hypothesis.descriptors as descriptors
@@ -615,3 +617,7 @@ def test_one_of_descriptor_distinguishes_sets_and_frozensets():
     d = descriptors.one_of(({int}, frozenset({int})))
     s = strategy(d)
     assert s.descriptor == d
+
+
+def test_simplifies_0_char():
+    assert list(strategy(text_type).simplify('\x00')) == ['', '0']
