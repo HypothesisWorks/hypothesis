@@ -24,14 +24,24 @@ branch_types = [dict, tuple, list]
 Descriptor = namedtuple('Descriptor', ('descriptor',))
 
 
-class DescriptorWithValue(namedtuple(
-        'DescriptorWithValue', ('descriptor', 'value', 'parameter', 'random'))
-):
-    def __init__(self, *args, **kwargs):
-        super(DescriptorWithValue, self).__init__(*args, **kwargs)
+class DescriptorWithValue(object):
+    def __init__(self, descriptor, value, parameter, random):
+        self.descriptor = descriptor
+        self.value = value
+        self.parameter = parameter
+        self.random = random
         assert small_table.strategy(self.descriptor).could_have_produced(
             self.value
         )
+
+    def __iter__(self):
+        yield self.descriptor
+        yield self.value
+        yield self.parameter
+        yield self.random
+
+    def __len__(self):
+        return 4
 
     def __repr__(self):
         return 'DescriptorWithValue(descriptor=%s, value=%r, random=%r)' % (
