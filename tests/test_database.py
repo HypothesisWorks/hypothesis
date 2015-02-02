@@ -16,7 +16,7 @@ from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.strategytable import StrategyTable
 import hypothesis.params as params
 from hypothesis.internal.compat import text_type, binary_type, integer_types
-from collections import Counter
+from collections import Counter, namedtuple
 from hypothesis.internal.utils.fixers import actually_equal
 
 
@@ -39,7 +39,11 @@ def run_round_trip(descriptor, value, format=None, backend=None):
     saved = list(storage.fetch())
     assert actually_equal(saved, [value])
 
+
+AB = namedtuple("AB", ('a', 'b'))
+
 data_examples = (
+    (AB(int, int), AB(1, 2)),
     (int, 1),
     ((int,), (1,)),
     (complex, complex(1, 1)),
