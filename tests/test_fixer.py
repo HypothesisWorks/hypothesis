@@ -222,3 +222,23 @@ def test_actually_equal_things_have_same_type_shape(d, r):
         d2 = mutate_slightly(r, d)
         if actually_equal(d, d2):
             assert type_shape(d) == type_shape(d2)
+
+
+class BadCollection(object):
+    def __init__(self, *values):
+        self.values = values
+
+    def __iter__(self):
+        return iter(self.values)
+
+
+def test_can_handle_collections_that_define_no_equality():
+    assert actually_equal(
+        BadCollection(1, 2, 3),
+        BadCollection(1, 2, 3),
+    )
+
+    assert not actually_equal(
+        BadCollection(1, 2, 3),
+        BadCollection(1, 2, 4),
+    )

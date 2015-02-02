@@ -13,16 +13,40 @@ from hypothesis.internal.extmethod import ExtMethod
 equality = ExtMethod()
 
 
-unordered_collections = [set, frozenset]
-dict_like_collections = [dict]
 primitives = [
     int, float, bool, type, text_type, binary_type
 ] + list(integer_types)
 
 
 @equality.extend(object)
-@equality.extend(type)
 def generic_equality(x, y, fuzzy):
+    try:
+        if len(x) != len(y):
+            return False
+    except (TypeError, AttributeError):
+        pass
+    ix = None
+    iy = None
+    try:
+        ix = iter(x)
+        iy = iter(y)
+    except TypeError:
+        pass
+    assert (ix is None) == (iy is None)
+    if ix is not None:
+        for u, v in zip(ix, iy):
+            if not actually_equal(u, v, fuzzy):
+                return False
+        return True
+    return x == y
+
+
+@equality.extend(int)
+@equality.extend(bool)
+@equality.extend(type)
+@equality.extend(text_type)
+@equality.extend(binary_type)
+def primitive_equality(x, y, fuzzy):
     return x == y
 
 
