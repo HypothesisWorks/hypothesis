@@ -13,7 +13,9 @@ import string
 from random import Random
 import hypothesis.descriptors as descriptors
 from copy import deepcopy
-from hypothesis.internal.utils.fixers import actually_equal, actually_in
+from hypothesis.internal.utils.fixers import (
+    actually_equal, actually_in, nice_string
+)
 import struct
 import sys
 
@@ -34,82 +36,6 @@ def mix_generators(*generators):
             except StopIteration:
                 generators[i] = None
         generators = [x for x in generators if x is not None]
-
-
-def is_nasty_float(x):
-    return math.isnan(x) or math.isinf(x)
-
-
-def nice_string(xs):
-    """Take a descriptor and produce a nicer string representation of it than
-    repr.
-
-    In particular this is designed to work around the problem that the
-    repr for type objects is nasty.
-
-    """
-    # pylint: disable=too-many-return-statements
-    if isinstance(xs, float):
-        if is_nasty_float(xs):
-            return 'float(%r)' % (str(xs),)
-        else:
-            return repr(xs)
-    if isinstance(xs, complex):
-        if is_nasty_float(xs.real) or is_nasty_float(xs.imag):
-            return 'complex(%r)' % (str(xs)[1:-1],)
-        else:
-            return repr(xs)
-
-    if isinstance(xs, list):
-        return '[' + ', '.join(map(nice_string, xs)) + ']'
-    if type(xs) == tuple:
-        if len(xs) == 1:
-            return '(%s,)' % (nice_string(xs[0]),)
-        else:
-            return '(' + ', '.join(map(nice_string, xs)) + ')'
-    elif isinstance(xs, tuple) and hasattr(xs, '_fields'):
-        return '%s(%s)' % (
-            xs.__class__.__name__,
-            ', '.join(
-                '%s=%s' % (f, nice_string(getattr(xs, f)))
-                for f in xs._fields))
-
-    if isinstance(xs, dict):
-        return '{' + ', '.join(sorted([
-            repr(k1) + ':' + nice_string(v1)
-            for k1, v1 in xs.items()
-        ])) + '}'
-    if isinstance(xs, set):
-        if not xs:
-            return repr(xs)
-        return '{%s}' % (
-            ', '.join(
-                sorted(map(nice_string, xs))
-            )
-        )
-    if isinstance(xs, frozenset):
-        if not xs:
-            return repr(xs)
-        return 'frozenset(%s)' % (nice_string(set(xs)),)
-    try:
-        return xs.__name__
-    except AttributeError:
-        pass
-
-    try:
-        d = xs.__dict__
-    except AttributeError:
-        return repr(xs)
-
-    if getattr(xs.__repr__, '__objclass__', None) != object:
-        return repr(xs)
-    else:
-        return '%s(%s)' % (
-            xs.__class__.__name__,
-            ', '.join(
-                '%s=%s' % (k2, nice_string(v2)) for k2, v2 in d.items()
-            )
-        )
 
 
 class SearchStrategy(object):

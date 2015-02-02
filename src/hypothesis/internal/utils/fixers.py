@@ -113,3 +113,104 @@ def real_index(xs, y, fuzzy=False):
                 return i
             i += 1
         raise ValueError('%r is not in list' % (y))
+
+
+def is_nasty_float(x):
+    return math.isnan(x) or math.isinf(x)
+
+
+nice_string_method = ExtMethod()
+
+
+@nice_string_method.extend(object)
+def generic_string(xs):
+    try:
+        d = xs.__dict__
+    except AttributeError:
+        return repr(xs)
+
+    if getattr(xs.__repr__, '__objclass__', None) != object:
+        return repr(xs)
+    else:
+        return '%s(%s)' % (
+            xs.__class__.__name__,
+            ', '.join(
+                '%s=%s' % (k2, nice_string(v2)) for k2, v2 in d.items()
+            )
+        )
+
+
+@nice_string_method.extend(type)
+def type_string(xs):
+    return xs.__name__
+
+
+@nice_string_method.extend(float)
+def float_string(xs):
+    if is_nasty_float(xs):
+        return 'float(%r)' % (str(xs),)
+    else:
+        return repr(xs)
+
+
+@nice_string_method.extend(complex)
+def complex_string(x):
+    if is_nasty_float(x.real) or is_nasty_float(x.imag):
+        return 'complex(%r)' % (repr(x)[1:-1],)
+    else:
+        return repr(x)
+
+
+@nice_string_method.extend(list)
+def list_string(xs):
+    return "[%s]" % (', '.join(map(nice_string, xs)))
+
+
+@nice_string_method.extend(set)
+def set_string(xs):
+    if xs:
+        return "{%s}" % (', '.join(map(nice_string, xs)))
+    else:
+        return repr(xs)
+
+
+@nice_string_method.extend(frozenset)
+def frozenset_string(xs):
+    if xs:
+        return "frozenset({%s})" % (', '.join(map(nice_string, xs)))
+    else:
+        return repr(xs)
+
+
+@nice_string_method.extend(tuple)
+def tuple_string(xs):
+    if hasattr(xs, '_fields'):
+        return '%s(%s)' % (
+            xs.__class__.__name__,
+            ', '.join(
+                '%s=%s' % (f, nice_string(getattr(xs, f)))
+                for f in xs._fields))
+    else:
+        core = ', '.join(map(nice_string, xs))
+        if len(xs) == 1:
+            core += ','
+        return '(%s)' % (core,)
+
+
+@nice_string_method.extend(dict)
+def dict_string(xs):
+    return '{' + ', '.join(sorted([
+        nice_string(k1) + ':' + nice_string(v1)
+        for k1, v1 in xs.items()
+    ])) + '}'
+
+
+def nice_string(xs):
+    """Take a descriptor and produce a nicer string representation of it than
+    repr.
+
+    In particular this is designed to work around the problem that the
+    repr for type objects is nasty.
+
+    """
+    return nice_string_method(type(xs), xs)
