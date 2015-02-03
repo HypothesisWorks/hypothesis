@@ -171,11 +171,11 @@ def test_can_falsify_sets():
 
 
 def test_can_falsify_list_inclusion():
-    assert falsify(lambda x, y: x not in y, int, [int]) == (0, [0])
+    assert len(falsify(lambda x, y: x not in y, int, [int])[1]) == 1
 
 
 def test_can_falsify_set_inclusion():
-    assert falsify(lambda x, y: x not in y, int, {int}) == (0, {0})
+    assert len(falsify(lambda x, y: x not in y, int, {int})[1]) == 1
 
 
 def test_can_falsify_lists():
