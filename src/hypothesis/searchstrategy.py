@@ -642,16 +642,11 @@ class ListStrategy(SearchStrategy):
 
         yield []
 
-        if len(x) > 1:
-            yield x[1:]
-            yield x[:-1]
-
-            for i in hrange(0, len(x)):
+        for i in hrange(0, len(x)):
+            if len(x) > 1:
                 y = list(x)
                 del y[i]
                 yield y
-
-        for i in hrange(len(x)):
             for s in self.element_strategy.simplify(x[i]):
                 z = list(x)
                 z[i] = s
