@@ -40,7 +40,7 @@ def run_round_trip(descriptor, value, format=None, backend=None):
     assert actually_equal(saved, [value])
 
 
-AB = namedtuple("AB", ('a', 'b'))
+AB = namedtuple('AB', ('a', 'b'))
 
 data_examples = (
     (AB(int, int), AB(1, 2)),
