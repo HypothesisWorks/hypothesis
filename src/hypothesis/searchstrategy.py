@@ -652,7 +652,7 @@ class ListStrategy(SearchStrategy):
                 z[i] = s
                 yield z
 
-        for i in hrange(0, len(x)-1):
+        for i in hrange(0, len(x) - 1):
             z = list(x)
             del z[i]
             del z[i]
