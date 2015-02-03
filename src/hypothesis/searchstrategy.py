@@ -24,6 +24,7 @@ import unicodedata
 
 
 class mix_generators(object):
+
     """a generator which cycles through these generator arguments.
 
     Will return all the same values as (x for g in generators for x in
@@ -31,6 +32,7 @@ class mix_generators(object):
     up.
 
     """
+
     def __init__(self, generators):
         self.generators = list(generators)
         self.next_batch = []
