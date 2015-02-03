@@ -639,54 +639,20 @@ class ListStrategy(SearchStrategy):
 
         yield []
 
-        if len(x) <= 1:
-            return
+        if len(x) > 1:
+            yield x[1:]
+            yield x[:-1]
 
-        indices = hrange(len(x))
-        assert len(indices) == len(x)
-        for i in indices:
-            yield [x[i]]
-            if i < len(x) - 1:
-                yield x[i:i+1]
-            if i > 2:
-                yield x[:i]
-
-        generators = []
-
-        def with_one_index_deleted():
-            """yield lists that are the same as x but lacking a single
-            element."""
-            for i in indices:
+            for i in hrange(0, len(x)):
                 y = list(x)
                 del y[i]
                 yield y
 
-        def with_one_index_simplified():
-            """yield lists that are the same as x but with a single element
-            simplified according to its defined strategy."""
-            for i in indices:
-                for s in self.element_strategy.simplify(x[i]):
-                    z = list(x)
-                    z[i] = s
-                    yield z
-
-        if len(x) > 2:
-            generators.append(with_one_index_deleted())
-
-        generators.append(with_one_index_simplified())
-
-        def with_two_indices_deleted():
-            """yield lists that are the same as x but lacking two elements."""
-            for i in hrange(0, len(x) - 1):
-                y = list(x)
-                del y[i]
-                del y[i]
-                yield y
-
-        if len(x) > 3:
-            generators.append(with_two_indices_deleted())
-        for t in mix_generators(generators):
-            yield t
+        for i in hrange(len(x)):
+            for s in self.element_strategy.simplify(x[i]):
+                z = list(x)
+                z[i] = s
+                yield z
 
     def could_have_produced(self, value):
         return isinstance(value, list) and all(
