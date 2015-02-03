@@ -41,7 +41,7 @@ class mix_generators(object):
     def __iter__(self):
         return self
 
-    def next(self):
+    def next(self):  # pragma: no cover
         return self.__next__()
 
     def __next__(self):
