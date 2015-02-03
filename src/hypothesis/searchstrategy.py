@@ -532,21 +532,31 @@ class TupleStrategy(SearchStrategy):
         After that we stop because it's getting silly.
         """
 
-        for i in hrange(0, len(x)):
+        generators = []
+
+        def simplify_single(i):
             for s in self.element_strategies[i].simplify(x[i]):
                 z = list(x)
                 z[i] = s
                 yield self.newtuple(z)
+
+        def simplify_pair(i, j):
+            assert i != j
+            for s in self.element_strategies[i].simplify(x[i]):
+                for t in self.element_strategies[j].simplify(x[j]):
+                    z = list(x)
+                    z[i] = s
+                    z[j] = t
+                    yield self.newtuple(z)
+
         for i in hrange(0, len(x)):
-            for j in hrange(0, len(x)):
-                if i == j:
-                    continue
-                for s in self.element_strategies[i].simplify(x[i]):
-                    for t in self.element_strategies[j].simplify(x[j]):
-                        z = list(x)
-                        z[i] = s
-                        z[j] = t
-                        yield self.newtuple(z)
+            generators.append(simplify_single(i))
+
+        for i in hrange(0, len(x)):
+            for j in hrange(i+1, len(x)):
+                generators.append(simplify_pair(i, j))
+
+        return mix_generators(*generators)
 
 
 def one_of_strategies(xs):
