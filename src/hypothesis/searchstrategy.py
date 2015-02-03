@@ -651,11 +651,12 @@ class ListStrategy(SearchStrategy):
                 z = list(x)
                 z[i] = s
                 yield z
-            if i < len(x) - 1:
-                z = list(x)
-                del z[i]
-                del z[i]
-                yield z
+
+        for i in hrange(0, len(x)-1):
+            z = list(x)
+            del z[i]
+            del z[i]
+            yield z
 
     def could_have_produced(self, value):
         return isinstance(value, list) and all(
