@@ -23,22 +23,47 @@ import sys
 import unicodedata
 
 
-def mix_generators(*generators):
-    """Return a generator which cycles through these generator arguments.
+class mix_generators(object):
+    """a generator which cycles through these generator arguments.
 
     Will return all the same values as (x for g in generators for x in
     g) but will do so in an order that mixes the different generators
     up.
 
     """
-    generators = list(generators)
-    while generators:
-        for i in hrange(len(generators)):
+    def __init__(self, generators):
+        self.generators = list(generators)
+        self.next_batch = []
+        self.solo_generator = None
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        return self.__next__()
+
+    def __next__(self):
+        if self.solo_generator is None and len(
+            self.generators + self.next_batch
+        ) == 1:
+            self.solo_generator = (self.generators + self.next_batch)[0]
+
+        if self.solo_generator is not None:
+            return next(self.solo_generator)
+
+        while self.generators or self.next_batch:
+            if not self.generators:
+                self.generators = self.next_batch
+                self.generators.reverse()
+                self.next_batch = []
+            g = self.generators.pop()
             try:
-                yield next(generators[i])
+                result = next(g)
+                self.next_batch.append(g)
+                return result
             except StopIteration:
-                generators[i] = None
-        generators = [x for x in generators if x is not None]
+                pass
+        raise StopIteration()
 
 
 class SearchStrategy(object):
@@ -178,7 +203,8 @@ class SearchStrategy(object):
         yield t
 
         while True:
-            for s in self.simplify(t):
+            simpler = self.simplify(t)
+            for s in simpler:
                 assert self.could_have_produced(s)
                 if tracker.track(s) > 1:
                     continue
@@ -540,23 +566,10 @@ class TupleStrategy(SearchStrategy):
                 z[i] = s
                 yield self.newtuple(z)
 
-        def simplify_pair(i, j):
-            assert i != j
-            for s in self.element_strategies[i].simplify(x[i]):
-                for t in self.element_strategies[j].simplify(x[j]):
-                    z = list(x)
-                    z[i] = s
-                    z[j] = t
-                    yield self.newtuple(z)
-
         for i in hrange(0, len(x)):
             generators.append(simplify_single(i))
 
-        for i in hrange(0, len(x)):
-            for j in hrange(i+1, len(x)):
-                generators.append(simplify_pair(i, j))
-
-        return mix_generators(*generators)
+        return mix_generators(generators)
 
 
 def one_of_strategies(xs):
@@ -620,18 +633,25 @@ class ListStrategy(SearchStrategy):
         return result
 
     def simplify(self, x):
+        assert isinstance(x, list)
         if not x:
-            return iter(())
+            return
+
+        yield []
+
+        if len(x) <= 1:
+            return
+
+        indices = hrange(len(x))
+        assert len(indices) == len(x)
+        for i in indices:
+            yield [x[i]]
+            if i < len(x) - 1:
+                yield x[i:i+1]
+            if i > 2:
+                yield x[:i]
+
         generators = []
-
-        generators.append(iter(([],)))
-
-        indices = hrange(len(x) - 1, -1, -1)
-
-        if len(x) > 1:
-            generators.append(
-                [x[i]] for i in indices
-            )
 
         def with_one_index_deleted():
             """yield lists that are the same as x but lacking a single
@@ -658,15 +678,15 @@ class ListStrategy(SearchStrategy):
         def with_two_indices_deleted():
             """yield lists that are the same as x but lacking two elements."""
             for i in hrange(0, len(x) - 1):
-                for j in hrange(i, len(x) - 1):
-                    y = list(x)
-                    del y[i]
-                    del y[j]
-                    yield y
+                y = list(x)
+                del y[i]
+                del y[i]
+                yield y
 
         if len(x) > 3:
             generators.append(with_two_indices_deleted())
-        return mix_generators(*generators)
+        for t in mix_generators(generators):
+            yield t
 
     def could_have_produced(self, value):
         return isinstance(value, list) and all(
