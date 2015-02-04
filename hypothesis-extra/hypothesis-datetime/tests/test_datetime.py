@@ -59,3 +59,19 @@ def test_simplifies_towards_2000():
     assert d.year == 2001
     d = falsify(lambda x: x.year >= 2000, datetime)[0]
     assert d.year == 1999
+
+
+def test_can_generate_naive_datetime():
+    falsify(lambda d: d.tzinfo, datetime)
+
+
+def test_can_generate_non_naive_datetime():
+    falsify(lambda d: not d.tzinfo, datetime)
+
+
+def test_can_generate_non_utc():
+    falsify(lambda d: assume(d.tzinfo) and d.tzinfo.zone == 'UTC', datetime)
+
+
+def test_can_generate_utc():
+    falsify(lambda d: assume(d.tzinfo) and d.tzinfo.zone != 'UTC', datetime)

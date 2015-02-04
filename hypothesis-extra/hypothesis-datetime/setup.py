@@ -26,7 +26,7 @@ setup(
     license='MPL v2',
     description='Adds support for generating datetime to Hypothesis',
     install_requires=[
-        'hypothesis==0.5.0',
+        'hypothesis==0.5.0', 'pytz'
     ],
     entry_points={
         'hypothesis.extra': 'hypothesisdatetime = hypothesisdatetime:load'

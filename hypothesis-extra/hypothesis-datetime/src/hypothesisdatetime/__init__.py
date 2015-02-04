@@ -3,6 +3,13 @@ from hypothesis.searchstrategy import SearchStrategy
 from datetime import datetime, MINYEAR, MAXYEAR
 import hypothesis.params as params
 from hypothesis.internal.compat import hrange
+from hypothesis.internal.utils.fixers import equality
+import pytz
+
+
+@equality.extend(datetime)
+def equal_datetimes(x, y, fuzzy=False):
+    return (x.tzinfo == y.tzinfo) and (x == y)
 
 
 def draw_day_for_month(random, year, month):
@@ -32,12 +39,17 @@ class DatetimeStrategy(SearchStrategy):
         p_minute=params.UniformFloatParameter(0, 1),
         p_second=params.UniformFloatParameter(0, 1),
         month=params.NonEmptySubset(list(range(1, 13))),
+        naive_chance=params.UniformFloatParameter(0, 0.5),
+        utc_chance=params.UniformFloatParameter(0, 1),
+        timezones=params.NonEmptySubset(
+            list(map(pytz.timezone, pytz.all_timezones))
+        )
     )
 
     def produce(self, random, pv):
         year = random.randint(MINYEAR, MAXYEAR)
         month = random.choice(pv.month)
-        return datetime(
+        base = datetime(
             year=year,
             month=month,
             day=draw_day_for_month(random, year, month),
@@ -46,8 +58,17 @@ class DatetimeStrategy(SearchStrategy):
             second=maybe_zero_or(random, pv.p_second, random.randint(0, 59)),
             microsecond=random.randint(0, 1000000-1),
         )
+        if random.random() <= pv.naive_chance:
+            return base
+        if random.random() <= pv.utc_chance:
+            return pytz.UTC.localize(base)
+        return random.choice(pv.timezones).localize(base)
 
     def simplify(self, value):
+        if not value.tzinfo:
+            yield pytz.UTC.localize(value)
+        elif value.tzinfo != pytz.UTC:
+            yield pytz.UTC.normalize(value.astimezone(pytz.UTC))
         s = {value}
         s.add(value.replace(microsecond=0))
         s.add(value.replace(second=0))
