@@ -24,6 +24,7 @@ for d in hypothesis-extra/*; do
 
     pushd $d
         $PIP install -r requirements.txt
+        $PYTHON setup.py develop
         PYTHONPATH=src $PYTHON -m coverage run --include="src/**/*.py" -m pytest tests
         $PYTHON -m coverage report --fail-under=100
         $PYTHON setup.py install
