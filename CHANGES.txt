@@ -202,3 +202,17 @@
     * A lot of internals have been been rewritten. This shouldn't affect you at all, but
       it opens the way for certain of hypothesis's oddities to be a lot more extensible by
       users. Whether this is a good thing may be up for debate...
+
+
+0.4.2, "O(dear)" - 24/02/2015
+
+    This is purely a bugfix release:
+
+    * Provide sensible external hashing for all core types. This will significantly improve
+      performance of tracking seen examples which happens in literally every falsification
+      run. For Hypothesis fixing this cut 40% off the runtime of the test suite. The behaviour
+      is quadratic in the number of examples so if you're running the default configuration
+      this will be less extreme (Hypothesis's test suite runs at a higher number of examples
+      than default), but you should still see a significant improvement.
+    * Fix a bug in formatting of complex numbers where the string could get incorrectly truncated.
+
