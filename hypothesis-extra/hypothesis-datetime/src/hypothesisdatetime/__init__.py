@@ -4,12 +4,17 @@ from datetime import datetime, MINYEAR, MAXYEAR
 import hypothesis.params as params
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.utils.fixers import equality
+from hypothesis.internal.utils.hashitanyway import (
+    hash_everything_method, normal_hash
+)
 import pytz
 
 
 @equality.extend(datetime)
 def equal_datetimes(x, y, fuzzy=False):
     return (x.tzinfo == y.tzinfo) and (x == y)
+
+hash_everything_method.extend(datetime)(normal_hash)
 
 
 def draw_day_for_month(random, year, month):
