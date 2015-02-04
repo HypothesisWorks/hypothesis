@@ -311,3 +311,8 @@ class Timeout(Unfalsifiable):
             ' after %gs (considered %d examples)' % (
                 run_time, satisfying_examples)
         )
+
+
+from hypothesis.extra import load_entry_points
+
+load_entry_points()

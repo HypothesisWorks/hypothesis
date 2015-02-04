@@ -7,7 +7,7 @@ import sys
 class PyTest(TestCommand):
     def finalize_options(self):
         TestCommand.finalize_options(self)
-        self.test_args = ["tests"]
+        self.test_args = []
         self.test_suite = True
 
     def run_tests(self):
@@ -16,15 +16,21 @@ class PyTest(TestCommand):
         sys.exit(errno)
 
 setup(
-    name='hypothesis',
-    version='0.5.0',
+    name='hypothesis-datetime',
+    version='0.1.0',
     author='David R. MacIver',
     author_email='david@drmaciver.com',
     packages=find_packages("src"),
     package_dir={"": "src"},
     url='https://github.com/DRMacIver/hypothesis',
     license='MPL v2',
-    description='A library for property based testing',
+    description='Adds support for generating datetime to Hypothesis',
+    install_requires=[
+        'hypothesis==0.5.0',
+    ],
+    entry_points={
+        'hypothesis.extra': 'hypothesisdatetime = hypothesisdatetime:load'
+    },
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
@@ -39,7 +45,6 @@ setup(
         "Programming Language :: Python :: Implementation :: CPython",
         "Topic :: Software Development :: Testing",
     ],
-    long_description=open('README.rst').read(),
-    tests_require=['pytest', 'pytest-timeout', 'flake8'],
+    tests_require=['pytest'],
     cmdclass={'test': PyTest},
 )
