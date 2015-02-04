@@ -1,5 +1,13 @@
 from hypothesis.internal.utils.hashitanyway import HashItAnyway
 from collections import namedtuple
+from tests.common.descriptors import Descriptor
+from tests.common import small_table
+from hypothesis import given, Verifier
+from hypothesis.settings import Settings
+from copy import deepcopy
+from hypothesis.searchstrategy import RandomWithSeed
+from random import Random
+from tests.common.mutate import mutate_slightly, mutate_maliciously
 
 
 def hia(x):
@@ -76,3 +84,49 @@ def test_has_a_sensible_string_representation():
     x = str(hia('kittens'))
     assert 'HashItAnyway' in x
     assert 'kittens' in x
+
+
+def test_hashing_random_with_seed():
+    assert hia(
+        RandomWithSeed(237230384214978941106830136598254622812)
+    ) == hia(
+        RandomWithSeed(237230384214978941106830136598254622812)
+    )
+
+
+@given([Descriptor], Random, verifier=Verifier(
+    strategy_table=small_table,
+    settings=Settings(
+        max_examples=500,
+        timeout=100
+    )
+))
+def test_can_put_and_retrieve_descriptors_from_a_list(ds, r):
+    ds += [mutate_slightly(r, d) for d in ds]
+    ds += [mutate_maliciously(r, d) for d in ds]
+    mapping = {}
+    for d in ds:
+        mapping[HashItAnyway(d)] = d
+    for d in ds:
+        assert mapping[HashItAnyway(deepcopy(d))] == d
+
+
+class BadHash(object):
+
+    def __len__(x):
+        return 2
+
+    def __iter__(x):
+        yield 1
+        yield 2
+
+
+def test_uses_collection_hashing_even_when_hash_is_defined():
+    assert hia(BadHash()) == hia(BadHash())
+
+
+def test_using_a_random_does_not_break_its_hash():
+    r = RandomWithSeed(2)
+    x = hia(r)
+    r.getrandbits(128)
+    assert x == hia(RandomWithSeed(2))

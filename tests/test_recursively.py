@@ -14,9 +14,10 @@ import hypothesis.settings as hs
 from random import Random
 from hypothesis.searchstrategy import RandomWithSeed
 from tests.common.descriptors import (
-    Descriptor, primitive_types
+    Descriptor, primitive_types, DescriptorWithValue
 )
 from tests.common import small_table
+from hypothesis.internal.utils.fixers import actually_equal
 
 # Placate flake8
 [OneOf, just, Just, RandomWithSeed, SampledFrom]
@@ -72,21 +73,23 @@ verifier = Verifier(
 )
 
 
-@given(Descriptor, verifier=verifier)
+@given(Descriptor, Random, verifier=verifier)
 @timeout(5)
-def test_can_falsify_false_things(desc):
+def test_can_falsify_false_things(desc, random):
     assume(size(desc) <= MAX_SIZE)
+    verifier.random = random
     x = verifier.falsify(lambda x: False, desc)[0]
     strategy = small_table.strategy(desc)
     assert not list(strategy.simplify(x))
 
 
-@given([Descriptor], verifier=verifier)
+@given([Descriptor], Random, verifier=verifier)
 @timeout(5)
-def test_can_falsify_false_things_with_many_args(descs):
+def test_can_falsify_false_things_with_many_args(descs, random):
     assume(len(descs) > 0)
     assume(size(descs) <= MAX_SIZE)
     descs = tuple(descs)
+    verifier.random = random
     x = verifier.falsify(lambda *args: False, *descs)
     strategy = small_table.strategy(descs)
     assert not list(strategy.simplify(x))
@@ -109,8 +112,14 @@ UNDESIRABLE_STRINGS = re.compile('|'.join(
 def test_does_not_use_nasty_type_reprs_in_nice_string(desc):
     s = nice_string(desc)
     assert not UNDESIRABLE_STRINGS.findall(s)
+
+
+@timeout(5)
+@given(Descriptor, verifier=verifier)
+def test_nice_string_evals_as_descriptor(desc):
+    s = nice_string(desc)
     read_desc = eval(s)
-    assert desc == read_desc
+    assert actually_equal(desc, read_desc, fuzzy=True)
 
 
 def tree_contains_match(t, f):
@@ -162,7 +171,7 @@ def test_cannot_generate_mutable_data_from_an_immutable_strategy(d):
 def test_copies_all_its_values_correctly(desc, random):
     strategy = small_table.strategy(desc)
     value = strategy.produce(random, strategy.parameter.draw(random))
-    assert value == strategy.copy(value)
+    assert actually_equal(value, strategy.copy(value))
 
 
 @given(Descriptor, verifier=verifier)
@@ -170,3 +179,18 @@ def test_can_produce_what_it_produces(desc):
     strategy = small_table.strategy(desc)
     with pytest.raises(Unfalsifiable):
         verifier.falsify(strategy.could_have_produced, desc)
+
+
+@given(DescriptorWithValue, verifier=verifier)
+def test_decomposing_produces_things_that_can_be_produced(dav):
+    for d, v in small_table.strategy(dav.descriptor).decompose(dav.value):
+        assert small_table.strategy(d).could_have_produced(v)
+
+
+@given(
+    DescriptorWithValue,
+    verifier=verifier,
+)
+def test_can_minimize_descriptor_with_value(dav):
+    s = small_table.strategy(DescriptorWithValue)
+    list(s.simplify_such_that(dav, lambda x: True))

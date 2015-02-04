@@ -1,91 +1,71 @@
+from __future__ import unicode_literals
+
 """Module defining SearchStrategy, which is the core type that Hypothesis uses
 to explore data."""
 
 from hypothesis.internal.tracker import Tracker
 import hypothesis.params as params
 import hypothesis.internal.utils.distributions as dist
-
+import math
 import inspect
 from abc import abstractmethod
-from hypothesis.internal.compat import hrange
+from hypothesis.internal.compat import hrange, hunichr
 from hypothesis.internal.compat import text_type, binary_type, integer_types
 import string
 from random import Random
 import hypothesis.descriptors as descriptors
 from copy import deepcopy
-from hypothesis.internal.utils.fixers import actually_equal, actually_in
+from hypothesis.internal.utils.fixers import (
+    actually_equal, actually_in, nice_string
+)
+import struct
+import sys
+import unicodedata
 
 
-def mix_generators(*generators):
-    """Return a generator which cycles through these generator arguments.
+class mix_generators(object):
+
+    """a generator which cycles through these generator arguments.
 
     Will return all the same values as (x for g in generators for x in
     g) but will do so in an order that mixes the different generators
     up.
 
     """
-    generators = list(generators)
-    while generators:
-        for i in hrange(len(generators)):
+
+    def __init__(self, generators):
+        self.generators = list(generators)
+        self.next_batch = []
+        self.solo_generator = None
+
+    def __iter__(self):
+        return self
+
+    def next(self):  # pragma: no cover
+        return self.__next__()
+
+    def __next__(self):
+        if self.solo_generator is None and len(
+            self.generators + self.next_batch
+        ) == 1:
+            self.solo_generator = (self.generators + self.next_batch)[0]
+
+        if self.solo_generator is not None:
+            return next(self.solo_generator)
+
+        while self.generators or self.next_batch:
+            if not self.generators:
+                self.generators = self.next_batch
+                self.generators.reverse()
+                self.next_batch = []
+            g = self.generators.pop()
             try:
-                yield next(generators[i])
+                result = next(g)
+                self.next_batch.append(g)
+                return result
             except StopIteration:
-                generators[i] = None
-        generators = [x for x in generators if x is not None]
-
-
-def nice_string(xs):
-    """Take a descriptor and produce a nicer string representation of it than
-    repr.
-
-    In particular this is designed to work around the problem that the
-    repr for type objects is nasty.
-
-    """
-    # pylint: disable=too-many-return-statements
-    if isinstance(xs, list):
-        return '[' + ', '.join(map(nice_string, xs)) + ']'
-    if type(xs) == tuple:
-        if len(xs) == 1:
-            return '(%s,)' % (nice_string(xs[0]),)
-        else:
-            return '(' + ', '.join(map(nice_string, xs)) + ')'
-    if isinstance(xs, dict):
-        return '{' + ', '.join(sorted([
-            repr(k1) + ':' + nice_string(v1)
-            for k1, v1 in xs.items()
-        ])) + '}'
-    if isinstance(xs, set):
-        if not xs:
-            return repr(xs)
-        return '{%s}' % (
-            ', '.join(
-                sorted(map(nice_string, xs))
-            )
-        )
-    if isinstance(xs, frozenset):
-        if not xs:
-            return repr(xs)
-        return 'frozenset(%s)' % (nice_string(set(xs)),)
-    try:
-        return xs.__name__
-    except AttributeError:
-        pass
-
-    if isinstance(xs, descriptors.Just):
-        return repr(xs)
-
-    try:
-        d = xs.__dict__
-    except AttributeError:
-        return repr(xs)
-
-    return '%s(%s)' % (
-        xs.__class__.__name__,
-        ', '.join(
-            '%s=%s' % (k2, nice_string(v2)) for k2, v2 in d.items()
-        )
-    )
+                pass
+        raise StopIteration()
 
 
 class SearchStrategy(object):
@@ -225,7 +205,8 @@ class SearchStrategy(object):
         yield t
 
         while True:
-            for s in self.simplify(t):
+            simpler = self.simplify(t)
+            for s in simpler:
                 assert self.could_have_produced(s)
                 if tracker.track(s) > 1:
                     continue
@@ -350,15 +331,78 @@ class FloatStrategy(SearchStrategy):
         self.int_strategy = RandomGeometricIntStrategy()
 
     def simplify(self, x):
+        if x == 0.0:
+            return
+        if math.isnan(x):
+            yield 0.0
+            yield float('inf')
+            yield -float('inf')
+            return
+        if math.isinf(x):
+            yield math.copysign(
+                sys.float_info.max, x
+            )
+            return
+
         if x < 0:
             yield -x
 
-        n = int(x)
-        y = float(n)
-        if x != y:
-            yield y
-        for m in self.int_strategy.simplify(n):
-            yield x + (m - n)
+        yield 0.0
+        try:
+            n = int(x)
+            y = float(n)
+            if x != y:
+                yield y
+            for m in self.int_strategy.simplify(n):
+                yield x + (m - n)
+        except (ValueError, OverflowError):
+            pass
+        if abs(x) > 1.0:
+            yield x / 2
+
+    def could_have_produced(self, value):
+        return isinstance(value, float) and not (
+            math.isnan(value) or math.isinf(value)
+        )
+
+
+class JustIntFloats(FloatStrategy):
+
+    def __init__(self, int_strategy):
+        super(JustIntFloats, self).__init__()
+        self.int_strategy = int_strategy
+        self.parameter = self.int_strategy.parameter
+
+    def produce(self, random, pv):
+        return float(self.int_strategy.produce(random, pv))
+
+
+def compose_float(sign, exponent, fraction):
+    as_long = (sign << 63) | (exponent << 52) | fraction
+    return struct.unpack(b'd', struct.pack(b'L', as_long))[0]
+
+
+class FullRangeFloats(FloatStrategy):
+    parameter = params.CompositeParameter(
+        negative_probability=params.UniformFloatParameter(0, 1),
+        subnormal_probability=params.UniformFloatParameter(0, 0.5),
+    )
+
+    def produce(self, random, pv):
+        sign = int(dist.biased_coin(random, pv.negative_probability))
+        if dist.biased_coin(random, pv.subnormal_probability):
+            exponent = 0
+        else:
+            exponent = random.getrandbits(11)
+
+        return compose_float(
+            sign,
+            exponent,
+            random.getrandbits(52)
+        )
+
+    def could_have_produced(self, value):
+        return isinstance(value, float)
 
 
 class FixedBoundedFloatStrategy(SearchStrategy):
@@ -517,21 +561,18 @@ class TupleStrategy(SearchStrategy):
         After that we stop because it's getting silly.
         """
 
-        for i in hrange(0, len(x)):
+        generators = []
+
+        def simplify_single(i):
             for s in self.element_strategies[i].simplify(x[i]):
                 z = list(x)
                 z[i] = s
                 yield self.newtuple(z)
+
         for i in hrange(0, len(x)):
-            for j in hrange(0, len(x)):
-                if i == j:
-                    continue
-                for s in self.element_strategies[i].simplify(x[i]):
-                    for t in self.element_strategies[j].simplify(x[j]):
-                        z = list(x)
-                        z[i] = s
-                        z[j] = t
-                        yield self.newtuple(z)
+            generators.append(simplify_single(i))
+
+        return mix_generators(generators)
 
 
 def one_of_strategies(xs):
@@ -549,7 +590,7 @@ def _unique(xs):
     its order."""
     result = []
     for x in xs:
-        if x not in result:
+        if not actually_in(x, result):
             result.append(x)
     result.sort(key=repr)
     return result
@@ -595,53 +636,27 @@ class ListStrategy(SearchStrategy):
         return result
 
     def simplify(self, x):
+        assert isinstance(x, list)
         if not x:
-            return iter(())
-        generators = []
+            return
 
-        generators.append(iter(([],)))
+        yield []
 
-        indices = hrange(len(x) - 1, -1, -1)
-
-        generators.append(
-            [x[i]] for i in indices
-        )
-
-        def with_one_index_deleted():
-            """yield lists that are the same as x but lacking a single
-            element."""
-            for i in indices:
+        for i in hrange(0, len(x)):
+            if len(x) > 1:
                 y = list(x)
                 del y[i]
                 yield y
+            for s in self.element_strategy.simplify(x[i]):
+                z = list(x)
+                z[i] = s
+                yield z
 
-        def with_one_index_simplified():
-            """yield lists that are the same as x but with a single element
-            simplified according to its defined strategy."""
-            for i in indices:
-                for s in self.element_strategy.simplify(x[i]):
-                    z = list(x)
-                    z[i] = s
-                    yield z
-
-        if len(x) > 2:
-            generators.append(with_one_index_deleted())
-
-        generators.append(with_one_index_simplified())
-
-        def with_two_indices_deleted():
-            """yield lists that are the same as x but lacking two elements."""
-            for i in hrange(0, len(x) - 1):
-                for j in hrange(i, len(x) - 1):
-                    y = list(x)
-                    del y[i]
-                    del y[j]
-                    yield y
-
-        if len(x) > 3:
-            generators.append(with_two_indices_deleted())
-
-        return mix_generators(*generators)
+        for i in hrange(0, len(x) - 1):
+            z = list(x)
+            del z[i]
+            del z[i]
+            yield z
 
     def could_have_produced(self, value):
         return isinstance(value, list) and all(
@@ -772,25 +787,34 @@ class OneCharStringStrategy(SearchStrategy):
 
     """A strategy which generates single character strings of text type."""
     descriptor = text_type
-
-    def __init__(self, characters=None):
-        SearchStrategy.__init__(self)
-        if characters is not None and not isinstance(characters, text_type):
-            raise ValueError('Invalid characters %r: Not a %s' % (
-                characters, text_type
-            ))
-        self.characters = characters or (
-            text_type('0123456789') + text_type(string.ascii_letters) +
-            ' \t\n'
-        )
-        self.parameter = params.CompositeParameter()
+    ascii_characters = (
+        text_type('0123456789') + text_type(string.ascii_letters) +
+        text_type(' \t\n')
+    )
+    parameter = params.CompositeParameter(
+        ascii_chance=params.UniformFloatParameter(0, 1)
+    )
 
     def produce(self, random, pv):
-        return random.choice(self.characters)
+        if dist.biased_coin(random, pv.ascii_chance):
+            return random.choice(self.ascii_characters)
+        else:
+            while True:
+                result = hunichr(random.randint(0, 0x10ffff))
+                if unicodedata.category(result) != 'Cs':
+                    return result
 
     def simplify(self, x):
-        for i in hrange(self.characters.index(x), -1, -1):
-            yield self.characters[i]
+        if x in self.ascii_characters:
+            for i in hrange(self.ascii_characters.index(x), -1, -1):
+                yield self.ascii_characters[i]
+        else:
+            o = ord(x)
+            for c in reversed(self.ascii_characters):
+                yield text_type(c)
+            if o > 0:
+                yield hunichr(o // 2)
+                yield hunichr(o - 1)
 
 
 class StringStrategy(MappedSearchStrategy):
@@ -1009,14 +1033,16 @@ class RandomWithSeed(Random):
         r.setstate(self.getstate())
         return r
 
+    def __hash__(self):
+        return hash(self.seed)
+
     def __deepcopy__(self, d):
         return self.__copy__()
 
     def __eq__(self, other):
         return self is other or (
             isinstance(other, RandomWithSeed) and
-            self.seed == other.seed and
-            self.getstate() == other.getstate()
+            self.seed == other.seed
         )
 
     def __ne__(self, other):
@@ -1053,10 +1079,12 @@ class SampledFromStrategy(SearchStrategy):
 
     """
 
-    def __init__(self, elements):
+    def __init__(self, elements, descriptor=None):
         SearchStrategy.__init__(self)
         self.elements = tuple(elements)
-        self.descriptor = descriptors.SampledFrom(self.elements)
+        if descriptor is None:
+            descriptor = descriptors.SampledFrom(self.elements)
+        self.descriptor = descriptor
         self.parameter = params.NonEmptySubset(self.elements)
 
     def produce(self, random, pv):
@@ -1064,6 +1092,22 @@ class SampledFromStrategy(SearchStrategy):
 
     def could_have_produced(self, value):
         return actually_in(value, self.elements)
+
+
+class NastyFloats(SampledFromStrategy):
+
+    def __init__(self):
+        super(NastyFloats, self).__init__(
+            descriptor=float,
+            elements=[
+                0.0,
+                sys.float_info.min,
+                -sys.float_info.min,
+                float('inf'),
+                -float('inf'),
+                float('nan'),
+            ]
+        )
 
 
 class ExampleAugmentedStrategy(SearchStrategy):

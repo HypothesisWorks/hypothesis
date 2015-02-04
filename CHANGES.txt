@@ -163,3 +163,42 @@
       considered != are not considered equal by hypothesis, but some things that
       are considered == are distinguished. If your test suite uses both frozenset
       and set tests this bug is probably affecting you.
+
+0.4.1, "Cruel and unusual edge cases" - 23/02/2015
+
+    This release is mostly about better test case generation.
+
+    Enhancements:
+
+    * Has a cool release name
+    * text_type (str in python 3, unicode in python 2) example generation now
+      actually produces interesting unicode instead of boring ascii strings.
+    * floating point numbers are generated over a much wider range, with particular
+      attention paid to generating nasty numbers - nan, infinity, large and small
+      values, etc.
+    * examples can be generated using pieces of examples previously saved in the
+      database. This allows interesting behaviour that has previously been discovered
+      to be propagated to other examples.
+    * improved parameter exploration algorithm which should allow it to more reliably
+      hit interesting edge cases.
+    * Timeout can now be disabled entirely by setting it to any value <= 0.
+
+
+    Bug fixes:
+
+    * The descriptor on a OneOfStrategy could be wrong if you had descriptors which
+      were equal but should not be coalesced. e.g. a strategy for one_of((frozenset({int}), {int}))
+      would have reported its descriptor as {int}. This is unlikely to have caused you
+      any problems
+    * If you had strategies that could produce NaN (which float previously couldn't but 
+      e.g. a Just(float('nan')) could) then this would have sent hypothesis into an infinite
+      loop that would have only been terminated when it hit the timeout.
+    * Given elements that can take a long time to minimize, minimization of floats or tuples
+      could be quadratic or worse in the that value. You should now see much better performance
+      for simplification, albeit at some cost in quality.
+
+    Other:
+
+    * A lot of internals have been been rewritten. This shouldn't affect you at all, but
+      it opens the way for certain of hypothesis's oddities to be a lot more extensible by
+      users. Whether this is a good thing may be up for debate...

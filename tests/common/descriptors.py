@@ -24,13 +24,27 @@ branch_types = [dict, tuple, list]
 Descriptor = namedtuple('Descriptor', ('descriptor',))
 
 
-class DescriptorWithValue(namedtuple(
-        'DescriptorWithValue', ('descriptor', 'value', 'parameter', 'random'))
-):
+class DescriptorWithValue(object):
+
+    def __init__(self, descriptor, value, random):
+        self.descriptor = descriptor
+        self.value = value
+        self.random = random
+        assert small_table.strategy(self.descriptor).could_have_produced(
+            self.value
+        )
+
+    def __iter__(self):
+        yield self.descriptor
+        yield self.value
+        yield self.random
+
+    def __len__(self):
+        return 3
 
     def __repr__(self):
-        return 'DescriptorWithValue(descriptor=%s, value=%r)' % (
-            nice_string(self.descriptor), self.value
+        return 'DescriptorWithValue(descriptor=%s, value=%r, random=%r)' % (
+            nice_string(self.descriptor), self.value, self.random,
         )
 
 ConverterTable.default().mark_not_serializeable(Descriptor)
@@ -120,31 +134,17 @@ class DescriptorWithValueStrategy(SearchStrategy):
         assert strategy.could_have_produced(value)
         return DescriptorWithValue(
             descriptor=descriptor,
-            parameter=parameter,
             value=value,
             random=new_random,
         )
 
     def simplify(self, dav):
-        random = RandomWithSeed(dav.random.seed)
-        for d in self.descriptor_strategy.simplify(dav.descriptor):
-            strat = self.strategy_table.strategy(d)
-            param = strat.parameter.draw(random)
-            value = strat.produce(random, param)
-            if not strat.could_have_produced(value):
-                continue
+        strat = self.strategy_table.strategy(dav.descriptor)
+        for d, v in strat.decompose(dav.value):
+            stratd = self.strategy_table.strategy(d)
+            assert stratd.could_have_produced(v)
             yield DescriptorWithValue(
                 descriptor=d,
-                parameter=param,
-                value=value,
-                random=RandomWithSeed(dav.random.seed)
-            )
-        strategy = self.strategy_table.strategy(dav.descriptor)
-        for v in strategy.simplify(dav.value):
-            assert strategy.could_have_produced(v)
-            yield DescriptorWithValue(
-                descriptor=dav.descriptor,
-                parameter=dav.parameter,
                 value=v,
                 random=RandomWithSeed(dav.random.seed)
             )

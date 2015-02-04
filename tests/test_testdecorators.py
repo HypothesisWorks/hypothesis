@@ -2,25 +2,12 @@ from hypothesis import Verifier, assume, Unsatisfiable, given, Flaky
 from hypothesis.descriptors import (
     one_of, just, integers_in_range, sampled_from
 )
-from functools import wraps
 import pytest
 import time
 from hypothesis.internal.compat import text_type, binary_type
 import hypothesis.settings as hs
 import inspect
-from tests.common.utils import capture_out
-
-
-def fails_with(e):
-    def accepts(f):
-        @wraps(f)
-        def inverted_test(*arguments, **kwargs):
-            with pytest.raises(e):
-                f(*arguments, **kwargs)
-        return inverted_test
-    return accepts
-
-fails = fails_with(AssertionError)
+from tests.common.utils import capture_out, fails, fails_with
 
 
 @given(int, int)

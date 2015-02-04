@@ -59,5 +59,6 @@ def given(*generator_arguments, **kwargs):
             raise Flaky(test, falsifying_example)
         wrapped_test.__name__ = test.__name__
         wrapped_test.__doc__ = test.__doc__
+        wrapped_test.verifier = verifier
         return wrapped_test
     return run_test_with_generator

@@ -16,7 +16,11 @@ class ExampleSource(object):
 
     """
 
-    def __init__(self, random, strategy, storage, min_parameters=50):
+    def __init__(
+        self,
+        random, strategy, storage,
+        min_parameters=25, min_tries=2,
+    ):
         if not isinstance(random, Random):
             raise ValueError('A Random is required but got %r' % (random,))
         if strategy is None and storage is None:
@@ -29,8 +33,11 @@ class ExampleSource(object):
         self.parameters = []
         self.last_parameter_index = -1
         self.min_parameters = min_parameters
+        self.min_tries = min_tries
         self.bad_counts = []
         self.counts = []
+        self.total_count = 0
+        self.total_bad_count = 0
         self.mark_set = False
         self.started = False
 
@@ -47,6 +54,7 @@ class ExampleSource(object):
         self.mark_set = True
         if self.last_parameter_index < 0:
             return
+        self.total_bad_count += 1
         self.bad_counts[self.last_parameter_index] += 1
 
     def new_parameter(self):
@@ -57,8 +65,13 @@ class ExampleSource(object):
         return result
 
     def draw_parameter_score(self, i):
-        beta = 1 + self.bad_counts[i]
-        alpha = 1 + self.counts[i] - self.bad_counts[i]
+        beta_prior = 2.0 * (
+            1.0 + self.total_bad_count
+        ) / (1.0 + self.total_count)
+        alpha_prior = 2.0 - beta_prior
+
+        beta = beta_prior + self.bad_counts[i]
+        alpha = alpha_prior + self.counts[i] - self.bad_counts[i]
         assert self.counts[i] > 0
         assert self.bad_counts[i] >= 0
         assert self.bad_counts[i] <= self.counts[i]
@@ -66,6 +79,12 @@ class ExampleSource(object):
 
     def pick_a_parameter(self):
         self.mark_set = False
+        self.total_count += 1
+        if self.parameters and self.counts[-1] < self.min_tries:
+            index = len(self.parameters) - 1
+            self.counts[index] += 1
+            self.last_parameter_index = index
+            return self.parameters[index]
         if len(self.parameters) < self.min_parameters:
             return self.new_parameter()
         else:

@@ -24,8 +24,10 @@ import hypothesis.params as params
 import hypothesis.settings as hs
 import time
 from hypothesis.internal.compat import binary_type, text_type
+from hypothesis.internal.utils.fixers import actually_equal
 from random import Random
 from tests.test_statistical_distribution import cumulative_binomial_probability
+import math
 
 
 def test_can_make_assumptions():
@@ -149,7 +151,7 @@ def test_can_find_negative_ints():
 
 
 def test_can_find_negative_floats():
-    assert falsify(lambda x: x > -1.0, float)[0] == -1.0
+    assert falsify(lambda x: math.isnan(x) or x > -1.0, float)[0] == -1.0
 
 
 def test_can_falsify_int_pairs():
@@ -161,9 +163,7 @@ def test_can_falsify_string_commutativity():
         return x + y == y + x
 
     non_commuting = falsify(commutes, text_type, text_type)
-    x, y = sorted(non_commuting)
-    assert x == '0'
-    assert y == '1'
+    assert sorted(non_commuting) == ['0', '1']
 
 
 def test_can_falsify_sets():
@@ -171,11 +171,11 @@ def test_can_falsify_sets():
 
 
 def test_can_falsify_list_inclusion():
-    assert falsify(lambda x, y: x not in y, int, [int]) == (0, [0])
+    assert len(falsify(lambda x, y: x not in y, int, [int])[1]) == 1
 
 
 def test_can_falsify_set_inclusion():
-    assert falsify(lambda x, y: x not in y, int, {int}) == (0, {0})
+    assert len(falsify(lambda x, y: x not in y, int, {int})[1]) == 1
 
 
 def test_can_falsify_lists():
@@ -271,13 +271,15 @@ def test_can_falsify_named_tuples():
 
 
 def test_can_falsify_complex_numbers():
-    falsify(lambda x: x == (x ** 2) ** 0.5, complex)
+    falsify(lambda x: assume(abs(x) <= 1000) and x == (x ** 2) ** 0.5, complex)
 
     with pytest.raises(Unfalsifiable):
         falsify(
-            lambda x, y: (
-                x * y
-            ).conjugate() == x.conjugate() * y.conjugate(), complex, complex)
+            lambda x, y: actually_equal(
+                (x * y).conjugate(),
+                x.conjugate() * y.conjugate()
+            ), complex, complex
+        )
 
 
 def test_raises_on_unsatisfiable_assumption():
@@ -307,7 +309,7 @@ def test_gravitates_towards_good_parameter_values():
         k=good_value_counts[0],
         p=0.6,
     )
-    assert p >= 0.05
+    assert p >= 0.01
 
 
 def test_detects_flaky_failure():
@@ -498,3 +500,32 @@ def test_can_derandomize_on_evalled_functions():
     settings = hs.Settings(derandomize=True)
     v = Verifier(strategy_table=table, settings=settings)
     assert v.falsify(eval('lambda x: x > 0'), int) == (0,)
+
+
+def test_can_minimize_lists_of_floats():
+    v = Verifier(
+        random=Random(196269418687253827969443357943160693167)
+    )
+    x = v.falsify(lambda x, y: False, float, frozenset([bool]))
+    assert x == (0.0, frozenset())
+
+
+def test_can_generate_non_ascii():
+    def is_ascii(s):
+        try:
+            s.encode('ascii')
+            return True
+        except UnicodeEncodeError:
+            return False
+    falsify(is_ascii, text_type)
+
+
+def test_only_generates_valid_unicode():
+    def is_valid(x):
+        try:
+            x.encode('utf-8')
+            return True
+        except UnicodeEncodeError:
+            return False
+    with pytest.raises(Unfalsifiable):
+        print(falsify(is_valid, text_type))

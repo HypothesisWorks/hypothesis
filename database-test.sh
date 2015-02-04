@@ -1,4 +1,4 @@
-set -e -o xtrace
+set -o xtrace
 
 export PYTHONDONTWRITEBYTECODE=x
 export HYPOTHESIS_DATABASE_FILE=$(mktemp --suffix=.db)

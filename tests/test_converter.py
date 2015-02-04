@@ -40,6 +40,15 @@ def test_simple_conversions(descriptor, value):
         converter.to_basic(value)
 
 
+@pytest.mark.parametrize(('descriptor', 'value'), [
+    (float, 252010555201342071294067021251680995120),
+])
+def test_simple_back_conversions(descriptor, value):
+    converter = ConverterTable.default().specification_for(descriptor)
+    with pytest.raises(BadData):
+        converter.from_basic(value)
+
+
 @given(DescriptorWithValue, DescriptorWithValue, verifier=Verifier(
     strategy_table=small_table,
     settings=hs.Settings(max_examples=500),
@@ -73,7 +82,7 @@ def test_can_not_save_as_incompatible_examples(dav, dav2):
     (SampledFrom((1, 2, 3)), 5),
     (OneOf((int, float)), 1),
     (OneOf((int, float)), 'tv'),
-    (binary_type, "1"),
+    (binary_type, '1'),
     ([frozenset({float}), frozenset({float})], [[8, 0], []]),
 ])
 def test_simple_data_validation(descriptor, data):

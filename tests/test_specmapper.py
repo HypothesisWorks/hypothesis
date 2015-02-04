@@ -2,7 +2,6 @@ from hypothesis.internal.specmapper import (
     SpecificationMapper,
     MissingSpecification,
     next_in_chain,
-    sort_in_subclass_order,
 )
 from hypothesis import given
 from hypothesis.descriptors import sampled_from
@@ -13,8 +12,7 @@ from hypothesis.internal.compat import hrange
 
 
 def setup_function(fn):
-    SpecificationMapper.default_mapper = None
-    fn()
+    SpecificationMapper.clear_default()
 
 
 def const(x):
@@ -401,17 +399,6 @@ def test_chooses_most_specific_subclass(classes, r):
             assert i == classes.index(correct_choice)
 
 
-@given({sampled_from(all_test_classes)}, random.Random)
-def test_class_sorter_topologically_sorts_wrt_subclassing(classes, random):
-    classes = list(classes)
-    random.shuffle(classes)
-    in_order = sort_in_subclass_order(classes)
-    n = len(classes)
-    for i in hrange(n):
-        for j in hrange(i + 1, n):
-            assert not issubclass(in_order[j], in_order[i])
-
-
 def test_correctly_reports_specifications():
     mapper = SpecificationMapper()
     mapper.define_specification_for_instances(
@@ -458,3 +445,12 @@ def test_is_not_confused_by_equal_things_of_different_types():
     )
     assert mapper.specification_for((Confused1(),)) == 1
     assert mapper.specification_for((Confused2(),)) == 2
+
+
+class Submapper(SpecificationMapper):
+    pass
+
+
+def test_does_not_confuse_defaults():
+    x = SpecificationMapper.default()
+    assert Submapper.default() != x

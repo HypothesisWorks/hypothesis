@@ -105,21 +105,11 @@ class TestRun(object):
                 init_kwargs=self.init_kwargs,
             )
 
-    def __eq__(self, that):
-        return (isinstance(that, TestRun) and
-                self.cls == that.cls and
-                self.steps == that.steps)
-
-    def __ne__(self, that):
-        return not self.__eq__(that)
-
-    def __hash__(self):
-        # Where we want to hash this we want to rely on Tracker's logic for
-        # hashing collections anyway
-        raise TypeError("unhashable type 'testrun'")
-
     def __len__(self):
-        return len(self.steps)
+        if self.init_args or self.init_kwargs:
+            return 1 + len(self.steps)
+        else:
+            return len(self.steps)
 
     def __iter__(self):
         if self.init_args or self.init_kwargs:

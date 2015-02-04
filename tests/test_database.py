@@ -16,7 +16,8 @@ from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.strategytable import StrategyTable
 import hypothesis.params as params
 from hypothesis.internal.compat import text_type, binary_type, integer_types
-from collections import Counter
+from collections import Counter, namedtuple
+from hypothesis.internal.utils.fixers import actually_equal
 
 
 def test_deduplicates():
@@ -28,7 +29,6 @@ def test_deduplicates():
 
 
 def run_round_trip(descriptor, value, format=None, backend=None):
-    print(descriptor, value)
     if backend is not None:
         backend = backend()
     else:
@@ -37,9 +37,13 @@ def run_round_trip(descriptor, value, format=None, backend=None):
     storage = db.storage_for(descriptor)
     storage.save(value)
     saved = list(storage.fetch())
-    assert saved == [value]
+    assert actually_equal(saved, [value])
+
+
+AB = namedtuple('AB', ('a', 'b'))
 
 data_examples = (
+    (AB(int, int), AB(1, 2)),
     (int, 1),
     ((int,), (1,)),
     (complex, complex(1, 1)),
@@ -58,6 +62,7 @@ data_examples = (
     (sampled_from(elements=(1,)), 1),
     (one_of(({1: int}, {1: bool})), {1: 2}),
     (one_of(({1: int}, {1: bool})), {1: False}),
+    ({float}, {0.0460563451184767, -0.19420794805570227}),
 )
 
 
@@ -256,3 +261,10 @@ def test_verifier_deduplicates_on_coming_out_of_the_database():
     verifier.falsify(count_and_object, frozenset({int}))
     assert calls[0] == good
     assert counter[good] == 1
+
+
+@given(text_type)
+def test_can_save_all_strings(s):
+    db = ExampleDatabase()
+    storage = db.storage_for(text_type)
+    storage.save(s)

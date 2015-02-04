@@ -1,5 +1,6 @@
 from functools import wraps
 from hypothesis.internal.utils.hashitanyway import HashItAnyway
+from hypothesis.internal.classmap import ClassMap
 
 
 class SpecificationMapper(object):
@@ -21,17 +22,25 @@ class SpecificationMapper(object):
 
     @classmethod
     def default(cls):
+        key = '_%s_default_mapper' % (cls.__name__,)
         try:
-            if cls.default_mapper:
-                return cls.default_mapper
+            return getattr(cls, key)
         except AttributeError:
             pass
-        cls.default_mapper = cls()
-        return cls.default_mapper
+        result = cls()
+        setattr(cls, key, result)
+        return result
+
+    @classmethod
+    def clear_default(cls):
+        try:
+            delattr(cls, '_%s_default_mapper' % (cls.__name__,))
+        except AttributeError:
+            pass
 
     def __init__(self, prototype=None):
         self.value_mappers = {}
-        self.instance_mappers = {}
+        self.instance_mappers = ClassMap()
         self.__prototype = prototype
         self.__descriptor_cache = {}
 
@@ -44,11 +53,14 @@ class SpecificationMapper(object):
 
     def define_specification_for(self, value, specification):
         self.value_mappers.setdefault(value, []).append(specification)
+        self.clear_cache()
+
+    def clear_cache(self):
         self.__descriptor_cache = {}
 
     def define_specification_for_instances(self, cls, specification):
         self.instance_mappers.setdefault(cls, []).append(specification)
-        self.__descriptor_cache = {}
+        self.clear_cache()
 
     def define_specification_for_classes(
             self, specification, subclasses_of=None):
@@ -66,6 +78,7 @@ class SpecificationMapper(object):
         self.define_specification_for_instances(
             typekey(SpecificationMapper),
             specification)
+        self.clear_cache()
 
     def new_child_mapper(self):
         return self.__class__(prototype=self)
@@ -112,48 +125,12 @@ class SpecificationMapper(object):
                 yield h
 
     def __instance_handlers(self, tk):
-        for c, hs in sort_in_subclass_order(
-                self.instance_mappers.items(),
-                lambda x: x[0],
-        ):
-            if issubclass(tk, c):
-                for h in reversed(hs):
-                    yield h
+        for hs in self.instance_mappers.all_mappings(tk):
+            for h in reversed(hs):
+                yield h
 
     def missing_specification(self, descriptor):
         raise MissingSpecification(descriptor)
-
-
-def sort_in_subclass_order(xs, get_class=lambda x: x):
-    if len(xs) <= 1:
-        return list(xs)
-    by_class = {}
-    for x in xs:
-        c = get_class(x)
-        by_class.setdefault(c, []).append(x)
-    classes = list(by_class.keys())
-    subclasses = {}
-    for c in classes:
-        children = subclasses.setdefault(c, [])
-        for d in classes:
-            if c != d and issubclass(d, c):
-                children.append(d)
-    in_order = []
-
-    def recurse(c):
-        if c in in_order:
-            return
-        for d in subclasses[c]:
-            recurse(d)
-        in_order.append(c)
-
-    while classes:
-        recurse(classes.pop())
-    return [
-        x
-        for c in in_order
-        for x in by_class[c]
-    ]
 
 
 def typekey(x):
