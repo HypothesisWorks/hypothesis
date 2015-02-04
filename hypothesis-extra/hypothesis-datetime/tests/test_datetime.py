@@ -44,3 +44,18 @@ def test_can_find_february_29():
 
 def test_can_find_christmas():
     falsify(lambda d: assume(d.month == 12) and d.day == 25, datetime)
+
+
+def test_simplifies_towards_midnight():
+    d = falsify(lambda x: False, datetime)[0]
+    assert d.hour == 0
+    assert d.minute == 0
+    assert d.second == 0
+    assert d.microsecond == 0
+
+
+def test_simplifies_towards_2000():
+    d = falsify(lambda x: x.year <= 2000, datetime)[0]
+    assert d.year == 2001
+    d = falsify(lambda x: x.year >= 2000, datetime)[0]
+    assert d.year == 1999
