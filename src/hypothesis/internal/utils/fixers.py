@@ -182,7 +182,10 @@ def float_string(xs):
 @nice_string_method.extend(complex)
 def complex_string(x):
     if is_nasty_float(x.real) or is_nasty_float(x.imag):
-        return 'complex(%r)' % (repr(x)[1:-1],)
+        r = repr(x)
+        if r[0] == '(' and r[-1] == ')':
+            r = r[1:-1]
+        return 'complex(%r)' % (r,)
     else:
         return repr(x)
 

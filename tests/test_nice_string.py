@@ -50,3 +50,7 @@ def test_uses_nice_string_inside_named_tuples():
     assert nice_string(
         Foo(1, float('nan'))
     ) == "Foo(b=1, a=float('nan'))"
+
+
+def test_does_not_strip_brackets_when_not_present():
+    assert nice_string(complex('nanj')) == "complex('nanj')"

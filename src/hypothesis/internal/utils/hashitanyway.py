@@ -1,17 +1,28 @@
 from hypothesis.internal.utils.fixers import actually_equal
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.internal.extmethod import ExtMethod
+from hypothesis.types import RandomWithSeed
 
 hash_everything_method = ExtMethod()
 
 
 @hash_everything_method.extend(int)
 @hash_everything_method.extend(float)
+@hash_everything_method.extend(complex)
 @hash_everything_method.extend(binary_type)
 @hash_everything_method.extend(text_type)
 @hash_everything_method.extend(bool)
+@hash_everything_method.extend(RandomWithSeed)
 def normal_hash(x):
     return hash(x)
+
+
+@hash_everything_method.extend(dict)
+def dict_hash(x):
+    base = hash(type(x).__name__)
+    for t in x.items():
+        base ^= hash_everything(t)
+    return base
 
 
 @hash_everything_method.extend(type)
