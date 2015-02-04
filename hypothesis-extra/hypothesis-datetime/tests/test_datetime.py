@@ -1,4 +1,5 @@
 from hypothesis import falsify, assume
+from hypothesis.strategytable import StrategyTable
 from datetime import datetime
 from hypothesis.internal.compat import hrange
 import hypothesis.settings as hs
@@ -75,3 +76,15 @@ def test_can_generate_non_utc():
 
 def test_can_generate_utc():
     falsify(lambda d: assume(d.tzinfo) and d.tzinfo.zone != 'UTC', datetime)
+
+
+def test_can_simplify_leap_years():
+    s = StrategyTable().strategy(datetime)
+    d = datetime(
+        year=2012, month=2, day=29
+    )
+    t = list(
+        s.simplify_such_that(
+            d, lambda x: (x.month == 2) and (x.day == 29) and (x.year > 2000))
+    )[-1]
+    assert t.year == 2004

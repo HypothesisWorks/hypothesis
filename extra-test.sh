@@ -20,10 +20,15 @@ for d in hypothesis-extra/*; do
     fi
 
     $PYTHON setup.py install
+    $PIP install pytest coverage
 
     pushd $d
+        $PIP install -r requirements.txt
+        PYTHONPATH=src $PYTHON -m coverage run --include="src/**/*.py" -m pytest tests
+        $PYTHON -m coverage report --fail-under=100
         $PYTHON setup.py install
-        $PIP install pytest
         $PYTHON -m pytest tests
     popd
+
+    rm -rf $VENV
 done

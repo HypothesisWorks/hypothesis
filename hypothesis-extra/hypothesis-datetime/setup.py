@@ -25,9 +25,7 @@ setup(
     url='https://github.com/DRMacIver/hypothesis',
     license='MPL v2',
     description='Adds support for generating datetime to Hypothesis',
-    install_requires=[
-        'hypothesis==0.5.0', 'pytz'
-    ],
+    install_requires=open("requirements.txt").read().splitlines(),
     entry_points={
         'hypothesis.extra': 'hypothesisdatetime = hypothesisdatetime:load'
     },

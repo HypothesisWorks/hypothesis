@@ -87,13 +87,11 @@ class DatetimeStrategy(SearchStrategy):
         year = value.year
         if year == 2000:
             return
+        yield value.replace(year=2000)
         # We swallow a bunch of value errors here.
         # These can happen if the original value was february 29 on a
         # leap year and the current year is not a leap year.
-        try:
-            yield value.replace(year=2000)
-        except ValueError:
-            pass
+        # Note that 2000 was a leap year which is why we didn't need one above.
         mid = (year + 2000) // 2
         if mid != 2000 and mid != year:
             try:
