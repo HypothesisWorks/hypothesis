@@ -7,13 +7,11 @@ import types
 import ast
 import re
 import hashlib
-import atexit
-import tempfile
-import shutil
 from contextlib import contextmanager
 import sys
 import os
 from hypothesis.conventions import not_set
+from hypothesis.internal.filestorage import storage_directory
 
 
 def function_digest(function):
@@ -267,17 +265,8 @@ def check_valid_identifier(identifier):
         raise ValueError("%r is not a valid python identifier" % (identifier,))
 
 
-_tmp_eval_directory = None
-
-
-def tmp_eval_directory():
-    global _tmp_eval_directory
-    if _tmp_eval_directory is None:
-        directory = tempfile.mkdtemp(prefix="hypothesis_temporary_modules_")
-        rm = shutil.rmtree
-        atexit.register(lambda: rm(directory))
-        _tmp_eval_directory = directory
-    return _tmp_eval_directory
+def eval_directory():
+    return storage_directory("eval_source")
 
 
 @contextmanager
@@ -298,8 +287,10 @@ def source_exec_as_module(source):
     except KeyError:
         pass
 
-    d = tmp_eval_directory()
-    name = "hypothesis_temporary_module_%s" % (os.urandom(16).encode('hex'),)
+    d = eval_directory()
+    name = "hypothesis_temporary_module_%s" % (
+        hashlib.sha1(source).hexdigest(),
+    )
     filepath = os.path.join(d, name+".py")
     with file(filepath, 'w') as f:
         f.write(source)

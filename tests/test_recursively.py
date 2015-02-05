@@ -83,8 +83,8 @@ verifier = Verifier(
 )
 
 
-@given(Descriptor, Random, verifier=verifier)
 @timeout(5)
+@given(Descriptor, Random, verifier=verifier)
 def test_can_falsify_false_things(desc, random):
     assume(size(desc) <= MAX_SIZE)
     verifier.random = random
@@ -93,8 +93,8 @@ def test_can_falsify_false_things(desc, random):
     assert not list(strategy.simplify(x))
 
 
-@given([Descriptor], Random, verifier=verifier)
 @timeout(5)
+@given([Descriptor], Random, verifier=verifier)
 def test_can_falsify_false_things_with_many_args(descs, random):
     assume(len(descs) > 0)
     assume(size(descs) <= MAX_SIZE)
@@ -105,8 +105,8 @@ def test_can_falsify_false_things_with_many_args(descs, random):
     assert not list(strategy.simplify(x))
 
 
-@given(Descriptor, verifier=verifier)
 @timeout(5)
+@given(Descriptor, verifier=verifier)
 def test_can_not_falsify_true_things(desc):
     assume(size(desc) <= MAX_SIZE)
     with pytest.raises(Unfalsifiable):

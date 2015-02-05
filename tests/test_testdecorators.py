@@ -299,3 +299,11 @@ def test_can_sample_from_single_element(x):
 @given([int])
 def test_list_is_sorted(xs):
     assert sorted(xs) == xs
+
+
+def test_errors_when_given_varargs():
+    with pytest.raises(TypeError) as e:
+        @given(int)
+        def has_varargs(*args):
+            pass
+    assert 'varargs' in e.value.args[0]

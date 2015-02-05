@@ -1,6 +1,6 @@
 import inspect
 import pytest
-from hypothesis import given
+from hypothesis import given, Verifier
 
 
 def has_one_arg(hello):
@@ -31,16 +31,53 @@ basic_test_cases = [
     (has_two_args, given(int, bool)),
     (has_a_default, given(int, int)),
     (has_a_default, given(int, int, int)),
-    (has_varargs, given()),
-    (has_varargs, given(int, bool, bool)),
-    (has_kwargs, given(a=int, b=int, c=bool)),
 ]
 
 
-@pytest.mark.parametrize('f,g', basic_test_cases)
+@pytest.mark.parametrize(('f', 'g'), basic_test_cases)
 def test_argspec_lines_up(f, g):
     af = inspect.getargspec(f)
     ag = inspect.getargspec(g(f))
     assert af.args == ag.args
     assert af.keywords == ag.keywords
     assert af.varargs == ag.varargs
+
+
+def test_errors_on_unwanted_kwargs():
+    with pytest.raises(TypeError):
+        @given(hello=int, world=int)
+        def greet(world):
+            pass
+
+
+def test_errors_on_too_many_positional_args():
+    with pytest.raises(TypeError):
+        @given(int, int, int)
+        def foo(x, y):
+            pass
+
+
+def test_errors_on_any_varargs():
+    with pytest.raises(TypeError):
+        @given(int)
+        def oops(*args):
+            pass
+
+
+def test_converts_provided_kwargs_into_args():
+    @given(hello=int, world=int)
+    def greet(**kwargs):
+        pass
+
+    assert inspect.getargspec(greet).args == ['hello', 'world']
+
+
+def test_does_not_falsify_if_all_args_given():
+    verifier = Verifier()
+    verifier.falsify = None
+
+    @given(int, int, verifier=verifier)
+    def foo(x, y):
+        pass
+
+    foo(1, 2)
