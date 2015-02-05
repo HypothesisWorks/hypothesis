@@ -101,6 +101,15 @@ def convert_positional_arguments(function, args, kwargs):
                     '%s() got an unexpected keyword argument %r' % (
                         function.__name__, k
                     ))
+    if len(args) < len(argspec.args):
+        for i in hrange(
+            len(args), len(argspec.args) - len(argspec.defaults or ())
+        ):
+            if argspec.args[i] not in kwargs:
+                raise TypeError("No value provided for argument %s" % (
+                    argspec.args[i],
+                ))
+
     if len(args) > len(argspec.args) and not argspec.varargs:
         raise TypeError(
             '%s() takes at most %d positional arguments (%d given)' % (

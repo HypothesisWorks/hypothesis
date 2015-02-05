@@ -115,6 +115,21 @@ def test_positional_errors_if_too_many_args():
     assert '2 given' in e.value.args[0]
 
 
+def test_positional_errors_if_too_few_args():
+    def foo(a, b, c):
+        pass
+
+    with pytest.raises(TypeError):
+        convert_positional_arguments(foo, (1, 2), {})
+
+
+def test_positional_does_not_error_if_extra_args_are_kwargs():
+    def foo(a, b, c):
+        pass
+
+    convert_positional_arguments(foo, (1, 2), {'c': 3})
+
+
 def test_positional_errors_if_given_bad_kwargs():
     def foo(a):
         pass
