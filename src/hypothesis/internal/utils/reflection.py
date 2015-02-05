@@ -273,7 +273,7 @@ _tmp_eval_directory = None
 def tmp_eval_directory():
     global _tmp_eval_directory
     if _tmp_eval_directory is None:
-        directory = tempfile.mkdtemp(prefix="hypothesis_temporary_modules")
+        directory = tempfile.mkdtemp(prefix="hypothesis_temporary_modules_")
         rm = shutil.rmtree
         atexit.register(lambda: rm(directory))
         _tmp_eval_directory = directory
