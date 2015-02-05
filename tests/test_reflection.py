@@ -360,13 +360,34 @@ def test_copying_preserves_argspec(f):
     af = inspect.getargspec(f)
     t = copy_argspec('foo', inspect.getargspec(f))(universal_acceptor)
     at = inspect.getargspec(t)
-    assert af == at
+    assert af.args == at.args
+    assert af.varargs == at.varargs
+    assert af.keywords == at.keywords
+    assert len(af.defaults or ()) == len(at.defaults or ())
 
 
 def test_copying_sets_name():
     f = copy_argspec(
         'hello_world', inspect.getargspec(has_two_args))(universal_acceptor)
     assert f.__name__ == 'hello_world'
+
+
+def test_uses_defaults():
+    f = copy_argspec(
+        'foo', inspect.getargspec(has_a_default))(universal_acceptor)
+    assert f(3, 2) == ((), {'z': 1, 'x': 3, 'y': 2})
+
+
+def test_uses_varargs():
+    f = copy_argspec(
+        'foo', inspect.getargspec(has_varargs))(universal_acceptor)
+    assert f(1, 2) == ((1, 2), {})
+
+
+def test_passes_args_as_keyword():
+    f = copy_argspec(
+        'foo', inspect.getargspec(has_two_args))(universal_acceptor)
+    assert f(1, 2) == ((), {'hello': 1, 'world': 2})
 
 
 DEFINE_FOO_FUNCTION = """

@@ -13,6 +13,7 @@ import shutil
 from contextlib import contextmanager
 import sys
 import os
+from hypothesis.conventions import not_set
 
 
 def function_digest(function):
@@ -299,9 +300,11 @@ def source_exec_as_module(source):
         return result
 
 COPY_ARGSPEC_SCRIPT = """
+from hypothesis.conventions import not_set
+
 def accept(f):
     def %(name)s(%(argspec)s):
-        return f(%(argspec)s)
+        return f(%(invocation)s)
     return %(name)s
 """
 
@@ -317,13 +320,46 @@ def copy_argspec(name, argspec):
         check_valid_identifier(argspec.varargs)
     if argspec.keywords is not None:
         check_valid_identifier(argspec.keywords)
-    parts = list(argspec.args)
+    n_defaults = len(argspec.defaults or ())
+    invocation_parts = []
+    if n_defaults:
+        parts = []
+        for a in argspec.args[:-n_defaults]:
+            parts.append(a)
+        for a in argspec.args[-n_defaults:]:
+            parts.append("%s=not_set" % (a,))
+    else:
+        parts = list(argspec.args)
+
+    invocation_parts = []
     if argspec.varargs:
         parts.append("*" + argspec.varargs)
+        invocation_parts.append("*" + argspec.varargs)
+
+    for a in argspec.args:
+        invocation_parts.append("%s=%s" % (a, a))
+
     if argspec.keywords:
         parts.append("**" + argspec.keywords)
-    return source_exec_as_module(
+        invocation_parts.append("**" + argspec.keywords)
+
+    accept_with_right_args = source_exec_as_module(
         COPY_ARGSPEC_SCRIPT % {
             'name': name,
-            'argspec': ', '.join(parts)
+            'argspec': ', '.join(parts),
+            'invocation': ', '.join(invocation_parts)
         }).accept
+    defaults = {}
+    for name, default in zip(
+        argspec.args[-n_defaults:], argspec.defaults or ()
+    ):
+        defaults[name] = default
+
+    def accept(f):
+        def convert_arguments(*args, **kwargs):
+            for k, v in kwargs.items():
+                if v is not_set:
+                    kwargs[k] = defaults[k]
+            return f(*args, **kwargs)
+        return accept_with_right_args(convert_arguments)
+    return accept
