@@ -5,7 +5,9 @@ from hypothesis.internal.utils.reflection import (
     function_digest,
     arg_string,
     unbind_method,
+    copy_argspec
 )
+import inspect
 import pytest
 
 
@@ -322,3 +324,43 @@ def test_unbind_distinguishes_different_functions():
 
 def test_unbind_distinguishes_overridden_functions():
     assert unbind_method(C().f) != unbind_method(A.f)
+
+
+def universal_acceptor(*args, **kwargs):
+    return args, kwargs
+
+
+def has_one_arg(hello):
+    pass
+
+
+def has_two_args(hello, world):
+    pass
+
+
+def has_a_default(x, y, z=1):
+    pass
+
+
+def has_varargs(*args):
+    pass
+
+
+def has_kwargs(**kwargs):
+    pass
+
+
+@pytest.mark.parametrize(
+    'f', [has_one_arg, has_two_args, has_varargs, has_kwargs]
+)
+def test_copying_preserves_argspec(f):
+    af = inspect.getargspec(f)
+    t = copy_argspec('foo', inspect.getargspec(f))(universal_acceptor)
+    at = inspect.getargspec(t)
+    assert af == at
+
+
+def test_copying_sets_name():
+    f = copy_argspec(
+        'hello_world', inspect.getargspec(has_two_args))(universal_acceptor)
+    assert f.__name__ == 'hello_world'

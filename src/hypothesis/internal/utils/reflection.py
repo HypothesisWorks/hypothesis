@@ -239,3 +239,45 @@ def unbind_method(f):
     """Take something that might be a method or a function and return the
     underlying function."""
     return getattr(f, 'im_func', getattr(f, '__func__', f))
+
+
+VALID_PYTHON_IDENTIFIER = re.compile(
+    r"^[a-zA-Z_][a-zA-Z0-9_]*$"
+)
+
+
+def check_valid_identifier(identifier):
+    if not VALID_PYTHON_IDENTIFIER.match(identifier):
+        raise ValueError("%r is not a valid python identifier" % (identifier,))
+
+
+COPY_ARGSPEC_SCRIPT = """
+def accept(f):
+    def %(name)s(%(argspec)s):
+        return f(%(argspec)s)
+    return %(name)s
+"""
+
+
+def copy_argspec(name, argspec):
+    """
+    A decorator which sets the name and argspec of the function passed into it
+    """
+    check_valid_identifier(name)
+    for a in argspec.args:
+        check_valid_identifier(a)
+    if argspec.varargs is not None:
+        check_valid_identifier(argspec.varargs)
+    if argspec.keywords is not None:
+        check_valid_identifier(argspec.keywords)
+    parts = list(argspec.args)
+    if argspec.varargs:
+        parts.append("*" + argspec.varargs)
+    if argspec.keywords:
+        parts.append("**" + argspec.keywords)
+    result_dict = {}
+    exec(COPY_ARGSPEC_SCRIPT % {
+        'name': name,
+        'argspec': ', '.join(parts)
+    }, result_dict)
+    return result_dict['accept']

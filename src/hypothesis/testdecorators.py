@@ -3,8 +3,9 @@ import time
 from hypothesis.verifier import (
     Verifier, Unfalsifiable, UnsatisfiedAssumption, Flaky
 )
-from hypothesis.internal.utils.reflection import arg_string
 from hypothesis.reporting import current_reporter
+from hypothesis.internal.utils.reflection import arg_string, copy_argspec
+import inspect
 
 
 def given(*generator_arguments, **kwargs):
@@ -17,13 +18,14 @@ def given(*generator_arguments, **kwargs):
         verifier = Verifier()
 
     def run_test_with_generator(test):
-        def wrapped_test(*arguments):
+        @copy_argspec(test.__name__, inspect.getargspec(test))
+        def wrapped_test(*args, **kwargs):
             # The only thing we accept in falsifying the test are exceptions
             # Returning successfully is always a pass.
             def to_falsify(xs):
                 testargs, testkwargs = xs
                 try:
-                    test(*(arguments + testargs), **testkwargs)
+                    test(*(args + testargs), **testkwargs)
                     return True
                 except UnsatisfiedAssumption as e:
                     raise e
