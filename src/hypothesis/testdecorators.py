@@ -4,6 +4,7 @@ from hypothesis.verifier import (
     Verifier, Unfalsifiable, UnsatisfiedAssumption, Flaky
 )
 from hypothesis.internal.utils.reflection import arg_string
+from hypothesis.reporting import current_reporter
 
 
 def given(*generator_arguments, **kwargs):
@@ -39,7 +40,7 @@ def given(*generator_arguments, **kwargs):
             except Unfalsifiable:
                 return
 
-            print(
+            current_reporter()(
                 'Falsifying example: %s' % (
                     arg_string(
                         test,

@@ -283,3 +283,9 @@ def test_does_not_print_on_success():
 @given(sampled_from([1]))
 def test_can_sample_from_single_element(x):
     assert x == 1
+
+
+@fails
+@given([int])
+def test_list_is_sorted(xs):
+    assert sorted(xs) == xs
