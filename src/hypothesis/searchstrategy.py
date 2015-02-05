@@ -380,7 +380,7 @@ class JustIntFloats(FloatStrategy):
 
 def compose_float(sign, exponent, fraction):
     as_long = (sign << 63) | (exponent << 52) | fraction
-    return struct.unpack(b'd', struct.pack(b'L', as_long))[0]
+    return struct.unpack(b'!d', struct.pack(b'!Q', as_long))[0]
 
 
 class FullRangeFloats(FloatStrategy):
