@@ -164,13 +164,15 @@ class Verifier(object):
             if is_falsifying_example:
                 falsifying_examples.append(args)
         run_time = time.time() - start_time
-        timed_out = run_time >= self.timeout
+        timed_out = self.timeout >= 0 and run_time >= self.timeout
 
         if not falsifying_examples:
             if satisfying_examples < min_satisfying_examples:
-                raise Unsatisfiable(hypothesis, satisfying_examples, run_time)
-            elif timed_out:
-                raise Timeout(hypothesis, satisfying_examples, run_time)
+                if timed_out:
+                    raise Timeout(hypothesis, satisfying_examples, run_time)
+                else:
+                    raise Unsatisfiable(
+                        hypothesis, satisfying_examples, run_time)
             else:
                 raise Unfalsifiable(hypothesis)
 
@@ -300,14 +302,7 @@ class Flaky(HypothesisException):
         ) % (get_pretty_function_description(hypothesis), example))
 
 
-class Timeout(Unfalsifiable):
+class Timeout(Unsatisfiable):
 
     """We were unable to find enough examples that satisfied the preconditions
     of this hypothesis in the amount of time allotted to us."""
-
-    def __init__(self, hypothesis, satisfying_examples, run_time):
-        super(Timeout, self).__init__(
-            hypothesis,
-            ' after %gs (considered %d examples)' % (
-                run_time, satisfying_examples)
-        )
