@@ -238,6 +238,9 @@ class IntStrategy(SearchStrategy):
         return isinstance(x, integer_types)
 
     def simplify(self, x):
+        ix = int(x)
+        if type(ix) != type(x):  # pragma: no cover
+            yield ix
         if x < 0:
             yield -x
             for y in self.simplify(-x):
