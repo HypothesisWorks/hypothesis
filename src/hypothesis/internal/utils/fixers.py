@@ -54,9 +54,9 @@ def primitive_equality(x, y, fuzzy):
 def float_equality(x, y, fuzzy=False):
     if math.isnan(x) and math.isnan(y):
         return True
-    if fuzzy:
-        return repr(x) == repr(y)
-    return x == y
+    if x == y:
+        return True
+    return fuzzy and (repr(x) == repr(y))
 
 
 @equality.extend(complex)
