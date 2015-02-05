@@ -5,10 +5,13 @@ from hypothesis.internal.utils.reflection import (
     function_digest,
     arg_string,
     unbind_method,
-    copy_argspec
+    copy_argspec,
+    source_exec_as_module,
 )
 import inspect
 import pytest
+from copy import deepcopy
+import sys
 
 
 def do_conversion_test(f, args, kwargs):
@@ -364,3 +367,33 @@ def test_copying_sets_name():
     f = copy_argspec(
         'hello_world', inspect.getargspec(has_two_args))(universal_acceptor)
     assert f.__name__ == 'hello_world'
+
+
+DEFINE_FOO_FUNCTION = """
+def foo(x):
+    return x
+"""
+
+
+def test_exec_as_module_execs():
+    m = source_exec_as_module(DEFINE_FOO_FUNCTION)
+    assert m.foo(1) == 1
+
+
+def test_exec_as_module_caches():
+    assert (
+        source_exec_as_module(DEFINE_FOO_FUNCTION) is
+        source_exec_as_module(DEFINE_FOO_FUNCTION)
+    )
+
+
+def test_exec_leaves_sys_path_unchanged():
+    old_path = deepcopy(sys.path)
+    source_exec_as_module("hello_world = 42")
+    assert sys.path == old_path
+
+
+def test_can_get_source_of_functions_from_exec():
+    assert 'foo(x)' in inspect.getsource(
+        source_exec_as_module(DEFINE_FOO_FUNCTION).foo
+    )

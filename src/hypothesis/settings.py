@@ -5,12 +5,11 @@ this module can be modified.
 
 """
 import os
-
-USE_DEFAULT = object()
+from hypothesis.conventions import not_set
 
 
 def set_or_default(self, name, value):
-    if value != USE_DEFAULT:
+    if value != not_set:
         setattr(self, name, value)
     else:
         setattr(self, name, getattr(default, name))
@@ -48,11 +47,11 @@ class Settings(object):
 
     def __init__(
             self,
-            min_satisfying_examples=USE_DEFAULT,
-            max_examples=USE_DEFAULT,
-            timeout=USE_DEFAULT,
-            derandomize=USE_DEFAULT,
-            database=USE_DEFAULT,
+            min_satisfying_examples=not_set,
+            max_examples=not_set,
+            timeout=not_set,
+            derandomize=not_set,
+            database=not_set,
     ):
         set_or_default(
             self, 'min_satisfying_examples', min_satisfying_examples)

@@ -7,6 +7,12 @@ import types
 import ast
 import re
 import hashlib
+import atexit
+import tempfile
+import shutil
+from contextlib import contextmanager
+import sys
+import os
 
 
 def function_digest(function):
@@ -251,6 +257,47 @@ def check_valid_identifier(identifier):
         raise ValueError("%r is not a valid python identifier" % (identifier,))
 
 
+_tmp_eval_directory = None
+
+
+def tmp_eval_directory():
+    global _tmp_eval_directory
+    if _tmp_eval_directory is None:
+        directory = tempfile.mkdtemp(prefix="hypothesis_temporary_modules")
+        rm = shutil.rmtree
+        atexit.register(lambda: rm(directory))
+        _tmp_eval_directory = directory
+    return _tmp_eval_directory
+
+
+@contextmanager
+def directory_on_path(d):
+    try:
+        sys.path.insert(0, d)
+        yield
+    finally:
+        sys.path.remove(d)
+
+
+eval_cache = {}
+
+
+def source_exec_as_module(source):
+    try:
+        return eval_cache[source]
+    except KeyError:
+        pass
+
+    d = tmp_eval_directory()
+    name = "hypothesis_temporary_module_%s" % (os.urandom(16).encode('hex'),)
+    filepath = os.path.join(d, name+".py")
+    with file(filepath, 'w') as f:
+        f.write(source)
+    with directory_on_path(d):
+        result = __import__(name)
+        eval_cache[source] = result
+        return result
+
 COPY_ARGSPEC_SCRIPT = """
 def accept(f):
     def %(name)s(%(argspec)s):
@@ -276,8 +323,9 @@ def copy_argspec(name, argspec):
     if argspec.keywords:
         parts.append("**" + argspec.keywords)
     result_dict = {}
-    exec(COPY_ARGSPEC_SCRIPT % {
-        'name': name,
-        'argspec': ', '.join(parts)
-    }, result_dict)
+    return source_exec_as_module(
+        COPY_ARGSPEC_SCRIPT % {
+            'name': name,
+            'argspec': ', '.join(parts)
+        }).accept
     return result_dict['accept']

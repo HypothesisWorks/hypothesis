@@ -19,13 +19,13 @@ def given(*generator_arguments, **kwargs):
 
     def run_test_with_generator(test):
         @copy_argspec(test.__name__, inspect.getargspec(test))
-        def wrapped_test(*args, **kwargs):
+        def wrapped_test(*arguments, **kwargs):
             # The only thing we accept in falsifying the test are exceptions
             # Returning successfully is always a pass.
             def to_falsify(xs):
                 testargs, testkwargs = xs
                 try:
-                    test(*(args + testargs), **testkwargs)
+                    test(*(arguments + testargs), **testkwargs)
                     return True
                 except UnsatisfiedAssumption as e:
                     raise e
