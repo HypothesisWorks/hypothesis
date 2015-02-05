@@ -104,7 +104,7 @@ def convert_positional_arguments(function, args, kwargs):
             len(args), len(argspec.args) - len(argspec.defaults or ())
         ):
             if argspec.args[i] not in kwargs:
-                raise TypeError("No value provided for argument %s" % (
+                raise TypeError('No value provided for argument %s' % (
                     argspec.args[i],
                 ))
 
@@ -262,11 +262,11 @@ VALID_PYTHON_IDENTIFIER = re.compile(
 
 def check_valid_identifier(identifier):
     if not VALID_PYTHON_IDENTIFIER.match(identifier):
-        raise ValueError("%r is not a valid python identifier" % (identifier,))
+        raise ValueError('%r is not a valid python identifier' % (identifier,))
 
 
 def eval_directory():
-    return storage_directory("eval_source")
+    return storage_directory('eval_source')
 
 
 @contextmanager
@@ -288,10 +288,10 @@ def source_exec_as_module(source):
         pass
 
     d = eval_directory()
-    name = "hypothesis_temporary_module_%s" % (
+    name = 'hypothesis_temporary_module_%s' % (
         hashlib.sha1(source).hexdigest(),
     )
-    filepath = os.path.join(d, name+".py")
+    filepath = os.path.join(d, name + '.py')
     with file(filepath, 'w') as f:
         f.write(source)
     with directory_on_path(d):
@@ -306,13 +306,12 @@ def accept(f):
     def %(name)s(%(argspec)s):
         return f(%(invocation)s)
     return %(name)s
-""".strip() + "\n"
+""".strip() + '\n'
 
 
 def copy_argspec(name, argspec):
-    """
-    A decorator which sets the name and argspec of the function passed into it
-    """
+    """A decorator which sets the name and argspec of the function passed into
+    it."""
     check_valid_identifier(name)
     for a in argspec.args:
         check_valid_identifier(a)
@@ -327,21 +326,21 @@ def copy_argspec(name, argspec):
         for a in argspec.args[:-n_defaults]:
             parts.append(a)
         for a in argspec.args[-n_defaults:]:
-            parts.append("%s=not_set" % (a,))
+            parts.append('%s=not_set' % (a,))
     else:
         parts = list(argspec.args)
 
     invocation_parts = []
     if argspec.varargs:
-        parts.append("*" + argspec.varargs)
-        invocation_parts.append("*" + argspec.varargs)
+        parts.append('*' + argspec.varargs)
+        invocation_parts.append('*' + argspec.varargs)
 
     for a in argspec.args:
-        invocation_parts.append("%s=%s" % (a, a))
+        invocation_parts.append('%s=%s' % (a, a))
 
     if argspec.keywords:
-        parts.append("**" + argspec.keywords)
-        invocation_parts.append("**" + argspec.keywords)
+        parts.append('**' + argspec.keywords)
+        invocation_parts.append('**' + argspec.keywords)
 
     accept_with_right_args = source_exec_as_module(
         COPY_ARGSPEC_SCRIPT % {

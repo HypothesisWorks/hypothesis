@@ -425,7 +425,7 @@ def test_exec_as_module_caches():
 
 def test_exec_leaves_sys_path_unchanged():
     old_path = deepcopy(sys.path)
-    source_exec_as_module("hello_world = 42")
+    source_exec_as_module('hello_world = 42')
     assert sys.path == old_path
 
 

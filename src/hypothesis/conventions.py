@@ -1,4 +1,5 @@
 class UniqueIdentifier(object):
+
     def __init__(self, identifier):
         self.identifier = identifier
 
@@ -6,4 +7,4 @@ class UniqueIdentifier(object):
         return self.identifier
 
 
-not_set = UniqueIdentifier("not_set")
+not_set = UniqueIdentifier('not_set')

@@ -101,12 +101,13 @@ class ExampleDatabase(object):
         except KeyError:
             pass
 
+        converter = self.converters.specification_for(descriptor)
         result = Storage(
             descriptor=descriptor,
             database=self,
             backend=self.backend,
             format=self.format,
-            converter=self.converters.specification_for(descriptor),
+            converter=converter,
             strategy=self.strategies.specification_for(descriptor),
         )
         self.storage_cache[key] = result

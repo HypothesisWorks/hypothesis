@@ -18,10 +18,10 @@ def mkdir_p(path):
 def hypothesis_home_dir():
     global __hypothesis_home_directory
     if not __hypothesis_home_directory:
-        __hypothesis_home_directory = os.getenv("HYPOTHESIS_STORAGE_DIRECTORY")
+        __hypothesis_home_directory = os.getenv('HYPOTHESIS_STORAGE_DIRECTORY')
     if not __hypothesis_home_directory:
         __hypothesis_home_directory = os.path.join(
-            os.getcwd(), ".hypothesis"
+            os.getcwd(), '.hypothesis'
         )
     mkdir_p(__hypothesis_home_directory)
     return __hypothesis_home_directory

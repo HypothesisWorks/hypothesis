@@ -27,20 +27,20 @@ def given(*generator_arguments, **generator_kwargs):
         original_argspec = inspect.getargspec(test)
         if original_argspec.varargs:
             raise TypeError(
-                "varargs are not supported with @given"
+                'varargs are not supported with @given'
             )
         extra_kwargs = [
             k for k in generator_kwargs if k not in original_argspec.args]
         if extra_kwargs and not original_argspec.keywords:
-            raise TypeError("%s() got an unexpected keyword argument %r" % (
+            raise TypeError('%s() got an unexpected keyword argument %r' % (
                 extra_kwargs[0]
             ))
         if (
             len(generator_arguments) > len(original_argspec.args)
         ):
             raise TypeError((
-                "Too many positional arguments for %s() (got %d but"
-                " expected at most %d") % (
+                'Too many positional arguments for %s() (got %d but'
+                ' expected at most %d') % (
                     test.__name__, len(generator_arguments),
                     len(original_argspec.args)))
         arguments = original_argspec.args + sorted(extra_kwargs)
