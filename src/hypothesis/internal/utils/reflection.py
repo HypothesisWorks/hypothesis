@@ -322,10 +322,8 @@ def copy_argspec(name, argspec):
         parts.append("*" + argspec.varargs)
     if argspec.keywords:
         parts.append("**" + argspec.keywords)
-    result_dict = {}
     return source_exec_as_module(
         COPY_ARGSPEC_SCRIPT % {
             'name': name,
             'argspec': ', '.join(parts)
         }).accept
-    return result_dict['accept']
