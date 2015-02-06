@@ -2,10 +2,13 @@ from hypothesis.strategytable import StrategyTable
 from hypothesis.searchstrategy import SearchStrategy
 from datetime import datetime, MINYEAR, MAXYEAR
 import hypothesis.params as params
-from hypothesis.internal.compat import hrange
+from hypothesis.internal.compat import hrange, text_type
 from hypothesis.internal.utils.fixers import equality
 from hypothesis.internal.utils.hashitanyway import (
     hash_everything_method, normal_hash
+)
+from hypothesis.database.converter import (
+    ConverterTable, Converter, check_type, check_data_type
 )
 import pytz
 
@@ -35,6 +38,35 @@ def maybe_zero_or(random, p, v):
         return v
     else:
         return 0
+
+
+class DatetimeConverter(Converter):
+
+    def to_basic(self, dt):
+        check_type(datetime, dt)
+        return (
+            dt.year, dt.month, dt.day,
+            dt.hour, dt.minute, dt.second,
+            dt.microsecond,
+            dt.tzinfo.zone if dt.tzinfo else None
+        )
+
+    def from_basic(self, values):
+        check_data_type(list, values)
+        for d in values[:-1]:
+            check_data_type(int, d)
+        timezone = None
+        if values[-1] is not None:
+            check_data_type(text_type, values[-1])
+            timezone = pytz.timezone(values[-1])
+        base = datetime(
+            year=values[0], month=values[1], day=values[2],
+            hour=values[3], minute=values[4], second=values[5],
+            microsecond=values[6]
+        )
+        if timezone is not None:
+            base = timezone.localize(base)
+        return base
 
 
 class DatetimeStrategy(SearchStrategy):
@@ -111,4 +143,7 @@ class DatetimeStrategy(SearchStrategy):
 def load():
     StrategyTable.default().define_specification_for(
         datetime, lambda s, d: DatetimeStrategy()
+    )
+    ConverterTable.default().define_specification_for(
+        datetime, lambda s, d: DatetimeConverter()
     )

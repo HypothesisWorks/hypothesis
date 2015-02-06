@@ -3,8 +3,12 @@ from hypothesis.strategytable import StrategyTable
 from datetime import datetime
 from hypothesis.internal.compat import hrange
 import hypothesis.settings as hs
+from hypothesis.descriptortests import descriptor_test_suite
 
 hs.default.max_examples = 1000
+
+
+TestStandardDescriptorFeatures = descriptor_test_suite(datetime)
 
 
 def test_can_find_after_the_year_2000():
