@@ -5,7 +5,9 @@ sudo: false
 env: PYTHONDONTWRITEBYTECODE=x
 
 python:
+  - pypy
   - 2.7
+  - 3.2
   - 3.3
   - 3.4
 
