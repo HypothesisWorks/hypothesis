@@ -25,7 +25,8 @@ from hypothesis.searchstrategy import RandomWithSeed
 from random import Random
 from hypothesis.searchstrategy import nice_string
 from hypothesis.strategytable import StrategyTable
-from hypothesis.descriptors import one_of, Just, OneOf, SampledFrom
+from hypothesis.descriptors import (
+    one_of, Just, OneOf, SampledFrom, IntegerRange, FloatRange)
 from abc import abstractmethod
 from hypothesis.internal.specmapper import SpecificationMapper
 from hypothesis.internal.compat import (
@@ -115,10 +116,15 @@ class ConverterTable(SpecificationMapper):
 
 
 for basic_type in (
-    type(None), text_type, bool
+    type(None), text_type, bool,
 ) + integer_types:
     ConverterTable.default().define_specification_for(
         basic_type,
+        lambda s, d: GenericConverter(s.strategy_table.specification_for(d)))
+
+for r in (IntegerRange, FloatRange):
+    ConverterTable.default().define_specification_for_instances(
+        r,
         lambda s, d: GenericConverter(s.strategy_table.specification_for(d)))
 
 

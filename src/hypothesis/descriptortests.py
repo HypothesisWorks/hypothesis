@@ -17,12 +17,17 @@ from random import Random
 
 
 def descriptor_test_suite(
-    descriptor, strategy_table=None, converter_table=None
+    descriptor, strategy_table=None, converter_table=None,
+    simplify_is_unique=True,
+    max_examples=50,
 ):
     strategy_table = strategy_table or StrategyTable()
     converter_table = converter_table or ConverterTable(strategy_table)
     database = ExampleDatabase(converters=converter_table)
-    settings = Settings(database=database)
+    settings = Settings(
+        database=database,
+        max_examples=max_examples,
+    )
     random = Random()
     verifier = Verifier(
         settings=settings,
@@ -43,15 +48,21 @@ def descriptor_test_suite(
                 value, strategy.copy(value)
             )
 
-        @descriptor_test
-        def test_simplify_produces_distinct_results(self, value):
-            simpler = list(strategy.simplify(value))
-            assert len(set(map(HashItAnyway, simpler))) == len(simpler)
+        if simplify_is_unique:
+            @descriptor_test
+            def test_simplify_produces_distinct_results(self, value):
+                simpler = list(strategy.simplify(value))
+                assert len(set(map(HashItAnyway, simpler))) == len(simpler)
 
         def test_produces_two_distinct_hashes(self):
             verifier.falsify(
                 lambda x, y: hash_everything(x) == hash_everything(y),
                 descriptor, descriptor)
+
+        @descriptor_test
+        def test_is_not_in_simplify(self, value):
+            for simpler in strategy.simplify(value):
+                assert not actually_equal(value, simpler)
 
         @descriptor_test
         def test_can_round_trip_through_the_database(self, value):

@@ -247,11 +247,16 @@ class IntStrategy(SearchStrategy):
                 yield -y
         elif x > 0:
             yield 0
+            if x == 1:
+                return
             yield x // 2
+            if x == 2:
+                return
             max_iters = 100
             if x <= max_iters:
                 for i in hrange(x - 1, 0, -1):
-                    yield i
+                    if i != x // 2:
+                        yield i
             else:
                 random = Random(x)
                 seen = {0, x // 2}
@@ -737,10 +742,6 @@ class ComplexStrategy(SearchStrategy):
         )
 
     def simplify(self, x):
-        if x.imag != 0:
-            yield complex(x.real, 0)
-        if x.real != 0:
-            yield complex(0, x.imag)
         for t in self.float_strategy.simplify(x.real):
             yield complex(t, x.imag)
         for t in self.float_strategy.simplify(x.imag):
@@ -810,7 +811,7 @@ class OneCharStringStrategy(SearchStrategy):
 
     def simplify(self, x):
         if x in self.ascii_characters:
-            for i in hrange(self.ascii_characters.index(x), -1, -1):
+            for i in hrange(self.ascii_characters.index(x) - 1, -1, -1):
                 yield self.ascii_characters[i]
         else:
             o = ord(x)
