@@ -155,7 +155,7 @@ def generic_string(xs):
     except AttributeError:
         return repr(xs)
     if (
-        unbind_method(xs.__repr__) != unbind_method(object.__repr__)
+        unbind_method(type(xs).__repr__) != unbind_method(object.__repr__)
     ):
         return repr(xs)
     else:
