@@ -113,13 +113,13 @@ class DatetimeStrategy(SearchStrategy):
         s.add(value.replace(hour=0))
         s.add(value.replace(day=1))
         s.add(value.replace(month=1))
+        s.add(value.replace(year=2000))
         s.remove(value)
         for t in s:
             yield t
         year = value.year
         if year == 2000:
             return
-        yield value.replace(year=2000)
         # We swallow a bunch of value errors here.
         # These can happen if the original value was february 29 on a
         # leap year and the current year is not a leap year.
@@ -130,7 +130,8 @@ class DatetimeStrategy(SearchStrategy):
                 yield value.replace(year=mid)
             except ValueError:
                 pass
-        years = hrange(year, 2000, -1 if year > 2000 else 1)
+        direction = -1 if year > 2000 else 1
+        years = hrange(year + direction, 2000, direction)
         for year in years:
             if year == mid:
                 continue
