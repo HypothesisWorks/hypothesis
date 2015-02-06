@@ -1,6 +1,4 @@
-"""
-Support for testing your custom implementations of descriptors
-"""
+"""Support for testing your custom implementations of descriptors."""
 
 from hypothesis.strategytable import StrategyTable
 from hypothesis.database.converter import ConverterTable
@@ -38,6 +36,7 @@ def descriptor_test_suite(
     descriptor_test = given(descriptor, verifier=verifier)
 
     class ValidationSuite(TestCase):
+
         @descriptor_test
         def test_can_produce_what_it_produces(self, value):
             assert strategy.could_have_produced(value)
@@ -67,7 +66,7 @@ def descriptor_test_suite(
         @descriptor_test
         def test_can_round_trip_through_the_database(self, value):
             empty_db = ExampleDatabase(
-                backend=SQLiteBackend(":memory:"),
+                backend=SQLiteBackend(':memory:'),
                 converters=converter_table
             )
             storage = empty_db.storage_for(descriptor)

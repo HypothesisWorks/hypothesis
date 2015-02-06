@@ -93,7 +93,7 @@ class DatetimeStrategy(SearchStrategy):
             hour=maybe_zero_or(random, pv.p_hour, random.randint(0, 23)),
             minute=maybe_zero_or(random, pv.p_minute, random.randint(0, 59)),
             second=maybe_zero_or(random, pv.p_second, random.randint(0, 59)),
-            microsecond=random.randint(0, 1000000-1),
+            microsecond=random.randint(0, 1000000 - 1),
         )
         if random.random() <= pv.naive_chance:
             return base
