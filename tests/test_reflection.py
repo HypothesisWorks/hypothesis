@@ -4,6 +4,7 @@ from hypothesis.internal.utils.reflection import (
     get_pretty_function_description,
     function_digest,
     arg_string,
+    unbind_method,
 )
 import pytest
 
@@ -290,3 +291,34 @@ def test_arg_string_does_not_include_unprovided_defaults():
         pass
 
     assert arg_string(foo, (1,), {'b': 1, 'd': 11}) == 'a=1, b=1, d=11'
+
+
+class A(object):
+
+    def f(self):
+        pass
+
+    def g(self):
+        pass
+
+
+class B(A):
+    pass
+
+
+class C(A):
+
+    def f(self):
+        pass
+
+
+def test_unbind_gives_parent_class_function():
+    assert unbind_method(B().f) == unbind_method(A.f)
+
+
+def test_unbind_distinguishes_different_functions():
+    assert unbind_method(A.f) != unbind_method(A.g)
+
+
+def test_unbind_distinguishes_overridden_functions():
+    assert unbind_method(C().f) != unbind_method(A.f)
