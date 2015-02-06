@@ -801,7 +801,7 @@ class OneCharStringStrategy(SearchStrategy):
             return random.choice(self.ascii_characters)
         else:
             while True:
-                result = hunichr(random.randint(0, 0x10ffff))
+                result = hunichr(random.randint(0, sys.maxunicode))
                 if unicodedata.category(result) != 'Cs':
                     return result
 

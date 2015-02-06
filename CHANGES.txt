@@ -164,7 +164,7 @@
       are considered == are distinguished. If your test suite uses both frozenset
       and set tests this bug is probably affecting you.
 
-0.4.1, "Cruel and unusual edge cases" - 23/02/2015
+0.4.1, "Cruel and unusual edge cases" - 03/02/2015
 
     This release is mostly about better test case generation.
 
@@ -204,7 +204,7 @@
       users. Whether this is a good thing may be up for debate...
 
 
-0.4.2, "O(dear)" - 24/02/2015
+0.4.2, "O(dear)" - 04/02/2015
 
     This is purely a bugfix release:
 
@@ -216,3 +216,12 @@
       than default), but you should still see a significant improvement.
     * Fix a bug in formatting of complex numbers where the string could get incorrectly truncated.
 
+
+0.4.3, "TIL narrow Python builds are a thing" - 05/02/2015
+
+    This just fixes the one bug.
+
+    * Apparently there is such a thing as a "narrow python build" and OSX ships with these by default
+      for python 2.7. These are builds where you only have two bytes worth of unicode. As a result,
+      generating unicode was completely broken on OSX. Fix this by only generating unicode codepoints
+      in the range supported by the system.
