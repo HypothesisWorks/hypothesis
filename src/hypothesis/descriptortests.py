@@ -77,11 +77,11 @@ def descriptor_test_suite(
             assert actually_equal(value, values[0])
 
         @descriptor_test
-        def can_minimize_to_empty(self, value):
+        def test_can_minimize_to_empty(self, value):
             simplest = list(strategy.simplify_such_that(
                 value, lambda x: True
             ))[-1]
             assert strategy.could_have_produced(simplest)
-            assert list(strategy.simplify(value)) == []
+            assert list(strategy.simplify(simplest)) == []
 
     return ValidationSuite
