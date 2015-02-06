@@ -179,7 +179,7 @@ class FloatConverter(Converter):
         check_data_type(integer_types, value)
         try:
             return struct.unpack('!d', struct.pack('!Q', value))[0]
-        except struct.error as e:
+        except (struct.error, ValueError, OverflowError) as e:
             raise BadData(e.args[0])
 
 ConverterTable.default().define_specification_for(
