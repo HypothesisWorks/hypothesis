@@ -623,3 +623,9 @@ def test_simplifies_0_char():
     xs = list(strategy(text_type).simplify('\x00'))
     assert '' in xs
     assert '0' in xs
+
+
+def test_minimizing_a_very_large_int_produces_an_int():
+    s = strategy(int)
+    shrunk = list(s.simplify_such_that(1 << 73, lambda x: x > 0))[-1]
+    assert type(shrunk) == int

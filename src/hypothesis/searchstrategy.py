@@ -238,6 +238,9 @@ class IntStrategy(SearchStrategy):
         return isinstance(x, integer_types)
 
     def simplify(self, x):
+        ix = int(x)
+        if type(ix) != type(x):  # pragma: no cover
+            yield ix
         if x < 0:
             yield -x
             for y in self.simplify(-x):
@@ -380,7 +383,7 @@ class JustIntFloats(FloatStrategy):
 
 def compose_float(sign, exponent, fraction):
     as_long = (sign << 63) | (exponent << 52) | fraction
-    return struct.unpack(b'd', struct.pack(b'L', as_long))[0]
+    return struct.unpack(b'!d', struct.pack(b'!Q', as_long))[0]
 
 
 class FullRangeFloats(FloatStrategy):

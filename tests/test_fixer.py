@@ -243,3 +243,10 @@ def test_can_handle_collections_that_define_no_equality():
         BadCollection(1, 2, 3),
         BadCollection(1, 2, 4),
     )
+
+
+def test_equal_complex_are_fuzzy_equal():
+    x = -43j
+    y = -0.0-43j
+    assert x == y
+    assert actually_equal(x, y, fuzzy=True)

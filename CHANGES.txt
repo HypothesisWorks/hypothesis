@@ -225,3 +225,14 @@
       for python 2.7. These are builds where you only have two bytes worth of unicode. As a result,
       generating unicode was completely broken on OSX. Fix this by only generating unicode codepoints
       in the range supported by the system.
+
+NEXT
+
+    * Windows is now fully supported. A limited version (just the tests with none of the extras) of the test suite
+      is run on windows with each commit so it is now a first class citizen of the Hypothesis world.
+    * Fix a bug for fuzzy equality of equal complex numbers with different reprs (this can happen when
+      one coordinate is zero). This shouldn't affect users - that feature isn't used anywhere public
+      facing.
+    * Fix generation of floats on windows and 32-bit builds of python. I was using some struct.pack logic
+      that only worked on certain word sizes.
+    * When a test times out and hasn't produced enough examples this now raises a Timeout subclass of Unfalsifiable.
