@@ -22,6 +22,7 @@ from hypothesis.internal.utils.fixers import (
 import struct
 import sys
 import unicodedata
+from hypothesis.internal.utils.reflection import unbind_method
 
 
 class mix_generators(object):
@@ -105,6 +106,27 @@ class SearchStrategy(object):
     def __init__(self):
         pass
 
+    def has_custom_copy(self):
+        try:
+            return self.__has_custom_copy
+        except AttributeError:
+            pass
+        self.__has_custom_copy = self.check_has_custom_copy()
+        return self.__has_custom_copy
+
+    def check_has_custom_copy(self):
+        return (
+            unbind_method(self.custom_copy) !=
+            unbind_method(SearchStrategy.custom_copy))
+
+    def custom_copy(self, value):
+        """
+        Perform a custom copy. You don't need to implement this if your type
+        supports deepcopy.
+        """
+        raise NotImplementedError(
+            "%s.custom_copy()" % (self.__class__.__name__))
+
     def draw_and_produce(self, random):
         return self.produce(random, self.parameter.draw(random))
 
@@ -144,7 +166,9 @@ class SearchStrategy(object):
         providing copy hooks is not suitable for their needs.
 
         """
-        if self.has_immutable_data:
+        if self.has_custom_copy():
+            return self.custom_copy(value)
+        elif self.has_immutable_data:
             return value
         else:
             return deepcopy(value)
@@ -534,6 +558,14 @@ class TupleStrategy(SearchStrategy):
         return all((s.could_have_produced(x)
                     for s, x in zip(self.element_strategies, xs)))
 
+    def check_has_custom_copy(self):
+        return any(e.has_custom_copy() for e in self.element_strategies)
+
+    def custom_copy(self, value):
+        return self.newtuple(
+            e.copy(v) for e, v in zip(self.element_strategies, value)
+        )
+
     def decompose(self, value):
         assert self.could_have_produced(value)
         return [
@@ -628,6 +660,12 @@ class ListStrategy(SearchStrategy):
             for v in value
         ]
 
+    def check_has_custom_copy(self):
+        return self.element_strategy.has_custom_copy()
+
+    def custom_copy(self, value):
+        return list(map(self.element_strategy.copy, value))
+
     def produce(self, random, pv):
         length = dist.geometric(random, 1.0 / (1 + pv.average_length))
         result = []
@@ -680,6 +718,9 @@ class MappedSearchStrategy(SearchStrategy):
         self.mapped_strategy = strategy
         self.descriptor = descriptor
         self.parameter = self.mapped_strategy.parameter
+
+    def check_has_custom_copy(self):
+        return self.mapped_strategy.has_custom_copy()
 
     @abstractmethod
     def pack(self, x):
@@ -829,6 +870,9 @@ class StringStrategy(MappedSearchStrategy):
             strategy=list_of_one_char_strings_strategy
         )
 
+    def has_custom_copy(self):
+        return False
+
     def pack(self, ls):
         return text_type('').join(ls)
 
@@ -846,6 +890,9 @@ class BinaryStringStrategy(MappedSearchStrategy):
 
     """A strategy for strings of bytes, defined in terms of a strategy for
     lists of bytes."""
+
+    def has_custom_copy(self):
+        return False
 
     def pack(self, x):
         return binary_type(bytearray(x))
@@ -882,6 +929,15 @@ class FixedKeysDictStrategy(SearchStrategy):
         self.descriptor = {}
         for k, v in self.strategy_dict.items():
             self.descriptor[k] = v.descriptor
+
+    def check_has_custom_copy(self):
+        return any(s.has_custom_copy() for s in self.strategy_dict.values())
+
+    def custom_copy(self, value):
+        result = {}
+        for k, v in self.strategy_dict.items():
+            result[k] = v.copy(value[k])
+        return result
 
     def decompose(self, value):
         return [
@@ -955,6 +1011,17 @@ class OneOfStrategy(SearchStrategy):
         )
         self.has_immutable_data = all(
             s.has_immutable_data for s in self.element_strategies)
+
+    def check_has_custom_copy(self):
+        return any(e.has_custom_copy() for e in self.element_strategies)
+
+    def custom_copy(self, value):
+        for e in self.element_strategies:
+            if e.could_have_produced(value):
+                return e.copy(value)
+        raise ValueError("%r could not have produced %r" % (
+            self, value
+        ))
 
     def decompose(self, value):
         results = [
