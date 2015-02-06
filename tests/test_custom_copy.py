@@ -79,3 +79,8 @@ def test_uses_custom_copy():
 def test_custom_copy_one_of_errors_on_bad_value():
     with pytest.raises(ValueError):
         StrategyTable().strategy(one_of((int, bool, HasAnId))).copy("foo")
+
+
+def test_custom_copy_raises_error_if_not_supported():
+    with pytest.raises(NotImplementedError):
+        StrategyTable().strategy(int).custom_copy(1)
