@@ -120,12 +120,13 @@ class SearchStrategy(object):
             unbind_method(SearchStrategy.custom_copy))
 
     def custom_copy(self, value):
-        """
-        Perform a custom copy. You don't need to implement this if your type
-        supports deepcopy.
+        """Perform a custom copy.
+
+        You don't need to implement this if your type supports deepcopy.
+
         """
         raise NotImplementedError(
-            "%s.custom_copy()" % (self.__class__.__name__))
+            '%s.custom_copy()' % (self.__class__.__name__))
 
     def draw_and_produce(self, random):
         return self.produce(random, self.parameter.draw(random))
@@ -1019,7 +1020,7 @@ class OneOfStrategy(SearchStrategy):
         for e in self.element_strategies:
             if e.could_have_produced(value):
                 return e.copy(value)
-        raise ValueError("%r could not have produced %r" % (
+        raise ValueError('%r could not have produced %r' % (
             self, value
         ))
 

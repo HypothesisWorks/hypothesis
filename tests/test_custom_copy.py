@@ -6,11 +6,12 @@ from hypothesis.descriptors import one_of
 
 
 class HasAnId(object):
+
     def __init__(self, i):
         self.i = i
 
     def __repr__(self):
-        return "HasAnId(%r)" % (self.i,)
+        return 'HasAnId(%r)' % (self.i,)
 
     def __eq__(self, other):
         return (type(other) == HasAnId) and (self.i == other.i)
@@ -78,7 +79,7 @@ def test_uses_custom_copy():
 
 def test_custom_copy_one_of_errors_on_bad_value():
     with pytest.raises(ValueError):
-        StrategyTable().strategy(one_of((int, bool, HasAnId))).copy("foo")
+        StrategyTable().strategy(one_of((int, bool, HasAnId))).copy('foo')
 
 
 def test_custom_copy_raises_error_if_not_supported():

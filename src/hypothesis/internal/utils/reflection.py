@@ -236,11 +236,6 @@ def arg_string(f, args, kwargs):
 
 
 def unbind_method(f):
-    """
-    Take something that might be a method or a function and return the
-    underlying function
-    """
+    """Take something that might be a method or a function and return the
+    underlying function."""
     return getattr(f, 'im_func', getattr(f, '__func__', f))
-
-
-

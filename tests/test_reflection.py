@@ -294,6 +294,7 @@ def test_arg_string_does_not_include_unprovided_defaults():
 
 
 class A(object):
+
     def f(self):
         pass
 
@@ -306,6 +307,7 @@ class B(A):
 
 
 class C(A):
+
     def f(self):
         pass
 
