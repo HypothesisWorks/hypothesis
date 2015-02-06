@@ -8,7 +8,7 @@ You can imagine how grumpy I was when I wrote it.
 from hypothesis.internal.compat import text_type, binary_type, integer_types
 import math
 from hypothesis.internal.extmethod import ExtMethod
-
+from hypothesis.internal.utils.reflection import unbind_method
 
 equality = ExtMethod()
 
@@ -154,8 +154,9 @@ def generic_string(xs):
         d = xs.__dict__
     except AttributeError:
         return repr(xs)
-
-    if getattr(xs.__repr__, '__objclass__', None) != object:
+    if (
+        unbind_method(xs.__repr__) != unbind_method(object.__repr__)
+    ):
         return repr(xs)
     else:
         return '%s(%s)' % (

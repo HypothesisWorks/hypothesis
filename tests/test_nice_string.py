@@ -54,3 +54,13 @@ def test_uses_nice_string_inside_named_tuples():
 
 def test_does_not_strip_brackets_when_not_present():
     assert nice_string(complex('nanj')) == "complex('nanj')"
+
+
+class X(object):
+
+    def __init__(self, x):
+        self.x = x
+
+
+def test_can_nicely_display_things_without_repr():
+    assert nice_string(X(1)) == "X(x=1)"
