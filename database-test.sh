@@ -1,3 +1,5 @@
+#!/bin/bash
+
 set -o xtrace
 
 export PYTHONDONTWRITEBYTECODE=x

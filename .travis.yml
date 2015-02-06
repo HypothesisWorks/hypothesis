@@ -1,27 +1,33 @@
-language: python
-
-sudo: false
+language: c
 
 env: PYTHONDONTWRITEBYTECODE=x
 
-python:
-  - 2.7
-  - 3.2
-  - 3.3
-  - 3.4
+os:
+    - osx
+    - linux
 
-before_script:
-  - pip install pytest coverage
-  - find . -name "*.pyc" -delete
+env:
+    matrix:
+        - TOXENV=py27
+        - TOXENV=py33
+        - TOXENV=py34
+        - TOXENV=pypy
+        - TOXENV=lint
+
+install:
+    - ./.travis/install.sh
 
 script:
-  - PYTHONPATH=src python -u -m coverage run -a --branch --include 'src/hypothesis/*' --omit 'src/hypothesis/settings.py,src/hypothesis/internal/compat.py,src/hypothesis/extra.py' $(which py.test) -v tests --ignore=tests/test_recursively.py
-  - ./database-test.sh
-  - coverage report -m --fail-under=100
-  - PYTHONPATH=src py.test -v tests/test_recursively.py
-  - pip install flake8 restructuredtext_lint pygments pyformat
-  - find src tests hypothesis-extra/*/{src,tests} -name "*.py"
-  - git diff --exit-code
-  - flake8 src tests --exclude=compat.py,test_reflection.py --ignore=E731
-  - ./installer-test.sh
-  - ./extra-test.sh
+    - ./.travis/run.sh
+
+notifications:
+    irc:
+        channels:
+            - "irc.freenode.org#hypothesis"
+        use_notice: true
+        skip_join: true
+
+matrix:
+    exclude:
+        - os: osx
+          env: TOXENV=lint
