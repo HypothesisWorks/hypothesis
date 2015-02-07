@@ -23,6 +23,6 @@ script:
   - pip install flake8 restructuredtext_lint pygments pyformat
   - find src tests hypothesis-extra/*/{src,tests} -name "*.py"
   - git diff --exit-code
-  - flake8 src tests --exclude=compat.py
+  - flake8 src tests --exclude=compat.py,test_reflection.py --ignore=E731
   - ./installer-test.sh
   - ./extra-test.sh

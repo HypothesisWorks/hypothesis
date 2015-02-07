@@ -11,6 +11,7 @@ from hypothesis.internal.utils.reflection import (
 )
 from hypothesis.internal.tracker import Tracker
 from hypothesis.examplesource import ExampleSource
+from hypothesis.extra import load_entry_points
 
 
 def assume(condition):
@@ -307,7 +308,5 @@ class Timeout(Unsatisfiable):
     """We were unable to find enough examples that satisfied the preconditions
     of this hypothesis in the amount of time allotted to us."""
 
-
-from hypothesis.extra import load_entry_points
 
 load_entry_points()

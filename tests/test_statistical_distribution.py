@@ -100,7 +100,7 @@ def teardown_module(module):
                 'the Benjamini-Hochberg procedure demonstrates that the '
                 'following are rejected with a false discovery rate of %g: '
                 '\n\n'
-            ) % (REQUIRED_P,  FALSE_POSITIVE_RATE)) + '\n'.join(
+            ) % (REQUIRED_P, FALSE_POSITIVE_RATE)) + '\n'.join(
                 ('  ' + p.description())
                 for p in rejected
             ))
