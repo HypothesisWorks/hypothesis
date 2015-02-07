@@ -38,7 +38,6 @@ def given(*generator_arguments, **kwargs):
                 falsifying_example = verifier.falsify(
                     to_falsify, (generator_arguments, kwargs))[0]
             except Unfalsifiable:
-                print("Unfalsifiable")
                 return
 
             current_reporter()(

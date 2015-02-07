@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from hypothesis import Verifier, assume, Unsatisfiable, given, Flaky
 from hypothesis.descriptors import (
     one_of, just, integers_in_range, sampled_from
@@ -179,12 +181,16 @@ def test_does_not_catch_interrupt_during_falsify():
 
 def test_contains_the_test_function_name_in_the_exception_string():
 
+    calls = [0]
+
     @given(int)
     def this_has_a_totally_unique_name(x):
+        calls[0] += 1
         assume(False)
 
     with pytest.raises(Unsatisfiable) as e:
         this_has_a_totally_unique_name()
+        print("Called %d times" % tuple(calls))
 
     assert this_has_a_totally_unique_name.__name__ in e.value.args[0]
 
