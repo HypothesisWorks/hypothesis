@@ -1,13 +1,17 @@
 [run]
 branch = True
 source =
-    cryptography
     tests/
+include = src/
+omit =
+    src/hypothesis/settings.py
+    src/hypothesis/internal/compat.py
+    src/hypothesis/extra.py
 
 [paths]
 source =
-   src/cryptography
-   .tox/*/lib/python*/site-packages/cryptography
+   src/
+   .tox/*/lib/python*/site-packages/hypothesis
 
 [report]
 exclude_lines =
