@@ -3,6 +3,7 @@ from contextlib import contextmanager
 
 
 class DynamicVariable(object):
+
     def __init__(self, default):
         self.default = default
         self.data = threading.local()
