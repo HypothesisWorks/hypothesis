@@ -1,3 +1,4 @@
+#!/bin/bash
 set -e -o xtrace
 
 for d in hypothesis-extra/*; do

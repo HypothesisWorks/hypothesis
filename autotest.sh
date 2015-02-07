@@ -1,3 +1,4 @@
+#!/bin/bash
 SELF=$(readlink -f $0)
 
 PYTHONPATH=src coverage run --branch --include 'src/hypothesis/*'\
