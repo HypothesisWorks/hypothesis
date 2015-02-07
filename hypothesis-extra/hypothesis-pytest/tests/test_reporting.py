@@ -20,7 +20,7 @@ def test_never_sorted(xs):
 
 def test_runs_reporting_hook(testdir):
     script = testdir.makepyfile(TESTSUITE)
-    result = testdir.runpytest(script, "--verbose")
+    result = testdir.runpytest(script, '--verbose')
     out = '\n'.join(result.stdout.lines)
     assert 'test_this_one_is_ok' in out
     assert 'Captured stdout call' not in out

@@ -190,7 +190,7 @@ def test_contains_the_test_function_name_in_the_exception_string():
 
     with pytest.raises(Unsatisfiable) as e:
         this_has_a_totally_unique_name()
-        print("Called %d times" % tuple(calls))
+        print('Called %d times' % tuple(calls))
 
     assert this_has_a_totally_unique_name.__name__ in e.value.args[0]
 

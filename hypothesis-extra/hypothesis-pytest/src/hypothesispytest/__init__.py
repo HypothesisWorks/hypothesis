@@ -4,6 +4,7 @@ import pytest
 
 
 class StoringReporter(object):
+
     def __init__(self):
         self.results = []
 
@@ -26,7 +27,7 @@ def pytest_runtest_makereport(item, call, __multicall__):
     report = __multicall__.execute()
     if hasattr(item, 'hypothesis_falsifying_example'):
         report.sections.append((
-            "Hypothesis",
+            'Hypothesis',
             item.hypothesis_falsifying_example
         ))
     return report
