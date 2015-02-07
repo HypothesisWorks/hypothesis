@@ -7,7 +7,8 @@ os:
     - linux
 
 cache:
-    - $HOME/.pyenv
+    directories:
+        - $HOME/.pyenv
 
 env:
     matrix:
