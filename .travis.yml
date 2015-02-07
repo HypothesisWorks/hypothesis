@@ -7,6 +7,7 @@ os:
     - linux
 
 cache:
+    apt: true
     directories:
         - $HOME/.pyenv
 
