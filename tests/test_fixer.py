@@ -233,6 +233,9 @@ class BadCollection(object):
         return iter(self.values)
 
 
+def test_with_no_equality_different_length_is_still_not_equal():
+    assert not actually_equal(BadCollection(1), BadCollection(1, 2))
+
 def test_can_handle_collections_that_define_no_equality():
     assert actually_equal(
         BadCollection(1, 2, 3),
@@ -243,6 +246,22 @@ def test_can_handle_collections_that_define_no_equality():
         BadCollection(1, 2, 3),
         BadCollection(1, 2, 4),
     )
+
+
+class BadCollectionWithLength(BadCollection):
+    def __init__(self, *values):
+        self.values = values
+
+    def __iter__(self):
+        raise ValueError()
+
+    def __len__(self):
+        return len(self.values)
+
+
+def test_uses_length_when_present():
+    assert not actually_equal(
+        BadCollectionWithLength(1), BadCollectionWithLength(1, 2))
 
 
 def test_equal_complex_are_fuzzy_equal():

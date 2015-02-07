@@ -25,20 +25,14 @@ def generic_equality(x, y, fuzzy):
             return False
     except (TypeError, AttributeError):
         pass
-    ix = None
-    iy = None
     try:
-        ix = iter(x)
-        iy = iter(y)
+        iter(x)
+        iter(y)
     except TypeError:
-        pass
-    assert (ix is None) == (iy is None)
-    if ix is not None:
-        for u, v in zip(ix, iy):
-            if not actually_equal(u, v, fuzzy):
-                return False
-        return True
-    return x == y
+        return x == y
+    return actually_equal(
+        tuple(x), tuple(y), fuzzy
+    )
 
 
 @equality.extend(int)
