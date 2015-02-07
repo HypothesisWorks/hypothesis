@@ -1,8 +1,8 @@
 from hypothesis.internal.utils.hashitanyway import HashItAnyway
 from collections import namedtuple
-from tests.common.descriptors import Descriptor, DescriptorWithValue
-from tests.common import small_table, small_verifier
-from hypothesis import given, Verifier, assume, Unfalsifiable
+from tests.common.descriptors import Descriptor
+from tests.common import small_table
+from hypothesis import given, Verifier
 from hypothesis.settings import Settings
 from copy import deepcopy
 from hypothesis.searchstrategy import RandomWithSeed
@@ -130,15 +130,3 @@ def test_using_a_random_does_not_break_its_hash():
     x = hia(r)
     r.getrandbits(128)
     assert x == hia(RandomWithSeed(2))
-
-
-@given(DescriptorWithValue, verifier=small_verifier)
-def test_generates_a_good_hash_for_all_core_value_types(dav):
-    base = hia(dav.value)
-    base_hash = hash(base)
-    try:
-        small_verifier.falsify(lambda x: hia(x) == base, dav.descriptor)
-    except Unfalsifiable:
-        assume(False)
-
-    small_verifier.falsify(lambda x: hash(hia(x)) == base_hash, dav.descriptor)
