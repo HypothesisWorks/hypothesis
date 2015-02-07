@@ -20,13 +20,6 @@ install:
 script:
     - ./.travis/run.sh
 
-notifications:
-    irc:
-        channels:
-            - "irc.freenode.org#hypothesis"
-        use_notice: true
-        skip_join: true
-
 matrix:
     exclude:
         - os: osx
