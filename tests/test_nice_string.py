@@ -63,4 +63,4 @@ class X(object):
 
 
 def test_can_nicely_display_things_without_repr():
-    assert nice_string(X(1)) == "X(x=1)"
+    assert nice_string(X(1)) == 'X(x=1)'

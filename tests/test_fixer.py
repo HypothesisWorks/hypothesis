@@ -236,6 +236,7 @@ class BadCollection(object):
 def test_with_no_equality_different_length_is_still_not_equal():
     assert not actually_equal(BadCollection(1), BadCollection(1, 2))
 
+
 def test_can_handle_collections_that_define_no_equality():
     assert actually_equal(
         BadCollection(1, 2, 3),
@@ -249,6 +250,7 @@ def test_can_handle_collections_that_define_no_equality():
 
 
 class BadCollectionWithLength(BadCollection):
+
     def __init__(self, *values):
         self.values = values
 
