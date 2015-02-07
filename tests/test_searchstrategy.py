@@ -382,6 +382,20 @@ def test_frozen_set_of_immutable_types_is_immutable():
     assert strategy(frozenset([int])).has_immutable_data
 
 
+def test_example_augmented_strategy_of_immutable_frozenset_is_immutable():
+    assert strat.ExampleAugmentedStrategy(
+        strategy(frozenset([int])),
+        [frozenset({1})]
+    ).has_immutable_data
+
+
+def test_example_augmented_strategy_of_mutable_frozenset_is_immutable():
+    assert not strat.ExampleAugmentedStrategy(
+        strategy(frozenset([random.Random])),
+        [frozenset({strat.RandomWithSeed(1)})]
+    ).has_immutable_data
+
+
 def test_frozen_set_of_mutable_types_is_mutable():
     class Foo(object):
         pass
