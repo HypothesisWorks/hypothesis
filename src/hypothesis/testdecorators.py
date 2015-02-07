@@ -37,9 +37,9 @@ def given(*generator_arguments, **kwargs):
             try:
                 falsifying_example = verifier.falsify(
                     to_falsify, (generator_arguments, kwargs))[0]
-            except Unfalsifiable:
+            except Unfalsifiable as e:
                 if 'unique_name' in test.__name__:
-                    print("Unfalsifiable")
+                    print("Unfalsifiable", e)
                 return
 
             current_reporter()(
