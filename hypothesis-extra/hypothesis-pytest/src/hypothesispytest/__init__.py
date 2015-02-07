@@ -34,17 +34,3 @@ def pytest_runtest_makereport(item, call, __multicall__):
 
 def load():
     pass
-
-
-def pytest_addoption(parser):
-    group = parser.getgroup(
-        'hypothesis', 'Property-based testing with hypothesis')
-
-    group.addoption('--hypothesis', action='store_true', default=False,
-                    dest='hypothesis',
-                    help='Enable custom reporting of examples from hypothesis')
-
-
-def pytest_configure(config):
-    if config.option.hypothesis:
-        config.option.verbose = True
