@@ -194,14 +194,18 @@ def test_contains_the_test_function_name_in_the_exception_string():
 
     assert this_has_a_totally_unique_name.__name__ in e.value.args[0]
 
+    calls2 = [0]
+
     class Foo(object):
 
         @given(int)
         def this_has_a_unique_name_and_lives_on_a_class(self, x):
+            calls2[0] += 1
             assume(False)
 
     with pytest.raises(Unsatisfiable) as e:
         Foo().this_has_a_unique_name_and_lives_on_a_class()
+        print('Called %d times' % tuple(calls2))
 
     assert (
         Foo.this_has_a_unique_name_and_lives_on_a_class.__name__
