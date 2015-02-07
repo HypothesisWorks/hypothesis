@@ -17,10 +17,19 @@ def pytest_pyfunc_call(pyfuncitem):
     store = StoringReporter()
     with with_reporter(store):
         yield
+    if store.results:
+        pyfuncitem.hypothesis_falsifying_example = store.results[-1]
 
 
-def pytest_runtest_makereport(item, call):
-    print(item, call)
+@pytest.mark.tryfirst
+def pytest_runtest_makereport(item, call, __multicall__):
+    report = __multicall__.execute()
+    if hasattr(item, 'hypothesis_falsifying_example'):
+        report.sections.append((
+            "Hypothesis",
+            item.hypothesis_falsifying_example
+        ))
+    return report
 
 
 def load():
@@ -39,7 +48,3 @@ def pytest_addoption(parser):
 def pytest_configure(config):
     if config.option.hypothesis:
         config.option.verbose = True
-
-
-def pytest_runtest_logreport(report):
-    pass
