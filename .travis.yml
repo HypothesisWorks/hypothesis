@@ -6,6 +6,9 @@ os:
     - osx
     - linux
 
+cache:
+    - $HOME/.pyenv
+
 env:
     matrix:
         - TOXENV=lint
