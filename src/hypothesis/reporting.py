@@ -7,7 +7,11 @@ def silent(value):
     pass
 
 
-reporter = DynamicVariable(print)
+def default(value):
+    print(value)
+
+
+reporter = DynamicVariable(default)
 
 
 def current_reporter():
