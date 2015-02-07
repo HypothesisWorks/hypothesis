@@ -21,16 +21,14 @@ hash_everything_method.extend(datetime)(normal_hash)
 
 
 def draw_day_for_month(random, year, month):
-    while True:
-        day = random.randint(1, 31)
+    # Validate that we've not got a bad year or month
+    datetime(year=year, month=month, day=27)
+    for max_day in hrange(31, 27, -1):  # pragma: no branch
         try:
-            datetime(
-                year=year, month=month, day=day
-            )
-            return day
-        except ValueError as e:
-            if e.args[0] != 'day is out of range for month':
-                raise e
+            datetime(year=year, month=month, day=max_day)
+            return random.randint(1, max_day)
+        except ValueError:
+            pass
 
 
 def maybe_zero_or(random, p, v):
