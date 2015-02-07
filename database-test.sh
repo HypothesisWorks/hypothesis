@@ -1,9 +1,10 @@
 #!/bin/bash
 
-set -o xtrace
+set -o xtrace -e
 
 export PYTHONDONTWRITEBYTECODE=x
-export HYPOTHESIS_DATABASE_FILE=$(mktemp --suffix=.db)
+export HYPOTHESIS_DATABASE_FILE=$(python -c 'import tempfile; print(tempfile.mkstemp(suffix=".db")[-1])')
+rm $HYPOTHESIS_DATABASE_FILE
 PYTHONPATH=src python -u -m coverage run -a --branch --include 'src/hypothesis/*' --omit 'src/hypothesis/settings.py,src/hypothesis/internal/compat.py' $(which py.test) -v tests --ignore=tests/test_recursively.py
 PYTHONPATH=src python -c '
 from __future__ import print_function
