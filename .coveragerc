@@ -1,8 +1,6 @@
 [run]
 branch = True
-source =
-    tests/
-include = src/
+include = src/**/*.py
 omit =
     src/hypothesis/settings.py
     src/hypothesis/internal/compat.py
