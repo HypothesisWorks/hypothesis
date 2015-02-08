@@ -561,3 +561,7 @@ def test_assume_false_on_small_search_space_does_not_fail():
         falsify(lambda x: assume(False), {bool})
     with pytest.raises(Unfalsifiable):
         falsify(lambda x: assume(False), descriptors.integers_in_range(1, 10))
+    with pytest.raises(Unfalsifiable):
+        falsify(
+            lambda x: assume(False),
+            descriptors.one_of((descriptors.integers_in_range(1, 10), bool)))
