@@ -4,6 +4,7 @@ from hypothesis.internal.tracker import Tracker
 from hypothesis.database.converter import (
     ConverterTable, BadData, NotSerializeable
 )
+from hypothesis.internal.specmapper import MissingSpecification
 from hypothesis.database.formats import JSONFormat
 from hypothesis.database.backend import SQLiteBackend
 
@@ -100,6 +101,10 @@ class ExampleDatabase(object):
             return self.storage_cache[key]
         except KeyError:
             pass
+        try:
+            strategy = self.strategies.specification_for(descriptor)
+        except MissingSpecification:
+            raise NotSerializeable(descriptor)
 
         converter = self.converters.specification_for(descriptor)
         result = Storage(
@@ -108,7 +113,7 @@ class ExampleDatabase(object):
             backend=self.backend,
             format=self.format,
             converter=converter,
-            strategy=self.strategies.specification_for(descriptor),
+            strategy=strategy,
         )
         self.storage_cache[key] = result
         return result
