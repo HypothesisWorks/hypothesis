@@ -9,7 +9,7 @@ from __future__ import print_function, unicode_literals
 # END HEADER
 
 from hypothesis.internal.utils.fixers import actually_equal, real_index
-from hypothesis.internal.compat import hrange
+from hypothesis.internal.compat import hrange, text_type
 import random
 import pytest
 from hypothesis import given, Verifier
@@ -119,7 +119,7 @@ def test_can_handle_really_broken_dicts():
 
 
 def test_handles_strings_correctly():
-    s = hex(random.getrandbits(128))
+    s = text_type(hex(random.getrandbits(128)))
     rs = ''.join(reversed(s))
     rrs = ''.join(reversed(rs))
     assert s is not rrs
