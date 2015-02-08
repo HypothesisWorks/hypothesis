@@ -649,3 +649,17 @@ def test_duplicates_do_not_inflate_size_of_sampled_from():
     s = strategy(descriptors.sampled_from([0, 0, 1, 1, 2]))
     assert s.size_lower_bound == 3
     assert s.size_upper_bound == 3
+
+
+class Foo(object):
+    def __copy__(self):
+        raise ValueError()
+
+    def __deepcopy__(self):
+        raise ValueError()
+
+
+def test_just_strategy_can_copy_things_that_break_deepcopy():
+    v = Foo()
+    s = strategy(descriptors.just(v))
+    s.copy(v)
