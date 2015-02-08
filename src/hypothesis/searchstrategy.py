@@ -1235,6 +1235,8 @@ class ExampleAugmentedStrategy(SearchStrategy):
         self.has_immutable_data = main_strategy.has_immutable_data
         if hasattr(main_strategy, 'element_strategy'):
             self.element_strategy = main_strategy.element_strategy
+        self.size_lower_bound = main_strategy.size_lower_bound
+        self.size_upper_bound = main_strategy.size_upper_bound
 
     def produce(self, random, pv):
         if dist.biased_coin(random, pv.example_probability):
