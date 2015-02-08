@@ -21,9 +21,9 @@ def test_homedir_exists_automatically():
 
 
 def test_can_set_homedir_and_it_will_exist(tmpdir):
-    fs.set_hypothesis_home_dir(str(tmpdir.mkdir("kittens")))
+    fs.set_hypothesis_home_dir(str(tmpdir.mkdir('kittens')))
     d = fs.hypothesis_home_dir()
-    assert "kittens" in d
+    assert 'kittens' in d
     assert os.path.exists(d)
 
 
@@ -34,4 +34,4 @@ def test_will_pick_up_location_from_env(tmpdir):
 
 def test_storage_directories_are_created_automatically(tmpdir):
     fs.set_hypothesis_home_dir(str(tmpdir))
-    assert os.path.exists(fs.storage_directory("badgers"))
+    assert os.path.exists(fs.storage_directory('badgers'))
