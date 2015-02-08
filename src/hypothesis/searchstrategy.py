@@ -70,6 +70,9 @@ class mix_generators(object):
         raise StopIteration()
 
 
+Infinity = float('inf')
+
+
 class SearchStrategy(object):
 
     """A SearchStrategy is an object that knows how to explore data of a given
@@ -96,6 +99,9 @@ class SearchStrategy(object):
     # This should be an object of type Parameter, values from which will be
     # passed to produce to control the shape of the distribution.
     parameter = None
+
+    size_lower_bound = Infinity
+    size_upper_bound = Infinity
 
     def __repr__(self):
         return '%s(%s)' % (
@@ -332,6 +338,8 @@ class BoundedIntStrategy(SearchStrategy):
             tuple(range(start, end + 1)),
             activation_chance=min(0.5, 3.0 / (end - start + 1))
         )
+        self.size_lower_bound = end - start + 1
+        self.size_upper_bound = end - start + 1
 
     def produce(self, random, parameter):
         if self.start == self.end:
@@ -531,6 +539,8 @@ class BoolStrategy(SearchStrategy):
     """A strategy that produces Booleans with a Bernoulli conditional
     distribution."""
     descriptor = bool
+    size_lower_bound = 2
+    size_upper_bound = 2
 
     parameter = params.UniformFloatParameter(0, 1)
 
@@ -558,6 +568,11 @@ class TupleStrategy(SearchStrategy):
             x.parameter for x in self.element_strategies
         )
         self.has_immutable_data = all(s.has_immutable_data for s in strategies)
+        self.size_lower_bound = 1
+        self.size_upper_bound = 1
+        for e in self.element_strategies:
+            self.size_lower_bound *= e.size_lower_bound
+            self.size_upper_bound *= e.size_upper_bound
 
     def could_have_produced(self, xs):
         if xs.__class__ != self.tuple_type:
@@ -634,7 +649,6 @@ def _unique(xs):
     for x in xs:
         if not actually_in(x, result):
             result.append(x)
-    result.sort(key=repr)
     return result
 
 
@@ -656,6 +670,7 @@ class ListStrategy(SearchStrategy):
         SearchStrategy.__init__(self)
 
         self.descriptor = _unique(x.descriptor for x in strategies)
+        self.descriptor.sort(key=repr)
         self.element_strategy = one_of_strategies(strategies)
         self.parameter = params.CompositeParameter(
             average_length=params.ExponentialParameter(1.0 / average_length),
@@ -801,6 +816,10 @@ class SetStrategy(MappedSearchStrategy):
             strategy=list_strategy,
             descriptor=set(list_strategy.descriptor)
         )
+        self.size_lower_bound = (
+            2 ** list_strategy.element_strategy.size_lower_bound)
+        self.size_upper_bound = (
+            2 ** list_strategy.element_strategy.size_upper_bound)
 
     def pack(self, x):
         return set(x)
@@ -822,6 +841,10 @@ class FrozenSetStrategy(MappedSearchStrategy):
         self.has_immutable_data = (
             list_strategy.element_strategy.has_immutable_data
         )
+        self.size_lower_bound = (
+            2 ** list_strategy.element_strategy.size_lower_bound)
+        self.size_upper_bound = (
+            2 ** list_strategy.element_strategy.size_upper_bound)
 
     def pack(self, x):
         return frozenset(x)
@@ -934,6 +957,11 @@ class FixedKeysDictStrategy(SearchStrategy):
         self.descriptor = {}
         for k, v in self.strategy_dict.items():
             self.descriptor[k] = v.descriptor
+        self.size_lower_bound = 1
+        self.size_upper_bound = 1
+        for e in self.strategy_dict.values():
+            self.size_lower_bound *= e.size_lower_bound
+            self.size_upper_bound *= e.size_upper_bound
 
     def check_has_custom_copy(self):
         return any(s.has_custom_copy() for s in self.strategy_dict.values())
@@ -1003,8 +1031,9 @@ class OneOfStrategy(SearchStrategy):
         strategies = tuple(flattened_strategies)
         if len(strategies) <= 1:
             raise ValueError('Need at least 2 strategies to choose amongst')
-        descriptor = descriptors.one_of(
-            _unique(s.descriptor for s in strategies))
+        descs = _unique(s.descriptor for s in strategies)
+        descs.sort(key=repr)
+        descriptor = descriptors.one_of(descs)
         self.descriptor = descriptor
         self.element_strategies = list(strategies)
         n = len(self.element_strategies)
@@ -1016,6 +1045,12 @@ class OneOfStrategy(SearchStrategy):
         )
         self.has_immutable_data = all(
             s.has_immutable_data for s in self.element_strategies)
+        self.size_lower_bound = 0
+        self.size_upper_bound = 0
+        for e in self.element_strategies:
+            self.size_lower_bound = max(
+                self.size_lower_bound, e.size_lower_bound)
+            self.size_upper_bound += e.size_upper_bound
 
     def check_has_custom_copy(self):
         return any(e.has_custom_copy() for e in self.element_strategies)
@@ -1067,6 +1102,8 @@ class JustStrategy(SearchStrategy):
     # deepcopy has optimisations that will probably work just as well as
     # our check
     has_immutable_data = False
+    size_lower_bound = 1
+    size_upper_bound = 1
 
     def __init__(self, value):
         SearchStrategy.__init__(self)
@@ -1116,11 +1153,13 @@ class SampledFromStrategy(SearchStrategy):
 
     def __init__(self, elements, descriptor=None):
         SearchStrategy.__init__(self)
-        self.elements = tuple(elements)
+        self.elements = tuple(_unique(elements))
         if descriptor is None:
             descriptor = descriptors.SampledFrom(self.elements)
         self.descriptor = descriptor
         self.parameter = params.NonEmptySubset(self.elements)
+        self.size_lower_bound = len(elements)
+        self.size_upper_bound = len(elements)
 
     def produce(self, random, pv):
         return random.choice(pv)

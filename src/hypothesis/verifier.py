@@ -47,7 +47,6 @@ class Verifier(object):
             )
 
         self.min_satisfying_examples = settings.min_satisfying_examples
-        self.max_skipped_examples = settings.max_skipped_examples
         self.max_examples = settings.max_examples
         self.timeout = settings.timeout
         if settings.derandomize and random:
@@ -122,13 +121,14 @@ class Verifier(object):
                 return False
             return time.time() >= start_time + self.timeout
 
-        skipped_examples = 0
         examples_seen = 0
         # At present this loop will never exit normally . This needs proper
         # testing when "database only" mode becomes available but right now
         # it's not.
         for args in example_source:  # pragma: no branch
             assert search_strategy.could_have_produced(args)
+            if examples_found >= search_strategy.size_upper_bound:
+                break
 
             if falsifying_examples:
                 break
@@ -140,18 +140,7 @@ class Verifier(object):
 
             if track_seen.track(args) > 1:
                 example_source.mark_bad()
-                skipped_examples += 1
-                if skipped_examples >= self.max_skipped_examples:
-                    raise Exhausted(hypothesis, examples_found)
-                else:
-                    # This really is covered. I suspect a bug in coverage that
-                    # I have not yet narrowed down. It is impossible to execute
-                    # the other branch without first executing this one and
-                    # there is a test that cannot pass without executing the
-                    # other branch.
-                    continue  # pragma: no cover
-            else:
-                skipped_examples = 0
+                continue
             examples_found += 1
             try:
                 is_falsifying_example = not hypothesis(
@@ -168,7 +157,10 @@ class Verifier(object):
         timed_out = self.timeout >= 0 and run_time >= self.timeout
 
         if not falsifying_examples:
-            if satisfying_examples < min_satisfying_examples:
+            if examples_found >= search_strategy.size_lower_bound:
+                raise Exhausted(
+                    hypothesis, satisfying_examples)
+            elif satisfying_examples < min_satisfying_examples:
                 if timed_out:
                     raise Timeout(hypothesis, satisfying_examples, run_time)
                 else:

@@ -20,6 +20,7 @@ from collections import namedtuple
 import pytest
 import re
 from hypothesis.internal.compat import hrange
+import hypothesis.internal.utils.distributions as dist
 import hypothesis.params as params
 import hypothesis.settings as hs
 import time
@@ -529,3 +530,34 @@ def test_only_generates_valid_unicode():
             return False
     with pytest.raises(Unfalsifiable):
         print(falsify(is_valid, text_type))
+
+
+class SmallInt(int):
+    pass
+
+
+class SmallIntStrategy(SearchStrategy):
+    descriptor = SmallInt
+    parameter = params.CompositeParameter()
+
+    def produce(self, random, pv):
+        return SmallInt(dist.geometric(random, 0.9))
+
+
+StrategyTable.default().define_specification_for(
+    SmallInt, lambda s, d: SmallIntStrategy()
+)
+
+
+def test_assume_false_with_lots_of_duplicates_fails():
+    with pytest.raises(Unsatisfiable):
+        falsify(lambda x: assume(False), SmallInt)
+
+
+def test_assume_false_on_small_search_space_does_not_fail():
+    with pytest.raises(Unfalsifiable):
+        falsify(lambda x, y: assume(False), bool, bool)
+    with pytest.raises(Unfalsifiable):
+        falsify(lambda x: assume(False), {bool})
+    with pytest.raises(Unfalsifiable):
+        falsify(lambda x: assume(False), descriptors.integers_in_range(1, 10))

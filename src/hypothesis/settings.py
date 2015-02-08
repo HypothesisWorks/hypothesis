@@ -50,7 +50,6 @@ class Settings(object):
             self,
             min_satisfying_examples=USE_DEFAULT,
             max_examples=USE_DEFAULT,
-            max_skipped_examples=USE_DEFAULT,
             timeout=USE_DEFAULT,
             derandomize=USE_DEFAULT,
             database=USE_DEFAULT,
@@ -59,8 +58,6 @@ class Settings(object):
             self, 'min_satisfying_examples', min_satisfying_examples)
         set_or_default(
             self, 'max_examples', max_examples)
-        set_or_default(
-            self, 'max_skipped_examples', max_skipped_examples)
         set_or_default(
             self, 'timeout', timeout)
         set_or_default(
@@ -73,7 +70,6 @@ default = Settings(
     min_satisfying_examples=5,
     max_examples=200,
     timeout=60,
-    max_skipped_examples=50,
     derandomize=False,
     database=None
 )
