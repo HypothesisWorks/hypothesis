@@ -8,7 +8,6 @@ from hypothesis.internal.utils.reflection import arg_string, copy_argspec
 from hypothesis.descriptors import just
 import inspect
 from collections import namedtuple
-from functools import wraps
 
 
 HypothesisProvided = namedtuple('HypothesisProvided', ('value,'))
@@ -56,7 +55,6 @@ def given(*generator_arguments, **generator_kwargs):
             defaults=list(map(HypothesisProvided, descriptors))
         )
 
-        @wraps(test)
         @copy_argspec(
             test.__name__, argspec
         )
