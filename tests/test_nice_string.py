@@ -74,3 +74,11 @@ class X(object):
 
 def test_can_nicely_display_things_without_repr():
     assert nice_string(X(1)) == 'X(x=1)'
+
+
+def test_uses_binary_literals_for_binary_type():
+    assert nice_string(b'foo') == "b'foo'"
+
+
+def test_uses_text_literals_for_text_type():
+    assert nice_string('foo') == "'foo'"
