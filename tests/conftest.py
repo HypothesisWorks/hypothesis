@@ -1,4 +1,8 @@
 import hypothesis.settings
+from hypothesis.internal.filestorage import set_hypothesis_home_dir
+from tempfile import mkdtemp
+
+set_hypothesis_home_dir(mkdtemp())
 
 hypothesis.settings.default.max_examples = 1000
 hypothesis.settings.default.timeout = -1

@@ -7,9 +7,9 @@ import types
 import ast
 import re
 import hashlib
-from contextlib import contextmanager
 import sys
 import os
+import time
 from hypothesis.conventions import not_set
 from hypothesis.internal.filestorage import storage_directory
 from functools import wraps
@@ -270,16 +270,9 @@ def eval_directory():
     return storage_directory('eval_source')
 
 
-@contextmanager
-def directory_on_path(d):
-    if d in sys.path:
-        yield
-    else:
-        try:
-            sys.path.insert(0, d)
-            yield
-        finally:
-            sys.path.remove(d)
+def add_directory_to_path(d):
+    if d not in sys.path:
+        sys.path.insert(0, d)
 
 
 eval_cache = {}
@@ -292,17 +285,27 @@ def source_exec_as_module(source):
         pass
 
     d = eval_directory()
-    name = 'hypothesis_temporary_module_%s' % (
-        hashlib.sha1(source.encode('utf-8')).hexdigest(),
-    )
-    filepath = os.path.join(d, name + '.py')
-    f = open(filepath, 'w')
-    f.write(source)
-    f.close()
-    with directory_on_path(d):
-        result = __import__(name)
-        eval_cache[source] = result
-        return result
+    max_tries = 10
+    for i in hrange(10):  # pragma: no branch
+        name = 'hypothesis_temporary_module_%s_%d' % (
+            hashlib.sha1(source.encode('utf-8')).hexdigest(),
+            i,
+        )
+        filepath = os.path.join(d, name + '.py')
+        f = open(filepath, 'w')
+        f.write(source)
+        f.close()
+        add_directory_to_path(d)
+        # Workaround for race condition in importer. No really. :(
+        # See http://bugs.python.org/issue23412
+        try:
+            result = __import__(name)
+            eval_cache[source] = result
+            return result
+        except ImportError:  # pragma: no cover
+            if max_tries == i + 1:
+                raise
+        time.sleep(0.001 * (2 ** i))  # pragma: no cover
 
 COPY_ARGSPEC_SCRIPT = """
 from hypothesis.conventions import not_set
