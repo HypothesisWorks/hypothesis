@@ -1,8 +1,8 @@
 import contextlib
 import sys
 from io import StringIO
-from functools import wraps
 import pytest
+from hypothesis.internal.utils.reflection import proxies
 
 
 @contextlib.contextmanager
@@ -18,7 +18,7 @@ def capture_out():
 
 def fails_with(e):
     def accepts(f):
-        @wraps(f)
+        @proxies(f)
         def inverted_test(*arguments, **kwargs):
             with pytest.raises(e):
                 f(*arguments, **kwargs)

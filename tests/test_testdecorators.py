@@ -307,3 +307,10 @@ def test_errors_when_given_varargs():
         def has_varargs(*args):
             pass
     assert 'varargs' in e.value.args[0]
+
+
+@pytest.mark.parametrize('t', [1, 10, 100, 1000])
+@fails
+@given(x=int)
+def test_is_bounded(t, x):
+    assert x < t

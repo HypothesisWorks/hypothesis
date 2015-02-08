@@ -12,7 +12,7 @@ import sys
 import os
 from hypothesis.conventions import not_set
 from hypothesis.internal.filestorage import storage_directory
-
+from functools import wraps
 
 def function_digest(function):
     """Returns a string that is stable across multiple invocations across
@@ -361,4 +361,11 @@ def copy_argspec(name, argspec):
                     kwargs[k] = defaults[k]
             return f(*args, **kwargs)
         return accept_with_right_args(convert_arguments)
+    return accept
+
+
+def proxies(target):
+    def accept(proxy):
+        return wraps(target)(
+            copy_argspec(target.__name__, inspect.getargspec(target))(proxy))
     return accept
