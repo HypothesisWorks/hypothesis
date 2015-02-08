@@ -272,11 +272,14 @@ def eval_directory():
 
 @contextmanager
 def directory_on_path(d):
-    try:
-        sys.path.insert(0, d)
+    if d in sys.path:
         yield
-    finally:
-        sys.path.remove(d)
+    else:
+        try:
+            sys.path.insert(0, d)
+            yield
+        finally:
+            sys.path.remove(d)
 
 
 eval_cache = {}
@@ -293,8 +296,9 @@ def source_exec_as_module(source):
         hashlib.sha1(source.encode('utf-8')).hexdigest(),
     )
     filepath = os.path.join(d, name + '.py')
-    with open(filepath, 'w') as f:
-        f.write(source)
+    f = open(filepath, 'w')
+    f.write(source)
+    f.close()
     with directory_on_path(d):
         result = __import__(name)
         eval_cache[source] = result
