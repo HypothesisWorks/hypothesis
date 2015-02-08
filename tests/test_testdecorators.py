@@ -8,8 +8,6 @@ from __future__ import print_function, unicode_literals
 
 # END HEADER
 
-from __future__ import print_function
-
 from hypothesis import Verifier, assume, Unsatisfiable, given, Flaky
 from hypothesis.descriptors import (
     one_of, just, integers_in_range, sampled_from

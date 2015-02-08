@@ -25,6 +25,7 @@ def main():
                 else:
                     lines.append(l)
         source = ''.join(lines).strip()
+        assert '__future__' not in source, f
         with open(f, "w") as o:
             o.write(HEADER_SOURCE)
             o.write("\n\n")

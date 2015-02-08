@@ -18,8 +18,6 @@ data from the distribution produced by some descriptor is >= REQUIRED_P
 
 """
 
-from __future__ import print_function
-
 import math
 import hypothesis.internal.utils.reflection as reflection
 import random

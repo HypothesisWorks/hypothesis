@@ -8,8 +8,6 @@ from __future__ import print_function, unicode_literals
 
 # END HEADER
 
-from __future__ import unicode_literals
-
 """Module defining SearchStrategy, which is the core type that Hypothesis uses
 to explore data."""
 

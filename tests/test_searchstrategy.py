@@ -8,8 +8,6 @@ from __future__ import print_function, unicode_literals
 
 # END HEADER
 
-from __future__ import unicode_literals
-
 import hypothesis.strategytable as ss
 import hypothesis.searchstrategy as strat
 import hypothesis.descriptors as descriptors

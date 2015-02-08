@@ -8,7 +8,6 @@ from __future__ import print_function, unicode_literals
 
 # END HEADER
 
-from __future__ import print_function, unicode_literals
 import time
 from hypothesis.verifier import (
     Verifier, Unfalsifiable, UnsatisfiedAssumption, Flaky

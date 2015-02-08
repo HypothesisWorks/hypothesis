@@ -11,8 +11,6 @@ from __future__ import print_function, unicode_literals
 """Tests specifically around the behaviour of the interaction between falsify
 and the database."""
 
-from __future__ import unicode_literals
-
 from hypothesis import Verifier, given
 from hypothesis.database import ExampleDatabase, SQLiteBackend
 from hypothesis.descriptors import one_of
