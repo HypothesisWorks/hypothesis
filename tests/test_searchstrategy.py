@@ -652,6 +652,7 @@ def test_duplicates_do_not_inflate_size_of_sampled_from():
 
 
 class Foo(object):
+
     def __copy__(self):
         raise ValueError()
 
