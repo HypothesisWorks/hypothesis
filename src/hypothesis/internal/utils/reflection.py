@@ -286,8 +286,13 @@ def source_exec_as_module(source):
 
     d = eval_directory()
     add_directory_to_path(d)
+    # Try writing the source to a series of files. If we get an import error
+    # importing after writing we're experiencing a race condition in the
+    # import mechanism. Try again a few times. If after a 1.5 second wait it's
+    # still not working something else is going on.
+    # See http://bugs.python.org/issue23412
     waits = [0.0, 0.001, 0.01, 0.1, 0.5, 1.0, 1.5]
-    for i, wait in enumerate(waits):
+    for i, wait in enumerate(waits):  # pragma: no branch
         name = 'hypothesis_temporary_module_%s_%d' % (
             hashlib.sha1(source.encode('utf-8')).hexdigest(),
             i,
@@ -295,11 +300,6 @@ def source_exec_as_module(source):
         filepath = os.path.join(d, name + '.py')
         f = open(filepath, 'w')
         f.write(source)
-        # Workaround for race condition in importer. No really. :(
-        # See http://bugs.python.org/issue23412
-        f.flush()
-        if i > 0:
-            os.fsync(f.fileno())
         f.close()
         assert os.path.exists(filepath)
         assert open(filepath).read() == source

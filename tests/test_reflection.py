@@ -433,3 +433,15 @@ def test_can_get_source_of_functions_from_exec():
     assert 'foo(x)' in inspect.getsource(
         source_exec_as_module(DEFINE_FOO_FUNCTION).foo
     )
+
+
+def test_copy_argspec_validates_arguments():
+    with pytest.raises(ValueError):
+        copy_argspec("hello_world", inspect.ArgSpec(
+            args=['a b'], varargs=None, keywords=None, defaults=None))
+
+
+def test_copy_argspec_validates_function_name():
+    with pytest.raises(ValueError):
+        copy_argspec("hello world", inspect.ArgSpec(
+            args=['a', 'b'], varargs=None, keywords=None, defaults=None))
