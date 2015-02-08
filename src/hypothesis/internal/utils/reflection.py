@@ -285,6 +285,7 @@ def source_exec_as_module(source):
         pass
 
     d = eval_directory()
+    add_directory_to_path(d)
     max_tries = 10
     for i in hrange(10):  # pragma: no branch
         name = 'hypothesis_temporary_module_%s_%d' % (
@@ -294,10 +295,14 @@ def source_exec_as_module(source):
         filepath = os.path.join(d, name + '.py')
         f = open(filepath, 'w')
         f.write(source)
-        f.close()
-        add_directory_to_path(d)
         # Workaround for race condition in importer. No really. :(
         # See http://bugs.python.org/issue23412
+        f.flush()
+        if i > 0:
+            os.fsync(f.fileno())
+        f.close()
+        assert os.path.exists(filepath)
+        assert open(filepath).read() == source
         try:
             result = __import__(name)
             eval_cache[source] = result
