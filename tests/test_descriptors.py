@@ -7,6 +7,7 @@
 from __future__ import print_function, unicode_literals
 
 # END HEADER
+
 import hypothesis.descriptors as descriptors
 import pytest
 

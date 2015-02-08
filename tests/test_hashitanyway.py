@@ -7,6 +7,7 @@
 from __future__ import print_function, unicode_literals
 
 # END HEADER
+
 from hypothesis.internal.utils.hashitanyway import HashItAnyway
 from collections import namedtuple
 from tests.common.descriptors import Descriptor

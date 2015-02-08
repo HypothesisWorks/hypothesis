@@ -7,6 +7,7 @@
 from __future__ import print_function, unicode_literals
 
 # END HEADER
+
 """Tests for specific string representations of values."""
 
 from hypothesis.searchstrategy import nice_string

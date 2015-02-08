@@ -7,6 +7,7 @@
 from __future__ import print_function, unicode_literals
 
 # END HEADER
+
 """A module controlling settings for Hypothesis to use in falsification.
 
 Either an explicit Settings object can be used or the default object on

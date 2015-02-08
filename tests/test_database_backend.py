@@ -7,6 +7,7 @@
 from __future__ import print_function, unicode_literals
 
 # END HEADER
+
 from hypothesis import given
 from hypothesis.database.backend import SQLiteBackend
 from hypothesis.internal.compat import text_type

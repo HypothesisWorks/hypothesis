@@ -7,6 +7,7 @@
 from __future__ import print_function, unicode_literals
 
 # END HEADER
+
 from __future__ import print_function
 
 from hypothesis import Verifier, assume, Unsatisfiable, given, Flaky

@@ -7,6 +7,7 @@
 from __future__ import print_function, unicode_literals
 
 # END HEADER
+
 from hypothesis import Verifier
 import hypothesis.settings as hs
 from hypothesis.strategytable import StrategyTable

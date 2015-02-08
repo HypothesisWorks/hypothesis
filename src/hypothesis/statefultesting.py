@@ -7,6 +7,7 @@
 from __future__ import print_function, unicode_literals
 
 # END HEADER
+
 from hypothesis.searchstrategy import (
     MappedSearchStrategy,
     one_of_strategies,

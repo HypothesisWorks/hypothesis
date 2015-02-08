@@ -7,6 +7,7 @@
 from __future__ import print_function, unicode_literals
 
 # END HEADER
+
 from hypothesis.internal.compat import binary_type, text_type
 from hypothesis.descriptors import (
     Just, just, OneOf, SampledFrom

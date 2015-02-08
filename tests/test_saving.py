@@ -7,6 +7,7 @@
 from __future__ import print_function, unicode_literals
 
 # END HEADER
+
 """Tests specifically around the behaviour of the interaction between falsify
 and the database."""
 

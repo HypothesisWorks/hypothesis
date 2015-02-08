@@ -7,6 +7,7 @@
 from __future__ import print_function, unicode_literals
 
 # END HEADER
+
 from __future__ import unicode_literals
 
 from tests.common.descriptors import DescriptorWithValue

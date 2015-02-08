@@ -7,6 +7,7 @@
 from __future__ import print_function, unicode_literals
 
 # END HEADER
+
 from hypothesis.internal.specmapper import SpecificationMapper
 import hypothesis.searchstrategy as strat
 from hypothesis.internal.compat import text_type, binary_type

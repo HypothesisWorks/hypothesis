@@ -24,11 +24,12 @@ def main():
                     lines = []
                 else:
                     lines.append(l)
-        source = ''.join(lines)
+        source = ''.join(lines).strip()
         with open(f, "w") as o:
             o.write(HEADER_SOURCE)
-            o.write("\n")
+            o.write("\n\n")
             o.write(source)
+            o.write("\n")
 
 if __name__ == '__main__':
     main()

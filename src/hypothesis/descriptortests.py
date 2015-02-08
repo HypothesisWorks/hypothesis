@@ -7,6 +7,7 @@
 from __future__ import print_function, unicode_literals
 
 # END HEADER
+
 """Support for testing your custom implementations of descriptors."""
 
 from hypothesis.strategytable import StrategyTable

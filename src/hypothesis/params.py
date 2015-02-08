@@ -7,6 +7,7 @@
 from __future__ import print_function, unicode_literals
 
 # END HEADER
+
 """This module defines a Parameter type which is used by search strategies to
 control the shape of their distribution.
 

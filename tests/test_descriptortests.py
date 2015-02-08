@@ -7,6 +7,7 @@
 from __future__ import print_function, unicode_literals
 
 # END HEADER
+
 from hypothesis.descriptortests import descriptor_test_suite
 from hypothesis.descriptors import one_of, integers_in_range
 from random import Random

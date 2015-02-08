@@ -7,6 +7,7 @@
 from __future__ import print_function, unicode_literals
 
 # END HEADER
+
 import hypothesis.strategytable as st
 import hypothesis.searchstrategy as strat
 import hypothesis.descriptors as descriptors

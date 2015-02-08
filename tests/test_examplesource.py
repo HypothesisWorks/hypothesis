@@ -7,6 +7,7 @@
 from __future__ import print_function, unicode_literals
 
 # END HEADER
+
 from hypothesis.database import ExampleDatabase
 from hypothesis.examplesource import ExampleSource
 from hypothesis.strategytable import StrategyTable

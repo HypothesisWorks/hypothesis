@@ -7,6 +7,7 @@
 from __future__ import print_function, unicode_literals
 
 # END HEADER
+
 from hypothesis.internal.utils.fixers import actually_equal, real_index
 from hypothesis.internal.compat import hrange
 import random

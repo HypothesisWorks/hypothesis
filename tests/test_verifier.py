@@ -7,6 +7,7 @@
 from __future__ import print_function, unicode_literals
 
 # END HEADER
+
 from hypothesis import Verifier
 from hypothesis.settings import Settings
 from random import Random

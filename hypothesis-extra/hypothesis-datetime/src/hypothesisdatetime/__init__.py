@@ -7,6 +7,7 @@
 from __future__ import print_function, unicode_literals
 
 # END HEADER
+
 from hypothesis.strategytable import StrategyTable
 from hypothesis.searchstrategy import SearchStrategy
 from datetime import datetime, MINYEAR, MAXYEAR

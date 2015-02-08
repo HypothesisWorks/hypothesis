@@ -7,6 +7,7 @@
 from __future__ import print_function, unicode_literals
 
 # END HEADER
+
 from hypothesis import reporting, given
 import pytest
 from tests.common.utils import capture_out
