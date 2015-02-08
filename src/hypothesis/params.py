@@ -71,6 +71,20 @@ class UniformFloatParameter(Parameter):
         ) * random.random()
 
 
+class UniformIntParameter(Parameter):
+
+    """Parameter representing a uniform distribution over floats between a
+    provided lower and upper bound."""
+
+    def __init__(self, lower_bound, upper_bound):
+        Parameter.__init__(self)
+        self.lower_bound = lower_bound
+        self.upper_bound = upper_bound
+
+    def draw(self, random):
+        return random.randint(self.lower_bound, self.upper_bound)
+
+
 class NormalParameter(Parameter):
 
     """Parameter representing a normal distribution over floats with a provided

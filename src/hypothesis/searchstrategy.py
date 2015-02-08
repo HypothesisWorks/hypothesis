@@ -447,6 +447,41 @@ class FullRangeFloats(FloatStrategy):
         return isinstance(value, float)
 
 
+def _find_max_exponent():
+    """Returns the largest n such that math.ldexp(1.0, -n) > 0"""
+    upper = 1
+    while math.ldexp(1.0, -upper) > 0:
+        lower = upper
+        upper *= 2
+    assert math.ldexp(1.0, -lower) > 0
+    assert math.ldexp(1.0, -upper) == 0
+    assert upper > lower + 1
+    while upper > lower + 1:
+        mid = (upper + lower) // 2
+        if math.ldexp(1.0, -mid) > 0:
+            lower = mid
+        else:
+            upper = mid
+    return lower
+
+
+class SmallFloats(FloatStrategy):
+    max_exponent = _find_max_exponent()
+    parameter = params.CompositeParameter(
+        negative_probability=params.UniformFloatParameter(0, 1),
+        min_exponent=params.UniformIntParameter(0, max_exponent)
+    )
+
+    def produce(self, random, pv):
+        base = math.ldexp(
+            random.random(),
+            -random.randint(pv.min_exponent, self.max_exponent)
+        )
+        if dist.biased_coin(random, pv.negative_probability):
+            base = -base
+        return base
+
+
 class FixedBoundedFloatStrategy(SearchStrategy):
 
     """A strategy for floats distributed between two endpoints.

@@ -76,7 +76,8 @@ def define_float_strategy(strategies, descriptor):
         strat.ExponentialFloatStrategy() |
         strat.JustIntFloats(strategies.strategy(int)) |
         strat.NastyFloats() |
-        strat.FullRangeFloats()
+        strat.FullRangeFloats() |
+        strat.SmallFloats()
     )
 
 
