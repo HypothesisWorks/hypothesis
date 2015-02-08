@@ -14,6 +14,7 @@ from hypothesis.conventions import not_set
 from hypothesis.internal.filestorage import storage_directory
 from functools import wraps
 
+
 def function_digest(function):
     """Returns a string that is stable across multiple invocations across
     multiple processes and is prone to changing significantly in response to
