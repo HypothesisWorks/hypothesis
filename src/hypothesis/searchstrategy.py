@@ -1133,9 +1133,6 @@ class JustStrategy(SearchStrategy):
     """
     A strategy which simply returns a single fixed value with probability 1.
     """
-    # We could do better here but it's probably not worth it
-    # deepcopy has optimisations that will probably work just as well as
-    # our check
     has_immutable_data = False
     size_lower_bound = 1
     size_upper_bound = 1
@@ -1143,6 +1140,16 @@ class JustStrategy(SearchStrategy):
     def __init__(self, value):
         SearchStrategy.__init__(self)
         self.descriptor = descriptors.Just(value)
+        try:
+            deepcopy(value)
+        except:
+            self.has_immutable_data = True
+
+    def check_has_custom_copy(self):
+        return self.has_immutable_data
+
+    def custom_copy(self, value):
+        return value
 
     def __repr__(self):
         return 'JustStrategy(value=%r)' % (self.descriptor.value,)
