@@ -179,7 +179,6 @@ def binary_string(xs):
         return result
 
 
-
 @nice_string_method.extend(type)
 def type_string(xs):
     return xs.__name__

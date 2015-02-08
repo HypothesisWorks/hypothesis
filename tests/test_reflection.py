@@ -293,7 +293,7 @@ def test_can_mix_varargs_and_varkwargs():
 
     assert arg_string(
         foo, (1, 2, 3), {'c': 7}
-    ) == "1, 2, 3, c=7"
+    ) == '1, 2, 3, c=7'
 
 
 def test_arg_string_does_not_include_unprovided_defaults():
