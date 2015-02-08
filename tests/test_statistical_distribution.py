@@ -218,6 +218,18 @@ def long_list(xs):
     return len(xs) >= 20
 
 
+test_can_produce_positive_infinity = define_test(
+    float, 0.02, lambda x: x == float('inf')
+)
+
+test_can_produce_negative_infinity = define_test(
+    float, 0.02, lambda x: x == float('-inf')
+)
+
+test_can_produce_nan = define_test(
+    float, 0.02, math.isnan
+)
+
 test_can_produce_long_lists_of_positive_integers = define_test(
     [int], 0.07, lambda x: all(t >= 0 for t in x),
     condition=long_list
