@@ -1193,8 +1193,8 @@ class SampledFromStrategy(SearchStrategy):
             descriptor = descriptors.SampledFrom(self.elements)
         self.descriptor = descriptor
         self.parameter = params.NonEmptySubset(self.elements)
-        self.size_lower_bound = len(elements)
-        self.size_upper_bound = len(elements)
+        self.size_lower_bound = len(self.elements)
+        self.size_upper_bound = len(self.elements)
 
     def produce(self, random, pv):
         return random.choice(pv)

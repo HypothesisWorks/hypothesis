@@ -643,3 +643,9 @@ def test_minimizing_a_very_large_int_produces_an_int():
     s = strategy(int)
     shrunk = list(s.simplify_such_that(1 << 73, lambda x: x > 0))[-1]
     assert type(shrunk) == int
+
+
+def test_duplicates_do_not_inflate_size_of_sampled_from():
+    s = strategy(descriptors.sampled_from([0, 0, 1, 1, 2]))
+    assert s.size_lower_bound == 3
+    assert s.size_upper_bound == 3
