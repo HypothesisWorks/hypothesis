@@ -286,8 +286,8 @@ def source_exec_as_module(source):
 
     d = eval_directory()
     add_directory_to_path(d)
-    max_tries = 10
-    for i in hrange(10):  # pragma: no branch
+    waits = [0.0, 0.001, 0.01, 0.1, 0.5, 1.0, 1.5]
+    for i, wait in enumerate(waits):
         name = 'hypothesis_temporary_module_%s_%d' % (
             hashlib.sha1(source.encode('utf-8')).hexdigest(),
             i,
@@ -303,14 +303,14 @@ def source_exec_as_module(source):
         f.close()
         assert os.path.exists(filepath)
         assert open(filepath).read() == source
+        time.sleep(wait)
         try:
             result = __import__(name)
             eval_cache[source] = result
             return result
         except ImportError:  # pragma: no cover
-            if max_tries == i + 1:
+            if wait == waits[-1]:
                 raise
-        time.sleep(0.001 * (2 ** i))  # pragma: no cover
 
 COPY_ARGSPEC_SCRIPT = """
 from hypothesis.conventions import not_set
