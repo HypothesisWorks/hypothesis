@@ -289,10 +289,10 @@ def source_exec_as_module(source):
 
     d = eval_directory()
     name = 'hypothesis_temporary_module_%s' % (
-        hashlib.sha1(source).hexdigest(),
+        hashlib.sha1(source.encode('utf-8')).hexdigest(),
     )
     filepath = os.path.join(d, name + '.py')
-    with file(filepath, 'w') as f:
+    with open(filepath, 'w') as f:
         f.write(source)
     with directory_on_path(d):
         result = __import__(name)
