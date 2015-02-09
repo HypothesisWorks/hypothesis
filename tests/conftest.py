@@ -17,6 +17,10 @@ from tempfile import mkdtemp
 import hypothesis.settings
 from hypothesis.internal.filestorage import set_hypothesis_home_dir
 
+import warnings
+
+warnings.filterwarnings("error")
+
 set_hypothesis_home_dir(mkdtemp())
 
 hypothesis.settings.default.max_examples = 1000
