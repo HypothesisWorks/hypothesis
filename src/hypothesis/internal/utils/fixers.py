@@ -270,8 +270,8 @@ def dict_string(xs):
 
 def int_string(xs):
     s = repr(xs)
-    if s[-1] == 'L':
-        s = s[:-1]
+    if s[-1] == 'L':  # pragma: no branch
+        s = s[:-1]  # pragma: no cover
     return s
 
 for t in integer_types:
