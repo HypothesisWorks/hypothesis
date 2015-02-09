@@ -8,21 +8,22 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import print_function, unicode_literals, division
-
 # END HEADER
 
+from __future__ import division, print_function, unicode_literals
+
+import math
+import random
+from collections import namedtuple
+
+import pytest
+
+import hypothesis.params as params
+import hypothesis.descriptors as descriptors
 import hypothesis.strategytable as ss
 import hypothesis.searchstrategy as strat
-import hypothesis.descriptors as descriptors
-import hypothesis.params as params
+from hypothesis.internal.compat import hrange, text_type, binary_type
 from hypothesis.internal.tracker import Tracker
-from collections import namedtuple
-from hypothesis.internal.compat import hrange
-from hypothesis.internal.compat import text_type, binary_type
-import random
-import pytest
-import math
 
 
 def strategy(*args, **kwargs):

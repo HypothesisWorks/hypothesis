@@ -8,8 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import print_function, unicode_literals, division
-
 # END HEADER
 
 """This module defines a Parameter type which is used by search strategies to
@@ -18,10 +16,13 @@ control the shape of their distribution.
 It also provides a variety of implementations thereof.
 
 """
-import collections
-import hypothesis.internal.utils.distributions as dist
+from __future__ import division, print_function, unicode_literals
+
 import inspect
+import collections
 from abc import abstractmethod
+
+import hypothesis.internal.utils.distributions as dist
 
 
 class Parameter(object):

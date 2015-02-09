@@ -8,24 +8,24 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import print_function, unicode_literals, division
-
 # END HEADER
 
 """Support for testing your custom implementations of descriptors."""
 
-from hypothesis.strategytable import StrategyTable
-from hypothesis.database.converter import ConverterTable
-from hypothesis.database import ExampleDatabase
-from hypothesis.database.backend import SQLiteBackend
-from hypothesis import Verifier, given
-from hypothesis.settings import Settings
-from unittest import TestCase
-from hypothesis.internal.utils.fixers import actually_equal
-from hypothesis.internal.utils.hashitanyway import (
-    hash_everything, HashItAnyway
-)
+from __future__ import division, print_function, unicode_literals
+
 from random import Random
+from unittest import TestCase
+
+from hypothesis import Verifier, given
+from hypothesis.database import ExampleDatabase
+from hypothesis.settings import Settings
+from hypothesis.strategytable import StrategyTable
+from hypothesis.database.backend import SQLiteBackend
+from hypothesis.database.converter import ConverterTable
+from hypothesis.internal.utils.fixers import actually_equal
+from hypothesis.internal.utils.hashitanyway import HashItAnyway, \
+    hash_everything
 
 
 def descriptor_test_suite(

@@ -8,24 +8,22 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import print_function, unicode_literals, division
-
 # END HEADER
 
-from hypothesis.internal.compat import binary_type, text_type, hrange
-from hypothesis.descriptors import (
-    just, Just,
-    OneOf, sampled_from, SampledFrom
-)
-from hypothesis.searchstrategy import (
-    SearchStrategy, RandomWithSeed, nice_string
-)
-import hypothesis.params as params
-from hypothesis.internal.utils.distributions import geometric, biased_coin
+from __future__ import division, print_function, unicode_literals
+
 from random import Random
 from collections import namedtuple
+
+import hypothesis.params as params
 from tests.common import small_table
+from hypothesis.descriptors import Just, OneOf, SampledFrom, just, \
+    sampled_from
+from hypothesis.searchstrategy import RandomWithSeed, SearchStrategy, \
+    nice_string
+from hypothesis.internal.compat import hrange, text_type, binary_type
 from hypothesis.database.converter import ConverterTable
+from hypothesis.internal.utils.distributions import geometric, biased_coin
 
 primitive_types = [int, float, text_type, binary_type, bool, complex]
 basic_types = list(primitive_types)

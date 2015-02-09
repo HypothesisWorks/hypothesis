@@ -1,5 +1,8 @@
-from abc import abstractmethod
+from __future__ import division, print_function, unicode_literals
+
 import json
+from abc import abstractmethod
+
 from hypothesis.internal.compat import text_type
 
 

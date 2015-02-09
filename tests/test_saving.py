@@ -8,19 +8,20 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import print_function, unicode_literals, division
-
 # END HEADER
 
 """Tests specifically around the behaviour of the interaction between falsify
 and the database."""
 
+from __future__ import division, print_function, unicode_literals
+
+import pytest
+
 from hypothesis import Verifier, given
-from hypothesis.database import ExampleDatabase, SQLiteBackend
+from hypothesis.database import SQLiteBackend, ExampleDatabase
+from hypothesis.settings import Settings
 from hypothesis.descriptors import one_of
 from hypothesis.internal.compat import text_type, binary_type
-from hypothesis.settings import Settings
-import pytest
 
 
 def test_puts_arguments_in_the_database_from_falsify():

@@ -8,24 +8,24 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import print_function, unicode_literals, division
-
 # END HEADER
 
 """The main entry point for Hypothesis, providing the falsify method and all
 the various errors it may throw."""
 
-from hypothesis.strategytable import StrategyTable
-from hypothesis.database.converter import NotSerializeable
-from random import Random
+from __future__ import division, print_function, unicode_literals
+
 import time
+from random import Random
+
 import hypothesis.settings as hs
-from hypothesis.internal.utils.reflection import (
-    get_pretty_function_description, function_digest
-)
-from hypothesis.internal.tracker import Tracker
-from hypothesis.examplesource import ExampleSource
 from hypothesis.extra import load_entry_points
+from hypothesis.examplesource import ExampleSource
+from hypothesis.strategytable import StrategyTable
+from hypothesis.internal.tracker import Tracker
+from hypothesis.database.converter import NotSerializeable
+from hypothesis.internal.utils.reflection import function_digest, \
+    get_pretty_function_description
 
 
 def assume(condition):

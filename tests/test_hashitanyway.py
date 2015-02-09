@@ -8,20 +8,21 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import print_function, unicode_literals, division
-
 # END HEADER
 
-from hypothesis.internal.utils.hashitanyway import HashItAnyway
-from collections import namedtuple
-from tests.common.descriptors import Descriptor
-from tests.common import small_table
-from hypothesis import given, Verifier
-from hypothesis.settings import Settings
+from __future__ import division, print_function, unicode_literals
+
 from copy import deepcopy
-from hypothesis.searchstrategy import RandomWithSeed
 from random import Random
+from collections import namedtuple
+
+from hypothesis import Verifier, given
+from tests.common import small_table
+from hypothesis.settings import Settings
 from tests.common.mutate import mutate_slightly, mutate_maliciously
+from tests.common.descriptors import Descriptor
+from hypothesis.searchstrategy import RandomWithSeed
+from hypothesis.internal.utils.hashitanyway import HashItAnyway
 
 
 def hia(x):

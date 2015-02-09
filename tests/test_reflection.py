@@ -8,24 +8,20 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import print_function, unicode_literals, division
-
 # END HEADER
 
-from hypothesis.internal.utils.reflection import (
-    convert_keyword_arguments,
-    convert_positional_arguments,
-    get_pretty_function_description,
-    function_digest,
-    arg_string,
-    unbind_method,
-    copy_argspec,
-    source_exec_as_module,
-)
-import inspect
-import pytest
-from copy import deepcopy
+from __future__ import division, print_function, unicode_literals
+
 import sys
+import inspect
+from copy import deepcopy
+
+import pytest
+
+from hypothesis.internal.utils.reflection import arg_string, \
+    copy_argspec, unbind_method, function_digest, source_exec_as_module, \
+    convert_keyword_arguments, convert_positional_arguments, \
+    get_pretty_function_description
 
 
 def do_conversion_test(f, args, kwargs):

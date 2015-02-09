@@ -8,41 +8,32 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import print_function, unicode_literals, division
-
 # END HEADER
 
-from hypothesis.verifier import (
-    falsify,
-    assume,
-    Unfalsifiable,
-    Unsatisfiable,
-    Exhausted,
-    Timeout,
-    Flaky,
-    Verifier,
-)
-import hypothesis.descriptors as descriptors
-from hypothesis.internal.specmapper import MissingSpecification
-from hypothesis.searchstrategy import SearchStrategy
-from hypothesis.descriptors import one_of
-from hypothesis.strategytable import (
-    StrategyTable,
-    strategy_for,
-)
-from collections import namedtuple
-import pytest
+from __future__ import division, print_function, unicode_literals
+
 import re
-from hypothesis.internal.compat import hrange
-import hypothesis.internal.utils.distributions as dist
+import math
+import time
+from random import Random
+from collections import namedtuple
+
+import pytest
+
 import hypothesis.params as params
 import hypothesis.settings as hs
-import time
-from hypothesis.internal.compat import binary_type, text_type
+import hypothesis.descriptors as descriptors
+import hypothesis.internal.utils.distributions as dist
+from hypothesis.verifier import Flaky, Timeout, Verifier, Exhausted, \
+    Unfalsifiable, Unsatisfiable, assume, falsify
+from hypothesis.descriptors import one_of
+from hypothesis.strategytable import StrategyTable, strategy_for
+from hypothesis.searchstrategy import SearchStrategy
+from hypothesis.internal.compat import hrange, text_type, binary_type
+from hypothesis.internal.specmapper import MissingSpecification
 from hypothesis.internal.utils.fixers import actually_equal
-from random import Random
-from tests.test_statistical_distribution import cumulative_binomial_probability
-import math
+from tests.test_statistical_distribution import \
+    cumulative_binomial_probability
 
 
 def test_can_make_assumptions():

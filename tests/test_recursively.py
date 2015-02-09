@@ -8,29 +8,27 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import print_function, unicode_literals, division
-
 # END HEADER
 
-from hypothesis.internal.compat import binary_type, text_type
-from hypothesis.descriptors import (
-    Just, just, OneOf, SampledFrom
-)
-from hypothesis.searchstrategy import nice_string
-from hypothesis.testdecorators import given
-from hypothesis import Verifier, Unfalsifiable, assume, Unsatisfiable
-import pytest
+from __future__ import division, print_function, unicode_literals
+
 import re
-import signal
 import time
-from functools import wraps
-import hypothesis.settings as hs
+import signal
 from random import Random
-from hypothesis.searchstrategy import RandomWithSeed
-from tests.common.descriptors import (
-    Descriptor, primitive_types, DescriptorWithValue
-)
+from functools import wraps
+
+import pytest
+
+import hypothesis.settings as hs
+from hypothesis import Verifier, Unfalsifiable, Unsatisfiable, assume
 from tests.common import small_table
+from hypothesis.descriptors import Just, OneOf, SampledFrom, just
+from tests.common.descriptors import Descriptor, DescriptorWithValue, \
+    primitive_types
+from hypothesis.searchstrategy import RandomWithSeed, nice_string
+from hypothesis.testdecorators import given
+from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.internal.utils.fixers import actually_equal
 
 # Placate flake8

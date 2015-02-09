@@ -8,13 +8,15 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import print_function, unicode_literals, division
-
 # END HEADER
 
-from hypothesis import given
+from __future__ import division, print_function, unicode_literals
+
 from functools import wraps
+
 import pytest
+
+from hypothesis import given
 
 
 def fails(f):

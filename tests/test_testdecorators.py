@@ -8,20 +8,21 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import print_function, unicode_literals, division
-
 # END HEADER
 
-from hypothesis import Verifier, assume, Unsatisfiable, given, Flaky
-from hypothesis.descriptors import (
-    one_of, just, integers_in_range, sampled_from
-)
-import pytest
+from __future__ import division, print_function, unicode_literals
+
 import time
-from hypothesis.internal.compat import text_type, binary_type
-import hypothesis.settings as hs
 import inspect
-from tests.common.utils import capture_out, fails, fails_with
+
+import pytest
+
+import hypothesis.settings as hs
+from hypothesis import Flaky, Verifier, Unsatisfiable, given, assume
+from tests.common.utils import fails, fails_with, capture_out
+from hypothesis.descriptors import just, one_of, sampled_from, \
+    integers_in_range
+from hypothesis.internal.compat import text_type, binary_type
 
 
 @given(int, int)

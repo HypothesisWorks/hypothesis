@@ -5,8 +5,12 @@ You can imagine how grumpy I was when I wrote it.
 
 """
 
-from hypothesis.internal.compat import text_type, binary_type, integer_types
+from __future__ import division, print_function, unicode_literals
+
 import math
+
+from hypothesis.internal.compat import text_type, binary_type, \
+    integer_types
 from hypothesis.internal.extmethod import ExtMethod
 from hypothesis.internal.utils.reflection import unbind_method
 

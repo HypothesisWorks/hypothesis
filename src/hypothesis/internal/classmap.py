@@ -1,3 +1,6 @@
+from __future__ import division, print_function, unicode_literals
+
+
 class ClassMap(object):
 
     def __init__(self):

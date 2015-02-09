@@ -4,6 +4,8 @@ They're still single dispatch but are not defined on the class.
 
 """
 
+from __future__ import division, print_function, unicode_literals
+
 from hypothesis.internal.classmap import ClassMap
 
 

@@ -8,8 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import print_function, unicode_literals, division
-
 # END HEADER
 
 """A module controlling settings for Hypothesis to use in falsification.
@@ -18,7 +16,10 @@ Either an explicit Settings object can be used or the default object on
 this module can be modified.
 
 """
+from __future__ import division, print_function, unicode_literals
+
 import os
+
 from hypothesis.conventions import not_set
 
 

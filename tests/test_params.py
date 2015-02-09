@@ -8,12 +8,13 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import print_function, unicode_literals, division
-
 # END HEADER
 
-import hypothesis.params as params
+from __future__ import division, print_function, unicode_literals
+
 import pytest
+
+import hypothesis.params as params
 
 
 def test_non_empty_subset_on_one_element_does_not_call_random():

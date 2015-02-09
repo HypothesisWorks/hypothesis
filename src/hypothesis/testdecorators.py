@@ -8,20 +8,19 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import print_function, unicode_literals, division
-
 # END HEADER
 
+from __future__ import division, print_function, unicode_literals
+
 import time
-from hypothesis.verifier import (
-    Verifier, Unfalsifiable, UnsatisfiedAssumption, Flaky
-)
-from hypothesis.reporting import current_reporter
-from hypothesis.internal.utils.reflection import arg_string, copy_argspec
-from hypothesis.descriptors import just
 import inspect
 from collections import namedtuple
 
+from hypothesis.verifier import Flaky, Verifier, Unfalsifiable, \
+    UnsatisfiedAssumption
+from hypothesis.reporting import current_reporter
+from hypothesis.descriptors import just
+from hypothesis.internal.utils.reflection import arg_string, copy_argspec
 
 HypothesisProvided = namedtuple('HypothesisProvided', ('value,'))
 

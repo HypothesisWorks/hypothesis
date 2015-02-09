@@ -8,24 +8,20 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import print_function, unicode_literals, division
-
 # END HEADER
 
-from hypothesis.searchstrategy import (
-    MappedSearchStrategy,
-    one_of_strategies,
-)
-from hypothesis.strategytable import (
-    StrategyTable,
-)
-from hypothesis.database.converter import (
-    Converter, ConverterTable, check_type, WrongFormat)
-from collections import namedtuple
+from __future__ import division, print_function, unicode_literals
+
 from inspect import getmembers
+from collections import namedtuple
 
 import hypothesis
+from hypothesis.strategytable import StrategyTable
+from hypothesis.searchstrategy import MappedSearchStrategy, \
+    one_of_strategies
 from hypothesis.internal.compat import hrange
+from hypothesis.database.converter import Converter, WrongFormat, \
+    ConverterTable, check_type
 from hypothesis.internal.utils.reflection import convert_keyword_arguments
 
 

@@ -8,13 +8,12 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import print_function, unicode_literals, division
-
 # END HEADER
 
-from hypothesis.internal.utils.fixers import actually_equal
-from hypothesis.internal.compat import hrange
+from __future__ import division, print_function, unicode_literals
 
+from hypothesis.internal.compat import hrange
+from hypothesis.internal.utils.fixers import actually_equal
 
 collection_types = (set, frozenset, tuple, list)
 

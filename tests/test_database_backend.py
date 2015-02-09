@@ -8,14 +8,14 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import print_function, unicode_literals, division
-
 # END HEADER
 
+from __future__ import division, print_function, unicode_literals
+
 from hypothesis import given
-from hypothesis.database.backend import SQLiteBackend
-from hypothesis.internal.compat import text_type
 from tests.common import small_verifier
+from hypothesis.internal.compat import text_type
+from hypothesis.database.backend import SQLiteBackend
 
 
 @given([(text_type, text_type)], verifier=small_verifier)

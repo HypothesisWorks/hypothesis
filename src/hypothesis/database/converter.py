@@ -21,19 +21,21 @@ mapping descriptors to converters.
 """
 
 
-from hypothesis.searchstrategy import RandomWithSeed
-from random import Random
-from hypothesis.searchstrategy import nice_string
-from hypothesis.strategytable import StrategyTable
-from hypothesis.descriptors import (
-    one_of, Just, OneOf, SampledFrom, IntegerRange, FloatRange)
-from abc import abstractmethod
-from hypothesis.internal.specmapper import SpecificationMapper
-from hypothesis.internal.compat import (
-    text_type, binary_type, hrange, integer_types)
+from __future__ import division, print_function, unicode_literals
+
 import base64
-from hypothesis.internal.utils.fixers import actually_equal, real_index
 import struct
+from abc import abstractmethod
+from random import Random
+
+from hypothesis.descriptors import Just, OneOf, FloatRange, SampledFrom, \
+    IntegerRange, one_of
+from hypothesis.strategytable import StrategyTable
+from hypothesis.searchstrategy import RandomWithSeed, nice_string
+from hypothesis.internal.compat import hrange, text_type, binary_type, \
+    integer_types
+from hypothesis.internal.specmapper import SpecificationMapper
+from hypothesis.internal.utils.fixers import real_index, actually_equal
 
 
 class WrongFormat(ValueError):

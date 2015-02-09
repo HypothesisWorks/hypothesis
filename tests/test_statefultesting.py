@@ -8,25 +8,19 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import print_function, unicode_literals, division
-
 # END HEADER
 
-from hypothesis.statefultesting import (
-    StatefulTest,
-    step,
-    requires,
-    precondition,
-    integrity_test,
-    Step,
-)
-# Otherwise py.test will treat this as a test class
-from hypothesis.statefultesting import TestRun as TR
+from __future__ import division, print_function, unicode_literals
+
 import pytest
-from hypothesis import Unfalsifiable
-from hypothesis.database.converter import ConverterTable, WrongFormat
+
+from hypothesis import Unfalsifiable, falsify
 from hypothesis.internal.compat import hrange
-from hypothesis import falsify
+from hypothesis.statefultesting import TestRun as TR
+# Otherwise py.test will treat this as a test class
+from hypothesis.statefultesting import Step, StatefulTest, step, \
+    requires, precondition, integrity_test
+from hypothesis.database.converter import WrongFormat, ConverterTable
 
 
 class Foo(StatefulTest):

@@ -8,18 +8,20 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import print_function, unicode_literals, division
-
 # END HEADER
 
-from hypothesis.internal.utils.fixers import actually_equal, real_index
-from hypothesis.internal.compat import hrange, text_type
+from __future__ import division, print_function, unicode_literals
+
 import random
+
 import pytest
-from hypothesis import given, Verifier
-from tests.common.descriptors import Descriptor
+
+from hypothesis import Verifier, given
+from tests.common import small_table, small_verifier
 from tests.common.mutate import mutate_slightly
-from tests.common import small_verifier, small_table
+from tests.common.descriptors import Descriptor
+from hypothesis.internal.compat import hrange, text_type
+from hypothesis.internal.utils.fixers import real_index, actually_equal
 
 
 def test_lists_of_same_elements_are_equal():

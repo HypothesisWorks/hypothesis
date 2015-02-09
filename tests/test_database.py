@@ -8,27 +8,30 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import print_function, unicode_literals, division
-
 # END HEADER
 
+from __future__ import division, print_function, unicode_literals
+
+from random import Random
+from collections import Counter, namedtuple
+
+import pytest
+
+import hypothesis.params as params
+import hypothesis.settings as hs
+from hypothesis import Verifier, given
+from tests.common import small_table
+from hypothesis.database import ExampleDatabase
+from hypothesis.descriptors import Just, one_of, sampled_from
+from hypothesis.strategytable import StrategyTable
+from tests.common.descriptors import DescriptorWithValue
+from hypothesis.searchstrategy import JustStrategy, RandomWithSeed, \
+    SearchStrategy
+from hypothesis.internal.compat import text_type, binary_type, \
+    integer_types
 from hypothesis.database.backend import Backend, SQLiteBackend
 from hypothesis.database.formats import Format
-from hypothesis.database import ExampleDatabase
-from hypothesis.database.converter import ConverterTable, JustConverter
-from hypothesis.searchstrategy import RandomWithSeed, JustStrategy
-from hypothesis.descriptors import Just, one_of, sampled_from
-from random import Random
-from tests.common.descriptors import DescriptorWithValue
-from tests.common import small_table
-from hypothesis import given, Verifier
-import pytest
-import hypothesis.settings as hs
-from hypothesis.searchstrategy import SearchStrategy
-from hypothesis.strategytable import StrategyTable
-import hypothesis.params as params
-from hypothesis.internal.compat import text_type, binary_type, integer_types
-from collections import Counter, namedtuple
+from hypothesis.database.converter import JustConverter, ConverterTable
 from hypothesis.internal.utils.fixers import actually_equal
 
 

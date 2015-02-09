@@ -8,18 +8,19 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import print_function, unicode_literals, division
-
 # END HEADER
 
 """Tests for being able to generate weird and wonderful floating point
 numbers."""
 
+from __future__ import division, print_function, unicode_literals
+
+import sys
+import math
+
 from hypothesis import given, assume
 from tests.common.utils import fails
 from hypothesis.internal.utils.fixers import actually_equal
-import math
-import sys
 
 
 @fails

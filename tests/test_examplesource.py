@@ -8,18 +8,19 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import print_function, unicode_literals, division
-
 # END HEADER
 
+from __future__ import division, print_function, unicode_literals
+
+import random
+
+import pytest
+
+import hypothesis.settings as hs
 from hypothesis.database import ExampleDatabase
 from hypothesis.examplesource import ExampleSource
 from hypothesis.strategytable import StrategyTable
-import random
 from hypothesis.internal.compat import hrange
-import pytest
-import hypothesis.settings as hs
-
 
 N_EXAMPLES = 1000
 

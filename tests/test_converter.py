@@ -8,22 +8,23 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import print_function, unicode_literals, division
-
 # END HEADER
 
-from tests.common.descriptors import DescriptorWithValue
-from tests.common import small_table
-from hypothesis import given, assume, Verifier
-from hypothesis.database.converter import (
-    NotSerializeable, ConverterTable, WrongFormat, BadData
-)
-import hypothesis.settings as hs
-from hypothesis.internal.compat import text_type, binary_type
-from hypothesis.searchstrategy import RandomWithSeed
-from hypothesis.descriptors import Just, OneOf, SampledFrom
-import pytest
+from __future__ import division, print_function, unicode_literals
+
 from random import Random
+
+import pytest
+
+import hypothesis.settings as hs
+from hypothesis import Verifier, given, assume
+from tests.common import small_table
+from hypothesis.descriptors import Just, OneOf, SampledFrom
+from tests.common.descriptors import DescriptorWithValue
+from hypothesis.searchstrategy import RandomWithSeed
+from hypothesis.internal.compat import text_type, binary_type
+from hypothesis.database.converter import BadData, WrongFormat, \
+    ConverterTable, NotSerializeable
 
 
 @pytest.mark.parametrize(('descriptor', 'value'), [

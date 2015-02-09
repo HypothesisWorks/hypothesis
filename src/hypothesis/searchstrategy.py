@@ -8,32 +8,32 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import print_function, unicode_literals, division
-
 # END HEADER
 
 """Module defining SearchStrategy, which is the core type that Hypothesis uses
 to explore data."""
 
-from hypothesis.internal.tracker import Tracker
-import hypothesis.params as params
-import hypothesis.internal.utils.distributions as dist
-import math
-import inspect
-from abc import abstractmethod
-from hypothesis.internal.compat import hrange, hunichr
-from hypothesis.internal.compat import text_type, binary_type, integer_types
-import string
-from random import Random
-from hypothesis.types import RandomWithSeed
-import hypothesis.descriptors as descriptors
-from copy import deepcopy
-from hypothesis.internal.utils.fixers import (
-    actually_equal, actually_in, nice_string
-)
-import struct
+from __future__ import division, print_function, unicode_literals
+
 import sys
+import math
+import string
+import struct
+import inspect
 import unicodedata
+from abc import abstractmethod
+from copy import deepcopy
+from random import Random
+
+import hypothesis.params as params
+import hypothesis.descriptors as descriptors
+import hypothesis.internal.utils.distributions as dist
+from hypothesis.types import RandomWithSeed
+from hypothesis.internal.compat import hrange, hunichr, text_type, \
+    binary_type, integer_types
+from hypothesis.internal.tracker import Tracker
+from hypothesis.internal.utils.fixers import actually_in, nice_string, \
+    actually_equal
 from hypothesis.internal.utils.reflection import unbind_method
 
 

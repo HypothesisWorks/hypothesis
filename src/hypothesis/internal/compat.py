@@ -1,4 +1,6 @@
 # pylint: skip-file
+from __future__ import division, print_function, unicode_literals
+
 import sys
 
 PY3 = sys.version_info[0] == 3

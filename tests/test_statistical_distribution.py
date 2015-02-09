@@ -8,8 +8,6 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import print_function, unicode_literals, division
-
 # END HEADER
 
 # -*- coding: utf-8 -*-
@@ -22,14 +20,18 @@ data from the distribution produced by some descriptor is >= REQUIRED_P
 
 """
 
-import math
-import hypothesis.internal.utils.reflection as reflection
-import random
-from hypothesis.strategytable import StrategyTable
-import hypothesis.descriptors as descriptors
-from hypothesis.internal.compat import hrange
+from __future__ import division, print_function, unicode_literals
+
 import re
+import math
+import random
+
 import pytest
+
+import hypothesis.descriptors as descriptors
+import hypothesis.internal.utils.reflection as reflection
+from hypothesis.strategytable import StrategyTable
+from hypothesis.internal.compat import hrange
 
 # We run each individual test at a very high level of significance to the
 # point where it will basically only fail if it's really really wildly wrong.

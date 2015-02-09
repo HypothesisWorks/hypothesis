@@ -1,18 +1,21 @@
 """This file can approximately be considered the collection of hypothesis going
 to really unreasonable lengths to produce pretty output."""
 
-import inspect
-from hypothesis.internal.compat import hrange, ARG_NAME_ATTRIBUTE
-import types
-import ast
-import re
-import hashlib
-import sys
+from __future__ import division, print_function, unicode_literals
+
 import os
+import re
+import ast
+import sys
 import time
-from hypothesis.conventions import not_set
-from hypothesis.internal.filestorage import storage_directory
+import types
+import hashlib
+import inspect
 from functools import wraps
+
+from hypothesis.conventions import not_set
+from hypothesis.internal.compat import ARG_NAME_ATTRIBUTE, hrange
+from hypothesis.internal.filestorage import storage_directory
 
 
 def function_digest(function):

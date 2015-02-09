@@ -8,16 +8,17 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import print_function, unicode_literals, division
-
 # END HEADER
 
-from hypothesis import falsify, assume
-from hypothesis.strategytable import StrategyTable
+from __future__ import division, print_function, unicode_literals
+
 from datetime import datetime
-from hypothesis.internal.compat import hrange
+
 import hypothesis.settings as hs
+from hypothesis import assume, falsify
+from hypothesis.strategytable import StrategyTable
 from hypothesis.descriptortests import descriptor_test_suite
+from hypothesis.internal.compat import hrange
 
 hs.default.max_examples = 1000
 

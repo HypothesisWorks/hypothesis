@@ -8,13 +8,14 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import print_function, unicode_literals, division
-
 # END HEADER
+
+from __future__ import division, print_function, unicode_literals
+
+from tempfile import mkdtemp
 
 import hypothesis.settings
 from hypothesis.internal.filestorage import set_hypothesis_home_dir
-from tempfile import mkdtemp
 
 set_hypothesis_home_dir(mkdtemp())
 

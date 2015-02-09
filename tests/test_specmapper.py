@@ -8,22 +8,20 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file, You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import print_function, unicode_literals, division
-
 # END HEADER
 
-from hypothesis.internal.specmapper import (
-    SpecificationMapper,
-    MissingSpecification,
-    next_in_chain,
-)
-from hypothesis.internal.compat import text_type
+from __future__ import division, print_function, unicode_literals
+
+import random
+from collections import namedtuple
+
+import pytest
+
 from hypothesis import given
 from hypothesis.descriptors import sampled_from
-import pytest
-from collections import namedtuple
-import random
-from hypothesis.internal.compat import hrange
+from hypothesis.internal.compat import hrange, text_type
+from hypothesis.internal.specmapper import SpecificationMapper, \
+    MissingSpecification, next_in_chain
 
 
 def setup_function(fn):
