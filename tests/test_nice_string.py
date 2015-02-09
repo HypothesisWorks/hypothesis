@@ -14,11 +14,11 @@
 
 from __future__ import division, print_function, unicode_literals
 
+import unittest
 from collections import namedtuple
 
 import hypothesis.descriptors as descriptors
 from hypothesis.searchstrategy import nice_string
-import unittest
 
 
 def test_nice_string_for_nasty_floats():
@@ -153,6 +153,7 @@ def test_nice_string_of_1_tuple_includes_trailing_comma():
 
 
 class TestEvalSelfTC(unittest.TestCase):
+
     def __init__(self, *args, **kwargs):
         super(TestEvalSelfTC, self).__init__(*args, **kwargs)
 
@@ -161,5 +162,6 @@ class TestEvalSelfTC(unittest.TestCase):
 
 
 class TestEvalSelf(object):
+
     def test_can_eval_self(self):
         eval(nice_string(self))

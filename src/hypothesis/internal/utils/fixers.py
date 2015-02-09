@@ -20,12 +20,12 @@ You can imagine how grumpy I was when I wrote it.
 from __future__ import division, print_function, unicode_literals
 
 import math
+import unittest
 
 from hypothesis.internal.compat import text_type, binary_type, \
     integer_types
 from hypothesis.internal.extmethod import ExtMethod
 from hypothesis.internal.utils.reflection import unbind_method
-import unittest
 
 equality = ExtMethod()
 
@@ -271,7 +271,7 @@ def dict_string(xs):
 
 @nice_string_method.extend(unittest.TestCase)
 def test_string(xs):
-    return "%s(methodName=%r)" % (
+    return '%s(methodName=%r)' % (
         type(xs).__name__,
         xs._testMethodName,
     )
