@@ -14,6 +14,7 @@ from distutils.core import setup
 from setuptools.command.test import test as TestCommand
 from setuptools import find_packages
 import sys
+import os
 
 
 class PyTest(TestCommand):
@@ -37,7 +38,9 @@ setup(
     url='https://github.com/DRMacIver/hypothesis',
     license='MPL v2',
     description='Adds support for generating datetime to Hypothesis',
-    install_requires=open("requirements.txt").read().splitlines(),
+    install_requires=open(
+        os.path.join(os.path.dirname(__file__), "requirements.txt")
+    ).read().splitlines(),
     entry_points={
         'hypothesis.extra': 'hypothesisdatetime = hypothesisdatetime:load'
     },
