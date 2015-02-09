@@ -161,6 +161,24 @@ def generic_string(xs):
         )
 
 
+@nice_string_method.extend(text_type)
+def text_string(xs):
+    result = repr(xs)
+    if result[0] == 'u':
+        return result[1:]
+    else:
+        return result
+
+
+@nice_string_method.extend(binary_type)
+def binary_string(xs):
+    result = repr(xs)
+    if result[0] != 'b':
+        return 'b' + result
+    else:
+        return result
+
+
 @nice_string_method.extend(type)
 def type_string(xs):
     return xs.__name__

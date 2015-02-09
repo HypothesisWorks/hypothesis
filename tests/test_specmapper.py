@@ -1,8 +1,23 @@
+# coding=utf-8
+
+# Copyright (C) 2013-2015 David R. MacIver (david@drmaciver.com)
+
+# This file is part of Hypothesis (https://github.com/DRMacIver/hypothesis)
+
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file, You can
+# obtain one at http://mozilla.org/MPL/2.0/.
+
+from __future__ import print_function, unicode_literals, division
+
+# END HEADER
+
 from hypothesis.internal.specmapper import (
     SpecificationMapper,
     MissingSpecification,
     next_in_chain,
 )
+from hypothesis.internal.compat import text_type
 from hypothesis import given
 from hypothesis.descriptors import sampled_from
 import pytest
@@ -49,14 +64,14 @@ def test_can_define_specifications_for_built_in_types():
 
 def test_can_define_instance_specifications():
     sm = SpecificationMapper()
-    sm.define_specification_for_instances(str, lambda _, i: i + 'bar')
+    sm.define_specification_for_instances(text_type, lambda _, i: i + 'bar')
     assert sm.specification_for('foo') == 'foobar'
 
 
 def test_can_define_instance_specifications_on_the_default():
     sm = SpecificationMapper()
     SpecificationMapper.default().define_specification_for_instances(
-        str,
+        text_type,
         lambda _, i: i + 'bar'
     )
     assert sm.specification_for('foo') == 'foobar'
@@ -131,16 +146,16 @@ def test_can_override_specifications():
 
 def test_can_override_instance_specifications():
     s = SpecificationMapper()
-    s.define_specification_for_instances(str, const(1))
-    s.define_specification_for_instances(str, const(2))
+    s.define_specification_for_instances(text_type, const(1))
+    s.define_specification_for_instances(text_type, const(2))
     assert s.specification_for('foo') == 2
 
 
 def test_can_call_previous_in_overridden_specifications():
     s = SpecificationMapper()
-    s.define_specification_for_instances(str, lambda _, s: len(s))
+    s.define_specification_for_instances(text_type, lambda _, s: len(s))
     s.define_specification_for_instances(
-        str,
+        text_type,
         lambda _, s: 5 if len(s) > 5 else next_in_chain()
     )
     assert s.specification_for('foo') == 3
@@ -178,7 +193,7 @@ def test_can_define_class_specifications_for_subclasses():
 
 def test_multiple_calls_return_same_value():
     s = SpecificationMapper()
-    s.define_specification_for_instances(str, lambda *_: Foo())
+    s.define_specification_for_instances(text_type, lambda *_: Foo())
 
     assert s.specification_for('foo') is s.specification_for('foo')
     assert s.specification_for('foo') is not s.specification_for('bar')
@@ -186,9 +201,9 @@ def test_multiple_calls_return_same_value():
 
 def test_defining_new_handlers_resets_cache():
     s = SpecificationMapper()
-    s.define_specification_for_instances(str, lambda *_: Foo())
+    s.define_specification_for_instances(text_type, lambda *_: Foo())
     x = s.specification_for('foo')
-    s.define_specification_for_instances(str, lambda *_: Fooc())
+    s.define_specification_for_instances(text_type, lambda *_: Fooc())
     y = s.specification_for('foo')
     assert y is not x
     assert isinstance(y, Fooc)
@@ -201,7 +216,7 @@ def test_cache_correctly_handles_inheritance():
         lambda s, d: [s.specification_for(d[0])]
     )
     t = s.new_child_mapper()
-    t.define_specification_for_instances(str, lambda *_: Foo())
+    t.define_specification_for_instances(text_type, lambda *_: Foo())
 
     x = t.specification_for('foo')
     y = t.specification_for(['foo'])[0]
@@ -230,7 +245,7 @@ def test_can_override_handlers_for_supertypes():
 
 def test_can_handle_large_numbers_of_instance_mappers():
     def f(s, x):
-        return str(x)
+        return text_type(x)
 
     s = SpecificationMapper()
     s.define_specification_for_instances(tuple, f)

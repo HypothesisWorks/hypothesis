@@ -1,5 +1,19 @@
+# coding=utf-8
+
+# Copyright (C) 2013-2015 David R. MacIver (david@drmaciver.com)
+
+# This file is part of Hypothesis (https://github.com/DRMacIver/hypothesis)
+
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file, You can
+# obtain one at http://mozilla.org/MPL/2.0/.
+
+from __future__ import print_function, unicode_literals, division
+
+# END HEADER
+
 from hypothesis.internal.utils.fixers import actually_equal, real_index
-from hypothesis.internal.compat import hrange
+from hypothesis.internal.compat import hrange, text_type
 import random
 import pytest
 from hypothesis import given, Verifier
@@ -109,7 +123,7 @@ def test_can_handle_really_broken_dicts():
 
 
 def test_handles_strings_correctly():
-    s = hex(random.getrandbits(128))
+    s = text_type(hex(random.getrandbits(128)))
     rs = ''.join(reversed(s))
     rrs = ''.join(reversed(rs))
     assert s is not rrs

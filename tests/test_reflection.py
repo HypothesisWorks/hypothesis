@@ -1,3 +1,17 @@
+# coding=utf-8
+
+# Copyright (C) 2013-2015 David R. MacIver (david@drmaciver.com)
+
+# This file is part of Hypothesis (https://github.com/DRMacIver/hypothesis)
+
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file, You can
+# obtain one at http://mozilla.org/MPL/2.0/.
+
+from __future__ import print_function, unicode_literals, division
+
+# END HEADER
+
 from hypothesis.internal.utils.reflection import (
     convert_keyword_arguments,
     convert_positional_arguments,
@@ -302,8 +316,8 @@ def test_can_mix_varargs_and_varkwargs():
         pass
 
     assert arg_string(
-        foo, (1, 2, 3), {'c': 'fish'}
-    ) == "1, 2, 3, c='fish'"
+        foo, (1, 2, 3), {'c': 7}
+    ) == '1, 2, 3, c=7'
 
 
 def test_arg_string_does_not_include_unprovided_defaults():
