@@ -309,3 +309,23 @@ def test_equal_complex_are_fuzzy_equal():
     y = -0.0 - 43j
     assert x == y
     assert actually_equal(x, y, fuzzy=True)
+
+
+def test_can_index_nan():
+    nan = float('nan')
+    assert real_index([nan, 0], nan) == 0
+    assert real_index([nan, 0], float('nan')) == 0
+
+
+def test_index_does_not_use_original_equal_on_inequal_types():
+    snowman = '☃'
+    x = [b'0\xff', 'hi', snowman, 'bar']
+    assert real_index(x, snowman) == 2
+
+
+def test_value_error_if_not_in_list():
+    with pytest.raises(ValueError) as e:
+        real_index([1, 2, 3], (1, 2))
+    msg = e.value.args[0]
+    assert '(1, 2)' in msg
+    assert '[1, 2, 3]' in msg

@@ -12,10 +12,13 @@
 
 from __future__ import division, print_function, unicode_literals
 
+import warnings
 from tempfile import mkdtemp
 
 import hypothesis.settings
 from hypothesis.internal.filestorage import set_hypothesis_home_dir
+
+warnings.filterwarnings('error', category=UnicodeWarning)
 
 set_hypothesis_home_dir(mkdtemp())
 

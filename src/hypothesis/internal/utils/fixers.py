@@ -132,16 +132,12 @@ def actually_in(x, ys, fuzzy=False):
 
 
 def real_index(xs, y, fuzzy=False):
-    i = xs.index(y)
-    if actually_equal(xs[i], y, fuzzy):
-        return i
-    else:
-        i = 0
-        while i < len(xs):
-            if actually_equal(xs[i], y, fuzzy):
-                return i
-            i += 1
-        raise ValueError('%r is not in list' % (y))
+    i = 0
+    while i < len(xs):
+        if actually_equal(xs[i], y, fuzzy):
+            return i
+        i += 1
+    raise ValueError('%r is not in list %r' % (y, xs))
 
 
 def is_nasty_float(x):
