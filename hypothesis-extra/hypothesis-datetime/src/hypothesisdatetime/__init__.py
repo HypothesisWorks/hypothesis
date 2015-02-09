@@ -15,9 +15,9 @@ from hypothesis.searchstrategy import SearchStrategy
 from datetime import datetime, MINYEAR, MAXYEAR
 import hypothesis.params as params
 from hypothesis.internal.compat import hrange, text_type
-from hypothesis.internal.utils.fixers import equality
+from hypothesis.internal.utils.fixers import equal
 from hypothesis.internal.utils.hashitanyway import (
-    hash_everything_method, normal_hash
+    hash_everything, normal_hash
 )
 from hypothesis.database.converter import (
     ConverterTable, Converter, check_type, check_data_type
@@ -25,11 +25,11 @@ from hypothesis.database.converter import (
 import pytz
 
 
-@equality.extend(datetime)
+@equal.extend(datetime)
 def equal_datetimes(x, y, fuzzy=False):
     return (x.tzinfo == y.tzinfo) and (x == y)
 
-hash_everything_method.extend(datetime)(normal_hash)
+hash_everything.extend(datetime)(normal_hash)
 
 
 def draw_day_for_month(random, year, month):

@@ -12,7 +12,7 @@ from __future__ import division, print_function, unicode_literals
 
 # END HEADER
 
-pytest_plugins = 'pytester'
+pytest_plugins = str('pytester')
 
 
 TESTSUITE = """
