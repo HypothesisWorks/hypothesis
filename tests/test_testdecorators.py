@@ -287,7 +287,9 @@ def test_prints_on_failure():
             test_ints_are_sorted()
     out = out.getvalue()
     lines = [l.strip() for l in out.split('\n')]
-    assert 'Falsifying example: balthazar=1, evans=0' in lines
+    assert (
+        'Falsifying example: test_ints_are_sorted(balthazar=1, evans=0)'
+        in lines)
 
 
 def test_does_not_print_on_success():
