@@ -16,7 +16,6 @@ and the database."""
 from __future__ import division, print_function, unicode_literals
 
 import pytest
-
 from hypothesis import Verifier, given
 from hypothesis.database import SQLiteBackend, ExampleDatabase
 from hypothesis.settings import Settings

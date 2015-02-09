@@ -13,7 +13,6 @@
 from __future__ import division, print_function, unicode_literals
 
 import pytest
-
 from hypothesis.params import CompositeParameter
 from hypothesis.descriptors import one_of
 from hypothesis.strategytable import StrategyTable

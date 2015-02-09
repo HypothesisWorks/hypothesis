@@ -19,7 +19,6 @@ from random import Random
 from collections import namedtuple
 
 import pytest
-
 import hypothesis.params as params
 import hypothesis.settings as hs
 import hypothesis.descriptors as descriptors

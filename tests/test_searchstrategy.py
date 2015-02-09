@@ -17,7 +17,6 @@ import random
 from collections import namedtuple
 
 import pytest
-
 import hypothesis.params as params
 import hypothesis.descriptors as descriptors
 import hypothesis.strategytable as ss

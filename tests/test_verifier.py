@@ -15,7 +15,6 @@ from __future__ import division, print_function, unicode_literals
 from random import Random
 
 import pytest
-
 from hypothesis import Verifier
 from hypothesis.settings import Settings
 

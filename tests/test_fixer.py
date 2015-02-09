@@ -15,7 +15,6 @@ from __future__ import division, print_function, unicode_literals
 import random
 
 import pytest
-
 from hypothesis import Verifier, given
 from tests.common import small_table, small_verifier
 from tests.common.mutate import mutate_slightly

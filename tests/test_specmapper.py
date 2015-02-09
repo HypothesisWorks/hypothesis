@@ -16,7 +16,6 @@ import random
 from collections import namedtuple
 
 import pytest
-
 from hypothesis import given
 from hypothesis.descriptors import sampled_from
 from hypothesis.internal.compat import hrange, text_type

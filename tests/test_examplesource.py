@@ -15,7 +15,6 @@ from __future__ import division, print_function, unicode_literals
 import random
 
 import pytest
-
 import hypothesis.settings as hs
 from hypothesis.database import ExampleDatabase
 from hypothesis.examplesource import ExampleSource

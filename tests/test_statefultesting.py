@@ -13,7 +13,6 @@
 from __future__ import division, print_function, unicode_literals
 
 import pytest
-
 from hypothesis import Unfalsifiable, falsify
 from hypothesis.internal.compat import hrange
 from hypothesis.statefultesting import TestRun as TR

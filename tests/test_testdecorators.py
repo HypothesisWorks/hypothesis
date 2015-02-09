@@ -16,7 +16,6 @@ import time
 import inspect
 
 import pytest
-
 import hypothesis.settings as hs
 from hypothesis import Flaky, Verifier, Unsatisfiable, given, assume
 from tests.common.utils import fails, fails_with, capture_out

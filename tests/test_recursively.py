@@ -19,7 +19,6 @@ from random import Random
 from functools import wraps
 
 import pytest
-
 import hypothesis.settings as hs
 from hypothesis import Verifier, Unfalsifiable, Unsatisfiable, assume
 from tests.common import small_table

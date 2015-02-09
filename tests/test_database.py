@@ -16,7 +16,6 @@ from random import Random
 from collections import Counter, namedtuple
 
 import pytest
-
 import hypothesis.params as params
 import hypothesis.settings as hs
 from hypothesis import Verifier, given

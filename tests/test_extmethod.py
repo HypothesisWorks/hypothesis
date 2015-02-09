@@ -13,7 +13,6 @@
 from __future__ import division, print_function, unicode_literals
 
 import pytest
-
 from hypothesis.internal.extmethod import ExtMethod
 
 

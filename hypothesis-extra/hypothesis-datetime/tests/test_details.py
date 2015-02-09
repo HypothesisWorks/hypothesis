@@ -15,7 +15,6 @@ from __future__ import division, print_function, unicode_literals
 import random
 
 import pytest
-
 from hypothesisdatetime import draw_day_for_month
 
 

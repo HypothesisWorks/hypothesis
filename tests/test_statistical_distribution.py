@@ -27,7 +27,6 @@ import math
 import random
 
 import pytest
-
 import hypothesis.descriptors as descriptors
 import hypothesis.internal.utils.reflection as reflection
 from hypothesis.strategytable import StrategyTable
