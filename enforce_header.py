@@ -1,21 +1,29 @@
-from glob import glob
+import subprocess
 
-HEADER_FILE = "src/hypothesis/header.py"
+HEADER_FILE = "misc/header.py"
 
 HEADER_SOURCE = open(HEADER_FILE).read().strip()
 
 
-def main():
-    files = (
-        glob("src/**/*.py") +
-        glob("tests/*.py") +
-        glob("tests/**/*.py") +
-        glob("hypothesis-extra/*/src/*.py") +
-        glob("hypothesis-extra/*/src/**/*.py") +
-        glob("hypothesis-extra/*/tests/*.py") +
-        glob("hypothesis-extra/*/tests/**/*.py"))
+def all_python_files():
+    lines = subprocess.check_output([
+        "git", "ls-tree", "--full-tree", "-r", "HEAD",
+    ]).decode('utf-8').split("\n")
+    files = [
+        l.split()[-1]
+        for l in lines
+        if l
+    ]
+    return [
+        f for f in files
+        if f[-3:] == ".py"
+    ]
 
-    files.remove(HEADER_FILE)
+
+def main():
+    files = all_python_files()
+    files.remove("enforce_header.py")
+
     for f in files:
         lines = []
         with open(f) as o:
@@ -25,7 +33,6 @@ def main():
                 else:
                     lines.append(l)
         source = ''.join(lines).strip()
-        assert '__future__' not in source, f
         with open(f, "w") as o:
             o.write(HEADER_SOURCE)
             o.write("\n\n")

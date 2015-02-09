@@ -1,3 +1,15 @@
+# coding=utf-8
+
+# Copyright (C) 2013-2015 David R. MacIver (david@drmaciver.com)
+
+# This file is part of Hypothesis (https://github.com/DRMacIver/hypothesis)
+
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file, You can
+# obtain one at http://mozilla.org/MPL/2.0/.
+
+# END HEADER
+
 """
 This module introduces the concept of *basic data*.
 
@@ -175,12 +187,12 @@ class FloatConverter(Converter):
 
     def to_basic(self, value):
         check_type(float, value)
-        return struct.unpack('!Q', struct.pack('!d', value))[0]
+        return struct.unpack(b'!Q', struct.pack(b'!d', value))[0]
 
     def from_basic(self, value):
         check_data_type(integer_types, value)
         try:
-            return struct.unpack('!d', struct.pack('!Q', value))[0]
+            return struct.unpack(b'!d', struct.pack(b'!Q', value))[0]
         except (struct.error, ValueError, OverflowError) as e:
             raise BadData(e.args[0])
 
