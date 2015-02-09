@@ -25,6 +25,7 @@ from hypothesis.internal.compat import text_type, binary_type, \
     integer_types
 from hypothesis.internal.extmethod import ExtMethod
 from hypothesis.internal.utils.reflection import unbind_method
+import unittest
 
 equality = ExtMethod()
 
@@ -266,6 +267,14 @@ def dict_string(xs):
         nice_string(k1) + ': ' + nice_string(v1)
         for k1, v1 in xs.items()
     ])) + '}'
+
+
+@nice_string_method.extend(unittest.TestCase)
+def test_string(xs):
+    return "%s(methodName=%r)" % (
+        type(xs).__name__,
+        xs._testMethodName,
+    )
 
 
 def int_string(xs):

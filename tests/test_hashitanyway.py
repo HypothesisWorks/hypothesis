@@ -53,7 +53,7 @@ def test_hashes_lists_deterministically():
     assert hash(hia([int, str])) == hash(hia([int, str]))
 
 
-class Foo():
+class Foo(object):
 
     def __hash__(self):
         raise TypeError('Unhashable type Foo')

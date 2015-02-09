@@ -197,7 +197,7 @@ def test_storage_does_not_error_if_the_database_is_invalid():
     assert list(ints.fetch()) == []
 
 
-class PickyStrategyLazyFormat():
+class PickyStrategyLazyFormat(object):
     pass
 
 

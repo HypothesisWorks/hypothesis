@@ -18,6 +18,7 @@ from collections import namedtuple
 
 import hypothesis.descriptors as descriptors
 from hypothesis.searchstrategy import nice_string
+import unittest
 
 
 def test_nice_string_for_nasty_floats():
@@ -114,6 +115,14 @@ def test_nice_string_of_object_is_object():
     assert nice_string(object()) == 'object()'
 
 
+class SomeObject(object):
+    pass
+
+
+def test_nice_string_of_object_is_class():
+    assert nice_string(SomeObject()) == 'SomeObject()'
+
+
 def test_nice_string_of_bool_is_repr():
     assert nice_string(False) == 'False'
     assert nice_string(True) == 'True'
@@ -141,3 +150,16 @@ def test_dict_str_is_sorted_repr():
 
 def test_nice_string_of_1_tuple_includes_trailing_comma():
     assert nice_string((1,)) == '(1,)'
+
+
+class TestEvalSelfTC(unittest.TestCase):
+    def __init__(self, *args, **kwargs):
+        super(TestEvalSelfTC, self).__init__(*args, **kwargs)
+
+    def test_can_eval_self(self):
+        eval(nice_string(self))
+
+
+class TestEvalSelf(object):
+    def test_can_eval_self(self):
+        eval(nice_string(self))
