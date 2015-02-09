@@ -40,6 +40,10 @@ def test_dicts_of_same_length_but_different_keys_are_not_equal():
     assert not actually_equal({1: 2}, {2: 1})
 
 
+def test_dicts_of_different_length_are_not_equal():
+    assert not actually_equal({1: 2}, {1: 2, 3: 4})
+
+
 def test_sets_are_not_actually_equal_to_frozensets():
     assert not actually_equal(set(), frozenset())
 
@@ -280,6 +284,25 @@ class BadCollectionWithLength(BadCollection):
 def test_uses_length_when_present():
     assert not actually_equal(
         BadCollectionWithLength(1), BadCollectionWithLength(1, 2))
+
+
+class GoodCollectionWithLength(BadCollection):
+
+    def __init__(self, *values):
+        self.values = values
+
+    def __iter__(self):
+        return iter(self.values)
+
+    def __len__(self):
+        return len(self.values)
+
+
+def test_when_len_and_iter_present_and_len_equal_uses_iter():
+    assert actually_equal(
+        GoodCollectionWithLength(1, 2),
+        GoodCollectionWithLength(1, 2),
+    )
 
 
 def test_equal_complex_are_fuzzy_equal():

@@ -155,6 +155,8 @@ def is_nasty_float(x):
 
 nice_string_method = ExtMethod()
 
+nice_string_method.extend(bool)(repr)
+
 
 @nice_string_method.extend(object)
 def generic_string(xs):
@@ -163,7 +165,10 @@ def generic_string(xs):
     try:
         d = xs.__dict__
     except AttributeError:
-        return repr(xs)
+        if type(xs) == object:
+            return 'object()'
+        else:
+            return repr(xs)
     if (
         unbind_method(type(xs).__repr__) != unbind_method(object.__repr__)
     ):
@@ -180,19 +185,19 @@ def generic_string(xs):
 @nice_string_method.extend(text_type)
 def text_string(xs):
     result = repr(xs)
-    if result[0] == 'u':
-        return result[1:]
+    if result[0] == 'u':  # pragma: no branch
+        return result[1:]  # pragma: no cover
     else:
-        return result
+        return result  # pragma: no cover
 
 
 @nice_string_method.extend(binary_type)
 def binary_string(xs):
     result = repr(xs)
-    if result[0] != 'b':
-        return 'b' + result
+    if result[0] != 'b':  # pragma: no branch
+        return 'b' + result  # pragma: no cover
     else:
-        return result
+        return result  # pragma: no cover
 
 
 @nice_string_method.extend(type)
@@ -258,9 +263,19 @@ def tuple_string(xs):
 @nice_string_method.extend(dict)
 def dict_string(xs):
     return '{' + ', '.join(sorted([
-        nice_string(k1) + ':' + nice_string(v1)
+        nice_string(k1) + ': ' + nice_string(v1)
         for k1, v1 in xs.items()
     ])) + '}'
+
+
+def int_string(xs):
+    s = repr(xs)
+    if s[-1] == 'L':
+        s = s[:-1]
+    return s
+
+for t in integer_types:
+    nice_string_method.extend(t)(int_string)
 
 
 def nice_string(xs):
