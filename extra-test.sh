@@ -2,7 +2,7 @@
 set -e -o xtrace
 
 for d in hypothesis-extra/*; do
-    VENV=$(mktemp -d)
+    VENV=$(python -c 'import tempfile; print(tempfile.mkdtemp())')
 
     CURRENT_PYTHON=$(which python)
 
