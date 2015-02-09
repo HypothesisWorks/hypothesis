@@ -143,7 +143,7 @@ def real_index(xs, y, fuzzy=False):
         if actually_equal(xs[i], y, fuzzy):
             return i
         i += 1
-    raise ValueError('%r is not in list' % (y))
+    raise ValueError('%r is not in list %r' % (y, xs))
 
 
 def is_nasty_float(x):
