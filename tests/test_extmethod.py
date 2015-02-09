@@ -20,19 +20,19 @@ def test_will_use_tightest_class():
     f = ExtMethod()
 
     @f.extend(object)
-    def foo():
+    def foo(x):
         return 0
 
     @f.extend(int)
-    def bar():
+    def bar(x):
         return 1
 
-    assert f(object) == 0
-    assert f(str) == 0
-    assert f(int) == 1
+    assert f(object()) == 0
+    assert f('') == 0
+    assert f(10) == 1
 
 
 def test_will_error_on_missing():
     f = ExtMethod()
     with pytest.raises(NotImplementedError):
-        f(int)
+        f(1)

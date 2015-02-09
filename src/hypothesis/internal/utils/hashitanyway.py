@@ -17,21 +17,21 @@ from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.internal.extmethod import ExtMethod
 from hypothesis.internal.utils.fixers import actually_equal
 
-hash_everything_method = ExtMethod()
+hash_everything = ExtMethod()
 
 
-@hash_everything_method.extend(int)
-@hash_everything_method.extend(float)
-@hash_everything_method.extend(complex)
-@hash_everything_method.extend(binary_type)
-@hash_everything_method.extend(text_type)
-@hash_everything_method.extend(bool)
-@hash_everything_method.extend(RandomWithSeed)
+@hash_everything.extend(int)
+@hash_everything.extend(float)
+@hash_everything.extend(complex)
+@hash_everything.extend(binary_type)
+@hash_everything.extend(text_type)
+@hash_everything.extend(bool)
+@hash_everything.extend(RandomWithSeed)
 def normal_hash(x):
     return hash(x)
 
 
-@hash_everything_method.extend(dict)
+@hash_everything.extend(dict)
 def dict_hash(x):
     base = hash(type(x).__name__)
     for t in x.items():
@@ -39,12 +39,12 @@ def dict_hash(x):
     return base
 
 
-@hash_everything_method.extend(type)
+@hash_everything.extend(type)
 def type_hash(x):
     return hash(x.__name__)
 
 
-@hash_everything_method.extend(object)
+@hash_everything.extend(object)
 def generic_hash(x):
     h = hash(type(x).__name__)
     try:
@@ -59,10 +59,6 @@ def generic_hash(x):
     for y in x:
         h ^= hash_everything(y)
     return h
-
-
-def hash_everything(l):
-    return hash_everything_method(type(l), l)
 
 
 class HashItAnyway(object):

@@ -33,11 +33,15 @@ class ExtMethod(object):
 
         return accept
 
-    def __call__(self, typekey, *args, **kwargs):
+    def typekey(self, arg):
+        return type(arg)
+
+    def __call__(self, dispatch_arg, *args, **kwargs):
+        typekey = self.typekey(dispatch_arg)
         try:
             f = self.mapping[typekey]
         except KeyError:
             raise NotImplementedError(
                 'No implementation available for %s' % (typekey.__name__,)
             )
-        return f(*args, **kwargs)
+        return f(dispatch_arg, *args, **kwargs)

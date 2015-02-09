@@ -27,7 +27,18 @@ from hypothesis.internal.compat import text_type, binary_type, \
 from hypothesis.internal.extmethod import ExtMethod
 from hypothesis.internal.utils.reflection import unbind_method
 
-equality = ExtMethod()
+
+class Equality(ExtMethod):
+
+    def __call__(self, x, y, fuzzy=False):
+        if x is y:
+            return True
+        if type(x) != type(y):
+            return False
+        return super(Equality, self).__call__(x, y, fuzzy)
+
+
+equal = Equality()
 
 
 primitives = [
@@ -35,8 +46,8 @@ primitives = [
 ] + list(integer_types)
 
 
-@equality.extend(object)
-def generic_equality(x, y, fuzzy):
+@equal.extend(object)
+def generic_equal(x, y, fuzzy):
     try:
         if len(x) != len(y):
             return False
@@ -52,17 +63,17 @@ def generic_equality(x, y, fuzzy):
     )
 
 
-@equality.extend(int)
-@equality.extend(bool)
-@equality.extend(type)
-@equality.extend(text_type)
-@equality.extend(binary_type)
-def primitive_equality(x, y, fuzzy):
+@equal.extend(int)
+@equal.extend(bool)
+@equal.extend(type)
+@equal.extend(text_type)
+@equal.extend(binary_type)
+def primitive_equal(x, y, fuzzy):
     return x == y
 
 
-@equality.extend(float)
-def float_equality(x, y, fuzzy=False):
+@equal.extend(float)
+def float_equal(x, y, fuzzy=False):
     if math.isnan(x) and math.isnan(y):
         return True
     if x == y:
@@ -70,17 +81,17 @@ def float_equality(x, y, fuzzy=False):
     return fuzzy and (repr(x) == repr(y))
 
 
-@equality.extend(complex)
-def complex_equality(x, y, fuzzy=False):
+@equal.extend(complex)
+def complex_equal(x, y, fuzzy=False):
     return (
-        float_equality(x.real, y.real, fuzzy) and
-        float_equality(x.imag, y.imag, fuzzy)
+        float_equal(x.real, y.real, fuzzy) and
+        float_equal(x.imag, y.imag, fuzzy)
     )
 
 
-@equality.extend(tuple)
-@equality.extend(list)
-def sequence_equality(x, y, fuzzy=False):
+@equal.extend(tuple)
+@equal.extend(list)
+def sequence_equal(x, y, fuzzy=False):
     if len(x) != len(y):
         return False
     for u, v in zip(x, y):
@@ -89,9 +100,9 @@ def sequence_equality(x, y, fuzzy=False):
     return True
 
 
-@equality.extend(set)
-@equality.extend(frozenset)
-def set_equality(x, y, fuzzy=False):
+@equal.extend(set)
+@equal.extend(frozenset)
+def set_equal(x, y, fuzzy=False):
     if len(x) != len(y):
         return False
     for u in x:
@@ -100,8 +111,8 @@ def set_equality(x, y, fuzzy=False):
     return True
 
 
-@equality.extend(dict)
-def dict_equality(x, y, fuzzy=False):
+@equal.extend(dict)
+def dict_equal(x, y, fuzzy=False):
     if len(x) != len(y):
         return False
     for k, v in x.items():
@@ -113,24 +124,7 @@ def dict_equality(x, y, fuzzy=False):
 
 
 def actually_equal(x, y, fuzzy=False):
-    """
-    Look, this function is terrible. I know it's terrible. I'm sorry.
-    Hypothesis relies on a more precise version of equality than python uses
-    and in particular is broken by things like frozenset() == set() because
-    that behaviour is just broken.
-
-    Unfortunately this means that we have to define our own equality. We do
-    our best to respect the equality defined on types but there's only so much
-    we can do.
-
-    If fuzzy is True takes a slightly laxer approach around e.g. floating point
-    equality.
-    """
-    if x is y:
-        return True
-    if type(x) != type(y):
-        return False
-    return equality(type(x), x, y, fuzzy)
+    return equal(x, y, fuzzy)
 
 
 def actually_in(x, ys, fuzzy=False):
@@ -154,12 +148,12 @@ def is_nasty_float(x):
     return math.isnan(x) or math.isinf(x)
 
 
-nice_string_method = ExtMethod()
+nice_string = ExtMethod()
 
-nice_string_method.extend(bool)(repr)
+nice_string.extend(bool)(repr)
 
 
-@nice_string_method.extend(object)
+@nice_string.extend(object)
 def generic_string(xs):
     if hasattr(xs, '__name__'):
         return xs.__name__
@@ -183,7 +177,7 @@ def generic_string(xs):
         )
 
 
-@nice_string_method.extend(text_type)
+@nice_string.extend(text_type)
 def text_string(xs):
     result = repr(xs)
     if result[0] == 'u':  # pragma: no branch
@@ -192,7 +186,7 @@ def text_string(xs):
         return result  # pragma: no cover
 
 
-@nice_string_method.extend(binary_type)
+@nice_string.extend(binary_type)
 def binary_string(xs):
     result = repr(xs)
     if result[0] != 'b':  # pragma: no branch
@@ -201,12 +195,12 @@ def binary_string(xs):
         return result  # pragma: no cover
 
 
-@nice_string_method.extend(type)
+@nice_string.extend(type)
 def type_string(xs):
     return xs.__name__
 
 
-@nice_string_method.extend(float)
+@nice_string.extend(float)
 def float_string(xs):
     if is_nasty_float(xs):
         return 'float(%r)' % (str(xs),)
@@ -214,7 +208,7 @@ def float_string(xs):
         return repr(xs)
 
 
-@nice_string_method.extend(complex)
+@nice_string.extend(complex)
 def complex_string(x):
     if is_nasty_float(x.real) or is_nasty_float(x.imag):
         r = repr(x)
@@ -225,12 +219,12 @@ def complex_string(x):
         return repr(x)
 
 
-@nice_string_method.extend(list)
+@nice_string.extend(list)
 def list_string(xs):
     return '[%s]' % (', '.join(map(nice_string, xs)))
 
 
-@nice_string_method.extend(set)
+@nice_string.extend(set)
 def set_string(xs):
     if xs:
         return '{%s}' % (', '.join(sorted(map(nice_string, xs))))
@@ -238,7 +232,7 @@ def set_string(xs):
         return repr(xs)
 
 
-@nice_string_method.extend(frozenset)
+@nice_string.extend(frozenset)
 def frozenset_string(xs):
     if xs:
         return 'frozenset({%s})' % (', '.join(sorted(map(nice_string, xs))))
@@ -246,7 +240,7 @@ def frozenset_string(xs):
         return repr(xs)
 
 
-@nice_string_method.extend(tuple)
+@nice_string.extend(tuple)
 def tuple_string(xs):
     if hasattr(xs, '_fields'):
         return '%s(%s)' % (
@@ -261,7 +255,7 @@ def tuple_string(xs):
         return '(%s)' % (core,)
 
 
-@nice_string_method.extend(dict)
+@nice_string.extend(dict)
 def dict_string(xs):
     return '{' + ', '.join(sorted([
         nice_string(k1) + ': ' + nice_string(v1)
@@ -269,7 +263,7 @@ def dict_string(xs):
     ])) + '}'
 
 
-@nice_string_method.extend(unittest.TestCase)
+@nice_string.extend(unittest.TestCase)
 def test_string(xs):
     return '%s(methodName=%r)' % (
         type(xs).__name__,
@@ -284,15 +278,4 @@ def int_string(xs):
     return s
 
 for t in integer_types:
-    nice_string_method.extend(t)(int_string)
-
-
-def nice_string(xs):
-    """Take a descriptor and produce a nicer string representation of it than
-    repr.
-
-    In particular this is designed to work around the problem that the
-    repr for type objects is nasty.
-
-    """
-    return nice_string_method(type(xs), xs)
+    nice_string.extend(t)(int_string)
