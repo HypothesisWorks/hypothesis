@@ -114,7 +114,8 @@ def given(*generator_arguments, **generator_kwargs):
 
             false_args, false_kwargs = falsifying_example
             current_reporter()(
-                'Falsifying example: %s' % (
+                'Falsifying example: %s(%s)' % (
+                    test.__name__,
                     arg_string(
                         test,
                         false_args,
