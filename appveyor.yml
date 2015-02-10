@@ -50,9 +50,9 @@ install:
   - "python --version"
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
   - "%CMD_IN_ENV% pip install --upgrade setuptools pytest pytz"
-  - "%CMD_IN_ENV% python setup.py install"
-  - "%CMD_IN_ENV% python ./hypothesis-extra/hypothesis-datetime/setup.py install"
-  - "%CMD_IN_ENV% python ./hypothesis-extra/hypothesis-pytest/setup.py install"
+  - "%CMD_IN_ENV% pip install -e ."
+  - "%CMD_IN_ENV% pip install -e ./hypothesis-extra/hypothesis-datetime/"
+  - "%CMD_IN_ENV% pip install -e ./hypothesis-extra/hypothesis-pytest/"
 
 build: false  # Not a C# project, build stuff at the test step instead.
 
