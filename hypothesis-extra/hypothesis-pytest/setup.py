@@ -16,11 +16,14 @@ from setuptools import find_packages
 import sys
 import os
 
+
 def local_file(name):
     return os.path.join(os.path.dirname(__file__), name)
 
+
 SOURCE = local_file("src")
 REQUIREMENTS = local_file("requirements.txt")
+README = local_file("README.rst")
 
 
 class PyTest(TestCommand):
@@ -45,6 +48,7 @@ setup(
     license='MPL v2',
     description='Pytest plugin for better integration with hypothesis',
     install_requires=open(REQUIREMENTS).read().splitlines(),
+    long_description=open(README).read(),
     entry_points={
         'hypothesis.extra': 'hypothesispytest = hypothesispytest:load',
         'pytest11': ['hypothesispytest = hypothesispytest'],

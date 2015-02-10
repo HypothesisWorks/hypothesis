@@ -102,8 +102,6 @@ should be treated with respect.
 I'll do my best to pay attention to peoples' behaviour, but if you see anyone violating these rules and I haven't noticed, please alert me and I'll deal with it. Usually I will simply ask people to modify their behaviour,
 but for particularly severe transgressions, repeat offenders or those unwilling to change their ways I'll ban them from the community.
 
-(So far there have been absolutely zero problems of this sort, but it's important to set the right tone from the beginning)
-
 ------
 Usage
 ------
@@ -370,46 +368,6 @@ a talk about what you can do to help me support them.
 
 I have no idea if Hypothesis works on Jython, IronPython, etc. Do people really use those?
 
-------------
-Contributing
-------------
-
-I'm not incredibly keen on external contributions prior to the 1.0 release. I think you're going to have a hard time of it.
-
-In the meantime I'd rather you do any of the following
-
-* Submit bug reports
-* Submit feature requests
-* Write about Hypothesis
-* Build libraries and tools on top of Hypothesis outside the main repo
-
-If you need any help with any of these, get in touch and I'll be extremely happy to provide it.
-
-However if you really really want to submit code to Hypothesis, the process is as follows:
-
-You must own the copyright to the patch you're submitting as an individual. I'm not currently clear on how to accept patches from organisations and other legal entities.
-
-If you have not already done so, you must sign a CLA assigning copyright to me. Send an email to hypothesis@drmaciver.com with
-an attached copy of `the current version of the CLA <https://github.com/DRMacIver/hypothesis/blob/master/docs/Hypothesis-CLA.pdf?raw=true>`_
-and the text in the body "I, (your name), have read the attached CLA and agree to its terms" (you should in fact have actually read it).
-Note that it's important to attach a copy of the CLA because I may change it from time to time as new things come up and this keeps a record of
-which version of it you agreed to.
-
-Then submit a pull request on Github. This will be checked by Travis to see if the build passes.
-
-Advance warning that passing the build requires:
-
-1. Really quite a lot of tests to pass (it looks like it's only 300+ but many of these use Hypothesis itself to run 1000 examples through them, and the build is run in 4 configurations across 3 python versions).
-2. Your code to have 100% branch coverage.
-3. Your code to be flake8 clean.
-4. Your code to have had pyformat run over it.
-
-It is a fairly strict process.
-
-(Unfortunately right now the build is also a bit flaky. I'm working on fixing that, but in the meantime if a test fails and you don't understand why you should probably just run the build again to see what happens. Sorry)
-
-Once all this has happened I'll review your patch. I don't promise to accept it, but I do promise to review it as promptly as I can and to tell you why if I reject it.
-
 -----------------
 Internals
 -----------------
@@ -641,6 +599,33 @@ Or if this is difficult for some reason you can also override could_have_produce
 Descriptors can be anything you like as long as you're willing to define that
 custom could_have_produced.
 
+Once you've defined your custom type, there is a standard test suite you can use
+to validate that your implementation is correct.
+
+
+.. code:: python
+
+    from hypothesis.descriptortests import descriptor_test_suite
+
+    TestSmallint = descriptor_test_suite(smallint)
+
+
+This is a unittest.TestCase. You can either run it explicitly or let pytest or
+similar pick it up automatically. It will run a battery of standard tests against
+your implementation to check that it is correct.
+
+-------------------------
+Hypothesis extra packages
+-------------------------
+
+Hypothesis avoids dependencies in the core package, so there's a notion of extra
+packages which are basically Hypothesis + one or more dependencies. So far there are
+two:
+
+* hypothesis-datetime: Gives you datetime support, depends on pytz
+* hypothesis-pytest: A pytest plugin for better reporting, depends on pytest
+
+
 ----------------
  Under the hood
 ----------------
@@ -697,10 +682,45 @@ probably be considered semi-internal until it gets a better API.
  Testing
 ---------
 
-This version of hypothesis has been tested using Python series 2.7,
-3.3, 3.4.  Builds are checked with `travis`_:
+This version of hypothesis has been tested on OSX, Windows and Linux using CPython 2.7, 3.2,
+3.3, 3.4 and Pypy 2.5.0.  Builds are checked with `Travis <https://travis-ci.org/>`_ and `Appveyor <https://appveyor.com>`_.
 
-.. _travis: https://travis-ci.org/DRMacIver/hypothesis
+------------
+Contributing
+------------
 
-.. image:: https://travis-ci.org/DRMacIver/hypothesis.png?branch=master
-   :target: https://travis-ci.org/DRMacIver/hypothesis
+I'm not incredibly keen on external contributions prior to the 1.0 release. I think you're going to have a hard time of it.
+
+In the meantime I'd rather you do any of the following
+
+* Submit bug reports
+* Submit feature requests
+* Write about Hypothesis
+* Build libraries and tools on top of Hypothesis outside the main repo
+
+If you need any help with any of these, get in touch and I'll be extremely happy to provide it.
+
+However if you really really want to submit code to Hypothesis, the process is as follows:
+
+You must own the copyright to the patch you're submitting as an individual. I'm not currently clear on how to accept patches from organisations and other legal entities.
+
+If you have not already done so, you must sign a CLA assigning copyright to me. Send an email to hypothesis@drmaciver.com with
+an attached copy of `the current version of the CLA <https://github.com/DRMacIver/hypothesis/blob/master/docs/Hypothesis-CLA.pdf?raw=true>`_
+and the text in the body "I, (your name), have read the attached CLA and agree to its terms" (you should in fact have actually read it).
+Note that it's important to attach a copy of the CLA because I may change it from time to time as new things come up and this keeps a record of
+which version of it you agreed to.
+
+Then submit a pull request on Github. This will be checked by Travis and Appveyor to see if the build passes.
+
+Advance warning that passing the build requires:
+
+1. Really quite a lot of tests to pass (it looks like it's only 600+ but many of these use Hypothesis itself to run 1000 examples through them, and the build is run in 4 configurations across 16 different OS/python version combinations).
+2. Your code to have 100% branch coverage.
+3. Your code to be flake8 clean.
+4. Your code to be a fixed point for a variety of reformatting operations (defined in lint.sh)
+
+It is a fairly strict process.
+
+(Unfortunately right now the build is also a bit flaky. I'm working on fixing that, but in the meantime if a test fails and you don't understand why you should probably just run the build again to see what happens. Sorry)
+
+Once all this has happened I'll review your patch. I don't promise to accept it, but I do promise to review it as promptly as I can and to tell you why if I reject it.

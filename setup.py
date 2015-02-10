@@ -14,6 +14,14 @@ from distutils.core import setup
 from setuptools.command.test import test as TestCommand
 from setuptools import find_packages
 import sys
+import os
+
+
+def local_file(name):
+    return os.path.join(os.path.dirname(__file__), name)
+
+SOURCE = local_file("src")
+README = local_file("README.rst")
 
 
 class PyTest(TestCommand):
@@ -32,8 +40,8 @@ setup(
     version='0.5.0',
     author='David R. MacIver',
     author_email='david@drmaciver.com',
-    packages=find_packages("src"),
-    package_dir={"": "src"},
+    packages=find_packages(SOURCE),
+    package_dir={"": SOURCE},
     url='https://github.com/DRMacIver/hypothesis',
     license='MPL v2',
     description='A library for property based testing',
@@ -51,7 +59,7 @@ setup(
         "Programming Language :: Python :: Implementation :: CPython",
         "Topic :: Software Development :: Testing",
     ],
-    long_description=open('README.rst').read(),
+    long_description=open(README).read(),
     tests_require=['pytest', 'pytest-timeout', 'flake8'],
     cmdclass={'test': PyTest},
 )

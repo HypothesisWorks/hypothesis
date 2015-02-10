@@ -34,6 +34,7 @@ def local_file(name):
 
 SOURCE = local_file("src")
 REQUIREMENTS = local_file("requirements.txt")
+README = local_file("README.rst")
 
 setup(
     name='hypothesis-datetime',
@@ -46,6 +47,7 @@ setup(
     license='MPL v2',
     description='Adds support for generating datetime to Hypothesis',
     install_requires=open(REQUIREMENTS).read().splitlines(),
+    long_description=open(README).read(),
     entry_points={
         'hypothesis.extra': 'hypothesisdatetime = hypothesisdatetime:load'
     },

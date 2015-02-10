@@ -226,8 +226,17 @@
       generating unicode was completely broken on OSX. Fix this by only generating unicode codepoints
       in the range supported by the system.
 
-NEXT
+0.5.0, "Read all about it", 10/02/2015
 
+    Core hypothesis:
+
+    * Add support back in for pypy and python 3.2
+    * @given functions can now be invoked with some arguments explicitly provided. If all arguments that hypothesis
+      would have provided are passed in then no falsification is run.
+    * Related to the above, this means that you can now use pytest fixtures and mark.parametrize with Hypothesis without
+      either interfering with the other.
+    * Breaking change: @given no longer works for functions with varargs (varkwargs are fine). This might be added back
+      in at a later date.
     * Windows is now fully supported. A limited version (just the tests with none of the extras) of the test suite
       is run on windows with each commit so it is now a first class citizen of the Hypothesis world.
     * Fix a bug for fuzzy equality of equal complex numbers with different reprs (this can happen when
@@ -236,3 +245,35 @@ NEXT
     * Fix generation of floats on windows and 32-bit builds of python. I was using some struct.pack logic
       that only worked on certain word sizes.
     * When a test times out and hasn't produced enough examples this now raises a Timeout subclass of Unfalsifiable.
+    * Small search spaces are better supported. Previously something like a @given(bool, bool) would have failed because
+      it couldn't find enough examples. Hypothesis is now aware of the fact that these are small search spaces and will
+      not error in this case.
+    * Improvements to parameter search in the case of hard to satisfy assume. Hypothesis will now spend less time exploring
+      parameters that are unlikely to provide anything useful.
+    * Increase chance of generating "nasty" floats
+    * Fix a bug that would have caused unicode warnings if you had a sampled_from that was mixing unicode and byte strings.
+    * Added a standard test suite that you can use to validate a custom strategy you've defined is working correctly.
+
+    Hypothesis extra:
+
+    First off, introducing Hypothesis extra packages!
+
+    These are packages that are separated out from core Hypothesis because they have one or more dependencies. Every
+    hypothesis-extra package is pinned to a specific point release of Hypothesis and will have some version requirements
+    on its dependency. They use entry_points so you will usually not need to explicitly import them, just have them installed
+    on the path.
+
+    This release introduces two of them:
+
+    hypothesis-datetime:
+    
+    Does what it says on the tin: Generates datetimes for Hypothesis. Just install the package and datetime support will start
+    working.
+
+    Depends on pytz for timezone support
+
+    hypothesis-pytest:
+
+    A very rudimentary pytest plugin. All it does right now is hook the display of falsifying examples into pytest reporting.
+
+    Depends on pytest.
