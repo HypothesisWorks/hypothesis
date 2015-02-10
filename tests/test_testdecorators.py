@@ -17,6 +17,7 @@ import inspect
 
 import pytest
 import hypothesis.settings as hs
+import hypothesis.reporting as reporting
 from hypothesis import Flaky, Verifier, Unsatisfiable, given, assume
 from tests.common.utils import fails, fails_with, capture_out
 from hypothesis.descriptors import just, one_of, sampled_from, \
@@ -277,14 +278,15 @@ def test_can_find_large_sum_frozenset(xs):
     assert sum(xs) < 100
 
 
-def test_prints_on_failure():
+def test_prints_on_failure_by_default():
     @given(int, int)
     def test_ints_are_sorted(balthazar, evans):
         assume(evans >= 0)
         assert balthazar <= evans
     with pytest.raises(AssertionError):
         with capture_out() as out:
-            test_ints_are_sorted()
+            with reporting.with_reporter(reporting.default):
+                test_ints_are_sorted()
     out = out.getvalue()
     lines = [l.strip() for l in out.split('\n')]
     assert (
