@@ -39,7 +39,7 @@ class PyTest(TestCommand):
 
 setup(
     name='hypothesis-pytest',
-    version='0.1.0',
+    version='0.1.1',
     author='David R. MacIver',
     author_email='david@drmaciver.com',
     packages=find_packages(SOURCE),
@@ -47,7 +47,10 @@ setup(
     url='https://github.com/DRMacIver/hypothesis',
     license='MPL v2',
     description='Pytest plugin for better integration with hypothesis',
-    install_requires=open(REQUIREMENTS).read().splitlines(),
+    install_requires=[
+        "hypothesis==0.5.0",
+        "pytest>=2.6.0,<2.6.99",
+    ],
     long_description=open(README).read(),
     entry_points={
         'hypothesis.extra': 'hypothesispytest = hypothesispytest:load',

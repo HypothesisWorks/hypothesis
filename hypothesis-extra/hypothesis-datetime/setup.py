@@ -38,7 +38,7 @@ README = local_file("README.rst")
 
 setup(
     name='hypothesis-datetime',
-    version='0.1.0',
+    version='0.1.1',
     author='David R. MacIver',
     author_email='david@drmaciver.com',
     packages=find_packages(SOURCE),
@@ -46,7 +46,10 @@ setup(
     url='https://github.com/DRMacIver/hypothesis',
     license='MPL v2',
     description='Adds support for generating datetime to Hypothesis',
-    install_requires=open(REQUIREMENTS).read().splitlines(),
+    install_requires=[
+        "hypothesis==0.5.0",
+        "pytz",
+    ],
     long_description=open(README).read(),
     entry_points={
         'hypothesis.extra': 'hypothesisdatetime = hypothesisdatetime:load'
