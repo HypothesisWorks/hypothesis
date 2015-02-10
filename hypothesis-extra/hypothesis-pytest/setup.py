@@ -16,6 +16,12 @@ from setuptools import find_packages
 import sys
 import os
 
+def local_file(name):
+    return os.path.join(os.path.dirname(__file__), name)
+
+SOURCE = local_file("src")
+REQUIREMENTS = local_file("requirements.txt")
+
 
 class PyTest(TestCommand):
     def finalize_options(self):
@@ -33,14 +39,12 @@ setup(
     version='0.1.0',
     author='David R. MacIver',
     author_email='david@drmaciver.com',
-    packages=find_packages("src"),
-    package_dir={"": "src"},
+    packages=find_packages(SOURCE),
+    package_dir={"": SOURCE},
     url='https://github.com/DRMacIver/hypothesis',
     license='MPL v2',
     description='Pytest plugin for better integration with hypothesis',
-    install_requires=open(
-        os.path.join(os.path.dirname(__file__), "requirements.txt")
-    ).read().splitlines(),
+    install_requires=open(REQUIREMENTS).read().splitlines(),
     entry_points={
         'hypothesis.extra': 'hypothesispytest = hypothesispytest:load',
         'pytest11': ['hypothesispytest = hypothesispytest'],
