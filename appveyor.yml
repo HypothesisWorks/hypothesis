@@ -49,7 +49,7 @@ install:
   # Check that we have the expected version and architecture for Python
   - "python --version"
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
-  - "%CMD_IN_ENV% pip install --upgrade setuptools"
+  - "%CMD_IN_ENV% pip install --upgrade setuptools pip"
   - "%CMD_IN_ENV% pip install ."
   - "%CMD_IN_ENV% pip install ./hypothesis-extra/hypothesis-datetime/"
   - "%CMD_IN_ENV% pip install ./hypothesis-extra/hypothesis-pytest/"
