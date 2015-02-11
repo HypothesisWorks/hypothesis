@@ -14,7 +14,13 @@
 def load():
     import hypothesis.extra.fakefactory as ff
     from hypothesis.strategytable import StrategyTable
+    from hypothesis.database.converter import ConverterTable
+    from hypothesis.internal.compat import text_type
     StrategyTable.default().define_specification_for_instances(
         ff.FakeFactory,
         lambda s, d: ff.FakeFactoryStrategy(d)
+    )
+    ConverterTable.default().define_specification_for_instances(
+        ff.FakeFactory,
+        lambda s, d: s.specification_for(text_type)
     )

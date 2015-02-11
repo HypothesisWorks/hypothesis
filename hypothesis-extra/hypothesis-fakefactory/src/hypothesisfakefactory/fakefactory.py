@@ -60,7 +60,7 @@ class FakeFactoryStrategy(SearchStrategy):
         factory.seed(random.getrandbits(128))
         for p in self.providers:
             factory.add_provider(p)
-        return getattr(factory, self.source)()
+        return text_type(getattr(factory, self.source)())
 
     def could_have_produced(self, value):
         return isinstance(value, text_type)

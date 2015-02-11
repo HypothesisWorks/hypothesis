@@ -16,6 +16,7 @@ import pytest
 from hypothesis import given, falsify
 from faker.providers import BaseProvider
 from hypothesis.extra.fakefactory import FakeFactory
+from hypothesis.descriptortests import descriptor_test_suite
 
 
 class KittenProvider(BaseProvider):
@@ -75,3 +76,16 @@ def test_fake_factory_errors_if_unsupported_method():
 def test_fake_factory_errors_if_private_ish_method():
     with pytest.raises(ValueError):
         FakeFactory('_Generator__config')
+
+
+TestFakeEmail = descriptor_test_suite(
+    FakeFactory('email')
+)
+
+TestFakeNames = descriptor_test_suite(
+    FakeFactory('name')
+)
+
+TestFakeEnglishNames = descriptor_test_suite(
+    FakeFactory('name', locale='en_US')
+)
