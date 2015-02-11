@@ -163,6 +163,13 @@ def test_names_of_functions_are_pretty():
     ) == 'test_names_of_functions_are_pretty'
 
 
+def test_can_have_unicode_in_lambda_sources():
+    t = lambda x: 'é' not in x
+    assert get_pretty_function_description(t) == (
+        "lambda x: 'é' not in x"
+    )
+
+
 class Foo(object):
 
     @classmethod

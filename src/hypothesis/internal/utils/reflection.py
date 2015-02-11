@@ -26,7 +26,7 @@ import inspect
 from functools import wraps
 
 from hypothesis.conventions import not_set
-from hypothesis.internal.compat import ARG_NAME_ATTRIBUTE, hrange
+from hypothesis.internal.compat import ARG_NAME_ATTRIBUTE, hrange, text_type
 from hypothesis.internal.filestorage import storage_directory
 
 
@@ -189,6 +189,9 @@ def extract_lambda_source(f):
         source = inspect.getsource(f)
     except IOError:
         return if_confused
+
+    if not isinstance(source, text_type):  # pragma: no branch
+        source = source.decode('utf-8')  # pragma: no cover
 
     try:
         try:
