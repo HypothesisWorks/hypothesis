@@ -4,7 +4,7 @@ include = src/**/*.py
 omit =
     src/hypothesis/settings.py
     src/hypothesis/internal/compat.py
-    src/hypothesis/extra.py
+    src/hypothesis/extra/__init__.py
 
 [paths]
 source =
