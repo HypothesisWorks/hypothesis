@@ -20,8 +20,15 @@ from hypothesis.internal.compat import text_type
 
 class FakeFactory(object):
 
-    def __init__(self, source, locale=None, locales=None):
+    def __init__(self, source, locale=None, locales=None, providers=()):
+        test_faker = faker.Faker()
+
+        for provider in providers:
+            test_faker.add_provider(provider)
+
         self.source = source
+        if not hasattr(test_faker, source) or source[0] == '_':
+            raise ValueError("No such source %r" % (source,))
         if locale is not None and locales is not None:
             raise ValueError('Cannot specify both single and multiple locales')
         if locale:
@@ -30,6 +37,11 @@ class FakeFactory(object):
             self.locales = tuple(locales)
         else:
             self.locales = None
+        if self.locales:
+            for l in self.locales:
+                if l not in faker.AVAILABLE_LOCALES:
+                    raise ValueError("Unsupported locale %r" % (l,))
+        self.providers = tuple(providers)
 
 
 class FakeFactoryStrategy(SearchStrategy):
@@ -41,10 +53,13 @@ class FakeFactoryStrategy(SearchStrategy):
                 details.locales or faker.AVAILABLE_LOCALES
             )
         )
+        self.providers = details.providers
 
     def produce(self, random, pv):
         factory = faker.Faker(locale=random.choice(pv.locales))
         factory.seed(random.getrandbits(128))
+        for p in self.providers:
+            factory.add_provider(p)
         return getattr(factory, self.source)()
 
     def could_have_produced(self, value):
