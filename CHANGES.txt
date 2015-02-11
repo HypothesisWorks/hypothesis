@@ -277,3 +277,17 @@
     A very rudimentary pytest plugin. All it does right now is hook the display of falsifying examples into pytest reporting.
 
     Depends on pytest.
+
+NEXT
+
+    * Fix for a bug where calling falsify on a lambda with a non-ascii character
+      in its body would error.
+    * Change to the way extra packages work. You now specify the package. This
+      must have a load() method. Additionally any modules in the package will be
+      loaded in under hypothesis.extra
+
+Hypothesis Extra:
+    
+    hypothesis-fakefactory: An extension for using faker data in hypothesis. Depends
+        on fake-factory.
+
