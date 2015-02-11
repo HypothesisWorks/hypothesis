@@ -28,7 +28,7 @@ class FakeFactory(object):
 
         self.source = source
         if not hasattr(test_faker, source) or source[0] == '_':
-            raise ValueError("No such source %r" % (source,))
+            raise ValueError('No such source %r' % (source,))
         if locale is not None and locales is not None:
             raise ValueError('Cannot specify both single and multiple locales')
         if locale:
@@ -40,7 +40,7 @@ class FakeFactory(object):
         if self.locales:
             for l in self.locales:
                 if l not in faker.AVAILABLE_LOCALES:
-                    raise ValueError("Unsupported locale %r" % (l,))
+                    raise ValueError('Unsupported locale %r' % (l,))
         self.providers = tuple(providers)
 
 

@@ -12,20 +12,21 @@
 
 from __future__ import division, print_function, unicode_literals
 
-from hypothesis import given, falsify
-from hypothesis.extra.fakefactory import FakeFactory
 import pytest
+from hypothesis import given, falsify
 from faker.providers import BaseProvider
+from hypothesis.extra.fakefactory import FakeFactory
 
 
 class KittenProvider(BaseProvider):
+
     def kittens(self):
-        return "meow %d" % (self.random_number(digits=10),)
+        return 'meow %d' % (self.random_number(digits=10),)
 
 
 @given(FakeFactory('kittens', providers=[KittenProvider]))
 def test_kittens_meow(kitten):
-    assert "meow" in kitten
+    assert 'meow' in kitten
 
 
 @given(FakeFactory('email'))
@@ -48,21 +49,21 @@ def test_french_names_may_have_an_accent():
 def test_fake_factory_errors_with_both_locale_and_locales():
     with pytest.raises(ValueError):
         FakeFactory(
-            'name', locale="fr_FR", locales=["fr_FR", "en_US"]
+            'name', locale='fr_FR', locales=['fr_FR', 'en_US']
         )
 
 
 def test_fake_factory_errors_with_unsupported_locale():
     with pytest.raises(ValueError):
         FakeFactory(
-            'name', locale="badger_BADGER"
+            'name', locale='badger_BADGER'
         )
 
 
 def test_fake_factory_errors_if_any_locale_is_unsupported():
     with pytest.raises(ValueError):
         FakeFactory(
-            'name', locales=["fr_FR", "en_US", "mushroom_MUSHROOM"]
+            'name', locales=['fr_FR', 'en_US', 'mushroom_MUSHROOM']
         )
 
 
