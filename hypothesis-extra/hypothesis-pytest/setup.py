@@ -53,7 +53,7 @@ setup(
     ],
     long_description=open(README).read(),
     entry_points={
-        'hypothesis.extra': 'hypothesispytest = hypothesispytest:load',
+        'hypothesis.extra': 'hypothesispytest = hypothesispytest',
         'pytest11': ['hypothesispytest = hypothesispytest'],
     },
     classifiers=[

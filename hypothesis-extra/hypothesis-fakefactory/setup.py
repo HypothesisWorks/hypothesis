@@ -17,17 +17,10 @@ import sys
 import os
 
 
-def local_file(name):
-    return os.path.join(os.path.dirname(__file__), name)
-
-SOURCE = local_file("src")
-README = local_file("README.rst")
-
-
 class PyTest(TestCommand):
     def finalize_options(self):
         TestCommand.finalize_options(self)
-        self.test_args = ["tests"]
+        self.test_args = []
         self.test_suite = True
 
     def run_tests(self):
@@ -35,16 +28,32 @@ class PyTest(TestCommand):
         errno = pytest.main(self.test_args)
         sys.exit(errno)
 
+
+def local_file(name):
+    return os.path.join(os.path.dirname(__file__), name)
+
+SOURCE = local_file("src")
+REQUIREMENTS = local_file("requirements.txt")
+README = local_file("README.rst")
+
 setup(
-    name='hypothesis',
-    version='0.5.1',
+    name='hypothesis-fakefactory',
+    version='0.1.1',
     author='David R. MacIver',
     author_email='david@drmaciver.com',
     packages=find_packages(SOURCE),
     package_dir={"": SOURCE},
     url='https://github.com/DRMacIver/hypothesis',
     license='MPL v2',
-    description='A library for property based testing',
+    description='Adds support for generating fake-factory data to Hypothesis',
+    install_requires=[
+        "hypothesis==0.5.1",
+        "fake-factory",
+    ],
+    long_description=open(README).read(),
+    entry_points={
+        'hypothesis.extra': 'hypothesisfakefactory = hypothesisfakefactory'
+    },
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
@@ -59,7 +68,6 @@ setup(
         "Programming Language :: Python :: Implementation :: CPython",
         "Topic :: Software Development :: Testing",
     ],
-    long_description=open(README).read(),
-    tests_require=['pytest', 'pytest-timeout', 'flake8'],
+    tests_require=['pytest'],
     cmdclass={'test': PyTest},
 )

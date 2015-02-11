@@ -26,7 +26,8 @@ import inspect
 from functools import wraps
 
 from hypothesis.conventions import not_set
-from hypothesis.internal.compat import ARG_NAME_ATTRIBUTE, hrange, text_type
+from hypothesis.internal.compat import ARG_NAME_ATTRIBUTE, hrange, \
+    text_type
 from hypothesis.internal.filestorage import storage_directory
 
 

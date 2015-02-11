@@ -52,7 +52,7 @@ setup(
     ],
     long_description=open(README).read(),
     entry_points={
-        'hypothesis.extra': 'hypothesisdatetime = hypothesisdatetime:load'
+        'hypothesis.extra': 'hypothesisdatetime = hypothesisdatetime'
     },
     classifiers=[
         "Development Status :: 4 - Beta",
