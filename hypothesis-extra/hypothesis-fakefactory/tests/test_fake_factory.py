@@ -15,8 +15,8 @@ from __future__ import division, print_function, unicode_literals
 import pytest
 from hypothesis import given, falsify
 from faker.providers import BaseProvider
-from hypothesis.extra.fakefactory import FakeFactory
 from hypothesis.descriptortests import descriptor_test_suite
+from hypothesis.extra.fakefactory import FakeFactory
 
 
 class KittenProvider(BaseProvider):
