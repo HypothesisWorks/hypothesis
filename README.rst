@@ -311,7 +311,7 @@ be surprising behaviour, but it's easy to turn on.
     # This will create an on-disk database that will be used across runs at the
     # specified path
     from hypothesis.database.backend import SQLiteBackend
-    hs.default.databse = ExampleDatabase(
+    hs.default.database = ExampleDatabase(
         backend=SQLiteBackend('/path/to/my/example.db')
     )
 
