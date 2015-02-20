@@ -154,8 +154,6 @@ class Verifier(object):
 
         examples_seen = 0
         for parameter in parameter_source:  # pragma: no branch
-            if setup_example is not None:
-                setup_example()
             args = search_strategy.produce_template(
                 random, parameter
             )

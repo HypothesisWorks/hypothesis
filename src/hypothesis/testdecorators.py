@@ -72,6 +72,18 @@ def given(*generator_arguments, **generator_kwargs):
             test.__name__, argspec
         )
         def wrapped_test(*arguments, **kwargs):
+            selfy = None
+            if argspec.args:
+                selfy = kwargs.get(argspec.args[0])
+                if isinstance(selfy, HypothesisProvided):
+                    selfy = None
+            if selfy is not None:
+                setup_example = getattr(selfy, 'setup_example', None)
+                teardown_example = getattr(selfy, 'teardown_example', None)
+            else:
+                setup_example = None
+                teardown_example = None
+
             if not any(
                 isinstance(x, HypothesisProvided)
                 for xs in (arguments, kwargs.values())
@@ -79,7 +91,11 @@ def given(*generator_arguments, **generator_kwargs):
             ):
                 # All arguments have been satisfied without needing to invoke
                 # hypothesis
-                test(*arguments, **kwargs)
+                setup_example()
+                try:
+                    test(*arguments, **kwargs)
+                finally:
+                    teardown_example((arguments, kwargs))
                 return
 
             def convert_to_descriptor(v):
@@ -109,7 +125,10 @@ def given(*generator_arguments, **generator_kwargs):
 
             try:
                 falsifying_example = verifier.falsify(
-                    to_falsify, given_descriptor)[0]
+                    to_falsify, given_descriptor,
+                    setup_example=setup_example,
+                    teardown_example=teardown_example,
+                )[0]
             except Unfalsifiable:
                 return
 
