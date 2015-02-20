@@ -91,11 +91,13 @@ def given(*generator_arguments, **generator_kwargs):
             ):
                 # All arguments have been satisfied without needing to invoke
                 # hypothesis
-                setup_example()
+                if setup_example is not None:
+                    setup_example()
                 try:
                     test(*arguments, **kwargs)
                 finally:
-                    teardown_example((arguments, kwargs))
+                    if teardown_example is not None:
+                        teardown_example((arguments, kwargs))
                 return
 
             def convert_to_descriptor(v):
