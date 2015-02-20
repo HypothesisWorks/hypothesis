@@ -51,7 +51,6 @@ def descriptor_test_suite(
     descriptor_test = given(descriptor, verifier=verifier)
 
     class ValidationSuite(TestCase):
-
         @descriptor_test
         def test_can_produce_what_it_produces(self, value):
             assert strategy.could_have_produced(value)

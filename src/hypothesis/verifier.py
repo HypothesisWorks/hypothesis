@@ -91,8 +91,8 @@ class Verifier(object):
         Attempt to construct an example tuple x matching argument_types such
         that hypothesis(*x) returns a falsey value or throws an AssertionError
         """
-        teardown_example = kwargs.get('teardown_example')
-        setup_example = kwargs.get('setup_example')
+        teardown_example = kwargs.get('teardown_example') or (lambda x: None)
+        setup_example = kwargs.get('setup_example') or (lambda: None)
         random = self.random
         if random is None:
             random = Random(
@@ -112,8 +112,7 @@ class Verifier(object):
             example = None
             try:
                 try:
-                    if setup_example is not None:
-                        setup_example()
+                    setup_example()
                     example = search_strategy.reify(args)
                     return not hypothesis(*example)
                 except AssertionError:
@@ -121,11 +120,16 @@ class Verifier(object):
                 except UnsatisfiedAssumption:
                     return False
             finally:
-                if teardown_example is not None:
-                    teardown_example(example)
+                teardown_example(example)
 
         track_seen = Tracker()
         falsifying_examples = []
+        if storage:
+            for example in storage.fetch():
+                if falsifies(example):
+                    falsifying_examples = [example]
+                break
+
         examples_found = 0
         satisfying_examples = 0
         timed_out = False
@@ -172,8 +176,12 @@ class Verifier(object):
                 continue
             examples_found += 1
             try:
+                setup_example()
                 a = search_strategy.reify(args)
-                is_falsifying_example = not hypothesis(*a)
+                try:
+                    is_falsifying_example = not hypothesis(*a)
+                finally:
+                    teardown_example(a)
             except AssertionError:
                 is_falsifying_example = True
             except UnsatisfiedAssumption:

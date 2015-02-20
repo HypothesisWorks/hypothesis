@@ -51,7 +51,7 @@ class FooStrategy(SearchStrategy):
     descriptor = Foo
     parameter = params.CompositeParameter()
 
-    def produce(self, random, pv):
+    def produce_template(self, random, pv):
         return Foo()
 
 
@@ -86,9 +86,9 @@ class BarStrategy(SearchStrategy):
         self.int_strategy = int_strategy
         self.parameter = self.int_strategy.parameter
 
-    def produce(self, random, pv):
+    def produce_template(self, random, pv):
         x = Bar()
-        for _ in hrange(self.int_strategy.produce(random, pv)):
+        for _ in hrange(self.int_strategy.produce_template(random, pv)):
             x = Bar(x)
         return x
 
@@ -450,7 +450,7 @@ class BrokenFloatStrategy(SearchStrategy):
     descriptor = float
     parameter = params.CompositeParameter()
 
-    def produce(self, random, pv):
+    def produce_template(self, random, pv):
         return random.random()
 
 
@@ -545,7 +545,7 @@ class SmallIntStrategy(SearchStrategy):
     descriptor = SmallInt
     parameter = params.CompositeParameter()
 
-    def produce(self, random, pv):
+    def produce_template(self, random, pv):
         return SmallInt(dist.geometric(random, 0.9))
 
 

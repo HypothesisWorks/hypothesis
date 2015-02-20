@@ -36,7 +36,7 @@ class HasAnIdStrategy(SearchStrategy):
     parameter = CompositeParameter()
     descriptor = HasAnId
 
-    def produce(self, random, pv):
+    def produce_template(self, random, pv):
         return HasAnId(0)
 
     def custom_reify(self, value):

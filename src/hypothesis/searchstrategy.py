@@ -22,7 +22,6 @@ import string
 import struct
 import inspect
 import unicodedata
-from abc import abstractmethod
 from copy import deepcopy
 from random import Random
 
@@ -150,12 +149,12 @@ class SearchStrategy(object):
     def draw_and_produce(self, random):
         return self.produce_template(random, self.parameter.draw(random))
 
-    @abstractmethod
     def produce_template(self, random, parameter_value):
         """Given a random number generator and a value drawn from
         self.parameter, produce a value matching this search strategy's
         descriptor."""
-        pass  # pragma: no cover
+        raise NotImplementedError(  # pragma: no cover
+            '%s.produce_template()' % (self.__class__.__name__))
 
     def decompose(self, value):
         """Returns something iterable over pairs (descriptor, v) where v is
@@ -795,17 +794,17 @@ class MappedSearchStrategy(SearchStrategy):
     def check_has_custom_reify(self):
         return self.mapped_strategy.has_custom_reify()
 
-    @abstractmethod
     def pack(self, x):
         """Take a value produced by the underlying mapped_strategy and turn it
         into a value suitable for outputting from this strategy."""
-        pass  # pragma: no cover
+        raise NotImplementedError(
+            '%s.pack()' % (self.__class__.__name__))
 
-    @abstractmethod
     def unpack(self, x):
         """Take a value produced from pack and convert it back to a value that
         could have been produced by the underlying strategy."""
-        pass  # pragma: no cover
+        raise NotImplementedError(
+            '%s.unpack()' % (self.__class__.__name__))
 
     def decompose(self, value):
         return self.mapped_strategy.decompose(self.unpack(value))

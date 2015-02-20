@@ -244,7 +244,7 @@ class AwkwardStrategy(SearchStrategy):
     descriptor = Awkward
     parameter = params.CompositeParameter()
 
-    def produce(self, random, pv):
+    def produce_template(self, random, pv):
         return Awkward()
 
 StrategyTable.default().define_specification_for(

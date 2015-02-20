@@ -93,7 +93,7 @@ class DatetimeStrategy(SearchStrategy):
         )
     )
 
-    def produce(self, random, pv):
+    def produce_template(self, random, pv):
         year = random.randint(MINYEAR, MAXYEAR)
         month = random.choice(pv.month)
         base = datetime(

@@ -120,3 +120,12 @@ class ParameterSource(object):
         self.started = True
         while True:
             yield self.pick_a_parameter()
+
+    def examples(self):
+        self.started = True
+        while True:
+            p = self.pick_a_parameter()
+            template = self.strategy.produce_template(
+                self.random, p
+            )
+            yield self.strategy.reify(template)

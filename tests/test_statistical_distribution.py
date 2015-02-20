@@ -150,7 +150,7 @@ def define_test(descriptor, q, predicate, condition=None):
         strategy = StrategyTable.default().strategy(descriptor)
         for _ in hrange(MAX_RUNS):
             pv = strategy.parameter.draw(random)
-            x = strategy.produce(random, pv)
+            x = strategy.produce_template(random, pv)
             if not _condition(x):
                 continue
             successful_runs += 1

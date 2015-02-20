@@ -16,9 +16,7 @@ from __future__ import division, print_function, absolute_import, \
 import random
 
 import pytest
-import hypothesis.settings as hs
-from hypothesis.database import ExampleDatabase
-from hypothesis.examplesource import ExampleSource
+from hypothesis.examplesource import ParameterSource
 from hypothesis.strategytable import StrategyTable
 from hypothesis.internal.compat import hrange
 
@@ -26,14 +24,13 @@ N_EXAMPLES = 1000
 
 
 def test_negative_is_not_too_far_off_mean():
-    source = ExampleSource(
+    source = ParameterSource(
         random=random.Random(),
         strategy=StrategyTable.default().strategy(int),
-        storage=None,
     )
     positive = 0
     i = 0
-    for example in source:
+    for example in source.examples():
         if example >= 0:
             positive += 1
         i += 1
@@ -43,14 +40,13 @@ def test_negative_is_not_too_far_off_mean():
 
 
 def test_marking_negative_avoids_similar_examples():
-    source = ExampleSource(
+    source = ParameterSource(
         random=random.Random(),
         strategy=StrategyTable.default().strategy(int),
-        storage=None,
     )
     positive = 0
     i = 0
-    for example in source:
+    for example in source.examples():
         if example >= 0:
             positive += 1
         else:
@@ -65,14 +61,13 @@ def test_can_grow_the_set_of_available_parameters_if_doing_badly():
     runs = 10
     number_grown = 0
     for _ in hrange(runs):
-        source = ExampleSource(
+        source = ParameterSource(
             random=random.Random(),
             strategy=StrategyTable.default().strategy(int),
-            storage=None,
             min_parameters=1,
         )
         i = 0
-        for example in source:
+        for example in source.examples():
             if example < 0:
                 source.mark_bad()
             i += 1
@@ -83,40 +78,18 @@ def test_can_grow_the_set_of_available_parameters_if_doing_badly():
         assert len(source.parameters) < 100
 
 
-def test_example_source_needs_at_least_one_useful_argument():
-    with pytest.raises(ValueError):
-        ExampleSource(random=random.Random(), storage=None, strategy=None)
-
-
 def test_example_source_needs_random():
     with pytest.raises(ValueError):
-        ExampleSource(
+        ParameterSource(
             random=None,
             strategy=StrategyTable.default().strategy(int),
-            storage=None,
         )
 
 
-def test_example_source_terminates_if_just_from_db():
-    db = ExampleDatabase()
-    storage = db.storage_for(int)
-    storage.save(1)
-    source = ExampleSource(
-        random=random.Random(), storage=storage, strategy=None)
-    its = iter(source)
-    assert next(its) == 1
-    with pytest.raises(StopIteration):
-        next(its)
-
-
 def test_errors_if_you_mark_bad_twice():
-    storage = None
-    if hs.default.database is not None:
-        storage = hs.default.database.storage_for(int)
-    source = ExampleSource(
+    source = ParameterSource(
         random=random.Random(),
         strategy=StrategyTable.default().strategy(int),
-        storage=storage,
     )
     next(iter(source))
     source.mark_bad()
@@ -125,27 +98,22 @@ def test_errors_if_you_mark_bad_twice():
 
 
 def test_errors_if_you_mark_bad_before_fetching():
-    storage = None
-    if hs.default.database is not None:
-        storage = hs.default.database.storage_for(int)
-    source = ExampleSource(
+    source = ParameterSource(
         random=random.Random(),
         strategy=StrategyTable.default().strategy(int),
-        storage=storage,
     )
     with pytest.raises(ValueError):
         source.mark_bad()
 
 
 def test_tries_each_parameter_at_least_min_index_times():
-    source = ExampleSource(
+    source = ParameterSource(
         random=random.Random(),
         strategy=StrategyTable.default().strategy(int),
-        storage=None,
         min_tries=5
     )
     i = 0
-    for x in source:
+    for x in source.examples():
         i += 1
         if i > 500:
             break

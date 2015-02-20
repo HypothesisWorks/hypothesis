@@ -82,29 +82,31 @@ class DescriptorStrategy(SearchStrategy):
             sampling_param=self.sampling_strategy.parameter,
         )
 
-    def produce(self, random, pv):
+    def produce_template(self, random, pv):
         n_children = geometric(random, pv.branch_factor)
         if not n_children:
             return random.choice(pv.leaf_descriptors)
         elif n_children == 1 and biased_coin(random, pv.just_probability):
-            new_desc = self.produce(random, pv)
+            new_desc = self.produce_template(random, pv)
             child_strategy = small_table.strategy(new_desc)
             pv2 = child_strategy.parameter.draw(random)
-            return just(child_strategy.produce(random, pv2))
+            return just(child_strategy.produce_template(random, pv2))
         elif n_children == 1 and biased_coin(random, pv.sampling_probability):
-            elements = self.sampling_strategy.produce(
+            elements = self.sampling_strategy.produce_template(
                 random, pv.sampling_param)
             if elements:
                 return sampled_from(elements)
 
-        children = [self.produce(random, pv) for _ in hrange(n_children)]
+        children = [
+            self.produce_template(random, pv) for _ in hrange(n_children)]
         combiner = random.choice(pv.branch_descriptors)
         if combiner != dict:
             return combiner(children)
         else:
             result = {}
             for v in children:
-                k = self.key_strategy.produce(random, pv.key_parameter)
+                k = self.key_strategy.produce_template(
+                    random, pv.key_parameter)
                 result[k] = v
             return result
 
@@ -138,11 +140,11 @@ class DescriptorWithValueStrategy(SearchStrategy):
         self.strategy_table = strategy_table
         self.random_strategy = strategy_table.strategy(Random)
 
-    def produce(self, random, pv):
-        descriptor = self.descriptor_strategy.produce(random, pv)
+    def produce_template(self, random, pv):
+        descriptor = self.descriptor_strategy.produce_template(random, pv)
         strategy = self.strategy_table.strategy(descriptor)
         parameter = strategy.parameter.draw(random)
-        value = strategy.produce(random, parameter)
+        value = strategy.produce_template(random, parameter)
         new_random = self.random_strategy.draw_and_produce(random)
         assert strategy.could_have_produced(value)
         return DescriptorWithValue(

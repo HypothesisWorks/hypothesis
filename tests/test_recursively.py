@@ -192,8 +192,8 @@ def test_cannot_generate_mutable_data_from_an_immutable_strategy(d):
 @given(Descriptor, Random, verifier=verifier)
 def test_copies_all_its_values_correctly(desc, random):
     strategy = small_table.strategy(desc)
-    value = strategy.produce(random, strategy.parameter.draw(random))
-    assert actually_equal(value, strategy.copy(value))
+    value = strategy.produce_template(random, strategy.parameter.draw(random))
+    assert actually_equal(value, strategy.reify(value))
 
 
 @given(Descriptor, verifier=verifier)
