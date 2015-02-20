@@ -175,15 +175,15 @@ def test_can_handle_recursion():
 
     d = {}
     d[1] = d
-    assert nice_string(d) == "{1: (...)}"
+    assert nice_string(d) == '{1: (...)}'
 
     t = ([],)
     t[0].append(t)
-    assert nice_string(t) == "([(...)],)"
+    assert nice_string(t) == '([(...)],)'
 
     class Foo(object):
         pass
 
     f = Foo()
     f.stuff = f
-    assert nice_string(f) == "Foo(stuff=(...))"
+    assert nice_string(f) == 'Foo(stuff=(...))'

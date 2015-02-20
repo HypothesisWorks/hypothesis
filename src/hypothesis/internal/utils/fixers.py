@@ -146,6 +146,7 @@ def is_nasty_float(x):
 
 
 class IdKey(object):
+
     def __init__(self, value):
         self.value = value
 
@@ -160,6 +161,7 @@ class IdKey(object):
 
 
 class IdentitySet(object):
+
     def __init__(self):
         self.data = {}
 
@@ -177,11 +179,12 @@ class IdentitySet(object):
 
 
 class NiceString(ExtMethod):
+
     def __call__(self, value, seen=None):
         if seen is None:
             seen = IdentitySet()
         if value in seen:
-            return "(...)"
+            return '(...)'
         seen.add(value)
         result = super(NiceString, self).__call__(value, seen)
         seen.remove(value)

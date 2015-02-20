@@ -16,9 +16,9 @@ from __future__ import division, print_function, absolute_import, \
 import pytest
 from hypothesis import given, falsify
 from faker.providers import BaseProvider
+from hypothesis.strategytable import StrategyTable
 from hypothesis.descriptortests import descriptor_test_suite
 from hypothesis.extra.fakefactory import FakeFactory
-from hypothesis.strategytable import StrategyTable
 
 
 class KittenProvider(BaseProvider):
@@ -30,8 +30,8 @@ class KittenProvider(BaseProvider):
 def test_produces_any_unicode():
     ff = FakeFactory('email')
     strat = StrategyTable.default().specification_for(ff)
-    assert strat.could_have_produced("foo")
-    assert not strat.could_have_produced(b"foo")
+    assert strat.could_have_produced('foo')
+    assert not strat.could_have_produced(b'foo')
 
 
 @given(FakeFactory('kittens', providers=[KittenProvider]))
