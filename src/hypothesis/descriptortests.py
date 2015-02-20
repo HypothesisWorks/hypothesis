@@ -57,9 +57,10 @@ def descriptor_test_suite(
             assert strategy.could_have_produced(value)
 
         @descriptor_test
-        def test_copying_produces_equality(self, value):
+        def test_two_reifications_are_equal(self, value):
             assert actually_equal(
-                value, strategy.copy(value)
+                strategy.reify(value),
+                strategy.reify(value),
             )
 
         if simplify_is_unique:

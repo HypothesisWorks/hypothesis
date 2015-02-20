@@ -18,7 +18,7 @@ from random import Random
 from hypothesis.internal.compat import hrange
 
 
-class ExampleSource(object):
+class ParameterSource(object):
 
     """An object that provides you with an a stream of examples to work with.
 
@@ -34,17 +34,12 @@ class ExampleSource(object):
 
     def __init__(
         self,
-        random, strategy, storage,
+        random, strategy,
         min_parameters=25, min_tries=2,
     ):
         if not isinstance(random, Random):
             raise ValueError('A Random is required but got %r' % (random,))
-        if strategy is None and storage is None:
-            raise ValueError(
-                'Cannot proceed without at least one way of getting examples'
-            )
         self.strategy = strategy
-        self.storage = storage
         self.random = random
         self.parameters = []
         self.last_parameter_index = -1
@@ -123,14 +118,5 @@ class ExampleSource(object):
 
     def __iter__(self):
         self.started = True
-        if self.storage is not None:
-            for example in self.storage.fetch():
-                self.mark_set = False
-                yield example
-
-        if self.strategy is not None:
-            while True:
-                parameter = self.pick_a_parameter()
-                yield self.strategy.produce(
-                    self.random, parameter
-                )
+        while True:
+            yield self.pick_a_parameter()

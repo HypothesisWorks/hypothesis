@@ -125,33 +125,33 @@ class SearchStrategy(object):
     def __init__(self):
         pass
 
-    def has_custom_copy(self):
+    def has_custom_reify(self):
         try:
-            return self.__has_custom_copy
+            return self.__has_custom_reify
         except AttributeError:
             pass
-        self.__has_custom_copy = self.check_has_custom_copy()
-        return self.__has_custom_copy
+        self.__has_custom_reify = self.check_has_custom_reify()
+        return self.__has_custom_reify
 
-    def check_has_custom_copy(self):
+    def check_has_custom_reify(self):
         return (
-            unbind_method(self.custom_copy) !=
-            unbind_method(SearchStrategy.custom_copy))
+            unbind_method(self.custom_reify) !=
+            unbind_method(SearchStrategy.custom_reify))
 
-    def custom_copy(self, value):
+    def custom_reify(self, value):
         """Perform a custom copy.
 
         You don't need to implement this if your type supports deepcopy.
 
         """
         raise NotImplementedError(
-            '%s.custom_copy()' % (self.__class__.__name__))
+            '%s.custom_reify()' % (self.__class__.__name__))
 
     def draw_and_produce(self, random):
-        return self.produce(random, self.parameter.draw(random))
+        return self.produce_template(random, self.parameter.draw(random))
 
     @abstractmethod
-    def produce(self, random, parameter_value):
+    def produce_template(self, random, parameter_value):
         """Given a random number generator and a value drawn from
         self.parameter, produce a value matching this search strategy's
         descriptor."""
@@ -176,7 +176,7 @@ class SearchStrategy(object):
         """
         return ()
 
-    def copy(self, value):
+    def reify(self, value):
         """Return a version of value such that if it is mutated this will not
         be reflected in value. If value is immutable it is perfectly acceptable
         to just return value itself.
@@ -186,8 +186,8 @@ class SearchStrategy(object):
         providing copy hooks is not suitable for their needs.
 
         """
-        if self.has_custom_copy():
-            return self.custom_copy(value)
+        if self.has_custom_reify():
+            return self.custom_reify(value)
         elif self.has_immutable_data:
             return value
         else:
@@ -326,7 +326,7 @@ class RandomGeometricIntStrategy(IntStrategy):
         p=params.BetaFloatParameter(alpha=0.2, beta=1.8),
     )
 
-    def produce(self, random, parameter):
+    def produce_template(self, random, parameter):
         value = dist.geometric(random, parameter.p)
         if dist.biased_coin(random, parameter.negative_probability):
             value = -value
@@ -354,7 +354,7 @@ class BoundedIntStrategy(SearchStrategy):
         self.size_lower_bound = end - start + 1
         self.size_upper_bound = end - start + 1
 
-    def produce(self, random, parameter):
+    def produce_template(self, random, parameter):
         if self.start == self.end:
             return self.start
         return random.choice(parameter)
@@ -428,8 +428,8 @@ class JustIntFloats(FloatStrategy):
         self.int_strategy = int_strategy
         self.parameter = self.int_strategy.parameter
 
-    def produce(self, random, pv):
-        return float(self.int_strategy.produce(random, pv))
+    def produce_template(self, random, pv):
+        return float(self.int_strategy.produce_template(random, pv))
 
 
 def compose_float(sign, exponent, fraction):
@@ -443,7 +443,7 @@ class FullRangeFloats(FloatStrategy):
         subnormal_probability=params.UniformFloatParameter(0, 0.5),
     )
 
-    def produce(self, random, pv):
+    def produce_template(self, random, pv):
         sign = int(dist.biased_coin(random, pv.negative_probability))
         if dist.biased_coin(random, pv.subnormal_probability):
             exponent = 0
@@ -485,7 +485,7 @@ class SmallFloats(FloatStrategy):
         min_exponent=params.UniformIntParameter(0, max_exponent)
     )
 
-    def produce(self, random, pv):
+    def produce_template(self, random, pv):
         base = math.ldexp(
             random.random(),
             -random.randint(pv.min_exponent, self.max_exponent)
@@ -515,7 +515,7 @@ class FixedBoundedFloatStrategy(SearchStrategy):
         self.lower_bound = float(lower_bound)
         self.upper_bound = float(upper_bound)
 
-    def produce(self, random, pv):
+    def produce_template(self, random, pv):
         if pv.leftwards:
             left = self.lower_bound
             right = pv.cut
@@ -544,8 +544,8 @@ class BoundedFloatStrategy(FloatStrategy):
             spread=self.inner_strategy.parameter,
         )
 
-    def produce(self, random, pv):
-        return pv.left + self.inner_strategy.produce(
+    def produce_template(self, random, pv):
+        return pv.left + self.inner_strategy.produce_template(
             random, pv.spread
         ) * pv.length
 
@@ -558,7 +558,7 @@ class GaussianFloatStrategy(FloatStrategy):
         mean=params.NormalParameter(0, 1),
     )
 
-    def produce(self, random, pv):
+    def produce_template(self, random, pv):
         return random.normalvariate(pv.mean, 1)
 
 
@@ -575,7 +575,7 @@ class ExponentialFloatStrategy(FloatStrategy):
         negative=params.BiasedCoin(0.5),
     )
 
-    def produce(self, random, pv):
+    def produce_template(self, random, pv):
         value = random.expovariate(pv.lambd)
         if pv.negative:
             value = -value
@@ -592,7 +592,7 @@ class BoolStrategy(SearchStrategy):
 
     parameter = params.UniformFloatParameter(0, 1)
 
-    def produce(self, random, p):
+    def produce_template(self, random, p):
         return dist.biased_coin(random, p)
 
 
@@ -630,12 +630,12 @@ class TupleStrategy(SearchStrategy):
         return all((s.could_have_produced(x)
                     for s, x in zip(self.element_strategies, xs)))
 
-    def check_has_custom_copy(self):
-        return any(e.has_custom_copy() for e in self.element_strategies)
+    def check_has_custom_reify(self):
+        return any(e.has_custom_reify() for e in self.element_strategies)
 
-    def custom_copy(self, value):
+    def custom_reify(self, value):
         return self.newtuple(
-            e.copy(v) for e, v in zip(self.element_strategies, value)
+            e.reify(v) for e, v in zip(self.element_strategies, value)
         )
 
     def decompose(self, value):
@@ -651,10 +651,10 @@ class TupleStrategy(SearchStrategy):
         else:
             return self.tuple_type(*xs)
 
-    def produce(self, random, pv):
+    def produce_template(self, random, pv):
         es = self.element_strategies
         return self.newtuple([
-            g.produce(random, v)
+            g.produce_template(random, v)
             for g, v in zip(es, pv)
         ])
 
@@ -732,18 +732,19 @@ class ListStrategy(SearchStrategy):
             for v in value
         ]
 
-    def check_has_custom_copy(self):
-        return self.element_strategy.has_custom_copy()
+    def check_has_custom_reify(self):
+        return self.element_strategy.has_custom_reify()
 
-    def custom_copy(self, value):
-        return list(map(self.element_strategy.copy, value))
+    def custom_reify(self, value):
+        return list(map(self.element_strategy.reify, value))
 
-    def produce(self, random, pv):
+    def produce_template(self, random, pv):
         length = dist.geometric(random, 1.0 / (1 + pv.average_length))
         result = []
         for _ in hrange(length):
             result.append(
-                self.element_strategy.produce(random, pv.child_parameter))
+                self.element_strategy.produce_template(
+                    random, pv.child_parameter))
         return result
 
     def simplify(self, x):
@@ -791,8 +792,8 @@ class MappedSearchStrategy(SearchStrategy):
         self.descriptor = descriptor
         self.parameter = self.mapped_strategy.parameter
 
-    def check_has_custom_copy(self):
-        return self.mapped_strategy.has_custom_copy()
+    def check_has_custom_reify(self):
+        return self.mapped_strategy.has_custom_reify()
 
     @abstractmethod
     def pack(self, x):
@@ -809,8 +810,8 @@ class MappedSearchStrategy(SearchStrategy):
     def decompose(self, value):
         return self.mapped_strategy.decompose(self.unpack(value))
 
-    def produce(self, random, pv):
-        return self.pack(self.mapped_strategy.produce(random, pv))
+    def produce_template(self, random, pv):
+        return self.pack(self.mapped_strategy.produce_template(random, pv))
 
     def could_have_produced(self, value):
         return super(MappedSearchStrategy, self).could_have_produced(
@@ -840,10 +841,10 @@ class ComplexStrategy(SearchStrategy):
         )
         self.float_strategy = float_strategy
 
-    def produce(self, random, pv):
+    def produce_template(self, random, pv):
         return complex(
-            self.float_strategy.produce(random, pv.real),
-            self.float_strategy.produce(random, pv.imaginary),
+            self.float_strategy.produce_template(random, pv.real),
+            self.float_strategy.produce_template(random, pv.imaginary),
         )
 
     def simplify(self, x):
@@ -913,7 +914,7 @@ class OneCharStringStrategy(SearchStrategy):
         ascii_chance=params.UniformFloatParameter(0, 1)
     )
 
-    def produce(self, random, pv):
+    def produce_template(self, random, pv):
         if dist.biased_coin(random, pv.ascii_chance):
             return random.choice(self.ascii_characters)
         else:
@@ -946,7 +947,7 @@ class StringStrategy(MappedSearchStrategy):
             strategy=list_of_one_char_strings_strategy
         )
 
-    def has_custom_copy(self):
+    def has_custom_reify(self):
         return False
 
     def pack(self, ls):
@@ -967,7 +968,7 @@ class BinaryStringStrategy(MappedSearchStrategy):
     """A strategy for strings of bytes, defined in terms of a strategy for
     lists of bytes."""
 
-    def has_custom_copy(self):
+    def has_custom_reify(self):
         return False
 
     def pack(self, x):
@@ -1011,13 +1012,13 @@ class FixedKeysDictStrategy(SearchStrategy):
             self.size_lower_bound *= e.size_lower_bound
             self.size_upper_bound *= e.size_upper_bound
 
-    def check_has_custom_copy(self):
-        return any(s.has_custom_copy() for s in self.strategy_dict.values())
+    def check_has_custom_reify(self):
+        return any(s.has_custom_reify() for s in self.strategy_dict.values())
 
-    def custom_copy(self, value):
+    def custom_reify(self, value):
         result = {}
         for k, v in self.strategy_dict.items():
-            result[k] = v.copy(value[k])
+            result[k] = v.reify(value[k])
         return result
 
     def decompose(self, value):
@@ -1026,10 +1027,10 @@ class FixedKeysDictStrategy(SearchStrategy):
             for k, d in self.descriptor.items()
         ]
 
-    def produce(self, random, pv):
+    def produce_template(self, random, pv):
         result = {}
         for k, g in self.strategy_dict.items():
-            result[k] = g.produce(random, pv[k])
+            result[k] = g.produce_template(random, pv[k])
         return result
 
     def simplify(self, x):
@@ -1100,13 +1101,13 @@ class OneOfStrategy(SearchStrategy):
                 self.size_lower_bound, e.size_lower_bound)
             self.size_upper_bound += e.size_upper_bound
 
-    def check_has_custom_copy(self):
-        return any(e.has_custom_copy() for e in self.element_strategies)
+    def check_has_custom_reify(self):
+        return any(e.has_custom_reify() for e in self.element_strategies)
 
-    def custom_copy(self, value):
+    def custom_reify(self, value):
         for e in self.element_strategies:
             if e.could_have_produced(value):
-                return e.copy(value)
+                return e.reify(value)
         raise ValueError('%r could not have produced %r' % (
             self, value
         ))
@@ -1123,13 +1124,13 @@ class OneOfStrategy(SearchStrategy):
     def could_have_produced(self, x):
         return any((s.could_have_produced(x) for s in self.element_strategies))
 
-    def produce(self, random, pv):
+    def produce_template(self, random, pv):
         if len(pv.enabled_children) == 1:
             child = pv.enabled_children[0]
         else:
             child = pv.enabled_children[
                 random.randint(0, len(pv.enabled_children) - 1)]
-        return self.element_strategies[child].produce(
+        return self.element_strategies[child].produce_template(
             random, pv.child_parameters[child])
 
     def simplify(self, x):
@@ -1158,10 +1159,10 @@ class JustStrategy(SearchStrategy):
         except:
             self.has_immutable_data = True
 
-    def check_has_custom_copy(self):
+    def check_has_custom_reify(self):
         return self.has_immutable_data
 
-    def custom_copy(self, value):
+    def custom_reify(self, value):
         return value
 
     def __repr__(self):
@@ -1169,7 +1170,7 @@ class JustStrategy(SearchStrategy):
 
     parameter = params.CompositeParameter()
 
-    def produce(self, random, pv):
+    def produce_template(self, random, pv):
         return self.descriptor.value
 
     def could_have_produced(self, value):
@@ -1188,7 +1189,7 @@ class RandomStrategy(SearchStrategy):
     parameter = params.CompositeParameter()
     has_immutable_data = False
 
-    def produce(self, random, pv):
+    def produce_template(self, random, pv):
         return RandomWithSeed(random.getrandbits(128))
 
     def could_have_produced(self, value):
@@ -1216,7 +1217,7 @@ class SampledFromStrategy(SearchStrategy):
         self.size_lower_bound = len(self.elements)
         self.size_upper_bound = len(self.elements)
 
-    def produce(self, random, pv):
+    def produce_template(self, random, pv):
         return random.choice(pv)
 
     def could_have_produced(self, value):
@@ -1258,17 +1259,17 @@ class ExampleAugmentedStrategy(SearchStrategy):
         self.size_lower_bound = main_strategy.size_lower_bound
         self.size_upper_bound = main_strategy.size_upper_bound
 
-    def produce(self, random, pv):
+    def produce_template(self, random, pv):
         if dist.biased_coin(random, pv.example_probability):
             return random.choice(pv.examples)
         else:
-            return self.main_strategy.produce(random, pv.main)
+            return self.main_strategy.produce_template(random, pv.main)
 
     def decompose(self, value):
         return self.main_strategy.decompose(value)
 
-    def copy(self, value):
-        return self.main_strategy.copy(value)
+    def reify(self, value):
+        return self.main_strategy.reify(value)
 
     def simplify(self, value):
         return self.main_strategy.simplify(value)

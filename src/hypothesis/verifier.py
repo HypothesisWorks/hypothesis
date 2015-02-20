@@ -21,7 +21,7 @@ from random import Random
 
 import hypothesis.settings as hs
 from hypothesis.extra import load_entry_points
-from hypothesis.examplesource import ExampleSource
+from hypothesis.examplesource import ParameterSource
 from hypothesis.strategytable import StrategyTable
 from hypothesis.internal.tracker import Tracker
 from hypothesis.database.converter import NotSerializeable
@@ -83,12 +83,16 @@ class Verifier(object):
         return tuple(storage.fetch())
 
     def falsify(
-            self, hypothesis, *argument_types
+            self, hypothesis,
+            *argument_types,
+            **kwargs
     ):  # pylint: disable=too-many-locals,too-many-branches
         """
         Attempt to construct an example tuple x matching argument_types such
         that hypothesis(*x) returns a falsey value or throws an AssertionError
         """
+        teardown_example = kwargs.get('teardown_example')
+        setup_example = kwargs.get('setup_example')
         random = self.random
         if random is None:
             random = Random(
@@ -105,12 +109,20 @@ class Verifier(object):
                 pass
 
         def falsifies(args):  # pylint: disable=missing-docstring
+            example = None
             try:
-                return not hypothesis(*search_strategy.copy(args))
-            except AssertionError:
-                return True
-            except UnsatisfiedAssumption:
-                return False
+                try:
+                    if setup_example is not None:
+                        setup_example()
+                    example = search_strategy.reify(args)
+                    return not hypothesis(*example)
+                except AssertionError:
+                    return True
+                except UnsatisfiedAssumption:
+                    return False
+            finally:
+                if teardown_example is not None:
+                    teardown_example(example)
 
         track_seen = Tracker()
         falsifying_examples = []
@@ -124,8 +136,8 @@ class Verifier(object):
             max_examples = 1
             min_satisfying_examples = 1
 
-        example_source = ExampleSource(
-            random=random, strategy=search_strategy, storage=storage,
+        parameter_source = ParameterSource(
+            random=random, strategy=search_strategy,
             min_parameters=max(2, int(float(max_examples) / 10))
         )
         start_time = time.time()
@@ -137,10 +149,12 @@ class Verifier(object):
             return time.time() >= start_time + self.timeout
 
         examples_seen = 0
-        # At present this loop will never exit normally . This needs proper
-        # testing when "database only" mode becomes available but right now
-        # it's not.
-        for args in example_source:  # pragma: no branch
+        for parameter in parameter_source:  # pragma: no branch
+            if setup_example is not None:
+                setup_example()
+            args = search_strategy.produce_template(
+                random, parameter
+            )
             assert search_strategy.could_have_produced(args)
             if examples_found >= search_strategy.size_upper_bound:
                 break
@@ -154,16 +168,16 @@ class Verifier(object):
             examples_seen += 1
 
             if track_seen.track(args) > 1:
-                example_source.mark_bad()
+                parameter_source.mark_bad()
                 continue
             examples_found += 1
             try:
-                is_falsifying_example = not hypothesis(
-                    *search_strategy.copy(args))
+                a = search_strategy.reify(args)
+                is_falsifying_example = not hypothesis(*a)
             except AssertionError:
                 is_falsifying_example = True
             except UnsatisfiedAssumption:
-                example_source.mark_bad()
+                parameter_source.mark_bad()
                 continue
             satisfying_examples += 1
             if is_falsifying_example:
