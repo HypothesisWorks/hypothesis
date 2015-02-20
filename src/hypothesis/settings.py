@@ -16,7 +16,8 @@ Either an explicit Settings object can be used or the default object on
 this module can be modified.
 
 """
-from __future__ import division, print_function, unicode_literals
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 import os
 

@@ -13,7 +13,8 @@
 """Tests for being able to generate weird and wonderful floating point
 numbers."""
 
-from __future__ import division, print_function, unicode_literals
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 import sys
 import math

@@ -12,7 +12,8 @@
 
 """Tests for specific string representations of values."""
 
-from __future__ import division, print_function, unicode_literals
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 import unittest
 from collections import namedtuple

@@ -10,7 +10,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, unicode_literals
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 from copy import deepcopy
 from random import Random

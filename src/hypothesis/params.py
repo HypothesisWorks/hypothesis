@@ -16,7 +16,8 @@ control the shape of their distribution.
 It also provides a variety of implementations thereof.
 
 """
-from __future__ import division, print_function, unicode_literals
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 import inspect
 import collections

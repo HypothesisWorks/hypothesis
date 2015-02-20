@@ -12,7 +12,8 @@
 
 """Support for testing your custom implementations of descriptors."""
 
-from __future__ import division, print_function, unicode_literals
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 from random import Random
 from unittest import TestCase

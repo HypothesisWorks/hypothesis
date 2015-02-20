@@ -13,7 +13,8 @@
 """The main entry point for Hypothesis, providing the falsify method and all
 the various errors it may throw."""
 
-from __future__ import division, print_function, unicode_literals
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 import time
 from random import Random

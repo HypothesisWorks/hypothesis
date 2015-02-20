@@ -13,7 +13,8 @@
 """Module defining SearchStrategy, which is the core type that Hypothesis uses
 to explore data."""
 
-from __future__ import division, print_function, unicode_literals
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 import sys
 import math

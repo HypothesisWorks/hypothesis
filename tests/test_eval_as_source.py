@@ -10,7 +10,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, unicode_literals
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 from hypothesis.internal.utils.reflection import source_exec_as_module
 

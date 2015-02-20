@@ -4,7 +4,7 @@ set -o xtrace -e
 
 python enforce_header.py
 isort -p hypothesis -ls -m 2 -w 75 \
-    -a  "from __future__ import print_function, unicode_literals, division" \
+    -a  "from __future__ import absolute_import, print_function, unicode_literals, division" \
     -rc src tests hypothesis-extra/*/{src,tests}
 find hypothesis-extra/*/{src,tests} src tests -name '*.py' | xargs pyformat -i
 git diff --exit-code
