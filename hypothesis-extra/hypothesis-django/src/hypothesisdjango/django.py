@@ -5,17 +5,25 @@ import django.test as dt
 import unittest
 
 
-class TestCase(dt.TestCase):
+class HypothesisTestCase(object):
+    def setup_example(self):
+        self._pre_setup()
+
+    def teardown_example(self, example):
+        self._post_teardown()
+
     def __call__(self, result=None):
         testMethod = getattr(self, self._testMethodName)
         is_hypothesis = getattr(testMethod, 'is_hypothesis_test', False)
         if is_hypothesis:
             return unittest.TestCase.__call__(self, result)
         else:
-            return super(TestCase, self).__call__(result)
+            return dt.SimpleTestCase.__call__(self, result)
 
-    def setup_example(self):
-        self._pre_setup()
 
-    def teardown_example(self, example):
-        self._post_teardown()
+class TestCase(HypothesisTestCase, dt.TestCase):
+    pass
+
+
+class TransactionTestCase(HypothesisTestCase, dt.TransactionTestCase):
+    pass
