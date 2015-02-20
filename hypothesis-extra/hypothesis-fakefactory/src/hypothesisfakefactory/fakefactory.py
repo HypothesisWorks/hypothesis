@@ -14,6 +14,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import faker
+from faker.config import AVAILABLE_LOCALES
 import hypothesis.params as params
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import text_type
@@ -40,7 +41,7 @@ class FakeFactory(object):
             self.locales = None
         if self.locales:
             for l in self.locales:
-                if l not in faker.AVAILABLE_LOCALES:
+                if l not in AVAILABLE_LOCALES:
                     raise ValueError('Unsupported locale %r' % (l,))
         self.providers = tuple(providers)
 
@@ -48,15 +49,16 @@ class FakeFactory(object):
 class FakeFactoryStrategy(SearchStrategy):
 
     def __init__(self, details):
+        self.descriptor = details
         self.source = details.source
         self.parameter = params.CompositeParameter(
             locales=params.NonEmptySubset(
-                details.locales or faker.AVAILABLE_LOCALES
+                details.locales or AVAILABLE_LOCALES
             )
         )
         self.providers = details.providers
 
-    def produce(self, random, pv):
+    def produce_template(self, random, pv):
         factory = faker.Faker(locale=random.choice(pv.locales))
         factory.seed(random.getrandbits(128))
         for p in self.providers:

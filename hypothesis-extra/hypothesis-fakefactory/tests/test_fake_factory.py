@@ -18,12 +18,20 @@ from hypothesis import given, falsify
 from faker.providers import BaseProvider
 from hypothesis.descriptortests import descriptor_test_suite
 from hypothesis.extra.fakefactory import FakeFactory
+from hypothesis.strategytable import StrategyTable
 
 
 class KittenProvider(BaseProvider):
 
     def kittens(self):
         return 'meow %d' % (self.random_number(digits=10),)
+
+
+def test_produces_any_unicode():
+    ff = FakeFactory('email')
+    strat = StrategyTable.default().specification_for(ff)
+    assert strat.could_have_produced("foo")
+    assert not strat.could_have_produced(b"foo")
 
 
 @given(FakeFactory('kittens', providers=[KittenProvider]))
@@ -77,6 +85,12 @@ def test_fake_factory_errors_if_unsupported_method():
 def test_fake_factory_errors_if_private_ish_method():
     with pytest.raises(ValueError):
         FakeFactory('_Generator__config')
+
+
+def test_can_get_specification_for_fake_factory():
+    ff = FakeFactory('email')
+    strat = StrategyTable.default().specification_for(ff)
+    assert strat.descriptor == ff
 
 
 TestFakeEmail = descriptor_test_suite(
