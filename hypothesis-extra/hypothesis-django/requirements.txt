@@ -1,0 +1,2 @@
+hypothesis==0.5.1
+django>=1.7
