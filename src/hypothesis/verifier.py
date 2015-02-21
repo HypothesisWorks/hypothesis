@@ -18,6 +18,7 @@ from __future__ import division, print_function, absolute_import, \
 
 import time
 from random import Random
+from itertools import islice
 
 import hypothesis.settings as hs
 from hypothesis.extra import load_entry_points
@@ -27,7 +28,6 @@ from hypothesis.internal.tracker import Tracker
 from hypothesis.database.converter import NotSerializeable
 from hypothesis.internal.utils.reflection import function_digest, \
     get_pretty_function_description
-from itertools import islice
 
 
 def assume(condition):
