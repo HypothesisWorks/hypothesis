@@ -35,6 +35,9 @@ def given(*generator_arguments, **generator_kwargs):
     else:
         verifier = Verifier()
 
+    if not (generator_arguments or generator_kwargs):
+        raise TypeError("given must be called with at least one argument")
+
     def run_test_with_generator(test):
         original_argspec = inspect.getargspec(test)
         if original_argspec.varargs:
@@ -73,10 +76,13 @@ def given(*generator_arguments, **generator_kwargs):
         )
         def wrapped_test(*arguments, **kwargs):
             selfy = None
-            if argspec.args:
-                selfy = kwargs.get(argspec.args[0])
-                if isinstance(selfy, HypothesisProvided):
-                    selfy = None
+            # Because we converted all kwargs to given into real args and
+            # error if we have neither args nor kwargs, this should always
+            # be valid
+            assert argspec.args
+            selfy = kwargs.get(argspec.args[0])
+            if isinstance(selfy, HypothesisProvided):
+                selfy = None
             if selfy is not None:
                 setup_example = getattr(selfy, 'setup_example', None)
                 teardown_example = getattr(selfy, 'teardown_example', None)

@@ -336,3 +336,8 @@ def test_is_bounded(t, x):
 @given(x=int)
 def test_can_test_kwargs_only_methods(**kwargs):
     assert isinstance(kwargs['x'], int)
+
+
+def test_bare_given_errors():
+    with pytest.raises(TypeError):
+        given()
