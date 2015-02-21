@@ -1,7 +1,10 @@
 #!/bin/bash
 set -e -o xtrace
 
-for d in hypothesis-extra/*; do
+TOP_LEVEL=$(cd $(dirname $0); pwd)
+COVERAGERC=$TOP_LEVEL/.coveragerc
+
+for d in hypothesis-extra/hypothesis-*; do
     VENV=$(python -c 'import tempfile; print(tempfile.mkdtemp())')
 
     CURRENT_PYTHON=$(which python)
@@ -12,13 +15,7 @@ for d in hypothesis-extra/*; do
     PYTHON=$BINDIR/python
     PIP=$BINDIR/pip
 
-    CURRENT_VERSION=$($CURRENT_PYTHON --version 2>&1)
-    VENV_VERSION=$($PYTHON --version 2>&1)
-
-    if [ "$CURRENT_VERSION" != "$VENV_VERSION" ]
-    then
-      exit 1
-    fi
+    PACKAGE=$(basename $d)
 
     $PYTHON setup.py install
     $PIP install pytest coverage
@@ -26,10 +23,14 @@ for d in hypothesis-extra/*; do
     pushd $d
         $PIP install -r requirements.txt
         $PYTHON setup.py develop
-        PYTHONPATH=src $PYTHON -m coverage run --include="src/**/*.py" -m pytest tests
+        rm -f .coverage
+        if [ -e manage.py ]; then
+          PYTHONPATH=src $PYTHON -m coverage run --rcfile=$COVERAGERC manage.py test
+          pip install pytest-django
+        else
+          PYTHONPATH=src $PYTHON -m coverage run  --rcfile=$COVERAGERC -m pytest tests
+        fi
         $PYTHON -m coverage report --fail-under=100
-        $PYTHON setup.py install
-        $PYTHON -m pytest tests
     popd
 
     rm -rf $VENV

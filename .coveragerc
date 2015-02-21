@@ -1,6 +1,8 @@
 [run]
 branch = True
-include = src/**/*.py
+include =
+  src/**/*.py
+  hypothesis-extra/*/src/**/*.py
 omit =
     src/hypothesis/settings.py
     src/hypothesis/internal/compat.py
@@ -9,7 +11,9 @@ omit =
 [paths]
 source =
    src/
+   hypothesis-extra/*/src/
    .tox/*/lib/python*/site-packages/hypothesis
+   .tox/*/lib/python*/site-packages/hypothesis-*
 
 [report]
 exclude_lines =
