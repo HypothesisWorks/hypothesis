@@ -10,6 +10,17 @@
 
 # END HEADER
 
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
+
 
 def load():
-    pass
+    from hypothesis.extra import load_entry_points
+    load_entry_points('hypothesisfakefactory')
+    load_entry_points('hypothesisdatetime')
+    from hypothesis.extra.django.models import define_model_strategy
+    from hypothesis.strategytable import StrategyTable
+    import django.db.models as dm
+    StrategyTable.default().define_specification_for_classes(
+        define_model_strategy, subclasses_of=dm.Model
+    )

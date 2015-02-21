@@ -45,6 +45,22 @@ class FakeFactory(object):
                     raise ValueError('Unsupported locale %r' % (l,))
         self.providers = tuple(providers)
 
+    def __eq__(self, other):
+        return (
+            type(other) == type(self) and
+            self.source == other.source and
+            self.locales == other.locales and
+            self.providers == other.providers
+        )
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def hash(self):
+        return hash((
+            type(self), self.source, self.locales
+        ))
+
 
 class FakeFactoryStrategy(SearchStrategy):
 

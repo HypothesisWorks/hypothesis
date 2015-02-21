@@ -18,3 +18,24 @@ from django.db import models
 
 class Company(models.Model):
     name = models.CharField(max_length=100, unique=True)
+
+
+class CharmField(models.Field):
+    def db_type(self, connection):
+        return "char(1)"
+
+
+class Customer(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    email = models.EmailField(max_length=100, unique=True)
+    gender = models.CharField(max_length=50, null=True)
+    age = models.IntegerField()
+    birthday = models.DateTimeField()
+
+
+class Charming(models.Model):
+    charm = CharmField()
+
+
+class CouldBeCharming(models.Model):
+    charm = CharmField(null=True)

@@ -15,10 +15,15 @@ from __future__ import division, print_function, unicode_literals
 import pkg_resources
 
 
-def load_entry_points():
+loaded = set()
+
+
+def load_entry_points(name=None):
     for entry_point in pkg_resources.iter_entry_points(
-        group='hypothesis.extra'
+        group='hypothesis.extra', name=name
     ):
         package = entry_point.load()  # pragma: no cover
-        __path__.extend(package.__path__)
-        package.load()
+        if package not in loaded:
+            loaded.add(package)
+            __path__.extend(package.__path__)
+            package.load()

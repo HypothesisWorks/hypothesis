@@ -16,8 +16,10 @@ from __future__ import division, print_function, absolute_import, \
 from datetime import datetime
 
 import hypothesis.settings as hs
-from hypothesis import assume, falsify
+from hypothesis import given, assume, falsify
 from hypothesis.strategytable import StrategyTable
+from hypothesis.extra.datetime import naive_datetime, \
+    timezone_aware_datetime
 from hypothesis.descriptortests import descriptor_test_suite
 from hypothesis.internal.compat import hrange
 
@@ -108,3 +110,13 @@ def test_can_simplify_leap_years():
             d, lambda x: (x.month == 2) and (x.day == 29) and (x.year > 2000))
     )[-1]
     assert t.year == 2004
+
+
+@given(naive_datetime)
+def test_naive_datetimes_are_naive(dt):
+    assert not dt.tzinfo
+
+
+@given(timezone_aware_datetime)
+def test_timezone_aware_datetimes_are_timezone_aware(dt):
+    assert dt.tzinfo

@@ -175,3 +175,8 @@ def define_random_strategy(strategies, descriptor):
 @strategy_for_instances(descriptors.SampledFrom)
 def define_sampled_strategy(strategies, descriptor):
     return strat.SampledFromStrategy(descriptor.elements)
+
+
+@strategy_for_instances(type(None))
+def define_none_strategy(strategies, descriptor):
+    return strat.JustStrategy(None)
