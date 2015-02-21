@@ -331,3 +331,8 @@ def test_errors_when_given_varargs():
 @given(x=int)
 def test_is_bounded(t, x):
     assert x < t
+
+
+@given(x=int)
+def test_can_test_kwargs_only_methods(**kwargs):
+    assert isinstance(kwargs['x'], int)

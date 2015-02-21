@@ -61,3 +61,10 @@ def test_calls_setup_and_teardown_on_self_unbound():
     HasSetupAndTeardown.give_me_an_int(x)
     assert x.setups > 0
     assert len(x.teardowns) == x.setups
+
+
+def test_calls_setup_and_teardown_on_explicit_call():
+    x = HasSetupAndTeardown()
+    x.give_me_an_int(1)
+    assert x.setups == 1
+    assert len(x.teardowns) == 1

@@ -21,7 +21,7 @@ from tests.common import small_table, small_verifier
 from tests.common.mutate import mutate_slightly
 from tests.common.descriptors import Descriptor
 from hypothesis.internal.compat import hrange, text_type
-from hypothesis.internal.utils.fixers import real_index, actually_equal
+from hypothesis.internal.utils.fixers import real_index, actually_equal, IdKey
 
 
 def test_lists_of_same_elements_are_equal():
@@ -330,3 +330,11 @@ def test_value_error_if_not_in_list():
     msg = e.value.args[0]
     assert '(1, 2)' in msg
     assert '[1, 2, 3]' in msg
+
+
+def test_id_key_is_equal_iff_value_identical():
+    x = IdKey(object())
+    y = IdKey(object())
+
+    assert x == x
+    assert x != y

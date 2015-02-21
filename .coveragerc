@@ -15,4 +15,5 @@ source =
 exclude_lines =
     @abc.abstractmethod
     @abc.abstractproperty
+    NotImplementedError
     pragma: no cover

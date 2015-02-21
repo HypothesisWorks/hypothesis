@@ -127,8 +127,7 @@ class Verifier(object):
         falsifying_examples = []
         if storage:
             for example in storage.fetch():
-                if track_seen.track(example) > 1:
-                    continue
+                track_seen.track(example)
                 if falsifies(example):
                     falsifying_examples = [example]
                 break
