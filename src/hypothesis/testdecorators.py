@@ -36,7 +36,7 @@ def given(*generator_arguments, **generator_kwargs):
         verifier = Verifier()
 
     if not (generator_arguments or generator_kwargs):
-        raise TypeError("given must be called with at least one argument")
+        raise TypeError('given must be called with at least one argument')
 
     def run_test_with_generator(test):
         original_argspec = inspect.getargspec(test)
