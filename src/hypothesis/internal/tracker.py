@@ -21,6 +21,9 @@ class Tracker(object):
     def __init__(self):
         self.contents = {}
 
+    def __len__(self):
+        return len(self.contents)
+
     def track(self, x):
         k = HashItAnyway(x)
         n = self.contents.get(k, 0) + 1

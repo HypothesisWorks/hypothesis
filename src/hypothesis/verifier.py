@@ -27,6 +27,7 @@ from hypothesis.internal.tracker import Tracker
 from hypothesis.database.converter import NotSerializeable
 from hypothesis.internal.utils.reflection import function_digest, \
     get_pretty_function_description
+from itertools import islice
 
 
 def assume(condition):
@@ -132,7 +133,6 @@ class Verifier(object):
                     falsifying_examples = [example]
                 break
 
-        examples_found = 0
         satisfying_examples = 0
         timed_out = False
         if argument_types:
@@ -154,27 +154,25 @@ class Verifier(object):
                 return False
             return time.time() >= start_time + self.timeout
 
-        examples_seen = 0
-        for parameter in parameter_source:  # pragma: no branch
-            args = search_strategy.produce_template(
-                random, parameter
-            )
-            assert search_strategy.could_have_produced(args)
-            if examples_found >= search_strategy.size_upper_bound:
+        for parameter in islice(
+            parameter_source, max_examples - len(track_seen)
+        ):
+            if len(track_seen) >= search_strategy.size_upper_bound:
                 break
 
             if falsifying_examples:
                 break
-            if examples_seen >= max_examples:
-                break
             if time_to_call_it_a_day():
                 break
-            examples_seen += 1
+
+            args = search_strategy.produce_template(
+                random, parameter
+            )
+            assert search_strategy.could_have_produced(args)
 
             if track_seen.track(args) > 1:
                 parameter_source.mark_bad()
                 continue
-            examples_found += 1
             try:
                 setup_example()
                 a = search_strategy.reify(args)
@@ -194,7 +192,7 @@ class Verifier(object):
         timed_out = self.timeout >= 0 and run_time >= self.timeout
 
         if not falsifying_examples:
-            if examples_found >= search_strategy.size_lower_bound:
+            if len(track_seen) >= search_strategy.size_lower_bound:
                 raise Exhausted(
                     hypothesis, satisfying_examples)
             elif satisfying_examples < min_satisfying_examples:
