@@ -34,6 +34,7 @@ for d in hypothesis-extra/hypothesis-*; do
         fi
         python -m coverage report --fail-under=100
     popd
+    deactivate
 
     rm -rf $VENV
 done
