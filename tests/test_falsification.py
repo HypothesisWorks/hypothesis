@@ -570,3 +570,8 @@ def test_assume_false_on_small_search_space_does_not_fail():
         falsify(
             lambda x: assume(False),
             descriptors.one_of((descriptors.integers_in_range(1, 10), bool)))
+
+
+def test_falsifies_none():
+    assert falsify(lambda x: x is not None, None) == (None,)
+    assert falsify(lambda x: x is not None, type(None)) == (None,)

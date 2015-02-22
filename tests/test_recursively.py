@@ -34,6 +34,8 @@ from hypothesis.internal.utils.fixers import actually_equal
 # Placate flake8
 [OneOf, just, Just, RandomWithSeed, SampledFrom]
 
+NoneType = type(None)
+
 
 class Timeout(BaseException):
     pass

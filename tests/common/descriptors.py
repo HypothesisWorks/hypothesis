@@ -26,7 +26,8 @@ from hypothesis.internal.compat import hrange, text_type, binary_type
 from hypothesis.database.converter import ConverterTable
 from hypothesis.internal.utils.distributions import geometric, biased_coin
 
-primitive_types = [int, float, text_type, binary_type, bool, complex]
+primitive_types = [
+    int, float, text_type, binary_type, bool, complex, type(None)]
 basic_types = list(primitive_types)
 basic_types.append(OneOf(tuple(basic_types)))
 basic_types += [frozenset({x}) for x in basic_types]
