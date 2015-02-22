@@ -21,6 +21,7 @@ from unittest import TestCase
 from hypothesis import Verifier, given
 from hypothesis.database import ExampleDatabase
 from hypothesis.settings import Settings
+from hypothesis.descriptors import one_of
 from hypothesis.strategytable import StrategyTable
 from hypothesis.database.backend import SQLiteBackend
 from hypothesis.database.converter import ConverterTable
@@ -49,6 +50,8 @@ def descriptor_test_suite(
     )
     strategy = strategy_table.strategy(descriptor)
     descriptor_test = given(descriptor, verifier=verifier)
+    mixed = one_of((int, float, str, (bool, str, descriptor)))
+    mixed_strategy = strategy_table.strategy(mixed)
 
     class ValidationSuite(TestCase):
 
@@ -62,6 +65,10 @@ def descriptor_test_suite(
                 strategy.reify(value),
                 strategy.reify(value),
             )
+
+        @given(mixed)
+        def test_can_simplify_mixed(m):
+            list(mixed_strategy.simplify(m))
 
         if simplify_is_unique:
             @descriptor_test

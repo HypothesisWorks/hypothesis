@@ -120,3 +120,10 @@ def test_naive_datetimes_are_naive(dt):
 @given(timezone_aware_datetime)
 def test_timezone_aware_datetimes_are_timezone_aware(dt):
     assert dt.tzinfo
+
+
+def test_can_mix_timezoneness():
+    def is_mixed(xs):
+        return any(x.tzinfo for x in xs) and any(not x.tzinfo for x in xs)
+
+    falsify(is_mixed, [naive_datetime, timezone_aware_datetime])
