@@ -104,3 +104,19 @@ TestFakeNames = descriptor_test_suite(
 TestFakeEnglishNames = descriptor_test_suite(
     FakeFactory('name', locale='en_US')
 )
+
+
+def test_equality():
+    assert FakeFactory('email') == FakeFactory('email')
+    assert FakeFactory('email') != FakeFactory('name')
+    assert FakeFactory('email') != FakeFactory('email', locale='en_US')
+
+
+def test_hashing():
+    x = FakeFactory('email')
+    assert hash(x) == hash(FakeFactory('email'))
+    y = FakeFactory('email', locale='en_US')
+    assert hash(x) != hash(y)
+    d = {x: x, y: y}
+    assert d[x] == x
+    assert d[y] == y

@@ -56,7 +56,7 @@ class FakeFactory(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def hash(self):
+    def __hash__(self):
         return hash((
             type(self), self.source, self.locales
         ))
