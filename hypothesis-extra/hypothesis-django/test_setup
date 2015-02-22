@@ -1,0 +1,8 @@
+#!/bin/bash
+
+for p in hypothesis-datetime hypothesis-fakefactory; do
+    pushd ../$p
+        pip install -r requirements.txt
+        python setup.py install
+    popd
+done

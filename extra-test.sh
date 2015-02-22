@@ -12,25 +12,27 @@ for d in hypothesis-extra/hypothesis-*; do
     rm -rf ./dist
     virtualenv $VENV  --python=$CURRENT_PYTHON
     BINDIR=$VENV/bin
-    PYTHON=$BINDIR/python
-    PIP=$BINDIR/pip
+    source $BINDIR/activate
 
     PACKAGE=$(basename $d)
 
-    $PYTHON setup.py install
-    $PIP install pytest coverage
+    python setup.py install
+    pip install pytest coverage
 
     pushd $d
-        $PIP install -r requirements.txt
-        $PYTHON setup.py develop
+        pip install -r requirements.txt
+        python setup.py develop
         rm -f .coverage
+        if [ -e test_setup ]; then
+            ./test_setup
+        fi
         if [ -e manage.py ]; then
-          PYTHONPATH=src $PYTHON -m coverage run --rcfile=$COVERAGERC manage.py test
+          PYTHONPATH=src python -m coverage run --rcfile=$COVERAGERC manage.py test
           pip install pytest-django
         else
-          PYTHONPATH=src $PYTHON -m coverage run  --rcfile=$COVERAGERC -m pytest tests
+          PYTHONPATH=src python -m coverage run  --rcfile=$COVERAGERC -m pytest tests
         fi
-        $PYTHON -m coverage report --fail-under=100
+        python -m coverage report --fail-under=100
     popd
 
     rm -rf $VENV
