@@ -22,11 +22,19 @@ from hypothesis.extra.datetime import naive_datetime, \
     timezone_aware_datetime
 from hypothesis.descriptortests import descriptor_test_suite
 from hypothesis.internal.compat import hrange
+from hypothesis.descriptors import one_of
 
 hs.default.max_examples = 1000
 
 
-TestStandardDescriptorFeatures = descriptor_test_suite(datetime)
+TestStandardDescriptorFeatures1 = descriptor_test_suite(datetime)
+TestStandardDescriptorFeatures2 = descriptor_test_suite(
+    timezone_aware_datetime)
+TestStandardDescriptorFeatures3 = descriptor_test_suite(naive_datetime)
+TestStandardDescriptorFeatures4 = descriptor_test_suite(one_of((
+    naive_datetime,
+    timezone_aware_datetime,
+)))
 
 
 def test_can_find_after_the_year_2000():
@@ -120,10 +128,3 @@ def test_naive_datetimes_are_naive(dt):
 @given(timezone_aware_datetime)
 def test_timezone_aware_datetimes_are_timezone_aware(dt):
     assert dt.tzinfo
-
-
-def test_can_mix_timezoneness():
-    def is_mixed(xs):
-        return any(x.tzinfo for x in xs) and any(not x.tzinfo for x in xs)
-
-    falsify(is_mixed, [naive_datetime, timezone_aware_datetime])

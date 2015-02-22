@@ -50,7 +50,7 @@ def descriptor_test_suite(
     )
     strategy = strategy_table.strategy(descriptor)
     descriptor_test = given(descriptor, verifier=verifier)
-    mixed = one_of((int, float, str, (bool, str, descriptor)))
+    mixed = one_of((int, (bool, str), descriptor))
     mixed_strategy = strategy_table.strategy(mixed)
 
     class ValidationSuite(TestCase):
