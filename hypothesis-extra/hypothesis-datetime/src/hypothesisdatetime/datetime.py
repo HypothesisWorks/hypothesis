@@ -20,7 +20,7 @@ import pytz
 import hypothesis.params as params
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import hrange, text_type
-from hypothesis.database.converter import Converter, check_type, \
+from hypothesis.searchstrategy import check_type, \
     check_data_type
 from hypothesis.internal.utils.fixers import equal
 from hypothesis.internal.utils.hashitanyway import normal_hash, \
@@ -56,35 +56,6 @@ def maybe_zero_or(random, p, v):
         return v
     else:
         return 0
-
-
-class DatetimeConverter(Converter):
-
-    def to_basic(self, value):
-        check_type(dt.datetime, value)
-        return (
-            value.year, value.month, value.day,
-            value.hour, value.minute, value.second,
-            value.microsecond,
-            value.tzinfo.zone if value.tzinfo else None
-        )
-
-    def from_basic(self, values):
-        check_data_type(list, values)
-        for d in values[:-1]:
-            check_data_type(int, d)
-        timezone = None
-        if values[-1] is not None:
-            check_data_type(text_type, values[-1])
-            timezone = pytz.timezone(values[-1])
-        base = dt.datetime(
-            year=values[0], month=values[1], day=values[2],
-            hour=values[3], minute=values[4], second=values[5],
-            microsecond=values[6]
-        )
-        if timezone is not None:
-            base = timezone.localize(base)
-        return base
 
 
 class DatetimeStrategy(SearchStrategy):
@@ -189,3 +160,29 @@ class DatetimeStrategy(SearchStrategy):
                 yield value.replace(year)
             except ValueError:
                 pass
+
+    def to_basic(self, value):
+        check_type(dt.datetime, value)
+        return [
+            value.year, value.month, value.day,
+            value.hour, value.minute, value.second,
+            value.microsecond,
+            text_type(value.tzinfo.zone) if value.tzinfo else None
+        ]
+
+    def from_basic(self, values):
+        check_data_type(list, values)
+        for d in values[:-1]:
+            check_data_type(int, d)
+        timezone = None
+        if values[-1] is not None:
+            check_data_type(text_type, values[-1])
+            timezone = pytz.timezone(values[-1])
+        base = dt.datetime(
+            year=values[0], month=values[1], day=values[2],
+            hour=values[3], minute=values[4], second=values[5],
+            microsecond=values[6]
+        )
+        if timezone is not None:
+            base = timezone.localize(base)
+        return base
