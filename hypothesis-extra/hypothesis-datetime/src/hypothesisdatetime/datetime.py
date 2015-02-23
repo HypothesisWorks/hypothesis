@@ -18,10 +18,9 @@ from collections import namedtuple
 
 import pytz
 import hypothesis.params as params
-from hypothesis.searchstrategy import SearchStrategy
-from hypothesis.internal.compat import hrange, text_type
-from hypothesis.searchstrategy import check_type, \
+from hypothesis.searchstrategy import SearchStrategy, check_type, \
     check_data_type
+from hypothesis.internal.compat import hrange, text_type
 from hypothesis.internal.utils.fixers import equal
 from hypothesis.internal.utils.hashitanyway import normal_hash, \
     hash_everything

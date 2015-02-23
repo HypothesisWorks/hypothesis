@@ -17,21 +17,8 @@ import django.db.models as dm
 import hypothesis.extra.fakefactory as ff
 from hypothesis.descriptors import one_of
 from hypothesis.extra.datetime import timezone_aware_datetime
-from hypothesis.searchstrategy import SearchStrategy
+from hypothesis.searchstrategy import MappedSearchStrategy
 from hypothesis.internal.compat import text_type, binary_type
-
-
-class DjangoSkeleton(object):
-
-    def __init__(self, model, build_args):
-        self.build_args = build_args
-        self.model = model
-
-    def build(self):
-        result = self.model(**self.build_args)
-        result.save()
-        return result
-
 
 FIELD_MAPPINGS = {
     dm.BigIntegerField: int,
@@ -72,27 +59,17 @@ def model_to_base_specifier(model):
     return result
 
 
-class ModelStrategy(SearchStrategy):
+class ModelStrategy(MappedSearchStrategy):
 
-    def __init__(self, model, arg_strategy):
-        self.descriptor = model
-        self.model = model
-        self.arg_strategy = arg_strategy
-        self.parameter = self.arg_strategy.parameter
-
-    def produce_template(self, random, parameter_value):
-        args = self.arg_strategy.produce_template(random, parameter_value)
-        return DjangoSkeleton(
-            model=self.model, build_args=args
-        )
-
-    def custom_reify(self, value):
-        return value.build()
+    def pack(self, value):
+        result = self.descriptor(**value)
+        result.save()
+        return result
 
 
 def define_model_strategy(table, descriptor):
     specifier = model_to_base_specifier(descriptor)
     base_strategy = table.specification_for(specifier)
     return ModelStrategy(
-        model=descriptor, arg_strategy=base_strategy
+        descriptor=descriptor, strategy=base_strategy
     )

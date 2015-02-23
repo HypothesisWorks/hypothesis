@@ -164,7 +164,7 @@ def given(*generator_arguments, **generator_kwargs):
 
             finally:
                 if teardown_example is not None:
-                    teardown_example()
+                    teardown_example(falsifying_example)
 
             # If we get here then something has gone wrong: We found a counter
             # example but it didn't fail when we invoked it again.
