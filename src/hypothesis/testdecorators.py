@@ -140,22 +140,31 @@ def given(*generator_arguments, **generator_kwargs):
             except Unfalsifiable:
                 return
 
-            false_args, false_kwargs = falsifying_example
-            current_reporter()(
-                'Falsifying example: %s(%s)' % (
-                    test.__name__,
-                    arg_string(
-                        test,
-                        false_args,
-                        false_kwargs,
+            strategy = verifier.strategy_table.strategy(given_descriptor)
+
+            if setup_example is not None:
+                setup_example()
+
+            try:
+                false_args, false_kwargs = strategy.reify(falsifying_example)
+                current_reporter()(
+                    'Falsifying example: %s(%s)' % (
+                        test.__name__,
+                        arg_string(
+                            test,
+                            false_args,
+                            false_kwargs,
+                        )
                     )
                 )
-            )
+                # We run this one final time so we get good errors
+                # Otherwise we would have swallowed all the reports of it
+                # actually having gone wrong.
+                test(*false_args, **false_kwargs)
 
-            # We run this one final time so we get good errors
-            # Otherwise we would have swallowed all the reports of it actually
-            # having gone wrong.
-            test(*false_args, **false_kwargs)
+            finally:
+                if teardown_example is not None:
+                    teardown_example()
 
             # If we get here then something has gone wrong: We found a counter
             # example but it didn't fail when we invoked it again.

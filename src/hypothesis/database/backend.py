@@ -58,8 +58,12 @@ class Backend(object):
 class SQLiteBackend(Backend):
 
     def __init__(self, path=':memory:'):
+        self.path = path
         self.connection = sqlite3.connect(path)
         self.db_created = False
+
+    def __repr__(self):
+        return '%s(%s)' % (self.__class__.__name__, self.path)
 
     def data_type(self):
         return text_type

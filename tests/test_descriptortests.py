@@ -15,26 +15,30 @@ from __future__ import division, print_function, absolute_import, \
 
 from random import Random
 
-from hypothesis.descriptors import one_of, integers_in_range
+from hypothesis.descriptors import just, one_of, sampled_from, \
+    integers_in_range
 from hypothesis.descriptortests import descriptor_test_suite
 from hypothesis.internal.compat import text_type, binary_type
 
-TestOneOf = descriptor_test_suite(one_of((int, bool)))
+TestIntegerRange = descriptor_test_suite(integers_in_range(0, 5))
+TestSampled = descriptor_test_suite(sampled_from(elements=(1, 2, 3)))
+
+TestOneOf = descriptor_test_suite(one_of((int, int, bool)))
 TestOneOfSameType = descriptor_test_suite(
     one_of((integers_in_range(1, 10), integers_in_range(8, 15)))
 )
 TestRandom = descriptor_test_suite(Random)
 TestInts = descriptor_test_suite(int)
-TestBoolLists = descriptor_test_suite(
-    [bool], simplify_is_unique=False
-)
-TestString = descriptor_test_suite(
-    text_type, simplify_is_unique=False
-)
-BinaryString = descriptor_test_suite(
-    binary_type, simplify_is_unique=False
-)
+TestBoolLists = descriptor_test_suite([bool])
+TestString = descriptor_test_suite(text_type)
+BinaryString = descriptor_test_suite(binary_type)
 TestIntBool = descriptor_test_suite((int, bool))
 TestFloat = descriptor_test_suite(float)
 TestComplex = descriptor_test_suite(complex)
-TestComplex = descriptor_test_suite((float, float))
+TestJust = descriptor_test_suite(just('hi'))
+
+TestMisc1 = descriptor_test_suite({(2, -374): frozenset({None})})
+TestMisc2 = descriptor_test_suite({b'': frozenset({int})})
+TestMisc3 = descriptor_test_suite(
+    ([{1: int}, {int}],)
+)

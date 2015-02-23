@@ -86,11 +86,6 @@ class ModelStrategy(SearchStrategy):
             model=self.model, build_args=args
         )
 
-    def could_have_produced(self, value):
-        return isinstance(value, DjangoSkeleton) and (
-            value.model == self.model
-        )
-
     def custom_reify(self, value):
         return value.build()
 

@@ -111,12 +111,6 @@ class DatetimeStrategy(SearchStrategy):
             )
         )
 
-    def could_have_produced(self, value):
-        if not isinstance(value, dt.datetime):
-            return False
-        is_naive = value.tzinfo is None
-        return is_naive in self.naive_options
-
     def produce_template(self, random, pv):
         year = random.randint(dt.MINYEAR, dt.MAXYEAR)
         month = random.choice(pv.month)

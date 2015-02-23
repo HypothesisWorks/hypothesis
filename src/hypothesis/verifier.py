@@ -25,7 +25,6 @@ from hypothesis.extra import load_entry_points
 from hypothesis.examplesource import ParameterSource
 from hypothesis.strategytable import StrategyTable
 from hypothesis.internal.tracker import Tracker
-from hypothesis.database.converter import NotSerializeable
 from hypothesis.internal.utils.reflection import function_digest, \
     get_pretty_function_description
 
@@ -77,10 +76,7 @@ class Verifier(object):
         self.max_regenerations = 0
 
     def examples_for(self, descriptor):
-        try:
-            storage = self.database.storage_for(descriptor)
-        except NotSerializeable:
-            return ()
+        storage = self.database.storage_for(descriptor)
         return tuple(storage.fetch())
 
     def falsify(
@@ -104,10 +100,7 @@ class Verifier(object):
             self.strategy_table.specification_for(argument_types))
         storage = None
         if self.database is not None:
-            try:
-                storage = self.database.storage_for(argument_types)
-            except NotSerializeable:
-                pass
+            storage = self.database.storage_for(argument_types)
 
         def falsifies(args):  # pylint: disable=missing-docstring
             example = None
@@ -167,7 +160,6 @@ class Verifier(object):
             args = search_strategy.produce_template(
                 random, parameter
             )
-            assert search_strategy.could_have_produced(args)
 
             if track_seen.track(args) > 1:
                 parameter_source.mark_bad()

@@ -86,7 +86,7 @@ def define_text_type_strategy(strategies, descriptor):
 
 @strategy_for(float)
 def define_float_strategy(strategies, descriptor):
-    return (
+    return strat.WrapperFloatStrategy(
         strat.GaussianFloatStrategy() |
         strat.BoundedFloatStrategy() |
         strat.ExponentialFloatStrategy() |
@@ -118,7 +118,7 @@ def define_frozen_set_strategy(strategies, descriptor):
 
 @strategy_for(complex)
 def define_complex_strategy(strategies, descriptor):
-    return strat.ComplexStrategy(strategies.strategy(float))
+    return strat.ComplexStrategy(complex, strategies.strategy((float, float)))
 
 
 @strategy_for_instances(descriptors.Just)

@@ -23,7 +23,6 @@ from hypothesis.descriptors import Just, OneOf, SampledFrom, just, \
 from hypothesis.searchstrategy import RandomWithSeed, SearchStrategy, \
     nice_string
 from hypothesis.internal.compat import hrange, text_type, binary_type
-from hypothesis.database.converter import ConverterTable
 from hypothesis.internal.utils.distributions import geometric, biased_coin
 
 primitive_types = [
@@ -40,29 +39,29 @@ Descriptor = namedtuple('Descriptor', ('descriptor',))
 
 class DescriptorWithValue(object):
 
-    def __init__(self, descriptor, value, random):
+    def __init__(self, descriptor, template, value, random):
         self.descriptor = descriptor
         self.value = value
+        self.template = template
         self.random = random
-        assert small_table.strategy(self.descriptor).could_have_produced(
-            self.value
-        )
 
     def __iter__(self):
         yield self.descriptor
         yield self.value
+        yield self.template
         yield self.random
 
     def __len__(self):
-        return 3
+        return 4
 
     def __repr__(self):
-        return 'DescriptorWithValue(descriptor=%s, value=%r, random=%r)' % (
-            nice_string(self.descriptor), self.value, self.random,
+        return (
+            'DescriptorWithValue(descriptor=%s, template=%r, '
+            'value=%r, random=%r)'
+        ) % (
+            nice_string(self.descriptor), self.template, self.value,
+            self.random,
         )
-
-ConverterTable.default().mark_not_serializeable(Descriptor)
-ConverterTable.default().mark_not_serializeable(DescriptorWithValue)
 
 
 class DescriptorStrategy(SearchStrategy):
@@ -106,8 +105,9 @@ class DescriptorStrategy(SearchStrategy):
         else:
             result = {}
             for v in children:
-                k = self.key_strategy.produce_template(
+                kt = self.key_strategy.produce_template(
                     random, pv.key_parameter)
+                k = self.key_strategy.reify(kt)
                 result[k] = v
             return result
 
@@ -122,9 +122,6 @@ class DescriptorStrategy(SearchStrategy):
             return
         for child in children:
             yield child
-
-    def could_have_produced(self, value):
-        return True
 
 
 small_table.define_specification_for(
@@ -145,24 +142,32 @@ class DescriptorWithValueStrategy(SearchStrategy):
         descriptor = self.descriptor_strategy.produce_template(random, pv)
         strategy = self.strategy_table.strategy(descriptor)
         parameter = strategy.parameter.draw(random)
-        value = strategy.produce_template(random, parameter)
+        template = strategy.produce_template(random, parameter)
         new_random = self.random_strategy.draw_and_produce(random)
-        assert strategy.could_have_produced(value)
         return DescriptorWithValue(
             descriptor=descriptor,
-            value=value,
-            random=new_random,
+            template=template,
+            value=None,
+            random=new_random
+        )
+
+    def reify(self, davt):
+        return DescriptorWithValue(
+            descriptor=davt.descriptor,
+            template=davt.template,
+            value=self.strategy_table.strategy(
+                davt.descriptor).reify(davt.template),
+            random=RandomWithSeed(davt.random),
         )
 
     def simplify(self, dav):
         strat = self.strategy_table.strategy(dav.descriptor)
-        for d, v in strat.decompose(dav.value):
-            stratd = self.strategy_table.strategy(d)
-            assert stratd.could_have_produced(v)
+        for d, v in strat.decompose(dav.template):
             yield DescriptorWithValue(
                 descriptor=d,
-                value=v,
-                random=RandomWithSeed(dav.random.seed)
+                template=v,
+                value=None,
+                random=dav.random
             )
 
 

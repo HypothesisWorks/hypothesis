@@ -24,6 +24,11 @@ from tests.common.utils import fails
 from hypothesis.internal.utils.fixers import actually_equal
 
 
+@given(float)
+def test_is_float(x):
+    assert isinstance(x, float)
+
+
 @fails
 @given(float)
 def test_inversion_is_imperfect(x):

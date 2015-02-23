@@ -21,7 +21,7 @@ from functools import wraps
 
 import pytest
 import hypothesis.settings as hs
-from hypothesis import Verifier, Unfalsifiable, Unsatisfiable, assume
+from hypothesis import Verifier, Unfalsifiable, assume
 from tests.common import small_table
 from hypothesis.descriptors import Just, OneOf, SampledFrom, just
 from tests.common.descriptors import Descriptor, DescriptorWithValue, \
@@ -159,56 +159,12 @@ def tree_contains_match(t, f):
     return any(tree_contains_match(s, f) for s in t)
 
 
-def is_immutable_data(t):
-    return not tree_contains_match(
-        t, lambda x: isinstance(x, (list, set, dict)))
-
-
-def test_basic_tree_matching():
-    """Just an integrity check to make sure we're testing the right thing
-    here."""
-
-    assert not is_immutable_data([1])
-    assert not is_immutable_data(([1],))
-    assert not is_immutable_data({'foo': 1})
-    assert is_immutable_data((1, 1))
-    assert is_immutable_data('foo')
-
-
-@timeout(5)
-@given(Descriptor, verifier=verifier)
-def test_cannot_generate_mutable_data_from_an_immutable_strategy(d):
-    strategy = small_table.strategy(d)
-    assume(strategy.has_immutable_data)
-    really_small_verifier = Verifier(
-        settings=hs.Settings(max_examples=50, timeout=5)
-    )
-
-    with pytest.raises((Unfalsifiable, Unsatisfiable)):
-        print(
-            nice_string(d),
-            really_small_verifier.falsify(is_immutable_data, d))
-
-
 @timeout(5)
 @given(Descriptor, Random, verifier=verifier)
 def test_copies_all_its_values_correctly(desc, random):
     strategy = small_table.strategy(desc)
     value = strategy.produce_template(random, strategy.parameter.draw(random))
-    assert actually_equal(value, strategy.reify(value))
-
-
-@given(Descriptor, verifier=verifier)
-def test_can_produce_what_it_produces(desc):
-    strategy = small_table.strategy(desc)
-    with pytest.raises(Unfalsifiable):
-        verifier.falsify(strategy.could_have_produced, desc)
-
-
-@given(DescriptorWithValue, verifier=verifier)
-def test_decomposing_produces_things_that_can_be_produced(dav):
-    for d, v in small_table.strategy(dav.descriptor).decompose(dav.value):
-        assert small_table.strategy(d).could_have_produced(v)
+    assert actually_equal(strategy.reify(value), strategy.reify(value))
 
 
 @given(

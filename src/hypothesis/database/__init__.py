@@ -13,10 +13,8 @@
 from hypothesis.searchstrategy import nice_string
 from hypothesis.internal.utils.hashitanyway import HashItAnyway
 from hypothesis.internal.tracker import Tracker
-from hypothesis.database.converter import (
-    ConverterTable, BadData, NotSerializeable
-)
-from hypothesis.internal.specmapper import MissingSpecification
+from hypothesis.searchstrategy import BadData
+from hypothesis.strategytable import StrategyTable
 from hypothesis.database.formats import JSONFormat
 from hypothesis.database.backend import SQLiteBackend
 
@@ -25,34 +23,28 @@ class Storage(object):
 
     """Handles saving and loading examples matching a particular descriptor."""
 
+    def __repr__(self):
+        return 'Storage(%s)' % (self.descriptor,)
+
     def __init__(
-        self, backend, descriptor, converter, strategy, format,
+        self, backend, descriptor, strategy, format,
         database
     ):
         self.database = database
         self.backend = backend
         self.descriptor = descriptor
-        self.converter = converter
         self.format = format
         self.strategy = strategy
         self.key = nice_string(descriptor)
 
     def save(self, value):
-        if not self.strategy.could_have_produced(value):
-            raise ValueError(
-                'Argument %r does not match description %s' % (
-                    value, self.key))
-
         tracker = Tracker()
 
         def do_save(d, v):
             if tracker.track((d, v)) > 1:
                 return
-            try:
-                s = self.database.storage_for(d)
-            except NotSerializeable:
-                return
-            converted = s.converter.to_basic(v)
+            s = self.database.storage_for(d)
+            converted = s.strategy.to_basic(v)
             serialized = s.format.serialize_basic(converted)
             s.backend.save(s.key, serialized)
 
@@ -64,15 +56,13 @@ class Storage(object):
     def fetch(self):
         for data in self.backend.fetch(self.key):
             try:
-                deserialized = self.converter.from_basic(
+                deserialized = self.strategy.from_basic(
                     self.format.deserialize_data(data))
             except BadData:
                 self.backend.delete(self.key, data)
                 continue
-            if not self.strategy.could_have_produced(deserialized):
-                self.backend.delete(self.key, data)
-            else:
-                yield deserialized
+
+            yield deserialized
 
 
 class ExampleDatabase(object):
@@ -83,14 +73,18 @@ class ExampleDatabase(object):
 
     """
 
+    def __repr__(self):
+        return 'ExampleDatabase(%r, %r)' % (
+            self.backend, self.format
+        )
+
     def __init__(
         self,
-        converters=None,
+        strategies=None,
         backend=None,
         format=None,
     ):
-        self.converters = converters or ConverterTable.default()
-        self.strategies = self.converters.strategy_table
+        self.strategies = strategies or StrategyTable.default()
         self.backend = backend or SQLiteBackend()
         self.format = format or JSONFormat()
         if self.format.data_type() != self.backend.data_type():
@@ -113,18 +107,14 @@ class ExampleDatabase(object):
             return self.storage_cache[key]
         except KeyError:
             pass
-        try:
-            strategy = self.strategies.specification_for(descriptor)
-        except MissingSpecification:
-            raise NotSerializeable(descriptor)
 
-        converter = self.converters.specification_for(descriptor)
+        strategy = self.strategies.specification_for(descriptor)
+
         result = Storage(
             descriptor=descriptor,
             database=self,
             backend=self.backend,
             format=self.format,
-            converter=converter,
             strategy=strategy,
         )
         self.storage_cache[key] = result

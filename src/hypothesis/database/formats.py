@@ -29,6 +29,9 @@ class Format(object):
 
     """
 
+    def __repr__(self):
+        return '%s()' % (self.__class__.__name__,)
+
     @abstractmethod  # pragma: no cover
     def data_type(self):
         """The type of data that this format will serialize to."""

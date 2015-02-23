@@ -27,13 +27,6 @@ class KittenProvider(BaseProvider):
         return 'meow %d' % (self.random_number(digits=10),)
 
 
-def test_produces_any_unicode():
-    ff = FakeFactory('email')
-    strat = StrategyTable.default().specification_for(ff)
-    assert strat.could_have_produced('foo')
-    assert not strat.could_have_produced(b'foo')
-
-
 @given(FakeFactory('kittens', providers=[KittenProvider]))
 def test_kittens_meow(kitten):
     assert 'meow' in kitten

@@ -18,11 +18,10 @@ from __future__ import division, print_function, absolute_import, \
 
 import sys
 import math
+import base64
 import string
 import struct
-import inspect
 import unicodedata
-from copy import deepcopy
 from random import Random
 
 import hypothesis.params as params
@@ -32,9 +31,45 @@ from hypothesis.types import RandomWithSeed
 from hypothesis.internal.compat import hrange, hunichr, text_type, \
     binary_type, integer_types
 from hypothesis.internal.tracker import Tracker
-from hypothesis.internal.utils.fixers import actually_in, nice_string, \
-    actually_equal
-from hypothesis.internal.utils.reflection import unbind_method
+from hypothesis.internal.utils.fixers import nice_string
+
+
+class WrongFormat(ValueError):
+
+    """An exception indicating you have attempted to serialize a value that
+    does not match the type described by this format."""
+
+
+class BadData(ValueError):
+
+    """The data that we got out of the database does not seem to match the data
+    we could have put into the database given this schema."""
+
+
+def check_type(typ, value, e=WrongFormat):
+    if not isinstance(value, typ):
+        if isinstance(typ, tuple):
+            name = 'any of ' + ', '.join(t.__name__ for t in typ)
+        else:
+            name = typ.__name__
+        raise e('Value %r is not an instance of %s' % (
+            value, name
+        ))
+
+
+def check_data_type(typ, value):
+    check_type(typ, value, BadData)
+
+
+def check_length(l, value, e=BadData):
+    try:
+        actual = len(value)
+    except TypeError:
+        raise e('Excepted type with length but got %r' % (value,))
+    if actual != l:
+        raise e('Expected %d elements but got %d from %r' % (
+            l, actual, value
+        ))
 
 
 class mix_generators(object):
@@ -100,10 +135,6 @@ class SearchStrategy(object):
 
     """
 
-    # A subclass should override this if its data is mutable and must be
-    # copied before it is safe to pass to unknown functions.
-    has_immutable_data = True
-
     # This should be an object that describes the type of data that this
     # SearchStrategy can produce.
     descriptor = None
@@ -123,28 +154,6 @@ class SearchStrategy(object):
 
     def __init__(self):
         pass
-
-    def has_custom_reify(self):
-        try:
-            return self.__has_custom_reify
-        except AttributeError:
-            pass
-        self.__has_custom_reify = self.check_has_custom_reify()
-        return self.__has_custom_reify
-
-    def check_has_custom_reify(self):
-        return (
-            unbind_method(self.custom_reify) !=
-            unbind_method(SearchStrategy.custom_reify))
-
-    def custom_reify(self, value):
-        """Perform a custom copy.
-
-        You don't need to implement this if your type supports deepcopy.
-
-        """
-        raise NotImplementedError(
-            '%s.custom_reify()' % (self.__class__.__name__))
 
     def draw_and_produce(self, random):
         return self.produce_template(random, self.parameter.draw(random))
@@ -185,12 +194,7 @@ class SearchStrategy(object):
         providing copy hooks is not suitable for their needs.
 
         """
-        if self.has_custom_reify():
-            return self.custom_reify(value)
-        elif self.has_immutable_data:
-            return value
-        else:
-            return deepcopy(value)
+        return value
 
     def simplify(self, value):
         """Yield a number of values matching this descriptor that are in some
@@ -212,22 +216,6 @@ class SearchStrategy(object):
         """
         return iter(())
 
-    def could_have_produced(self, x):
-        """Is this a value that feasibly could have resulted from produce on
-        this strategy.
-
-        It is not strictly required that this method is accurate and the only
-        invariant it *must* satisfy is that a value which returns True here
-        will never error when passed to simplify, but implementations should
-        try to make this as precise as possible as confusing behaviour may
-        arise in some cases if it is not, with values produced by one strategy
-        being passed to another for simplification when one_of is used.
-
-        """
-        d = self.descriptor
-        c = d if inspect.isclass(d) else d.__class__
-        return isinstance(x, c)
-
     def simplify_such_that(self, t, f):
         """Perform a greedy search to produce a "simplest" version of t that
         satisfies the predicate s. As each simpler version is found, yield it
@@ -241,7 +229,6 @@ class SearchStrategy(object):
         some other times.
 
         """
-        assert self.could_have_produced(t)
         if not f(t):
             raise ValueError(
                 '%r does not satisfy predicate %s' % (t, f))
@@ -251,7 +238,6 @@ class SearchStrategy(object):
         while True:
             simpler = self.simplify(t)
             for s in simpler:
-                assert self.could_have_produced(s)
                 if tracker.track(s) > 1:
                     continue
                 if f(s):
@@ -261,13 +247,38 @@ class SearchStrategy(object):
             else:
                 break
 
+    def to_basic(self, template):
+        """Convert a template value into basic data, raising WrongFormat if
+        this is not an appropriate template."""
+        raise NotImplementedError(  # pragma: no cover
+            '%s.to_basic()' % (self.__class__.__name__))
+
+    def from_basic(self, value):
+        """Convert basic data back to a Template, raising BadData if this could
+        not have come from a template for this strategy."""
+        raise NotImplementedError(  # pragma: no cover
+            '%s.from_basic()' % (self.__class__.__name__))
+
     def __or__(self, other):
         if not isinstance(other, SearchStrategy):
             raise ValueError('Cannot | a SearchStrategy with %r' % (other,))
         return one_of_strategies((self, other))
 
 
-class IntStrategy(SearchStrategy):
+class BasicDataStrategy(SearchStrategy):
+
+    def data_type(self):
+        return self.descriptor
+
+    def from_basic(self, data):
+        check_data_type(self.data_type(), data)
+        return data
+
+    def to_basic(self, template):
+        return template
+
+
+class IntStrategy(BasicDataStrategy):
 
     """A generic strategy for integer types that provides the basic methods
     other than produce.
@@ -277,8 +288,8 @@ class IntStrategy(SearchStrategy):
     """
     descriptor = int
 
-    def could_have_produced(self, x):
-        return isinstance(x, integer_types)
+    def data_type(self):
+        return integer_types
 
     def simplify(self, x):
         ix = int(x)
@@ -332,16 +343,16 @@ class RandomGeometricIntStrategy(IntStrategy):
         return value
 
 
-class BoundedIntStrategy(SearchStrategy):
+class BoundedIntStrategy(BasicDataStrategy):
 
     """A strategy for providing integers in some interval with inclusive
     endpoints."""
 
-    descriptor = int
     parameter = params.CompositeParameter()
 
     def __init__(self, start, end):
         SearchStrategy.__init__(self)
+        self.descriptor = descriptors.integers_in_range(start, end)
         self.start = start
         self.end = end
         if start > end:
@@ -352,6 +363,9 @@ class BoundedIntStrategy(SearchStrategy):
         )
         self.size_lower_bound = end - start + 1
         self.size_upper_bound = end - start + 1
+
+    def data_type(self):
+        return integer_types
 
     def produce_template(self, random, parameter):
         if self.start == self.end:
@@ -369,11 +383,6 @@ class BoundedIntStrategy(SearchStrategy):
             for t in hrange(x + 1, self.end + 1):
                 yield t
 
-    def could_have_produced(self, i):
-        return isinstance(i, integer_types) and (
-            self.start <= i <= self.end
-        )
-
 
 class FloatStrategy(SearchStrategy):
 
@@ -383,6 +392,21 @@ class FloatStrategy(SearchStrategy):
     def __init__(self):
         SearchStrategy.__init__(self)
         self.int_strategy = RandomGeometricIntStrategy()
+
+    def to_basic(self, value):
+        check_type(float, value)
+        return (
+            struct.unpack(b'!Q', struct.pack(b'!d', value))[0]
+        )
+
+    def from_basic(self, value):
+        check_type(integer_types, value)
+        try:
+            return (
+                struct.unpack(b'!d', struct.pack(b'!Q', value))[0]
+            )
+        except (struct.error, ValueError, OverflowError) as e:
+            raise BadData(e.args[0])
 
     def simplify(self, x):
         if x == 0.0:
@@ -414,10 +438,17 @@ class FloatStrategy(SearchStrategy):
         if abs(x) > 1.0:
             yield x / 2
 
-    def could_have_produced(self, value):
-        return isinstance(value, float) and not (
-            math.isnan(value) or math.isinf(value)
-        )
+
+class WrapperFloatStrategy(FloatStrategy):
+
+    def __init__(self, sub_strategy):
+        super(WrapperFloatStrategy, self).__init__()
+        self.sub_strategy = sub_strategy
+        self.parameter = sub_strategy.parameter
+
+    def produce_template(self, random, pv):
+        return self.sub_strategy.reify(
+            self.sub_strategy.produce_template(random, pv))
 
 
 class JustIntFloats(FloatStrategy):
@@ -454,9 +485,6 @@ class FullRangeFloats(FloatStrategy):
             exponent,
             random.getrandbits(52)
         )
-
-    def could_have_produced(self, value):
-        return isinstance(value, float)
 
 
 def _find_max_exponent():
@@ -594,6 +622,14 @@ class BoolStrategy(SearchStrategy):
     def produce_template(self, random, p):
         return dist.biased_coin(random, p)
 
+    def to_basic(self, value):
+        check_type(bool, value)
+        return int(value)
+
+    def from_basic(self, value):
+        check_data_type(int, value)
+        return bool(value)
+
 
 class TupleStrategy(SearchStrategy):
 
@@ -614,31 +650,18 @@ class TupleStrategy(SearchStrategy):
         self.parameter = params.CompositeParameter(
             x.parameter for x in self.element_strategies
         )
-        self.has_immutable_data = all(s.has_immutable_data for s in strategies)
         self.size_lower_bound = 1
         self.size_upper_bound = 1
         for e in self.element_strategies:
             self.size_lower_bound *= e.size_lower_bound
             self.size_upper_bound *= e.size_upper_bound
 
-    def could_have_produced(self, xs):
-        if xs.__class__ != self.tuple_type:
-            return False
-        if len(xs) != len(self.element_strategies):
-            return False
-        return all((s.could_have_produced(x)
-                    for s, x in zip(self.element_strategies, xs)))
-
-    def check_has_custom_reify(self):
-        return any(e.has_custom_reify() for e in self.element_strategies)
-
-    def custom_reify(self, value):
+    def reify(self, value):
         return self.newtuple(
             e.reify(v) for e, v in zip(self.element_strategies, value)
         )
 
     def decompose(self, value):
-        assert self.could_have_produced(value)
         return [
             (s.descriptor, v)
             for s, v in zip(self.element_strategies, value)]
@@ -664,7 +687,6 @@ class TupleStrategy(SearchStrategy):
         We first try simplifying each index. We then try pairs of indices.
         After that we stop because it's getting silly.
         """
-
         generators = []
 
         def simplify_single(i):
@@ -678,6 +700,27 @@ class TupleStrategy(SearchStrategy):
 
         return mix_generators(generators)
 
+    def to_basic(self, value):
+        check_type(self.tuple_type, value)
+        if len(self.descriptor) != len(value):
+            raise WrongFormat((
+                'Value %r is of the wrong length. '
+                'Expected elements matching %s'
+            ) % (
+                value, nice_string(self.descriptor),
+            ))
+        return [
+            f.to_basic(v)
+            for f, v in zip(self.element_strategies, value)
+        ]
+
+    def from_basic(self, value):
+        check_length(len(self.element_strategies), value)
+        return self.newtuple(
+            f.from_basic(v)
+            for f, v in zip(self.element_strategies, value)
+        )
+
 
 def one_of_strategies(xs):
     """Helper function for unioning multiple strategies."""
@@ -687,16 +730,6 @@ def one_of_strategies(xs):
     if len(xs) == 1:
         return xs[0]
     return OneOfStrategy(xs)
-
-
-def _unique(xs):
-    """Helper function for removing duplicates from a list whilst preserving
-    its order."""
-    result = []
-    for x in xs:
-        if not actually_in(x, result):
-            result.append(x)
-    return result
 
 
 class ListStrategy(SearchStrategy):
@@ -710,14 +743,12 @@ class ListStrategy(SearchStrategy):
     strategies define.
 
     """
-    has_immutable_data = False
 
     def __init__(self,
                  strategies, average_length=50.0):
         SearchStrategy.__init__(self)
 
-        self.descriptor = _unique(x.descriptor for x in strategies)
-        self.descriptor.sort(key=repr)
+        self.descriptor = [x.descriptor for x in strategies]
         self.element_strategy = one_of_strategies(strategies)
         self.parameter = params.CompositeParameter(
             average_length=params.ExponentialParameter(1.0 / average_length),
@@ -725,16 +756,12 @@ class ListStrategy(SearchStrategy):
         )
 
     def decompose(self, value):
-        assert self.could_have_produced(value)
         return [
             (self.element_strategy.descriptor, v)
             for v in value
         ]
 
-    def check_has_custom_reify(self):
-        return self.element_strategy.has_custom_reify()
-
-    def custom_reify(self, value):
+    def reify(self, value):
         return list(map(self.element_strategy.reify, value))
 
     def produce_template(self, random, pv):
@@ -744,36 +771,38 @@ class ListStrategy(SearchStrategy):
             result.append(
                 self.element_strategy.produce_template(
                     random, pv.child_parameter))
-        return result
+        return tuple(result)
 
     def simplify(self, x):
-        assert isinstance(x, list)
+        assert isinstance(x, tuple)
         if not x:
             return
 
-        yield []
+        yield ()
 
         for i in hrange(0, len(x)):
             if len(x) > 1:
                 y = list(x)
                 del y[i]
-                yield y
+                yield tuple(y)
             for s in self.element_strategy.simplify(x[i]):
                 z = list(x)
                 z[i] = s
-                yield z
+                yield tuple(z)
 
         for i in hrange(0, len(x) - 1):
             z = list(x)
             del z[i]
             del z[i]
-            yield z
+            yield tuple(z)
 
-    def could_have_produced(self, value):
-        return isinstance(value, list) and all(
-            self.element_strategy.could_have_produced(x)
-            for x in value
-        )
+    def to_basic(self, value):
+        check_type(tuple, value)
+        return list(map(self.element_strategy.to_basic, value))
+
+    def from_basic(self, value):
+        check_data_type(list, value)
+        return tuple(map(self.element_strategy.from_basic, value))
 
 
 class MappedSearchStrategy(SearchStrategy):
@@ -790,9 +819,8 @@ class MappedSearchStrategy(SearchStrategy):
         self.mapped_strategy = strategy
         self.descriptor = descriptor
         self.parameter = self.mapped_strategy.parameter
-
-    def check_has_custom_reify(self):
-        return self.mapped_strategy.has_custom_reify()
+        self.size_lower_bound = self.mapped_strategy.size_lower_bound
+        self.size_upper_bound = self.mapped_strategy.size_upper_bound
 
     def pack(self, x):
         """Take a value produced by the underlying mapped_strategy and turn it
@@ -800,64 +828,40 @@ class MappedSearchStrategy(SearchStrategy):
         raise NotImplementedError(
             '%s.pack()' % (self.__class__.__name__))
 
-    def unpack(self, x):
-        """Take a value produced from pack and convert it back to a value that
-        could have been produced by the underlying strategy."""
-        raise NotImplementedError(
-            '%s.unpack()' % (self.__class__.__name__))
-
     def decompose(self, value):
-        return self.mapped_strategy.decompose(self.unpack(value))
+        return self.mapped_strategy.decompose(value)
 
     def produce_template(self, random, pv):
-        return self.pack(self.mapped_strategy.produce_template(random, pv))
+        return self.mapped_strategy.produce_template(random, pv)
 
-    def could_have_produced(self, value):
-        return super(MappedSearchStrategy, self).could_have_produced(
-            value
-        ) and self.mapped_strategy.could_have_produced(
-            self.unpack(value)
-        )
+    def reify(self, value):
+        return self.pack(self.mapped_strategy.reify(value))
 
-    def simplify(self, x):
-        unpacked = self.unpack(x)
-        for y in self.mapped_strategy.simplify(unpacked):
-            yield self.pack(y)
+    def simplify(self, value):
+        for y in self.mapped_strategy.simplify(value):
+            yield y
+
+    def to_basic(self, template):
+        return self.mapped_strategy.to_basic(template)
+
+    def from_basic(self, data):
+        return self.mapped_strategy.from_basic(data)
 
 
-class ComplexStrategy(SearchStrategy):
+class ComplexStrategy(MappedSearchStrategy):
 
     """A strategy over complex numbers, with real and imaginary values
     distributed according to some provided strategy for floating point
     numbers."""
-    descriptor = complex
 
-    def __init__(self, float_strategy):
-        super(ComplexStrategy, self).__init__()
-        self.parameter = params.CompositeParameter(
-            real=float_strategy.parameter,
-            imaginary=float_strategy.parameter,
-        )
-        self.float_strategy = float_strategy
-
-    def produce_template(self, random, pv):
-        return complex(
-            self.float_strategy.produce_template(random, pv.real),
-            self.float_strategy.produce_template(random, pv.imaginary),
-        )
-
-    def simplify(self, x):
-        for t in self.float_strategy.simplify(x.real):
-            yield complex(t, x.imag)
-        for t in self.float_strategy.simplify(x.imag):
-            yield complex(x.real, t)
+    def pack(self, value):
+        return complex(*value)
 
 
 class SetStrategy(MappedSearchStrategy):
 
     """A strategy for sets of values, defined in terms of a strategy for lists
     of values."""
-    has_immutable_data = False
 
     def __init__(self, list_strategy):
         super(SetStrategy, self).__init__(
@@ -872,9 +876,6 @@ class SetStrategy(MappedSearchStrategy):
     def pack(self, x):
         return set(x)
 
-    def unpack(self, x):
-        return list(x)
-
 
 class FrozenSetStrategy(MappedSearchStrategy):
 
@@ -886,9 +887,6 @@ class FrozenSetStrategy(MappedSearchStrategy):
             strategy=list_strategy,
             descriptor=frozenset(list_strategy.descriptor)
         )
-        self.has_immutable_data = (
-            list_strategy.element_strategy.has_immutable_data
-        )
         self.size_lower_bound = (
             2 ** list_strategy.element_strategy.size_lower_bound)
         self.size_upper_bound = (
@@ -896,9 +894,6 @@ class FrozenSetStrategy(MappedSearchStrategy):
 
     def pack(self, x):
         return frozenset(x)
-
-    def unpack(self, x):
-        return list(x)
 
 
 class OneCharStringStrategy(SearchStrategy):
@@ -946,20 +941,19 @@ class StringStrategy(MappedSearchStrategy):
             strategy=list_of_one_char_strings_strategy
         )
 
-    def has_custom_reify(self):
-        return False
-
     def pack(self, ls):
-        return text_type('').join(ls)
-
-    def unpack(self, s):
-        return list(s)
+        return ''.join(ls)
 
     def decompose(self, value):
         return ()
 
-    def could_have_produced(self, value):
-        return isinstance(value, text_type)
+    def to_basic(self, c):
+        check_type(tuple, c)
+        return ''.join(c)
+
+    def from_basic(self, c):
+        check_data_type(text_type, c)
+        return tuple(c)
 
 
 class BinaryStringStrategy(MappedSearchStrategy):
@@ -967,23 +961,30 @@ class BinaryStringStrategy(MappedSearchStrategy):
     """A strategy for strings of bytes, defined in terms of a strategy for
     lists of bytes."""
 
-    def has_custom_reify(self):
-        return False
-
     def pack(self, x):
-        return binary_type(bytearray(x))
+        assert isinstance(x, list), repr(x)
+        ba = bytearray(x)
+        return binary_type(ba)
 
     def decompose(self, value):
         return ()
 
-    def unpack(self, x):
-        return list(bytearray(x))
+    def to_basic(self, value):
+        check_type(tuple, value)
+        if value:
+            check_type(int, value[0])
+        packed = binary_type(bytearray(value))
+        return base64.b64encode(packed).decode('utf-8')
 
-    def could_have_produced(self, value):
-        return isinstance(value, binary_type)
+    def from_basic(self, data):
+        check_data_type(text_type, data)
+        try:
+            return tuple(bytearray(base64.b64decode(data.encode('utf-8'))))
+        except Exception as e:
+            raise BadData(*e.args)
 
 
-class FixedKeysDictStrategy(SearchStrategy):
+class FixedKeysDictStrategy(MappedSearchStrategy):
 
     """A strategy which produces dicts with a fixed set of keys, given a
     strategy for each of their equivalent values.
@@ -992,64 +993,22 @@ class FixedKeysDictStrategy(SearchStrategy):
     generate dicts with the single key 'foo' mapping to some integer.
 
     """
-    has_immutable_data = False
 
     def __init__(self, strategy_dict):
-        SearchStrategy.__init__(self)
-        self.strategy_dict = dict(strategy_dict)
-        self.parameter = params.DictParameter({
-            k: v.parameter
-            for k, v
-            in self.strategy_dict.items()
-        })
-        self.descriptor = {}
-        for k, v in self.strategy_dict.items():
-            self.descriptor[k] = v.descriptor
-        self.size_lower_bound = 1
-        self.size_upper_bound = 1
-        for e in self.strategy_dict.values():
-            self.size_lower_bound *= e.size_lower_bound
-            self.size_upper_bound *= e.size_upper_bound
+        self.keys = tuple(sorted(
+            strategy_dict.keys(), key=nice_string
+        ))
+        super(FixedKeysDictStrategy, self).__init__(
+            descriptor={
+                k: v.descriptor for k, v in strategy_dict.items()
+            },
+            strategy=TupleStrategy(
+                (strategy_dict[k] for k in self.keys), tuple
+            )
+        )
 
-    def check_has_custom_reify(self):
-        return any(s.has_custom_reify() for s in self.strategy_dict.values())
-
-    def custom_reify(self, value):
-        result = {}
-        for k, v in self.strategy_dict.items():
-            result[k] = v.reify(value[k])
-        return result
-
-    def decompose(self, value):
-        return [
-            (d, value[k])
-            for k, d in self.descriptor.items()
-        ]
-
-    def produce_template(self, random, pv):
-        result = {}
-        for k, g in self.strategy_dict.items():
-            result[k] = g.produce_template(random, pv[k])
-        return result
-
-    def simplify(self, x):
-        for k, v in x.items():
-            for s in self.strategy_dict[k].simplify(v):
-                y = dict(x)
-                y[k] = s
-                yield y
-
-    def could_have_produced(self, value):
-        if not isinstance(value, dict):
-            return False
-        if len(value) != len(self.descriptor):
-            return False
-        for k, v in self.strategy_dict.items():
-            if k not in value:
-                return False
-            if not v.could_have_produced(value[k]):
-                return False
-        return True
+    def pack(self, value):
+        return dict(zip(self.keys, value))
 
 
 class OneOfStrategy(SearchStrategy):
@@ -1061,27 +1020,15 @@ class OneOfStrategy(SearchStrategy):
     subset of these strategies and then draws from the conditional distribution
     of that strategy.
 
-    Note: If two strategies both return could_have_produced(x) as True then
-    when simplifying it is arbitrarily chosen which one gets passed x. The
-    specific choice is an implementation detail that should not be relied upon.
-
     """
 
     def __init__(self,
                  strategies):
         SearchStrategy.__init__(self)
-        flattened_strategies = []
-        for s in strategies:
-            if isinstance(s, OneOfStrategy):
-                flattened_strategies += s.element_strategies
-            else:
-                flattened_strategies.append(s)
-        strategies = tuple(flattened_strategies)
+        strategies = tuple(strategies)
         if len(strategies) <= 1:
             raise ValueError('Need at least 2 strategies to choose amongst')
-        descs = _unique(s.descriptor for s in strategies)
-        descs.sort(key=repr)
-        descriptor = descriptors.one_of(descs)
+        descriptor = descriptors.one_of([s.descriptor for s in strategies])
         self.descriptor = descriptor
         self.element_strategies = list(strategies)
         n = len(self.element_strategies)
@@ -1091,8 +1038,6 @@ class OneOfStrategy(SearchStrategy):
                 e.parameter for e in self.element_strategies
             )
         )
-        self.has_immutable_data = all(
-            s.has_immutable_data for s in self.element_strategies)
         self.size_lower_bound = 0
         self.size_upper_bound = 0
         for e in self.element_strategies:
@@ -1100,45 +1045,49 @@ class OneOfStrategy(SearchStrategy):
                 self.size_lower_bound, e.size_lower_bound)
             self.size_upper_bound += e.size_upper_bound
 
-    def check_has_custom_reify(self):
-        return any(e.has_custom_reify() for e in self.element_strategies)
-
-    def custom_reify(self, value):
-        for e in self.element_strategies:
-            if e.could_have_produced(value):
-                return e.reify(value)
-        raise ValueError('%r could not have produced %r' % (
-            self, value
-        ))
+    def reify(self, value):
+        s, x = value
+        return self.element_strategies[s].reify(x)
 
     def decompose(self, value):
-        results = [
-            (s.descriptor, value)
-            for s in self.element_strategies
-            if s.could_have_produced(value)
-        ]
-        assert results
-        return results
-
-    def could_have_produced(self, x):
-        return any((s.could_have_produced(x) for s in self.element_strategies))
+        s, x = value
+        yield self.element_strategies[s].descriptor, x
+        for t in self.element_strategies[s].decompose(x):
+            yield t
 
     def produce_template(self, random, pv):
         if len(pv.enabled_children) == 1:
             child = pv.enabled_children[0]
         else:
-            child = pv.enabled_children[
-                random.randint(0, len(pv.enabled_children) - 1)]
-        return self.element_strategies[child].produce_template(
-            random, pv.child_parameters[child])
+            child = random.choice(pv.enabled_children)
+
+        return (
+            child,
+            self.element_strategies[child].produce_template(
+                random, pv.child_parameters[child]))
 
     def simplify(self, x):
-        t = Tracker()
-        for cs in self.element_strategies:
-            if cs.could_have_produced(x):
-                for y in cs.simplify(x):
-                    if t.track(y) == 1:
-                        yield y
+        s, value = x
+        for y in self.element_strategies[s].simplify(value):
+            yield (s, y)
+
+    def to_basic(self, template):
+        i, value = template
+        return [i, self.element_strategies[i].to_basic(value)]
+
+    def from_basic(self, data):
+        check_data_type(list, data)
+        check_length(2, data)
+        i, value = data
+        check_data_type(integer_types, i)
+        if i < 0:
+            raise BadData('Index out of range: %d < 0' % (i,))
+        elif i >= len(self.element_strategies):
+            raise BadData(
+                'Index out of range: %d >= %d' % (
+                    i, len(self.element_strategies)))
+
+        return (i, self.element_strategies[i].from_basic(value))
 
 
 class JustStrategy(SearchStrategy):
@@ -1146,23 +1095,12 @@ class JustStrategy(SearchStrategy):
     """
     A strategy which simply returns a single fixed value with probability 1.
     """
-    has_immutable_data = False
     size_lower_bound = 1
     size_upper_bound = 1
 
     def __init__(self, value):
         SearchStrategy.__init__(self)
         self.descriptor = descriptors.Just(value)
-        try:
-            deepcopy(value)
-        except:
-            self.has_immutable_data = True
-
-    def check_has_custom_reify(self):
-        return self.has_immutable_data
-
-    def custom_reify(self, value):
-        return value
 
     def __repr__(self):
         return 'JustStrategy(value=%r)' % (self.descriptor.value,)
@@ -1172,11 +1110,16 @@ class JustStrategy(SearchStrategy):
     def produce_template(self, random, pv):
         return self.descriptor.value
 
-    def could_have_produced(self, value):
-        return actually_equal(self.descriptor.value, value)
+    def to_basic(self, template):
+        return None
+
+    def from_basic(self, data):
+        if data is not None:
+            raise BadData('Expected None but got %s' % (nice_string(data,)))
+        return self.descriptor.value
 
 
-class RandomStrategy(SearchStrategy):
+class RandomStrategy(BasicDataStrategy):
 
     """A strategy which produces Random objects.
 
@@ -1186,13 +1129,15 @@ class RandomStrategy(SearchStrategy):
     """
     descriptor = Random
     parameter = params.CompositeParameter()
-    has_immutable_data = False
+
+    def data_type(self):
+        return integer_types
 
     def produce_template(self, random, pv):
-        return RandomWithSeed(random.getrandbits(128))
+        return random.getrandbits(128)
 
-    def could_have_produced(self, value):
-        return isinstance(value, RandomWithSeed)
+    def reify(self, template):
+        return RandomWithSeed(template)
 
 
 class SampledFromStrategy(SearchStrategy):
@@ -1208,7 +1153,7 @@ class SampledFromStrategy(SearchStrategy):
 
     def __init__(self, elements, descriptor=None):
         SearchStrategy.__init__(self)
-        self.elements = tuple(_unique(elements))
+        self.elements = tuple(elements)
         if descriptor is None:
             descriptor = descriptors.SampledFrom(self.elements)
         self.descriptor = descriptor
@@ -1216,17 +1161,31 @@ class SampledFromStrategy(SearchStrategy):
         self.size_lower_bound = len(self.elements)
         self.size_upper_bound = len(self.elements)
 
+    def to_basic(self, template):
+        return template
+
+    def from_basic(self, data):
+        check_data_type(integer_types, data)
+        if data < 0:
+            raise BadData('Index out of range: %d < 0' % (data,))
+        elif data >= len(self.elements):
+            raise BadData(
+                'Index out of range: %d >= %d' % (data, len(self.elements)))
+
+        return data
+
     def produce_template(self, random, pv):
-        return random.choice(pv)
+        return random.randint(0, len(self.elements) - 1)
 
-    def could_have_produced(self, value):
-        return actually_in(value, self.elements)
+    def reify(self, template):
+        return self.elements[template]
 
 
-class NastyFloats(SampledFromStrategy):
+class NastyFloats(FloatStrategy, SampledFromStrategy):
 
     def __init__(self):
-        super(NastyFloats, self).__init__(
+        SampledFromStrategy.__init__(
+            self,
             descriptor=float,
             elements=[
                 0.0,
@@ -1243,7 +1202,6 @@ class ExampleAugmentedStrategy(SearchStrategy):
 
     def __init__(self, main_strategy, examples):
         assert examples
-        assert all(main_strategy.could_have_produced(e) for e in examples)
         self.examples = tuple(examples)
         self.main_strategy = main_strategy
         self.descriptor = main_strategy.descriptor
@@ -1252,7 +1210,6 @@ class ExampleAugmentedStrategy(SearchStrategy):
             example_probability=params.UniformFloatParameter(0.0, 0.5),
             main=main_strategy.parameter
         )
-        self.has_immutable_data = main_strategy.has_immutable_data
         if hasattr(main_strategy, 'element_strategy'):
             self.element_strategy = main_strategy.element_strategy
         self.size_lower_bound = main_strategy.size_lower_bound
@@ -1272,6 +1229,3 @@ class ExampleAugmentedStrategy(SearchStrategy):
 
     def simplify(self, value):
         return self.main_strategy.simplify(value)
-
-    def could_have_produced(self, value):
-        return self.main_strategy.could_have_produced(value)

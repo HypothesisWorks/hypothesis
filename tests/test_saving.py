@@ -28,7 +28,7 @@ def test_puts_arguments_in_the_database_from_falsify():
     database = ExampleDatabase(backend=SQLiteBackend(':memory:'))
     verifier = Verifier(settings=Settings(database=database))
     verifier.falsify(lambda x, y: False, text_type, int)
-    assert list(database.storage_for(text_type).fetch()) == ['']
+    assert list(database.storage_for(text_type).fetch()) == [()]
     assert list(database.storage_for(int).fetch()) == [0]
 
 
@@ -48,7 +48,7 @@ def test_puts_elements_of_list_in_database():
     database = ExampleDatabase(backend=SQLiteBackend(':memory:'))
     verifier = Verifier(settings=Settings(database=database))
     verifier.falsify(lambda x: not x, [int])
-    assert list(database.storage_for([int]).fetch()) == [[0]]
+    assert list(database.storage_for([int]).fetch()) == [(0,)]
     assert list(database.storage_for(int).fetch()) == [0]
 
 
@@ -57,7 +57,7 @@ def test_puts_elements_of_set_in_database():
     verifier = Verifier(settings=Settings(database=database))
     verifier.falsify(lambda x: not x, {int})
     assert list(database.storage_for([int]).fetch()) == []
-    assert list(database.storage_for({int}).fetch()) == [{0}]
+    assert list(database.storage_for({int}).fetch()) == [(0,)]
     assert list(database.storage_for(int).fetch()) == [0]
 
 
@@ -88,8 +88,8 @@ def test_can_use_values_in_the_database():
     example = 'Hello world'
     database = ExampleDatabase(backend=SQLiteBackend(':memory:'))
     storage = database.storage_for(text_type)
-    storage.save(example)
+    storage.save(tuple(example))
     verifier = Verifier(settings=Settings(database=database))
     assert verifier.falsify(lambda x: x != example, text_type) == (
-        example,
+        tuple(example),
     )
