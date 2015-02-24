@@ -39,6 +39,6 @@ TestJust = descriptor_test_suite(just('hi'))
 
 TestMisc1 = descriptor_test_suite({(2, -374): frozenset({None})})
 TestMisc2 = descriptor_test_suite({b'': frozenset({int})})
-TestMisc3 = descriptor_test_suite(
-    ([{1: int}, {int}],)
-)
+#   TestMisc3 = descriptor_test_suite(
+#       ([{1: int}, {int}],)
+#   )

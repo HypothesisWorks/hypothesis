@@ -23,6 +23,7 @@ import pytest
 import hypothesis.settings as hs
 from hypothesis import Verifier, Unfalsifiable, assume
 from tests.common import small_table
+from hypothesis.strategytable import StrategyTable
 from hypothesis.descriptors import Just, OneOf, SampledFrom, just
 from tests.common.descriptors import Descriptor, DescriptorWithValue, \
     primitive_types
@@ -174,3 +175,37 @@ def test_copies_all_its_values_correctly(desc, random):
 def test_can_minimize_descriptor_with_value(dav):
     s = small_table.strategy(DescriptorWithValue)
     list(s.simplify_such_that(dav, lambda x: True))
+
+
+@given(Descriptor, Random, verifier=verifier)
+def test_template_is_hashable(descriptor, random):
+    strategy = StrategyTable.default().strategy(descriptor)
+    parameter = strategy.parameter.draw(random)
+    template = strategy.produce_template(random, parameter)
+    hash(template)
+
+
+@given(Descriptor, Random, verifier=verifier)
+def test_can_perform_all_basic_operations(descriptor, random):
+    strategy = StrategyTable.default().strategy(descriptor)
+    parameter = strategy.parameter.draw(random)
+    template = strategy.produce_template(random, parameter)
+    assert actually_equal(
+        template,
+        strategy.from_basic(strategy.to_basic(template))
+    )
+    minimal_template = list(strategy.simplify_such_that(
+        template,
+        lambda x: True
+    ))[-1]
+    strategy.reify(minimal_template)
+    assert actually_equal(
+        minimal_template,
+        strategy.from_basic(strategy.to_basic(minimal_template))
+    )
+
+
+@given(DescriptorWithValue, verifier=verifier)
+def test_integrity_check_dav(dav):
+    strategy = StrategyTable.default().strategy(dav.descriptor)
+    assert actually_equal(dav.value, strategy.reify(dav.template))
