@@ -23,14 +23,15 @@ import pytest
 import hypothesis.settings as hs
 from hypothesis import Verifier, Unfalsifiable, assume
 from tests.common import small_table
-from hypothesis.strategytable import StrategyTable
 from hypothesis.descriptors import Just, OneOf, SampledFrom, just
+from hypothesis.strategytable import StrategyTable
 from tests.common.descriptors import Descriptor, DescriptorWithValue, \
     primitive_types
 from hypothesis.searchstrategy import RandomWithSeed, nice_string
 from hypothesis.testdecorators import given
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.internal.utils.fixers import actually_equal
+from hypothesis.descriptortests import TemplatesFor
 
 # Placate flake8
 [OneOf, just, Just, RandomWithSeed, SampledFrom]
@@ -169,7 +170,7 @@ def test_copies_all_its_values_correctly(desc, random):
 
 
 @given(
-    DescriptorWithValue,
+    TemplatesFor(DescriptorWithValue),
     verifier=verifier,
 )
 def test_can_minimize_descriptor_with_value(dav):

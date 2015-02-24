@@ -16,23 +16,17 @@ from __future__ import division, print_function, absolute_import, \
 from random import Random
 from collections import namedtuple
 
-import hypothesis.params as params
-from tests.common import small_table
-from hypothesis.descriptors import Just, OneOf, SampledFrom, just, \
+from hypothesis.descriptors import one_of, \
     sampled_from
-from hypothesis.searchstrategy import RandomWithSeed, SearchStrategy, \
+from hypothesis.searchstrategy import RandomWithSeed, SearchStrategy, MappedSearchStrategy, \
     nice_string
-from hypothesis.internal.compat import hrange, text_type, binary_type
-from hypothesis.internal.utils.distributions import geometric, biased_coin
+from hypothesis.internal.compat import text_type, binary_type
+from hypothesis.searchstrategy.narytree import NAryTree, Leaf
+from hypothesis.strategytable import StrategyTable
 
 primitive_types = [
     int, float, text_type, binary_type, bool, complex, type(None)]
-basic_types = list(primitive_types)
-basic_types.append(OneOf(tuple(basic_types)))
-basic_types += [frozenset({x}) for x in basic_types]
-basic_types += [set({x}) for x in basic_types]
-basic_types.append(Random)
-branch_types = [dict, tuple, list]
+
 
 Descriptor = namedtuple('Descriptor', ('descriptor',))
 
@@ -64,67 +58,40 @@ class DescriptorWithValue(object):
         )
 
 
-class DescriptorStrategy(SearchStrategy):
-    descriptor = Descriptor
+class DescriptorStrategy(MappedSearchStrategy):
 
     def __init__(self):
-        self.key_strategy = small_table.strategy(
-            OneOf((text_type, binary_type, int, bool))
+        super(DescriptorStrategy, self).__init__(
+            descriptor=Descriptor,
+            strategy=StrategyTable.default().strategy(NAryTree(
+                branch_labels=sampled_from((
+                    tuple, dict, set, frozenset, list
+                )),
+                branch_keys=one_of((int, str)),
+                leaf_values=sampled_from((
+                    int, float, text_type, binary_type,
+                    bool, complex, type(None)))
+            ))
         )
-        self.sampling_strategy = small_table.strategy(primitive_types)
-        self.parameter = params.CompositeParameter(
-            leaf_descriptors=params.NonEmptySubset(basic_types),
-            branch_descriptors=params.NonEmptySubset(branch_types),
-            branch_factor=params.UniformFloatParameter(0.6, 0.99),
-            key_parameter=self.key_strategy.parameter,
-            just_probability=params.UniformFloatParameter(0, 0.45),
-            sampling_probability=params.UniformFloatParameter(0, 0.45),
-            sampling_param=self.sampling_strategy.parameter,
-        )
 
-    def produce_template(self, random, pv):
-        n_children = geometric(random, pv.branch_factor)
-        if not n_children:
-            return random.choice(pv.leaf_descriptors)
-        elif n_children == 1 and biased_coin(random, pv.just_probability):
-            new_desc = self.produce_template(random, pv)
-            child_strategy = small_table.strategy(new_desc)
-            pv2 = child_strategy.parameter.draw(random)
-            return just(child_strategy.produce_template(random, pv2))
-        elif n_children == 1 and biased_coin(random, pv.sampling_probability):
-            elements = self.sampling_strategy.produce_template(
-                random, pv.sampling_param)
-            if elements:
-                return sampled_from(elements)
-
-        children = [
-            self.produce_template(random, pv) for _ in hrange(n_children)]
-        combiner = random.choice(pv.branch_descriptors)
-        if combiner != dict:
-            return combiner(children)
+    def pack(self, value):
+        if isinstance(value, Leaf):
+            return value.value
         else:
-            result = {}
-            for v in children:
-                kt = self.key_strategy.produce_template(
-                    random, pv.key_parameter)
-                k = self.key_strategy.reify(kt)
-                result[k] = v
-            return result
+            label = value.label
+            if label == dict:
+                return {
+                    k: self.pack(v)
+                    for k, v in value.keyed_children
+                }
+            else:
+                children = [self.pack(v) for k, v in value.keyed_children]
+                try:
+                    return label(children)
+                except TypeError:
+                    return tuple(children)
 
-    def simplify(self, value):
-        if isinstance(value, dict):
-            children = list(value.values())
-        elif isinstance(value, (Just, SampledFrom)):
-            return
-        elif isinstance(value, (list, set, tuple)):
-            children = list(value)
-        else:
-            return
-        for child in children:
-            yield child
-
-
-small_table.define_specification_for(
+StrategyTable.default().define_specification_for(
     Descriptor, lambda s, d: DescriptorStrategy())
 
 
@@ -139,39 +106,55 @@ class DescriptorWithValueStrategy(SearchStrategy):
         self.random_strategy = strategy_table.strategy(Random)
 
     def produce_template(self, random, pv):
-        descriptor = self.descriptor_strategy.produce_template(random, pv)
+        descriptor_template = self.descriptor_strategy.produce_template(
+            random, pv)
+        descriptor = self.descriptor_strategy.reify(descriptor_template)
         strategy = self.strategy_table.strategy(descriptor)
         parameter = strategy.parameter.draw(random)
         template = strategy.produce_template(random, parameter)
         new_random = self.random_strategy.draw_and_produce(random)
         return DescriptorWithValue(
-            descriptor=descriptor,
+            descriptor=descriptor_template,
             template=template,
             value=None,
             random=new_random
         )
 
     def reify(self, davt):
+        descriptor = self.descriptor_strategy.reify(davt.descriptor)
         return DescriptorWithValue(
-            descriptor=davt.descriptor,
+            descriptor=descriptor,
             template=davt.template,
-            value=self.strategy_table.strategy(
-                davt.descriptor).reify(davt.template),
+            value=self.strategy_table.strategy(descriptor).reify(
+                davt.template),
             random=RandomWithSeed(davt.random),
         )
 
-    def simplify(self, dav):
-        strat = self.strategy_table.strategy(dav.descriptor)
-        for d, v in strat.decompose(dav.template):
+    def simplify(self, davt):
+        random = RandomWithSeed(davt.random)
+        for d in self.descriptor_strategy.simplify(davt.descriptor):
+            new_template = self.strategy_table.strategy(
+                self.descriptor_strategy.reify(d)).draw_and_produce(random)
             yield DescriptorWithValue(
                 descriptor=d,
+                template=new_template,
+                value=None,
+                random=davt.random,
+            )
+
+        strategy = self.strategy_table.strategy(
+            self.descriptor_strategy.reify(davt.descriptor))
+
+        for v in strategy.simplify(davt.template):
+            yield DescriptorWithValue(
+                descriptor=davt.descriptor,
                 template=v,
                 value=None,
-                random=dav.random
+                random=davt.random,
             )
 
 
-small_table.define_specification_for(
+StrategyTable.default().define_specification_for(
     DescriptorWithValue,
     lambda s, d: DescriptorWithValueStrategy(s),
 )
