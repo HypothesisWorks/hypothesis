@@ -19,7 +19,7 @@ from collections import namedtuple
 from hypothesis.descriptors import one_of, sampled_from
 from hypothesis.strategytable import StrategyTable
 from hypothesis.searchstrategy import RandomWithSeed, SearchStrategy, \
-    MappedSearchStrategy, nice_string
+    MappedSearchStrategy, nice_string, check_length, check_data_type
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.searchstrategy.narytree import Leaf, NAryTree
 
@@ -152,6 +152,26 @@ class DescriptorWithValueStrategy(SearchStrategy):
                 random=davt.random,
             )
 
+    def to_basic(self, value):
+        strategy = self.strategy_table.strategy(
+            self.descriptor_strategy.reify(value.descriptor))
+        return [
+            self.descriptor_strategy.to_basic(value.descriptor),
+            value.random,
+            strategy.to_basic(value.template)
+        ]
+
+    def from_basic(self, data):
+        check_data_type(list, data)
+        check_length(3, data)
+        descriptor, random, template = data
+        dt = self.descriptor_strategy.from_basic(descriptor)
+        d = self.descriptor_strategy.reify(dt)
+        strategy = self.strategy_table.strategy(d)
+        vt = strategy.from_basic(template)
+        return DescriptorWithValue(
+            random=random, descriptor=dt, template=vt, value=None
+        )
 
 StrategyTable.default().define_specification_for(
     DescriptorWithValue,

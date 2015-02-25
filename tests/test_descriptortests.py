@@ -18,6 +18,7 @@ from collections import namedtuple
 
 from hypothesis.descriptors import just, one_of, sampled_from, \
     floats_in_range, integers_in_range
+from tests.common.descriptors import Descriptor, DescriptorWithValue
 from hypothesis.descriptortests import TemplatesFor, descriptor_test_suite
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.searchstrategy.narytree import NAryTree
@@ -58,6 +59,9 @@ TestEmptyList = descriptor_test_suite([])
 TestEmptySet = descriptor_test_suite(set())
 TestEmptyFrozenSet = descriptor_test_suite(frozenset())
 TestEmptyDict = descriptor_test_suite({})
+
+TestDescriptor = descriptor_test_suite(Descriptor)
+TestDescriptorWithValue = descriptor_test_suite(DescriptorWithValue)
 
 
 def test_repr_has_descriptor_in_it():
