@@ -24,3 +24,9 @@ def test_verifier_explodes_when_you_mix_random_and_derandom():
     settings = Settings(derandomize=True)
     with pytest.raises(ValueError):
         Verifier(settings=settings, random=Random())
+
+
+def test_can_falsify_in_derandomize_mode():
+    settings = Settings(derandomize=True)
+    v = Verifier(settings=settings)
+    v.falsify(lambda x: x > 0, int)

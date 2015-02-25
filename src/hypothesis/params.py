@@ -188,25 +188,6 @@ class BiasedCoin(Parameter):
         return dist.biased_coin(random, self.probability)
 
 
-class DictParameter(Parameter):
-
-    """
-    A parameter which returns a dict with a fixed set of keys.
-    Given an __init__ argument {k: v} this will return results from
-    {k: v.draw}
-    """
-
-    def __init__(self, dict_of_parameters):
-        Parameter.__init__(self)
-        self.dict_of_parameters = dict(dict_of_parameters)
-
-    def draw(self, random):
-        result = {}
-        for key, value in self.dict_of_parameters.items():
-            result[key] = value.draw(random)
-        return result
-
-
 class CompositeParameter(Parameter):
 
     """A parameter returning a record with attributes corresponding to some

@@ -86,7 +86,7 @@ class Verifier(object):
     ):  # pylint: disable=too-many-locals,too-many-branches
         """
         Attempt to construct an example tuple x matching argument_types such
-        that hypothesis(*x) returns a falsey value or throws an AssertionError
+        that hypothesis(*x) returns a falsey value
         """
         teardown_example = kwargs.get('teardown_example') or (lambda x: None)
         setup_example = kwargs.get('setup_example') or (lambda: None)
@@ -109,8 +109,6 @@ class Verifier(object):
                     setup_example()
                     example = search_strategy.reify(args)
                     return not hypothesis(*example)
-                except AssertionError:
-                    return True
                 except UnsatisfiedAssumption:
                     return False
             finally:
@@ -127,12 +125,8 @@ class Verifier(object):
 
         satisfying_examples = 0
         timed_out = False
-        if argument_types:
-            max_examples = self.max_examples
-            min_satisfying_examples = self.min_satisfying_examples
-        else:
-            max_examples = 1
-            min_satisfying_examples = 1
+        max_examples = self.max_examples
+        min_satisfying_examples = self.min_satisfying_examples
 
         parameter_source = ParameterSource(
             random=random, strategy=search_strategy,
@@ -171,8 +165,6 @@ class Verifier(object):
                     is_falsifying_example = not hypothesis(*a)
                 finally:
                     teardown_example(a)
-            except AssertionError:
-                is_falsifying_example = True
             except UnsatisfiedAssumption:
                 parameter_source.mark_bad()
                 continue
@@ -212,11 +204,6 @@ class Verifier(object):
             storage.save(best_example)
 
         return best_example
-
-
-def falsify(*args, **kwargs):
-    """A convenience wrapper function for Verifier.falsify."""
-    return Verifier(**kwargs).falsify(*args)
 
 
 class HypothesisException(Exception):

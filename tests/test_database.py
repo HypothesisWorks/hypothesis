@@ -21,7 +21,7 @@ from hypothesis.database import ExampleDatabase
 from tests.common.descriptors import DescriptorWithValue
 from hypothesis.internal.compat import text_type, integer_types
 from hypothesis.database.backend import Backend, SQLiteBackend
-from hypothesis.database.formats import Format
+from hypothesis.database.formats import Format, JSONFormat
 from hypothesis.internal.utils.fixers import actually_equal
 
 
@@ -164,3 +164,20 @@ def test_can_save_all_strings(s):
     db = ExampleDatabase()
     storage = db.storage_for(text_type)
     storage.save(tuple(s))
+
+
+def test_db_has_path_in_repr():
+    backend = SQLiteBackend(':memory:')
+    db = ExampleDatabase(backend=backend)
+    assert ':memory:' in repr(db)
+
+
+def test_storage_has_descriptor_in_repr():
+    db = ExampleDatabase()
+    d = (int, int)
+    s = db.storage_for(d)
+    assert repr(d) in repr(s)
+
+
+def test_json_format_repr_is_nice():
+    assert repr(JSONFormat()) == 'JSONFormat()'

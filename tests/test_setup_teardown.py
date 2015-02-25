@@ -13,6 +13,7 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+import pytest
 from hypothesis import given
 
 
@@ -45,6 +46,10 @@ class HasSetupAndTeardown(object):
     def give_me_a_string(myself, x):
         pass
 
+    @given(int)
+    def give_me_a_positive_int(self, x):
+        assert x >= 0
+
 
 def test_calls_setup_and_teardown_on_self_as_first_argument():
     x = HasSetupAndTeardown()
@@ -68,3 +73,12 @@ def test_calls_setup_and_teardown_on_explicit_call():
     x.give_me_an_int(1)
     assert x.setups == 1
     assert len(x.teardowns) == 1
+
+
+def test_calls_setup_and_teardown_on_failure():
+    x = HasSetupAndTeardown()
+    with pytest.raises(AssertionError):
+        x.give_me_a_positive_int()
+    assert x.setups > 0
+    assert len(x.teardowns) == x.setups
+    assert x.teardowns[-1][1]['x'] == -1

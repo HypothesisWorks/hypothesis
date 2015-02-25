@@ -14,13 +14,16 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 from random import Random
+from collections import namedtuple
 
 from hypothesis.descriptors import just, one_of, sampled_from, \
-    integers_in_range
-from hypothesis.descriptortests import descriptor_test_suite
+    floats_in_range, integers_in_range
+from hypothesis.descriptortests import TemplatesFor, descriptor_test_suite
 from hypothesis.internal.compat import text_type, binary_type
+from hypothesis.searchstrategy.narytree import NAryTree
 
 TestIntegerRange = descriptor_test_suite(integers_in_range(0, 5))
+TestFloatRange = descriptor_test_suite(floats_in_range(0.5, 10))
 TestSampled = descriptor_test_suite(sampled_from(elements=(1, 2, 3)))
 
 TestOneOf = descriptor_test_suite(one_of((int, int, bool)))
@@ -36,9 +39,18 @@ TestIntBool = descriptor_test_suite((int, bool))
 TestFloat = descriptor_test_suite(float)
 TestComplex = descriptor_test_suite(complex)
 TestJust = descriptor_test_suite(just('hi'))
+TestTemplates = descriptor_test_suite(TemplatesFor({int}))
+
+Stuff = namedtuple('Stuff', ('a', 'b'))
+TestNamedTuple = descriptor_test_suite(Stuff(int, int))
+
+TestTrees = descriptor_test_suite(NAryTree(int, int, int))
 
 TestMisc1 = descriptor_test_suite({(2, -374): frozenset({None})})
 TestMisc2 = descriptor_test_suite({b'': frozenset({int})})
-#   TestMisc3 = descriptor_test_suite(
-#       ([{1: int}, {int}],)
-#   )
+
+
+def test_repr_has_descriptor_in_it():
+    suite = TestComplex(
+        'test_can_round_trip_through_the_database')
+    assert repr(suite) == 'descriptor_test_suite(complex)'

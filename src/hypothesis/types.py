@@ -33,16 +33,8 @@ class RandomWithSeed(Random):
     def __repr__(self):
         return 'RandomWithSeed(%s)' % (self.seed,)
 
-    def __copy__(self):
-        r = RandomWithSeed(self.seed)
-        r.setstate(self.getstate())
-        return r
-
     def __hash__(self):
         return hash(self.seed)
-
-    def __deepcopy__(self, d):
-        return self.__copy__()
 
     def __eq__(self, other):
         return self is other or (

@@ -426,6 +426,15 @@ def test_correctly_reports_specifications():
     assert not mapper.has_specification_for([str])
 
 
+def test_specification_is_missing_if_all_next_in_chain():
+    mapper = SpecificationMapper()
+    mapper.define_specification_for_instances(
+        list,
+        lambda s, d: next_in_chain()
+    )
+    assert not mapper.has_specification_for([int])
+
+
 class Confused1(object):
 
     def __eq__(self, other):

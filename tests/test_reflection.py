@@ -288,6 +288,18 @@ def test_digest_is_stable_across_process_runs():
     assert digest == b'\x8d\x07\xdb\xe1\xbeC\x92\xec-\xb4PWj\x0c%\x87'
 
 
+def test_lambda_digests_are_stable_across_process_runs():
+    digest = function_digest(lambda x: 42)
+    print(repr(digest))
+    assert digest == b'\x96=\xed6\x07\x1d\xb6:\x1a\x8b\x8eA\xd0\x19\xd7\x9c'
+
+
+def test_evalled_lambda_digests_are_stable_across_process_runs():
+    digest = function_digest(eval('lambda x: 42'))
+    print(repr(digest))
+    assert digest == b'\x86\x95\xf2\xab\x8a\x83\x91F|1\xbdi\x05\xdeC?'
+
+
 def test_arg_string_is_in_order():
     def foo(c, a, b, f, a1):
         pass

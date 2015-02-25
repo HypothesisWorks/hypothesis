@@ -11,7 +11,6 @@
 # END HEADER
 
 from hypothesis.verifier import (
-    falsify,
     Unfalsifiable,
     Unsatisfiable,
     Exhausted,
@@ -23,7 +22,6 @@ from hypothesis.verifier import (
 from hypothesis.testdecorators import given
 
 __all__ = [
-    'falsify',
     'Unfalsifiable',
     'Unsatisfiable',
     'Exhausted',

@@ -403,20 +403,5 @@ def test_one_of_descriptor_distinguishes_sets_and_frozensets():
 
 def test_minimizing_a_very_large_int_produces_an_int():
     s = strategy(int)
-    shrunk = list(s.simplify_such_that(1 << 73, lambda x: x > 0))[-1]
+    shrunk = list(s.simplify_such_that(1 << 73, lambda x: x > 1))[-1]
     assert type(shrunk) == int
-
-
-class Foo(object):
-
-    def __copy__(self):
-        raise ValueError()
-
-    def __deepcopy__(self):
-        raise ValueError()
-
-
-def test_just_strategy_can_copy_things_that_break_deepcopy():
-    v = Foo()
-    s = strategy(descriptors.just(v))
-    s.reify(v)

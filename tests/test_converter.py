@@ -20,6 +20,7 @@ from hypothesis.descriptors import Just, OneOf, SampledFrom
 from hypothesis.strategytable import StrategyTable
 from hypothesis.searchstrategy import BadData
 from hypothesis.internal.compat import text_type, binary_type
+from hypothesis.searchstrategy.narytree import NAryTree
 
 
 @pytest.mark.parametrize(('descriptor', 'data'), [
@@ -36,12 +37,17 @@ from hypothesis.internal.compat import text_type, binary_type
     ((int, int, int), (1, 2)),
     (SampledFrom((1, 2, 3)), 'fish'),
     (SampledFrom((1, 2, 3)), 5),
+    (SampledFrom((1, 2, 3)), -2),
     (OneOf((int, float)), 1),
     (OneOf((int, float)), 'tv'),
+    (OneOf((int, float)), [-2, 0]),
     (binary_type, '1'),
     (float, -1),
     ([frozenset({float}), frozenset({float})], [[8, 0], []]),
     (float, 252010555201342071294067021251680995120),
+    ((int, int), 10),
+    (NAryTree(int, int, int), []),
+    (NAryTree(int, int, int), [1, 2, 3, 4, 5]),
 ])
 def test_simple_data_validation(descriptor, data):
     converter = StrategyTable.default().specification_for(descriptor)

@@ -146,7 +146,8 @@ def given(*generator_arguments, **generator_kwargs):
                 setup_example()
 
             try:
-                false_args, false_kwargs = strategy.reify(falsifying_example)
+                reified = strategy.reify(falsifying_example)
+                false_args, false_kwargs = reified
                 current_reporter()(
                     'Falsifying example: %s(%s)' % (
                         test.__name__,
@@ -164,7 +165,7 @@ def given(*generator_arguments, **generator_kwargs):
 
             finally:
                 if teardown_example is not None:
-                    teardown_example(falsifying_example)
+                    teardown_example(reified)
 
             # If we get here then something has gone wrong: We found a counter
             # example but it didn't fail when we invoked it again.

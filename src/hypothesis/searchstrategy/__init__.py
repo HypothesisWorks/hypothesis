@@ -265,20 +265,7 @@ class SearchStrategy(object):
         return one_of_strategies((self, other))
 
 
-class BasicDataStrategy(SearchStrategy):
-
-    def data_type(self):
-        return self.descriptor
-
-    def from_basic(self, data):
-        check_data_type(self.data_type(), data)
-        return data
-
-    def to_basic(self, template):
-        return template
-
-
-class IntStrategy(BasicDataStrategy):
+class IntStrategy(SearchStrategy):
 
     """A generic strategy for integer types that provides the basic methods
     other than produce.
@@ -288,8 +275,12 @@ class IntStrategy(BasicDataStrategy):
     """
     descriptor = int
 
-    def data_type(self):
-        return integer_types
+    def from_basic(self, data):
+        check_data_type(integer_types, data)
+        return data
+
+    def to_basic(self, template):
+        return template
 
     def simplify(self, x):
         ix = int(x)
@@ -343,7 +334,7 @@ class RandomGeometricIntStrategy(IntStrategy):
         return value
 
 
-class BoundedIntStrategy(BasicDataStrategy):
+class BoundedIntStrategy(SearchStrategy):
 
     """A strategy for providing integers in some interval with inclusive
     endpoints."""
@@ -364,8 +355,12 @@ class BoundedIntStrategy(BasicDataStrategy):
         self.size_lower_bound = end - start + 1
         self.size_upper_bound = end - start + 1
 
-    def data_type(self):
-        return integer_types
+    def from_basic(self, data):
+        check_data_type(integer_types, data)
+        return data
+
+    def to_basic(self, template):
+        return template
 
     def produce_template(self, random, parameter):
         if self.start == self.end:
@@ -522,7 +517,7 @@ class SmallFloats(FloatStrategy):
         return base
 
 
-class FixedBoundedFloatStrategy(SearchStrategy):
+class FixedBoundedFloatStrategy(FloatStrategy):
 
     """A strategy for floats distributed between two endpoints.
 
@@ -552,9 +547,16 @@ class FixedBoundedFloatStrategy(SearchStrategy):
         return left + random.random() * (right - left)
 
     def simplify(self, value):
+        if value == self.lower_bound:
+            return
         yield self.lower_bound
+        if value == self.upper_bound:
+            return
         yield self.upper_bound
-        yield (self.lower_bound + self.upper_bound) * 0.5
+        mid = (self.lower_bound + self.upper_bound) * 0.5
+        if value == mid:
+            return
+        yield mid
 
 
 class BoundedFloatStrategy(FloatStrategy):
@@ -701,14 +703,6 @@ class TupleStrategy(SearchStrategy):
         return mix_generators(generators)
 
     def to_basic(self, value):
-        check_type(self.tuple_type, value)
-        if len(self.descriptor) != len(value):
-            raise WrongFormat((
-                'Value %r is of the wrong length. '
-                'Expected elements matching %s'
-            ) % (
-                value, nice_string(self.descriptor),
-            ))
         return [
             f.to_basic(v)
             for f, v in zip(self.element_strategies, value)
@@ -925,9 +919,9 @@ class OneCharStringStrategy(SearchStrategy):
             o = ord(x)
             for c in reversed(self.ascii_characters):
                 yield text_type(c)
-            if o > 0:
-                yield hunichr(o // 2)
-                yield hunichr(o - 1)
+            yield hunichr(o // 2)
+            for t in hrange(o - 1, -1, -1):
+                yield hunichr(t)
 
 
 class StringStrategy(MappedSearchStrategy):
@@ -1119,7 +1113,7 @@ class JustStrategy(SearchStrategy):
         return self.descriptor.value
 
 
-class RandomStrategy(BasicDataStrategy):
+class RandomStrategy(SearchStrategy):
 
     """A strategy which produces Random objects.
 
@@ -1130,8 +1124,12 @@ class RandomStrategy(BasicDataStrategy):
     descriptor = Random
     parameter = params.CompositeParameter()
 
-    def data_type(self):
-        return integer_types
+    def from_basic(self, data):
+        check_data_type(integer_types, data)
+        return data
+
+    def to_basic(self, template):
+        return template
 
     def produce_template(self, random, pv):
         return random.getrandbits(128)
@@ -1210,8 +1208,6 @@ class ExampleAugmentedStrategy(SearchStrategy):
             example_probability=params.UniformFloatParameter(0.0, 0.5),
             main=main_strategy.parameter
         )
-        if hasattr(main_strategy, 'element_strategy'):
-            self.element_strategy = main_strategy.element_strategy
         self.size_lower_bound = main_strategy.size_lower_bound
         self.size_upper_bound = main_strategy.size_upper_bound
 

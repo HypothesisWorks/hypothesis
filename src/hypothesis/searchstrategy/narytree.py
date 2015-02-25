@@ -55,6 +55,10 @@ class NAryTreeStrategy(SearchStrategy):
             branch_factor=params.UniformFloatParameter(0.6, 0.99),
         )
 
+        self.child_strategy = strategy_table.strategy(
+            [(self.branch_key_strategy, self)]
+        )
+
     def produce_template(self, random, pv):
         n_children = geometric(random, pv.branch_factor)
         if not n_children:
@@ -62,11 +66,11 @@ class NAryTreeStrategy(SearchStrategy):
                 random, pv.leaf_parameter
             ))
         else:
-            children = [
+            children = tuple(
                 (self.branch_key_strategy.produce_template(
                     random, pv.branch_key_parameter),
                  self.produce_template(random, pv))
-                for _ in hrange(n_children)]
+                for _ in hrange(n_children))
             label = self.branch_label_strategy.produce_template(
                 random, pv.branch_label_parameter
             )
@@ -83,17 +87,21 @@ class NAryTreeStrategy(SearchStrategy):
             assert isinstance(template, Branch)
             return Branch(
                 label=self.branch_label_strategy.reify(template.label),
-                keyed_children=[
+                keyed_children=tuple(
                     (
                         self.branch_key_strategy.reify(k),
                         self.reify(v))
                     for k, v in template.keyed_children
-                ])
+                ))
 
     def simplify(self, template):
         if isinstance(template, Branch):
             for k, v in template.keyed_children:
                 yield v
+            for l in self.branch_label_strategy.simplify(template.label):
+                yield Branch(l, template.keyed_children)
+            for cs in self.child_strategy.simplify(template.keyed_children):
+                yield Branch(template.label, cs)
         else:
             for v in self.leaf_strategy.simplify(template.value):
                 yield Leaf(v)
@@ -104,10 +112,10 @@ class NAryTreeStrategy(SearchStrategy):
         else:
             assert isinstance(template, Branch)
             return [
-                self.branch_label_strategy.to_basic(template.label)
-                [self.branch_key_strategy.to_basic(k),
-                 self.to_basic(v)]
-                for k, v in template.keyed_children
+                self.branch_label_strategy.to_basic(template.label), [
+                    [self.branch_key_strategy.to_basic(k),
+                     self.to_basic(v)]
+                    for k, v in template.keyed_children]
             ]
 
     def from_basic(self, data):
@@ -122,10 +130,10 @@ class NAryTreeStrategy(SearchStrategy):
             assert len(data) == 2
             return Branch(
                 label=self.branch_label_strategy.from_basic(data[0]),
-                keyed_children=[
+                keyed_children=tuple(
                     (self.branch_key_strategy.from_basic(k),
                      self.from_basic(v))
-                    for k, v in data[1]])
+                    for k, v in data[1]))
 
 
 StrategyTable.default().define_specification_for_instances(

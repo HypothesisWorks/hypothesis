@@ -14,6 +14,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import time
+import string
 import inspect
 
 import pytest
@@ -22,7 +23,7 @@ import hypothesis.reporting as reporting
 from hypothesis import Flaky, Verifier, Unsatisfiable, given, assume
 from tests.common.utils import fails, fails_with, capture_out
 from hypothesis.descriptors import just, one_of, sampled_from, \
-    integers_in_range
+    floats_in_range, integers_in_range
 from hypothesis.internal.compat import text_type, binary_type
 
 
@@ -318,6 +319,12 @@ def test_list_is_sorted(xs):
     assert sorted(xs) == xs
 
 
+@fails
+@given(floats_in_range(1.0, 2.0))
+def test_is_an_endpoint(x):
+    assert x == 1.0 or x == 2.0
+
+
 def test_errors_when_given_varargs():
     with pytest.raises(TypeError) as e:
         @given(int)
@@ -333,11 +340,51 @@ def test_is_bounded(t, x):
     assert x < t
 
 
-@given(x=int)
+@given(x=bool)
 def test_can_test_kwargs_only_methods(**kwargs):
-    assert isinstance(kwargs['x'], int)
+    assert isinstance(kwargs['x'], bool)
 
 
 def test_bare_given_errors():
     with pytest.raises(TypeError):
         given()
+
+
+@fails_with(UnicodeEncodeError)
+@given(text_type)
+def test_is_ascii(x):
+    x.encode('ascii')
+
+
+@fails
+@given(text_type)
+def test_is_not_ascii(x):
+    try:
+        x.encode('ascii')
+        assert False
+    except UnicodeEncodeError:
+        pass
+
+
+@fails
+@given(text_type)
+def test_has_ascii(x):
+    if not x:
+        return
+    ascii_characters = (
+        text_type('0123456789') + text_type(string.ascii_letters) +
+        text_type(' \t\n')
+    )
+    assert any(c in ascii_characters for c in x)
+
+
+first_call = True
+
+
+@fails_with(Flaky)
+@given(int)
+def test_fails_only_once(x):
+    global first_call
+    if first_call:
+        first_call = False
+        assert False
