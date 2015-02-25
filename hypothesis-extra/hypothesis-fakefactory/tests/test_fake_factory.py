@@ -14,7 +14,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import pytest
-from hypothesis import given, falsify
+from hypothesis import given, Verifier
 from faker.providers import BaseProvider
 from hypothesis.strategytable import StrategyTable
 from hypothesis.descriptortests import descriptor_test_suite
@@ -43,7 +43,7 @@ def test_english_names_are_ascii(name):
 
 
 def test_french_names_may_have_an_accent():
-    falsify(
+    Verifier().falsify(
         lambda x: 'é' not in x,
         FakeFactory('name', locale='fr_FR')
     )
