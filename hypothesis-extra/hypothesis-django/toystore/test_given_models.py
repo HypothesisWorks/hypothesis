@@ -14,9 +14,9 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 from hypothesis.extra.django import TestCase
-from hypothesis.extra.datetime import timezone_aware_datetime
+from hypothesis.extra.django.models import ModelNotSupported
 from hypothesis import given
-from toystore.models import Company, Customer, CouldBeCharming
+from toystore.models import Company, Customer, CouldBeCharming, Charming
 
 
 class TestGetsBasicModels(TestCase):
@@ -36,3 +36,11 @@ class TestGetsBasicModels(TestCase):
         self.assertIsInstance(not_charming, CouldBeCharming)
         self.assertIsNotNone(not_charming.pk)
         self.assertIsNone(not_charming.charm)
+
+    @given(Charming)
+    def charm_me(self, charm):
+        pass
+
+    def test_given_unsupported_errors(self):
+        with self.assertRaises(ModelNotSupported):
+            TestGetsBasicModels('charm_me').charm_me()

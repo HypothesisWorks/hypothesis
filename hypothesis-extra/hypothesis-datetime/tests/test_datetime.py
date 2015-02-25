@@ -16,7 +16,7 @@ from __future__ import division, print_function, absolute_import, \
 from datetime import datetime
 
 import hypothesis.settings as hs
-from hypothesis import given, assume, falsify
+from hypothesis import given, assume, Verifier
 from hypothesis.descriptors import one_of
 from hypothesis.strategytable import StrategyTable
 from hypothesis.extra.datetime import naive_datetime, \
@@ -35,6 +35,9 @@ TestStandardDescriptorFeatures4 = descriptor_test_suite(one_of((
     naive_datetime,
     timezone_aware_datetime,
 )))
+
+
+falsify = Verifier().falsify
 
 
 def test_can_find_after_the_year_2000():
