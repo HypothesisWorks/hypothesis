@@ -405,3 +405,10 @@ def test_minimizing_a_very_large_int_produces_an_int():
     s = strategy(int)
     shrunk = list(s.simplify_such_that(1 << 73, lambda x: x > 1))[-1]
     assert type(shrunk) == int
+
+
+def test_does_not_shrink_size_for_non_hashable_sample():
+    s = strategy(descriptors.sampled_from(([], [])))
+    assert s.size_lower_bound == 2
+    assert s.size_upper_bound == 2
+
