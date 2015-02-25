@@ -64,7 +64,7 @@ def some_minimal_element(s):
 
 
 def assert_minimizes_to(s, value):
-    for _ in xrange(100):
+    for _ in hrange(100):
         m = some_minimal_element(s)
         if actually_equal(m, value):
             return
@@ -411,4 +411,3 @@ def test_does_not_shrink_size_for_non_hashable_sample():
     s = strategy(descriptors.sampled_from(([], [])))
     assert s.size_lower_bound == 2
     assert s.size_upper_bound == 2
-
