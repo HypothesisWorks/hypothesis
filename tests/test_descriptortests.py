@@ -46,6 +46,9 @@ TestNamedTuple = descriptor_test_suite(Stuff(int, int))
 
 TestTrees = descriptor_test_suite(NAryTree(int, int, int))
 
+TestMixedSets = descriptor_test_suite({int, bool, float})
+TestFrozenSets = descriptor_test_suite(frozenset({bool}))
+
 TestMisc1 = descriptor_test_suite({(2, -374): frozenset({None})})
 TestMisc2 = descriptor_test_suite({b'': frozenset({int})})
 

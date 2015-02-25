@@ -108,12 +108,12 @@ def define_binary_strategy(strategies, descriptor):
 
 @strategy_for_instances(set)
 def define_set_strategy(strategies, descriptor):
-    return strat.SetStrategy(strategies.strategy(list(descriptor)))
+    return strat.SetStrategy(map(strategies.strategy, descriptor))
 
 
 @strategy_for_instances(frozenset)
 def define_frozen_set_strategy(strategies, descriptor):
-    return strat.FrozenSetStrategy(strategies.strategy(list(descriptor)))
+    return strat.FrozenSetStrategy(strategies.strategy(set(descriptor)))
 
 
 @strategy_for(complex)

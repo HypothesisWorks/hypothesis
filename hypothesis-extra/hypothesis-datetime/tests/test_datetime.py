@@ -16,7 +16,7 @@ from __future__ import division, print_function, absolute_import, \
 from datetime import datetime
 
 import hypothesis.settings as hs
-from hypothesis import given, assume, Verifier
+from hypothesis import Verifier, given, assume
 from hypothesis.descriptors import one_of
 from hypothesis.strategytable import StrategyTable
 from hypothesis.extra.datetime import naive_datetime, \

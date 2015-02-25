@@ -14,7 +14,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import pytest
-from hypothesis import given, Verifier
+from hypothesis import Verifier, given
 from faker.providers import BaseProvider
 from hypothesis.strategytable import StrategyTable
 from hypothesis.descriptortests import descriptor_test_suite

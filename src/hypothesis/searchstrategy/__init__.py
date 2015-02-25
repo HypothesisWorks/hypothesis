@@ -857,18 +857,61 @@ class SetStrategy(MappedSearchStrategy):
     """A strategy for sets of values, defined in terms of a strategy for lists
     of values."""
 
-    def __init__(self, list_strategy):
-        super(SetStrategy, self).__init__(
-            strategy=list_strategy,
-            descriptor=set(list_strategy.descriptor)
-        )
+    def __init__(self, strategies):
+        strategies = tuple(strategies)
+        self.element_strategy = one_of_strategies(strategies)
         self.size_lower_bound = (
-            2 ** list_strategy.element_strategy.size_lower_bound)
+            2 ** self.element_strategy.size_lower_bound)
         self.size_upper_bound = (
-            2 ** list_strategy.element_strategy.size_upper_bound)
+            2 ** self.element_strategy.size_upper_bound)
 
-    def pack(self, x):
-        return set(x)
+        self.descriptor = [x.descriptor for x in strategies]
+        self.parameter = params.CompositeParameter(
+            stopping_chance=params.UniformFloatParameter(0, 1.0),
+            child_parameter=self.element_strategy.parameter,
+        )
+
+    def decompose(self, value):
+        return [
+            (self.element_strategy.descriptor, v)
+            for v in value
+        ]
+
+    def reify(self, value):
+        return set(map(self.element_strategy.reify, value))
+
+    def produce_template(self, random, pv):
+        result = set()
+        while True:
+            if dist.biased_coin(random, pv.stopping_chance):
+                break
+            result.add(self.element_strategy.produce_template(
+                random, pv.child_parameter
+            ))
+        return frozenset(result)
+
+    def simplify(self, x):
+        assert isinstance(x, frozenset)
+        if not x:
+            return
+
+        yield frozenset()
+        for v in x:
+            y = set(x)
+            y.remove(v)
+            yield frozenset(y)
+            for w in self.element_strategy.simplify(v):
+                z = set(y)
+                z.add(w)
+                yield frozenset(z)
+
+    def to_basic(self, value):
+        check_type(frozenset, value)
+        return list(map(self.element_strategy.to_basic, value))
+
+    def from_basic(self, value):
+        check_data_type(list, value)
+        return frozenset(map(self.element_strategy.from_basic, value))
 
 
 class FrozenSetStrategy(MappedSearchStrategy):
@@ -876,15 +919,11 @@ class FrozenSetStrategy(MappedSearchStrategy):
     """A strategy for frozensets of values, defined in terms of a strategy for
     lists of values."""
 
-    def __init__(self, list_strategy):
+    def __init__(self, set_strategy):
         super(FrozenSetStrategy, self).__init__(
-            strategy=list_strategy,
-            descriptor=frozenset(list_strategy.descriptor)
+            strategy=set_strategy,
+            descriptor=frozenset(set_strategy.descriptor)
         )
-        self.size_lower_bound = (
-            2 ** list_strategy.element_strategy.size_lower_bound)
-        self.size_upper_bound = (
-            2 ** list_strategy.element_strategy.size_upper_bound)
 
     def pack(self, x):
         return frozenset(x)
