@@ -743,11 +743,17 @@ class ListStrategy(SearchStrategy):
         SearchStrategy.__init__(self)
 
         self.descriptor = [x.descriptor for x in strategies]
-        self.element_strategy = one_of_strategies(strategies)
-        self.parameter = params.CompositeParameter(
-            average_length=params.ExponentialParameter(1.0 / average_length),
-            child_parameter=self.element_strategy.parameter,
-        )
+        if self.descriptor:
+            self.element_strategy = one_of_strategies(strategies)
+            self.parameter = params.CompositeParameter(
+                average_length=params.ExponentialParameter(
+                    1.0 / average_length),
+                child_parameter=self.element_strategy.parameter,
+            )
+        else:
+            self.size_upper_bound = 1
+            self.size_lower_bound = 1
+            self.parameter = params.CompositeParameter()
 
     def decompose(self, value):
         return [
@@ -756,9 +762,14 @@ class ListStrategy(SearchStrategy):
         ]
 
     def reify(self, value):
-        return list(map(self.element_strategy.reify, value))
+        if value:
+            return list(map(self.element_strategy.reify, value))
+        else:
+            return []
 
     def produce_template(self, random, pv):
+        if not self.descriptor:
+            return ()
         length = dist.geometric(random, 1.0 / (1 + pv.average_length))
         result = []
         for _ in hrange(length):
@@ -792,10 +803,14 @@ class ListStrategy(SearchStrategy):
 
     def to_basic(self, value):
         check_type(tuple, value)
+        if not self.descriptor:
+            return []
         return list(map(self.element_strategy.to_basic, value))
 
     def from_basic(self, value):
         check_data_type(list, value)
+        if not self.descriptor:
+            return ()
         return tuple(map(self.element_strategy.from_basic, value))
 
 
@@ -858,18 +873,24 @@ class SetStrategy(MappedSearchStrategy):
     of values."""
 
     def __init__(self, strategies):
-        strategies = tuple(strategies)
-        self.element_strategy = one_of_strategies(strategies)
-        self.size_lower_bound = (
-            2 ** self.element_strategy.size_lower_bound)
-        self.size_upper_bound = (
-            2 ** self.element_strategy.size_upper_bound)
+        strategies = list(strategies)
+        strategies.sort(key=nice_string)
 
-        self.descriptor = [x.descriptor for x in strategies]
-        self.parameter = params.CompositeParameter(
-            stopping_chance=params.UniformFloatParameter(0, 1.0),
-            child_parameter=self.element_strategy.parameter,
-        )
+        self.descriptor = {x.descriptor for x in strategies}
+        if self.descriptor:
+            self.element_strategy = one_of_strategies(strategies)
+            self.parameter = params.CompositeParameter(
+                stopping_chance=params.UniformFloatParameter(0.01, 0.25),
+                child_parameter=self.element_strategy.parameter,
+            )
+            self.size_lower_bound = (
+                2 ** self.element_strategy.size_lower_bound)
+            self.size_upper_bound = (
+                2 ** self.element_strategy.size_upper_bound)
+        else:
+            self.parameter = params.CompositeParameter()
+            self.size_lower_bound = 1
+            self.size_upper_bound = 1
 
     def decompose(self, value):
         return [
@@ -878,9 +899,13 @@ class SetStrategy(MappedSearchStrategy):
         ]
 
     def reify(self, value):
+        if not self.descriptor:
+            return set()
         return set(map(self.element_strategy.reify, value))
 
     def produce_template(self, random, pv):
+        if not self.descriptor:
+            return frozenset()
         result = set()
         while True:
             if dist.biased_coin(random, pv.stopping_chance):
@@ -896,6 +921,7 @@ class SetStrategy(MappedSearchStrategy):
             return
 
         yield frozenset()
+
         for v in x:
             y = set(x)
             y.remove(v)
@@ -907,9 +933,13 @@ class SetStrategy(MappedSearchStrategy):
 
     def to_basic(self, value):
         check_type(frozenset, value)
+        if not self.descriptor:
+            return []
         return list(map(self.element_strategy.to_basic, value))
 
     def from_basic(self, value):
+        if not self.descriptor:
+            return frozenset()
         check_data_type(list, value)
         return frozenset(map(self.element_strategy.from_basic, value))
 
@@ -1195,8 +1225,13 @@ class SampledFromStrategy(SearchStrategy):
             descriptor = descriptors.SampledFrom(self.elements)
         self.descriptor = descriptor
         self.parameter = params.NonEmptySubset(self.elements)
-        self.size_lower_bound = len(self.elements)
-        self.size_upper_bound = len(self.elements)
+        try:
+            s = set(self.elements)
+            self.size_lower_bound = len(s)
+            self.size_upper_bound = len(s)
+        except TypeError:
+            self.size_lower_bound = len(self.elements)
+            self.size_upper_bound = len(self.elements)
 
     def to_basic(self, template):
         return template

@@ -51,6 +51,13 @@ TestFrozenSets = descriptor_test_suite(frozenset({bool}))
 
 TestMisc1 = descriptor_test_suite({(2, -374): frozenset({None})})
 TestMisc2 = descriptor_test_suite({b'': frozenset({int})})
+TestMisc3 = descriptor_test_suite(({type(None), str},),)
+
+TestEmptyTuple = descriptor_test_suite(())
+TestEmptyList = descriptor_test_suite([])
+TestEmptySet = descriptor_test_suite(set())
+TestEmptyFrozenSet = descriptor_test_suite(frozenset())
+TestEmptyDict = descriptor_test_suite({})
 
 
 def test_repr_has_descriptor_in_it():

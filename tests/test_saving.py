@@ -57,7 +57,7 @@ def test_puts_elements_of_set_in_database():
     verifier = Verifier(settings=Settings(database=database))
     verifier.falsify(lambda x: not x, {int})
     assert list(database.storage_for([int]).fetch()) == []
-    assert list(database.storage_for({int}).fetch()) == [(0,)]
+    assert list(database.storage_for({int}).fetch()) == [frozenset((0,))]
     assert list(database.storage_for(int).fetch()) == [0]
 
 
