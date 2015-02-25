@@ -1,14 +1,26 @@
+# coding=utf-8
+
+# Copyright (C) 2013-2015 David R. MacIver (david@drmaciver.com)
+
+# This file is part of Hypothesis (https://github.com/DRMacIver/hypothesis)
+
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file, You can
+# obtain one at http://mozilla.org/MPL/2.0/.
+
+# END HEADER
+
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 from collections import namedtuple
 
 import hypothesis.params as params
-from hypothesis.searchstrategy import SearchStrategy, BadData, check_data_type
+from hypothesis.strategytable import StrategyTable
+from hypothesis.searchstrategy import BadData, SearchStrategy, \
+    check_data_type
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.utils.distributions import geometric
-from hypothesis.strategytable import StrategyTable
-
 
 NAryTree = namedtuple('NAryTree', (
     'branch_labels',
@@ -102,7 +114,7 @@ class NAryTreeStrategy(SearchStrategy):
         check_data_type(list, data)
         if not (1 <= len(data) <= 2):
             raise BadData(
-                "Expected list of length 1 or 2 but got %r" % (data,))
+                'Expected list of length 1 or 2 but got %r' % (data,))
 
         if len(data) == 1:
             return Leaf(self.leaf_strategy.from_basic(data[0]))

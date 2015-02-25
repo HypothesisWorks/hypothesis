@@ -29,9 +29,9 @@ from tests.common.descriptors import Descriptor, DescriptorWithValue, \
     primitive_types
 from hypothesis.searchstrategy import RandomWithSeed, nice_string
 from hypothesis.testdecorators import given
+from hypothesis.descriptortests import TemplatesFor
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.internal.utils.fixers import actually_equal
-from hypothesis.descriptortests import TemplatesFor
 
 # Placate flake8
 [OneOf, just, Just, RandomWithSeed, SampledFrom]
