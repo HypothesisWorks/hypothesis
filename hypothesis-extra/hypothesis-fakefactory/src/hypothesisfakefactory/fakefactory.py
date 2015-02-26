@@ -16,7 +16,8 @@ from __future__ import division, print_function, absolute_import, \
 import faker
 import hypothesis.params as params
 from faker.config import AVAILABLE_LOCALES
-from hypothesis.searchstrategy import SearchStrategy, check_data_type, strategy
+from hypothesis.searchstrategy import SearchStrategy, strategy, \
+    check_data_type
 from hypothesis.internal.compat import text_type
 
 
@@ -74,9 +75,9 @@ class FakeFactoryStrategy(SearchStrategy):
         )
         self.providers = details.providers
 
-    def produce_template(self, random, pv):
-        factory = faker.Faker(locale=random.choice(pv.locales))
-        factory.seed(random.getrandbits(128))
+    def produce_template(self, context, pv):
+        factory = faker.Faker(locale=context.random.choice(pv.locales))
+        factory.seed(context.random.getrandbits(128))
         for p in self.providers:
             factory.add_provider(p)
         return text_type(getattr(factory, self.source)())

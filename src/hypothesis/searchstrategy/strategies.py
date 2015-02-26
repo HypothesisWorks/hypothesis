@@ -14,16 +14,22 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import hypothesis.params as params
-import hypothesis.internal.distributions as dist
-from hypothesis.descriptors import one_of, OneOf
+from hypothesis.settings import Settings
+from hypothesis.extmethod import ExtMethod
+from hypothesis.descriptors import OneOf, one_of
 from hypothesis.internal.compat import integer_types
 from hypothesis.internal.fixers import nice_string
 from hypothesis.internal.tracker import Tracker
-from hypothesis.extmethod import ExtMethod
-from hypothesis.settings import Settings
+
+
+class BuildContext(object):
+
+    def __init__(self, random):
+        self.random = random
 
 
 class StrategyExtMethod(ExtMethod):
+
     def __call__(self, specifier, settings=None):
         if settings is None:
             settings = Settings()
@@ -126,13 +132,13 @@ class SearchStrategy(object):
     def __init__(self):
         pass
 
-    def draw_and_produce(self, random):
-        return self.produce_template(random, self.parameter.draw(random))
+    def draw_and_produce(self, context):
+        return self.produce_template(
+            context, self.parameter.draw(context.random))
 
-    def produce_template(self, random, parameter_value):
-        """Given a random number generator and a value drawn from
-        self.parameter, produce a value matching this search strategy's
-        descriptor."""
+    def produce_template(self, context, parameter_value):
+        """Given a build context and a value drawn from self.parameter, produce
+        a value matching this search strategy's descriptor."""
         raise NotImplementedError(  # pragma: no cover
             '%s.produce_template()' % (self.__class__.__name__))
 
@@ -285,16 +291,16 @@ class OneOfStrategy(SearchStrategy):
         for t in self.element_strategies[s].decompose(x):
             yield t
 
-    def produce_template(self, random, pv):
+    def produce_template(self, context, pv):
         if len(pv.enabled_children) == 1:
             child = pv.enabled_children[0]
         else:
-            child = random.choice(pv.enabled_children)
+            child = context.random.choice(pv.enabled_children)
 
         return (
             child,
             self.element_strategies[child].produce_template(
-                random, pv.child_parameters[child]))
+                context, pv.child_parameters[child]))
 
     def simplify(self, x):
         s, value = x
@@ -346,8 +352,8 @@ class MappedSearchStrategy(SearchStrategy):
     def decompose(self, value):
         return self.mapped_strategy.decompose(value)
 
-    def produce_template(self, random, pv):
-        return self.mapped_strategy.produce_template(random, pv)
+    def produce_template(self, context, pv):
+        return self.mapped_strategy.produce_template(context, pv)
 
     def reify(self, value):
         return self.pack(self.mapped_strategy.reify(value))
@@ -361,34 +367,3 @@ class MappedSearchStrategy(SearchStrategy):
 
     def from_basic(self, data):
         return self.mapped_strategy.from_basic(data)
-
-
-class ExampleAugmentedStrategy(SearchStrategy):
-
-    def __init__(self, main_strategy, examples):
-        assert examples
-        self.examples = tuple(examples)
-        self.main_strategy = main_strategy
-        self.descriptor = main_strategy.descriptor
-        self.parameter = params.CompositeParameter(
-            examples=params.NonEmptySubset(examples),
-            example_probability=params.UniformFloatParameter(0.0, 0.5),
-            main=main_strategy.parameter
-        )
-        self.size_lower_bound = main_strategy.size_lower_bound
-        self.size_upper_bound = main_strategy.size_upper_bound
-
-    def produce_template(self, random, pv):
-        if dist.biased_coin(random, pv.example_probability):
-            return random.choice(pv.examples)
-        else:
-            return self.main_strategy.produce_template(random, pv.main)
-
-    def decompose(self, value):
-        return self.main_strategy.decompose(value)
-
-    def reify(self, value):
-        return self.main_strategy.reify(value)
-
-    def simplify(self, value):
-        return self.main_strategy.simplify(value)

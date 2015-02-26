@@ -23,7 +23,8 @@ from hypothesis import Verifier, Exhausted, given
 from hypothesis.database import ExampleDatabase
 from hypothesis.settings import Settings
 from hypothesis.descriptors import one_of
-from hypothesis.searchstrategy import SearchStrategy, strategy
+from hypothesis.searchstrategy import BuildContext, SearchStrategy, \
+    strategy
 from hypothesis.internal.compat import text_type, integer_types
 from hypothesis.internal.fixers import nice_string, actually_equal
 from hypothesis.database.backend import SQLiteBackend
@@ -42,8 +43,8 @@ class TemplatesStrategy(SearchStrategy):
         self.size_lower_bound = base_strategy.size_lower_bound
         self.size_upper_bound = base_strategy.size_upper_bound
 
-    def produce_template(self, random, pv):
-        return self.base_strategy.produce_template(random, pv)
+    def produce_template(self, context, pv):
+        return self.base_strategy.produce_template(context, pv)
 
     def reify(self, template):
         return template
@@ -146,7 +147,7 @@ def descriptor_test_suite(
         @given(Random, verifier=verifier)
         def test_can_perform_all_basic_operations(self, random):
             parameter = strat.parameter.draw(random)
-            template = strat.produce_template(random, parameter)
+            template = strat.produce_template(BuildContext(random), parameter)
             minimal_template = list(strat.simplify_such_that(
                 template,
                 lambda x: True

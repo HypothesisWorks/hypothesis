@@ -56,7 +56,7 @@ class Settings(object):
                 value = getattr(default, setting.name)
             setattr(self, setting.name, value)
         if kwargs:
-            raise TypeError("Invalid arguments %s" % (', '.join(kwargs),))
+            raise TypeError('Invalid arguments %s' % (', '.join(kwargs),))
 
     def __repr__(self):
         bits = []

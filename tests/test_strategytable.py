@@ -13,8 +13,8 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from hypothesis.searchstrategy.numbers import ExponentialFloatStrategy
 from hypothesis.searchstrategy import strategy
+from hypothesis.searchstrategy.numbers import ExponentialFloatStrategy
 
 
 def test_strategies_can_be_used_in_descriptors():

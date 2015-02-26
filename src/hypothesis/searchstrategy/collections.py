@@ -14,13 +14,13 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import hypothesis.params as params
+import hypothesis.settings as hs
 import hypothesis.internal.distributions as dist
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.fixers import nice_string
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
-    MappedSearchStrategy, check_type, check_length, check_data_type, \
-    one_of_strategies, strategy
-import hypothesis.settings as hs
+    MappedSearchStrategy, strategy, check_type, check_length, \
+    check_data_type, one_of_strategies
 
 
 class mix_generators(object):
@@ -110,10 +110,10 @@ class TupleStrategy(SearchStrategy):
         else:
             return self.tuple_type(*xs)
 
-    def produce_template(self, random, pv):
+    def produce_template(self, context, pv):
         es = self.element_strategies
         return self.newtuple([
-            g.produce_template(random, v)
+            g.produce_template(context, v)
             for g, v in zip(es, pv)
         ])
 
@@ -192,15 +192,15 @@ class ListStrategy(SearchStrategy):
         else:
             return []
 
-    def produce_template(self, random, pv):
+    def produce_template(self, context, pv):
         if not self.descriptor:
             return ()
-        length = dist.geometric(random, 1.0 / (1 + pv.average_length))
+        length = dist.geometric(context.random, 1.0 / (1 + pv.average_length))
         result = []
         for _ in hrange(length):
             result.append(
                 self.element_strategy.produce_template(
-                    random, pv.child_parameter))
+                    context, pv.child_parameter))
         return tuple(result)
 
     def simplify(self, x):
@@ -275,15 +275,15 @@ class SetStrategy(MappedSearchStrategy):
             return set()
         return set(map(self.element_strategy.reify, value))
 
-    def produce_template(self, random, pv):
+    def produce_template(self, context, pv):
         if not self.descriptor:
             return frozenset()
         result = set()
         while True:
-            if dist.biased_coin(random, pv.stopping_chance):
+            if dist.biased_coin(context.random, pv.stopping_chance):
                 break
             result.add(self.element_strategy.produce_template(
-                random, pv.child_parameter
+                context, pv.child_parameter
             ))
         return frozenset(result)
 
@@ -376,9 +376,9 @@ def define_list_strategy(descriptor, settings):
     )
 
 hs.define_setting(
-    "average_list_length",
+    'average_list_length',
     default=50.0,
-    description="Average length of lists to use"
+    description='Average length of lists to use'
 )
 
 

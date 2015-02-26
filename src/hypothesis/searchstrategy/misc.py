@@ -22,7 +22,7 @@ from hypothesis.types import RandomWithSeed
 from hypothesis.internal.compat import integer_types
 from hypothesis.internal.fixers import nice_string
 from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
-    check_type, check_data_type, strategy
+    strategy, check_type, check_data_type
 
 
 class BoolStrategy(SearchStrategy):
@@ -35,8 +35,8 @@ class BoolStrategy(SearchStrategy):
 
     parameter = params.UniformFloatParameter(0, 1)
 
-    def produce_template(self, random, p):
-        return dist.biased_coin(random, p)
+    def produce_template(self, context, p):
+        return dist.biased_coin(context.random, p)
 
     def to_basic(self, value):
         check_type(bool, value)
@@ -64,7 +64,7 @@ class JustStrategy(SearchStrategy):
 
     parameter = params.CompositeParameter()
 
-    def produce_template(self, random, pv):
+    def produce_template(self, context, pv):
         return self.descriptor.value
 
     def to_basic(self, template):
@@ -94,8 +94,8 @@ class RandomStrategy(SearchStrategy):
     def to_basic(self, template):
         return template
 
-    def produce_template(self, random, pv):
-        return random.getrandbits(128)
+    def produce_template(self, context, pv):
+        return context.random.getrandbits(128)
 
     def reify(self, template):
         return RandomWithSeed(template)
@@ -140,8 +140,8 @@ class SampledFromStrategy(SearchStrategy):
 
         return data
 
-    def produce_template(self, random, pv):
-        return random.randint(0, len(self.elements) - 1)
+    def produce_template(self, context, pv):
+        return context.random.randint(0, len(self.elements) - 1)
 
     def reify(self, template):
         return self.elements[template]

@@ -21,6 +21,7 @@ import pytest
 import hypothesis.descriptors as descriptors
 import hypothesis.searchstrategy as strat
 from hypothesis.types import RandomWithSeed
+from hypothesis.searchstrategy import BuildContext, strategy
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.internal.fixers import nice_string, actually_equal
 from hypothesis.internal.tracker import Tracker
@@ -28,12 +29,12 @@ from hypothesis.searchstrategy.numbers import BoundedIntStrategy, \
     FixedBoundedFloatStrategy, RandomGeometricIntStrategy
 from hypothesis.searchstrategy.strategies import OneOfStrategy, \
     one_of_strategies
-from hypothesis.searchstrategy import strategy
 
 
 def test_string_strategy_produces_strings():
     strings = strategy(text_type)
-    result = strings.produce_template(random, strings.parameter.draw(random))
+    result = strings.produce_template(
+        BuildContext(random), strings.parameter.draw(random))
     assert result is not None
 
 
@@ -58,7 +59,7 @@ def alternating(*args):
 
 def some_minimal_element(s):
     strat = strategy(s)
-    template = strat.draw_and_produce(random)
+    template = strat.draw_and_produce(BuildContext(random))
     for t in strat.simplify_such_that(template, lambda _: True):
         template = t
     return strat.reify(template)
@@ -100,7 +101,8 @@ def test_int_lists_no_duplicates_in_simplify():
 
 def test_just_works():
     s = strategy(descriptors.just('giving'))
-    assert s.produce_template(random, s.parameter.draw(random)) == 'giving'
+    assert s.produce_template(
+        BuildContext(random), s.parameter.draw(random)) == 'giving'
     simplifications = list(s.simplify_such_that('giving', lambda _: True))
     assert len(simplifications) == 1
     assert simplifications[0] == 'giving'
@@ -114,7 +116,8 @@ def test_named_tuples_always_produce_named_tuples():
 
     for i in hrange(100):
         assert isinstance(
-            s.produce_template(random, s.parameter.draw(random)), Litter)
+            s.produce_template(
+                BuildContext(random), s.parameter.draw(random)), Litter)
 
     for x in s.simplify(Litter(100, 100)):
         assert isinstance(x, Litter)
@@ -178,7 +181,7 @@ def test_float_strategy_does_not_overflow():
     s = strategy(float)
 
     for _ in hrange(100):
-        s.produce_template(random, s.parameter.draw(random))
+        s.produce_template(BuildContext(random), s.parameter.draw(random))
 
 
 def test_does_not_shrink_tuple_length():
@@ -213,12 +216,12 @@ def test_strategy_for_integer_range_produces_only_integers_in_that_range():
     just_one_integer = strategy(descriptors.IntegerRange(1, 1))
     for _ in hrange(100):
         pv = just_one_integer.parameter.draw(random)
-        x = just_one_integer.produce_template(random, pv)
+        x = just_one_integer.produce_template(BuildContext(random), pv)
         assert x == 1
     some_integers = strategy(descriptors.IntegerRange(1, 10))
     for _ in hrange(100):
         pv = some_integers.parameter.draw(random)
-        x = some_integers.produce_template(random, pv)
+        x = some_integers.produce_template(BuildContext(random), pv)
         assert 1 <= x <= 10
 
 
@@ -227,7 +230,7 @@ def test_strategy_for_integer_range_can_produce_end_points():
     found = set()
     for _ in hrange(1000):  # pragma: no branch
         pv = some_integers.parameter.draw(random)
-        x = some_integers.produce_template(random, pv)
+        x = some_integers.produce_template(BuildContext(random), pv)
         found.add(x)
         if 1 in found and 10 in found:
             break
@@ -277,7 +280,8 @@ def test_does_not_simplify_outside_range():
 
 def test_random_repr_has_seed():
     strat = strategy(random.Random)
-    rnd = strat.reify(strat.produce_template(random.Random(), None))
+    rnd = strat.reify(
+        strat.produce_template(BuildContext(random.Random()), None))
     seed = rnd.seed
     assert text_type(seed) in repr(rnd)
 
@@ -285,7 +289,8 @@ def test_random_repr_has_seed():
 def test_random_only_produces_special_random():
     st = strategy(random.Random)
     assert isinstance(
-        st.reify(st.produce_template(random, st.parameter.draw(random))),
+        st.reify(st.produce_template(
+            BuildContext(random), st.parameter.draw(random))),
         RandomWithSeed
     )
 
@@ -345,15 +350,6 @@ class AwkwardDict(dict):
 def test_dict_descriptor_representation_is_stable_for_order():
     x = AwkwardDict({i: i for i in hrange(100)})
     assert nice_string(x) == nice_string(x)
-
-
-def test_example_augmented_strategy_decomposes_as_main():
-    s = strat.ExampleAugmentedStrategy(
-        main_strategy=strategy((int,)),
-        examples=[(1,)],
-    )
-    assert list(s.decompose((1,))) == [(int, 1)]
-    assert list(s.decompose((2,))) == [(int, 2)]
 
 
 def test_can_simplify_nan():

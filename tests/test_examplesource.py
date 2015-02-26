@@ -17,15 +17,15 @@ import random
 
 import pytest
 from hypothesis.examplesource import ParameterSource
+from hypothesis.searchstrategy import BuildContext, strategy
 from hypothesis.internal.compat import hrange
-from hypothesis.searchstrategy import strategy
 
 N_EXAMPLES = 1000
 
 
 def test_negative_is_not_too_far_off_mean():
     source = ParameterSource(
-        random=random.Random(),
+        context=BuildContext(random.Random()),
         strategy=strategy(int),
     )
     positive = 0
@@ -41,7 +41,7 @@ def test_negative_is_not_too_far_off_mean():
 
 def test_marking_negative_avoids_similar_examples():
     source = ParameterSource(
-        random=random.Random(),
+        context=BuildContext(random.Random()),
         strategy=strategy(int),
     )
     positive = 0
@@ -62,7 +62,7 @@ def test_can_grow_the_set_of_available_parameters_if_doing_badly():
     number_grown = 0
     for _ in hrange(runs):
         source = ParameterSource(
-            random=random.Random(),
+            context=BuildContext(random.Random()),
             strategy=strategy(int),
             min_parameters=1,
         )
@@ -78,17 +78,9 @@ def test_can_grow_the_set_of_available_parameters_if_doing_badly():
         assert len(source.parameters) < 100
 
 
-def test_example_source_needs_random():
-    with pytest.raises(ValueError):
-        ParameterSource(
-            random=None,
-            strategy=strategy(int),
-        )
-
-
 def test_errors_if_you_mark_bad_twice():
     source = ParameterSource(
-        random=random.Random(),
+        context=BuildContext(random.Random()),
         strategy=strategy(int),
     )
     next(iter(source))
@@ -99,7 +91,7 @@ def test_errors_if_you_mark_bad_twice():
 
 def test_errors_if_you_mark_bad_before_fetching():
     source = ParameterSource(
-        random=random.Random(),
+        context=BuildContext(random.Random()),
         strategy=strategy(int),
     )
     with pytest.raises(ValueError):
@@ -108,7 +100,7 @@ def test_errors_if_you_mark_bad_before_fetching():
 
 def test_tries_each_parameter_at_least_min_index_times():
     source = ParameterSource(
-        random=random.Random(),
+        context=BuildContext(random.Random()),
         strategy=strategy(int),
         min_tries=5
     )

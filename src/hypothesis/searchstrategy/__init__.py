@@ -17,8 +17,8 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 from .strategies import SearchStrategy, \
-    MappedSearchStrategy, BadData, ExampleAugmentedStrategy, check_data_type, \
-    check_length, strategy
+    MappedSearchStrategy, BadData, check_data_type, \
+    check_length, strategy, BuildContext
 
 from . import numbers as s1
 from . import collections as s2
@@ -35,7 +35,7 @@ __all__ = [
     'strategy',
 
     'BadData',
-    'ExampleAugmentedStrategy',
+    'BuildContext',
     'MappedSearchStrategy',
     'SearchStrategy',
 ]

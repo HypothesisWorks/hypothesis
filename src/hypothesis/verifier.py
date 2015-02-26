@@ -23,10 +23,10 @@ from itertools import islice
 import hypothesis.settings as hs
 from hypothesis.extra import load_entry_points
 from hypothesis.examplesource import ParameterSource
+from hypothesis.searchstrategy import BuildContext, strategy
 from hypothesis.internal.tracker import Tracker
 from hypothesis.internal.reflection import function_digest, \
     get_pretty_function_description
-from hypothesis.searchstrategy import strategy
 
 
 def assume(condition):
@@ -91,6 +91,8 @@ class Verifier(object):
                 function_digest(hypothesis)
             )
 
+        build_context = BuildContext(random)
+
         search_strategy = strategy(argument_types, self.settings)
         storage = None
         if self.database is not None:
@@ -123,7 +125,7 @@ class Verifier(object):
         min_satisfying_examples = self.min_satisfying_examples
 
         parameter_source = ParameterSource(
-            random=random, strategy=search_strategy,
+            random=build_context, strategy=search_strategy,
             min_parameters=max(2, int(float(max_examples) / 10))
         )
         start_time = time.time()
@@ -146,7 +148,7 @@ class Verifier(object):
                 break
 
             args = search_strategy.produce_template(
-                random, parameter
+                build_context, parameter
             )
 
             if track_seen.track(args) > 1:

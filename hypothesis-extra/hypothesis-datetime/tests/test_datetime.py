@@ -20,9 +20,9 @@ from hypothesis import Verifier, given, assume
 from hypothesis.descriptors import one_of
 from hypothesis.extra.datetime import naive_datetime, \
     timezone_aware_datetime
+from hypothesis.searchstrategy import strategy
 from hypothesis.descriptortests import descriptor_test_suite
 from hypothesis.internal.compat import hrange
-from hypothesis.searchstrategy import strategy
 
 hs.default.max_examples = 1000
 

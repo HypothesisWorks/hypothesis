@@ -18,8 +18,8 @@ from collections import namedtuple
 
 from hypothesis.types import RandomWithSeed
 from hypothesis.descriptors import one_of, sampled_from
-from hypothesis.searchstrategy import SearchStrategy, \
-    MappedSearchStrategy, check_length, check_data_type, strategy
+from hypothesis.searchstrategy import BuildContext, SearchStrategy, \
+    MappedSearchStrategy, strategy, check_length, check_data_type
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.internal.fixers import nice_string
 from hypothesis.searchstrategy.narytree import Leaf, NAryTree
@@ -110,14 +110,14 @@ class DescriptorWithValueStrategy(SearchStrategy):
     def strategy(self, specifier):
         return strategy(specifier, self.settings)
 
-    def produce_template(self, random, pv):
+    def produce_template(self, context, pv):
         descriptor_template = self.descriptor_strategy.produce_template(
-            random, pv)
+            context, pv)
         descriptor = self.descriptor_strategy.reify(descriptor_template)
         strat = self.strategy(descriptor)
-        parameter = strat.parameter.draw(random)
-        template = strat.produce_template(random, parameter)
-        new_random = self.random_strategy.draw_and_produce(random)
+        parameter = strat.parameter.draw(context.random)
+        template = strat.produce_template(context, parameter)
+        new_random = self.random_strategy.draw_and_produce(context)
         return DescriptorWithValue(
             descriptor=descriptor_template,
             template=template,
@@ -139,7 +139,8 @@ class DescriptorWithValueStrategy(SearchStrategy):
         random = RandomWithSeed(davt.random)
         for d in self.descriptor_strategy.simplify(davt.descriptor):
             new_template = self.strategy(
-                self.descriptor_strategy.reify(d)).draw_and_produce(random)
+                self.descriptor_strategy.reify(d)).draw_and_produce(
+                    BuildContext(random))
             yield DescriptorWithValue(
                 descriptor=d,
                 template=new_template,

@@ -24,7 +24,7 @@ import hypothesis.internal.distributions as dist
 from hypothesis.internal.compat import hrange, hunichr, text_type, \
     binary_type
 from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
-    MappedSearchStrategy, check_type, check_data_type, strategy
+    MappedSearchStrategy, strategy, check_type, check_data_type
 
 
 class OneCharStringStrategy(SearchStrategy):
@@ -39,7 +39,8 @@ class OneCharStringStrategy(SearchStrategy):
         ascii_chance=params.UniformFloatParameter(0, 1)
     )
 
-    def produce_template(self, random, pv):
+    def produce_template(self, context, pv):
+        random = context.random
         if dist.biased_coin(random, pv.ascii_chance):
             return random.choice(self.ascii_characters)
         else:

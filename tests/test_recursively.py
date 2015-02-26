@@ -26,11 +26,11 @@ from hypothesis.types import RandomWithSeed
 from hypothesis.descriptors import Just, OneOf, SampledFrom, just
 from tests.common.descriptors import Descriptor, DescriptorWithValue, \
     primitive_types
+from hypothesis.searchstrategy import BuildContext, strategy
 from hypothesis.testdecorators import given
 from hypothesis.descriptortests import TemplatesFor
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.internal.fixers import nice_string, actually_equal
-from hypothesis.searchstrategy import strategy
 
 # Placate flake8
 [OneOf, just, Just, RandomWithSeed, SampledFrom]
@@ -161,7 +161,8 @@ def tree_contains_match(t, f):
 @given(Descriptor, Random, verifier=verifier)
 def test_copies_all_its_values_correctly(desc, random):
     strat = strategy(desc)
-    value = strat.produce_template(random, strat.parameter.draw(random))
+    value = strat.produce_template(
+        BuildContext(random), strat.parameter.draw(random))
     assert actually_equal(strat.reify(value), strat.reify(value))
 
 
@@ -178,7 +179,7 @@ def test_can_minimize_descriptor_with_value(dav):
 def test_template_is_hashable(descriptor, random):
     strat = strategy(descriptor)
     parameter = strat.parameter.draw(random)
-    template = strat.produce_template(random, parameter)
+    template = strat.produce_template(BuildContext(random), parameter)
     hash(template)
 
 
@@ -186,7 +187,7 @@ def test_template_is_hashable(descriptor, random):
 def test_can_perform_all_basic_operations(descriptor, random):
     strat = strategy(descriptor)
     parameter = strat.parameter.draw(random)
-    template = strat.produce_template(random, parameter)
+    template = strat.produce_template(BuildContext(random), parameter)
     assert actually_equal(
         template,
         strat.from_basic(strat.to_basic(template))

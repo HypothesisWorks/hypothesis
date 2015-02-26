@@ -18,7 +18,8 @@ from collections import namedtuple
 
 import pytz
 import hypothesis.params as params
-from hypothesis.searchstrategy import SearchStrategy, check_data_type, strategy
+from hypothesis.searchstrategy import SearchStrategy, strategy, \
+    check_data_type
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.internal.fixers import equal
 from hypothesis.internal.hashitanyway import normal_hash, hash_everything
@@ -79,7 +80,8 @@ class DatetimeStrategy(SearchStrategy):
             )
         )
 
-    def produce_template(self, random, pv):
+    def produce_template(self, context, pv):
+        random = context.random
         year = random.randint(dt.MINYEAR, dt.MAXYEAR)
         month = random.choice(pv.month)
         base = dt.datetime(

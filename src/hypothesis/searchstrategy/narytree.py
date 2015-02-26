@@ -16,8 +16,8 @@ from __future__ import division, print_function, absolute_import, \
 from collections import namedtuple
 
 import hypothesis.params as params
-from hypothesis.searchstrategy import BadData, SearchStrategy, \
-    check_data_type, strategy
+from hypothesis.searchstrategy import BadData, SearchStrategy, strategy, \
+    check_data_type
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.distributions import geometric
 
@@ -58,20 +58,20 @@ class NAryTreeStrategy(SearchStrategy):
             [(self.branch_key_strategy, self)], settings
         )
 
-    def produce_template(self, random, pv):
-        n_children = geometric(random, pv.branch_factor)
+    def produce_template(self, context, pv):
+        n_children = geometric(context.random, pv.branch_factor)
         if not n_children:
             return Leaf(self.leaf_strategy.produce_template(
-                random, pv.leaf_parameter
+                context, pv.leaf_parameter
             ))
         else:
             children = tuple(
                 (self.branch_key_strategy.produce_template(
-                    random, pv.branch_key_parameter),
-                 self.produce_template(random, pv))
+                    context, pv.branch_key_parameter),
+                 self.produce_template(context, pv))
                 for _ in hrange(n_children))
             label = self.branch_label_strategy.produce_template(
-                random, pv.branch_label_parameter
+                context, pv.branch_label_parameter
             )
             return Branch(
                 label=label, keyed_children=children
