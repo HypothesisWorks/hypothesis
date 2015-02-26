@@ -53,6 +53,7 @@ class Verifier(object):
     ):
         if settings is None:
             settings = hs.default
+        self.settings = settings
         self.database = settings.database
 
         self.min_satisfying_examples = settings.min_satisfying_examples
@@ -90,7 +91,7 @@ class Verifier(object):
                 function_digest(hypothesis)
             )
 
-        search_strategy = strategy(argument_types)
+        search_strategy = strategy(argument_types, self.settings)
         storage = None
         if self.database is not None:
             storage = self.database.storage_for(argument_types)

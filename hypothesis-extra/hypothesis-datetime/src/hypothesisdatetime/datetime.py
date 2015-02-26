@@ -185,10 +185,10 @@ class DatetimeStrategy(SearchStrategy):
 
 
 @strategy.extend_static(dt.datetime)
-def datetime_strategy(cls):
+def datetime_strategy(cls, settings):
     return DatetimeStrategy()
 
 
 @strategy.extend(DatetimeSpec)
-def datetime_specced_strategy(spec):
+def datetime_specced_strategy(spec, settings):
     return DatetimeStrategy(spec.naive_options)

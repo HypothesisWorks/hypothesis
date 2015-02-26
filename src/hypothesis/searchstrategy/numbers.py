@@ -401,22 +401,22 @@ class ComplexStrategy(MappedSearchStrategy):
 
 
 @strategy.extend(descriptors.IntegerRange)
-def define_stragy_for_integer_Range(descriptor):
+def define_stragy_for_integer_Range(descriptor, settings):
     return BoundedIntStrategy(descriptor.start, descriptor.end)
 
 
 @strategy.extend(descriptors.FloatRange)
-def define_strategy_for_float_Range(descriptor):
+def define_strategy_for_float_Range(descriptor, settings):
     return FixedBoundedFloatStrategy(descriptor.start, descriptor.end)
 
 
 @strategy.extend_static(int)
-def int_strategy(descriptor):
+def int_strategy(descriptor, settings):
     return RandomGeometricIntStrategy()
 
 
 @strategy.extend_static(float)
-def define_float_strategy(descriptor):
+def define_float_strategy(descriptor, settings):
     return WrapperFloatStrategy(
         GaussianFloatStrategy() |
         BoundedFloatStrategy() |
@@ -430,5 +430,5 @@ def define_float_strategy(descriptor):
 
 
 @strategy.extend_static(complex)
-def define_complex_strategy(descriptor):
-    return ComplexStrategy(complex, strategy((float, float)))
+def define_complex_strategy(descriptor, settings):
+    return ComplexStrategy(complex, strategy((float, float), settings))

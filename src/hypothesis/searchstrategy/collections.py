@@ -20,6 +20,7 @@ from hypothesis.internal.fixers import nice_string
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
     MappedSearchStrategy, check_type, check_length, check_data_type, \
     one_of_strategies, strategy
+import hypothesis.settings as hs
 
 
 class mix_generators(object):
@@ -358,31 +359,40 @@ class FixedKeysDictStrategy(MappedSearchStrategy):
 
 
 @strategy.extend(set)
-def define_set_strategy(descriptor):
-    return SetStrategy(map(strategy, descriptor))
+def define_set_strategy(descriptor, settings):
+    return SetStrategy(strategy(d, settings) for d in descriptor)
 
 
 @strategy.extend(frozenset)
-def define_frozen_set_strategy(descriptor):
-    return FrozenSetStrategy(strategy(set(descriptor)))
+def define_frozen_set_strategy(descriptor, settings):
+    return FrozenSetStrategy(strategy(set(descriptor), settings))
 
 
 @strategy.extend(list)
-def define_list_strategy(descriptor):
-    return ListStrategy(list(map(strategy, descriptor)))
+def define_list_strategy(descriptor, settings):
+    return ListStrategy(
+        [strategy(d, settings) for d in descriptor],
+        average_length=settings.average_list_length
+    )
+
+hs.define_setting(
+    "average_list_length",
+    default=50.0,
+    description="Average length of lists to use"
+)
 
 
 @strategy.extend(tuple)
-def define_tuple_strategy(descriptor):
+def define_tuple_strategy(descriptor, settings):
     return TupleStrategy(
-        tuple(map(strategy, descriptor)),
+        tuple(strategy(d, settings) for d in descriptor),
         tuple_type=type(descriptor)
     )
 
 
 @strategy.extend(dict)
-def define_dict_strategy(descriptor):
+def define_dict_strategy(descriptor, settings):
     strategy_dict = {}
     for k, v in descriptor.items():
-        strategy_dict[k] = strategy(v)
+        strategy_dict[k] = strategy(v, settings)
     return FixedKeysDictStrategy(strategy_dict)

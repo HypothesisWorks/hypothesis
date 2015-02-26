@@ -148,31 +148,31 @@ class SampledFromStrategy(SearchStrategy):
 
 
 @strategy.extend_static(bool)
-def bool_strategy(cls):
+def bool_strategy(cls, settings):
     return BoolStrategy()
 
 
 @strategy.extend(descriptors.Just)
-def define_just_strategy(descriptor):
+def define_just_strategy(descriptor, settings):
     return JustStrategy(descriptor.value)
 
 
 @strategy.extend(SearchStrategy)
-def define_strategy_strategy(descriptor):
+def define_strategy_strategy(descriptor, settings):
     return descriptor
 
 
 @strategy.extend_static(Random)
-def define_random_strategy(descriptor):
+def define_random_strategy(descriptor, settings):
     return RandomStrategy()
 
 
 @strategy.extend(descriptors.SampledFrom)
-def define_sampled_strategy(descriptor):
+def define_sampled_strategy(descriptor, settings):
     return SampledFromStrategy(descriptor.elements)
 
 
 @strategy.extend(type(None))
 @strategy.extend_static(type(None))
-def define_none_strategy(descriptor):
+def define_none_strategy(descriptor, settings):
     return JustStrategy(None)

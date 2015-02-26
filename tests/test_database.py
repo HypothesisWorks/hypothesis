@@ -92,7 +92,10 @@ backend_format_pairs = (
 
 
 @given(DescriptorWithValue, verifier=Verifier(
-    settings=hs.Settings(max_examples=500),
+    settings=hs.Settings(
+        max_examples=500,
+        average_list_length=3.0,
+    ),
 ))
 def test_can_round_trip_a_single_value_through_the_database(dav):
     run_round_trip(dav.descriptor, dav.template)

@@ -90,5 +90,5 @@ class FakeFactoryStrategy(SearchStrategy):
 
 
 @strategy.extend(FakeFactory)
-def fake_factory_strategy(d):
+def fake_factory_strategy(d, settings):
     return FakeFactoryStrategy(d)

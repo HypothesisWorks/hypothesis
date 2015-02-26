@@ -68,8 +68,8 @@ class ModelStrategy(MappedSearchStrategy):
 
 
 @strategy.extend_static(dm.Model)
-def define_model_strategy(model):
+def define_model_strategy(model, settings):
     specifier = model_to_base_specifier(model)
     return ModelStrategy(
-        descriptor=model, strategy=strategy(specifier)
+        descriptor=model, strategy=strategy(specifier, settings)
     )

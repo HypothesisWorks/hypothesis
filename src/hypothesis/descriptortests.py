@@ -59,8 +59,8 @@ class TemplatesStrategy(SearchStrategy):
 
 
 @strategy.extend(TemplatesFor)
-def templates_for(descriptor):
-    return TemplatesStrategy(strategy(descriptor.base))
+def templates_for(descriptor, settings):
+    return TemplatesStrategy(strategy(descriptor.base, settings))
 
 
 def descriptor_test_suite(

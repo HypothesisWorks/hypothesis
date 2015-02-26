@@ -20,11 +20,14 @@ from hypothesis.internal.compat import integer_types
 from hypothesis.internal.fixers import nice_string
 from hypothesis.internal.tracker import Tracker
 from hypothesis.extmethod import ExtMethod
+from hypothesis.settings import Settings
 
 
 class StrategyExtMethod(ExtMethod):
-    def __call__(self, *args, **kwargs):
-        result = super(StrategyExtMethod, self).__call__(*args, **kwargs)
+    def __call__(self, specifier, settings=None):
+        if settings is None:
+            settings = Settings()
+        result = super(StrategyExtMethod, self).__call__(specifier, settings)
         assert isinstance(result, SearchStrategy)
         return result
 
@@ -84,8 +87,8 @@ def one_of_strategies(xs):
 
 
 @strategy.extend(OneOf)
-def strategy_for_one_of(oneof):
-    return one_of_strategies(map(strategy, oneof.elements))
+def strategy_for_one_of(oneof, settings):
+    return one_of_strategies([strategy(d, settings) for d in oneof.elements])
 
 
 class SearchStrategy(object):
@@ -234,7 +237,7 @@ class SearchStrategy(object):
 
 
 @strategy.extend(SearchStrategy)
-def strategy_strategy(strategy):
+def strategy_strategy(strategy, settings):
     return strategy
 
 

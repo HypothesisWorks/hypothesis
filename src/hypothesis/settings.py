@@ -51,10 +51,12 @@ class Settings(object):
             **kwargs
     ):
         for setting in all_settings.values():
-            value = kwargs.get(setting.name, not_set)
+            value = kwargs.pop(setting.name, not_set)
             if value == not_set:
                 value = getattr(default, setting.name)
             setattr(self, setting.name, value)
+        if kwargs:
+            raise TypeError("Invalid arguments %s" % (', '.join(kwargs),))
 
     def __repr__(self):
         bits = []

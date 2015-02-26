@@ -116,13 +116,13 @@ class BinaryStringStrategy(MappedSearchStrategy):
 
 
 @strategy.extend_static(text_type)
-def define_text_type_strategy(descriptor):
-    return StringStrategy(strategy([OneCharStringStrategy()]))
+def define_text_type_strategy(descriptor, settings):
+    return StringStrategy(strategy([OneCharStringStrategy()], settings))
 
 
 @strategy.extend_static(binary_type)
-def define_binary_strategy(descriptor):
+def define_binary_strategy(descriptor, settings):
     return BinaryStringStrategy(
-        strategy=strategy([descriptors.integers_in_range(0, 255)]),
+        strategy=strategy([descriptors.integers_in_range(0, 255)], settings),
         descriptor=binary_type,
     )

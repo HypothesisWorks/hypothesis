@@ -39,13 +39,13 @@ Branch = namedtuple('Branch', (
 
 class NAryTreeStrategy(SearchStrategy):
 
-    def __init__(self, descriptor):
+    def __init__(self, descriptor, settings):
         self.descriptor = descriptor
-        self.leaf_strategy = strategy(descriptor.leaf_values)
+        self.leaf_strategy = strategy(descriptor.leaf_values, settings)
         self.branch_key_strategy = strategy(
-            descriptor.branch_keys)
+            descriptor.branch_keys, settings)
         self.branch_label_strategy = strategy(
-            descriptor.branch_labels)
+            descriptor.branch_labels, settings)
         self.parameter = params.CompositeParameter(
             leaf_parameter=self.leaf_strategy.parameter,
             branch_key_parameter=self.branch_key_strategy.parameter,
@@ -55,7 +55,7 @@ class NAryTreeStrategy(SearchStrategy):
         )
 
         self.child_strategy = strategy(
-            [(self.branch_key_strategy, self)]
+            [(self.branch_key_strategy, self)], settings
         )
 
     def produce_template(self, random, pv):
@@ -136,5 +136,5 @@ class NAryTreeStrategy(SearchStrategy):
 
 
 @strategy.extend(NAryTree)
-def nary_tree_strategy(descriptor):
-    return NAryTreeStrategy(descriptor)
+def nary_tree_strategy(descriptor, settings):
+    return NAryTreeStrategy(descriptor, settings)

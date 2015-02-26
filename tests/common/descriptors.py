@@ -60,7 +60,7 @@ class DescriptorWithValue(object):
 
 class DescriptorStrategy(MappedSearchStrategy):
 
-    def __init__(self):
+    def __init__(self, settings):
         super(DescriptorStrategy, self).__init__(
             descriptor=Descriptor,
             strategy=strategy(NAryTree(
@@ -71,7 +71,7 @@ class DescriptorStrategy(MappedSearchStrategy):
                 leaf_values=sampled_from((
                     int, float, text_type, binary_type,
                     bool, complex, type(None)))
-            ))
+            ), settings)
         )
 
     def pack(self, value):
@@ -93,24 +93,28 @@ class DescriptorStrategy(MappedSearchStrategy):
 
 
 @strategy.extend_static(Descriptor)
-def descriptor_strategy(cls):
-    return DescriptorStrategy()
+def descriptor_strategy(cls, settings):
+    return DescriptorStrategy(settings)
 
 
 class DescriptorWithValueStrategy(SearchStrategy):
     descriptor = DescriptorWithValue
 
-    def __init__(self):
-        descriptor_strategy = strategy(Descriptor)
+    def __init__(self, settings):
+        self.settings = settings
+        descriptor_strategy = strategy(Descriptor, settings)
         self.descriptor_strategy = descriptor_strategy
         self.parameter = descriptor_strategy.parameter
-        self.random_strategy = strategy(Random)
+        self.random_strategy = strategy(Random, settings)
+
+    def strategy(self, specifier):
+        return strategy(specifier, self.settings)
 
     def produce_template(self, random, pv):
         descriptor_template = self.descriptor_strategy.produce_template(
             random, pv)
         descriptor = self.descriptor_strategy.reify(descriptor_template)
-        strat = strategy(descriptor)
+        strat = self.strategy(descriptor)
         parameter = strat.parameter.draw(random)
         template = strat.produce_template(random, parameter)
         new_random = self.random_strategy.draw_and_produce(random)
@@ -126,7 +130,7 @@ class DescriptorWithValueStrategy(SearchStrategy):
         return DescriptorWithValue(
             descriptor=descriptor,
             template=davt.template,
-            value=strategy(descriptor).reify(
+            value=self.strategy(descriptor).reify(
                 davt.template),
             random=RandomWithSeed(davt.random),
         )
@@ -134,7 +138,7 @@ class DescriptorWithValueStrategy(SearchStrategy):
     def simplify(self, davt):
         random = RandomWithSeed(davt.random)
         for d in self.descriptor_strategy.simplify(davt.descriptor):
-            new_template = strategy(
+            new_template = self.strategy(
                 self.descriptor_strategy.reify(d)).draw_and_produce(random)
             yield DescriptorWithValue(
                 descriptor=d,
@@ -143,7 +147,7 @@ class DescriptorWithValueStrategy(SearchStrategy):
                 random=davt.random,
             )
 
-        strat = strategy(
+        strat = self.strategy(
             self.descriptor_strategy.reify(davt.descriptor))
 
         for v in strat.simplify(davt.template):
@@ -155,7 +159,7 @@ class DescriptorWithValueStrategy(SearchStrategy):
             )
 
     def to_basic(self, value):
-        strat = strategy(
+        strat = self.strategy(
             self.descriptor_strategy.reify(value.descriptor))
         return [
             self.descriptor_strategy.to_basic(value.descriptor),
@@ -169,12 +173,12 @@ class DescriptorWithValueStrategy(SearchStrategy):
         descriptor, random, template = data
         dt = self.descriptor_strategy.from_basic(descriptor)
         d = self.descriptor_strategy.reify(dt)
-        vt = strategy(d).from_basic(template)
+        vt = self.strategy(d).from_basic(template)
         return DescriptorWithValue(
             random=random, descriptor=dt, template=vt, value=None
         )
 
 
 @strategy.extend_static(DescriptorWithValue)
-def dav_strategy(cls):
-    return DescriptorWithValueStrategy()
+def dav_strategy(cls, settings):
+    return DescriptorWithValueStrategy(settings)
