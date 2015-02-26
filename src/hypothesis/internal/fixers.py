@@ -25,7 +25,7 @@ import unittest
 
 from hypothesis.internal.compat import text_type, binary_type, \
     integer_types
-from hypothesis.internal.extmethod import ExtMethod
+from hypothesis.extmethod import ExtMethod
 from hypothesis.internal.reflection import unbind_method
 
 

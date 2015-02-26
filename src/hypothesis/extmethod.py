@@ -26,6 +26,7 @@ class ExtMethod(object):
 
     def __init__(self):
         self.mapping = ClassMap()
+        self.static_mapping = ClassMap()
 
     def extend(self, typ):
         def accept(f):
@@ -34,15 +35,26 @@ class ExtMethod(object):
 
         return accept
 
-    def typekey(self, arg):
-        return type(arg)
+    def extend_static(self, typ):
+        def accept(f):
+            self.static_mapping[typ] = f
+            return f
+
+        return accept
 
     def __call__(self, dispatch_arg, *args, **kwargs):
-        typekey = self.typekey(dispatch_arg)
-        try:
-            f = self.mapping[typekey]
-        except KeyError:
-            raise NotImplementedError(
-                'No implementation available for %s' % (typekey.__name__,)
-            )
+        is_instance = True
+        if isinstance(dispatch_arg, type):
+            try:
+                f = self.static_mapping[dispatch_arg]
+                is_instance = False
+            except KeyError:
+                pass
+        if is_instance:
+            try:
+                f = self.mapping[type(dispatch_arg)]
+            except KeyError:
+                raise NotImplementedError(
+                    'No implementation available for %r' % (
+                        dispatch_arg,))
         return f(dispatch_arg, *args, **kwargs)

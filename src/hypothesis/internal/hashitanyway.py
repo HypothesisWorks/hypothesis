@@ -16,7 +16,7 @@ from __future__ import division, print_function, absolute_import, \
 from hypothesis.types import RandomWithSeed
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.internal.fixers import actually_equal
-from hypothesis.internal.extmethod import ExtMethod
+from hypothesis.extmethod import ExtMethod
 
 hash_everything = ExtMethod()
 

@@ -15,7 +15,7 @@ from __future__ import division, print_function, absolute_import, \
 
 from hypothesis.descriptors import IntegerRange
 from hypothesis.internal.compat import integer_types
-from hypothesis.internal.extmethod import ExtMethod
+from hypothesis.extmethod import ExtMethod
 
 matches_type = ExtMethod()
 
