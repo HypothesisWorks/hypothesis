@@ -28,6 +28,7 @@ from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.database.backend import SQLiteBackend
 from hypothesis.internal.utils.fixers import nice_string, actually_equal
 from hypothesis.internal.utils.hashitanyway import hash_everything
+from hypothesis.internal.compat import integer_types, text_type
 
 TemplatesFor = namedtuple('TemplatesFor', ('base',))
 
@@ -107,6 +108,20 @@ def descriptor_test_suite(
         @given(TemplatesFor(mixed), verifier=verifier)
         def test_can_simplify_mixed(self, template):
             list(mixed_strategy.simplify_such_that(template, lambda x: True))
+
+        @descriptor_test
+        def test_is_basic(self, value):
+            def is_basic(v):
+                if not isinstance(
+                    v, integer_types + (list, type(None), text_type)
+                ):
+                    return False
+                if isinstance(v, list):
+                    return all(is_basic(w) for w in v)
+                else:
+                    return True
+            supposedly_basic = strategy.to_basic(value)
+            self.assertTrue(is_basic(supposedly_basic), repr(supposedly_basic))
 
         def test_produces_two_distinct_hashes(self):
             try:
