@@ -112,14 +112,12 @@ def descriptor_test_suite(
         @descriptor_test
         def test_is_basic(self, value):
             def is_basic(v):
-                if not isinstance(
+                return isinstance(
                     v, integer_types + (list, type(None), text_type)
-                ):
-                    return False
-                if isinstance(v, list):
-                    return all(is_basic(w) for w in v)
-                else:
-                    return True
+                ) and (
+                    not isinstance(v, list) or
+                    all(is_basic(w) for w in v)
+                )
             supposedly_basic = strategy.to_basic(value)
             self.assertTrue(is_basic(supposedly_basic), repr(supposedly_basic))
 
