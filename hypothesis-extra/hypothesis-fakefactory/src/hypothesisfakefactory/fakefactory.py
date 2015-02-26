@@ -16,7 +16,7 @@ from __future__ import division, print_function, absolute_import, \
 import faker
 import hypothesis.params as params
 from faker.config import AVAILABLE_LOCALES
-from hypothesis.searchstrategy import SearchStrategy, check_data_type
+from hypothesis.searchstrategy import SearchStrategy, check_data_type, strategy
 from hypothesis.internal.compat import text_type
 
 
@@ -87,3 +87,8 @@ class FakeFactoryStrategy(SearchStrategy):
     def from_basic(self, value):
         check_data_type(text_type, value)
         return value
+
+
+@strategy.extend(FakeFactory)
+def fake_factory_strategy(d):
+    return FakeFactoryStrategy(d)

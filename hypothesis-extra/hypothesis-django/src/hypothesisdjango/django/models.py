@@ -17,7 +17,7 @@ import django.db.models as dm
 import hypothesis.extra.fakefactory as ff
 from hypothesis.descriptors import one_of
 from hypothesis.extra.datetime import timezone_aware_datetime
-from hypothesis.searchstrategy import MappedSearchStrategy
+from hypothesis.searchstrategy import MappedSearchStrategy, strategy
 from hypothesis.internal.compat import text_type, binary_type
 
 FIELD_MAPPINGS = {
@@ -67,9 +67,9 @@ class ModelStrategy(MappedSearchStrategy):
         return result
 
 
-def define_model_strategy(table, descriptor):
-    specifier = model_to_base_specifier(descriptor)
-    base_strategy = table.specification_for(specifier)
+@strategy.extend_static(dm.Model)
+def define_model_strategy(model):
+    specifier = model_to_base_specifier(model)
     return ModelStrategy(
-        descriptor=descriptor, strategy=base_strategy
+        descriptor=model, strategy=strategy(specifier)
     )

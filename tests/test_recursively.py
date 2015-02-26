@@ -22,7 +22,6 @@ from functools import wraps
 import pytest
 import hypothesis.settings as hs
 from hypothesis import Verifier, Unfalsifiable, assume
-from tests.common import small_table
 from hypothesis.types import RandomWithSeed
 from hypothesis.descriptors import Just, OneOf, SampledFrom, just
 from tests.common.descriptors import Descriptor, DescriptorWithValue, \
@@ -31,7 +30,7 @@ from hypothesis.testdecorators import given
 from hypothesis.descriptortests import TemplatesFor
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.internal.fixers import nice_string, actually_equal
-from hypothesis.searchstrategy.table import StrategyTable
+from hypothesis.searchstrategy import strategy
 
 # Placate flake8
 [OneOf, just, Just, RandomWithSeed, SampledFrom]
@@ -95,7 +94,6 @@ settings = hs.Settings(max_examples=100, timeout=4)
 
 verifier = Verifier(
     settings=settings,
-    strategy_table=small_table,
 )
 
 
@@ -105,8 +103,7 @@ def test_can_falsify_false_things(desc, random):
     assume(size(desc) <= MAX_SIZE)
     verifier.random = random
     x = verifier.falsify(lambda x: False, desc)[0]
-    strategy = small_table.strategy(desc)
-    assert not list(strategy.simplify(x))
+    assert not list(strategy(desc).simplify(x))
 
 
 @timeout(5)
@@ -117,8 +114,7 @@ def test_can_falsify_false_things_with_many_args(descs, random):
     descs = tuple(descs)
     verifier.random = random
     x = verifier.falsify(lambda *args: False, *descs)
-    strategy = small_table.strategy(descs)
-    assert not list(strategy.simplify(x))
+    assert not list(strategy(descs).simplify(x))
 
 
 @timeout(5)
@@ -164,9 +160,9 @@ def tree_contains_match(t, f):
 @timeout(5)
 @given(Descriptor, Random, verifier=verifier)
 def test_copies_all_its_values_correctly(desc, random):
-    strategy = small_table.strategy(desc)
-    value = strategy.produce_template(random, strategy.parameter.draw(random))
-    assert actually_equal(strategy.reify(value), strategy.reify(value))
+    strat = strategy(desc)
+    value = strat.produce_template(random, strategy.parameter.draw(random))
+    assert actually_equal(strat.reify(value), strat.reify(value))
 
 
 @given(
@@ -174,26 +170,26 @@ def test_copies_all_its_values_correctly(desc, random):
     verifier=verifier,
 )
 def test_can_minimize_descriptor_with_value(dav):
-    s = small_table.strategy(DescriptorWithValue)
+    s = strategy(DescriptorWithValue)
     list(s.simplify_such_that(dav, lambda x: True))
 
 
 @given(Descriptor, Random, verifier=verifier)
 def test_template_is_hashable(descriptor, random):
-    strategy = StrategyTable.default().strategy(descriptor)
-    parameter = strategy.parameter.draw(random)
-    template = strategy.produce_template(random, parameter)
+    strat = strategy(descriptor)
+    parameter = strat.parameter.draw(random)
+    template = strat.produce_template(random, parameter)
     hash(template)
 
 
 @given(Descriptor, Random, verifier=verifier)
 def test_can_perform_all_basic_operations(descriptor, random):
-    strategy = StrategyTable.default().strategy(descriptor)
-    parameter = strategy.parameter.draw(random)
-    template = strategy.produce_template(random, parameter)
+    strat = strategy(descriptor)
+    parameter = strat.parameter.draw(random)
+    template = strat.produce_template(random, parameter)
     assert actually_equal(
         template,
-        strategy.from_basic(strategy.to_basic(template))
+        strat.from_basic(strat.to_basic(template))
     )
     minimal_template = list(strategy.simplify_such_that(
         template,
@@ -208,5 +204,5 @@ def test_can_perform_all_basic_operations(descriptor, random):
 
 @given(DescriptorWithValue, verifier=verifier)
 def test_integrity_check_dav(dav):
-    strategy = StrategyTable.default().strategy(dav.descriptor)
-    assert actually_equal(dav.value, strategy.reify(dav.template))
+    strat = strategy(dav.descriptor)
+    assert actually_equal(dav.value, strat.reify(dav.template))

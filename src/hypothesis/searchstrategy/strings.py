@@ -23,10 +23,8 @@ import hypothesis.descriptors as descriptors
 import hypothesis.internal.distributions as dist
 from hypothesis.internal.compat import hrange, hunichr, text_type, \
     binary_type
-from hypothesis.searchstrategy.strategy import BadData, SearchStrategy, \
-    MappedSearchStrategy, check_type, check_data_type
-
-from .table import strategy_for
+from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
+    MappedSearchStrategy, check_type, check_data_type, strategy
 
 
 class OneCharStringStrategy(SearchStrategy):
@@ -117,19 +115,14 @@ class BinaryStringStrategy(MappedSearchStrategy):
             raise BadData(*e.args)
 
 
-@strategy_for(text_type)
-def define_text_type_strategy(strategies, descriptor):
-    child = strategies.new_child_mapper()
-    c = OneCharStringStrategy()
-    child.define_specification_for(
-        text_type, lambda x, y: c)
-    list_of_strings = child.strategy([text_type])
-    return StringStrategy(list_of_strings)
+@strategy.extend_static(text_type)
+def define_text_type_strategy(descriptor):
+    return StringStrategy(strategy([OneCharStringStrategy()]))
 
 
-@strategy_for(binary_type)
-def define_binary_strategy(strategies, descriptor):
+@strategy.extend_static(binary_type)
+def define_binary_strategy(descriptor):
     return BinaryStringStrategy(
-        strategy=strategies.strategy([descriptors.integers_in_range(0, 255)]),
+        strategy=strategy([descriptors.integers_in_range(0, 255)]),
         descriptor=binary_type,
     )

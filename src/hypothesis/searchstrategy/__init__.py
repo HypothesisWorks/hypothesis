@@ -16,9 +16,9 @@ to explore data."""
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from .strategy import SearchStrategy, \
+from .strategies import SearchStrategy, \
     MappedSearchStrategy, BadData, ExampleAugmentedStrategy, check_data_type, \
-    check_length
+    check_length, strategy
 
 from . import numbers as s1
 from . import collections as s2
@@ -32,6 +32,7 @@ loaded = [s1, s2, s3, s4]
 __all__ = [
     'check_data_type',
     'check_length',
+    'strategy',
 
     'BadData',
     'ExampleAugmentedStrategy',

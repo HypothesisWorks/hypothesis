@@ -23,10 +23,8 @@ import hypothesis.descriptors as descriptors
 import hypothesis.internal.distributions as dist
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.searchstrategy.misc import SampledFromStrategy
-from hypothesis.searchstrategy.strategy import BadData, SearchStrategy, \
-    MappedSearchStrategy, check_type, check_data_type
-
-from .table import strategy_for, strategy_for_instances
+from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
+    MappedSearchStrategy, check_type, check_data_type, strategy
 
 
 class IntStrategy(SearchStrategy):
@@ -402,27 +400,28 @@ class ComplexStrategy(MappedSearchStrategy):
         return complex(*value)
 
 
-@strategy_for_instances(descriptors.IntegerRange)
-def define_stragy_for_integer_Range(strategies, descriptor):
+@strategy.extend(descriptors.IntegerRange)
+def define_stragy_for_integer_Range(descriptor):
     return BoundedIntStrategy(descriptor.start, descriptor.end)
 
 
-@strategy_for_instances(descriptors.FloatRange)
-def define_strategy_for_float_Range(strategies, descriptor):
+@strategy.extend(descriptors.FloatRange)
+def define_strategy_for_float_Range(descriptor):
     return FixedBoundedFloatStrategy(descriptor.start, descriptor.end)
 
 
-strategy_for(int)(
-    RandomGeometricIntStrategy())
+@strategy.extend_static(int)
+def int_strategy(descriptor):
+    return RandomGeometricIntStrategy()
 
 
-@strategy_for(float)
-def define_float_strategy(strategies, descriptor):
+@strategy.extend_static(float)
+def define_float_strategy(descriptor):
     return WrapperFloatStrategy(
         GaussianFloatStrategy() |
         BoundedFloatStrategy() |
         ExponentialFloatStrategy() |
-        JustIntFloats(strategies.strategy(int)) |
+        JustIntFloats(strategy(int)) |
         NastyFloats() |
         NastyFloats() |
         FullRangeFloats() |
@@ -430,6 +429,6 @@ def define_float_strategy(strategies, descriptor):
     )
 
 
-@strategy_for(complex)
-def define_complex_strategy(strategies, descriptor):
-    return ComplexStrategy(complex, strategies.strategy((float, float)))
+@strategy.extend_static(complex)
+def define_complex_strategy(descriptor):
+    return ComplexStrategy(complex, strategy((float, float)))

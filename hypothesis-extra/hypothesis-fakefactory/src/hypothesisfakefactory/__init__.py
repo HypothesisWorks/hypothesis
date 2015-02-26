@@ -12,9 +12,4 @@
 
 
 def load():
-    import hypothesis.extra.fakefactory as ff
-    from hypothesis.searchstrategy.table import StrategyTable
-    StrategyTable.default().define_specification_for_instances(
-        ff.FakeFactory,
-        lambda s, d: ff.FakeFactoryStrategy(d)
-    )
+    pass

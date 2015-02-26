@@ -26,7 +26,7 @@ from hypothesis.examplesource import ParameterSource
 from hypothesis.internal.tracker import Tracker
 from hypothesis.internal.reflection import function_digest, \
     get_pretty_function_description
-from hypothesis.searchstrategy.table import StrategyTable
+from hypothesis.searchstrategy import strategy
 
 
 def assume(condition):
@@ -48,18 +48,12 @@ class Verifier(object):
 
     def __init__(
             self,
-            strategy_table=None,
             random=None,
             settings=None,
     ):
         if settings is None:
             settings = hs.default
         self.database = settings.database
-        self.strategy_table = strategy_table or StrategyTable()
-        if self.database is not None:
-            self.strategy_table = self.strategy_table.augment_with_examples(
-                self.examples_for
-            )
 
         self.min_satisfying_examples = settings.min_satisfying_examples
         self.max_examples = settings.max_examples
@@ -96,8 +90,7 @@ class Verifier(object):
                 function_digest(hypothesis)
             )
 
-        search_strategy = (
-            self.strategy_table.specification_for(argument_types))
+        search_strategy = strategy(argument_types)
         storage = None
         if self.database is not None:
             storage = self.database.storage_for(argument_types)

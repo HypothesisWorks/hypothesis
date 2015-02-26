@@ -21,10 +21,8 @@ import hypothesis.internal.distributions as dist
 from hypothesis.types import RandomWithSeed
 from hypothesis.internal.compat import integer_types
 from hypothesis.internal.fixers import nice_string
-from hypothesis.searchstrategy.strategy import BadData, SearchStrategy, \
-    check_type, check_data_type
-
-from .table import strategy_for, strategy_for_instances
+from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
+    check_type, check_data_type, strategy
 
 
 class BoolStrategy(SearchStrategy):
@@ -149,30 +147,32 @@ class SampledFromStrategy(SearchStrategy):
         return self.elements[template]
 
 
-strategy_for(bool)(BoolStrategy())
+@strategy.extend_static(bool)
+def bool_strategy(cls):
+    return BoolStrategy()
 
 
-@strategy_for_instances(descriptors.Just)
-def define_just_strategy(strategies, descriptor):
+@strategy.extend(descriptors.Just)
+def define_just_strategy(descriptor):
     return JustStrategy(descriptor.value)
 
 
-@strategy_for_instances(SearchStrategy)
-def define_strategy_strategy(strategies, descriptor):
+@strategy.extend(SearchStrategy)
+def define_strategy_strategy(descriptor):
     return descriptor
 
 
-@strategy_for(Random)
-def define_random_strategy(strategies, descriptor):
+@strategy.extend_static(Random)
+def define_random_strategy(descriptor):
     return RandomStrategy()
 
 
-@strategy_for_instances(descriptors.SampledFrom)
-def define_sampled_strategy(strategies, descriptor):
+@strategy.extend(descriptors.SampledFrom)
+def define_sampled_strategy(descriptor):
     return SampledFromStrategy(descriptor.elements)
 
 
-@strategy_for(None)
-@strategy_for(type(None))
-def define_none_strategy(strategies, descriptor):
+@strategy.extend(type(None))
+@strategy.extend_static(type(None))
+def define_none_strategy(descriptor):
     return JustStrategy(None)

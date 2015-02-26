@@ -20,19 +20,15 @@ from collections import namedtuple
 import pytest
 import hypothesis.descriptors as descriptors
 import hypothesis.searchstrategy as strat
-import hypothesis.searchstrategy.table as ss
 from hypothesis.types import RandomWithSeed
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.internal.fixers import nice_string, actually_equal
 from hypothesis.internal.tracker import Tracker
 from hypothesis.searchstrategy.numbers import BoundedIntStrategy, \
     FixedBoundedFloatStrategy, RandomGeometricIntStrategy
-from hypothesis.searchstrategy.strategy import OneOfStrategy, \
+from hypothesis.searchstrategy.strategies import OneOfStrategy, \
     one_of_strategies
-
-
-def strategy(*args, **kwargs):
-    return ss.StrategyTable().strategy(*args, **kwargs)
+from hypothesis.searchstrategy import strategy
 
 
 def test_string_strategy_produces_strings():
@@ -155,21 +151,21 @@ class X(object):
         self.x = x
 
 
-@ss.strategy_for_instances(X)
+@strategy.extend(X)
 class XStrategy(strat.MappedSearchStrategy):
     pass
 
 
-@ss.strategy_for_instances(X)
-def define_x_strategy(strategies, descriptor):
+@strategy.extend(X)
+def define_x_strategy(descriptor):
     return XStrategy(
-        strategy=strategies.strategy(descriptor.x),
+        strategy=strategy(descriptor.x),
         descriptor=descriptor,
     )
 
 
 def test_strategy_repr_handles_custom_types():
-    assert 'X(x=int)' in repr(ss.StrategyTable().strategy(X(int)))
+    assert 'X(x=int)' in repr(strategy(X(int)))
 
 
 class TrivialStrategy(strat.SearchStrategy):
@@ -178,20 +174,11 @@ class TrivialStrategy(strat.SearchStrategy):
         self.descriptor = descriptor
 
 
-def test_strategy_repr_handles_instances_without_dicts():
-    strats = ss.StrategyTable()
-    strats.define_specification_for_instances(
-        int, lambda s, d: TrivialStrategy(d))
-
-    assert repr(strats.strategy(42)) == 'TrivialStrategy(42)'
-    assert repr(strats.strategy(23)) == 'TrivialStrategy(23)'
-
-
 def test_float_strategy_does_not_overflow():
-    strategy = ss.StrategyTable().strategy(float)
+    s = strategy(float)
 
     for _ in hrange(100):
-        strategy.produce_template(random, strategy.parameter.draw(random))
+        s.produce_template(random, s.parameter.draw(random))
 
 
 def test_does_not_shrink_tuple_length():
@@ -199,7 +186,7 @@ def test_does_not_shrink_tuple_length():
 
 
 def test_or_errors_when_given_non_strategy():
-    bools = ss.StrategyTable().strategy((bool,))
+    bools = strategy((bool,))
     with pytest.raises(ValueError):
         bools | 'foo'
 
@@ -215,7 +202,7 @@ def test_directly_joining_one_strategy_also_fails():
 
 
 def test_list_strategy_reprs_as_list():
-    x = ss.StrategyTable.default().strategy([int])
+    x = strategy([int])
     assert repr(x) == 'ListStrategy([int])'
 
 
@@ -223,13 +210,12 @@ SomeNamedTuple = namedtuple('SomeNamedTuple', ('a', 'b'))
 
 
 def test_strategy_for_integer_range_produces_only_integers_in_that_range():
-    table = ss.StrategyTable()
-    just_one_integer = table.strategy(descriptors.IntegerRange(1, 1))
+    just_one_integer = strategy(descriptors.IntegerRange(1, 1))
     for _ in hrange(100):
         pv = just_one_integer.parameter.draw(random)
         x = just_one_integer.produce_template(random, pv)
         assert x == 1
-    some_integers = table.strategy(descriptors.IntegerRange(1, 10))
+    some_integers = strategy(descriptors.IntegerRange(1, 10))
     for _ in hrange(100):
         pv = some_integers.parameter.draw(random)
         x = some_integers.produce_template(random, pv)
@@ -237,8 +223,7 @@ def test_strategy_for_integer_range_produces_only_integers_in_that_range():
 
 
 def test_strategy_for_integer_range_can_produce_end_points():
-    table = ss.StrategyTable()
-    some_integers = table.strategy(descriptors.IntegerRange(1, 10))
+    some_integers = strategy(descriptors.IntegerRange(1, 10))
     found = set()
     for _ in hrange(1000):  # pragma: no branch
         pv = some_integers.parameter.draw(random)
@@ -260,8 +245,7 @@ def last(xs):
 
 
 def test_simplify_integer_range_can_push_to_near_boundaries():
-    table = ss.StrategyTable()
-    some_integers = table.strategy(descriptors.IntegerRange(1, 10))
+    some_integers = strategy(descriptors.IntegerRange(1, 10))
 
     predicates = [
         (lambda x: True, 1),

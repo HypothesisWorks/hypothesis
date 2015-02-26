@@ -17,11 +17,9 @@ import hypothesis.params as params
 import hypothesis.internal.distributions as dist
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.fixers import nice_string
-from hypothesis.searchstrategy.strategy import SearchStrategy, \
+from hypothesis.searchstrategy.strategies import SearchStrategy, \
     MappedSearchStrategy, check_type, check_length, check_data_type, \
-    one_of_strategies
-
-from .table import strategy_for_instances
+    one_of_strategies, strategy
 
 
 class mix_generators(object):
@@ -359,32 +357,32 @@ class FixedKeysDictStrategy(MappedSearchStrategy):
         return dict(zip(self.keys, value))
 
 
-@strategy_for_instances(set)
-def define_set_strategy(strategies, descriptor):
-    return SetStrategy(map(strategies.strategy, descriptor))
+@strategy.extend(set)
+def define_set_strategy(descriptor):
+    return SetStrategy(map(strategy, descriptor))
 
 
-@strategy_for_instances(frozenset)
-def define_frozen_set_strategy(strategies, descriptor):
-    return FrozenSetStrategy(strategies.strategy(set(descriptor)))
+@strategy.extend(frozenset)
+def define_frozen_set_strategy(descriptor):
+    return FrozenSetStrategy(strategy(set(descriptor)))
 
 
-@strategy_for_instances(list)
-def define_list_strategy(strategies, descriptor):
-    return ListStrategy(list(map(strategies.strategy, descriptor)))
+@strategy.extend(list)
+def define_list_strategy(descriptor):
+    return ListStrategy(list(map(strategy, descriptor)))
 
 
-@strategy_for_instances(tuple)
-def define_tuple_strategy(strategies, descriptor):
+@strategy.extend(tuple)
+def define_tuple_strategy(descriptor):
     return TupleStrategy(
-        tuple(map(strategies.strategy, descriptor)),
+        tuple(map(strategy, descriptor)),
         tuple_type=type(descriptor)
     )
 
 
-@strategy_for_instances(dict)
-def define_dict_strategy(strategies, descriptor):
+@strategy.extend(dict)
+def define_dict_strategy(descriptor):
     strategy_dict = {}
     for k, v in descriptor.items():
-        strategy_dict[k] = strategies.strategy(v)
+        strategy_dict[k] = strategy(v)
     return FixedKeysDictStrategy(strategy_dict)

@@ -15,10 +15,22 @@ from __future__ import division, print_function, absolute_import, \
 
 import hypothesis.params as params
 import hypothesis.internal.distributions as dist
-from hypothesis.descriptors import one_of
+from hypothesis.descriptors import one_of, OneOf
 from hypothesis.internal.compat import integer_types
 from hypothesis.internal.fixers import nice_string
 from hypothesis.internal.tracker import Tracker
+from hypothesis.extmethod import ExtMethod
+
+
+class StrategyExtMethod(ExtMethod):
+    def __call__(self, *args, **kwargs):
+        result = super(StrategyExtMethod, self).__call__(*args, **kwargs)
+        assert isinstance(result, SearchStrategy)
+        return result
+
+
+strategy = StrategyExtMethod()
+
 
 Infinity = float('inf')
 
@@ -69,6 +81,11 @@ def one_of_strategies(xs):
     if len(xs) == 1:
         return xs[0]
     return OneOfStrategy(xs)
+
+
+@strategy.extend(OneOf)
+def strategy_for_one_of(oneof):
+    return one_of_strategies(map(strategy, oneof.elements))
 
 
 class SearchStrategy(object):
@@ -214,6 +231,11 @@ class SearchStrategy(object):
         if not isinstance(other, SearchStrategy):
             raise ValueError('Cannot | a SearchStrategy with %r' % (other,))
         return one_of_strategies((self, other))
+
+
+@strategy.extend(SearchStrategy)
+def strategy_strategy(strategy):
+    return strategy
 
 
 class OneOfStrategy(SearchStrategy):

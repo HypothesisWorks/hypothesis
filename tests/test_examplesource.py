@@ -18,7 +18,7 @@ import random
 import pytest
 from hypothesis.examplesource import ParameterSource
 from hypothesis.internal.compat import hrange
-from hypothesis.searchstrategy.table import StrategyTable
+from hypothesis.searchstrategy import strategy
 
 N_EXAMPLES = 1000
 
@@ -26,7 +26,7 @@ N_EXAMPLES = 1000
 def test_negative_is_not_too_far_off_mean():
     source = ParameterSource(
         random=random.Random(),
-        strategy=StrategyTable.default().strategy(int),
+        strategy=strategy(int),
     )
     positive = 0
     i = 0
@@ -42,7 +42,7 @@ def test_negative_is_not_too_far_off_mean():
 def test_marking_negative_avoids_similar_examples():
     source = ParameterSource(
         random=random.Random(),
-        strategy=StrategyTable.default().strategy(int),
+        strategy=strategy(int),
     )
     positive = 0
     i = 0
@@ -63,7 +63,7 @@ def test_can_grow_the_set_of_available_parameters_if_doing_badly():
     for _ in hrange(runs):
         source = ParameterSource(
             random=random.Random(),
-            strategy=StrategyTable.default().strategy(int),
+            strategy=strategy(int),
             min_parameters=1,
         )
         i = 0
@@ -82,14 +82,14 @@ def test_example_source_needs_random():
     with pytest.raises(ValueError):
         ParameterSource(
             random=None,
-            strategy=StrategyTable.default().strategy(int),
+            strategy=strategy(int),
         )
 
 
 def test_errors_if_you_mark_bad_twice():
     source = ParameterSource(
         random=random.Random(),
-        strategy=StrategyTable.default().strategy(int),
+        strategy=strategy(int),
     )
     next(iter(source))
     source.mark_bad()
@@ -100,7 +100,7 @@ def test_errors_if_you_mark_bad_twice():
 def test_errors_if_you_mark_bad_before_fetching():
     source = ParameterSource(
         random=random.Random(),
-        strategy=StrategyTable.default().strategy(int),
+        strategy=strategy(int),
     )
     with pytest.raises(ValueError):
         source.mark_bad()
@@ -109,7 +109,7 @@ def test_errors_if_you_mark_bad_before_fetching():
 def test_tries_each_parameter_at_least_min_index_times():
     source = ParameterSource(
         random=random.Random(),
-        strategy=StrategyTable.default().strategy(int),
+        strategy=strategy(int),
         min_tries=5
     )
     i = 0

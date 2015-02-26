@@ -16,7 +16,6 @@ from __future__ import division, print_function, absolute_import, \
 import pytest
 import hypothesis.settings as hs
 from hypothesis import Verifier, given
-from tests.common import small_table
 from hypothesis.database import ExampleDatabase
 from tests.common.descriptors import DescriptorWithValue
 from hypothesis.internal.compat import text_type, integer_types
@@ -93,7 +92,6 @@ backend_format_pairs = (
 
 
 @given(DescriptorWithValue, verifier=Verifier(
-    strategy_table=small_table,
     settings=hs.Settings(max_examples=500),
 ))
 def test_can_round_trip_a_single_value_through_the_database(dav):

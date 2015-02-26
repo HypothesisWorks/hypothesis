@@ -17,9 +17,8 @@ from collections import namedtuple
 
 import hypothesis.params as params
 from hypothesis.searchstrategy import BadData, SearchStrategy, \
-    check_data_type
+    check_data_type, strategy
 from hypothesis.internal.compat import hrange
-from hypothesis.searchstrategy.table import StrategyTable
 from hypothesis.internal.distributions import geometric
 
 NAryTree = namedtuple('NAryTree', (
@@ -40,12 +39,12 @@ Branch = namedtuple('Branch', (
 
 class NAryTreeStrategy(SearchStrategy):
 
-    def __init__(self, strategy_table, descriptor):
+    def __init__(self, descriptor):
         self.descriptor = descriptor
-        self.leaf_strategy = strategy_table.strategy(descriptor.leaf_values)
-        self.branch_key_strategy = strategy_table.strategy(
+        self.leaf_strategy = strategy(descriptor.leaf_values)
+        self.branch_key_strategy = strategy(
             descriptor.branch_keys)
-        self.branch_label_strategy = strategy_table.strategy(
+        self.branch_label_strategy = strategy(
             descriptor.branch_labels)
         self.parameter = params.CompositeParameter(
             leaf_parameter=self.leaf_strategy.parameter,
@@ -55,7 +54,7 @@ class NAryTreeStrategy(SearchStrategy):
             branch_factor=params.UniformFloatParameter(0.6, 0.99),
         )
 
-        self.child_strategy = strategy_table.strategy(
+        self.child_strategy = strategy(
             [(self.branch_key_strategy, self)]
         )
 
@@ -136,6 +135,6 @@ class NAryTreeStrategy(SearchStrategy):
                     for k, v in data[1]))
 
 
-StrategyTable.default().define_specification_for_instances(
-    NAryTree, NAryTreeStrategy
-)
+@strategy.extend(NAryTree)
+def nary_tree_strategy(descriptor):
+    return NAryTreeStrategy(descriptor)

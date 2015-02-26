@@ -23,11 +23,10 @@ from hypothesis import Verifier, Exhausted, given
 from hypothesis.database import ExampleDatabase
 from hypothesis.settings import Settings
 from hypothesis.descriptors import one_of
-from hypothesis.searchstrategy import SearchStrategy
+from hypothesis.searchstrategy import SearchStrategy, strategy
 from hypothesis.internal.compat import text_type, integer_types
 from hypothesis.internal.fixers import nice_string, actually_equal
 from hypothesis.database.backend import SQLiteBackend
-from hypothesis.searchstrategy.table import StrategyTable
 from hypothesis.internal.hashitanyway import hash_everything
 
 TemplatesFor = namedtuple('TemplatesFor', ('base',))
@@ -59,17 +58,15 @@ class TemplatesStrategy(SearchStrategy):
         return self.base_strategy.simplify(template)
 
 
-StrategyTable.default().define_specification_for_instances(
-    TemplatesFor,
-    lambda s, d: TemplatesStrategy(s.specification_for(d.base))
-)
+@strategy.extend(TemplatesFor)
+def templates_for(descriptor):
+    return TemplatesStrategy(strategy(descriptor.base))
 
 
 def descriptor_test_suite(
-    descriptor, strategy_table=None,
+    descriptor,
     max_examples=100, random=None
 ):
-    strategy_table = strategy_table or StrategyTable()
     settings = Settings(
         database=None,
         max_examples=max_examples,
@@ -77,12 +74,11 @@ def descriptor_test_suite(
     random = random or Random()
     verifier = Verifier(
         settings=settings,
-        strategy_table=strategy_table,
         random=random
     )
-    strategy = strategy_table.strategy(descriptor)
+    strat = strategy(descriptor)
     mixed = one_of((int, (bool, str), descriptor))
-    mixed_strategy = strategy_table.strategy(mixed)
+    mixed_strategy = strategy(mixed)
     descriptor_test = given(
         TemplatesFor(descriptor), verifier=verifier
     )
@@ -101,8 +97,8 @@ def descriptor_test_suite(
         @descriptor_test
         def test_two_reifications_are_equal(self, template):
             assert actually_equal(
-                strategy.reify(template),
-                strategy.reify(template),
+                strat.reify(template),
+                strat.reify(template),
             )
 
         @given(TemplatesFor(mixed), verifier=verifier)
@@ -118,7 +114,7 @@ def descriptor_test_suite(
                     not isinstance(v, list) or
                     all(is_basic(w) for w in v)
                 )
-            supposedly_basic = strategy.to_basic(value)
+            supposedly_basic = strat.to_basic(value)
             self.assertTrue(is_basic(supposedly_basic), repr(supposedly_basic))
 
         def test_produces_two_distinct_hashes(self):
@@ -133,7 +129,6 @@ def descriptor_test_suite(
         def test_can_round_trip_through_the_database(self, template):
             empty_db = ExampleDatabase(
                 backend=SQLiteBackend(':memory:'),
-                strategies=strategy_table,
             )
             storage = empty_db.storage_for(descriptor)
             storage.save(template)
@@ -143,28 +138,24 @@ def descriptor_test_suite(
 
         @descriptor_test
         def test_can_minimize_to_empty(self, template):
-            simplest = list(strategy.simplify_such_that(
+            simplest = list(strat.simplify_such_that(
                 template, lambda x: True
             ))[-1]
-            assert list(strategy.simplify(simplest)) == []
+            assert list(strat.simplify(simplest)) == []
 
         @given(Random, verifier=verifier)
         def test_can_perform_all_basic_operations(self, random):
-            parameter = strategy.parameter.draw(random)
-            template = strategy.produce_template(random, parameter)
-            minimal_template = list(strategy.simplify_such_that(
+            parameter = strat.parameter.draw(random)
+            template = strat.produce_template(random, parameter)
+            minimal_template = list(strat.simplify_such_that(
                 template,
                 lambda x: True
             ))[-1]
-            strategy.reify(minimal_template)
+            strat.reify(minimal_template)
             assert actually_equal(
                 minimal_template,
-                strategy.from_basic(strategy.to_basic(minimal_template))
+                strat.from_basic(strat.to_basic(minimal_template))
             )
-            list(strategy.decompose(minimal_template))
-
-#       @descriptor_test
-#       def test_can_decompose(self, template):
-#           list(strategy.decompose(template))
+            list(strat.decompose(minimal_template))
 
     return ValidationSuite

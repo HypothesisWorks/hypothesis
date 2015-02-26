@@ -14,13 +14,13 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 from hypothesis import Verifier
-from hypothesis.searchstrategy.table import StrategyTable
+from hypothesis.searchstrategy import strategy
 from hypothesis.searchstrategy.narytree import Leaf, Branch, NAryTree
 
 
 def smallest_tree(predicate):
     d = NAryTree(int, int, int)
-    strat = StrategyTable.default().strategy(d)
+    strat = strategy(d)
     v = Verifier()
     return strat.reify(v.falsify(lambda t: not predicate(t), d)[0])
 

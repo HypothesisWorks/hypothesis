@@ -22,7 +22,7 @@ from hypothesis.extra.datetime import naive_datetime, \
     timezone_aware_datetime
 from hypothesis.descriptortests import descriptor_test_suite
 from hypothesis.internal.compat import hrange
-from hypothesis.searchstrategy.table import StrategyTable
+from hypothesis.searchstrategy import strategy
 
 hs.default.max_examples = 1000
 
@@ -112,7 +112,7 @@ def test_can_generate_utc():
 
 
 def test_can_simplify_leap_years():
-    s = StrategyTable().strategy(datetime)
+    s = strategy(datetime)
     d = datetime(
         year=2012, month=2, day=29
     )

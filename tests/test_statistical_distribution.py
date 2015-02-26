@@ -31,7 +31,7 @@ import pytest
 import hypothesis.descriptors as descriptors
 import hypothesis.internal.reflection as reflection
 from hypothesis.internal.compat import hrange
-from hypothesis.searchstrategy.table import StrategyTable
+from hypothesis.searchstrategy import strategy
 
 # We run each individual test at a very high level of significance to the
 # point where it will basically only fail if it's really really wildly wrong.
@@ -147,10 +147,10 @@ def define_test(descriptor, q, predicate, condition=None):
 
         count = 0
         successful_runs = 0
-        strategy = StrategyTable.default().strategy(descriptor)
+        s = strategy(descriptor)
         for _ in hrange(MAX_RUNS):
-            pv = strategy.parameter.draw(random)
-            x = strategy.reify(strategy.produce_template(random, pv))
+            pv = s.parameter.draw(random)
+            x = s.reify(s.produce_template(random, pv))
             if not _condition(x):
                 continue
             successful_runs += 1

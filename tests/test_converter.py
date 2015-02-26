@@ -19,8 +19,8 @@ import pytest
 from hypothesis.descriptors import Just, OneOf, SampledFrom
 from hypothesis.searchstrategy import BadData
 from hypothesis.internal.compat import text_type, binary_type
-from hypothesis.searchstrategy.table import StrategyTable
 from hypothesis.searchstrategy.narytree import NAryTree
+from hypothesis.searchstrategy import strategy
 
 
 @pytest.mark.parametrize(('descriptor', 'data'), [
@@ -50,6 +50,6 @@ from hypothesis.searchstrategy.narytree import NAryTree
     (NAryTree(int, int, int), [1, 2, 3, 4, 5]),
 ])
 def test_simple_data_validation(descriptor, data):
-    converter = StrategyTable.default().specification_for(descriptor)
+    converter = strategy(descriptor)
     with pytest.raises(BadData):
         converter.from_basic(data)
