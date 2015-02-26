@@ -91,8 +91,7 @@ Discussion and help
 -------------------
 
 If you use or are interested in using Hypothesis, we have `a mailing list <https://groups.google.com/forum/#!forum/hypothesis-users>`_.
-We also have the IRC channel #hypothesis on freenode, and a `gitter <https://gitter.im/DRMacIver/hypothesis?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge>`_ channel (The IRC channel is preferred
-in that it has more of a community, but if you just want a place to ask me questions gitter is fine!).
+We also have the IRC channel #hypothesis on freenode.
 
 Feel free to use these to ask for help, provide feedback, or discuss anything remotely
 Hypothesis related at all. When you do, please abide by the `Hacker School social rules <https://www.hackerschool.com/manual#sub-sec-social-rules>`_.
