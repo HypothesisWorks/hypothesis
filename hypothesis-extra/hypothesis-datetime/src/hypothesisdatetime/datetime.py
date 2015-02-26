@@ -20,9 +20,8 @@ import pytz
 import hypothesis.params as params
 from hypothesis.searchstrategy import SearchStrategy, check_data_type
 from hypothesis.internal.compat import hrange, text_type
-from hypothesis.internal.utils.fixers import equal
-from hypothesis.internal.utils.hashitanyway import normal_hash, \
-    hash_everything
+from hypothesis.internal.fixers import equal
+from hypothesis.internal.hashitanyway import normal_hash, hash_everything
 
 DatetimeSpec = namedtuple('DatetimeSpec', ('naive_options',))
 

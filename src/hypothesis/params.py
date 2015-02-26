@@ -23,7 +23,7 @@ import inspect
 import collections
 from abc import abstractmethod
 
-import hypothesis.internal.utils.distributions as dist
+import hypothesis.internal.distributions as dist
 
 
 class Parameter(object):

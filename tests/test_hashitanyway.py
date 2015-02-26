@@ -23,7 +23,7 @@ from hypothesis.types import RandomWithSeed
 from hypothesis.settings import Settings
 from tests.common.mutate import mutate_slightly, mutate_maliciously
 from tests.common.descriptors import Descriptor
-from hypothesis.internal.utils.hashitanyway import HashItAnyway
+from hypothesis.internal.hashitanyway import HashItAnyway
 
 
 def hia(x):

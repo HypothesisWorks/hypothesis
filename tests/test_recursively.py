@@ -30,8 +30,8 @@ from tests.common.descriptors import Descriptor, DescriptorWithValue, \
 from hypothesis.testdecorators import given
 from hypothesis.descriptortests import TemplatesFor
 from hypothesis.internal.compat import text_type, binary_type
+from hypothesis.internal.fixers import nice_string, actually_equal
 from hypothesis.searchstrategy.table import StrategyTable
-from hypothesis.internal.utils.fixers import nice_string, actually_equal
 
 # Placate flake8
 [OneOf, just, Just, RandomWithSeed, SampledFrom]

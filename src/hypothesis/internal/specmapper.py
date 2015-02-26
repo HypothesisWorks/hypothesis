@@ -16,7 +16,7 @@ from __future__ import division, print_function, absolute_import, \
 from functools import wraps
 
 from hypothesis.internal.classmap import ClassMap
-from hypothesis.internal.utils.hashitanyway import HashItAnyway
+from hypothesis.internal.hashitanyway import HashItAnyway
 
 
 class SpecificationMapper(object):

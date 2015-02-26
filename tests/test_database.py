@@ -20,9 +20,9 @@ from tests.common import small_table
 from hypothesis.database import ExampleDatabase
 from tests.common.descriptors import DescriptorWithValue
 from hypothesis.internal.compat import text_type, integer_types
+from hypothesis.internal.fixers import actually_equal
 from hypothesis.database.backend import Backend, SQLiteBackend
 from hypothesis.database.formats import Format, JSONFormat
-from hypothesis.internal.utils.fixers import actually_equal
 
 
 def test_deduplicates():

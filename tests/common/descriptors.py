@@ -21,8 +21,8 @@ from hypothesis.descriptors import one_of, sampled_from
 from hypothesis.searchstrategy import SearchStrategy, \
     MappedSearchStrategy, check_length, check_data_type
 from hypothesis.internal.compat import text_type, binary_type
+from hypothesis.internal.fixers import nice_string
 from hypothesis.searchstrategy.table import StrategyTable
-from hypothesis.internal.utils.fixers import nice_string
 from hypothesis.searchstrategy.narytree import Leaf, NAryTree
 
 primitive_types = [

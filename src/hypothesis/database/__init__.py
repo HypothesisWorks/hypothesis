@@ -10,8 +10,8 @@
 
 # END HEADER
 
-from hypothesis.internal.utils.fixers import nice_string
-from hypothesis.internal.utils.hashitanyway import HashItAnyway
+from hypothesis.internal.fixers import nice_string
+from hypothesis.internal.hashitanyway import HashItAnyway
 from hypothesis.internal.tracker import Tracker
 from hypothesis.searchstrategy import BadData
 from hypothesis.searchstrategy.table import StrategyTable

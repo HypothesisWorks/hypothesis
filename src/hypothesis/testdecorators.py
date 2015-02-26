@@ -21,7 +21,7 @@ from hypothesis.verifier import Flaky, Verifier, Unfalsifiable, \
     UnsatisfiedAssumption
 from hypothesis.reporting import current_reporter
 from hypothesis.descriptors import just
-from hypothesis.internal.utils.reflection import arg_string, copy_argspec
+from hypothesis.internal.reflection import arg_string, copy_argspec
 
 HypothesisProvided = namedtuple('HypothesisProvided', ('value,'))
 

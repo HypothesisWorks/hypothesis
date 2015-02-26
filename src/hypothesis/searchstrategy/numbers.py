@@ -20,7 +20,7 @@ from random import Random
 
 import hypothesis.params as params
 import hypothesis.descriptors as descriptors
-import hypothesis.internal.utils.distributions as dist
+import hypothesis.internal.distributions as dist
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.searchstrategy.misc import SampledFromStrategy
 from hypothesis.searchstrategy.strategy import BadData, SearchStrategy, \

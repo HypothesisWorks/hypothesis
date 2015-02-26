@@ -29,7 +29,7 @@ import random
 
 import pytest
 import hypothesis.descriptors as descriptors
-import hypothesis.internal.utils.reflection as reflection
+import hypothesis.internal.reflection as reflection
 from hypothesis.internal.compat import hrange
 from hypothesis.searchstrategy.table import StrategyTable
 

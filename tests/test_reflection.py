@@ -18,8 +18,8 @@ import inspect
 from copy import deepcopy
 
 import pytest
-from hypothesis.internal.utils.reflection import arg_string, \
-    copy_argspec, unbind_method, function_digest, source_exec_as_module, \
+from hypothesis.internal.reflection import arg_string, copy_argspec, \
+    unbind_method, function_digest, source_exec_as_module, \
     convert_keyword_arguments, convert_positional_arguments, \
     get_pretty_function_description
 

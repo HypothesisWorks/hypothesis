@@ -21,8 +21,7 @@ from tests.common import small_table, small_verifier
 from tests.common.mutate import mutate_slightly
 from tests.common.descriptors import Descriptor
 from hypothesis.internal.compat import hrange, text_type
-from hypothesis.internal.utils.fixers import IdKey, real_index, \
-    actually_equal
+from hypothesis.internal.fixers import IdKey, real_index, actually_equal
 
 
 def test_lists_of_same_elements_are_equal():

@@ -20,7 +20,7 @@ from hypothesis.searchstrategy import BadData, SearchStrategy, \
     check_data_type
 from hypothesis.internal.compat import hrange
 from hypothesis.searchstrategy.table import StrategyTable
-from hypothesis.internal.utils.distributions import geometric
+from hypothesis.internal.distributions import geometric
 
 NAryTree = namedtuple('NAryTree', (
     'branch_labels',

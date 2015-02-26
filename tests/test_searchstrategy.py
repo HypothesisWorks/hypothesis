@@ -23,8 +23,8 @@ import hypothesis.searchstrategy as strat
 import hypothesis.searchstrategy.table as ss
 from hypothesis.types import RandomWithSeed
 from hypothesis.internal.compat import hrange, text_type
+from hypothesis.internal.fixers import nice_string, actually_equal
 from hypothesis.internal.tracker import Tracker
-from hypothesis.internal.utils.fixers import nice_string, actually_equal
 from hypothesis.searchstrategy.numbers import BoundedIntStrategy, \
     FixedBoundedFloatStrategy, RandomGeometricIntStrategy
 from hypothesis.searchstrategy.strategy import OneOfStrategy, \

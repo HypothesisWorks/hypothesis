@@ -20,7 +20,7 @@ import unicodedata
 
 import hypothesis.params as params
 import hypothesis.descriptors as descriptors
-import hypothesis.internal.utils.distributions as dist
+import hypothesis.internal.distributions as dist
 from hypothesis.internal.compat import hrange, hunichr, text_type, \
     binary_type
 from hypothesis.searchstrategy.strategy import BadData, SearchStrategy, \

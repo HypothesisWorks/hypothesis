@@ -14,11 +14,11 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import hypothesis.params as params
-import hypothesis.internal.utils.distributions as dist
+import hypothesis.internal.distributions as dist
 from hypothesis.descriptors import one_of
 from hypothesis.internal.compat import integer_types
+from hypothesis.internal.fixers import nice_string
 from hypothesis.internal.tracker import Tracker
-from hypothesis.internal.utils.fixers import nice_string
 
 Infinity = float('inf')
 

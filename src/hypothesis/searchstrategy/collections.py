@@ -14,9 +14,9 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import hypothesis.params as params
-import hypothesis.internal.utils.distributions as dist
+import hypothesis.internal.distributions as dist
 from hypothesis.internal.compat import hrange
-from hypothesis.internal.utils.fixers import nice_string
+from hypothesis.internal.fixers import nice_string
 from hypothesis.searchstrategy.strategy import SearchStrategy, \
     MappedSearchStrategy, check_type, check_length, check_data_type, \
     one_of_strategies

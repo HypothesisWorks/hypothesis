@@ -17,10 +17,10 @@ from random import Random
 
 import hypothesis.params as params
 import hypothesis.descriptors as descriptors
-import hypothesis.internal.utils.distributions as dist
+import hypothesis.internal.distributions as dist
 from hypothesis.types import RandomWithSeed
 from hypothesis.internal.compat import integer_types
-from hypothesis.internal.utils.fixers import nice_string
+from hypothesis.internal.fixers import nice_string
 from hypothesis.searchstrategy.strategy import BadData, SearchStrategy, \
     check_type, check_data_type
 
