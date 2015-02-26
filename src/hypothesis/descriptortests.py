@@ -23,12 +23,12 @@ from hypothesis import Verifier, Exhausted, given
 from hypothesis.database import ExampleDatabase
 from hypothesis.settings import Settings
 from hypothesis.descriptors import one_of
-from hypothesis.strategytable import StrategyTable
 from hypothesis.searchstrategy import SearchStrategy
+from hypothesis.internal.compat import text_type, integer_types
 from hypothesis.database.backend import SQLiteBackend
+from hypothesis.searchstrategy.table import StrategyTable
 from hypothesis.internal.utils.fixers import nice_string, actually_equal
 from hypothesis.internal.utils.hashitanyway import hash_everything
-from hypothesis.internal.compat import integer_types, text_type
 
 TemplatesFor = namedtuple('TemplatesFor', ('base',))
 

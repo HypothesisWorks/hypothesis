@@ -20,8 +20,7 @@ for d in hypothesis-extra/hypothesis-*; do
     pip install pytest coverage
 
     pushd $d
-        pip install -r requirements.txt
-        python setup.py develop
+        python setup.py install
         rm -f .coverage
         if [ -e test_setup ]; then
             ./test_setup

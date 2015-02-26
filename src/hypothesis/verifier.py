@@ -23,8 +23,8 @@ from itertools import islice
 import hypothesis.settings as hs
 from hypothesis.extra import load_entry_points
 from hypothesis.examplesource import ParameterSource
-from hypothesis.strategytable import StrategyTable
 from hypothesis.internal.tracker import Tracker
+from hypothesis.searchstrategy.table import StrategyTable
 from hypothesis.internal.utils.reflection import function_digest, \
     get_pretty_function_description
 

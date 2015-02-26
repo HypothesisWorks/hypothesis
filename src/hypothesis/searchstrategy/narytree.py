@@ -16,10 +16,10 @@ from __future__ import division, print_function, absolute_import, \
 from collections import namedtuple
 
 import hypothesis.params as params
-from hypothesis.strategytable import StrategyTable
 from hypothesis.searchstrategy import BadData, SearchStrategy, \
     check_data_type
 from hypothesis.internal.compat import hrange
+from hypothesis.searchstrategy.table import StrategyTable
 from hypothesis.internal.utils.distributions import geometric
 
 NAryTree = namedtuple('NAryTree', (

@@ -16,9 +16,9 @@ from __future__ import division, print_function, absolute_import, \
 import pytest
 from hypothesis import Verifier, given
 from faker.providers import BaseProvider
-from hypothesis.strategytable import StrategyTable
 from hypothesis.descriptortests import descriptor_test_suite
 from hypothesis.extra.fakefactory import FakeFactory
+from hypothesis.searchstrategy.table import StrategyTable
 
 
 class KittenProvider(BaseProvider):

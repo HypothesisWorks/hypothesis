@@ -10,11 +10,11 @@
 
 # END HEADER
 
-from hypothesis.searchstrategy import nice_string
+from hypothesis.internal.utils.fixers import nice_string
 from hypothesis.internal.utils.hashitanyway import HashItAnyway
 from hypothesis.internal.tracker import Tracker
 from hypothesis.searchstrategy import BadData
-from hypothesis.strategytable import StrategyTable
+from hypothesis.searchstrategy.table import StrategyTable
 from hypothesis.database.formats import JSONFormat
 from hypothesis.database.backend import SQLiteBackend
 

@@ -23,15 +23,15 @@ import pytest
 import hypothesis.settings as hs
 from hypothesis import Verifier, Unfalsifiable, assume
 from tests.common import small_table
+from hypothesis.types import RandomWithSeed
 from hypothesis.descriptors import Just, OneOf, SampledFrom, just
-from hypothesis.strategytable import StrategyTable
 from tests.common.descriptors import Descriptor, DescriptorWithValue, \
     primitive_types
-from hypothesis.searchstrategy import RandomWithSeed, nice_string
 from hypothesis.testdecorators import given
 from hypothesis.descriptortests import TemplatesFor
 from hypothesis.internal.compat import text_type, binary_type
-from hypothesis.internal.utils.fixers import actually_equal
+from hypothesis.searchstrategy.table import StrategyTable
+from hypothesis.internal.utils.fixers import nice_string, actually_equal
 
 # Placate flake8
 [OneOf, just, Just, RandomWithSeed, SampledFrom]

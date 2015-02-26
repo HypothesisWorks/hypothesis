@@ -19,7 +19,7 @@ import unittest
 from collections import namedtuple
 
 import hypothesis.descriptors as descriptors
-from hypothesis.searchstrategy import nice_string
+from hypothesis.internal.utils.fixers import nice_string
 
 
 def test_nice_string_for_nasty_floats():

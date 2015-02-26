@@ -19,10 +19,10 @@ from collections import namedtuple
 
 from hypothesis import Verifier, given
 from tests.common import small_table
+from hypothesis.types import RandomWithSeed
 from hypothesis.settings import Settings
 from tests.common.mutate import mutate_slightly, mutate_maliciously
 from tests.common.descriptors import Descriptor
-from hypothesis.searchstrategy import RandomWithSeed
 from hypothesis.internal.utils.hashitanyway import HashItAnyway
 
 

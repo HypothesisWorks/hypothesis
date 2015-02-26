@@ -14,13 +14,13 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import hypothesis.descriptors as descriptors
-import hypothesis.strategytable as st
-import hypothesis.searchstrategy as strat
+import hypothesis.searchstrategy.table as st
+from hypothesis.searchstrategy.numbers import ExponentialFloatStrategy
 
 
 def test_strategies_can_be_used_in_descriptors():
     intxfloat = st.StrategyTable.default().strategy((
-        int, strat.ExponentialFloatStrategy()
+        int, ExponentialFloatStrategy()
     ))
     assert intxfloat.descriptor == (int, float)
 

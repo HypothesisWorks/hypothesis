@@ -16,11 +16,13 @@ from __future__ import division, print_function, absolute_import, \
 from random import Random
 from collections import namedtuple
 
+from hypothesis.types import RandomWithSeed
 from hypothesis.descriptors import one_of, sampled_from
-from hypothesis.strategytable import StrategyTable
-from hypothesis.searchstrategy import RandomWithSeed, SearchStrategy, \
-    MappedSearchStrategy, nice_string, check_length, check_data_type
+from hypothesis.searchstrategy import SearchStrategy, \
+    MappedSearchStrategy, check_length, check_data_type
 from hypothesis.internal.compat import text_type, binary_type
+from hypothesis.searchstrategy.table import StrategyTable
+from hypothesis.internal.utils.fixers import nice_string
 from hypothesis.searchstrategy.narytree import Leaf, NAryTree
 
 primitive_types = [

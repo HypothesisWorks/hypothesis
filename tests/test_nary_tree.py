@@ -14,7 +14,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 from hypothesis import Verifier
-from hypothesis.strategytable import StrategyTable
+from hypothesis.searchstrategy.table import StrategyTable
 from hypothesis.searchstrategy.narytree import Leaf, Branch, NAryTree
 
 

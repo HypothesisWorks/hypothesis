@@ -30,8 +30,8 @@ import random
 import pytest
 import hypothesis.descriptors as descriptors
 import hypothesis.internal.utils.reflection as reflection
-from hypothesis.strategytable import StrategyTable
 from hypothesis.internal.compat import hrange
+from hypothesis.searchstrategy.table import StrategyTable
 
 # We run each individual test at a very high level of significance to the
 # point where it will basically only fail if it's really really wildly wrong.

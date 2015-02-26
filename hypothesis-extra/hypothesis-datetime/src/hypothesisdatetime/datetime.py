@@ -18,8 +18,7 @@ from collections import namedtuple
 
 import pytz
 import hypothesis.params as params
-from hypothesis.searchstrategy import SearchStrategy, check_type, \
-    check_data_type
+from hypothesis.searchstrategy import SearchStrategy, check_data_type
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.internal.utils.fixers import equal
 from hypothesis.internal.utils.hashitanyway import normal_hash, \
@@ -161,7 +160,6 @@ class DatetimeStrategy(SearchStrategy):
                 pass
 
     def to_basic(self, value):
-        check_type(dt.datetime, value)
         return [
             value.year, value.month, value.day,
             value.hour, value.minute, value.second,

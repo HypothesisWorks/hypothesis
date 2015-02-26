@@ -12,8 +12,8 @@
 
 from hypothesis import Verifier
 import hypothesis.settings as hs
-from hypothesis.strategytable import StrategyTable
-import hypothesis.searchstrategy as strat
+from hypothesis.searchstrategy.table import StrategyTable
+from hypothesis.searchstrategy.collections import ListStrategy
 
 
 settings = hs.Settings(max_examples=100, timeout=4)
@@ -22,7 +22,7 @@ small_table = StrategyTable()
 small_table.define_specification_for_instances(
     list,
     lambda strategies, descriptor:
-        strat.ListStrategy(
+        ListStrategy(
             list(map(strategies.strategy, descriptor)),
             average_length=2.0
         )

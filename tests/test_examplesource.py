@@ -17,8 +17,8 @@ import random
 
 import pytest
 from hypothesis.examplesource import ParameterSource
-from hypothesis.strategytable import StrategyTable
 from hypothesis.internal.compat import hrange
+from hypothesis.searchstrategy.table import StrategyTable
 
 N_EXAMPLES = 1000
 

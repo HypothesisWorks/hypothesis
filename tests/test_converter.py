@@ -17,9 +17,9 @@ from random import Random
 
 import pytest
 from hypothesis.descriptors import Just, OneOf, SampledFrom
-from hypothesis.strategytable import StrategyTable
 from hypothesis.searchstrategy import BadData
 from hypothesis.internal.compat import text_type, binary_type
+from hypothesis.searchstrategy.table import StrategyTable
 from hypothesis.searchstrategy.narytree import NAryTree
 
 

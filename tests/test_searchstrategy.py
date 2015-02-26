@@ -19,11 +19,16 @@ from collections import namedtuple
 
 import pytest
 import hypothesis.descriptors as descriptors
-import hypothesis.strategytable as ss
 import hypothesis.searchstrategy as strat
+import hypothesis.searchstrategy.table as ss
+from hypothesis.types import RandomWithSeed
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.internal.tracker import Tracker
-from hypothesis.internal.utils.fixers import actually_equal
+from hypothesis.internal.utils.fixers import nice_string, actually_equal
+from hypothesis.searchstrategy.numbers import BoundedIntStrategy, \
+    FixedBoundedFloatStrategy, RandomGeometricIntStrategy
+from hypothesis.searchstrategy.strategy import OneOfStrategy, \
+    one_of_strategies
 
 
 def strategy(*args, **kwargs):
@@ -201,12 +206,12 @@ def test_or_errors_when_given_non_strategy():
 
 def test_joining_zero_strategies_fails():
     with pytest.raises(ValueError):
-        strat.one_of_strategies(())
+        one_of_strategies(())
 
 
 def test_directly_joining_one_strategy_also_fails():
     with pytest.raises(ValueError):
-        strat.OneOfStrategy([strat.RandomGeometricIntStrategy()])
+        OneOfStrategy([RandomGeometricIntStrategy()])
 
 
 def test_list_strategy_reprs_as_list():
@@ -276,12 +281,12 @@ def test_simplify_integer_range_can_push_to_near_boundaries():
 
 def test_rejects_invalid_ranges():
     with pytest.raises(ValueError):
-        strat.BoundedIntStrategy(10, 9)
+        BoundedIntStrategy(10, 9)
 
 
 def test_does_not_simplify_outside_range():
     n = 3
-    s = strat.BoundedIntStrategy(0, n)
+    s = BoundedIntStrategy(0, n)
     for t in s.simplify(n):
         assert 0 <= t <= n
 
@@ -297,19 +302,19 @@ def test_random_only_produces_special_random():
     st = strategy(random.Random)
     assert isinstance(
         st.reify(st.produce_template(random, st.parameter.draw(random))),
-        strat.RandomWithSeed
+        RandomWithSeed
     )
 
 
 def test_randoms_with_same_seed_are_equal():
-    s = strat.RandomWithSeed(123)
-    t = strat.RandomWithSeed(123)
+    s = RandomWithSeed(123)
+    t = RandomWithSeed(123)
     assert s == t
     s.random()
     assert s == t
     t.random()
     assert s == t
-    assert t != strat.RandomWithSeed(124)
+    assert t != RandomWithSeed(124)
 
 
 def test_just_strategy_uses_repr():
@@ -324,7 +329,7 @@ def test_just_strategy_uses_repr():
 
 
 def test_fixed_bounded_float_strategy_converts_its_args():
-    st = strat.FixedBoundedFloatStrategy(0, 1)
+    st = FixedBoundedFloatStrategy(0, 1)
     for t in st.simplify(0.5):
         assert isinstance(t, float)
 
@@ -341,7 +346,7 @@ class AwkwardSet(set):
 def test_set_descriptor_representation_is_stable_for_order():
     x = AwkwardSet(list(hrange(100)))
     assert repr(x) != repr(x)
-    assert strat.nice_string(x) == strat.nice_string(x)
+    assert nice_string(x) == nice_string(x)
 
 
 class AwkwardDict(dict):
@@ -355,7 +360,7 @@ class AwkwardDict(dict):
 
 def test_dict_descriptor_representation_is_stable_for_order():
     x = AwkwardDict({i: i for i in hrange(100)})
-    assert strat.nice_string(x) == strat.nice_string(x)
+    assert nice_string(x) == nice_string(x)
 
 
 def test_example_augmented_strategy_decomposes_as_main():
