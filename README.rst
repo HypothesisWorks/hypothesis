@@ -2,6 +2,10 @@
  Hypothesis
 ================
 
+.. image:: https://badges.gitter.im/Join%20Chat.svg
+   :alt: Join the chat at https://gitter.im/DRMacIver/hypothesis
+   :target: https://gitter.im/DRMacIver/hypothesis?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+
 Hypothesis is a library for property based testing in Python. You write tests encoding some invariant
 that you believe should always be true for a variety of inputs and then Hypothesis tries to prove you wrong.
 
