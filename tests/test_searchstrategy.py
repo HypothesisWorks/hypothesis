@@ -157,9 +157,9 @@ class XStrategy(strat.MappedSearchStrategy):
 
 
 @strategy.extend(X)
-def define_x_strategy(descriptor):
+def define_x_strategy(descriptor, settings):
     return XStrategy(
-        strategy=strategy(descriptor.x),
+        strategy=strategy(descriptor.x, settings),
         descriptor=descriptor,
     )
 

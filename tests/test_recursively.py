@@ -161,7 +161,7 @@ def tree_contains_match(t, f):
 @given(Descriptor, Random, verifier=verifier)
 def test_copies_all_its_values_correctly(desc, random):
     strat = strategy(desc)
-    value = strat.produce_template(random, strategy.parameter.draw(random))
+    value = strat.produce_template(random, strat.parameter.draw(random))
     assert actually_equal(strat.reify(value), strat.reify(value))
 
 
@@ -191,14 +191,14 @@ def test_can_perform_all_basic_operations(descriptor, random):
         template,
         strat.from_basic(strat.to_basic(template))
     )
-    minimal_template = list(strategy.simplify_such_that(
+    minimal_template = list(strat.simplify_such_that(
         template,
         lambda x: True
     ))[-1]
-    strategy.reify(minimal_template)
+    strat.reify(minimal_template)
     assert actually_equal(
         minimal_template,
-        strategy.from_basic(strategy.to_basic(minimal_template))
+        strat.from_basic(strat.to_basic(minimal_template))
     )
 
 
