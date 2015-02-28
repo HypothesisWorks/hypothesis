@@ -149,7 +149,7 @@ def define_test(descriptor, q, predicate, condition=None):
         successful_runs = 0
         s = strategy(descriptor)
         for _ in hrange(MAX_RUNS):
-            pv = s.parameter.draw(random)
+            pv = s.draw_parameter(random)
             x = s.reify(s.produce_template(BuildContext(random), pv))
             if not _condition(x):
                 continue

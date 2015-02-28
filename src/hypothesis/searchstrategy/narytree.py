@@ -61,16 +61,16 @@ class NAryTreeStrategy(SearchStrategy):
     def produce_template(self, context, pv):
         n_children = geometric(context.random, pv.branch_factor)
         if not n_children:
-            return Leaf(self.leaf_strategy.produce_template(
+            return Leaf(self.leaf_strategy.draw_template(
                 context, pv.leaf_parameter
             ))
         else:
             children = tuple(
-                (self.branch_key_strategy.produce_template(
+                (self.branch_key_strategy.draw_template(
                     context, pv.branch_key_parameter),
-                 self.produce_template(context, pv))
+                 self.draw_template(context, pv))
                 for _ in hrange(n_children))
-            label = self.branch_label_strategy.produce_template(
+            label = self.branch_label_strategy.draw_template(
                 context, pv.branch_label_parameter
             )
             return Branch(

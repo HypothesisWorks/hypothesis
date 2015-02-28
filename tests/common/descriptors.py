@@ -115,7 +115,7 @@ class DescriptorWithValueStrategy(SearchStrategy):
             context, pv)
         descriptor = self.descriptor_strategy.reify(descriptor_template)
         strat = self.strategy(descriptor)
-        parameter = strat.parameter.draw(context.random)
+        parameter = strat.draw_parameter(context.random)
         template = strat.produce_template(context, parameter)
         new_random = self.random_strategy.draw_and_produce(context)
         return DescriptorWithValue(

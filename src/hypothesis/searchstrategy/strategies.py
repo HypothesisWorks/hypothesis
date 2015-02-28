@@ -18,7 +18,7 @@ from hypothesis.settings import Settings
 from hypothesis.extmethod import ExtMethod
 from hypothesis.descriptors import OneOf, one_of
 from hypothesis.internal.compat import integer_types
-from hypothesis.internal.fixers import nice_string
+from hypothesis.internal.fixers import nice_string, IdKey
 from hypothesis.internal.tracker import Tracker
 
 
@@ -26,6 +26,14 @@ class BuildContext(object):
 
     def __init__(self, random):
         self.random = random
+        self.data = {}
+
+    def examples_for(self, strategy):
+        key = IdKey(strategy)
+        return self.data.setdefault(key, [])
+
+    def add_example(self, strategy, example):
+        self.examples_for(strategy).append(example)
 
 
 class StrategyExtMethod(ExtMethod):
@@ -133,8 +141,24 @@ class SearchStrategy(object):
         pass
 
     def draw_and_produce(self, context):
-        return self.produce_template(
-            context, self.parameter.draw(context.random))
+        return self.draw_template(
+            context, self.draw_parameter(context.random))
+
+    def draw_parameter(self, random):
+        return (random.random(), self.parameter.draw(random))
+
+    def draw_template(self, context, parameter_values):
+        reuse_chance, parameter_value = parameter_values
+        existing = context.examples_for(self)
+        if existing and context.random.random() <= reuse_chance:
+            return context.random.choice(existing)
+        else:
+            template = self.produce_template(context, parameter_value)
+            context.add_example(self, template)
+            return template
+
+    def produce_parameter(self, random):
+        return None
 
     def produce_template(self, context, parameter_value):
         """Given a build context and a value drawn from self.parameter, produce
@@ -299,7 +323,7 @@ class OneOfStrategy(SearchStrategy):
 
         return (
             child,
-            self.element_strategies[child].produce_template(
+            self.element_strategies[child].draw_template(
                 context, pv.child_parameters[child]))
 
     def simplify(self, x):

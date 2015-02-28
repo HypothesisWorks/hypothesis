@@ -29,3 +29,32 @@ def geometric(random, p):
 
 def biased_coin(random, p):
     return random.random() <= p
+
+
+def non_empty_subset(random, elements, activation_chance=None):
+    elements = tuple(elements)
+    if not elements:
+        raise ValueError('Must have at least one element')
+    if len(elements) == 1:
+        return list(elements)
+    if activation_chance is None:
+        # TODO: This should have a more principled choice. It seems to be
+        # good in practice though.
+        # Note: The actual expected value is slightly higher because we're
+        # conditioning on the result being non-empty.
+        if len(elements) == 1:
+            desired_expected_value = 1.0
+        elif len(elements) <= 3:
+            desired_expected_value = 1.75
+        else:
+            desired_expected_value = 2.0
+        activation_chance = desired_expected_value / len(elements)
+
+        result = []
+        while not result:
+            result = [
+                x
+                for x in elements
+                if biased_coin(random, activation_chance)
+            ]
+        return result

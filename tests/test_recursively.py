@@ -162,7 +162,7 @@ def tree_contains_match(t, f):
 def test_copies_all_its_values_correctly(desc, random):
     strat = strategy(desc)
     value = strat.produce_template(
-        BuildContext(random), strat.parameter.draw(random))
+        BuildContext(random), strat.draw_parameter(random))
     assert actually_equal(strat.reify(value), strat.reify(value))
 
 
@@ -178,7 +178,7 @@ def test_can_minimize_descriptor_with_value(dav):
 @given(Descriptor, Random, verifier=verifier)
 def test_template_is_hashable(descriptor, random):
     strat = strategy(descriptor)
-    parameter = strat.parameter.draw(random)
+    parameter = strat.draw_parameter(random)
     template = strat.produce_template(BuildContext(random), parameter)
     hash(template)
 
@@ -186,7 +186,7 @@ def test_template_is_hashable(descriptor, random):
 @given(Descriptor, Random, verifier=verifier)
 def test_can_perform_all_basic_operations(descriptor, random):
     strat = strategy(descriptor)
-    parameter = strat.parameter.draw(random)
+    parameter = strat.draw_parameter(random)
     template = strat.produce_template(BuildContext(random), parameter)
     assert actually_equal(
         template,

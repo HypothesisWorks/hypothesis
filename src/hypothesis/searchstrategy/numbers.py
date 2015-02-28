@@ -205,7 +205,7 @@ class WrapperFloatStrategy(FloatStrategy):
 
     def produce_template(self, context, pv):
         return self.sub_strategy.reify(
-            self.sub_strategy.produce_template(context, pv))
+            self.sub_strategy.draw_template(context, pv))
 
 
 class JustIntFloats(FloatStrategy):
@@ -216,7 +216,7 @@ class JustIntFloats(FloatStrategy):
         self.parameter = self.int_strategy.parameter
 
     def produce_template(self, context, pv):
-        return float(self.int_strategy.produce_template(context, pv))
+        return float(self.int_strategy.draw_template(context, pv))
 
 
 def compose_float(sign, exponent, fraction):
@@ -337,7 +337,7 @@ class BoundedFloatStrategy(FloatStrategy):
         )
 
     def produce_template(self, context, pv):
-        return pv.left + self.inner_strategy.produce_template(
+        return pv.left + self.inner_strategy.draw_template(
             context, pv.spread
         ) * pv.length
 

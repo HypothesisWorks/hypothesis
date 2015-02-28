@@ -125,7 +125,7 @@ class Verifier(object):
         min_satisfying_examples = self.min_satisfying_examples
 
         parameter_source = ParameterSource(
-            random=build_context, strategy=search_strategy,
+            context=build_context, strategy=search_strategy,
             min_parameters=max(2, int(float(max_examples) / 10))
         )
         start_time = time.time()

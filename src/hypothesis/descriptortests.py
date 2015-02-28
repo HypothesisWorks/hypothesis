@@ -146,7 +146,7 @@ def descriptor_test_suite(
 
         @given(Random, verifier=verifier)
         def test_can_perform_all_basic_operations(self, random):
-            parameter = strat.parameter.draw(random)
+            parameter = strat.draw_parameter(random)
             template = strat.produce_template(BuildContext(random), parameter)
             minimal_template = list(strat.simplify_such_that(
                 template,

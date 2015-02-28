@@ -34,7 +34,7 @@ from hypothesis.searchstrategy.strategies import OneOfStrategy, \
 def test_string_strategy_produces_strings():
     strings = strategy(text_type)
     result = strings.produce_template(
-        BuildContext(random), strings.parameter.draw(random))
+        BuildContext(random), strings.draw_parameter(random))
     assert result is not None
 
 
@@ -102,7 +102,7 @@ def test_int_lists_no_duplicates_in_simplify():
 def test_just_works():
     s = strategy(descriptors.just('giving'))
     assert s.produce_template(
-        BuildContext(random), s.parameter.draw(random)) == 'giving'
+        BuildContext(random), s.draw_parameter(random)) == 'giving'
     simplifications = list(s.simplify_such_that('giving', lambda _: True))
     assert len(simplifications) == 1
     assert simplifications[0] == 'giving'
@@ -117,7 +117,7 @@ def test_named_tuples_always_produce_named_tuples():
     for i in hrange(100):
         assert isinstance(
             s.produce_template(
-                BuildContext(random), s.parameter.draw(random)), Litter)
+                BuildContext(random), s.draw_parameter(random)), Litter)
 
     for x in s.simplify(Litter(100, 100)):
         assert isinstance(x, Litter)
@@ -181,7 +181,7 @@ def test_float_strategy_does_not_overflow():
     s = strategy(float)
 
     for _ in hrange(100):
-        s.produce_template(BuildContext(random), s.parameter.draw(random))
+        s.produce_template(BuildContext(random), s.draw_parameter(random))
 
 
 def test_does_not_shrink_tuple_length():
@@ -215,12 +215,12 @@ SomeNamedTuple = namedtuple('SomeNamedTuple', ('a', 'b'))
 def test_strategy_for_integer_range_produces_only_integers_in_that_range():
     just_one_integer = strategy(descriptors.IntegerRange(1, 1))
     for _ in hrange(100):
-        pv = just_one_integer.parameter.draw(random)
+        pv = just_one_integer.draw_parameter(random)
         x = just_one_integer.produce_template(BuildContext(random), pv)
         assert x == 1
     some_integers = strategy(descriptors.IntegerRange(1, 10))
     for _ in hrange(100):
-        pv = some_integers.parameter.draw(random)
+        pv = some_integers.draw_parameter(random)
         x = some_integers.produce_template(BuildContext(random), pv)
         assert 1 <= x <= 10
 
@@ -229,7 +229,7 @@ def test_strategy_for_integer_range_can_produce_end_points():
     some_integers = strategy(descriptors.IntegerRange(1, 10))
     found = set()
     for _ in hrange(1000):  # pragma: no branch
-        pv = some_integers.parameter.draw(random)
+        pv = some_integers.draw_parameter(random)
         x = some_integers.produce_template(BuildContext(random), pv)
         found.add(x)
         if 1 in found and 10 in found:
@@ -290,7 +290,7 @@ def test_random_only_produces_special_random():
     st = strategy(random.Random)
     assert isinstance(
         st.reify(st.produce_template(
-            BuildContext(random), st.parameter.draw(random))),
+            BuildContext(random), st.draw_parameter(random))),
         RandomWithSeed
     )
 

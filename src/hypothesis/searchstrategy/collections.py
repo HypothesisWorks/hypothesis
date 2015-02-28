@@ -113,7 +113,7 @@ class TupleStrategy(SearchStrategy):
     def produce_template(self, context, pv):
         es = self.element_strategies
         return self.newtuple([
-            g.produce_template(context, v)
+            g.draw_template(context, v)
             for g, v in zip(es, pv)
         ])
 
@@ -199,7 +199,7 @@ class ListStrategy(SearchStrategy):
         result = []
         for _ in hrange(length):
             result.append(
-                self.element_strategy.produce_template(
+                self.element_strategy.draw_template(
                     context, pv.child_parameter))
         return tuple(result)
 
@@ -282,7 +282,7 @@ class SetStrategy(MappedSearchStrategy):
         while True:
             if dist.biased_coin(context.random, pv.stopping_chance):
                 break
-            result.add(self.element_strategy.produce_template(
+            result.add(self.element_strategy.draw_template(
                 context, pv.child_parameter
             ))
         return frozenset(result)
