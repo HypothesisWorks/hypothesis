@@ -104,19 +104,21 @@ class DescriptorWithValueStrategy(SearchStrategy):
         self.settings = settings
         descriptor_strategy = strategy(Descriptor, settings)
         self.descriptor_strategy = descriptor_strategy
-        self.parameter = descriptor_strategy.parameter
         self.random_strategy = strategy(Random, settings)
 
     def strategy(self, specifier):
         return strategy(specifier, self.settings)
 
+    def produce_parameter(self, random):
+        return self.descriptor_strategy.draw_parameter(random)
+
     def produce_template(self, context, pv):
-        descriptor_template = self.descriptor_strategy.produce_template(
+        descriptor_template = self.descriptor_strategy.draw_template(
             context, pv)
         descriptor = self.descriptor_strategy.reify(descriptor_template)
         strat = self.strategy(descriptor)
         parameter = strat.draw_parameter(context.random)
-        template = strat.produce_template(context, parameter)
+        template = strat.draw_template(context, parameter)
         new_random = self.random_strategy.draw_and_produce(context)
         return DescriptorWithValue(
             descriptor=descriptor_template,

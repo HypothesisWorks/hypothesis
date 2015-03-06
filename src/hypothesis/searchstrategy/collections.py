@@ -13,7 +13,6 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-import hypothesis.params as params
 import hypothesis.settings as hs
 import hypothesis.internal.distributions as dist
 from hypothesis.internal.compat import hrange
@@ -21,6 +20,7 @@ from hypothesis.internal.fixers import nice_string
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
     MappedSearchStrategy, strategy, check_type, check_length, \
     check_data_type, one_of_strategies
+from collections import namedtuple
 
 
 class mix_generators(object):
@@ -84,9 +84,6 @@ class TupleStrategy(SearchStrategy):
         self.tuple_type = tuple_type
         self.descriptor = self.newtuple([s.descriptor for s in strategies])
         self.element_strategies = strategies
-        self.parameter = params.CompositeParameter(
-            x.parameter for x in self.element_strategies
-        )
         self.size_lower_bound = 1
         self.size_upper_bound = 1
         for e in self.element_strategies:
@@ -109,6 +106,12 @@ class TupleStrategy(SearchStrategy):
             return tuple(xs)
         else:
             return self.tuple_type(*xs)
+
+    def produce_parameter(self, random):
+        return tuple(
+            e.draw_parameter(random)
+            for e in self.element_strategies
+        )
 
     def produce_template(self, context, pv):
         es = self.element_strategies
@@ -163,22 +166,21 @@ class ListStrategy(SearchStrategy):
 
     """
 
+    Parameter = namedtuple(
+        'Parameter', ('child_parameter', 'average_length')
+    )
+
     def __init__(self,
                  strategies, average_length=50.0):
         SearchStrategy.__init__(self)
 
+        self.average_length = average_length
         self.descriptor = [x.descriptor for x in strategies]
         if self.descriptor:
             self.element_strategy = one_of_strategies(strategies)
-            self.parameter = params.CompositeParameter(
-                average_length=params.ExponentialParameter(
-                    1.0 / average_length),
-                child_parameter=self.element_strategy.parameter,
-            )
         else:
             self.size_upper_bound = 1
             self.size_lower_bound = 1
-            self.parameter = params.CompositeParameter()
 
     def decompose(self, value):
         return [
@@ -191,6 +193,16 @@ class ListStrategy(SearchStrategy):
             return list(map(self.element_strategy.reify, value))
         else:
             return []
+
+    def produce_parameter(self, random):
+        if not self.descriptor:
+            return None
+        else:
+            return self.Parameter(
+                average_length=random.expovariate(
+                    1.0 / self.average_length),
+                child_parameter=self.element_strategy.draw_parameter(random),
+            )
 
     def produce_template(self, context, pv):
         if not self.descriptor:
@@ -244,6 +256,11 @@ class SetStrategy(MappedSearchStrategy):
     """A strategy for sets of values, defined in terms of a strategy for lists
     of values."""
 
+    Parameter = namedtuple(
+        'Parameter',
+        ('stopping_chance', 'child_parameter'),
+    )
+
     def __init__(self, strategies):
         strategies = list(strategies)
         strategies.sort(key=nice_string)
@@ -251,16 +268,11 @@ class SetStrategy(MappedSearchStrategy):
         self.descriptor = {x.descriptor for x in strategies}
         if self.descriptor:
             self.element_strategy = one_of_strategies(strategies)
-            self.parameter = params.CompositeParameter(
-                stopping_chance=params.UniformFloatParameter(0.01, 0.25),
-                child_parameter=self.element_strategy.parameter,
-            )
             self.size_lower_bound = (
                 2 ** self.element_strategy.size_lower_bound)
             self.size_upper_bound = (
                 2 ** self.element_strategy.size_upper_bound)
         else:
-            self.parameter = params.CompositeParameter()
             self.size_lower_bound = 1
             self.size_upper_bound = 1
 
@@ -274,6 +286,13 @@ class SetStrategy(MappedSearchStrategy):
         if not self.descriptor:
             return set()
         return set(map(self.element_strategy.reify, value))
+
+    def produce_parameter(self, random):
+        if self.descriptor:
+            return self.Parameter(
+                stopping_chance=dist.uniform_float(random, 0.01, 0.25),
+                child_parameter=self.element_strategy.draw_parameter(random),
+            )
 
     def produce_template(self, context, pv):
         if not self.descriptor:

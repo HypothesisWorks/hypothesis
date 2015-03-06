@@ -16,6 +16,10 @@ from __future__ import division, print_function, absolute_import, \
 import math
 
 
+def uniform_float(random, start, end):
+    return start + random.random() * (end - start)
+
+
 def geometric(random, p):
     """Generate a geometric integer in the range [0, infinity) with expected
     value.
@@ -50,11 +54,11 @@ def non_empty_subset(random, elements, activation_chance=None):
             desired_expected_value = 2.0
         activation_chance = desired_expected_value / len(elements)
 
-        result = []
-        while not result:
-            result = [
-                x
-                for x in elements
-                if biased_coin(random, activation_chance)
-            ]
-        return result
+    result = []
+    while not result:
+        result = [
+            x
+            for x in elements
+            if biased_coin(random, activation_chance)
+        ]
+    return result

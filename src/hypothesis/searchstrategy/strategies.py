@@ -13,13 +13,14 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-import hypothesis.params as params
 from hypothesis.settings import Settings
 from hypothesis.extmethod import ExtMethod
 from hypothesis.descriptors import OneOf, one_of
 from hypothesis.internal.compat import integer_types
 from hypothesis.internal.fixers import nice_string, IdKey
 from hypothesis.internal.tracker import Tracker
+from collections import namedtuple
+import hypothesis.internal.distributions as dist
 
 
 class BuildContext(object):
@@ -124,10 +125,6 @@ class SearchStrategy(object):
     # SearchStrategy can produce.
     descriptor = None
 
-    # This should be an object of type Parameter, values from which will be
-    # passed to produce to control the shape of the distribution.
-    parameter = None
-
     size_lower_bound = Infinity
     size_upper_bound = Infinity
 
@@ -145,7 +142,9 @@ class SearchStrategy(object):
             context, self.draw_parameter(context.random))
 
     def draw_parameter(self, random):
-        return (random.random(), self.parameter.draw(random))
+        return (
+            dist.uniform_float(random, 0, 0.5),
+            self.produce_parameter(random))
 
     def draw_template(self, context, parameter_values):
         reuse_chance, parameter_value = parameter_values
@@ -158,7 +157,8 @@ class SearchStrategy(object):
             return template
 
     def produce_parameter(self, random):
-        return None
+        raise NotImplementedError(  # pragma: no cover
+            '%s.produce_parameter()' % (self.__class__.__name__))
 
     def produce_template(self, context, parameter_value):
         """Given a build context and a value drawn from self.parameter, produce
@@ -282,6 +282,10 @@ class OneOfStrategy(SearchStrategy):
 
     """
 
+    Parameter = namedtuple(
+        'Parameter', ('enabled_children', 'child_parameters')
+    )
+
     def __init__(self,
                  strategies):
         SearchStrategy.__init__(self)
@@ -291,13 +295,6 @@ class OneOfStrategy(SearchStrategy):
         descriptor = one_of([s.descriptor for s in strategies])
         self.descriptor = descriptor
         self.element_strategies = list(strategies)
-        n = len(self.element_strategies)
-        self.parameter = params.CompositeParameter(
-            enabled_children=params.NonEmptySubset(range(n)),
-            child_parameters=params.CompositeParameter(
-                e.parameter for e in self.element_strategies
-            )
-        )
         self.size_lower_bound = 0
         self.size_upper_bound = 0
         for e in self.element_strategies:
@@ -315,11 +312,24 @@ class OneOfStrategy(SearchStrategy):
         for t in self.element_strategies[s].decompose(x):
             yield t
 
+    def produce_parameter(self, random):
+        indices = list(range(len(self.element_strategies)))
+        enabled = dist.non_empty_subset(
+            random,
+            indices,
+        )
+        return self.Parameter(
+            enabled_children=enabled,
+            child_parameters=[
+                self.element_strategies[i].draw_parameter(random)
+                if i in enabled else None
+                for i in indices
+            ]
+        )
+
     def produce_template(self, context, pv):
-        if len(pv.enabled_children) == 1:
-            child = pv.enabled_children[0]
-        else:
-            child = context.random.choice(pv.enabled_children)
+        assert isinstance(pv, self.Parameter), repr(pv)
+        child = context.random.choice(pv.enabled_children)
 
         return (
             child,
@@ -363,9 +373,14 @@ class MappedSearchStrategy(SearchStrategy):
         SearchStrategy.__init__(self)
         self.mapped_strategy = strategy
         self.descriptor = descriptor
-        self.parameter = self.mapped_strategy.parameter
         self.size_lower_bound = self.mapped_strategy.size_lower_bound
         self.size_upper_bound = self.mapped_strategy.size_upper_bound
+
+    def produce_parameter(self, random):
+        return self.mapped_strategy.produce_parameter(random)
+
+    def produce_template(self, context, pv):
+        return self.mapped_strategy.produce_template(context, pv)
 
     def pack(self, x):
         """Take a value produced by the underlying mapped_strategy and turn it
@@ -375,9 +390,6 @@ class MappedSearchStrategy(SearchStrategy):
 
     def decompose(self, value):
         return self.mapped_strategy.decompose(value)
-
-    def produce_template(self, context, pv):
-        return self.mapped_strategy.produce_template(context, pv)
 
     def reify(self, value):
         return self.pack(self.mapped_strategy.reify(value))

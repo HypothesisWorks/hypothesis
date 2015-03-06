@@ -39,9 +39,11 @@ class TemplatesStrategy(SearchStrategy):
         super(TemplatesStrategy, self).__init__()
         self.descriptor = TemplatesFor(base_strategy.descriptor)
         self.base_strategy = base_strategy
-        self.parameter = base_strategy.parameter
         self.size_lower_bound = base_strategy.size_lower_bound
         self.size_upper_bound = base_strategy.size_upper_bound
+
+    def produce_parameter(self, random):
+        return self.base_strategy.produce_parameter(random)
 
     def produce_template(self, context, pv):
         return self.base_strategy.produce_template(context, pv)
@@ -147,7 +149,7 @@ def descriptor_test_suite(
         @given(Random, verifier=verifier)
         def test_can_perform_all_basic_operations(self, random):
             parameter = strat.draw_parameter(random)
-            template = strat.produce_template(BuildContext(random), parameter)
+            template = strat.draw_template(BuildContext(random), parameter)
             minimal_template = list(strat.simplify_such_that(
                 template,
                 lambda x: True

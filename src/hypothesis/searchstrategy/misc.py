@@ -15,7 +15,6 @@ from __future__ import division, print_function, absolute_import, \
 
 from random import Random
 
-import hypothesis.params as params
 import hypothesis.descriptors as descriptors
 import hypothesis.internal.distributions as dist
 from hypothesis.types import RandomWithSeed
@@ -33,7 +32,8 @@ class BoolStrategy(SearchStrategy):
     size_lower_bound = 2
     size_upper_bound = 2
 
-    parameter = params.UniformFloatParameter(0, 1)
+    def produce_parameter(self, random):
+        return random.random()
 
     def produce_template(self, context, p):
         return dist.biased_coin(context.random, p)
@@ -62,7 +62,8 @@ class JustStrategy(SearchStrategy):
     def __repr__(self):
         return 'JustStrategy(value=%r)' % (self.descriptor.value,)
 
-    parameter = params.CompositeParameter()
+    def produce_parameter(self, random):
+        return None
 
     def produce_template(self, context, pv):
         return self.descriptor.value
@@ -85,7 +86,6 @@ class RandomStrategy(SearchStrategy):
 
     """
     descriptor = Random
-    parameter = params.CompositeParameter()
 
     def from_basic(self, data):
         check_data_type(integer_types, data)
@@ -93,6 +93,9 @@ class RandomStrategy(SearchStrategy):
 
     def to_basic(self, template):
         return template
+
+    def produce_parameter(self, random):
+        return None
 
     def produce_template(self, context, pv):
         return context.random.getrandbits(128)
@@ -118,7 +121,6 @@ class SampledFromStrategy(SearchStrategy):
         if descriptor is None:
             descriptor = descriptors.SampledFrom(self.elements)
         self.descriptor = descriptor
-        self.parameter = params.NonEmptySubset(self.elements)
         try:
             s = set(self.elements)
             self.size_lower_bound = len(s)
@@ -140,8 +142,11 @@ class SampledFromStrategy(SearchStrategy):
 
         return data
 
+    def produce_parameter(self, random):
+        return dist.non_empty_subset(random, range(len(self.elements)))
+
     def produce_template(self, context, pv):
-        return context.random.randint(0, len(self.elements) - 1)
+        return context.random.choice(pv)
 
     def reify(self, template):
         return self.elements[template]

@@ -123,7 +123,7 @@ class ParameterSource(object):
         self.started = True
         while True:
             p = self.pick_a_parameter()
-            template = self.strategy.produce_template(
+            template = self.strategy.draw_template(
                 self.context, p
             )
             yield self.strategy.reify(template)

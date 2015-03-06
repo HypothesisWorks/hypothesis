@@ -18,7 +18,6 @@ import base64
 import string
 import unicodedata
 
-import hypothesis.params as params
 import hypothesis.descriptors as descriptors
 import hypothesis.internal.distributions as dist
 from hypothesis.internal.compat import hrange, hunichr, text_type, \
@@ -35,13 +34,13 @@ class OneCharStringStrategy(SearchStrategy):
         text_type('0123456789') + text_type(string.ascii_letters) +
         text_type(' \t\n')
     )
-    parameter = params.CompositeParameter(
-        ascii_chance=params.UniformFloatParameter(0, 1)
-    )
 
-    def produce_template(self, context, pv):
+    def produce_parameter(self, random):
+        return random.random()
+
+    def produce_template(self, context, p):
         random = context.random
-        if dist.biased_coin(random, pv.ascii_chance):
+        if dist.biased_coin(random, p):
             return random.choice(self.ascii_characters)
         else:
             while True:

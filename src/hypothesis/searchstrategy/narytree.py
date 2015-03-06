@@ -15,11 +15,10 @@ from __future__ import division, print_function, absolute_import, \
 
 from collections import namedtuple
 
-import hypothesis.params as params
 from hypothesis.searchstrategy import BadData, SearchStrategy, strategy, \
     check_data_type
 from hypothesis.internal.compat import hrange
-from hypothesis.internal.distributions import geometric
+from hypothesis.internal.distributions import geometric, uniform_float
 
 NAryTree = namedtuple('NAryTree', (
     'branch_labels',
@@ -38,6 +37,12 @@ Branch = namedtuple('Branch', (
 
 
 class NAryTreeStrategy(SearchStrategy):
+    Parameter = namedtuple(
+        'Parameter', (
+            'leaf_parameter', 'branch_key_parameter',
+            'branch_label_parameter', 'branch_factor'
+        )
+    )
 
     def __init__(self, descriptor, settings):
         self.descriptor = descriptor
@@ -46,16 +51,19 @@ class NAryTreeStrategy(SearchStrategy):
             descriptor.branch_keys, settings)
         self.branch_label_strategy = strategy(
             descriptor.branch_labels, settings)
-        self.parameter = params.CompositeParameter(
-            leaf_parameter=self.leaf_strategy.parameter,
-            branch_key_parameter=self.branch_key_strategy.parameter,
-            branch_label_parameter=self.branch_label_strategy.parameter,
-
-            branch_factor=params.UniformFloatParameter(0.6, 0.99),
-        )
 
         self.child_strategy = strategy(
             [(self.branch_key_strategy, self)], settings
+        )
+
+    def produce_parameter(self, random):
+        return self.Parameter(
+            leaf_parameter=self.leaf_strategy.draw_parameter(random),
+            branch_key_parameter=self.branch_key_strategy.draw_parameter(
+                random),
+            branch_label_parameter=self.branch_label_strategy.draw_parameter(
+                random),
+            branch_factor=uniform_float(random, 0.6, 0.99),
         )
 
     def produce_template(self, context, pv):
@@ -68,7 +76,7 @@ class NAryTreeStrategy(SearchStrategy):
             children = tuple(
                 (self.branch_key_strategy.draw_template(
                     context, pv.branch_key_parameter),
-                 self.draw_template(context, pv))
+                 self.produce_template(context, pv))
                 for _ in hrange(n_children))
             label = self.branch_label_strategy.draw_template(
                 context, pv.branch_label_parameter
