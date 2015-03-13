@@ -20,12 +20,12 @@ import inspect
 import pytest
 import hypothesis.settings as hs
 import hypothesis.reporting as reporting
-from hypothesis import Flaky, Verifier, Unsatisfiable, given, assume
+from hypothesis import Flaky, Verifier, Unsatisfiable, given, assume, \
+    strategy
 from tests.common.utils import fails, fails_with, capture_out
 from hypothesis.descriptors import just, one_of, sampled_from, \
     floats_in_range, integers_in_range
 from hypothesis.internal.compat import text_type, binary_type
-from hypothesis import strategy
 
 
 @given(int, int)
