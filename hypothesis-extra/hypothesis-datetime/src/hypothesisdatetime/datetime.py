@@ -22,6 +22,7 @@ from hypothesis.searchstrategy import SearchStrategy, strategy, \
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.internal.fixers import equal
 from hypothesis.internal.hashitanyway import normal_hash, hash_everything
+import hypothesis.internal.distributions as dist
 
 DatetimeSpec = namedtuple('DatetimeSpec', ('naive_options',))
 
@@ -57,6 +58,20 @@ def maybe_zero_or(random, p, v):
 
 class DatetimeStrategy(SearchStrategy):
 
+    Parameter = namedtuple(
+        'Parameter',
+        (
+            'p_hour',
+            'p_minute',
+            'p_second',
+            'month',
+            'naive_chance',
+            'utc_chance',
+            'timezones',
+            'naive_options',
+        )
+    )
+
     def __init__(self, naive_options=None):
         self.naive_options = naive_options or {False, True}
         if self.naive_options == {False, True}:
@@ -64,19 +79,22 @@ class DatetimeStrategy(SearchStrategy):
         else:
             self.descriptor = DatetimeSpec(self.naive_options)
 
-        self.parameter = params.CompositeParameter(
-            p_hour=params.UniformFloatParameter(0, 1),
-            p_minute=params.UniformFloatParameter(0, 1),
-            p_second=params.UniformFloatParameter(0, 1),
-            month=params.NonEmptySubset(list(range(1, 13))),
-            naive_chance=params.UniformFloatParameter(0, 0.5),
-            utc_chance=params.UniformFloatParameter(0, 1),
-            timezones=params.NonEmptySubset(
-                list(map(pytz.timezone, pytz.all_timezones))
-            ),
-            naive_options=params.NonEmptySubset(
-                self.naive_options
-            )
+    def produce_parameter(self, random):
+        return self.Parameter(
+            p_hour=dist.uniform_float(random, 0, 1),
+            p_minute=dist.uniform_float(random, 0, 1),
+            p_second=dist.uniform_float(random, 0, 1),
+            month=dist.non_empty_subset(random, list(range(1, 13))),
+            naive_chance=dist.uniform_float(random, 0, 0.5),
+            utc_chance=dist.uniform_float(random, 0, 1),
+            timezones=dist.non_empty_subset(
+                random,
+                list(
+                    map(pytz.timezone, pytz.all_timezones))
+                ),
+            naive_options=dist.non_empty_subset(random,
+                                                self.naive_options
+                                                )
         )
 
     def produce_template(self, context, pv):

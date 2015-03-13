@@ -18,6 +18,7 @@ from faker.config import AVAILABLE_LOCALES
 from hypothesis.searchstrategy import SearchStrategy, strategy, \
     check_data_type
 from hypothesis.internal.compat import text_type
+import hypothesis.internal.distributions as dist
 
 
 class FakeFactory(object):
@@ -67,15 +68,14 @@ class FakeFactoryStrategy(SearchStrategy):
     def __init__(self, details):
         self.descriptor = details
         self.source = details.source
-        self.parameter = params.CompositeParameter(
-            locales=params.NonEmptySubset(
-                details.locales or AVAILABLE_LOCALES
-            )
-        )
         self.providers = details.providers
+        self.locales = details.locales or AVAILABLE_LOCALES
+
+    def produce_parameter(self, random):
+        return dist.non_empty_subset(random, self.locales)
 
     def produce_template(self, context, pv):
-        factory = faker.Faker(locale=context.random.choice(pv.locales))
+        factory = faker.Faker(locale=context.random.choice(pv))
         factory.seed(context.random.getrandbits(128))
         for p in self.providers:
             factory.add_provider(p)
