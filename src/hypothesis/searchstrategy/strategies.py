@@ -13,14 +13,15 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+from collections import namedtuple
+
+import hypothesis.internal.distributions as dist
 from hypothesis.settings import Settings
 from hypothesis.extmethod import ExtMethod
 from hypothesis.descriptors import OneOf, one_of
 from hypothesis.internal.compat import integer_types
-from hypothesis.internal.fixers import nice_string, IdKey
+from hypothesis.internal.fixers import IdKey, nice_string
 from hypothesis.internal.tracker import Tracker
-from collections import namedtuple
-import hypothesis.internal.distributions as dist
 
 
 class BuildContext(object):

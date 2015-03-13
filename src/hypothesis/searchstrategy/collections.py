@@ -13,6 +13,8 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+from collections import namedtuple
+
 import hypothesis.settings as hs
 import hypothesis.internal.distributions as dist
 from hypothesis.internal.compat import hrange
@@ -20,7 +22,6 @@ from hypothesis.internal.fixers import nice_string
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
     MappedSearchStrategy, strategy, check_type, check_length, \
     check_data_type, one_of_strategies
-from collections import namedtuple
 
 
 class mix_generators(object):

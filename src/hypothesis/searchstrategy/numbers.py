@@ -17,6 +17,7 @@ import sys
 import math
 import struct
 from random import Random
+from collections import namedtuple
 
 import hypothesis.descriptors as descriptors
 import hypothesis.internal.distributions as dist
@@ -24,7 +25,6 @@ from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.searchstrategy.misc import SampledFromStrategy
 from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
     MappedSearchStrategy, strategy, check_type, check_data_type
-from collections import namedtuple
 
 
 class IntStrategy(SearchStrategy):
