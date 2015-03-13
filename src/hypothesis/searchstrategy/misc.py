@@ -162,11 +162,6 @@ def define_just_strategy(descriptor, settings):
     return JustStrategy(descriptor.value)
 
 
-@strategy.extend(SearchStrategy)
-def define_strategy_strategy(descriptor, settings):
-    return descriptor
-
-
 @strategy.extend_static(Random)
 def define_random_strategy(descriptor, settings):
     return RandomStrategy()

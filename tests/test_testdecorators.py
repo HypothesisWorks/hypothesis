@@ -20,12 +20,12 @@ import inspect
 import pytest
 import hypothesis.settings as hs
 import hypothesis.reporting as reporting
-from hypothesis import Flaky, Verifier, Unsatisfiable, given, assume, \
-    strategy
+from hypothesis import Flaky, Verifier, Unsatisfiable, given, assume
 from tests.common.utils import fails, fails_with, capture_out
 from hypothesis.descriptors import just, one_of, sampled_from, \
     floats_in_range, integers_in_range
 from hypothesis.internal.compat import text_type, binary_type
+from hypothesis.searchstrategy.numbers import IntStrategy
 
 
 @given(int, int)
@@ -391,7 +391,17 @@ def test_fails_only_once(x):
         assert False
 
 
-@given([strategy(int)])
-def test_can_use_strategies(xs):
+class SpecialIntStrategy(IntStrategy):
+    descriptor = int
+
+    def produce_parameter(self, random):
+        return None
+
+    def produce_template(self, context, parameter):
+        return 1
+
+
+@given([SpecialIntStrategy()])
+def test_can_use_custom_strategies(xs):
     assert isinstance(xs, list)
-    assert all(isinstance(x, int) for x in xs)
+    assert all(x == 1 for x in xs)
