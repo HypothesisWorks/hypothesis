@@ -278,13 +278,30 @@
 
     Depends on pytest.
 
-NEXT
+0.6.0, "I'm sorry, were you using that API?" - 13/03/2015
 
-    * Fix for a bug where calling falsify on a lambda with a non-ascii character
-      in its body would error.
+    This is primarily a "simplify all the weird bits of the API" release. As a result there are a lot of breaking changes. If
+    you just use @given with core types then you're probably fine.
+
+    In particular:
+
+    * Stateful testing has been removed from the API
+    * The way the database is used has been rendered less useful (sorry). The feature for reassembling values saved from other
+      tests doesn't currently work. This will probably be brought back in post 1.0.
+    * SpecificationMapper is no longer a thing. Instead there is an ExtMethod called strategy which you extend to specify how
+      to convert other types to strategies.
+    * Settings are now extensible so you can add your own for configuring a strategy
+    * MappedSearchStrategy no longer needs an unpack method
+    * Basically all the SearchStrategy internals have changed massively. If you implemented SearchStrategy directly rather than
+      using MappedSearchStrategy talk to me about fixing it.
     * Change to the way extra packages work. You now specify the package. This
       must have a load() method. Additionally any modules in the package will be
       loaded in under hypothesis.extra
+
+    Bug fixes:
+
+    * Fix for a bug where calling falsify on a lambda with a non-ascii character
+      in its body would error.
 
 Hypothesis Extra:
     

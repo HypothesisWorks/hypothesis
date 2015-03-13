@@ -513,91 +513,29 @@ two digits after the decimal point.
         def pack(self, x):
             return Decimal(x) / 100
 
-        def unpack(self, x):
-            return int(x * 100)
-
 This strategy is going to wrap some strategy for producing integers. Pack takes
-an integer and returns a Decimal and unpack takes a Decimal and returns an integer.
+an integer and returns a Decimal
 
 You then need to register this strategy so that when you just refer to Decimal,
 Hypothesis knows that this is the one you intend to use:
 
 .. code:: python
 
-    from hypothesis.strategytable import StrategyTable
-    StrategyTable.default().define_specification_for(
-      Decimal,
-      lambda s, d: DecimalStrategy(
-        strategy=s.strategy(float),
-        descriptor=Decimal,
-      ))
+    from hypothesis import strategy
 
-Given a StrategyTable x, this means that when you call x.strategy(Decimal), this will
-call your lambda as f(x, Decimal), which will build the relevant strategy.
+    @strategy.extend_static(Decimal)
+    def decimal_strategy(d, settings):
+        return DecimalStrategy(
+          strategy=strategy(int),
+          descriptor=Decimal,
+        )
 
-Note that it's important that pack returns a decimal here. A descriptor can be anything
-you like, but if it's not the type of the things you are returning then you may have problems.
+strategy(Decimal) will now return an instance of the DecimalStrategy you defined,
+based on the appropriate Strategy(int).
 
-For example:
-
-.. code:: python
-
-    from hypothesis.searchstrategy import MappedSearchStrategy
-    class smallint(int):
-      pass
-
-    class SmallintStrategy(MappedSearchStrategy):
-        def pack(self, x):
-            return min(abs(x), 100)
-
-        def unpack(self, x):
-            return x
-
-
-(Note: This is a silly example chosen for simplicity. You should use integers_in_range(0, 100) for this)
-
-If you try to use the above strategy you will get errors! The problem is that
-the values produced by a strategy (in the case of a MappedSearchStrategy these
-will be the values returned by pack) have to return True when passed to the could_have_produced method
-of that strategy.
-
-You can fix this in one of two ways. You could either return something of the right type:
-
-.. code:: python
-
-    from hypothesis.searchstrategy import MappedSearchStrategy
-    class smallint(int):
-      pass
-
-    class SmallintStrategy(MappedSearchStrategy):
-        def pack(self, x):
-            return smallint(min(abs(x), 100))
-
-        def unpack(self, x):
-            return x
-
-
-Or if this is difficult for some reason you can also override could_have_produced instead:
-
-.. code:: python
-
-    from hypothesis.searchstrategy import MappedSearchStrategy
-    class smallint(int):
-      pass
-
-    class SmallintStrategy(MappedSearchStrategy):
-        def pack(self, x):
-            return smallint(min(abs(x), 100))
-
-        def unpack(self, x):
-            return x
-
-        def could_have_produced(self, value):
-            return isinstance(value, int)
-
-
-Descriptors can be anything you like as long as you're willing to define that
-custom could_have_produced.
+Note that although in this case (and in most of the common cases) your DecimalStrategy
+produces values of the type you use for the descriptor, this is in fact not in any
+way required. You can use whatever you want there and it will work just fine.
 
 Once you've defined your custom type, there is a standard test suite you can use
 to validate that your implementation is correct.
@@ -607,7 +545,7 @@ to validate that your implementation is correct.
 
     from hypothesis.descriptortests import descriptor_test_suite
 
-    TestSmallint = descriptor_test_suite(smallint)
+    TestDecimal = descriptor_test_suite(Decimal)
 
 
 This is a unittest.TestCase. You can either run it explicitly or let pytest or
@@ -624,59 +562,8 @@ two:
 
 * hypothesis-datetime: Gives you datetime support, depends on pytz
 * hypothesis-pytest: A pytest plugin for better reporting, depends on pytest
+* hypothesis-fakefactory: Uses data provided by `fake-factory <https://pypi.python.org/pypi/fake-factory>`_ to provide data.
 
-
-----------------
- Under the hood
-----------------
-
-~~~~~~~~~~~~~~~~~~
-Example generation
-~~~~~~~~~~~~~~~~~~
-
-How does hypothesis work?
-
-The core object of how hypothesis generates examples hypothesis is the SearchStrategy.
-It knows how to explore a state space, and has the following operations:
-
-* produce(random, parameter). Generate a random element of the state space given a value from its class of parameters.
-* simplify(element). Return a generator over a simplified versions of this element.
-* could_have_produced(element). Say whether it's plausible that this element was produced by this strategy.
-* copy(element). Provide a mutation safe copy of this value. If the data is immutable it's OK to just return the value itself.
-
-These satisfy the following invariants:
-
-* Any element produced by produce must return true when passed to could_have_produced
-* Any element for which could_have_produced returns true must not throw an exception when passed to simplify
-* simplify(x) should return a generator over a sequence of unique values
-* x == copy(x) (but not necessarily x is copy(x))
-
-It also has a parameter. This is an object of type Parameter that controls random data generation. Parameters are used
-to shape the search space to try to find better examples.
-
-A mix of drawing parameters and calling produce is ued to explore the search space, producing a sequence of
-novel examples. If we ever find one which falsifies the hypothesis we stop there and proceed to simplification. 
-If after a configurable number of examples or length of time we have not found anything we stop and declare the
-hypothesis unfalsifiable.
-
-Simplification occurs as a straightforward greedy algorithm: If any of the elements produced by simplify(x) also
-falsify the hypothesis, replace x with that and try again. Stop when no simplified version of x falsifies the
-hypothesis.
-
-~~~~~~~~~~~~~~~
-Strategy lookup
-~~~~~~~~~~~~~~~
-
-Hypothesis converts from e.g. (Int, Int, Int) to a TupleStrategy by use of a StrategyTable object. You probably
-just want to use the default one, available at StrategyTable.default()
-
-You can define new strategies on it for descriptors from the above example.
-
-If you want to customize the generation of your data you can create a new StrategyTable and tinker with it. Anything
-defined on the default StrategyTable will be inherited by it.
-
-Talk to me if you actually want to do this beyond simple examples like the above. It's all a bit confusing and should
-probably be considered semi-internal until it gets a better API.
 
 ---------
  Testing
