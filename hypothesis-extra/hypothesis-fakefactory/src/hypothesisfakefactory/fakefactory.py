@@ -14,11 +14,11 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import faker
+import hypothesis.internal.distributions as dist
 from faker.config import AVAILABLE_LOCALES
 from hypothesis.searchstrategy import SearchStrategy, strategy, \
     check_data_type
 from hypothesis.internal.compat import text_type
-import hypothesis.internal.distributions as dist
 
 
 class FakeFactory(object):

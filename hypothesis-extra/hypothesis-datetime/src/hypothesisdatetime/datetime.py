@@ -17,12 +17,12 @@ import datetime as dt
 from collections import namedtuple
 
 import pytz
+import hypothesis.internal.distributions as dist
 from hypothesis.searchstrategy import SearchStrategy, strategy, \
     check_data_type
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.internal.fixers import equal
 from hypothesis.internal.hashitanyway import normal_hash, hash_everything
-import hypothesis.internal.distributions as dist
 
 DatetimeSpec = namedtuple('DatetimeSpec', ('naive_options',))
 
@@ -91,7 +91,7 @@ class DatetimeStrategy(SearchStrategy):
                 random,
                 list(
                     map(pytz.timezone, pytz.all_timezones))
-                ),
+            ),
             naive_options=dist.non_empty_subset(random,
                                                 self.naive_options
                                                 )
