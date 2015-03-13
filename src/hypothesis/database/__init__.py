@@ -10,11 +10,10 @@
 
 # END HEADER
 
-from hypothesis.internal.utils.fixers import nice_string
-from hypothesis.internal.utils.hashitanyway import HashItAnyway
+from hypothesis.internal.fixers import nice_string
+from hypothesis.internal.hashitanyway import HashItAnyway
 from hypothesis.internal.tracker import Tracker
-from hypothesis.searchstrategy import BadData
-from hypothesis.searchstrategy.table import StrategyTable
+from hypothesis.searchstrategy import BadData, strategy
 from hypothesis.database.formats import JSONFormat
 from hypothesis.database.backend import SQLiteBackend
 
@@ -80,11 +79,9 @@ class ExampleDatabase(object):
 
     def __init__(
         self,
-        strategies=None,
         backend=None,
         format=None,
     ):
-        self.strategies = strategies or StrategyTable.default()
         self.backend = backend or SQLiteBackend()
         self.format = format or JSONFormat()
         if self.format.data_type() != self.backend.data_type():
@@ -108,14 +105,12 @@ class ExampleDatabase(object):
         except KeyError:
             pass
 
-        strategy = self.strategies.specification_for(descriptor)
-
         result = Storage(
             descriptor=descriptor,
             database=self,
             backend=self.backend,
             format=self.format,
-            strategy=strategy,
+            strategy=strategy(descriptor),
         )
         self.storage_cache[key] = result
         return result

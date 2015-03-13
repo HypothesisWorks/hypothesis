@@ -21,7 +21,8 @@ from hypothesis.verifier import Flaky, Verifier, Unfalsifiable, \
     UnsatisfiedAssumption
 from hypothesis.reporting import current_reporter
 from hypothesis.descriptors import just
-from hypothesis.internal.utils.reflection import arg_string, copy_argspec
+from hypothesis.searchstrategy import strategy
+from hypothesis.internal.reflection import arg_string, copy_argspec
 
 HypothesisProvided = namedtuple('HypothesisProvided', ('value,'))
 
@@ -140,13 +141,13 @@ def given(*generator_arguments, **generator_kwargs):
             except Unfalsifiable:
                 return
 
-            strategy = verifier.strategy_table.strategy(given_descriptor)
+            strat = strategy(given_descriptor)
 
             if setup_example is not None:
                 setup_example()
 
             try:
-                reified = strategy.reify(falsifying_example)
+                reified = strat.reify(falsifying_example)
                 false_args, false_kwargs = reified
                 current_reporter()(
                     'Falsifying example: %s(%s)' % (

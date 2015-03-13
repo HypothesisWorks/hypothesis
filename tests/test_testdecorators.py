@@ -25,6 +25,7 @@ from tests.common.utils import fails, fails_with, capture_out
 from hypothesis.descriptors import just, one_of, sampled_from, \
     floats_in_range, integers_in_range
 from hypothesis.internal.compat import text_type, binary_type
+from hypothesis.searchstrategy.numbers import IntStrategy
 
 
 @given(int, int)
@@ -388,3 +389,19 @@ def test_fails_only_once(x):
     if first_call:
         first_call = False
         assert False
+
+
+class SpecialIntStrategy(IntStrategy):
+    descriptor = int
+
+    def produce_parameter(self, random):
+        return None
+
+    def produce_template(self, context, parameter):
+        return 1
+
+
+@given([SpecialIntStrategy()])
+def test_can_use_custom_strategies(xs):
+    assert isinstance(xs, list)
+    assert all(x == 1 for x in xs)

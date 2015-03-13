@@ -14,7 +14,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import pytest
-from hypothesis.internal.extmethod import ExtMethod
+from hypothesis.extmethod import ExtMethod
 
 
 def test_will_use_tightest_class():
@@ -37,3 +37,29 @@ def test_will_error_on_missing():
     f = ExtMethod()
     with pytest.raises(NotImplementedError):
         f(1)
+
+
+def test_can_add_static():
+    f = ExtMethod()
+
+    @f.extend_static(object)
+    def fs(x):
+        return 1
+
+    @f.extend_static(int)
+    def fi(x):
+        return 2
+
+    assert f(object) == 1
+    assert f(int) == 2
+    assert f(str) == 1
+
+
+def test_will_use_instance_if_no_static():
+    f = ExtMethod()
+
+    @f.extend(object)
+    def foo(x):
+        return x
+
+    assert f(int) == int

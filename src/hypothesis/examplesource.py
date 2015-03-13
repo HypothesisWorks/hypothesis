@@ -13,8 +13,6 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from random import Random
-
 from hypothesis.internal.compat import hrange
 
 
@@ -34,11 +32,11 @@ class ParameterSource(object):
 
     def __init__(
         self,
-        random, strategy,
+        context, strategy,
         min_parameters=25, min_tries=2,
     ):
-        if not isinstance(random, Random):
-            raise ValueError('A Random is required but got %r' % (random,))
+        random = context.random
+        self.context = context
         self.strategy = strategy
         self.random = random
         self.parameters = []
@@ -69,7 +67,7 @@ class ParameterSource(object):
         self.bad_counts[self.last_parameter_index] += 1
 
     def new_parameter(self):
-        result = self.strategy.parameter.draw(self.random)
+        result = self.strategy.produce_parameter(self.random)
         self.parameters.append(result)
         self.bad_counts.append(0)
         self.counts.append(1)
@@ -125,7 +123,7 @@ class ParameterSource(object):
         self.started = True
         while True:
             p = self.pick_a_parameter()
-            template = self.strategy.produce_template(
-                self.random, p
+            template = self.strategy.draw_template(
+                self.context, p
             )
             yield self.strategy.reify(template)

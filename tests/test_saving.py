@@ -82,14 +82,3 @@ def test_does_not_put_binary_substrings_in_database():
     verifier.falsify(lambda x: len(x) <= 3, binary_type)
     assert len(list(database.storage_for(binary_type).fetch())) == 1
     assert len(list(database.storage_for(int).fetch())) == 0
-
-
-def test_can_use_values_in_the_database():
-    example = 'Hello world'
-    database = ExampleDatabase(backend=SQLiteBackend(':memory:'))
-    storage = database.storage_for(text_type)
-    storage.save(tuple(example))
-    verifier = Verifier(settings=Settings(database=database))
-    assert verifier.falsify(lambda x: x != example, text_type) == (
-        tuple(example),
-    )

@@ -23,9 +23,9 @@ from itertools import islice
 import hypothesis.settings as hs
 from hypothesis.extra import load_entry_points
 from hypothesis.examplesource import ParameterSource
+from hypothesis.searchstrategy import BuildContext, strategy
 from hypothesis.internal.tracker import Tracker
-from hypothesis.searchstrategy.table import StrategyTable
-from hypothesis.internal.utils.reflection import function_digest, \
+from hypothesis.internal.reflection import function_digest, \
     get_pretty_function_description
 
 
@@ -48,18 +48,13 @@ class Verifier(object):
 
     def __init__(
             self,
-            strategy_table=None,
             random=None,
             settings=None,
     ):
         if settings is None:
             settings = hs.default
+        self.settings = settings
         self.database = settings.database
-        self.strategy_table = strategy_table or StrategyTable()
-        if self.database is not None:
-            self.strategy_table = self.strategy_table.augment_with_examples(
-                self.examples_for
-            )
 
         self.min_satisfying_examples = settings.min_satisfying_examples
         self.max_examples = settings.max_examples
@@ -74,10 +69,6 @@ class Verifier(object):
         else:
             self.random = random or Random()
         self.max_regenerations = 0
-
-    def examples_for(self, descriptor):
-        storage = self.database.storage_for(descriptor)
-        return tuple(storage.fetch())
 
     def falsify(
             self, hypothesis,
@@ -96,8 +87,9 @@ class Verifier(object):
                 function_digest(hypothesis)
             )
 
-        search_strategy = (
-            self.strategy_table.specification_for(argument_types))
+        build_context = BuildContext(random)
+
+        search_strategy = strategy(argument_types, self.settings)
         storage = None
         if self.database is not None:
             storage = self.database.storage_for(argument_types)
@@ -129,7 +121,7 @@ class Verifier(object):
         min_satisfying_examples = self.min_satisfying_examples
 
         parameter_source = ParameterSource(
-            random=random, strategy=search_strategy,
+            context=build_context, strategy=search_strategy,
             min_parameters=max(2, int(float(max_examples) / 10))
         )
         start_time = time.time()
@@ -152,7 +144,7 @@ class Verifier(object):
                 break
 
             args = search_strategy.produce_template(
-                random, parameter
+                build_context, parameter
             )
 
             if track_seen.track(args) > 1:

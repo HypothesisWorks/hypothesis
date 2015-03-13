@@ -16,13 +16,12 @@ from __future__ import division, print_function, absolute_import, \
 import random
 
 import pytest
-from hypothesis import Verifier, given
-from tests.common import small_table, small_verifier
+from hypothesis import given
+from tests.common import small_verifier
 from tests.common.mutate import mutate_slightly
 from tests.common.descriptors import Descriptor
 from hypothesis.internal.compat import hrange, text_type
-from hypothesis.internal.utils.fixers import IdKey, real_index, \
-    actually_equal
+from hypothesis.internal.fixers import IdKey, real_index, actually_equal
 
 
 def test_lists_of_same_elements_are_equal():
@@ -235,9 +234,7 @@ def test_type_shape_self_checks():
         dict, {1: (set, {int})})
 
 
-@given(Descriptor, random.Random, verifier=Verifier(
-    strategy_table=small_table,
-))
+@given(Descriptor, random.Random, verifier=small_verifier)
 def test_actually_equal_things_have_same_type_shape(d, r):
     for _ in hrange(10):
         d2 = mutate_slightly(r, d)

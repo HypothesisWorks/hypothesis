@@ -18,6 +18,8 @@ from hypothesis.verifier import (
     Verifier,
     assume,
 )
+from hypothesis.searchstrategy import strategy, MappedSearchStrategy
+
 
 from hypothesis.testdecorators import given
 
@@ -29,4 +31,6 @@ __all__ = [
     'Verifier',
     'assume',
     'given',
+    'MappedSearchStrategy',
+    'strategy',
 ]

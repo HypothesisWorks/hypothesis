@@ -13,19 +13,17 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-import math
+import random
+
+import pytest
+import hypothesis.internal.distributions as dist
 
 
-def geometric(random, p):
-    """Generate a geometric integer in the range [0, infinity) with expected
-    value.
-
-    1 / p - 1
-
-    """
-    denom = math.log1p(-p)
-    return int(math.log(random.random()) / denom)
+def test_non_empty_of_empty_errors():
+    with pytest.raises(ValueError):
+        dist.non_empty_subset(random, [])
 
 
-def biased_coin(random, p):
-    return random.random() <= p
+def test_non_empty_of_one_always_returns_it():
+    assert dist.non_empty_subset(random, [1]) == [1]
+    assert dist.non_empty_subset(random, [2]) == [2]

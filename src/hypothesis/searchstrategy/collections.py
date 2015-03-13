@@ -13,15 +13,15 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-import hypothesis.params as params
-import hypothesis.internal.utils.distributions as dist
-from hypothesis.internal.compat import hrange
-from hypothesis.internal.utils.fixers import nice_string
-from hypothesis.searchstrategy.strategy import SearchStrategy, \
-    MappedSearchStrategy, check_type, check_length, check_data_type, \
-    one_of_strategies
+from collections import namedtuple
 
-from .table import strategy_for_instances
+import hypothesis.settings as hs
+import hypothesis.internal.distributions as dist
+from hypothesis.internal.compat import hrange
+from hypothesis.internal.fixers import nice_string
+from hypothesis.searchstrategy.strategies import SearchStrategy, \
+    MappedSearchStrategy, strategy, check_type, check_length, \
+    check_data_type, one_of_strategies
 
 
 class mix_generators(object):
@@ -85,9 +85,6 @@ class TupleStrategy(SearchStrategy):
         self.tuple_type = tuple_type
         self.descriptor = self.newtuple([s.descriptor for s in strategies])
         self.element_strategies = strategies
-        self.parameter = params.CompositeParameter(
-            x.parameter for x in self.element_strategies
-        )
         self.size_lower_bound = 1
         self.size_upper_bound = 1
         for e in self.element_strategies:
@@ -111,10 +108,16 @@ class TupleStrategy(SearchStrategy):
         else:
             return self.tuple_type(*xs)
 
-    def produce_template(self, random, pv):
+    def produce_parameter(self, random):
+        return tuple(
+            e.draw_parameter(random)
+            for e in self.element_strategies
+        )
+
+    def produce_template(self, context, pv):
         es = self.element_strategies
         return self.newtuple([
-            g.produce_template(random, v)
+            g.draw_template(context, v)
             for g, v in zip(es, pv)
         ])
 
@@ -164,22 +167,21 @@ class ListStrategy(SearchStrategy):
 
     """
 
+    Parameter = namedtuple(
+        'Parameter', ('child_parameter', 'average_length')
+    )
+
     def __init__(self,
                  strategies, average_length=50.0):
         SearchStrategy.__init__(self)
 
+        self.average_length = average_length
         self.descriptor = [x.descriptor for x in strategies]
         if self.descriptor:
             self.element_strategy = one_of_strategies(strategies)
-            self.parameter = params.CompositeParameter(
-                average_length=params.ExponentialParameter(
-                    1.0 / average_length),
-                child_parameter=self.element_strategy.parameter,
-            )
         else:
             self.size_upper_bound = 1
             self.size_lower_bound = 1
-            self.parameter = params.CompositeParameter()
 
     def decompose(self, value):
         return [
@@ -193,15 +195,25 @@ class ListStrategy(SearchStrategy):
         else:
             return []
 
-    def produce_template(self, random, pv):
+    def produce_parameter(self, random):
+        if not self.descriptor:
+            return None
+        else:
+            return self.Parameter(
+                average_length=random.expovariate(
+                    1.0 / self.average_length),
+                child_parameter=self.element_strategy.draw_parameter(random),
+            )
+
+    def produce_template(self, context, pv):
         if not self.descriptor:
             return ()
-        length = dist.geometric(random, 1.0 / (1 + pv.average_length))
+        length = dist.geometric(context.random, 1.0 / (1 + pv.average_length))
         result = []
         for _ in hrange(length):
             result.append(
-                self.element_strategy.produce_template(
-                    random, pv.child_parameter))
+                self.element_strategy.draw_template(
+                    context, pv.child_parameter))
         return tuple(result)
 
     def simplify(self, x):
@@ -245,25 +257,26 @@ class SetStrategy(MappedSearchStrategy):
     """A strategy for sets of values, defined in terms of a strategy for lists
     of values."""
 
-    def __init__(self, strategies):
+    Parameter = namedtuple(
+        'Parameter',
+        ('stopping_chance', 'child_parameter'),
+    )
+
+    def __init__(self, strategies, average_length=50.0):
         strategies = list(strategies)
         strategies.sort(key=nice_string)
 
         self.descriptor = {x.descriptor for x in strategies}
         if self.descriptor:
             self.element_strategy = one_of_strategies(strategies)
-            self.parameter = params.CompositeParameter(
-                stopping_chance=params.UniformFloatParameter(0.01, 0.25),
-                child_parameter=self.element_strategy.parameter,
-            )
             self.size_lower_bound = (
                 2 ** self.element_strategy.size_lower_bound)
             self.size_upper_bound = (
                 2 ** self.element_strategy.size_upper_bound)
         else:
-            self.parameter = params.CompositeParameter()
             self.size_lower_bound = 1
             self.size_upper_bound = 1
+        self.average_length = average_length
 
     def decompose(self, value):
         return [
@@ -276,15 +289,23 @@ class SetStrategy(MappedSearchStrategy):
             return set()
         return set(map(self.element_strategy.reify, value))
 
-    def produce_template(self, random, pv):
+    def produce_parameter(self, random):
+        if self.descriptor:
+            return self.Parameter(
+                stopping_chance=dist.uniform_float(
+                    random, 0., 2.0 / self.average_length),
+                child_parameter=self.element_strategy.produce_parameter(
+                    random),)
+
+    def produce_template(self, context, pv):
         if not self.descriptor:
             return frozenset()
         result = set()
         while True:
-            if dist.biased_coin(random, pv.stopping_chance):
+            if dist.biased_coin(context.random, pv.stopping_chance):
                 break
             result.add(self.element_strategy.produce_template(
-                random, pv.child_parameter
+                context, pv.child_parameter
             ))
         return frozenset(result)
 
@@ -359,32 +380,44 @@ class FixedKeysDictStrategy(MappedSearchStrategy):
         return dict(zip(self.keys, value))
 
 
-@strategy_for_instances(set)
-def define_set_strategy(strategies, descriptor):
-    return SetStrategy(map(strategies.strategy, descriptor))
+@strategy.extend(set)
+def define_set_strategy(descriptor, settings):
+    return SetStrategy(
+        (strategy(d, settings) for d in descriptor),
+        average_length=settings.average_list_length
+    )
 
 
-@strategy_for_instances(frozenset)
-def define_frozen_set_strategy(strategies, descriptor):
-    return FrozenSetStrategy(strategies.strategy(set(descriptor)))
+@strategy.extend(frozenset)
+def define_frozen_set_strategy(descriptor, settings):
+    return FrozenSetStrategy(strategy(set(descriptor), settings))
 
 
-@strategy_for_instances(list)
-def define_list_strategy(strategies, descriptor):
-    return ListStrategy(list(map(strategies.strategy, descriptor)))
+@strategy.extend(list)
+def define_list_strategy(descriptor, settings):
+    return ListStrategy(
+        [strategy(d, settings) for d in descriptor],
+        average_length=settings.average_list_length
+    )
+
+hs.define_setting(
+    'average_list_length',
+    default=50.0,
+    description='Average length of lists to use'
+)
 
 
-@strategy_for_instances(tuple)
-def define_tuple_strategy(strategies, descriptor):
+@strategy.extend(tuple)
+def define_tuple_strategy(descriptor, settings):
     return TupleStrategy(
-        tuple(map(strategies.strategy, descriptor)),
+        tuple(strategy(d, settings) for d in descriptor),
         tuple_type=type(descriptor)
     )
 
 
-@strategy_for_instances(dict)
-def define_dict_strategy(strategies, descriptor):
+@strategy.extend(dict)
+def define_dict_strategy(descriptor, settings):
     strategy_dict = {}
     for k, v in descriptor.items():
-        strategy_dict[k] = strategies.strategy(v)
+        strategy_dict[k] = strategy(v, settings)
     return FixedKeysDictStrategy(strategy_dict)

@@ -26,9 +26,6 @@ class ClassMap(object):
             except KeyError:
                 pass
 
-    def setdefault(self, key, value):
-        return self.data.setdefault(key, value)
-
     def __getitem__(self, key):
         try:
             return self.data[key]

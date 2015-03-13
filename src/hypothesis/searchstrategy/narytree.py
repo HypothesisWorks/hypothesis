@@ -15,12 +15,10 @@ from __future__ import division, print_function, absolute_import, \
 
 from collections import namedtuple
 
-import hypothesis.params as params
-from hypothesis.searchstrategy import BadData, SearchStrategy, \
+from hypothesis.searchstrategy import BadData, SearchStrategy, strategy, \
     check_data_type
 from hypothesis.internal.compat import hrange
-from hypothesis.searchstrategy.table import StrategyTable
-from hypothesis.internal.utils.distributions import geometric
+from hypothesis.internal.distributions import geometric, uniform_float
 
 NAryTree = namedtuple('NAryTree', (
     'branch_labels',
@@ -39,40 +37,49 @@ Branch = namedtuple('Branch', (
 
 
 class NAryTreeStrategy(SearchStrategy):
+    Parameter = namedtuple(
+        'Parameter', (
+            'leaf_parameter', 'branch_key_parameter',
+            'branch_label_parameter', 'branch_factor'
+        )
+    )
 
-    def __init__(self, strategy_table, descriptor):
+    def __init__(self, descriptor, settings):
         self.descriptor = descriptor
-        self.leaf_strategy = strategy_table.strategy(descriptor.leaf_values)
-        self.branch_key_strategy = strategy_table.strategy(
-            descriptor.branch_keys)
-        self.branch_label_strategy = strategy_table.strategy(
-            descriptor.branch_labels)
-        self.parameter = params.CompositeParameter(
-            leaf_parameter=self.leaf_strategy.parameter,
-            branch_key_parameter=self.branch_key_strategy.parameter,
-            branch_label_parameter=self.branch_label_strategy.parameter,
+        self.leaf_strategy = strategy(descriptor.leaf_values, settings)
+        self.branch_key_strategy = strategy(
+            descriptor.branch_keys, settings)
+        self.branch_label_strategy = strategy(
+            descriptor.branch_labels, settings)
 
-            branch_factor=params.UniformFloatParameter(0.6, 0.99),
+        self.child_strategy = strategy(
+            [(self.branch_key_strategy, self)], settings
         )
 
-        self.child_strategy = strategy_table.strategy(
-            [(self.branch_key_strategy, self)]
+    def produce_parameter(self, random):
+        return self.Parameter(
+            leaf_parameter=self.leaf_strategy.draw_parameter(random),
+            branch_key_parameter=self.branch_key_strategy.draw_parameter(
+                random),
+            branch_label_parameter=self.branch_label_strategy.draw_parameter(
+                random),
+            branch_factor=uniform_float(random, 0.6, 0.99),
         )
 
-    def produce_template(self, random, pv):
-        n_children = geometric(random, pv.branch_factor)
+    def produce_template(self, context, pv):
+        n_children = geometric(context.random, pv.branch_factor)
         if not n_children:
-            return Leaf(self.leaf_strategy.produce_template(
-                random, pv.leaf_parameter
+            return Leaf(self.leaf_strategy.draw_template(
+                context, pv.leaf_parameter
             ))
         else:
             children = tuple(
-                (self.branch_key_strategy.produce_template(
-                    random, pv.branch_key_parameter),
-                 self.produce_template(random, pv))
+                (self.branch_key_strategy.draw_template(
+                    context, pv.branch_key_parameter),
+                 self.produce_template(context, pv))
                 for _ in hrange(n_children))
-            label = self.branch_label_strategy.produce_template(
-                random, pv.branch_label_parameter
+            label = self.branch_label_strategy.draw_template(
+                context, pv.branch_label_parameter
             )
             return Branch(
                 label=label, keyed_children=children
@@ -136,6 +143,6 @@ class NAryTreeStrategy(SearchStrategy):
                     for k, v in data[1]))
 
 
-StrategyTable.default().define_specification_for_instances(
-    NAryTree, NAryTreeStrategy
-)
+@strategy.extend(NAryTree)
+def nary_tree_strategy(descriptor, settings):
+    return NAryTreeStrategy(descriptor, settings)

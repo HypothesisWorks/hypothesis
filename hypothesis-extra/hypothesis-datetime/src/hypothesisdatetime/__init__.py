@@ -13,17 +13,7 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from hypothesis.searchstrategy.table import StrategyTable
-from datetime import datetime
-
 
 def load():
-    from hypothesis.extra.datetime import (
-        DatetimeSpec, DatetimeStrategy
-    )
-    StrategyTable.default().define_specification_for(
-        datetime, lambda s, d: DatetimeStrategy()
-    )
-    StrategyTable.default().define_specification_for_instances(
-        DatetimeSpec, lambda s, d: DatetimeStrategy(d.naive_options)
-    )
+    from hypothesis.extra import datetime
+    [datetime]

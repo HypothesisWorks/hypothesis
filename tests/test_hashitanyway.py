@@ -18,12 +18,11 @@ from random import Random
 from collections import namedtuple
 
 from hypothesis import Verifier, given
-from tests.common import small_table
 from hypothesis.types import RandomWithSeed
 from hypothesis.settings import Settings
 from tests.common.mutate import mutate_slightly, mutate_maliciously
 from tests.common.descriptors import Descriptor
-from hypothesis.internal.utils.hashitanyway import HashItAnyway
+from hypothesis.internal.hashitanyway import HashItAnyway
 
 
 def hia(x):
@@ -111,7 +110,6 @@ def test_hashing_random_with_seed():
 
 
 @given([Descriptor], Random, verifier=Verifier(
-    strategy_table=small_table,
     settings=Settings(
         max_examples=500,
         timeout=100

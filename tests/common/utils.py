@@ -18,7 +18,7 @@ import contextlib
 from io import StringIO
 
 import pytest
-from hypothesis.internal.utils.reflection import proxies
+from hypothesis.internal.reflection import proxies
 
 
 @contextlib.contextmanager

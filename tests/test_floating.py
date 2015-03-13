@@ -21,7 +21,7 @@ import math
 
 from hypothesis import given, assume
 from tests.common.utils import fails
-from hypothesis.internal.utils.fixers import actually_equal
+from hypothesis.internal.fixers import actually_equal
 
 
 @given(float)

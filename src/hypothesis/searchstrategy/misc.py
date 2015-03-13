@@ -15,16 +15,13 @@ from __future__ import division, print_function, absolute_import, \
 
 from random import Random
 
-import hypothesis.params as params
 import hypothesis.descriptors as descriptors
-import hypothesis.internal.utils.distributions as dist
+import hypothesis.internal.distributions as dist
 from hypothesis.types import RandomWithSeed
 from hypothesis.internal.compat import integer_types
-from hypothesis.internal.utils.fixers import nice_string
-from hypothesis.searchstrategy.strategy import BadData, SearchStrategy, \
-    check_type, check_data_type
-
-from .table import strategy_for, strategy_for_instances
+from hypothesis.internal.fixers import nice_string
+from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
+    strategy, check_type, check_data_type
 
 
 class BoolStrategy(SearchStrategy):
@@ -35,10 +32,11 @@ class BoolStrategy(SearchStrategy):
     size_lower_bound = 2
     size_upper_bound = 2
 
-    parameter = params.UniformFloatParameter(0, 1)
+    def produce_parameter(self, random):
+        return random.random()
 
-    def produce_template(self, random, p):
-        return dist.biased_coin(random, p)
+    def produce_template(self, context, p):
+        return dist.biased_coin(context.random, p)
 
     def to_basic(self, value):
         check_type(bool, value)
@@ -64,9 +62,10 @@ class JustStrategy(SearchStrategy):
     def __repr__(self):
         return 'JustStrategy(value=%r)' % (self.descriptor.value,)
 
-    parameter = params.CompositeParameter()
+    def produce_parameter(self, random):
+        return None
 
-    def produce_template(self, random, pv):
+    def produce_template(self, context, pv):
         return self.descriptor.value
 
     def to_basic(self, template):
@@ -87,7 +86,6 @@ class RandomStrategy(SearchStrategy):
 
     """
     descriptor = Random
-    parameter = params.CompositeParameter()
 
     def from_basic(self, data):
         check_data_type(integer_types, data)
@@ -96,8 +94,11 @@ class RandomStrategy(SearchStrategy):
     def to_basic(self, template):
         return template
 
-    def produce_template(self, random, pv):
-        return random.getrandbits(128)
+    def produce_parameter(self, random):
+        return None
+
+    def produce_template(self, context, pv):
+        return context.random.getrandbits(128)
 
     def reify(self, template):
         return RandomWithSeed(template)
@@ -120,7 +121,6 @@ class SampledFromStrategy(SearchStrategy):
         if descriptor is None:
             descriptor = descriptors.SampledFrom(self.elements)
         self.descriptor = descriptor
-        self.parameter = params.NonEmptySubset(self.elements)
         try:
             s = set(self.elements)
             self.size_lower_bound = len(s)
@@ -142,37 +142,37 @@ class SampledFromStrategy(SearchStrategy):
 
         return data
 
-    def produce_template(self, random, pv):
-        return random.randint(0, len(self.elements) - 1)
+    def produce_parameter(self, random):
+        return dist.non_empty_subset(random, range(len(self.elements)))
+
+    def produce_template(self, context, pv):
+        return context.random.choice(pv)
 
     def reify(self, template):
         return self.elements[template]
 
 
-strategy_for(bool)(BoolStrategy())
+@strategy.extend_static(bool)
+def bool_strategy(cls, settings):
+    return BoolStrategy()
 
 
-@strategy_for_instances(descriptors.Just)
-def define_just_strategy(strategies, descriptor):
+@strategy.extend(descriptors.Just)
+def define_just_strategy(descriptor, settings):
     return JustStrategy(descriptor.value)
 
 
-@strategy_for_instances(SearchStrategy)
-def define_strategy_strategy(strategies, descriptor):
-    return descriptor
-
-
-@strategy_for(Random)
-def define_random_strategy(strategies, descriptor):
+@strategy.extend_static(Random)
+def define_random_strategy(descriptor, settings):
     return RandomStrategy()
 
 
-@strategy_for_instances(descriptors.SampledFrom)
-def define_sampled_strategy(strategies, descriptor):
+@strategy.extend(descriptors.SampledFrom)
+def define_sampled_strategy(descriptor, settings):
     return SampledFromStrategy(descriptor.elements)
 
 
-@strategy_for(None)
-@strategy_for(type(None))
-def define_none_strategy(strategies, descriptor):
+@strategy.extend(type(None))
+@strategy.extend_static(type(None))
+def define_none_strategy(descriptor, settings):
     return JustStrategy(None)

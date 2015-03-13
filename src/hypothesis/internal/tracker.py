@@ -13,7 +13,7 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from hypothesis.internal.utils.hashitanyway import HashItAnyway
+from hypothesis.internal.hashitanyway import HashItAnyway
 
 
 class Tracker(object):

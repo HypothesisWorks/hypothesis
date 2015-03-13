@@ -18,15 +18,12 @@ import base64
 import string
 import unicodedata
 
-import hypothesis.params as params
 import hypothesis.descriptors as descriptors
-import hypothesis.internal.utils.distributions as dist
+import hypothesis.internal.distributions as dist
 from hypothesis.internal.compat import hrange, hunichr, text_type, \
     binary_type
-from hypothesis.searchstrategy.strategy import BadData, SearchStrategy, \
-    MappedSearchStrategy, check_type, check_data_type
-
-from .table import strategy_for
+from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
+    MappedSearchStrategy, strategy, check_type, check_data_type
 
 
 class OneCharStringStrategy(SearchStrategy):
@@ -37,12 +34,13 @@ class OneCharStringStrategy(SearchStrategy):
         text_type('0123456789') + text_type(string.ascii_letters) +
         text_type(' \t\n')
     )
-    parameter = params.CompositeParameter(
-        ascii_chance=params.UniformFloatParameter(0, 1)
-    )
 
-    def produce_template(self, random, pv):
-        if dist.biased_coin(random, pv.ascii_chance):
+    def produce_parameter(self, random):
+        return random.random()
+
+    def produce_template(self, context, p):
+        random = context.random
+        if dist.biased_coin(random, p):
             return random.choice(self.ascii_characters)
         else:
             while True:
@@ -117,19 +115,14 @@ class BinaryStringStrategy(MappedSearchStrategy):
             raise BadData(*e.args)
 
 
-@strategy_for(text_type)
-def define_text_type_strategy(strategies, descriptor):
-    child = strategies.new_child_mapper()
-    c = OneCharStringStrategy()
-    child.define_specification_for(
-        text_type, lambda x, y: c)
-    list_of_strings = child.strategy([text_type])
-    return StringStrategy(list_of_strings)
+@strategy.extend_static(text_type)
+def define_text_type_strategy(descriptor, settings):
+    return StringStrategy(strategy([OneCharStringStrategy()], settings))
 
 
-@strategy_for(binary_type)
-def define_binary_strategy(strategies, descriptor):
+@strategy.extend_static(binary_type)
+def define_binary_strategy(descriptor, settings):
     return BinaryStringStrategy(
-        strategy=strategies.strategy([descriptors.integers_in_range(0, 255)]),
+        strategy=strategy([descriptors.integers_in_range(0, 255)], settings),
         descriptor=binary_type,
     )

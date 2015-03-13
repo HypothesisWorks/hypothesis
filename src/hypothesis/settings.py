@@ -20,15 +20,11 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import os
+from collections import namedtuple
 
 from hypothesis.conventions import not_set
 
-
-def set_or_default(self, name, value):
-    if value != not_set:
-        setattr(self, name, value)
-    else:
-        setattr(self, name, getattr(default, name))
+all_settings = {}
 
 
 class Settings(object):
@@ -40,53 +36,103 @@ class Settings(object):
     Not all settings parameters are guaranteed to be stable. However the
     following are:
 
-    max_examples: Once this many examples have been considered without finding
-        any counter-example, falsify will terminate
-    timeout: Once this amount of time has passed, falsify will terminate even
-        if it has not found many examples. This is a soft rather than a hard
-        limit - Hypothesis won't e.g. interrupt execution of the called
-        function to stop it. If this value is <= 0 then no timeout will be
-        applied.
-    derandomize: If this is True then hypothesis will run in deterministic mode
-        where each falsification uses a random number generator that is seeded
-        based on the hypothesis to falsify, which will be consistent across
-        multiple runs. This has the advantage that it will eliminate any
-        randomness from your tests, which may be preferable for some situations
-        . It does have the disadvantage of making your tests less likely to
-        find novel breakages.
-    database: An instance of hypothesis.database.ExampleDatabase that will be
-        used to save examples to and load previous examples from. May be None
-        in which case no storage will be used.
-
     """
     # pylint: disable=too-many-arguments
 
+    def __getattr__(self, name):
+        if name in all_settings:
+            return all_settings[name].default
+
+        else:
+            raise AttributeError('Settings has no attribute %s' % (name,))
+
     def __init__(
             self,
-            min_satisfying_examples=not_set,
-            max_examples=not_set,
-            timeout=not_set,
-            derandomize=not_set,
-            database=not_set,
+            **kwargs
     ):
-        set_or_default(
-            self, 'min_satisfying_examples', min_satisfying_examples)
-        set_or_default(
-            self, 'max_examples', max_examples)
-        set_or_default(
-            self, 'timeout', timeout)
-        set_or_default(
-            self, 'derandomize', derandomize)
-        set_or_default(
-            self, 'database', database)
+        for setting in all_settings.values():
+            value = kwargs.pop(setting.name, not_set)
+            if value == not_set:
+                value = getattr(default, setting.name)
+            setattr(self, setting.name, value)
+        if kwargs:
+            raise TypeError('Invalid arguments %s' % (', '.join(kwargs),))
+
+    def __repr__(self):
+        bits = []
+        for name in all_settings:
+            value = getattr(self, name)
+            if value != getattr(default, name):
+                bits.append('%s=%r' % (name, value))
+        bits.sort()
+        return 'Settings(%s)' % ', '.join(bits)
+
+default = Settings()
+
+Setting = namedtuple('Setting', ('name', 'description', 'default'))
 
 
-default = Settings(
-    min_satisfying_examples=5,
-    max_examples=200,
-    timeout=60,
-    derandomize=False,
-    database=None
+def _default():
+    return default
+
+
+def define_setting(name, description, default):
+    all_settings[name] = Setting(name, description.strip(), default)
+
+
+define_setting(
+    'min_satisfying_examples',
+    default=5,
+    description="""
+Raise Unsatisfiable for any tests which do not produce at least this many
+values that pass all assume() calls and which have not exhaustively covered the
+search space.
+"""
+)
+
+define_setting(
+    'max_examples',
+    default=200,
+    description="""
+Once this many examples have been considered without finding any counter-
+example, falsify will terminate
+"""
+)
+
+define_setting(
+    'timeout',
+    default=60,
+    description="""
+Once this amount of time has passed, falsify will terminate even
+if it has not found many examples. This is a soft rather than a hard
+limit - Hypothesis won't e.g. interrupt execution of the called
+function to stop it. If this value is <= 0 then no timeout will be
+applied.
+"""
+)
+
+define_setting(
+    'derandomize',
+    default=False,
+    description="""
+If this is True then hypothesis will run in deterministic mode
+where each falsification uses a random number generator that is seeded
+based on the hypothesis to falsify, which will be consistent across
+multiple runs. This has the advantage that it will eliminate any
+randomness from your tests, which may be preferable for some situations
+. It does have the disadvantage of making your tests less likely to
+find novel breakages.
+"""
+)
+
+define_setting(
+    'database',
+    default=None,
+    description="""
+    database: An instance of hypothesis.database.ExampleDatabase that will be
+used to save examples to and load previous examples from. May be None
+in which case no storage will be used.
+"""
 )
 
 DATABASE_OVERRIDE = os.getenv('HYPOTHESIS_DATABASE_FILE')

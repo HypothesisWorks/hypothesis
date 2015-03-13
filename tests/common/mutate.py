@@ -14,7 +14,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 from hypothesis.internal.compat import hrange
-from hypothesis.internal.utils.fixers import actually_equal
+from hypothesis.internal.fixers import actually_equal
 
 collection_types = (set, frozenset, tuple, list)
 

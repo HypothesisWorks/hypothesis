@@ -13,13 +13,12 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-import hypothesis.descriptors as descriptors
-import hypothesis.searchstrategy.table as st
+from hypothesis.searchstrategy import strategy
 from hypothesis.searchstrategy.numbers import ExponentialFloatStrategy
 
 
 def test_strategies_can_be_used_in_descriptors():
-    intxfloat = st.StrategyTable.default().strategy((
+    intxfloat = strategy((
         int, ExponentialFloatStrategy()
     ))
     assert intxfloat.descriptor == (int, float)
@@ -27,13 +26,5 @@ def test_strategies_can_be_used_in_descriptors():
 
 def test_has_strategy_for_frozensets():
     assert (
-        st.StrategyTable.default().strategy(frozenset([int])).descriptor ==
+        strategy(frozenset([int])).descriptor ==
         frozenset([int]))
-
-
-def test_has_strategy_for_samples():
-    table = st.StrategyTable.default()
-    sampling = descriptors.sampled_from([1, 2, 3])
-    assert table.has_specification_for(sampling)
-    assert table.has_specification_for([sampling])
-    assert table.has_specification_for(set([sampling]))

@@ -17,12 +17,12 @@ import datetime as dt
 from collections import namedtuple
 
 import pytz
-import hypothesis.params as params
-from hypothesis.searchstrategy import SearchStrategy, check_data_type
+import hypothesis.internal.distributions as dist
+from hypothesis.searchstrategy import SearchStrategy, strategy, \
+    check_data_type
 from hypothesis.internal.compat import hrange, text_type
-from hypothesis.internal.utils.fixers import equal
-from hypothesis.internal.utils.hashitanyway import normal_hash, \
-    hash_everything
+from hypothesis.internal.fixers import equal
+from hypothesis.internal.hashitanyway import normal_hash, hash_everything
 
 DatetimeSpec = namedtuple('DatetimeSpec', ('naive_options',))
 
@@ -58,6 +58,20 @@ def maybe_zero_or(random, p, v):
 
 class DatetimeStrategy(SearchStrategy):
 
+    Parameter = namedtuple(
+        'Parameter',
+        (
+            'p_hour',
+            'p_minute',
+            'p_second',
+            'month',
+            'naive_chance',
+            'utc_chance',
+            'timezones',
+            'naive_options',
+        )
+    )
+
     def __init__(self, naive_options=None):
         self.naive_options = naive_options or {False, True}
         if self.naive_options == {False, True}:
@@ -65,22 +79,26 @@ class DatetimeStrategy(SearchStrategy):
         else:
             self.descriptor = DatetimeSpec(self.naive_options)
 
-        self.parameter = params.CompositeParameter(
-            p_hour=params.UniformFloatParameter(0, 1),
-            p_minute=params.UniformFloatParameter(0, 1),
-            p_second=params.UniformFloatParameter(0, 1),
-            month=params.NonEmptySubset(list(range(1, 13))),
-            naive_chance=params.UniformFloatParameter(0, 0.5),
-            utc_chance=params.UniformFloatParameter(0, 1),
-            timezones=params.NonEmptySubset(
-                list(map(pytz.timezone, pytz.all_timezones))
+    def produce_parameter(self, random):
+        return self.Parameter(
+            p_hour=dist.uniform_float(random, 0, 1),
+            p_minute=dist.uniform_float(random, 0, 1),
+            p_second=dist.uniform_float(random, 0, 1),
+            month=dist.non_empty_subset(random, list(range(1, 13))),
+            naive_chance=dist.uniform_float(random, 0, 0.5),
+            utc_chance=dist.uniform_float(random, 0, 1),
+            timezones=dist.non_empty_subset(
+                random,
+                list(
+                    map(pytz.timezone, pytz.all_timezones))
             ),
-            naive_options=params.NonEmptySubset(
-                self.naive_options
-            )
+            naive_options=dist.non_empty_subset(random,
+                                                self.naive_options
+                                                )
         )
 
-    def produce_template(self, random, pv):
+    def produce_template(self, context, pv):
+        random = context.random
         year = random.randint(dt.MINYEAR, dt.MAXYEAR)
         month = random.choice(pv.month)
         base = dt.datetime(
@@ -183,3 +201,13 @@ class DatetimeStrategy(SearchStrategy):
         if timezone is not None:
             base = timezone.localize(base)
         return base
+
+
+@strategy.extend_static(dt.datetime)
+def datetime_strategy(cls, settings):
+    return DatetimeStrategy()
+
+
+@strategy.extend(DatetimeSpec)
+def datetime_specced_strategy(spec, settings):
+    return DatetimeStrategy(spec.naive_options)

@@ -14,9 +14,9 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 from hypothesis.types import RandomWithSeed
+from hypothesis.extmethod import ExtMethod
 from hypothesis.internal.compat import text_type, binary_type
-from hypothesis.internal.extmethod import ExtMethod
-from hypothesis.internal.utils.fixers import actually_equal
+from hypothesis.internal.fixers import actually_equal
 
 hash_everything = ExtMethod()
 

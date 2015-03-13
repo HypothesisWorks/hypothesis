@@ -17,16 +17,14 @@ import sys
 import math
 import struct
 from random import Random
+from collections import namedtuple
 
-import hypothesis.params as params
 import hypothesis.descriptors as descriptors
-import hypothesis.internal.utils.distributions as dist
+import hypothesis.internal.distributions as dist
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.searchstrategy.misc import SampledFromStrategy
-from hypothesis.searchstrategy.strategy import BadData, SearchStrategy, \
-    MappedSearchStrategy, check_type, check_data_type
-
-from .table import strategy_for, strategy_for_instances
+from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
+    MappedSearchStrategy, strategy, check_type, check_data_type
 
 
 class IntStrategy(SearchStrategy):
@@ -86,14 +84,20 @@ class RandomGeometricIntStrategy(IntStrategy):
     the small.
 
     """
-    parameter = params.CompositeParameter(
-        negative_probability=params.BetaFloatParameter(0.5, 0.5),
-        p=params.BetaFloatParameter(alpha=0.2, beta=1.8),
+    Parameter = namedtuple(
+        'Parameter',
+        ('negative_probability', 'p')
     )
 
-    def produce_template(self, random, parameter):
-        value = dist.geometric(random, parameter.p)
-        if dist.biased_coin(random, parameter.negative_probability):
+    def produce_parameter(self, random):
+        return self.Parameter(
+            negative_probability=random.betavariate(0.5, 0.5),
+            p=random.betavariate(0.2, 1.8),
+        )
+
+    def produce_template(self, context, parameter):
+        value = dist.geometric(context.random, parameter.p)
+        if dist.biased_coin(context.random, parameter.negative_probability):
             value = -value
         return value
 
@@ -103,8 +107,6 @@ class BoundedIntStrategy(SearchStrategy):
     """A strategy for providing integers in some interval with inclusive
     endpoints."""
 
-    parameter = params.CompositeParameter()
-
     def __init__(self, start, end):
         SearchStrategy.__init__(self)
         self.descriptor = descriptors.integers_in_range(start, end)
@@ -112,12 +114,15 @@ class BoundedIntStrategy(SearchStrategy):
         self.end = end
         if start > end:
             raise ValueError('Invalid range [%d, %d]' % (start, end))
-        self.parameter = params.NonEmptySubset(
-            tuple(range(start, end + 1)),
-            activation_chance=min(0.5, 3.0 / (end - start + 1))
-        )
         self.size_lower_bound = end - start + 1
         self.size_upper_bound = end - start + 1
+
+    def produce_parameter(self, random):
+        return dist.non_empty_subset(
+            random,
+            tuple(range(self.start, self.end + 1)),
+            activation_chance=min(0.5, 3.0 / (self.end - self.start + 1))
+        )
 
     def from_basic(self, data):
         check_data_type(integer_types, data)
@@ -126,10 +131,10 @@ class BoundedIntStrategy(SearchStrategy):
     def to_basic(self, template):
         return template
 
-    def produce_template(self, random, parameter):
+    def produce_template(self, context, parameter):
         if self.start == self.end:
             return self.start
-        return random.choice(parameter)
+        return context.random.choice(parameter)
 
     def simplify(self, x):
         if x == self.start:
@@ -203,11 +208,13 @@ class WrapperFloatStrategy(FloatStrategy):
     def __init__(self, sub_strategy):
         super(WrapperFloatStrategy, self).__init__()
         self.sub_strategy = sub_strategy
-        self.parameter = sub_strategy.parameter
 
-    def produce_template(self, random, pv):
+    def produce_parameter(self, random):
+        return self.sub_strategy.produce_parameter(random)
+
+    def produce_template(self, context, pv):
         return self.sub_strategy.reify(
-            self.sub_strategy.produce_template(random, pv))
+            self.sub_strategy.produce_template(context, pv))
 
 
 class JustIntFloats(FloatStrategy):
@@ -215,10 +222,12 @@ class JustIntFloats(FloatStrategy):
     def __init__(self, int_strategy):
         super(JustIntFloats, self).__init__()
         self.int_strategy = int_strategy
-        self.parameter = self.int_strategy.parameter
 
-    def produce_template(self, random, pv):
-        return float(self.int_strategy.produce_template(random, pv))
+    def produce_parameter(self, random):
+        return self.int_strategy.draw_parameter(random)
+
+    def produce_template(self, context, pv):
+        return float(self.int_strategy.draw_template(context, pv))
 
 
 def compose_float(sign, exponent, fraction):
@@ -227,22 +236,29 @@ def compose_float(sign, exponent, fraction):
 
 
 class FullRangeFloats(FloatStrategy):
-    parameter = params.CompositeParameter(
-        negative_probability=params.UniformFloatParameter(0, 1),
-        subnormal_probability=params.UniformFloatParameter(0, 0.5),
+
+    Parameter = namedtuple(
+        'Parameter',
+        ('negative_probability', 'subnormal_probability')
     )
 
-    def produce_template(self, random, pv):
-        sign = int(dist.biased_coin(random, pv.negative_probability))
-        if dist.biased_coin(random, pv.subnormal_probability):
+    def produce_parameter(self, random):
+        return self.Parameter(
+            negative_probability=dist.uniform_float(random, 0, 1),
+            subnormal_probability=dist.uniform_float(random, 0, 0.5),
+        )
+
+    def produce_template(self, context, pv):
+        sign = int(dist.biased_coin(context.random, pv.negative_probability))
+        if dist.biased_coin(context.random, pv.subnormal_probability):
             exponent = 0
         else:
-            exponent = random.getrandbits(11)
+            exponent = context.random.getrandbits(11)
 
         return compose_float(
             sign,
             exponent,
-            random.getrandbits(52)
+            context.random.getrandbits(52)
         )
 
 
@@ -266,17 +282,23 @@ def _find_max_exponent():
 
 class SmallFloats(FloatStrategy):
     max_exponent = _find_max_exponent()
-    parameter = params.CompositeParameter(
-        negative_probability=params.UniformFloatParameter(0, 1),
-        min_exponent=params.UniformIntParameter(0, max_exponent)
+    Parameter = namedtuple(
+        'Parameter',
+        ('negative_probability', 'min_exponent'),
     )
 
-    def produce_template(self, random, pv):
-        base = math.ldexp(
-            random.random(),
-            -random.randint(pv.min_exponent, self.max_exponent)
+    def produce_parameter(self, random):
+        return self.Parameter(
+            negative_probability=dist.uniform_float(random, 0, 1),
+            min_exponent=random.randint(0, self.max_exponent)
         )
-        if dist.biased_coin(random, pv.negative_probability):
+
+    def produce_template(self, context, pv):
+        base = math.ldexp(
+            context.random.random(),
+            -context.random.randint(pv.min_exponent, self.max_exponent)
+        )
+        if dist.biased_coin(context.random, pv.negative_probability):
             base = -base
         return base
 
@@ -291,9 +313,9 @@ class FixedBoundedFloatStrategy(FloatStrategy):
     """
     descriptor = float
 
-    parameter = params.CompositeParameter(
-        cut=params.UniformFloatParameter(0, 1),
-        leftwards=params.BiasedCoin(0.5),
+    Parameter = namedtuple(
+        'Parameter',
+        ('cut', 'leftwards')
     )
 
     def __init__(self, lower_bound, upper_bound):
@@ -301,7 +323,14 @@ class FixedBoundedFloatStrategy(FloatStrategy):
         self.lower_bound = float(lower_bound)
         self.upper_bound = float(upper_bound)
 
-    def produce_template(self, random, pv):
+    def produce_parameter(self, random):
+        return self.Parameter(
+            cut=random.random(),
+            leftwards=dist.biased_coin(random, 0.5)
+        )
+
+    def produce_template(self, context, pv):
+        random = context.random
         if pv.leftwards:
             left = self.lower_bound
             right = pv.cut
@@ -328,18 +357,25 @@ class BoundedFloatStrategy(FloatStrategy):
     """A float strategy such that every conditional distribution is bounded but
     the endpoints may be arbitrary."""
 
+    Parameter = namedtuple(
+        'Parameter',
+        ('left', 'length', 'spread'),
+    )
+
     def __init__(self):
         super(BoundedFloatStrategy, self).__init__()
         self.inner_strategy = FixedBoundedFloatStrategy(0, 1)
-        self.parameter = params.CompositeParameter(
-            left=params.NormalParameter(0, 1),
-            length=params.ExponentialParameter(1),
-            spread=self.inner_strategy.parameter,
+
+    def produce_parameter(self, random):
+        return self.Parameter(
+            left=random.normalvariate(0, 1),
+            length=random.expovariate(1),
+            spread=self.inner_strategy.draw_parameter(random),
         )
 
-    def produce_template(self, random, pv):
-        return pv.left + self.inner_strategy.produce_template(
-            random, pv.spread
+    def produce_template(self, context, pv):
+        return pv.left + self.inner_strategy.draw_template(
+            context, pv.spread
         ) * pv.length
 
 
@@ -347,12 +383,12 @@ class GaussianFloatStrategy(FloatStrategy):
 
     """A float strategy such that every conditional distribution is drawn from
     a gaussian."""
-    parameter = params.CompositeParameter(
-        mean=params.NormalParameter(0, 1),
-    )
 
-    def produce_template(self, random, pv):
-        return random.normalvariate(pv.mean, 1)
+    def produce_parameter(self, random):
+        return random.normalvariate(0, 1)
+
+    def produce_template(self, context, mean):
+        return context.random.normalvariate(mean, 1)
 
 
 class ExponentialFloatStrategy(FloatStrategy):
@@ -362,14 +398,21 @@ class ExponentialFloatStrategy(FloatStrategy):
     aX + b where a = +/- 1 and X is an exponentially distributed random
     variable.
     """
-    parameter = params.CompositeParameter(
-        lambd=params.GammaParameter(2, 50),
-        zero_point=params.NormalParameter(0, 1),
-        negative=params.BiasedCoin(0.5),
+
+    Parameter = namedtuple(
+        'Parameter',
+        ('lambd', 'zero_point', 'negative'),
     )
 
-    def produce_template(self, random, pv):
-        value = random.expovariate(pv.lambd)
+    def produce_parameter(self, random):
+        return self.Parameter(
+            lambd=random.gammavariate(2, 50),
+            zero_point=random.normalvariate(0, 1),
+            negative=dist.biased_coin(random, 0.5),
+        )
+
+    def produce_template(self, context, pv):
+        value = context.random.expovariate(pv.lambd)
         if pv.negative:
             value = -value
         return pv.zero_point + value
@@ -402,27 +445,28 @@ class ComplexStrategy(MappedSearchStrategy):
         return complex(*value)
 
 
-@strategy_for_instances(descriptors.IntegerRange)
-def define_stragy_for_integer_Range(strategies, descriptor):
+@strategy.extend(descriptors.IntegerRange)
+def define_stragy_for_integer_Range(descriptor, settings):
     return BoundedIntStrategy(descriptor.start, descriptor.end)
 
 
-@strategy_for_instances(descriptors.FloatRange)
-def define_strategy_for_float_Range(strategies, descriptor):
+@strategy.extend(descriptors.FloatRange)
+def define_strategy_for_float_Range(descriptor, settings):
     return FixedBoundedFloatStrategy(descriptor.start, descriptor.end)
 
 
-strategy_for(int)(
-    RandomGeometricIntStrategy())
+@strategy.extend_static(int)
+def int_strategy(descriptor, settings):
+    return RandomGeometricIntStrategy()
 
 
-@strategy_for(float)
-def define_float_strategy(strategies, descriptor):
+@strategy.extend_static(float)
+def define_float_strategy(descriptor, settings):
     return WrapperFloatStrategy(
         GaussianFloatStrategy() |
         BoundedFloatStrategy() |
         ExponentialFloatStrategy() |
-        JustIntFloats(strategies.strategy(int)) |
+        JustIntFloats(strategy(int)) |
         NastyFloats() |
         NastyFloats() |
         FullRangeFloats() |
@@ -430,6 +474,6 @@ def define_float_strategy(strategies, descriptor):
     )
 
 
-@strategy_for(complex)
-def define_complex_strategy(strategies, descriptor):
-    return ComplexStrategy(complex, strategies.strategy((float, float)))
+@strategy.extend_static(complex)
+def define_complex_strategy(descriptor, settings):
+    return ComplexStrategy(complex, strategy((float, float), settings))

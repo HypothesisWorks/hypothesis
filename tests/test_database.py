@@ -16,13 +16,12 @@ from __future__ import division, print_function, absolute_import, \
 import pytest
 import hypothesis.settings as hs
 from hypothesis import Verifier, given
-from tests.common import small_table
 from hypothesis.database import ExampleDatabase
 from tests.common.descriptors import DescriptorWithValue
 from hypothesis.internal.compat import text_type, integer_types
+from hypothesis.internal.fixers import actually_equal
 from hypothesis.database.backend import Backend, SQLiteBackend
 from hypothesis.database.formats import Format, JSONFormat
-from hypothesis.internal.utils.fixers import actually_equal
 
 
 def test_deduplicates():
@@ -93,8 +92,10 @@ backend_format_pairs = (
 
 
 @given(DescriptorWithValue, verifier=Verifier(
-    strategy_table=small_table,
-    settings=hs.Settings(max_examples=500),
+    settings=hs.Settings(
+        max_examples=500,
+        average_list_length=3.0,
+    ),
 ))
 def test_can_round_trip_a_single_value_through_the_database(dav):
     run_round_trip(dav.descriptor, dav.template)
