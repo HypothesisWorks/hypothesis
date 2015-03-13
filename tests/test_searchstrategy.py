@@ -34,7 +34,7 @@ from hypothesis.searchstrategy.strategies import OneOfStrategy, \
 def test_string_strategy_produces_strings():
     strings = strategy(text_type)
     result = strings.produce_template(
-        BuildContext(random), strings.draw_parameter(random))
+        BuildContext(random), strings.produce_parameter(random))
     assert result is not None
 
 
@@ -117,7 +117,7 @@ def test_named_tuples_always_produce_named_tuples():
     for i in hrange(100):
         assert isinstance(
             s.produce_template(
-                BuildContext(random), s.draw_parameter(random)), Litter)
+                BuildContext(random), s.produce_parameter(random)), Litter)
 
     for x in s.simplify(Litter(100, 100)):
         assert isinstance(x, Litter)
@@ -181,7 +181,7 @@ def test_float_strategy_does_not_overflow():
     s = strategy(float)
 
     for _ in hrange(100):
-        s.produce_template(BuildContext(random), s.draw_parameter(random))
+        s.produce_template(BuildContext(random), s.produce_parameter(random))
 
 
 def test_does_not_shrink_tuple_length():
@@ -220,7 +220,7 @@ def test_strategy_for_integer_range_produces_only_integers_in_that_range():
         assert x == 1
     some_integers = strategy(descriptors.IntegerRange(1, 10))
     for _ in hrange(100):
-        pv = some_integers.draw_parameter(random)
+        pv = some_integers.produce_parameter(random)
         x = some_integers.produce_template(BuildContext(random), pv)
         assert 1 <= x <= 10
 
@@ -229,7 +229,7 @@ def test_strategy_for_integer_range_can_produce_end_points():
     some_integers = strategy(descriptors.IntegerRange(1, 10))
     found = set()
     for _ in hrange(1000):  # pragma: no branch
-        pv = some_integers.draw_parameter(random)
+        pv = some_integers.produce_parameter(random)
         x = some_integers.produce_template(BuildContext(random), pv)
         found.add(x)
         if 1 in found and 10 in found:

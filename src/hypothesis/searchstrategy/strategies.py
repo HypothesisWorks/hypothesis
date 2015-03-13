@@ -142,19 +142,12 @@ class SearchStrategy(object):
             context, self.draw_parameter(context.random))
 
     def draw_parameter(self, random):
-        return (
-            dist.uniform_float(random, 0, 0.5),
-            self.produce_parameter(random))
+        return self.produce_parameter(random)
 
-    def draw_template(self, context, parameter_values):
-        reuse_chance, parameter_value = parameter_values
-        existing = context.examples_for(self)
-        if existing and context.random.random() <= reuse_chance:
-            return context.random.choice(existing)
-        else:
-            template = self.produce_template(context, parameter_value)
-            context.add_example(self, template)
-            return template
+    def draw_template(self, context, parameter_value):
+        template = self.produce_template(context, parameter_value)
+        context.add_example(self, template)
+        return template
 
     def produce_parameter(self, random):
         raise NotImplementedError(  # pragma: no cover

@@ -90,7 +90,10 @@ def size(descriptor):
 
 
 MAX_SIZE = 15
-settings = hs.Settings(max_examples=100, timeout=4)
+settings = hs.Settings(
+    max_examples=100, timeout=4,
+    average_list_length=5,
+)
 
 verifier = Verifier(
     settings=settings,

@@ -147,7 +147,7 @@ class Verifier(object):
             if time_to_call_it_a_day():
                 break
 
-            args = search_strategy.draw_template(
+            args = search_strategy.produce_template(
                 build_context, parameter
             )
 

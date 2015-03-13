@@ -22,7 +22,6 @@ from collections import namedtuple
 from hypothesis import Verifier, Exhausted, given
 from hypothesis.database import ExampleDatabase
 from hypothesis.settings import Settings
-from hypothesis.descriptors import one_of
 from hypothesis.searchstrategy import BuildContext, SearchStrategy, \
     strategy
 from hypothesis.internal.compat import text_type, integer_types
@@ -73,6 +72,7 @@ def descriptor_test_suite(
     settings = Settings(
         database=None,
         max_examples=max_examples,
+        average_list_length=5.0,
     )
     random = random or Random()
     verifier = Verifier(
@@ -80,8 +80,6 @@ def descriptor_test_suite(
         random=random
     )
     strat = strategy(descriptor)
-    mixed = one_of((int, (bool, str), descriptor))
-    mixed_strategy = strategy(mixed)
     descriptor_test = given(
         TemplatesFor(descriptor), verifier=verifier
     )
@@ -103,10 +101,6 @@ def descriptor_test_suite(
                 strat.reify(template),
                 strat.reify(template),
             )
-
-        @given(TemplatesFor(mixed), verifier=verifier)
-        def test_can_simplify_mixed(self, template):
-            list(mixed_strategy.simplify_such_that(template, lambda x: True))
 
         @descriptor_test
         def test_is_basic(self, value):

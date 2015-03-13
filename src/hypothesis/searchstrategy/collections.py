@@ -261,7 +261,7 @@ class SetStrategy(MappedSearchStrategy):
         ('stopping_chance', 'child_parameter'),
     )
 
-    def __init__(self, strategies):
+    def __init__(self, strategies, average_length=50.0):
         strategies = list(strategies)
         strategies.sort(key=nice_string)
 
@@ -275,6 +275,7 @@ class SetStrategy(MappedSearchStrategy):
         else:
             self.size_lower_bound = 1
             self.size_upper_bound = 1
+        self.average_length = average_length
 
     def decompose(self, value):
         return [
@@ -290,9 +291,10 @@ class SetStrategy(MappedSearchStrategy):
     def produce_parameter(self, random):
         if self.descriptor:
             return self.Parameter(
-                stopping_chance=dist.uniform_float(random, 0.01, 0.25),
-                child_parameter=self.element_strategy.draw_parameter(random),
-            )
+                stopping_chance=dist.uniform_float(
+                    random, 0., 2.0 / self.average_length),
+                child_parameter=self.element_strategy.produce_parameter(
+                    random),)
 
     def produce_template(self, context, pv):
         if not self.descriptor:
@@ -301,7 +303,7 @@ class SetStrategy(MappedSearchStrategy):
         while True:
             if dist.biased_coin(context.random, pv.stopping_chance):
                 break
-            result.add(self.element_strategy.draw_template(
+            result.add(self.element_strategy.produce_template(
                 context, pv.child_parameter
             ))
         return frozenset(result)
@@ -379,7 +381,10 @@ class FixedKeysDictStrategy(MappedSearchStrategy):
 
 @strategy.extend(set)
 def define_set_strategy(descriptor, settings):
-    return SetStrategy(strategy(d, settings) for d in descriptor)
+    return SetStrategy(
+        (strategy(d, settings) for d in descriptor),
+        average_length=settings.average_list_length
+    )
 
 
 @strategy.extend(frozenset)
