@@ -25,6 +25,7 @@ from tests.common.utils import fails, fails_with, capture_out
 from hypothesis.descriptors import just, one_of, sampled_from, \
     floats_in_range, integers_in_range
 from hypothesis.internal.compat import text_type, binary_type
+from hypothesis import strategy
 
 
 @given(int, int)
@@ -388,3 +389,9 @@ def test_fails_only_once(x):
     if first_call:
         first_call = False
         assert False
+
+
+@given([strategy(int)])
+def test_can_use_strategies(xs):
+    assert isinstance(xs, list)
+    assert all(isinstance(x, int) for x in xs)

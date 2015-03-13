@@ -70,10 +70,6 @@ class Verifier(object):
             self.random = random or Random()
         self.max_regenerations = 0
 
-    def examples_for(self, descriptor):
-        storage = self.database.storage_for(descriptor)
-        return tuple(storage.fetch())
-
     def falsify(
             self, hypothesis,
             *argument_types,
