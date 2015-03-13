@@ -162,7 +162,7 @@ It can also be true that a test which is in theory falsifiable will always pass.
 .. code:: python
 
     @given(str)
-    def test_str_addition_is_commutative(x):
+    def test_not_a_specific_value(x):
         assert x != "I am the very model of a modern major general"
 
 Hypothesis is not magic and does not do any introspection on your code to find
@@ -368,128 +368,6 @@ a talk about what you can do to help me support them.
 
 I have no idea if Hypothesis works on Jython, IronPython, etc. Do people really use those?
 
------------------
-Internals
------------------
-
-The main function which drives everything that Hypothesis does is falsify. This is essentially
-a slightly more direct version of what the test annotations above are doing: Given a function
-and a specification for how to call that function it tries to produce a value that makes
-that function return False.
-
-.. code:: python
-
-    In [1]: from hypothesis import falsify
-
-    In [2]: falsify(lambda x,y,z: (x + y) + z == x + (y + z), float,float,float)
-    Out[2]: (1.0, 1.0, 0.0387906318128606)
-
-    In [3]: falsify(lambda x: sum(x) < 100, [int])
-    Out[3]: ([6, 29, 65],)
-
-    In [4]: falsify(lambda x: sum(x) < 100, [int,float])
-    Out[4]: ([18.0, 82],)
-
-    In [5]: falsify(lambda x: "a" not in x, str)
-    Out[5]: ('a',)
-
-    In [6]: falsify(lambda x: "a" not in x, {str})
-    Out[6]: (set(['a']),)
-
-If you ask it to falsify things that are true:
-
-.. code:: python
-
-    In [7]: falsify(lambda x: x + 1 == 1 + x, int)
-    Unfalsifiable: Unable to falsify hypothesis lambda x: x + 1 == 1 + x
-
-(that's real output. Hypothesis goes to some length to nicely display the functions
-you're trying to falsify even when they're lambdas. This isn't always possible to do
-but it manages a lot of the time)
-
-And of course the same thing will happen if we ask it to falsify things that are false but hard to find:
-
-.. code:: python
-
-    In [8]: falsify(lambda x: x != "I am the very model of a modern major general", str)
-    Unfalsifiable: Unable to falsify hypothesis lambda x: x != "I am the very model of a modern major general"
-
-
-------------------
- Stateful testing
-------------------
-
-You can also use hypothesis for a more stateful style of testing, to generate
-sequences of operations to break your code.
-
-Considering the following broken implementation of a set:
-
-.. code:: python
-
-    class BadSet:
-        def __init__(self):
-            self.data = []
-
-        def add(self, arg):
-            self.data.append(arg)
-
-        def remove(self, arg):
-            for i in xrange(0, len(self.data)):
-                if self.data[i] == arg:
-                    del self.data[i]
-                    break
-
-        def contains(self, arg):
-            return arg in self.data
-
-Can we use hypothesis to demonstrate that it's broken? We can indeed!
-
-We can put together a stateful test as follows:
-
-.. code:: python
-
-    class BadSetTester(StatefulTest):
-        def __init__(self):
-            self.target = BadSet()
-
-        @step
-        @requires(int)
-        def add(self, i):
-            self.target.add(i)
-            assert self.target.contains(i)
-
-        @step
-        @requires(int)
-        def remove(self,i):
-            self.target.remove(i)
-            assert not self.target.contains(i)
-
-The @step decorator says that this method is to be used as a test step.
-The @requires decorator says what argument types it needs when it is 
-(you can omit @requires if you don't need any arguments).
-
-We can now ask hypothesis for an example of this being broken:
-
-.. code:: python
-
-    In [7]: BadSetTester.breaking_example()
-    Out[7]: [('add', 1), ('add', 1), ('remove', 1)]
-
-What does this mean? It means that if we were to do:
-
-.. code:: python
-
-    x = BadSetTester()
-    x.add(1)
-    x.add(1)
-    x.remove(1)
-
-then we would get an assertion failure. Which indeed we would because the
-assertion that removing results in the element no longer being in the set
-would now be failing.
-
-The stateful testing doesn't currently have a clean way for integrating it into
-a test suite, but you can always just run it and make assertions about the output.
 
 ---------------------
  Adding custom types
