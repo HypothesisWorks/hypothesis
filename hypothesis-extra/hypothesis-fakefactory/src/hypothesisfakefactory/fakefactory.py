@@ -14,7 +14,6 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import faker
-import hypothesis.params as params
 from faker.config import AVAILABLE_LOCALES
 from hypothesis.searchstrategy import SearchStrategy, strategy, \
     check_data_type

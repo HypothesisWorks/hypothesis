@@ -17,7 +17,6 @@ import datetime as dt
 from collections import namedtuple
 
 import pytz
-import hypothesis.params as params
 from hypothesis.searchstrategy import SearchStrategy, strategy, \
     check_data_type
 from hypothesis.internal.compat import hrange, text_type
