@@ -72,14 +72,14 @@ def descriptor_test_suite(
     settings = Settings(
         database=None,
         max_examples=max_examples,
-        average_list_length=5.0,
+        average_list_length=2.0,
     )
     random = random or Random()
     verifier = Verifier(
         settings=settings,
         random=random
     )
-    strat = strategy(descriptor)
+    strat = strategy(descriptor, settings)
     descriptor_test = given(
         TemplatesFor(descriptor), verifier=verifier
     )
