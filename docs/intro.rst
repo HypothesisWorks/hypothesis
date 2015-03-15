@@ -160,6 +160,30 @@ The latter is very much a greedy local search method so is not guaranteed to fin
 the simplest possible example, but generally speaking the examples it finds are very
 easy to understand.
 
+
+~~~~~~~~~~~~~~~~~~~~~~~~~
+Random data in my tests??
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Randomization in tests has a bad reputation - unreliable CI runs are the worst, and
+randomness seems like the very definition of unreliable.
+
+Hypothesis has two defences against this problem:
+
+1. Hypothesis can only ever exhibit false negatives - a test can fail to find an example,
+and thus pass when it should fail, but if a test fails then it is demonstrating a genuine
+bug. So if your build fails randomly it's still telling you about a new bug you hadn't
+previously seen.
+2. Hypothesis saves failing examples in a database, so once a test starts failing it should
+keep failing, because Hypothesis remembers the previous example and tries that first.
+
+If that's not enough for you, you can also set the derandomize setting to True, which will
+cause all tests to be run with a random number generator seeded off the function body. I
+don't particularly recommend it - it significantly decreases the potential for Hypothesis
+to find interesting bugs because each time you run your tests it always checks the same
+set of examples - but it's a perfectly good approach if you need a 100% deterministic test
+suite.
+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 SearchStrategy and converting arguments
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
