@@ -185,5 +185,3 @@ used to save examples to and load previous examples from. May be None
 in which case no storage will be used.
 """
 )
-
-default.database_file = os.getenv('HYPOTHESIS_DATABASE_FILE')
