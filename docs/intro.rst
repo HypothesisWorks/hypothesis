@@ -98,16 +98,6 @@ You could also have done this as a unittest TestCase:
 
   if __name__ == '__main__':
       unittest.main()
-  import unittest
-
-
-  class TestEncoding(unittest.TestCase):
-      @given(str)
-      def test_decode_inverts_encode(self, s):
-          self.assertEqual(decode(encode(s)), s)
-
-  if __name__ == '__main__':
-      unittest.main()
 
 The @given decorator takes our test function and turns it into a parametrized one.
 If it's called as normal by whatever test runner you like (or just explicitly called
