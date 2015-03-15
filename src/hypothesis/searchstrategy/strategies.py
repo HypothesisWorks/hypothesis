@@ -19,9 +19,10 @@ import hypothesis.internal.distributions as dist
 from hypothesis.settings import Settings
 from hypothesis.extmethod import ExtMethod
 from hypothesis.descriptors import OneOf, one_of
-from hypothesis.internal.compat import integer_types
+from hypothesis.internal.compat import integer_types, hrange
 from hypothesis.internal.fixers import IdKey, nice_string
 from hypothesis.internal.tracker import Tracker
+from random import Random
 
 
 class BuildContext(object):
@@ -141,6 +142,30 @@ class SearchStrategy(object):
     def draw_and_produce(self, context):
         return self.draw_template(
             context, self.draw_parameter(context.random))
+
+    def size(self, template):
+        def basic_size(x):
+            try:
+                if len(x) == 1:
+                    return 1
+            except TypeError:
+                return 1
+            return sum(map(basic_size, x))
+        return basic_size(self.to_basic(template))
+
+    def map(self, pack, descriptor):
+        return MappedSearchStrategy(
+            pack=pack, descriptor=descriptor, strategy=self
+        )
+
+    def example(self):
+        random = Random()
+        context = BuildContext(random)
+        template = min((
+            self.draw_and_produce(context)
+            for _ in hrange(3)
+            ), key=self.size)
+        return self.reify(template)
 
     def draw_parameter(self, random):
         return self.produce_parameter(random)
@@ -363,12 +388,14 @@ class MappedSearchStrategy(SearchStrategy):
 
     """
 
-    def __init__(self, descriptor, strategy):
+    def __init__(self, descriptor, strategy, pack=None):
         SearchStrategy.__init__(self)
         self.mapped_strategy = strategy
         self.descriptor = descriptor
         self.size_lower_bound = self.mapped_strategy.size_lower_bound
         self.size_upper_bound = self.mapped_strategy.size_upper_bound
+        if pack is not None:
+            self.pack = pack
 
     def produce_parameter(self, random):
         return self.mapped_strategy.produce_parameter(random)
