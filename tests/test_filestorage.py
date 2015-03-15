@@ -15,7 +15,7 @@ from __future__ import division, print_function, absolute_import, \
 
 import os
 
-import hypothesis.internal.filestorage as fs
+import hypothesis.settings as fs
 
 previous_home_dir = None
 

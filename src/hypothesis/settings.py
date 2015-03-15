@@ -21,8 +21,40 @@ from __future__ import division, print_function, absolute_import, \
 
 import os
 from collections import namedtuple
-
+import inspect
 from hypothesis.conventions import not_set
+
+__hypothesis_home_directory = None
+
+
+def set_hypothesis_home_dir(directory):
+    global __hypothesis_home_directory
+    __hypothesis_home_directory = directory
+
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError:
+        pass
+
+
+def hypothesis_home_dir():
+    global __hypothesis_home_directory
+    if not __hypothesis_home_directory:
+        __hypothesis_home_directory = os.getenv('HYPOTHESIS_STORAGE_DIRECTORY')
+    if not __hypothesis_home_directory:
+        __hypothesis_home_directory = os.path.join(
+            os.getcwd(), '.hypothesis'
+        )
+    mkdir_p(__hypothesis_home_directory)
+    return __hypothesis_home_directory
+
+
+def storage_directory(name):
+    path = os.path.join(hypothesis_home_dir(), name)
+    mkdir_p(path)
+    return path
 
 all_settings = {}
 
@@ -44,8 +76,10 @@ class Settings(object):
 
     def __getattr__(self, name):
         if name in all_settings:
-            return all_settings[name].default
-
+            d = all_settings[name].default
+            if inspect.isfunction(d):
+                d = d()
+            return d
         else:
             raise AttributeError('Settings has no attribute %s' % (name,))
 
@@ -141,7 +175,10 @@ find novel breakages.
 
 define_setting(
     'database_file',
-    default=None,
+    default=lambda: (
+        os.getenv('HYPOTHESIS_DATABASE_FILE') or
+        os.path.join(hypothesis_home_dir(), 'hypothesis.db')
+    ),
     description="""
     database: An instance of hypothesis.database.ExampleDatabase that will be
 used to save examples to and load previous examples from. May be None

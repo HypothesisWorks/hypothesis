@@ -60,6 +60,7 @@ setup(
         "Topic :: Software Development :: Testing",
     ],
     long_description=open(README).read(),
-    tests_require=['pytest', 'pytest-rerunfailures', 'flake8'],
+    tests_require=[
+        'pytest', 'pytest-rerunfailures', 'pytest-faulthandler', 'flake8'],
     cmdclass={'test': PyTest},
 )

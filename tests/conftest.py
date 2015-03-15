@@ -17,7 +17,7 @@ import warnings
 from tempfile import mkdtemp
 
 import hypothesis.settings
-from hypothesis.internal.filestorage import set_hypothesis_home_dir
+from hypothesis.settings import set_hypothesis_home_dir
 
 warnings.filterwarnings('error', category=UnicodeWarning)
 
