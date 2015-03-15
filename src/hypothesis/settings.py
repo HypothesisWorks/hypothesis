@@ -83,6 +83,15 @@ class Settings(object):
         else:
             raise AttributeError('Settings has no attribute %s' % (name,))
 
+    def __setattr__(self, name, value):
+        if (
+            name in all_settings or
+            name in ('_database', 'database')
+        ):
+            return super(Settings, self).__setattr__(name, value)
+        else:
+            raise AttributeError('No such setting %s' % (name,))
+
     def __init__(
             self,
             **kwargs
@@ -92,7 +101,7 @@ class Settings(object):
             if value == not_set:
                 value = getattr(default, setting.name)
             setattr(self, setting.name, value)
-        self.__database = kwargs.pop('database', None)
+        self._database = kwargs.pop('database', None)
         if kwargs:
             raise TypeError('Invalid arguments %s' % (', '.join(kwargs),))
 
@@ -107,13 +116,13 @@ class Settings(object):
 
     @property
     def database(self):
-        if self.__database is None and self.database_file is not None:
+        if self._database is None and self.database_file is not None:
             from hypothesis.database import ExampleDatabase
             from hypothesis.database.backend import SQLiteBackend
-            self.__database = databases.get(self.database_file) or (
+            self._database = databases.get(self.database_file) or (
                 ExampleDatabase(backend=SQLiteBackend(self.database_file)))
-            databases[self.database_file] = self.__database
-        return self.__database
+            databases[self.database_file] = self._database
+        return self._database
 
 default = Settings()
 
