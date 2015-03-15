@@ -27,6 +27,9 @@ from hypothesis.conventions import not_set
 all_settings = {}
 
 
+databases = {}
+
+
 class Settings(object):
 
     """A settings object controls a variety of parameters that are used in
@@ -55,6 +58,7 @@ class Settings(object):
             if value == not_set:
                 value = getattr(default, setting.name)
             setattr(self, setting.name, value)
+        self.__database = kwargs.pop('database', None)
         if kwargs:
             raise TypeError('Invalid arguments %s' % (', '.join(kwargs),))
 
@@ -66,6 +70,16 @@ class Settings(object):
                 bits.append('%s=%r' % (name, value))
         bits.sort()
         return 'Settings(%s)' % ', '.join(bits)
+
+    @property
+    def database(self):
+        if self.__database is None and self.database_file is not None:
+            from hypothesis.database import ExampleDatabase
+            from hypothesis.database.backend import SQLiteBackend
+            self.__database = databases.get(self.database_file) or (
+                ExampleDatabase(backend=SQLiteBackend(self.database_file)))
+            databases[self.database_file] = self.__database
+        return self.__database
 
 default = Settings()
 
@@ -126,7 +140,7 @@ find novel breakages.
 )
 
 define_setting(
-    'database',
+    'database_file',
     default=None,
     description="""
     database: An instance of hypothesis.database.ExampleDatabase that will be
@@ -135,11 +149,4 @@ in which case no storage will be used.
 """
 )
 
-DATABASE_OVERRIDE = os.getenv('HYPOTHESIS_DATABASE_FILE')
-
-if DATABASE_OVERRIDE:
-    from hypothesis.database import ExampleDatabase
-    from hypothesis.database.backend import SQLiteBackend
-    default.database = ExampleDatabase(
-        backend=SQLiteBackend(DATABASE_OVERRIDE)
-    )
+default.database_file = os.getenv('HYPOTHESIS_DATABASE_FILE')
