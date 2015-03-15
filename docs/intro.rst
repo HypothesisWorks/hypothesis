@@ -8,15 +8,15 @@ thought to look for.
 
 Classically a unit test will usually look something like:
 
-  1. Set up some data.
-  2. Perform some operations on the data.
-  3. Assert something about the result.
+1. Set up some data.
+2. Perform some operations on the data.
+3. Assert something about the result.
 
 With Hypothesis, tests look like
 
-  1. For all data matching some specification.
-  2. Perform some operations on the data.
-  3. Assert something about the result.
+1. For all data matching some specification.
+2. Perform some operations on the data.
+3. Assert something about the result.
 
 Usually this takes the form of deciding on invariants that your code should satisfy
 and asserting that they always hold, but you can also just modify your existing unit
@@ -373,5 +373,3 @@ It certainly works fine with pytest, nose and unittest and should work fine with
 There *is* `a pytest plugin <https://pypi.python.org/pypi/hypothesis-pytest>`_, which if you're using Hypothesis
 with pytest you should probably use, but it's not strictly necessary - its purely for improving the quality of the
 reporting a bit (by default Hypothesis prints its falsifying examples to stdout).
-
-
