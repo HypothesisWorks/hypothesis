@@ -251,6 +251,7 @@ def get_pretty_function_description(f):
 
 
 def arg_string(f, args, kwargs):
+    from hypothesis.internal.fixers import nice_string
     args, kwargs = convert_positional_arguments(f, args, kwargs)
 
     argspec = inspect.getargspec(f)
@@ -259,13 +260,13 @@ def arg_string(f, args, kwargs):
 
     for a in argspec.args:
         if a in kwargs:
-            bits.append('%s=%r' % (a, kwargs.pop(a)))
+            bits.append('%s=%s' % (a, nice_string(kwargs.pop(a))))
     if kwargs:
         for a in sorted(kwargs):
-            bits.append('%s=%r' % (a, kwargs[a]))
+            bits.append('%s=%s' % (a, nice_string(kwargs[a])))
 
     return ', '.join(
-        [repr(x) for x in args] +
+        [nice_string(x) for x in args] +
         bits
     )
 

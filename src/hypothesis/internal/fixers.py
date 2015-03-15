@@ -26,7 +26,7 @@ import unittest
 from hypothesis.extmethod import ExtMethod
 from hypothesis.internal.compat import text_type, binary_type, \
     integer_types
-from hypothesis.internal.reflection import unbind_method
+import hypothesis.internal.reflection as reflection
 
 
 class Equality(ExtMethod):
@@ -211,7 +211,8 @@ def generic_string(value, seen):
         else:
             return repr(value)
     if (
-        unbind_method(type(value).__repr__) != unbind_method(object.__repr__)
+        reflection.unbind_method(type(value).__repr__) !=
+        reflection.unbind_method(object.__repr__)
     ):
         return repr(value)
     else:
