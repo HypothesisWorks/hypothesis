@@ -76,12 +76,45 @@ Lets see how you'd do that with Hypothesis:
       assert decode(encode(s)) == s
 
 
+You can either let pytest discover that or if you just run it explicitly yourself:
+
+.. code:: python
+
+  if __name__ == '__main__':
+      test_decode_inverts_encode()
+
+You could also have done this as a unittest TestCase:
+
+
+.. code:: python
+
+  import unittest
+
+
+  class TestEncoding(unittest.TestCase):
+      @given(str)
+      def test_decode_inverts_encode(self, s):
+          self.assertEqual(decode(encode(s)), s)
+
+  if __name__ == '__main__':
+      unittest.main()
+  import unittest
+
+
+  class TestEncoding(unittest.TestCase):
+      @given(str)
+      def test_decode_inverts_encode(self, s):
+          self.assertEqual(decode(encode(s)), s)
+
+  if __name__ == '__main__':
+      unittest.main()
+
 The @given decorator takes our test function and turns it into a parametrized one.
 If it's called as normal by whatever test runner you like (or just explicitly called
 with no arguments) then Hypothesis will turn it into a parametrized test over a wide
 range of data.
 
-This immediately finds a bug in the code:
+Anyway, this test immediately finds a bug in the code:
 
 ..
 
