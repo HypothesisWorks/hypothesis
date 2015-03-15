@@ -26,7 +26,7 @@ tests to be a bit more general.
 An example
 ----------
 
-Suppose we've written a run length encoding system and we want to test it out.
+Suppose we've written a `run length encoding <http://en.wikipedia.org/wiki/Run-length_encoding>`_ system and we want to test it out.
 
 We have the following code which I took straight from the
 `Rosetta Code <http://rosettacode.org/wiki/Run-length_encoding>`_ wiki (OK, I removed some commented out code and fixed the formatting, but there
@@ -315,6 +315,126 @@ Note: example is just a method that's available for this sort of interactive deb
 It's not actually part of the process that Hypothesis uses to feed tests, though
 it is of course built off the same infrastructure.
 
+~~~~~~~~~~~~~~~~~~
+Making assumptions
+~~~~~~~~~~~~~~~~~~
+
+Sometimes a SearchStrategy doesn't produce exactly the right sort of data you want.
+
+For example suppose had the following test:
+
+
+.. code:: python
+
+  from hypothesis import given
+
+  @given(float)
+  def test_negation_is_self_inverse(x):
+      assert x == -(-x)
+      
+
+Running this gives us:
+
+.. 
+
+  Falsifying example: test_negation_is_self_inverse(x=float('nan'))
+  AssertionError
+
+This is annoying. We know about NaN and don't really care about it, but as soon as Hypothesis
+finds a NaN example it will get distracted by that and tell us about it. Also the test will
+fail and we want it to pass.
+
+So lets block off this particular example:
+
+.. code:: python
+
+  from hypothesis import given, assume
+  from math import isnan
+
+  @given(float)
+  def test_negation_is_self_inverse_for_non_nan(x):
+      assume(not isnan(x))
+      assert x == -(-x)
+
+And this passes without a problem.
+
+assume throws an exception which terminates the test when provided with a false argument.
+It's essentially an assert, except that the exception it throws is one that Hypothesis
+identifies as meaning that this is a bad example, not a failing test.
+
+In order to avoid the easy trap where you assume a lot more than you intended, Hypothesis
+will fail a test when it can't find enough examples passing the assumption.
+
+If we'd written:
+
+.. code:: python
+
+  from hypothesis import given, assume
+
+  @given(float)
+  def test_negation_is_self_inverse_for_non_nan(x):
+      assume(False)
+      assert x == -(-x)
+
+
+Then on running we'd have got the exception:
+
+.. 
+
+  Unsatisfiable: Unable to satisfy assumptions of hypothesis test_negation_is_self_inverse_for_non_nan. Only 0 examples found after 0.0791318 seconds
+  
+
+Hypothesis has an adaptive exploration strategy to try to avoid things which falsify
+assumptions, which should generally result in it still being able to find examples in hard
+to find situations.
+
+Suppose we had the following:
+
+
+.. code:: python
+
+  @given([int])
+  def test_sum_is_positive(xs):
+    assert sum(xs) > 0
+
+Unsurprisingly this fails and gives the falsifying example [].
+
+Adding assume(xs) to this removes the trivial empty example and gives us [0].
+
+Adding assume(all(x > 0 for x in xs)) and, unsurprisingly, it passes.
+
+This may seem obvious, and indeed it is, but suppose we wanted to try this for long
+lists. e.g. suppose we added an assume(len(xs) > 10) to it. This should basically
+never find an example: A naive strategy would find fewer than one in a thousand
+examples, and in the default configuration Hypothesis gives up long before it's
+tried 1000 examples (by default it tries 200).
+
+Here's what happens if we try to run this:
+
+
+.. code:: python
+
+  @given([int])
+  def test_sum_is_positive(xs):
+      assume(len(xs) > 10)
+      assume(all(x > 0 for x in xs))
+      print(xs)
+      assert sum(xs) > 0
+
+  In: test_sum_is_positive()
+  [17, 12, 7, 13, 11, 3, 6, 9, 8, 11, 47, 27, 1, 31, 1]
+  [6, 2, 29, 30, 25, 34, 19, 15, 50, 16, 10, 3, 16]
+  [25, 17, 9, 19, 15, 2, 2, 4, 22, 10, 10, 27, 3, 1, 14, 17, 13, 8, 16, 9, 2, 26, 5, 18, 16, 4]
+  [17, 65, 78, 1, 8, 29, 2, 79, 28, 18, 39]
+  [13, 26, 8, 3, 4, 76, 6, 14, 20, 27, 21, 32, 14, 42, 9, 24, 33, 9, 5, 15, 30, 40, 58, 2, 2, 4, 40, 1, 42, 33, 22, 45, 51, 2, 8, 4, 11, 5, 35, 18, 1, 46]
+  [2, 1, 2, 2, 3, 10, 12, 11, 21, 11, 1, 16]
+
+As you can see, Hypothesis doesn't find *many* examples here, but it finds some - enough to
+keep it happy.
+
+In general if you *can* shape your strategies better to your tests you should - for example
+integers_in_range(1, 1000) is a lot better than assume(1 <= x <= 1000), but assume will take
+you a long way if you can't.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The gory details of given parameters
@@ -383,6 +503,151 @@ If you don't have kwargs then the function returned by @given will have the same
 The reason for the "filling up from the right" behaviour is so that using @given with instance methods works: self will be passed to the function as normal and not be parametrized over.
 
 If all this seems really confusing, my recommendation is to just use keyword arguments for everything.
+
+------
+Extras
+------
+
+Hypothesis has a zero dependency policy for the core library. For things which need a
+dependency to work, these are farmed off into extra packages on pypi.
+
+These end up putting any additional things you need to import (if there are any) under
+the hypothesis.extra namespace.
+
+~~~~~~~~~~~~~~~~~~~
+hypothesis-datetime
+~~~~~~~~~~~~~~~~~~~
+
+As might be expected, this adds support for datetime to Hypothesis.
+
+If you install the hypothesis-datetime package then you get a strategy for datetime
+out of the box:
+
+.. code:: python
+
+  In [1]: from datetime import datetime
+  In [2]: from hypothesis import strategy
+
+  In [3]: strategy(datetime).example()
+  Out[3]: datetime.datetime(6360, 1, 3, 12, 30, 56, 185849)
+
+  In [4]: strategy(datetime).example()
+  Out[4]: datetime.datetime(6187, 6, 11, 0, 0, 23, 809965, tzinfo=<UTC>)
+
+  In [5]: strategy(datetime).example()
+  Out[5]: datetime.datetime(4076, 8, 7, 0, 15, 55, 127297, tzinfo=<DstTzInfo 'Turkey' EET+2:00:00 STD>)
+
+So things like the following work:
+
+.. code:: python
+
+  @given(datetime)
+  def test_365_days_are_one_year(d):
+      assert (d + timedelta(days=365)).year > d.year
+
+
+Or rather, the test correctly fails:
+
+.. 
+
+  Falsifying example: test_add_one_year(d=datetime.datetime(2000, 1, 1, 0, 0, tzinfo=<UTC>))
+
+We forgot about leap years.
+
+(Note: Actually most of the time you run that test it will pass because Hypothesis does not hit
+January 1st on a leap year with high enough probability that it will often find it.
+However the advantage of the Hypothesis database is that once this example is found
+it will stay found)
+
+We can also restrict ourselves to just naive datetimes or just timezone aware
+datetimes.
+
+
+.. code:: python
+
+  from hypothesis.extra.datetime import naive_datetime, timezone_aware_datetime
+
+  @given(naive_datetime)
+  def test_naive_datetime(xs):
+    assert isinstance(xs, datetime)
+    assert xs.tzinfo is None
+
+  @given(timezone_aware_datetime)
+  def test_non_naive_datetime(xs):
+    assert isinstance(xs, datetime)
+    assert xs.tzinfo is not None
+
+
+Both of the above will pass.
+
+~~~~~~~~~~~~~~~~~~~~~~
+hypothesis-fakefactory
+~~~~~~~~~~~~~~~~~~~~~~
+
+`Fake-factory <https://pypi.python.org/pypi/fake-factory>`_ is another Python
+library for data generation. hypothesis-fakefactory is a package which lets you
+use fake-factory generators to parametrize tests.
+
+In hypothesis.extra.fakefactory it defines the type FakeFactory which is a
+placeholder for producing data from any FakeFactory type.
+
+So for example the following will parametrize a test by an email address:
+
+
+.. code:: python
+
+  @given(FakeFactory('email'))
+  def test_email(email):
+      assert '@' in email
+
+
+Naturally you can compose these in all the usual ways, so e.g.
+
+.. code:: python
+
+  In [1]: from hypothesis.extra.fakefactory import FakeFactory
+  In [2]: from hypothesis import strategy
+  In [3]: strategy([FakeFactory('email')]).example()
+  Out[3]: 
+  ['.@.com',
+   '.@yahoo.com',
+   'kalvelis.paulius@yahoo.com',
+   'eraslan.mohsim@demirkoruturk.info']
+
+You can also specify locales:
+
+
+.. code:: python
+
+  In [4]: strategy(FakeFactory('name', locale='en_US')).example()
+  Out[4]: 'Kai Grant'
+
+  In [5]: strategy(FakeFactory('name', locale='fr_FR')).example()
+  Out[5]: 'Édouard Paul'
+
+Or if you want you can specify several locales:
+
+.. code:: python
+
+  In [6]: strategy([FakeFactory('name', locales=['en_US', 'fr_FR'])]).example()
+  Out[6]: 
+  ['Michel Blanchet',
+   'Victor Collin',
+   'Eugène Perrin',
+   'Miss Bernice Satterfield MD']
+
+If you want to your own FakeFactory providers you can do that too, passing them
+in as a providers argument to the FakeFactory type. It will generally be more
+powerful to use Hypothesis's custom strategies though unless you have a specific
+existing provider you want to use.
+
+~~~~~~~~~~~~~~~~~
+hypothesis-pytest
+~~~~~~~~~~~~~~~~~
+
+hypothesis-pytest is the world's most basic pytest plugin. Install it to get
+slightly better integrated example reporting when using @given and running
+under pytest. That's basically all it does.
 
 -------------------------------------------
 Integrating Hypothesis with your test suite
