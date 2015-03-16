@@ -10,6 +10,10 @@
 
 # END HEADER
 
+"""
+This module provides the core primitives of Hypothesis, assume and given.
+"""
+
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
@@ -41,6 +45,13 @@ def assume(condition):
 
 
 def given(*generator_arguments, **generator_kwargs):
+    """
+    A decorator for turning a test function that accepts
+    arguments into a randomized test.
+
+    This is the main entry point to Hypothesis. See the
+    full tutorial for details of its behaviour.
+    """
     if 'verifier' in generator_kwargs:
         verifier = generator_kwargs.pop('verifier')
         verifier.start_time = time.time()

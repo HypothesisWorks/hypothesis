@@ -19,7 +19,7 @@ With Hypothesis, tests look like
 3. Assert something about the result.
 
 Usually this takes the form of deciding on invariants, or guarantees, that your
-code should satisfy and asserting that they always hold. The simplest example
+code should satisfy and asserting that they always hold. The easiest example
 of a guarantee is that for all inputs your code shouldn't throw an exception,
 or should only throw a particular type of exception. Other examples of
 guarantees could be things like that after removing a user from a project they
@@ -71,7 +71,7 @@ functional modifications):
 We want to write a test for this that will check some invariant of these
 functions.
 
-The obvious invariant one tends to try when you've got this sort of encoding /
+The invariant one tends to try when you've got this sort of encoding /
 decoding is that if you encode something and then decode it you get the same
 value back.
 
@@ -530,13 +530,19 @@ Unsurprisingly this fails and gives the falsifying example [].
 
 Adding assume(xs) to this removes the trivial empty example and gives us [0].
 
-Adding assume(all(x > 0 for x in xs)) and, unsurprisingly, it passes.
+Adding assume(all(x > 0 for x in xs)) and it passes: A sum of a list of
+positive integers is positive.
 
-This may seem obvious, and indeed it is, but suppose we wanted to try this for long
-lists. e.g. suppose we added an assume(len(xs) > 10) to it. This should basically
-never find an example: A naive strategy would find fewer than one in a thousand
-examples, and in the default configuration Hypothesis gives up long before it's
-tried 1000 examples (by default it tries 200).
+The reason that this should be surprising is not that it doesn't find a
+counter-example, but that it finds enough examples at all.
+
+In order to make sure something interesting is happening, suppose we wanted to
+try this for long lists. e.g. suppose we added an assume(len(xs) > 10) to it.
+This should basically never find an example: A naive strategy would find fewer
+than one in a thousand examples, because if each element of the list is
+negative with probability half, you'd have to have ten of these go the right
+way by chance. In the default configuration Hypothesis gives up long before
+it's tried 1000 examples (by default it tries 200).
 
 Here's what happens if we try to run this:
 
@@ -767,8 +773,8 @@ Or if you want you can specify several locales:
 
 If you want to your own FakeFactory providers you can do that too, passing them
 in as a providers argument to the FakeFactory type. It will generally be more
-powerful to use Hypothesis's custom strategies though unless you have a specific
-existing provider you want to use.
+powerful to use Hypothesis's custom strategies though unless you have a
+specific existing provider you want to use.
 
 ~~~~~~~~~~~~~~~~~
 hypothesis-pytest
@@ -782,10 +788,13 @@ under pytest. That's basically all it does.
 Integrating Hypothesis with your test suite
 -------------------------------------------
 
-Hypothesis is very unopinionated about how you run your tests because all it does is modify your test functions.
-You can use it on the tests you want without affecting any others.
+Hypothesis is very unopinionated about how you run your tests because all it
+does is modify your test functions. You can use it on the tests you want
+without affecting any others.
 
-pytest is the only framework with explicit support right now, but the explicit support
-isn't really needed for integration - it just provides better integration with the reporting.
+pytest is the only framework with explicit support right now, but the explicit
+support isn't really needed for integration - it just provides better
+integration with the reporting.
 
-It certainly works fine with pytest, nose and unittest and should work fine with anything else.
+It certainly works fine with pytest, nose and unittest and should work fine
+with anything else.
