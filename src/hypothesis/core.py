@@ -17,7 +17,7 @@ import time
 import inspect
 from collections import namedtuple
 
-from hypothesis.verifier import Flaky, Verifier, Unfalsifiable, \
+from hypothesis.internal.verifier import Flaky, Verifier, Unfalsifiable, \
     UnsatisfiedAssumption
 from hypothesis.reporting import current_reporter
 from hypothesis.descriptors import just
@@ -25,6 +25,19 @@ from hypothesis.searchstrategy import strategy
 from hypothesis.internal.reflection import arg_string, copy_argspec
 
 HypothesisProvided = namedtuple('HypothesisProvided', ('value,'))
+
+
+def assume(condition):
+    """Assert a precondition for this test.
+
+    If this is not truthy then the test will abort but not fail and
+    Hypothesis will make a "best effort" attempt to avoid similar
+    examples in future.
+
+    """
+    if not condition:
+        raise UnsatisfiedAssumption()
+    return True
 
 
 def given(*generator_arguments, **generator_kwargs):

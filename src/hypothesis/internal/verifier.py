@@ -30,19 +30,6 @@ from hypothesis.errors import UnsatisfiedAssumption, \
     Unfalsifiable, Timeout, Exhausted, Unsatisfiable, Flaky
 
 
-def assume(condition):
-    """Assert a precondition for this test.
-
-    If this is not truthy then the test will abort but not fail and
-    Hypothesis will make a "best effort" attempt to avoid similar
-    examples in future.
-
-    """
-    if not condition:
-        raise UnsatisfiedAssumption()
-    return True
-
-
 class Verifier(object):
 
     """A wrapper object holding state required for a falsify invocation."""

@@ -16,19 +16,14 @@ some source of data. It verifies your code against a wide range of input
 and minimizes any failing examples it finds.
 """
 
-from hypothesis.verifier import (
-    Verifier,
-    assume,
-)
 from hypothesis.searchstrategy import strategy
 from hypothesis.settings import Settings
 
 
-from hypothesis.decorators import given
+from hypothesis.core import given, assume
 
 __all__ = [
     'Settings',
-    'Verifier',
     'assume',
     'given',
     'strategy',
