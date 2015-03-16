@@ -26,7 +26,7 @@ import hashlib
 import inspect
 from functools import wraps
 
-from hypothesis.conventions import not_set
+from hypothesis.utils.conventions import not_set
 from hypothesis.internal.compat import ARG_NAME_ATTRIBUTE, hrange, \
     text_type
 from hypothesis.settings import storage_directory
@@ -334,7 +334,7 @@ def source_exec_as_module(source):
                 raise
 
 COPY_ARGSPEC_SCRIPT = """
-from hypothesis.conventions import not_set
+from hypothesis.utils.conventions import not_set
 
 def accept(f):
     def %(name)s(%(argspec)s):

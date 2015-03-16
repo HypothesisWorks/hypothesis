@@ -28,7 +28,7 @@ from hypothesis.descriptors import Just, OneOf, SampledFrom, just
 from tests.common.descriptors import Descriptor, DescriptorWithValue, \
     primitive_types
 from hypothesis.searchstrategy import BuildContext, strategy
-from hypothesis.testdecorators import given
+from hypothesis.decorators import given
 from hypothesis.descriptortests import TemplatesFor
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.internal.fixers import nice_string, actually_equal

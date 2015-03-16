@@ -22,7 +22,7 @@ from __future__ import division, print_function, absolute_import, \
 import os
 from collections import namedtuple
 import inspect
-from hypothesis.conventions import not_set
+from hypothesis.utils.conventions import not_set
 
 __hypothesis_home_directory = None
 

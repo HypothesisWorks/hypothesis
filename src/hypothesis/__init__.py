@@ -24,7 +24,7 @@ from hypothesis.searchstrategy import strategy, MappedSearchStrategy
 from hypothesis.settings import Settings
 
 
-from hypothesis.testdecorators import given
+from hypothesis.decorators import given
 
 __all__ = [
     'Settings',

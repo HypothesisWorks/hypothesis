@@ -17,7 +17,7 @@ from collections import namedtuple
 
 import hypothesis.internal.distributions as dist
 from hypothesis.settings import Settings
-from hypothesis.extmethod import ExtMethod
+from hypothesis.utils.extmethod import ExtMethod
 from hypothesis.descriptors import OneOf, one_of
 from hypothesis.internal.compat import integer_types, hrange
 from hypothesis.internal.fixers import IdKey, nice_string
