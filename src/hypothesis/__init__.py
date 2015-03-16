@@ -19,11 +19,13 @@ from hypothesis.verifier import (
     assume,
 )
 from hypothesis.searchstrategy import strategy, MappedSearchStrategy
+from hypothesis.settings import Settings
 
 
 from hypothesis.testdecorators import given
 
 __all__ = [
+    'Settings',
     'Unfalsifiable',
     'Unsatisfiable',
     'Exhausted',

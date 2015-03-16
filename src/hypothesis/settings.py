@@ -62,17 +62,49 @@ all_settings = {}
 databases = {}
 
 
+def field_name(setting_name):
+    return "_" + setting_name
+
+
+class SettingsProperty(object):
+    def __init__(self, name):
+        self.name = name
+
+    def __get__(self, obj, type=None):
+        if obj is None:
+            return self
+        else:
+            try:
+                return obj.__dict__[self.name]
+            except KeyError:
+                raise AttributeError(self.name)
+
+    def __set__(self, obj, value):
+        obj.__dict__[self.name] = value
+
+    def __delete__(self, obj):
+        try:
+            del obj.__dict__[self.name]
+        except KeyError:
+            raise AttributeError(self.name)
+
+    @property
+    def __doc__(self):
+        return '\n'.join((
+            all_settings[self.name].description,
+            "default value: %r" % (getattr(Settings.default, self.name),)
+        ))
+
+
 class Settings(object):
 
     """A settings object controls a variety of parameters that are used in
-    falsification. There is a single default settings object that all other
-    Settings will use as its values s defaults.
+    falsification. These may control both the falsification strategy and the
+    details of the data that is generated.
 
-    Not all settings parameters are guaranteed to be stable. However the
-    following are:
-
+    Default values are picked up from the Settings.default object and changes
+    made there will be picked up in newly created Settings.
     """
-    # pylint: disable=too-many-arguments
 
     def __getattr__(self, name):
         if name in all_settings:
@@ -83,15 +115,6 @@ class Settings(object):
         else:
             raise AttributeError('Settings has no attribute %s' % (name,))
 
-    def __setattr__(self, name, value):
-        if (
-            name in all_settings or
-            name in ('_database', 'database')
-        ):
-            return super(Settings, self).__setattr__(name, value)
-        else:
-            raise AttributeError('No such setting %s' % (name,))
-
     def __init__(
             self,
             **kwargs
@@ -99,24 +122,58 @@ class Settings(object):
         for setting in all_settings.values():
             value = kwargs.pop(setting.name, not_set)
             if value == not_set:
-                value = getattr(default, setting.name)
+                value = getattr(Settings.default, setting.name)
             setattr(self, setting.name, value)
-        self._database = kwargs.pop('database', None)
+        self._database = kwargs.pop('database', not_set)
         if kwargs:
             raise TypeError('Invalid arguments %s' % (', '.join(kwargs),))
+
+    @classmethod
+    def define_setting(cls, name, description, default):
+        """
+        Add a new setting.
+
+            - name is the name of the property that will be used to access the
+              setting. This must be a valid python identifier.
+            - description will appear in the property's docstring
+            - default is the default value. This may be a zero argument
+              function in which case it is evaluated and its result is stored
+              the first time it is accessed on any given Settings object.
+        """
+        all_settings[name] = Setting(name, description.strip(), default)
+        setattr(cls, name, SettingsProperty(name))
+
+    def __setattr__(self, name, value):
+        if (
+            name not in all_settings and
+            name != '_database'
+        ):
+            raise AttributeError("No such setting %s" % (name,))
+        else:
+            return object.__setattr__(self, name, value)
 
     def __repr__(self):
         bits = []
         for name in all_settings:
             value = getattr(self, name)
-            if value != getattr(default, name):
+            if value != getattr(Settings.default, name):
                 bits.append('%s=%r' % (name, value))
         bits.sort()
         return 'Settings(%s)' % ', '.join(bits)
 
     @property
     def database(self):
-        if self._database is None and self.database_file is not None:
+        """
+        An ExampleDatabase instance to use for storage of examples. May be
+        None.
+
+        If this was explicitly set at Settings instantiation then that value
+        will be used (even if it was None). If not and the database_file
+        setting is not None this will be lazily loaded as an SQLite backed
+        ExampleDatabase using that file the first time this property is
+        accessed.
+        """
+        if self._database is not_set and self.database_file is not None:
             from hypothesis.database import ExampleDatabase
             from hypothesis.database.backend import SQLiteBackend
             self._database = databases.get(self.database_file) or (
@@ -124,20 +181,12 @@ class Settings(object):
             databases[self.database_file] = self._database
         return self._database
 
-default = Settings()
+Settings.default = Settings()
 
 Setting = namedtuple('Setting', ('name', 'description', 'default'))
 
 
-def _default():
-    return default
-
-
-def define_setting(name, description, default):
-    all_settings[name] = Setting(name, description.strip(), default)
-
-
-define_setting(
+Settings.define_setting(
     'min_satisfying_examples',
     default=5,
     description="""
@@ -147,16 +196,17 @@ search space.
 """
 )
 
-define_setting(
+Settings.define_setting(
     'max_examples',
     default=200,
     description="""
 Once this many examples have been considered without finding any counter-
-example, falsify will terminate
+example, falsification will terminate. Note that this includes examples which
+do not meet the assumptions of the test.
 """
 )
 
-define_setting(
+Settings.define_setting(
     'timeout',
     default=60,
     description="""
@@ -168,7 +218,7 @@ applied.
 """
 )
 
-define_setting(
+Settings.define_setting(
     'derandomize',
     default=False,
     description="""
@@ -182,7 +232,7 @@ find novel breakages.
 """
 )
 
-define_setting(
+Settings.define_setting(
     'database_file',
     default=lambda: (
         os.getenv('HYPOTHESIS_DATABASE_FILE') or

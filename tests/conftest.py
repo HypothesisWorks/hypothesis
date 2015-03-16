@@ -16,15 +16,15 @@ from __future__ import division, print_function, absolute_import, \
 import warnings
 from tempfile import mkdtemp
 
-import hypothesis.settings
+from hypothesis import Settings
 from hypothesis.settings import set_hypothesis_home_dir
 
 warnings.filterwarnings('error', category=UnicodeWarning)
 
 set_hypothesis_home_dir(mkdtemp())
 
-hypothesis.settings.default.max_examples = 1000
-hypothesis.settings.default.timeout = -1
+Settings.default.max_examples = 1000
+Settings.default.timeout = -1
 
 try:
     import resource

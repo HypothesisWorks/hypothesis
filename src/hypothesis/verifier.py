@@ -53,7 +53,7 @@ class Verifier(object):
             settings=None,
     ):
         if settings is None:
-            settings = hs.default
+            settings = hs.Settings.default
         self.settings = settings
         self.database = settings.database
 

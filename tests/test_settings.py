@@ -14,48 +14,61 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import pytest
-import hypothesis.settings as hs
+from hypothesis import Settings
 
-hs.define_setting(
+TEST_DESCRIPTION = 'This is a setting just for these tests'
+
+Settings.define_setting(
     'a_setting_just_for_these_tests',
     default=3,
-    description='This is a setting just for these tests'
+    description=TEST_DESCRIPTION,
 )
+
+
+def test_has_docstrings():
+    assert TEST_DESCRIPTION in Settings.a_setting_just_for_these_tests.__doc__
 
 
 def setup_function(fn):
     try:
-        delattr(hs.default, 'a_setting_just_for_these_tests')
+        delattr(Settings.default, 'a_setting_just_for_these_tests')
     except AttributeError:
         pass
 
 
+def test_cannot_set_non_settings():
+    s = Settings()
+    with pytest.raises(AttributeError):
+        s.databas_file = "some_file"
+
+
 def test_settings_uses_defaults():
-    s = hs.Settings()
+    s = Settings()
     assert s.a_setting_just_for_these_tests == 3
 
 
 def test_picks_up_changes_to_defaults():
-    hs.default.a_setting_just_for_these_tests = 18
-    s = hs.Settings()
+    Settings.default.a_setting_just_for_these_tests = 18
+    assert Settings.default.a_setting_just_for_these_tests == 18
+    s = Settings()
     assert s.a_setting_just_for_these_tests == 18
 
 
 def test_does_not_pick_up_changes_after_instantiation():
-    s = hs.Settings()
-    hs.default.a_setting_just_for_these_tests = 18
+    s = Settings()
+    Settings.default.a_setting_just_for_these_tests = 18
     assert s.a_setting_just_for_these_tests == 3
 
 
 def test_settings_repr_only_has_changes_from_defaults():
-    s = hs.Settings()
+    s = Settings()
     assert repr(s) == 'Settings()'
     s.a_setting_just_for_these_tests = 4
     assert repr(s) == 'Settings(a_setting_just_for_these_tests=4)'
 
 
 def test_settings_repr_is_sorted():
-    s = hs.Settings(
+    s = Settings(
         a_setting_just_for_these_tests=10,
         min_satisfying_examples=1,
         max_examples=10,
@@ -67,4 +80,8 @@ def test_settings_repr_is_sorted():
 
 def test_raises_attribute_error():
     with pytest.raises(AttributeError):
-        hs.Settings().kittens
+        Settings().kittens
+
+
+def test_respects_none_database():
+    assert Settings(database=None).database is None

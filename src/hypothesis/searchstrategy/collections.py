@@ -15,7 +15,7 @@ from __future__ import division, print_function, absolute_import, \
 
 from collections import namedtuple
 
-import hypothesis.settings as hs
+from hypothesis.settings import Settings
 import hypothesis.internal.distributions as dist
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.fixers import nice_string
@@ -400,7 +400,7 @@ def define_list_strategy(descriptor, settings):
         average_length=settings.average_list_length
     )
 
-hs.define_setting(
+Settings.define_setting(
     'average_list_length',
     default=50.0,
     description='Average length of lists to use'
