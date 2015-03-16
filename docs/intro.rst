@@ -193,18 +193,6 @@ function is called a SearchStrategy. The arguments to @given are passed to
 the function *strategy*. This is used to convert arbitrary objects to
 a SearchStrategy.
 
-The way this works is that Hypothesis has something that looks suspiciously
-like its own object system, called ExtMethod.
-
-It mirrors the Python object system as closely as possible and has the
-same method resolution order, but allows for methods that are defined externally
-to the class that uses them. This allows extensibly doing different things
-based on the type of an argument without worrying about the namespacing problems
-caused by MonkeyPatching.
-
-strategy is the main ExtMethod you are likely to interact with directly, but
-there are a number of others that Hypothesis uses under the hood.
-
 From most usage, strategy looks like a normal function:
 
 .. code:: python
@@ -226,16 +214,23 @@ get a NotImplementedError:
   In [4]: strategy(1)
   NotImplementedError: No implementation available for 1
 
+Although we have a strategy for producing ints it doesn't make sense to convert
+an *individual* int into a strategy.
+
+Conversely there's no implementation for the type "tuple" because we need to know
+the shape of the tuple and what sort of elements to put in it:
+
+.. code:: python
+
   In[5]: strategy(tuple)
   NotImplementedError: No implementation available for <class 'tuple'>
 
 
-Note that we could call strategy with the type 'int' but not with individual
-ints. Similarly we can call it with tuples but not type 'tuple'. The general
-idea is that arguments to strategy should "look like types" and should generate
-things that are instances of that type. With collections and similar you also
-need to specify the types of the elements. So e.g. the strategy you get for
-(int, int, int) is a strategy for generating triples of ints.
+The general idea is that arguments to strategy should "look like types" and
+should generate things that are instances of that type. With collections and
+similar you also need to specify the types of the elements. So e.g. the
+strategy you get for (int, int, int) is a strategy for generating triples
+of ints.
 
 If you want to see the sort of data that a strategy produces you can ask it
 for an example:
@@ -255,7 +250,8 @@ for an example:
   Out[5]: (548, 12)
  
 
-You can also generate lists:
+You can also generate lists (like tuples you generate lists from a list describing
+what should be in the list rather than from just the type list):
 
 .. code:: python
 
@@ -338,6 +334,24 @@ convenient)
 Note: example is just a method that's available for this sort of interactive debugging.
 It's not actually part of the process that Hypothesis uses to feed tests, though
 it is of course built off the same infrastructure.
+
+
+~~~~~~~~~~~~~~~~~~~~~
+Extending a function?
+~~~~~~~~~~~~~~~~~~~~~
+
+The way this works is that Hypothesis has something that looks suspiciously
+like its own object system, called ExtMethod.
+
+It mirrors the Python object system as closely as possible and has the
+same method resolution order, but allows for methods that are defined externally
+to the class that uses them. This allows extensibly doing different things
+based on the type of an argument without worrying about the namespacing problems
+caused by MonkeyPatching.
+
+strategy is the main ExtMethod you are likely to interact with directly, but
+there are a number of others that Hypothesis uses under the hood.
+
 
 ~~~~~~~~~~~~~~~~~~
 Making assumptions
