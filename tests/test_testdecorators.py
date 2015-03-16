@@ -20,7 +20,8 @@ import inspect
 import pytest
 import hypothesis.settings as hs
 import hypothesis.reporting as reporting
-from hypothesis import Flaky, Verifier, Unsatisfiable, given, assume
+from hypothesis import Verifier, given, assume
+from hypothesis.errors import Flaky, Unsatisfiable
 from tests.common.utils import fails, fails_with, capture_out
 from hypothesis.descriptors import just, one_of, sampled_from, \
     floats_in_range, integers_in_range

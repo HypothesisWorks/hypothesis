@@ -21,7 +21,8 @@ from functools import wraps
 
 import pytest
 import hypothesis.settings as hs
-from hypothesis import Verifier, Unfalsifiable, assume
+from hypothesis import Verifier, assume
+from hypothesis.errors import Unfalsifiable
 from hypothesis.types import RandomWithSeed
 from hypothesis.descriptors import Just, OneOf, SampledFrom, just
 from tests.common.descriptors import Descriptor, DescriptorWithValue, \

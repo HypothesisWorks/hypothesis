@@ -10,11 +10,13 @@
 
 # END HEADER
 
+"""
+Hypothesis is a library for writing unit tests which are parametrized by
+some source of data. It verifies your code against a wide range of input
+and minimizes any failing examples it finds.
+"""
+
 from hypothesis.verifier import (
-    Unfalsifiable,
-    Unsatisfiable,
-    Exhausted,
-    Flaky,
     Verifier,
     assume,
 )
@@ -26,10 +28,6 @@ from hypothesis.testdecorators import given
 
 __all__ = [
     'Settings',
-    'Unfalsifiable',
-    'Unsatisfiable',
-    'Exhausted',
-    'Flaky',
     'Verifier',
     'assume',
     'given',

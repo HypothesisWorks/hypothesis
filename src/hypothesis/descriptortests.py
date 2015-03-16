@@ -19,7 +19,8 @@ from random import Random
 from unittest import TestCase
 from collections import namedtuple
 
-from hypothesis import Verifier, Exhausted, given
+from hypothesis import Verifier, given
+from hypothesis.errors import Exhausted
 from hypothesis.database import ExampleDatabase
 from hypothesis.settings import Settings
 from hypothesis.searchstrategy import BuildContext, SearchStrategy, \
