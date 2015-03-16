@@ -18,19 +18,26 @@ With Hypothesis, tests look like
 2. Perform some operations on the data.
 3. Assert something about the result.
 
-Usually this takes the form of deciding on invariants that your code should satisfy
-and asserting that they always hold, but you can also just modify your existing unit
-tests to be a bit more general.
+Usually this takes the form of deciding on invariants, or guarantees, that your
+code should satisfy and asserting that they always hold. The simplest example
+of a guarantee is that for all inputs your code shouldn't throw an exception,
+or should only throw a particular type of exception. Other examples of
+guarantees could be things like that after removing a user from a project they
+are no longer on the project, or that if you serialize and then deserialize an
+object you get the same object back.
 
 ----------
 An example
 ----------
 
-Suppose we've written a `run length encoding <http://en.wikipedia.org/wiki/Run-length_encoding>`_ system and we want to test it out.
+Suppose we've written a `run length encoding
+<http://en.wikipedia.org/wiki/Run-length_encoding>`_ system and we want to test
+it out.
 
 We have the following code which I took straight from the
-`Rosetta Code <http://rosettacode.org/wiki/Run-length_encoding>`_ wiki (OK, I removed some commented out code and fixed the formatting, but there
-are no functional modifications):
+`Rosetta Code <http://rosettacode.org/wiki/Run-length_encoding>`_ wiki (OK, I
+removed some commented out code and fixed the formatting, but there are no
+functional modifications):
 
 
 .. code:: python
@@ -61,10 +68,12 @@ are no functional modifications):
       return q
 
 
-We want to write a test for this that will check some invariant of these functions.
+We want to write a test for this that will check some invariant of these
+functions.
 
-The obvious invariant one tends to try when you've got this sort of encoding / decoding
-is that if you encode something and then decode it you get the same value back.
+The obvious invariant one tends to try when you've got this sort of encoding /
+decoding is that if you encode something and then decode it you get the same
+value back.
 
 Lets see how you'd do that with Hypothesis:
 
@@ -76,7 +85,8 @@ Lets see how you'd do that with Hypothesis:
       assert decode(encode(s)) == s
 
 
-You can either let pytest discover that or if you just run it explicitly yourself:
+You can either let pytest discover that or if you just run it explicitly
+yourself:
 
 .. code:: python
 
