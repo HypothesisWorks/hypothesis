@@ -20,7 +20,7 @@ from hypothesis.verifier import (
     Verifier,
     assume,
 )
-from hypothesis.searchstrategy import strategy, MappedSearchStrategy
+from hypothesis.searchstrategy import strategy
 from hypothesis.settings import Settings
 
 
@@ -31,6 +31,5 @@ __all__ = [
     'Verifier',
     'assume',
     'given',
-    'MappedSearchStrategy',
     'strategy',
 ]
