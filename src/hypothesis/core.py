@@ -44,8 +44,11 @@ def given(*generator_arguments, **generator_kwargs):
     if 'verifier' in generator_kwargs:
         verifier = generator_kwargs.pop('verifier')
         verifier.start_time = time.time()
-    elif 'verifier_settings' in generator_kwargs:
-        verifier = Verifier(settings=generator_kwargs.pop('verifier_settings'))
+    elif 'settings' in generator_kwargs or 'random' in generator_kwargs:
+        verifier = Verifier(
+            settings=generator_kwargs.pop('settings'),
+            random=generator_kwargs.pop('random'),
+        )
     else:
         verifier = Verifier()
 

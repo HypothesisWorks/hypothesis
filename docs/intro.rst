@@ -147,18 +147,69 @@ Some side notes:
 
 
 ----------------
-How @given works
+How it works
 ----------------
 
 Hypothesis takes the arguments provided to @given and uses them to come up with
 a strategy for providing data to your test function. It calls the same function
 many times - initially with random data and then, if the first stage found an
 example which causes it to error, with increasingly simple versions of the same
-example until it finds an example triggering the failure that is as small as possible.
+example until it finds one triggering the failure that is as small as possible.
 
-The latter is very much a greedy local search method so is not guaranteed to find
-the simplest possible example, but generally speaking the examples it finds are very
-easy to understand.
+The latter is a greedy local search method so is not guaranteed to find
+the simplest possible example, but generally speaking the examples it finds are
+small enough that they should be easy to understand.
+
+~~~~~~~~
+Settings
+~~~~~~~~
+
+Hypothesis tries to have good defaults for its behaviour, but sometimes that's not
+enough and you need to tweak it.
+
+The mechanism for doing this is the Settings object. You can pass this to a @given
+invocation as follows:
+
+.. code:: python
+
+    from hypothesis import Settings
+    @given(int, settings=Settings(max_examples=500))
+    def test_this_thoroughly(x):
+        pass
+
+This uses a Settings object which causes the test to receive a much larger
+set of examples than normal.
+
+There is a Settings.default object. This is both a Settings object you can
+use, but additionally any changes to the default object will be picked up as
+the defaults for newly created settings objects.
+
+.. code:: python
+
+    >>> from hypothesis import Settings
+    >>> s = Settings()
+    >>> s.max_examples
+    200
+    >>> Settings.default.max_examples = 100
+    >>> t = Settings()
+    >>> t.max_examples
+    100
+    >>> s.max_examples
+    200
+
+There are a variety of other settings you can use. Check out the pydoc, or
+help(Settings) to get a list of them.
+
+Settings are also extensible. You can add new settings if you want to extend
+this. This is useful for adding additional parameters for customising your
+strategies. These will be picked up by all settings objects.
+
+.. code:: python
+
+    >>> Settings.define_setting(name="some_custom_setting", default=3, description="This is a custom settings we've just added")
+    >>> s.some_custom_setting
+    3
+
 
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -197,13 +248,13 @@ From most usage, strategy looks like a normal function:
 
 .. code:: python
 
-  In [1]: from hypothesis import strategy
+  >>> from hypothesis import strategy
 
-  In [2]: strategy(int)
-  Out[2]: RandomGeometricIntStrategy(int)
+  >>> strategy(int)
+  RandomGeometricIntStrategy(int)
 
-  In [3]: strategy((int, int, int))
-  Out[3]: TupleStrategy((int, int, int))
+  >>> strategy((int, int, int))
+  TupleStrategy((int, int, int))
 
 If you try to call it on something with no implementation defined you will
 get a NotImplementedError:
@@ -211,7 +262,7 @@ get a NotImplementedError:
 
 .. code:: python
 
-  In [4]: strategy(1)
+  >>> strategy(1)
   NotImplementedError: No implementation available for 1
 
 Although we have a strategy for producing ints it doesn't make sense to convert
@@ -237,26 +288,35 @@ for an example:
 
 .. code:: python
 
-  In [2]: strategy(int).example()
-  Out[2]: 192
+  >>> strategy(int).example()
+  192
  
-  In [3]: strategy(str).example()
-  Out[3]: '\U0009d5dc\U000989fc\U00106f82\U00033731'
+  >>> strategy(str).example()
+  '\U0009d5dc\U000989fc\U00106f82\U00033731'
 
-  In [4]: strategy(float).example()
-  Out[4]: -1.7551092389086e-308
+  >>> strategy(float).example()
+  -1.7551092389086e-308
 
-  In [5]: strategy((int, int)).example()
-  Out[5]: (548, 12)
- 
+  >>> strategy((int, int)).example()
+  (548, 12)
 
-You can also generate lists (like tuples you generate lists from a list describing
-what should be in the list rather than from just the type list):
+
+strategy can also accept a settings object which will customise the SearchStrategy
+returned:
 
 .. code:: python
 
-  In [6]: strategy([int]).example()
-  Out[6]: [0, 0, -1, 0, -1, -2]
+    >>> strategy([[int]], Settings(average_list_length=0.5)).example()
+    [[], [0]]
+
+ 
+You can also generate lists (like tuples you generate lists from a list describing
+what should be in the list rather than from the type):
+
+.. code:: python
+
+  >>> strategy([int]).example()
+  [0, 0, -1, 0, -1, -2]
 
 Unlike tuples, the strategy for lists will generate lists of arbitrary length.
 
@@ -265,52 +325,73 @@ give you a mix:
 
 .. code:: python
 
-  In [7]: strategy([int, bool]).example()
-  Out[7]: [1, True, False, -7, 35, True, -2]
+  >>> strategy([int, bool]).example()
+  [1, True, False, -7, 35, True, -2]
 
 There are also a bunch of custom types that let you define more specific examples.
 
 .. code:: python
 
-  In [8]: import hypothesis.descriptors as desc
+  >>> import hypothesis.descriptors as desc
 
-  In [9]: strategy([desc.integers_in_range(1, 10)]).example()
-  Out[9]: [7, 9, 9, 10, 10, 4, 10, 9, 9, 7, 4, 7, 7, 4, 7]
+  >>> strategy([desc.integers_in_range(1, 10)]).example()
+  [7, 9, 9, 10, 10, 4, 10, 9, 9, 7, 4, 7, 7, 4, 7]
 
   In[10]: strategy([desc.floats_in_range(0, 1)]).example()
-  Out[10]: [0.4679222775246174, 0.021441634094071356, 0.08639605748268818]
+  [0.4679222775246174, 0.021441634094071356, 0.08639605748268818]
 
-  In [11]: strategy(desc.one_of((float, bool))).example()
-  Out[11]: 3.6797748715455153e-281
+  >>> strategy(desc.one_of((float, bool))).example()
+  3.6797748715455153e-281
 
-  In [12]: strategy(desc.one_of((float, bool))).example()
-  Out[12]: False
+  >>> strategy(desc.one_of((float, bool))).example()
+  False
+
+~~~~~~~~~~~~~~~~~~~~
+Strategy descriptors
+~~~~~~~~~~~~~~~~~~~~
+
+You can get back a description from the strategy descriptors. This
+will generally be the original value you got from it, but some
+normalisation may occur. It is available as the descriptor parameter
+on the strategy. e.g.
+
+.. code:: python
+
+    >>> strategy((int, int)).descriptor
+    (int, int)
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Defining your own strategies
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can build new strategies out of other strategies. For example:
 
 .. code:: python
 
-  In [13]: strategy(int).map(pack=Decimal, descriptor=Decimal).example()
-  Out[13]: Decimal('6029418')
-  
+  >>> s = strategy(int).map(pack=Decimal, descriptor=Decimal)
+  >>> s.example()
+  Decimal('6029418')
+  >>> s.descriptor
+  Decimal
 
-This is generally the encouraged way to do it: The details of how SearchStrategy
-works are not currently considered part of the public API and may be liable to
-change.
+pack is a function which converts an int to a Decimal, so that we can use the
+generated for ints to generate data for Decimal. descriptor is the value that will
+be returned as the resulting strategy's descriptor.
+
+This is generally the encouraged way to define your own strategies: The details of how SearchStrategy
+works are not currently considered part of the public API and may be liable to change.
 
 If you want to register this so that strategy works for your custom types you
 can do this by extending the strategy method:
 
 .. code:: python
 
-  In [14]: @strategy.extend_static(Decimal)
-     ....: def decimal_strategy(d, settings):
-     ....:     return strategy(int, settings).map(pack=Decimal, descriptor=Decimal)
-     ....: 
-
-  In [15]: strategy(Decimal).example()
-  Out[15]: Decimal('13')
-
+  >>> @strategy.extend_static(Decimal)
+  ... def decimal_strategy(d, settings):
+  ...   return strategy(int, settings).map(pack=Decimal, descriptor=Decimal)
+  >>> strategy(Decimal).example()
+  Decimal('13')
 
 You can also define types for your own custom data generation if you need something
 more specific. For example here is a strategy that lets you specify the exact length
@@ -318,22 +399,22 @@ of list you want:
 
 .. code:: python
 
-  In [16]: from collections import namedtuple
-  In [17]: ListsOfFixedLength = namedtuple('ListsOfFixedLength', ('length', 'elements'))
-  In [18]: @strategy.extend(ListsOfFixedLength)
+  >>> from collections import namedtuple
+  >>> ListsOfFixedLength = namedtuple('ListsOfFixedLength', ('length', 'elements'))
+  >>> @strategy.extend(ListsOfFixedLength)
      ....: def fixed_length_lists_strategy(descriptor, settings):
      ....:     return strategy((descriptor.elements,) * descriptor.length, settings).map(
      ....:        pack=list, descriptor=descriptor)
      ....: 
-  In [19]: strategy(ListsOfFixedLength(5, int)).example()
-  Out[19]: [0, 2190, 899, 2, -1326]
+  >>> strategy(ListsOfFixedLength(5, int)).example()
+  [0, 2190, 899, 2, -1326]
 
 (You don't have to use namedtuple for this, but I tend to because they're
 convenient)
 
 Note: example is just a method that's available for this sort of interactive debugging.
 It's not actually part of the process that Hypothesis uses to feed tests, though
-it is of course built off the same infrastructure.
+it is of course built on the same basic mechanisms.
 
 
 ~~~~~~~~~~~~~~~~~~~~~
@@ -563,17 +644,17 @@ out of the box:
 
 .. code:: python
 
-  In [1]: from datetime import datetime
-  In [2]: from hypothesis import strategy
+  >>> from datetime import datetime
+  >>> from hypothesis import strategy
 
-  In [3]: strategy(datetime).example()
-  Out[3]: datetime.datetime(6360, 1, 3, 12, 30, 56, 185849)
+  >>> strategy(datetime).example()
+  datetime.datetime(6360, 1, 3, 12, 30, 56, 185849)
 
-  In [4]: strategy(datetime).example()
-  Out[4]: datetime.datetime(6187, 6, 11, 0, 0, 23, 809965, tzinfo=<UTC>)
+  >>> strategy(datetime).example()
+  datetime.datetime(6187, 6, 11, 0, 0, 23, 809965, tzinfo=<UTC>)
 
-  In [5]: strategy(datetime).example()
-  Out[5]: datetime.datetime(4076, 8, 7, 0, 15, 55, 127297, tzinfo=<DstTzInfo 'Turkey' EET+2:00:00 STD>)
+  >>> strategy(datetime).example()
+  datetime.datetime(4076, 8, 7, 0, 15, 55, 127297, tzinfo=<DstTzInfo 'Turkey' EET+2:00:00 STD>)
 
 So things like the following work:
 
@@ -643,10 +724,10 @@ Naturally you can compose these in all the usual ways, so e.g.
 
 .. code:: python
 
-  In [1]: from hypothesis.extra.fakefactory import FakeFactory
-  In [2]: from hypothesis import strategy
-  In [3]: strategy([FakeFactory('email')]).example()
-  Out[3]: 
+  >>> from hypothesis.extra.fakefactory import FakeFactory
+  >>> from hypothesis import strategy
+  >>> strategy([FakeFactory('email')]).example()
+  
   ['.@.com',
    '.@yahoo.com',
    'kalvelis.paulius@yahoo.com',
@@ -657,18 +738,18 @@ You can also specify locales:
 
 .. code:: python
 
-  In [4]: strategy(FakeFactory('name', locale='en_US')).example()
-  Out[4]: 'Kai Grant'
+  >>> strategy(FakeFactory('name', locale='en_US')).example()
+  'Kai Grant'
 
-  In [5]: strategy(FakeFactory('name', locale='fr_FR')).example()
-  Out[5]: 'Édouard Paul'
+  >>> strategy(FakeFactory('name', locale='fr_FR')).example()
+  'Édouard Paul'
 
 Or if you want you can specify several locales:
 
 .. code:: python
 
-  In [6]: strategy([FakeFactory('name', locales=['en_US', 'fr_FR'])]).example()
-  Out[6]: 
+  >>> strategy([FakeFactory('name', locales=['en_US', 'fr_FR'])]).example()
+  
   ['Michel Blanchet',
    'Victor Collin',
    'Eugène Perrin',
@@ -694,8 +775,7 @@ Integrating Hypothesis with your test suite
 Hypothesis is very unopinionated about how you run your tests because all it does is modify your test functions.
 You can use it on the tests you want without affecting any others.
 
-It certainly works fine with pytest, nose and unittest and should work fine with anything else.
+pytest is the only framework with explicit support right now, but the explicit support
+isn't really needed for integration - it just provides better integration with the reporting.
 
-There *is* `a pytest plugin <https://pypi.python.org/pypi/hypothesis-pytest>`_, which if you're using Hypothesis
-with pytest you should probably use, but it's not strictly necessary - its purely for improving the quality of the
-reporting a bit (by default Hypothesis prints its falsifying examples to stdout).
+It certainly works fine with pytest, nose and unittest and should work fine with anything else.
