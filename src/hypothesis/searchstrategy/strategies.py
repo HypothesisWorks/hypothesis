@@ -23,6 +23,7 @@ from hypothesis.internal.compat import integer_types, hrange
 from hypothesis.internal.fixers import IdKey, nice_string
 from hypothesis.internal.tracker import Tracker
 from random import Random
+from hypothesis.errors import BadData, WrongFormat
 
 
 class BuildContext(object):
@@ -53,18 +54,6 @@ strategy = StrategyExtMethod()
 
 
 Infinity = float('inf')
-
-
-class WrongFormat(ValueError):
-
-    """An exception indicating you have attempted to serialize a value that
-    does not match the type described by this format."""
-
-
-class BadData(ValueError):
-
-    """The data that we got out of the database does not seem to match the data
-    we could have put into the database given this schema."""
 
 
 def check_type(typ, value, e=WrongFormat):
