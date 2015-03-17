@@ -17,7 +17,8 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import pytest
-from hypothesis import Verifier, given
+from hypothesis import given
+from hypothesis.internal.verifier import Verifier
 from hypothesis.database import SQLiteBackend, ExampleDatabase
 from hypothesis.settings import Settings
 from hypothesis.descriptors import one_of

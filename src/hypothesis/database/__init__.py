@@ -13,7 +13,7 @@
 from hypothesis.internal.fixers import nice_string
 from hypothesis.internal.hashitanyway import HashItAnyway
 from hypothesis.internal.tracker import Tracker
-from hypothesis.searchstrategy import BadData, strategy
+from hypothesis.searchstrategy.strategies import BadData, strategy
 from hypothesis.database.formats import JSONFormat
 from hypothesis.database.backend import SQLiteBackend
 

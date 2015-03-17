@@ -16,7 +16,8 @@ from __future__ import division, print_function, absolute_import, \
 import inspect
 
 import pytest
-from hypothesis import Verifier, given
+from hypothesis import given
+from hypothesis.internal.verifier import Verifier
 
 
 def has_one_arg(hello):

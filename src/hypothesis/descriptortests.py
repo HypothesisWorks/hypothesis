@@ -19,13 +19,14 @@ from random import Random
 from unittest import TestCase
 from collections import namedtuple
 
-from hypothesis import Verifier, given
+from hypothesis import given
 from hypothesis.errors import Exhausted
 from hypothesis.database import ExampleDatabase
 from hypothesis.settings import Settings
-from hypothesis.searchstrategy import BuildContext, SearchStrategy, \
+from hypothesis.searchstrategy.strategies import BuildContext, SearchStrategy,\
     strategy
 from hypothesis.internal.compat import text_type, integer_types
+from hypothesis.internal.verifier import Verifier
 from hypothesis.internal.fixers import nice_string, actually_equal
 from hypothesis.database.backend import SQLiteBackend
 from hypothesis.internal.hashitanyway import hash_everything
@@ -82,7 +83,7 @@ def descriptor_test_suite(
     )
     strat = strategy(descriptor, settings)
     descriptor_test = given(
-        TemplatesFor(descriptor), verifier=verifier
+        TemplatesFor(descriptor), settings=settings
     )
 
     class ValidationSuite(TestCase):
@@ -92,7 +93,7 @@ def descriptor_test_suite(
                 nice_string(descriptor),
             )
 
-        @given(descriptor, verifier=verifier)
+        @given(descriptor, settings=settings)
         def test_does_not_error(self, value):
             pass
 

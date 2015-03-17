@@ -30,7 +30,7 @@ import random
 import pytest
 import hypothesis.descriptors as descriptors
 import hypothesis.internal.reflection as reflection
-from hypothesis.searchstrategy import BuildContext, strategy
+from hypothesis.searchstrategy.strategies import BuildContext, strategy
 from hypothesis.internal.compat import hrange
 
 # We run each individual test at a very high level of significance to the

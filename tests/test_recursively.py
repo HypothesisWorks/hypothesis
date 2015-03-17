@@ -21,13 +21,14 @@ from functools import wraps
 
 import pytest
 import hypothesis.settings as hs
-from hypothesis import Verifier, assume
+from hypothesis import assume
+from hypothesis.internal.verifier import Verifier
 from hypothesis.errors import Unfalsifiable
 from hypothesis.types import RandomWithSeed
 from hypothesis.descriptors import Just, OneOf, SampledFrom, just
 from tests.common.descriptors import Descriptor, DescriptorWithValue, \
     primitive_types
-from hypothesis.searchstrategy import BuildContext, strategy
+from hypothesis.searchstrategy.strategies import BuildContext, strategy
 from hypothesis.core import given
 from hypothesis.descriptortests import TemplatesFor
 from hypothesis.internal.compat import text_type, binary_type

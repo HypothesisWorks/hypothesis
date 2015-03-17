@@ -16,7 +16,7 @@ from __future__ import division, print_function, absolute_import, \
 from random import Random
 
 import pytest
-from hypothesis import Verifier
+from hypothesis.internal.verifier import Verifier
 from hypothesis.settings import Settings
 
 

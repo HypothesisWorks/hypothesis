@@ -55,13 +55,11 @@ def given(*generator_arguments, **generator_kwargs):
     if 'verifier' in generator_kwargs:
         verifier = generator_kwargs.pop('verifier')
         verifier.start_time = time.time()
-    elif 'settings' in generator_kwargs or 'random' in generator_kwargs:
-        verifier = Verifier(
-            settings=generator_kwargs.pop('settings'),
-            random=generator_kwargs.pop('random'),
-        )
     else:
-        verifier = Verifier()
+        verifier = Verifier(
+            settings=generator_kwargs.pop('settings', None),
+            random=generator_kwargs.pop('random', None),
+        )
 
     if not (generator_arguments or generator_kwargs):
         raise TypeError('given must be called with at least one argument')

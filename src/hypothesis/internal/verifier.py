@@ -23,7 +23,7 @@ from itertools import islice
 import hypothesis.settings as hs
 from hypothesis.extra import load_entry_points
 from hypothesis.internal.examplesource import ParameterSource
-from hypothesis.searchstrategy import BuildContext, strategy
+from hypothesis.searchstrategy.strategies import BuildContext, strategy
 from hypothesis.internal.tracker import Tracker
 from hypothesis.internal.reflection import function_digest
 from hypothesis.errors import UnsatisfiedAssumption, \

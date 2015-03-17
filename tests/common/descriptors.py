@@ -18,7 +18,7 @@ from collections import namedtuple
 
 from hypothesis.types import RandomWithSeed
 from hypothesis.descriptors import one_of, sampled_from
-from hypothesis.searchstrategy import BuildContext, SearchStrategy, \
+from hypothesis.searchstrategy.strategies import BuildContext, SearchStrategy,\
     MappedSearchStrategy, strategy, check_length, check_data_type
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.internal.fixers import nice_string

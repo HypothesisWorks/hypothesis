@@ -15,8 +15,8 @@ from __future__ import division, print_function, absolute_import, \
 
 from collections import namedtuple
 
-from hypothesis.searchstrategy import BadData, SearchStrategy, strategy, \
-    check_data_type
+from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
+    strategy, check_data_type
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.distributions import geometric, uniform_float
 

@@ -21,7 +21,7 @@ import pytest
 import hypothesis.descriptors as descriptors
 import hypothesis.searchstrategy as strat
 from hypothesis.types import RandomWithSeed
-from hypothesis.searchstrategy import BuildContext, strategy
+from hypothesis.searchstrategy.strategies import BuildContext, strategy
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.internal.fixers import nice_string, actually_equal
 from hypothesis.internal.tracker import Tracker
@@ -155,14 +155,9 @@ class X(object):
 
 
 @strategy.extend(X)
-class XStrategy(strat.MappedSearchStrategy):
-    pass
-
-
-@strategy.extend(X)
 def define_x_strategy(descriptor, settings):
-    return XStrategy(
-        strategy=strategy(descriptor.x, settings),
+    return strategy(descriptor.x, settings).map(
+        pack=lambda x: x,
         descriptor=descriptor,
     )
 

@@ -10,7 +10,7 @@
 
 # END HEADER
 
-from hypothesis import Verifier
+from hypothesis.internal.verifier import Verifier
 import hypothesis.settings as hs
 
 

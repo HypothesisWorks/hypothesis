@@ -17,7 +17,7 @@ import random
 
 import pytest
 from hypothesis.internal.examplesource import ParameterSource
-from hypothesis.searchstrategy import BuildContext, strategy
+from hypothesis.searchstrategy.strategies import BuildContext, strategy
 from hypothesis.internal.compat import hrange
 
 N_EXAMPLES = 1000
