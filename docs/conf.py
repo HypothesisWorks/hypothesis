@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-needs_sphinx = '1.3'
-
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
