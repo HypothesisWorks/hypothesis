@@ -104,6 +104,9 @@ def descriptor_test_suite(
                 strat.reify(template),
             )
 
+        def test_can_give_example(self):
+            strat.example()
+
         @descriptor_test
         def test_is_basic(self, value):
             def is_basic(v):
