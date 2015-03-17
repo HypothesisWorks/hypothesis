@@ -25,7 +25,7 @@ from hypothesis.searchstrategy import strategy
 from hypothesis.descriptortests import descriptor_test_suite
 from hypothesis.internal.compat import hrange
 
-hs.default.max_examples = 1000
+hs.Settings.default.max_examples = 1000
 
 
 TestStandardDescriptorFeatures1 = descriptor_test_suite(datetime)
