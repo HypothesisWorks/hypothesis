@@ -18,7 +18,7 @@ from collections import namedtuple
 
 import pytz
 import hypothesis.internal.distributions as dist
-from hypothesis.searchstrategy import SearchStrategy, strategy, \
+from hypothesis.searchstrategy.strategies import SearchStrategy, strategy, \
     check_data_type
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.internal.fixers import equal
