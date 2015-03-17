@@ -5,8 +5,6 @@ import os
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
 
-needs_sphinx = '1.3'
-
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
