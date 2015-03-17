@@ -17,13 +17,13 @@ from datetime import datetime
 
 import hypothesis.settings as hs
 from hypothesis import given, assume
-from hypothesis.internal.verifier import Verifier
 from hypothesis.descriptors import one_of
 from hypothesis.extra.datetime import naive_datetime, \
     timezone_aware_datetime
 from hypothesis.searchstrategy import strategy
 from hypothesis.descriptortests import descriptor_test_suite
 from hypothesis.internal.compat import hrange
+from hypothesis.internal.verifier import Verifier
 
 hs.Settings.default.max_examples = 1000
 
