@@ -18,11 +18,11 @@ from collections import namedtuple
 
 import pytz
 import hypothesis.internal.distributions as dist
-from hypothesis.searchstrategy.strategies import SearchStrategy, strategy, \
-    check_data_type
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.internal.fixers import equal
 from hypothesis.internal.hashitanyway import normal_hash, hash_everything
+from hypothesis.searchstrategy.strategies import SearchStrategy, \
+    strategy, check_data_type
 
 DatetimeSpec = namedtuple('DatetimeSpec', ('naive_options',))
 
