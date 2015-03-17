@@ -23,13 +23,13 @@ from hypothesis import given
 from hypothesis.errors import Exhausted
 from hypothesis.database import ExampleDatabase
 from hypothesis.settings import Settings
-from hypothesis.searchstrategy.strategies import BuildContext, SearchStrategy,\
-    strategy
 from hypothesis.internal.compat import text_type, integer_types
-from hypothesis.internal.verifier import Verifier
 from hypothesis.internal.fixers import nice_string, actually_equal
 from hypothesis.database.backend import SQLiteBackend
+from hypothesis.internal.verifier import Verifier
 from hypothesis.internal.hashitanyway import hash_everything
+from hypothesis.searchstrategy.strategies import BuildContext, \
+    SearchStrategy, strategy
 
 TemplatesFor = namedtuple('TemplatesFor', ('base',))
 

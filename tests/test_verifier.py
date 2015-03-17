@@ -16,8 +16,8 @@ from __future__ import division, print_function, absolute_import, \
 from random import Random
 
 import pytest
-from hypothesis.internal.verifier import Verifier
 from hypothesis.settings import Settings
+from hypothesis.internal.verifier import Verifier
 
 
 def test_verifier_explodes_when_you_mix_random_and_derandom():

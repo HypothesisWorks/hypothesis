@@ -18,11 +18,11 @@ from random import Random
 from collections import namedtuple
 
 from hypothesis import given
-from hypothesis.internal.verifier import Verifier
 from hypothesis.types import RandomWithSeed
 from hypothesis.settings import Settings
 from tests.common.mutate import mutate_slightly, mutate_maliciously
 from tests.common.descriptors import Descriptor
+from hypothesis.internal.verifier import Verifier
 from hypothesis.internal.hashitanyway import HashItAnyway
 
 

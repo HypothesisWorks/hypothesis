@@ -13,8 +13,8 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from hypothesis.internal.verifier import Verifier
 from hypothesis.searchstrategy import strategy
+from hypothesis.internal.verifier import Verifier
 from hypothesis.searchstrategy.narytree import Leaf, Branch, NAryTree
 
 

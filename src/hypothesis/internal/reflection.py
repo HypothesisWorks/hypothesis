@@ -26,10 +26,10 @@ import hashlib
 import inspect
 from functools import wraps
 
-from hypothesis.utils.conventions import not_set
+from hypothesis.settings import storage_directory
 from hypothesis.internal.compat import ARG_NAME_ATTRIBUTE, hrange, \
     text_type
-from hypothesis.settings import storage_directory
+from hypothesis.utils.conventions import not_set
 
 
 def function_digest(function):

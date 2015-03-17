@@ -22,17 +22,17 @@ from functools import wraps
 import pytest
 import hypothesis.settings as hs
 from hypothesis import assume
-from hypothesis.internal.verifier import Verifier
-from hypothesis.errors import Unfalsifiable
+from hypothesis.core import given
 from hypothesis.types import RandomWithSeed
+from hypothesis.errors import Unfalsifiable
 from hypothesis.descriptors import Just, OneOf, SampledFrom, just
 from tests.common.descriptors import Descriptor, DescriptorWithValue, \
     primitive_types
-from hypothesis.searchstrategy.strategies import BuildContext, strategy
-from hypothesis.core import given
 from hypothesis.descriptortests import TemplatesFor
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.internal.fixers import nice_string, actually_equal
+from hypothesis.internal.verifier import Verifier
+from hypothesis.searchstrategy.strategies import BuildContext, strategy
 
 # Placate flake8
 [OneOf, just, Just, RandomWithSeed, SampledFrom]

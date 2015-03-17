@@ -21,14 +21,13 @@ import pytest
 import hypothesis.descriptors as descriptors
 import hypothesis.searchstrategy as strat
 from hypothesis.types import RandomWithSeed
-from hypothesis.searchstrategy.strategies import BuildContext, strategy
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.internal.fixers import nice_string, actually_equal
 from hypothesis.internal.tracker import Tracker
 from hypothesis.searchstrategy.numbers import BoundedIntStrategy, \
     FixedBoundedFloatStrategy, RandomGeometricIntStrategy
-from hypothesis.searchstrategy.strategies import OneOfStrategy, \
-    one_of_strategies
+from hypothesis.searchstrategy.strategies import BuildContext, \
+    OneOfStrategy, strategy, one_of_strategies
 
 
 def test_string_strategy_produces_strings():
@@ -394,5 +393,5 @@ def test_does_not_shrink_size_for_non_hashable_sample():
 
 
 def test_can_map():
-    s = strategy(int).map(pack=lambda t: "foo", descriptor="foo")
-    assert s.example() == "foo"
+    s = strategy(int).map(pack=lambda t: 'foo', descriptor='foo')
+    assert s.example() == 'foo'

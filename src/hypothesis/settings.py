@@ -20,8 +20,9 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import os
-from collections import namedtuple
 import inspect
+from collections import namedtuple
+
 from hypothesis.utils.conventions import not_set
 
 __hypothesis_home_directory = None
@@ -63,10 +64,11 @@ databases = {}
 
 
 def field_name(setting_name):
-    return "_" + setting_name
+    return '_' + setting_name
 
 
 class SettingsProperty(object):
+
     def __init__(self, name):
         self.name = name
 
@@ -92,7 +94,7 @@ class SettingsProperty(object):
     def __doc__(self):
         return '\n'.join((
             all_settings[self.name].description,
-            "default value: %r" % (getattr(Settings.default, self.name),)
+            'default value: %r' % (getattr(Settings.default, self.name),)
         ))
 
 
@@ -102,8 +104,9 @@ class Settings(object):
     falsification. These may control both the falsification strategy and the
     details of the data that is generated.
 
-    Default values are picked up from the Settings.default object and changes
-    made there will be picked up in newly created Settings.
+    Default values are picked up from the Settings.default object and
+    changes made there will be picked up in newly created Settings.
+
     """
 
     def __getattr__(self, name):
@@ -130,15 +133,15 @@ class Settings(object):
 
     @classmethod
     def define_setting(cls, name, description, default):
-        """
-        Add a new setting.
+        """Add a new setting.
 
-            - name is the name of the property that will be used to access the
-              setting. This must be a valid python identifier.
-            - description will appear in the property's docstring
-            - default is the default value. This may be a zero argument
-              function in which case it is evaluated and its result is stored
-              the first time it is accessed on any given Settings object.
+        - name is the name of the property that will be used to access the
+          setting. This must be a valid python identifier.
+        - description will appear in the property's docstring
+        - default is the default value. This may be a zero argument
+          function in which case it is evaluated and its result is stored
+          the first time it is accessed on any given Settings object.
+
         """
         all_settings[name] = Setting(name, description.strip(), default)
         setattr(cls, name, SettingsProperty(name))
@@ -148,7 +151,7 @@ class Settings(object):
             name not in all_settings and
             name != '_database'
         ):
-            raise AttributeError("No such setting %s" % (name,))
+            raise AttributeError('No such setting %s' % (name,))
         else:
             return object.__setattr__(self, name, value)
 
@@ -163,15 +166,15 @@ class Settings(object):
 
     @property
     def database(self):
-        """
-        An ExampleDatabase instance to use for storage of examples. May be
+        """An ExampleDatabase instance to use for storage of examples. May be
         None.
 
-        If this was explicitly set at Settings instantiation then that value
-        will be used (even if it was None). If not and the database_file
-        setting is not None this will be lazily loaded as an SQLite backed
-        ExampleDatabase using that file the first time this property is
-        accessed.
+        If this was explicitly set at Settings instantiation then that
+        value will be used (even if it was None). If not and the
+        database_file setting is not None this will be lazily loaded as
+        an SQLite backed ExampleDatabase using that file the first time
+        this property is accessed.
+
         """
         if self._database is not_set and self.database_file is not None:
             from hypothesis.database import ExampleDatabase

@@ -22,12 +22,12 @@ from itertools import islice
 
 import hypothesis.settings as hs
 from hypothesis.extra import load_entry_points
-from hypothesis.internal.examplesource import ParameterSource
-from hypothesis.searchstrategy.strategies import BuildContext, strategy
+from hypothesis.errors import Flaky, Timeout, Exhausted, Unfalsifiable, \
+    Unsatisfiable, UnsatisfiedAssumption
 from hypothesis.internal.tracker import Tracker
 from hypothesis.internal.reflection import function_digest
-from hypothesis.errors import UnsatisfiedAssumption, \
-    Unfalsifiable, Timeout, Exhausted, Unsatisfiable, Flaky
+from hypothesis.internal.examplesource import ParameterSource
+from hypothesis.searchstrategy.strategies import BuildContext, strategy
 
 
 class Verifier(object):

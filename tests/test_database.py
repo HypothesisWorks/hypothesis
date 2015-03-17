@@ -16,13 +16,13 @@ from __future__ import division, print_function, absolute_import, \
 import pytest
 import hypothesis.settings as hs
 from hypothesis import given
-from hypothesis.internal.verifier import Verifier
 from hypothesis.database import ExampleDatabase
 from tests.common.descriptors import DescriptorWithValue
 from hypothesis.internal.compat import text_type, integer_types
 from hypothesis.internal.fixers import actually_equal
 from hypothesis.database.backend import Backend, SQLiteBackend
 from hypothesis.database.formats import Format, JSONFormat
+from hypothesis.internal.verifier import Verifier
 
 
 def test_deduplicates():

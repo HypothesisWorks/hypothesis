@@ -18,11 +18,11 @@ from __future__ import division, print_function, absolute_import, \
 
 import pytest
 from hypothesis import given
-from hypothesis.internal.verifier import Verifier
 from hypothesis.database import SQLiteBackend, ExampleDatabase
 from hypothesis.settings import Settings
 from hypothesis.descriptors import one_of
 from hypothesis.internal.compat import text_type, binary_type
+from hypothesis.internal.verifier import Verifier
 
 
 def test_puts_arguments_in_the_database_from_falsify():

@@ -23,10 +23,10 @@ from __future__ import division, print_function, absolute_import, \
 import math
 import unittest
 
-from hypothesis.utils.extmethod import ExtMethod
+import hypothesis.internal.reflection as reflection
 from hypothesis.internal.compat import text_type, binary_type, \
     integer_types
-import hypothesis.internal.reflection as reflection
+from hypothesis.utils.extmethod import ExtMethod
 
 
 class Equality(ExtMethod):

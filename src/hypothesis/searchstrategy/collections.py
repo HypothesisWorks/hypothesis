@@ -15,8 +15,8 @@ from __future__ import division, print_function, absolute_import, \
 
 from collections import namedtuple
 
-from hypothesis.settings import Settings
 import hypothesis.internal.distributions as dist
+from hypothesis.settings import Settings
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.fixers import nice_string
 from hypothesis.searchstrategy.strategies import SearchStrategy, \

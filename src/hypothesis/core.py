@@ -10,9 +10,7 @@
 
 # END HEADER
 
-"""
-This module provides the core primitives of Hypothesis, assume and given.
-"""
+"""This module provides the core primitives of Hypothesis, assume and given."""
 
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
@@ -21,11 +19,11 @@ import time
 import inspect
 from collections import namedtuple
 
-from hypothesis.internal.verifier import Flaky, Verifier, Unfalsifiable, \
-    UnsatisfiedAssumption
 from hypothesis.reporting import current_reporter
 from hypothesis.descriptors import just
 from hypothesis.searchstrategy import strategy
+from hypothesis.internal.verifier import Flaky, Verifier, Unfalsifiable, \
+    UnsatisfiedAssumption
 from hypothesis.internal.reflection import arg_string, copy_argspec
 
 HypothesisProvided = namedtuple('HypothesisProvided', ('value,'))
@@ -45,12 +43,12 @@ def assume(condition):
 
 
 def given(*generator_arguments, **generator_kwargs):
-    """
-    A decorator for turning a test function that accepts
-    arguments into a randomized test.
+    """A decorator for turning a test function that accepts arguments into a
+    randomized test.
 
-    This is the main entry point to Hypothesis. See the
-    full tutorial for details of its behaviour.
+    This is the main entry point to Hypothesis. See the full tutorial
+    for details of its behaviour.
+
     """
     if 'verifier' in generator_kwargs:
         verifier = generator_kwargs.pop('verifier')

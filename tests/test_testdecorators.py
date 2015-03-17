@@ -21,12 +21,12 @@ import pytest
 import hypothesis.settings as hs
 import hypothesis.reporting as reporting
 from hypothesis import given, assume
-from hypothesis.internal.verifier import Verifier
 from hypothesis.errors import Flaky, Unsatisfiable
 from tests.common.utils import fails, fails_with, capture_out
 from hypothesis.descriptors import just, one_of, sampled_from, \
     floats_in_range, integers_in_range
 from hypothesis.internal.compat import text_type, binary_type
+from hypothesis.internal.verifier import Verifier
 from hypothesis.searchstrategy.numbers import IntStrategy
 
 

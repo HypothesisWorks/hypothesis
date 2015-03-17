@@ -13,17 +13,17 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+from random import Random
 from collections import namedtuple
 
 import hypothesis.internal.distributions as dist
-from hypothesis.settings import Settings
-from hypothesis.utils.extmethod import ExtMethod
-from hypothesis.descriptors import OneOf, one_of
-from hypothesis.internal.compat import integer_types, hrange
-from hypothesis.internal.fixers import IdKey, nice_string
-from hypothesis.internal.tracker import Tracker
-from random import Random
 from hypothesis.errors import BadData, WrongFormat
+from hypothesis.settings import Settings
+from hypothesis.descriptors import OneOf, one_of
+from hypothesis.internal.compat import hrange, integer_types
+from hypothesis.internal.fixers import IdKey, nice_string
+from hypothesis.utils.extmethod import ExtMethod
+from hypothesis.internal.tracker import Tracker
 
 
 class BuildContext(object):
@@ -153,7 +153,7 @@ class SearchStrategy(object):
         template = min((
             self.draw_and_produce(context)
             for _ in hrange(3)
-            ), key=self.size)
+        ), key=self.size)
         return self.reify(template)
 
     def draw_parameter(self, random):
