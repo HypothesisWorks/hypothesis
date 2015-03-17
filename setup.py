@@ -45,6 +45,7 @@ setup(
     url='https://github.com/DRMacIver/hypothesis',
     license='MPL v2',
     description='A library for property based testing',
+    zip_safe=False,
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
