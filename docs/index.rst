@@ -311,6 +311,10 @@ for an example:
   >>> strategy((int, int)).example()
   (548, 12)
 
+Note: example is just a method that's available for this sort of interactive debugging.
+It's not actually part of the process that Hypothesis uses to feed tests, though
+it is of course built on the same basic mechanisms.
+
 
 strategy can also accept a settings object which will customise the SearchStrategy
 returned:
@@ -423,10 +427,17 @@ of list you want:
 (You don't have to use namedtuple for this, but I tend to because they're
 convenient)
 
-Note: example is just a method that's available for this sort of interactive debugging.
-It's not actually part of the process that Hypothesis uses to feed tests, though
-it is of course built on the same basic mechanisms.
+Hypothesis also provides a standard test suite you can use for testing strategies
+you've defined.
 
+
+.. code:: python
+
+  from hypothesis.descriptortests import descriptor_test_suite
+  TestDecimal = descriptor_test_suite(Decimal)
+
+TestDecimal is a unitest.TestCase class that will run a bunch of tests against the
+strategy you've provided for Decimal to make sure it works correctly.
 
 ~~~~~~~~~~~~~~~~~~~~~
 Extending a function?
