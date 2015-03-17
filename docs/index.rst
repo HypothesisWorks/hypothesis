@@ -1,6 +1,10 @@
-==============================
- An introduction to Hypothesis
-==============================
+======================
+Welcome to Hypothesis!
+======================
+
+.. toctree::
+   :maxdepth: 2
+
 
 Hypothesis is a library for creating unit tests which are simpler to write
 and more powerful when run, finding edge cases in your code you wouldn't have
