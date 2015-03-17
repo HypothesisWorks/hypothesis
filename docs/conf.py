@@ -1,16 +1,11 @@
-# coding=utf-8
-
-# Copyright (C) 2013-2015 David R. MacIver (david@drmaciver.com)
-
-# This file is part of Hypothesis (https://github.com/DRMacIver/hypothesis)
-
-# This Source Code Form is subject to the terms of the Mozilla Public License,
-# v. 2.0. If a copy of the MPL was not distributed with this file, You can
-# obtain one at http://mozilla.org/MPL/2.0/.
-
-# END HEADER
-
 # -*- coding: utf-8 -*-
+
+# on_rtd is whether we are on readthedocs.org
+import os
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+
+
+needs_sphinx = '1.3'
 
 extensions = [
     'sphinx.ext.autodoc',
@@ -45,6 +40,11 @@ todo_include_todos = False
 
 
 # -- Options for HTML output ----------------------------------------------
+
+if not on_rtd:  # only import and set the theme if we're building docs locally
+    import sphinx_rtd_theme
+    html_theme = 'sphinx_rtd_theme'
+    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 html_static_path = ['_static']
 
