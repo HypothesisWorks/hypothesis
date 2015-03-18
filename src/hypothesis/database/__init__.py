@@ -11,7 +11,6 @@
 # END HEADER
 
 from hypothesis.internal.fixers import nice_string
-from hypothesis.internal.hashitanyway import HashItAnyway
 from hypothesis.internal.tracker import Tracker
 from hypothesis.searchstrategy.strategies import BadData, strategy
 from hypothesis.database.formats import JSONFormat
@@ -90,7 +89,6 @@ class ExampleDatabase(object):
                 'but backend expects data of type %s' % (
                     self.format.data_type(), self.backend.data_type()
                 )))
-        self.storage_cache = {}
 
     def storage_for(self, descriptor):
         """Get a storage object corresponding to this descriptor.
@@ -99,18 +97,10 @@ class ExampleDatabase(object):
         x.storage_for(d). You can rely on that behaviour.
 
         """
-        key = HashItAnyway(descriptor)
-        try:
-            return self.storage_cache[key]
-        except KeyError:
-            pass
-
-        result = Storage(
+        return Storage(
             descriptor=descriptor,
             database=self,
             backend=self.backend,
             format=self.format,
             strategy=strategy(descriptor),
         )
-        self.storage_cache[key] = result
-        return result

@@ -42,13 +42,15 @@ def object_to_tracking_key(o):
 class Tracker(object):
 
     def __init__(self):
-        self.contents = {}
+        self.contents = set()
 
     def __len__(self):
         return len(self.contents)
 
     def track(self, x):
         k = object_to_tracking_key(x)
-        n = self.contents.get(k, 0) + 1
-        self.contents[k] = n
-        return n
+        if k in self.contents:
+            return 2
+        else:
+            self.contents.add(k)
+            return 1

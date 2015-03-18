@@ -20,14 +20,12 @@ from unittest import TestCase
 from collections import namedtuple
 
 from hypothesis import given
-from hypothesis.errors import Exhausted
 from hypothesis.database import ExampleDatabase
 from hypothesis.settings import Settings
 from hypothesis.internal.compat import text_type, integer_types
 from hypothesis.internal.fixers import nice_string, actually_equal
 from hypothesis.database.backend import SQLiteBackend
 from hypothesis.internal.verifier import Verifier
-from hypothesis.internal.hashitanyway import hash_everything
 from hypothesis.searchstrategy.strategies import BuildContext, \
     SearchStrategy, strategy
 
@@ -118,14 +116,6 @@ def descriptor_test_suite(
                 )
             supposedly_basic = strat.to_basic(value)
             self.assertTrue(is_basic(supposedly_basic), repr(supposedly_basic))
-
-        def test_produces_two_distinct_hashes(self):
-            try:
-                verifier.falsify(
-                    lambda x, y: hash_everything(x) == hash_everything(y),
-                    descriptor, descriptor)
-            except Exhausted:
-                pass
 
         @descriptor_test
         def test_can_round_trip_through_the_database(self, template):

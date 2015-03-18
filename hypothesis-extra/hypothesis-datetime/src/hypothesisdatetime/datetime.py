@@ -20,7 +20,6 @@ import pytz
 import hypothesis.internal.distributions as dist
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.internal.fixers import equal
-from hypothesis.internal.hashitanyway import normal_hash, hash_everything
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
     strategy, check_data_type
 
@@ -34,8 +33,6 @@ any_datetime = DatetimeSpec({False, True})
 @equal.extend(dt.datetime)
 def equal_datetimes(x, y, fuzzy=False):
     return (x.tzinfo == y.tzinfo) and (x == y)
-
-hash_everything.extend(dt.datetime)(normal_hash)
 
 
 def draw_day_for_month(random, year, month):
