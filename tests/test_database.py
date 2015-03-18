@@ -15,7 +15,7 @@ from __future__ import division, print_function, absolute_import, \
 
 import pytest
 import hypothesis.settings as hs
-from hypothesis import given
+from hypothesis import given, strategy
 from hypothesis.database import ExampleDatabase
 from tests.common.descriptors import DescriptorWithValue
 from hypothesis.internal.compat import text_type, integer_types
@@ -41,7 +41,9 @@ def run_round_trip(descriptor, value, format=None, backend=None):
     storage = db.storage_for(descriptor)
     storage.save(value)
     saved = list(storage.fetch())
-    assert repr(saved) == repr([value])
+    assert len(saved) == 1
+    strat = strategy(descriptor)
+    assert strat.to_basic(saved[0]) == strat.to_basic(value)
 
 
 class InMemoryBackend(Backend):
