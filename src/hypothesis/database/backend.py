@@ -17,6 +17,7 @@ import sqlite3
 from abc import abstractmethod
 
 from hypothesis.internal.compat import text_type
+from contextlib import contextmanager
 
 
 class Backend(object):
@@ -69,8 +70,12 @@ class SQLiteBackend(Backend):
 
     def close(self):
         if self.__connection is not None:
-            self.__connection.close()
+            c = self.__connection
             self.__connection = None
+            try:
+                c.close()
+            except sqlite3.OperationalError:
+                pass
 
     def __repr__(self):
         return '%s(%s)' % (self.__class__.__name__, self.path)
@@ -78,53 +83,61 @@ class SQLiteBackend(Backend):
     def data_type(self):
         return text_type
 
-    def save(self, key, value):
-        self.create_db_if_needed()
-        cursor = self.connection().cursor()
-        try:
-            cursor.execute("""
-                insert into hypothesis_data_mapping(key, value)
-                values(?, ?)
-            """, (key, value))
-            cursor.close()
-            self.connection().commit()
-        except sqlite3.IntegrityError:
-            pass
-
     def __del__(self):
         self.close()
 
+    @contextmanager
+    def cursor(self):
+        conn = self.connection()
+        cursor = conn.cursor()
+        try:
+            try:
+                yield cursor
+            finally:
+                cursor.close()
+        except:
+            self.connection.rollback()
+            raise
+        else:
+            conn.commit()
+
+    def save(self, key, value):
+        self.create_db_if_needed()
+        with self.cursor() as cursor:
+            try:
+                cursor.execute("""
+                    insert into hypothesis_data_mapping(key, value)
+                    values(?, ?)
+                """, (key, value))
+            except sqlite3.IntegrityError:
+                pass
+
     def delete(self, key, value):
         self.create_db_if_needed()
-        cursor = self.connection().cursor()
-        cursor.execute("""
-            delete from hypothesis_data_mapping
-            where key = ? and value = ?
-        """, (key, value))
-        cursor.close()
-        self.connection().commit()
+        with self.cursor() as cursor:
+            cursor.execute("""
+                delete from hypothesis_data_mapping
+                where key = ? and value = ?
+            """, (key, value))
 
     def fetch(self, key):
         self.create_db_if_needed()
-        cursor = self.connection().cursor()
-        cursor.execute("""
-            select value from hypothesis_data_mapping
-            where key = ?
-        """, (key,))
-        for (value,) in cursor:
-            yield value
+        with self.cursor() as cursor:
+            cursor.execute("""
+                select value from hypothesis_data_mapping
+                where key = ?
+            """, (key,))
+            return [value for (value,) in cursor]
 
     def create_db_if_needed(self):
         if self.db_created:
             return
-        cursor = self.connection().cursor()
-        cursor.execute("""
-            create table if not exists hypothesis_data_mapping(
-                key text,
-                value text,
-                unique(key, value)
-            )
-        """)
-        cursor.close()
-        self.connection().commit()
+        with self.cursor() as cursor:
+            cursor.execute("""
+                create table if not exists hypothesis_data_mapping(
+                    key text,
+                    value text,
+                    unique(key, value)
+                )
+            """)
         self.db_created = True
