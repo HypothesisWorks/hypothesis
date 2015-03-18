@@ -29,122 +29,6 @@ from hypothesis.internal.compat import text_type, binary_type, \
 from hypothesis.utils.extmethod import ExtMethod
 
 
-class Equality(ExtMethod):
-
-    def __call__(self, x, y, fuzzy=False):
-        if x is y:
-            return True
-        if type(x) != type(y):
-            return False
-        return super(Equality, self).__call__(x, y, fuzzy)
-
-
-equal = Equality()
-
-
-primitives = [
-    int, float, bool, type, text_type, binary_type
-] + list(integer_types)
-
-
-@equal.extend(object)
-def generic_equal(x, y, fuzzy):
-    try:
-        if len(x) != len(y):
-            return False
-    except (TypeError, AttributeError):
-        pass
-    try:
-        iter(x)
-        iter(y)
-    except TypeError:
-        return x == y
-    return actually_equal(
-        tuple(x), tuple(y), fuzzy
-    )
-
-
-@equal.extend(int)
-@equal.extend(bool)
-@equal.extend(type)
-@equal.extend(text_type)
-@equal.extend(binary_type)
-def primitive_equal(x, y, fuzzy):
-    return x == y
-
-
-@equal.extend(float)
-def float_equal(x, y, fuzzy=False):
-    if math.isnan(x) and math.isnan(y):
-        return True
-    if x == y:
-        return True
-    return fuzzy and (repr(x) == repr(y))
-
-
-@equal.extend(complex)
-def complex_equal(x, y, fuzzy=False):
-    return (
-        float_equal(x.real, y.real, fuzzy) and
-        float_equal(x.imag, y.imag, fuzzy)
-    )
-
-
-@equal.extend(tuple)
-@equal.extend(list)
-def sequence_equal(x, y, fuzzy=False):
-    if len(x) != len(y):
-        return False
-    for u, v in zip(x, y):
-        if not actually_equal(u, v, fuzzy):
-            return False
-    return True
-
-
-@equal.extend(set)
-@equal.extend(frozenset)
-def set_equal(x, y, fuzzy=False):
-    if len(x) != len(y):
-        return False
-    for u in x:
-        if not actually_in(u, y):
-            return False
-    return True
-
-
-@equal.extend(dict)
-def dict_equal(x, y, fuzzy=False):
-    if len(x) != len(y):
-        return False
-    for k, v in x.items():
-        if k not in y:
-            return False
-        if not actually_equal(x[k], y[k], fuzzy):
-            return False
-    return True
-
-
-def actually_equal(x, y, fuzzy=False):
-    return equal(x, y, fuzzy)
-
-
-def actually_in(x, ys, fuzzy=False):
-    return any(actually_equal(x, y, fuzzy) for y in ys)
-
-
-def real_index(value, y, fuzzy=False):
-    i = 0
-    while i < len(value):
-        if actually_equal(value[i], y, fuzzy):
-            return i
-        i += 1
-    raise ValueError('%r is not in list %r' % (y, value))
-
-
-def is_nasty_float(x):
-    return math.isnan(x) or math.isinf(x)
-
-
 class IdKey(object):
 
     def __init__(self, value):
@@ -247,6 +131,10 @@ def binary_string(value, seen):
 @nice_string.extend(type)
 def type_string(value, seen):
     return value.__name__
+
+
+def is_nasty_float(x):
+    return math.isnan(x) or math.isinf(x)
 
 
 @nice_string.extend(float)

@@ -30,7 +30,7 @@ from tests.common.descriptors import Descriptor, DescriptorWithValue, \
     primitive_types
 from hypothesis.descriptortests import TemplatesFor
 from hypothesis.internal.compat import text_type, binary_type
-from hypothesis.internal.fixers import nice_string, actually_equal
+from hypothesis.internal.fixers import nice_string
 from hypothesis.internal.verifier import Verifier
 from hypothesis.searchstrategy.strategies import BuildContext, strategy
 
@@ -146,7 +146,7 @@ def test_does_not_use_nasty_type_reprs_in_nice_string(desc):
 def test_nice_string_evals_as_descriptor(desc):
     s = nice_string(desc)
     read_desc = eval(s)
-    assert actually_equal(desc, read_desc, fuzzy=True)
+    assert nice_string(read_desc) == s
 
 
 def tree_contains_match(t, f):
@@ -168,7 +168,7 @@ def test_copies_all_its_values_correctly(desc, random):
     strat = strategy(desc)
     value = strat.produce_template(
         BuildContext(random), strat.draw_parameter(random))
-    assert actually_equal(strat.reify(value), strat.reify(value))
+    assert nice_string(strat.reify(value)) == nice_string(strat.reify(value))
 
 
 @given(
@@ -199,22 +199,22 @@ def test_can_perform_all_basic_operations(descriptor, random):
     strat = strategy(descriptor)
     parameter = strat.draw_parameter(random)
     template = strat.produce_template(BuildContext(random), parameter)
-    assert actually_equal(
-        template,
-        strat.from_basic(strat.to_basic(template))
+    assert (
+        strat.to_basic(template) ==
+        strat.to_basic(strat.from_basic(strat.to_basic(template)))
     )
     minimal_template = last(strat.simplify_such_that(
         template,
         lambda x: True
     ))
     strat.reify(minimal_template)
-    assert actually_equal(
-        minimal_template,
-        strat.from_basic(strat.to_basic(minimal_template))
+    assert (
+        strat.to_basic(minimal_template) ==
+        strat.to_basic(strat.from_basic(strat.to_basic(minimal_template)))
     )
 
 
 @given(DescriptorWithValue, verifier=verifier)
 def test_integrity_check_dav(dav):
     strat = strategy(dav.descriptor)
-    assert actually_equal(dav.value, strat.reify(dav.template))
+    assert nice_string(dav.value) == nice_string(strat.reify(dav.template))

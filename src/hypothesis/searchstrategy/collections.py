@@ -329,7 +329,9 @@ class SetStrategy(MappedSearchStrategy):
         check_type(frozenset, value)
         if not self.descriptor:
             return []
-        return list(map(self.element_strategy.to_basic, value))
+        result = list(map(self.element_strategy.to_basic, value))
+        result.sort()
+        return result
 
     def from_basic(self, value):
         if not self.descriptor:

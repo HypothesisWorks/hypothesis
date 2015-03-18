@@ -21,7 +21,6 @@ import math
 
 from hypothesis import given, assume
 from tests.common.utils import fails
-from hypothesis.internal.fixers import actually_equal
 
 
 @given(float)
@@ -113,19 +112,9 @@ def test_can_generate_really_small_negative_floats(x):
 @given(float)
 def test_can_find_floats_that_do_not_round_trip_through_strings(x):
     assert float(str(x)) == x
-    assert actually_equal(float(str(x)), x)
 
 
 @fails
 @given(float)
 def test_can_find_floats_that_do_not_round_trip_through_reprs(x):
     assert float(repr(x)) == x
-
-
-@given(float)
-def test_printing_and_parsing_is_fuzzy_equal(x):
-    assert actually_equal(
-        x,
-        float(repr(x)),
-        fuzzy=True,
-    )

@@ -22,7 +22,6 @@ import hypothesis.descriptors as descriptors
 import hypothesis.searchstrategy as strat
 from hypothesis.types import RandomWithSeed
 from hypothesis.internal.compat import hrange, text_type
-from hypothesis.internal.fixers import nice_string, actually_equal
 from hypothesis.internal.tracker import Tracker
 from hypothesis.searchstrategy.numbers import BoundedIntStrategy, \
     FixedBoundedFloatStrategy, RandomGeometricIntStrategy
@@ -67,7 +66,7 @@ def some_minimal_element(s):
 def assert_minimizes_to(s, value):
     for _ in hrange(100):
         m = some_minimal_element(s)
-        if actually_equal(m, value):
+        if m == value:
             return
     assert False
 

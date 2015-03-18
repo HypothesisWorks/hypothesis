@@ -23,7 +23,7 @@ from hypothesis import given
 from hypothesis.database import ExampleDatabase
 from hypothesis.settings import Settings
 from hypothesis.internal.compat import text_type, integer_types
-from hypothesis.internal.fixers import nice_string, actually_equal
+from hypothesis.internal.fixers import nice_string
 from hypothesis.database.backend import SQLiteBackend
 from hypothesis.internal.verifier import Verifier
 from hypothesis.searchstrategy.strategies import BuildContext, \
@@ -95,13 +95,6 @@ def descriptor_test_suite(
         def test_does_not_error(self, value):
             pass
 
-        @descriptor_test
-        def test_two_reifications_are_equal(self, template):
-            assert actually_equal(
-                strat.reify(template),
-                strat.reify(template),
-            )
-
         def test_can_give_example(self):
             strat.example()
 
@@ -126,7 +119,7 @@ def descriptor_test_suite(
             storage.save(template)
             values = list(storage.fetch())
             assert len(values) == 1
-            assert actually_equal(template, values[0])
+            assert repr(template) == repr(values[0])
 
         @descriptor_test
         def test_template_is_hashable(self, template):
@@ -148,9 +141,10 @@ def descriptor_test_suite(
                 lambda x: True
             ))[-1]
             strat.reify(minimal_template)
-            assert actually_equal(
-                minimal_template,
-                strat.from_basic(strat.to_basic(minimal_template))
+            assert (
+                strat.to_basic(minimal_template) ==
+                strat.to_basic(
+                    strat.from_basic(strat.to_basic(minimal_template)))
             )
             list(strat.decompose(minimal_template))
 

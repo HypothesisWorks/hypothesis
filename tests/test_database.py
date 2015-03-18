@@ -19,7 +19,6 @@ from hypothesis import given
 from hypothesis.database import ExampleDatabase
 from tests.common.descriptors import DescriptorWithValue
 from hypothesis.internal.compat import text_type, integer_types
-from hypothesis.internal.fixers import actually_equal
 from hypothesis.database.backend import Backend, SQLiteBackend
 from hypothesis.database.formats import Format, JSONFormat
 from hypothesis.internal.verifier import Verifier
@@ -42,7 +41,7 @@ def run_round_trip(descriptor, value, format=None, backend=None):
     storage = db.storage_for(descriptor)
     storage.save(value)
     saved = list(storage.fetch())
-    assert actually_equal(saved, [value])
+    assert repr(saved) == repr([value])
 
 
 class InMemoryBackend(Backend):
