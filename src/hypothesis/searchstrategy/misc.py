@@ -66,6 +66,10 @@ class JustStrategy(SearchStrategy):
         return None
 
     def produce_template(self, context, pv):
+        return None
+
+    def reify(self, template):
+        assert template is None
         return self.descriptor.value
 
     def to_basic(self, template):
@@ -74,7 +78,7 @@ class JustStrategy(SearchStrategy):
     def from_basic(self, data):
         if data is not None:
             raise BadData('Expected None but got %s' % (nice_string(data,)))
-        return self.descriptor.value
+        return None
 
 
 class RandomStrategy(SearchStrategy):

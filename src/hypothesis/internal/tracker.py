@@ -13,7 +13,30 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from hypothesis.internal.hashitanyway import HashItAnyway
+import marshal
+import collections
+from hypothesis.internal.compat import text_type, binary_type
+import hashlib
+
+
+def flatten(x):
+    if isinstance(x, (text_type, binary_type)):
+        return x
+    if isinstance(x, collections.Iterable):
+        return (type(x).__name__, tuple(map(flatten, x)))
+    return x
+
+
+def object_to_tracking_key(o):
+    try:
+        k = marshal.dumps(flatten(o))
+    except ValueError:
+        raise ValueError("Unmarshallable object %r" % (o,))
+
+    if len(k) < 20:
+        return k
+    else:
+        return hashlib.sha1(k).digest()
 
 
 class Tracker(object):
@@ -25,7 +48,7 @@ class Tracker(object):
         return len(self.contents)
 
     def track(self, x):
-        k = HashItAnyway(x)
+        k = object_to_tracking_key(x)
         n = self.contents.get(k, 0) + 1
         self.contents[k] = n
         return n

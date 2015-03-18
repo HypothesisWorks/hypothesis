@@ -40,7 +40,7 @@ class Storage(object):
         tracker = Tracker()
 
         def do_save(d, v):
-            if tracker.track((d, v)) > 1:
+            if tracker.track((repr(d), v)) > 1:
                 return
             s = self.database.storage_for(d)
             converted = s.strategy.to_basic(v)
