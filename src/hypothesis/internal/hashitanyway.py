@@ -17,18 +17,27 @@ from hypothesis.types import RandomWithSeed
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.internal.fixers import actually_equal
 from hypothesis.utils.extmethod import ExtMethod
+import math
 
 hash_everything = ExtMethod()
 
 
 @hash_everything.extend(int)
-@hash_everything.extend(float)
 @hash_everything.extend(complex)
 @hash_everything.extend(binary_type)
 @hash_everything.extend(text_type)
 @hash_everything.extend(bool)
 @hash_everything.extend(RandomWithSeed)
 def normal_hash(x):
+    return hash(x)
+
+
+@hash_everything.extend(float)
+def hash_float(x):
+    if math.isnan(x):
+        # there's nothing special about this number. I just called hash(
+        # random.random()) and picked the first value I got.
+        return 1734584942
     return hash(x)
 
 
@@ -45,11 +54,32 @@ def type_hash(x):
     return hash(x.__name__)
 
 
+@hash_everything.extend(set)
+@hash_everything.extend(frozenset)
+def hash_sets(x):
+    h = hash(type(x).__name__)
+    h += hash(len(x))
+    for y in x:
+        h += hash_everything(y)
+    return h
+
+
+@hash_everything.extend(tuple)
+@hash_everything.extend(list)
+def hash_sequences(x):
+    h = hash(type(x).__name__)
+    h += hash(len(x))
+    for y in x:
+        h *= 37
+        h += hash_everything(y)
+    return h
+
+
 @hash_everything.extend(object)
 def generic_hash(x):
     h = hash(type(x).__name__)
     try:
-        h ^= hash(len(x))
+        h += hash(len(x))
     except (TypeError, AttributeError):
         pass
     try:
