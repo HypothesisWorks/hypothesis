@@ -162,7 +162,7 @@ def tree_contains_match(t, f):
     return any(tree_contains_match(s, f) for s in t)
 
 
-@timeout(5)
+@timeout(10)
 @given(Descriptor, Random, verifier=verifier)
 def test_copies_all_its_values_correctly(desc, random):
     strat = strategy(desc)
