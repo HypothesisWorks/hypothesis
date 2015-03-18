@@ -103,7 +103,7 @@ class HashItAnyway(object):
         return (
             isinstance(other, HashItAnyway) and
             self.h == other.h and
-            actually_equal(self, other)
+            actually_equal(self.wrapped, other.wrapped)
         )
 
     def __ne__(self, other):
