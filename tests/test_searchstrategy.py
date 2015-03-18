@@ -22,6 +22,7 @@ import hypothesis.descriptors as descriptors
 import hypothesis.searchstrategy as strat
 from hypothesis.types import RandomWithSeed
 from hypothesis.internal.compat import hrange, text_type
+from hypothesis.internal.fixers import nice_string
 from hypothesis.internal.tracker import Tracker
 from hypothesis.searchstrategy.numbers import BoundedIntStrategy, \
     FixedBoundedFloatStrategy, RandomGeometricIntStrategy
