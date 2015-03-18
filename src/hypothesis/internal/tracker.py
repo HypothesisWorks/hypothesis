@@ -13,10 +13,11 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-import marshal
-import collections
-from hypothesis.internal.compat import text_type, binary_type
 import hashlib
+import collections
+
+import marshal
+from hypothesis.internal.compat import text_type, binary_type
 
 
 def flatten(x):
@@ -31,7 +32,7 @@ def object_to_tracking_key(o):
     try:
         k = marshal.dumps(flatten(o))
     except ValueError:
-        raise ValueError("Unmarshallable object %r" % (o,))
+        raise ValueError('Unmarshallable object %r' % (o,))
 
     if len(k) < 20:
         return k
