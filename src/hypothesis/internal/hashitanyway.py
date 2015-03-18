@@ -13,11 +13,12 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+import math
+
 from hypothesis.types import RandomWithSeed
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.internal.fixers import actually_equal
 from hypothesis.utils.extmethod import ExtMethod
-import math
 
 hash_everything = ExtMethod()
 
@@ -99,9 +100,15 @@ class HashItAnyway(object):
         self.h = hash_everything(wrapped)
 
     def __eq__(self, other):
-        return (isinstance(other, HashItAnyway) and
-                self.h == other.h and
-                actually_equal(self.wrapped, other.wrapped))
+        if not isinstance(other, HashItAnyway):
+            return False
+        if self.h != other.h:
+            return False
+        if actually_equal(self.wrapped, other.wrapped):
+            return True
+        else:
+            print(self.wrapped, other.wrapped)
+            return False
 
     def __ne__(self, other):
         return not self.__eq__(other)

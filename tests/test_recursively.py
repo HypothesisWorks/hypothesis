@@ -94,7 +94,7 @@ def size(descriptor):
 MAX_SIZE = 15
 settings = hs.Settings(
     max_examples=100, timeout=4,
-    average_list_length=5,
+    average_list_length=2.0,
 )
 
 verifier = Verifier(
@@ -177,7 +177,7 @@ def test_copies_all_its_values_correctly(desc, random):
 )
 def test_can_minimize_descriptor_with_value(dav):
     s = strategy(DescriptorWithValue)
-    list(s.simplify_such_that(dav, lambda x: True))
+    last(s.simplify_such_that(dav, lambda x: True))
 
 
 @given(Descriptor, Random, verifier=verifier)
@@ -186,6 +186,12 @@ def test_template_is_hashable(descriptor, random):
     parameter = strat.draw_parameter(random)
     template = strat.produce_template(BuildContext(random), parameter)
     hash(template)
+
+
+def last(it):
+    for i in it:
+        pass
+    return i
 
 
 @given(Descriptor, Random, verifier=verifier)
@@ -197,10 +203,10 @@ def test_can_perform_all_basic_operations(descriptor, random):
         template,
         strat.from_basic(strat.to_basic(template))
     )
-    minimal_template = list(strat.simplify_such_that(
+    minimal_template = last(strat.simplify_such_that(
         template,
         lambda x: True
-    ))[-1]
+    ))
     strat.reify(minimal_template)
     assert actually_equal(
         minimal_template,

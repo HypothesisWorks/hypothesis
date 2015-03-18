@@ -110,22 +110,6 @@ def test_hashing_random_with_seed():
     )
 
 
-@given([Descriptor], Random, verifier=Verifier(
-    settings=Settings(
-        max_examples=500,
-        timeout=100
-    )
-))
-def test_can_put_and_retrieve_descriptors_from_a_list(ds, r):
-    ds += [mutate_slightly(r, d) for d in ds]
-    ds += [mutate_maliciously(r, d) for d in ds]
-    mapping = {}
-    for d in ds:
-        mapping[HashItAnyway(d)] = d
-    for d in ds:
-        assert mapping[HashItAnyway(deepcopy(d))] == d
-
-
 class BadHash(object):
 
     def __len__(x):
