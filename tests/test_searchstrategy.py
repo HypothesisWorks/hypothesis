@@ -285,17 +285,6 @@ def test_random_only_produces_special_random():
     )
 
 
-def test_randoms_with_same_seed_are_equal():
-    s = RandomWithSeed(123)
-    t = RandomWithSeed(123)
-    assert s == t
-    s.random()
-    assert s == t
-    t.random()
-    assert s == t
-    assert t != RandomWithSeed(124)
-
-
 def test_just_strategy_uses_repr():
     class WeirdRepr(object):
 

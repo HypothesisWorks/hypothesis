@@ -32,15 +32,3 @@ class RandomWithSeed(Random):
 
     def __repr__(self):
         return 'RandomWithSeed(%s)' % (self.seed,)
-
-    def __hash__(self):
-        return hash(self.seed)
-
-    def __eq__(self, other):
-        return self is other or (
-            isinstance(other, RandomWithSeed) and
-            self.seed == other.seed
-        )
-
-    def __ne__(self, other):
-        return not self.__eq__(other)

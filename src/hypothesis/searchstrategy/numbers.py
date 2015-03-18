@@ -343,12 +343,8 @@ class FixedBoundedFloatStrategy(FloatStrategy):
         if value == self.lower_bound:
             return
         yield self.lower_bound
-        if value == self.upper_bound:
-            return
         yield self.upper_bound
         mid = (self.lower_bound + self.upper_bound) * 0.5
-        if value == mid:
-            return
         yield mid
 
 
