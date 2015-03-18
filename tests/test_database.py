@@ -30,6 +30,7 @@ def test_deduplicates():
     storage.save(1)
     storage.save(1)
     assert list(storage.fetch()) == [1]
+    database.close()
 
 
 def run_round_trip(descriptor, value, format=None, backend=None):
@@ -38,12 +39,15 @@ def run_round_trip(descriptor, value, format=None, backend=None):
     else:
         backend = SQLiteBackend()
     db = ExampleDatabase(format=format, backend=backend)
-    storage = db.storage_for(descriptor)
-    storage.save(value)
-    saved = list(storage.fetch())
-    assert len(saved) == 1
-    strat = strategy(descriptor)
-    assert strat.to_basic(saved[0]) == strat.to_basic(value)
+    try:
+        storage = db.storage_for(descriptor)
+        storage.save(value)
+        saved = list(storage.fetch())
+        assert len(saved) == 1
+        strat = strategy(descriptor)
+        assert strat.to_basic(saved[0]) == strat.to_basic(value)
+    finally:
+        db.close()
 
 
 class InMemoryBackend(Backend):

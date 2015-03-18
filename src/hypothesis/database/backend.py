@@ -59,8 +59,18 @@ class SQLiteBackend(Backend):
 
     def __init__(self, path=':memory:'):
         self.path = path
-        self.connection = sqlite3.connect(path)
         self.db_created = False
+        self.__connection = None
+
+    def connection(self):
+        if self.__connection is None:
+            self.__connection = sqlite3.connect(self.path)
+        return self.__connection
+
+    def close(self):
+        if self.__connection is not None:
+            self.__connection.close()
+            self.__connection = None
 
     def __repr__(self):
         return '%s(%s)' % (self.__class__.__name__, self.path)
@@ -70,33 +80,33 @@ class SQLiteBackend(Backend):
 
     def save(self, key, value):
         self.create_db_if_needed()
-        cursor = self.connection.cursor()
+        cursor = self.connection().cursor()
         try:
             cursor.execute("""
                 insert into hypothesis_data_mapping(key, value)
                 values(?, ?)
             """, (key, value))
             cursor.close()
-            self.connection.commit()
+            self.connection().commit()
         except sqlite3.IntegrityError:
             pass
 
     def __del__(self):
-        self.connection.close()
+        self.close()
 
     def delete(self, key, value):
         self.create_db_if_needed()
-        cursor = self.connection.cursor()
+        cursor = self.connection().cursor()
         cursor.execute("""
             delete from hypothesis_data_mapping
             where key = ? and value = ?
         """, (key, value))
         cursor.close()
-        self.connection.commit()
+        self.connection().commit()
 
     def fetch(self, key):
         self.create_db_if_needed()
-        cursor = self.connection.cursor()
+        cursor = self.connection().cursor()
         cursor.execute("""
             select value from hypothesis_data_mapping
             where key = ?
@@ -107,7 +117,7 @@ class SQLiteBackend(Backend):
     def create_db_if_needed(self):
         if self.db_created:
             return
-        cursor = self.connection.cursor()
+        cursor = self.connection().cursor()
         cursor.execute("""
             create table if not exists hypothesis_data_mapping(
                 key text,
@@ -116,5 +126,5 @@ class SQLiteBackend(Backend):
             )
         """)
         cursor.close()
-        self.connection.commit()
+        self.connection().commit()
         self.db_created = True

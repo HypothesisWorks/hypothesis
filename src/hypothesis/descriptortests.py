@@ -115,11 +115,14 @@ def descriptor_test_suite(
             empty_db = ExampleDatabase(
                 backend=SQLiteBackend(':memory:'),
             )
-            storage = empty_db.storage_for(descriptor)
-            storage.save(template)
-            values = list(storage.fetch())
-            assert len(values) == 1
-            assert strat.to_basic(template) == strat.to_basic(values[0])
+            try:
+                storage = empty_db.storage_for(descriptor)
+                storage.save(template)
+                values = list(storage.fetch())
+                assert len(values) == 1
+                assert strat.to_basic(template) == strat.to_basic(values[0])
+            finally:
+                empty_db.close()
 
         @descriptor_test
         def test_template_is_hashable(self, template):

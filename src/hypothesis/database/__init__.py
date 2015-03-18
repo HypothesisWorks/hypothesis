@@ -104,3 +104,6 @@ class ExampleDatabase(object):
             format=self.format,
             strategy=strategy(descriptor),
         )
+
+    def close(self):
+        self.backend.close()
