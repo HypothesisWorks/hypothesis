@@ -81,6 +81,9 @@ class SQLiteBackend(Backend):
         except sqlite3.IntegrityError:
             pass
 
+    def __del__(self):
+        self.connection.close()
+
     def delete(self, key, value):
         self.create_db_if_needed()
         cursor = self.connection.cursor()
