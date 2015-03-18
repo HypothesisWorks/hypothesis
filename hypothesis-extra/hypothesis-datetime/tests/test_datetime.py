@@ -82,7 +82,7 @@ def test_can_find_christmas():
 
 
 def test_simplifies_towards_midnight():
-    d = falsify(lambda x: False, datetime)[0]
+    d = strategy(datetime).reify(falsify(lambda x: False, datetime)[0])
     assert d.hour == 0
     assert d.minute == 0
     assert d.second == 0
@@ -90,9 +90,11 @@ def test_simplifies_towards_midnight():
 
 
 def test_simplifies_towards_2000():
-    d = falsify(lambda x: x.year <= 2000, datetime)[0]
+    d = strategy(datetime).reify(
+        falsify(lambda x: x.year <= 2000, datetime)[0])
     assert d.year == 2001
-    d = falsify(lambda x: x.year >= 2000, datetime)[0]
+    d = strategy(datetime).reify(
+        falsify(lambda x: x.year >= 2000, datetime)[0])
     assert d.year == 1999
 
 
@@ -110,18 +112,6 @@ def test_can_generate_non_utc():
 
 def test_can_generate_utc():
     falsify(lambda d: assume(d.tzinfo) and d.tzinfo.zone != 'UTC', datetime)
-
-
-def test_can_simplify_leap_years():
-    s = strategy(datetime)
-    d = datetime(
-        year=2012, month=2, day=29
-    )
-    t = list(
-        s.simplify_such_that(
-            d, lambda x: (x.month == 2) and (x.day == 29) and (x.year > 2000))
-    )[-1]
-    assert t.year == 2004
 
 
 @given(naive_datetime)

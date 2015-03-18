@@ -19,7 +19,6 @@ from collections import namedtuple
 import pytz
 import hypothesis.internal.distributions as dist
 from hypothesis.internal.compat import hrange, text_type
-from hypothesis.internal.fixers import equal
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
     strategy, check_data_type
 
@@ -28,11 +27,6 @@ DatetimeSpec = namedtuple('DatetimeSpec', ('naive_options',))
 naive_datetime = DatetimeSpec({True})
 timezone_aware_datetime = DatetimeSpec({False})
 any_datetime = DatetimeSpec({False, True})
-
-
-@equal.extend(dt.datetime)
-def equal_datetimes(x, y, fuzzy=False):
-    return (x.tzinfo == y.tzinfo) and (x == y)
 
 
 def draw_day_for_month(random, year, month):
@@ -108,7 +102,7 @@ class DatetimeStrategy(SearchStrategy):
             microsecond=random.randint(0, 1000000 - 1),
         )
         if not self.supports_timezones():
-            return base
+            return self.templateize(base)
 
         if random.random() <= pv.utc_chance:
             timezone = pytz.UTC
@@ -116,7 +110,7 @@ class DatetimeStrategy(SearchStrategy):
             timezone = random.choice(pv.timezones)
 
         if not self.supports_naive():
-            return timezone.localize(base)
+            return self.templateize(timezone.localize(base))
 
         if len(pv.naive_options) == 1:
             naive = list(pv.naive_options)[0]
@@ -124,9 +118,32 @@ class DatetimeStrategy(SearchStrategy):
             naive = random.random() <= pv.naive_chance
 
         if naive:
-            return base
+            return self.templateize(base)
         else:
-            return timezone.localize(base)
+            return self.templateize(timezone.localize(base))
+
+    def templateize(self, dt):
+        return (
+            dt.year,
+            dt.month,
+            dt.day,
+            dt.hour,
+            dt.minute,
+            dt.second,
+            dt.microsecond,
+            text_type(dt.tzinfo.zone) if dt.tzinfo else None,
+        )
+
+    def reify(self, template):
+        tz = template[-1]
+        d = dt.datetime(
+            year=template[0], month=template[1], day=template[2],
+            hour=template[3], minute=template[4], second=template[5],
+            microsecond=template[6]
+        )
+        if tz:
+            d = pytz.timezone(tz).localize(d)
+        return d
 
     def supports_timezones(self):
         return False in self.naive_options
@@ -135,11 +152,13 @@ class DatetimeStrategy(SearchStrategy):
         return True in self.naive_options
 
     def simplify(self, value):
+        value = self.reify(value)
         if self.supports_timezones():
             if not value.tzinfo:
-                yield pytz.UTC.localize(value)
+                yield self.templateize(pytz.UTC.localize(value))
             elif value.tzinfo != pytz.UTC:
-                yield pytz.UTC.normalize(value.astimezone(pytz.UTC))
+                yield self.templateize(
+                    pytz.UTC.normalize(value.astimezone(pytz.UTC)))
         s = {value}
         s.add(value.replace(microsecond=0))
         s.add(value.replace(second=0))
@@ -150,7 +169,7 @@ class DatetimeStrategy(SearchStrategy):
         s.add(value.replace(year=2000))
         s.remove(value)
         for t in s:
-            yield t
+            yield self.templateize(t)
         year = value.year
         if year == 2000:
             return
@@ -161,7 +180,7 @@ class DatetimeStrategy(SearchStrategy):
         mid = (year + 2000) // 2
         if mid != 2000 and mid != year:
             try:
-                yield value.replace(year=mid)
+                yield self.templateize(value.replace(year=mid))
             except ValueError:
                 pass
         direction = -1 if year > 2000 else 1
@@ -170,34 +189,20 @@ class DatetimeStrategy(SearchStrategy):
             if year == mid:
                 continue
             try:
-                yield value.replace(year)
+                yield self.templateize(value.replace(year))
             except ValueError:
                 pass
 
     def to_basic(self, value):
-        return [
-            value.year, value.month, value.day,
-            value.hour, value.minute, value.second,
-            value.microsecond,
-            text_type(value.tzinfo.zone) if value.tzinfo else None
-        ]
+        return list(value)
 
     def from_basic(self, values):
         check_data_type(list, values)
         for d in values[:-1]:
             check_data_type(int, d)
-        timezone = None
         if values[-1] is not None:
             check_data_type(text_type, values[-1])
-            timezone = pytz.timezone(values[-1])
-        base = dt.datetime(
-            year=values[0], month=values[1], day=values[2],
-            hour=values[3], minute=values[4], second=values[5],
-            microsecond=values[6]
-        )
-        if timezone is not None:
-            base = timezone.localize(base)
-        return base
+        return tuple(values)
 
 
 @strategy.extend_static(dt.datetime)
