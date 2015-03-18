@@ -13,16 +13,9 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from copy import deepcopy
-from random import Random
 from collections import namedtuple
 
-from hypothesis import given
 from hypothesis.types import RandomWithSeed
-from hypothesis.settings import Settings
-from tests.common.mutate import mutate_slightly, mutate_maliciously
-from tests.common.descriptors import Descriptor
-from hypothesis.internal.verifier import Verifier
 from hypothesis.internal.hashitanyway import HashItAnyway
 
 

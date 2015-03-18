@@ -100,15 +100,11 @@ class HashItAnyway(object):
         self.h = hash_everything(wrapped)
 
     def __eq__(self, other):
-        if not isinstance(other, HashItAnyway):
-            return False
-        if self.h != other.h:
-            return False
-        if actually_equal(self.wrapped, other.wrapped):
-            return True
-        else:
-            print(self.wrapped, other.wrapped)
-            return False
+        return (
+            isinstance(other, HashItAnyway) and
+            self.h == other.h and
+            actually_equal(self, other)
+        )
 
     def __ne__(self, other):
         return not self.__eq__(other)
