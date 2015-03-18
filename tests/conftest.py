@@ -13,13 +13,13 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+import gc
 import warnings
 from tempfile import mkdtemp
-import pytest
 
+import pytest
 from hypothesis import Settings
 from hypothesis.settings import set_hypothesis_home_dir
-import gc
 
 warnings.filterwarnings('error', category=UnicodeWarning)
 
@@ -36,6 +36,6 @@ except ImportError:
     pass
 
 
-@pytest.fixture(scope="function", autouse=True)
+@pytest.fixture(scope='function', autouse=True)
 def some_fixture():
     gc.collect()

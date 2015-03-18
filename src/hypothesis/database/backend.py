@@ -15,9 +15,9 @@ from __future__ import division, print_function, absolute_import, \
 
 import sqlite3
 from abc import abstractmethod
+from contextlib import contextmanager
 
 from hypothesis.internal.compat import text_type
-from contextlib import contextmanager
 
 
 class Backend(object):
