@@ -100,11 +100,7 @@ def test_int_lists_no_duplicates_in_simplify():
 
 def test_just_works():
     s = strategy(descriptors.just('giving'))
-    assert s.produce_template(
-        BuildContext(random), s.draw_parameter(random)) == 'giving'
-    simplifications = list(s.simplify_such_that('giving', lambda _: True))
-    assert len(simplifications) == 1
-    assert simplifications[0] == 'giving'
+    assert s.example() == "giving"
 
 
 Litter = namedtuple('Litter', ('kitten1', 'kitten2'))

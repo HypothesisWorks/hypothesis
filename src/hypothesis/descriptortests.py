@@ -119,7 +119,7 @@ def descriptor_test_suite(
             storage.save(template)
             values = list(storage.fetch())
             assert len(values) == 1
-            assert repr(template) == repr(values[0])
+            assert strat.to_basic(template) == strat.to_basic(values[0])
 
         @descriptor_test
         def test_template_is_hashable(self, template):
