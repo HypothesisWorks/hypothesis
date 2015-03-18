@@ -139,6 +139,10 @@ def descriptor_test_suite(
             assert actually_equal(template, values[0])
 
         @descriptor_test
+        def test_template_is_hashable(self, template):
+            hash(template)
+
+        @descriptor_test
         def test_can_minimize_to_empty(self, template):
             simplest = list(strat.simplify_such_that(
                 template, lambda x: True
