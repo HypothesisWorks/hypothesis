@@ -100,7 +100,7 @@ def test_int_lists_no_duplicates_in_simplify():
 
 def test_just_works():
     s = strategy(descriptors.just('giving'))
-    assert s.example() == "giving"
+    assert s.example() == 'giving'
 
 
 Litter = namedtuple('Litter', ('kitten1', 'kitten2'))
