@@ -10,7 +10,7 @@
 
 # END HEADER
 
-from hypothesis.internal.fixers import nice_string
+from hypothesis.utils.show import show
 from hypothesis.internal.tracker import Tracker
 from hypothesis.searchstrategy.strategies import BadData, strategy
 from hypothesis.database.formats import JSONFormat
@@ -33,7 +33,7 @@ class Storage(object):
         self.descriptor = descriptor
         self.format = format
         self.strategy = strategy
-        self.key = nice_string(descriptor)
+        self.key = show(descriptor)
 
     def save(self, value):
         tracker = Tracker()

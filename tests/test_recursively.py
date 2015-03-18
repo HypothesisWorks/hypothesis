@@ -25,12 +25,12 @@ from hypothesis import assume
 from hypothesis.core import given
 from hypothesis.types import RandomWithSeed
 from hypothesis.errors import Unfalsifiable
+from hypothesis.utils.show import show
 from hypothesis.descriptors import Just, OneOf, SampledFrom, just
 from tests.common.descriptors import Descriptor, DescriptorWithValue, \
     primitive_types
 from hypothesis.descriptortests import TemplatesFor
 from hypothesis.internal.compat import text_type, binary_type
-from hypothesis.internal.fixers import nice_string
 from hypothesis.internal.verifier import Verifier
 from hypothesis.searchstrategy.strategies import BuildContext, strategy
 
@@ -136,17 +136,17 @@ UNDESIRABLE_STRINGS = re.compile('|'.join(
 
 @timeout(5)
 @given(Descriptor, verifier=verifier)
-def test_does_not_use_nasty_type_reprs_in_nice_string(desc):
-    s = nice_string(desc)
+def test_does_not_use_nasty_type_reprs_in_show(desc):
+    s = show(desc)
     assert not UNDESIRABLE_STRINGS.findall(s)
 
 
 @timeout(5)
 @given(Descriptor, verifier=verifier)
-def test_nice_string_evals_as_descriptor(desc):
-    s = nice_string(desc)
+def test_show_evals_as_descriptor(desc):
+    s = show(desc)
     read_desc = eval(s)
-    assert nice_string(read_desc) == s
+    assert show(read_desc) == s
 
 
 def tree_contains_match(t, f):
@@ -168,7 +168,7 @@ def test_copies_all_its_values_correctly(desc, random):
     strat = strategy(desc)
     value = strat.produce_template(
         BuildContext(random), strat.draw_parameter(random))
-    assert nice_string(strat.reify(value)) == nice_string(strat.reify(value))
+    assert show(strat.reify(value)) == show(strat.reify(value))
 
 
 @given(
@@ -217,4 +217,4 @@ def test_can_perform_all_basic_operations(descriptor, random):
 @given(DescriptorWithValue, verifier=verifier)
 def test_integrity_check_dav(dav):
     strat = strategy(dav.descriptor)
-    assert nice_string(dav.value) == nice_string(strat.reify(dav.template))
+    assert show(dav.value) == show(strat.reify(dav.template))

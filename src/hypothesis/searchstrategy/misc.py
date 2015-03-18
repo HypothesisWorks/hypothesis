@@ -18,8 +18,8 @@ from random import Random
 import hypothesis.descriptors as descriptors
 import hypothesis.internal.distributions as dist
 from hypothesis.types import RandomWithSeed
+from hypothesis.utils.show import show
 from hypothesis.internal.compat import integer_types
-from hypothesis.internal.fixers import nice_string
 from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
     strategy, check_type, check_data_type
 
@@ -77,7 +77,7 @@ class JustStrategy(SearchStrategy):
 
     def from_basic(self, data):
         if data is not None:
-            raise BadData('Expected None but got %s' % (nice_string(data,)))
+            raise BadData('Expected None but got %s' % (show(data,)))
         return None
 
 

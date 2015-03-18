@@ -22,8 +22,8 @@ from collections import namedtuple
 from hypothesis import given
 from hypothesis.database import ExampleDatabase
 from hypothesis.settings import Settings
+from hypothesis.utils.show import show
 from hypothesis.internal.compat import text_type, integer_types
-from hypothesis.internal.fixers import nice_string
 from hypothesis.database.backend import SQLiteBackend
 from hypothesis.internal.verifier import Verifier
 from hypothesis.searchstrategy.strategies import BuildContext, \
@@ -88,7 +88,7 @@ def descriptor_test_suite(
 
         def __repr__(self):
             return 'descriptor_test_suite(%s)' % (
-                nice_string(descriptor),
+                show(descriptor),
             )
 
         @given(descriptor, settings=settings)

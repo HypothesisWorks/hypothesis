@@ -17,9 +17,9 @@ from random import Random
 from collections import namedtuple
 
 from hypothesis.types import RandomWithSeed
+from hypothesis.utils.show import show
 from hypothesis.descriptors import one_of, sampled_from
 from hypothesis.internal.compat import text_type, binary_type
-from hypothesis.internal.fixers import nice_string
 from hypothesis.searchstrategy.narytree import Leaf, NAryTree
 from hypothesis.searchstrategy.strategies import BuildContext, \
     SearchStrategy, MappedSearchStrategy, strategy, check_length, \
@@ -54,7 +54,7 @@ class DescriptorWithValue(object):
             'DescriptorWithValue(descriptor=%s, template=%r, '
             'value=%r, random=%r)'
         ) % (
-            nice_string(self.descriptor), self.template, self.value,
+            show(self.descriptor), self.template, self.value,
             self.random,
         )
 

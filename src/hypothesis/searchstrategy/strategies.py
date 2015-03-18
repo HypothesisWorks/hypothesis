@@ -19,9 +19,10 @@ from collections import namedtuple
 import hypothesis.internal.distributions as dist
 from hypothesis.errors import BadData, WrongFormat
 from hypothesis.settings import Settings
+from hypothesis.utils.show import show
 from hypothesis.descriptors import OneOf, one_of
+from hypothesis.utils.idkey import IdKey
 from hypothesis.internal.compat import hrange, integer_types
-from hypothesis.internal.fixers import IdKey, nice_string
 from hypothesis.utils.extmethod import ExtMethod
 from hypothesis.internal.tracker import Tracker
 
@@ -122,7 +123,7 @@ class SearchStrategy(object):
     def __repr__(self):
         return '%s(%s)' % (
             self.__class__.__name__,
-            nice_string(self.descriptor)
+            show(self.descriptor)
         )
 
     def __init__(self):

@@ -21,8 +21,8 @@ import pytest
 import hypothesis.descriptors as descriptors
 import hypothesis.searchstrategy as strat
 from hypothesis.types import RandomWithSeed
+from hypothesis.utils.show import show
 from hypothesis.internal.compat import hrange, text_type
-from hypothesis.internal.fixers import nice_string
 from hypothesis.internal.tracker import Tracker
 from hypothesis.searchstrategy.numbers import BoundedIntStrategy, \
     FixedBoundedFloatStrategy, RandomGeometricIntStrategy
@@ -325,7 +325,7 @@ class AwkwardSet(set):
 def test_set_descriptor_representation_is_stable_for_order():
     x = AwkwardSet(list(hrange(100)))
     assert repr(x) != repr(x)
-    assert nice_string(x) == nice_string(x)
+    assert show(x) == show(x)
 
 
 class AwkwardDict(dict):
@@ -339,7 +339,7 @@ class AwkwardDict(dict):
 
 def test_dict_descriptor_representation_is_stable_for_order():
     x = AwkwardDict({i: i for i in hrange(100)})
-    assert nice_string(x) == nice_string(x)
+    assert show(x) == show(x)
 
 
 def test_can_simplify_nan():

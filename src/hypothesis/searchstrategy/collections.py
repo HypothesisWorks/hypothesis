@@ -17,8 +17,8 @@ from collections import namedtuple
 
 import hypothesis.internal.distributions as dist
 from hypothesis.settings import Settings
+from hypothesis.utils.show import show
 from hypothesis.internal.compat import hrange
-from hypothesis.internal.fixers import nice_string
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
     MappedSearchStrategy, strategy, check_type, check_length, \
     check_data_type, one_of_strategies
@@ -264,7 +264,7 @@ class SetStrategy(MappedSearchStrategy):
 
     def __init__(self, strategies, average_length=50.0):
         strategies = list(strategies)
-        strategies.sort(key=nice_string)
+        strategies.sort(key=show)
 
         self.descriptor = {x.descriptor for x in strategies}
         if self.descriptor:
@@ -367,7 +367,7 @@ class FixedKeysDictStrategy(MappedSearchStrategy):
 
     def __init__(self, strategy_dict):
         self.keys = tuple(sorted(
-            strategy_dict.keys(), key=nice_string
+            strategy_dict.keys(), key=show
         ))
         super(FixedKeysDictStrategy, self).__init__(
             descriptor={
