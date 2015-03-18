@@ -15,9 +15,11 @@ from __future__ import division, print_function, absolute_import, \
 
 import warnings
 from tempfile import mkdtemp
+import pytest
 
 from hypothesis import Settings
 from hypothesis.settings import set_hypothesis_home_dir
+import gc
 
 warnings.filterwarnings('error', category=UnicodeWarning)
 
@@ -32,3 +34,8 @@ try:
     resource.setrlimit(resource.RLIMIT_DATA, (MAX_MEMORY, MAX_MEMORY))
 except ImportError:
     pass
+
+
+@pytest.fixture(scope="function", autouse=True)
+def some_fixture():
+    gc.collect()
