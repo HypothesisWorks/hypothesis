@@ -23,6 +23,8 @@ from hypothesis.internal.compat import text_type, binary_type
 def flatten(x):
     if isinstance(x, (text_type, binary_type)):
         return x
+    if isinstance(x, collections.Mapping):
+        return (type(x).__name__, tuple(map(flatten, x.items())))
     if isinstance(x, collections.Iterable):
         return (type(x).__name__, tuple(map(flatten, x)))
     return x

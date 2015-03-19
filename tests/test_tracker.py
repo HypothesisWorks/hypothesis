@@ -28,6 +28,12 @@ def test_track_lists():
     assert t.track([1]) == 2
 
 
+def test_track_dict():
+    t = Tracker()
+    assert t.track({1: 2}) == 1
+    assert t.track({1: 3}) == 1
+
+
 def test_nested_unhashables():
     t = Tracker()
     x = {'foo': [1, 2, {3, 4, 5, 6}], 'bar': 10}
