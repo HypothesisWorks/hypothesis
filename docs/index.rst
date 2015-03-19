@@ -262,10 +262,10 @@ From most usage, strategy looks like a normal function:
   >>> from hypothesis import strategy
 
   >>> strategy(int)
-  RandomGeometricIntStrategy(int)
+  RandomGeometricIntStrategy()
 
-  >>> strategy((int, int, int))
-  TupleStrategy((int, int, int))
+  >>> strategy((int, int))
+  TupleStrategy((RandomGeometricIntStrategy(), RandomGeometricIntStrategy()), tuple) 
 
 If you try to call it on something with no implementation defined you will
 get a NotImplementedError:
