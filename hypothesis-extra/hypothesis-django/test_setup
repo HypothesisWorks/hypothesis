@@ -1,6 +1,5 @@
 #!/bin/bash
 
-pip install fake-factory
 for p in hypothesis-datetime hypothesis-fakefactory; do
     pushd ../$p
         python setup.py install

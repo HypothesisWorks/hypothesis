@@ -48,7 +48,7 @@ setup(
     description='Adds support for generating fake-factory data to Hypothesis',
     install_requires=[
         "hypothesis==0.6.0",
-        "fake-factory>=0.5.0,<0.5.99",
+        "fake-factory==0.4.2",
     ],
     long_description=open(README).read(),
     entry_points={
