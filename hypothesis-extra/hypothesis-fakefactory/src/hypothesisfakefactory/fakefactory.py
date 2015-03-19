@@ -66,7 +66,6 @@ class FakeFactory(object):
 class FakeFactoryStrategy(SearchStrategy):
 
     def __init__(self, details):
-        self.descriptor = details
         self.source = details.source
         self.providers = details.providers
         self.locales = details.locales or AVAILABLE_LOCALES

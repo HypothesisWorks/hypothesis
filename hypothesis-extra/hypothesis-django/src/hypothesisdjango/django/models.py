@@ -62,15 +62,18 @@ def model_to_base_specifier(model):
 
 class ModelStrategy(MappedSearchStrategy):
 
+    def __init__(self, model, settings):
+        self.model = model
+        specifier = model_to_base_specifier(model)
+        super(ModelStrategy, self).__init__(
+            strategy=strategy(specifier, settings))
+
     def pack(self, value):
-        result = self.descriptor(**value)
+        result = self.model(**value)
         result.save()
         return result
 
 
 @strategy.extend_static(dm.Model)
 def define_model_strategy(model, settings):
-    specifier = model_to_base_specifier(model)
-    return ModelStrategy(
-        descriptor=model, strategy=strategy(specifier, settings)
-    )
+    return ModelStrategy(model, settings)

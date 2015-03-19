@@ -83,7 +83,7 @@ def test_fake_factory_errors_if_private_ish_method():
 
 def test_can_get_specification_for_fake_factory():
     ff = FakeFactory('email')
-    assert strategy(ff).descriptor == ff
+    strategy(ff)
 
 
 TestFakeEmail = descriptor_test_suite(

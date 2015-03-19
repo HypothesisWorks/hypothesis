@@ -65,10 +65,6 @@ class DatetimeStrategy(SearchStrategy):
 
     def __init__(self, naive_options=None):
         self.naive_options = naive_options or {False, True}
-        if self.naive_options == {False, True}:
-            self.descriptor = dt.datetime
-        else:
-            self.descriptor = DatetimeSpec(self.naive_options)
 
     def produce_parameter(self, random):
         return self.Parameter(
