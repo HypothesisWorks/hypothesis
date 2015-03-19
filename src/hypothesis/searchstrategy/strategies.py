@@ -21,7 +21,6 @@ from hypothesis.errors import BadData, WrongFormat
 from hypothesis.settings import Settings
 from hypothesis.utils.show import show
 from hypothesis.descriptors import OneOf, one_of
-from hypothesis.utils.idkey import IdKey
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.utils.extmethod import ExtMethod
 from hypothesis.internal.tracker import Tracker
@@ -31,14 +30,6 @@ class BuildContext(object):
 
     def __init__(self, random):
         self.random = random
-        self.data = {}
-
-    def examples_for(self, strategy):
-        key = IdKey(strategy)
-        return self.data.setdefault(key, [])
-
-    def add_example(self, strategy, example):
-        self.examples_for(strategy).append(example)
 
 
 class StrategyExtMethod(ExtMethod):
@@ -161,9 +152,7 @@ class SearchStrategy(object):
         return self.produce_parameter(random)
 
     def draw_template(self, context, parameter_value):
-        template = self.produce_template(context, parameter_value)
-        context.add_example(self, template)
-        return template
+        return self.produce_template(context, parameter_value)
 
     def produce_parameter(self, random):
         raise NotImplementedError(  # pragma: no cover
