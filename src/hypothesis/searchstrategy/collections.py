@@ -269,10 +269,14 @@ class SetStrategy(MappedSearchStrategy):
         self.descriptor = {x.descriptor for x in strategies}
         if self.descriptor:
             self.element_strategy = one_of_strategies(strategies)
-            self.size_lower_bound = (
-                2 ** self.element_strategy.size_lower_bound)
-            self.size_upper_bound = (
-                2 ** self.element_strategy.size_upper_bound)
+            if self.element_strategy.size_upper_bound < 32:
+                self.size_lower_bound = (
+                    2 ** self.element_strategy.size_lower_bound)
+                self.size_upper_bound = (
+                    2 ** self.element_strategy.size_upper_bound)
+            else:
+                self.size_upper_bound = float('inf')
+                self.size_lower_bound = float('inf')
         else:
             self.size_lower_bound = 1
             self.size_upper_bound = 1
@@ -291,9 +295,10 @@ class SetStrategy(MappedSearchStrategy):
 
     def produce_parameter(self, random):
         if self.descriptor:
+            size = random.expovariate(
+                1.0 / self.average_length)
             return self.Parameter(
-                stopping_chance=dist.uniform_float(
-                    random, 0., 2.0 / self.average_length),
+                stopping_chance=1.0 / (1 + size),
                 child_parameter=self.element_strategy.produce_parameter(
                     random),)
 
@@ -301,9 +306,8 @@ class SetStrategy(MappedSearchStrategy):
         if not self.descriptor:
             return frozenset()
         result = set()
-        while True:
-            if dist.biased_coin(context.random, pv.stopping_chance):
-                break
+        length = dist.geometric(context.random, pv.stopping_chance)
+        for _ in hrange(length):
             result.add(self.element_strategy.produce_template(
                 context, pv.child_parameter
             ))

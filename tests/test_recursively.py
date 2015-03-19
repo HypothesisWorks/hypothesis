@@ -108,18 +108,7 @@ def test_can_falsify_false_things(desc, random):
     assume(size(desc) <= MAX_SIZE)
     verifier.random = random
     x = verifier.falsify(lambda x: False, desc)[0]
-    assert not list(strategy(desc).simplify(x))
-
-
-@timeout(5)
-@given([Descriptor], Random, verifier=verifier)
-def test_can_falsify_false_things_with_many_args(descs, random):
-    assume(len(descs) > 0)
-    assume(size(descs) <= MAX_SIZE)
-    descs = tuple(descs)
-    verifier.random = random
-    x = verifier.falsify(lambda *args: False, *descs)
-    assert not list(strategy(descs).simplify(x))
+    assert not list(strategy(desc, settings).simplify(x))
 
 
 @timeout(5)
@@ -165,7 +154,7 @@ def tree_contains_match(t, f):
 @timeout(10)
 @given(Descriptor, Random, verifier=verifier)
 def test_copies_all_its_values_correctly(desc, random):
-    strat = strategy(desc)
+    strat = strategy(desc, settings)
     value = strat.produce_template(
         BuildContext(random), strat.draw_parameter(random))
     assert show(strat.reify(value)) == show(strat.reify(value))
@@ -176,13 +165,13 @@ def test_copies_all_its_values_correctly(desc, random):
     verifier=verifier,
 )
 def test_can_minimize_descriptor_with_value(dav):
-    s = strategy(DescriptorWithValue)
+    s = strategy(DescriptorWithValue, settings)
     last(s.simplify_such_that(dav, lambda x: True))
 
 
 @given(Descriptor, Random, verifier=verifier)
 def test_template_is_hashable(descriptor, random):
-    strat = strategy(descriptor)
+    strat = strategy(descriptor, settings)
     parameter = strat.draw_parameter(random)
     template = strat.produce_template(BuildContext(random), parameter)
     hash(template)
@@ -196,7 +185,7 @@ def last(it):
 
 @given(Descriptor, Random, verifier=verifier)
 def test_can_perform_all_basic_operations(descriptor, random):
-    strat = strategy(descriptor)
+    strat = strategy(descriptor, settings)
     parameter = strat.draw_parameter(random)
     template = strat.produce_template(BuildContext(random), parameter)
     assert (
@@ -216,5 +205,5 @@ def test_can_perform_all_basic_operations(descriptor, random):
 
 @given(DescriptorWithValue, verifier=verifier)
 def test_integrity_check_dav(dav):
-    strat = strategy(dav.descriptor)
+    strat = strategy(dav.descriptor, settings)
     assert show(dav.value) == show(strat.reify(dav.template))

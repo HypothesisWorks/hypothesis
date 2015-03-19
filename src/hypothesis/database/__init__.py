@@ -36,20 +36,9 @@ class Storage(object):
         self.key = show(descriptor)
 
     def save(self, value):
-        tracker = Tracker()
-
-        def do_save(d, v):
-            if tracker.track((repr(d), v)) > 1:
-                return
-            s = self.database.storage_for(d)
-            converted = s.strategy.to_basic(v)
-            serialized = s.format.serialize_basic(converted)
-            s.backend.save(s.key, serialized)
-
-            for d2, v2 in s.strategy.decompose(v):
-                do_save(d2, v2)
-
-        do_save(self.descriptor, value)
+        converted = self.strategy.to_basic(value)
+        serialized = self.format.serialize_basic(converted)
+        self.backend.save(self.key, serialized)
 
     def fetch(self):
         for data in self.backend.fetch(self.key):

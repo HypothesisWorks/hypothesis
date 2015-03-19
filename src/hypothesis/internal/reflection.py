@@ -29,7 +29,6 @@ from functools import wraps
 from hypothesis.settings import storage_directory
 from hypothesis.internal.compat import ARG_NAME_ATTRIBUTE, hrange, \
     text_type
-from hypothesis.utils.conventions import not_set
 
 
 def function_digest(function):
@@ -376,25 +375,17 @@ def copy_argspec(name, argspec):
         parts.append('**' + argspec.keywords)
         invocation_parts.append('**' + argspec.keywords)
 
-    accept_with_right_args = source_exec_as_module(
+    base_accept = source_exec_as_module(
         COPY_ARGSPEC_SCRIPT % {
             'name': name,
             'argspec': ', '.join(parts),
             'invocation': ', '.join(invocation_parts)
         }).accept
-    defaults = {}
-    for name, default in zip(
-        argspec.args[-n_defaults:], argspec.defaults or ()
-    ):
-        defaults[name] = default
 
     def accept(f):
-        def convert_arguments(*args, **kwargs):
-            for k, v in kwargs.items():
-                if v is not_set:
-                    kwargs[k] = defaults[k]
-            return f(*args, **kwargs)
-        return accept_with_right_args(convert_arguments)
+        result = base_accept(f)
+        result.__defaults__ = argspec.defaults
+        return result
     return accept
 
 

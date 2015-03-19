@@ -19,7 +19,6 @@ import string
 import unicodedata
 
 import hypothesis.descriptors as descriptors
-import hypothesis.internal.distributions as dist
 from hypothesis.internal.compat import hrange, hunichr, text_type, \
     binary_type
 from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
@@ -40,13 +39,10 @@ class OneCharStringStrategy(SearchStrategy):
 
     def produce_template(self, context, p):
         random = context.random
-        if dist.biased_coin(random, p):
-            return random.choice(self.ascii_characters)
-        else:
-            while True:
-                result = hunichr(random.randint(0, sys.maxunicode))
-                if unicodedata.category(result) != 'Cs':
-                    return result
+        while True:
+            result = hunichr(random.randint(0, sys.maxunicode))
+            if unicodedata.category(result) != 'Cs':
+                return result
 
     def simplify(self, x):
         if x in self.ascii_characters:

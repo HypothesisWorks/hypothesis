@@ -92,7 +92,7 @@ def given(*generator_arguments, **generator_kwargs):
             args=arguments,
             keywords=original_argspec.keywords,
             varargs=original_argspec.varargs,
-            defaults=list(map(HypothesisProvided, descriptors))
+            defaults=tuple(map(HypothesisProvided, descriptors))
         )
 
         @copy_argspec(
