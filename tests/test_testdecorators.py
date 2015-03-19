@@ -436,3 +436,11 @@ def test_can_derandomize():
         assert x > 0
 
     test_blah()
+
+
+def test_can_run_without_database():
+    @given(int, settings=hs.Settings(database=None))
+    def test_blah(x):
+        assert False
+    with pytest.raises(AssertionError):
+        test_blah()
