@@ -89,7 +89,7 @@ class RandomGeometricIntStrategy(IntStrategy):
     )
 
     def __repr__(self):
-        return "RandomGeometricIntStrategy()"
+        return 'RandomGeometricIntStrategy()'
 
     def produce_parameter(self, random):
         return self.Parameter(
@@ -119,7 +119,7 @@ class BoundedIntStrategy(SearchStrategy):
         self.size_upper_bound = end - start + 1
 
     def __repr__(self):
-        return "BoundedIntStrategy(%d, %d)" % (self.start, self.end)
+        return 'BoundedIntStrategy(%d, %d)' % (self.start, self.end)
 
     def produce_parameter(self, random):
         return dist.non_empty_subset(
@@ -155,12 +155,13 @@ class BoundedIntStrategy(SearchStrategy):
 class FloatStrategy(SearchStrategy):
 
     """Generic superclass for strategies which produce floats."""
+
     def __init__(self):
         SearchStrategy.__init__(self)
         self.int_strategy = RandomGeometricIntStrategy()
 
     def __repr__(self):
-        return "%s()" % (self.__class__.__name__,)
+        return '%s()' % (self.__class__.__name__,)
 
     def to_basic(self, value):
         check_type(float, value)
@@ -215,7 +216,7 @@ class WrapperFloatStrategy(FloatStrategy):
         self.sub_strategy = sub_strategy
 
     def __repr__(self):
-        return "WrapperFloatStrategy(%r)" % (self.sub_strategy,)
+        return 'WrapperFloatStrategy(%r)' % (self.sub_strategy,)
 
     def produce_parameter(self, random):
         return self.sub_strategy.produce_parameter(random)
@@ -443,7 +444,7 @@ class ComplexStrategy(MappedSearchStrategy):
     numbers."""
 
     def __repr__(self):
-        return "ComplexStrategy()"
+        return 'ComplexStrategy()'
 
     def pack(self, value):
         return complex(*value)

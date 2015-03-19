@@ -119,7 +119,7 @@ def test_can_not_falsify_true_things(desc):
     with pytest.raises(Unfalsifiable):
         verifier.falsify(lambda x: True, desc)
 
-UNDESIRABLE_STRINGS = re.compile("at 0x")
+UNDESIRABLE_STRINGS = re.compile('at 0x')
 
 
 @timeout(5)

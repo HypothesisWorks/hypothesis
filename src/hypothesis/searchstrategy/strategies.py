@@ -343,7 +343,7 @@ class MappedSearchStrategy(SearchStrategy):
             self.pack = pack
 
     def __repr__(self):
-        return "MappedSearchStrategy(%r, %r)" % (
+        return 'MappedSearchStrategy(%r, %r)' % (
             self.mapped_strategy, self.pack
         )
 

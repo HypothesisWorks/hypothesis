@@ -32,7 +32,7 @@ class BoolStrategy(SearchStrategy):
     size_upper_bound = 2
 
     def __repr__(self):
-        return "BoolStrategy()"
+        return 'BoolStrategy()'
 
     def produce_parameter(self, random):
         return random.random()
@@ -91,6 +91,7 @@ class RandomStrategy(SearchStrategy):
     a 128 bits of data chosen uniformly at random.
 
     """
+
     def from_basic(self, data):
         check_data_type(integer_types, data)
         return data

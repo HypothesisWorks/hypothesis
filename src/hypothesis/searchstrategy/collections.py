@@ -97,10 +97,10 @@ class TupleStrategy(SearchStrategy):
 
     def __repr__(self):
         if len(self.element_strategies) == 1:
-            tuple_string = "%s," % (repr(self.element_strategies[0]),)
+            tuple_string = '%s,' % (repr(self.element_strategies[0]),)
         else:
-            tuple_string = ", ".join(map(repr, self.element_strategies))
-        return "TupleStrategy((%s), %s)" % (
+            tuple_string = ', '.join(map(repr, self.element_strategies))
+        return 'TupleStrategy((%s), %s)' % (
             tuple_string, self.tuple_type.__name__
         )
 
@@ -194,7 +194,7 @@ class ListStrategy(SearchStrategy):
             return []
 
     def __repr__(self):
-        return "ListStrategy(%r)" % (
+        return 'ListStrategy(%r)' % (
             self.element_strategy,
         )
 
@@ -266,7 +266,7 @@ class SetStrategy(MappedSearchStrategy):
     )
 
     def __repr__(self):
-        return "SetStrategy(%r)" % (
+        return 'SetStrategy(%r)' % (
             self.element_strategy,
         )
 
@@ -358,7 +358,7 @@ class FrozenSetStrategy(MappedSearchStrategy):
         )
 
     def __repr__(self):
-        return "FrozenSetStrategy(%r)" % (self.mapped_strategy,)
+        return 'FrozenSetStrategy(%r)' % (self.mapped_strategy,)
 
 
 class FixedKeysDictStrategy(MappedSearchStrategy):
@@ -382,7 +382,7 @@ class FixedKeysDictStrategy(MappedSearchStrategy):
         )
 
     def __repr__(self):
-        return "FixedKeysDictStrategy(%r, %r)" % (
+        return 'FixedKeysDictStrategy(%r, %r)' % (
             self.keys, self.mapped_strategy)
 
     def pack(self, value):
