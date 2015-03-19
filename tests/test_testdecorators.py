@@ -28,6 +28,7 @@ from hypothesis.descriptors import just, one_of, sampled_from, \
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.internal.verifier import Verifier
 from hypothesis.searchstrategy.numbers import IntStrategy
+from random import Random
 
 
 @given(int, int)
@@ -407,3 +408,31 @@ class SpecialIntStrategy(IntStrategy):
 def test_can_use_custom_strategies(xs):
     assert isinstance(xs, list)
     assert all(x == 1 for x in xs)
+
+
+def test_uses_random():
+    random = Random()
+    initial = random.getstate()
+    assert random.getstate() == initial
+
+    @given(int, random=random)
+    def test_foo(x):
+        pass
+    test_foo()
+    assert random.getstate() != initial
+
+
+def test_does_not_accept_random_if_derandomize():
+    with pytest.raises(ValueError):
+        @given(int, settings=hs.Settings(derandomize=True), random=Random())
+        def test_blah(x):
+            pass
+
+
+def test_can_derandomize():
+    @fails
+    @given(int, settings=hs.Settings(derandomize=True))
+    def test_blah(x):
+        assert x > 0
+
+    test_blah()
