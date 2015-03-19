@@ -16,6 +16,7 @@ from __future__ import division, print_function, absolute_import, \
 import time
 import string
 import inspect
+from random import Random
 
 import pytest
 import hypothesis.settings as hs
@@ -28,7 +29,6 @@ from hypothesis.descriptors import just, one_of, sampled_from, \
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.internal.verifier import Verifier
 from hypothesis.searchstrategy.numbers import IntStrategy
-from random import Random
 
 
 @given(int, int)
