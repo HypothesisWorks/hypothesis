@@ -11,7 +11,6 @@
 # END HEADER
 
 from hypothesis.utils.show import show
-from hypothesis.internal.tracker import Tracker
 from hypothesis.searchstrategy.strategies import BadData, strategy
 from hypothesis.database.formats import JSONFormat
 from hypothesis.database.backend import SQLiteBackend
