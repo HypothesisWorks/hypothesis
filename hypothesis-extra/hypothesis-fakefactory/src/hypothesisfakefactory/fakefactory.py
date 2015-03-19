@@ -15,7 +15,7 @@ from __future__ import division, print_function, absolute_import, \
 
 import faker
 import hypothesis.internal.distributions as dist
-from faker.config import AVAILABLE_LOCALES
+from faker import AVAILABLE_LOCALES
 from hypothesis.internal.compat import text_type
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
     strategy, check_data_type
