@@ -34,7 +34,7 @@ def test_backend_returns_what_you_put_in(xs):
 
 
 def test_does_not_commit_in_error_state():
-    backend = SQLiteBackend(":memory:")
+    backend = SQLiteBackend(':memory:')
     backend.create_db_if_needed()
     try:
         with backend.cursor() as cursor:
@@ -46,4 +46,4 @@ def test_does_not_commit_in_error_state():
     except ValueError:
         pass
 
-    assert backend.fetch("a") == []
+    assert backend.fetch('a') == []
