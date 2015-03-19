@@ -83,7 +83,6 @@ class TupleStrategy(SearchStrategy):
         SearchStrategy.__init__(self)
         strategies = tuple(strategies)
         self.tuple_type = tuple_type
-        self.descriptor = self.newtuple([s.descriptor for s in strategies])
         self.element_strategies = strategies
         self.size_lower_bound = 1
         self.size_upper_bound = 1
@@ -94,6 +93,15 @@ class TupleStrategy(SearchStrategy):
     def reify(self, value):
         return self.newtuple(
             e.reify(v) for e, v in zip(self.element_strategies, value)
+        )
+
+    def __repr__(self):
+        if len(self.element_strategies) == 1:
+            tuple_string = "%s," % (repr(self.element_strategies[0]),)
+        else:
+            tuple_string = ", ".join(map(repr, self.element_strategies))
+        return "TupleStrategy((%s), %s)" % (
+            tuple_string, self.tuple_type.__name__
         )
 
     def newtuple(self, xs):
@@ -171,21 +179,27 @@ class ListStrategy(SearchStrategy):
         SearchStrategy.__init__(self)
 
         self.average_length = average_length
-        self.descriptor = [x.descriptor for x in strategies]
-        if self.descriptor:
+        strategies = tuple(strategies)
+        if strategies:
             self.element_strategy = one_of_strategies(strategies)
         else:
+            self.element_strategy = None
             self.size_upper_bound = 1
             self.size_lower_bound = 1
 
     def reify(self, value):
-        if value:
+        if self.element_strategy is not None:
             return list(map(self.element_strategy.reify, value))
         else:
             return []
 
+    def __repr__(self):
+        return "ListStrategy(%r)" % (
+            self.element_strategy,
+        )
+
     def produce_parameter(self, random):
-        if not self.descriptor:
+        if self.element_strategy is None:
             return None
         else:
             return self.Parameter(
@@ -195,7 +209,7 @@ class ListStrategy(SearchStrategy):
             )
 
     def produce_template(self, context, pv):
-        if not self.descriptor:
+        if self.element_strategy is None:
             return ()
         length = dist.geometric(context.random, 1.0 / (1 + pv.average_length))
         result = []
@@ -230,13 +244,13 @@ class ListStrategy(SearchStrategy):
 
     def to_basic(self, value):
         check_type(tuple, value)
-        if not self.descriptor:
+        if self.element_strategy is None:
             return []
         return list(map(self.element_strategy.to_basic, value))
 
     def from_basic(self, value):
         check_data_type(list, value)
-        if not self.descriptor:
+        if self.element_strategy is None:
             return ()
         return tuple(map(self.element_strategy.from_basic, value))
 
@@ -251,12 +265,16 @@ class SetStrategy(MappedSearchStrategy):
         ('stopping_chance', 'child_parameter'),
     )
 
+    def __repr__(self):
+        return "SetStrategy(%r)" % (
+            self.element_strategy,
+        )
+
     def __init__(self, strategies, average_length=50.0):
         strategies = list(strategies)
-        strategies.sort(key=show)
 
-        self.descriptor = {x.descriptor for x in strategies}
-        if self.descriptor:
+        if strategies:
+            strategies.sort(key=show)
             self.element_strategy = one_of_strategies(strategies)
             if self.element_strategy.size_upper_bound < 32:
                 self.size_lower_bound = (
@@ -267,17 +285,18 @@ class SetStrategy(MappedSearchStrategy):
                 self.size_upper_bound = float('inf')
                 self.size_lower_bound = float('inf')
         else:
+            self.element_strategy = None
             self.size_lower_bound = 1
             self.size_upper_bound = 1
         self.average_length = average_length
 
     def reify(self, value):
-        if not self.descriptor:
+        if self.element_strategy is None:
             return set()
         return set(map(self.element_strategy.reify, value))
 
     def produce_parameter(self, random):
-        if self.descriptor:
+        if self.element_strategy is not None:
             size = random.expovariate(
                 1.0 / self.average_length)
             return self.Parameter(
@@ -286,7 +305,7 @@ class SetStrategy(MappedSearchStrategy):
                     random),)
 
     def produce_template(self, context, pv):
-        if not self.descriptor:
+        if self.element_strategy is None:
             return frozenset()
         result = set()
         length = dist.geometric(context.random, pv.stopping_chance)
@@ -314,14 +333,14 @@ class SetStrategy(MappedSearchStrategy):
 
     def to_basic(self, value):
         check_type(frozenset, value)
-        if not self.descriptor:
+        if self.element_strategy is None:
             return []
         result = list(map(self.element_strategy.to_basic, value))
         result.sort()
         return result
 
     def from_basic(self, value):
-        if not self.descriptor:
+        if self.element_strategy is None:
             return frozenset()
         check_data_type(list, value)
         return frozenset(map(self.element_strategy.from_basic, value))
@@ -335,11 +354,11 @@ class FrozenSetStrategy(MappedSearchStrategy):
     def __init__(self, set_strategy):
         super(FrozenSetStrategy, self).__init__(
             strategy=set_strategy,
-            descriptor=frozenset(set_strategy.descriptor)
+            pack=frozenset,
         )
 
-    def pack(self, x):
-        return frozenset(x)
+    def __repr__(self):
+        return "FrozenSetStrategy(%r)" % (self.mapped_strategy,)
 
 
 class FixedKeysDictStrategy(MappedSearchStrategy):
@@ -357,13 +376,14 @@ class FixedKeysDictStrategy(MappedSearchStrategy):
             strategy_dict.keys(), key=show
         ))
         super(FixedKeysDictStrategy, self).__init__(
-            descriptor={
-                k: v.descriptor for k, v in strategy_dict.items()
-            },
             strategy=TupleStrategy(
                 (strategy_dict[k] for k in self.keys), tuple
             )
         )
+
+    def __repr__(self):
+        return "FixedKeysDictStrategy(%r, %r)" % (
+            self.keys, self.mapped_strategy)
 
     def pack(self, value):
         return dict(zip(self.keys, value))

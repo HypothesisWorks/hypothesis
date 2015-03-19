@@ -28,9 +28,11 @@ class BoolStrategy(SearchStrategy):
 
     """A strategy that produces Booleans with a Bernoulli conditional
     distribution."""
-    descriptor = bool
     size_lower_bound = 2
     size_upper_bound = 2
+
+    def __repr__(self):
+        return "BoolStrategy()"
 
     def produce_parameter(self, random):
         return random.random()
@@ -57,10 +59,10 @@ class JustStrategy(SearchStrategy):
 
     def __init__(self, value):
         SearchStrategy.__init__(self)
-        self.descriptor = descriptors.Just(value)
+        self.value = value
 
     def __repr__(self):
-        return 'JustStrategy(value=%r)' % (self.descriptor.value,)
+        return 'JustStrategy(value=%r)' % (self.value,)
 
     def produce_parameter(self, random):
         return None
@@ -70,7 +72,7 @@ class JustStrategy(SearchStrategy):
 
     def reify(self, template):
         assert template is None
-        return self.descriptor.value
+        return self.value
 
     def to_basic(self, template):
         return None
@@ -89,8 +91,6 @@ class RandomStrategy(SearchStrategy):
     a 128 bits of data chosen uniformly at random.
 
     """
-    descriptor = Random
-
     def from_basic(self, data):
         check_data_type(integer_types, data)
         return data
@@ -119,12 +119,9 @@ class SampledFromStrategy(SearchStrategy):
 
     """
 
-    def __init__(self, elements, descriptor=None):
+    def __init__(self, elements):
         SearchStrategy.__init__(self)
         self.elements = tuple(elements)
-        if descriptor is None:
-            descriptor = descriptors.SampledFrom(self.elements)
-        self.descriptor = descriptor
         try:
             s = set(self.elements)
             self.size_lower_bound = len(s)

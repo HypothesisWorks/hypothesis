@@ -119,16 +119,16 @@ def test_can_not_falsify_true_things(desc):
     with pytest.raises(Unfalsifiable):
         verifier.falsify(lambda x: True, desc)
 
-UNDESIRABLE_STRINGS = re.compile('|'.join(
-    re.escape(repr(t)) for t in primitive_types
-))
+UNDESIRABLE_STRINGS = re.compile("at 0x")
 
 
 @timeout(5)
 @given(Descriptor, verifier=verifier)
 def test_does_not_use_nasty_type_reprs_in_show(desc):
-    s = show(desc)
+    strat = strategy(desc)
+    s = repr(strat)
     assert not UNDESIRABLE_STRINGS.findall(s)
+    assert type(strat).__name__ in s
 
 
 @timeout(5)

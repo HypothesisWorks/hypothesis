@@ -14,3 +14,4 @@ exclude_lines =
     @abc.abstractproperty
     NotImplementedError
     pragma: no cover
+    __repr__

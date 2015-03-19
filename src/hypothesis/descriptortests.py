@@ -36,7 +36,6 @@ class TemplatesStrategy(SearchStrategy):
 
     def __init__(self, base_strategy):
         super(TemplatesStrategy, self).__init__()
-        self.descriptor = TemplatesFor(base_strategy.descriptor)
         self.base_strategy = base_strategy
         self.size_lower_bound = base_strategy.size_lower_bound
         self.size_upper_bound = base_strategy.size_upper_bound

@@ -19,9 +19,7 @@ from collections import namedtuple
 
 import pytest
 import hypothesis.descriptors as descriptors
-import hypothesis.searchstrategy as strat
 from hypothesis.types import RandomWithSeed
-from hypothesis.utils.show import show
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.internal.tracker import Tracker
 from hypothesis.searchstrategy.numbers import BoundedIntStrategy, \
@@ -37,19 +35,7 @@ def test_string_strategy_produces_strings():
     assert result is not None
 
 
-def test_unary_tuple_strategy_has_trailing_comma():
-    assert repr(strategy((int,))) == 'TupleStrategy((int,))'
-
-
 Blah = namedtuple('Blah', ('hi',))
-
-
-def test_named_tuple_strategy_has_tuple_in_name_and_no_trailing_comma():
-    assert repr(strategy(Blah(int))) == 'TupleStrategy(Blah(hi=int))'
-
-
-def test_class_names_are_simplified_in_sets():
-    assert repr(strategy({float})) == 'SetStrategy({float})'
 
 
 def alternating(*args):
@@ -125,48 +111,6 @@ def test_simplifying_something_that_does_not_satisfy_errors():
         next(s.simplify_such_that(1, f))
 
 
-def test_strategy_repr_handles_dicts():
-    s = repr(strategy({'foo': int, 'bar': str}))
-    assert 'foo' in s
-    assert 'bar' in s
-    assert 'int' in s
-    assert 'str' in s
-
-
-def test_strategy_repr_handles_tuples():
-    s = repr(strategy((str, str)))
-    assert '(str, str)' in s
-
-
-def test_strategy_repr_handles_bools():
-    s = repr(strategy(bool))
-    assert '(bool)' in s
-
-
-class X(object):
-
-    def __init__(self, x):
-        self.x = x
-
-
-@strategy.extend(X)
-def define_x_strategy(descriptor, settings):
-    return strategy(descriptor.x, settings).map(
-        pack=lambda x: x,
-        descriptor=descriptor,
-    )
-
-
-def test_strategy_repr_handles_custom_types():
-    assert 'X(x=int)' in repr(strategy(X(int)))
-
-
-class TrivialStrategy(strat.SearchStrategy):
-
-    def __init__(self, descriptor):
-        self.descriptor = descriptor
-
-
 def test_float_strategy_does_not_overflow():
     s = strategy(float)
 
@@ -192,12 +136,6 @@ def test_joining_zero_strategies_fails():
 def test_directly_joining_one_strategy_also_fails():
     with pytest.raises(ValueError):
         OneOfStrategy([RandomGeometricIntStrategy()])
-
-
-def test_list_strategy_reprs_as_list():
-    x = strategy([int])
-    assert repr(x) == 'ListStrategy([int])'
-
 
 SomeNamedTuple = namedtuple('SomeNamedTuple', ('a', 'b'))
 
@@ -311,26 +249,6 @@ class AwkwardSet(set):
             yield r
 
 
-def test_set_descriptor_representation_is_stable_for_order():
-    x = AwkwardSet(list(hrange(100)))
-    assert repr(x) != repr(x)
-    assert show(x) == show(x)
-
-
-class AwkwardDict(dict):
-
-    def items(self):
-        results = list(super(AwkwardDict, self).items())
-        random.shuffle(results)
-        for r in results:
-            yield r
-
-
-def test_dict_descriptor_representation_is_stable_for_order():
-    x = AwkwardDict({i: i for i in hrange(100)})
-    assert show(x) == show(x)
-
-
 def test_can_simplify_nan():
     s = strategy(float)
     x = list(s.simplify_such_that(float('nan'), math.isnan))[-1]
@@ -359,12 +277,6 @@ def test_infinity_simplifies_to_finite():
         s.simplify_such_that(float('-inf'), lambda x: x <= -1))[-1] == -1.0
 
 
-def test_one_of_descriptor_distinguishes_sets_and_frozensets():
-    d = descriptors.one_of(({int}, frozenset({int})))
-    s = strategy(d)
-    assert s.descriptor == d
-
-
 def test_minimizing_a_very_large_int_produces_an_int():
     s = strategy(int)
     shrunk = list(s.simplify_such_that(1 << 73, lambda x: x > 1))[-1]
@@ -378,5 +290,5 @@ def test_does_not_shrink_size_for_non_hashable_sample():
 
 
 def test_can_map():
-    s = strategy(int).map(pack=lambda t: 'foo', descriptor='foo')
+    s = strategy(int).map(pack=lambda t: 'foo')
     assert s.example() == 'foo'

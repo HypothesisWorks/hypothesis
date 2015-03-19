@@ -64,9 +64,11 @@ class StringStrategy(MappedSearchStrategy):
 
     def __init__(self, list_of_one_char_strings_strategy):
         super(StringStrategy, self).__init__(
-            descriptor=text_type,
             strategy=list_of_one_char_strings_strategy
         )
+
+    def __repr__(self):
+        return "StringStrategy()"
 
     def pack(self, ls):
         return ''.join(ls)
@@ -84,6 +86,9 @@ class BinaryStringStrategy(MappedSearchStrategy):
 
     """A strategy for strings of bytes, defined in terms of a strategy for
     lists of bytes."""
+
+    def __repr__(self):
+        return "BinaryStringStrategy()"
 
     def pack(self, x):
         assert isinstance(x, list), repr(x)
@@ -114,5 +119,4 @@ def define_text_type_strategy(descriptor, settings):
 def define_binary_strategy(descriptor, settings):
     return BinaryStringStrategy(
         strategy=strategy([descriptors.integers_in_range(0, 255)], settings),
-        descriptor=binary_type,
     )

@@ -35,7 +35,6 @@ class IntStrategy(SearchStrategy):
     Subclasses should provide the produce method.
 
     """
-    descriptor = int
 
     def from_basic(self, data):
         check_data_type(integer_types, data)
@@ -89,6 +88,9 @@ class RandomGeometricIntStrategy(IntStrategy):
         ('negative_probability', 'p')
     )
 
+    def __repr__(self):
+        return "RandomGeometricIntStrategy()"
+
     def produce_parameter(self, random):
         return self.Parameter(
             negative_probability=random.betavariate(0.5, 0.5),
@@ -109,13 +111,15 @@ class BoundedIntStrategy(SearchStrategy):
 
     def __init__(self, start, end):
         SearchStrategy.__init__(self)
-        self.descriptor = descriptors.integers_in_range(start, end)
         self.start = start
         self.end = end
         if start > end:
             raise ValueError('Invalid range [%d, %d]' % (start, end))
         self.size_lower_bound = end - start + 1
         self.size_upper_bound = end - start + 1
+
+    def __repr__(self):
+        return "BoundedIntStrategy(%d, %d)" % (self.start, self.end)
 
     def produce_parameter(self, random):
         return dist.non_empty_subset(
@@ -151,11 +155,12 @@ class BoundedIntStrategy(SearchStrategy):
 class FloatStrategy(SearchStrategy):
 
     """Generic superclass for strategies which produce floats."""
-    descriptor = float
-
     def __init__(self):
         SearchStrategy.__init__(self)
         self.int_strategy = RandomGeometricIntStrategy()
+
+    def __repr__(self):
+        return "%s()" % (self.__class__.__name__,)
 
     def to_basic(self, value):
         check_type(float, value)
@@ -208,6 +213,9 @@ class WrapperFloatStrategy(FloatStrategy):
     def __init__(self, sub_strategy):
         super(WrapperFloatStrategy, self).__init__()
         self.sub_strategy = sub_strategy
+
+    def __repr__(self):
+        return "WrapperFloatStrategy(%r)" % (self.sub_strategy,)
 
     def produce_parameter(self, random):
         return self.sub_strategy.produce_parameter(random)
@@ -311,8 +319,6 @@ class FixedBoundedFloatStrategy(FloatStrategy):
     closer to one of the ends.
 
     """
-    descriptor = float
-
     Parameter = namedtuple(
         'Parameter',
         ('cut', 'leftwards')
@@ -419,7 +425,6 @@ class NastyFloats(FloatStrategy, SampledFromStrategy):
     def __init__(self):
         SampledFromStrategy.__init__(
             self,
-            descriptor=float,
             elements=[
                 0.0,
                 sys.float_info.min,
@@ -436,6 +441,9 @@ class ComplexStrategy(MappedSearchStrategy):
     """A strategy over complex numbers, with real and imaginary values
     distributed according to some provided strategy for floating point
     numbers."""
+
+    def __repr__(self):
+        return "ComplexStrategy()"
 
     def pack(self, value):
         return complex(*value)
@@ -472,4 +480,4 @@ def define_float_strategy(descriptor, settings):
 
 @strategy.extend_static(complex)
 def define_complex_strategy(descriptor, settings):
-    return ComplexStrategy(complex, strategy((float, float), settings))
+    return ComplexStrategy(strategy((float, float), settings))

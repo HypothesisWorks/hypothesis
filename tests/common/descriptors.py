@@ -63,7 +63,6 @@ class DescriptorStrategy(MappedSearchStrategy):
 
     def __init__(self, settings):
         super(DescriptorStrategy, self).__init__(
-            descriptor=Descriptor,
             strategy=strategy(NAryTree(
                 branch_labels=sampled_from((
                     tuple, dict, set, frozenset, list

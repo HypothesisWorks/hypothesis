@@ -19,8 +19,7 @@ from collections import namedtuple
 import hypothesis.internal.distributions as dist
 from hypothesis.errors import BadData, WrongFormat
 from hypothesis.settings import Settings
-from hypothesis.utils.show import show
-from hypothesis.descriptors import OneOf, one_of
+from hypothesis.descriptors import OneOf
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.utils.extmethod import ExtMethod
 from hypothesis.internal.tracker import Tracker
@@ -106,16 +105,8 @@ class SearchStrategy(object):
 
     # This should be an object that describes the type of data that this
     # SearchStrategy can produce.
-    descriptor = None
-
     size_lower_bound = Infinity
     size_upper_bound = Infinity
-
-    def __repr__(self):
-        return '%s(%s)' % (
-            self.__class__.__name__,
-            show(self.descriptor)
-        )
 
     def __init__(self):
         pass
@@ -134,9 +125,9 @@ class SearchStrategy(object):
             return sum(map(basic_size, x))
         return basic_size(self.to_basic(template))
 
-    def map(self, pack, descriptor):
+    def map(self, pack):
         return MappedSearchStrategy(
-            pack=pack, descriptor=descriptor, strategy=self
+            pack=pack, strategy=self
         )
 
     def example(self):
@@ -271,8 +262,6 @@ class OneOfStrategy(SearchStrategy):
         strategies = tuple(strategies)
         if len(strategies) <= 1:
             raise ValueError('Need at least 2 strategies to choose amongst')
-        descriptor = one_of([s.descriptor for s in strategies])
-        self.descriptor = descriptor
         self.element_strategies = list(strategies)
         self.size_lower_bound = 0
         self.size_upper_bound = 0
@@ -280,6 +269,9 @@ class OneOfStrategy(SearchStrategy):
             self.size_lower_bound = max(
                 self.size_lower_bound, e.size_lower_bound)
             self.size_upper_bound += e.size_upper_bound
+
+    def __repr__(self):
+        return ' | '.join(map(repr, self.element_strategies))
 
     def reify(self, value):
         s, x = value
@@ -342,14 +334,18 @@ class MappedSearchStrategy(SearchStrategy):
 
     """
 
-    def __init__(self, descriptor, strategy, pack=None):
+    def __init__(self, strategy, pack=None):
         SearchStrategy.__init__(self)
         self.mapped_strategy = strategy
-        self.descriptor = descriptor
         self.size_lower_bound = self.mapped_strategy.size_lower_bound
         self.size_upper_bound = self.mapped_strategy.size_upper_bound
         if pack is not None:
             self.pack = pack
+
+    def __repr__(self):
+        return "MappedSearchStrategy(%r, %r)" % (
+            self.mapped_strategy, self.pack
+        )
 
     def produce_parameter(self, random):
         return self.mapped_strategy.produce_parameter(random)
