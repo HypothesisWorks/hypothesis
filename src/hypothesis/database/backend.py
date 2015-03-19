@@ -72,10 +72,7 @@ class SQLiteBackend(Backend):
         if self.__connection is not None:
             c = self.__connection
             self.__connection = None
-            try:
-                c.close()
-            except sqlite3.OperationalError:
-                pass
+            c.close()
 
     def __repr__(self):
         return '%s(%s)' % (self.__class__.__name__, self.path)
@@ -96,7 +93,7 @@ class SQLiteBackend(Backend):
             finally:
                 cursor.close()
         except:
-            self.connection.rollback()
+            conn.rollback()
             raise
         else:
             conn.commit()

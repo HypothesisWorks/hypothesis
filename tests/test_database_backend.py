@@ -31,3 +31,19 @@ def test_backend_returns_what_you_put_in(xs):
         distinct_backend_contents = set(backend_contents)
         assert len(backend_contents) == len(distinct_backend_contents)
         assert distinct_backend_contents == set(values)
+
+
+def test_does_not_commit_in_error_state():
+    backend = SQLiteBackend(":memory:")
+    backend.create_db_if_needed()
+    try:
+        with backend.cursor() as cursor:
+            cursor.execute("""
+                insert into hypothesis_data_mapping(key, value)
+                values("a", "b")
+            """)
+            raise ValueError()
+    except ValueError:
+        pass
+
+    assert backend.fetch("a") == []
