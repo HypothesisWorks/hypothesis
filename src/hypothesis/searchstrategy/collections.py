@@ -96,11 +96,6 @@ class TupleStrategy(SearchStrategy):
             e.reify(v) for e, v in zip(self.element_strategies, value)
         )
 
-    def decompose(self, value):
-        return [
-            (s.descriptor, v)
-            for s, v in zip(self.element_strategies, value)]
-
     def newtuple(self, xs):
         """Produce a new tuple of the correct type."""
         if self.tuple_type == tuple:
@@ -182,12 +177,6 @@ class ListStrategy(SearchStrategy):
         else:
             self.size_upper_bound = 1
             self.size_lower_bound = 1
-
-    def decompose(self, value):
-        return [
-            (self.element_strategy.descriptor, v)
-            for v in value
-        ]
 
     def reify(self, value):
         if value:
@@ -281,12 +270,6 @@ class SetStrategy(MappedSearchStrategy):
             self.size_lower_bound = 1
             self.size_upper_bound = 1
         self.average_length = average_length
-
-    def decompose(self, value):
-        return [
-            (self.element_strategy.descriptor, v)
-            for v in value
-        ]
 
     def reify(self, value):
         if not self.descriptor:

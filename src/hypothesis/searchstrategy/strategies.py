@@ -164,25 +164,6 @@ class SearchStrategy(object):
         raise NotImplementedError(  # pragma: no cover
             '%s.produce_template()' % (self.__class__.__name__))
 
-    def decompose(self, value):
-        """Returns something iterable over pairs (descriptor, v) where v is
-        some value that could have been produced by an appropriate strategy for
-        descriptor.
-
-        The idea is that this is supposed to highlight interesting features
-        that were used to build the value passed in. e.g. elements of a
-        collection. No specific behaviour is required of these values and you
-        can do whatever you want, but this can help guide finding interesting
-        examples for other tests so if there's something you can do it's worth
-        doing.
-
-        Implementation detail: The current way this is used is that all of
-        the values produced here will be saved in the database under the
-        storage for the provided descriptor if the main value is.
-
-        """
-        return ()
-
     def reify(self, value):
         """Return a version of value such that if it is mutated this will not
         be reflected in value. If value is immutable it is perfectly acceptable
@@ -304,12 +285,6 @@ class OneOfStrategy(SearchStrategy):
         s, x = value
         return self.element_strategies[s].reify(x)
 
-    def decompose(self, value):
-        s, x = value
-        yield self.element_strategies[s].descriptor, x
-        for t in self.element_strategies[s].decompose(x):
-            yield t
-
     def produce_parameter(self, random):
         indices = list(range(len(self.element_strategies)))
         enabled = dist.non_empty_subset(
@@ -387,9 +362,6 @@ class MappedSearchStrategy(SearchStrategy):
         into a value suitable for outputting from this strategy."""
         raise NotImplementedError(
             '%s.pack()' % (self.__class__.__name__))
-
-    def decompose(self, value):
-        return self.mapped_strategy.decompose(value)
 
     def reify(self, value):
         return self.pack(self.mapped_strategy.reify(value))

@@ -71,9 +71,6 @@ class StringStrategy(MappedSearchStrategy):
     def pack(self, ls):
         return ''.join(ls)
 
-    def decompose(self, value):
-        return ()
-
     def to_basic(self, c):
         check_type(tuple, c)
         return ''.join(c)
@@ -92,9 +89,6 @@ class BinaryStringStrategy(MappedSearchStrategy):
         assert isinstance(x, list), repr(x)
         ba = bytearray(x)
         return binary_type(ba)
-
-    def decompose(self, value):
-        return ()
 
     def to_basic(self, value):
         check_type(tuple, value)

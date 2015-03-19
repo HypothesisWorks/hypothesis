@@ -149,6 +149,5 @@ def descriptor_test_suite(
                 strat.to_basic(
                     strat.from_basic(strat.to_basic(minimal_template)))
             )
-            list(strat.decompose(minimal_template))
 
     return ValidationSuite
