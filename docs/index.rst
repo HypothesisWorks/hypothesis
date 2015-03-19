@@ -361,21 +361,6 @@ There are also a bunch of custom types that let you define more specific example
   >>> strategy(desc.one_of((float, bool))).example()
   False
 
-~~~~~~~~~~~~~~~~~~~~
-Strategy descriptors
-~~~~~~~~~~~~~~~~~~~~
-
-You can get back a description from the strategy descriptors. This
-will generally be the original value you got from it, but some
-normalisation may occur. It is available as the descriptor parameter
-on the strategy. e.g.
-
-.. code:: python
-
-    >>> strategy((int, int)).descriptor
-    (int, int)
-
-
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Defining your own strategies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -384,15 +369,15 @@ You can build new strategies out of other strategies. For example:
 
 .. code:: python
 
-  >>> s = strategy(int).map(pack=Decimal, descriptor=Decimal)
+  >>> s = strategy(int).map(Decimal)
   >>> s.example()
   Decimal('6029418')
-  >>> s.descriptor
-  Decimal
 
-pack is a function which converts an int to a Decimal, so that we can use the
-generated for ints to generate data for Decimal. descriptor is the value that will
-be returned as the resulting strategy's descriptor.
+map takes a function which takes a value produced by the original strategy and
+returns a new value. It returns a strategy whose values are values from the
+original strategy with that function applied to them, so here we have a strategy
+which produces Decimals by first generating an int and then calling Decimal on
+that int.
 
 This is generally the encouraged way to define your own strategies: The details of how SearchStrategy
 works are not currently considered part of the public API and may be liable to change.
