@@ -95,6 +95,7 @@ MAX_SIZE = 15
 settings = hs.Settings(
     max_examples=100, timeout=4,
     average_list_length=2.0,
+    database=None,
 )
 
 verifier = Verifier(
