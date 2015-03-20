@@ -34,15 +34,10 @@ Hypothesis is inspired by and strongly based on libraries
 for testing like `Quickcheck <http://en.wikipedia.org/wiki/QuickCheck>`_, but in comparison
 has a distinctly dynamic flavour and a novel approach to data generation.
 
-Its most direct ancestor is `ScalaCheck <https://github.com/rickynils/scalacheck>`_
-from which it acquired its original approach to test case minimization (modern Hypothesis
-uses a different one) and the concept of stateful testing.
-
-Hypothesis is not itself a testing framework (though it may grow one). It is a library
-for generating and minimizing data to falsify properties you believe to be true which
-should be easy to integrate into any testing library you use. Development and testing of
-Hypothesis itself is done with `Pytest <http://pytest.org/>`_ but there is no dependency
-on it and you should be able to use it just as easily with any other testing library.
+Hypothesis is not itself a testing framework, and should play nicely with your
+existing one. Development and testing of Hypothesis itself is done with `Pytest <http://pytest.org/>`_,
+but pytest is not a dependency and Hypothesis should work with just about
+anything.
 
 If you want to learn more about how to use Hypothesis, comprehensive
 documentation is `available at readthedocs <http://hypothesis.readthedocs.org/en/master/>`_.
