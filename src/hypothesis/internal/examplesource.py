@@ -87,6 +87,26 @@ class ParameterSource(object):
         return self.random.betavariate(alpha, beta)
 
     def pick_a_parameter(self):
+        """
+        Draw a parameter value, either picking one we've already generated or
+        generating a new one.
+
+        This is a modified form of Thompson sampling with a bunch of special
+        cases designed around failure modes I found in practice.
+
+        1. Once a parameter is generated, we try it self.min_tries times before
+           we try anything else.
+        2. If we have fewer than self.min_parameters already generated we will
+           always generate a new parameter in preference to reusing an existing
+           one.
+        3. We then perform Thompson sampling on len(self.parameters) + 1 arms.
+           Then final arm is given a score by randomly picking an existing arm
+           and drawing a score from that. If this arm is picked we generate a
+           new parameter. This means that we always have a probability of at
+           least 1/(2n) of generating a new parameter, but means that we are
+           less enthusiastic to explore novelty in cases where most parameters
+           we've drawn are terrible.
+        """
         self.mark_set = False
         self.total_count += 1
         if self.parameters and self.counts[-1] < self.min_tries:
