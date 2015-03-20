@@ -71,7 +71,7 @@ is drawn independently the chances of them all being True are just under one in
 a million. However with this parametrization it's one in 21 (because if you draw
 a number close to 1 it makes them *all* more likely to be True). 
 
-The idea of trying to generate this sort of "clumpier" distributionis based on
+The idea of trying to generate this sort of "clumpier" distribution is based on
 a paper called `Swarm Testing <http://www.cs.utah.edu/~regehr/papers/swarm12.pdf>`_,
 but with some extensions to the idea. The essential concept is that a distribution
 which is too flat is likely to spend too much time exploring uninteresting
