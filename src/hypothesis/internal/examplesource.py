@@ -87,9 +87,8 @@ class ParameterSource(object):
         return self.random.betavariate(alpha, beta)
 
     def pick_a_parameter(self):
-        """
-        Draw a parameter value, either picking one we've already generated or
-        generating a new one.
+        """Draw a parameter value, either picking one we've already generated
+        or generating a new one.
 
         This is a modified form of Thompson sampling with a bunch of special
         cases designed around failure modes I found in practice.
@@ -106,6 +105,7 @@ class ParameterSource(object):
            least 1/(2n) of generating a new parameter, but means that we are
            less enthusiastic to explore novelty in cases where most parameters
            we've drawn are terrible.
+
         """
         self.mark_set = False
         self.total_count += 1
