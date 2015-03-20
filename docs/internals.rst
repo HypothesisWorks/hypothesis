@@ -47,11 +47,11 @@ Template generation is also less direct than you might expect. Each strategy
 has two distributions: A parameter distribution, and a conditional template
 distribution given a parameter value.
 
-The idea is that the parameter says roughly what sort of things should be
+The idea is that a parameter value says roughly what sort of things should be
 generated, and then the template distribution generates them given that
 specification.
 
-To consider a simple example, a parameter value for a generating booleans is a single
+To consider a simple example, a parameter value for a generating booleans is a
 number between 0 and 1 which is the probability of generating true. So in order
 to draw a boolean we draw that number from a uniform distribution, then we draw
 a boolean which is true with that probability.
