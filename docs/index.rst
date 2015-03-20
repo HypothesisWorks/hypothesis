@@ -120,6 +120,7 @@ Anyway, this test immediately finds a bug in the code:
 ..
 
   Falsifying example: test_decode_inverts_encode(s='')
+
   UnboundLocalError: local variable 'character' referenced before assignment
 
 Hypothesis correctly points out that this code is simply wrong if called on
@@ -156,6 +157,29 @@ Some side notes:
 * We actually got lucky with the above run. Hypothesis almost always finds a counter-example, but it's not usually quite such a nice one. Other example that Hypothesis could have found are things like 'aa0', '110', etc. The simplification process only simplifies one character at a time.
 * Because of the use of str this behaves differently in python 2 and python 3. In python 2 the example would have been something like '\x02\x02\x00' because str is a binary type. Hypothesis works equally well in both python 2 and python 3, but if you want consistent behaviour across the two you need something like `six <https://pypi.python.org/pypi/six>`_'s text_type. 
 
+-------
+Lineage
+-------
+
+The type of testing Hypothesis does is called property based testing, though
+Hypothesis deliberately blurs the lines between property based testing and more
+standard unit testing.
+
+The idea originated with a Haskell library called `Quickcheck <https://wiki.haskell.org/Introduction_to_QuickCheck2>`_,
+and has since been ported to many different languages. The most recent ancestor
+of Hypothesis is `ScalaCheck <http://scalacheck.org/>`_, although there are
+sufficiently many differences that Hypothesis isn't really in any sense a port
+of Scalacheck.
+
+Most quickcheck ports are very disappointing: Poor quality of data generation,
+failure to do example minimization, difficult to extend, etc. Even a bad
+version of quickcheck is still better than nothing, but Hypothesis aims to be
+a *lot* better than that. It's a production quality implementation, with a
+number of interesting innovations not previously found in any other
+implementations.
+
+If you want to learn more about the innovative features of Hypothesis, there is
+:doc:`separate documentation describing the internals <internals>`
 
 ----------------
 How it works
@@ -184,6 +208,7 @@ invocation as follows:
 .. code:: python
 
     from hypothesis import Settings
+
     @given(int, settings=Settings(max_examples=500))
     def test_this_thoroughly(x):
         pass
@@ -208,8 +233,8 @@ the defaults for newly created settings objects.
     >>> s.max_examples
     200
 
-There are a variety of other settings you can use. Check out the pydoc, or
-help(Settings) to get a list of them.
+There are a variety of other settings you can use. help(Settings) will give you
+a full list of them.
 
 Settings are also extensible. You can add new settings if you want to extend
 this. This is useful for adding additional parameters for customising your
@@ -389,7 +414,7 @@ can do this by extending the strategy method:
 
   >>> @strategy.extend_static(Decimal)
   ... def decimal_strategy(d, settings):
-  ...   return strategy(int, settings).map(pack=Decimal, descriptor=Decimal)
+  ...   return strategy(int, settings).map(pack=Decimal)
   >>> strategy(Decimal).example()
   Decimal('13')
 
@@ -404,7 +429,7 @@ of list you want:
   >>> @strategy.extend(ListsOfFixedLength)
      ....: def fixed_length_lists_strategy(descriptor, settings):
      ....:     return strategy((descriptor.elements,) * descriptor.length, settings).map(
-     ....:        pack=list, descriptor=descriptor)
+     ....:        pack=list)
      ....: 
   >>> strategy(ListsOfFixedLength(5, int)).example()
   [0, 2190, 899, 2, -1326]
@@ -418,8 +443,8 @@ you've defined.
 
 .. code:: python
 
-  from hypothesis.descriptortests import descriptor_test_suite
-  TestDecimal = descriptor_test_suite(Decimal)
+  from hypothesis.strategytests import strategy_test_suite
+  TestDecimal = strategy_test_suite(Decimal)
 
 TestDecimal is a unitest.TestCase class that will run a bunch of tests against the
 strategy you've provided for Decimal to make sure it works correctly.
