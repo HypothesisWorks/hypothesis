@@ -157,9 +157,100 @@ Some side notes:
 * We actually got lucky with the above run. Hypothesis almost always finds a counter-example, but it's not usually quite such a nice one. Other example that Hypothesis could have found are things like 'aa0', '110', etc. The simplification process only simplifies one character at a time.
 * Because of the use of str this behaves differently in python 2 and python 3. In python 2 the example would have been something like '\x02\x02\x00' because str is a binary type. Hypothesis works equally well in both python 2 and python 3, but if you want consistent behaviour across the two you need something like `six <https://pypi.python.org/pypi/six>`_'s text_type. 
 
--------
-Lineage
--------
+---------------
+Getting started
+---------------
+
+~~~~~~~~~~
+Installing
+~~~~~~~~~~
+
+Hypothesis is `available on pypi as "hypothesis"
+<https://pypi.python.org/pypi/hypothesis>`_. You can install it with:
+
+.. code:: bash
+
+  pip install hypothesis
+
+or 
+
+.. code:: bash 
+
+  easy_install hypothesis
+
+If you want to install directly from the source code (e.g. because you want to
+make changes and install the changed version) you can do this with:
+
+.. code:: bash
+
+  python setup.py install
+
+You should probably run the tests first to make sure nothing is broken. You can
+do this with:
+
+.. code:: bash
+
+  python setup.py test 
+
+(note that if they're not already installed this will try to install the test
+dependencies)
+
+You may wish to do all of this in a `virtualenv <https://virtualenv.pypa.io/en/latest/>`_. For example:
+
+.. code:: bash
+
+  virtualenv venv
+  source venv/bin/activate
+  pip install hypothesis
+
+Will create an isolated environment for you to try hypothesis out in without
+affecting your system installed packages.
+
+~~~~~~~~~~~~~
+Writing tests
+~~~~~~~~~~~~~
+
+A test in Hypothesis consists of two parts: A function that looks like a normal
+test in your test framework of choice but with some additional arguments, and
+a @given decorator that specifies how to provide those arguments.
+
+Here are some other examples of how you could use that:
+
+
+.. code:: python
+
+    from hypothesis import given
+
+    @given(int, int)
+    def test_ints_are_commutative(x, y):
+        assert x + y == y + x
+
+    @given(x=int, y=int)
+    def test_ints_cancel(x, y):
+        assert (x + y) - y == y
+
+    @given([int])
+    def test_reversing_twice_gives_same_list(xs):
+        assert xs == list(reversed(reversed(xs)))
+
+    @given((int, int))
+    def test_look_tuples_work_too(t):
+        assert len(t) == 2
+        assert isinstance(t[0], int)
+        assert isinstance(t[1], int)
+
+Things to note here:
+
+1. You can pass arguments to @given either as positional or keywords
+2. For basic things (ints, strings, etc) you use their types for @given, but you can also ask for e.g. lists or tuples of types
+
+You'll see more advanced examples later, but essentially the goal is for the
+arguments to @given to look like a specification of some type, including enough
+information to know how to generate its elements if appropriate.
+
+---------------------------
+Where Hypothesis comes from
+---------------------------
 
 The type of testing Hypothesis does is called property based testing, though
 Hypothesis deliberately blurs the lines between property based testing and more
@@ -199,11 +290,11 @@ small enough that they should be easy to understand.
 Settings
 ~~~~~~~~
 
-Hypothesis tries to have good defaults for its behaviour, but sometimes that's not
-enough and you need to tweak it.
+Hypothesis tries to have good defaults for its behaviour, but sometimes that's
+not enough and you need to tweak it.
 
-The mechanism for doing this is the Settings object. You can pass this to a @given
-invocation as follows:
+The mechanism for doing this is the Settings object. You can pass this to a
+@given invocation as follows:
 
 .. code:: python
 
@@ -252,17 +343,13 @@ strategies. These will be picked up by all settings objects.
 Random data in my tests??
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Randomization in tests has a bad reputation - unreliable CI runs are the worst, and
-randomness seems like the very definition of unreliable.
+Randomization in tests has a bad reputation - unreliable CI runs are the worst,
+and randomness seems like the very definition of unreliable.
 
 Hypothesis has two defences against this problem:
 
-1. Hypothesis can only ever exhibit false negatives - a test can fail to find an example,
-and thus pass when it should fail, but if a test fails then it is demonstrating a genuine
-bug. So if your build fails randomly it's still telling you about a new bug you hadn't
-previously seen.
-2. Hypothesis saves failing examples in a database, so once a test starts failing it should
-keep failing, because Hypothesis remembers the previous example and tries that first.
+1. Hypothesis can only ever exhibit false negatives - a test can fail to find an example, and thus pass when it should fail, but if a test fails then it is demonstrating a genuine bug. So if your build fails randomly it's still telling you about a new bug you hadn't previously seen.
+2. Hypothesis saves failing examples in a database, so once a test starts failing it should keep failing, because Hypothesis remembers the previous example and tries that first.
 
 If that's not enough for you, you can also set the derandomize setting to True, which will
 cause all tests to be run with a random number generator seeded off the function body. I
