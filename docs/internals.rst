@@ -29,7 +29,7 @@ This has several major advantages:
 
 1. The templates can be of a much more restricted type than the desired output - you can require them to be immutable, serializable, hashable, etc without in any way restricting the range of data that you can generate.
 2. Seamless support for mutable data: Because the mutable object you produce is the result of reifying the template, any mutation done by the function you call does not affect the underlying template.
-3. Generation strategies can be made functorial (and indeed applicative. You can sortof make them monadic but the resulting templates are a bit fiddly and can't really be of the desired restricted type, so it's probably not really worth it)
+3. Generation strategies can be made functorial (and indeed applicative. You can sortof make them monadic but the resulting templates are a bit fiddly and can't really be of the desired restricted type, so it's probably not actually worth it)
 
 The latter is worth elaborating on: Hypothesis SearchStrategy has a method map
 which lets you do e.g. strategy(int).map(lambda x: Decimal(x) / 100). This gives
@@ -51,25 +51,25 @@ The idea is that the parameter says roughly what sort of things should be
 generated, and then the template distribution generates them given that
 specification.
 
-To consider a simple example, a parameter for a generating booleans is a single
-number between 0 and 1 which is the probability of generating True. So in order
-to draw a boolean we draw that number, then we draw a boolean which is true
-with that probability.
+To consider a simple example, a parameter value for a generating booleans is a single
+number between 0 and 1 which is the probability of generating true. So in order
+to draw a boolean we draw that number from a uniform distribution, then we draw
+a boolean which is true with that probability.
 
 As described, the result is indistinguishable from just flipping a coin. The
 resulting bool will be true 50% of the time. The interesting thing is how
 parameters compose.
 
-Suppose we now want to draw a list of booleans. This will have a parameter which
-is a pair of numbers: The first is the expected length, the second is the bool
-parameter, which is the probability of any given element being true.
+Suppose we now want to draw a list of booleans. This will have a parameter value
+which is a pair of numbers: The first is the expected length, the second is the
+bool parameter, which is the probability of any given element being true.
 
 This allows us to reach a lot of values that would be essentially impossible to
 reach otherwise. Suppose we needed a list of length at least 20 elements all of
-which are True in order to trigger a bug. Given a length of 20, if each element
-is drawn independently the chances of them all being True are just under one in
+which are true in order to trigger a bug. Given a length of 20, if each element
+is drawn independently the chances of them all being true are just under one in
 a million. However with this parametrization it's one in 21 (because if you draw
-a number close to 1 it makes them *all* more likely to be True). 
+a number close to 1 it makes them *all* more likely to be true). 
 
 The idea of trying to generate this sort of "clumpier" distribution is based on
 a paper called `Swarm Testing <http://www.cs.utah.edu/~regehr/papers/swarm12.pdf>`_,
@@ -83,17 +83,20 @@ The second important benefit of the parameter system is that you can use it to
 guide the search space. This is useful because it allows you to use otherwise
 quite hard to satisfy preconditions in your tests.
 
-The way this works is that we store all the parameters we use, and will tend to
-use each parameter multiple times. Parameters which tend to produce "bad"
-results (that is, produce a test such that assume() is called with a Falsey
-value) will be chosen less often than a parameter which doesn't. Parameters
-which produce templates we've already seen are also penalized in order to guide
-the search towards novelty.
+The way this works is that we store all the parameter values we've used, and
+will tend to use each parameter value multiple times. Vlaueswhich tend to
+produce "bad" results (that is, produce a test such that assume() is called
+with a Falsey value to reject the example) will be chosen less often than a
+parameter value which doesn't. Values which produce templates we've already
+seen are also penalized in order to guide the search towards novelty.
 
 The way this works in Hypothesis is with an infinitely many armed bandit algorithm
-based on Thompson Sampling and some ad hoc hacks. I don't strongly recommend
-following the specific algorithm, though it seems to work well in practice.
-
+based on `Thompson Sampling <http://en.wikipedia.org/wiki/Thompson_sampling>`_
+and some ad hoc hacks I found useful to avoid certain pathological behaviours.
+I don't strongly recommend following the specific algorithm, though it seems to
+work well in practice, but if you want to take a look at the code it's
+`in this file <https://github.com/DRMacIver/hypothesis/blob/master/src/hypothesis/internal/examplesource.py>`_.
+ 
 ------------
 The database
 ------------
@@ -118,6 +121,12 @@ without losing much.
 I had some experiments with disassembling and reassembling examples for reuse
 in other tests, but in the end these didn't prove very useful and were hard to
 support after some other changes to the system, so I took them out.
+
+A minor detail that's worth bearing in mind: Because the template type of a
+strategy is not considered part of its public API, it may change in a way that
+makes old serialized data in the database invalid. Hypothesis handles this in a
+"self-healing" way by validating the template as it comes out of the database
+and silently discarding any that don't correspond to a valid template.
 
 ----------------
 Example tracking
