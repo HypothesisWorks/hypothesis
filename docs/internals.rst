@@ -32,7 +32,7 @@ This has several major advantages:
 3. Generation strategies can be made functorial (and indeed applicative. You can sortof make them monadic but the resulting templates are a bit fiddly and can't really be of the desired restricted type, so it's probably not really worth it)
 
 The latter is worth elaborating on: Hypothesis SearchStrategy has a method map
-which lets you do e.g. strategy(int).map(lamda x: Decimal(x) / 100). This gives
+which lets you do e.g. strategy(int).map(lambda x: Decimal(x) / 100). This gives
 you a new strategy for decimals, which still supports minimization. The normal
 obstacle here is that you can't minimize the result because you'd need a way to
 map back to the original data type, but that isn't an issue here because you
@@ -47,26 +47,37 @@ Template generation is also less direct than you might expect. Each strategy
 has two distributions: A parameter distribution, and a conditional template
 distribution given a parameter value.
 
-There are two reasons for this: The first is simplier that this gives a
-"clumpier" distribution. This is based on a paper called `Swarm Testing <http://www.cs.utah.edu/~regehr/papers/swarm12.pdf>`_
+The idea is that the parameter says roughly what sort of things should be
+generated, and then the template distribution generates them given that
+specification.
+
+To consider a simple example, a parameter for a generating booleans is a single
+number between 0 and 1 which is the probability of generating True. So in order
+to draw a boolean we draw that number, then we draw a boolean which is true
+with that probability.
+
+As described, the result is indistinguishable from just flipping a coin. The
+resulting bool will be true 50% of the time. The interesting thing is how
+parameters compose.
+
+Suppose we now want to draw a list of booleans. This will have a parameter which
+is a pair of numbers: The first is the expected length, the second is the bool
+parameter, which is the probability of any given element being true.
+
+This allows us to reach a lot of values that would be essentially impossible to
+reach otherwise. Suppose we needed a list of length at least 20 elements all of
+which are True in order to trigger a bug. Given a length of 20, if each element
+is drawn independently the chances of them all being True are just under one in
+a million. However with this parametrization it's one in 21 (because if you draw
+a number close to 1 it makes them *all* more likely to be True). 
+
+The idea of trying to generate this sort of "clumpier" distributionis based on
+a paper called `Swarm Testing <http://www.cs.utah.edu/~regehr/papers/swarm12.pdf>`_,
 but with some extensions to the idea. The essential concept is that a distribution
 which is too flat is likely to spend too much time exploring uninteresting
-interactions.
-
-A trivial example of how this sort of thing can be interesting is consider tests
-parametrized by lists of integers. How do you find a distribution which can trigger:
-
-1. A bug that only occurs when the list has duplicates
-2. A bug that only occurs when the list contains very large integers
-3. A bug that only occurs when the list is long and contains only small integers
-
-The answer in Hypothesis is that the parameter for a list of values draws a single
-parameter for its element and draws templates conditional on that parameter.
-For integers sometimes the parameter produces on average small ints, sometimes
-it produces on average big ints.
-
-(It would be possible to have it instead draw a small but sometimes > 1 number
-of parameters and draw from a mixture of those. I haven't investigated this yet)
+interactions. By making any given draw focus on some particular area of the parameter
+space we significantly increase the chances of certain interesting classes of
+things happening.
 
 The second important benefit of the parameter system is that you can use it to
 guide the search space. This is useful because it allows you to use otherwise
@@ -94,13 +105,13 @@ When Hypothesis finds a minimal failing example it saves the template for it in
 a database (by default a local sqlite database, though it could be anything).
 When run in future, Hypothesis first checks if there are any saved examples for
 the test and tries those first. If any of them fail the test, it skips straight
-to the minimization statge without bothering with data generation. This is
+to the minimization stage without bothering with data generation. This is
 particularly useful for tests with a low probability of failure - if Hypothesis
 has a one in 1000 chance of finding an example it will probably take 5 runs of
 the test suite before the test fails, but after that it will consistently fail
 until you fix the bug.
 
-The key Hypothesis uses for this is the type signature of the test, but that
+The key that Hypothesis uses for this is the type signature of the test, but that
 hasn't proven terribly useful. You could use the name of the test equally well
 without losing much.
 
