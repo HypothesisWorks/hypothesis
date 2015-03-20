@@ -27,15 +27,9 @@ not on reified data.
 
 This has several major advantages:
 
-1. The templates can be of a much more restricted type than the desired output
-- you can require them to be immutable, serializable, hashable, etc without in
-any way restricting the range of data that you can generate.
-2. Seamless support for mutable data: Because the mutable object you produce is
-the result of reifying the template, any mutation done by the function you call
-does not affect the underlying template.
-3. Generation strategies can be made functorial (and indeed applicative. You can
-sortof make them monadic but the resulting templates are a bit fiddly and can't
-really be of the desired restricted type, so it's probably not really worth it)
+1. The templates can be of a much more restricted type than the desired output - you can require them to be immutable, serializable, hashable, etc without in any way restricting the range of data that you can generate.
+2. Seamless support for mutable data: Because the mutable object you produce is the result of reifying the template, any mutation done by the function you call does not affect the underlying template.
+3. Generation strategies can be made functorial (and indeed applicative. You can sortof make them monadic but the resulting templates are a bit fiddly and can't really be of the desired restricted type, so it's probably not really worth it)
 
 The latter is worth elaborating on: Hypothesis SearchStrategy has a method map
 which lets you do e.g. strategy(int).map(lamda x: Decimal(x) / 100). This gives
