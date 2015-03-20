@@ -25,8 +25,8 @@ from hypothesis import assume
 from hypothesis.core import given
 from hypothesis.types import RandomWithSeed
 from hypothesis.errors import Unfalsifiable
-from hypothesis.utils.show import show
 from hypothesis.specifiers import Just, OneOf, SampledFrom, just
+from hypothesis.utils.show import show
 from tests.common.specifiers import Descriptor, DescriptorWithValue, \
     primitive_types
 from hypothesis.strategytests import TemplatesFor

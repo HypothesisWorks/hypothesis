@@ -18,10 +18,10 @@ from datetime import datetime
 import hypothesis.settings as hs
 from hypothesis import given, assume
 from hypothesis.specifiers import one_of
+from hypothesis.strategytests import strategy_test_suitee
 from hypothesis.extra.datetime import naive_datetime, \
     timezone_aware_datetime
 from hypothesis.searchstrategy import strategy
-from hypothesis.strategytests import strategy_test_suitee
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.verifier import Verifier
 

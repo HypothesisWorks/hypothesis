@@ -17,8 +17,8 @@ from random import Random
 from collections import namedtuple
 
 from hypothesis.types import RandomWithSeed
-from hypothesis.utils.show import show
 from hypothesis.specifiers import one_of, sampled_from
+from hypothesis.utils.show import show
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.searchstrategy.narytree import Leaf, NAryTree
 from hypothesis.searchstrategy.strategies import BuildContext, \

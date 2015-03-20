@@ -16,8 +16,8 @@ from __future__ import division, print_function, absolute_import, \
 import pytest
 from hypothesis import given
 from faker.providers import BaseProvider
-from hypothesis.searchstrategy import strategy
 from hypothesis.strategytests import strategy_test_suitee
+from hypothesis.searchstrategy import strategy
 from hypothesis.extra.fakefactory import FakeFactory
 from hypothesis.internal.verifier import Verifier
 
