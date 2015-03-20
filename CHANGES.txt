@@ -308,3 +308,16 @@ Hypothesis Extra:
     hypothesis-fakefactory: An extension for using faker data in hypothesis. Depends
         on fake-factory.
 
+0.7.0, "Starting to look suspiciously real" - 20/03/2015
+
+This is probably the last minor release prior to 1.0. It consists of stability
+improvements, a few usability things designed to make Hypothesis easier to try
+out, and filing off some final rough edges from the API.
+
+    * Significant speed and memory usage improvements
+    * Add an example() method to strategy objects to give an example of the sort
+      of data that the strategy generates.
+    * Remove .descriptor attribute of strategies
+    * Rename descriptor_test_suite to strategy_test_suite
+    * Rename the few remaing uses of descriptor to specifier (descriptor
+      already has a defined meaning in Python)
