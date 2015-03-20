@@ -75,7 +75,7 @@ The idea of trying to generate this sort of "clumpier" distribution is based on
 a paper called `Swarm Testing <http://www.cs.utah.edu/~regehr/papers/swarm12.pdf>`_,
 but with some extensions to the idea. The essential concept is that a distribution
 which is too flat is likely to spend too much time exploring uninteresting
-interactions. By making any given draw focus on some particular area of the parameter
+interactions. By making any given draw focus on some particular area of the search
 space we significantly increase the chances of certain interesting classes of
 things happening.
 
