@@ -18,7 +18,7 @@ from collections import namedtuple
 
 from hypothesis.types import RandomWithSeed
 from hypothesis.utils.show import show
-from hypothesis.descriptors import one_of, sampled_from
+from hypothesis.specifiers import one_of, sampled_from
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.searchstrategy.narytree import Leaf, NAryTree
 from hypothesis.searchstrategy.strategies import BuildContext, \
@@ -29,19 +29,19 @@ primitive_types = [
     int, float, text_type, binary_type, bool, complex, type(None)]
 
 
-Descriptor = namedtuple('Descriptor', ('descriptor',))
+Descriptor = namedtuple('Descriptor', ('specifier',))
 
 
 class DescriptorWithValue(object):
 
-    def __init__(self, descriptor, template, value, random):
-        self.descriptor = descriptor
+    def __init__(self, specifier, template, value, random):
+        self.specifier = specifier
         self.value = value
         self.template = template
         self.random = random
 
     def __iter__(self):
-        yield self.descriptor
+        yield self.specifier
         yield self.value
         yield self.template
         yield self.random
@@ -51,10 +51,10 @@ class DescriptorWithValue(object):
 
     def __repr__(self):
         return (
-            'DescriptorWithValue(descriptor=%s, template=%r, '
+            'DescriptorWithValue(specifier=%s, template=%r, '
             'value=%r, random=%r)'
         ) % (
-            show(self.descriptor), self.template, self.value,
+            show(self.specifier), self.template, self.value,
             self.random,
         )
 
@@ -93,69 +93,69 @@ class DescriptorStrategy(MappedSearchStrategy):
 
 
 @strategy.extend_static(Descriptor)
-def descriptor_strategy(cls, settings):
+def specifier_strategy(cls, settings):
     return DescriptorStrategy(settings)
 
 
 class DescriptorWithValueStrategy(SearchStrategy):
-    descriptor = DescriptorWithValue
+    specifier = DescriptorWithValue
 
     def __init__(self, settings):
         self.settings = settings
-        descriptor_strategy = strategy(Descriptor, settings)
-        self.descriptor_strategy = descriptor_strategy
+        specifier_strategy = strategy(Descriptor, settings)
+        self.specifier_strategy = specifier_strategy
         self.random_strategy = strategy(Random, settings)
 
     def strategy(self, specifier):
         return strategy(specifier, self.settings)
 
     def produce_parameter(self, random):
-        return self.descriptor_strategy.draw_parameter(random)
+        return self.specifier_strategy.draw_parameter(random)
 
     def produce_template(self, context, pv):
-        descriptor_template = self.descriptor_strategy.draw_template(
+        specifier_template = self.specifier_strategy.draw_template(
             context, pv)
-        descriptor = self.descriptor_strategy.reify(descriptor_template)
-        strat = self.strategy(descriptor)
+        specifier = self.specifier_strategy.reify(specifier_template)
+        strat = self.strategy(specifier)
         parameter = strat.draw_parameter(context.random)
         template = strat.draw_template(context, parameter)
         new_random = self.random_strategy.draw_and_produce(context)
         return DescriptorWithValue(
-            descriptor=descriptor_template,
+            specifier=specifier_template,
             template=template,
             value=None,
             random=new_random
         )
 
     def reify(self, davt):
-        descriptor = self.descriptor_strategy.reify(davt.descriptor)
+        specifier = self.specifier_strategy.reify(davt.specifier)
         return DescriptorWithValue(
-            descriptor=descriptor,
+            specifier=specifier,
             template=davt.template,
-            value=self.strategy(descriptor).reify(
+            value=self.strategy(specifier).reify(
                 davt.template),
             random=RandomWithSeed(davt.random),
         )
 
     def simplify(self, davt):
         random = RandomWithSeed(davt.random)
-        for d in self.descriptor_strategy.simplify(davt.descriptor):
+        for d in self.specifier_strategy.simplify(davt.specifier):
             new_template = self.strategy(
-                self.descriptor_strategy.reify(d)).draw_and_produce(
+                self.specifier_strategy.reify(d)).draw_and_produce(
                     BuildContext(random))
             yield DescriptorWithValue(
-                descriptor=d,
+                specifier=d,
                 template=new_template,
                 value=None,
                 random=davt.random,
             )
 
         strat = self.strategy(
-            self.descriptor_strategy.reify(davt.descriptor))
+            self.specifier_strategy.reify(davt.specifier))
 
         for v in strat.simplify(davt.template):
             yield DescriptorWithValue(
-                descriptor=davt.descriptor,
+                specifier=davt.specifier,
                 template=v,
                 value=None,
                 random=davt.random,
@@ -163,9 +163,9 @@ class DescriptorWithValueStrategy(SearchStrategy):
 
     def to_basic(self, value):
         strat = self.strategy(
-            self.descriptor_strategy.reify(value.descriptor))
+            self.specifier_strategy.reify(value.specifier))
         return [
-            self.descriptor_strategy.to_basic(value.descriptor),
+            self.specifier_strategy.to_basic(value.specifier),
             value.random,
             strat.to_basic(value.template)
         ]
@@ -173,12 +173,12 @@ class DescriptorWithValueStrategy(SearchStrategy):
     def from_basic(self, data):
         check_data_type(list, data)
         check_length(3, data)
-        descriptor, random, template = data
-        dt = self.descriptor_strategy.from_basic(descriptor)
-        d = self.descriptor_strategy.reify(dt)
+        specifier, random, template = data
+        dt = self.specifier_strategy.from_basic(specifier)
+        d = self.specifier_strategy.reify(dt)
         vt = self.strategy(d).from_basic(template)
         return DescriptorWithValue(
-            random=random, descriptor=dt, template=vt, value=None
+            random=random, specifier=dt, template=vt, value=None
         )
 
 

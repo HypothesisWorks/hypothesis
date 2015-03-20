@@ -16,13 +16,13 @@ from __future__ import division, print_function, absolute_import, \
 from random import Random
 
 import pytest
-from hypothesis.descriptors import Just, OneOf, SampledFrom
+from hypothesis.specifiers import Just, OneOf, SampledFrom
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.searchstrategy.narytree import NAryTree
 from hypothesis.searchstrategy.strategies import BadData, strategy
 
 
-@pytest.mark.parametrize(('descriptor', 'data'), [
+@pytest.mark.parametrize(('specifier', 'data'), [
     ({text_type}, 0j),
     (complex, {'hi'}),
     ([{bool}], 0),
@@ -48,7 +48,7 @@ from hypothesis.searchstrategy.strategies import BadData, strategy
     (NAryTree(int, int, int), []),
     (NAryTree(int, int, int), [1, 2, 3, 4, 5]),
 ])
-def test_simple_data_validation(descriptor, data):
-    converter = strategy(descriptor)
+def test_simple_data_validation(specifier, data):
+    converter = strategy(specifier)
     with pytest.raises(BadData):
         converter.from_basic(data)

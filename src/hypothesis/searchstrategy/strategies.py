@@ -19,7 +19,7 @@ from collections import namedtuple
 import hypothesis.internal.distributions as dist
 from hypothesis.errors import BadData, WrongFormat
 from hypothesis.settings import Settings
-from hypothesis.descriptors import OneOf
+from hypothesis.specifiers import OneOf
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.utils.extmethod import ExtMethod
 from hypothesis.internal.tracker import Tracker
@@ -151,7 +151,7 @@ class SearchStrategy(object):
 
     def produce_template(self, context, parameter_value):
         """Given a build context and a value drawn from self.parameter, produce
-        a value matching this search strategy's descriptor."""
+        a value matching this search strategy's specifier."""
         raise NotImplementedError(  # pragma: no cover
             '%s.produce_template()' % (self.__class__.__name__))
 
@@ -168,7 +168,7 @@ class SearchStrategy(object):
         return value
 
     def simplify(self, value):
-        """Yield a number of values matching this descriptor that are in some
+        """Yield a number of values matching this specifier that are in some
         sense "simpelr" than value. What simpler means is entirely up to
         subclasses and has no specified meaning. The intended interpretation is
         that if you are given a choice between value and an element of

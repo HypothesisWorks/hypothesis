@@ -10,7 +10,7 @@
 
 # END HEADER
 
-"""Support for testing your custom implementations of descriptors."""
+"""Support for testing your custom implementations of specifiers."""
 
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
@@ -60,12 +60,12 @@ class TemplatesStrategy(SearchStrategy):
 
 
 @strategy.extend(TemplatesFor)
-def templates_for(descriptor, settings):
-    return TemplatesStrategy(strategy(descriptor.base, settings))
+def templates_for(specifier, settings):
+    return TemplatesStrategy(strategy(specifier.base, settings))
 
 
-def descriptor_test_suite(
-    descriptor,
+def strategy_test_suitee(
+    specifier,
     max_examples=100, random=None
 ):
     settings = Settings(
@@ -78,26 +78,26 @@ def descriptor_test_suite(
         settings=settings,
         random=random
     )
-    strat = strategy(descriptor, settings)
-    descriptor_test = given(
-        TemplatesFor(descriptor), settings=settings
+    strat = strategy(specifier, settings)
+    specifier_test = given(
+        TemplatesFor(specifier), settings=settings
     )
 
     class ValidationSuite(TestCase):
 
         def __repr__(self):
-            return 'descriptor_test_suite(%s)' % (
-                show(descriptor),
+            return 'strategy_test_suitee(%s)' % (
+                show(specifier),
             )
 
-        @given(descriptor, settings=settings)
+        @given(specifier, settings=settings)
         def test_does_not_error(self, value):
             pass
 
         def test_can_give_example(self):
             strat.example()
 
-        @descriptor_test
+        @specifier_test
         def test_is_basic(self, value):
             def is_basic(v):
                 return isinstance(
@@ -109,13 +109,13 @@ def descriptor_test_suite(
             supposedly_basic = strat.to_basic(value)
             self.assertTrue(is_basic(supposedly_basic), repr(supposedly_basic))
 
-        @descriptor_test
+        @specifier_test
         def test_can_round_trip_through_the_database(self, template):
             empty_db = ExampleDatabase(
                 backend=SQLiteBackend(':memory:'),
             )
             try:
-                storage = empty_db.storage_for(descriptor)
+                storage = empty_db.storage_for(specifier)
                 storage.save(template)
                 values = list(storage.fetch())
                 assert len(values) == 1
@@ -123,11 +123,11 @@ def descriptor_test_suite(
             finally:
                 empty_db.close()
 
-        @descriptor_test
+        @specifier_test
         def test_template_is_hashable(self, template):
             hash(template)
 
-        @descriptor_test
+        @specifier_test
         def test_can_minimize_to_empty(self, template):
             simplest = list(strat.simplify_such_that(
                 template, lambda x: True

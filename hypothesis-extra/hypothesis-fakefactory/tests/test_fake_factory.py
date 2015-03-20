@@ -17,7 +17,7 @@ import pytest
 from hypothesis import given
 from faker.providers import BaseProvider
 from hypothesis.searchstrategy import strategy
-from hypothesis.descriptortests import descriptor_test_suite
+from hypothesis.strategytests import strategy_test_suitee
 from hypothesis.extra.fakefactory import FakeFactory
 from hypothesis.internal.verifier import Verifier
 
@@ -86,15 +86,15 @@ def test_can_get_specification_for_fake_factory():
     strategy(ff)
 
 
-TestFakeEmail = descriptor_test_suite(
+TestFakeEmail = strategy_test_suitee(
     FakeFactory('email')
 )
 
-TestFakeNames = descriptor_test_suite(
+TestFakeNames = strategy_test_suitee(
     FakeFactory('name')
 )
 
-TestFakeEnglishNames = descriptor_test_suite(
+TestFakeEnglishNames = strategy_test_suitee(
     FakeFactory('name', locale='en_US')
 )
 

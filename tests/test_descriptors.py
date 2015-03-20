@@ -14,13 +14,13 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import pytest
-import hypothesis.descriptors as descriptors
+import hypothesis.specifiers as specifiers
 
 
 def test_errors_on_empty_one_of():
     with pytest.raises(ValueError):
-        descriptors.one_of([])
+        specifiers.one_of([])
 
 
 def test_returns_just_a_single_element():
-    assert descriptors.one_of([1]) == 1
+    assert specifiers.one_of([1]) == 1

@@ -18,7 +18,7 @@ import random
 from collections import namedtuple
 
 import pytest
-import hypothesis.descriptors as descriptors
+import hypothesis.specifiers as specifiers
 from hypothesis.types import RandomWithSeed
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.internal.tracker import Tracker
@@ -39,7 +39,7 @@ Blah = namedtuple('Blah', ('hi',))
 
 
 def alternating(*args):
-    return strategy(descriptors.one_of(args))
+    return strategy(specifiers.one_of(args))
 
 
 def some_minimal_element(s):
@@ -85,7 +85,7 @@ def test_int_lists_no_duplicates_in_simplify():
 
 
 def test_just_works():
-    s = strategy(descriptors.just('giving'))
+    s = strategy(specifiers.just('giving'))
     assert s.example() == 'giving'
 
 
@@ -141,12 +141,12 @@ SomeNamedTuple = namedtuple('SomeNamedTuple', ('a', 'b'))
 
 
 def test_strategy_for_integer_range_produces_only_integers_in_that_range():
-    just_one_integer = strategy(descriptors.IntegerRange(1, 1))
+    just_one_integer = strategy(specifiers.IntegerRange(1, 1))
     for _ in hrange(100):
         pv = just_one_integer.draw_parameter(random)
         x = just_one_integer.produce_template(BuildContext(random), pv)
         assert x == 1
-    some_integers = strategy(descriptors.IntegerRange(1, 10))
+    some_integers = strategy(specifiers.IntegerRange(1, 10))
     for _ in hrange(100):
         pv = some_integers.produce_parameter(random)
         x = some_integers.produce_template(BuildContext(random), pv)
@@ -154,7 +154,7 @@ def test_strategy_for_integer_range_produces_only_integers_in_that_range():
 
 
 def test_strategy_for_integer_range_can_produce_end_points():
-    some_integers = strategy(descriptors.IntegerRange(1, 10))
+    some_integers = strategy(specifiers.IntegerRange(1, 10))
     found = set()
     for _ in hrange(1000):  # pragma: no branch
         pv = some_integers.produce_parameter(random)
@@ -176,7 +176,7 @@ def last(xs):
 
 
 def test_simplify_integer_range_can_push_to_near_boundaries():
-    some_integers = strategy(descriptors.IntegerRange(1, 10))
+    some_integers = strategy(specifiers.IntegerRange(1, 10))
 
     predicates = [
         (lambda x: True, 1),
@@ -230,7 +230,7 @@ def test_just_strategy_uses_repr():
             return 'ABCDEFG'
 
     assert repr(
-        strategy(descriptors.just(WeirdRepr()))
+        strategy(specifiers.just(WeirdRepr()))
     ) == 'JustStrategy(value=%r)' % (WeirdRepr(),)
 
 
@@ -284,7 +284,7 @@ def test_minimizing_a_very_large_int_produces_an_int():
 
 
 def test_does_not_shrink_size_for_non_hashable_sample():
-    s = strategy(descriptors.sampled_from(([], [])))
+    s = strategy(specifiers.sampled_from(([], [])))
     assert s.size_lower_bound == 2
     assert s.size_upper_bound == 2
 

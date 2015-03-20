@@ -18,7 +18,7 @@ from __future__ import division, print_function, absolute_import, \
 import unittest
 from collections import namedtuple
 
-import hypothesis.descriptors as descriptors
+import hypothesis.specifiers as specifiers
 from hypothesis.utils.show import show
 
 
@@ -43,7 +43,7 @@ def test_show_for_nasty_complex():
 
 def test_show_for_nasty_in_just():
     assert show(
-        descriptors.just(complex('inf+1.9j'))
+        specifiers.just(complex('inf+1.9j'))
     ) == "Just(value=complex('inf+1.9j'))"
 
 
@@ -62,7 +62,7 @@ def test_just_show_should_respect_its_values_reprs():
         def __repr__(self):
             return 'Things()'
     assert show(
-        descriptors.Just(Stuff())
+        specifiers.Just(Stuff())
     ) == 'Just(value=Things())'
 
 

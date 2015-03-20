@@ -20,7 +20,7 @@ import inspect
 from collections import namedtuple
 
 from hypothesis.reporting import current_reporter
-from hypothesis.descriptors import just
+from hypothesis.specifiers import just
 from hypothesis.searchstrategy import strategy
 from hypothesis.internal.verifier import Flaky, Verifier, Unfalsifiable, \
     UnsatisfiedAssumption
@@ -83,16 +83,16 @@ def given(*generator_arguments, **generator_kwargs):
                     test.__name__, len(generator_arguments),
                     len(original_argspec.args)))
         arguments = original_argspec.args + sorted(extra_kwargs)
-        descriptors = list(generator_arguments)
+        specifiers = list(generator_arguments)
         for a in arguments:
             if a in generator_kwargs:
-                descriptors.append(generator_kwargs[a])
+                specifiers.append(generator_kwargs[a])
 
         argspec = inspect.ArgSpec(
             args=arguments,
             keywords=original_argspec.keywords,
             varargs=original_argspec.varargs,
-            defaults=tuple(map(HypothesisProvided, descriptors))
+            defaults=tuple(map(HypothesisProvided, specifiers))
         )
 
         @copy_argspec(
@@ -130,15 +130,15 @@ def given(*generator_arguments, **generator_kwargs):
                         teardown_example((arguments, kwargs))
                 return
 
-            def convert_to_descriptor(v):
+            def convert_to_specifier(v):
                 if isinstance(v, HypothesisProvided):
                     return v.value
                 else:
                     return just(v)
 
-            given_descriptor = (
-                tuple(map(convert_to_descriptor, arguments)),
-                {k: convert_to_descriptor(v) for k, v in kwargs.items()}
+            given_specifier = (
+                tuple(map(convert_to_specifier, arguments)),
+                {k: convert_to_specifier(v) for k, v in kwargs.items()}
             )
 
             def to_falsify(xs):
@@ -157,14 +157,14 @@ def given(*generator_arguments, **generator_kwargs):
 
             try:
                 falsifying_example = verifier.falsify(
-                    to_falsify, given_descriptor,
+                    to_falsify, given_specifier,
                     setup_example=setup_example,
                     teardown_example=teardown_example,
                 )[0]
             except Unfalsifiable:
                 return
 
-            strat = strategy(given_descriptor)
+            strat = strategy(given_specifier)
 
             if setup_example is not None:
                 setup_example()

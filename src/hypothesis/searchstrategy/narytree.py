@@ -44,13 +44,13 @@ class NAryTreeStrategy(SearchStrategy):
         )
     )
 
-    def __init__(self, descriptor, settings):
-        self.descriptor = descriptor
-        self.leaf_strategy = strategy(descriptor.leaf_values, settings)
+    def __init__(self, specifier, settings):
+        self.specifier = specifier
+        self.leaf_strategy = strategy(specifier.leaf_values, settings)
         self.branch_key_strategy = strategy(
-            descriptor.branch_keys, settings)
+            specifier.branch_keys, settings)
         self.branch_label_strategy = strategy(
-            descriptor.branch_labels, settings)
+            specifier.branch_labels, settings)
 
         self.child_strategy = strategy(
             [(self.branch_key_strategy, self)], settings
@@ -144,5 +144,5 @@ class NAryTreeStrategy(SearchStrategy):
 
 
 @strategy.extend(NAryTree)
-def nary_tree_strategy(descriptor, settings):
-    return NAryTreeStrategy(descriptor, settings)
+def nary_tree_strategy(specifier, settings):
+    return NAryTreeStrategy(specifier, settings)

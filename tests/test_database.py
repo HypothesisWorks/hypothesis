@@ -17,7 +17,7 @@ import pytest
 import hypothesis.settings as hs
 from hypothesis import given, strategy
 from hypothesis.database import ExampleDatabase
-from tests.common.descriptors import DescriptorWithValue
+from tests.common.specifiers import DescriptorWithValue
 from hypothesis.internal.compat import text_type, integer_types
 from hypothesis.database.backend import Backend, SQLiteBackend
 from hypothesis.database.formats import Format, JSONFormat
@@ -33,18 +33,18 @@ def test_deduplicates():
     database.close()
 
 
-def run_round_trip(descriptor, value, format=None, backend=None):
+def run_round_trip(specifier, value, format=None, backend=None):
     if backend is not None:
         backend = backend()
     else:
         backend = SQLiteBackend()
     db = ExampleDatabase(format=format, backend=backend)
     try:
-        storage = db.storage_for(descriptor)
+        storage = db.storage_for(specifier)
         storage.save(value)
         saved = list(storage.fetch())
         assert len(saved) == 1
-        strat = strategy(descriptor)
+        strat = strategy(specifier)
         assert strat.to_basic(saved[0]) == strat.to_basic(value)
     finally:
         db.close()
@@ -105,7 +105,7 @@ settings = hs.Settings(
 
 @given(DescriptorWithValue, settings=settings)
 def test_can_round_trip_a_single_value_through_the_database(dav):
-    run_round_trip(dav.descriptor, dav.template)
+    run_round_trip(dav.specifier, dav.template)
 
 
 def test_errors_if_given_incompatible_format_and_backend():
@@ -180,7 +180,7 @@ def test_db_has_path_in_repr():
     assert ':memory:' in repr(db)
 
 
-def test_storage_has_descriptor_in_repr():
+def test_storage_has_specifier_in_repr():
     db = ExampleDatabase()
     d = (int, int)
     s = db.storage_for(d)

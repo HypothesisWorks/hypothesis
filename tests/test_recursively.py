@@ -26,10 +26,10 @@ from hypothesis.core import given
 from hypothesis.types import RandomWithSeed
 from hypothesis.errors import Unfalsifiable
 from hypothesis.utils.show import show
-from hypothesis.descriptors import Just, OneOf, SampledFrom, just
-from tests.common.descriptors import Descriptor, DescriptorWithValue, \
+from hypothesis.specifiers import Just, OneOf, SampledFrom, just
+from tests.common.specifiers import Descriptor, DescriptorWithValue, \
     primitive_types
-from hypothesis.descriptortests import TemplatesFor
+from hypothesis.strategytests import TemplatesFor
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.internal.verifier import Verifier
 from hypothesis.searchstrategy.strategies import BuildContext, strategy
@@ -76,16 +76,16 @@ except AttributeError:
         return decorate
 
 
-def size(descriptor):
-    if descriptor in primitive_types:
+def size(specifier):
+    if specifier in primitive_types:
         return 1
-    elif isinstance(descriptor, dict):
-        children = descriptor.values()
-    elif isinstance(descriptor, (Just, SampledFrom)):
+    elif isinstance(specifier, dict):
+        children = specifier.values()
+    elif isinstance(specifier, (Just, SampledFrom)):
         return 1
     else:
         try:
-            children = list(descriptor)
+            children = list(specifier)
         except TypeError:
             return 1
     return 1 + sum(map(size, children))
@@ -133,7 +133,7 @@ def test_does_not_use_nasty_type_reprs_in_show(desc):
 
 @timeout(5)
 @given(Descriptor, verifier=verifier)
-def test_show_evals_as_descriptor(desc):
+def test_show_evals_as_specifier(desc):
     s = show(desc)
     read_desc = eval(s)
     assert show(read_desc) == s
@@ -165,14 +165,14 @@ def test_copies_all_its_values_correctly(desc, random):
     TemplatesFor(DescriptorWithValue),
     verifier=verifier,
 )
-def test_can_minimize_descriptor_with_value(dav):
+def test_can_minimize_specifier_with_value(dav):
     s = strategy(DescriptorWithValue, settings)
     last(s.simplify_such_that(dav, lambda x: True))
 
 
 @given(Descriptor, Random, verifier=verifier)
-def test_template_is_hashable(descriptor, random):
-    strat = strategy(descriptor, settings)
+def test_template_is_hashable(specifier, random):
+    strat = strategy(specifier, settings)
     parameter = strat.draw_parameter(random)
     template = strat.produce_template(BuildContext(random), parameter)
     hash(template)
@@ -185,8 +185,8 @@ def last(it):
 
 
 @given(Descriptor, Random, verifier=verifier)
-def test_can_perform_all_basic_operations(descriptor, random):
-    strat = strategy(descriptor, settings)
+def test_can_perform_all_basic_operations(specifier, random):
+    strat = strategy(specifier, settings)
     parameter = strat.draw_parameter(random)
     template = strat.produce_template(BuildContext(random), parameter)
     assert (
@@ -206,5 +206,5 @@ def test_can_perform_all_basic_operations(descriptor, random):
 
 @given(DescriptorWithValue, verifier=verifier)
 def test_integrity_check_dav(dav):
-    strat = strategy(dav.descriptor, settings)
+    strat = strategy(dav.specifier, settings)
     assert show(dav.value) == show(strat.reify(dav.template))

@@ -15,7 +15,7 @@ from __future__ import division, print_function, absolute_import, \
 
 from random import Random
 
-import hypothesis.descriptors as descriptors
+import hypothesis.specifiers as specifiers
 import hypothesis.internal.distributions as dist
 from hypothesis.types import RandomWithSeed
 from hypothesis.utils.show import show
@@ -159,22 +159,22 @@ def bool_strategy(cls, settings):
     return BoolStrategy()
 
 
-@strategy.extend(descriptors.Just)
-def define_just_strategy(descriptor, settings):
-    return JustStrategy(descriptor.value)
+@strategy.extend(specifiers.Just)
+def define_just_strategy(specifier, settings):
+    return JustStrategy(specifier.value)
 
 
 @strategy.extend_static(Random)
-def define_random_strategy(descriptor, settings):
+def define_random_strategy(specifier, settings):
     return RandomStrategy()
 
 
-@strategy.extend(descriptors.SampledFrom)
-def define_sampled_strategy(descriptor, settings):
-    return SampledFromStrategy(descriptor.elements)
+@strategy.extend(specifiers.SampledFrom)
+def define_sampled_strategy(specifier, settings):
+    return SampledFromStrategy(specifier.elements)
 
 
 @strategy.extend(type(None))
 @strategy.extend_static(type(None))
-def define_none_strategy(descriptor, settings):
+def define_none_strategy(specifier, settings):
     return JustStrategy(None)

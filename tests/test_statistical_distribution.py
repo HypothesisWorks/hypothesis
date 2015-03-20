@@ -16,7 +16,7 @@ definitions.
 
 These tests all take the form of a classic hypothesis test with the null
 hypothesis being that the probability of some event occurring when drawing
-data from the distribution produced by some descriptor is >= REQUIRED_P
+data from the distribution produced by some specifier is >= REQUIRED_P
 
 """
 
@@ -28,7 +28,7 @@ import math
 import random
 
 import pytest
-import hypothesis.descriptors as descriptors
+import hypothesis.specifiers as specifiers
 import hypothesis.internal.reflection as reflection
 from hypothesis.internal.compat import hrange
 from hypothesis.searchstrategy.strategies import BuildContext, strategy
@@ -135,7 +135,7 @@ class ConditionTooHard(Exception):
     pass
 
 
-def define_test(descriptor, q, predicate, condition=None):
+def define_test(specifier, q, predicate, condition=None):
     def run_test():
         if condition is None:
             _condition = lambda x: True
@@ -147,7 +147,7 @@ def define_test(descriptor, q, predicate, condition=None):
 
         count = 0
         successful_runs = 0
-        s = strategy(descriptor)
+        s = strategy(specifier)
         for _ in hrange(MAX_RUNS):
             pv = s.draw_parameter(random)
             x = s.reify(s.draw_template(BuildContext(random), pv))
@@ -255,17 +255,17 @@ test_can_produce_long_lists_of_negative_integers = define_test(
 )
 
 test_can_produce_floats_near_left = define_test(
-    descriptors.floats_in_range(0, 1), 0.1,
+    specifiers.floats_in_range(0, 1), 0.1,
     lambda t: t < 0.2
 )
 
 test_can_produce_floats_near_right = define_test(
-    descriptors.floats_in_range(0, 1), 0.1,
+    specifiers.floats_in_range(0, 1), 0.1,
     lambda t: t > 0.8
 )
 
 test_can_produce_floats_in_middle = define_test(
-    descriptors.floats_in_range(0, 1), 0.3,
+    specifiers.floats_in_range(0, 1), 0.3,
     lambda t: 0.2 <= t <= 0.8
 )
 
@@ -278,13 +278,13 @@ test_can_produce_short_lists = define_test(
 )
 
 test_can_produce_lists_bunched_near_left = define_test(
-    [descriptors.floats_in_range(0, 1)], 0.1,
+    [specifiers.floats_in_range(0, 1)], 0.1,
     lambda ts: all(t < 0.2 for t in ts),
     condition=long_list,
 )
 
 test_can_produce_lists_bunched_near_right = define_test(
-    [descriptors.floats_in_range(0, 1)], 0.1,
+    [specifiers.floats_in_range(0, 1)], 0.1,
     lambda ts: all(t > 0.8 for t in ts),
     condition=long_list,
 )
@@ -295,6 +295,6 @@ test_can_produce_the_same_int_twice = define_test(
 )
 
 test_non_empty_subset_of_two_is_usually_large = define_test(
-    {descriptors.sampled_from((1, 2))}, 0.6,
+    {specifiers.sampled_from((1, 2))}, 0.6,
     lambda t: len(t) == 2
 )

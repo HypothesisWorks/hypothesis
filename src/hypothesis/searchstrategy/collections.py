@@ -390,22 +390,22 @@ class FixedKeysDictStrategy(MappedSearchStrategy):
 
 
 @strategy.extend(set)
-def define_set_strategy(descriptor, settings):
+def define_set_strategy(specifier, settings):
     return SetStrategy(
-        (strategy(d, settings) for d in descriptor),
+        (strategy(d, settings) for d in specifier),
         average_length=settings.average_list_length
     )
 
 
 @strategy.extend(frozenset)
-def define_frozen_set_strategy(descriptor, settings):
-    return FrozenSetStrategy(strategy(set(descriptor), settings))
+def define_frozen_set_strategy(specifier, settings):
+    return FrozenSetStrategy(strategy(set(specifier), settings))
 
 
 @strategy.extend(list)
-def define_list_strategy(descriptor, settings):
+def define_list_strategy(specifier, settings):
     return ListStrategy(
-        [strategy(d, settings) for d in descriptor],
+        [strategy(d, settings) for d in specifier],
         average_length=settings.average_list_length
     )
 
@@ -417,16 +417,16 @@ Settings.define_setting(
 
 
 @strategy.extend(tuple)
-def define_tuple_strategy(descriptor, settings):
+def define_tuple_strategy(specifier, settings):
     return TupleStrategy(
-        tuple(strategy(d, settings) for d in descriptor),
-        tuple_type=type(descriptor)
+        tuple(strategy(d, settings) for d in specifier),
+        tuple_type=type(specifier)
     )
 
 
 @strategy.extend(dict)
-def define_dict_strategy(descriptor, settings):
+def define_dict_strategy(specifier, settings):
     strategy_dict = {}
-    for k, v in descriptor.items():
+    for k, v in specifier.items():
         strategy_dict[k] = strategy(v, settings)
     return FixedKeysDictStrategy(strategy_dict)

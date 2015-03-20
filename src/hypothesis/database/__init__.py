@@ -18,21 +18,21 @@ from hypothesis.database.backend import SQLiteBackend
 
 class Storage(object):
 
-    """Handles saving and loading examples matching a particular descriptor."""
+    """Handles saving and loading examples matching a particular specifier."""
 
     def __repr__(self):
-        return 'Storage(%s)' % (self.descriptor,)
+        return 'Storage(%s)' % (self.specifier,)
 
     def __init__(
-        self, backend, descriptor, strategy, format,
+        self, backend, specifier, strategy, format,
         database
     ):
         self.database = database
         self.backend = backend
-        self.descriptor = descriptor
+        self.specifier = specifier
         self.format = format
         self.strategy = strategy
-        self.key = show(descriptor)
+        self.key = show(specifier)
 
     def save(self, value):
         converted = self.strategy.to_basic(value)
@@ -55,7 +55,7 @@ class ExampleDatabase(object):
 
     """Object encapsulating all the things you need to get storage.
 
-    Maps descriptors to storage for them.
+    Maps specifiers to storage for them.
 
     """
 
@@ -78,19 +78,19 @@ class ExampleDatabase(object):
                     self.format.data_type(), self.backend.data_type()
                 )))
 
-    def storage_for(self, descriptor):
-        """Get a storage object corresponding to this descriptor.
+    def storage_for(self, specifier):
+        """Get a storage object corresponding to this specifier.
 
         Will cache the result so that x.storage_for(d) is
         x.storage_for(d). You can rely on that behaviour.
 
         """
         return Storage(
-            descriptor=descriptor,
+            specifier=specifier,
             database=self,
             backend=self.backend,
             format=self.format,
-            strategy=strategy(descriptor),
+            strategy=strategy(specifier),
         )
 
     def close(self):

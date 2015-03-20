@@ -15,7 +15,7 @@ from __future__ import division, print_function, absolute_import, \
 
 import django.db.models as dm
 import hypothesis.extra.fakefactory as ff
-from hypothesis.descriptors import one_of
+from hypothesis.specifiers import one_of
 from hypothesis.extra.datetime import timezone_aware_datetime
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.searchstrategy.strategies import MappedSearchStrategy, \

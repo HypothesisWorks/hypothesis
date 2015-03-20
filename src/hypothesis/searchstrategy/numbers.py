@@ -19,7 +19,7 @@ import struct
 from random import Random
 from collections import namedtuple
 
-import hypothesis.descriptors as descriptors
+import hypothesis.specifiers as specifiers
 import hypothesis.internal.distributions as dist
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.searchstrategy.misc import SampledFromStrategy
@@ -450,23 +450,23 @@ class ComplexStrategy(MappedSearchStrategy):
         return complex(*value)
 
 
-@strategy.extend(descriptors.IntegerRange)
-def define_stragy_for_integer_Range(descriptor, settings):
-    return BoundedIntStrategy(descriptor.start, descriptor.end)
+@strategy.extend(specifiers.IntegerRange)
+def define_stragy_for_integer_Range(specifier, settings):
+    return BoundedIntStrategy(specifier.start, specifier.end)
 
 
-@strategy.extend(descriptors.FloatRange)
-def define_strategy_for_float_Range(descriptor, settings):
-    return FixedBoundedFloatStrategy(descriptor.start, descriptor.end)
+@strategy.extend(specifiers.FloatRange)
+def define_strategy_for_float_Range(specifier, settings):
+    return FixedBoundedFloatStrategy(specifier.start, specifier.end)
 
 
 @strategy.extend_static(int)
-def int_strategy(descriptor, settings):
+def int_strategy(specifier, settings):
     return RandomGeometricIntStrategy()
 
 
 @strategy.extend_static(float)
-def define_float_strategy(descriptor, settings):
+def define_float_strategy(specifier, settings):
     return WrapperFloatStrategy(
         GaussianFloatStrategy() |
         BoundedFloatStrategy() |
@@ -480,5 +480,5 @@ def define_float_strategy(descriptor, settings):
 
 
 @strategy.extend_static(complex)
-def define_complex_strategy(descriptor, settings):
+def define_complex_strategy(specifier, settings):
     return ComplexStrategy(strategy((float, float), settings))

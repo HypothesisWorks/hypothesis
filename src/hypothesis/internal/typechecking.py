@@ -13,7 +13,7 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from hypothesis.descriptors import IntegerRange
+from hypothesis.specifiers import IntegerRange
 from hypothesis.internal.compat import integer_types
 from hypothesis.utils.extmethod import ExtMethod
 

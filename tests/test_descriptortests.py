@@ -16,57 +16,57 @@ from __future__ import division, print_function, absolute_import, \
 from random import Random
 from collections import namedtuple
 
-from hypothesis.descriptors import just, one_of, sampled_from, \
+from hypothesis.specifiers import just, one_of, sampled_from, \
     floats_in_range, integers_in_range
-from tests.common.descriptors import Descriptor, DescriptorWithValue
-from hypothesis.descriptortests import TemplatesFor, descriptor_test_suite
+from tests.common.specifiers import Descriptor, DescriptorWithValue
+from hypothesis.strategytests import TemplatesFor, strategy_test_suitee
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.searchstrategy.narytree import NAryTree
 
-TestIntegerRange = descriptor_test_suite(integers_in_range(0, 5))
-TestFloatRange = descriptor_test_suite(floats_in_range(0.5, 10))
-TestSampled = descriptor_test_suite(sampled_from(elements=(1, 2, 3)))
+TestIntegerRange = strategy_test_suitee(integers_in_range(0, 5))
+TestFloatRange = strategy_test_suitee(floats_in_range(0.5, 10))
+TestSampled = strategy_test_suitee(sampled_from(elements=(1, 2, 3)))
 
-TestOneOf = descriptor_test_suite(one_of((int, int, bool)))
-TestOneOfSameType = descriptor_test_suite(
+TestOneOf = strategy_test_suitee(one_of((int, int, bool)))
+TestOneOfSameType = strategy_test_suitee(
     one_of((integers_in_range(1, 10), integers_in_range(8, 15)))
 )
-TestRandom = descriptor_test_suite(Random)
-TestInts = descriptor_test_suite(int)
-TestBoolLists = descriptor_test_suite([bool])
-TestString = descriptor_test_suite(text_type)
-BinaryString = descriptor_test_suite(binary_type)
-TestIntBool = descriptor_test_suite((int, bool))
-TestFloats = descriptor_test_suite(float)
-TestComplex = descriptor_test_suite(complex)
-TestJust = descriptor_test_suite(just('hi'))
-TestTemplates = descriptor_test_suite(TemplatesFor({int}))
+TestRandom = strategy_test_suitee(Random)
+TestInts = strategy_test_suitee(int)
+TestBoolLists = strategy_test_suitee([bool])
+TestString = strategy_test_suitee(text_type)
+BinaryString = strategy_test_suitee(binary_type)
+TestIntBool = strategy_test_suitee((int, bool))
+TestFloats = strategy_test_suitee(float)
+TestComplex = strategy_test_suitee(complex)
+TestJust = strategy_test_suitee(just('hi'))
+TestTemplates = strategy_test_suitee(TemplatesFor({int}))
 
 Stuff = namedtuple('Stuff', ('a', 'b'))
-TestNamedTuple = descriptor_test_suite(Stuff(int, int))
+TestNamedTuple = strategy_test_suitee(Stuff(int, int))
 
-TestTrees = descriptor_test_suite(NAryTree(int, int, int))
+TestTrees = strategy_test_suitee(NAryTree(int, int, int))
 
-TestMixedSets = descriptor_test_suite({int, bool, float})
-TestFrozenSets = descriptor_test_suite(frozenset({bool}))
+TestMixedSets = strategy_test_suitee({int, bool, float})
+TestFrozenSets = strategy_test_suitee(frozenset({bool}))
 
-TestNestedSets = descriptor_test_suite(frozenset({frozenset({complex})}))
+TestNestedSets = strategy_test_suitee(frozenset({frozenset({complex})}))
 
-TestMisc1 = descriptor_test_suite({(2, -374): frozenset({None})})
-TestMisc2 = descriptor_test_suite({b'': frozenset({int})})
-TestMisc3 = descriptor_test_suite(({type(None), str},),)
+TestMisc1 = strategy_test_suitee({(2, -374): frozenset({None})})
+TestMisc2 = strategy_test_suitee({b'': frozenset({int})})
+TestMisc3 = strategy_test_suitee(({type(None), str},),)
 
-TestEmptyTuple = descriptor_test_suite(())
-TestEmptyList = descriptor_test_suite([])
-TestEmptySet = descriptor_test_suite(set())
-TestEmptyFrozenSet = descriptor_test_suite(frozenset())
-TestEmptyDict = descriptor_test_suite({})
+TestEmptyTuple = strategy_test_suitee(())
+TestEmptyList = strategy_test_suitee([])
+TestEmptySet = strategy_test_suitee(set())
+TestEmptyFrozenSet = strategy_test_suitee(frozenset())
+TestEmptyDict = strategy_test_suitee({})
 
-TestDescriptor = descriptor_test_suite(Descriptor)
-TestDescriptorWithValue = descriptor_test_suite(DescriptorWithValue)
+TestDescriptor = strategy_test_suitee(Descriptor)
+TestDescriptorWithValue = strategy_test_suitee(DescriptorWithValue)
 
 
-def test_repr_has_descriptor_in_it():
+def test_repr_has_specifier_in_it():
     suite = TestComplex(
         'test_can_round_trip_through_the_database')
-    assert repr(suite) == 'descriptor_test_suite(complex)'
+    assert repr(suite) == 'strategy_test_suitee(complex)'

@@ -17,22 +17,22 @@ from datetime import datetime
 
 import hypothesis.settings as hs
 from hypothesis import given, assume
-from hypothesis.descriptors import one_of
+from hypothesis.specifiers import one_of
 from hypothesis.extra.datetime import naive_datetime, \
     timezone_aware_datetime
 from hypothesis.searchstrategy import strategy
-from hypothesis.descriptortests import descriptor_test_suite
+from hypothesis.strategytests import strategy_test_suitee
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.verifier import Verifier
 
 hs.Settings.default.max_examples = 1000
 
 
-TestStandardDescriptorFeatures1 = descriptor_test_suite(datetime)
-TestStandardDescriptorFeatures2 = descriptor_test_suite(
+TestStandardDescriptorFeatures1 = strategy_test_suitee(datetime)
+TestStandardDescriptorFeatures2 = strategy_test_suitee(
     timezone_aware_datetime)
-TestStandardDescriptorFeatures3 = descriptor_test_suite(naive_datetime)
-TestStandardDescriptorFeatures4 = descriptor_test_suite(one_of((
+TestStandardDescriptorFeatures3 = strategy_test_suitee(naive_datetime)
+TestStandardDescriptorFeatures4 = strategy_test_suitee(one_of((
     naive_datetime,
     timezone_aware_datetime,
 )))

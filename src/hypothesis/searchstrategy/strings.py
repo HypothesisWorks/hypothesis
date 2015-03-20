@@ -18,7 +18,7 @@ import base64
 import string
 import unicodedata
 
-import hypothesis.descriptors as descriptors
+import hypothesis.specifiers as specifiers
 from hypothesis.internal.compat import hrange, hunichr, text_type, \
     binary_type
 from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
@@ -28,7 +28,7 @@ from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
 class OneCharStringStrategy(SearchStrategy):
 
     """A strategy which generates single character strings of text type."""
-    descriptor = text_type
+    specifier = text_type
     ascii_characters = (
         text_type('0123456789') + text_type(string.ascii_letters) +
         text_type(' \t\n')
@@ -111,12 +111,12 @@ class BinaryStringStrategy(MappedSearchStrategy):
 
 
 @strategy.extend_static(text_type)
-def define_text_type_strategy(descriptor, settings):
+def define_text_type_strategy(specifier, settings):
     return StringStrategy(strategy([OneCharStringStrategy()], settings))
 
 
 @strategy.extend_static(binary_type)
-def define_binary_strategy(descriptor, settings):
+def define_binary_strategy(specifier, settings):
     return BinaryStringStrategy(
-        strategy=strategy([descriptors.integers_in_range(0, 255)], settings),
+        strategy=strategy([specifiers.integers_in_range(0, 255)], settings),
     )
