@@ -372,6 +372,12 @@ def test_is_not_ascii(x):
 
 @fails
 @given(text_type)
+def test_can_find_string_with_duplicates(s):
+    assert len(set(s)) == len(s)
+
+
+@fails
+@given(text_type)
 def test_has_ascii(x):
     if not x:
         return
