@@ -153,7 +153,6 @@ class Verifier(object):
                 falsifying_examples.append(args)
         run_time = time.time() - start_time
         timed_out = self.timeout >= 0 and run_time >= self.timeout
-
         if not falsifying_examples:
             if len(track_seen) >= search_strategy.size_lower_bound:
                 raise Exhausted(

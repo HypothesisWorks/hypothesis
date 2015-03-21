@@ -19,11 +19,11 @@ import string
 import unicodedata
 
 import hypothesis.specifiers as specifiers
+import hypothesis.internal.distributions as dist
 from hypothesis.internal.compat import hrange, hunichr, text_type, \
     binary_type
 from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
     MappedSearchStrategy, strategy, check_type, check_data_type
-import hypothesis.internal.distributions as dist
 
 
 class OneCharStringStrategy(SearchStrategy):
