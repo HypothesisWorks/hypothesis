@@ -47,7 +47,7 @@ setup(
     license='MPL v2',
     description='Adds support for generating fake-factory data to Hypothesis',
     install_requires=[
-        "hypothesis==0.7.0",
+        "hypothesis==0.7.1",
         "fake-factory==0.4.2",
     ],
     long_description=open(README).read(),
