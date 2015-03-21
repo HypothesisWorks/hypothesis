@@ -226,7 +226,7 @@ class ListStrategy(SearchStrategy):
 
         yield ()
 
-        if len(x) > 1:
+        if len(x) > 3:
             mid = len(x) // 2
             yield x[:mid]
             yield x[mid:]
