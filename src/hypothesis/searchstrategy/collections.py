@@ -247,6 +247,18 @@ class ListStrategy(SearchStrategy):
             del z[i]
             yield tuple(z)
 
+        same_valued_indices = {}
+        for i, value in enumerate(x):
+            same_valued_indices.setdefault(value, []).append(i)
+        for indices in same_valued_indices.values():
+            if len(indices) > 1:
+                value = x[indices[0]]
+                for simpler in self.element_strategy.simplify(value):
+                    copy = list(x)
+                    for i in indices:
+                        copy[i] = simpler
+                    yield tuple(copy)
+
     def to_basic(self, value):
         check_type(tuple, value)
         if self.element_strategy is None:
