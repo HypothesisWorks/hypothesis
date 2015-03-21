@@ -321,3 +321,16 @@ out, and filing off some final rough edges from the API.
     * Rename descriptor_test_suite to strategy_test_suite
     * Rename the few remaing uses of descriptor to specifier (descriptor
       already has a defined meaning in Python)
+
+0.7.1, "Point releases go faster" 
+
+    * Better string generation by parametrizing by a limited alphabet
+    * Faster string simplification - previously if simplifying a string with
+      high range unicode characters it would try every unicode character
+      smaller than that. This was pretty pointless. Now it stops after it's a
+      short range (it can still reach smaller ones through recursive
+      calls because of other simplifying operations).
+    * Faster list simplification by first trying a binary chop down the middle
+    * Simultaneous simplification of identical elements in a list. So if a bug
+      only trickers when you have duplicates but you drew e.g. [-17, -17], this
+      will now simplify to [0, 0].
