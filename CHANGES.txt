@@ -322,7 +322,7 @@ out, and filing off some final rough edges from the API.
     * Rename the few remaing uses of descriptor to specifier (descriptor
       already has a defined meaning in Python)
 
-0.7.1, "Point releases go faster" 
+0.7.1, "Point releases go faster" , 21/03/2015
 
     * Better string generation by parametrizing by a limited alphabet
     * Faster string simplification - previously if simplifying a string with
