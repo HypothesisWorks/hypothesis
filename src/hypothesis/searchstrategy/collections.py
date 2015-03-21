@@ -226,6 +226,11 @@ class ListStrategy(SearchStrategy):
 
         yield ()
 
+        if len(x) > 1:
+            mid = len(x) // 2
+            yield x[:mid]
+            yield x[mid:]
+
         for i in hrange(0, len(x)):
             if len(x) > 1:
                 y = list(x)

@@ -23,6 +23,7 @@ from hypothesis.internal.compat import hrange, hunichr, text_type, \
     binary_type
 from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
     MappedSearchStrategy, strategy, check_type, check_data_type
+import hypothesis.internal.distributions as dist
 
 
 class OneCharStringStrategy(SearchStrategy):
@@ -35,14 +36,16 @@ class OneCharStringStrategy(SearchStrategy):
     )
 
     def produce_parameter(self, random):
-        return random.random()
+        alphabet_size = 1 + dist.geometric(random, 0.1)
+        alphabet = []
+        while len(alphabet) < alphabet_size:
+            char = hunichr(random.randint(0, sys.maxunicode))
+            if unicodedata.category(char) != 'Cs':
+                alphabet.append(char)
+        return tuple(alphabet)
 
     def produce_template(self, context, p):
-        random = context.random
-        while True:
-            result = hunichr(random.randint(0, sys.maxunicode))
-            if unicodedata.category(result) != 'Cs':
-                return result
+        return context.random.choice(p)
 
     def simplify(self, x):
         if x in self.ascii_characters:
@@ -53,7 +56,7 @@ class OneCharStringStrategy(SearchStrategy):
             for c in reversed(self.ascii_characters):
                 yield text_type(c)
             yield hunichr(o // 2)
-            for t in hrange(o - 1, -1, -1):
+            for t in hrange(o - 1, max(o - 100, -1), -1):
                 yield hunichr(t)
 
 
