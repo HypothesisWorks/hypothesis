@@ -77,16 +77,17 @@ def get_class(obj, typ):
 
 
 class DefaultSettings(object):
+
     def __get__(self, obj, typ=None):
         if obj is not None:
             typ = type(obj)
         return typ.default_variable.value
 
     def __set__(self, obj, value):
-        raise AttributeError("Cannot set default settings")
+        raise AttributeError('Cannot set default settings')
 
     def __delete__(self, obj):
-        raise AttributeError("Cannot delete default settings")
+        raise AttributeError('Cannot delete default settings')
 
 
 class SettingsProperty(object):
