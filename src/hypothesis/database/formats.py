@@ -10,8 +10,7 @@
 
 # END HEADER
 
-"""
-This is the module responsible for handling conversion of data to and from a
+"""This is the module responsible for handling conversion of data to and from a
 serialized format.
 
 Before you get here, you must convert your objects into *basic data*. Basic
@@ -19,6 +18,7 @@ data is any of the following:
 
     1. A bool, None, int, or unicode string
     2. A list of basic data
+
 """
 
 from __future__ import division, print_function, absolute_import, \

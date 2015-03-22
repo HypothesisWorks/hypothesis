@@ -140,18 +140,19 @@ class SearchStrategy(object):
 
     Data simplification proceeds on template values, taking a template and
     providing a generator over some examples of similar but simpler templates.
+
     """
 
     def example(self):
-        """
-        Provide an example of the sort of value that this strategy generates.
-        This is biased to be slightly simpler than is typical for values from
-        this strategy, for clarity purposes.
+        """Provide an example of the sort of value that this strategy
+        generates. This is biased to be slightly simpler than is typical for
+        values from this strategy, for clarity purposes.
 
         This method shouldn't be taken too seriously. It's here for interactive
         exploration of the API, not for any sort of real testing.
 
         This method is part of the  public API.
+
         """
         random = Random()
         context = BuildContext(random)
@@ -162,22 +163,22 @@ class SearchStrategy(object):
         return self.reify(template)
 
     def map(self, pack):
-        """
-        Returns a new strategy that generates values by generating a value from
-        this strategy and then calling pack() on the result, giving that.
+        """Returns a new strategy that generates values by generating a value
+        from this strategy and then calling pack() on the result, giving that.
 
         This method is part of the  public API.
+
         """
         return MappedSearchStrategy(
             pack=pack, strategy=self
         )
 
     def __or__(self, other):
-        """
-        Return a strategy which produces values by randomly drawing from one of
-        this strategy or the other strategy.
+        """Return a strategy which produces values by randomly drawing from one
+        of this strategy or the other strategy.
 
         This method is part of the  public API.
+
         """
         if not isinstance(other, SearchStrategy):
             raise ValueError('Cannot | a SearchStrategy with %r' % (other,))
@@ -189,45 +190,41 @@ class SearchStrategy(object):
     # Methods to be overridden by subclasses
 
     def produce_parameter(self, random):
-        """
-        Produce a random valid parameter for this strategy, using only data
+        """Produce a random valid parameter for this strategy, using only data
         from the provided random number generator.
 
         Note: You should not call this directly. Call draw_parameter instead.
+
         """
         raise NotImplementedError(  # pragma: no cover
             '%s.produce_parameter()' % (self.__class__.__name__))
 
     def produce_template(self, context, parameter_value):
-        """
-        Given this build context and this parameter value, produce a random
+        """Given this build context and this parameter value, produce a random
         valid template for this strategy.
 
         Note: You should not call this directly. Call draw_template instead.
+
         """
         raise NotImplementedError(  # pragma: no cover
             '%s.produce_template()' % (self.__class__.__name__))
 
     def reify(self, template):
-        """
-        Given a template value, deterministically convert it into a value of
-        the desired final type.
-        """
+        """Given a template value, deterministically convert it into a value of
+        the desired final type."""
         raise NotImplementedError(  # pragma: no cover
             '%s.reify()' % (self.__class__.__name__))
 
     def to_basic(self, template):
         """Convert a template value for this strategy into basic data (see
-        hypothesis.dabase.formats for the definition of basic data)
-
-        """
+        hypothesis.dabase.formats for the definition of basic data)"""
         raise NotImplementedError(  # pragma: no cover
             '%s.to_basic()' % (self.__class__.__name__))
 
     def from_basic(self, value):
         """Convert basic data back to a template, raising BadData if the
         provided data cannot be converted into a valid template for this
-        strategy"""
+        strategy."""
         raise NotImplementedError(  # pragma: no cover
             '%s.from_basic()' % (self.__class__.__name__))
 
@@ -251,10 +248,11 @@ class SearchStrategy(object):
             context, self.draw_parameter(context.random))
 
     def size(self, template):
-        """
-        Gives an approximate estimate of how "large" this template value is.
-        This doesn't really matter for anything, it's just a convenience used
-        to implement example().
+        """Gives an approximate estimate of how "large" this template value is.
+
+        This doesn't really matter for anything, it's just a convenience
+        used to implement example().
+
         """
         def basic_size(x):
             try:
@@ -266,30 +264,30 @@ class SearchStrategy(object):
         return basic_size(self.to_basic(template))
 
     def draw_parameter(self, random):
-        """
-        Draw a new parameter value given this random number generator.
+        """Draw a new parameter value given this random number generator.
 
         You should not override this method. Override produce_parameter
-        instead. Right now this calls produce_parameter directly, but it's a
-        placeholder for when that might not be the case later.
+        instead. Right now this calls produce_parameter directly, but
+        it's a placeholder for when that might not be the case later.
+
         """
         return self.produce_parameter(random)
 
     def draw_template(self, context, parameter_value):
-        """
-        Draw a new template value given this build context and parameter value.
+        """Draw a new template value given this build context and parameter
+        value.
 
         You should not override this method. Override produce_template
-        instead. Right now this calls produce_template directly, but it's a
-        placeholder for when that might not be the case later.
+        instead. Right now this calls produce_template directly, but
+        it's a placeholder for when that might not be the case later.
+
         """
         return self.produce_template(context, parameter_value)
 
     def simplify(self, template):
-        """
-        Given a template, return a generator which yields a number of templates
-        that are "like this template but simpler". simpler has no defined
-        semantic meaning here and can be whatever you feel like.
+        """Given a template, return a generator which yields a number of
+        templates that are "like this template but simpler". simpler has no
+        defined semantic meaning here and can be whatever you feel like.
 
         General tips for a good simplify:
 
@@ -304,6 +302,7 @@ class SearchStrategy(object):
                a minimal element, throw out half of your data, etc. Providing
                shortcuts in the graph will speed up the simplification process
                a lot.
+
         """
         return iter(())
 
