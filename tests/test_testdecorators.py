@@ -450,3 +450,9 @@ def test_can_run_without_database():
         assert False
     with pytest.raises(AssertionError):
         test_blah()
+
+
+@given(int)
+def test_can_call_an_argument_f(f):
+    # See issue https://github.com/DRMacIver/hypothesis/issues/38 for details
+    pass

@@ -332,14 +332,16 @@ def source_exec_as_module(source):
             if wait == waits[-1]:
                 raise
 
-COPY_ARGSPEC_SCRIPT = """
+COPY_ARGSPEC_SCRIPT = ("""
 from hypothesis.utils.conventions import not_set
 
-def accept(f):
-    def %(name)s(%(argspec)s):
-        return f(%(invocation)s)
-    return %(name)s
-""".strip() + '\n'
+def accept(%(argname)s):
+    def %%(name)s(%%(argspec)s):
+        return %(argname)s(%%(invocation)s)
+    return %%(name)s
+""" % {
+    'argname': 'hypothesis_reflection_internal_name_do_not_use'
+}).strip() + '\n'
 
 
 def copy_argspec(name, argspec):
