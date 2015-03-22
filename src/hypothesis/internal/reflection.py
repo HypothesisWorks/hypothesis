@@ -332,16 +332,14 @@ def source_exec_as_module(source):
             if wait == waits[-1]:
                 raise
 
-COPY_ARGSPEC_SCRIPT = ("""
+COPY_ARGSPEC_SCRIPT = """
 from hypothesis.utils.conventions import not_set
 
-def accept(%(argname)s):
-    def %%(name)s(%%(argspec)s):
-        return %(argname)s(%%(invocation)s)
-    return %%(name)s
-""" % {
-    'argname': 'hypothesis_reflection_internal_name_do_not_use'
-}).strip() + '\n'
+def accept(%(funcname)s):
+    def %(name)s(%(argspec)s):
+        return %(funcname)s(%(invocation)s)
+    return %(name)s
+""".strip() + '\n'
 
 
 def copy_argspec(name, argspec):
@@ -364,9 +362,11 @@ def copy_argspec(name, argspec):
             parts.append('%s=not_set' % (a,))
     else:
         parts = list(argspec.args)
+    used_names = list(argspec.args)
 
     invocation_parts = []
     if argspec.varargs:
+        used_names.append(argspec.varargs)
         parts.append('*' + argspec.varargs)
         invocation_parts.append('*' + argspec.varargs)
 
@@ -374,12 +374,22 @@ def copy_argspec(name, argspec):
         invocation_parts.append('%s=%s' % (a, a))
 
     if argspec.keywords:
+        used_names.append(argspec.keywords)
         parts.append('**' + argspec.keywords)
         invocation_parts.append('**' + argspec.keywords)
+
+    candidate_names = ['f'] + [
+        'f_%d' % (i,) for i in hrange(1, len(used_names) + 2)
+    ]
+
+    for funcname in candidate_names:  # pragma: no branch
+        if funcname not in used_names:
+            break
 
     base_accept = source_exec_as_module(
         COPY_ARGSPEC_SCRIPT % {
             'name': name,
+            'funcname': funcname,
             'argspec': ', '.join(parts),
             'invocation': ', '.join(invocation_parts)
         }).accept

@@ -464,6 +464,27 @@ def test_can_get_source_of_functions_from_exec():
     )
 
 
+def test_copy_argspec_works_with_conflicts():
+    def accepts_everything(*args, **kwargs):
+        pass
+
+    copy_argspec('hello', inspect.ArgSpec(
+        args=('f',), varargs=None, keywords=None, defaults=None
+    ))(accepts_everything)(1)
+
+    copy_argspec('hello', inspect.ArgSpec(
+        args=(), varargs='f', keywords=None, defaults=None
+    ))(accepts_everything)(1)
+
+    copy_argspec('hello', inspect.ArgSpec(
+        args=(), varargs=None, keywords='f', defaults=None
+    ))(accepts_everything)()
+
+    copy_argspec('hello', inspect.ArgSpec(
+        args=('f', 'f_3'), varargs='f_1', keywords='f_2', defaults=None
+    ))(accepts_everything)(1, 2)
+
+
 def test_copy_argspec_validates_arguments():
     with pytest.raises(ValueError):
         copy_argspec('hello_world', inspect.ArgSpec(
