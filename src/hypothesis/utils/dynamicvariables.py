@@ -27,10 +27,6 @@ class DynamicVariable(object):
     def value(self):
         return getattr(self.data, 'value', self.default)
 
-    @value.setter
-    def value(self, value):
-        self.data.value = value
-
     @contextmanager
     def with_value(self, value):
         old_value = self.value
