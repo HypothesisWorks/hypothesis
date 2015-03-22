@@ -227,7 +227,7 @@ Here are some other examples of how you could use that:
 
     @given(x=int, y=int)
     def test_ints_cancel(x, y):
-        assert (x + y) - y == y
+        assert (x + y) - y == x
 
     @given([int])
     def test_reversing_twice_gives_same_list(xs):
