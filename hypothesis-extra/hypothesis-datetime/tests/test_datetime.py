@@ -74,7 +74,8 @@ def test_can_find_on_the_minute():
 
 
 def test_can_find_february_29():
-    falsify(lambda d: assume(d.month == 2) and (d.day != 29), datetime)
+    with hs.Settings(max_examples=2000):
+        falsify(lambda d: assume(d.month == 2) and (d.day != 29), datetime)
 
 
 def test_can_find_christmas():
