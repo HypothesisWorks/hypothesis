@@ -34,6 +34,9 @@ class BoolStrategy(SearchStrategy):
     def __repr__(self):
         return 'BoolStrategy()'
 
+    def reify(self, value):
+        return value
+
     def produce_parameter(self, random):
         return random.random()
 

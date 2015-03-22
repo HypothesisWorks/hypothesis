@@ -47,6 +47,9 @@ class OneCharStringStrategy(SearchStrategy):
     def produce_template(self, context, p):
         return context.random.choice(p)
 
+    def reify(self, value):
+        return value
+
     def simplify(self, x):
         if x in self.ascii_characters:
             for i in hrange(self.ascii_characters.index(x) - 1, -1, -1):

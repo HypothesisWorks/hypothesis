@@ -10,6 +10,17 @@
 
 # END HEADER
 
+"""
+This is the module responsible for handling conversion of data to and from a
+serialized format.
+
+Before you get here, you must convert your objects into *basic data*. Basic
+data is any of the following:
+
+    1. A bool, None, int, or unicode string
+    2. A list of basic data
+"""
+
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
@@ -21,8 +32,7 @@ from hypothesis.internal.compat import text_type
 
 class Format(object):
 
-    """A format describes a conversion between basic data (see
-    hypothesis.database.converter) and some other type.
+    """A format describes a conversion between basic data and some other type.
 
     The type can be any thing you like, but the most likely use cases
     are text or binary encodings.

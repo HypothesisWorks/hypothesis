@@ -43,6 +43,9 @@ class IntStrategy(SearchStrategy):
     def to_basic(self, template):
         return template
 
+    def reify(self, template):
+        return template
+
     def simplify(self, x):
         ix = int(x)
         if type(ix) != type(x):  # pragma: no cover
@@ -135,6 +138,9 @@ class BoundedIntStrategy(SearchStrategy):
     def to_basic(self, template):
         return template
 
+    def reify(self, value):
+        return value
+
     def produce_template(self, context, parameter):
         if self.start == self.end:
             return self.start
@@ -177,6 +183,9 @@ class FloatStrategy(SearchStrategy):
             )
         except (struct.error, ValueError, OverflowError) as e:
             raise BadData(e.args[0])
+
+    def reify(self, value):
+        return value
 
     def simplify(self, x):
         if x == 0.0:
@@ -435,6 +444,9 @@ class NastyFloats(FloatStrategy, SampledFromStrategy):
                 float('nan'),
             ]
         )
+
+    def reify(self, value):
+        return SampledFromStrategy.reify(self, value)
 
 
 class ComplexStrategy(MappedSearchStrategy):
