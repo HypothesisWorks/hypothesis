@@ -334,3 +334,13 @@ out, and filing off some final rough edges from the API.
     * Simultaneous simplification of identical elements in a list. So if a bug
       only trickers when you have duplicates but you drew e.g. [-17, -17], this
       will now simplify to [0, 0].
+
+0.7.2, "Hygienic macros or bust"
+
+    * You can now name an argument to @given 'f' and it won't break (issue #38)
+    * strategy_test_suite is now named strategy_test_suite as the documentation
+      claims and not in fact strategy_test_suitee
+    * Settings objects can now be used as a context manager to temporarily
+      override the default values inside their context.
+
+    * Setting objects can now be used as context managers
