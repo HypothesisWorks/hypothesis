@@ -333,7 +333,9 @@ strategies. These will be picked up by all settings objects.
 
 .. code:: python
 
-    >>> Settings.define_setting(name="some_custom_setting", default=3, description="This is a custom settings we've just added")
+    >>> Settings.define_setting(
+    ... name="some_custom_setting", default=3,
+    ... description="This is a custom settings we've just added")
     >>> s.some_custom_setting
     3
 
