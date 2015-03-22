@@ -21,9 +21,11 @@ from __future__ import division, print_function, absolute_import, \
 
 import os
 import inspect
+import threading
 from collections import namedtuple
 
 from hypothesis.utils.conventions import not_set
+from hypothesis.utils.dynamicvariables import DynamicVariable
 
 __hypothesis_home_directory = None
 
@@ -65,6 +67,26 @@ databases = {}
 
 def field_name(setting_name):
     return '_' + setting_name
+
+
+def get_class(obj, typ):
+    if obj is not None:
+        return type(obj)
+    else:
+        return typ
+
+
+class DefaultSettings(object):
+    def __get__(self, obj, typ=None):
+        if obj is not None:
+            typ = type(obj)
+        return typ.default_variable.value
+
+    def __set__(self, obj, value):
+        raise AttributeError("Cannot set default settings")
+
+    def __delete__(self, obj):
+        raise AttributeError("Cannot delete default settings")
 
 
 class SettingsProperty(object):
@@ -130,6 +152,14 @@ class Settings(object):
         self._database = kwargs.pop('database', not_set)
         if kwargs:
             raise TypeError('Invalid arguments %s' % (', '.join(kwargs),))
+        self.storage = threading.local()
+
+    def defaults_stack(self):
+        try:
+            return self.storage.defaults_stack
+        except AttributeError:
+            self.storage.defaults_stack = []
+            return self.storage.defaults_stack
 
     @classmethod
     def define_setting(cls, name, description, default):
@@ -149,7 +179,7 @@ class Settings(object):
     def __setattr__(self, name, value):
         if (
             name not in all_settings and
-            name != '_database'
+            name not in ('storage', '_database')
         ):
             raise AttributeError('No such setting %s' % (name,))
         else:
@@ -159,8 +189,7 @@ class Settings(object):
         bits = []
         for name in all_settings:
             value = getattr(self, name)
-            if value != getattr(Settings.default, name):
-                bits.append('%s=%r' % (name, value))
+            bits.append('%s=%r' % (name, value))
         bits.sort()
         return 'Settings(%s)' % ', '.join(bits)
 
@@ -184,7 +213,20 @@ class Settings(object):
             databases[self.database_file] = self._database
         return self._database
 
-Settings.default = Settings()
+    def __enter__(self):
+        default_context_manager = Settings.default_variable.with_value(self)
+        self.defaults_stack().append(default_context_manager)
+        default_context_manager.__enter__()
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        default_context_manager = self.defaults_stack().pop()
+        return default_context_manager.__exit__(*args, **kwargs)
+
+    default = DefaultSettings()
+
+
+Settings.default_variable = DynamicVariable(Settings())
 
 Setting = namedtuple('Setting', ('name', 'description', 'default'))
 

@@ -60,24 +60,6 @@ def test_does_not_pick_up_changes_after_instantiation():
     assert s.a_setting_just_for_these_tests == 3
 
 
-def test_settings_repr_only_has_changes_from_defaults():
-    s = Settings()
-    assert repr(s) == 'Settings()'
-    s.a_setting_just_for_these_tests = 4
-    assert repr(s) == 'Settings(a_setting_just_for_these_tests=4)'
-
-
-def test_settings_repr_is_sorted():
-    s = Settings(
-        a_setting_just_for_these_tests=10,
-        min_satisfying_examples=1,
-        max_examples=10,
-    )
-    assert repr(s) == (
-        'Settings(a_setting_just_for_these_tests=10, max_examples=10, '
-        'min_satisfying_examples=1)')
-
-
 def test_raises_attribute_error():
     with pytest.raises(AttributeError):
         Settings().kittens
@@ -85,3 +67,27 @@ def test_raises_attribute_error():
 
 def test_respects_none_database():
     assert Settings(database=None).database is None
+
+
+def test_settings_can_be_used_as_context_manager_to_change_defaults():
+    with Settings(a_setting_just_for_these_tests=12):
+        assert Settings.default.a_setting_just_for_these_tests == 12
+    assert Settings.default.a_setting_just_for_these_tests == 3
+
+
+def test_can_repeatedly_push_the_same_thing():
+    s = Settings(a_setting_just_for_these_tests=12)
+    t = Settings(a_setting_just_for_these_tests=17)
+    assert Settings().a_setting_just_for_these_tests == 3
+    with s:
+        assert Settings().a_setting_just_for_these_tests == 12
+        with t:
+            assert Settings().a_setting_just_for_these_tests == 17
+            with s:
+                assert Settings().a_setting_just_for_these_tests == 12
+                with t:
+                    assert Settings().a_setting_just_for_these_tests == 17
+                assert Settings().a_setting_just_for_these_tests == 12
+            assert Settings().a_setting_just_for_these_tests == 17
+        assert Settings().a_setting_just_for_these_tests == 12
+    assert Settings().a_setting_just_for_these_tests == 3
