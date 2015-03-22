@@ -80,6 +80,9 @@ class FakeFactoryStrategy(SearchStrategy):
             factory.add_provider(p)
         return text_type(getattr(factory, self.source)())
 
+    def reify(self, template):
+        return template
+
     def to_basic(self, value):
         return value
 
