@@ -16,7 +16,7 @@ from __future__ import division, print_function, absolute_import, \
 import pytest
 from hypothesis import given
 from faker.providers import BaseProvider
-from hypothesis.strategytests import strategy_test_suitee
+from hypothesis.strategytests import strategy_test_suite
 from hypothesis.searchstrategy import strategy
 from hypothesis.extra.fakefactory import FakeFactory
 from hypothesis.internal.verifier import Verifier
@@ -86,15 +86,15 @@ def test_can_get_specification_for_fake_factory():
     strategy(ff)
 
 
-TestFakeEmail = strategy_test_suitee(
+TestFakeEmail = strategy_test_suite(
     FakeFactory('email')
 )
 
-TestFakeNames = strategy_test_suitee(
+TestFakeNames = strategy_test_suite(
     FakeFactory('name')
 )
 
-TestFakeEnglishNames = strategy_test_suitee(
+TestFakeEnglishNames = strategy_test_suite(
     FakeFactory('name', locale='en_US')
 )
 

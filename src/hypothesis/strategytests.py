@@ -64,7 +64,7 @@ def templates_for(specifier, settings):
     return TemplatesStrategy(strategy(specifier.base, settings))
 
 
-def strategy_test_suitee(
+def strategy_test_suite(
     specifier,
     max_examples=100, random=None
 ):
@@ -86,7 +86,7 @@ def strategy_test_suitee(
     class ValidationSuite(TestCase):
 
         def __repr__(self):
-            return 'strategy_test_suitee(%s)' % (
+            return 'strategy_test_suite(%s)' % (
                 show(specifier),
             )
 
