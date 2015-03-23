@@ -51,7 +51,7 @@ We want to write a test for this that will check some invariant of these
 functions.
 
 The invariant one tends to try when you've got this sort of encoding /
-decoding is that if you encode something and then decode it you get the same
+decoding is that if you encode something and then decode it then you get the same
 value back.
 
 Lets see how you'd do that with Hypothesis:
@@ -64,7 +64,7 @@ Lets see how you'd do that with Hypothesis:
       assert decode(encode(s)) == s
 
 (For this example we'll just let pytest discover and run the test. We'll cover other
-ways you could have run it later)
+ways you could have run it later).
 
 The @given decorator takes our test function and turns it into a parametrized one.
 When it is called, Hypothesis will run the test function over a wide range of matching
@@ -108,8 +108,8 @@ distinct value which shold have reset the count but in this case didn't.
 
 Some side notes:
   
-* The examples Hypothesis provides are valid Python code you can run. When called with the arguments explicitly provided the test functions Hypothesis uses are just calls to the underlying test function)
-* Because of the use of str this behaves differently in python 2 and python 3. In python 2 the example would have been something like '\x02\x02\x00' because str is a binary type. Hypothesis works equally well in both python 2 and python 3, but if you want consistent behaviour across the two you need something like `six <https://pypi.python.org/pypi/six>`_'s text_type. 
+* The examples Hypothesis provides are valid Python code you can run. When called with the arguments explicitly provided the test functions Hypothesis uses are just calls to the underlying test function.
+* Because of the use of str this behaves differently in python 2 and python 3. In python 2 the example would have been something like '\\x02\\x02\\x00' because str is a binary type. Hypothesis works equally well in both python 2 and python 3, but if you want consistent behaviour across the two you need something like `six <https://pypi.python.org/pypi/six>`_'s text_type. 
 
 ----------
 Installing
@@ -142,8 +142,8 @@ do this with:
 
   python setup.py test 
 
-(note that if they're not already installed this will try to install the test
-dependencies)
+Note that if they're not already installed this will try to install the test
+dependencies.
 
 You may wish to do all of this in a `virtualenv <https://virtualenv.pypa.io/en/latest/>`_. For example:
 
@@ -222,10 +222,10 @@ Here are some other examples of how you could use that:
         assert isinstance(t[0], int)
         assert isinstance(t[1], int)
 
-Note that you can pass arguments to @given either as positional or keywords
+Note that you can pass arguments to @given either as positional or as keywords.
 
 The arguments to @given are intended to be "things that describe data". There are more
-details in the advanced section (TODO: Link me) but the following should be enough to get
+details in :doc:`the advanced section <details>` but the following should be enough to get
 you started:
 
 1. For "primitive" types like int, float, bool, str, unicode, bytes, etc. the type is enough to generate data of that type

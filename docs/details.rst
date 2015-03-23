@@ -9,8 +9,9 @@ to get started but will nevertheless make your life easier.
 Making assumptions
 ------------------
 
-Sometimes a SearchStrategy doesn't produce exactly the right sort of data you want.
-You *can* just ignore these by aborting the test early, but this runs the risk of
+Sometimes hypothesis doesn't give you exactly the right sort of data you want - it's
+mostly of the right shape, but some examples won't work and you don't want to care about
+them. You *can* just ignore these by aborting the test early, but this runs the risk of
 accidentally testing a lot less than you think you are. Also it would be nice to spend
 less time on bad examples - if you're running 200 examples per test (the default) and
 it turns out 150 of those examples don't match your needs, that's a lot of wasted time.
@@ -87,8 +88,8 @@ How good is assume?
 ~~~~~~~~~~~~~~~~~~~
 
 Hypothesis has an adaptive exploration strategy to try to avoid things which falsify
-assumptions, which should generally result in it still being able to find examples in hard
-to find situations.
+assumptions, which should generally result in it still being able to find examples in
+hard to find situations.
 
 Suppose we had the following:
 
@@ -373,7 +374,7 @@ For example all of the following are valid uses:
     pass
 
   @given(x=int, y=int)
-  def e(x, \*\*kwargs):
+  def e(x, **kwargs):
     pass
 
 
@@ -401,10 +402,10 @@ The following are not:
 
 The rules for determining what are valid uses of given are as follows:
 
-1. Arguments passed as keyword arguments must cover the right hand side of the argument list
+1. Arguments passed as keyword arguments must cover the right hand side of the argument list.
 2. Positional arguments fill up from the right, starting from the first argument not covered by a keyword argument.
 3. If the function has kwargs, additional arguments will be added corresponding to any keyword arguments passed. These will be to the right of the normal argument list in an arbitrary order.
-4. varargs are forbidden on functions used with @given
+4. varargs are forbidden on functions used with @given.
 
 If you don't have kwargs then the function returned by @given will have the same argspec (i.e. same arguments, keyword arguments, etc) as the original but with different defaults.
 
@@ -440,7 +441,7 @@ can do this by extending the strategy method:
 
   >>> @strategy.extend_static(Decimal)
   ... def decimal_strategy(d, settings):
-  ...   return strategy(int, settings).map(pack=Decimal)
+  ...   return strategy(int, settings).map(Decimal)
   >>> strategy(Decimal).example()
   Decimal('13')
 
@@ -472,7 +473,7 @@ you've defined.
   from hypothesis.strategytests import strategy_test_suite
   TestDecimal = strategy_test_suite(Decimal)
 
-TestDecimal is a unitest.TestCase class that will run a bunch of tests against the
+TestDecimal is a TestCase class (from unittest) that will run a bunch of tests against the
 strategy you've provided for Decimal to make sure it works correctly.
 
 ~~~~~~~~~~~~~~~~~~~~~

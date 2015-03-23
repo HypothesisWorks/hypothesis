@@ -20,15 +20,15 @@ With Hypothesis, tests look like
 3. Assert something about the result.
 
 This is often called property based testing, and was popularised by the
-Haskell library, `Quickcheck <https://hackage.haskell.org/package/QuickCheck>`_.
+Haskell library `Quickcheck <https://hackage.haskell.org/package/QuickCheck>`_.
 
 Usually this takes the form of deciding on guarantees that your code should make
 - properties that should always hold true, regardless of what the world throws at
 you. Examples of such guarantees might be:
 
-* your code shouldn't throw an exception, or should only throw a particular type of exception (this works particularly well if you have a lot of internal assertions)
-* if you delete an object it is no longer visible
-* if you serialize and then deserialize a value you get the same value back
+* Your code shouldn't throw an exception, or should only throw a particular type of exception (this works particularly well if you have a lot of internal assertions).
+* If you delete an object, it is no longer visible.
+* If you serialize and then deserialize a value, then you get the same value back.
 
 Hypothesis works by generating random data matching your specification and checking
 that your guarantee still holds in that case. If it finds an example where it doesn't,

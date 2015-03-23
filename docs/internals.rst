@@ -86,11 +86,11 @@ guide the search space. This is useful because it allows you to use otherwise
 quite hard to satisfy preconditions in your tests.
 
 The way this works is that we store all the parameter values we've used, and
-will tend to use each parameter value multiple times. Vlaueswhich tend to
+will tend to use each parameter value multiple times. Values which tend to
 produce "bad" results (that is, produce a test such that assume() is called
-with a Falsey value to reject the example) will be chosen less often than a
-parameter value which doesn't. Values which produce templates we've already
-seen are also penalized in order to guide the search towards novelty.
+with a falsey value and rejects the example it was given) will be chosen less
+often than a parameter value which doesn't. Values which produce templates we've
+already seen are also penalized in order to guide the search towards novelty.
 
 The way this works in Hypothesis is with an infinitely many armed bandit algorithm
 based on `Thompson Sampling <http://en.wikipedia.org/wiki/Thompson_sampling>`_

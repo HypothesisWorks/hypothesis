@@ -31,7 +31,7 @@ for most languages, but very few of them are worth using.
 
 The goal of Hypothesis is to bring advanced testing techniques to the masses, and to
 provide an implementation that is so high quality that it is easier to use them than
-it is not use them. Where I can, I will beg, borrow and steal every good idea
+it is not to use them. Where I can, I will beg, borrow and steal every good idea
 I can find that someone has had to make software testing better. Where I can't, I will
 invent new ones.
 
