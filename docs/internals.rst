@@ -1,10 +1,12 @@
-====================
-Hypothesis internals
-====================
+=================================
+Innovative features of Hypothesis
+=================================
 
 This document is a guide to Hypothesis internals, mostly with a goal to porting
 to other implementations of Quickcheck that want to benefit from some of the
-more unusual/interesting ideas in it.
+more unusual/interesting ideas in it, but it's probably of general interest. It
+assumes you have some familiarity with the general ideas of property based testing
+and Quickcheck.
 
 Nothing here is stable public API and might all be prone to change between
 minor releases. The purpose of this document is to share the ideas, not to
