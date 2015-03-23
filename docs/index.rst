@@ -24,19 +24,18 @@ Haskell library, `Quickcheck <https://hackage.haskell.org/package/QuickCheck>`_.
 
 Usually this takes the form of deciding on guarantees that your code should make
 - properties that should always hold true, regardless of what the world throws at
-you.
+you. Examples of such guarantees might be:
 
-The easiest example of a guarantee is that your code shouldn't throw an exception,
-or should only throw a particular type of exception. This works particularly well if
-you have a lot of internal assertions in your code. Other examples of
-guarantees could be things an object no longer being visible after it has been deleted,
-or that if you serialize and then deserialize a value you get the same value back.
+* your code shouldn't throw an exception, or should only throw a particular type of exception (this works particularly well if you have a lot of internal assertions)
+* if you delete an object it is no longer visible
+* if you serialize and then deserialize a value you get the same value back
 
-Hypothesis works by generating random data matching your specification. When it
-finds an example which causes your test to fail it takes that example and cuts it
-down to size, simplifying it until it finds a much smaller example that still causes
-a failure. It then saves that example in a database, so that once it has found a
-problem with your code it will not forget it in future.
+Hypothesis works by generating random data matching your specification and checking
+that your guarantee still holds in that case. If it finds an example where it doesn't,
+it takes that example and cuts it down to size, simplifying it until it finds a
+much smaller example that still causes the problem. It then saves that example in
+a database, so that once it has found a problem with your code it will not forget
+it in future.
 
 This documentation is divided into a number of sections, which you can see in the sidebar (or the
 menu at the top if you're on mobile), but you probably want to begin with the :doc:`Quick start guide <quickstart>`,
