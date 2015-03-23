@@ -1,0 +1,17 @@
+[run]
+branch = True
+include =
+    .tox/*/lib/*/site-packages/hypothesis/*.py
+    .tox/*/lib/*/site-packages/hypothesis/**/*.py
+omit =
+    **/settings.py
+    **/compat.py
+    **/extra/__init__.py
+
+[report]
+exclude_lines =
+    @abc.abstractmethod
+    @abc.abstractproperty
+    NotImplementedError
+    pragma: no cover
+    __repr__
