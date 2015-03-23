@@ -104,7 +104,7 @@ Note that the example provided is really quite simple. Hypothesis doesn't just
 find *any* counter-example to your tests, it knows how to simplify the examples
 it finds to produce small easy to understand examples. In this case, two identical
 values are enough to set the count to a number different from one, followed by another
-distinct value which shold have reset the count but in this case didn't.
+distinct value which should have reset the count but in this case didn't.
 
 Some side notes:
   
