@@ -335,7 +335,7 @@ out, and filing off some final rough edges from the API.
       only trickers when you have duplicates but you drew e.g. [-17, -17], this
       will now simplify to [0, 0].
 
-0.7.2, "Hygienic macros or bust"
+0.7.2, "Hygienic macros or bust", 23/03/2015
 
     * You can now name an argument to @given 'f' and it won't break (issue #38)
     * strategy_test_suite is now named strategy_test_suite as the documentation
@@ -344,3 +344,24 @@ out, and filing off some final rough edges from the API.
       override the default values inside their context.
 
     * Setting objects can now be used as context managers
+
+0.9.0, "The final countdown"
+
+  This release could also be called 1.0-RC1.
+
+  It contains a teeny tiny bugfix, but the real point of this release is to declare
+  feature freeze. There will be zero functionality changes between 0.9.0 and 1.0 unless
+  something goes really really wrong. No new features will be added, no breaking API changes
+  will occur, etc. This is the final shakedown before I declare Hypothesis stable and ready
+  to use and throw a party to celebrate.
+
+  Bug bounty for any bugs found between now and 1.0: I will buy you a drink (alcoholic,
+  caffeinated, or otherwise) and shake your hand should we ever find ourselves in the
+  same city at the same time.
+
+  The one tiny bugfix:
+
+  * Under pypy, databases would fail to close correctly when garbage collected, leading to a
+    memory leak and a confusing error message if you were repeatedly creating databases and not
+    closing them. It is very unlikely you were doing this and the chances of you ever having
+    noticed this bug are very low.
