@@ -80,9 +80,6 @@ class SQLiteBackend(Backend):
     def data_type(self):
         return text_type
 
-    def __del__(self):
-        self.close()
-
     @contextmanager
     def cursor(self):
         conn = self.connection()
