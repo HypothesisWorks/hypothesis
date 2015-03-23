@@ -47,3 +47,18 @@ def test_does_not_commit_in_error_state():
         pass
 
     assert backend.fetch('a') == []
+
+
+def test_can_double_close():
+    backend = SQLiteBackend(":memory:")
+    backend.create_db_if_needed()
+    backend.close()
+    backend.close()
+
+
+def test_can_delete_keys():
+    backend = SQLiteBackend(":memory:")
+    backend.save("foo", "bar")
+    backend.save("foo", "baz")
+    backend.delete("foo", "bar")
+    assert list(backend.fetch("foo")) == ["baz"]
