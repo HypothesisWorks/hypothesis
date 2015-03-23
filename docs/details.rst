@@ -1,10 +1,152 @@
-============
-Some details
-============
+=============================
+Details and advanced features
+=============================
 
-~~~~~~~~
+This is an account of slightly less common Hypothesis features that you don't need
+to get started but will nevertheless make your life easier.
+
+------------------
+Making assumptions
+------------------
+
+Sometimes a SearchStrategy doesn't produce exactly the right sort of data you want.
+You *can* just ignore these by aborting the test early, but this runs the risk of
+accidentally testing a lot less than you think you are. Also it would be nice to spend
+less time on bad examples - if you're running 200 examples per test (the default) and
+it turns out 150 of those examples don't match your needs, that's a lot of wasted time.
+
+The way Hypothesis handles this is to let you specify things which you *assume* to be
+true. This lets you abort a test in a way that marks the example as bad rather than
+failing the test. Hypothesis will use this information to try to avoid similar examples
+in future.
+
+For example suppose had the following test:
+
+
+.. code:: python
+
+  from hypothesis import given
+
+  @given(float)
+  def test_negation_is_self_inverse(x):
+      assert x == -(-x)
+      
+
+Running this gives us:
+
+.. 
+
+  Falsifying example: test_negation_is_self_inverse(x=float('nan'))
+  AssertionError
+
+This is annoying. We know about NaN and don't really care about it, but as soon as Hypothesis
+finds a NaN example it will get distracted by that and tell us about it. Also the test will
+fail and we want it to pass.
+
+So lets block off this particular example:
+
+.. code:: python
+
+  from hypothesis import given, assume
+  from math import isnan
+
+  @given(float)
+  def test_negation_is_self_inverse_for_non_nan(x):
+      assume(not isnan(x))
+      assert x == -(-x)
+
+And this passes without a problem.
+
+assume throws an exception which terminates the test when provided with a false argument.
+It's essentially an assert, except that the exception it throws is one that Hypothesis
+identifies as meaning that this is a bad example, not a failing test.
+
+In order to avoid the easy trap where you assume a lot more than you intended, Hypothesis
+will fail a test when it can't find enough examples passing the assumption.
+
+If we'd written:
+
+.. code:: python
+
+  from hypothesis import given, assume
+
+  @given(float)
+  def test_negation_is_self_inverse_for_non_nan(x):
+      assume(False)
+      assert x == -(-x)
+
+
+Then on running we'd have got the exception:
+
+.. 
+
+  Unsatisfiable: Unable to satisfy assumptions of hypothesis test_negation_is_self_inverse_for_non_nan. Only 0 examples found after 0.0791318 seconds
+  
+~~~~~~~~~~~~~~~~~~~
+How good is assume?
+~~~~~~~~~~~~~~~~~~~
+
+Hypothesis has an adaptive exploration strategy to try to avoid things which falsify
+assumptions, which should generally result in it still being able to find examples in hard
+to find situations.
+
+Suppose we had the following:
+
+
+.. code:: python
+
+  @given([int])
+  def test_sum_is_positive(xs):
+    assert sum(xs) > 0
+
+Unsurprisingly this fails and gives the falsifying example [].
+
+Adding assume(xs) to this removes the trivial empty example and gives us [0].
+
+Adding assume(all(x > 0 for x in xs)) and it passes: A sum of a list of
+positive integers is positive.
+
+The reason that this should be surprising is not that it doesn't find a
+counter-example, but that it finds enough examples at all.
+
+In order to make sure something interesting is happening, suppose we wanted to
+try this for long lists. e.g. suppose we added an assume(len(xs) > 10) to it.
+This should basically never find an example: A naive strategy would find fewer
+than one in a thousand examples, because if each element of the list is
+negative with probability half, you'd have to have ten of these go the right
+way by chance. In the default configuration Hypothesis gives up long before
+it's tried 1000 examples (by default it tries 200).
+
+Here's what happens if we try to run this:
+
+
+.. code:: python
+
+  @given([int])
+  def test_sum_is_positive(xs):
+      assume(len(xs) > 10)
+      assume(all(x > 0 for x in xs))
+      print(xs)
+      assert sum(xs) > 0
+
+  In: test_sum_is_positive()
+  [17, 12, 7, 13, 11, 3, 6, 9, 8, 11, 47, 27, 1, 31, 1]
+  [6, 2, 29, 30, 25, 34, 19, 15, 50, 16, 10, 3, 16]
+  [25, 17, 9, 19, 15, 2, 2, 4, 22, 10, 10, 27, 3, 1, 14, 17, 13, 8, 16, 9, 2, 26, 5, 18, 16, 4]
+  [17, 65, 78, 1, 8, 29, 2, 79, 28, 18, 39]
+  [13, 26, 8, 3, 4, 76, 6, 14, 20, 27, 21, 32, 14, 42, 9, 24, 33, 9, 5, 15, 30, 40, 58, 2, 2, 4, 40, 1, 42, 33, 22, 45, 51, 2, 8, 4, 11, 5, 35, 18, 1, 46]
+  [2, 1, 2, 2, 3, 10, 12, 11, 21, 11, 1, 16]
+
+As you can see, Hypothesis doesn't find *many* examples here, but it finds some - enough to
+keep it happy.
+
+In general if you *can* shape your strategies better to your tests you should - for example
+integers_in_range(1, 1000) is a lot better than assume(1 <= x <= 1000), but assume will take
+you a long way if you can't.
+
+--------
 Settings
-~~~~~~~~
+--------
 
 Hypothesis tries to have good defaults for its behaviour, but sometimes that's
 not enough and you need to tweak it.
@@ -14,7 +156,7 @@ The mechanism for doing this is the Settings object. You can pass this to a
 
 .. code:: python
 
-    from hypothesis import Settings
+    from hypothesis import given, Settings
 
     @given(int, settings=Settings(max_examples=500))
     def test_this_thoroughly(x):
@@ -40,8 +182,39 @@ the defaults for newly created settings objects.
     >>> s.max_examples
     200
 
-There are a variety of other settings you can use. help(Settings) will give you
-a full list of them.
+You can also override the default locally by using a settings object as a context
+manager:
+
+
+.. code:: python
+
+  >>> with Settings(max_examples=150):
+  ...     print(Settings().max_examples)
+  ... 
+  150
+  >>> Settings().max_examples
+  200
+
+Note that after the block exits the default is returned to normal.
+
+You can use this by nesting test definitions inside the context:
+
+
+.. code:: python
+
+    from hypothesis import given, Settings
+
+    with Settings(max_examples=500):
+        @given(int)
+        def test_this_thoroughly(x):
+            pass
+
+All Settings objects created or tests defined inside the block will inherit their
+defaults from the settings object used as the context. You can still override them
+with custom defined settings of course.
+
+As well as max_examples there are a variety of other settings you can use.
+help(Settings) in an interactive environment will give you a full list of them.
 
 Settings are also extensible. You can add new settings if you want to extend
 this. This is useful for adding additional parameters for customising your
@@ -55,10 +228,9 @@ strategies. These will be picked up by all settings objects.
     >>> s.some_custom_setting
     3
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------------------
 SearchStrategy and converting arguments
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------------------
 
 The type of object that is used to explore the examples given to your test
 function is called a SearchStrategy. The arguments to @given are passed to
@@ -172,71 +344,9 @@ There are also a bunch of custom types that let you define more specific example
   False
 
 
-~~~~~~~~~~~~~~~~~~~
-How good is assume?
-~~~~~~~~~~~~~~~~~~~
-
-Hypothesis has an adaptive exploration strategy to try to avoid things which falsify
-assumptions, which should generally result in it still being able to find examples in hard
-to find situations.
-
-Suppose we had the following:
-
-
-.. code:: python
-
-  @given([int])
-  def test_sum_is_positive(xs):
-    assert sum(xs) > 0
-
-Unsurprisingly this fails and gives the falsifying example [].
-
-Adding assume(xs) to this removes the trivial empty example and gives us [0].
-
-Adding assume(all(x > 0 for x in xs)) and it passes: A sum of a list of
-positive integers is positive.
-
-The reason that this should be surprising is not that it doesn't find a
-counter-example, but that it finds enough examples at all.
-
-In order to make sure something interesting is happening, suppose we wanted to
-try this for long lists. e.g. suppose we added an assume(len(xs) > 10) to it.
-This should basically never find an example: A naive strategy would find fewer
-than one in a thousand examples, because if each element of the list is
-negative with probability half, you'd have to have ten of these go the right
-way by chance. In the default configuration Hypothesis gives up long before
-it's tried 1000 examples (by default it tries 200).
-
-Here's what happens if we try to run this:
-
-
-.. code:: python
-
-  @given([int])
-  def test_sum_is_positive(xs):
-      assume(len(xs) > 10)
-      assume(all(x > 0 for x in xs))
-      print(xs)
-      assert sum(xs) > 0
-
-  In: test_sum_is_positive()
-  [17, 12, 7, 13, 11, 3, 6, 9, 8, 11, 47, 27, 1, 31, 1]
-  [6, 2, 29, 30, 25, 34, 19, 15, 50, 16, 10, 3, 16]
-  [25, 17, 9, 19, 15, 2, 2, 4, 22, 10, 10, 27, 3, 1, 14, 17, 13, 8, 16, 9, 2, 26, 5, 18, 16, 4]
-  [17, 65, 78, 1, 8, 29, 2, 79, 28, 18, 39]
-  [13, 26, 8, 3, 4, 76, 6, 14, 20, 27, 21, 32, 14, 42, 9, 24, 33, 9, 5, 15, 30, 40, 58, 2, 2, 4, 40, 1, 42, 33, 22, 45, 51, 2, 8, 4, 11, 5, 35, 18, 1, 46]
-  [2, 1, 2, 2, 3, 10, 12, 11, 21, 11, 1, 16]
-
-As you can see, Hypothesis doesn't find *many* examples here, but it finds some - enough to
-keep it happy.
-
-In general if you *can* shape your strategies better to your tests you should - for example
-integers_in_range(1, 1000) is a lot better than assume(1 <= x <= 1000), but assume will take
-you a long way if you can't.
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------
 The gory details of given parameters
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------
 
 The @given decorator may be used to specify what arguments of a function should
 be parametrized over. You can use either positional or keyword arguments or a mixture
@@ -300,4 +410,83 @@ If you don't have kwargs then the function returned by @given will have the same
 
 The reason for the "filling up from the right" behaviour is so that using @given with instance methods works: self will be passed to the function as normal and not be parametrized over.
 
-If all this seems really confusing, my recommendation is to just use keyword arguments for everything.
+If all this seems really confusing, my recommendation is to just not mix positional and keyword arguments. It will probably make your life easier.
+
+-----------------------------------
+Extending Hypothesis with new types
+-----------------------------------
+
+You can build new strategies out of other strategies. For example:
+
+.. code:: python
+
+  >>> s = strategy(int).map(Decimal)
+  >>> s.example()
+  Decimal('6029418')
+
+map takes a function which takes a value produced by the original strategy and
+returns a new value. It returns a strategy whose values are values from the
+original strategy with that function applied to them, so here we have a strategy
+which produces Decimals by first generating an int and then calling Decimal on
+that int.
+
+This is generally the encouraged way to define your own strategies: The details of how SearchStrategy
+works are not currently considered part of the public API and may be liable to change.
+
+If you want to register this so that strategy works for your custom types you
+can do this by extending the strategy method:
+
+.. code:: python
+
+  >>> @strategy.extend_static(Decimal)
+  ... def decimal_strategy(d, settings):
+  ...   return strategy(int, settings).map(pack=Decimal)
+  >>> strategy(Decimal).example()
+  Decimal('13')
+
+You can also define types for your own custom data generation if you need something
+more specific. For example here is a strategy that lets you specify the exact length
+of list you want:
+
+.. code:: python
+
+  >>> from collections import namedtuple
+  >>> ListsOfFixedLength = namedtuple('ListsOfFixedLength', ('length', 'elements'))
+  >>> @strategy.extend(ListsOfFixedLength)
+     ....: def fixed_length_lists_strategy(descriptor, settings):
+     ....:     return strategy((descriptor.elements,) * descriptor.length, settings).map(
+     ....:        pack=list)
+     ....: 
+  >>> strategy(ListsOfFixedLength(5, int)).example()
+  [0, 2190, 899, 2, -1326]
+
+(You don't have to use namedtuple for this, but I tend to because they're
+convenient)
+
+Hypothesis also provides a standard test suite you can use for testing strategies
+you've defined.
+
+
+.. code:: python
+
+  from hypothesis.strategytests import strategy_test_suite
+  TestDecimal = strategy_test_suite(Decimal)
+
+TestDecimal is a unitest.TestCase class that will run a bunch of tests against the
+strategy you've provided for Decimal to make sure it works correctly.
+
+~~~~~~~~~~~~~~~~~~~~~
+Extending a function?
+~~~~~~~~~~~~~~~~~~~~~
+
+The way this works is that Hypothesis has something that looks suspiciously
+like its own object system, called ExtMethod.
+
+It mirrors the Python object system as closely as possible and has the
+same method resolution order, but allows for methods that are defined externally
+to the class that uses them. This allows extensibly doing different things
+based on the type of an argument without worrying about the namespacing problems
+caused by MonkeyPatching.
+
+strategy is the main ExtMethod you are likely to interact with directly, but
+there are a number of others that Hypothesis uses under the hood.

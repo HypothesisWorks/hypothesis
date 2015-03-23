@@ -1,12 +1,14 @@
-==============
-Extra packages
-==============
+===================
+Additional packages
+===================
 
 Hypothesis has a zero dependency policy for the core library. For things which need a
-dependency to work, these are farmed off into extra packages on pypi.
+dependency to work, these are farmed off into additional packages on pypi. These end
+up putting any additional things you need to import (if there are any) under the
+hypothesis.extra namespace.
 
-These end up putting any additional things you need to import (if there are any) under
-the hypothesis.extra namespace.
+Generally these will be for providing new sources of data for Hypothesis, or for better
+integrating it into an existing testing framework.
 
 -------------------
 hypothesis-datetime
