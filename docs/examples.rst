@@ -25,10 +25,10 @@ Suppose we've got the following type:
       def __repr__(self):
           return "Node(%r, %r)" % (self.name, self.value)
 
-    def sorts_before(self, other):
-        if len(self.value) >= len(other.value):
-            return False
-        return other.value[:len(self.value)] == self.value
+      def sorts_before(self, other):
+          if len(self.value) >= len(other.value):
+              return False
+          return other.value[:len(self.value)] == self.value
 
 Each node is a name and a sequence of some data, and we have the relationship
 sorts_before meaning the data of the left is an initial segment of the right.
