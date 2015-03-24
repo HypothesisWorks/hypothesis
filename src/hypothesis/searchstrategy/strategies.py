@@ -443,8 +443,8 @@ class MappedSearchStrategy(SearchStrategy):
             self.pack = pack
 
     def __repr__(self):
-        return 'MappedSearchStrategy(%r, %r)' % (
-            self.mapped_strategy, self.pack
+        return 'MappedSearchStrategy(%r, %s)' % (
+            self.mapped_strategy, self.pack.__name__
         )
 
     def produce_parameter(self, random):
