@@ -292,3 +292,8 @@ def test_does_not_shrink_size_for_non_hashable_sample():
 def test_can_map():
     s = strategy(int).map(pack=lambda t: 'foo')
     assert s.example() == 'foo'
+
+
+def test_sample_from_empty_errors():
+    with pytest.raises(ValueError):
+        strategy(specifiers.sampled_from([]))
