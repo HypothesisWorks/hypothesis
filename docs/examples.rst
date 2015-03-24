@@ -273,14 +273,14 @@ Hypothesis, and how the hypothesis-datetime extra package works.
             a_day = timedelta(days=1)
             assert (dt + a_day).astimezone(tz) == dt.astimezone(tz) + a_day
 
-------------------------
-A classic voting paradox
-------------------------
+-------------------
+Condorcet's Paradox
+-------------------
 
-A classic paradox in voting theory is that majority preferences are not
-transitive. That is, there is a population and a set of three candidates A, B
-and C such that the majority of the population prefer A to B, B to C and C to
-A.
+A classic paradox in voting theory, called Condorcet's paradox, is that
+majority preferences are not transitive. That is, there is a population
+and a set of three candidates A, B and C such that the majority of the
+population prefer A to B, B to C and C to A.
 
 Wouldn't it be neat if we could use Hypothesis to provide an example of this?
 
