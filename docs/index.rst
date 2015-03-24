@@ -3,9 +3,9 @@ Welcome to Hypothesis!
 ======================
 
 
-Hypothesis is a Python library for creating unit tests which are simpler to write
-and more powerful when run, finding edge cases in your code you wouldn't have
-thought to look for.
+`Hypothesis <https://github.com/DRMacIver/hypothesis>`_ is a Python library for
+creating unit tests which are simpler to write and more powerful when run,
+finding edge cases in your code you wouldn't have thought to look for.
 
 Classically a unit test will usually look something like:
 
