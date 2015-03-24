@@ -56,7 +56,7 @@ class OneCharStringStrategy(SearchStrategy):
                 yield self.ascii_characters[i]
         else:
             o = ord(x)
-            for c in reversed(self.ascii_characters):
+            for c in self.ascii_characters:
                 yield text_type(c)
             yield hunichr(o // 2)
             for t in hrange(o - 1, max(o - 10, -1), -1):
