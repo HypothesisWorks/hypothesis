@@ -166,8 +166,6 @@ def given(*generator_arguments, **generator_kwargs):
                     teardown_example=teardown_example,
                 )[0]
             except Unfalsifiable:
-                if _debugging_return_failing_example.value:
-                    raise
                 return
 
             strat = strategy(given_specifier)
