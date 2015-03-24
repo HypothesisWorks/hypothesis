@@ -126,6 +126,9 @@ class SampledFromStrategy(SearchStrategy):
     def __init__(self, elements):
         SearchStrategy.__init__(self)
         self.elements = tuple(elements)
+        if not self.elements:
+            raise ValueError(
+                "SampledFromStrategy requires at least one element")
         try:
             s = set(self.elements)
             self.size_lower_bound = len(s)
@@ -146,6 +149,9 @@ class SampledFromStrategy(SearchStrategy):
                 'Index out of range: %d >= %d' % (data, len(self.elements)))
 
         return data
+
+    def __repr__(self):
+        return "SampledFromStrategy(%r)" % (self.elements,)
 
     def produce_parameter(self, random):
         return dist.non_empty_subset(random, range(len(self.elements)))
