@@ -149,12 +149,12 @@ class BoundedIntStrategy(SearchStrategy):
     def simplify(self, x):
         if x == self.start:
             return
-        for t in hrange(x - 1, self.start - 1, -1):
-            yield t
         mid = (self.start + self.end) // 2
+        for t in hrange(self.start, min(x, mid)):
+            yield t
         if x > mid:
             yield self.start + (self.end - x)
-            for t in hrange(x + 1, self.end + 1):
+            for t in hrange(self.end, x, -1):
                 yield t
 
 
