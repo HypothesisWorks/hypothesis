@@ -19,6 +19,7 @@ from random import Random
 import pytest
 import hypothesis.settings as hs
 from hypothesis import assume
+from tests.common import timeout
 from hypothesis.core import given
 from hypothesis.types import RandomWithSeed
 from hypothesis.errors import Unfalsifiable
@@ -30,8 +31,6 @@ from hypothesis.strategytests import TemplatesFor
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.internal.verifier import Verifier
 from hypothesis.searchstrategy.strategies import BuildContext, strategy
-from tests.common import timeout
-
 
 # Placate flake8
 [OneOf, just, Just, RandomWithSeed, SampledFrom]

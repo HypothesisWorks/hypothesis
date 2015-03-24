@@ -22,10 +22,10 @@ from collections import namedtuple
 from hypothesis.reporting import current_reporter
 from hypothesis.specifiers import just
 from hypothesis.searchstrategy import strategy
-from hypothesis.utils.dynamicvariables import DynamicVariable
 from hypothesis.internal.verifier import Flaky, Verifier, Unfalsifiable, \
     UnsatisfiedAssumption
 from hypothesis.internal.reflection import arg_string, copy_argspec
+from hypothesis.utils.dynamicvariables import DynamicVariable
 
 HypothesisProvided = namedtuple('HypothesisProvided', ('value,'))
 
