@@ -272,3 +272,111 @@ Hypothesis, and how the hypothesis-datetime extra package works.
             """
             a_day = timedelta(days=1)
             assert (dt + a_day).astimezone(tz) == dt.astimezone(tz) + a_day
+
+------------------------
+A classic voting paradox
+------------------------
+
+A classic paradox in voting theory is that majority preferences are not
+transitive. That is, there is a population and a set of three candidates A, B
+and C such that the majority of the population prefer A to B, B to C and C to
+A.
+
+Wouldn't it be neat if we could use Hypothesis to provide an example of this?
+
+Well as you can probably guess from the presence in this section, we can! This
+is slightly surprising because it's not really obvious how we would generate an
+election given the types that Hypothesis knows about.
+
+The trick here turns out to be twofold:
+
+1. We can generate a type that is *much larger* than an election, extract an election out of that, and rely on minimization to throw away all the extraneous detail.
+2. We can use assume and rely on Hypothesis's adaptive exploration to focus on the examples that turn out to generate interesting elections
+
+Without further ado, here is the code:
+
+.. code:: python
+
+    from hypothesis import given, assume
+    from hypothesis.specifiers import integers_in_range
+    from collections import Counter
+
+
+    def candidates(votes):
+        return {candidate for vote in votes for candidate in vote}
+
+
+    def build_election(votes):
+        """
+        Given a list of lists we extract an election out of this. We do this
+        in two phases:
+
+        1. First of all we work out the full set of candidates present in all
+           votes and throw away any votes that do not have that whole set.
+        2. We then take each vote and make it unique, keeping only the first
+           instance of any candidate.
+
+        This gives us a list of total orderings of some set. It will usually
+        be a lot smaller than the starting list, but that's OK.
+        """
+        all_candidates = candidates(votes)
+        votes = list(filter(lambda v: set(v) == all_candidates, votes))
+        if not votes:
+            return []
+        rebuilt_votes = []
+        for vote in votes:
+            rv = []
+            for v in vote:
+                if v not in rv:
+                    rv.append(v)
+            assert len(rv) == len(all_candidates)
+            rebuilt_votes.append(rv)
+        return rebuilt_votes
+
+
+    @given([[integers_in_range(1, 5)]])
+    def test_elections_are_transitive(election):
+        election = build_election(election)
+        # Small elections are unlikely to be interesting
+        assume(len(election) >= 3)
+        all_candidates = candidates(election)
+        # Elections with fewer than three candidates certainly can't exhibit
+        # intransitivity
+        assume(len(all_candidates) >= 3)
+
+        # Now we check if the election is transitive
+
+        # First calculate the pairwise counts of how many prefer each candidate
+        # to the other
+        counts = Counter()
+        for vote in election:
+            for i in range(len(vote)):
+                for j in range(i+1, len(vote)):
+                    counts[(vote[i], vote[j])] += 1
+
+        # Now look at which pairs of candidates one has a majority over the
+        # other and store that.
+        graph = {}
+        all_candidates = candidates(election)
+        for i in all_candidates:
+            for j in all_candidates:
+                if counts[(i, j)] > counts[(j, i)]:
+                    graph.setdefault(i, set()).add(j)
+
+        # Now for each triple assert that it is transitive.
+        for x in all_candidates:
+            for y in graph.get(x, ()):
+                for z in graph.get(y, ()):
+                    assert x not in graph.get(z, ())
+
+The example Hypothesis gives me on my first run (your mileage may of course
+vary) is:
+
+.. code:: python
+
+    [[3, 1, 4], [4, 3, 1], [1, 4, 3]]
+
+Which does indeed do the job: The majority (votes 0 and 1) prefer 3 to 1, the
+majority (votes 0 and 2) prefer 1 to 4 and the majority (votes 1 and 2) prefer
+4 to 3. This is in fact basically the canonical example of the voting paradox,
+modulo variations on the names of candidates.
