@@ -22,6 +22,7 @@ import pytest
 import hypothesis.settings as hs
 import hypothesis.reporting as reporting
 from hypothesis import given, assume
+from hypothesis.core import _debugging_return_failing_example
 from hypothesis.errors import Flaky, Unsatisfiable
 from tests.common.utils import fails, fails_with, capture_out
 from hypothesis.specifiers import just, one_of, sampled_from, \
@@ -456,3 +457,12 @@ def test_can_run_without_database():
 def test_can_call_an_argument_f(f):
     # See issue https://github.com/DRMacIver/hypothesis/issues/38 for details
     pass
+
+
+def test_can_abuse_given_into_returning_value():
+    @given(int)
+    def test_is_negative(x):
+        assert x < 0
+
+    with _debugging_return_failing_example.with_value(True):
+        assert test_is_negative() == ((), {'x': 0})

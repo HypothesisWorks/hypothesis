@@ -22,6 +22,7 @@ from collections import namedtuple
 from hypothesis.reporting import current_reporter
 from hypothesis.specifiers import just
 from hypothesis.searchstrategy import strategy
+from hypothesis.utils.dynamicvariables import DynamicVariable
 from hypothesis.internal.verifier import Flaky, Verifier, Unfalsifiable, \
     UnsatisfiedAssumption
 from hypothesis.internal.reflection import arg_string, copy_argspec
@@ -40,6 +41,9 @@ def assume(condition):
     if not condition:
         raise UnsatisfiedAssumption()
     return True
+
+
+_debugging_return_failing_example = DynamicVariable(False)
 
 
 def given(*generator_arguments, **generator_kwargs):
@@ -171,6 +175,8 @@ def given(*generator_arguments, **generator_kwargs):
 
             try:
                 reified = strat.reify(falsifying_example)
+                if _debugging_return_failing_example.value:
+                    return reified
                 false_args, false_kwargs = reified
                 current_reporter()(
                     'Falsifying example: %s(%s)' % (
