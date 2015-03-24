@@ -52,7 +52,7 @@ class OneCharStringStrategy(SearchStrategy):
 
     def simplify(self, x):
         if x in self.ascii_characters:
-            for i in hrange(self.ascii_characters.index(x) - 1, -1, -1):
+            for i in hrange(0, self.ascii_characters.index(x)):
                 yield self.ascii_characters[i]
         else:
             o = ord(x)

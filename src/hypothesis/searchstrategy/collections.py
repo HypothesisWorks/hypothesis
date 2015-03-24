@@ -231,21 +231,11 @@ class ListStrategy(SearchStrategy):
             yield x[:mid]
             yield x[mid:]
 
-        for i in hrange(0, len(x)):
-            if len(x) > 1:
+        if len(x) > 1:
+            for i in hrange(0, len(x)):
                 y = list(x)
                 del y[i]
                 yield tuple(y)
-            for s in self.element_strategy.simplify(x[i]):
-                z = list(x)
-                z[i] = s
-                yield tuple(z)
-
-        for i in hrange(0, len(x) - 1):
-            z = list(x)
-            del z[i]
-            del z[i]
-            yield tuple(z)
 
         same_valued_indices = {}
         for i, value in enumerate(x):
@@ -258,6 +248,18 @@ class ListStrategy(SearchStrategy):
                     for i in indices:
                         copy[i] = simpler
                     yield tuple(copy)
+
+        for i in hrange(0, len(x)):
+            for s in self.element_strategy.simplify(x[i]):
+                z = list(x)
+                z[i] = s
+                yield tuple(z)
+
+        for i in hrange(0, len(x) - 1):
+            z = list(x)
+            del z[i]
+            del z[i]
+            yield tuple(z)
 
     def to_basic(self, value):
         check_type(tuple, value)

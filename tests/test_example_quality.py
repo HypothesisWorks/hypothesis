@@ -13,6 +13,8 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+from collections import Counter
+
 import pytest
 from hypothesis import given, assume, strategy
 from tests.common import timeout
@@ -29,7 +31,7 @@ def test_minimal_unsorted_strings(string):
                 result.append(x)
         return result
 
-    @timeout(5)
+    @timeout(10)
     @given(strategy([string]).map(dedupe))
     def is_sorted(xs):
         assume(len(xs) >= 10)
@@ -39,3 +41,28 @@ def test_minimal_unsorted_strings(string):
         result = is_sorted()[1]['xs']
         assert len(result) == 10
         assert all(len(r) <= 2 for r in result)
+
+
+def test_finds_small_sum_large_lists():
+    @given([int])
+    def small_sum_large_list(xs):
+        assume(len(xs) >= 20)
+        assume(all(x >= 0 for x in xs))
+        assert sum(xs) >= 100
+
+    with _debugging_return_failing_example.with_value(True):
+        result = small_sum_large_list()[1]['xs']
+        assert result == [0] * 20
+
+
+def test_finds_list_with_plenty_duplicates():
+    @given([str])
+    def has_a_triple(xs):
+        xs = list(filter(None, xs))
+        assume(xs)
+        c = Counter(xs)
+        assert max(c.values()) < 3
+
+    with _debugging_return_failing_example.with_value(True):
+        result = has_a_triple()[1]['xs']
+        assert result == ['0'] * 3
