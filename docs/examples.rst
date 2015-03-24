@@ -5,6 +5,9 @@ Some more examples
 This is a collection of examples of how to use Hypothesis in interesting ways.
 It's small for now but will grow over time.
 
+All of these examples are designed to be run under py.test (nose should probably
+work too).
+
 ----------------------------------
 How not to sort by a partial order
 ----------------------------------
@@ -17,20 +20,21 @@ Suppose we've got the following type:
 
 .. code:: python
 
-  class Node(object):
-      def __init__(self, name, value):
-          self.name = name
-          self.value = tuple(value)
+    class Node(object):
+        def __init__(self, label, value):
+            self.label = label
+            self.value = tuple(value)
 
-      def __repr__(self):
-          return "Node(%r, %r)" % (self.name, self.value)
+        def __repr__(self):
+            return "Node(%r, %r)" % (self.label, self.value)
 
-      def sorts_before(self, other):
-          if len(self.value) >= len(other.value):
-              return False
-          return other.value[:len(self.value)] == self.value
+        def sorts_before(self, other):
+            if len(self.value) >= len(other.value):
+                return False
+            return other.value[:len(self.value)] == self.value
 
-Each node is a name and a sequence of some data, and we have the relationship
+
+Each node is a label and a sequence of some data, and we have the relationship
 sorts_before meaning the data of the left is an initial segment of the right.
 So e.g. a node with value [1, 2] will sort before a node with value [1, 2, 3],
 but neither of [1, 2] nor [1, 3] will sort before the other.
@@ -44,27 +48,28 @@ define the following code:
 
 .. code:: python
 
-  from functools import total_ordering
-
-  @total_ordering
-  class TopoKey(object):
-      def __init__(self, node):
-          self.value = node
-
-      def __lt__(self, other):
-          if self.value.sorts_before(other.value):
-              return True
-          if other.value.sorts_before(self.value):
-              return False
-
-          return self.value.name < other.value.name
+    from functools import total_ordering
 
 
-  def sort_nodes(xs):
-      xs.sort(key=TopoKey)
+    @total_ordering
+    class TopoKey(object):
+        def __init__(self, node):
+            self.value = node
+
+        def __lt__(self, other):
+            if self.value.sorts_before(other.value):
+                return True
+            if other.value.sorts_before(self.value):
+                return False
+
+            return self.value.label < other.value.label
+
+
+    def sort_nodes(xs):
+        xs.sort(key=TopoKey)
 
 This takes the order defined by sorts_before and extends it by breaking ties by
-comparing the node names.
+comparing the node labels.
 
 But now we want to test that it works.
 
@@ -95,7 +100,7 @@ First we need to define a strategy for Node:
   def node_strategy(_, settings):
       with settings:
           values = strategy([bool], Settings(average_list_length=5.0))
-      return strategy((str, values), settings).map(
+      return strategy((int, values), settings).map(
           lambda kv: Node(*kv)
       )
 
@@ -105,82 +110,91 @@ the choice of bool as the elements), so we explicitly create a strategy that ove
 a setting that controls the list length. We use the passed in settings as a context
 manager to inherit its defaults.
 
-Once we have the strategy for the values, we map over a strategy for a tuple of a name
+Once we have the strategy for the values, we map over a strategy for a tuple of a label 
 and the values to produce a node. We then install this as the strategy for nodes.
 
 We can now write a test:
 
 .. code:: python
 
-  @given([node])
+  from hypothesis import given
+
+  @given([Node])
   def test_sorting_nodes_is_prefix_sorted(xs):
       sort_nodes(xs)
       assert is_prefix_sorted(xs)
 
-this immediately fails:
+this immediately fails with the following example:
 
 .. code:: python
 
-  AssertionError: assert is_prefix_sorted(
-    [Node('', (True, True)), Node('', (False,)), Node('', (True,))])
+  [Node(0, (False, True)), Node(0, (True,)), Node(0, (False,))]
+
 
 The reason for this is that because False is not a prefix of (True, True) nor vice
-versa, sorting things the first two nodes are equal because they have equal names.
+versa, sorting things the first two nodes are equal because they have equal labels.
 This makes the whole order non-transitive and produces basically nonsense results.
 
-But this is pretty unsatisfying. It only works because they have the same name. Perhaps
-we actually wanted our names to be unique. Lets change the test to do that.
+But this is pretty unsatisfying. It only works because they have the same label. Perhaps
+we actually wanted our labels to be unique. Lets change the test to do that.
 
 .. code:: python
 
-  def deduplicate_nodes_by_name(nodes):
-      table = {}
-      for node in nodes:
-          table[node.name] = node
-      return list(table.values())
+    def deduplicate_nodes_by_label(nodes):
+        table = {}
+        for node in nodes:
+            table[node.label] = node
+        return list(table.values())
 
 
-  NodeSet = strategy([Node]).map(deduplicate_nodes_by_name)
+    NodeSet = strategy([Node]).map(deduplicate_nodes_by_label)
 
-We define a function to deduplicate nodes by names, and then map that over a strategy
-for lists of nodes to give us a strategy for lists of nodes with unique names. We can
+We define a function to deduplicate nodes by labels, and then map that over a strategy
+for lists of nodes to give us a strategy for lists of nodes with unique labels. We can
 now rewrite the test to use that:
 
 
 .. code:: python
 
-  @given(NodeSet)
-  def test_sorting_nodes_is_prefix_sorted(xs):
-      sort_nodes(xs)
-      assert is_prefix_sorted(xs)
+    @given(NodeSet)
+    def test_sorting_nodes_is_prefix_sorted(xs):
+        sort_nodes(xs)
+        assert is_prefix_sorted(xs)
+
+This example will take a while to run (it takes about a minute for me). Hypothesis has
+some trouble getting a good minimization of this example because a lot of the things it
+tries to speed up the minimization don't work. This is partly because the condition we
+are trying to minimimize for is tricky - it depends in detail on the exact edge cases 
+you hit in sorting - 
 
 Hypothesis has a bit more trouble minimizing a good example for this (mostly in that
 it takes it rather a lot longer because some of the shortcuts it takes in minimization
 are blocked off because they would cause duplicates) but it finds us a new example:
 
-.. code:: python
-
-  AssertionError: assert is_prefix_sorted(
-    [Node('', ()), Node('\x00', (True, True)),
-    Node('\x01', (False,)), Node('\x02', (True,))])
-
-Now this is a more interesting example. None of the nodes will sort equal, so there
-must be a more subtle intransitivity in here. I'll leave finding it as an exercise for
-the interested reader.
-
-So, convinced that our code is broken, we write a better one:
-
 
 .. code:: python
 
-  def sort_nodes(xs):
-      for i in xrange(1, len(xs)):
-          j = i - 1
-          while j >= 0:
-              if xs[j].sorts_before(xs[j+1]):
-                  break
-              xs[j], xs[j+1] = xs[j+1], xs[j]
-              j -= 1
+  [Node(0, (False,)), Node(-1, (True,)), Node(-2, (False, False))])
+
+
+Now this is a more interesting example. None of the nodes will sort equal. What is
+happening here is that the first node is strictly less than the last node because
+(False,) is a prefix of (False, False). This is in turn strictly less than the middle
+node because neither is a prefix of the other and -2 < -1. The middle node is then
+less than the first node because -1 < 0.
+
+So, convinced that our implementation is broken, we write a better one:
+
+.. code:: python
+
+    def sort_nodes(xs):
+        for i in xrange(1, len(xs)):
+            j = i - 1
+            while j >= 0:
+                if xs[j].sorts_before(xs[j+1]):
+                    break
+                xs[j], xs[j+1] = xs[j+1], xs[j]
+                j -= 1
 
 This is just insertion sort slightly modified - we swap a node backwards until swapping
 it further would violate the order constraints. The reason this works is because our
