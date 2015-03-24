@@ -65,4 +65,6 @@ def test_finds_list_with_plenty_duplicates():
 
     with _debugging_return_failing_example.with_value(True):
         result = has_a_triple()[1]['xs']
-        assert result == ['0'] * 3
+        assert len(result) == 3
+        assert len(set(result)) == 1
+        assert len(result[0]) == 1
