@@ -33,7 +33,6 @@ def test_minimal_unsorted_strings(string):
     @given(strategy([string]).map(dedupe))
     def is_sorted(xs):
         assume(len(xs) >= 10)
-        print(xs)
         assert sorted(xs) == xs
 
     with _debugging_return_failing_example.with_value(True):
