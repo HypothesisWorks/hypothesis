@@ -380,3 +380,118 @@ Which does indeed do the job: The majority (votes 0 and 1) prefer 3 to 1, the
 majority (votes 0 and 2) prefer 1 to 4 and the majority (votes 1 and 2) prefer
 4 to 3. This is in fact basically the canonical example of the voting paradox,
 modulo variations on the names of candidates.
+
+-------------------
+Fuzzing an HTTP API
+-------------------
+
+Hypothesis's support for testing HTTP services is somewhat nascent. There are
+plans for some fully featured things around this, but right now they're
+probably quite far down the line.
+
+But you can do a lot yourself without any explicit support! Here's a script
+I wrote to throw random data against the API for an entirely fictitious service
+called Waspfinder (this is only lightly obfuscated and you can easily figure
+out who I'm actually talking about, but I don't want you to run this code and
+hammer their API without their permission).
+
+All this does is use Hypothesis to generate random JSON data matching the
+format their API asks for and check for 500 errors. More advanced tests which
+then use the result and go on to do other things are definitely also possible.
+
+.. code:: python
+
+    import unittest
+    from hypothesis import given, assume, Settings
+    from collections import namedtuple
+    import requests
+    import os
+    import random
+    import time
+    import math
+    from hypothesis.descriptors import one_of, sampled_from
+
+    # These tests will be quite slow because we have to talk to an external
+    # service. Also we'll put in a sleep between calls so as to not hammer it.
+    # As a result we reduce the number of test cases and turn off the timeout.
+    Settings.default.max_examples = 100
+    Settings.default.timeout = -1
+
+    Goal = namedtuple("Goal", ("slug",))
+
+
+    # We just pass in our API credentials via environment variables.
+    waspfinder_token = os.getenv('WASPFINDER_TOKEN')
+    waspfinder_user = os.getenv('WASPFINDER_USER')
+    assert waspfinder_token is not None
+    assert waspfinder_user is not None
+
+    GoalData = {
+        'title': str,
+        'goal_type': sampled_from([
+            "hustler", "biker", "gainer", "fatloser", "inboxer",
+            "drinker", "custom"]),
+        'goaldate': one_of((None, float)),
+        'goalval': one_of((None, float)),
+        'rate': one_of((None, float)),
+        'initval': float,
+        'panic': float,
+        'secret': bool,
+        'datapublic': bool,
+    }
+
+
+    needs2 = ['goaldate', 'goalval', 'rate']
+
+
+    class WaspfinderTest(unittest.TestCase):
+
+        @given(GoalData)
+        def test_create_goal_dry_run(self, data):
+            # We want slug to be unique for each run so that multiple test runs
+            # don't interfere with eachother. If for some reason some slugs trigger
+            # an error and others don't we'll get a Flaky error, but that's OK.
+            slug = hex(random.getrandbits(32))[2:]
+
+            # Use assume to guide us through validation we know about, otherwise
+            # we'll spend a lot of time generating boring examples.
+
+            # Title must not be empty
+            assume(data["title"])
+
+            # Exactly two of these values should be not None. The other will be
+            # inferred by the API.
+
+            assume(len([1 for k in needs2 if data[k] is not None]) == 2)
+            for v in data.values():
+                if isinstance(v, float):
+                    assume(not math.isnan(v))
+            data["slug"] = slug
+
+            # The API nicely supports a dry run option, which means we don't have
+            # to worry about the user account being spammed with lots of fake goals
+            # Otherwise we would have to make sure we cleaned up after ourselves
+            # in this test.
+            data["dryrun"] = True
+            data["auth_token"] = waspfinder_token
+            for d, v in data.items():
+                if v is None:
+                    data[d] = "null"
+                else:
+                    data[d] = str(v)
+            result = requests.post(
+                "https://waspfinder.example.com/api/v1/users/"
+                "%s/goals.json" % (waspfinder_user,), data=data)
+
+            # Lets not hammer the API too badly. This will of course make the
+            # tests even slower than they otherwise would have been, but that's
+            # life.
+            time.sleep(1.0)
+
+            # For the moment all we're testing is that this doesn't generate an
+            # internal error. If we didn't use the dry run option we could have
+            # then tried doing more with the result, but this is a good start.
+            self.assertNotEqual(result.status_code, 500)
+
+    if __name__ == '__main__':
+        unittest.main()
