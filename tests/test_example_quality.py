@@ -40,7 +40,7 @@ def test_minimal_unsorted_strings(string):
     with _debugging_return_failing_example.with_value(True):
         result = is_sorted()[1]['xs']
         assert len(result) == 10
-        assert all(len(r) <= 2 for r in result)
+        assert all(len(r) <= 2 for r in result), repr(result)
 
 
 def test_finds_small_sum_large_lists():
