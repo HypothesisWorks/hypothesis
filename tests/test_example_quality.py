@@ -48,7 +48,7 @@ def test_finds_small_sum_large_lists():
     def small_sum_large_list(xs):
         assume(len(xs) >= 20)
         assume(all(x >= 0 for x in xs))
-        assert sum(xs) >= 100
+        assert sum(xs) >= 50
 
     with _debugging_return_failing_example.with_value(True):
         result = small_sum_large_list()[1]['xs']
