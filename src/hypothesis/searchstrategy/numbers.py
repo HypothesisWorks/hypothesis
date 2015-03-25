@@ -89,6 +89,30 @@ class IntStrategy(SearchStrategy):
             yield x - 1
 
 
+class IntegersFromStrategy(IntStrategy):
+    def __init__(self, lower_bound):
+        super(IntegersFromStrategy, self).__init__()
+        self.lower_bound = lower_bound
+
+    def produce_parameter(self, random):
+        return random.random()
+
+    def produce_template(self, context, parameter):
+        return self.lower_bound + dist.geometric(context.random, parameter)
+
+    def simplify(self, template):
+        assert template >= self.lower_bound
+        if template == self.lower_bound:
+            return
+        yield self.lower_bound
+        for i in hrange(
+            self.lower_bound, min(template, self.lower_bound + 10)
+        ):
+            yield i
+        yield (template + self.lower_bound) // 2
+        yield template - 1
+
+
 class RandomGeometricIntStrategy(IntStrategy):
 
     """A strategy that produces integers whose magnitudes are a geometric
@@ -541,6 +565,11 @@ def define_strategy_for_float_Range(specifier, settings):
 @strategy.extend_static(int)
 def int_strategy(specifier, settings):
     return RandomGeometricIntStrategy()
+
+
+@strategy.extend(specifiers.IntegersFrom)
+def integers_from_strategy(specifier, settings):
+    return IntegersFromStrategy(specifier.lower_bound)
 
 
 @strategy.extend_static(float)

@@ -31,6 +31,10 @@ def one_of(args):
     return OneOf(args)
 
 
+IntegersFrom = namedtuple('IntegersFrom', ('lower_bound',))
+
+positive_integers = IntegersFrom(0)
+
 IntegerRange = namedtuple('IntegerRange', ('start', 'end'))
 
 
