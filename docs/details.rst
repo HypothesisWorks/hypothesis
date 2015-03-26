@@ -330,18 +330,18 @@ There are also a bunch of custom types that let you define more specific example
 
 .. code:: python
 
-  >>> import hypothesis.descriptors as desc
+  >>> import hypothesis.specifiers as spec
 
-  >>> strategy([desc.integers_in_range(1, 10)]).example()
+  >>> strategy([spec.integers_in_range(1, 10)]).example()
   [7, 9, 9, 10, 10, 4, 10, 9, 9, 7, 4, 7, 7, 4, 7]
 
-  In[10]: strategy([desc.floats_in_range(0, 1)]).example()
+  In[10]: strategy([spec.floats_in_range(0, 1)]).example()
   [0.4679222775246174, 0.021441634094071356, 0.08639605748268818]
 
-  >>> strategy(desc.one_of((float, bool))).example()
+  >>> strategy(spec.one_of((float, bool))).example()
   3.6797748715455153e-281
 
-  >>> strategy(desc.one_of((float, bool))).example()
+  >>> strategy(spec.one_of((float, bool))).example()
   False
 
 
@@ -454,8 +454,8 @@ of list you want:
   >>> from collections import namedtuple
   >>> ListsOfFixedLength = namedtuple('ListsOfFixedLength', ('length', 'elements'))
   >>> @strategy.extend(ListsOfFixedLength)
-     ....: def fixed_length_lists_strategy(descriptor, settings):
-     ....:     return strategy((descriptor.elements,) * descriptor.length, settings).map(
+     ....: def fixed_length_lists_strategy(specifier, settings):
+     ....:     return strategy((specifier.elements,) * specifier.length, settings).map(
      ....:        pack=list)
      ....: 
   >>> strategy(ListsOfFixedLength(5, int)).example()

@@ -409,7 +409,7 @@ then use the result and go on to do other things are definitely also possible.
     import random
     import time
     import math
-    from hypothesis.descriptors import one_of, sampled_from
+    from hypothesis.specifiers import one_of, sampled_from
 
     # These tests will be quite slow because we have to talk to an external
     # service. Also we'll put in a sleep between calls so as to not hammer it.
