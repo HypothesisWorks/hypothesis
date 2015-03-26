@@ -7,6 +7,15 @@ in reverse chronological order. All previous releases should still be available
 on pip.
 
 ------------------
+0.9.2 - 2015-03-26
+------------------
+
+Codename: T-1 days.
+
+* floats_in_range would not actually have produced floats_in_range unless that
+  range happened to be (0, 1). Fix this.
+
+------------------
 0.9.1 - 2015-03-25
 ------------------
 
