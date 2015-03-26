@@ -21,6 +21,7 @@ import math
 from random import Random
 
 from hypothesis import Settings, given, assume
+from hypothesis.errors import Unsatisfiable
 from tests.common.utils import fails
 from hypothesis.specifiers import floats_in_range
 
@@ -134,4 +135,7 @@ def test_floats_are_in_range(x, y, rand):
         def test_is_in_range(t):
             assert x <= t <= y
 
-    test_is_in_range()
+    try:
+        test_is_in_range()
+    except Unsatisfiable:
+        assume(False)
