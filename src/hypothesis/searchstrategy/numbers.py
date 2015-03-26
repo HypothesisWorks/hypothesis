@@ -16,9 +16,9 @@ from __future__ import division, print_function, absolute_import, \
 import sys
 import math
 import struct
-from collections import namedtuple
 from decimal import Decimal
 from fractions import Fraction
+from collections import namedtuple
 
 import hypothesis.specifiers as specifiers
 import hypothesis.internal.distributions as dist
@@ -92,6 +92,7 @@ class IntStrategy(SearchStrategy):
 
 
 class IntegersFromStrategy(IntStrategy):
+
     def __init__(self, lower_bound):
         super(IntegersFromStrategy, self).__init__()
         self.lower_bound = lower_bound
