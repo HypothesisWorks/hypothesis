@@ -18,9 +18,11 @@ from __future__ import division, print_function, absolute_import, \
 
 import sys
 import math
+from random import Random
 
-from hypothesis import given, assume
+from hypothesis import Settings, given, assume
 from tests.common.utils import fails
+from hypothesis.specifiers import floats_in_range
 
 
 @given(float)
@@ -118,3 +120,18 @@ def test_can_find_floats_that_do_not_round_trip_through_strings(x):
 @given(float)
 def test_can_find_floats_that_do_not_round_trip_through_reprs(x):
     assert float(repr(x)) == x
+
+
+@given(float, float, Random)
+def test_floats_are_in_range(x, y, rand):
+    assume(not (math.isnan(x) or math.isnan(y)))
+    assume(not (math.isinf(x) or math.isinf(y)))
+    x, y = sorted((x, y))
+    assume(x < y)
+
+    with Settings(max_examples=10):
+        @given(floats_in_range(x, y), random=rand)
+        def test_is_in_range(t):
+            assert x <= t <= y
+
+    test_is_in_range()

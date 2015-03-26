@@ -347,11 +347,12 @@ class FixedBoundedFloatStrategy(FloatStrategy):
 
     def produce_template(self, context, pv):
         random = context.random
+        cut = self.lower_bound + pv.cut * (self.upper_bound - self.lower_bound)
         if pv.leftwards:
             left = self.lower_bound
-            right = pv.cut
+            right = cut
         else:
-            left = pv.cut
+            left = cut
             right = self.upper_bound
         return left + random.random() * (right - left)
 
