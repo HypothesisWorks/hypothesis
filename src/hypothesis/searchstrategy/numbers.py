@@ -17,6 +17,8 @@ import sys
 import math
 import struct
 from collections import namedtuple
+from decimal import Decimal
+from fractions import Fraction
 
 import hypothesis.specifiers as specifiers
 import hypothesis.internal.distributions as dist
@@ -589,3 +591,20 @@ def define_float_strategy(specifier, settings):
 @strategy.extend_static(complex)
 def define_complex_strategy(specifier, settings):
     return ComplexStrategy(strategy((float, float), settings))
+
+
+@strategy.extend_static(Decimal)
+def define_decimal_strategy(specifier, settings):
+    return (
+        strategy(float, settings).map(specifier) |
+        strategy(Fraction, settings).map(
+            lambda f: specifier(f.numerator) / f.denominator
+        )
+    )
+
+
+@strategy.extend_static(Fraction)
+def define_fraction_strategy(specifier, settings):
+    return strategy((int, specifiers.integers_from(1))).map(
+        lambda t: Fraction(*t)
+    )

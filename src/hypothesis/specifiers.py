@@ -33,6 +33,7 @@ def one_of(args):
 
 IntegersFrom = namedtuple('IntegersFrom', ('lower_bound',))
 
+integers_from = IntegersFrom
 positive_integers = IntegersFrom(0)
 
 IntegerRange = namedtuple('IntegerRange', ('start', 'end'))
