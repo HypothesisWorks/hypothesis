@@ -46,3 +46,12 @@ It is a fairly strict process.
 Once all this has happened I'll review your patch. I don't promise to accept
 it, but I do promise to review it as promptly as I can and to tell you why if
 I reject it.
+
+---------------------
+Documentation changes
+---------------------
+
+The CLA is still required for significant documentation changes, but if you want
+to just submit typo fixes and so on I'll happily just merge them. A CLA request
+for fixing a typo seems a bit silly.
+
