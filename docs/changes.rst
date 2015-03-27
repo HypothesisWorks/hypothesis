@@ -15,7 +15,7 @@ with everything in this documentation considered public API.
 
 Codename: Blast-off!
 
-There are no code changes in this release. This is precisely the 0.9 release
+There are no code changes in this release. This is precisely the 0.9.2 release
 with some updated documentation. 
 
 ------------------
