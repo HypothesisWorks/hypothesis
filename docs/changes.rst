@@ -6,6 +6,18 @@ This is a record of all past Hypothesis releases and what went into them,
 in reverse chronological order. All previous releases should still be available
 on pip.
 
+All Hypothesis releases since 1.0 are `semantically versioned <http://semver.org/>`,
+with everything in this documentation considered public API.
+
+------------------
+1.0.0 - 2015-03-27
+------------------
+
+Codename: Blast-off!
+
+There are no code changes in this release. This is precisely the 0.9 release
+with some updated documentation. 
+
 ------------------
 0.9.2 - 2015-03-26
 ------------------
