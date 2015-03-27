@@ -37,7 +37,7 @@ class PyTest(TestCommand):
 
 setup(
     name='hypothesis',
-    version='0.9.2',
+    version='1.0.0',
     author='David R. MacIver',
     author_email='david@drmaciver.com',
     packages=find_packages(SOURCE),
