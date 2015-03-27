@@ -73,7 +73,7 @@ comparing the node labels.
 
 But now we want to test that it works.
 
-First we right a function to verify that our desired outcome holds:
+First we write a function to verify that our desired outcome holds:
 
 .. code:: python
 
