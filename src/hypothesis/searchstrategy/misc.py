@@ -37,6 +37,10 @@ class BoolStrategy(SearchStrategy):
     def reify(self, value):
         return value
 
+    def basic_simplify(self, value):
+        if value:
+            yield False
+
     def produce_parameter(self, random):
         return random.random()
 

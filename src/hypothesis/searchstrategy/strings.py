@@ -50,7 +50,7 @@ class OneCharStringStrategy(SearchStrategy):
     def reify(self, value):
         return value
 
-    def simplify(self, x):
+    def basic_simplify(self, x):
         if x in self.ascii_characters:
             for i in hrange(0, self.ascii_characters.index(x)):
                 yield self.ascii_characters[i]

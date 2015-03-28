@@ -41,6 +41,91 @@ map back to the original data type, but that isn't an issue here because you
 can just keep using the previous template type, minimize that, and only convert
 to the new data type at the point of reification.
 
+--------------------------
+Multi-stage simplification
+--------------------------
+
+Hypothesis generally seems to try harder than classic quickcheck to produce
+simple examples. Unfortunately this meant historically that simplification was
+potentially *very* slow. Multi-stage simplification helps with this a lot by
+avoiding large categories of behaviours that waste time.
+
+The core idea is that there are different categories of simplification, and
+once a category of simplification has stopped working you should stop trying
+it even if you've changed other things. For example, if we have something like:
+
+.. code:: python
+
+  @given([int])
+  def test_lists_are_short(xs):
+    assert len(xs) < 100
+
+then in the classic mode of quickcheck simplification, once we've found an
+example which is only 100 elements long and are trying to simplify the elements
+to find out if they are essential, each recursive simplification will nevertheless
+try to shrink the size of the list, wasting a lot of time after each successful
+shrink of an element.
+
+The way Hypothesis solves this is to split simplification into stages: Instead
+of a single function simplify, we have a list (well, generator) of simplify
+functions.
+
+This gives us the following algorithm (somewhere between python and pseudocode):
+
+.. code:: python
+
+  def minimize_with_shrinker(x, f, shrinker):
+      """
+      Greedily apply a single shrinker function to find a smaller version
+      of x which satisfies f.
+      """
+      for s in shrinker(x):
+         if f(s):
+            return minimize_with_shrinker(s, f, shrinker)
+      return x
+   
+  def shrink_pass(x, f):
+     """
+     Apply each shrinker in turn to minimizing an example from x
+     """
+     for shrinker in shrinkers:
+        x = minimize_with_shrinker(x, f, shrinker)
+     return x
+
+  def minimize(x, f):
+      """
+      Repeatedly do minimization passes on x until we hit a fixed point
+      """
+      while True:
+          shrunk = shrink_pass(x, f)
+          if shrunk == x:
+              return shrunk
+          x = shrunk
+
+So in the list example we have two simplification passes: The first attempts
+to remove elements, the second attempts to simplify elements in place without
+changing the size of the list.
+
+We do multiple passes because sometimes a later pass can unblock a condition
+that was making a previous pass make progress by e.g. changing relations between
+elements.
+
+In order to avoid combinatorial explosions when recursively applying simplification
+one will frequently flatten down the simplification passes for elements into a
+single pass, using the function
+
+
+.. code:: python
+
+  def all_shrinks(x):
+      shrink in shrinkers:
+          for s in shrink(x):
+              yield s
+
+Empirically this general appraoch seems to be much faster for classes of
+example where one of the passes is constrained, while still producing high
+quality results.
+
 ---------------
 Parametrization
 ---------------

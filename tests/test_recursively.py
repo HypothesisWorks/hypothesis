@@ -71,7 +71,7 @@ def test_can_falsify_false_things(desc, random):
     assume(size(desc) <= MAX_SIZE)
     verifier.random = random
     x = verifier.falsify(lambda x: False, desc)[0]
-    assert not list(strategy(desc, settings).simplify(x))
+    assert not list(strategy(desc, settings).full_simplify(x))
 
 
 @timeout(5)

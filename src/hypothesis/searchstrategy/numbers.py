@@ -46,13 +46,13 @@ class IntStrategy(SearchStrategy):
     def reify(self, template):
         return template
 
-    def simplify(self, x):
+    def basic_simplify(self, x):
         ix = int(x)
         if type(ix) != type(x):  # pragma: no cover
             yield ix
         if x < 0:
             yield -x
-            for y in self.simplify(-x):
+            for y in self.basic_simplify(-x):
                 yield -y
         elif x > 0:
             yield 0
@@ -146,7 +146,7 @@ class BoundedIntStrategy(SearchStrategy):
             return self.start
         return context.random.choice(parameter)
 
-    def simplify(self, x):
+    def basic_simplify(self, x):
         if x == self.start:
             return
         mid = (self.start + self.end) // 2
@@ -187,7 +187,7 @@ class FloatStrategy(SearchStrategy):
     def reify(self, value):
         return value
 
-    def simplify(self, x):
+    def basic_simplify(self, x):
         if x == 0.0:
             return
         if math.isnan(x):
@@ -210,7 +210,7 @@ class FloatStrategy(SearchStrategy):
             y = float(n)
             if x != y:
                 yield y
-            for m in self.int_strategy.simplify(n):
+            for m in self.int_strategy.basic_simplify(n):
                 yield x + (m - n)
         except (ValueError, OverflowError):
             pass
@@ -356,7 +356,7 @@ class FixedBoundedFloatStrategy(FloatStrategy):
             right = self.upper_bound
         return left + random.random() * (right - left)
 
-    def simplify(self, value):
+    def basic_simplify(self, value):
         if value == self.lower_bound:
             return
         yield self.lower_bound

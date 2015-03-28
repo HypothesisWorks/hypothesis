@@ -16,10 +16,66 @@ from __future__ import division, print_function, absolute_import, \
 from collections import Counter
 
 import pytest
-from hypothesis import given, assume, strategy
+from hypothesis import Settings, given, assume, strategy
 from tests.common import timeout
 from hypothesis.core import _debugging_return_failing_example
-from hypothesis.internal.compat import text_type, binary_type
+from hypothesis.specifiers import one_of
+from hypothesis.internal.compat import hrange, text_type, binary_type
+
+quality_settings = Settings(
+    max_examples=5000
+)
+
+
+def minimal(definition, condition=None):
+    @timeout(5)
+    @given(definition, settings=quality_settings)
+    def everything_is_terrible(x):
+        if condition is None:
+            assert False
+        else:
+            assert not condition(x)
+
+    with _debugging_return_failing_example.with_value(True):
+        result = everything_is_terrible()
+        assert result is not None
+        return result[1]['x']
+
+
+def test_minimize_list_to_empty():
+    assert minimal([int]) == []
+
+
+def test_minimize_string_to_empty():
+    assert minimal(text_type) == ''
+
+
+def test_minimize_one_of():
+    for _ in hrange(100):
+        assert minimal(one_of((int, str, bool))) in (
+            0, '', False
+        )
+
+
+def test_minimize_mixed_list():
+    mixed = minimal([int, text_type], lambda x: len(x) >= 10)
+    assert set(mixed).issubset({0, ''})
+
+
+def test_minimize_longer_string():
+    assert minimal(text_type, lambda x: len(x) >= 10) == '0' * 10
+
+
+def test_minimize_longer_list_of_strings():
+    assert minimal([text_type], lambda x: len(x) >= 10) == [''] * 10
+
+
+def test_minimize_3_set():
+    assert minimal({int}, lambda x: len(x) >= 3) == {0, 1, 2}
+
+
+def test_minimize_3_set_of_tuples():
+    assert minimal({(int,)}, lambda x: len(x) >= 2) == {(0,), (1,)}
 
 
 @pytest.mark.parametrize(('string',), [(text_type,), (binary_type,)])
@@ -31,40 +87,31 @@ def test_minimal_unsorted_strings(string):
                 result.append(x)
         return result
 
-    @timeout(10)
-    @given(strategy([string]).map(dedupe))
-    def is_sorted(xs):
-        assume(len(xs) >= 10)
-        assert sorted(xs) == xs
-
-    with _debugging_return_failing_example.with_value(True):
-        result = is_sorted()[1]['xs']
-        assert len(result) == 10
-        assert all(len(r) <= 4 for r in result), repr(result)
+    result = minimal(
+        strategy([string]).map(dedupe),
+        lambda xs: assume(len(xs) >= 10) and sorted(xs) != xs
+    )
+    assert len(result) == 10
+    for example in result:
+        if len(example) > 1:
+            for i in hrange(len(example)):
+                assert example[:i] in result
 
 
 def test_finds_small_sum_large_lists():
-    @given([int])
-    def small_sum_large_list(xs):
-        assume(len(xs) >= 20)
-        assume(all(x >= 0 for x in xs))
-        assert sum(xs) >= 150
-
-    with _debugging_return_failing_example.with_value(True):
-        result = small_sum_large_list()[1]['xs']
-        assert result == [0] * 20
+    result = minimal(
+        [int],
+        lambda xs: assume(
+            len(xs) >= 20 and all(x >= 0 for x in xs)) and sum(xs) < 150)
+    assert result == [0] * 20
 
 
 def test_finds_list_with_plenty_duplicates():
-    @given([str])
-    def has_a_triple(xs):
-        xs = list(filter(None, xs))
-        assume(xs)
-        c = Counter(xs)
-        assert max(c.values()) < 3
-
-    with _debugging_return_failing_example.with_value(True):
-        result = has_a_triple()[1]['xs']
-        assert len(result) == 3
-        assert len(set(result)) == 1
-        assert len(result[0]) == 1
+    result = minimal(
+        [str],
+        lambda xs: assume(any(xs)) and max(
+            Counter(filter(None, xs)).values()) >= 3
+    )
+    assert len(result) == 3
+    assert len(set(result)) == 1
+    assert len(result[0]) == 1

@@ -17,6 +17,7 @@ import time
 import string
 import inspect
 from random import Random
+from collections import namedtuple
 
 import pytest
 import hypothesis.settings as hs
@@ -466,3 +467,11 @@ def test_can_abuse_given_into_returning_value():
 
     with _debugging_return_failing_example.with_value(True):
         assert test_is_negative() == ((), {'x': 0})
+
+
+Litter = namedtuple('Litter', ('kitten1', 'kitten2'))
+
+
+@given(Litter(int, int))
+def test_named_tuples_are_of_right_type(litter):
+    assert isinstance(litter, Litter)

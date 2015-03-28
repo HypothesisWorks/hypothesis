@@ -21,7 +21,6 @@ import pytest
 import hypothesis.specifiers as specifiers
 from hypothesis.types import RandomWithSeed
 from hypothesis.internal.compat import hrange, text_type
-from hypothesis.internal.tracker import Tracker
 from hypothesis.searchstrategy.numbers import BoundedIntStrategy, \
     FixedBoundedFloatStrategy, RandomGeometricIntStrategy
 from hypothesis.searchstrategy.strategies import BuildContext, \
@@ -68,40 +67,9 @@ def test_can_minimize_tuples():
     assert_minimizes_to((int, int, int), (0, 0, 0))
 
 
-def assert_no_duplicates_in_simplify(s, x):
-    s = strategy(s)
-    t = Tracker()
-    t.track(x)
-    for y in s.simplify(x):
-        assert t.track(y) == 1
-
-
-def test_ints_no_duplicates_in_simplify():
-    assert_no_duplicates_in_simplify(int, 555)
-
-
-def test_int_lists_no_duplicates_in_simplify():
-    assert_no_duplicates_in_simplify([int], (0, 555, 1281))
-
-
 def test_just_works():
     s = strategy(specifiers.just('giving'))
     assert s.example() == 'giving'
-
-
-Litter = namedtuple('Litter', ('kitten1', 'kitten2'))
-
-
-def test_named_tuples_always_produce_named_tuples():
-    s = strategy(Litter(int, int))
-
-    for i in hrange(100):
-        assert isinstance(
-            s.produce_template(
-                BuildContext(random), s.produce_parameter(random)), Litter)
-
-    for x in s.simplify(Litter(100, 100)):
-        assert isinstance(x, Litter)
 
 
 def test_simplifying_something_that_does_not_satisfy_errors():
@@ -202,7 +170,7 @@ def test_rejects_invalid_ranges():
 def test_does_not_simplify_outside_range():
     n = 3
     s = BoundedIntStrategy(0, n)
-    for t in s.simplify(n):
+    for t in s.full_simplify(n):
         assert 0 <= t <= n
 
 
@@ -236,7 +204,7 @@ def test_just_strategy_uses_repr():
 
 def test_fixed_bounded_float_strategy_converts_its_args():
     st = FixedBoundedFloatStrategy(0, 1)
-    for t in st.simplify(0.5):
+    for t in st.full_simplify(0.5):
         assert isinstance(t, float)
 
 
@@ -264,7 +232,7 @@ def test_can_simplify_tuples_of_nan():
 
 def test_nan_is_not_simpler_than_nan():
     s = strategy(float)
-    simpler = list(s.simplify(float('nan')))
+    simpler = list(s.full_simplify(float('nan')))
     for x in simpler:
         assert not math.isnan(x)
 

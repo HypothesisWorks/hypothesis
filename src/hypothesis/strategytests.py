@@ -55,8 +55,8 @@ class TemplatesStrategy(SearchStrategy):
     def from_basic(self, data):
         return self.base_strategy.from_basic(data)
 
-    def simplify(self, template):
-        return self.base_strategy.simplify(template)
+    def simplifiers(self):
+        return self.base_strategy.simplifiers()
 
 
 @strategy.extend(TemplatesFor)
@@ -132,7 +132,7 @@ def strategy_test_suite(
             simplest = list(strat.simplify_such_that(
                 template, lambda x: True
             ))[-1]
-            assert list(strat.simplify(simplest)) == []
+            assert list(strat.full_simplify(simplest)) == []
 
         @given(Random, verifier=verifier)
         def test_can_perform_all_basic_operations(self, random):
