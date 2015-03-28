@@ -35,6 +35,10 @@ def minimal(definition, condition=None):
             assert False
         else:
             assert not condition(x)
+    try:
+        everything_is_terrible()
+    except AssertionError:
+        pass
 
     with _debugging_return_failing_example.with_value(True):
         result = everything_is_terrible()
@@ -108,7 +112,7 @@ def test_finds_small_sum_large_lists():
 
 def test_finds_list_with_plenty_duplicates():
     def is_good(xs):
-        xs = filter(None, xs)
+        xs = list(filter(None, xs))
         assume(xs)
         return max(Counter(xs).values()) >= 3
 
