@@ -107,10 +107,13 @@ def test_finds_small_sum_large_lists():
 
 
 def test_finds_list_with_plenty_duplicates():
+    def is_good(xs):
+        xs = filter(None, xs)
+        assume(xs)
+        return max(Counter(xs).values()) >= 3
+
     result = minimal(
-        [str],
-        lambda xs: assume(any(xs)) and max(
-            Counter(filter(None, xs)).values()) >= 3
+        [str], is_good
     )
     assert len(result) == 3
     assert len(set(result)) == 1

@@ -13,6 +13,7 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+from random import Random
 from collections import namedtuple
 
 import hypothesis.internal.distributions as dist
@@ -85,6 +86,9 @@ class TupleStrategy(SearchStrategy):
             for s in simplifier(template[i]):
                 replacement[i] = s
                 yield tuple(replacement)
+        accept.__name__ = str(
+            'simplifier_for_index(%d, %s)' % (i, simplifier.__name__)
+        )
         return accept
 
     def simplifiers(self):
@@ -187,22 +191,30 @@ class ListStrategy(SearchStrategy):
 
         yield ()
 
-        if len(x) > 3:
-            mid = len(x) // 2
-            yield x[:mid]
-            yield x[mid:]
+        if len(x) == 1:
+            return
 
-        if len(x) > 1:
-            for i in hrange(0, len(x)):
-                y = list(x)
-                del y[i]
-                yield tuple(y)
+        for i in hrange(len(x)):
+            yield (x[i],)
 
-        for i in hrange(0, len(x) - 1):
-            z = list(x)
-            del z[i]
-            del z[i]
-            yield tuple(z)
+        for width in hrange(len(x) // 2):
+            yield x[:width]
+            yield x[(len(x) - width):]
+
+        r = Random(repr(x))
+
+        for _ in hrange(10):
+            yield tuple(
+                t for t in x
+                if r.randint(0, 1)
+            )
+
+        indices = list(hrange(len(x)))
+        r.shuffle(indices)
+        for i in indices:
+            y = list(x)
+            del y[i]
+            yield tuple(y)
 
     def shared_simplification(self, simplify):
         def accept(x):
@@ -217,6 +229,9 @@ class ListStrategy(SearchStrategy):
                         for i in indices:
                             copy[i] = simpler
                         yield tuple(copy)
+        accept.__name__ = str(
+            'shared_simplification(%s)' % (simplify.__name__,)
+        )
         return accept
 
     def simplify_elementwise(self, simplify):
@@ -226,6 +241,9 @@ class ListStrategy(SearchStrategy):
                     z = list(x)
                     z[i] = s
                     yield tuple(z)
+        accept.__name__ = str(
+            'simplify_elementwise(%s)' % (simplify.__name__,)
+        )
         return accept
 
     def to_basic(self, value):
