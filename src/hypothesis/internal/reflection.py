@@ -292,7 +292,7 @@ def eval_directory():
 
 def add_directory_to_path(d):
     if d not in sys.path:
-        sys.path.insert(0, d)
+        sys.path.insert(0, d.encode())
 
 
 eval_cache = {}
