@@ -3,6 +3,15 @@
 set -e
 set -x
 
+# Travis will run multiple builds in parallel. The various installers will tend
+# to stomp all over eachother if you do this and they haven't previously successfully
+# succeeded. We use a lockfile to block progress so only one install runs at a time.
+# This script should be pretty fast once files are cached, so the lost of concurrency
+# is not a major problem.
+LOCKFILE="$HOME/.install-lockfile"
+lockfile -l200 $LOCKFILE
+trap "rm -rf $LOCKFILE" EXIT
+
 if [ ! -e "$HOME/.pyenv/bin/pyenv" ] ; then
   echo "pyenv does not exist"
   if [ -e "$HOME/.pyenv" ] ; then
