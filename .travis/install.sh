@@ -9,11 +9,12 @@ set -x
 # This script should be pretty fast once files are cached, so the lost of concurrency
 # is not a major problem.
 LOCKFILE="$HOME/.install-lockfile"
-LOCKED=false
 while true; do
   if mkdir $LOCKFILE 2>/dev/null; then
     echo "Successfully acquired lock"
     break
+  else
+    echo "Failed to acquire lock. Waiting our turn"
   fi
 
   sleep $[ ( $RANDOM % 4 )  + 1 ].$[ ( $RANDOM % 100) ]s
