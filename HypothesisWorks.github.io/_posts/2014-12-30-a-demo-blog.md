@@ -2,6 +2,7 @@
 layout: post
 tags: machine-learning python numpy scikit-learn
 date: 2014-12-30 13:06
+lastmodified: 2015-03-30 13:48
 thumbnail: http://placehold.it/100x100
 title: A Demo blog
 published: true
