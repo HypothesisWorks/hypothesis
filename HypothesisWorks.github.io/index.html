@@ -1,7 +1,6 @@
 ---
 layout: default
 date: 2014-10-19 23:51
-lastmodified: 2014-10-19 23:51
 ---
 <div class="row">
   <div class="col-xs-12 col-sm-12 col-md-offset-1 col-md-10 col-lg-offset-2 col-lg-8">
@@ -12,11 +11,7 @@ lastmodified: 2014-10-19 23:51
 		  <small>
 			<i class="fa fa-calendar"></i>
 			<time>
-			  {% if post.lastmodified %}
-				{{ post.lastmodified | date:'%A, %B %d, %Y'}}
-			  {% else %}
-				{{ post.date | date:'%A, %B %d, %Y'}}
-			  {% endif %}
+        {{ post.date | date:'%A, %B %d, %Y'}}
 			</time>
 		  </small>
          </div>

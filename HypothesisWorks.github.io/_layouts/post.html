@@ -8,17 +8,10 @@ layout: default
 
       <header class="page-header">
         <h3 class="page-title">{{ page.title }}</h3>
-        <!-- {% if page.subtitle %}
-          <h5 class="page-subtitle"> {{ page.subtitle }} </h5>
-        {% endif %} -->
         <div class="post-metadata">
           <div> <i class="fa fa-calendar"></i>
             <time>
-              {% if page.lastmodified %}
-                {{ page.lastmodified | date:'%A, %B %d, %Y'}}
-              {% else %}
-                {{ page.date | date:'%A, %B %d, %Y'}}
-              {% endif %}
+              {{ page.date | date:'%A, %B %d, %Y'}}
             </time>
           </div>
           <div> <i class="fa fa-tag"></i>

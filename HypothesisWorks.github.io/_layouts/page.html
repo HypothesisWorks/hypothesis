@@ -13,11 +13,7 @@ layout: default
         {% endif %}
         <small> <i class="fa fa-calendar"></i>
           <time>
-            {% if page.lastmodified %}
-              {{ page.lastmodified | date:'%A, %B %d, %Y'}}
-            {% else %}
-              {{ page.date | date:'%A, %B %d, %Y'}}
-            {% endif %}
+            {{ page.date | date:'%A, %B %d, %Y'}}
           </time>
         </small>
       </header>
