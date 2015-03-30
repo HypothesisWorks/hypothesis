@@ -17,7 +17,7 @@ while true; do
     echo "Failed to acquire lock. Waiting our turn"
   fi
 
-  sleep $[ ( $RANDOM % 4 )  + 1 ].$[ ( $RANDOM % 100) ]s
+  sleep $[ ( $RANDOM % 10)  + 1 ].$[ ( $RANDOM % 100) ]s
 
   if (( $(date '+%s') > 300 + $(stat --format=%X $LOCKFILE) )); then
     echo "We've waited long enough"
