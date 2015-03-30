@@ -12,10 +12,10 @@ lastmodified: 2014-10-19 23:51
 		  <small>
 			<i class="fa fa-calendar"></i>
 			<time>
-			  {% if page.lastmodified %}
-				{{ page.lastmodified | date:'%A, %B %d, %Y'}}
+			  {% if post.lastmodified %}
+				{{ post.lastmodified | date:'%A, %B %d, %Y'}}
 			  {% else %}
-				{{ page.date | date:'%A, %B %d, %Y'}}
+				{{ post.date | date:'%A, %B %d, %Y'}}
 			  {% endif %}
 			</time>
 		  </small>
