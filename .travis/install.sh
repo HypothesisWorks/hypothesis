@@ -79,7 +79,7 @@ python --version
 pip install --upgrade pip
 pip install --upgrade virtualenv
 
-if [ ! -d "$HOME/.venv" ] ; then
+if [ ! -e "$HOME/.venv/bin/activate" ] ; then
   rm -rf "$HOME/.venv"
   virtualenv "$HOME/.venv"
 fi
