@@ -9,7 +9,21 @@ set -x
 # This script should be pretty fast once files are cached, so the lost of concurrency
 # is not a major problem.
 LOCKFILE="$HOME/.install-lockfile"
-lockfile -l200 $LOCKFILE
+LOCKED=false
+while true; do
+  if mkdir $LOCKFILE 2>/dev/null; then
+    echo "Successfully acquired lock"
+    break
+  fi
+
+  sleep $[ ( $RANDOM % 4 )  + 1 ].$[ ( $RANDOM % 100) ]s
+
+  if (( $(date '+%s') > 300 + $(stat --format=%X $LOCKFILE) )); then
+    echo "We've waited long enough"
+    rm -rf $LOCKFILE
+  fi
+done
+
 trap "rm -rf $LOCKFILE" EXIT
 
 if [ ! -e "$HOME/.pyenv/bin/pyenv" ] ; then
