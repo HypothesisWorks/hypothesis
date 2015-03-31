@@ -24,7 +24,7 @@ recommending it because it's great).
 Code of conduct
 ---------------
 
-Note that everyone in these spaces is expected to abide by a code of conduct, the `Hacker School social rules <https://www.hackerschool.com/manual#sub-sec-social-rules>`_.
+Note that everyone in these spaces is expected to abide by a code of conduct, the `Recurse Center social rules <https://www.recurse.com/manual#sub-sec-social-rules>`_.
 This is an inclusive environment for people from a variety of backgrounds and skill levels. Prejudice and aggression are unwelcome and everyone should be treated with respect.
 
 I'll do my best to pay attention to peoples' behaviour, but if you see anyone violating these rules and I haven't noticed, please alert me and I'll deal with it. Usually I will simply ask people to modify their behaviour,
