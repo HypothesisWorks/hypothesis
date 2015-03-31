@@ -329,7 +329,7 @@ class SearchStrategy(object):
         """
         yield self.basic_simplify
 
-    def full_simplify(self, template):
+    def full_simplify(self, random, template):
         """A convenience method.
 
         Run each simplifier over this template and yield the results in
@@ -337,10 +337,10 @@ class SearchStrategy(object):
 
         """
         for simplifier in self.simplifiers():
-            for value in simplifier(template):
+            for value in simplifier(random, template):
                 yield value
 
-    def basic_simplify(self, template):
+    def basic_simplify(self, random, template):
         """A convenience method for subclasses that do not have complex complex
         simplification requirements to override.
 
@@ -349,7 +349,7 @@ class SearchStrategy(object):
         """
         return iter(())
 
-    def simplify_such_that(self, t, f):
+    def simplify_such_that(self, random, t, f, tracker=None):
         """Perform a greedy search to produce a "simplest" version of a
         template that satisfies some predicate.
 
@@ -360,10 +360,10 @@ class SearchStrategy(object):
         some other times.
 
         """
-        if not f(t):
-            raise ValueError(
-                '%r does not satisfy predicate %s' % (t, f))
-        tracker = Tracker()
+        assert isinstance(random, Random)
+
+        if tracker is None:
+            tracker = Tracker()
         yield t
 
         last_passes = list(self.simplifiers())
@@ -374,7 +374,7 @@ class SearchStrategy(object):
             for simplify in last_passes:
                 this_pass_did_something = False
                 while True:
-                    simpler = simplify(t)
+                    simpler = simplify(random, t)
                     for s in simpler:
                         if tracker.track(s) > 1:
                             continue
@@ -457,10 +457,10 @@ class OneOfStrategy(SearchStrategy):
                 context, pv.child_parameters[child]))
 
     def element_simplifier(self, s, simplifier):
-        def accept(template):
+        def accept(random, template):
             if template[0] != s:
                 return
-            for value in simplifier(template[1]):
+            for value in simplifier(random, template[1]):
                 yield (s, value)
         return accept
 

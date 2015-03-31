@@ -72,6 +72,27 @@ def test_minimize_one_of():
         )
 
 
+def test_minimize_negative_int():
+    assert minimal(int, lambda x: x < 0) == -1
+
+
+def test_positive_negative_int():
+    assert minimal(int, lambda x: x > 0) == 1
+
+
+boundaries = pytest.mark.parametrize('boundary', [0, 1, 11, 23, 64, 10000])
+
+
+@boundaries
+def test_minimizes_int_down_to_boundary(boundary):
+    assert minimal(int, lambda x: x >= boundary) == boundary
+
+
+@boundaries
+def test_minimizes_int_up_to_boundary(boundary):
+    assert minimal(int, lambda x: x <= -boundary) == -boundary
+
+
 def test_minimize_mixed_list():
     mixed = minimal([int, text_type], lambda x: len(x) >= 10)
     assert set(mixed).issubset({0, ''})

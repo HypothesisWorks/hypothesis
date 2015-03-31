@@ -29,10 +29,8 @@ Operating systems
 
 In theory Hypothesis should work anywhere that Python does. In practice it is
 only known to work and regularly tested on OSX, Windows and Linux, and you may
-experience issues running it elsewhere. For example a known issue is that FreeBSD
-splits out the python-sqlite package from the main python package, and you will
-need to install that in order for it to work.
-
+experience issues running it elsewhere.
+ 
 If you're using something else and it doesn't work, do get in touch and I'll try
 to help, but unless you can come up with a way for me to run a CI server on that
 operating system it probably won't stay fixed due to the inevitable march of time.
@@ -61,11 +59,55 @@ coverage in its own tests). However you should probably not use Coverage, Hypoth
 and pypy together. Because Hypothesis does quite a lot of CPU heavy work compared
 to normal tests it really exacerbates 
 
+------------
+Known issues
+------------
+
+Here are some known issues that you may need to work around when using
+Hypothesis on some platform combinations. Do let me know if you encounter any
+others.
+
+-------------------------------------------
+Windows, Python 2.7 and non-ascii filenames
+-------------------------------------------
+
+Some programs may experience issues if you try to use Hypothesis inside a
+directory with a non-ascii character in the file path under python 2.7.
+This will cause Hypothesis to add a unicode object to the sys.path, which
+some programs which invoke subprocesses cannot correctly handle (this
+behaviour is valid but may not always be handled correctly).
+
+If you are unable to fix the programs and need to run in a directory with
+a unicode filepath for some reason (e.g. a non-ascii username) then you can
+work around this by changing the Hypothesis storage directory so that it is
+in an ascii location. You can do this in one of two ways:
+
+1. Set the HYPOTHESIS_STORAGE_DIRECTORY environment variable to the new location
+2. Call hypothesis.settings.set_hypothesis_home_dir( ) with the new location.
+
+This problem should not affect Python 3, which has much more sensible unicode
+behaviour, or non-Windows platforms, which do not experience a problem with
+passing a unicode environment to subprocesses.
+
+-------
+FreeBSD
+-------
+
+Hypothesis will not work correctly with just the basic python package
+installed. You also need to install python-sqlite.
+
 ------------------------
 Regularly verifying this
 ------------------------
 
-Everything mentioned above as explicitly supported is checked on every commit 
-with `Travis <https://travis-ci.org/>`_ and `Appveyor <https://appveyor.com>`_
-and goes green before a release happens, so when I say they're supported I really
-mean it.
+Every supported version of Python and supported platform has CI builds happening
+on every commit, and must be green for a release. This is done with 
+with `Travis <https://travis-ci.org/>`_ and `Appveyor <https://appveyor.com>`_.
+
+A mix of combinatorics and difficulty of setup means that not every pairwise
+combination is tested. For example pypy is not currently tested on windows,
+and 32-bit builds of Python are *only* tested on Windows. These should still
+work, but the possibility of interactions that were not caught on the CI means
+that bugs are more likely. I'll try to set up CI for any combinations that
+exhibit a novel bug, but no promises (particularly if it's not one of Windows,
+OSX or Linux, which I have access to free CI servers for).

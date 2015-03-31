@@ -16,7 +16,6 @@ from __future__ import division, print_function, absolute_import, \
 import sys
 import math
 import struct
-from random import Random
 from collections import namedtuple
 
 import hypothesis.specifiers as specifiers
@@ -61,33 +60,32 @@ class IntStrategy(SearchStrategy):
             return True
         return False
 
-    def try_convert_type(self, x):
+    def try_convert_type(self, random, x):
         ix = int(x)
         if type(ix) != type(x):  # pragma: no cover
             yield ix
 
-    def try_negate(self, x):
+    def try_negate(self, random, x):
         if x >= 0:
             return
         yield -x
 
-    def try_small_numbers(self, x):
+    def try_small_numbers(self, random, x):
         if x != 0:
             yield 0
 
-    def try_shrink_to_zero(self, x):
+    def try_shrink_to_zero(self, random, x):
         if x < 0:
             yield -x
-            for y in self.basic_simplify(-x):
+            for y in self.try_shrink_to_zero(random, -x):
                 yield -y
         elif x > 1:
-            r = Random(x)
-            values = sorted({
-                r.randint(1, x - 1)
-                for _ in xrange(10)
-            })
-            for v in values:
-                yield v
+            y = 1
+            while True:
+                yield y
+                y = random.randint(y, x)
+                if y == x:
+                    break
             yield x - 1
 
 
@@ -161,7 +159,7 @@ class BoundedIntStrategy(SearchStrategy):
             return self.start
         return context.random.choice(parameter)
 
-    def basic_simplify(self, x):
+    def basic_simplify(self, random, x):
         if x == self.start:
             return
         mid = (self.start + self.end) // 2
@@ -202,7 +200,7 @@ class FloatStrategy(SearchStrategy):
     def reify(self, value):
         return value
 
-    def basic_simplify(self, x):
+    def basic_simplify(self, random, x):
         if x == 0.0:
             return
         if math.isnan(x):
@@ -225,7 +223,7 @@ class FloatStrategy(SearchStrategy):
             y = float(n)
             if x != y:
                 yield y
-            for m in self.int_strategy.basic_simplify(n):
+            for m in self.int_strategy.basic_simplify(random, n):
                 yield x + (m - n)
         except (ValueError, OverflowError):
             pass
@@ -371,7 +369,7 @@ class FixedBoundedFloatStrategy(FloatStrategy):
             right = self.upper_bound
         return left + random.random() * (right - left)
 
-    def basic_simplify(self, value):
+    def basic_simplify(self, random, value):
         if value == self.lower_bound:
             return
         yield self.lower_bound

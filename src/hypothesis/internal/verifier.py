@@ -173,7 +173,9 @@ class Verifier(object):
         best_example = falsifying_examples[0]
 
         for simpler in search_strategy.simplify_such_that(
-                best_example, falsifies
+            random,
+            best_example, falsifies,
+            tracker=track_seen,
         ):
             best_example = simpler
             if time_to_call_it_a_day():

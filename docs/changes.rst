@@ -9,6 +9,18 @@ on pip.
 All Hypothesis releases since 1.0 are `semantically versioned <http://semver.org/>`,
 with everything in this documentation considered public API.
 
+--------
+Upcoming
+--------
+
+This is a section for currently unreleased features. Most of these are likely
+to be in the next released version.
+
+* Hypothesis will avoid putting unicode objects on sys.path unless it has to,
+  encoding them as ascii where possible. non-ascii strings will be left as
+  unicode. This isn't strictly a bug but is for aiding compatibility with some
+  programs.
+
 ------------------
 1.0.0 - 2015-03-27
 ------------------

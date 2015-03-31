@@ -13,7 +13,6 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from random import Random
 from collections import namedtuple
 
 import hypothesis.internal.distributions as dist
@@ -81,9 +80,9 @@ class TupleStrategy(SearchStrategy):
         ])
 
     def simplifier_for_index(self, i, simplifier):
-        def accept(template):
+        def accept(random, template):
             replacement = list(template)
-            for s in simplifier(template[i]):
+            for s in simplifier(random, template[i]):
                 replacement[i] = s
                 yield tuple(replacement)
         accept.__name__ = str(
@@ -190,7 +189,7 @@ class ListStrategy(SearchStrategy):
         for simplify in self.element_strategy.simplifiers():
             yield self.simplify_elementwise(simplify)
 
-    def simplify_to_empty(self, x):
+    def simplify_to_empty(self, random, x):
         assert isinstance(x, tuple)
         if not x:
             return
@@ -208,12 +207,11 @@ class ListStrategy(SearchStrategy):
             x[0], y[0],
         )
 
-    def simplify_arrange_by_pivot(self, x):
+    def simplify_arrange_by_pivot(self, random, x):
         if len(x) <= 1:
             return
-        r = Random(repr(x))
-        for _ in xrange(10):
-            pivot = r.choice(x)
+        for _ in hrange(10):
+            pivot = random.choice(x)
             left = []
             center = []
             right = []
@@ -230,38 +228,29 @@ class ListStrategy(SearchStrategy):
                 if t and len(t) < len(x):
                     yield tuple(t)
 
-    def simplify_with_example_cloning(self, x):
+    def simplify_with_example_cloning(self, random, x):
         assert isinstance(x, tuple)
         if len(x) <= 1:
             return
-        r = Random(repr(x))
-        for _ in xrange(20):
+        for _ in hrange(20):
             result = list(x)
-            pivot = r.choice(x)
-            for _ in xrange(10):
-                new_pivot = r.choice(x)
+            pivot = random.choice(x)
+            for _ in hrange(10):
+                new_pivot = random.choice(x)
                 if self.element_strategy.strictly_simpler(new_pivot, pivot):
                     pivot = new_pivot
             indices = [
-                j for j in xrange(len(x))
+                j for j in hrange(len(x))
                 if self.element_strategy.strictly_simpler(pivot, x[j])]
             if not indices:
                 break
-            r.shuffle(indices)
-            indices = indices[:r.randint(1, len(x) - 1)]
+            random.shuffle(indices)
+            indices = indices[:random.randint(1, len(x) - 1)]
             for j in indices:
                 result[j] = pivot
             yield tuple(result)
 
-    def simplify_to_singletons(self, x):
-        assert isinstance(x, tuple)
-        if len(x) <= 1:
-            return
-
-        for i in hrange(len(x)):
-            yield (x[i],)
-
-    def simplify_to_ends(self, x):
+    def simplify_to_ends(self, random, x):
         assert isinstance(x, tuple)
         if len(x) <= 2:
             return
@@ -269,44 +258,41 @@ class ListStrategy(SearchStrategy):
         yield x[:len(x) // 2]
         yield x[len(x) // 2:]
 
-    def simplify_with_random_discards(self, x):
+    def simplify_with_random_discards(self, random, x):
         assert isinstance(x, tuple)
         if len(x) <= 3:
             return
 
-        r = Random(repr(x))
-
         for _ in hrange(10):
             results = []
             for t in x:
-                if r.randint(0, 1):
+                if random.randint(0, 1):
                     results.append(t)
             yield tuple(results)
 
-    def simplify_with_single_deletes(self, x):
+    def simplify_with_single_deletes(self, random, x):
         assert isinstance(x, tuple)
         if len(x) <= 1:
             return
         yield x[1:]
         yield x[:-1]
 
-        r = Random(repr(x))
         indices = list(hrange(1, len(x) - 1))
-        r.shuffle(indices)
+        random.shuffle(indices)
         for i in indices:
             y = list(x)
             del y[i]
             yield tuple(y)
 
     def shared_simplification(self, simplify):
-        def accept(x):
+        def accept(random, x):
             same_valued_indices = {}
             for i, value in enumerate(x):
                 same_valued_indices.setdefault(value, []).append(i)
             for indices in same_valued_indices.values():
                 if len(indices) > 1:
                     value = x[indices[0]]
-                    for simpler in simplify(value):
+                    for simpler in simplify(random, value):
                         copy = list(x)
                         for i in indices:
                             copy[i] = simpler
@@ -317,9 +303,9 @@ class ListStrategy(SearchStrategy):
         return accept
 
     def simplify_elementwise(self, simplify):
-        def accept(x):
+        def accept(random, x):
             for i in hrange(0, len(x)):
-                for s in simplify(x[i]):
+                for s in simplify(random, x[i]):
                     z = list(x)
                     z[i] = s
                     yield tuple(z)
@@ -383,8 +369,8 @@ class SetStrategy(SearchStrategy):
         return frozenset(self.list_strategy.produce_template(context, pv))
 
     def convert_simplifier(self, simplifier):
-        def accept(template):
-            for value in simplifier(tuple(template)):
+        def accept(random, template):
+            for value in simplifier(random, tuple(template)):
                 yield frozenset(value)
         return accept
 

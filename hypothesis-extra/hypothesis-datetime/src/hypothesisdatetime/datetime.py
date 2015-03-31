@@ -151,7 +151,7 @@ class DatetimeStrategy(SearchStrategy):
         yield self.simplify_timezones
         yield self.simplify_towards_2000
 
-    def simplify_timezones(self, value):
+    def simplify_timezones(self, random, value):
         value = self.reify(value)
         if self.supports_timezones():
             if not value.tzinfo:
@@ -160,7 +160,7 @@ class DatetimeStrategy(SearchStrategy):
                 yield self.templateize(
                     pytz.UTC.normalize(value.astimezone(pytz.UTC)))
 
-    def simplify_towards_2000(self, value):
+    def simplify_towards_2000(self, random, value):
         value = self.reify(value)
         s = {value}
         s.add(value.replace(microsecond=0))
