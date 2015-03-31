@@ -72,7 +72,8 @@ class IntStrategy(SearchStrategy):
         yield -x
 
     def try_small_numbers(self, x):
-        yield 0
+        if x != 0:
+            yield 0
 
     def try_shrink_to_zero(self, x):
         if x < 0:
