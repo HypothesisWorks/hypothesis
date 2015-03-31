@@ -59,7 +59,8 @@ In terms of what's actually *known* to work:
 Coverage works out of the box with Hypothesis (and Hypothesis has 100% branch
 coverage in its own tests). However you should probably not use Coverage, Hypothesis
 and PyPy together. Because Hypothesis does quite a lot of CPU heavy work compared
-to normal tests, it really exacerbates...
+to normal tests, it really exacerbates the performance problems the two normally
+have working together.
 
 ------------------------
 Regularly verifying this
