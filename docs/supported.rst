@@ -15,7 +15,7 @@ Hypothesis has quite wide version support. It is supported and tested on python 
 and python 3.2+. Supporting 3.0 or 3.1 wouldn't be infeasible but I'd need a good
 reason to. Supporting python before 2.7 isn't going to happen.
 
-Hypothesis also support pypy (pypy3 should also work but isn't part of
+Hypothesis also supports PyPy (PyPy3 should also work but isn't part of
 the CI at the moment), and should support 32-bit and narrow builds, though
 this is currently only tested on Windows.
 
@@ -28,7 +28,7 @@ Operating systems
 -----------------
 
 In theory Hypothesis should work anywhere that Python does. In practice it is
-only known to work and regularly tested on OSX, Windows and Linux, and you may
+only known to work and regularly tested on OS X, Windows and Linux, and you may
 experience issues running it elsewhere. For example a known issue is that FreeBSD
 splits out the python-sqlite package from the main python package, and you will
 need to install that in order for it to work.
@@ -58,8 +58,8 @@ In terms of what's actually *known* to work:
 
 Coverage works out of the box with Hypothesis (and Hypothesis has 100% branch
 coverage in its own tests). However you should probably not use Coverage, Hypothesis
-and pypy together. Because Hypothesis does quite a lot of CPU heavy work compared
-to normal tests it really exacerbates 
+and PyPy together. Because Hypothesis does quite a lot of CPU heavy work compared
+to normal tests, it really exacerbates...
 
 ------------------------
 Regularly verifying this
