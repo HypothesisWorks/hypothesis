@@ -1,5 +1,7 @@
 language: c
 
+sudo: false
+
 env: PYTHONDONTWRITEBYTECODE=x
 
 os:
@@ -10,11 +12,14 @@ cache:
     apt: true
     directories:
         - $HOME/.pyenv
+        - $HOME/.venv
+        - $HOME/.cache/pip
 
 env:
     matrix:
         - TOXENV=lint
         - TOXENV=pypy
+        - TOXENV=pypy3
         - TOXENV=py27
         - TOXENV=py32
         - TOXENV=py33

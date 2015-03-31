@@ -5,8 +5,7 @@ set -x
 
 ulimit -m 2000000 -v 2000000
 
-if [[ "$(uname -s)" == "Darwin" ]]; then
-    eval "$(pyenv init -)"
-fi
+export PATH="$HOME/.pyenv/bin:$HOME/.pyenv/shims:$PATH"
+eval "$(pyenv init -)"
 source ~/.venv/bin/activate
 tox -- $TOX_FLAGS

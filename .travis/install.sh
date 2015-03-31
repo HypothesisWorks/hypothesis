@@ -1,106 +1,115 @@
 #!/bin/bash
 
+# Special license: Take literally anything you want out of this file. I don't
+# care. Consider it WTFPL licensed if you like.
+# Basically there's a lot of suffering encoded here that I don't want you to
+# have to go through and you should feel free to use this to avoid some of
+# that suffering in advance.
+
 set -e
 set -x
 
-if [[ "$(uname -s)" == 'Darwin' ]]; then
-    DARWIN=true
-else
-    DARWIN=false
+# This is to guard against multiple builds in parallel. The various installers will tend
+# to stomp all over eachother if you do this and they haven't previously successfully
+# succeeded. We use a lock file to block progress so only one install runs at a time.
+# This script should be pretty fast once files are cached, so the lost of concurrency
+# is not a major problem.
+# This should be using the lockfile command, but that's not available on the
+# containerized travis and we can't install it without sudo.
+# Is is unclear if this is actually useful. I was seeing behaviour that suggested
+# concurrent runs of the installer, but I can't seem to find any evidence of this lock
+# ever not being acquired. 
+LOCKFILE="$HOME/.install-lockfile"
+while true; do
+  if mkdir $LOCKFILE 2>/dev/null; then
+    echo "Successfully acquired lock"
+    break
+  else
+    echo "Failed to acquire lock. Waiting our turn"
+  fi
+
+  sleep $[ ( $RANDOM % 10)  + 1 ].$[ ( $RANDOM % 100) ]s
+
+  if (( $(date '+%s') > 300 + $(stat --format=%X $LOCKFILE) )); then
+    echo "We've waited long enough"
+    rm -rf $LOCKFILE
+  fi
+done
+trap "rm -rf $LOCKFILE" EXIT
+
+
+# Somehow we occasionally get broken installs of pyenv, and pyenv-installer
+# is not good at detecting and cleaning up from those. We use the existence
+# of a pyenv executable as a proxy for whether pyenv is actually installed
+# correctly, but only because that's the only error I've seen so far.
+if [ ! -e "$HOME/.pyenv/bin/pyenv" ] ; then
+  echo "pyenv does not exist"
+  if [ -e "$HOME/.pyenv" ] ; then
+    echo "Looks like a bad pyenv install. Deleting"
+    rm -rf $HOME/.pyenv
+  fi
 fi
 
-if [[ "$DARWIN" = true ]]; then
-    brew update
+# Run the pyenv-installer script we've bundled.
+# This is basically vendored from >https://github.com/yyuu/pyenv-installer
+$(dirname $0)/pyenv-installer
 
-    if which pyenv > /dev/null; then
-        eval "$(pyenv init -)"
-    fi
+# Now that pyenv is installed, run the commands it gives us to actually
+# activate it.
+export PATH="$HOME/.pyenv/bin:$PATH"
+eval "$(pyenv init -)"
+eval "$(pyenv virtualenv-init -)"
 
-    case "${TOXENV}" in
-        py26)
-            curl -O https://bootstrap.pypa.io/get-pip.py
-            sudo python get-pip.py
-            ;;
-        py27)
-            curl -O https://bootstrap.pypa.io/get-pip.py
-            sudo python get-pip.py
-            ;;
-        py32)
-            brew upgrade pyenv
-            pyenv install 3.2.6
-            pyenv global 3.2.6
-            ;;
-        py33)
-            brew upgrade pyenv
-            pyenv install 3.3.6
-            pyenv global 3.3.6
-            ;;
-        py34)
-            brew upgrade pyenv
-            pyenv install 3.4.2
-            pyenv global 3.4.2
-            ;;
-        pypy)
-            brew upgrade pyenv
-            pyenv install pypy-2.5.0
-            pyenv global pypy-2.5.0
-            ;;
-        pypy3)
-            brew upgrade pyenv
-            pyenv install pypy3-2.4.0
-            pyenv global pypy3-2.4.0
-            ;;
-        docs)
-            curl -O https://bootstrap.pypa.io/get-pip.py
-            sudo python get-pip.py
-            ;;
-    esac
-    pyenv rehash
 
-else
-    sudo add-apt-repository -y ppa:fkrull/deadsnakes
+# pyenv update makes a lot of requests to github, which is not entirely
+# reliable. As long as we got a working pyenv in the first place (above) we
+# don't want to fail the build if pyenv can't update. Given that .pyenv is
+# cached anyway, the version we have should probably be quite recent.
+pyenv update || echo "Update failed to complete. Ignoring"
 
-    if [[ "${TOXENV}" == "pypy" ]]; then
-        sudo add-apt-repository -y ppa:pypy/ppa
-    fi
+# TOXENV sets the version of python we need for running tox itself. Make sure
+# we have that installed.
+case "${TOXENV}" in
+    py27)
+        PYVERSION=2.7.8
+        ;;
+    py32)
+        PYVERSION=3.2.6
+        ;;
+    py33)
+        PYVERSION=3.3.6
+        ;;
+    py34)
+        PYVERSION=3.4.2
+        ;;
+    pypy)
+        PYVERSION=pypy-2.5.0
+        ;;
+    pypy3)
+        PYVERSION=pypy3-2.4.0
+        ;;
+esac
 
-    if [[ "${OPENSSL}" == "0.9.8" ]]; then
-        sudo add-apt-repository -y "deb http://archive.ubuntu.com/ubuntu/ lucid main"
-    fi
-
-    sudo apt-get -y update
-
-    if [[ "${OPENSSL}" == "0.9.8" ]]; then
-        sudo apt-get install -y --force-yes libssl-dev/lucid
-    fi
-
-    case "${TOXENV}" in
-        py26)
-            sudo apt-get install python2.6 python2.6-dev
-            ;;
-        py32)
-            sudo apt-get install python3.2 python3.2-dev
-            ;;
-        py33)
-            sudo apt-get install python3.3 python3.3-dev
-            ;;
-        py34)
-            sudo apt-get install python3.4 python3.4-dev
-            ;;
-        py3pep8)
-            sudo apt-get install python3.3 python3.3-dev
-            ;;
-        pypy)
-            sudo apt-get install --force-yes pypy pypy-dev
-            ;;
-        docs)
-            sudo apt-get install libenchant-dev
-            ;;
-    esac
+# Default to 3.4.2, mostly for things like lint.
+if [ -z "$PYVERSION" ]; then
+  PYVERSION=3.4.2
 fi
 
-sudo -H pip install virtualenv
-virtualenv ~/.venv
-source ~/.venv/bin/activate
+pyenv install -s $PYVERSION
+pyenv rehash
+pyenv global $PYVERSION
+pyenv local $PYVERSION
+
+python --version
 pip install --upgrade pip
-pip install tox
+pip install --upgrade virtualenv
+
+# We might have got a bad version of the virtualenv. We check that and recover
+# in a similar way to how we do for pyenv.
+if [ ! -e "$HOME/.venv/bin/activate" ] ; then
+  rm -rf "$HOME/.venv"
+  virtualenv "$HOME/.venv"
+fi
+
+source $HOME/.venv/bin/activate
+pip install --upgrade tox
