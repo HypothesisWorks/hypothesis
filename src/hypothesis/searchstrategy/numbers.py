@@ -46,34 +46,48 @@ class IntStrategy(SearchStrategy):
     def reify(self, template):
         return template
 
-    def basic_simplify(self, x):
+    def simplifiers(self):
+        yield self.try_convert_type
+        yield self.try_negate
+        yield self.try_small_numbers
+        yield self.try_shrink_to_zero
+
+    def strictly_simpler(self, x, y):
+        if (not x) and y:
+            return True
+        if x > 0 and y < 0:
+            return True
+        if 0 <= x < y:
+            return True
+        return False
+
+    def try_convert_type(self, x):
         ix = int(x)
         if type(ix) != type(x):  # pragma: no cover
             yield ix
+
+    def try_negate(self, x):
+        if x >= 0:
+            return
+        yield -x
+
+    def try_small_numbers(self, x):
+        yield 0
+
+    def try_shrink_to_zero(self, x):
         if x < 0:
             yield -x
             for y in self.basic_simplify(-x):
                 yield -y
-        elif x > 0:
-            yield 0
-            if x == 1:
-                return
-            yield x // 2
-            if x == 2:
-                return
-            max_iters = 100
-            if x <= max_iters:
-                for i in hrange(x - 1, 0, -1):
-                    if i != x // 2:
-                        yield i
-            else:
-                random = Random(x)
-                seen = {0, x // 2}
-                for _ in hrange(max_iters):
-                    i = random.randint(0, x - 1)
-                    if i not in seen:
-                        yield i
-                    seen.add(i)
+        elif x > 1:
+            r = Random(x)
+            values = sorted({
+                r.randint(1, x - 1)
+                for _ in xrange(10)
+            })
+            for v in values:
+                yield v
+            yield x - 1
 
 
 class RandomGeometricIntStrategy(IntStrategy):

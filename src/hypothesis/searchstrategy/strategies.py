@@ -284,6 +284,25 @@ class SearchStrategy(object):
         """
         return self.produce_template(context, parameter_value)
 
+    def strictly_simpler(self, x, y):
+        """
+        Is the left hand argument *strictly* simpler than the right hand side.
+
+        Required properties:
+
+        1. not strictly_simpler(x, y)
+        2. not (strictly_simpler(x, y) and strictly_simpler(y, x))
+        3. not (strictly_simpler(x, y) and strictly_simpler(y, z)
+           and strictly_simpler(z x))
+
+        This is used for hinting in certain cases. The default implementation
+        of it always returns False and this is perfectly acceptable to leave
+        as is.
+
+        Note: Cheap to call is more important than high quality.
+        """
+        return False
+
     def simplifiers(self):
         """Yield a sequence of functions which each take a single template and
         produce a generator over "simpler" versions of that template.
@@ -347,22 +366,29 @@ class SearchStrategy(object):
         tracker = Tracker()
         yield t
 
+        last_passes = list(self.simplifiers())
         changed = True
         while changed:
             changed = False
-            for simplify in self.simplifiers():
+            worthwile_passes = []
+            for simplify in last_passes:
+                this_pass_did_something = False
                 while True:
                     simpler = simplify(t)
                     for s in simpler:
                         if tracker.track(s) > 1:
                             continue
                         if f(s):
+                            this_pass_did_something = True
                             changed = True
                             yield s
                             t = s
                             break
                     else:
                         break
+                if this_pass_did_something:
+                    worthwile_passes.append(simplify)
+            last_passes = worthwile_passes
 
 
 @strategy.extend(SearchStrategy)

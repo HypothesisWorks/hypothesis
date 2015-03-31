@@ -46,6 +46,17 @@ def minimal(definition, condition=None):
         return result[1]['x']
 
 
+def test_minimize_list_on_large_structure():
+    def test_list_in_range(xs):
+        assume(len(xs) >= 50)
+        return len([
+            x for x in xs
+            if x >= 10
+        ]) >= 70
+
+    assert minimal([int], test_list_in_range) == [10] * 70
+
+
 def test_minimize_list_to_empty():
     assert minimal([int]) == []
 
@@ -75,7 +86,10 @@ def test_minimize_longer_list_of_strings():
 
 
 def test_minimize_3_set():
-    assert minimal({int}, lambda x: len(x) >= 3) == {0, 1, 2}
+    assert minimal({int}, lambda x: len(x) >= 3) in (
+        {0, 1, 2},
+        {-1, 0, 1},
+    )
 
 
 def test_minimize_3_set_of_tuples():
