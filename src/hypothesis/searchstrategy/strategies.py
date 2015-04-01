@@ -284,12 +284,30 @@ class SearchStrategy(object):
         """
         return self.produce_template(context, parameter_value)
 
-    def simplify(self, template):
-        """Given a template, return a generator which yields a number of
-        templates that are "like this template but simpler". simpler has no
-        defined semantic meaning here and can be whatever you feel like.
+    def strictly_simpler(self, x, y):
+        """
+        Is the left hand argument *strictly* simpler than the right hand side.
 
-        General tips for a good simplify:
+        Required properties:
+
+        1. not strictly_simpler(x, y)
+        2. not (strictly_simpler(x, y) and strictly_simpler(y, x))
+        3. not (strictly_simpler(x, y) and strictly_simpler(y, z)
+           and strictly_simpler(z x))
+
+        This is used for hinting in certain cases. The default implementation
+        of it always returns False and this is perfectly acceptable to leave
+        as is.
+
+        Note: Cheap to call is more important than high quality.
+        """
+        return False
+
+    def simplifiers(self):
+        """Yield a sequence of functions which each take a single template and
+        produce a generator over "simpler" versions of that template.
+
+        General tips for a good simplify function:
 
             1. The generator shouldn't yield too many values. A few hundred is
                fine, but if you're generating millions of simplifications you
@@ -303,10 +321,35 @@ class SearchStrategy(object):
                shortcuts in the graph will speed up the simplification process
                a lot.
 
+        By default this just yields the basic_simplify function (which in turn
+        by default does not do anything useful). If you override this function
+        and also override basic_simplify you should make sure to yield it, or
+        it will not be called.
+
+        """
+        yield self.basic_simplify
+
+    def full_simplify(self, random, template):
+        """A convenience method.
+
+        Run each simplifier over this template and yield the results in
+        turn.
+
+        """
+        for simplifier in self.simplifiers():
+            for value in simplifier(random, template):
+                yield value
+
+    def basic_simplify(self, random, template):
+        """A convenience method for subclasses that do not have complex complex
+        simplification requirements to override.
+
+        See simplifiers for details.
+
         """
         return iter(())
 
-    def simplify_such_that(self, t, f):
+    def simplify_such_that(self, random, t, f, tracker=None):
         """Perform a greedy search to produce a "simplest" version of a
         template that satisfies some predicate.
 
@@ -317,23 +360,28 @@ class SearchStrategy(object):
         some other times.
 
         """
-        if not f(t):
-            raise ValueError(
-                '%r does not satisfy predicate %s' % (t, f))
-        tracker = Tracker()
+        assert isinstance(random, Random)
+
+        if tracker is None:
+            tracker = Tracker()
         yield t
 
-        while True:
-            simpler = self.simplify(t)
-            for s in simpler:
-                if tracker.track(s) > 1:
-                    continue
-                if f(s):
-                    yield s
-                    t = s
-                    break
-            else:
-                break
+        changed = True
+        while changed:
+            changed = False
+            for simplify in self.simplifiers():
+                while True:
+                    simpler = simplify(random, t)
+                    for s in simpler:
+                        if tracker.track(s) > 1:
+                            continue
+                        if f(s):
+                            changed = True
+                            yield s
+                            t = s
+                            break
+                    else:
+                        break
 
 
 @strategy.extend(SearchStrategy)
@@ -401,10 +449,18 @@ class OneOfStrategy(SearchStrategy):
             self.element_strategies[child].draw_template(
                 context, pv.child_parameters[child]))
 
-    def simplify(self, x):
-        s, value = x
-        for y in self.element_strategies[s].simplify(value):
-            yield (s, y)
+    def element_simplifier(self, s, simplifier):
+        def accept(random, template):
+            if template[0] != s:
+                return
+            for value in simplifier(random, template[1]):
+                yield (s, value)
+        return accept
+
+    def simplifiers(self):
+        for i, strategy in enumerate(self.element_strategies):
+            for simplify in strategy.simplifiers():
+                yield self.element_simplifier(i, simplify)
 
     def to_basic(self, template):
         i, value = template
@@ -462,9 +518,11 @@ class MappedSearchStrategy(SearchStrategy):
     def reify(self, value):
         return self.pack(self.mapped_strategy.reify(value))
 
-    def simplify(self, value):
-        for y in self.mapped_strategy.simplify(value):
-            yield y
+    def simplifiers(self):
+        return self.mapped_strategy.simplifiers()
+
+    def strictly_simpler(self, x, y):
+        return self.mapped_strategy.strictly_simpler(x, y)
 
     def to_basic(self, template):
         return self.mapped_strategy.to_basic(template)

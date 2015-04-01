@@ -24,51 +24,6 @@ from hypothesis.searchstrategy.strategies import SearchStrategy, \
     check_data_type, one_of_strategies
 
 
-class mix_generators(object):
-
-    """a generator which cycles through these generator arguments.
-
-    Will return all the same values as (x for g in generators for x in
-    g) but will do so in an order that mixes the different generators
-    up.
-
-    """
-
-    def __init__(self, generators):
-        self.generators = list(generators)
-        self.next_batch = []
-        self.solo_generator = None
-
-    def __iter__(self):
-        return self
-
-    def next(self):  # pragma: no cover
-        return self.__next__()
-
-    def __next__(self):
-        if self.solo_generator is None and len(
-            self.generators + self.next_batch
-        ) == 1:
-            self.solo_generator = (self.generators + self.next_batch)[0]
-
-        if self.solo_generator is not None:
-            return next(self.solo_generator)
-
-        while self.generators or self.next_batch:
-            if not self.generators:
-                self.generators = self.next_batch
-                self.generators.reverse()
-                self.next_batch = []
-            g = self.generators.pop()
-            try:
-                result = next(g)
-                self.next_batch.append(g)
-                return result
-            except StopIteration:
-                pass
-        raise StopIteration()
-
-
 class TupleStrategy(SearchStrategy):
 
     """A strategy responsible for fixed length tuples based on heterogenous
@@ -124,25 +79,22 @@ class TupleStrategy(SearchStrategy):
             for g, v in zip(es, pv)
         ])
 
-    def simplify(self, x):
-        """
-        Defined simplification for tuples: We don't change the length of the
-        tuple we only try to simplify individual elements of it.
-        We first try simplifying each index. We then try pairs of indices.
-        After that we stop because it's getting silly.
-        """
-        generators = []
+    def simplifier_for_index(self, i, simplifier):
+        def accept(random, template):
+            replacement = list(template)
+            for s in simplifier(random, template[i]):
+                replacement[i] = s
+                yield tuple(replacement)
+        accept.__name__ = str(
+            'simplifier_for_index(%d, %s)' % (i, simplifier.__name__)
+        )
+        return accept
 
-        def simplify_single(i):
-            for s in self.element_strategies[i].simplify(x[i]):
-                z = list(x)
-                z[i] = s
-                yield self.newtuple(z)
-
-        for i in hrange(0, len(x)):
-            generators.append(simplify_single(i))
-
-        return mix_generators(generators)
+    def simplifiers(self):
+        for i in hrange(len(self.element_strategies)):
+            strat = self.element_strategies[i]
+            for simplifier in strat.simplifiers():
+                yield self.simplifier_for_index(i, simplifier)
 
     def to_basic(self, value):
         return [
@@ -219,47 +171,156 @@ class ListStrategy(SearchStrategy):
                     context, pv.child_parameter))
         return tuple(result)
 
-    def simplify(self, x):
+    def simplifiers(self):
+        if not self.element_strategy:
+            return
+
+        yield self.simplify_to_empty
+        yield self.simplify_arrange_by_pivot
+        yield self.simplify_to_ends
+        yield self.simplify_with_random_discards
+        yield self.simplify_with_single_deletes
+        yield self.simplify_with_example_cloning
+
+        for simplify in self.element_strategy.simplifiers():
+            yield self.shared_simplification(simplify)
+
+        for simplify in self.element_strategy.simplifiers():
+            yield self.simplify_elementwise(simplify)
+
+    def simplify_to_empty(self, random, x):
         assert isinstance(x, tuple)
         if not x:
             return
 
         yield ()
 
-        if len(x) > 3:
-            mid = len(x) // 2
-            yield x[:mid]
-            yield x[mid:]
+    def strictly_simpler(self, x, y):
+        if len(x) > len(y):
+            return False
+        if len(x) < len(y):
+            return True
+        if not x:
+            return False
+        return self.element_strategy.strictly_simpler(
+            x[0], y[0],
+        )
 
-        if len(x) > 1:
+    def simplify_arrange_by_pivot(self, random, x):
+        if len(x) <= 1:
+            return
+        for _ in hrange(10):
+            pivot = random.choice(x)
+            left = []
+            center = []
+            right = []
+            simpler = self.element_strategy.strictly_simpler
+            for y in x:
+                if simpler(y, pivot):
+                    left.append(y)
+                elif simpler(pivot, y):
+                    right.append(y)
+                else:
+                    center.append(y)
+            bits = list(map(tuple, (left, center, right)))
+            for t in bits:
+                if t and len(t) < len(x):
+                    yield tuple(t)
+
+    def simplify_with_example_cloning(self, random, x):
+        assert isinstance(x, tuple)
+        if len(x) <= 1:
+            return
+        for _ in hrange(20):
+            result = list(x)
+            pivot = random.choice(x)
+            for _ in hrange(10):
+                new_pivot = random.choice(x)
+                if self.element_strategy.strictly_simpler(new_pivot, pivot):
+                    pivot = new_pivot
+            indices = [
+                j for j in hrange(len(x))
+                if self.element_strategy.strictly_simpler(pivot, x[j])]
+            if not indices:
+                break
+            random.shuffle(indices)
+            indices = indices[:random.randint(1, len(x) - 1)]
+            for j in indices:
+                result[j] = pivot
+            yield tuple(result)
+
+    def simplify_to_ends(self, random, x):
+        assert isinstance(x, tuple)
+        if len(x) <= 2:
+            return
+
+        bits = []
+
+        for _ in hrange(5):
+            split = random.randint(0, len(x) - 1)
+            bits.append(x[:split])
+            bits.append(x[split:])
+
+        bits.sort()
+
+        for b in bits:
+            yield b
+
+    def simplify_with_random_discards(self, random, x):
+        assert isinstance(x, tuple)
+        if len(x) <= 3:
+            return
+
+        for _ in hrange(10):
+            results = []
+            for t in x:
+                if random.randint(0, 1):
+                    results.append(t)
+            yield tuple(results)
+
+    def simplify_with_single_deletes(self, random, x):
+        assert isinstance(x, tuple)
+        if len(x) <= 1:
+            return
+        yield x[1:]
+        yield x[:-1]
+
+        indices = list(hrange(1, len(x) - 1))
+        random.shuffle(indices)
+        for i in indices:
+            y = list(x)
+            del y[i]
+            yield tuple(y)
+
+    def shared_simplification(self, simplify):
+        def accept(random, x):
+            same_valued_indices = {}
+            for i, value in enumerate(x):
+                same_valued_indices.setdefault(value, []).append(i)
+            for indices in same_valued_indices.values():
+                if len(indices) > 1:
+                    value = x[indices[0]]
+                    for simpler in simplify(random, value):
+                        copy = list(x)
+                        for i in indices:
+                            copy[i] = simpler
+                        yield tuple(copy)
+        accept.__name__ = str(
+            'shared_simplification(%s)' % (simplify.__name__,)
+        )
+        return accept
+
+    def simplify_elementwise(self, simplify):
+        def accept(random, x):
             for i in hrange(0, len(x)):
-                y = list(x)
-                del y[i]
-                yield tuple(y)
-
-        same_valued_indices = {}
-        for i, value in enumerate(x):
-            same_valued_indices.setdefault(value, []).append(i)
-        for indices in same_valued_indices.values():
-            if len(indices) > 1:
-                value = x[indices[0]]
-                for simpler in self.element_strategy.simplify(value):
-                    copy = list(x)
-                    for i in indices:
-                        copy[i] = simpler
-                    yield tuple(copy)
-
-        for i in hrange(0, len(x)):
-            for s in self.element_strategy.simplify(x[i]):
-                z = list(x)
-                z[i] = s
-                yield tuple(z)
-
-        for i in hrange(0, len(x) - 1):
-            z = list(x)
-            del z[i]
-            del z[i]
-            yield tuple(z)
+                for s in simplify(random, x[i]):
+                    z = list(x)
+                    z[i] = s
+                    yield tuple(z)
+        accept.__name__ = str(
+            'simplify_elementwise(%s)' % (simplify.__name__,)
+        )
+        return accept
 
     def to_basic(self, value):
         check_type(tuple, value)
@@ -274,7 +335,7 @@ class ListStrategy(SearchStrategy):
         return tuple(map(self.element_strategy.from_basic, value))
 
 
-class SetStrategy(MappedSearchStrategy):
+class SetStrategy(SearchStrategy):
 
     """A strategy for sets of values, defined in terms of a strategy for lists
     of values."""
@@ -285,84 +346,55 @@ class SetStrategy(MappedSearchStrategy):
     )
 
     def __repr__(self):
-        return 'SetStrategy(%r)' % (
-            self.element_strategy,
+        return 'SetStrategy(list_strategy=%r)' % (
+            self.list_strategy,
         )
 
     def __init__(self, strategies, average_length=50.0):
-        strategies = list(strategies)
+        self.list_strategy = ListStrategy(strategies, average_length)
 
-        if strategies:
-            strategies.sort(key=show)
-            self.element_strategy = one_of_strategies(strategies)
-            if self.element_strategy.size_upper_bound < 32:
-                self.size_lower_bound = (
-                    2 ** self.element_strategy.size_lower_bound)
-                self.size_upper_bound = (
-                    2 ** self.element_strategy.size_upper_bound)
-            else:
-                self.size_upper_bound = float('inf')
-                self.size_lower_bound = float('inf')
-        else:
-            self.element_strategy = None
+        def powset(n):
+            if n >= 32:
+                return float('inf')
+            return 2 ** n
+
+        elements = self.list_strategy.element_strategy
+
+        if not elements:
             self.size_lower_bound = 1
             self.size_upper_bound = 1
-        self.average_length = average_length
+        else:
+            self.size_lower_bound = powset(elements.size_lower_bound)
+            self.size_upper_bound = powset(elements.size_upper_bound)
 
     def reify(self, value):
-        if self.element_strategy is None:
-            return set()
-        return set(map(self.element_strategy.reify, value))
+        return set(self.list_strategy.reify(tuple(value)))
 
     def produce_parameter(self, random):
-        if self.element_strategy is not None:
-            size = random.expovariate(
-                1.0 / self.average_length)
-            return self.Parameter(
-                stopping_chance=1.0 / (1 + size),
-                child_parameter=self.element_strategy.produce_parameter(
-                    random),)
+        return self.list_strategy.produce_parameter(random)
 
     def produce_template(self, context, pv):
-        if self.element_strategy is None:
-            return frozenset()
-        result = set()
-        length = dist.geometric(context.random, pv.stopping_chance)
-        for _ in hrange(length):
-            result.add(self.element_strategy.produce_template(
-                context, pv.child_parameter
-            ))
-        return frozenset(result)
+        return frozenset(self.list_strategy.produce_template(context, pv))
 
-    def simplify(self, x):
-        assert isinstance(x, frozenset)
-        if not x:
-            return
+    def convert_simplifier(self, simplifier):
+        def accept(random, template):
+            for value in simplifier(random, tuple(template)):
+                yield frozenset(value)
+        return accept
 
-        yield frozenset()
-
-        for v in x:
-            y = set(x)
-            y.remove(v)
-            yield frozenset(y)
-            for w in self.element_strategy.simplify(v):
-                z = set(y)
-                z.add(w)
-                yield frozenset(z)
+    def simplifiers(self):
+        for simplify in self.list_strategy.simplifiers():
+            yield self.convert_simplifier(simplify)
 
     def to_basic(self, value):
         check_type(frozenset, value)
-        if self.element_strategy is None:
-            return []
-        result = list(map(self.element_strategy.to_basic, value))
+        result = self.list_strategy.to_basic(tuple(value))
         result.sort()
         return result
 
     def from_basic(self, value):
-        if self.element_strategy is None:
-            return frozenset()
         check_data_type(list, value)
-        return frozenset(map(self.element_strategy.from_basic, value))
+        return frozenset(self.list_strategy.from_basic(value))
 
 
 class FrozenSetStrategy(MappedSearchStrategy):

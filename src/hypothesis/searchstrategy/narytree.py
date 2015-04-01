@@ -101,16 +101,21 @@ class NAryTreeStrategy(SearchStrategy):
                     for k, v in template.keyed_children
                 ))
 
-    def simplify(self, template):
+    def basic_simplify(self, random, template):
         if isinstance(template, Branch):
             for k, v in template.keyed_children:
                 yield v
-            for l in self.branch_label_strategy.simplify(template.label):
+            for l in (
+                self.branch_label_strategy.full_simplify(
+                    random, template.label)):
                 yield Branch(l, template.keyed_children)
-            for cs in self.child_strategy.simplify(template.keyed_children):
+            for cs in self.child_strategy.full_simplify(
+                random,
+                template.keyed_children
+            ):
                 yield Branch(template.label, cs)
         else:
-            for v in self.leaf_strategy.simplify(template.value):
+            for v in self.leaf_strategy.full_simplify(random, template.value):
                 yield Leaf(v)
 
     def to_basic(self, template):

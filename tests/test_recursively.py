@@ -71,7 +71,7 @@ def test_can_falsify_false_things(desc, random):
     assume(size(desc) <= MAX_SIZE)
     verifier.random = random
     x = verifier.falsify(lambda x: False, desc)[0]
-    assert not list(strategy(desc, settings).simplify(x))
+    assert not list(strategy(desc, settings).full_simplify(random, x))
 
 
 @timeout(5)
@@ -124,12 +124,12 @@ def test_copies_all_its_values_correctly(desc, random):
 
 
 @given(
-    TemplatesFor(DescriptorWithValue),
+    TemplatesFor(DescriptorWithValue), Random,
     verifier=verifier,
 )
-def test_can_minimize_specifier_with_value(dav):
+def test_can_minimize_specifier_with_value(dav, rnd):
     s = strategy(DescriptorWithValue, settings)
-    last(s.simplify_such_that(dav, lambda x: True))
+    last(s.simplify_such_that(rnd, dav, lambda x: True))
 
 
 @given(Descriptor, Random, verifier=verifier)
@@ -156,6 +156,7 @@ def test_can_perform_all_basic_operations(specifier, random):
         strat.to_basic(strat.from_basic(strat.to_basic(template)))
     )
     minimal_template = last(strat.simplify_such_that(
+        random,
         template,
         lambda x: True
     ))

@@ -137,9 +137,9 @@ class DescriptorWithValueStrategy(SearchStrategy):
             random=RandomWithSeed(davt.random),
         )
 
-    def simplify(self, davt):
-        random = RandomWithSeed(davt.random)
-        for d in self.specifier_strategy.simplify(davt.specifier):
+    def basic_simplify(self, random, davt):
+        assert isinstance(random, Random)
+        for d in self.specifier_strategy.full_simplify(random, davt.specifier):
             new_template = self.strategy(
                 self.specifier_strategy.reify(d)).draw_and_produce(
                     BuildContext(random))
@@ -153,7 +153,7 @@ class DescriptorWithValueStrategy(SearchStrategy):
         strat = self.strategy(
             self.specifier_strategy.reify(davt.specifier))
 
-        for v in strat.simplify(davt.template):
+        for v in strat.full_simplify(random, davt.template):
             yield DescriptorWithValue(
                 specifier=davt.specifier,
                 template=v,

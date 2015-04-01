@@ -13,7 +13,6 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-import math
 import random
 from collections import namedtuple
 
@@ -21,105 +20,10 @@ import pytest
 import hypothesis.specifiers as specifiers
 from hypothesis.types import RandomWithSeed
 from hypothesis.internal.compat import hrange, text_type
-from hypothesis.internal.tracker import Tracker
 from hypothesis.searchstrategy.numbers import BoundedIntStrategy, \
-    FixedBoundedFloatStrategy, RandomGeometricIntStrategy
+    RandomGeometricIntStrategy
 from hypothesis.searchstrategy.strategies import BuildContext, \
     OneOfStrategy, strategy, one_of_strategies
-
-
-def test_string_strategy_produces_strings():
-    strings = strategy(text_type)
-    result = strings.produce_template(
-        BuildContext(random), strings.produce_parameter(random))
-    assert result is not None
-
-
-Blah = namedtuple('Blah', ('hi',))
-
-
-def alternating(*args):
-    return strategy(specifiers.one_of(args))
-
-
-def some_minimal_element(s):
-    strat = strategy(s)
-    template = strat.draw_and_produce(BuildContext(random))
-    for t in strat.simplify_such_that(template, lambda _: True):
-        template = t
-    return strat.reify(template)
-
-
-def assert_minimizes_to(s, value):
-    for _ in hrange(100):
-        m = some_minimal_element(s)
-        if m == value:
-            return
-    assert False
-
-
-def test_can_minimize_component_types():
-    ios = alternating(text_type, int)
-    assert_minimizes_to(ios, '')
-    assert_minimizes_to(ios, 0)
-
-
-def test_can_minimize_tuples():
-    assert_minimizes_to((int, int, int), (0, 0, 0))
-
-
-def assert_no_duplicates_in_simplify(s, x):
-    s = strategy(s)
-    t = Tracker()
-    t.track(x)
-    for y in s.simplify(x):
-        assert t.track(y) == 1
-
-
-def test_ints_no_duplicates_in_simplify():
-    assert_no_duplicates_in_simplify(int, 555)
-
-
-def test_int_lists_no_duplicates_in_simplify():
-    assert_no_duplicates_in_simplify([int], (0, 555, 1281))
-
-
-def test_just_works():
-    s = strategy(specifiers.just('giving'))
-    assert s.example() == 'giving'
-
-
-Litter = namedtuple('Litter', ('kitten1', 'kitten2'))
-
-
-def test_named_tuples_always_produce_named_tuples():
-    s = strategy(Litter(int, int))
-
-    for i in hrange(100):
-        assert isinstance(
-            s.produce_template(
-                BuildContext(random), s.produce_parameter(random)), Litter)
-
-    for x in s.simplify(Litter(100, 100)):
-        assert isinstance(x, Litter)
-
-
-def test_simplifying_something_that_does_not_satisfy_errors():
-    s = strategy(int)
-    f = lambda x: x > 100
-    with pytest.raises(ValueError):
-        next(s.simplify_such_that(1, f))
-
-
-def test_float_strategy_does_not_overflow():
-    s = strategy(float)
-
-    for _ in hrange(100):
-        s.produce_template(BuildContext(random), s.produce_parameter(random))
-
-
-def test_does_not_shrink_tuple_length():
-    assert_minimizes_to((bool,), (False,))
 
 
 def test_or_errors_when_given_non_strategy():
@@ -175,35 +79,9 @@ def last(xs):
     return t
 
 
-def test_simplify_integer_range_can_push_to_near_boundaries():
-    some_integers = strategy(specifiers.IntegerRange(1, 10))
-
-    predicates = [
-        (lambda x: True, 1),
-        (lambda x: x > 1, 2),
-        (lambda x: x > 5, 10),
-        (lambda x: x > 5 and x < 10, 9),
-    ]
-
-    for p, v in predicates:
-        some = False
-        for i in hrange(1, 10):
-            if p(i):
-                some = True
-                assert last(some_integers.simplify_such_that(i, p)) == v
-        assert some
-
-
 def test_rejects_invalid_ranges():
     with pytest.raises(ValueError):
         BoundedIntStrategy(10, 9)
-
-
-def test_does_not_simplify_outside_range():
-    n = 3
-    s = BoundedIntStrategy(0, n)
-    for t in s.simplify(n):
-        assert 0 <= t <= n
 
 
 def test_random_repr_has_seed():
@@ -216,11 +94,7 @@ def test_random_repr_has_seed():
 
 def test_random_only_produces_special_random():
     st = strategy(random.Random)
-    assert isinstance(
-        st.reify(st.produce_template(
-            BuildContext(random), st.draw_parameter(random))),
-        RandomWithSeed
-    )
+    assert isinstance(st.example(), RandomWithSeed)
 
 
 def test_just_strategy_uses_repr():
@@ -232,61 +106,6 @@ def test_just_strategy_uses_repr():
     assert repr(
         strategy(specifiers.just(WeirdRepr()))
     ) == 'JustStrategy(value=%r)' % (WeirdRepr(),)
-
-
-def test_fixed_bounded_float_strategy_converts_its_args():
-    st = FixedBoundedFloatStrategy(0, 1)
-    for t in st.simplify(0.5):
-        assert isinstance(t, float)
-
-
-class AwkwardSet(set):
-
-    def __iter__(self):
-        results = list(super(AwkwardSet, self).__iter__())
-        random.shuffle(results)
-        for r in results:
-            yield r
-
-
-def test_can_simplify_nan():
-    s = strategy(float)
-    x = list(s.simplify_such_that(float('nan'), math.isnan))[-1]
-    assert math.isnan(x)
-
-
-def test_can_simplify_tuples_of_nan():
-    s = strategy((float,))
-    x = list(
-        s.simplify_such_that((float('nan'),), lambda x: math.isnan(x[0])))[-1]
-    assert math.isnan(x[0])
-
-
-def test_nan_is_not_simpler_than_nan():
-    s = strategy(float)
-    simpler = list(s.simplify(float('nan')))
-    for x in simpler:
-        assert not math.isnan(x)
-
-
-def test_infinity_simplifies_to_finite():
-    s = strategy(float)
-    assert list(
-        s.simplify_such_that(float('inf'), lambda x: x >= 1))[-1] == 1.0
-    assert list(
-        s.simplify_such_that(float('-inf'), lambda x: x <= -1))[-1] == -1.0
-
-
-def test_minimizing_a_very_large_int_produces_an_int():
-    s = strategy(int)
-    shrunk = list(s.simplify_such_that(1 << 73, lambda x: x > 1))[-1]
-    assert type(shrunk) == int
-
-
-def test_does_not_shrink_size_for_non_hashable_sample():
-    s = strategy(specifiers.sampled_from(([], [])))
-    assert s.size_lower_bound == 2
-    assert s.size_upper_bound == 2
 
 
 def test_can_map():

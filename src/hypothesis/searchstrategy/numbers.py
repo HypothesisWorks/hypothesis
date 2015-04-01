@@ -16,7 +16,6 @@ from __future__ import division, print_function, absolute_import, \
 import sys
 import math
 import struct
-from random import Random
 from collections import namedtuple
 
 import hypothesis.specifiers as specifiers
@@ -46,34 +45,48 @@ class IntStrategy(SearchStrategy):
     def reify(self, template):
         return template
 
-    def simplify(self, x):
+    def simplifiers(self):
+        yield self.try_convert_type
+        yield self.try_negate
+        yield self.try_small_numbers
+        yield self.try_shrink_to_zero
+
+    def strictly_simpler(self, x, y):
+        if (not x) and y:
+            return True
+        if x > 0 and y < 0:
+            return True
+        if 0 <= x < y:
+            return True
+        return False
+
+    def try_convert_type(self, random, x):
         ix = int(x)
         if type(ix) != type(x):  # pragma: no cover
             yield ix
+
+    def try_negate(self, random, x):
+        if x >= 0:
+            return
+        yield -x
+
+    def try_small_numbers(self, random, x):
+        if x != 0:
+            yield 0
+
+    def try_shrink_to_zero(self, random, x):
         if x < 0:
             yield -x
-            for y in self.simplify(-x):
+            for y in self.try_shrink_to_zero(random, -x):
                 yield -y
-        elif x > 0:
-            yield 0
-            if x == 1:
-                return
-            yield x // 2
-            if x == 2:
-                return
-            max_iters = 100
-            if x <= max_iters:
-                for i in hrange(x - 1, 0, -1):
-                    if i != x // 2:
-                        yield i
-            else:
-                random = Random(x)
-                seen = {0, x // 2}
-                for _ in hrange(max_iters):
-                    i = random.randint(0, x - 1)
-                    if i not in seen:
-                        yield i
-                    seen.add(i)
+        elif x > 1:
+            y = 1
+            while True:
+                yield y
+                y = random.randint(y, x)
+                if y == x:
+                    break
+            yield x - 1
 
 
 class RandomGeometricIntStrategy(IntStrategy):
@@ -146,7 +159,7 @@ class BoundedIntStrategy(SearchStrategy):
             return self.start
         return context.random.choice(parameter)
 
-    def simplify(self, x):
+    def basic_simplify(self, random, x):
         if x == self.start:
             return
         mid = (self.start + self.end) // 2
@@ -156,6 +169,13 @@ class BoundedIntStrategy(SearchStrategy):
             yield self.start + (self.end - x)
             for t in hrange(self.end, x, -1):
                 yield t
+
+
+def is_integral(value):
+    try:
+        return int(value) == value
+    except (OverflowError, ValueError):
+        return False
 
 
 class FloatStrategy(SearchStrategy):
@@ -168,6 +188,26 @@ class FloatStrategy(SearchStrategy):
 
     def __repr__(self):
         return '%s()' % (self.__class__.__name__,)
+
+    def complexity_tuple(self, value):
+
+        good_conditions = (
+            not math.isnan(value),
+            is_integral(value),
+            value + 1 == value,
+            value >= 0,
+        )
+        t = abs(value)
+        if t > 0:
+            score = min(t, 1.0 / t)
+        else:
+            score = 0.0
+        return tuple(
+            not x for x in good_conditions
+        ) + (score,)
+
+    def strictly_simpler(self, x, y):
+        return self.complexity_tuple(x) < self.complexity_tuple(y)
 
     def to_basic(self, value):
         check_type(float, value)
@@ -187,7 +227,7 @@ class FloatStrategy(SearchStrategy):
     def reify(self, value):
         return value
 
-    def simplify(self, x):
+    def basic_simplify(self, random, x):
         if x == 0.0:
             return
         if math.isnan(x):
@@ -199,23 +239,43 @@ class FloatStrategy(SearchStrategy):
             yield math.copysign(
                 sys.float_info.max, x
             )
+            if x < 0:
+                yield -x
             return
 
         if x < 0:
             yield -x
+            for t in self.basic_simplify(random, -x):
+                yield -t
+            return
 
         yield 0.0
-        try:
-            n = int(x)
-            y = float(n)
-            if x != y:
-                yield y
-            for m in self.int_strategy.simplify(n):
-                yield x + (m - n)
-        except (ValueError, OverflowError):
-            pass
+        if x != 1.0:
+            yield 1.0
+            yield math.sqrt(x)
+
+        if is_integral(x):
+            for m in self.int_strategy.full_simplify(random, int(x)):
+                yield float(m)
+        else:
+            for e in range(10):
+                scale = 2 ** e
+                y = math.floor(x * scale) / scale
+                if x != y:
+                    yield y
+                else:
+                    break
         if abs(x) > 1.0:
-            yield x / 2
+            bits = []
+            t = x
+            while True:
+                t *= random.random()
+                if t <= 1.0:
+                    break
+                bits.append(t)
+            bits.sort()
+            for b in bits:
+                yield b
 
 
 class WrapperFloatStrategy(FloatStrategy):
@@ -356,7 +416,7 @@ class FixedBoundedFloatStrategy(FloatStrategy):
             right = self.upper_bound
         return left + random.random() * (right - left)
 
-    def simplify(self, value):
+    def basic_simplify(self, random, value):
         if value == self.lower_bound:
             return
         yield self.lower_bound
@@ -398,10 +458,15 @@ class GaussianFloatStrategy(FloatStrategy):
     a gaussian."""
 
     def produce_parameter(self, random):
-        return random.normalvariate(0, 1)
+        size = 1000.0
+        return (
+            random.normalvariate(0, size),
+            random.expovariate(1.0 / size)
+        )
 
-    def produce_template(self, context, mean):
-        return context.random.normalvariate(mean, 1)
+    def produce_template(self, context, param):
+        mean, sd = param
+        return context.random.normalvariate(mean, sd)
 
 
 class ExponentialFloatStrategy(FloatStrategy):

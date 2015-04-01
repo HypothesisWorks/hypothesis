@@ -55,8 +55,8 @@ class TemplatesStrategy(SearchStrategy):
     def from_basic(self, data):
         return self.base_strategy.from_basic(data)
 
-    def simplify(self, template):
-        return self.base_strategy.simplify(template)
+    def simplifiers(self):
+        return self.base_strategy.simplifiers()
 
 
 @strategy.extend(TemplatesFor)
@@ -80,7 +80,7 @@ def strategy_test_suite(
     )
     strat = strategy(specifier, settings)
     specifier_test = given(
-        TemplatesFor(specifier), settings=settings
+        TemplatesFor(specifier), Random, settings=settings
     )
 
     class ValidationSuite(TestCase):
@@ -98,7 +98,7 @@ def strategy_test_suite(
             strat.example()
 
         @specifier_test
-        def test_is_basic(self, value):
+        def test_is_basic(self, value, rnd):
             def is_basic(v):
                 return isinstance(
                     v, integer_types + (list, type(None), text_type)
@@ -110,7 +110,7 @@ def strategy_test_suite(
             self.assertTrue(is_basic(supposedly_basic), repr(supposedly_basic))
 
         @specifier_test
-        def test_can_round_trip_through_the_database(self, template):
+        def test_can_round_trip_through_the_database(self, template, rnd):
             empty_db = ExampleDatabase(
                 backend=SQLiteBackend(':memory:'),
             )
@@ -124,21 +124,33 @@ def strategy_test_suite(
                 empty_db.close()
 
         @specifier_test
-        def test_template_is_hashable(self, template):
+        def test_template_is_hashable(self, template, rnd):
             hash(template)
 
         @specifier_test
-        def test_can_minimize_to_empty(self, template):
+        def test_can_minimize_to_empty(self, template, rnd):
             simplest = list(strat.simplify_such_that(
+                rnd,
                 template, lambda x: True
             ))[-1]
-            assert list(strat.simplify(simplest)) == []
+            assert list(strat.full_simplify(rnd, simplest)) == []
+
+        @specifier_test
+        def test_can_complete_falsify_loop(self, template, rnd):
+            for _ in strat.full_simplify(rnd, template):
+                pass
+
+        @given(Random, settings=Settings(max_examples=1000))
+        def test_can_create_templates(self, random):
+            parameter = strat.draw_parameter(random)
+            strat.draw_template(BuildContext(random), parameter)
 
         @given(Random, verifier=verifier)
-        def test_can_perform_all_basic_operations(self, random):
+        def test_can_perform_all_basic_operations(self, rnd):
             parameter = strat.draw_parameter(random)
-            template = strat.draw_template(BuildContext(random), parameter)
+            template = strat.draw_template(BuildContext(rnd), parameter)
             minimal_template = list(strat.simplify_such_that(
+                rnd,
                 template,
                 lambda x: True
             ))[-1]
