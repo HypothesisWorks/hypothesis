@@ -366,29 +366,22 @@ class SearchStrategy(object):
             tracker = Tracker()
         yield t
 
-        last_passes = list(self.simplifiers())
         changed = True
         while changed:
             changed = False
-            worthwile_passes = []
-            for simplify in last_passes:
-                this_pass_did_something = False
+            for simplify in self.simplifiers():
                 while True:
                     simpler = simplify(random, t)
                     for s in simpler:
                         if tracker.track(s) > 1:
                             continue
                         if f(s):
-                            this_pass_did_something = True
                             changed = True
                             yield s
                             t = s
                             break
                     else:
                         break
-                if this_pass_did_something:
-                    worthwile_passes.append(simplify)
-            last_passes = worthwile_passes
 
 
 @strategy.extend(SearchStrategy)
