@@ -411,10 +411,15 @@ class GaussianFloatStrategy(FloatStrategy):
     a gaussian."""
 
     def produce_parameter(self, random):
-        return random.normalvariate(0, 1)
+        size = 1000.0
+        return (
+            random.normalvariate(0, size),
+            random.expovariate(1.0 / size)
+        )
 
-    def produce_template(self, context, mean):
-        return context.random.normalvariate(mean, 1)
+    def produce_template(self, context, param):
+        mean, sd = param
+        return context.random.normalvariate(mean, sd)
 
 
 class ExponentialFloatStrategy(FloatStrategy):

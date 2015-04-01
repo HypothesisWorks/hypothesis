@@ -57,6 +57,19 @@ def test_minimize_list_on_large_structure():
     assert minimal([int], test_list_in_range) == [10] * 70
 
 
+def test_minimize_list_of_floats_on_large_structure():
+    def test_list_in_range(xs):
+        assume(len(xs) >= 50)
+        return len([
+            x for x in xs
+            if x >= 3
+        ]) >= 20
+
+    result = minimal([float], test_list_in_range)
+    result.sort()
+    assert result == [0.0] * 30 + [3.0] * 20
+
+
 def test_minimize_list_to_empty():
     assert minimal([int]) == []
 
