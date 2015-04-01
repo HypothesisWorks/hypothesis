@@ -67,6 +67,6 @@ Regularly verifying this
 ------------------------
 
 Everything mentioned above as explicitly supported is checked on every commit 
-with `Travis <https://travis-ci.org/>`_ and `Appveyor <https://appveyor.com>`_
+with `Travis <https://travis-ci.org/>`_ and `Appveyor <https://www.appveyor.com>`_
 and goes green before a release happens, so when I say they're supported I really
 mean it.
