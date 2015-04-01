@@ -140,6 +140,11 @@ def strategy_test_suite(
             for _ in strat.full_simplify(rnd, template):
                 pass
 
+        @given(Random, settings=Settings(max_examples=1000))
+        def test_can_create_templates(self, random):
+            parameter = strat.draw_parameter(random)
+            strat.draw_template(BuildContext(random), parameter)
+
         @given(Random, verifier=verifier)
         def test_can_perform_all_basic_operations(self, rnd):
             parameter = strat.draw_parameter(random)

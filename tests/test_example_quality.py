@@ -63,11 +63,11 @@ def test_minimize_list_of_floats_on_large_structure():
         return len([
             x for x in xs
             if x >= 3
-        ]) >= 20
+        ]) >= 30
 
     result = minimal([float], test_list_in_range)
     result.sort()
-    assert result == [0.0] * 30 + [3.0] * 20
+    assert result == [0.0] * 20 + [3.0] * 30
 
 
 def test_minimize_list_to_empty():

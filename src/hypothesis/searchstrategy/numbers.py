@@ -171,6 +171,13 @@ class BoundedIntStrategy(SearchStrategy):
                 yield t
 
 
+def is_integral(value):
+    try:
+        return int(value) == value
+    except (OverflowError, ValueError):
+        return False
+
+
 class FloatStrategy(SearchStrategy):
 
     """Generic superclass for strategies which produce floats."""
@@ -181,6 +188,25 @@ class FloatStrategy(SearchStrategy):
 
     def __repr__(self):
         return '%s()' % (self.__class__.__name__,)
+
+    def complexity_tuple(self, value):
+
+        good_conditions = (
+            is_integral(value),
+            value + 1 == value,
+            value >= 0,
+        )
+        t = abs(value)
+        if t > 0:
+            score = min(t, 1.0 / t)
+        else:
+            score = 0.0
+        return tuple(
+            not x for x in good_conditions
+        ) + (score,)
+
+    def strictly_simpler(self, x, y):
+        return self.complexity_tuple(x) < self.complexity_tuple(y)
 
     def to_basic(self, value):
         check_type(float, value)
@@ -223,12 +249,12 @@ class FloatStrategy(SearchStrategy):
             y = float(n)
             if x != y:
                 yield y
-            for m in self.int_strategy.basic_simplify(random, n):
+            for m in self.int_strategy.full_simplify(random, n):
                 yield x + (m - n)
         except (ValueError, OverflowError):
             pass
         if abs(x) > 1.0:
-            yield x / 2
+            yield random.random() * x
 
 
 class WrapperFloatStrategy(FloatStrategy):
