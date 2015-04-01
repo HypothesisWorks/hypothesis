@@ -239,6 +239,8 @@ class FloatStrategy(SearchStrategy):
             yield math.copysign(
                 sys.float_info.max, x
             )
+            if x < 0:
+                yield -x
             return
 
         if x < 0:
@@ -256,16 +258,13 @@ class FloatStrategy(SearchStrategy):
             for m in self.int_strategy.full_simplify(random, int(x)):
                 yield float(m)
         else:
-            try:
-                for e in range(10):
-                    scale = 2 ** e
-                    y = math.floor(x * scale) / scale
-                    if x != y:
-                        yield y
-                    else:
-                        break
-            except (ValueError, OverflowError):
-                pass
+            for e in range(10):
+                scale = 2 ** e
+                y = math.floor(x * scale) / scale
+                if x != y:
+                    yield y
+                else:
+                    break
         if abs(x) > 1.0:
             bits = []
             t = x

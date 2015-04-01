@@ -13,6 +13,8 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+import sys
+import math
 from collections import Counter
 
 import pytest
@@ -57,8 +59,29 @@ def test_minimize_list_on_large_structure():
     assert minimal([int], test_list_in_range) == [10] * 70
 
 
+def test_minimal_infinite_float_is_positive():
+    assert minimal(float, math.isinf) == float('inf')
+
+    def list_of_infinities(xs):
+        assume(len(xs) >= 10)
+        return len([
+            t for t in xs if (math.isinf(t) or math.isnan(t))
+        ]) >= 10
+
+    assert minimal([float], list_of_infinities) == [float('inf')] * 10
+
+
 def test_minimal_fractional_float():
     assert minimal(float, lambda x: x >= 1.5) in (1.5, 2.0)
+
+
+def test_minimize_nan():
+    assert math.isnan(minimal(float, math.isnan))
+
+
+def test_minimize_very_large_float():
+    t = sys.float_info.max / 2
+    assert t <= minimal(float, lambda x: x >= t) < float('inf')
 
 
 def test_list_of_fractional_float():
@@ -81,6 +104,10 @@ def test_minimize_list_of_floats_on_large_structure():
     result = minimal([float], test_list_in_range)
     result.sort()
     assert result == [0.0] * 20 + [3.0] * 30
+
+
+def test_negative_floats_simplify_to_zero():
+    assert minimal(float, lambda x: x <= -1.0) == -1.0
 
 
 def test_minimize_list_to_empty():
