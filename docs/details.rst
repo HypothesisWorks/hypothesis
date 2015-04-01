@@ -454,10 +454,10 @@ of list you want:
   >>> from collections import namedtuple
   >>> ListsOfFixedLength = namedtuple('ListsOfFixedLength', ('length', 'elements'))
   >>> @strategy.extend(ListsOfFixedLength)
-     ....: def fixed_length_lists_strategy(specifier, settings):
-     ....:     return strategy((specifier.elements,) * specifier.length, settings).map(
-     ....:        pack=list)
-     ....: 
+  ... def fixed_length_lists_strategy(specifier, settings):
+  ...     return strategy((specifier.elements,) * specifier.length, settings).map(
+  ...        pack=list)
+  ... 
   >>> strategy(ListsOfFixedLength(5, int)).example()
   [0, 2190, 899, 2, -1326]
 
