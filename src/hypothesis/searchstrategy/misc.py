@@ -133,13 +133,8 @@ class SampledFromStrategy(SearchStrategy):
         if not self.elements:
             raise ValueError(
                 'SampledFromStrategy requires at least one element')
-        try:
-            s = set(self.elements)
-            self.size_lower_bound = len(s)
-            self.size_upper_bound = len(s)
-        except TypeError:
-            self.size_lower_bound = len(self.elements)
-            self.size_upper_bound = len(self.elements)
+        self.size_lower_bound = len(elements)
+        self.size_upper_bound = len(elements)
 
     def to_basic(self, template):
         return template
