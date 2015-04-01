@@ -57,6 +57,19 @@ def test_minimize_list_on_large_structure():
     assert minimal([int], test_list_in_range) == [10] * 70
 
 
+def test_minimal_fractional_float():
+    assert minimal(float, lambda x: x >= 1.5) in (1.5, 2.0)
+
+
+def test_list_of_fractional_float():
+    assert set(minimal(
+        [float], lambda x: len([t for t in x if t >= 1.5]) >= 10
+    )) in (
+        {1.5},
+        {1.5, 2.0}
+    )
+
+
 def test_minimize_list_of_floats_on_large_structure():
     def test_list_in_range(xs):
         assume(len(xs) >= 50)

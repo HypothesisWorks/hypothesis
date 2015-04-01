@@ -243,7 +243,7 @@ class FloatStrategy(SearchStrategy):
 
         if x < 0:
             yield -x
-            for t in self.basic_simplify(-x):
+            for t in self.basic_simplify(random, -x):
                 yield -t
             return
 
@@ -252,17 +252,20 @@ class FloatStrategy(SearchStrategy):
             yield 1.0
             yield math.sqrt(x)
 
-        try:
-            n = int(x)
-            y = float(n)
-            if x != y:
-                yield y
-            else:
-                for m in self.int_strategy.full_simplify(random, n):
-                    yield float(m)
-
-        except (ValueError, OverflowError):
-            pass
+        if is_integral(x):
+            for m in self.int_strategy.full_simplify(random, int(x)):
+                yield float(m)
+        else:
+            try:
+                for e in range(10):
+                    scale = 2 ** e
+                    y = math.floor(x * scale) / scale
+                    if x != y:
+                        yield y
+                    else:
+                        break
+            except (ValueError, OverflowError):
+                pass
         if abs(x) > 1.0:
             bits = []
             t = x
