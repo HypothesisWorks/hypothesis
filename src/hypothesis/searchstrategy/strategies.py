@@ -528,6 +528,9 @@ class MappedSearchStrategy(SearchStrategy):
     def simplifiers(self):
         return self.mapped_strategy.simplifiers()
 
+    def strictly_simpler(self, x, y):
+        return self.mapped_strategy.strictly_simpler(x, y)
+
     def to_basic(self, template):
         return self.mapped_strategy.to_basic(template)
 
