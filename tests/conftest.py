@@ -18,6 +18,7 @@ import warnings
 from tempfile import mkdtemp
 
 import pytest
+
 from hypothesis import Settings
 from hypothesis.settings import set_hypothesis_home_dir
 

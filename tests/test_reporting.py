@@ -14,6 +14,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import pytest
+
 from hypothesis import given, reporting
 from tests.common.utils import capture_out
 

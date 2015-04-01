@@ -15,13 +15,15 @@ from __future__ import division, print_function, absolute_import, \
 
 import sys
 import math
+from fractions import Fraction
 from collections import Counter
 
 import pytest
+
 from hypothesis import Settings, given, assume, strategy
 from tests.common import timeout
 from hypothesis.core import _debugging_return_failing_example
-from hypothesis.specifiers import one_of, integers_in_range
+from hypothesis.specifiers import one_of, integers_from, integers_in_range
 from hypothesis.internal.compat import hrange, text_type, binary_type
 
 quality_settings = Settings(
@@ -87,6 +89,15 @@ def test_minimal_infinite_float_is_positive():
         ]) >= 10
 
     assert minimal([float], list_of_infinities) == [float('inf')] * 10
+
+
+def test_integers_from_minizes_leftwards():
+    assert minimal(integers_from(101)) == 101
+
+
+def test_minimal_fractions():
+    assert minimal(Fraction) == Fraction(0)
+    assert minimal(Fraction, lambda x: x >= 1) == Fraction(1)
 
 
 def test_minimal_fractional_float():

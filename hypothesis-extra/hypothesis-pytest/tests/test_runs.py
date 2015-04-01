@@ -16,6 +16,7 @@ from __future__ import division, print_function, absolute_import, \
 from functools import wraps
 
 import pytest
+
 from hypothesis import given
 
 

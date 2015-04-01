@@ -17,6 +17,7 @@ import re
 from random import Random
 
 import pytest
+
 import hypothesis.settings as hs
 from hypothesis import assume
 from tests.common import timeout

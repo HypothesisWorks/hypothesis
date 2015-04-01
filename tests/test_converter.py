@@ -16,6 +16,7 @@ from __future__ import division, print_function, absolute_import, \
 from random import Random
 
 import pytest
+
 from hypothesis.specifiers import Just, OneOf, SampledFrom
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.searchstrategy.narytree import NAryTree

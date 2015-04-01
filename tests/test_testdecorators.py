@@ -20,6 +20,7 @@ from random import Random
 from collections import namedtuple
 
 import pytest
+
 import hypothesis.settings as hs
 import hypothesis.reporting as reporting
 from hypothesis import given, assume
@@ -27,7 +28,7 @@ from hypothesis.core import _debugging_return_failing_example
 from hypothesis.errors import Flaky, Unsatisfiable
 from tests.common.utils import fails, fails_with, capture_out
 from hypothesis.specifiers import just, one_of, sampled_from, \
-    floats_in_range, integers_in_range
+    integers_from, floats_in_range, integers_in_range
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.internal.verifier import Verifier
 from hypothesis.searchstrategy.numbers import IntStrategy
@@ -186,6 +187,11 @@ def test_binary_addition_is_not_commutative(x, y):
 @given(integers_in_range(1, 10))
 def test_integers_are_in_range(x):
     assert 1 <= x <= 10
+
+
+@given(integers_from(100))
+def test_integers_from_are_from(x):
+    assert x >= 100
 
 
 def test_does_not_catch_interrupt_during_falsify():

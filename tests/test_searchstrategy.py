@@ -17,6 +17,7 @@ import random
 from collections import namedtuple
 
 import pytest
+
 import hypothesis.specifiers as specifiers
 from hypothesis.types import RandomWithSeed
 from hypothesis.internal.compat import hrange, text_type

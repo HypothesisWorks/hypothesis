@@ -91,7 +91,7 @@ class IntStrategy(SearchStrategy):
             yield x - 1
 
 
-class IntegersFromStrategy(IntStrategy):
+class IntegersFromStrategy(SearchStrategy):
 
     def __init__(self, lower_bound):
         super(IntegersFromStrategy, self).__init__()
@@ -103,7 +103,10 @@ class IntegersFromStrategy(IntStrategy):
     def produce_template(self, context, parameter):
         return self.lower_bound + dist.geometric(context.random, parameter)
 
-    def simplify(self, template):
+    def reify(self, template):
+        return template
+
+    def basic_simplify(self, random, template):
         assert template >= self.lower_bound
         if template == self.lower_bound:
             return
@@ -114,6 +117,13 @@ class IntegersFromStrategy(IntStrategy):
             yield i
         yield (template + self.lower_bound) // 2
         yield template - 1
+
+    def from_basic(self, data):
+        check_data_type(integer_types, data)
+        return data
+
+    def to_basic(self, template):
+        return template
 
 
 class RandomGeometricIntStrategy(IntStrategy):
