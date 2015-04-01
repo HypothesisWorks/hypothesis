@@ -42,7 +42,7 @@ might be:
 * If you serialize and then deserialize a value, then you get the same value back.
 
 Now you know the basics of what Hypothesis does, the rest of this
-documentation will take you through how any why. It's divided into a
+documentation will take you through how and why. It's divided into a
 number of sections, which you can see in the sidebar (or the
 menu at the top if you're on mobile), but you probably want to begin with
 the :doc:`Quick start guide <quickstart>`, which will give you a worked
