@@ -179,7 +179,10 @@ class Verifier(object):
         ):
             best_example = simpler
             if time_to_call_it_a_day():
-                break
+                # We no cover in here because it's a bit sensitive to timing
+                # and tends to make tests flaky. There are tests that mean
+                # this is definitely covered most of the time.
+                break  # pragma: no cover
 
         if storage is not None:
             storage.save(best_example)
