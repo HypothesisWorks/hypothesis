@@ -192,6 +192,7 @@ class FloatStrategy(SearchStrategy):
     def complexity_tuple(self, value):
 
         good_conditions = (
+            not math.isnan(value),
             is_integral(value),
             value + 1 == value,
             value >= 0,
@@ -242,19 +243,37 @@ class FloatStrategy(SearchStrategy):
 
         if x < 0:
             yield -x
+            for t in self.basic_simplify(-x):
+                yield -t
+            return
 
         yield 0.0
+        if x != 1.0:
+            yield 1.0
+            yield math.sqrt(x)
+
         try:
             n = int(x)
             y = float(n)
             if x != y:
                 yield y
-            for m in self.int_strategy.full_simplify(random, n):
-                yield x + (m - n)
+            else:
+                for m in self.int_strategy.full_simplify(random, n):
+                    yield float(m)
+
         except (ValueError, OverflowError):
             pass
         if abs(x) > 1.0:
-            yield random.random() * x
+            bits = []
+            t = x
+            while True:
+                t *= random.random()
+                if t <= 1.0:
+                    break
+                bits.append(t)
+            bits.sort()
+            for b in bits:
+                yield b
 
 
 class WrapperFloatStrategy(FloatStrategy):
