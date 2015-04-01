@@ -79,25 +79,6 @@ def last(xs):
     return t
 
 
-def test_simplify_integer_range_can_push_to_near_boundaries():
-    some_integers = strategy(specifiers.IntegerRange(1, 10))
-
-    predicates = [
-        (lambda x: True, 1),
-        (lambda x: x > 1, 2),
-        (lambda x: x > 5, 10),
-        (lambda x: x > 5 and x < 10, 9),
-    ]
-
-    for p, v in predicates:
-        some = False
-        for i in hrange(1, 10):
-            if p(i):
-                some = True
-                assert last(some_integers.simplify_such_that(i, p)) == v
-        assert some
-
-
 def test_rejects_invalid_ranges():
     with pytest.raises(ValueError):
         BoundedIntStrategy(10, 9)
