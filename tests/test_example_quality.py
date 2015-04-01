@@ -29,9 +29,9 @@ quality_settings = Settings(
 )
 
 
-def minimal(definition, condition=None):
+def minimal(definition, condition=None, settings=None):
     @timeout(5)
-    @given(definition, settings=quality_settings)
+    @given(definition, settings=settings or quality_settings)
     def everything_is_terrible(x):
         if condition is None:
             assert False
@@ -57,6 +57,14 @@ def test_minimize_list_on_large_structure():
         ]) >= 70
 
     assert minimal([int], test_list_in_range) == [10] * 70
+
+
+def test_shrinks_lists_to_small_pretty_quickly():
+
+    shrunk = minimal(
+        [str], lambda x: assume(len(x) >= 25) and len(set(x)) >= 10,
+        settings=Settings(timeout=0.5))
+    assert len(shrunk) == 25
 
 
 def test_minimal_infinite_float_is_positive():

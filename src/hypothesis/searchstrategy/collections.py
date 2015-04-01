@@ -176,15 +176,14 @@ class ListStrategy(SearchStrategy):
             return
 
         yield self.simplify_to_empty
-        yield self.simplify_to_ends
         yield self.simplify_arrange_by_pivot
+        yield self.simplify_to_ends
         yield self.simplify_with_random_discards
+        yield self.simplify_with_single_deletes
         yield self.simplify_with_example_cloning
 
         for simplify in self.element_strategy.simplifiers():
             yield self.shared_simplification(simplify)
-
-        yield self.simplify_with_single_deletes
 
         for simplify in self.element_strategy.simplifiers():
             yield self.simplify_elementwise(simplify)
@@ -255,8 +254,17 @@ class ListStrategy(SearchStrategy):
         if len(x) <= 2:
             return
 
-        yield x[:len(x) // 2]
-        yield x[len(x) // 2:]
+        bits = []
+
+        for _ in hrange(5):
+            split = random.randint(0, len(x) - 1)
+            bits.append(x[:split])
+            bits.append(x[split:])
+
+        bits.sort()
+
+        for b in bits:
+            yield b
 
     def simplify_with_random_discards(self, random, x):
         assert isinstance(x, tuple)
