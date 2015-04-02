@@ -15,6 +15,7 @@ from __future__ import division, print_function, absolute_import, \
 
 import sys
 import math
+from decimal import Decimal
 from fractions import Fraction
 from collections import Counter
 
@@ -106,6 +107,19 @@ def test_minimal_fractions():
 
 def test_minimal_fractional_float():
     assert minimal(float, lambda x: x >= 1.5) in (1.5, 2.0)
+
+
+def test_finding_decimals_with_defined_precision():
+    def is_integral(x):
+        try:
+            return x == int(x)
+        except (ValueError, OverflowError):
+            return False
+
+    assert minimal(Decimal, is_integral) == Decimal(0)
+    assert minimal(
+        Decimal, lambda x: is_integral(x * 100) and 0 < x < 1
+    ) == Decimal('0.5')  # TODO: Can we do better here?
 
 
 def test_minimize_nan():
