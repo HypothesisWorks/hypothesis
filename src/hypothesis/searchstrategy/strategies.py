@@ -421,6 +421,15 @@ class OneOfStrategy(SearchStrategy):
     def __repr__(self):
         return ' | '.join(map(repr, self.element_strategies))
 
+    def strictly_simpler(self, x, y):
+        lx, vx = x
+        ly, vy = y
+        if lx < ly:
+            return True
+        if lx > ly:
+            return False
+        return self.element_strategies[lx].strictly_simpler(vx, vy)
+
     def reify(self, value):
         s, x = value
         return self.element_strategies[s].reify(x)

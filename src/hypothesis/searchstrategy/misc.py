@@ -37,6 +37,9 @@ class BoolStrategy(SearchStrategy):
     def reify(self, value):
         return value
 
+    def strictly_simpler(self, x, y):
+        return (not x) and y
+
     def basic_simplify(self, random, value):
         if value:
             yield False

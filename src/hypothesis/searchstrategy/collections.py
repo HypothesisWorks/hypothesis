@@ -79,6 +79,15 @@ class TupleStrategy(SearchStrategy):
             for g, v in zip(es, pv)
         ])
 
+    def strictly_simpler(self, x, y):
+        for i, (u, v) in enumerate(zip(x, y)):
+            s = self.element_strategies[i]
+            if s.strictly_simpler(u, v):
+                return True
+            if s.strictly_simpler(v, u):
+                return False
+        return False
+
     def simplifier_for_index(self, i, simplifier):
         def accept(random, template):
             replacement = list(template)
@@ -202,9 +211,12 @@ class ListStrategy(SearchStrategy):
             return True
         if not x:
             return False
-        return self.element_strategy.strictly_simpler(
-            x[0], y[0],
-        )
+        for u, v in zip(x, y):
+            if self.element_strategy.strictly_simpler(u, v):
+                return True
+            if self.element_strategy.strictly_simpler(v, u):
+                return False
+        return False
 
     def simplify_arrange_by_pivot(self, random, x):
         if len(x) <= 1:
@@ -373,13 +385,36 @@ class SetStrategy(SearchStrategy):
     def produce_parameter(self, random):
         return self.list_strategy.produce_parameter(random)
 
+    def convert_template(self, template):
+        seen = set()
+        deduped = []
+        for x in template:
+            if x not in seen:
+                seen.add(x)
+                deduped.append(x)
+        if self.list_strategy.element_strategy:
+            simpler = self.list_strategy.element_strategy.strictly_simpler
+            for i in hrange(1, len(deduped)):
+                j = i
+                while j > 0:
+                    if simpler(deduped[j], deduped[j - 1]):
+                        deduped[j - 1], deduped[j] = deduped[j], deduped[j - 1]
+                        j -= 1
+                    else:
+                        break
+        return tuple(deduped)
+
     def produce_template(self, context, pv):
-        return frozenset(self.list_strategy.produce_template(context, pv))
+        return self.convert_template(
+            (self.list_strategy.produce_template(context, pv)))
+
+    def strictly_simpler(self, x, y):
+        return self.list_strategy.strictly_simpler(x, y)
 
     def convert_simplifier(self, simplifier):
         def accept(random, template):
             for value in simplifier(random, tuple(template)):
-                yield frozenset(value)
+                yield self.convert_template(value)
         return accept
 
     def simplifiers(self):
@@ -387,14 +422,13 @@ class SetStrategy(SearchStrategy):
             yield self.convert_simplifier(simplify)
 
     def to_basic(self, value):
-        check_type(frozenset, value)
-        result = self.list_strategy.to_basic(tuple(value))
+        result = self.list_strategy.to_basic(value)
         result.sort()
         return result
 
     def from_basic(self, value):
         check_data_type(list, value)
-        return frozenset(self.list_strategy.from_basic(value))
+        return self.convert_template(self.list_strategy.from_basic(value))
 
 
 class FrozenSetStrategy(MappedSearchStrategy):

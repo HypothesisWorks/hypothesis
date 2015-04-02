@@ -21,7 +21,7 @@ import pytest
 from hypothesis import Settings, given, assume, strategy
 from tests.common import timeout
 from hypothesis.core import _debugging_return_failing_example
-from hypothesis.specifiers import one_of
+from hypothesis.specifiers import one_of, integers_in_range
 from hypothesis.internal.compat import hrange, text_type, binary_type
 
 quality_settings = Settings(
@@ -57,6 +57,16 @@ def test_minimize_list_on_large_structure():
         ]) >= 70
 
     assert minimal([int], test_list_in_range) == [10] * 70
+
+
+def test_minimize_list_of_sets_on_large_structure():
+    def test_list_in_range(xs):
+        assume(len(xs) >= 50)
+        return len(list(filter(None, xs))) >= 50
+
+    x = minimal([frozenset({int})], test_list_in_range)
+    assert len(x) == 50
+    assert len(set(x)) == 1
 
 
 def test_shrinks_lists_to_small_pretty_quickly():
@@ -178,6 +188,20 @@ def test_minimize_3_set_of_tuples():
     assert minimal({(int,)}, lambda x: len(x) >= 2) == {(0,), (1,)}
 
 
+def test_minimize_sets_of_sets():
+    elements = integers_in_range(1, 100)
+    set_of_sets = minimal(
+        {frozenset({elements})}, lambda s: len(s) >= 30
+    )
+    assert frozenset() in set_of_sets
+    for s in set_of_sets:
+        if len(s) > 1:
+            assert any(
+                s != t and t.issubset(s)
+                for t in set_of_sets
+            )
+
+
 @pytest.mark.parametrize(('string',), [(text_type,), (binary_type,)])
 def test_minimal_unsorted_strings(string):
     def dedupe(xs):
@@ -218,3 +242,25 @@ def test_finds_list_with_plenty_duplicates():
     assert len(result) == 3
     assert len(set(result)) == 1
     assert len(result[0]) == 1
+
+
+def test_minimal_mixed_list_propagates_leftwards():
+    # one_of simplification can't actually simplify to the left, but it regards
+    # instances of the leftmost type as strictly simpler. This means that if we
+    # have any bools in the list we can clone them to replace the more complex
+    # examples to the right.
+    # The check that we have at least one bool is required for this to work,
+    # otherwise the features that ensure sometimes we can get a list of all of
+    # one type will occasionally give us an example which doesn't contain any
+    # bools to clone
+    assert minimal(
+        [bool, (int,)],
+        lambda x: len(x) >= 50 and any(isinstance(t, bool) for t in x)
+    ) == [False] * 50
+
+
+def test_tuples_do_not_block_cloning():
+    assert minimal(
+        [(one_of((bool, (int,))),)],
+        lambda x: len(x) >= 50 and any(isinstance(t[0], bool) for t in x)
+    ) == [(False,)] * 50
