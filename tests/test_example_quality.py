@@ -190,10 +190,12 @@ def test_minimize_3_set_of_tuples():
 
 def test_minimize_sets_of_sets():
     elements = integers_in_range(1, 100)
+    size = 15
     set_of_sets = minimal(
-        {frozenset({elements})}, lambda s: len(s) >= 30
+        {frozenset({elements})}, lambda s: len(s) >= size
     )
     assert frozenset() in set_of_sets
+    assert len(set_of_sets) == size
     for s in set_of_sets:
         if len(s) > 1:
             assert any(
