@@ -30,6 +30,7 @@ def test_all_decimals_can_be_exact_floats(x):
 @fails
 @given([Decimal])
 def test_reversing_preserves_decimal_addition(xs):
+    assume(all(x.is_finite() for x in xs))
     assert sum(xs) == sum(reversed(xs))
 
 
