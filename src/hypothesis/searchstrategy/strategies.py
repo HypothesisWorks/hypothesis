@@ -23,6 +23,7 @@ from hypothesis.specifiers import OneOf
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.utils.extmethod import ExtMethod
 from hypothesis.internal.tracker import Tracker
+from hypothesis.control import assume
 
 
 class BuildContext(object):
@@ -171,6 +172,19 @@ class SearchStrategy(object):
         """
         return MappedSearchStrategy(
             pack=pack, strategy=self
+        )
+
+    def filter(self, condition):
+        """Returns a new strategy that generates values from this strategy
+        which satisfy the provided condition. Note that if the condition is
+        too hard to satisfy this might result in your tests failing with
+        Unsatisfiable.
+
+        This method is part of the  public API.
+        """
+        return FilteredStrategy(
+            condition=condition,
+            strategy=self,
         )
 
     def __or__(self, other):
@@ -538,3 +552,13 @@ class MappedSearchStrategy(SearchStrategy):
 
     def from_basic(self, data):
         return self.mapped_strategy.from_basic(data)
+
+
+class FilteredStrategy(MappedSearchStrategy):
+    def __init__(self, strategy, condition):
+        super(FilteredStrategy, self).__init__(strategy=strategy)
+        self.condition = condition
+
+    def pack(self, value):
+        assume(self.condition(value))
+        return value

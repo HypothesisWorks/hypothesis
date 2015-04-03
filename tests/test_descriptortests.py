@@ -18,6 +18,8 @@ from decimal import Decimal
 from fractions import Fraction
 from collections import namedtuple
 
+from hypothesis import strategy
+
 from hypothesis.specifiers import just, one_of, sampled_from, \
     integers_from, floats_in_range, integers_in_range
 from tests.common.specifiers import Descriptor, DescriptorWithValue
@@ -71,6 +73,11 @@ TestFraction = strategy_test_suite(Fraction)
 
 TestDescriptor = strategy_test_suite(Descriptor)
 TestDescriptorWithValue = strategy_test_suite(DescriptorWithValue)
+
+
+TestNonEmptyLists = strategy_test_suite(
+    strategy([int]).filter(lambda x: x)
+)
 
 
 def test_repr_has_specifier_in_it():
