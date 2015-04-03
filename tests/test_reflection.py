@@ -18,7 +18,6 @@ import inspect
 from copy import deepcopy
 
 import pytest
-
 from hypothesis.internal.reflection import arg_string, copy_argspec, \
     unbind_method, function_digest, source_exec_as_module, \
     convert_keyword_arguments, convert_positional_arguments, \

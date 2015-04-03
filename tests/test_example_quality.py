@@ -20,7 +20,6 @@ from fractions import Fraction
 from collections import Counter
 
 import pytest
-
 from hypothesis import Settings, given, assume, strategy
 from tests.common import timeout
 from hypothesis.core import _debugging_return_failing_example

@@ -28,7 +28,6 @@ import math
 import random
 
 import pytest
-
 import hypothesis.specifiers as specifiers
 import hypothesis.internal.reflection as reflection
 from hypothesis.internal.compat import hrange

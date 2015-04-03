@@ -16,7 +16,6 @@ from __future__ import division, print_function, absolute_import, \
 import random
 
 import pytest
-
 from hypothesis.extra.datetime import draw_day_for_month
 
 

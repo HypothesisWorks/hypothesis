@@ -18,7 +18,6 @@ import contextlib
 from io import StringIO
 
 import pytest
-
 from hypothesis.core import given, _debugging_return_failing_example
 from hypothesis.internal.reflection import proxies
 

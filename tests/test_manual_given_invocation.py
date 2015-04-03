@@ -16,7 +16,6 @@ from __future__ import division, print_function, absolute_import, \
 import inspect
 
 import pytest
-
 from hypothesis import given
 from hypothesis.internal.verifier import Verifier
 

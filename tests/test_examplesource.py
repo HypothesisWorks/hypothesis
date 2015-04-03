@@ -16,7 +16,6 @@ from __future__ import division, print_function, absolute_import, \
 import random
 
 import pytest
-
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.examplesource import ParameterSource
 from hypothesis.searchstrategy.strategies import BuildContext, strategy

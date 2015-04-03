@@ -20,7 +20,6 @@ from random import Random
 from collections import namedtuple
 
 import pytest
-
 import hypothesis.settings as hs
 import hypothesis.reporting as reporting
 from hypothesis import given, assume

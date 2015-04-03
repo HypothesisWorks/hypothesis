@@ -14,7 +14,6 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import pytest
-
 from hypothesis import given
 from faker.providers import BaseProvider
 from hypothesis.strategytests import strategy_test_suite
