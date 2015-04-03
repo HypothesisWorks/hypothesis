@@ -96,13 +96,22 @@ def test_integers_from_minizes_leftwards():
     assert minimal(integers_from(101)) == 101
 
 
-def test_minimal_fractions():
+def test_minimal_fractions_1():
     assert minimal(Fraction) == Fraction(0)
+
+
+def test_minimal_fractions_2():
     assert minimal(Fraction, lambda x: x >= 1) == Fraction(1)
+
+
+def test_minimal_fractions_3():
     assert minimal([Fraction], lambda s: len(s) >= 20) == [Fraction(0)] * 20
+
+
+def test_minimal_fractions_4():
     assert minimal(
-        [Fraction], lambda s: len(s) >= 30 and all(t >= 1 for t in s)
-    ) == [Fraction(1)] * 30
+        [Fraction], lambda s: len(s) >= 20 and all(t >= 1 for t in s)
+    ) == [Fraction(1)] * 20
 
 
 def test_minimal_fractional_float():
