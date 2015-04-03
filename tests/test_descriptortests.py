@@ -80,6 +80,17 @@ TestNonEmptyLists = strategy_test_suite(
 )
 
 
+TestConstantLists = strategy_test_suite(
+    strategy(int).flatmap(lambda i: [just(i)])
+)
+
+TestOrderedPairs = strategy_test_suite(
+    strategy(integers_in_range(1, 200)).map(
+        lambda e: integers_in_range(0, e - 1)
+    )
+)
+
+
 def test_repr_has_specifier_in_it():
     suite = TestComplex(
         'test_can_round_trip_through_the_database')

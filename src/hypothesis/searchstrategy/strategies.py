@@ -189,6 +189,18 @@ class SearchStrategy(object):
             pack=pack, strategy=self
         )
 
+    def flatmap(self, expand):
+        """Returns a new strategy that generates values by generating a value
+        from this strategy, say x, then generating a value from
+        strategy(expand(x))
+
+        This method is part of the  public API.
+
+        """
+        return FlatMapStrategy(
+            expand=expand, strategy=self
+        )
+
     def filter(self, condition):
         """Returns a new strategy that generates values from this strategy
         which satisfy the provided condition. Note that if the condition is
@@ -577,3 +589,146 @@ class FilteredStrategy(MappedSearchStrategy):
     def pack(self, value):
         assume(self.condition(value))
         return value
+
+
+class FlatMapStrategy(SearchStrategy):
+    TemplateFromSeed = namedtuple(
+        'TemplateFromSeed', (
+            'source_template', 'parameter_seed', 'template_seed',
+        ))
+
+    TemplateFromTemplate = namedtuple(
+        'TemplateFromTemplate', (
+            'source_template', 'parameter_seed', 'template_seed',
+            'target_template',
+        ))
+
+    TemplateFromBasic = namedtuple(
+        'TemplateFromBasic', (
+            'source_template', 'parameter_seed', 'template_seed',
+            'basic_data',
+        ))
+
+    def __init__(
+        self, strategy, expand
+    ):
+        self.flatmapped_strategy = strategy
+        self.expand = expand
+        self.strategy_cache = {}
+
+    def produce_parameter(self, random):
+        return (
+            self.flatmapped_strategy.draw_parameter(random),
+            random.getrandbits(64),
+        )
+
+    def produce_template(self, context, parameter):
+        source_template = self.flatmapped_strategy.draw_template(
+            context, parameter[0])
+        parameter_seed = context.random.getrandbits(64)
+        template_seed = context.random.getrandbits(64)
+
+        if source_template in self.strategy_cache:
+            target = self.strategy_cache[source_template]
+            target_parameter = target.draw_parameter(Random(parameter_seed))
+            target_template = target.draw_template(
+                BuildContext(Random(template_seed)),
+                target_parameter,
+            )
+            return self.TemplateFromTemplate(
+                source_template=source_template,
+                parameter_seed=parameter_seed,
+                template_seed=template_seed,
+                target_template=target_template,
+            )
+        else:
+            return self.TemplateFromSeed(
+                source_template=source_template,
+                parameter_seed=parameter_seed,
+                template_seed=template_seed,
+            )
+
+    def reify(self, template):
+        source_template = template.source_template
+        if source_template not in self.strategy_cache:
+            target_strategy = strategy(self.expand(
+                self.flatmapped_strategy.reify(source_template)
+            ))
+            self.strategy_cache[source_template] = target_strategy
+        else:
+            target_strategy = self.strategy_cache[source_template]
+        succeeded = False
+        if isinstance(template, self.TemplateFromTemplate):
+            target_template = template.target_template
+            succeeded = True
+        elif isinstance(template, self.TemplateFromBasic):
+            try:
+                target_template = target_strategy.from_basic(
+                    template.basic_data
+                )
+                succeeded = True
+            except BadData:
+                pass
+        if not succeeded:
+            target_parameter = target_strategy.draw_parameter(
+                Random(template.parameter_seed)
+            )
+            target_template = target_strategy.draw_template(
+                BuildContext(Random(template.template_seed)),
+                target_parameter,
+            )
+        return target_strategy.reify(target_template)
+
+    def to_basic(self, template):
+        bits = [
+            self.flatmapped_strategy.to_basic(template.source_template),
+            template.parameter_seed, template.template_seed
+        ]
+        if isinstance(template, self.TemplateFromBasic):
+            bits.append(listize_basic(template.basic_data))
+        elif isinstance(template, self.TemplateFromTemplate):
+            target_strategy = self.strategy_cache[template.source_template]
+            bits.append(target_strategy.to_basic(template.target_template))
+        else:
+            assert isinstance(template, self.TemplateFromSeed)
+        return bits
+
+    def from_basic(self, data):
+        check_data_type(list, data)
+        if len(data) < 3:
+            raise BadData(
+                "Too few elements. Expected 3 or 4 but got %d" % (len(data),)
+            )
+        if len(data) > 4:
+            raise BadData(
+                "Too many elements. Expected 3 or 4 but got %d" % (len(data),)
+            )
+        check_data_type(integer_types, data[1])
+        check_data_type(integer_types, data[2])
+        source_template = self.flatmapped_strategy.from_basic(data[0])
+        if len(data) == 4:
+            return self.TemplateFromBasic(
+                source_template=source_template,
+                parameter_seed=data[1], template_seed=data[2],
+                basic_data=tupleize_basic(data[3])
+            )
+        else:
+            assert len(data) == 3
+            return self.TemplateFromSeed(
+                source_template=source_template,
+                parameter_seed=data[1], template_seed=data[2],
+            )
+
+
+def tupleize_basic(x):
+    if isinstance(x, list):
+        return tuple(map(tupleize_basic, x))
+    else:
+        return x
+
+
+def listize_basic(x):
+    if isinstance(x, tuple):
+        return list(map(tupleize_basic, x))
+    else:
+        return x

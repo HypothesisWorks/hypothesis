@@ -97,6 +97,9 @@ def strategy_test_suite(
         def test_can_give_example(self):
             strat.example()
 
+        def test_can_give_list_of_examples(self):
+            strategy([strat]).example()
+
         def test_will_give_unsatisfiable_if_all_rejected(self):
             @given(specifier, settings=settings)
             def nope(x):
@@ -140,6 +143,8 @@ def strategy_test_suite(
         @specifier_test
         def test_template_is_hashable(self, template, rnd):
             hash(template)
+            # It can be easy to forget to convert a list...
+            hash(strat.from_basic(strat.to_basic(template)))
 
         @specifier_test
         def test_can_minimize_to_empty(self, template, rnd):
