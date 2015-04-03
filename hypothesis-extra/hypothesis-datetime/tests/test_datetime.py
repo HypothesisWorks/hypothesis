@@ -73,15 +73,6 @@ def test_can_find_on_the_minute():
     falsify(lambda x: x.second != 0, datetime)
 
 
-def test_can_find_february_29():
-    with hs.Settings(max_examples=2000):
-        falsify(lambda d: assume(d.month == 2) and (d.day != 29), datetime)
-
-
-def test_can_find_christmas():
-    falsify(lambda d: assume(d.month == 12) and d.day == 25, datetime)
-
-
 def test_simplifies_towards_midnight():
     d = strategy(datetime).reify(falsify(lambda x: False, datetime)[0])
     assert d.hour == 0
