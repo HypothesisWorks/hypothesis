@@ -24,23 +24,13 @@ from hypothesis.specifiers import just
 from hypothesis.searchstrategy import strategy
 from hypothesis.internal.verifier import Flaky, Verifier, Unfalsifiable, \
     UnsatisfiedAssumption
+from hypothesis.control import assume
 from hypothesis.internal.reflection import arg_string, copy_argspec
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
+[assume]
+
 HypothesisProvided = namedtuple('HypothesisProvided', ('value,'))
-
-
-def assume(condition):
-    """Assert a precondition for this test.
-
-    If this is not truthy then the test will abort but not fail and
-    Hypothesis will make a "best effort" attempt to avoid similar
-    examples in future.
-
-    """
-    if not condition:
-        raise UnsatisfiedAssumption()
-    return True
 
 
 _debugging_return_failing_example = DynamicVariable(False)
