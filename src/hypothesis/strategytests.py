@@ -19,13 +19,13 @@ from random import Random
 from unittest import TestCase
 from collections import namedtuple
 
-from hypothesis import given
+from hypothesis.errors import Unsatisfiable
+from hypothesis import given, assume
 from hypothesis.database import ExampleDatabase
 from hypothesis.settings import Settings
 from hypothesis.utils.show import show
 from hypothesis.internal.compat import text_type, integer_types
 from hypothesis.database.backend import SQLiteBackend
-from hypothesis.internal.verifier import Verifier
 from hypothesis.searchstrategy.strategies import BuildContext, \
     SearchStrategy, strategy
 
@@ -64,6 +64,10 @@ def templates_for(specifier, settings):
     return TemplatesStrategy(strategy(specifier.base, settings))
 
 
+class Rejected(Exception):
+    pass
+
+
 def strategy_test_suite(
     specifier,
     max_examples=100, random=None
@@ -74,10 +78,6 @@ def strategy_test_suite(
         average_list_length=2.0,
     )
     random = random or Random()
-    verifier = Verifier(
-        settings=settings,
-        random=random
-    )
     strat = strategy(specifier, settings)
     specifier_test = given(
         TemplatesFor(specifier), Random, settings=settings
@@ -96,6 +96,20 @@ def strategy_test_suite(
 
         def test_can_give_example(self):
             strat.example()
+
+        def test_will_give_unsatisfiable_if_all_rejected(self):
+            @given(specifier, settings=settings)
+            def nope(x):
+                assume(False)
+            with self.assertRaises(Unsatisfiable):
+                nope()
+
+        def test_will_find_a_constant_failure(self):
+            @given(specifier, settings=settings)
+            def nope(x):
+                raise Rejected()
+            with self.assertRaises(Rejected):
+                nope()
 
         @specifier_test
         def test_is_basic(self, value, rnd):
@@ -144,21 +158,5 @@ def strategy_test_suite(
         def test_can_create_templates(self, random):
             parameter = strat.draw_parameter(random)
             strat.draw_template(BuildContext(random), parameter)
-
-        @given(Random, verifier=verifier)
-        def test_can_perform_all_basic_operations(self, rnd):
-            parameter = strat.draw_parameter(random)
-            template = strat.draw_template(BuildContext(rnd), parameter)
-            minimal_template = list(strat.simplify_such_that(
-                rnd,
-                template,
-                lambda x: True
-            ))[-1]
-            strat.reify(minimal_template)
-            assert (
-                strat.to_basic(minimal_template) ==
-                strat.to_basic(
-                    strat.from_basic(strat.to_basic(minimal_template)))
-            )
 
     return ValidationSuite
