@@ -17,7 +17,8 @@ from random import Random
 from collections import namedtuple
 
 import hypothesis.internal.distributions as dist
-from hypothesis.errors import BadData, WrongFormat
+from hypothesis.errors import BadData, WrongFormat, UnsatisfiedAssumption, \
+    Unsatisfiable
 from hypothesis.settings import Settings
 from hypothesis.specifiers import OneOf
 from hypothesis.internal.compat import hrange, integer_types
@@ -157,10 +158,24 @@ class SearchStrategy(object):
         """
         random = Random()
         context = BuildContext(random)
-        template = min((
-            self.draw_and_produce(context)
-            for _ in hrange(3)
-        ), key=self.size)
+
+        parts = []
+
+        for _ in hrange(20):
+            if len(parts) >= 3:
+                break
+            try:
+                template = self.draw_and_produce(context)
+                parts.append(template)
+                self.reify(template)
+            except UnsatisfiedAssumption:
+                pass
+        if not parts:
+            raise Unsatisfiable(
+                "Could not find any valid examples in 20 tries"
+            )
+
+        template = min(parts, key=self.size)
         return self.reify(template)
 
     def map(self, pack):
