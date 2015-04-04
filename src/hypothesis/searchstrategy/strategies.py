@@ -166,8 +166,8 @@ class SearchStrategy(object):
                 break
             try:
                 template = self.draw_and_produce(context)
-                parts.append(template)
                 self.reify(template)
+                parts.append(template)
             except UnsatisfiedAssumption:
                 pass
         if not parts:
