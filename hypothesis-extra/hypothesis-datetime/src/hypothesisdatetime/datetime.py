@@ -20,7 +20,7 @@ import pytz
 import hypothesis.internal.distributions as dist
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
-    strategy, check_data_type, check_length
+    strategy, check_length, check_data_type
 
 DatetimeSpec = namedtuple('DatetimeSpec', ('naive_options',))
 
