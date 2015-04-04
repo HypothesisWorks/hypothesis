@@ -33,7 +33,7 @@ quality_settings = Settings(
 
 
 def minimal(definition, condition=None, settings=None):
-    @timeout(5)
+    @timeout(10)
     @given(definition, settings=settings or quality_settings)
     def everything_is_terrible(x):
         if condition is None:
