@@ -340,7 +340,7 @@ class ListStrategy(SearchStrategy):
             if any(i >= len(x) for i in indices):
                 return
             if len({x[i] for i in indices}) > 1:
-                return
+                return  # pragma: no cover
             value = x[indices[0]]
             for simpler in simplify(random, value):
                 copy = list(x)
