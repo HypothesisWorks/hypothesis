@@ -20,16 +20,15 @@ from unittest import TestCase
 from collections import namedtuple
 
 from hypothesis import given, assume
-from hypothesis.errors import Unsatisfiable, BadData
+from hypothesis.errors import BadData, Unsatisfiable
 from hypothesis.database import ExampleDatabase
 from hypothesis.settings import Settings
 from hypothesis.utils.show import show
-from hypothesis.utils.extmethod import ExtMethod
 from hypothesis.internal.compat import text_type, integer_types
+from hypothesis.utils.extmethod import ExtMethod
 from hypothesis.database.backend import SQLiteBackend
 from hypothesis.searchstrategy.strategies import BuildContext, \
     SearchStrategy, strategy
-
 
 TemplatesFor = namedtuple('TemplatesFor', ('base',))
 

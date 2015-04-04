@@ -18,7 +18,7 @@ from collections import namedtuple
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.distributions import geometric, uniform_float
 from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
-    strategy, check_data_type, check_length
+    strategy, check_length, check_data_type
 
 NAryTree = namedtuple('NAryTree', (
     'branch_labels',
