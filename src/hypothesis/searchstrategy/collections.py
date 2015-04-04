@@ -352,18 +352,6 @@ class ListStrategy(SearchStrategy):
         )
         return accept
 
-    def simplify_elementwise(self, simplify):
-        def accept(random, x):
-            for i in hrange(0, len(x)):
-                for s in simplify(random, x[i]):
-                    z = list(x)
-                    z[i] = s
-                    yield tuple(z)
-        accept.__name__ = str(
-            'simplify_elementwise(%s)' % (simplify.__name__,)
-        )
-        return accept
-
     def to_basic(self, value):
         check_type(tuple, value)
         if self.element_strategy is None:
