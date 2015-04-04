@@ -779,6 +779,6 @@ def tupleize_basic(x):
 
 def listize_basic(x):
     if isinstance(x, tuple):
-        return list(map(tupleize_basic, x))
+        return list(map(listize_basic, x))
     else:
         return x
