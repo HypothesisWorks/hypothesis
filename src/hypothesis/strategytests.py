@@ -55,8 +55,8 @@ class TemplatesStrategy(SearchStrategy):
     def from_basic(self, data):
         return self.base_strategy.from_basic(data)
 
-    def simplifiers(self):
-        return self.base_strategy.simplifiers()
+    def simplifiers(self, template):
+        return self.base_strategy.simplifiers(template)
 
 
 @strategy.extend(TemplatesFor)

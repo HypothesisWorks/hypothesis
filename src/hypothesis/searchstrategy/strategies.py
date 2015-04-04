@@ -344,9 +344,15 @@ class SearchStrategy(object):
         """
         return False
 
-    def simplifiers(self):
-        """Yield a sequence of functions which each take a single template and
-        produce a generator over "simpler" versions of that template.
+    def simplifiers(self, template):
+        """Yield a sequence of functions which each take a Random object and
+        a single template and produce a generator over "simpler" versions of
+        that template.
+
+        The template argument is provided to allow picking simplifiers that are
+        likely to be useful. Each returned simplifier must be valid (in the
+        sense of not erroring. It doesn't have to do anything useful) for all
+        templates for this strategy.
 
         General tips for a good simplify function:
 
@@ -377,7 +383,7 @@ class SearchStrategy(object):
         turn.
 
         """
-        for simplifier in self.simplifiers():
+        for simplifier in self.simplifiers(template):
             for value in simplifier(random, template):
                 yield value
 
@@ -410,7 +416,7 @@ class SearchStrategy(object):
         changed = True
         while changed:
             changed = False
-            for simplify in self.simplifiers():
+            for simplify in self.simplifiers(t):
                 while True:
                     simpler = simplify(random, t)
                     for s in simpler:
@@ -507,10 +513,10 @@ class OneOfStrategy(SearchStrategy):
                 yield (s, value)
         return accept
 
-    def simplifiers(self):
-        for i, strategy in enumerate(self.element_strategies):
-            for simplify in strategy.simplifiers():
-                yield self.element_simplifier(i, simplify)
+    def simplifiers(self, template):
+        i, value = template
+        for simplify in self.element_strategies[i].simplifiers(value):
+            yield self.element_simplifier(i, simplify)
 
     def to_basic(self, template):
         i, value = template
@@ -568,8 +574,8 @@ class MappedSearchStrategy(SearchStrategy):
     def reify(self, value):
         return self.pack(self.mapped_strategy.reify(value))
 
-    def simplifiers(self):
-        return self.mapped_strategy.simplifiers()
+    def simplifiers(self, template):
+        return self.mapped_strategy.simplifiers(template)
 
     def strictly_simpler(self, x, y):
         return self.mapped_strategy.strictly_simpler(x, y)

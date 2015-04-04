@@ -47,7 +47,7 @@ class IntStrategy(SearchStrategy):
     def reify(self, template):
         return template
 
-    def simplifiers(self):
+    def simplifiers(self, template):
         yield self.try_convert_type
         yield self.try_negate
         yield self.try_small_numbers
