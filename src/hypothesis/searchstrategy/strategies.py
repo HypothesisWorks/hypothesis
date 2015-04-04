@@ -17,7 +17,7 @@ from random import Random
 from collections import namedtuple
 
 import hypothesis.internal.distributions as dist
-from hypothesis.errors import BadData, WrongFormat, Unsatisfiable, \
+from hypothesis.errors import BadData, NoExamples, WrongFormat, \
     UnsatisfiedAssumption
 from hypothesis.control import assume
 from hypothesis.settings import Settings
@@ -171,7 +171,7 @@ class SearchStrategy(object):
             except UnsatisfiedAssumption:
                 pass
         if not parts:
-            raise Unsatisfiable(
+            raise NoExamples(
                 'Could not find any valid examples in 20 tries'
             )
 
