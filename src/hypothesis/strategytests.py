@@ -20,10 +20,11 @@ from unittest import TestCase
 from collections import namedtuple
 
 from hypothesis import given, assume
-from hypothesis.errors import Unsatisfiable
+from hypothesis.errors import Unsatisfiable, BadData
 from hypothesis.database import ExampleDatabase
 from hypothesis.settings import Settings
 from hypothesis.utils.show import show
+from hypothesis.utils.extmethod import ExtMethod
 from hypothesis.internal.compat import text_type, integer_types
 from hypothesis.database.backend import SQLiteBackend
 from hypothesis.searchstrategy.strategies import BuildContext, \
@@ -66,6 +67,65 @@ def templates_for(specifier, settings):
 
 class Rejected(Exception):
     pass
+
+
+mess_with_basic_data = ExtMethod()
+
+
+def mess_with_int(i, random):
+    s = random.randint(0, 4)
+    if s == 0:
+        return -i
+    elif s == 1:
+        return i + random.randint(-1, 1)
+    elif s == 3:
+        return i * 2
+    elif s == 4:
+        b = (2 ** random.randint(31, 129)) + random.randint(-10 ** 5, 10 ** 5)
+        if random.randint(0, 1):
+            b = -b
+        return b
+
+for t in integer_types:
+    mess_with_basic_data.extend(t)(mess_with_int)
+
+
+@mess_with_basic_data.extend(bool)
+def mess_with_bool(b, random):
+    return bool(random.randint())
+
+
+@mess_with_basic_data.extend(text_type)
+def mess_with_text(text, random):
+    if random.randint(0, 1):
+        return text.encode('utf-8')
+    else:
+        return text
+
+
+@mess_with_basic_data.extend(list)
+def mess_with_list(ls, random):
+    ls = list(ls)
+    if not ls:
+        if random.randint(0, 1):
+            ls.append(random.randint(-2 ** 128, 2 ** 128))
+        return ls
+    i = random.randint(0, len(ls))
+    if i < len(ls):
+        ls[i] = mess_with_basic_data(ls[i], random)
+    t = random.randint(0, 5)
+    if t == 0:
+        ls.pop()
+    elif t == 1:
+        j = random.randint(0, len(ls) - 1)
+        ls.append(ls[j])
+    return ls
+
+
+@mess_with_basic_data.extend(type(None))
+def mess_with_none(n, random):
+    if not random.randint(0, 5):
+        return float('nan')
 
 
 def strategy_test_suite(
@@ -125,6 +185,16 @@ def strategy_test_suite(
                 )
             supposedly_basic = strat.to_basic(value)
             self.assertTrue(is_basic(supposedly_basic), repr(supposedly_basic))
+
+        @specifier_test
+        def test_only_raises_bad_data_in_from_basic(self, value, rnd):
+            basic = strat.to_basic(value)
+
+            messed_basic = mess_with_basic_data(basic, rnd)
+            try:
+                strat.from_basic(messed_basic)
+            except BadData:
+                pass
 
         @specifier_test
         def test_can_round_trip_through_the_database(self, template, rnd):

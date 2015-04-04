@@ -253,7 +253,7 @@ class FloatStrategy(SearchStrategy):
         )
 
     def from_basic(self, value):
-        check_type(integer_types, value)
+        check_data_type(integer_types, value)
         try:
             return (
                 struct.unpack(b'!d', struct.pack(b'!Q', value))[0]

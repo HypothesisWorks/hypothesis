@@ -18,7 +18,7 @@ from collections import namedtuple
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.distributions import geometric, uniform_float
 from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
-    strategy, check_data_type
+    strategy, check_data_type, check_length
 
 NAryTree = namedtuple('NAryTree', (
     'branch_labels',
@@ -139,7 +139,10 @@ class NAryTreeStrategy(SearchStrategy):
         if len(data) == 1:
             return Leaf(self.leaf_strategy.from_basic(data[0]))
         else:
-            assert len(data) == 2
+            check_length(2, data)
+            check_data_type(list, data[1])
+            for v in data[1]:
+                check_length(2, v)
             return Branch(
                 label=self.branch_label_strategy.from_basic(data[0]),
                 keyed_children=tuple(
