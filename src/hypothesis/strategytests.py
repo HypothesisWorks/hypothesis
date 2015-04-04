@@ -115,10 +115,13 @@ def mess_with_list(ls, random):
         ls[i] = mess_with_basic_data(ls[i], random)
     t = random.randint(0, 5)
     if t == 0:
-        ls.pop()
+        while ls and random.randint(0, 1):
+            ls.pop()
     elif t == 1:
         j = random.randint(0, len(ls) - 1)
         ls.append(ls[j])
+    elif t == 2:
+        random.shuffle(ls)
     return ls
 
 
