@@ -18,8 +18,8 @@ from hypothesis.specifiers import just, integers_in_range
 
 ConstantLists = strategy(int).flatmap(lambda i: [just(i)])
 
-OrderedPairs = strategy(integers_in_range(1, 200)).map(
-    lambda e: integers_in_range(0, e - 1)
+OrderedPairs = strategy(integers_in_range(1, 200)).flatmap(
+    lambda e: (integers_in_range(0, e - 1), just(e))
 )
 
 with Settings(max_examples=200):
