@@ -19,7 +19,6 @@ from fractions import Fraction
 from collections import namedtuple
 
 from hypothesis import strategy
-
 from hypothesis.specifiers import just, one_of, sampled_from, \
     integers_from, floats_in_range, integers_in_range
 from tests.common.specifiers import Descriptor, DescriptorWithValue

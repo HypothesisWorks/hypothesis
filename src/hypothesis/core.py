@@ -19,12 +19,12 @@ import time
 import inspect
 from collections import namedtuple
 
+from hypothesis.control import assume
 from hypothesis.reporting import current_reporter
 from hypothesis.specifiers import just
 from hypothesis.searchstrategy import strategy
 from hypothesis.internal.verifier import Flaky, Verifier, Unfalsifiable, \
     UnsatisfiedAssumption
-from hypothesis.control import assume
 from hypothesis.internal.reflection import arg_string, copy_argspec
 from hypothesis.utils.dynamicvariables import DynamicVariable
 

@@ -17,14 +17,14 @@ from random import Random
 from collections import namedtuple
 
 import hypothesis.internal.distributions as dist
-from hypothesis.errors import BadData, WrongFormat, UnsatisfiedAssumption, \
-    Unsatisfiable
+from hypothesis.errors import BadData, WrongFormat, Unsatisfiable, \
+    UnsatisfiedAssumption
+from hypothesis.control import assume
 from hypothesis.settings import Settings
 from hypothesis.specifiers import OneOf
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.utils.extmethod import ExtMethod
 from hypothesis.internal.tracker import Tracker
-from hypothesis.control import assume
 
 
 class BuildContext(object):
@@ -172,7 +172,7 @@ class SearchStrategy(object):
                 pass
         if not parts:
             raise Unsatisfiable(
-                "Could not find any valid examples in 20 tries"
+                'Could not find any valid examples in 20 tries'
             )
 
         template = min(parts, key=self.size)
@@ -203,11 +203,12 @@ class SearchStrategy(object):
 
     def filter(self, condition):
         """Returns a new strategy that generates values from this strategy
-        which satisfy the provided condition. Note that if the condition is
-        too hard to satisfy this might result in your tests failing with
+        which satisfy the provided condition. Note that if the condition is too
+        hard to satisfy this might result in your tests failing with
         Unsatisfiable.
 
         This method is part of the  public API.
+
         """
         return FilteredStrategy(
             condition=condition,
@@ -345,9 +346,9 @@ class SearchStrategy(object):
         return False
 
     def simplifiers(self, template):
-        """Yield a sequence of functions which each take a Random object and
-        a single template and produce a generator over "simpler" versions of
-        that template.
+        """Yield a sequence of functions which each take a Random object and a
+        single template and produce a generator over "simpler" versions of that
+        template.
 
         The template argument is provided to allow picking simplifiers that are
         likely to be useful. Each returned simplifier must be valid (in the
@@ -588,6 +589,7 @@ class MappedSearchStrategy(SearchStrategy):
 
 
 class FilteredStrategy(MappedSearchStrategy):
+
     def __init__(self, strategy, condition):
         super(FilteredStrategy, self).__init__(strategy=strategy)
         self.condition = condition
@@ -703,11 +705,11 @@ class FlatMapStrategy(SearchStrategy):
         check_data_type(list, data)
         if len(data) < 3:
             raise BadData(
-                "Too few elements. Expected 3 or 4 but got %d" % (len(data),)
+                'Too few elements. Expected 3 or 4 but got %d' % (len(data),)
             )
         if len(data) > 4:
             raise BadData(
-                "Too many elements. Expected 3 or 4 but got %d" % (len(data),)
+                'Too many elements. Expected 3 or 4 but got %d' % (len(data),)
             )
         check_data_type(integer_types, data[1])
         check_data_type(integer_types, data[2])

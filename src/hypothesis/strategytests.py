@@ -19,8 +19,8 @@ from random import Random
 from unittest import TestCase
 from collections import namedtuple
 
-from hypothesis.errors import Unsatisfiable
 from hypothesis import given, assume
+from hypothesis.errors import Unsatisfiable
 from hypothesis.database import ExampleDatabase
 from hypothesis.settings import Settings
 from hypothesis.utils.show import show
