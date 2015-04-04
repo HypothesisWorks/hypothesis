@@ -656,6 +656,68 @@ class FlatMapStrategy(SearchStrategy):
                 template_seed=template_seed,
             )
 
+    def simplifiers(self, template):
+        for simplify in self.flatmapped_strategy.simplifiers(
+            template.source_template
+        ):
+            yield self.left_simplifier(simplify)
+        if template.source_template in self.strategy_cache:
+            target_strategy = self.strategy_cache[template.source_template]
+            target_template = self.target_template(template)
+            for simplify in target_strategy.simplifiers(target_template):
+                yield self.right_simplifier(
+                    template.source_template, simplify
+                )
+
+    def left_simplifier(self, simplify):
+        def accept(random, template):
+            for simpler in simplify(random, template.source_template):
+                yield self.TemplateFromSeed(
+                    source_template=simpler,
+                    parameter_seed=template.parameter_seed,
+                    template_seed=template.template_seed,
+                )
+        accept.__name__ = str(
+            'left_simplifier(%s)' % (simplify.__name__,)
+        )
+        return accept
+
+    def right_simplifier(self, source_template, simplify):
+        def accept(random, template):
+            if template.source_template != source_template:
+                return
+            for simpler in simplify(random, self.target_template(template)):
+                yield self.TemplateFromTemplate(
+                    source_template=source_template,
+                    parameter_seed=template.parameter_seed,
+                    template_seed=template.template_seed,
+                    target_template=simpler,
+                )
+        accept.__name__ = str(
+            'right_simplifier(%s)' % (simplify.__name__,)
+        )
+        return accept
+
+    def target_template(self, template):
+        assert template.source_template in self.strategy_cache
+        target_strategy = self.strategy_cache[template.source_template]
+        if isinstance(template, self.TemplateFromTemplate):
+            return template.target_template
+        elif isinstance(template, self.TemplateFromBasic):
+            try:
+                return target_strategy.from_basic(
+                    template.basic_data
+                )
+            except BadData:
+                pass
+        target_parameter = target_strategy.draw_parameter(
+            Random(template.parameter_seed)
+        )
+        return target_strategy.draw_template(
+            BuildContext(Random(template.template_seed)),
+            target_parameter,
+        )
+
     def reify(self, template):
         source_template = template.source_template
         if source_template not in self.strategy_cache:
@@ -665,27 +727,7 @@ class FlatMapStrategy(SearchStrategy):
             self.strategy_cache[source_template] = target_strategy
         else:
             target_strategy = self.strategy_cache[source_template]
-        succeeded = False
-        if isinstance(template, self.TemplateFromTemplate):
-            target_template = template.target_template
-            succeeded = True
-        elif isinstance(template, self.TemplateFromBasic):
-            try:
-                target_template = target_strategy.from_basic(
-                    template.basic_data
-                )
-                succeeded = True
-            except BadData:
-                pass
-        if not succeeded:
-            target_parameter = target_strategy.draw_parameter(
-                Random(template.parameter_seed)
-            )
-            target_template = target_strategy.draw_template(
-                BuildContext(Random(template.template_seed)),
-                target_parameter,
-            )
-        return target_strategy.reify(target_template)
+        return target_strategy.reify(self.target_template(template))
 
     def to_basic(self, template):
         bits = [
