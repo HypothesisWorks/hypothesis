@@ -84,8 +84,8 @@ TestConstantLists = strategy_test_suite(
 )
 
 TestOrderedPairs = strategy_test_suite(
-    strategy(integers_in_range(1, 200)).map(
-        lambda e: integers_in_range(0, e - 1)
+    strategy(integers_in_range(1, 200)).flatmap(
+        lambda e: (integers_in_range(0, e - 1), just(e))
     )
 )
 
