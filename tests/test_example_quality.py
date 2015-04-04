@@ -23,8 +23,8 @@ import pytest
 from hypothesis import Settings, given, assume, strategy
 from tests.common import timeout
 from hypothesis.core import _debugging_return_failing_example
-from hypothesis.specifiers import one_of, integers_from, integers_in_range, \
-    just
+from hypothesis.specifiers import just, one_of, integers_from, \
+    integers_in_range
 from hypothesis.internal.compat import hrange, text_type, binary_type
 
 quality_settings = Settings(
@@ -319,4 +319,3 @@ def test_can_simplify_on_both_sides_of_flatmap():
         strategy(int).flatmap(lambda x: [just(x)]),
         lambda x: len(x) >= 10
     ) == [0] * 10
-    
