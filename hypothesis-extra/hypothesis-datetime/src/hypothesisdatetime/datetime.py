@@ -20,7 +20,7 @@ import pytz
 import hypothesis.internal.distributions as dist
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
-    strategy, check_data_type
+    strategy, check_data_type, check_length
 
 DatetimeSpec = namedtuple('DatetimeSpec', ('naive_options',))
 
@@ -201,6 +201,7 @@ class DatetimeStrategy(SearchStrategy):
 
     def from_basic(self, values):
         check_data_type(list, values)
+        check_length(8, values)
         for d in values[:-1]:
             check_data_type(int, d)
         if values[-1] is not None:
