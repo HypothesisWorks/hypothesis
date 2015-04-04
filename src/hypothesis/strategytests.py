@@ -30,6 +30,7 @@ from hypothesis.database.backend import SQLiteBackend
 from hypothesis.searchstrategy.strategies import BuildContext, \
     SearchStrategy, strategy
 
+
 TemplatesFor = namedtuple('TemplatesFor', ('base',))
 
 
@@ -218,6 +219,27 @@ def strategy_test_suite(
             hash(template)
             # It can be easy to forget to convert a list...
             hash(strat.from_basic(strat.to_basic(template)))
+
+        @given(
+            TemplatesFor(specifier), Random,
+            [[int]],
+            settings=settings
+        )
+        def test_apply_all_simplifiers(self, template, rnd, path):
+            path = list(filter(None, path))
+            assume(path)
+            current_template = template
+            for local_route in path:
+                simplifiers = list(strat.simplifiers(current_template))
+                if not simplifiers:
+                    break
+                for i in local_route:
+                    simplify = simplifiers[abs(i) % len(simplifiers)]
+                    simpler = list(simplify(
+                        rnd, current_template
+                    ))
+                    if simpler:
+                        current_template = random.choice(simpler)
 
         @specifier_test
         def test_can_minimize_to_empty(self, template, rnd):
