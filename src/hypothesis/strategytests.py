@@ -177,6 +177,16 @@ def strategy_test_suite(
             with self.assertRaises(Rejected):
                 nope()
 
+        def test_will_handle_a_really_weird_failure(self):
+            @given(specifier, settings=settings)
+            def nope(x):
+                if hash(show(specifier)) % 2:
+                    raise Rejected()
+            try:
+                nope()
+            except Rejected:
+                pass
+
         @specifier_test
         def test_is_basic(self, value, rnd):
             def is_basic(v):
