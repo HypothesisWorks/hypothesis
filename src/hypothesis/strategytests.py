@@ -90,11 +90,6 @@ for t in integer_types:
     mess_with_basic_data.extend(t)(mess_with_int)
 
 
-@mess_with_basic_data.extend(bool)
-def mess_with_bool(b, random):
-    return bool(random.randint())
-
-
 @mess_with_basic_data.extend(text_type)
 def mess_with_text(text, random):
     if random.randint(0, 1):
