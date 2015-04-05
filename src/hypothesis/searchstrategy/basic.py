@@ -18,7 +18,7 @@ from copy import deepcopy
 from random import Random, getrandbits
 from weakref import WeakKeyDictionary
 
-from hypothesis.internal.compat import integer_types
+from hypothesis.internal.compat import integer_types, hrange
 
 from .strategies import SearchStrategy, check_length, check_data_type
 
@@ -103,13 +103,19 @@ class BasicSearchStrategy(SearchStrategy):
 
     def produce_parameter(self, random):
         if self.user_parameter is not None:
-            return random.getrandbits(64)
+            up = random.getrandbits(64)
         else:
-            return 0
+            up = 0
+        template_choices = tuple(
+            random.getrandbits(64)
+            for _ in hrange(10)
+        )
+        return (up, template_choices)
 
     def produce_template(self, context, parameter):
+        up, template_choices = parameter
         return Generated(
-            context.random.getrandbits(64), parameter
+            context.random.choice(template_choices), up
         )
 
     def basic_simplify(self, random, template):
@@ -140,15 +146,13 @@ class BasicSearchStrategy(SearchStrategy):
                 Random(template.template_seed), parameter)
         else:
             assert isinstance(template, Simplified)
-            source = self.reify(template.source)
+            result = self.reify(template.source)
             for i, value in enumerate(
-                self.user_simplify(Random(template.seed), source)
+                self.user_simplify(Random(template.seed), result)
             ):
                 if i == template.iteration:
                     result = value
                     break
-            else:
-                result = source
         self.reify_cache[template.collection_key] = result
         return self.copy_value(result)
 
