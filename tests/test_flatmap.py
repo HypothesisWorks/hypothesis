@@ -15,8 +15,10 @@ from __future__ import division, print_function, absolute_import, \
 
 import pytest
 from hypothesis import Settings, given, assume, strategy
+from hypothesis.searchstrategy.strategies import BuildContext
 from hypothesis.database import ExampleDatabase
 from hypothesis.specifiers import just, floats_in_range, integers_in_range
+from random import Random
 
 ConstantLists = strategy(int).flatmap(lambda i: [just(i)])
 
@@ -62,3 +64,27 @@ def test_flatmap_retrieve_from_db():
         record_and_test_size()
 
     assert track[0] == example
+
+
+@given(Random)
+def test_can_recover_from_bad_data_in_mapped_strategy(r):
+    param = OrderedPairs.draw_parameter(r)
+    template = OrderedPairs.draw_template(BuildContext(r), param)
+    OrderedPairs.reify(template)
+    for simplification in OrderedPairs.full_simplify(r, template):
+        if isinstance(simplification, OrderedPairs.TemplateFromTemplate):
+            break
+    else:
+        assume(False)
+    assume(isinstance(simplification, OrderedPairs.TemplateFromTemplate))
+    basic = OrderedPairs.to_basic(simplification)
+    assert len(basic) == 4
+    assert isinstance(basic, list)
+    assert isinstance(basic[-1], list)
+    basic[-1] = 1
+    new_template = OrderedPairs.from_basic(basic)
+    assert isinstance(new_template, OrderedPairs.TemplateFromBasic)
+    reified = OrderedPairs.reify(new_template)
+    assert type(reified) == tuple
+    x, y = reified
+    assert x < y
