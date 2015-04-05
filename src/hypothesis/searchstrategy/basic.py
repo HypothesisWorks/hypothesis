@@ -23,7 +23,7 @@ class CollectionKey(object):
 
 
 class BasicTemplate(object):
-    __slots__ = ['tracking_id', 'collection_key', 'collection_keys']
+    __slots__ = ['tracking_id', 'collection_key']
 
     def __init__(self, tracking_id):
         self.tracking_id = tracking_id
@@ -59,7 +59,6 @@ class Generated(BasicTemplate):
         super(Generated, self).__init__(hasher.digest())
         self.template_seed = template_seed
         self.parameter_seed = parameter_seed
-        self.collection_keys = {self.collection_key}
 
 
 class Simplified(BasicTemplate):
@@ -74,8 +73,6 @@ class Simplified(BasicTemplate):
         self.seed = seed
         self.iteration = iteration
         self.source = source
-        self.collection_keys = set(source.collection_keys)
-        self.collection_keys.add(self.collection_key)
 
 
 class BasicSearchStrategy(SearchStrategy):
