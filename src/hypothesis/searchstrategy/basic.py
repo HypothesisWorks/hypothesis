@@ -7,8 +7,6 @@ import hashlib
 
 
 class CollectionKey(object):
-    __slots__ = ['h', '__weakref__']
-
     def __init__(self):
         self.h = getrandbits(64)
 
@@ -23,8 +21,6 @@ class CollectionKey(object):
 
 
 class BasicTemplate(object):
-    __slots__ = ['tracking_id', 'collection_key']
-
     def __init__(self, tracking_id):
         self.tracking_id = tracking_id
         self.collection_key = CollectionKey()
@@ -50,7 +46,6 @@ def add_int_to_hasher(hasher, i):
 
 
 class Generated(BasicTemplate):
-    __slots__ = ['template_seed', 'parameter_seed']
 
     def __init__(self, template_seed, parameter_seed):
         hasher = hashlib.sha1()
@@ -62,7 +57,6 @@ class Generated(BasicTemplate):
 
 
 class Simplified(BasicTemplate):
-    __slots__ = ['seed', 'iteration', 'source']
 
     def __init__(self, seed, iteration, source):
         hasher = hashlib.sha1()
