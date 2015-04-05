@@ -12,14 +12,28 @@ def simplify_bitfield(random, value):
         if value & k:
             yield value & (~k)
 
-BitField = basic_strategy(
-    generate=lambda r, p: r.getrandbits(128),
-    simplify=simplify_bitfield,
-    copy=lambda x: x,
+
+TestBitfield = strategy_test_suite(
+    basic_strategy(
+        generate=lambda r, p: r.getrandbits(128),
+        simplify=simplify_bitfield,
+        copy=lambda x: x,
+    )
+)
+
+TestBitfieldJustGenerate = strategy_test_suite(
+    basic_strategy(
+        generate=lambda r, p: r.getrandbits(128),
+    )
 )
 
 
-TestBitfield = strategy_test_suite(BitField)
+TestBitfieldWithParameter = strategy_test_suite(
+    basic_strategy(
+        parameter=lambda r: r.getrandbits(128),
+        generate=lambda r, p: r.getrandbits(128) & p,
+    )
+)
 
 
 def test_cache_is_cleaned_up_on_gc_1():
