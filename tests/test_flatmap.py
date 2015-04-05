@@ -13,8 +13,11 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+import pytest
+
 from hypothesis import Settings, given, assume, strategy
-from hypothesis.specifiers import just, integers_in_range
+from hypothesis.specifiers import just, integers_in_range, floats_in_range
+from hypothesis.database import ExampleDatabase
 
 ConstantLists = strategy(int).flatmap(lambda i: [just(i)])
 
@@ -31,3 +34,32 @@ with Settings(max_examples=200):
     @given(OrderedPairs)
     def test_in_order(x):
         assert x[0] < x[1]
+
+
+def test_flatmap_retrieve_from_db():
+    constant_float_lists = strategy(floats_in_range(0, 1)).flatmap(
+        lambda x: [just(x)]
+    )
+
+    track = []
+
+    db = ExampleDatabase()
+
+    @given(constant_float_lists, settings=Settings(database=db))
+    def record_and_test_size(xs):
+        track.append(xs)
+        assert sum(xs) < 1
+
+    with pytest.raises(AssertionError):
+        record_and_test_size()
+
+    assert track
+    example = track[-1]
+
+    while track:
+        track.pop()
+
+    with pytest.raises(AssertionError):
+        record_and_test_size()
+
+    assert track[0] == example

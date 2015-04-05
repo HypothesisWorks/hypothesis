@@ -306,12 +306,25 @@ def test_tuples_do_not_block_cloning():
     ) == [(False,)] * 50
 
 
+def test_can_simplify_flatmap_with_bounded_left_hand_size():
+    assert minimal(
+        strategy(bool).flatmap(lambda x: [just(x)]),
+        lambda x: len(x) >= 10) == [False] * 10
+
+
 def test_can_simplify_across_flatmap_of_just():
     assert minimal(strategy(int).flatmap(just)) == 0
 
 
 def test_can_simplify_on_right_hand_strategy_of_flatmap():
     assert minimal(strategy(int).flatmap(lambda x: [just(x)])) == []
+
+
+def test_can_ignore_left_hand_side_of_flatmap():
+    assert minimal(
+        strategy(int).flatmap(lambda x: [int]),
+        lambda x: len(x) >= 10
+    ) == [0] * 10
 
 
 def test_can_simplify_on_both_sides_of_flatmap():

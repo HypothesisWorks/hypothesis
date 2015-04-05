@@ -617,6 +617,11 @@ class FlatMapStrategy(SearchStrategy):
             'basic_data',
         ))
 
+    def __repr__(self):
+        return "FlatMapStrategy(%r, %s)" % (
+            self.flatmapped_strategy, self.expand.__name__
+        )
+
     def __init__(
         self, strategy, expand
     ):
@@ -706,7 +711,7 @@ class FlatMapStrategy(SearchStrategy):
         elif isinstance(template, self.TemplateFromBasic):
             try:
                 return target_strategy.from_basic(
-                    template.basic_data
+                    listize_basic(template.basic_data)
                 )
             except BadData:
                 pass
