@@ -190,7 +190,8 @@ class Verifier(object):
         if storage is not None:
             storage.save(best_example)
 
-        return best_example
+        setup_example()
+        return search_strategy.reify(best_example)
 
 
 load_entry_points()

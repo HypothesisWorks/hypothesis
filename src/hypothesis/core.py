@@ -22,7 +22,6 @@ from collections import namedtuple
 from hypothesis.control import assume
 from hypothesis.reporting import current_reporter
 from hypothesis.specifiers import just
-from hypothesis.searchstrategy import strategy
 from hypothesis.internal.verifier import Flaky, Verifier, Unfalsifiable, \
     UnsatisfiedAssumption
 from hypothesis.internal.reflection import arg_string, copy_argspec
@@ -158,16 +157,11 @@ def given(*generator_arguments, **generator_kwargs):
             except Unfalsifiable:
                 return
 
-            strat = strategy(given_specifier)
-
-            if setup_example is not None:
-                setup_example()
+            if _debugging_return_failing_example.value:
+                return falsifying_example
 
             try:
-                reified = strat.reify(falsifying_example)
-                if _debugging_return_failing_example.value:
-                    return reified
-                false_args, false_kwargs = reified
+                false_args, false_kwargs = falsifying_example
                 current_reporter()(
                     'Falsifying example: %s(%s)' % (
                         test.__name__,
@@ -185,7 +179,7 @@ def given(*generator_arguments, **generator_kwargs):
 
             finally:
                 if teardown_example is not None:
-                    teardown_example(reified)
+                    teardown_example(falsifying_example)
 
             # If we get here then something has gone wrong: We found a counter
             # example but it didn't fail when we invoked it again.
