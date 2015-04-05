@@ -26,6 +26,8 @@ def flatten(o):
 
     while stack:
         t = stack.pop()
+        if hasattr(t, '__trackas__'):
+            t = t.__trackas__()
         if isinstance(t, (text_type, binary_type)):
             result.append(t)
         elif isinstance(t, collections.Mapping):

@@ -1,3 +1,4 @@
+import gc
 import pytest
 
 from hypothesis.searchstrategy import basic_strategy
@@ -22,7 +23,7 @@ BitField = basic_strategy(
 TestBitfield = strategy_test_suite(BitField)
 
 
-def test_cache_is_cleaned_up_on_gc():
+def test_cache_is_cleaned_up_on_gc_1():
     st = basic_strategy(
         generate=lambda r, p: r.getrandbits(128),
         simplify=simplify_bitfield,
@@ -35,9 +36,23 @@ def test_cache_is_cleaned_up_on_gc():
 
     test_all_good()
 
+    gc.collect()
+
+    assert len(st.reify_cache) == 0
+
+
+def test_cache_is_cleaned_up_on_gc_2():
+    st = basic_strategy(
+        generate=lambda r, p: r.getrandbits(128),
+        simplify=simplify_bitfield,
+        copy=lambda x: x,
+    )
+
     @given(st)
     def test_all_bad(x):
         assert False
+
+    gc.collect()
 
     with pytest.raises(AssertionError):
         test_all_bad()
