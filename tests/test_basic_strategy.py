@@ -51,12 +51,12 @@ def test_cache_is_cleaned_up_on_gc_2():
     def test_all_bad(x):
         assert False
 
-    gc.collect()
-
     try:
         test_all_bad()
     except AssertionError:
         pass
+
+    gc.collect()
 
     assert all(isinstance(v, integer_types) for v in st.reify_cache.values())
     assert len(st.reify_cache) == 0, len(st.reify_cache)
