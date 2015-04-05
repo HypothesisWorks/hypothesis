@@ -149,7 +149,7 @@ class BasicSearchStrategy(SearchStrategy):
             result = self.reify(template.source)
             for i, value in enumerate(
                 self.user_simplify(Random(template.seed), result)
-            ):
+            ):  # pragma: no branch
                 if i == template.iteration:
                     result = value
                     break
