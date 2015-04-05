@@ -15,15 +15,15 @@ from __future__ import division, print_function, absolute_import, \
 
 from datetime import datetime
 
+import pytz
 import hypothesis.settings as hs
 from hypothesis import given, assume
 from hypothesis.specifiers import one_of
 from hypothesis.strategytests import strategy_test_suite
 from hypothesis.extra.datetime import naive_datetime, \
     timezone_aware_datetime
-from hypothesis.searchstrategy import strategy
+from hypothesis.internal.debug import minimal
 from hypothesis.internal.compat import hrange
-from hypothesis.internal.verifier import Verifier
 
 hs.Settings.default.max_examples = 1000
 
@@ -38,72 +38,58 @@ TestStandardDescriptorFeatures4 = strategy_test_suite(one_of((
 )))
 
 
-falsify = Verifier().falsify
-
-
 def test_can_find_after_the_year_2000():
-    falsify(lambda x: x.year > 2000, datetime)
+    assert minimal(datetime, lambda x: x.year > 2000).year == 2001
 
 
 def test_can_find_before_the_year_2000():
-    falsify(lambda x: x.year < 2000, datetime)
+    assert minimal(datetime, lambda x: x.year < 2000).year == 1999
 
 
 def test_can_find_each_month():
     for i in hrange(1, 12):
-        falsify(lambda x: x.month != i, datetime)
+        minimal(datetime, lambda x: x.month == i)
 
 
 def test_can_find_midnight():
-    falsify(
-        lambda x: not (x.hour == 0 and x.minute == 0 and x.second == 0),
-        datetime
+    minimal(
+        datetime,
+        lambda x: (x.hour == 0 and x.minute == 0 and x.second == 0),
     )
 
 
 def test_can_find_non_midnight():
-    falsify(lambda x: x.hour == 0, datetime)
+    assert minimal(datetime, lambda x: x.hour != 0).hour == 1
 
 
 def test_can_find_off_the_minute():
-    falsify(lambda x: x.second == 0, datetime)
+    minimal(datetime, lambda x: x.second == 0)
 
 
 def test_can_find_on_the_minute():
-    falsify(lambda x: x.second != 0, datetime)
+    minimal(datetime, lambda x: x.second != 0)
 
 
 def test_simplifies_towards_midnight():
-    d = strategy(datetime).reify(falsify(lambda x: False, datetime)[0])
+    d = minimal(datetime)
     assert d.hour == 0
     assert d.minute == 0
     assert d.second == 0
     assert d.microsecond == 0
 
 
-def test_simplifies_towards_2000():
-    d = strategy(datetime).reify(
-        falsify(lambda x: x.year <= 2000, datetime)[0])
-    assert d.year == 2001
-    d = strategy(datetime).reify(
-        falsify(lambda x: x.year >= 2000, datetime)[0])
-    assert d.year == 1999
-
-
 def test_can_generate_naive_datetime():
-    falsify(lambda d: d.tzinfo, datetime)
+    minimal(datetime, lambda d: not d.tzinfo)
 
 
 def test_can_generate_non_naive_datetime():
-    falsify(lambda d: not d.tzinfo, datetime)
+    assert minimal(datetime, lambda d: d.tzinfo).tzinfo == pytz.UTC
 
 
 def test_can_generate_non_utc():
-    falsify(lambda d: assume(d.tzinfo) and d.tzinfo.zone == 'UTC', datetime)
-
-
-def test_can_generate_utc():
-    falsify(lambda d: assume(d.tzinfo) and d.tzinfo.zone != 'UTC', datetime)
+    minimal(
+        datetime,
+        lambda d: assume(d.tzinfo) and d.tzinfo.zone != 'UTC')
 
 
 @given(naive_datetime)

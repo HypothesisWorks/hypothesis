@@ -173,6 +173,10 @@ class DatetimeStrategy(SearchStrategy):
         s.remove(value)
         for t in s:
             yield self.templateize(t)
+
+        for h in hrange(value.hour - 1, 0, -1):
+            yield self.templateize(value.replace(hour=h))
+
         year = value.year
         if year == 2000:
             return
