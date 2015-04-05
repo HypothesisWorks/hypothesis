@@ -18,7 +18,7 @@ from copy import deepcopy
 from random import Random
 from weakref import WeakKeyDictionary
 
-from hypothesis.internal.compat import integer_types, hrange
+from hypothesis.internal.compat import hrange, integer_types
 
 from .strategies import SearchStrategy, check_length, check_data_type
 
