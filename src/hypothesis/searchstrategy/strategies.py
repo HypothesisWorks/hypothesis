@@ -618,7 +618,7 @@ class FlatMapStrategy(SearchStrategy):
         ))
 
     def __repr__(self):
-        return "FlatMapStrategy(%r, %s)" % (
+        return 'FlatMapStrategy(%r, %s)' % (
             self.flatmapped_strategy, self.expand.__name__
         )
 

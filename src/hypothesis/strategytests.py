@@ -24,7 +24,7 @@ from hypothesis.errors import BadData, Unsatisfiable
 from hypothesis.database import ExampleDatabase
 from hypothesis.settings import Settings
 from hypothesis.utils.show import show
-from hypothesis.internal.compat import text_type, integer_types, hrange
+from hypothesis.internal.compat import hrange, text_type, integer_types
 from hypothesis.utils.extmethod import ExtMethod
 from hypothesis.database.backend import SQLiteBackend
 from hypothesis.searchstrategy.strategies import BuildContext, \
@@ -174,6 +174,7 @@ def strategy_test_suite(
 
         def test_will_find_a_failure_from_the_database(self):
             db = ExampleDatabase()
+
             @given(specifier, settings=Settings(max_examples=10, database=db))
             def nope(x):
                 raise Rejected()

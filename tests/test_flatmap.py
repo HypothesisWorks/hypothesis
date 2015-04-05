@@ -14,10 +14,9 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import pytest
-
 from hypothesis import Settings, given, assume, strategy
-from hypothesis.specifiers import just, integers_in_range, floats_in_range
 from hypothesis.database import ExampleDatabase
+from hypothesis.specifiers import just, floats_in_range, integers_in_range
 
 ConstantLists = strategy(int).flatmap(lambda i: [just(i)])
 
