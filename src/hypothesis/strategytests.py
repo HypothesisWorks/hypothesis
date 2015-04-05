@@ -72,7 +72,7 @@ class Rejected(Exception):
 mess_with_basic_data = ExtMethod()
 
 
-def mess_with_int(i, random):
+def mess_with_int(i, random):  # pragma: no cover
     s = random.randint(0, 4)
     if s == 0:
         return -i
@@ -91,7 +91,7 @@ for t in integer_types:
 
 
 @mess_with_basic_data.extend(text_type)
-def mess_with_text(text, random):
+def mess_with_text(text, random):  # pragma: no cover
     if random.randint(0, 1):
         return text.encode('utf-8')
     else:
@@ -99,7 +99,7 @@ def mess_with_text(text, random):
 
 
 @mess_with_basic_data.extend(list)
-def mess_with_list(ls, random):
+def mess_with_list(ls, random):  # pragma: no cover
     ls = list(ls)
     if not ls:
         if random.randint(0, 1):
