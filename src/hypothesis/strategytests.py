@@ -72,6 +72,17 @@ class Rejected(Exception):
 mess_with_basic_data = ExtMethod()
 
 
+def mutate_basic(basic, random):
+    if not random.randint(0, 2):
+        if isinstance(basic, text_type):
+            return list(basic)
+        elif isinstance(basic, integer_types):
+            return float(basic)
+        else:
+            return text_type(repr(basic))
+    return mess_with_basic_data(basic, random)
+
+
 def mess_with_int(i, random):  # pragma: no cover
     s = random.randint(0, 4)
     if s == 0:
@@ -107,7 +118,7 @@ def mess_with_list(ls, random):  # pragma: no cover
         return ls
     i = random.randint(0, len(ls))
     if i < len(ls):
-        ls[i] = mess_with_basic_data(ls[i], random)
+        ls[i] = mutate_basic(ls[i], random)
     t = random.randint(0, 5)
     if t == 0:
         while ls and random.randint(0, 1):
@@ -211,7 +222,7 @@ def strategy_test_suite(
         def test_only_raises_bad_data_in_from_basic(self, value, rnd):
             basic = strat.to_basic(value)
 
-            messed_basic = mess_with_basic_data(basic, rnd)
+            messed_basic = mutate_basic(basic, rnd)
             try:
                 strat.from_basic(messed_basic)
             except BadData:
