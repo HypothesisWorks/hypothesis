@@ -20,14 +20,25 @@ import marshal
 from hypothesis.internal.compat import text_type, binary_type
 
 
-def flatten(x):
-    if isinstance(x, (text_type, binary_type)):
-        return x
-    if isinstance(x, collections.Mapping):
-        return (type(x).__name__, tuple(map(flatten, x.items())))
-    if isinstance(x, collections.Iterable):
-        return (type(x).__name__, tuple(map(flatten, x)))
-    return x
+def flatten(o):
+    result = []
+    stack = [o]
+
+    while stack:
+        t = stack.pop()
+        if isinstance(t, (text_type, binary_type)):
+            result.append(t)
+        elif isinstance(t, collections.Mapping):
+            result.append(type(t).__name__)
+            result.append(len(t))
+            stack.extend(list(t.items()))
+        elif isinstance(t, collections.Iterable):
+            result.append(type(t).__name__)
+            result.append(len(t))
+            stack.extend(list(t))
+        else:
+            result.append(t)
+    return result
 
 
 def object_to_tracking_key(o):
