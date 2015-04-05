@@ -90,6 +90,7 @@ class TupleStrategy(SearchStrategy):
 
     def simplifier_for_index(self, i, simplifier):
         def accept(random, template):
+            assert len(template) == len(self.element_strategies)
             replacement = list(template)
             for s in simplifier(random, template[i]):
                 replacement[i] = s
