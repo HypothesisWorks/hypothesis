@@ -89,6 +89,18 @@ TestOrderedPairs = strategy_test_suite(
     )
 )
 
+TestMappedSampling = strategy_test_suite(
+    strategy([int]).filter(bool).flatmap(sampled_from)
+)
+
+TestManyFlatmaps = strategy_test_suite(
+    strategy(int)
+    .flatmap(integers_from)
+    .flatmap(integers_from)
+    .flatmap(integers_from)
+    .flatmap(integers_from)
+)
+
 
 def test_repr_has_specifier_in_it():
     suite = TestComplex(
