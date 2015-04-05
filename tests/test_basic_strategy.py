@@ -39,6 +39,14 @@ TestBitfields = strategy_test_suite([
     )
 ])
 
+TestBitfieldsSet = strategy_test_suite({
+    basic_strategy(
+        generate=lambda r, p: r.getrandbits(128),
+        simplify=simplify_bitfield,
+        copy=lambda x: x,
+    )
+})
+
 
 TestBitfield = strategy_test_suite(
     basic_strategy(
