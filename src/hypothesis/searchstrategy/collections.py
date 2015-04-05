@@ -295,7 +295,7 @@ class ListStrategy(SearchStrategy):
             bits.append(x[:split])
             bits.append(x[split:])
 
-        bits.sort()
+        bits.sort(key=len)
 
         for b in bits:
             yield b
