@@ -1,12 +1,30 @@
-from .strategies import SearchStrategy, check_data_type, check_length
-from weakref import WeakKeyDictionary
-from random import Random, getrandbits
-from copy import deepcopy
-from hypothesis.internal.compat import integer_types
+# coding=utf-8
+
+# Copyright (C) 2013-2015 David R. MacIver (david@drmaciver.com)
+
+# This file is part of Hypothesis (https://github.com/DRMacIver/hypothesis)
+
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file, You can
+# obtain one at http://mozilla.org/MPL/2.0/.
+
+# END HEADER
+
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
+
 import hashlib
+from copy import deepcopy
+from random import Random, getrandbits
+from weakref import WeakKeyDictionary
+
+from hypothesis.internal.compat import integer_types
+
+from .strategies import SearchStrategy, check_length, check_data_type
 
 
 class CollectionKey(object):
+
     def __init__(self):
         self.h = getrandbits(64)
 
@@ -21,6 +39,7 @@ class CollectionKey(object):
 
 
 class BasicTemplate(object):
+
     def __init__(self, tracking_id):
         self.tracking_id = tracking_id
         self.collection_key = CollectionKey()
