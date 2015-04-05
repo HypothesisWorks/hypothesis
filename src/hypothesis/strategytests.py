@@ -181,7 +181,7 @@ def strategy_test_suite(
             try:
                 for _ in hrange(3):
                     with self.assertRaises(Rejected):
-                        nope()
+                        nope()  # pragma: no branch
             finally:
                 db.close()
 
