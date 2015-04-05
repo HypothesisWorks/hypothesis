@@ -16,3 +16,4 @@ exclude_lines =
     NotImplementedError
     pragma: no cover
     __repr__
+    __ne__
