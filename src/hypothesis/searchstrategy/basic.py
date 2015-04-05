@@ -15,7 +15,7 @@ from __future__ import division, print_function, absolute_import, \
 
 import hashlib
 from copy import deepcopy
-from random import Random, getrandbits
+from random import Random
 from weakref import WeakKeyDictionary
 
 from hypothesis.internal.compat import integer_types, hrange
@@ -23,26 +23,10 @@ from hypothesis.internal.compat import integer_types, hrange
 from .strategies import SearchStrategy, check_length, check_data_type
 
 
-class CollectionKey(object):
-
-    def __init__(self):
-        self.h = getrandbits(64)
-
-    def __hash__(self):
-        return self.h
-
-    def __eq__(self, other):
-        return self is other
-
-    def __ne__(self, other):
-        return self is not other
-
-
 class BasicTemplate(object):
 
     def __init__(self, tracking_id):
         self.tracking_id = tracking_id
-        self.collection_key = CollectionKey()
 
     def __trackas__(self):
         return (type(self).__name__, self.tracking_id)
@@ -127,12 +111,12 @@ class BasicSearchStrategy(SearchStrategy):
             new_template = Simplified(
                 source=template, seed=random_seed, iteration=i
             )
-            self.reify_cache[new_template.collection_key] = simpler
+            self.reify_cache[new_template] = simpler
             yield new_template
 
     def reify(self, template):
         try:
-            return self.reify_cache[template.collection_key]
+            return self.reify_cache[template]
         except KeyError:
             pass
 
@@ -153,7 +137,7 @@ class BasicSearchStrategy(SearchStrategy):
                 if i == template.iteration:
                     result = value
                     break
-        self.reify_cache[template.collection_key] = result
+        self.reify_cache[template] = result
         return self.copy_value(result)
 
     def to_basic(self, template):
