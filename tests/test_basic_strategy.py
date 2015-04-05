@@ -1,8 +1,7 @@
 import gc
-import pytest
 
 from hypothesis.searchstrategy import basic_strategy
-from hypothesis.internal.compat import hrange
+from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.strategytests import strategy_test_suite
 from hypothesis import given
 
@@ -54,7 +53,10 @@ def test_cache_is_cleaned_up_on_gc_2():
 
     gc.collect()
 
-    with pytest.raises(AssertionError):
+    try:
         test_all_bad()
+    except AssertionError:
+        pass
 
-    assert len(st.reify_cache) == 0
+    assert all(isinstance(v, integer_types) for v in st.reify_cache.values())
+    assert len(st.reify_cache) == 0, len(st.reify_cache)
