@@ -1,9 +1,11 @@
 import gc
+import pytest
 
 from hypothesis.searchstrategy import basic_strategy
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.strategytests import strategy_test_suite
 from hypothesis import given
+from .test_example_quality import minimal
 
 
 def simplify_bitfield(random, value):
@@ -11,6 +13,15 @@ def simplify_bitfield(random, value):
         k = 1 << i
         if value & k:
             yield value & (~k)
+
+
+TestBitfields = strategy_test_suite([
+    basic_strategy(
+        generate=lambda r, p: r.getrandbits(128),
+        simplify=simplify_bitfield,
+        copy=lambda x: x,
+    )
+])
 
 
 TestBitfield = strategy_test_suite(
@@ -34,6 +45,18 @@ TestBitfieldWithParameter = strategy_test_suite(
         generate=lambda r, p: r.getrandbits(128) & p,
     )
 )
+
+
+@pytest.mark.parametrize('i', [0, 1, 2, 4, 8, 16, 32, 64, 127, 11, 10, 13])
+def test_can_simplify_bitfields(i):
+    bitfield = basic_strategy(
+        parameter=lambda r: r.getrandbits(128),
+        generate=lambda r, p: r.getrandbits(128) & p,
+        simplify=simplify_bitfield,
+        copy=lambda x: x,
+    )
+
+    assert minimal(bitfield, lambda x: x & (1 << i)) == 1 << i
 
 
 def test_cache_is_cleaned_up_on_gc_1():
