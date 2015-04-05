@@ -13,12 +13,13 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+from random import Random
+
 import pytest
 from hypothesis import Settings, given, assume, strategy
-from hypothesis.searchstrategy.strategies import BuildContext
 from hypothesis.database import ExampleDatabase
 from hypothesis.specifiers import just, floats_in_range, integers_in_range
-from random import Random
+from hypothesis.searchstrategy.strategies import BuildContext
 
 ConstantLists = strategy(int).flatmap(lambda i: [just(i)])
 
