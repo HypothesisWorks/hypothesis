@@ -9,17 +9,29 @@ on pip.
 All Hypothesis releases since 1.0 are `semantically versioned <http://semver.org/>`,
 with everything in this documentation considered public API.
 
---------
-Upcoming
---------
+------------------
+1.1.0 - 2015-04-06
+------------------
 
-This is a section for currently unreleased features. Most of these are likely
-to be in the next released version.
+Codename: No-one mention the M word.
 
-* Hypothesis will avoid putting unicode objects on sys.path unless it has to,
-  encoding them as ascii where possible. non-ascii strings will be left as
-  unicode. This isn't strictly a bug but is for aiding compatibility with some
-  programs.
+* Unicode strings are more strongly biased towards ascii characters. Previously they
+  would generate all over the space. This is mostly so that people who try to
+  shape their unicode strings with assume() have less of a bad time.
+* A number of fixes to data deserialization code that could theoretically have
+  caused mysterious bugs when using an old version of a Hypothesis example
+  database with a newer version. To the best of my knowledge a change that could
+  have triggered this bug has never actually been seen in the wild. Certainly
+  no-one ever reported a bug of this nature.
+* Out of the box support for Decimal and Fraction.
+* Significantly faster and higher quality simplification, especially for
+  collections of data.
+* New filter() and flatmap() methods on Strategy for better ways of building
+  strategies out of other strategies.
+* New BasicStrategy class which allows you to define your own strategies from
+  scratch without needing an existing matching strategy or being exposed to the
+  full horror or non-public nature of the SearchStrategy interface.
+
 
 ------------------
 1.0.0 - 2015-03-27
