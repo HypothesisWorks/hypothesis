@@ -99,10 +99,12 @@ class TupleStrategy(SearchStrategy):
         )
         return accept
 
-    def simplifiers(self):
+    def simplifiers(self, template):
+        if not template:
+            return
         for i in hrange(len(self.element_strategies)):
             strat = self.element_strategies[i]
-            for simplifier in strat.simplifiers():
+            for simplifier in strat.simplifiers(template[i]):
                 yield self.simplifier_for_index(i, simplifier)
 
     def to_basic(self, value):
@@ -180,8 +182,10 @@ class ListStrategy(SearchStrategy):
                     context, pv.child_parameter))
         return tuple(result)
 
-    def simplifiers(self):
+    def simplifiers(self, template):
         if not self.element_strategy:
+            return
+        if not template:
             return
 
         yield self.simplify_to_empty
@@ -191,11 +195,28 @@ class ListStrategy(SearchStrategy):
         yield self.simplify_with_single_deletes
         yield self.simplify_with_example_cloning
 
-        for simplify in self.element_strategy.simplifiers():
-            yield self.shared_simplification(simplify)
+        for indices in self.shared_indices(template):
+            for simplify in self.element_strategy.simplifiers(
+                template[indices[0]]
+            ):
+                yield self.shared_simplification(indices, simplify)
 
-        for simplify in self.element_strategy.simplifiers():
-            yield self.simplify_elementwise(simplify)
+        for i in hrange(len(template)):
+            for simplify in self.element_strategy.simplifiers(template[i]):
+                yield self.simplifier_for_index(i, simplify)
+
+    def simplifier_for_index(self, i, simplifier):
+        def accept(random, template):
+            if i >= len(template):
+                return
+            replacement = list(template)
+            for s in simplifier(random, template[i]):
+                replacement[i] = s
+                yield tuple(replacement)
+        accept.__name__ = str(
+            'simplifier_for_index(%d, %s)' % (i, simplifier.__name__)
+        )
+        return accept
 
     def simplify_to_empty(self, random, x):
         assert isinstance(x, tuple)
@@ -304,33 +325,30 @@ class ListStrategy(SearchStrategy):
             del y[i]
             yield tuple(y)
 
-    def shared_simplification(self, simplify):
-        def accept(random, x):
-            same_valued_indices = {}
-            for i, value in enumerate(x):
-                same_valued_indices.setdefault(value, []).append(i)
-            for indices in same_valued_indices.values():
-                if len(indices) > 1:
-                    value = x[indices[0]]
-                    for simpler in simplify(random, value):
-                        copy = list(x)
-                        for i in indices:
-                            copy[i] = simpler
-                        yield tuple(copy)
-        accept.__name__ = str(
-            'shared_simplification(%s)' % (simplify.__name__,)
-        )
-        return accept
+    def shared_indices(self, template):
+        same_valued_indices = {}
+        for i, value in enumerate(template):
+            same_valued_indices.setdefault(value, []).append(i)
+        for indices in same_valued_indices.values():
+            if len(indices) > 1:
+                yield tuple(indices)
 
-    def simplify_elementwise(self, simplify):
+    def shared_simplification(self, indices, simplify):
+        assert indices
+
         def accept(random, x):
-            for i in hrange(0, len(x)):
-                for s in simplify(random, x[i]):
-                    z = list(x)
-                    z[i] = s
-                    yield tuple(z)
+            if any(i >= len(x) for i in indices):
+                return
+            if len({x[i] for i in indices}) > 1:
+                return  # pragma: no cover
+            value = x[indices[0]]
+            for simpler in simplify(random, value):
+                copy = list(x)
+                for i in indices:
+                    copy[i] = simpler
+                yield tuple(copy)
         accept.__name__ = str(
-            'simplify_elementwise(%s)' % (simplify.__name__,)
+            'shared_simplification(%r, %s)' % (indices, simplify.__name__,)
         )
         return accept
 
@@ -417,8 +435,8 @@ class SetStrategy(SearchStrategy):
                 yield self.convert_template(value)
         return accept
 
-    def simplifiers(self):
-        for simplify in self.list_strategy.simplifiers():
+    def simplifiers(self, template):
+        for simplify in self.list_strategy.simplifiers(template):
             yield self.convert_simplifier(simplify)
 
     def to_basic(self, value):

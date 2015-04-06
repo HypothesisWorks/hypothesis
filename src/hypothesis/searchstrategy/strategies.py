@@ -17,7 +17,9 @@ from random import Random
 from collections import namedtuple
 
 import hypothesis.internal.distributions as dist
-from hypothesis.errors import BadData, WrongFormat
+from hypothesis.errors import BadData, NoExamples, WrongFormat, \
+    UnsatisfiedAssumption
+from hypothesis.control import assume
 from hypothesis.settings import Settings
 from hypothesis.specifiers import OneOf
 from hypothesis.internal.compat import hrange, integer_types
@@ -156,10 +158,24 @@ class SearchStrategy(object):
         """
         random = Random()
         context = BuildContext(random)
-        template = min((
-            self.draw_and_produce(context)
-            for _ in hrange(3)
-        ), key=self.size)
+
+        parts = []
+
+        for _ in hrange(20):
+            if len(parts) >= 3:
+                break
+            try:
+                template = self.draw_and_produce(context)
+                self.reify(template)
+                parts.append(template)
+            except UnsatisfiedAssumption:
+                pass
+        if not parts:
+            raise NoExamples(
+                'Could not find any valid examples in 20 tries'
+            )
+
+        template = min(parts, key=self.size)
         return self.reify(template)
 
     def map(self, pack):
@@ -171,6 +187,32 @@ class SearchStrategy(object):
         """
         return MappedSearchStrategy(
             pack=pack, strategy=self
+        )
+
+    def flatmap(self, expand):
+        """Returns a new strategy that generates values by generating a value
+        from this strategy, say x, then generating a value from
+        strategy(expand(x))
+
+        This method is part of the  public API.
+
+        """
+        return FlatMapStrategy(
+            expand=expand, strategy=self
+        )
+
+    def filter(self, condition):
+        """Returns a new strategy that generates values from this strategy
+        which satisfy the provided condition. Note that if the condition is too
+        hard to satisfy this might result in your tests failing with
+        Unsatisfiable.
+
+        This method is part of the  public API.
+
+        """
+        return FilteredStrategy(
+            condition=condition,
+            strategy=self,
         )
 
     def __or__(self, other):
@@ -303,9 +345,15 @@ class SearchStrategy(object):
         """
         return False
 
-    def simplifiers(self):
-        """Yield a sequence of functions which each take a single template and
-        produce a generator over "simpler" versions of that template.
+    def simplifiers(self, template):
+        """Yield a sequence of functions which each take a Random object and a
+        single template and produce a generator over "simpler" versions of that
+        template.
+
+        The template argument is provided to allow picking simplifiers that are
+        likely to be useful. Each returned simplifier must be valid (in the
+        sense of not erroring. It doesn't have to do anything useful) for all
+        templates for this strategy.
 
         General tips for a good simplify function:
 
@@ -336,7 +384,7 @@ class SearchStrategy(object):
         turn.
 
         """
-        for simplifier in self.simplifiers():
+        for simplifier in self.simplifiers(template):
             for value in simplifier(random, template):
                 yield value
 
@@ -369,7 +417,7 @@ class SearchStrategy(object):
         changed = True
         while changed:
             changed = False
-            for simplify in self.simplifiers():
+            for simplify in self.simplifiers(t):
                 while True:
                     simpler = simplify(random, t)
                     for s in simpler:
@@ -466,10 +514,10 @@ class OneOfStrategy(SearchStrategy):
                 yield (s, value)
         return accept
 
-    def simplifiers(self):
-        for i, strategy in enumerate(self.element_strategies):
-            for simplify in strategy.simplifiers():
-                yield self.element_simplifier(i, simplify)
+    def simplifiers(self, template):
+        i, value = template
+        for simplify in self.element_strategies[i].simplifiers(value):
+            yield self.element_simplifier(i, simplify)
 
     def to_basic(self, template):
         i, value = template
@@ -527,8 +575,8 @@ class MappedSearchStrategy(SearchStrategy):
     def reify(self, value):
         return self.pack(self.mapped_strategy.reify(value))
 
-    def simplifiers(self):
-        return self.mapped_strategy.simplifiers()
+    def simplifiers(self, template):
+        return self.mapped_strategy.simplifiers(template)
 
     def strictly_simpler(self, x, y):
         return self.mapped_strategy.strictly_simpler(x, y)
@@ -538,3 +586,204 @@ class MappedSearchStrategy(SearchStrategy):
 
     def from_basic(self, data):
         return self.mapped_strategy.from_basic(data)
+
+
+class FilteredStrategy(MappedSearchStrategy):
+
+    def __init__(self, strategy, condition):
+        super(FilteredStrategy, self).__init__(strategy=strategy)
+        self.condition = condition
+
+    def pack(self, value):
+        assume(self.condition(value))
+        return value
+
+
+class FlatMapStrategy(SearchStrategy):
+    TemplateFromSeed = namedtuple(
+        'TemplateFromSeed', (
+            'source_template', 'parameter_seed', 'template_seed',
+        ))
+
+    TemplateFromTemplate = namedtuple(
+        'TemplateFromTemplate', (
+            'source_template', 'parameter_seed', 'template_seed',
+            'target_template',
+        ))
+
+    TemplateFromBasic = namedtuple(
+        'TemplateFromBasic', (
+            'source_template', 'parameter_seed', 'template_seed',
+            'basic_data',
+        ))
+
+    def __repr__(self):
+        return 'FlatMapStrategy(%r, %s)' % (
+            self.flatmapped_strategy, self.expand.__name__
+        )
+
+    def __init__(
+        self, strategy, expand
+    ):
+        self.flatmapped_strategy = strategy
+        self.expand = expand
+        self.strategy_cache = {}
+
+    def produce_parameter(self, random):
+        return (
+            self.flatmapped_strategy.draw_parameter(random),
+            random.getrandbits(64),
+        )
+
+    def produce_template(self, context, parameter):
+        source_template = self.flatmapped_strategy.draw_template(
+            context, parameter[0])
+        parameter_seed = context.random.getrandbits(64)
+        template_seed = context.random.getrandbits(64)
+
+        if source_template in self.strategy_cache:
+            target = self.strategy_cache[source_template]
+            target_parameter = target.draw_parameter(Random(parameter_seed))
+            target_template = target.draw_template(
+                BuildContext(Random(template_seed)),
+                target_parameter,
+            )
+            return self.TemplateFromTemplate(
+                source_template=source_template,
+                parameter_seed=parameter_seed,
+                template_seed=template_seed,
+                target_template=target_template,
+            )
+        else:
+            return self.TemplateFromSeed(
+                source_template=source_template,
+                parameter_seed=parameter_seed,
+                template_seed=template_seed,
+            )
+
+    def simplifiers(self, template):
+        for simplify in self.flatmapped_strategy.simplifiers(
+            template.source_template
+        ):
+            yield self.left_simplifier(simplify)
+        if template.source_template in self.strategy_cache:
+            target_strategy = self.strategy_cache[template.source_template]
+            target_template = self.target_template(template)
+            for simplify in target_strategy.simplifiers(target_template):
+                yield self.right_simplifier(
+                    template.source_template, simplify
+                )
+
+    def left_simplifier(self, simplify):
+        def accept(random, template):
+            for simpler in simplify(random, template.source_template):
+                yield self.TemplateFromSeed(
+                    source_template=simpler,
+                    parameter_seed=template.parameter_seed,
+                    template_seed=template.template_seed,
+                )
+        accept.__name__ = str(
+            'left_simplifier(%s)' % (simplify.__name__,)
+        )
+        return accept
+
+    def right_simplifier(self, source_template, simplify):
+        def accept(random, template):
+            if template.source_template != source_template:
+                return
+            for simpler in simplify(random, self.target_template(template)):
+                yield self.TemplateFromTemplate(
+                    source_template=source_template,
+                    parameter_seed=template.parameter_seed,
+                    template_seed=template.template_seed,
+                    target_template=simpler,
+                )
+        accept.__name__ = str(
+            'right_simplifier(%s)' % (simplify.__name__,)
+        )
+        return accept
+
+    def target_template(self, template):
+        assert template.source_template in self.strategy_cache
+        target_strategy = self.strategy_cache[template.source_template]
+        if isinstance(template, self.TemplateFromTemplate):
+            return template.target_template
+        elif isinstance(template, self.TemplateFromBasic):
+            try:
+                return target_strategy.from_basic(
+                    listize_basic(template.basic_data)
+                )
+            except BadData:
+                pass
+        target_parameter = target_strategy.draw_parameter(
+            Random(template.parameter_seed)
+        )
+        return target_strategy.draw_template(
+            BuildContext(Random(template.template_seed)),
+            target_parameter,
+        )
+
+    def reify(self, template):
+        source_template = template.source_template
+        if source_template not in self.strategy_cache:
+            target_strategy = strategy(self.expand(
+                self.flatmapped_strategy.reify(source_template)
+            ))
+            self.strategy_cache[source_template] = target_strategy
+        else:
+            target_strategy = self.strategy_cache[source_template]
+        return target_strategy.reify(self.target_template(template))
+
+    def to_basic(self, template):
+        bits = [
+            self.flatmapped_strategy.to_basic(template.source_template),
+            template.parameter_seed, template.template_seed
+        ]
+        if isinstance(template, self.TemplateFromBasic):
+            bits.append(listize_basic(template.basic_data))
+        elif isinstance(template, self.TemplateFromTemplate):
+            target_strategy = self.strategy_cache[template.source_template]
+            bits.append(target_strategy.to_basic(template.target_template))
+        else:
+            assert isinstance(template, self.TemplateFromSeed)
+        return bits
+
+    def from_basic(self, data):
+        check_data_type(list, data)
+        if len(data) < 3:
+            raise BadData(
+                'Too few elements. Expected 3 or 4 but got %d' % (len(data),)
+            )
+        if len(data) > 4:
+            raise BadData(
+                'Too many elements. Expected 3 or 4 but got %d' % (len(data),)
+            )
+        check_data_type(integer_types, data[1])
+        check_data_type(integer_types, data[2])
+        source_template = self.flatmapped_strategy.from_basic(data[0])
+        if len(data) == 4:
+            return self.TemplateFromBasic(
+                source_template=source_template,
+                parameter_seed=data[1], template_seed=data[2],
+                basic_data=tupleize_basic(data[3])
+            )
+        else:
+            assert len(data) == 3
+            return self.TemplateFromSeed(
+                source_template=source_template,
+                parameter_seed=data[1], template_seed=data[2],
+            )
+
+
+def tupleize_basic(x):
+    if isinstance(x, list):
+        return tuple(map(tupleize_basic, x))
+    else:
+        return x
+
+
+def listize_basic(x):
+    if isinstance(x, tuple):
+        return list(map(listize_basic, x))
+    else:
+        return x

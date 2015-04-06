@@ -154,7 +154,10 @@ class Verifier(object):
         run_time = time.time() - start_time
         timed_out = self.timeout >= 0 and run_time >= self.timeout
         if not falsifying_examples:
-            if len(track_seen) >= search_strategy.size_lower_bound:
+            if (
+                satisfying_examples and
+                len(track_seen) >= search_strategy.size_lower_bound
+            ):
                 raise Exhausted(
                     hypothesis, satisfying_examples)
             elif satisfying_examples < min_satisfying_examples:

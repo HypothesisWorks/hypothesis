@@ -23,7 +23,8 @@ import pytest
 from hypothesis import Settings, given, assume, strategy
 from tests.common import timeout
 from hypothesis.core import _debugging_return_failing_example
-from hypothesis.specifiers import one_of, integers_from, integers_in_range
+from hypothesis.specifiers import just, one_of, integers_from, \
+    integers_in_range
 from hypothesis.internal.compat import hrange, text_type, binary_type
 
 quality_settings = Settings(
@@ -32,7 +33,7 @@ quality_settings = Settings(
 
 
 def minimal(definition, condition=None, settings=None):
-    @timeout(5)
+    @timeout(10)
     @given(definition, settings=settings or quality_settings)
     def everything_is_terrible(x):
         if condition is None:
@@ -303,3 +304,31 @@ def test_tuples_do_not_block_cloning():
         [(one_of((bool, (int,))),)],
         lambda x: len(x) >= 50 and any(isinstance(t[0], bool) for t in x)
     ) == [(False,)] * 50
+
+
+def test_can_simplify_flatmap_with_bounded_left_hand_size():
+    assert minimal(
+        strategy(bool).flatmap(lambda x: [just(x)]),
+        lambda x: len(x) >= 10) == [False] * 10
+
+
+def test_can_simplify_across_flatmap_of_just():
+    assert minimal(strategy(int).flatmap(just)) == 0
+
+
+def test_can_simplify_on_right_hand_strategy_of_flatmap():
+    assert minimal(strategy(int).flatmap(lambda x: [just(x)])) == []
+
+
+def test_can_ignore_left_hand_side_of_flatmap():
+    assert minimal(
+        strategy(int).flatmap(lambda x: [int]),
+        lambda x: len(x) >= 10
+    ) == [0] * 10
+
+
+def test_can_simplify_on_both_sides_of_flatmap():
+    assert minimal(
+        strategy(int).flatmap(lambda x: [just(x)]),
+        lambda x: len(x) >= 10
+    ) == [0] * 10

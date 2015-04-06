@@ -19,6 +19,7 @@ from collections import namedtuple
 import pytest
 import hypothesis.specifiers as specifiers
 from hypothesis.types import RandomWithSeed
+from hypothesis.errors import NoExamples
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.searchstrategy.numbers import BoundedIntStrategy, \
     RandomGeometricIntStrategy
@@ -116,3 +117,8 @@ def test_can_map():
 def test_sample_from_empty_errors():
     with pytest.raises(ValueError):
         strategy(specifiers.sampled_from([]))
+
+
+def test_example_raises_unsatisfiable_when_too_filtered():
+    with pytest.raises(NoExamples):
+        strategy(int).filter(lambda x: False).example()
