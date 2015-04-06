@@ -293,10 +293,14 @@ def test_minimal_mixed_list_propagates_leftwards():
     # otherwise the features that ensure sometimes we can get a list of all of
     # one type will occasionally give us an example which doesn't contain any
     # bools to clone
-    assert minimal(
-        [bool, (int,)],
-        lambda x: len(x) >= 50 and any(isinstance(t, bool) for t in x)
-    ) == [False] * 50
+    def long_list_with_enough_bools(x):
+        if len(x) < 50:
+            return False
+        if len([t for t in x if isinstance(t, bool)]) < 10:
+            return False
+        return True
+
+    assert minimal([bool, (int,)], long_list_with_enough_bools) == [False] * 50
 
 
 def test_tuples_do_not_block_cloning():
