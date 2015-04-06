@@ -593,9 +593,7 @@ def define_float_strategy(specifier, settings):
         ExponentialFloatStrategy() |
         JustIntFloats(strategy(int)) |
         NastyFloats() |
-        NastyFloats() |
-        FullRangeFloats() |
-        SmallFloats()
+        FullRangeFloats()
     )
 
 

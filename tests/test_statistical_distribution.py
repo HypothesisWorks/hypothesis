@@ -298,3 +298,14 @@ test_non_empty_subset_of_two_is_usually_large = define_test(
     {specifiers.sampled_from((1, 2))}, 0.6,
     lambda t: len(t) == 2
 )
+
+test_mostly_sensible_floats = define_test(
+    float, 0.5,
+    lambda t: t + 1 > t
+)
+
+test_mostly_largish_floats = define_test(
+    float, 0.5,
+    lambda t: t + 1 > 1,
+    condition=lambda x: x > 0,
+)
