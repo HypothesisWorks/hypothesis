@@ -79,8 +79,10 @@ class BasicStrategy(object):
 
         There should be no cycles in the graph produced by this. i.e. there
         should not be any sequence of values x1, ..., xn such that x{i+1} is
-        in simplify(xi) and x1 is in simplify xn. If there are then Hypothesis
-        will loop trying to simplify until it hits its timeout.
+        in simplify(xi) and x1 is in simplify xn. Hypothesis has built in
+        limits which will stop it getting stuck in an infinite loop if you do
+        this, but it will tend to get fixated on any values it finds in a loop,
+        and will take longer to give you a good answer.
 
         In general simplify should make a good effort to shrink a value a lot.
         "By about half" is usually a good choice for the initial values of the
@@ -139,6 +141,7 @@ class Generated(BasicTemplate):
         super(Generated, self).__init__(hasher.digest())
         self.template_seed = template_seed
         self.parameter_seed = parameter_seed
+        self.depth = 0
 
 
 class Simplified(BasicTemplate):
@@ -152,9 +155,15 @@ class Simplified(BasicTemplate):
         self.seed = seed
         self.iteration = iteration
         self.source = source
+        self.depth = source.depth + 1
 
 
 class BasicSearchStrategy(SearchStrategy):
+
+    # We don't have good duplicate detection for this so we cut off
+    # simplification at an arbitrary level so as to not get caught in an
+    # infinite loop.
+    MAX_DEPTH = 1000
 
     def __init__(
         self,
@@ -185,6 +194,8 @@ class BasicSearchStrategy(SearchStrategy):
         )
 
     def basic_simplify(self, random, template):
+        if template.depth >= self.MAX_DEPTH:
+            return
         random_seed = random.getrandbits(64)
         reified = self.reify(template)
         for i, simpler in enumerate(

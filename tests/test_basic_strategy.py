@@ -21,6 +21,8 @@ from hypothesis.strategytests import strategy_test_suite
 from hypothesis.searchstrategy import BasicStrategy
 from hypothesis.searchstrategy.basic import basic_strategy
 from hypothesis.internal.compat import hrange, integer_types
+from hypothesis.internal.debug import timeout
+
 
 from .test_example_quality import minimal
 
@@ -146,3 +148,17 @@ def test_cache_is_cleaned_up_on_gc_2():
 
     assert all(isinstance(v, integer_types) for v in st.reify_cache.values())
     assert len(st.reify_cache) == 0, len(st.reify_cache)
+
+
+def test_does_not_get_stuck_in_a_loop():
+    bad_strategy = basic_strategy(
+        generate=lambda r, p: 1,
+        simplify=lambda r, v: [v]
+    )
+
+    @timeout(2)
+    @given(bad_strategy)
+    def oh_noes(x):
+        assert x != 1
+    with pytest.raises(AssertionError):
+        oh_noes()
