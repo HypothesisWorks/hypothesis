@@ -316,34 +316,8 @@ what should be in the list rather than from the type):
   >>> strategy([int]).example()
   [0, 0, -1, 0, -1, -2]
 
-Unlike tuples, the strategy for lists will generate lists of arbitrary length.
 
-If you have multiple elements in the list you ask for a strategy from it will
-give you a mix:
-
-.. code:: python
-
-  >>> strategy([int, bool]).example()
-  [1, True, False, -7, 35, True, -2]
-
-There are also a bunch of custom types that let you define more specific examples.
-
-.. code:: python
-
-  >>> import hypothesis.specifiers as spec
-
-  >>> strategy([spec.integers_in_range(1, 10)]).example()
-  [7, 9, 9, 10, 10, 4, 10, 9, 9, 7, 4, 7, 7, 4, 7]
-
-  In[10]: strategy([spec.floats_in_range(0, 1)]).example()
-  [0.4679222775246174, 0.021441634094071356, 0.08639605748268818]
-
-  >>> strategy(spec.one_of((float, bool))).example()
-  3.6797748715455153e-281
-
-  >>> strategy(spec.one_of((float, bool))).example()
-  False
-
+Details of what exactly you can generate are :doc:`available in a separate document <data>`.
 
 ------------------------------------
 The gory details of given parameters
