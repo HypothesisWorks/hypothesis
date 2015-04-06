@@ -18,7 +18,8 @@ import gc
 import pytest
 from hypothesis import given
 from hypothesis.strategytests import strategy_test_suite
-from hypothesis.searchstrategy import basic_strategy
+from hypothesis.searchstrategy import BasicStrategy
+from hypothesis.searchstrategy.basic import basic_strategy
 from hypothesis.internal.compat import hrange, integer_types
 
 from .test_example_quality import minimal
@@ -29,6 +30,30 @@ def simplify_bitfield(random, value):
         k = 1 << i
         if value & k:
             yield value & (~k)
+
+
+class BoringBitfields(BasicStrategy):
+    def generate(self, random, parameter_value):
+        return random.getrandbits(128)
+
+
+class Bitfields(BasicStrategy):
+    def generate_parameter(self, random):
+        return random.getrandbits(128)
+
+    def generate(self, random, parameter_value):
+        return parameter_value & random.getrandbits(128)
+
+    def simplify(self, random, value):
+        return simplify_bitfield(random, value)
+
+    def copy(self, value):
+        return value
+
+
+TestBoringBitfieldsClass = strategy_test_suite(BoringBitfields)
+TestBitfieldsClass = strategy_test_suite(Bitfields)
+TestBitfieldsInstance = strategy_test_suite(Bitfields())
 
 
 TestBitfields = strategy_test_suite([

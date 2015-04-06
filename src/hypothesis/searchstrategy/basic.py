@@ -19,8 +19,90 @@ from random import Random
 from weakref import WeakKeyDictionary
 
 from hypothesis.internal.compat import hrange, integer_types
+from hypothesis.settings import Settings
 
-from .strategies import SearchStrategy, check_length, check_data_type
+from .strategies import SearchStrategy, check_length, check_data_type, strategy
+
+
+class BasicStrategy(object):
+    """
+    A class for constructing strategies which exposes a kinder, friendlier,
+    interface for you to use. It gives you 80-90% of Hypothesis's strategy
+    functionality but presents a stable and less outlandishly complicated
+    API, closer in nature to the standard Quickcheck arbitrary + simplify
+    API, but with a few variations that have proven their worth.
+
+    Caveats for the unwary:
+
+        * This is not actually a  SearchStrategy subclass and is not nearly
+          as close to the metal as you might imagine.
+        * Consider building your strategies out of existing strategies rather
+          than using this if at all possible. Writing a good strategy is hard
+          work and the built in types frequently have a lot of careful tuning
+          to hit edge cases that your own implementations will not get to
+          take advantage of.
+    """
+
+    def __init__(self, settings=None):
+        self.settings = settings or Settings.default
+
+    def generate_parameter(self, random):
+        """
+        A parameter value gets used to choose the "shape" of your distribution.
+        Values drawn from this will be fed to generate, with the same value
+        often being used multiple times.
+
+        This is used to drive the adaptic exploration, so you should try to
+        make sure that your parameters determine something interesting that
+        is likely to affect things people care about - parameters which tend
+        to produce results that fail assume will be used less often than
+        parameters which tend to produce things that pass assume.
+
+        However Hypothesis will work perfectly well if you don't want to use
+        this feature and the default implementation of just returning None is
+        entirely acceptable.
+        """
+        return None
+
+    def generate(self, random, parameter_value):
+        """
+        Generate a value given a random number generator and a value that has
+        previously been produced from generate_parameter. This is the only
+        method you actually have to implement.
+        """
+        raise NotImplementedError("BasicStrategy.generate")
+
+    def simplify(self, random, value):
+        """
+        Given a random number generator and a value, return a collection of
+        "simpler" versions of the value.
+
+        There should be no cycles in the graph produced by this. i.e. there
+        should not be any sequence of values x1, ..., xn such that x{i+1} is
+        in simplify(xi) and x1 is in simplify xn. If there are then Hypothesis
+        will loop trying to simplify until it hits its timeout.
+
+        In general simplify should make a good effort to shrink a value a lot.
+        "By about half" is usually a good choice for the initial values of the
+        generator, with values closer to the original value appearing towards
+        the end.
+
+        It's fine to not implement this but your examples will be
+        correspondingly more complex if you do.
+        """
+        return ()
+
+    def copy(self, value):
+        """
+        Copy a value so that the result is safe to be passed to a function
+        that might mutate it. Any mutations to the result should not affect
+        the original.
+
+        The default implementation of this uses deepcopy and should generally
+        be entirely safe to use. Only override this if your value doesn't and
+        can't be made to support deepcopying.
+        """
+        return deepcopy(value)
 
 
 class BasicTemplate(object):
@@ -175,3 +257,17 @@ def basic_strategy(
         user_generate=generate, user_parameter=parameter,
         user_simplify=simplify, copy_value=copy,
     )
+
+
+@strategy.extend(BasicStrategy)
+def basic_to_strategy(basic, settings):
+    return basic_strategy(
+        generate=basic.generate,
+        parameter=basic.generate_parameter,
+        simplify=basic.simplify, copy=basic.copy
+    )
+
+
+@strategy.extend_static(BasicStrategy)
+def basic_class_to_strategy(cls, settings):
+    return strategy(cls(settings))

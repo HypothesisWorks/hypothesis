@@ -17,7 +17,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 from .strategies import SearchStrategy, strategy
-from .basic import basic_strategy
+from .basic import BasicStrategy
 
 from . import numbers as s1
 from . import collections as s2
@@ -31,5 +31,5 @@ loaded = [s1, s2, s3, s4]
 __all__ = [
     'strategy',
     'SearchStrategy',
-    'basic_strategy',
+    'BasicStrategy',
 ]
