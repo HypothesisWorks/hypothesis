@@ -1,6 +1,6 @@
 # README #
 
-A simple blog site template for jekyll.
+A simple blog template for <a href="http://jekyllrb.com" target="_blank">Jekyll</a>.
 
 Uses:
 * Twitter Bootstrap 3.2.0
