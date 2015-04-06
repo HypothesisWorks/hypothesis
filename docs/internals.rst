@@ -12,7 +12,7 @@ Nothing here is stable public API and might all be prone to change between
 minor releases. The purpose of this document is to share the ideas, not to
 specify the behaviour.
 
-This is sorted roughly in order of most interesting to least interesting.
+This is sorted roughly in order of most interesting to least technically interesting.
 
 ----------
 Templating
@@ -29,17 +29,30 @@ not on reified data.
 
 This has several major advantages:
 
-1. The templates can be of a much more restricted type than the desired output - you can require them to be immutable, serializable, hashable, etc without in any way restricting the range of data that you can generate.
-2. Seamless support for mutable data: Because the mutable object you produce is the result of reifying the template, any mutation done by the function you call does not affect the underlying template.
-3. Generation strategies can be made functorial (and indeed applicative. You can sortof make them monadic but the resulting templates are a bit fiddly and can't really be of the desired restricted type, so it's probably not actually worth it)
+1. The templates can be of a much more restricted type than the desired output
+   - you can require them to be immutable, serializable, hashable, etc without
+   in any way restricting the range of data that you can generate.
+2. Seamless support for mutable data: Because the mutable object you produce
+   is the result of reifying the template, any mutation done by the function
+   you call does not affect the underlying template.
+3. Generation strategies are monads (more or less. The generation is monadic,
+   the simplification rules don't strictly follow the monad laws but this isn't
+   a problem in practice).
 
-The latter is worth elaborating on: Hypothesis SearchStrategy has a method map
-which lets you do e.g. strategy(int).map(lambda x: Decimal(x) / 100). This gives
-you a new strategy for decimals, which still supports minimization. The normal
-obstacle here is that you can't minimize the result because you'd need a way to
-map back to the original data type, but that isn't an issue here because you
-can just keep using the previous template type, minimize that, and only convert
-to the new data type at the point of reification.
+The latter is worth elaborating on: Hypothesis SearchStrategy has methods map and
+flatmap, which lets you do e.g. strategy(int).map(lambda x: Decimal(x) / 100).
+
+This gives you a new strategy for decimals, which still supports minimization.
+The normal obstacle here is that you can't minimize the result because you'd
+need a way to map back to the original data type, but that isn't an issue here
+because you can just keep using the previous template type, minimize that, and
+only convert to the new data type at the point of reification.
+
+Making generation monadic is trickier because of the way it has to interact with
+reification (you can't know what the strategy you need to draw from is until you've
+reified the intermediate argument, which you can't do). The way this is solved is
+pretty fiddly and involves some tricks that wouldn't work in a pure language unless
+reify was also pure (and it's quite useful to allow reify to be monadic).
 
 --------------------------
 Multi-stage simplification
@@ -125,6 +138,16 @@ single pass, using the function
 Empirically this general appraoch seems to be much faster for classes of
 example where one of the passes is constrained, while still producing high
 quality results.
+
+An additional detail: In actual fact, the function that returns the shrinkers
+has access to the value to be shrunk. This is to handle the case where there
+might be a very large number of potential shrinkers, most of them useless. In
+the monadic case we have an infinite space of potential shrinkers because we
+can only apply shrinkers from the target strategy if we know the source value.
+
+The shrink functions returned must all be able to handle any value (in the sense of
+not erroring. They don't have to do anything useful). The purpose of the argument
+to shrinkers is only to immediately eliminate shrinkers that won't be useful.
 
 ---------------
 Parametrization
@@ -242,3 +265,20 @@ stable serialization format. So rather than storing and testing the whole
 examples for equality we simply serialize them and (if the serialized string is
 at least 20 bytes) we take the sha1 hash of it. We then just keep these hashes
 around and if we've seen the hash before we treat the example as seen.
+
+
+---------------------
+The strategy function
+---------------------
+
+Hypothesis uses an extensible function called strategy that basically means
+"convert this object into a strategy if it's not one already". This turns out 
+to be a really good API for quickcheck style things in a dynamic language,
+because it means you can very often do "things that look like types" to map
+to a strategy, and it also lets you do nice things like putting in custom
+strategies anywhere you want.
+
+I only mention this because I spent a lot of time with a much worse API and
+it looks like this is not something that has generally been settled on very
+clearly for dynamic languages. I believe the more common approach is to just
+use combinators for everything, but the Hypothesis one looks a lot prettier. 
