@@ -18,13 +18,15 @@ from copy import deepcopy
 from random import Random
 from weakref import WeakKeyDictionary
 
-from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.settings import Settings
+from hypothesis.internal.compat import hrange, integer_types
 
-from .strategies import SearchStrategy, check_length, check_data_type, strategy
+from .strategies import SearchStrategy, strategy, check_length, \
+    check_data_type
 
 
 class BasicStrategy(object):
+
     """
     A class for constructing strategies which exposes a kinder, friendlier,
     interface for you to use. It gives you 80-90% of Hypothesis's strategy
@@ -47,10 +49,9 @@ class BasicStrategy(object):
         self.settings = settings or Settings.default
 
     def generate_parameter(self, random):
-        """
-        A parameter value gets used to choose the "shape" of your distribution.
-        Values drawn from this will be fed to generate, with the same value
-        often being used multiple times.
+        """A parameter value gets used to choose the "shape" of your
+        distribution. Values drawn from this will be fed to generate, with the
+        same value often being used multiple times.
 
         This is used to drive the adaptic exploration, so you should try to
         make sure that your parameters determine something interesting that
@@ -61,20 +62,21 @@ class BasicStrategy(object):
         However Hypothesis will work perfectly well if you don't want to use
         this feature and the default implementation of just returning None is
         entirely acceptable.
+
         """
         return None
 
     def generate(self, random, parameter_value):
+        """Generate a value given a random number generator and a value that
+        has previously been produced from generate_parameter.
+
+        This is the only method you actually have to implement.
+
         """
-        Generate a value given a random number generator and a value that has
-        previously been produced from generate_parameter. This is the only
-        method you actually have to implement.
-        """
-        raise NotImplementedError("BasicStrategy.generate")
+        raise NotImplementedError('BasicStrategy.generate')
 
     def simplify(self, random, value):
-        """
-        Given a random number generator and a value, return a collection of
+        """Given a random number generator and a value, return a collection of
         "simpler" versions of the value.
 
         There should be no cycles in the graph produced by this. i.e. there
@@ -91,18 +93,19 @@ class BasicStrategy(object):
 
         It's fine to not implement this but your examples will be
         correspondingly more complex if you do.
+
         """
         return ()
 
     def copy(self, value):
-        """
-        Copy a value so that the result is safe to be passed to a function
-        that might mutate it. Any mutations to the result should not affect
-        the original.
+        """Copy a value so that the result is safe to be passed to a function
+        that might mutate it. Any mutations to the result should not affect the
+        original.
 
-        The default implementation of this uses deepcopy and should generally
-        be entirely safe to use. Only override this if your value doesn't and
-        can't be made to support deepcopying.
+        The default implementation of this uses deepcopy and should
+        generally be entirely safe to use. Only override this if your
+        value doesn't and can't be made to support deepcopying.
+
         """
         return deepcopy(value)
 

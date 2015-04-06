@@ -18,11 +18,10 @@ import gc
 import pytest
 from hypothesis import given
 from hypothesis.strategytests import strategy_test_suite
-from hypothesis.searchstrategy import BasicStrategy
-from hypothesis.searchstrategy.basic import basic_strategy
-from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.internal.debug import timeout
-
+from hypothesis.searchstrategy import BasicStrategy
+from hypothesis.internal.compat import hrange, integer_types
+from hypothesis.searchstrategy.basic import basic_strategy
 
 from .test_example_quality import minimal
 
@@ -35,11 +34,13 @@ def simplify_bitfield(random, value):
 
 
 class BoringBitfields(BasicStrategy):
+
     def generate(self, random, parameter_value):
         return random.getrandbits(128)
 
 
 class Bitfields(BasicStrategy):
+
     def generate_parameter(self, random):
         return random.getrandbits(128)
 
