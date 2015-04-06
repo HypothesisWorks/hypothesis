@@ -166,6 +166,38 @@ Special specifiers
 The module hypothesis.specifiers has a number of types you can use to define
 more specific strategies for data.
 
+~~~~~~~~~~
+dictionary
+~~~~~~~~~~
+
+The strategy for dictionary instances just gives you dictionaries with fixed
+keys. If instead you want dictionaries with variable keys you use this function
+. It takes two arguments - one generates keys, the other values.
+
+.. code:: python
+
+    >>> from hypothesis.specifiers import dictionary
+    >>> strategy(dictionary(int, int)).example()
+    {}
+    >>> strategy(dictionary(int, int)).example()
+    {20819: -157}
+    >>> strategy(dictionary(int, int)).example()
+    {288: 13, 911: 12, -259: 9, -121: -4}
+
+It also takes an optional third argument you can use for custom dictionary
+classes (these don't have to be dict subtypes, anything that can be build
+from a list of (key, value) pairs will do):
+
+.. code:: python
+
+    >>> from collections import OrderedDict
+    >>> strategy(dictionary(int, int, OrderedDict)).example()
+    OrderedDict([(0, 0), (1, 0)])
+    >>> strategy(dictionary(int, int, OrderedDict)).example()
+    OrderedDict()
+    >>> strategy(dictionary(int, int, OrderedDict)).example()
+    OrderedDict([(-3, -213), (3, 203), (18, 0)])
+
 ~~~~~~
 one_of
 ~~~~~~
