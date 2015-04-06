@@ -70,6 +70,14 @@ Examples:
   >>> strategy((int, int, int)).example()
   (-6, -37837571, -8)
 
+The empty tuple gives the strategy that only generates the empty tuple:
+
+.. code:: python
+
+  >>> strategy(()).example()
+  ()
+  
+
 collections.namedtuple instances also work out of the box, and in exactly the
 same way:
 
@@ -114,6 +122,13 @@ e.g.
   >>> strategy([float, bool]).example()
   [True]
 
+An empty list will give you a strategy generating only empty lists:
+
+.. code:: python
+
+  >>> strategy([]).example()
+  []
+
 ~~~~~~~~~~~~~~~~~~~
 Sets and frozensets
 ~~~~~~~~~~~~~~~~~~~
@@ -128,6 +143,10 @@ Sets and frozensets behave identically to lists:
   {0, 2, -1}
   >>> strategy(frozenset({int})).example()
   frozenset({-7, -3, -2, -1})
+  >>> strategy(set()).example()
+  set()
+  >>> strategy(frozenset()).example()
+  frozenset()
 
 ~~~~~~~~~~~~
 Dictionaries
@@ -141,6 +160,9 @@ corresponding to the values in the source.
 
   >>> strategy({"foo": int, "bar": bool}).example()
   {'bar': True, 'foo': -367}
+  >>> strategy({}).example()
+  {}
+
 
 -----------------
 Mixing strategies
