@@ -17,6 +17,7 @@ from collections import namedtuple
 
 import hypothesis.internal.distributions as dist
 from hypothesis.settings import Settings
+from hypothesis.specifiers import Dictionary
 from hypothesis.utils.show import show
 from hypothesis.internal.compat import hrange
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
@@ -534,3 +535,10 @@ def define_dict_strategy(specifier, settings):
     for k, v in specifier.items():
         strategy_dict[k] = strategy(v, settings)
     return FixedKeysDictStrategy(strategy_dict)
+
+
+@strategy.extend(Dictionary)
+def define_dictionary_strategy(specifier, settings):
+    return strategy(
+        [(specifier.keys, specifier.values)], settings
+    ).map(specifier.dict_class)

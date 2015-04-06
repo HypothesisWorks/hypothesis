@@ -55,3 +55,10 @@ SampledFrom = namedtuple('SampledFrom', ('elements,'))
 
 def sampled_from(elements):
     return SampledFrom(tuple(elements))
+
+
+Dictionary = namedtuple('Dictionary', ('keys', 'values', 'dict_class'))
+
+
+def dictionary(keys, values, dict_class=dict):
+    return Dictionary(keys, values, dict_class)

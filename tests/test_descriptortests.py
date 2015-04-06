@@ -16,10 +16,10 @@ from __future__ import division, print_function, absolute_import, \
 from random import Random
 from decimal import Decimal
 from fractions import Fraction
-from collections import namedtuple
+from collections import OrderedDict, namedtuple
 
 from hypothesis import strategy
-from hypothesis.specifiers import just, one_of, sampled_from, \
+from hypothesis.specifiers import just, one_of, dictionary, sampled_from, \
     integers_from, floats_in_range, integers_in_range
 from tests.common.specifiers import Descriptor, DescriptorWithValue
 from hypothesis.strategytests import TemplatesFor, strategy_test_suite
@@ -39,6 +39,10 @@ TestOneOfSameType = strategy_test_suite(
 TestRandom = strategy_test_suite(Random)
 TestInts = strategy_test_suite(int)
 TestBoolLists = strategy_test_suite([bool])
+TestDictionaries = strategy_test_suite(dictionary((int, int), bool))
+TestOrderedDictionaries = strategy_test_suite(
+    dictionary(int, int, OrderedDict)
+)
 TestString = strategy_test_suite(text_type)
 BinaryString = strategy_test_suite(binary_type)
 TestIntBool = strategy_test_suite((int, bool))

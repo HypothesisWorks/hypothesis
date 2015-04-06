@@ -24,6 +24,7 @@ Codename: No-one mention the M word.
   have triggered this bug has never actually been seen in the wild. Certainly
   no-one ever reported a bug of this nature.
 * Out of the box support for Decimal and Fraction.
+* new dictionary specifier for dictionaries with variable keys.
 * Significantly faster and higher quality simplification, especially for
   collections of data.
 * New filter() and flatmap() methods on Strategy for better ways of building

@@ -17,14 +17,14 @@ import sys
 import math
 from decimal import Decimal
 from fractions import Fraction
-from collections import Counter
+from collections import Counter, OrderedDict
 
 import pytest
 from hypothesis import Settings, given, assume, strategy
 from tests.common import timeout
 from hypothesis.core import _debugging_return_failing_example
-from hypothesis.specifiers import just, one_of, integers_from, \
-    integers_in_range
+from hypothesis.specifiers import just, one_of, dictionary, \
+    integers_from, integers_in_range
 from hypothesis.internal.compat import hrange, text_type, binary_type
 
 quality_settings = Settings(
@@ -336,3 +336,17 @@ def test_can_simplify_on_both_sides_of_flatmap():
         strategy(int).flatmap(lambda x: [just(x)]),
         lambda x: len(x) >= 10
     ) == [0] * 10
+
+
+@pytest.mark.parametrize('dict_class', [dict, OrderedDict])
+def test_dictionary(dict_class):
+    assert minimal(dictionary(int, text_type, dict_class)) == dict_class()
+
+    x = minimal(dictionary(int, text_type, dict_class), lambda t: len(t) >= 3)
+    assert isinstance(x, dict_class)
+    assert set(x.values()) == {''}
+    for k in x:
+        if k < 0:
+            assert k + 1 in x
+        if k > 0:
+            assert k - 1 in x
