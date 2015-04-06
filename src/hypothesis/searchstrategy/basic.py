@@ -131,9 +131,9 @@ class BasicSearchStrategy(SearchStrategy):
         else:
             assert isinstance(template, Simplified)
             result = self.reify(template.source)
-            for i, value in enumerate(
+            for i, value in enumerate(  # pragma: no branch
                 self.user_simplify(Random(template.seed), result)
-            ):  # pragma: no branch
+            ):
                 if i == template.iteration:
                     result = value
                     break
