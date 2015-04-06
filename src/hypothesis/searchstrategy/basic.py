@@ -156,6 +156,7 @@ class BasicSearchStrategy(SearchStrategy):
         check_data_type(integer_types, data[1])
         template = Generated(data[0], data[1])
         simplifications = data[2]
+        check_data_type(list, simplifications)
         while simplifications:
             step = simplifications.pop()
             check_data_type(list, step)
