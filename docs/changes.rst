@@ -10,6 +10,22 @@ All Hypothesis releases since 1.0 are `semantically versioned <http://semver.org
 with everything in this documentation considered public API.
 
 ------------------
+1.1.1 - 2015-04-07
+------------------
+
+Codename: Nothing to see here
+
+This is just a patch release put out because it fixed some internal bugs that would
+block the Django integration release but did not actually affect anything anyone could
+previously have been using. It also contained a minor quality fix for floats that
+I'd happened to have finished in time.
+
+* Fix some internal bugs with object lifecycle management that were impossible to
+  hit with the previously released versions but broke hypothesis-django.
+* Bias floating point numbers somewhat less aggressively towards very small numbers
+
+
+------------------
 1.1.0 - 2015-04-06
 ------------------
 
