@@ -480,3 +480,16 @@ Litter = namedtuple('Litter', ('kitten1', 'kitten2'))
 @given(Litter(int, int))
 def test_named_tuples_are_of_right_type(litter):
     assert isinstance(litter, Litter)
+
+
+try:
+    import asyncio
+
+    @fails
+    @given(frozenset([int]))
+    @asyncio.coroutine
+    def test_coroutine(xs):
+        assert sum(xs) < 100
+        yield
+except ImportError:
+    pass

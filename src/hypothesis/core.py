@@ -27,12 +27,30 @@ from hypothesis.internal.verifier import Flaky, Verifier, Unfalsifiable, \
 from hypothesis.internal.reflection import arg_string, copy_argspec
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
+try:
+    import asyncio
+except ImportError:
+    asyncio = None
+
 [assume]
 
 HypothesisProvided = namedtuple('HypothesisProvided', ('value,'))
 
 
 _debugging_return_failing_example = DynamicVariable(False)
+
+
+def _make_test_runner(func):
+    if hasattr(func, '_is_coroutine'):
+        if asyncio is None:
+            raise RuntimeError('asyncio not found to run coroutine test')
+        loop = asyncio.get_event_loop()
+        if loop is None:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        return lambda *a, **k: loop.run_until_complete(func(*a, **k))
+    else:
+        return func
 
 
 def given(*generator_arguments, **generator_kwargs):
@@ -56,6 +74,8 @@ def given(*generator_arguments, **generator_kwargs):
         raise TypeError('given must be called with at least one argument')
 
     def run_test_with_generator(test):
+        run_test = _make_test_runner(test)
+
         original_argspec = inspect.getargspec(test)
         if original_argspec.varargs:
             raise TypeError(
@@ -117,7 +137,7 @@ def given(*generator_arguments, **generator_kwargs):
                 if setup_example is not None:
                     setup_example()
                 try:
-                    test(*arguments, **kwargs)
+                    run_test(test, *arguments, **kwargs)
                 finally:
                     if teardown_example is not None:
                         teardown_example((arguments, kwargs))
@@ -137,7 +157,7 @@ def given(*generator_arguments, **generator_kwargs):
             def to_falsify(xs):
                 testargs, testkwargs = xs
                 try:
-                    test(*testargs, **testkwargs)
+                    run_test(*testargs, **testkwargs)
                     return True
                 except UnsatisfiedAssumption as e:
                     raise e
@@ -175,7 +195,7 @@ def given(*generator_arguments, **generator_kwargs):
                 # We run this one final time so we get good errors
                 # Otherwise we would have swallowed all the reports of it
                 # actually having gone wrong.
-                test(*false_args, **false_kwargs)
+                run_test(*false_args, **false_kwargs)
 
             finally:
                 if teardown_example is not None:
