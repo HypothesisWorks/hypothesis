@@ -51,10 +51,9 @@ In terms of what's actually *known* to work:
     and this is verified as part of the CI.
   * Nose has been tried at least once and works fine, and I'm aware of people who
     use Hypothesis with Nose, but this isn't tested as part of the CI.
-  * Django unit testing doesn't work entirely well with Hypothesis at the moment
-    but proper support is coming. Right now the issue is that the database will
-    be reset once per test rather than once per example, which is not what you
-    want.
+  * Integration with Django's testing requires use of the :ref:`hypothesis-django` package.
+    The issue is that in Django's tests' normal mode of execution it will reset the
+    database one per test rather than once per example, which is not what you want.
 
 Coverage works out of the box with Hypothesis (and Hypothesis has 100% branch
 coverage in its own tests). However you should probably not use Coverage, Hypothesis

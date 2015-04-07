@@ -144,3 +144,56 @@ hypothesis-pytest
 hypothesis-pytest is the world's most basic pytest plugin. Install it to get
 slightly better integrated example reporting when using @given and running
 under pytest. That's basically all it does.
+
+.. _hypothesis-django:
+
+-----------------
+hypothesis-django
+-----------------
+
+hypothesis-django adds support for testing your Django models with Hypothesis.
+Using it is quite straightforward: All you need to do is subclass 
+hypothesis.extra.django.TestCase or hypothesis.extra.django.TransactionTestCase
+and you can use @given as normal, and the transactions will be per example
+rather than per test function as they would be if you used @given with a normal
+django test suite (this is important because your test function will be called
+multiple times and you don't want them to interfere with eachother). Test cases
+on these classes that do not use @given will be run as normal.
+
+I strongly recommend not using TransactionTestCase unless you really have to.
+Because Hypothesis runs this in a loop the performance problems it normally has
+are significantly exacerbated and your tests will be really slow.
+
+In addition to the above, Hypothesis has some limited support for automatically
+generating instances of your models. You can use @given(MyModelClass) and this
+will usually work.
+
+The test suite integration should be pretty solid, but the automatic model
+generation is highly experimental. Don't be surprised if it doesn't work very
+well, but do file bug reports.
+
+Known limitations:
+
+1. If your model has a non-nullable field type that Hypothesis doesn't support
+   then this will error with ModelNotSupported. If it is has a nullable field
+   type that Hypothesis doesn't support it will always be null.
+2. Cycles (e.g. if A has a foreign key pointing to B and B has a foreign key
+   pointing back to A) are not supported. In some limited cases a cycle where
+   the foreign key is nullable will be supported but always null.
+3. Children will not be populated. So if A has many B and you ask for A, you
+   will get an A with no Bs referencing it.
+4. Parents will not be shared, so if you ask for a list of [B] in the above,
+   each of them wil have a unique A.
+5. Particularly hairy constraints will sometimes cause Hypothesis to not be
+   able to provide enough examples.
+
+Basically if a model is mostly a simple data storage thing with few constraints
+you should probably expect to just be able to ask Hypothesis for an instance
+and have everything work. For more complicated dependencies you'll probably
+want to write your own generators.
+
+Fortunately, writing your own generators is entirely feasible! All of the
+:doc:`normal data generation methods <data>` work fine with models. In
+particular you should feel free to create models inside map and flatmap (or
+filter if you really want to I guess). These will only ever be run inside the
+transaction and anything created in them will be cleaned up as normal.
