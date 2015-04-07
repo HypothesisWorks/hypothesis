@@ -13,25 +13,29 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+from django.db import IntegrityError
 import django.db.models as dm
-import hypothesis.extra.fakefactory as ff
+from hypothesis.control import assume
 from hypothesis.specifiers import one_of
-from hypothesis.extra.datetime import timezone_aware_datetime
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.searchstrategy.strategies import MappedSearchStrategy, \
     strategy
 
-FIELD_MAPPINGS = {
-    dm.BigIntegerField: int,
-    dm.BinaryField: binary_type,
-    dm.BooleanField: bool,
-    dm.CharField: text_type,
-    dm.DateTimeField: timezone_aware_datetime,
-    dm.EmailField: ff.FakeFactory('email'),
-    dm.FloatField: float,
-    dm.IntegerField: int,
-    dm.NullBooleanField: one_of((None, bool)),
-}
+
+def field_mappings():
+    import hypothesis.extra.fakefactory as ff
+    from hypothesis.extra.datetime import timezone_aware_datetime
+    return {
+        dm.BigIntegerField: int,
+        dm.BinaryField: binary_type,
+        dm.BooleanField: bool,
+        dm.CharField: text_type,
+        dm.DateTimeField: timezone_aware_datetime,
+        dm.EmailField: ff.FakeFactory('email'),
+        dm.FloatField: float,
+        dm.IntegerField: int,
+        dm.NullBooleanField: one_of((None, bool)),
+    }
 
 
 class ModelNotSupported(Exception):
@@ -39,12 +43,13 @@ class ModelNotSupported(Exception):
 
 
 def model_to_base_specifier(model):
+    mappings = field_mappings()
     result = {}
     for f in model._meta.concrete_fields:
         if isinstance(f, dm.AutoField):
             continue
         try:
-            mapped = FIELD_MAPPINGS[type(f)]
+            mapped = mappings[type(f)]
         except KeyError:
             if f.null:
                 continue
@@ -69,9 +74,12 @@ class ModelStrategy(MappedSearchStrategy):
             strategy=strategy(specifier, settings))
 
     def pack(self, value):
-        result = self.model(**value)
-        result.save()
-        return result
+        try:
+            result = self.model(**value)
+            result.save()
+            return result
+        except IntegrityError:
+            assume(False)
 
 
 @strategy.extend_static(dm.Model)

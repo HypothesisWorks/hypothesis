@@ -14,9 +14,8 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 from hypothesis.extra.django import TestCase
-from hypothesis.extra.django.models import ModelNotSupported
-from hypothesis import given
-from toystore.models import Company, Customer, CouldBeCharming, Charming
+from hypothesis import given, assume
+from toystore.models import Company, Customer, CouldBeCharming
 
 
 class TestGetsBasicModels(TestCase):
@@ -24,6 +23,15 @@ class TestGetsBasicModels(TestCase):
     def test_is_company(self, company):
         self.assertIsInstance(company, Company)
         self.assertIsNotNone(company.pk)
+
+    @given([Company])
+    def test_can_get_multiple_models_with_unique_field(self, companies):
+        assume(len(companies) > 1)
+        for c in companies:
+            self.assertIsNotNone(c.pk)
+        self.assertEqual(
+            len(companies), len({c.name for c in companies})
+        )
 
     @given(Customer)
     def test_is_customer(self, customer):
@@ -36,11 +44,3 @@ class TestGetsBasicModels(TestCase):
         self.assertIsInstance(not_charming, CouldBeCharming)
         self.assertIsNotNone(not_charming.pk)
         self.assertIsNone(not_charming.charm)
-
-    @given(Charming)
-    def charm_me(self, charm):
-        pass
-
-    def test_given_unsupported_errors(self):
-        with self.assertRaises(ModelNotSupported):
-            TestGetsBasicModels('charm_me').charm_me()
