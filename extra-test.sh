@@ -26,9 +26,8 @@ for d in hypothesis-extra/hypothesis-*; do
             ./test_setup
         fi
         if [ -e manage.py ]; then
-          echo "Django tests temporarily disabled"
-#         PYTHONPATH=src python -m coverage run --rcfile=$COVERAGERC manage.py test
-#         pip install pytest-django
+          PYTHONPATH=src python -m coverage run --rcfile=$COVERAGERC manage.py test
+          pip install pytest-django
         else
           PYTHONPATH=src python -m coverage run  --rcfile=$COVERAGERC -m pytest tests
         fi
