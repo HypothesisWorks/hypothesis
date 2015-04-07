@@ -55,7 +55,7 @@ class TestWorkflow(VanillaTestCase):
             def test_normal_test_1(self):
                 Company.objects.create(name='MickeyCo')
 
-        t = LocalTest()
+        t = LocalTest('test_normal_test_1')
         try:
             t.test_does_not_break_other_things()
         except IntegrityError:
