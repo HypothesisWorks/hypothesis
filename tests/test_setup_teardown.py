@@ -14,7 +14,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import pytest
-from hypothesis import given
+from hypothesis import given, strategy
 
 
 class HasSetupAndTeardown(object):
@@ -50,6 +50,10 @@ class HasSetupAndTeardown(object):
     def give_me_a_positive_int(self, x):
         assert x >= 0
 
+    @given(strategy(int).map(lambda x: x.nope))
+    def fail_in_reify(self, x):
+        pass
+
 
 def test_calls_setup_and_teardown_on_self_as_first_argument():
     x = HasSetupAndTeardown()
@@ -82,3 +86,11 @@ def test_calls_setup_and_teardown_on_failure():
     assert x.setups > 0
     assert len(x.teardowns) == x.setups
     assert x.teardowns[-1][1]['x'] == -1
+
+
+def test_still_tears_down_on_failed_reify():
+    x = HasSetupAndTeardown()
+    with pytest.raises(AttributeError):
+        x.fail_in_reify()
+    assert x.setups > 0
+    assert len(x.teardowns) == x.setups

@@ -156,6 +156,10 @@ def given(*generator_arguments, **generator_kwargs):
                 )[0]
             except Unfalsifiable:
                 return
+            except Exception:
+                if teardown_example is not None:
+                    teardown_example(None)
+                raise
 
             if _debugging_return_failing_example.value:
                 return falsifying_example

@@ -22,7 +22,7 @@ from collections import namedtuple
 import pytest
 import hypothesis.settings as hs
 import hypothesis.reporting as reporting
-from hypothesis import given, assume
+from hypothesis import given, assume, strategy
 from hypothesis.core import _debugging_return_failing_example
 from hypothesis.errors import Flaky, Unsatisfiable
 from tests.common.utils import fails, fails_with, capture_out
@@ -480,3 +480,9 @@ Litter = namedtuple('Litter', ('kitten1', 'kitten2'))
 @given(Litter(int, int))
 def test_named_tuples_are_of_right_type(litter):
     assert isinstance(litter, Litter)
+
+
+@fails_with(AttributeError)
+@given(strategy(int).map(lambda x: x.nope))
+def test_fails_in_reify(x):
+    pass
