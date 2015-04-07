@@ -15,5 +15,4 @@ from __future__ import division, print_function, absolute_import, \
 
 
 def load():
-    from hypothesis.extra.django.models import field_mappings
-    [field_mappings]
+    __import__("hypothesis.extra.django.models")

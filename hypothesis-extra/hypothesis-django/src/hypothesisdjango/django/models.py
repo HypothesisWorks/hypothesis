@@ -22,10 +22,26 @@ from hypothesis.searchstrategy.strategies import MappedSearchStrategy, \
     strategy
 
 
-def field_mappings():
+class ModelNotSupported(Exception):
+    pass
+
+
+def referenced_models(model, seen=None):
+    if seen is None:
+        seen = set()
+    for f in model._meta.concrete_fields:
+        if isinstance(f, dm.ForeignKey):
+            t = f.rel.to
+            if t not in seen:
+                seen.add(t)
+                referenced_models(t, seen)
+    return seen
+
+
+def model_to_base_specifier(model):
     import hypothesis.extra.fakefactory as ff
     from hypothesis.extra.datetime import timezone_aware_datetime
-    return {
+    mappings = {
         dm.BigIntegerField: int,
         dm.BinaryField: binary_type,
         dm.BooleanField: bool,
@@ -37,13 +53,6 @@ def field_mappings():
         dm.NullBooleanField: one_of((None, bool)),
     }
 
-
-class ModelNotSupported(Exception):
-    pass
-
-
-def model_to_base_specifier(model):
-    mappings = field_mappings()
     result = {}
     for f in model._meta.concrete_fields:
         if isinstance(f, dm.AutoField):
@@ -51,7 +60,17 @@ def model_to_base_specifier(model):
         try:
             mapped = mappings[type(f)]
         except KeyError:
-            if f.null:
+            if isinstance(f, dm.ForeignKey):
+                mapped = f.rel.to
+                if model in referenced_models(mapped):
+                    if f.null:
+                        continue
+                    else:
+                        raise ModelNotSupported((
+                            'non-nullable cycle starting %s -> %s. This is '
+                            'currently not supported.'
+                        ) % (model.__name__, mapped.__name__))
+            elif f.null:
                 continue
             else:
                 raise ModelNotSupported((

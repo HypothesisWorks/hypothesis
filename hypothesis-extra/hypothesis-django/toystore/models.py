@@ -20,6 +20,11 @@ class Company(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
 
+class Store(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    company = models.ForeignKey(Company, null=False)
+
+
 class CharmField(models.Field):
     def db_type(self, connection):
         return "char(1)"
@@ -39,3 +44,15 @@ class Charming(models.Model):
 
 class CouldBeCharming(models.Model):
     charm = CharmField(null=True)
+
+
+class SelfLoop(models.Model):
+    me = models.ForeignKey('self', null=True)
+
+
+class LoopA(models.Model):
+    b = models.ForeignKey('LoopB', null=False)
+
+
+class LoopB(models.Model):
+    a = models.ForeignKey('LoopA', null=True)

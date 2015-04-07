@@ -14,8 +14,11 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 from hypothesis.extra.django import TestCase
-from hypothesis import given, assume
-from toystore.models import Company, Customer, CouldBeCharming
+from hypothesis.extra.django.models import ModelNotSupported
+from hypothesis import given, assume, strategy
+from toystore.models import Company, Customer, CouldBeCharming, Store, \
+    SelfLoop, LoopA, LoopB
+from unittest import TestCase as VanillaTestCase
 
 
 class TestGetsBasicModels(TestCase):
@@ -23,6 +26,10 @@ class TestGetsBasicModels(TestCase):
     def test_is_company(self, company):
         self.assertIsInstance(company, Company)
         self.assertIsNotNone(company.pk)
+
+    @given(Store)
+    def test_can_get_a_store(self, store):
+        assert store.company.pk
 
     @given([Company])
     def test_can_get_multiple_models_with_unique_field(self, companies):
@@ -44,3 +51,17 @@ class TestGetsBasicModels(TestCase):
         self.assertIsInstance(not_charming, CouldBeCharming)
         self.assertIsNotNone(not_charming.pk)
         self.assertIsNone(not_charming.charm)
+
+    @given(SelfLoop)
+    def test_sl(self, sl):
+        self.assertIsNone(sl.me)
+
+
+class TestUnsupportedModels(VanillaTestCase):
+
+    def test_mutual_loop_is_unsupported(self):
+        with self.assertRaises(ModelNotSupported):
+            strategy(LoopA)
+
+    def test_nullable_loop_is_supported(self):
+        strategy(LoopB)
