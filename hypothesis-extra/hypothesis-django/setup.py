@@ -38,7 +38,7 @@ README = local_file("README.rst")
 
 setup(
     name='hypothesis-django',
-    version='0.1',
+    version='0.1.0',
     author='David R. MacIver',
     author_email='david@drmaciver.com',
     packages=find_packages(SOURCE),
@@ -48,6 +48,8 @@ setup(
     description='Adds support for Django testing to Hypothesis',
     install_requires=[
         "hypothesis==1.1.1",
+        "hypothesis-datetime==1.1.1",
+        "hypothesis-fakefactory==0.5.1",
         "django>=1.7",
     ],
     long_description=open(README).read(),
