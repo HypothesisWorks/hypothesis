@@ -14,7 +14,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import pytest
-from hypothesis import given, strategy, assume
+from hypothesis import given, assume, strategy
 
 
 class HasSetupAndTeardown(object):

@@ -13,8 +13,8 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from django.db import IntegrityError
 import django.db.models as dm
+from django.db import IntegrityError
 from hypothesis.control import assume
 from hypothesis.specifiers import one_of
 from hypothesis.internal.compat import text_type, binary_type
