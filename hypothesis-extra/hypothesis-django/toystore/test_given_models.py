@@ -13,7 +13,7 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from hypothesis.extra.django import TestCase
+from hypothesis.extra.django import TestCase, TransactionTestCase
 from hypothesis.extra.django.models import ModelNotSupported
 from hypothesis import given, assume, strategy
 from toystore.models import Company, Customer, CouldBeCharming, Store, \
@@ -55,6 +55,12 @@ class TestGetsBasicModels(TestCase):
     @given(SelfLoop)
     def test_sl(self, sl):
         self.assertIsNone(sl.me)
+
+
+class TestsNeedingRollback(TransactionTestCase):
+    def test_can_get_examples(self):
+        for _ in range(200):
+            strategy(Company).example()
 
 
 class TestUnsupportedModels(VanillaTestCase):

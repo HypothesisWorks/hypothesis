@@ -166,8 +166,8 @@ class SearchStrategy(object):
                 break
             try:
                 template = self.draw_and_produce(context)
-                self.reify(template)
-                parts.append(template)
+                reified = self.reify(template)
+                parts.append((template, reified))
             except UnsatisfiedAssumption:
                 pass
         if not parts:
@@ -175,8 +175,7 @@ class SearchStrategy(object):
                 'Could not find any valid examples in 20 tries'
             )
 
-        template = min(parts, key=self.size)
-        return self.reify(template)
+        return min(parts, key=lambda tr: self.size(tr[0]))[1]
 
     def map(self, pack):
         """Returns a new strategy that generates values by generating a value
