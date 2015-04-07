@@ -140,8 +140,9 @@ class Verifier(object):
                 continue
             try:
                 setup_example()
-                a = search_strategy.reify(args)
+                a = None
                 try:
+                    a = search_strategy.reify(args)
                     is_falsifying_example = not hypothesis(*a)
                 finally:
                     teardown_example(a)

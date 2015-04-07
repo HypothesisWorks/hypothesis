@@ -107,6 +107,9 @@ def given(*generator_arguments, **generator_kwargs):
                 setup_example = None
                 teardown_example = None
 
+            setup_example = setup_example or (lambda: None)
+            teardown_example = teardown_example or (lambda ex: None)
+
             if not any(
                 isinstance(x, HypothesisProvided)
                 for xs in (arguments, kwargs.values())
@@ -114,13 +117,11 @@ def given(*generator_arguments, **generator_kwargs):
             ):
                 # All arguments have been satisfied without needing to invoke
                 # hypothesis
-                if setup_example is not None:
-                    setup_example()
+                setup_example()
                 try:
                     test(*arguments, **kwargs)
                 finally:
-                    if teardown_example is not None:
-                        teardown_example((arguments, kwargs))
+                    teardown_example((arguments, kwargs))
                 return
 
             def convert_to_specifier(v):
@@ -148,6 +149,13 @@ def given(*generator_arguments, **generator_kwargs):
             to_falsify.__qualname__ = getattr(
                 test, '__qualname__', test.__name__)
 
+            if _debugging_return_failing_example.value:
+                return verifier.falsify(
+                    to_falsify, given_specifier,
+                    setup_example=setup_example,
+                    teardown_example=teardown_example,
+                )[0]
+
             try:
                 falsifying_example = verifier.falsify(
                     to_falsify, given_specifier,
@@ -156,13 +164,6 @@ def given(*generator_arguments, **generator_kwargs):
                 )[0]
             except Unfalsifiable:
                 return
-            except Exception:
-                if teardown_example is not None:
-                    teardown_example(None)
-                raise
-
-            if _debugging_return_failing_example.value:
-                return falsifying_example
 
             try:
                 false_args, false_kwargs = falsifying_example
@@ -182,8 +183,7 @@ def given(*generator_arguments, **generator_kwargs):
                 test(*false_args, **false_kwargs)
 
             finally:
-                if teardown_example is not None:
-                    teardown_example(falsifying_example)
+                teardown_example(falsifying_example)
 
             # If we get here then something has gone wrong: We found a counter
             # example but it didn't fail when we invoked it again.

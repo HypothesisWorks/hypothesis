@@ -14,7 +14,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import pytest
-from hypothesis import given, strategy
+from hypothesis import given, strategy, assume
 
 
 class HasSetupAndTeardown(object):
@@ -52,6 +52,14 @@ class HasSetupAndTeardown(object):
 
     @given(strategy(int).map(lambda x: x.nope))
     def fail_in_reify(self, x):
+        pass
+
+    @given(int)
+    def assume_some_stuff(self, x):
+        assume(x > 0)
+
+    @given(strategy(int).filter(lambda x: x > 0))
+    def assume_in_reify(self, x):
         pass
 
 
@@ -92,5 +100,19 @@ def test_still_tears_down_on_failed_reify():
     x = HasSetupAndTeardown()
     with pytest.raises(AttributeError):
         x.fail_in_reify()
+    assert x.setups > 0
+    assert len(x.teardowns) == x.setups
+
+
+def test_still_tears_down_on_failed_assume():
+    x = HasSetupAndTeardown()
+    x.assume_some_stuff()
+    assert x.setups > 0
+    assert len(x.teardowns) == x.setups
+
+
+def test_still_tears_down_on_failed_assume_in_reify():
+    x = HasSetupAndTeardown()
+    x.assume_in_reify()
     assert x.setups > 0
     assert len(x.teardowns) == x.setups
