@@ -395,29 +395,6 @@ def _find_max_exponent():
     return lower
 
 
-class SmallFloats(FloatStrategy):
-    max_exponent = _find_max_exponent()
-    Parameter = namedtuple(
-        'Parameter',
-        ('negative_probability', 'min_exponent'),
-    )
-
-    def produce_parameter(self, random):
-        return self.Parameter(
-            negative_probability=dist.uniform_float(random, 0, 1),
-            min_exponent=random.randint(0, self.max_exponent)
-        )
-
-    def produce_template(self, context, pv):
-        base = math.ldexp(
-            context.random.random(),
-            -context.random.randint(pv.min_exponent, self.max_exponent)
-        )
-        if dist.biased_coin(context.random, pv.negative_probability):
-            base = -base
-        return base
-
-
 class FixedBoundedFloatStrategy(FloatStrategy):
 
     """A strategy for floats distributed between two endpoints.
