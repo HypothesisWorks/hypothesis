@@ -22,6 +22,7 @@ from collections import namedtuple
 from hypothesis.control import assume
 from hypothesis.reporting import current_reporter
 from hypothesis.specifiers import just
+from hypothesis.errors import InvalidArgument
 from hypothesis.internal.verifier import Flaky, Verifier, Unfalsifiable, \
     UnsatisfiedAssumption
 from hypothesis.internal.reflection import arg_string, copy_argspec
@@ -53,24 +54,27 @@ def given(*generator_arguments, **generator_kwargs):
         )
 
     if not (generator_arguments or generator_kwargs):
-        raise TypeError('given must be called with at least one argument')
+        raise InvalidArgument(
+            'given must be called with at least one argument')
 
     def run_test_with_generator(test):
         original_argspec = inspect.getargspec(test)
         if original_argspec.varargs:
-            raise TypeError(
+            raise InvalidArgument(
                 'varargs are not supported with @given'
             )
         extra_kwargs = [
             k for k in generator_kwargs if k not in original_argspec.args]
         if extra_kwargs and not original_argspec.keywords:
-            raise TypeError('%s() got an unexpected keyword argument %r' % (
-                extra_kwargs[0]
-            ))
+            raise InvalidArgument(
+                '%s() got an unexpected keyword argument %r' % (
+                    test.__name__,
+                    extra_kwargs[0]
+                ))
         if (
             len(generator_arguments) > len(original_argspec.args)
         ):
-            raise TypeError((
+            raise InvalidArgument((
                 'Too many positional arguments for %s() (got %d but'
                 ' expected at most %d') % (
                     test.__name__, len(generator_arguments),

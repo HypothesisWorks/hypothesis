@@ -58,27 +58,6 @@ def test_argspec_lines_up(f, g):
     assert af.varargs == ag.varargs
 
 
-def test_errors_on_unwanted_kwargs():
-    with pytest.raises(TypeError):
-        @given(hello=int, world=int)
-        def greet(world):
-            pass
-
-
-def test_errors_on_too_many_positional_args():
-    with pytest.raises(TypeError):
-        @given(int, int, int)
-        def foo(x, y):
-            pass
-
-
-def test_errors_on_any_varargs():
-    with pytest.raises(TypeError):
-        @given(int)
-        def oops(*args):
-            pass
-
-
 def test_converts_provided_kwargs_into_args():
     @given(hello=int, world=int)
     def greet(**kwargs):

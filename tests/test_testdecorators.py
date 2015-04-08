@@ -336,14 +336,6 @@ def test_is_an_endpoint(x):
     assert x == 1.0 or x == 2.0
 
 
-def test_errors_when_given_varargs():
-    with pytest.raises(TypeError) as e:
-        @given(int)
-        def has_varargs(*args):
-            pass
-    assert 'varargs' in e.value.args[0]
-
-
 @pytest.mark.parametrize('t', [1, 10, 100, 1000])
 @fails
 @given(x=int)
@@ -354,11 +346,6 @@ def test_is_bounded(t, x):
 @given(x=bool)
 def test_can_test_kwargs_only_methods(**kwargs):
     assert isinstance(kwargs['x'], bool)
-
-
-def test_bare_given_errors():
-    with pytest.raises(TypeError):
-        given()
 
 
 @fails_with(UnicodeEncodeError)

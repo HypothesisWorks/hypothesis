@@ -142,3 +142,9 @@ class BadData(HypothesisException, ValueError):
 
     """The data that we got out of the database does not seem to match the data
     we could have put into the database given this schema."""
+
+
+class InvalidArgument(HypothesisException, TypeError):
+
+    """Used to indicate that the arguments to a Hypothesis function were in
+    some manner incorrect"""
