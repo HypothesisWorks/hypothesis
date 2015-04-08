@@ -272,10 +272,12 @@ def strategy_test_suite(
 
         @specifier_test
         def test_can_minimize_to_empty(self, template, rnd):
-            simplest = list(strat.simplify_such_that(
-                rnd,
-                template, lambda x: True
-            ))[-1]
+            simplest = template
+            try:
+                while True:
+                    simplest = next(strat.full_simplify(rnd, simplest))
+            except StopIteration:
+                pass
             assert list(strat.full_simplify(rnd, simplest)) == []
 
         @specifier_test

@@ -26,7 +26,6 @@ from hypothesis.specifiers import Just, OneOf, SampledFrom, just
 from hypothesis.utils.show import show
 from tests.common.specifiers import Descriptor, DescriptorWithValue, \
     primitive_types
-from hypothesis.strategytests import TemplatesFor
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.searchstrategy.strategies import BuildContext, strategy
 
@@ -124,15 +123,6 @@ def test_copies_all_its_values_correctly(desc, random):
     assert show(strat.reify(value)) == show(strat.reify(value))
 
 
-@given(
-    TemplatesFor(DescriptorWithValue), Random,
-    settings=settings,
-)
-def test_can_minimize_specifier_with_value(dav, rnd):
-    s = strategy(DescriptorWithValue, settings)
-    last(s.simplify_such_that(rnd, dav, lambda x: True))
-
-
 @given(Descriptor, Random, settings=settings)
 def test_template_is_hashable(specifier, random):
     strat = strategy(specifier, settings)
@@ -145,27 +135,6 @@ def last(it):
     for i in it:
         pass
     return i
-
-
-@given(Descriptor, Random, settings=settings)
-def test_can_perform_all_basic_operations(specifier, random):
-    strat = strategy(specifier, settings)
-    parameter = strat.draw_parameter(random)
-    template = strat.produce_template(BuildContext(random), parameter)
-    assert (
-        strat.to_basic(template) ==
-        strat.to_basic(strat.from_basic(strat.to_basic(template)))
-    )
-    minimal_template = last(strat.simplify_such_that(
-        random,
-        template,
-        lambda x: True
-    ))
-    strat.reify(minimal_template)
-    assert (
-        strat.to_basic(minimal_template) ==
-        strat.to_basic(strat.from_basic(strat.to_basic(minimal_template)))
-    )
 
 
 @given(DescriptorWithValue, settings=settings)

@@ -42,6 +42,41 @@ from hypothesis.searchstrategy.strategies import BuildContext, strategy
 [assume]
 
 
+def simplify_such_that(strategy, random, t, f, tracker=None):
+    """Perform a greedy search to produce a "simplest" version of a
+    template that satisfies some predicate.
+
+    Care is taken to avoid cycles in simplify.
+
+    f should produce the same result deterministically. This function may
+    raise an error given f such that f(t) returns False sometimes and True
+    some other times.
+
+    """
+    assert isinstance(random, Random)
+
+    if tracker is None:
+        tracker = Tracker()
+    yield t
+
+    changed = True
+    while changed:
+        changed = False
+        for simplify in strategy.simplifiers(t):
+            while True:
+                simpler = simplify(random, t)
+                for s in simpler:
+                    if tracker.track(s) > 1:
+                        continue
+                    if f(s):
+                        changed = True
+                        yield s
+                        t = s
+                        break
+                else:
+                    break
+
+
 class Verifier(object):
 
     """A wrapper object holding state required for a falsify invocation."""
@@ -188,7 +223,8 @@ class Verifier(object):
 
         best_example = falsifying_examples[0]
 
-        for simpler in search_strategy.simplify_such_that(
+        for simpler in simplify_such_that(
+            search_strategy,
             random,
             best_example, falsifies,
             tracker=track_seen,

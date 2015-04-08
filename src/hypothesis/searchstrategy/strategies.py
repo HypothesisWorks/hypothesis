@@ -24,7 +24,6 @@ from hypothesis.settings import Settings
 from hypothesis.specifiers import OneOf
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.utils.extmethod import ExtMethod
-from hypothesis.internal.tracker import Tracker
 
 
 class BuildContext(object):
@@ -395,40 +394,6 @@ class SearchStrategy(object):
 
         """
         return iter(())
-
-    def simplify_such_that(self, random, t, f, tracker=None):
-        """Perform a greedy search to produce a "simplest" version of a
-        template that satisfies some predicate.
-
-        Care is taken to avoid cycles in simplify.
-
-        f should produce the same result deterministically. This function may
-        raise an error given f such that f(t) returns False sometimes and True
-        some other times.
-
-        """
-        assert isinstance(random, Random)
-
-        if tracker is None:
-            tracker = Tracker()
-        yield t
-
-        changed = True
-        while changed:
-            changed = False
-            for simplify in self.simplifiers(t):
-                while True:
-                    simpler = simplify(random, t)
-                    for s in simpler:
-                        if tracker.track(s) > 1:
-                            continue
-                        if f(s):
-                            changed = True
-                            yield s
-                            t = s
-                            break
-                    else:
-                        break
 
 
 @strategy.extend(SearchStrategy)
