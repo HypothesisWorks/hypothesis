@@ -28,6 +28,12 @@ def test_track_lists():
     assert t.track([1]) == 2
 
 
+def test_track_iterables():
+    t = Tracker()
+    assert t.track(iter([1])) == 1
+    assert t.track(iter([1])) == 2
+
+
 def test_track_dict():
     t = Tracker()
     assert t.track({1: 2}) == 1

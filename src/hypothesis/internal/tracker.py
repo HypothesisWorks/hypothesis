@@ -36,8 +36,9 @@ def flatten(o):
             stack.extend(list(t.items()))
         elif isinstance(t, collections.Iterable):
             result.append(type(t).__name__)
-            result.append(len(t))
-            stack.extend(list(t))
+            x = list(t)
+            result.append(len(x))
+            stack.extend(x)
         else:
             result.append(t)
     return result
