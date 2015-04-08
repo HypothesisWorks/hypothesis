@@ -24,7 +24,7 @@ import hypothesis.settings as hs
 import hypothesis.reporting as reporting
 from hypothesis import given, assume, strategy
 from hypothesis.core import _debugging_return_failing_example
-from hypothesis.errors import Flaky, Unsatisfiable
+from hypothesis.errors import Flaky, Unsatisfiable, InvalidArgument
 from tests.common.utils import fails, fails_with, capture_out
 from hypothesis.specifiers import just, one_of, sampled_from, \
     integers_from, floats_in_range, integers_in_range
@@ -422,10 +422,11 @@ def test_uses_random():
 
 
 def test_does_not_accept_random_if_derandomize():
-    with pytest.raises(ValueError):
+    with pytest.raises(InvalidArgument):
         @given(int, settings=hs.Settings(derandomize=True), random=Random())
         def test_blah(x):
             pass
+        test_blah()
 
 
 def test_can_derandomize():
