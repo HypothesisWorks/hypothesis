@@ -103,13 +103,13 @@ class Verifier(object):
             self.random = None
         else:
             self.random = random or Random()
-        self.max_regenerations = 0
 
     def falsify(
-            self, hypothesis,
-            *argument_types,
+            self,
+            hypothesis,
+            argument_type,
             **kwargs
-    ):  # pylint: disable=too-many-locals,too-many-branches
+    ):
         """
         Attempt to construct an example tuple x matching argument_types such
         that hypothesis(*x) returns a falsey value
@@ -124,18 +124,18 @@ class Verifier(object):
 
         build_context = BuildContext(random)
 
-        search_strategy = strategy(argument_types, self.settings)
+        search_strategy = strategy(argument_type, self.settings)
         storage = None
         if self.database is not None:
-            storage = self.database.storage_for(argument_types)
+            storage = self.database.storage_for(argument_type)
 
-        def falsifies(args):  # pylint: disable=missing-docstring
+        def falsifies(args):
             example = None
             try:
                 try:
                     setup_example()
                     example = search_strategy.reify(args)
-                    return not hypothesis(*example)
+                    return not hypothesis(example)
                 except UnsatisfiedAssumption:
                     return False
             finally:
@@ -190,7 +190,7 @@ class Verifier(object):
                 a = None
                 try:
                     a = search_strategy.reify(args)
-                    is_falsifying_example = not hypothesis(*a)
+                    is_falsifying_example = not hypothesis(a)
                 finally:
                     teardown_example(a)
             except UnsatisfiedAssumption:
@@ -360,7 +360,7 @@ def given(*generator_arguments, **generator_kwargs):
                     return True
                 except UnsatisfiedAssumption as e:
                     raise e
-                except Exception:  # pylint: disable=broad-except
+                except Exception:
                     return False
 
             to_falsify.__name__ = test.__name__
@@ -372,14 +372,14 @@ def given(*generator_arguments, **generator_kwargs):
                     to_falsify, given_specifier,
                     setup_example=setup_example,
                     teardown_example=teardown_example,
-                )[0]
+                )
 
             try:
                 falsifying_example = verifier.falsify(
                     to_falsify, given_specifier,
                     setup_example=setup_example,
                     teardown_example=teardown_example,
-                )[0]
+                )
             except Unfalsifiable:
                 return
 
