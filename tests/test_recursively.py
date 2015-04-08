@@ -22,14 +22,12 @@ from hypothesis import assume
 from tests.common import timeout
 from hypothesis.core import given
 from hypothesis.types import RandomWithSeed
-from hypothesis.errors import Unfalsifiable
 from hypothesis.specifiers import Just, OneOf, SampledFrom, just
 from hypothesis.utils.show import show
 from tests.common.specifiers import Descriptor, DescriptorWithValue, \
     primitive_types
 from hypothesis.strategytests import TemplatesFor
 from hypothesis.internal.compat import text_type, binary_type
-from hypothesis.internal.verifier import Verifier
 from hypothesis.searchstrategy.strategies import BuildContext, strategy
 
 # Placate flake8
@@ -60,31 +58,35 @@ settings = hs.Settings(
     database=None,
 )
 
-verifier = Verifier(
-    settings=settings,
-)
-
 
 @timeout(5)
-@given(Descriptor, Random, verifier=verifier)
+@given(Descriptor, Random, settings=settings)
 def test_can_falsify_false_things(desc, random):
     assume(size(desc) <= MAX_SIZE)
-    verifier.random = random
-    verifier.falsify(lambda x: False, desc)
+
+    @given(desc, settings=settings, random=random)
+    def test(x):
+        assert False
+    with pytest.raises(AssertionError):
+        test()
 
 
 @timeout(5)
-@given(Descriptor, verifier=verifier)
-def test_can_not_falsify_true_things(desc):
+@given(Descriptor, Random, settings=settings)
+def test_can_not_falsify_true_things(desc, random):
     assume(size(desc) <= MAX_SIZE)
-    with pytest.raises(Unfalsifiable):
-        verifier.falsify(lambda x: True, desc)
+
+    @given(desc, settings=settings, random=random)
+    def test(x):
+        pass
+    test()
+
 
 UNDESIRABLE_STRINGS = re.compile('at 0x')
 
 
 @timeout(5)
-@given(Descriptor, verifier=verifier)
+@given(Descriptor, settings=settings)
 def test_does_not_use_nasty_type_reprs_in_show(desc):
     strat = strategy(desc)
     s = repr(strat)
@@ -93,7 +95,7 @@ def test_does_not_use_nasty_type_reprs_in_show(desc):
 
 
 @timeout(5)
-@given(Descriptor, verifier=verifier)
+@given(Descriptor, settings=settings)
 def test_show_evals_as_specifier(desc):
     s = show(desc)
     read_desc = eval(s)
@@ -114,7 +116,7 @@ def tree_contains_match(t, f):
 
 
 @timeout(10)
-@given(Descriptor, Random, verifier=verifier)
+@given(Descriptor, Random, settings=settings)
 def test_copies_all_its_values_correctly(desc, random):
     strat = strategy(desc, settings)
     value = strat.produce_template(
@@ -124,14 +126,14 @@ def test_copies_all_its_values_correctly(desc, random):
 
 @given(
     TemplatesFor(DescriptorWithValue), Random,
-    verifier=verifier,
+    settings=settings,
 )
 def test_can_minimize_specifier_with_value(dav, rnd):
     s = strategy(DescriptorWithValue, settings)
     last(s.simplify_such_that(rnd, dav, lambda x: True))
 
 
-@given(Descriptor, Random, verifier=verifier)
+@given(Descriptor, Random, settings=settings)
 def test_template_is_hashable(specifier, random):
     strat = strategy(specifier, settings)
     parameter = strat.draw_parameter(random)
@@ -145,7 +147,7 @@ def last(it):
     return i
 
 
-@given(Descriptor, Random, verifier=verifier)
+@given(Descriptor, Random, settings=settings)
 def test_can_perform_all_basic_operations(specifier, random):
     strat = strategy(specifier, settings)
     parameter = strat.draw_parameter(random)
@@ -166,7 +168,7 @@ def test_can_perform_all_basic_operations(specifier, random):
     )
 
 
-@given(DescriptorWithValue, verifier=verifier)
+@given(DescriptorWithValue, settings=settings)
 def test_integrity_check_dav(dav):
     strat = strategy(dav.specifier, settings)
     assert show(dav.value) == show(strat.reify(dav.template))

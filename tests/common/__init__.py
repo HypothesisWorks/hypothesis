@@ -10,16 +10,10 @@
 
 # END HEADER
 
-from hypothesis.internal.verifier import Verifier
 import hypothesis.settings as hs
 from hypothesis.internal.debug import timeout
 
 
 settings = hs.Settings(max_examples=100, timeout=4)
-
-small_verifier = Verifier(
-    settings=settings,
-)
-
 
 __all__ = ['small_verifier', 'timeout']

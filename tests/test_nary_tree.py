@@ -13,16 +13,14 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from hypothesis.searchstrategy import strategy
-from hypothesis.internal.verifier import Verifier
 from hypothesis.searchstrategy.narytree import Leaf, Branch, NAryTree
+from hypothesis.internal.debug import minimal
 
 
 def smallest_tree(predicate):
-    d = NAryTree(int, int, int)
-    strat = strategy(d)
-    v = Verifier()
-    return strat.reify(v.falsify(lambda t: not predicate(t), d)[0])
+    return minimal(
+        NAryTree(int, int, int), predicate
+    )
 
 
 def test_tree_minimizes_to_leaf_with_minimal_value():

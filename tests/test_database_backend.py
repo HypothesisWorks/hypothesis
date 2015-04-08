@@ -14,12 +14,12 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 from hypothesis import given
-from tests.common import small_verifier
+from tests.common import settings as small_settings
 from hypothesis.internal.compat import text_type
 from hypothesis.database.backend import SQLiteBackend
 
 
-@given([(text_type, text_type)], verifier=small_verifier)
+@given([(text_type, text_type)], settings=small_settings)
 def test_backend_returns_what_you_put_in(xs):
     backend = SQLiteBackend(':memory:')
     mapping = {}

@@ -17,7 +17,6 @@ import inspect
 
 import pytest
 from hypothesis import given
-from hypothesis.internal.verifier import Verifier
 
 
 def has_one_arg(hello):
@@ -64,14 +63,3 @@ def test_converts_provided_kwargs_into_args():
         pass
 
     assert inspect.getargspec(greet).args == ['hello', 'world']
-
-
-def test_does_not_falsify_if_all_args_given():
-    verifier = Verifier()
-    verifier.falsify = None
-
-    @given(int, int, verifier=verifier)
-    def foo(x, y):
-        pass
-
-    foo(1, 2)

@@ -29,7 +29,6 @@ from tests.common.utils import fails, fails_with, capture_out
 from hypothesis.specifiers import just, one_of, sampled_from, \
     integers_from, floats_in_range, integers_in_range
 from hypothesis.internal.compat import text_type, binary_type
-from hypothesis.internal.verifier import Verifier
 from hypothesis.searchstrategy.numbers import IntStrategy
 
 
@@ -145,7 +144,7 @@ def test_slow_failing_test_2(x):
 
 
 @fails
-@given(int, verifier=Verifier(settings=timeout_settings))
+@given(int, settings=timeout_settings)
 def test_slow_failing_test_3(x):
     time.sleep(0.05)
     assert not calls[2]
@@ -153,7 +152,7 @@ def test_slow_failing_test_3(x):
 
 
 @fails
-@given(int, verifier=Verifier(settings=timeout_settings))
+@given(int, settings=timeout_settings)
 def test_slow_failing_test_4(x):
     time.sleep(0.05)
     assert not calls[3]

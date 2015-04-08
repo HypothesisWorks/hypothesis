@@ -19,7 +19,7 @@ from faker.providers import BaseProvider
 from hypothesis.strategytests import strategy_test_suite
 from hypothesis.searchstrategy import strategy
 from hypothesis.extra.fakefactory import FakeFactory
-from hypothesis.internal.verifier import Verifier
+from hypothesis.internal.debug import minimal
 
 
 class KittenProvider(BaseProvider):
@@ -44,9 +44,9 @@ def test_english_names_are_ascii(name):
 
 
 def test_french_names_may_have_an_accent():
-    Verifier().falsify(
-        lambda x: 'é' not in x,
-        FakeFactory('name', locale='fr_FR')
+    minimal(
+        FakeFactory('name', locale='fr_FR'),
+        lambda x: 'é' not in x
     )
 
 
