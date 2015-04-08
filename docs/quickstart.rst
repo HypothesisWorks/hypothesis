@@ -72,7 +72,7 @@ data.
 
 Anyway, this test immediately finds a bug in the code:
 
-..
+.. code::
 
   Falsifying example: test_decode_inverts_encode(s='')
 
@@ -96,7 +96,7 @@ Suppose we had a more interesting bug and forgot to reset the count each time.
 
 Hypothesis quickly informs us of the following example:
 
-..
+.. code::
 
   Falsifying example: test_decode_inverts_encode(s='001')
 
