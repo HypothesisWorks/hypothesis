@@ -42,7 +42,89 @@ from hypothesis.searchstrategy.strategies import BuildContext, strategy
 [assume]
 
 
-def simplify_such_that(strategy, random, t, f, tracker=None):
+def time_to_call_it_a_day(settings, start_time):
+    """Have we exceeded our timeout?"""
+    if settings.timeout <= 0:
+        return False
+    return time.time() >= start_time + settings.timeout
+
+
+def find_satisfying_template(
+    search_strategy, random, condition, tracker, settings
+):
+    """
+    Attempt to find a template for search_strategy such that condition is
+    truthy.
+
+    Exceptions other than UnsatisfiedAssumption will be immediately propagated.
+    UnsatisfiedAssumption will indicate that similar examples should be avoided
+    in future.
+
+    Returns such a template as soon as it is found, otherwise stops after
+    settings.max_examples examples have been considered or settings.timeout
+    seconds have passed (if settings.timeout > 0).
+
+    May raise a variety of exceptions depending on exact circumstances, but
+    these will all subclass either Unsatisfiable (to indicate not enough
+    examples were found which did not raise UnsatisfiedAssumption to consider
+    this a valid test) or Unfalsifiable (to indicate that this probably means
+    that condition is true with very high probability).
+    """
+    satisfying_examples = 0
+    timed_out = False
+    max_examples = settings.max_examples
+    min_satisfying_examples = settings.min_satisfying_examples
+
+    build_context = BuildContext(random)
+
+    parameter_source = ParameterSource(
+        context=build_context, strategy=search_strategy,
+        min_parameters=max(2, int(float(max_examples) / 10))
+    )
+    start_time = time.time()
+
+    for parameter in islice(
+        parameter_source, max_examples - len(tracker)
+    ):
+        if len(tracker) >= search_strategy.size_upper_bound:
+            break
+
+        if time_to_call_it_a_day(settings, start_time):
+            break
+
+        example = search_strategy.produce_template(
+            build_context, parameter
+        )
+
+        if tracker.track(example) > 1:
+            parameter_source.mark_bad()
+            continue
+        try:
+            if condition(example):
+                return example
+        except UnsatisfiedAssumption:
+            parameter_source.mark_bad()
+            continue
+        satisfying_examples += 1
+    run_time = time.time() - start_time
+    timed_out = settings.timeout >= 0 and run_time >= settings.timeout
+    if (
+        satisfying_examples and
+        len(tracker) >= search_strategy.size_lower_bound
+    ):
+        raise Exhausted(
+            condition, satisfying_examples)
+    elif satisfying_examples < min_satisfying_examples:
+        if timed_out:
+            raise Timeout(condition, satisfying_examples, run_time)
+        else:
+            raise Unsatisfiable(
+                condition, satisfying_examples, run_time)
+    else:
+        raise Unfalsifiable(condition)
+
+
+def simplify_template_such_that(search_strategy, random, t, f, tracker):
     """Perform a greedy search to produce a "simplest" version of a
     template that satisfies some predicate.
 
@@ -52,185 +134,77 @@ def simplify_such_that(strategy, random, t, f, tracker=None):
     raise an error given f such that f(t) returns False sometimes and True
     some other times.
 
+    If f throws UnsatisfiedAssumption this will be treated the same as if
+    it returned False.
     """
     assert isinstance(random, Random)
 
-    if tracker is None:
-        tracker = Tracker()
     yield t
 
     changed = True
     while changed:
         changed = False
-        for simplify in strategy.simplifiers(t):
+        for simplify in search_strategy.simplifiers(t):
             while True:
                 simpler = simplify(random, t)
                 for s in simpler:
                     if tracker.track(s) > 1:
                         continue
-                    if f(s):
-                        changed = True
-                        yield s
-                        t = s
-                        break
+                    try:
+                        if f(s):
+                            changed = True
+                            yield s
+                            t = s
+                            break
+                    except UnsatisfiedAssumption:
+                        pass
                 else:
                     break
 
 
-def falsify(
-    hypothesis,
-    argument_type,
-    random=None,
-    setup_example=None,
-    teardown_example=None,
-    settings=None,
+def best_satisfying_template(
+    search_strategy, random, condition, settings, storage
 ):
     """
-    Attempt to construct an example tuple x matching argument_types such
-    that hypothesis(*x) returns a falsey value
+    Find and then minimize a satisfying template. First look in storage
+    if it is not None, then attempt to generate one. May throw all the
+    exceptions of find_satisfying_template. Once an example has been found
+    it will be further minimized.
     """
-    settings = settings or Settings.default
-    database = settings.database
-
-    teardown_example = teardown_example or (lambda x: None)
-    setup_example = setup_example or (lambda: None)
-    if random is None:
-        if settings.derandomize:
-            random = Random(
-                function_digest(hypothesis)
-            )
-        else:
-            random = Random()
-    elif settings.derandomize:
-        raise InvalidArgument(
-            'Cannot both be derandomized and provide an explicit random')
-
-    build_context = BuildContext(random)
-
-    search_strategy = strategy(argument_type, settings)
+    tracker = Tracker()
     storage = None
-    if database is not None:
-        storage = database.storage_for(argument_type)
-
-    def falsifies(args):
-        example = None
-        try:
-            try:
-                setup_example()
-                example = search_strategy.reify(args)
-                return not hypothesis(example)
-            except UnsatisfiedAssumption:
-                return False
-        finally:
-            teardown_example(example)
-
-    track_seen = Tracker()
-    falsifying_examples = []
-    if storage:
-        for example in storage.fetch():
-            track_seen.track(example)
-            if falsifies(example):
-                falsifying_examples = [example]
-            break
-
-    satisfying_examples = 0
-    timed_out = False
-    max_examples = settings.max_examples
-    min_satisfying_examples = settings.min_satisfying_examples
-
-    parameter_source = ParameterSource(
-        context=build_context, strategy=search_strategy,
-        min_parameters=max(2, int(float(max_examples) / 10))
-    )
+    example_set = False
     start_time = time.time()
 
-    def time_to_call_it_a_day():
-        """Have we exceeded our timeout?"""
-        if settings.timeout <= 0:
-            return False
-        return time.time() >= start_time + settings.timeout
+    if storage:
+        for example in storage.fetch():
+            tracker.track(example)
+            if condition(example):
+                satisfying_example = example
+                example_set = True
+                break
 
-    for parameter in islice(
-        parameter_source, max_examples - len(track_seen)
-    ):
-        if len(track_seen) >= search_strategy.size_upper_bound:
-            break
-
-        if falsifying_examples:
-            break
-        if time_to_call_it_a_day():
-            break
-
-        args = search_strategy.produce_template(
-            build_context, parameter
+    if not example_set:
+        satisfying_example = find_satisfying_template(
+            search_strategy, random, condition, tracker, settings
         )
 
-        if track_seen.track(args) > 1:
-            parameter_source.mark_bad()
-            continue
-        try:
-            setup_example()
-            a = None
-            try:
-                a = search_strategy.reify(args)
-                is_falsifying_example = not hypothesis(a)
-            finally:
-                teardown_example(a)
-        except UnsatisfiedAssumption:
-            parameter_source.mark_bad()
-            continue
-        satisfying_examples += 1
-        if is_falsifying_example:
-            falsifying_examples.append(args)
-    run_time = time.time() - start_time
-    timed_out = settings.timeout >= 0 and run_time >= settings.timeout
-    if not falsifying_examples:
-        if (
-            satisfying_examples and
-            len(track_seen) >= search_strategy.size_lower_bound
-        ):
-            raise Exhausted(
-                hypothesis, satisfying_examples)
-        elif satisfying_examples < min_satisfying_examples:
-            if timed_out:
-                raise Timeout(hypothesis, satisfying_examples, run_time)
-            else:
-                raise Unsatisfiable(
-                    hypothesis, satisfying_examples, run_time)
-        else:
-            raise Unfalsifiable(hypothesis)
+    print("Satisfying:", search_strategy.reify(satisfying_example))
 
-    for example in falsifying_examples:
-        if not falsifies(example):
-            raise Flaky(hypothesis, example)
-
-    best_example = falsifying_examples[0]
-
-    for simpler in simplify_such_that(
-        search_strategy,
-        random,
-        best_example, falsifies,
-        tracker=track_seen,
+    for simpler in simplify_template_such_that(
+        search_strategy, random, satisfying_example, condition, tracker
     ):
-        best_example = simpler
-        if time_to_call_it_a_day():
-            # We no cover in here because it's a bit sensitive to timing
-            # and tends to make tests flaky. There are tests that mean
-            # this is definitely covered most of the time.
-            break  # pragma: no cover
+        satisfying_example = simpler
+        if time_to_call_it_a_day(settings, start_time):
+            break
 
     if storage is not None:
-        storage.save(best_example)
+        storage.save(satisfying_example)
 
-    setup_example()
-    return search_strategy.reify(best_example)
+    return satisfying_example
 
 
-load_entry_points()
 HypothesisProvided = namedtuple('HypothesisProvided', ('value,'))
-
-
-_debugging_return_failing_example = DynamicVariable(False)
 
 
 def given(*generator_arguments, **generator_kwargs):
@@ -334,28 +308,18 @@ def given(*generator_arguments, **generator_kwargs):
                 {k: convert_to_specifier(v) for k, v in kwargs.items()}
             )
 
-            def to_falsify(xs):
+            def is_example(xs):
                 testargs, testkwargs = xs
                 try:
                     test(*testargs, **testkwargs)
-                    return True
+                    return False
                 except UnsatisfiedAssumption as e:
                     raise e
                 except Exception:
-                    return False
-
-            to_falsify.__name__ = test.__name__
-            to_falsify.__qualname__ = getattr(
+                    return True
+            is_example.__name__ = test.__name__
+            is_example.__qualname__ = getattr(
                 test, '__qualname__', test.__name__)
-
-            if _debugging_return_failing_example.value:
-                return falsify(
-                    to_falsify, given_specifier,
-                    random=random,
-                    settings=settings,
-                    setup_example=setup_example,
-                    teardown_example=teardown_example,
-                )
 
             try:
                 falsifying_example = falsify(
@@ -396,3 +360,6 @@ def given(*generator_arguments, **generator_kwargs):
         wrapped_test.is_hypothesis_test = True
         return wrapped_test
     return run_test_with_generator
+
+
+load_entry_points()

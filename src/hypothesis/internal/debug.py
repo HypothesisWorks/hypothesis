@@ -15,10 +15,11 @@ from __future__ import division, print_function, absolute_import, \
 
 import time
 import signal
+from random import Random
 from functools import wraps
 
-from hypothesis import Settings, given
-from hypothesis.core import _debugging_return_failing_example
+from hypothesis import Settings, strategy
+from hypothesis.core import best_satisfying_template
 
 
 class Timeout(BaseException):
@@ -63,19 +64,17 @@ quality_settings = Settings(
 
 
 def minimal(definition, condition=None, settings=None):
-    @timeout(5)
-    @given(definition, settings=settings or quality_settings)
-    def everything_is_terrible(x):
-        if condition is None:
-            assert False
-        else:
-            assert not condition(x)
-    try:
-        everything_is_terrible()
-    except AssertionError:
-        pass
+    strat = strategy(definition)
+    condition = condition or (lambda x: True)
 
-    with _debugging_return_failing_example.with_value(True):
-        result = everything_is_terrible()
-        assert result is not None
-        return result[1]['x']
+    def template_satisfies(x):
+        return condition(strat.reify(x))
+
+    @timeout(5)
+    def run():
+        return best_satisfying_template(
+            strat,
+            Random(), template_satisfies,
+            quality_settings, None
+        )
+    return strat.reify(run())

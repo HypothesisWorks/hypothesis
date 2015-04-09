@@ -20,35 +20,11 @@ from fractions import Fraction
 from collections import Counter, OrderedDict
 
 import pytest
-from hypothesis import Settings, given, assume, strategy
-from tests.common import timeout
-from hypothesis.core import _debugging_return_failing_example
+from hypothesis import Settings, assume, strategy
 from hypothesis.specifiers import just, one_of, dictionary, \
     integers_from, integers_in_range
 from hypothesis.internal.compat import hrange, text_type, binary_type
-
-quality_settings = Settings(
-    max_examples=5000
-)
-
-
-def minimal(definition, condition=None, settings=None):
-    @timeout(10)
-    @given(definition, settings=settings or quality_settings)
-    def everything_is_terrible(x):
-        if condition is None:
-            assert False
-        else:
-            assert not condition(x)
-    try:
-        everything_is_terrible()
-    except AssertionError:
-        pass
-
-    with _debugging_return_failing_example.with_value(True):
-        result = everything_is_terrible()
-        assert result is not None
-        return result[1]['x']
+from hypothesis.internal.debug import minimal
 
 
 def test_minimize_list_on_large_structure():
