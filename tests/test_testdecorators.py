@@ -260,7 +260,7 @@ def test_errors_even_if_does_not_error_on_final_call():
     @given(int)
     def rude(x):
         assert not any(
-            t[3] == 'falsify'
+            t[3] == 'best_satisfying_template'
             for t in inspect.getouterframes(inspect.currentframe())
         )
 

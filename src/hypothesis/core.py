@@ -327,8 +327,10 @@ def given(*generator_arguments, **generator_kwargs):
 
             def is_template_example(xs):
                 setup_example()
-                testargs, testkwargs = xs
+                example = None
                 try:
+                    example = search_strategy.reify(xs)
+                    testargs, testkwargs = example
                     test(*testargs, **testkwargs)
                     return False
                 except UnsatisfiedAssumption as e:
@@ -336,7 +338,7 @@ def given(*generator_arguments, **generator_kwargs):
                 except Exception:
                     return True
                 finally:
-                    teardown_example()
+                    teardown_example(example)
 
             is_template_example.__name__ = test.__name__
             is_template_example.__qualname__ = getattr(
