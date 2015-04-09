@@ -186,8 +186,6 @@ def best_satisfying_template(
             search_strategy, random, condition, tracker, settings
         )
 
-    print('Satisfying:', search_strategy.reify(satisfying_example))
-
     for simpler in simplify_template_such_that(
         search_strategy, random, satisfying_example, condition, tracker
     ):
