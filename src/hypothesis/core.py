@@ -175,10 +175,13 @@ def best_satisfying_template(
     if storage:
         for example in storage.fetch():
             tracker.track(example)
-            if condition(example):
-                satisfying_example = example
-                example_set = True
-                break
+            try:
+                if condition(example):
+                    satisfying_example = example
+                    example_set = True
+                    break
+            except UnsatisfiedAssumption:
+                pass
 
     if not example_set:
         satisfying_example = find_satisfying_template(
