@@ -350,6 +350,7 @@ def given(*generator_arguments, **generator_kwargs):
                 return
 
             try:
+                falsifying_example = None
                 setup_example()
                 falsifying_example = search_strategy.reify(falsifying_template)
                 false_args, false_kwargs = falsifying_example
