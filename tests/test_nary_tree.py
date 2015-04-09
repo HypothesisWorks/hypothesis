@@ -13,8 +13,8 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from hypothesis.searchstrategy.narytree import Leaf, Branch, NAryTree
 from hypothesis.internal.debug import minimal
+from hypothesis.searchstrategy.narytree import Leaf, Branch, NAryTree
 
 
 def smallest_tree(predicate):

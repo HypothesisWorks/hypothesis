@@ -23,8 +23,8 @@ import pytest
 from hypothesis import Settings, assume, strategy
 from hypothesis.specifiers import just, one_of, dictionary, \
     integers_from, integers_in_range
-from hypothesis.internal.compat import hrange, text_type, binary_type
 from hypothesis.internal.debug import minimal
+from hypothesis.internal.compat import hrange, text_type, binary_type
 
 
 def test_minimize_list_on_large_structure():

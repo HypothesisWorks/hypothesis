@@ -18,24 +18,21 @@ from __future__ import division, print_function, absolute_import, \
 import time
 import inspect
 from random import Random
+from itertools import islice
 from collections import namedtuple
 
+from hypothesis.extra import load_entry_points
+from hypothesis.errors import Flaky, Timeout, Exhausted, Unfalsifiable, \
+    Unsatisfiable, InvalidArgument, UnsatisfiedAssumption
 from hypothesis.control import assume
+from hypothesis.settings import Settings
 from hypothesis.reporting import current_reporter
 from hypothesis.specifiers import just
-from hypothesis.errors import InvalidArgument, Flaky, Unfalsifiable, \
-    UnsatisfiedAssumption
-from hypothesis.internal.reflection import arg_string, copy_argspec
-from itertools import islice
-
-from hypothesis.extra import load_entry_points
-from hypothesis.errors import Timeout, Exhausted, Unsatisfiable
-from hypothesis.settings import Settings
 from hypothesis.internal.tracker import Tracker
-from hypothesis.internal.reflection import function_digest
+from hypothesis.internal.reflection import arg_string, copy_argspec, \
+    function_digest
 from hypothesis.internal.examplesource import ParameterSource
 from hypothesis.searchstrategy.strategies import BuildContext, strategy
-
 
 [assume]
 
@@ -50,8 +47,7 @@ def time_to_call_it_a_day(settings, start_time):
 def find_satisfying_template(
     search_strategy, random, condition, tracker, settings
 ):
-    """
-    Attempt to find a template for search_strategy such that condition is
+    """Attempt to find a template for search_strategy such that condition is
     truthy.
 
     Exceptions other than UnsatisfiedAssumption will be immediately propagated.
@@ -67,6 +63,7 @@ def find_satisfying_template(
     examples were found which did not raise UnsatisfiedAssumption to consider
     this a valid test) or Unfalsifiable (to indicate that this probably means
     that condition is true with very high probability).
+
     """
     satisfying_examples = 0
     timed_out = False
@@ -123,8 +120,8 @@ def find_satisfying_template(
 
 
 def simplify_template_such_that(search_strategy, random, t, f, tracker):
-    """Perform a greedy search to produce a "simplest" version of a
-    template that satisfies some predicate.
+    """Perform a greedy search to produce a "simplest" version of a template
+    that satisfies some predicate.
 
     Care is taken to avoid cycles in simplify.
 
@@ -134,6 +131,7 @@ def simplify_template_such_that(search_strategy, random, t, f, tracker):
 
     If f throws UnsatisfiedAssumption this will be treated the same as if
     it returned False.
+
     """
     assert isinstance(random, Random)
 
@@ -163,11 +161,12 @@ def simplify_template_such_that(search_strategy, random, t, f, tracker):
 def best_satisfying_template(
     search_strategy, random, condition, settings, storage
 ):
-    """
-    Find and then minimize a satisfying template. First look in storage
-    if it is not None, then attempt to generate one. May throw all the
-    exceptions of find_satisfying_template. Once an example has been found
-    it will be further minimized.
+    """Find and then minimize a satisfying template.
+
+    First look in storage if it is not None, then attempt to generate
+    one. May throw all the exceptions of find_satisfying_template. Once
+    an example has been found it will be further minimized.
+
     """
     tracker = Tracker()
     storage = None
@@ -187,7 +186,7 @@ def best_satisfying_template(
             search_strategy, random, condition, tracker, settings
         )
 
-    print("Satisfying:", search_strategy.reify(satisfying_example))
+    print('Satisfying:', search_strategy.reify(satisfying_example))
 
     for simpler in simplify_template_such_that(
         search_strategy, random, satisfying_example, condition, tracker

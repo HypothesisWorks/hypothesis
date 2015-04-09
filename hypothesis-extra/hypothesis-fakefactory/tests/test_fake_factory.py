@@ -17,9 +17,9 @@ import pytest
 from hypothesis import given
 from faker.providers import BaseProvider
 from hypothesis.strategytests import strategy_test_suite
+from hypothesis.internal.debug import minimal
 from hypothesis.searchstrategy import strategy
 from hypothesis.extra.fakefactory import FakeFactory
-from hypothesis.internal.debug import minimal
 
 
 class KittenProvider(BaseProvider):

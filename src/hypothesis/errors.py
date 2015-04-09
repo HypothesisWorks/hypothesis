@@ -147,4 +147,4 @@ class BadData(HypothesisException, ValueError):
 class InvalidArgument(HypothesisException, TypeError):
 
     """Used to indicate that the arguments to a Hypothesis function were in
-    some manner incorrect"""
+    some manner incorrect."""
