@@ -169,7 +169,6 @@ def best_satisfying_template(
 
     """
     tracker = Tracker()
-    storage = None
     example_set = False
     start_time = time.time()
 
