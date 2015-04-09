@@ -62,3 +62,8 @@ Dictionary = namedtuple('Dictionary', ('keys', 'values', 'dict_class'))
 
 def dictionary(keys, values, dict_class=dict):
     return Dictionary(keys, values, dict_class)
+
+
+Streaming = namedtuple('Streaming', ('data',))
+
+streaming = Streaming

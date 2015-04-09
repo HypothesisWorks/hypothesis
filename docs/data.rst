@@ -313,6 +313,93 @@ in x.
 Note that once again these values are not copied, so be careful using this on
 mutable data.
 
+~~~~~~~~~~~~~~~~
+Infinite streams
+~~~~~~~~~~~~~~~~
+
+Sometimes you need examples of a particular type to keep your test going but
+you're not sure how many you'll need in advance. For this, we have streaming
+types.
+
+
+.. code:: python
+
+    >>>> from hypothesis import strategy
+    >>>> from hypothesis.specifiers import streaming
+    >>>> x = strategy(streaming(int)).example()
+    >>>> x
+    Stream(...)
+    >>>> x[2]
+    209
+    >>>> x
+    Stream(32, 132, 209, ...)
+    >>>> x[10]
+    130
+    >>>> x
+    Stream(32, 132, 209, 843, -19, 58, 141, -1046, 37, 243, 130, ...)
+
+Think of a Stream as an infinite list where we've only evaluated as much as
+we need to. As per above, you can index into it and the stream will be evaluated up to
+that index and no further.
+
+You can iterate over it too (warning: iter on a stream given to you
+by Hypothesis in this way will never terminate):
+
+.. code:: python
+
+    >>>> it = iter(x)
+    >>>> next(it)
+    32
+    >>>> next(it)
+    132
+    >>>> next(it)
+    209
+    >>>> next(it)
+    843
+
+Slicing will also work, and will give you back Streams. If you set an upper
+bound then iter on those streams *will* terminate:
+
+.. code:: python
+
+    >>>> list(x[:5])
+    [32, 132, 209, 843, -19]
+    >>>> y = x[1::2]
+    >>>> y
+    Stream(...)
+    >>>> y[0]
+    132
+    >>>> y[1]
+    843
+    >>>> y
+    Stream(132, 843, ...)
+
+You can also apply a function to transform a stream:
+
+.. code:: python
+
+    >>>> t = strategy(streaming(int)).example()
+    >>>> tm = t.map(lambda n: n * 2)
+    >>>> tm[0]
+    26
+    >>>> t[0]
+    13
+    >>>> tm
+    Stream(26, ...)
+    >>>> t
+    Stream(13, ...)
+
+map creates a new stream where each element of the stream is the function
+applied to the corresponding element of the original stream. Evaluating the
+new stream will force evaluating the original stream up to that index.
+
+(Warning: This isn't the map builtin. In Python 3 the builtin map should do
+more or less the right thing, but in Python 2 it will never terminate and
+will just eat up all your memory as it tries to build an infinitely long list)
+
+These are the only operations a Stream supports. There are a few more internal
+ones, but you shouldn't rely on them.
+
 -------------------
 Adapting strategies
 -------------------

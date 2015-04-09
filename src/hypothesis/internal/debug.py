@@ -20,6 +20,8 @@ from functools import wraps
 
 from hypothesis import Settings, strategy
 from hypothesis.core import best_satisfying_template
+from hypothesis.database import ExampleDatabase
+from hypothesis.searchstrategy.strategies import BuildContext
 
 
 class Timeout(BaseException):
@@ -79,3 +81,17 @@ def minimal(definition, condition=None, settings=None):
             settings, None
         )
     return strat.reify(run())
+
+
+def some_template(spec):
+    return strategy(spec).draw_and_produce(BuildContext(Random()))
+
+
+def via_database(spec, template):
+    strat = strategy(spec)
+    db = ExampleDatabase()
+    s = db.storage_for(strat)
+    s.save(template)
+    results = list(s.fetch())
+    assert len(results) == 1
+    return results[0]
