@@ -66,6 +66,7 @@ quality_settings = Settings(
 def minimal(definition, condition=None, settings=None):
     strat = strategy(definition)
     condition = condition or (lambda x: True)
+    settings = settings or quality_settings
 
     def template_satisfies(x):
         return condition(strat.reify(x))
@@ -75,6 +76,6 @@ def minimal(definition, condition=None, settings=None):
         return best_satisfying_template(
             strat,
             Random(), template_satisfies,
-            quality_settings, None
+            settings, None
         )
     return strat.reify(run())

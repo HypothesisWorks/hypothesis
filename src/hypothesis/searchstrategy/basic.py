@@ -179,6 +179,19 @@ class BasicSearchStrategy(SearchStrategy):
         self.reify_cache = WeakKeyDictionary()
         self.copy_value = copy_value
 
+    def __repr__(self):
+        def name_if(x):
+            return x.__name__ if x else repr(x)
+
+        return (
+            "BasicSearchStrategy(generate=%s, "
+            "parameter=%s, simplify=%s)"
+        ) % (
+            name_if(self.user_generate),
+            name_if(self.user_parameter),
+            name_if(self.user_simplify),
+        )
+
     def produce_parameter(self, random):
         if self.user_parameter is not None:
             up = random.getrandbits(64)

@@ -54,6 +54,15 @@ class Bitfields(BasicStrategy):
         return value
 
 
+def popcount(x):
+    # don't judge
+    tot = 0
+    while x:
+        tot += (x & 1)
+        x >>= 1
+    return tot
+
+
 TestBoringBitfieldsClass = strategy_test_suite(BoringBitfields)
 TestBitfieldsClass = strategy_test_suite(Bitfields)
 TestBitfieldsInstance = strategy_test_suite(Bitfields())
@@ -99,7 +108,7 @@ TestBitfieldWithParameter = strategy_test_suite(
 )
 
 
-@pytest.mark.parametrize('i', [0, 1, 2, 4, 8, 16, 32, 64, 127, 11, 10, 13])
+@pytest.mark.parametrize('i', range(128))
 def test_can_simplify_bitfields(i):
     bitfield = basic_strategy(
         parameter=lambda r: r.getrandbits(128),
@@ -163,3 +172,38 @@ def test_does_not_get_stuck_in_a_loop():
         assert x != 1
     with pytest.raises(AssertionError):
         oh_noes()
+
+
+@pytest.mark.parametrize('c', range(30))
+def test_can_simplify_bitfields_with_composite(c):
+    bitfield = basic_strategy(
+        parameter=lambda r: r.getrandbits(128),
+        generate=lambda r, p: r.getrandbits(128) & p,
+        simplify=simplify_bitfield,
+        copy=lambda x: x,
+    )
+
+    t = minimal(bitfield, lambda x: popcount(x) >= c)
+    assert popcount(t) == c
+
+
+def has_adjacent_one_bits(x):
+    while x:
+        if x & 3 == 3:
+            return True
+        x >>= 1
+    return x
+
+
+def test_can_find_adjacent_one_bits():
+    class Nope(Exception):
+        pass
+
+    @given(Bitfields)
+    def has_no_adjacent_one_bits(x):
+        if has_adjacent_one_bits(x):
+            raise Nope()
+
+    for _ in range(5):
+        with pytest.raises(Nope):
+            has_no_adjacent_one_bits()
