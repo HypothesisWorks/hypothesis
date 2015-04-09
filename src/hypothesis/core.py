@@ -25,14 +25,12 @@ from hypothesis.reporting import current_reporter
 from hypothesis.specifiers import just
 from hypothesis.errors import InvalidArgument, Flaky, Unfalsifiable, \
     UnsatisfiedAssumption
-from hypothesis.settings import Settings
 from hypothesis.internal.reflection import arg_string, copy_argspec
-from hypothesis.utils.dynamicvariables import DynamicVariable
 from itertools import islice
 
 from hypothesis.extra import load_entry_points
-from hypothesis.errors import Timeout, Exhausted, \
-    Unsatisfiable
+from hypothesis.errors import Timeout, Exhausted, Unsatisfiable
+from hypothesis.settings import Settings
 from hypothesis.internal.tracker import Tracker
 from hypothesis.internal.reflection import function_digest
 from hypothesis.internal.examplesource import ParameterSource
@@ -219,14 +217,26 @@ def given(*generator_arguments, **generator_kwargs):
     # Keyword only arguments but actually supported in the full range of
     # pythons Hypothesis handles. pop so we don't later pick these up as
     # if they were keyword specifiers for data to pass to the test.
-    random = generator_kwargs.pop('random', None)
-    settings = generator_kwargs.pop('settings', None)
+    provided_random = generator_kwargs.pop('random', None)
+    settings = generator_kwargs.pop('settings', None) or Settings.default
+
+    if (provided_random is not None) and settings.derandomize:
+        raise InvalidArgument(
+            'Cannot both be derandomized and provide an explicit random')
 
     if not (generator_arguments or generator_kwargs):
         raise InvalidArgument(
             'given must be called with at least one argument')
 
     def run_test_with_generator(test):
+        if settings.derandomize:
+            assert provided_random is None
+            random = Random(
+                function_digest(test)
+            )
+        else:
+            random = provided_random or Random()
+
         original_argspec = inspect.getargspec(test)
         if original_argspec.varargs:
             raise InvalidArgument(
@@ -308,7 +318,15 @@ def given(*generator_arguments, **generator_kwargs):
                 {k: convert_to_specifier(v) for k, v in kwargs.items()}
             )
 
-            def is_example(xs):
+            if settings.database:
+                storage = settings.database.storage_for(given_specifier)
+            else:
+                storage = None
+
+            search_strategy = strategy(given_specifier)
+
+            def is_template_example(xs):
+                setup_example()
                 testargs, testkwargs = xs
                 try:
                     test(*testargs, **testkwargs)
@@ -317,22 +335,24 @@ def given(*generator_arguments, **generator_kwargs):
                     raise e
                 except Exception:
                     return True
-            is_example.__name__ = test.__name__
-            is_example.__qualname__ = getattr(
+                finally:
+                    teardown_example()
+
+            is_template_example.__name__ = test.__name__
+            is_template_example.__qualname__ = getattr(
                 test, '__qualname__', test.__name__)
 
             try:
-                falsifying_example = falsify(
-                    to_falsify, given_specifier,
-                    random=random,
-                    settings=settings,
-                    setup_example=setup_example,
-                    teardown_example=teardown_example,
+                falsifying_template = best_satisfying_template(
+                    search_strategy, random, is_template_example,
+                    settings, storage
                 )
             except Unfalsifiable:
                 return
 
             try:
+                setup_example()
+                falsifying_example = search_strategy.reify(falsifying_template)
                 false_args, false_kwargs = falsifying_example
                 current_reporter()(
                     'Falsifying example: %s(%s)' % (

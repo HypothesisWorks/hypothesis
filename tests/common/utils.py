@@ -18,7 +18,6 @@ import contextlib
 from io import StringIO
 
 import pytest
-from hypothesis.core import given, _debugging_return_failing_example
 from hypothesis.internal.reflection import proxies
 
 
@@ -43,13 +42,3 @@ def fails_with(e):
     return accepts
 
 fails = fails_with(AssertionError)
-
-
-def simplest_example_satisfying(typ, predicate):
-    @given(typ)
-    def test(x):
-        assert not predicate(x)
-    with _debugging_return_failing_example.with_value(True):
-        result = test()
-        if result is not None:
-            return result[1]['x']
