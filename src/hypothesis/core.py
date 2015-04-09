@@ -193,7 +193,9 @@ def best_satisfying_template(
     ):
         satisfying_example = simpler
         if time_to_call_it_a_day(settings, start_time):
-            break
+            # It's very hard to reliably hit this line even though we have
+            # tests for it. No cover prevents this from causing a flaky build.
+            break  # pragma: no cover
 
     if storage is not None:
         storage.save(satisfying_example)
