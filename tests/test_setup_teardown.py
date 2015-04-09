@@ -69,8 +69,8 @@ def test_calls_setup_and_teardown_on_self_as_first_argument():
     x.give_me_a_string()
     assert x.setups > 0
     assert len(x.teardowns) == x.setups
-    assert any(isinstance(t[0][1]['x'], int) for t in x.teardowns)
-    assert any(isinstance(t[0][1]['x'], str) for t in x.teardowns)
+    assert any(isinstance(t[1]['x'], int) for t in x.teardowns)
+    assert any(isinstance(t[1]['x'], str) for t in x.teardowns)
 
 
 def test_calls_setup_and_teardown_on_self_unbound():
