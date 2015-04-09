@@ -353,6 +353,10 @@ def given(*generator_arguments, **generator_kwargs):
                 falsifying_example = None
                 setup_example()
                 falsifying_example = search_strategy.reify(falsifying_template)
+                # Some strategies use a weakref cache keyed off templates.
+                # By cleaning up this template now we make it easier for python
+                # to clear the cache early in some circumstances.
+                del falsifying_template
                 false_args, false_kwargs = falsifying_example
                 current_reporter()(
                     'Falsifying example: %s(%s)' % (
