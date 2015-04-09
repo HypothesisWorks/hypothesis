@@ -184,8 +184,8 @@ class BasicSearchStrategy(SearchStrategy):
             return x.__name__ if x else repr(x)
 
         return (
-            "BasicSearchStrategy(generate=%s, "
-            "parameter=%s, simplify=%s)"
+            'BasicSearchStrategy(generate=%s, '
+            'parameter=%s, simplify=%s)'
         ) % (
             name_if(self.user_generate),
             name_if(self.user_parameter),
