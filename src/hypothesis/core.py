@@ -320,7 +320,7 @@ def given(*generator_arguments, **generator_kwargs):
             else:
                 storage = None
 
-            search_strategy = strategy(given_specifier)
+            search_strategy = strategy(given_specifier, settings)
 
             def is_template_example(xs):
                 setup_example()
