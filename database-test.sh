@@ -19,8 +19,8 @@ print("Database file is", database_file)
 
 db = ExampleDatabase(
     backend=SQLiteBackend(database_file))
-data = list(db.storage_for((((), {"x": int}),)).fetch())
-data += list(db.storage_for((((), {b"x": int}),)).fetch())
+data = list(db.storage_for(((), {"x": int})).fetch())
+data += list(db.storage_for(((), {b"x": int})).fetch())
 if not data:
     print("No integer examples in database")
     sys.exit(1)
