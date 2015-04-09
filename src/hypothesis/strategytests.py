@@ -15,6 +15,7 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+import hashlib
 from random import Random
 from unittest import TestCase
 from collections import namedtuple
@@ -198,14 +199,32 @@ def strategy_test_suite(
                 db.close()
 
         def test_will_handle_a_really_weird_failure(self):
-            @given(specifier, settings=settings)
+            db = ExampleDatabase()
+
+            @given(
+                specifier,
+                settings=Settings(
+                    database=db,
+                    max_examples=max_examples,
+                    min_satisfying_examples=2,
+                    average_list_length=2.0,
+                )
+            )
             def nope(x):
-                if hash(show(specifier)) % 2:
+                s = hashlib.sha1(show(x).encode('utf-8')).digest()
+                if Random(s).randint(0, 1):
                     raise Rejected()
             try:
-                nope()
-            except Rejected:
-                pass
+                try:
+                    nope()
+                except Rejected:
+                    pass
+                try:
+                    nope()
+                except Rejected:
+                    pass
+            finally:
+                db.close()
 
         @specifier_test
         def test_is_basic(self, value, rnd):
