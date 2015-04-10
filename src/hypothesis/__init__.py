@@ -21,12 +21,12 @@ failing examples it finds.
 from hypothesis.searchstrategy import strategy
 from hypothesis.settings import Settings
 
-
-from hypothesis.core import given, assume
+from hypothesis.core import given, assume, find
 
 __all__ = [
     'Settings',
     'assume',
     'given',
     'strategy',
+    'find',
 ]

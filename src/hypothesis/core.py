@@ -387,4 +387,21 @@ def given(*generator_arguments, **generator_kwargs):
     return run_test_with_generator
 
 
+def find(specifier, condition, settings=None, random=None):
+    settings = settings or Settings(
+        max_examples=2000,
+        min_satisfying_examples=0,
+    )
+
+    search = strategy(specifier, settings)
+    random = random or Random()
+
+    def template_condition(template):
+        return assume(condition(search.reify(template)))
+
+    return search.reify(best_satisfying_template(
+        search, random, template_condition, settings, None
+    ))
+
+
 load_entry_points()
