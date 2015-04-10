@@ -58,7 +58,6 @@ $(dirname $0)/pyenv-installer
 # activate it.
 export PATH="$HOME/.pyenv/bin:$PATH"
 eval "$(pyenv init -)"
-eval "$(pyenv virtualenv-init -)"
 
 
 # pyenv update makes a lot of requests to github, which is not entirely
@@ -67,49 +66,27 @@ eval "$(pyenv virtualenv-init -)"
 # cached anyway, the version we have should probably be quite recent.
 pyenv update || echo "Update failed to complete. Ignoring"
 
-# TOXENV sets the version of python we need for running tox itself. Make sure
-# we have that installed.
-case "${TOXENV}" in
-    py27)
-        export PYVERSION=2.7.8
-        ;;
-    py32)
-        export PYVERSION=3.2.6
-        ;;
-    py33)
-        export PYVERSION=3.3.6
-        ;;
-    py34)
-        export PYVERSION=3.4.2
-        ;;
-    pypy)
-        export PYVERSION=pypy-2.5.0
-        ;;
-    pypy3)
-        export PYVERSION=pypy3-2.4.0
-        ;;
-esac
+VERSIONS="2.7.8 3.2.6 3.3.6 3.4.2 pypy-2.5.0 pypy3-2.4.0"
 
-# Default to 3.4.2, mostly for things like lint.
-if [ -z "$PYVERSION" ]; then
-  PYVERSION=3.4.2
-fi
+for version in $VERSIONS; do
+  pyenv install -s $version
+done
 
-pyenv install -s $PYVERSION
-pyenv rehash
-pyenv global $PYVERSION
-pyenv local $PYVERSION
+SNAKEPIT=$HOME/snakepit
 
-python --version
-pip install --upgrade pip
-pip install --upgrade virtualenv
+rm -rf $SNAKEPIT
+mkdir $SNAKEPIT
 
-# We might have got a bad version of the virtualenv. We check that and recover
-# in a similar way to how we do for pyenv.
-if [ ! -e "$HOME/.venv/bin/activate" ] ; then
-  rm -rf "$HOME/.venv"
-  virtualenv "$HOME/.venv"
-fi
+PYENVS=$HOME/.pyenv/versions
 
-source $HOME/.venv/bin/activate
-pip install --upgrade tox
+ln -s $PYENVS/2.7.8/bin/python $SNAKEPIT/python27
+ln -s $PYENVS/3.2.6/bin/python $SNAKEPIT/python32
+ln -s $PYENVS/3.3.6/bin/python $SNAKEPIT/python33
+ln -s $PYENVS/3.4.2/bin/python $SNAKEPIT/python34
+ln -s $PYENVS/pypy-2.5.0/bin/pypy $SNAKEPIT/pypy
+ln -s $PYENVS/pypy3-2.4.0/bin/pypy $SNAKEPIT/pypy3
+
+echo 3.4.3 > $HOME/.python-version
+pyenv global 3.4.3
+pyenv local 3.4.3
+pip install --upgrade tox pip
