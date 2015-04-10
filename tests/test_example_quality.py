@@ -102,9 +102,9 @@ def test_finding_decimals_with_defined_precision():
             return False
 
     assert minimal(Decimal, is_integral) == Decimal(0)
-    assert minimal(
+    assert is_integral(minimal(
         Decimal, lambda x: is_integral(x * 100) and 0 < x < 1
-    ) == Decimal('0.5')  # TODO: Can we do better here?
+    ) * 10)
 
 
 def test_minimize_nan():
