@@ -19,6 +19,7 @@ import hashlib
 from random import Random
 from unittest import TestCase
 from collections import namedtuple
+from itertools import islice
 
 from hypothesis import given, assume
 from hypothesis.errors import BadData, Unsatisfiable
@@ -300,8 +301,10 @@ def strategy_test_suite(
             assert list(strat.full_simplify(rnd, simplest)) == []
 
         @specifier_test
-        def test_can_complete_falsify_loop(self, template, rnd):
-            for _ in strat.full_simplify(rnd, template):
+        def test_can_run_long_falsify_loop(self, template, rnd):
+            # Cut off at 1000 for the occasional case where we get
+            # really very large templates which have too many simplifies.
+            for x in islice(strat.full_simplify(rnd, template), 1000):
                 pass
 
         @given(Random, settings=Settings(max_examples=1000))
