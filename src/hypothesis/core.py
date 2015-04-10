@@ -45,7 +45,7 @@ def time_to_call_it_a_day(settings, start_time):
 
 
 def find_satisfying_template(
-    search_strategy, random, condition, tracker, settings
+    search_strategy, random, condition, tracker, settings, storage=None
 ):
     """Attempt to find a template for search_strategy such that condition is
     truthy.
@@ -70,6 +70,16 @@ def find_satisfying_template(
     max_examples = settings.max_examples
     min_satisfying_examples = settings.min_satisfying_examples
 
+    if storage:
+        for example in storage.fetch():
+            tracker.track(example)
+            try:
+                if condition(example):
+                    return example
+                satisfying_examples += 1
+            except UnsatisfiedAssumption:
+                pass
+
     build_context = BuildContext(random)
 
     parameter_source = ParameterSource(
@@ -90,7 +100,6 @@ def find_satisfying_template(
         example = search_strategy.produce_template(
             build_context, parameter
         )
-
         if tracker.track(example) > 1:
             parameter_source.mark_bad()
             continue
@@ -172,20 +181,9 @@ def best_satisfying_template(
     example_set = False
     start_time = time.time()
 
-    if storage:
-        for example in storage.fetch():
-            tracker.track(example)
-            try:
-                if condition(example):
-                    satisfying_example = example
-                    example_set = True
-                    break
-            except UnsatisfiedAssumption:
-                pass
-
     if not example_set:
         satisfying_example = find_satisfying_template(
-            search_strategy, random, condition, tracker, settings
+            search_strategy, random, condition, tracker, settings, storage
         )
 
     for simpler in simplify_template_such_that(
