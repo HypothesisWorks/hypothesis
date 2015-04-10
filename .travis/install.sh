@@ -66,12 +66,6 @@ eval "$(pyenv init -)"
 # cached anyway, the version we have should probably be quite recent.
 pyenv update || echo "Update failed to complete. Ignoring"
 
-VERSIONS="2.7.8 3.2.6 3.3.6 3.4.2 pypy-2.5.0 pypy3-2.4.0"
-
-for version in $VERSIONS; do
-  pyenv install -s $version
-done
-
 SNAKEPIT=$HOME/snakepit
 
 rm -rf $SNAKEPIT
