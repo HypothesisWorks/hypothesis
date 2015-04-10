@@ -18,8 +18,8 @@ from __future__ import division, print_function, absolute_import, \
 import hashlib
 from random import Random
 from unittest import TestCase
-from collections import namedtuple
 from itertools import islice
+from collections import namedtuple
 
 from hypothesis import given, assume
 from hypothesis.errors import BadData, Unsatisfiable
