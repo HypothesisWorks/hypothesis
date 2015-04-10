@@ -71,22 +71,22 @@ pyenv update || echo "Update failed to complete. Ignoring"
 # we have that installed.
 case "${TOXENV}" in
     py27)
-        PYVERSION=2.7.8
+        export PYVERSION=2.7.8
         ;;
     py32)
-        PYVERSION=3.2.6
+        export PYVERSION=3.2.6
         ;;
     py33)
-        PYVERSION=3.3.6
+        export PYVERSION=3.3.6
         ;;
     py34)
-        PYVERSION=3.4.2
+        export PYVERSION=3.4.2
         ;;
     pypy)
-        PYVERSION=pypy-2.5.0
+        export PYVERSION=pypy-2.5.0
         ;;
     pypy3)
-        PYVERSION=pypy3-2.4.0
+        export PYVERSION=pypy3-2.4.0
         ;;
 esac
 
