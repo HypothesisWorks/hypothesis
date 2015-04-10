@@ -74,7 +74,7 @@ mkdir $SNAKEPIT
 PYENVS=$HOME/.pyenv/versions
 
 pyenv install -s 3.4.3
-ln -s $PYENVS/3.4.3/bin/python $SNAKEPIT/python34
+ln -s $PYENVS/3.4.3/bin/python $SNAKEPIT/python3.4
 echo 3.4.3 > $HOME/.python-version
 pyenv global 3.4.3
 pyenv local 3.4.3
@@ -82,15 +82,15 @@ pyenv local 3.4.3
 case "${TOXENV}" in
     py27)
         pyenv install -s 2.7.8
-        ln -s $PYENVS/2.7.8/bin/python $SNAKEPIT/python27
+        ln -s $PYENVS/2.7.8/bin/python $SNAKEPIT/python2.7
         ;;
     py32)
         pyenv install -s 3.2.6
-        ln -s $PYENVS/3.2.6/bin/python $SNAKEPIT/python32
+        ln -s $PYENVS/3.2.6/bin/python $SNAKEPIT/python3.2
         ;;
     py33)
         pyenv install -s 3.3.6
-        ln -s $PYENVS/3.3.6/bin/python $SNAKEPIT/python33
+        ln -s $PYENVS/3.3.6/bin/python $SNAKEPIT/python3.3
         ;;
     pypy)
         pyenv install -s pypy-2.5.0
