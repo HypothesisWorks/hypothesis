@@ -14,6 +14,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import gc
+import sys
 
 import pytest
 from hypothesis import given
@@ -120,6 +121,14 @@ def test_can_simplify_bitfields(i):
     assert minimal(bitfield, lambda x: x & (1 << i)) == 1 << i
 
 
+def gc_clear():
+    try:
+        sys.exc_clear()
+    except AttributeError:
+        pass
+    gc.collect()
+
+
 def test_cache_is_cleaned_up_on_gc_1():
     st = basic_strategy(
         generate=lambda r, p: r.getrandbits(128),
@@ -133,7 +142,7 @@ def test_cache_is_cleaned_up_on_gc_1():
 
     test_all_good()
 
-    gc.collect()
+    gc_clear()
 
     assert len(st.reify_cache) == 0
 
@@ -154,7 +163,7 @@ def test_cache_is_cleaned_up_on_gc_2():
     except AssertionError:
         pass
 
-    gc.collect()
+    gc_clear()
 
     assert all(isinstance(v, integer_types) for v in st.reify_cache.values())
     assert len(st.reify_cache) == 0, len(st.reify_cache)
