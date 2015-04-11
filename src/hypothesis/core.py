@@ -69,9 +69,12 @@ def find_satisfying_template(
     timed_out = False
     max_examples = settings.max_examples
     min_satisfying_examples = settings.min_satisfying_examples
+    start_time = time.time()
 
     if storage:
         for example in storage.fetch():
+            if time_to_call_it_a_day(settings, start_time):
+                break
             tracker.track(example)
             try:
                 if condition(example):
@@ -86,7 +89,6 @@ def find_satisfying_template(
         context=build_context, strategy=search_strategy,
         min_parameters=max(2, int(float(max_examples) / 10))
     )
-    start_time = time.time()
 
     for parameter in islice(
         parameter_source, max_examples - len(tracker)

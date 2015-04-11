@@ -13,12 +13,15 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+import time
+
 import pytest
 import hypothesis.settings as hs
 from hypothesis import given, strategy
+from hypothesis.errors import Timeout
 from hypothesis.database import ExampleDatabase
 from tests.common.specifiers import DescriptorWithValue
-from hypothesis.internal.compat import text_type, integer_types
+from hypothesis.internal.compat import hrange, text_type, integer_types
 from hypothesis.database.backend import Backend, SQLiteBackend
 from hypothesis.database.formats import Format, JSONFormat
 
@@ -152,3 +155,35 @@ def test_storage_has_specifier_in_repr():
 
 def test_json_format_repr_is_nice():
     assert repr(JSONFormat()) == 'JSONFormat()'
+
+
+def test_can_time_out_when_reading_from_database():
+    should_timeout = False
+    limit = 0
+    examples = []
+    db = ExampleDatabase()
+
+    try:
+        @given(int, settings=hs.Settings(timeout=0.1, database=db))
+        def test_run_test(x):
+            examples.append(x)
+            if should_timeout:
+                time.sleep(0.2)
+            assert x >= limit
+
+        for i in hrange(10):
+            limit = -i
+            examples = []
+            with pytest.raises(AssertionError):
+                test_run_test()
+
+        should_timeout = True
+        examples = []
+        limit = -100
+
+        with pytest.raises(Timeout):
+            test_run_test()
+
+        assert len(examples) == 1
+    finally:
+        db.close()
