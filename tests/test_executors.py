@@ -16,7 +16,7 @@ from __future__ import division, print_function, absolute_import, \
 from unittest import TestCase
 
 import pytest
-from hypothesis import given
+from hypothesis import given, example
 
 
 class TestTryReallyHard(TestCase):
@@ -39,6 +39,11 @@ class Valueless(object):
             return None
 
     @given(int)
+    @example(1)
+    def test_no_boom_on_example(self, x):
+        raise ValueError()
+
+    @given(int)
     def test_no_boom(self, x):
         raise ValueError()
 
@@ -54,3 +59,7 @@ def test_boom():
 
 def test_no_boom():
     Valueless().test_no_boom()
+
+
+def test_no_boom_on_example():
+    Valueless().test_no_boom_on_example()
