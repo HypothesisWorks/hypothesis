@@ -73,7 +73,7 @@ def minimal(definition, condition=None, settings=None):
     def template_satisfies(x):
         return condition(strat.reify(x))
 
-    @timeout(5)
+    @timeout(10)
     def run():
         return best_satisfying_template(
             strat,
