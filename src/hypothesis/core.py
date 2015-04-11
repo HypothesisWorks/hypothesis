@@ -180,13 +180,11 @@ def best_satisfying_template(
 
     """
     tracker = Tracker()
-    example_set = False
     start_time = time.time()
 
-    if not example_set:
-        satisfying_example = find_satisfying_template(
-            search_strategy, random, condition, tracker, settings, storage
-        )
+    satisfying_example = find_satisfying_template(
+        search_strategy, random, condition, tracker, settings, storage
+    )
 
     for simpler in simplify_template_such_that(
         search_strategy, random, satisfying_example, condition, tracker
