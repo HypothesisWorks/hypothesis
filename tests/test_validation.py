@@ -50,3 +50,10 @@ def test_errors_on_any_varargs():
         @given(int)
         def oops(*args):
             pass
+
+
+def test_cannot_put_kwargs_in_the_middle():
+    with pytest.raises(InvalidArgument):
+        @given(y=int)
+        def foo(x, y, z):
+            pass

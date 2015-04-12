@@ -259,9 +259,19 @@ def given(*generator_arguments, **generator_kwargs):
                     len(original_argspec.args)))
         arguments = original_argspec.args + sorted(extra_kwargs)
         specifiers = list(generator_arguments)
+        seen_kwarg = None
         for a in arguments:
             if a in generator_kwargs:
+                seen_kwarg = seen_kwarg or a
                 specifiers.append(generator_kwargs[a])
+            else:
+                if seen_kwarg is not None:
+                    raise InvalidArgument((
+                        "Argument %s comes after keyword %s which has been "
+                        "specified, but does not itself have a "
+                        "specification") % (
+                        a, seen_kwarg
+                    ))
 
         argspec = inspect.ArgSpec(
             args=arguments,
