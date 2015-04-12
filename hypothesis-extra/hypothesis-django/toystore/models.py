@@ -56,3 +56,12 @@ class LoopA(models.Model):
 
 class LoopB(models.Model):
     a = models.ForeignKey('LoopA', null=True)
+
+
+class ManyInts(models.Model):
+    i1 = models.IntegerField()
+    i2 = models.SmallIntegerField()
+    i3 = models.BigIntegerField()
+
+    p1 = models.PositiveIntegerField()
+    p2 = models.PositiveSmallIntegerField()

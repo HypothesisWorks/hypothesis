@@ -16,7 +16,7 @@ from __future__ import division, print_function, absolute_import, \
 import django.db.models as dm
 from django.db import IntegrityError
 from hypothesis.control import assume
-from hypothesis.specifiers import one_of
+from hypothesis.specifiers import one_of, integers_in_range
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.searchstrategy.strategies import MappedSearchStrategy, \
     strategy
@@ -42,14 +42,18 @@ def model_to_base_specifier(model):
     import hypothesis.extra.fakefactory as ff
     from hypothesis.extra.datetime import timezone_aware_datetime
     mappings = {
-        dm.BigIntegerField: int,
+        dm.SmallIntegerField: integers_in_range(-32768, 32767),
+        dm.IntegerField: integers_in_range(-2147483648, 2147483647),
+        dm.BigIntegerField:
+            integers_in_range(-9223372036854775808, 9223372036854775807),
+        dm.PositiveIntegerField: integers_in_range(0, 2147483647),
+        dm.PositiveSmallIntegerField: integers_in_range(0, 32767),
         dm.BinaryField: binary_type,
         dm.BooleanField: bool,
         dm.CharField: text_type,
         dm.DateTimeField: timezone_aware_datetime,
         dm.EmailField: ff.FakeFactory('email'),
         dm.FloatField: float,
-        dm.IntegerField: int,
         dm.NullBooleanField: one_of((None, bool)),
     }
 

@@ -17,7 +17,7 @@ from hypothesis.extra.django import TestCase, TransactionTestCase
 from hypothesis.extra.django.models import ModelNotSupported
 from hypothesis import given, assume, strategy
 from toystore.models import Company, Customer, CouldBeCharming, Store, \
-    SelfLoop, LoopA, LoopB
+    SelfLoop, LoopA, LoopB, ManyInts
 from unittest import TestCase as VanillaTestCase
 
 
@@ -55,6 +55,10 @@ class TestGetsBasicModels(TestCase):
     @given(SelfLoop)
     def test_sl(self, sl):
         self.assertIsNone(sl.me)
+
+    @given([ManyInts])
+    def test_no_overflow_in_integer(self, manyints):
+        pass
 
 
 class TestsNeedingRollback(TransactionTestCase):
