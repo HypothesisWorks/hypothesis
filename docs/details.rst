@@ -510,3 +510,46 @@ they will not be called until you invoke the function passed to setup\_example.
 Methods of a BasicStrategy however will typically be called whenever. This may
 happen inside your executor or outside. This is why they have a "Warning you
 have no control over the lifecycle of these values" attached.
+
+~~~~~~~~~~~~~~~~~~~~~
+Fork before each test
+~~~~~~~~~~~~~~~~~~~~~
+
+An obstacle you can run into if you want to use Hypothesis to test native code
+is that your C code segfaults, or fails a C level assertion, and it causes the
+whole process to exit hard and Hypothesis just cries a little and doesn't know
+what is going on, so can't minimize an example for you.
+
+The solution to this is to run your tests in a subprocess. The process can die
+as messily as it likes and Hypothesis will be sitting happily in the
+controlling process unaffected by the crash. Hypothesis provides a custom
+executor for this:
+
+.. code:: python
+
+    from hypothesis.testrunners.forking import ForkingTestCase
+
+    class TestForking(ForkingTestCase):
+
+        @given(int)
+        def test_handles_abnormal_exit(self, i):
+            os._exit(1)
+
+        @given(int)
+        def test_normal_exceptions_work_too(self, i):
+            assert False
+
+
+Exceptions that occur in the child process will be seamlessly passed back to
+the parent. Abnormal exits that do not throw an exception in the child process
+will be turned into an AbnormalExit exception.
+
+There are currently some limitations to this approach:
+
+1. Exceptions which are not pickleable will be turned into abormal exits.
+2. Tracebacks from exceptions are not properly recreated in the parent process.
+3. Code called in the child process will not be recorded by coverage.
+4. This is only supported on platforms with os.fork. e.g. it will not work on
+   Windows.
+
+Some of these limitations should be resolvable in time.

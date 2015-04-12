@@ -148,3 +148,9 @@ class InvalidArgument(HypothesisException, TypeError):
 
     """Used to indicate that the arguments to a Hypothesis function were in
     some manner incorrect."""
+
+
+class AbnormalExit(HypothesisException):
+
+    """Raised when a test running in a child process exits without returning or
+    raising an exception."""
