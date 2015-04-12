@@ -168,7 +168,7 @@ def test_can_time_out_when_reading_from_database():
         def test_run_test(x):
             examples.append(x)
             if should_timeout:
-                time.sleep(0.2)
+                time.sleep(0.5)
             assert x >= limit
 
         for i in hrange(10):
@@ -177,9 +177,17 @@ def test_can_time_out_when_reading_from_database():
             with pytest.raises(AssertionError):
                 test_run_test()
 
+        examples = []
+
+        limit = 0
+
+        with pytest.raises(AssertionError):
+            test_run_test()
+
+        limit = min(examples) - 1
+
         should_timeout = True
         examples = []
-        limit = -100
 
         with pytest.raises(Timeout):
             test_run_test()
