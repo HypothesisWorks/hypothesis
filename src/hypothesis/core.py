@@ -17,6 +17,7 @@ from __future__ import division, print_function, absolute_import, \
 
 import time
 import inspect
+import functools
 from random import Random
 from itertools import islice
 from collections import namedtuple
@@ -26,6 +27,7 @@ from hypothesis.errors import Flaky, Timeout, Exhausted, Unfalsifiable, \
     Unsatisfiable, InvalidArgument, UnsatisfiedAssumption
 from hypothesis.control import assume
 from hypothesis.settings import Settings
+from hypothesis.executors import executor
 from hypothesis.reporting import current_reporter
 from hypothesis.specifiers import just
 from hypothesis.internal.tracker import Tracker
@@ -201,7 +203,31 @@ def best_satisfying_template(
     return satisfying_example
 
 
+def test_must_fail(test):
+    @functools.wraps(test)
+    def test_or_flaky(*args, **kwargs):
+        test(*args, **kwargs)
+        raise Flaky(test, (args, kwargs))
+    return test_or_flaky
+
+
 HypothesisProvided = namedtuple('HypothesisProvided', ('value,'))
+
+
+def reify_and_execute(search_strategy, template, test, print_example=False):
+    def run():
+        args, kwargs = search_strategy.reify(template)
+        if print_example:
+            current_reporter()(
+                'Falsifying example: %s(%s)' % (
+                    test.__name__,
+                    arg_string(
+                        test, args, kwargs
+                    )
+                )
+            )
+        return test(*args, **kwargs)
+    return run
 
 
 def given(*generator_arguments, **generator_kwargs):
@@ -292,15 +318,7 @@ def given(*generator_arguments, **generator_kwargs):
             selfy = kwargs.get(argspec.args[0])
             if isinstance(selfy, HypothesisProvided):
                 selfy = None
-            if selfy is not None:
-                setup_example = getattr(selfy, 'setup_example', None)
-                teardown_example = getattr(selfy, 'teardown_example', None)
-            else:
-                setup_example = None
-                teardown_example = None
-
-            setup_example = setup_example or (lambda: None)
-            teardown_example = teardown_example or (lambda ex: None)
+            test_runner = executor(selfy)
 
             if not any(
                 isinstance(x, HypothesisProvided)
@@ -309,11 +327,7 @@ def given(*generator_arguments, **generator_kwargs):
             ):
                 # All arguments have been satisfied without needing to invoke
                 # hypothesis
-                setup_example()
-                try:
-                    test(*arguments, **kwargs)
-                finally:
-                    teardown_example((arguments, kwargs))
+                test_runner(lambda: test(*arguments, **kwargs))
                 return
 
             def convert_to_specifier(v):
@@ -334,24 +348,19 @@ def given(*generator_arguments, **generator_kwargs):
             search_strategy = strategy(given_specifier, settings)
 
             def is_template_example(xs):
-                setup_example()
-                example = None
                 try:
-                    example = search_strategy.reify(xs)
-                    testargs, testkwargs = example
-                    test(*testargs, **testkwargs)
+                    test_runner(reify_and_execute(search_strategy, xs, test))
                     return False
                 except UnsatisfiedAssumption as e:
                     raise e
                 except Exception:
                     return True
-                finally:
-                    teardown_example(example)
 
             is_template_example.__name__ = test.__name__
             is_template_example.__qualname__ = getattr(
                 test, '__qualname__', test.__name__)
 
+            falsifying_template = None
             try:
                 falsifying_template = best_satisfying_template(
                     search_strategy, random, is_template_example,
@@ -361,35 +370,19 @@ def given(*generator_arguments, **generator_kwargs):
                 return
 
             try:
-                falsifying_example = None
-                setup_example()
-                falsifying_example = search_strategy.reify(falsifying_template)
+                # We run this one final time so we get good errors
+                # Otherwise we would have swallowed all the reports of it
+                # actually having gone wrong.
+                test_runner(reify_and_execute(
+                    search_strategy, falsifying_template, test_must_fail(test),
+                    print_example=True
+                ))
+
+            finally:
                 # Some strategies use a weakref cache keyed off templates.
                 # By cleaning up this template now we make it easier for python
                 # to clear the cache early in some circumstances.
                 del falsifying_template
-                false_args, false_kwargs = falsifying_example
-                current_reporter()(
-                    'Falsifying example: %s(%s)' % (
-                        test.__name__,
-                        arg_string(
-                            test,
-                            false_args,
-                            false_kwargs,
-                        )
-                    )
-                )
-                # We run this one final time so we get good errors
-                # Otherwise we would have swallowed all the reports of it
-                # actually having gone wrong.
-                test(*false_args, **false_kwargs)
-
-            finally:
-                teardown_example(falsifying_example)
-
-            # If we get here then something has gone wrong: We found a counter
-            # example but it didn't fail when we invoked it again.
-            raise Flaky(test, falsifying_example)
         wrapped_test.__name__ = test.__name__
         wrapped_test.__doc__ = test.__doc__
         wrapped_test.is_hypothesis_test = True

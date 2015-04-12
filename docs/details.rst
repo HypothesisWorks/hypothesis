@@ -465,3 +465,48 @@ caused by MonkeyPatching.
 
 strategy is the main ExtMethod you are likely to interact with directly, but
 there are a number of others that Hypothesis uses under the hood.
+
+
+-------------------------
+Custom function execution
+-------------------------
+
+Hypothesis provides you with a hook that lets you control how it runs examples.
+
+This lets you do things like set up and tear down around each example, run
+examples in a subprocess, transform coroutine tests into normal tests, etc.
+
+The way this works is by introducing the concept of an executor. An executor
+is essentially a function that takes a block of code and run it. The default
+executor is:
+
+.. code:: python
+
+    def default_executor(function):
+        return function()
+
+You define executors by defining a method execute_example on a class. Any
+test methods on that class with @given used on them will use
+self.execute_example as an executor with which to run tests. For example,
+the following executor runs all its code twice:
+
+
+.. code:: python
+
+    from unittest import TestCase
+
+    class TestTryReallyHard(TestCase):
+        @given(int)
+        def test_something(self, i):
+            perform_some_unreliable_operation(i)
+
+        def execute_example(self, f):
+            f()
+            return f()
+
+Note: The functions you use in map, etc. will run *inside* the executor. i.e.
+they will not be called until you invoke the function passed to setup\_example.
+
+Methods of a BasicStrategy however will typically be called whenever. This may
+happen inside your executor or outside. This is why they have a "Warning you
+have no control over the lifecycle of these values" attached.

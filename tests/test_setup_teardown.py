@@ -17,26 +17,21 @@ import pytest
 from hypothesis import given, assume, strategy
 
 
-class HasSetupAndTeardown(object):
-
-    def __init__(self):
-        self.setups = 0
-        self.teardowns = []
-
-    def __repr__(self):
-        return 'HasSetupAndTeardown()'
+class HasSetup(object):
 
     def setup_example(self):
+        self.setups = getattr(self, 'setups', 0)
         self.setups += 1
 
-    def teardown_example(self, example):
-        self.teardowns.append(example)
 
-    def __copy__(self):
-        return self
+class HasTeardown(object):
 
-    def __deepcopy__(self, mapping):
-        return self
+    def teardown_example(self, ex):
+        self.teardowns = getattr(self, 'teardowns', 0)
+        self.teardowns += 1
+
+
+class SomeGivens(object):
 
     @given(int)
     def give_me_an_int(self, x):
@@ -63,28 +58,30 @@ class HasSetupAndTeardown(object):
         pass
 
 
+class HasSetupAndTeardown(HasSetup, HasTeardown, SomeGivens):
+    pass
+
+
 def test_calls_setup_and_teardown_on_self_as_first_argument():
     x = HasSetupAndTeardown()
     x.give_me_an_int()
     x.give_me_a_string()
     assert x.setups > 0
-    assert len(x.teardowns) == x.setups
-    assert any(isinstance(t[1]['x'], int) for t in x.teardowns)
-    assert any(isinstance(t[1]['x'], str) for t in x.teardowns)
+    assert x.teardowns == x.setups
 
 
 def test_calls_setup_and_teardown_on_self_unbound():
     x = HasSetupAndTeardown()
     HasSetupAndTeardown.give_me_an_int(x)
     assert x.setups > 0
-    assert len(x.teardowns) == x.setups
+    assert x.teardowns == x.setups
 
 
 def test_calls_setup_and_teardown_on_explicit_call():
     x = HasSetupAndTeardown()
     x.give_me_an_int(1)
     assert x.setups == 1
-    assert len(x.teardowns) == 1
+    assert x.teardowns == 1
 
 
 def test_calls_setup_and_teardown_on_failure():
@@ -92,8 +89,7 @@ def test_calls_setup_and_teardown_on_failure():
     with pytest.raises(AssertionError):
         x.give_me_a_positive_int()
     assert x.setups > 0
-    assert len(x.teardowns) == x.setups
-    assert x.teardowns[-1][1]['x'] == -1
+    assert x.teardowns == x.setups
 
 
 def test_still_tears_down_on_failed_reify():
@@ -101,18 +97,38 @@ def test_still_tears_down_on_failed_reify():
     with pytest.raises(AttributeError):
         x.fail_in_reify()
     assert x.setups > 0
-    assert len(x.teardowns) == x.setups
+    assert x.teardowns == x.setups
 
 
 def test_still_tears_down_on_failed_assume():
     x = HasSetupAndTeardown()
     x.assume_some_stuff()
     assert x.setups > 0
-    assert len(x.teardowns) == x.setups
+    assert x.teardowns == x.setups
 
 
 def test_still_tears_down_on_failed_assume_in_reify():
     x = HasSetupAndTeardown()
     x.assume_in_reify()
     assert x.setups > 0
-    assert len(x.teardowns) == x.setups
+    assert x.teardowns == x.setups
+
+
+def test_sets_up_without_teardown():
+    class Foo(HasSetup, SomeGivens):
+        pass
+
+    x = Foo()
+    x.give_me_an_int()
+    assert x.setups > 0
+    assert not hasattr(x, 'teardowns')
+
+
+def test_tears_down_without_setup():
+    class Foo(HasTeardown, SomeGivens):
+        pass
+
+    x = Foo()
+    x.give_me_an_int()
+    assert x.teardowns > 0
+    assert not hasattr(x, 'setups')
