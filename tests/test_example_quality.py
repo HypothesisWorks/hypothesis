@@ -20,7 +20,7 @@ from fractions import Fraction
 from collections import Counter, OrderedDict
 
 import pytest
-from hypothesis import Settings, assume, strategy
+from hypothesis import assume, strategy
 from hypothesis.specifiers import just, one_of, dictionary, \
     integers_from, integers_in_range
 from hypothesis.internal.debug import minimal
@@ -46,14 +46,6 @@ def test_minimize_list_of_sets_on_large_structure():
     x = minimal([frozenset({int})], test_list_in_range)
     assert len(x) == 50
     assert len(set(x)) == 1
-
-
-def test_shrinks_lists_to_small_pretty_quickly():
-
-    shrunk = minimal(
-        [str], lambda x: assume(len(x) >= 25) and len(set(x)) >= 10,
-        settings=Settings(timeout=0.5))
-    assert len(shrunk) == 25
 
 
 def test_minimal_infinite_float_is_positive():
