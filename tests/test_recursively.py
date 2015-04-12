@@ -86,15 +86,6 @@ UNDESIRABLE_STRINGS = re.compile('at 0x')
 
 @timeout(5)
 @given(Descriptor, settings=settings)
-def test_does_not_use_nasty_type_reprs_in_show(desc):
-    strat = strategy(desc)
-    s = repr(strat)
-    assert not UNDESIRABLE_STRINGS.findall(s)
-    assert type(strat).__name__ in s
-
-
-@timeout(5)
-@given(Descriptor, settings=settings)
 def test_show_evals_as_specifier(desc):
     s = show(desc)
     read_desc = eval(s)

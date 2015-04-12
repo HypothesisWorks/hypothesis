@@ -65,15 +65,16 @@ quality_settings = Settings(
 )
 
 
-def minimal(definition, condition=None, settings=None):
+def minimal(definition, condition=None, settings=None, timeout_after=10):
     strat = strategy(definition)
     condition = condition or (lambda x: True)
     settings = settings or quality_settings
 
     def template_satisfies(x):
-        return condition(strat.reify(x))
+        t = strat.reify(x)
+        return condition(t)
 
-    @timeout(10)
+    @timeout(timeout_after)
     def run():
         return best_satisfying_template(
             strat,

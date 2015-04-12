@@ -451,6 +451,7 @@ class OneOfStrategy(SearchStrategy):
         enabled = dist.non_empty_subset(
             random,
             indices,
+            activation_chance=(1.0 / len(indices))
         )
         return self.Parameter(
             enabled_children=enabled,

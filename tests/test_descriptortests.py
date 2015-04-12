@@ -27,6 +27,9 @@ from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.searchstrategy.narytree import NAryTree
 
 TestIntegerRange = strategy_test_suite(integers_in_range(0, 5))
+TestGiantIntegerRange = strategy_test_suite(
+    integers_in_range(-(2 ** 129), 2 ** 129)
+)
 TestFloatRange = strategy_test_suite(floats_in_range(0.5, 10))
 TestSampled = strategy_test_suite(sampled_from(elements=(1, 2, 3)))
 

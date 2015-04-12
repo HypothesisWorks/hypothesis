@@ -230,14 +230,6 @@ def test_minimal_unsorted_strings(string):
                 assert example[:i] in result
 
 
-def test_finds_small_sum_large_lists():
-    result = minimal(
-        [int],
-        lambda xs: assume(
-            len(xs) >= 20 and all(x >= 0 for x in xs)) and sum(xs) < 150)
-    assert result == [0] * 20
-
-
 def test_finds_list_with_plenty_duplicates():
     def is_good(xs):
         xs = list(filter(None, xs))
@@ -318,3 +310,38 @@ def test_dictionary(dict_class):
             assert k + 1 in x
         if k > 0:
             assert k - 1 in x
+
+
+def test_minimize_single_element_in_silly_large_int_range():
+    ir = integers_in_range(-(2 ** 256), 2 ** 256)
+    assert minimal(ir, lambda x: x >= -(2 ** 255)) == -(2 ** 255)
+
+
+def test_minimize_multiple_elements_in_silly_large_int_range():
+    desired_result = [-(2 ** 255)] * 20
+
+    def condition(x):
+        assume(len(x) >= 20)
+        return all(t >= -(2 ** 255) for t in x)
+
+    ir = integers_in_range(-(2 ** 256), 2 ** 256)
+    x = minimal(
+        [ir],
+        condition,
+        # This is quite hard and I don't yet have a good solution for
+        # making it less so, so this one gets a higher timeout.
+        timeout_after=20,
+    )
+    assert x == desired_result
+
+
+def test_minimize_multiple_elements_in_silly_large_int_range_min_is_not_dupe():
+    ir = integers_in_range(0, 2 ** 256)
+    target = list(range(20))
+
+    x = minimal(
+        [ir],
+        lambda x: (
+            assume(len(x) >= 20) and all(x[i] >= target[i] for i in target))
+    )
+    assert x == target

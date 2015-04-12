@@ -196,12 +196,12 @@ class ListStrategy(SearchStrategy):
         yield self.simplify_with_random_discards
         yield self.simplify_with_single_deletes
         yield self.simplify_with_example_cloning
+        yield self.enlarge_clones
 
-        for indices in self.shared_indices(template):
-            for simplify in self.element_strategy.simplifiers(
-                template[indices[0]]
-            ):
-                yield self.shared_simplification(indices, simplify)
+        for simplify in self.element_strategy.simplifiers(
+            template[0]
+        ):
+            yield self.shared_simplification(simplify)
 
         for i in hrange(len(template)):
             for simplify in self.element_strategy.simplifiers(template[i]):
@@ -266,6 +266,21 @@ class ListStrategy(SearchStrategy):
         assert isinstance(x, tuple)
         if len(x) <= 1:
             return
+
+        best = x[0]
+        any_shrinks = False
+        for t in x:
+            if self.element_strategy.strictly_simpler(
+                t, best
+            ):
+                any_shrinks = True
+                best = t
+            if not any_shrinks:
+                any_shrinks = self.element_strategy.strictly_simpler(best, t)
+
+        if any_shrinks:
+            yield (best,) * len(x)
+
         for _ in hrange(20):
             result = list(x)
             pivot = random.choice(x)
@@ -335,22 +350,40 @@ class ListStrategy(SearchStrategy):
             if len(indices) > 1:
                 yield tuple(indices)
 
-    def shared_simplification(self, indices, simplify):
-        assert indices
+    def enlarge_clones(self, random, x):
+        sharing = list(self.shared_indices(x))
+        if not sharing:
+            return
+        sharing.sort(key=len, reverse=True)
 
-        def accept(random, x):
-            if any(i >= len(x) for i in indices):
-                return
-            if len({x[i] for i in indices}) > 1:
-                return  # pragma: no cover
+        for indices in sharing:
             value = x[indices[0]]
-            for simpler in simplify(random, value):
-                copy = list(x)
-                for i in indices:
-                    copy[i] = simpler
-                yield tuple(copy)
+            for i, t in enumerate(x):
+                if (
+                    i not in indices and
+                    self.element_strategy.strictly_simpler(t, value)
+                ):
+                    copy = list(x)
+                    for i in indices:
+                        copy[i] = t
+                    yield tuple(copy)
+
+    def shared_simplification(self, simplify):
+        def accept(random, x):
+            sharing = list(self.shared_indices(x))
+            if not sharing:
+                return
+            sharing.sort(key=len, reverse=True)
+
+            for indices in sharing:
+                value = x[indices[0]]
+                for simpler in simplify(random, value):
+                    copy = list(x)
+                    for i in indices:
+                        copy[i] = simpler
+                    yield tuple(copy)
         accept.__name__ = str(
-            'shared_simplification(%r, %s)' % (indices, simplify.__name__,)
+            'shared_simplification(%s)' % (simplify.__name__,)
         )
         return accept
 

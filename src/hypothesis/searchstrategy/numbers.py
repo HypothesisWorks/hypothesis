@@ -157,6 +157,27 @@ class RandomGeometricIntStrategy(IntStrategy):
         return value
 
 
+class WideRangeIntStrategy(IntStrategy):
+    Parameter = namedtuple(
+        'Parameter',
+        ('center', 'width'),
+    )
+
+    def __repr__(self):
+        return 'WideRangeIntStrategy()'
+
+    def produce_parameter(self, random):
+        return self.Parameter(
+            center=random.randint(-2 ** 129, 2 ** 129),
+            width=2 ** random.randint(0, 256),
+        )
+
+    def produce_template(self, context, parameter):
+        return parameter.center + context.random.randint(
+            -parameter.width, parameter.width
+        )
+
+
 class BoundedIntStrategy(SearchStrategy):
 
     """A strategy for providing integers in some interval with inclusive
@@ -174,12 +195,15 @@ class BoundedIntStrategy(SearchStrategy):
     def __repr__(self):
         return 'BoundedIntStrategy(%d, %d)' % (self.start, self.end)
 
+    def strictly_simpler(self, x, y):
+        return x < y
+
     def produce_parameter(self, random):
-        return dist.non_empty_subset(
-            random,
-            tuple(range(self.start, self.end + 1)),
-            activation_chance=min(0.5, 3.0 / (self.end - self.start + 1))
-        )
+        n = 1 + dist.geometric(random, 0.01)
+        results = []
+        for _ in hrange(n):
+            results.append(random.randint(self.start, self.end))
+        return results
 
     def from_basic(self, data):
         check_data_type(integer_types, data)
@@ -199,13 +223,18 @@ class BoundedIntStrategy(SearchStrategy):
     def basic_simplify(self, random, x):
         if x == self.start:
             return
-        mid = (self.start + self.end) // 2
-        for t in hrange(self.start, min(x, mid)):
-            yield t
-        if x > mid:
-            yield self.start + (self.end - x)
-            for t in hrange(self.end, x, -1):
-                yield t
+
+        probe = self.start
+        while True:
+            yield probe
+            new_probe = (x + probe) // 2
+            if new_probe > probe:
+                probe = new_probe
+            else:
+                break
+
+        for _ in hrange(10):
+            yield random.randint(self.start, x - 1)
 
 
 def is_integral(value):
@@ -334,9 +363,9 @@ class WrapperFloatStrategy(FloatStrategy):
 
 class JustIntFloats(FloatStrategy):
 
-    def __init__(self, int_strategy):
+    def __init__(self):
         super(JustIntFloats, self).__init__()
-        self.int_strategy = int_strategy
+        self.int_strategy = RandomGeometricIntStrategy()
 
     def produce_parameter(self, random):
         return self.int_strategy.draw_parameter(random)
@@ -536,7 +565,10 @@ def define_strategy_for_float_Range(specifier, settings):
 
 @strategy.extend_static(int)
 def int_strategy(specifier, settings):
-    return RandomGeometricIntStrategy()
+    return (
+        RandomGeometricIntStrategy() |
+        WideRangeIntStrategy()
+    )
 
 
 @strategy.extend(specifiers.IntegersFrom)
@@ -550,7 +582,7 @@ def define_float_strategy(specifier, settings):
         GaussianFloatStrategy() |
         BoundedFloatStrategy() |
         ExponentialFloatStrategy() |
-        JustIntFloats(strategy(int)) |
+        JustIntFloats() |
         NastyFloats() |
         FullRangeFloats()
     )

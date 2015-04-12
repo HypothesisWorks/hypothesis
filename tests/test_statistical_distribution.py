@@ -290,7 +290,7 @@ test_can_produce_lists_bunched_near_right = define_test(
 )
 
 test_can_produce_the_same_int_twice = define_test(
-    ([int], int), 0.05,
+    ([int], int), 0.01,
     lambda t: len([x for x in t[0] if x == t[1]]) > 1
 )
 
@@ -308,4 +308,21 @@ test_mostly_largish_floats = define_test(
     float, 0.5,
     lambda t: t + 1 > 1,
     condition=lambda x: x > 0,
+)
+
+test_ints_can_occasionally_be_really_large = define_test(
+    int, 0.01,
+    lambda t: t >= 2 ** 63
+)
+
+
+test_mixes_reasonably_often = define_test(
+    [bool, ()], 0.25, lambda x: len(set(map(type, x))) > 1,
+    condition=bool,
+)
+
+
+test_mixes_not_too_often = define_test(
+    [bool, ()], 0.5, lambda x: len(set(map(type, x))) == 1,
+    condition=bool,
 )

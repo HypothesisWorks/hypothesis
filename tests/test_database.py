@@ -26,15 +26,6 @@ from hypothesis.database.backend import Backend, SQLiteBackend
 from hypothesis.database.formats import Format, JSONFormat
 
 
-def test_deduplicates():
-    database = ExampleDatabase()
-    storage = database.storage_for(int)
-    storage.save(1)
-    storage.save(1)
-    assert list(storage.fetch()) == [1]
-    database.close()
-
-
 def run_round_trip(specifier, value, format=None, backend=None):
     if backend is not None:
         backend = backend()
