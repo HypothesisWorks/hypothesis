@@ -33,6 +33,7 @@ type (or using their type in @given).
 7. Fraction
 8. Unicode text (str on 3, unicode on 2.7)
 9. Binary text (bytes on 3, str on 2.7)
+10. Random
 
 Some examples:
 
