@@ -41,7 +41,7 @@ matrix:
           env: TOXENV=pypy3
         - os: linux
           env: TOXENV=py27
-        - os: linux
+        - os: osx
           env: TOXENV=py32
         - os: linux
           env: TOXENV=py33
