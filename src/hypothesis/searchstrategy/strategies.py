@@ -477,7 +477,7 @@ class OneOfStrategy(SearchStrategy):
                 return
             for value in simplifier(random, template[1]):
                 yield (s, value)
-        accept.__name__ = "element_simplifier(%s)" % (simplifier.__name__,)
+        accept.__name__ = 'element_simplifier(%s)' % (simplifier.__name__,)
         return accept
 
     def simplifiers(self, template):

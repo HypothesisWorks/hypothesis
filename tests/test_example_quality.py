@@ -24,7 +24,7 @@ from hypothesis import assume, strategy
 from hypothesis.specifiers import just, one_of, dictionary, \
     integers_from, integers_in_range
 from hypothesis.internal.debug import minimal
-from hypothesis.internal.compat import hrange, text_type, binary_type, PY3
+from hypothesis.internal.compat import PY3, hrange, text_type, binary_type
 
 
 def test_minimize_list_on_large_structure():
@@ -353,11 +353,11 @@ def test_minimize_one_of_distinct_types():
         lambda x: type(x[0]) != type(x[1])
     )
     assert x in (
-        (0, ""),
-        ("", 0)
+        (0, ''),
+        ('', 0)
     )
 
 
-@pytest.mark.skipif(PY3, reason="Python 3 has better integers")
+@pytest.mark.skipif(PY3, reason='Python 3 has better integers')
 def test_minimize_long():
     assert minimal(int, lambda x: isinstance(x, long)) == sys.maxint + 1
