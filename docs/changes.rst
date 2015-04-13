@@ -9,6 +9,31 @@ on pip.
 All Hypothesis releases since 1.0 are `semantically versioned <http://semver.org/>`,
 with everything in this documentation considered public API.
 
+----------------
+1.2 - 2015-04-14
+----------------
+
+Codename: Finders keepers.
+
+A bunch of new features and improvements.
+
+* Provide a mechanism for customizing how your tests are executed.
+* Provide a test runner that forks before running each example. This allows
+  better support for testing native code which might trigger a segfault or a C
+  level assertion failure.
+* Support for using Hypothesis to find examples directly rather than as just as
+  a test runner.
+* New streaming type which lets you generate infinite lazily loaded streams of
+  data - perfect for if you need a number of examples but don't know how many.
+* Better support for large integer ranges. You can now use integers_in_range
+  with ranges of basically any size. Previously large ranges would have eaten
+  up all your memory and taken forever.
+* Integers produce a wider range of data than before - previously they would
+  only rarely produce integers which didn't fit into a machine word. Now it's
+  much more common.
+* Better validation of arguments to @given. Some situations that would
+  previously have caused silently wrong behaviour will now raise an error.
+
 ------------------
 1.1.1 - 2015-04-07
 ------------------

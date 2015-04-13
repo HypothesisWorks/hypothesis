@@ -590,6 +590,8 @@ example to a condition that is always false it will raise an error:
   ...
   hypothesis.errors.DefinitelyNoSuchExample: No examples of conditition lambda x: <unknown> (all 2 considered)
 
+
+
 (The "lambda x: unknown" is because Hypothesis can't retrieve the source code
 of lambdas from the interactive python console. It gives a better error message
 most of the time which contains the actual condition)
@@ -597,3 +599,52 @@ most of the time which contains the actual condition)
 The reason for the two different types of errors is that there are only a small
 number of booleans, so it is feasible for Hypothesis to enumerate all of them
 and simply check that your condition is never true. 
+
+---------------------------
+Providing explicit examples
+---------------------------
+
+You can explicitly ask Hypothesis to try a particular example as follows:
+
+.. code:: python
+
+  from hypothesis import given, example
+
+  @given(str)
+  @example("Hello world")
+  @example(x="Some very long string")
+  def test_some_code(x):
+      assert True
+
+Hypothesis will run all examples you've asked for first. If any of them fail it
+will not go on to look for more examples. 
+
+This can be useful both because it's easier to share and version examples in
+source code than it is to share the example database, and it can also allow you
+to feed specific examples that Hypothesis is unlikely to figure out on its own.
+
+It doesn't matter whether you put the example decorator before or after given.
+Any permutation of the decorators in the above will do the same thing. 
+
+Note that examples can be positional or keyword based. If they're positional then
+they will be filled in from the right when calling, so things like the following
+will also work:
+
+.. code:: python
+
+  from unittest import TestCase
+  from hypothesis import given, example
+
+
+  class TestThings(TestCase):
+      @given(str)
+      @example("Hello world")
+      @example(x="Some very long string")
+      def test_some_code(self, x):
+          assert True
+
+It is *not* permitted for a single example to be a mix of positional and
+keyword arguments. Either are fine, and you can use one in one example and the
+other in another example if for some reason you really want to, but a single
+example must be consistent.
+
