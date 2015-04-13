@@ -353,8 +353,8 @@ def test_minimize_one_of_distinct_types():
         lambda x: type(x[0]) != type(x[1])
     )
     assert x in (
-        (0, ''),
-        ('', 0)
+        (False, b''),
+        (b'', False)
     )
 
 
