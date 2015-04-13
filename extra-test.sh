@@ -20,11 +20,11 @@ for d in hypothesis-extra/hypothesis-*; do
     pip install pytest coverage
 
     pushd $d
-        python setup.py install
         rm -f .coverage
         if [ -e test_setup ]; then
             ./test_setup
         fi
+        python setup.py install
         if [ -e manage.py ]; then
           PYTHONPATH=src python -m coverage run --rcfile=$COVERAGERC manage.py test
           pip install pytest-django

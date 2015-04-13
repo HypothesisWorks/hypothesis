@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e -o xtrace
+
 for p in hypothesis-datetime hypothesis-fakefactory; do
     pushd ../$p
         python setup.py install
