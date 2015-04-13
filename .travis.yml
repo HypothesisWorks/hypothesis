@@ -35,3 +35,15 @@ matrix:
     exclude:
         - os: osx
           env: TOXENV=lint
+        - os: osx
+          env: TOXENV=pypy
+        - os: linux
+          env: TOXENV=pypy3
+        - os: linux
+          env: TOXENV=py27
+        - os: linux
+          env: TOXENV=py32
+        - os: linux
+          env: TOXENV=py33
+        - os: osx
+          env: TOXENV=py34
