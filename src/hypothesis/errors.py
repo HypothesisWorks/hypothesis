@@ -52,14 +52,8 @@ class NoSuchExample(HypothesisException):
 
 class DefinitelyNoSuchExample(NoSuchExample):
 
-    """We appear to have considered the entire example space available before
-    we ran out of time or number of examples.
-
-    This does not guarantee that we have considered the whole example
-    space (it could just be a bad search strategy) but it makes it
-    pretty likely that this hypothesis is just always true.
-
-    """
+    """We have considered the entire example space available and there are no
+    examples in it."""
 
     def __init__(self, condition_string, n_examples):
         super(DefinitelyNoSuchExample, self).__init__(
