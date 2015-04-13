@@ -360,4 +360,4 @@ def test_minimize_one_of_distinct_types():
 
 @pytest.mark.skipif(PY3, reason='Python 3 has better integers')
 def test_minimize_long():
-    assert minimal(int, lambda x: isinstance(x, long)) == sys.maxint + 1
+    assert minimal(int, lambda x: type(x).__name__ == 'long') == sys.maxint + 1
