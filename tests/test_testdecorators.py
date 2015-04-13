@@ -159,7 +159,7 @@ def test_slow_failing_test_4(x):
 
 
 @fails
-@given(one_of([int, str]), one_of([int, str]))
+@given(one_of([float, bool]), one_of([float, bool]))
 def test_one_of_produces_different_values(x, y):
     assert type(x) == type(y)
 

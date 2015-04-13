@@ -44,14 +44,13 @@ class IntStrategy(SearchStrategy):
     def to_basic(self, template):
         return template
 
-    def reify(self, template):
-        return template
-
     def simplifiers(self, template):
-        yield self.try_convert_type
         yield self.try_negate
         yield self.try_small_numbers
         yield self.try_shrink_to_zero
+
+    def reify(self, template):
+        return int(template)
 
     def strictly_simpler(self, x, y):
         if (not x) and y:
@@ -61,11 +60,6 @@ class IntStrategy(SearchStrategy):
         if 0 <= x < y:
             return True
         return False
-
-    def try_convert_type(self, random, x):
-        ix = int(x)
-        if type(ix) != type(x):  # pragma: no cover
-            yield ix
 
     def try_negate(self, random, x):
         if x >= 0:
@@ -82,12 +76,15 @@ class IntStrategy(SearchStrategy):
             for y in self.try_shrink_to_zero(random, -x):
                 yield -y
         elif x > 1:
-            y = 1
+            lb = 0
             while True:
-                yield y
-                y = random.randint(y, x)
-                if y == x:
+                new_lb = (lb + x) // 2
+                if new_lb <= lb:
                     break
+                lb = new_lb
+                yield lb - 1
+                yield lb
+                yield lb + 1
             yield x - 1
 
 

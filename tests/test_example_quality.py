@@ -24,7 +24,7 @@ from hypothesis import assume, strategy
 from hypothesis.specifiers import just, one_of, dictionary, \
     integers_from, integers_in_range
 from hypothesis.internal.debug import minimal
-from hypothesis.internal.compat import hrange, text_type, binary_type
+from hypothesis.internal.compat import hrange, text_type, binary_type, PY3
 
 
 def test_minimize_list_on_large_structure():
@@ -345,3 +345,19 @@ def test_minimize_multiple_elements_in_silly_large_int_range_min_is_not_dupe():
             assume(len(x) >= 20) and all(x[i] >= target[i] for i in target))
     )
     assert x == target
+
+
+def test_minimize_one_of_distinct_types():
+    x = minimal(
+        (one_of((bool, binary_type)), one_of((bool, binary_type))),
+        lambda x: type(x[0]) != type(x[1])
+    )
+    assert x in (
+        (0, ""),
+        ("", 0)
+    )
+
+
+@pytest.mark.skipif(PY3, reason="Python 3 has better integers")
+def test_minimize_long():
+    assert minimal(int, lambda x: isinstance(x, long)) == sys.maxint + 1
