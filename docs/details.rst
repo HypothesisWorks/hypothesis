@@ -553,3 +553,47 @@ There are currently some limitations to this approach:
    Windows.
 
 Some of these limitations should be resolvable in time.
+
+-------------------------------
+Using Hypothesis to find values
+-------------------------------
+
+You can use Hypothesis's data exploration features to find values satisfying
+some predicate:
+
+.. code:: python
+
+  >>> from hypothesis import find
+  >>> find([int], lambda x: sum(x) >= 10)
+  [10]
+  >>> find([int], lambda x: sum(x) >= 10 and len(x) >= 3)
+  [0, 0, 10]
+  >>> find({int}, lambda x: sum(x) >= 10 and len(x) >= 3)
+  {0, 1, 9}
+
+The first argument to find describes data in the usual way for an argument to
+given, and supports :doc:`all the same data types <data>`. The second is a
+predicate it must satisfy.
+
+Of course not all conditions are satisfiable. If you ask Hypothesis for an
+example to a condition that is always false it will raise an error:
+
+
+.. code:: python
+
+  >>> find(int, lambda x: False)
+  Traceback (most recent call last):
+  ...
+  hypothesis.errors.NoSuchExample: No examples of conditition lambda x: <unknown>
+  >>> find(bool, lambda x: False)
+  Traceback (most recent call last):
+  ...
+  hypothesis.errors.DefinitelyNoSuchExample: No examples of conditition lambda x: <unknown> (all 2 considered)
+
+(The "lambda x: unknown" is because Hypothesis can't retrieve the source code
+of lambdas from the interactive python console. It gives a better error message
+most of the time which contains the actual condition)
+
+The reason for the two different types of errors is that there are only a small
+number of booleans, so it is feasible for Hypothesis to enumerate all of them
+and simply check that your condition is never true. 

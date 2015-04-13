@@ -34,23 +34,23 @@ class UnsatisfiedAssumption(HypothesisException):
         super(UnsatisfiedAssumption, self).__init__('Unsatisfied assumption')
 
 
-class Unfalsifiable(HypothesisException):
+class NoSuchExample(HypothesisException):
 
-    """The hypothesis we have been asked to falsify appears to be always true.
+    """The condition we have been asked to satisfy appears to be always false.
 
-    This does not guarantee that no counter-example exists, only that we
-    were unable to find one.
+    This does not guarantee that no example exists, only that we were
+    unable to find one.
 
     """
 
-    def __init__(self, hypothesis, extra=''):
-        super(Unfalsifiable, self).__init__(
-            'Unable to falsify hypothesis %s%s' % (
-                get_pretty_function_description(hypothesis), extra)
+    def __init__(self, condition_string, extra=''):
+        super(NoSuchExample, self).__init__(
+            'No examples of conditition %s%s' % (
+                condition_string, extra)
         )
 
 
-class Exhausted(Unfalsifiable):
+class DefinitelyNoSuchExample(NoSuchExample):
 
     """We appear to have considered the entire example space available before
     we ran out of time or number of examples.
@@ -61,12 +61,13 @@ class Exhausted(Unfalsifiable):
 
     """
 
-    def __init__(self, hypothesis, n_examples):
-        super(Exhausted, self).__init__(
-            hypothesis, ' exhausted parameter space after %d examples' % (
+    def __init__(self, condition_string, n_examples):
+        super(DefinitelyNoSuchExample, self).__init__(
+            condition_string, ' (all %d considered)' % (
                 n_examples,
             )
         )
+        self.n_examples = n_examples
 
 
 class NoExamples(HypothesisException):

@@ -14,9 +14,28 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import math
+from random import Random
 
-from hypothesis import find
-from hypothesis.specifiers import streaming
+import pytest
+from hypothesis import Settings, find, given, assume
+from hypothesis.errors import NoSuchExample, DefinitelyNoSuchExample
+from hypothesis.specifiers import streaming, sampled_from
+
+
+@given(Random, settings=Settings(max_examples=10, min_satisfying_examples=1))
+def test_only_raises_if_actually_considered_all(r):
+    examples = set()
+    settings = Settings(min_satisfying_examples=0, max_examples=100)
+
+    def consider_and_append(x):
+        examples.add(x)
+        return False
+    s = sampled_from(range(100))
+    with pytest.raises(NoSuchExample) as e:
+        find(s, consider_and_append, settings=settings)
+
+    assume(len(examples) < 100)
+    assert not isinstance(e.value, DefinitelyNoSuchExample)
 
 
 def test_can_find_an_int():
@@ -55,3 +74,30 @@ def test_find_streaming_int():
     n = 100
     r = find(streaming(int), lambda x: all(t >= 1 for t in x[:n]))
     assert list(r[:n]) == [1] * n
+
+
+def test_raises_when_no_example():
+    with pytest.raises(NoSuchExample):
+        find(int, lambda x: False)
+
+
+def test_raises_more_specifically_when_exhausted():
+    with pytest.raises(DefinitelyNoSuchExample):
+        find(bool, lambda x: False)
+
+
+def test_condition_is_name():
+    with pytest.raises(NoSuchExample) as e:
+        find(bool, lambda x: False)
+    assert 'lambda x:' in e.value.args[0]
+
+    with pytest.raises(NoSuchExample) as e:
+        find(int, lambda x: '☃' in str(x))
+    assert 'lambda x:' in e.value.args[0]
+
+    def bad(x):
+        return False
+
+    with pytest.raises(NoSuchExample) as e:
+        find(int, bad)
+    assert 'bad' in e.value.args[0]

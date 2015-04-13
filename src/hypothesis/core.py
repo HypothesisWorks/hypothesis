@@ -23,8 +23,9 @@ from itertools import islice
 from collections import namedtuple
 
 from hypothesis.extra import load_entry_points
-from hypothesis.errors import Flaky, Timeout, Exhausted, Unfalsifiable, \
-    Unsatisfiable, InvalidArgument, UnsatisfiedAssumption
+from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
+    Unsatisfiable, InvalidArgument, UnsatisfiedAssumption, \
+    DefinitelyNoSuchExample
 from hypothesis.control import assume
 from hypothesis.settings import Settings
 from hypothesis.executors import executor
@@ -32,7 +33,7 @@ from hypothesis.reporting import current_reporter
 from hypothesis.specifiers import just
 from hypothesis.internal.tracker import Tracker
 from hypothesis.internal.reflection import arg_string, copy_argspec, \
-    function_digest
+    function_digest, get_pretty_function_description
 from hypothesis.internal.examplesource import ParameterSource
 from hypothesis.searchstrategy.strategies import BuildContext, strategy
 
@@ -63,7 +64,7 @@ def find_satisfying_template(
     May raise a variety of exceptions depending on exact circumstances, but
     these will all subclass either Unsatisfiable (to indicate not enough
     examples were found which did not raise UnsatisfiedAssumption to consider
-    this a valid test) or Unfalsifiable (to indicate that this probably means
+    this a valid test) or NoSuchExample (to indicate that this probably means
     that condition is true with very high probability).
 
     """
@@ -120,8 +121,10 @@ def find_satisfying_template(
         satisfying_examples and
         len(tracker) >= search_strategy.size_lower_bound
     ):
-        raise Exhausted(
-            condition, satisfying_examples)
+        raise DefinitelyNoSuchExample(
+            get_pretty_function_description(condition),
+            satisfying_examples,
+        )
     elif satisfying_examples < min_satisfying_examples:
         if timed_out:
             raise Timeout(condition, satisfying_examples, run_time)
@@ -129,7 +132,7 @@ def find_satisfying_template(
             raise Unsatisfiable(
                 condition, satisfying_examples, run_time)
     else:
-        raise Unfalsifiable(condition)
+        raise NoSuchExample(get_pretty_function_description(condition))
 
 
 def simplify_template_such_that(search_strategy, random, t, f, tracker):
@@ -172,7 +175,7 @@ def simplify_template_such_that(search_strategy, random, t, f, tracker):
 
 
 def best_satisfying_template(
-    search_strategy, random, condition, settings, storage
+    search_strategy, random, condition, settings, storage, tracker=None
 ):
     """Find and then minimize a satisfying template.
 
@@ -181,7 +184,8 @@ def best_satisfying_template(
     an example has been found it will be further minimized.
 
     """
-    tracker = Tracker()
+    if tracker is None:
+        tracker = Tracker()
     start_time = time.time()
 
     satisfying_example = find_satisfying_template(
@@ -406,7 +410,7 @@ def given(*generator_arguments, **generator_kwargs):
                     search_strategy, random, is_template_example,
                     settings, storage
                 )
-            except Unfalsifiable:
+            except NoSuchExample:
                 return
 
             try:
@@ -445,9 +449,21 @@ def find(specifier, condition, settings=None, random=None):
     def template_condition(template):
         return assume(condition(search.reify(template)))
 
-    return search.reify(best_satisfying_template(
-        search, random, template_condition, settings, None
-    ))
+    template_condition.__name__ = condition.__name__
+    tracker = Tracker()
+
+    try:
+        return search.reify(best_satisfying_template(
+            search, random, template_condition, settings, None,
+            tracker=tracker,
+        ))
+    except NoSuchExample:
+        if search.size_upper_bound <= len(tracker):
+            raise DefinitelyNoSuchExample(
+                get_pretty_function_description(condition),
+                search.size_upper_bound,
+            )
+        raise NoSuchExample(get_pretty_function_description(condition))
 
 
 load_entry_points()
