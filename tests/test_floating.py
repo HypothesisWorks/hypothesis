@@ -40,6 +40,11 @@ def test_inversion_is_imperfect(x):
     assert x * y == 1.0
 
 
+@given(floats_in_range(-sys.float_info.max, sys.float_info.max))
+def test_largest_range(x):
+    assert not math.isinf(x)
+
+
 @given(float)
 def test_negation_is_self_inverse(x):
     assume(not math.isnan(x))
