@@ -15,8 +15,8 @@ from __future__ import division, print_function, absolute_import, \
 
 import pytest
 from hypothesis import given
-from hypothesis.specifiers import floats_in_range
 from hypothesis.errors import InvalidArgument
+from hypothesis.specifiers import floats_in_range
 
 
 def test_errors_when_given_varargs():

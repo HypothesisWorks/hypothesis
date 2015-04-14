@@ -20,9 +20,9 @@ from decimal import Decimal
 from fractions import Fraction
 from collections import namedtuple
 
-from hypothesis.errors import InvalidArgument
 import hypothesis.specifiers as specifiers
 import hypothesis.internal.distributions as dist
+from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.searchstrategy.misc import SampledFromStrategy
 from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
@@ -123,7 +123,7 @@ class IntStrategy(SearchStrategy):
                     return
                 lb = new_lb
         accept.__name__ = str(
-            "try_shrink(%d, %d)" % (lo, hi)
+            'try_shrink(%d, %d)' % (lo, hi)
         )
         return accept
 
@@ -598,7 +598,7 @@ def define_stragy_for_integer_Range(specifier, settings):
 def define_strategy_for_float_Range(specifier, settings):
     for t in specifier:
         if math.isinf(t) or math.isnan(t):
-            raise InvalidArgument("Invalid range: %r" % (specifier,))
+            raise InvalidArgument('Invalid range: %r' % (specifier,))
 
     if math.isinf(specifier.end - specifier.start):
         assert specifier.start < 0 and specifier.end > 0
