@@ -478,7 +478,9 @@ class OneOfStrategy(SearchStrategy):
             for value in simplifier(random, template[1]):
                 yield (s, value)
         accept.__name__ = str(
-            'element_simplifier(%s)' % (simplifier.__name__,)
+            'element_simplifier(%d, %s)' % (
+                s, simplifier.__name__,
+            )
         )
         return accept
 
