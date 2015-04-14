@@ -151,10 +151,12 @@ def test_minimize_one_of():
 
 def test_minimize_negative_int():
     assert minimal(int, lambda x: x < 0) == -1
+    assert minimal(int, lambda x: x < -1) == -2
 
 
 def test_positive_negative_int():
     assert minimal(int, lambda x: x > 0) == 1
+    assert minimal(int, lambda x: x > 1) == 2
 
 
 boundaries = pytest.mark.parametrize('boundary', [0, 1, 11, 23, 64, 10000])
