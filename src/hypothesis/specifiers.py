@@ -13,6 +13,9 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+import math
+from hypothesis.errors import InvalidArgument
+
 from collections import namedtuple
 
 Just = namedtuple('Just', 'value')
@@ -47,6 +50,13 @@ FloatRange = namedtuple('FloatRange', ('start', 'end'))
 
 
 def floats_in_range(start, end):
+    for t in (start, end):
+        if math.isinf(t) or math.isnan(t):
+            raise InvalidArgument("Invalid range: %r, %r" % (start, end,))
+    if end < start:
+        raise InvalidArgument(
+            "Invalid range: end=%f < start=%f" % (end, start))
+
     return FloatRange(start, end)
 
 

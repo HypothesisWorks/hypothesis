@@ -20,6 +20,7 @@ from decimal import Decimal
 from fractions import Fraction
 from collections import namedtuple
 
+from hypothesis.errors import InvalidArgument
 import hypothesis.specifiers as specifiers
 import hypothesis.internal.distributions as dist
 from hypothesis.internal.compat import hrange, integer_types
@@ -566,6 +567,8 @@ class NastyFloats(SampledFromStrategy):
                 0.0,
                 sys.float_info.min,
                 -sys.float_info.min,
+                -sys.float_info.max,
+                sys.float_info.max,
                 float('inf'),
                 -float('inf'),
                 float('nan'),
@@ -593,6 +596,18 @@ def define_stragy_for_integer_Range(specifier, settings):
 
 @strategy.extend(specifiers.FloatRange)
 def define_strategy_for_float_Range(specifier, settings):
+    for t in specifier:
+        if math.isinf(t) or math.isnan(t):
+            raise InvalidArgument("Invalid range: %r" % (specifier,))
+
+    if math.isinf(specifier.end - specifier.start):
+        assert specifier.start < 0 and specifier.end > 0
+        return strategy(
+            specifiers.FloatRange(0, specifier.end), settings
+        ) | strategy(
+            specifiers.FloatRange(specifier.start, 0), settings
+        )
+
     return FixedBoundedFloatStrategy(specifier.start, specifier.end)
 
 

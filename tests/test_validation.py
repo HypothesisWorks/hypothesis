@@ -15,6 +15,7 @@ from __future__ import division, print_function, absolute_import, \
 
 import pytest
 from hypothesis import given
+from hypothesis.specifiers import floats_in_range
 from hypothesis.errors import InvalidArgument
 
 
@@ -57,3 +58,12 @@ def test_cannot_put_kwargs_in_the_middle():
         @given(y=int)
         def foo(x, y, z):
             pass
+
+
+def test_float_ranges():
+    with pytest.raises(InvalidArgument):
+        floats_in_range(0, float('inf'))
+    with pytest.raises(InvalidArgument):
+        floats_in_range(float('nan'), 0)
+    with pytest.raises(InvalidArgument):
+        floats_in_range(1, -1)
