@@ -2,7 +2,7 @@
 Community
 =========
 
-The Hypothesis community is small for the moment but is full of excellent people (and me)
+The Hypothesis community is small for the moment but is full of excellent people
 who can answer your questions and help you out. Please do join us.
 
 The two major places for community discussion are:
