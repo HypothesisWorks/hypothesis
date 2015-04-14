@@ -10,7 +10,7 @@ All Hypothesis releases since 1.0 are `semantically versioned <http://semver.org
 with everything in this documentation considered public API.
 
 ----------------
-1.2 - 2015-04-14
+1.2 - 2015-04-15
 ----------------
 
 Codename: Finders keepers.
@@ -30,9 +30,17 @@ A bunch of new features and improvements.
   up all your memory and taken forever.
 * Integers produce a wider range of data than before - previously they would
   only rarely produce integers which didn't fit into a machine word. Now it's
-  much more common.
+  much more common. This percolates to other numeric types which build on
+  integers.
 * Better validation of arguments to @given. Some situations that would
   previously have caused silently wrong behaviour will now raise an error.
+* Include +/- sys.float_info.max in the set of floating point edge cases that
+  Hypothesis specifically tries.
+* Fix some bugs in floating point ranges which happen when given
+  +/- sys.float_info.max as one of the endpoints... (really any two floats that
+  are sufficiently far apart so that x, y are finite but y - x is infinite).
+  This would have resulted in generating infinite values instead of ones inside
+  the range.
 
 ------------------
 1.1.1 - 2015-04-07
