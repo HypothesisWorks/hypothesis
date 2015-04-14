@@ -47,8 +47,6 @@ class IntStrategy(SearchStrategy):
     def simplifiers(self, template):
         yield self.try_negate
         yield self.try_small_numbers
-        yield self.try_clearing_digits
-        yield self.try_clearing_bits
         i = 1
         while i < abs(template):
             yield self.try_shrink(i, 2 * i)
@@ -78,33 +76,6 @@ class IntStrategy(SearchStrategy):
             yield 1
         if x < -1:
             yield -1
-
-    def try_clearing_bits(self, random, x):
-        if x < 0:
-            for i in self.try_clearing_bits(random, -x):
-                yield -i
-        if x > 0:
-            mask = 1
-            while mask <= x:
-                mask *= 2
-
-            while mask > 0:
-                if x & mask:
-                    yield x ^ mask
-                mask //= 2
-
-    def try_clearing_digits(self, random, x):
-        if x < 0:
-            for i in self.try_clearing_digits(random, -x):
-                yield -i
-        if x > 0:
-            clearing = 10
-            while clearing < x:
-                clearing *= 10
-            while clearing > 0:
-                if x % clearing:
-                    yield (x // clearing) * clearing
-                clearing //= 10
 
     def try_shrink(self, lo, hi):
         def accept(random, x):
