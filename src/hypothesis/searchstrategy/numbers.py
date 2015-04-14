@@ -552,7 +552,7 @@ class ExponentialFloatStrategy(FloatStrategy):
         return pv.zero_point + value
 
 
-class NastyFloats(FloatStrategy, SampledFromStrategy):
+class NastyFloats(SampledFromStrategy):
 
     def __init__(self):
         SampledFromStrategy.__init__(
@@ -566,9 +566,6 @@ class NastyFloats(FloatStrategy, SampledFromStrategy):
                 float('nan'),
             ]
         )
-
-    def reify(self, value):
-        return SampledFromStrategy.reify(self, value)
 
 
 class ComplexStrategy(MappedSearchStrategy):

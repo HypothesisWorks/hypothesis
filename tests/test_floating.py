@@ -22,8 +22,9 @@ from random import Random
 
 from hypothesis import Settings, given, assume
 from hypothesis.errors import Unsatisfiable
-from tests.common.utils import fails
+from tests.common.utils import fails, fails_with
 from hypothesis.specifiers import floats_in_range
+from hypothesis.searchstrategy.numbers import NastyFloats
 
 
 @given(float)
@@ -139,3 +140,9 @@ def test_floats_are_in_range(x, y, rand):
         test_is_in_range()
     except Unsatisfiable:
         assume(False)
+
+
+@fails_with(AssertionError)
+@given(NastyFloats())
+def test_can_use_just_nasty(x):
+    assert not math.isnan(x)
