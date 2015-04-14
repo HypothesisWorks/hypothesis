@@ -361,3 +361,29 @@ def test_minimize_one_of_distinct_types():
 @pytest.mark.skipif(PY3, reason='Python 3 has better integers')
 def test_minimize_long():
     assert minimal(int, lambda x: type(x).__name__ == 'long') == sys.maxint + 1
+
+
+def test_non_reversible_ints_as_decimals():
+    def not_reversible(xs):
+        xs = list(map(Decimal, xs))
+        return sum(xs) != sum(reversed(xs))
+
+    sigh = minimal([int], not_reversible, timeout_after=20)
+    assert len(sigh) < 10
+
+
+def test_non_reversible_fractions_as_decimals():
+    def not_reversible(xs):
+        xs = [Decimal(x.numerator) / x.denominator for x in xs]
+        return sum(xs) != sum(reversed(xs))
+
+    sigh = minimal([Fraction], not_reversible, timeout_after=20)
+    assert len(sigh) < 10
+
+
+def test_non_reversible_decimals():
+    def not_reversible(xs):
+        assume(all(x.is_finite() for x in xs))
+        return sum(xs) != sum(reversed(xs))
+    sigh = minimal([Decimal], not_reversible, timeout_after=30)
+    assert len(sigh) < 10

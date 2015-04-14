@@ -46,8 +46,12 @@ class IntStrategy(SearchStrategy):
 
     def simplifiers(self, template):
         yield self.try_negate
-        yield self.try_small_numbers
-        yield self.try_shrink_to_zero
+        yield self.try_clearing_digits
+        yield self.try_clearing_bits
+        i = 1
+        while i < template:
+            yield self.try_shrink(i, 2 * i)
+            i *= 2
 
     def reify(self, template):
         return int(template)
@@ -70,22 +74,52 @@ class IntStrategy(SearchStrategy):
         if x != 0:
             yield 0
 
-    def try_shrink_to_zero(self, random, x):
+    def try_clearing_bits(self, random, x):
         if x < 0:
-            yield -x
-            for y in self.try_shrink_to_zero(random, -x):
-                yield -y
-        elif x > 1:
-            lb = 0
+            for i in self.try_clearing_bits(random, -x):
+                yield -i
+        if x > 0:
+            mask = 1
+            while mask <= x:
+                mask *= 2
+
+            while mask > 0:
+                if x & mask:
+                    yield x ^ mask
+                mask //= 2
+
+    def try_clearing_digits(self, random, x):
+        if x < 0:
+            for i in self.try_clearing_digits(random, -x):
+                yield -i
+        if x > 0:
+            clearing = 10
+            while clearing < x:
+                clearing *= 10
+            while clearing > 0:
+                if x % clearing:
+                    yield (x // clearing) * clearing
+                clearing //= 10
+
+    def try_shrink(self, lo, hi):
+        def accept(random, x):
+            if x < 0:
+                for i in accept(random, -x):
+                    yield -i
+            if x <= lo:
+                return
+
+            lb = lo
             while True:
-                new_lb = (lb + x) // 2
-                if new_lb <= lb:
-                    break
-                lb = new_lb
-                yield lb - 1
                 yield lb
-                yield lb + 1
-            yield x - 1
+                new_lb = (lb + x) // 2
+                if new_lb <= lb or new_lb >= hi:
+                    return
+                lb = new_lb
+        accept.__name__ = str(
+            "try_shrink(%d, %d)" % (lo, hi)
+        )
+        return accept
 
 
 class IntegersFromStrategy(SearchStrategy):
