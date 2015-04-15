@@ -21,6 +21,7 @@ from hypothesis import given, example
 
 def test_must_use_result_of_test():
     class DoubleRun(object):
+
         def execute_example(self, function):
             return function()()
 
