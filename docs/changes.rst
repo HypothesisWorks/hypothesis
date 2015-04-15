@@ -9,9 +9,17 @@ on pip.
 All Hypothesis releases since 1.0 are `semantically versioned <http://semver.org/>`,
 with everything in this documentation considered public API.
 
-----------------
-1.2 - 2015-04-15
-----------------
+------------------
+1.2.1 - 2015-04-16
+------------------
+
+A small patch release for a bug in the new executors feature. Tests which require
+doing something to their result in order to fail would have instead reported as
+flaky.
+
+------------------
+1.2.0 - 2015-04-15
+------------------
 
 Codename: Finders keepers.
 
