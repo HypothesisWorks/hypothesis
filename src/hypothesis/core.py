@@ -418,7 +418,7 @@ def given(*generator_arguments, **generator_kwargs):
             ))
 
             test_runner(reify_and_execute(
-                search_strategy, falsifying_template, test_is_flaky,
+                search_strategy, falsifying_template, test_is_flaky(test),
                 print_example=True
             ))
 
