@@ -161,16 +161,7 @@ now rewrite the test to use that:
         sort_nodes(xs)
         assert is_prefix_sorted(xs)
 
-This example will take a while to run (it takes about a minute for me). Hypothesis has
-some trouble getting a good minimization of this example because a lot of the things it
-tries to speed up the minimization don't work. This is partly because the condition we
-are trying to minimimize for is tricky - it depends in detail on the exact edge cases 
-you hit in sorting - 
-
-Hypothesis has a bit more trouble minimizing a good example for this (mostly in that
-it takes it rather a lot longer because some of the shortcuts it takes in minimization
-are blocked off because they would cause duplicates) but it finds us a new example:
-
+Hypothesis quickly gives us an example of this *still* being wrong:
 
 .. code:: python
 
