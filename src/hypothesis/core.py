@@ -207,10 +207,9 @@ def best_satisfying_template(
     return satisfying_example
 
 
-def test_must_fail(test):
+def test_is_flaky(test):
     @functools.wraps(test)
     def test_or_flaky(*args, **kwargs):
-        test(*args, **kwargs)
         raise Flaky(test, (args, kwargs))
     return test_or_flaky
 
@@ -413,20 +412,16 @@ def given(*generator_arguments, **generator_kwargs):
             except NoSuchExample:
                 return
 
-            try:
-                # We run this one final time so we get good errors
-                # Otherwise we would have swallowed all the reports of it
-                # actually having gone wrong.
-                test_runner(reify_and_execute(
-                    search_strategy, falsifying_template, test_must_fail(test),
-                    print_example=True
-                ))
+            test_runner(reify_and_execute(
+                search_strategy, falsifying_template, test,
+                print_example=True
+            ))
 
-            finally:
-                # Some strategies use a weakref cache keyed off templates.
-                # By cleaning up this template now we make it easier for python
-                # to clear the cache early in some circumstances.
-                del falsifying_template
+            test_runner(reify_and_execute(
+                search_strategy, falsifying_template, test_is_flaky,
+                print_example=True
+            ))
+
         wrapped_test.__name__ = test.__name__
         wrapped_test.__doc__ = test.__doc__
         wrapped_test.is_hypothesis_test = True

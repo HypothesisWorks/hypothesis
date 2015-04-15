@@ -19,6 +19,21 @@ import pytest
 from hypothesis import given, example
 
 
+def test_must_use_result_of_test():
+    class DoubleRun(object):
+        def execute_example(self, function):
+            return function()()
+
+        @given(bool)
+        def boom(self, b):
+            def f():
+                raise ValueError()
+            return f
+
+    with pytest.raises(ValueError):
+        DoubleRun().boom()
+
+
 class TestTryReallyHard(TestCase):
 
     @given(int)
