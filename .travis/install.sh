@@ -81,8 +81,8 @@ pyenv local 3.4.3
 
 case "${TOXENV}" in
     py27)
-        pyenv install -s 2.7.8
-        ln -s $PYENVS/2.7.8/bin/python $SNAKEPIT/python2.7
+        pyenv install -s 2.7.9
+        ln -s $PYENVS/2.7.9/bin/python $SNAKEPIT/python2.7
         ;;
     py32)
         pyenv install -s 3.2.6
