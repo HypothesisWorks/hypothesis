@@ -246,12 +246,12 @@ test_can_produce_nan = define_test(
 )
 
 test_can_produce_long_lists_of_positive_integers = define_test(
-    [int], 0.07, lambda x: all(t >= 0 for t in x),
+    [int], 0.05, lambda x: all(t >= 0 for t in x),
     condition=long_list
 )
 
 test_can_produce_long_lists_of_negative_integers = define_test(
-    [int], 0.07, lambda x: all(t <= 0 for t in x),
+    [int], 0.05, lambda x: all(t <= 0 for t in x),
     condition=lambda x: len(x) >= 20
 )
 
