@@ -20,7 +20,6 @@ import os
 import re
 import ast
 import sys
-import time
 import types
 import hashlib
 import inspect
@@ -28,7 +27,7 @@ from functools import wraps
 
 from hypothesis.settings import storage_directory
 from hypothesis.internal.compat import ARG_NAME_ATTRIBUTE, hrange, \
-    text_type
+    text_type, importlib_invalidate_caches
 
 
 def function_digest(function):
@@ -306,31 +305,20 @@ def source_exec_as_module(source):
 
     d = eval_directory()
     add_directory_to_path(d)
-    # Try writing the source to a series of files. If we get an import error
-    # importing after writing we're experiencing a race condition in the
-    # import mechanism. Try again a few times. If after a 1.5 second wait it's
-    # still not working something else is going on.
-    # See http://bugs.python.org/issue23412
-    waits = [0.0, 0.001, 0.01, 0.1, 0.5, 1.0, 1.5]
-    for i, wait in enumerate(waits):  # pragma: no branch
-        name = 'hypothesis_temporary_module_%s_%d' % (
-            hashlib.sha1(source.encode('utf-8')).hexdigest(),
-            i,
-        )
-        filepath = os.path.join(d, name + '.py')
-        f = open(filepath, 'w')
-        f.write(source)
-        f.close()
-        assert os.path.exists(filepath)
-        assert open(filepath).read() == source
-        time.sleep(wait)
-        try:
-            result = __import__(name)
-            eval_cache[source] = result
-            return result
-        except ImportError:  # pragma: no cover
-            if wait == waits[-1]:
-                raise
+    name = 'hypothesis_temporary_module_%s' % (
+        hashlib.sha1(source.encode('utf-8')).hexdigest(),
+    )
+    filepath = os.path.join(d, name + '.py')
+    f = open(filepath, 'w')
+    f.write(source)
+    f.close()
+    assert os.path.exists(filepath)
+    assert open(filepath).read() == source
+    importlib_invalidate_caches()
+    result = __import__(name)
+    eval_cache[source] = result
+    return result
+
 
 COPY_ARGSPEC_SCRIPT = """
 from hypothesis.utils.conventions import not_set

@@ -15,6 +15,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import sys
+import importlib
 
 PY3 = sys.version_info[0] == 3
 
@@ -32,3 +33,6 @@ else:
     ARG_NAME_ATTRIBUTE = 'id'
     integer_types = (int, long)
     hunichr = unichr
+
+importlib_invalidate_caches = getattr(
+    importlib, 'invalidate_caches', lambda: ())
