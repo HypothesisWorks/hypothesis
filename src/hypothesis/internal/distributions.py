@@ -65,19 +65,19 @@ def non_empty_subset(random, elements, activation_chance=None):
 
 
 def dirichlet(random, weights):
-    """
-    Draw from a dirichlet distribution with the provided weights.
+    """Draw from a dirichlet distribution with the provided weights.
 
     This results in a list of floats of the same length with all elements > 0
     and summing to 1. The expected value of coordinate i is weights[i] / sum(
     weights)
+
     """
     weights = list(map(float, weights))
     if not weights:
-        raise InvalidArgument("Cannot draw an empty dirichlet distribution")
+        raise InvalidArgument('Cannot draw an empty dirichlet distribution')
     for w in weights:
         if w <= 0:
-            raise InvalidArgument("Invalid weight %f <= 0" % (w,))
+            raise InvalidArgument('Invalid weight %f <= 0' % (w,))
     if len(weights) == 1:
         return [1.0]
     multiplier = 1.0

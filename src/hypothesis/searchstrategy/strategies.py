@@ -22,9 +22,9 @@ from hypothesis.control import assume
 from hypothesis.settings import Settings
 from hypothesis.specifiers import OneOf
 from hypothesis.internal.compat import hrange, integer_types
-from hypothesis.internal.distributions import dirichlet
 from hypothesis.utils.extmethod import ExtMethod
 from hypothesis.internal.chooser import chooser
+from hypothesis.internal.distributions import dirichlet
 
 
 class BuildContext(object):

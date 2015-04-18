@@ -13,15 +13,15 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from random import Random
 from math import sqrt
+from random import Random
 
 import hypothesis.specifiers as specifiers
 import hypothesis.internal.distributions as dist
-from hypothesis.internal.chooser import chooser
 from hypothesis.types import RandomWithSeed
 from hypothesis.utils.show import show
 from hypothesis.internal.compat import integer_types
+from hypothesis.internal.chooser import chooser
 from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
     strategy, check_type, check_data_type
 
