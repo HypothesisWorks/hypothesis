@@ -23,6 +23,7 @@ from hypothesis.settings import Settings
 from hypothesis.specifiers import OneOf
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.utils.extmethod import ExtMethod
+from hypothesis.internal.chooser import chooser
 
 
 class BuildContext(object):
@@ -412,7 +413,7 @@ class OneOfStrategy(SearchStrategy):
     """
 
     Parameter = namedtuple(
-        'Parameter', ('weights', 'child_parameters')
+        'Parameter', ('chooser', 'child_parameters')
     )
 
     def __init__(self,
@@ -446,25 +447,17 @@ class OneOfStrategy(SearchStrategy):
         return self.element_strategies[s].reify(x)
 
     def produce_parameter(self, random):
-        indices = list(range(len(self.element_strategies)))
-        weights = [
-            random.betavariate(0.5, 0.5) for _ in indices]
-        normalizer = max(weights)
-        assert normalizer > 0.0
-        for i in indices:
-            weights[i] /= normalizer
         return self.Parameter(
-            weights=weights,
+            chooser=chooser(
+                random.betavariate(0.5, 0.5)
+                for _ in hrange(len(self.element_strategies))
+            ),
             child_parameters=[
                 s.draw_parameter(random) for s in self.element_strategies]
         )
 
     def produce_template(self, context, pv):
-        r = context.random
-        while True:
-            child = r.randint(0, len(self.element_strategies) - 1)
-            if r.random() <= pv.weights[child]:
-                break
+        child = pv.chooser.choose(context.random)
         return (
             child,
             self.element_strategies[child].draw_template(
