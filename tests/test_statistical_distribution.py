@@ -26,6 +26,7 @@ from __future__ import division, print_function, absolute_import, \
 import re
 import math
 import random
+from collections import Counter
 
 import pytest
 import hypothesis.specifiers as specifiers
@@ -316,6 +317,17 @@ test_ints_can_occasionally_be_really_large = define_test(
 )
 
 
+def distorted(x):
+    c = Counter(map(type, x))
+    assert len(c) == 2
+    return min(c.values()) * 3 <= max(c.values())
+
+test_mixing_is_sometimes_distorted = define_test(
+    [bool, ()], 0.25, distorted,
+    condition=lambda x: len(set(map(type, x))) == 2,
+)
+
+
 test_mixes_reasonably_often = define_test(
     [bool, ()], 0.25, lambda x: len(set(map(type, x))) > 1,
     condition=bool,
@@ -323,6 +335,6 @@ test_mixes_reasonably_often = define_test(
 
 
 test_mixes_not_too_often = define_test(
-    [bool, ()], 0.5, lambda x: len(set(map(type, x))) == 1,
+    [bool, ()], 0.25, lambda x: len(set(map(type, x))) == 1,
     condition=bool,
 )

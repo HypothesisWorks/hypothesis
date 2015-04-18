@@ -16,7 +16,6 @@ from __future__ import division, print_function, absolute_import, \
 from random import Random
 from collections import namedtuple
 
-import hypothesis.internal.distributions as dist
 from hypothesis.errors import BadData, NoExamples, WrongFormat, \
     UnsatisfiedAssumption
 from hypothesis.control import assume
@@ -413,7 +412,7 @@ class OneOfStrategy(SearchStrategy):
     """
 
     Parameter = namedtuple(
-        'Parameter', ('enabled_children', 'child_parameters')
+        'Parameter', ('weights', 'child_parameters')
     )
 
     def __init__(self,
@@ -448,24 +447,24 @@ class OneOfStrategy(SearchStrategy):
 
     def produce_parameter(self, random):
         indices = list(range(len(self.element_strategies)))
-        enabled = dist.non_empty_subset(
-            random,
-            indices,
-            activation_chance=(1.0 / len(indices))
-        )
+        weights = [
+            random.betavariate(0.5, 0.5) for _ in indices]
+        normalizer = max(weights)
+        assert normalizer > 0.0
+        for i in indices:
+            weights[i] /= normalizer
         return self.Parameter(
-            enabled_children=enabled,
+            weights=weights,
             child_parameters=[
-                self.element_strategies[i].draw_parameter(random)
-                if i in enabled else None
-                for i in indices
-            ]
+                s.draw_parameter(random) for s in self.element_strategies]
         )
 
     def produce_template(self, context, pv):
-        assert isinstance(pv, self.Parameter), repr(pv)
-        child = context.random.choice(pv.enabled_children)
-
+        r = context.random
+        while True:
+            child = r.randint(0, len(self.element_strategies) - 1)
+            if r.random() <= pv.weights[child]:
+                break
         return (
             child,
             self.element_strategies[child].draw_template(
