@@ -14,9 +14,11 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 from random import Random
+from math import sqrt
 
 import hypothesis.specifiers as specifiers
 import hypothesis.internal.distributions as dist
+from hypothesis.internal.chooser import chooser
 from hypothesis.types import RandomWithSeed
 from hypothesis.utils.show import show
 from hypothesis.internal.compat import integer_types
@@ -156,10 +158,15 @@ class SampledFromStrategy(SearchStrategy):
         return 'SampledFromStrategy(%r)' % (self.elements,)
 
     def produce_parameter(self, random):
-        return dist.non_empty_subset(random, range(len(self.elements)))
+        n = len(self.elements)
+        if n == 1:
+            return
+        return chooser(dist.dirichlet(random, [sqrt(n)] * n))
 
     def produce_template(self, context, pv):
-        return context.random.choice(pv)
+        if len(self.elements) == 1:
+            return 0
+        return pv.choose(context.random)
 
     def reify(self, template):
         return self.elements[template]

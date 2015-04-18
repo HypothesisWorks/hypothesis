@@ -295,6 +295,28 @@ test_can_produce_the_same_int_twice = define_test(
     lambda t: len([x for x in t[0] if x == t[1]]) > 1
 )
 
+
+def distorted_value(x):
+    c = Counter(x)
+    return min(c.values()) * 3 <= max(c.values())
+
+
+def distorted(x):
+    return distorted_value(map(type, x))
+
+
+test_sampled_from_large_number_usually_mixes_some = define_test(
+    [specifiers.sampled_from(range(50))], 0.5, lambda x: len(set(x)) >= 25,
+    condition=lambda t: len(t) >= 50,
+)
+
+
+test_sampled_from_usually_distorted = define_test(
+    [specifiers.sampled_from(range(5))], 0.5, distorted_value,
+    condition=lambda x: len(x) >= 3,
+)
+
+
 test_non_empty_subset_of_two_is_usually_large = define_test(
     {specifiers.sampled_from((1, 2))}, 0.6,
     lambda t: len(t) == 2
@@ -316,23 +338,21 @@ test_ints_can_occasionally_be_really_large = define_test(
     lambda t: t >= 2 ** 63
 )
 
-
-def distorted(x):
-    c = Counter(map(type, x))
-    assert len(c) == 2
-    return min(c.values()) * 3 <= max(c.values())
-
 test_mixing_is_sometimes_distorted = define_test(
     [bool, ()], 0.25, distorted,
     condition=lambda x: len(set(map(type, x))) == 2,
 )
 
-
-test_mixes_reasonably_often = define_test(
+test_mixes_2_reasonably_often = define_test(
     [bool, ()], 0.25, lambda x: len(set(map(type, x))) > 1,
     condition=bool,
 )
 
+test_partial_mixes_3_reasonably_often = define_test(
+    [bool, (), specifiers.just('hi')], 0.25,
+    lambda x: 1 < len(set(map(type, x))) < 3,
+    condition=bool,
+)
 
 test_mixes_not_too_often = define_test(
     [bool, ()], 0.25, lambda x: len(set(map(type, x))) == 1,

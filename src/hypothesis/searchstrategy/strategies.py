@@ -22,6 +22,7 @@ from hypothesis.control import assume
 from hypothesis.settings import Settings
 from hypothesis.specifiers import OneOf
 from hypothesis.internal.compat import hrange, integer_types
+from hypothesis.internal.distributions import dirichlet
 from hypothesis.utils.extmethod import ExtMethod
 from hypothesis.internal.chooser import chooser
 
@@ -447,11 +448,10 @@ class OneOfStrategy(SearchStrategy):
         return self.element_strategies[s].reify(x)
 
     def produce_parameter(self, random):
+        n = len(self.element_strategies)
         return self.Parameter(
             chooser=chooser(
-                random.betavariate(0.5, 0.5)
-                for _ in hrange(len(self.element_strategies))
-            ),
+                dirichlet(random, [1.0 / n] * n)),
             child_parameters=[
                 s.draw_parameter(random) for s in self.element_strategies]
         )
