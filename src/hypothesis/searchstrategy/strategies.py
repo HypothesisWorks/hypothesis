@@ -383,7 +383,9 @@ class SearchStrategy(object):
         turn.
 
         """
-        for simplifier in self.simplifiers(random, template):
+        simplifiers = list(self.simplifiers(random, template))
+        random.shuffle(simplifiers)
+        for simplifier in simplifiers:
             for value in simplifier(random, template):
                 yield value
 
