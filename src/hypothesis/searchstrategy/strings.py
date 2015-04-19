@@ -23,7 +23,8 @@ import hypothesis.internal.distributions as dist
 from hypothesis.internal.compat import hrange, hunichr, text_type, \
     binary_type
 from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
-    MappedSearchStrategy, strategy, check_type, check_data_type, check_length
+    MappedSearchStrategy, strategy, check_type, check_length, \
+    check_data_type
 
 
 class OneCharStringStrategy(SearchStrategy):

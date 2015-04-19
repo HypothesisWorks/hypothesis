@@ -25,8 +25,8 @@ import hypothesis.reporting as reporting
 from hypothesis import given, assume, strategy
 from hypothesis.errors import Flaky, Unsatisfiable, InvalidArgument
 from tests.common.utils import fails, fails_with, capture_out
-from hypothesis.specifiers import just, one_of, sampled_from, \
-    integers_from, floats_in_range, integers_in_range, strings
+from hypothesis.specifiers import just, one_of, strings, sampled_from, \
+    integers_from, floats_in_range, integers_in_range
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.searchstrategy.numbers import IntStrategy
 
@@ -465,16 +465,16 @@ def test_fails_in_reify(x):
     pass
 
 
-@given(strings("a"))
+@given(strings('a'))
 def test_a_strings(x):
-    assert set(x).issubset({"a"})
+    assert set(x).issubset({'a'})
 
 
-@given(strings(""))
+@given(strings(''))
 def test_empty_strings(x):
     assert not x
 
 
-@given(strings("abcdefg"))
+@given(strings('abcdefg'))
 def test_mixed_strings(x):
-    assert set(x).issubset(set("abcdefg"))
+    assert set(x).issubset(set('abcdefg'))
