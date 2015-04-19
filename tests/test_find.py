@@ -57,8 +57,7 @@ def test_can_find_nans():
     if len(x) == 1:
         assert math.isnan(x[0])
     else:
-        assert len(x) == 2
-        assert all(math.isinf(t) for t in x)
+        assert 2 <= len(x) <= 3
 
 
 def test_find_large_structure():
