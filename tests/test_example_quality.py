@@ -15,6 +15,7 @@ from __future__ import division, print_function, absolute_import, \
 
 import sys
 import math
+import operator
 from decimal import Decimal
 from fractions import Fraction
 from collections import Counter, OrderedDict
@@ -24,7 +25,8 @@ from hypothesis import assume, strategy
 from hypothesis.specifiers import just, one_of, dictionary, \
     integers_from, integers_in_range
 from hypothesis.internal.debug import minimal
-from hypothesis.internal.compat import PY3, hrange, text_type, binary_type
+from hypothesis.internal.compat import PY3, hrange, text_type, binary_type, \
+    reduce
 
 
 def test_minimize_list_on_large_structure():
@@ -419,3 +421,20 @@ def test_increasing_sequence():
     )
     start = xs[0]
     assert xs == list(range(start, start + 5))
+
+
+def test_find_large_union_list():
+    def large_mostly_non_overlapping(xs):
+        assume(xs)
+        assume(all(xs))
+        union = reduce(operator.or_, xs)
+        return len(union) >= 50
+
+    result = minimal([{int}], large_mostly_non_overlapping, timeout_after=30)
+    union = reduce(operator.or_, result)
+    assert len(union) == 50
+    assert union == set(range(min(union), max(union) + 1))
+    for x in result:
+        for y in result:
+            if x is not y:
+                assert not (x & y)
