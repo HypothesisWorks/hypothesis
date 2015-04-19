@@ -56,3 +56,7 @@ def test_zeros_in_dirichlet_are_invalid():
 def test_dirichlet_biases_towaards_weights():
     t = dist.dirichlet(random, [10000000000, 1, 1])
     assert t[0] >= 0.8
+
+
+def test_single_dirichlet_is_always_one():
+    assert dist.dirichlet(random, [11]) == [1.0]

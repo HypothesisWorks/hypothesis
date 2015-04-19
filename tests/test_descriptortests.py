@@ -31,7 +31,9 @@ TestGiantIntegerRange = strategy_test_suite(
     integers_in_range(-(2 ** 129), 2 ** 129)
 )
 TestFloatRange = strategy_test_suite(floats_in_range(0.5, 10))
-TestSampled = strategy_test_suite(sampled_from(elements=(1, 2, 3)))
+TestSampled10 = strategy_test_suite(sampled_from(elements=list(range(10))))
+TestSampled1 = strategy_test_suite(sampled_from(elements=(1,)))
+TestSampled2 = strategy_test_suite(sampled_from(elements=(1, 2)))
 
 TestIntegersFrom = strategy_test_suite(integers_from(13))
 
