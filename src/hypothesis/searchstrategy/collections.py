@@ -461,8 +461,7 @@ class SetStrategy(SearchStrategy):
         def accept(random, template):
             for value in simplifier(random, tuple(template)):
                 yield self.convert_template(value)
-        accept.__name__ = str(
-            'convert_simplifier(%s)' % (simplifier.__name__,))
+        accept.__name__ = simplifier.__name__
         return accept
 
     def simplifiers(self, random, template):
