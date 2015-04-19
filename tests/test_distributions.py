@@ -30,6 +30,19 @@ def test_non_empty_of_one_always_returns_it():
     assert dist.non_empty_subset(random, [2]) == [2]
 
 
+def test_non_empty_of_three():
+    assert dist.non_empty_subset(random, [1, 2, 3])
+
+
+def test_non_empty_of_10():
+    assert dist.non_empty_subset(random, range(10))
+
+
+def test_non_empty_with_explicit_activation_chance():
+    assert len(dist.non_empty_subset(
+        random, range(100), activation_chance=0.99)) > 2
+
+
 def test_empty_dirichlet_is_invalid():
     with pytest.raises(InvalidArgument):
         dist.dirichlet(random, [])
