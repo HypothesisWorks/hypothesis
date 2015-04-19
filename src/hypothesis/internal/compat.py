@@ -26,6 +26,7 @@ if PY3:
     ARG_NAME_ATTRIBUTE = 'arg'
     integer_types = (int,)
     hunichr = chr
+    from functools import reduce
 else:
     text_type = unicode
     binary_type = str
@@ -33,6 +34,7 @@ else:
     ARG_NAME_ATTRIBUTE = 'id'
     integer_types = (int, long)
     hunichr = unichr
+    reduce = reduce
 
 importlib_invalidate_caches = getattr(
     importlib, 'invalidate_caches', lambda: ())
