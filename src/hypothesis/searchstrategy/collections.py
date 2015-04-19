@@ -300,23 +300,6 @@ class ListStrategy(SearchStrategy):
                 result[j] = pivot
             yield tuple(result)
 
-    def simplify_to_ends(self, random, x):
-        assert isinstance(x, tuple)
-        if len(x) <= 2:
-            return
-
-        bits = []
-
-        for _ in hrange(5):
-            split = random.randint(0, len(x) - 1)
-            bits.append(x[:split])
-            bits.append(x[split:])
-
-        bits.sort(key=len)
-
-        for b in bits:
-            yield b
-
     def simplify_with_random_discards(self, random, x):
         assert isinstance(x, tuple)
         if len(x) <= 3:
@@ -329,20 +312,7 @@ class ListStrategy(SearchStrategy):
                     results.append(t)
             yield tuple(results)
 
-    def index_of_maximally_complex_element(self, random, x):
-        assert x
-        indices = list(hrange(len(x)))
-        random.shuffle(indices)
-        worst = indices[0]
-        for i in hrange(len(x)):
-            y = x[i]
-            if self.element_strategy.strictly_simpler(x[worst], y):
-                worst = i
-        return worst
-
     def indices_roughly_from_worst_to_best(self, random, x):
-        if not x:
-            return []
         pivot = random.choice(x)
         bad = []
         good = []
