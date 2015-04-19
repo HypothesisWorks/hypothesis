@@ -28,6 +28,7 @@ ForkingTestCase = pytest.importorskip(
 
 def test_runs_normally_if_no_failure():
     class Foo(ForkingTestCase):
+
         @given(int)
         def runs_normally(self, x):
             pass
