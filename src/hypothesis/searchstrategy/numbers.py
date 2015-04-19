@@ -91,6 +91,8 @@ class IntStrategy(SearchStrategy):
                 new_lb = (lb + x) // 2
                 if new_lb <= lb or new_lb >= hi:
                     return
+                if new_lb > lb + 2:
+                    yield random.randint(lb + 1, new_lb - 1)
                 lb = new_lb
         accept.__name__ = str(
             'try_shrink(%d, %d)' % (lo, hi)
