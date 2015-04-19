@@ -20,7 +20,7 @@ from collections import OrderedDict, namedtuple
 
 from hypothesis import strategy
 from hypothesis.specifiers import just, one_of, dictionary, sampled_from, \
-    integers_from, floats_in_range, integers_in_range
+    integers_from, floats_in_range, integers_in_range, strings
 from tests.common.specifiers import Descriptor, DescriptorWithValue
 from hypothesis.strategytests import TemplatesFor, strategy_test_suite
 from hypothesis.internal.compat import text_type, binary_type
@@ -55,6 +55,10 @@ TestFloats = strategy_test_suite(float)
 TestComplex = strategy_test_suite(complex)
 TestJust = strategy_test_suite(just('hi'))
 TestTemplates = strategy_test_suite(TemplatesFor({int}))
+
+TestEmptyString = strategy_test_suite(strings(alphabet=""))
+TestSingleString = strategy_test_suite(strings(alphabet="a"))
+TestManyString = strategy_test_suite(strings(alphabet="abcdef☃"))
 
 Stuff = namedtuple('Stuff', ('a', 'b'))
 TestNamedTuple = strategy_test_suite(Stuff(int, int))

@@ -26,7 +26,7 @@ from hypothesis import given, assume, strategy
 from hypothesis.errors import Flaky, Unsatisfiable, InvalidArgument
 from tests.common.utils import fails, fails_with, capture_out
 from hypothesis.specifiers import just, one_of, sampled_from, \
-    integers_from, floats_in_range, integers_in_range
+    integers_from, floats_in_range, integers_in_range, strings
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.searchstrategy.numbers import IntStrategy
 
@@ -463,3 +463,18 @@ def test_named_tuples_are_of_right_type(litter):
 @given(strategy(int).map(lambda x: x.nope))
 def test_fails_in_reify(x):
     pass
+
+
+@given(strings("a"))
+def test_a_strings(x):
+    assert set(x).issubset({"a"})
+
+
+@given(strings(""))
+def test_empty_strings(x):
+    assert not x
+
+
+@given(strings("abcdefg"))
+def test_mixed_strings(x):
+    assert set(x).issubset(set("abcdefg"))

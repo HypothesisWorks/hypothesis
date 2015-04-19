@@ -17,6 +17,7 @@ import math
 from collections import namedtuple
 
 from hypothesis.errors import InvalidArgument
+from hypothesis.internal.compat import text_type
 
 Just = namedtuple('Just', 'value')
 just = Just
@@ -77,3 +78,10 @@ def dictionary(keys, values, dict_class=dict):
 Streaming = namedtuple('Streaming', ('data',))
 
 streaming = Streaming
+
+
+Strings = namedtuple('Strings', ('alphabet',))
+
+
+def strings(alphabet):
+    return Strings(text_type(alphabet))
