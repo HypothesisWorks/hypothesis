@@ -91,6 +91,8 @@ class ForkingTestCase(TestCase):
                     break
         except EOFError:
             pass
+        finally:
+            r.close()
 
         if error is not None:
             raise error
