@@ -392,3 +392,30 @@ def test_non_reversible_decimals():
         return sum(xs) != sum(reversed(xs))
     sigh = minimal([Decimal], not_reversible, timeout_after=30)
     assert len(sigh) < 10
+
+
+def length_of_longest_ordered_sequence(xs):
+    if not xs:
+        return 0
+    # FIXME: Needlessly O(n^2) algorithm, but it's a test so eh.
+    lengths = [-1] * len(xs)
+    lengths[-1] = 1
+    for i in hrange(len(xs) - 2, -1, -1):
+        assert lengths[i] == -1
+        for j in hrange(i + 1, len(xs)):
+            assert lengths[j] >= 1
+            if xs[j] > xs[i]:
+                lengths[i] = max(lengths[i], lengths[j] + 1)
+        if lengths[i] < 0:
+            lengths[i] = 1
+    assert all(t >= 1 for t in lengths)
+    return max(lengths)
+
+
+def test_increasing_sequence():
+    xs = minimal(
+        [int], lambda t: length_of_longest_ordered_sequence(t) >= 5,
+        timeout_after=60,
+    )
+    start = xs[0]
+    assert xs == list(range(start, start + 5))
