@@ -32,7 +32,7 @@ from hypothesis.searchstrategy.strategies import BadData, strategy
     ({True: {int}}, []),
     (Random, []),
     (int, ''),
-    (text_type, "kittens"),
+    (text_type, 'kittens'),
     ((int, int, int), (1, 2)),
     (SampledFrom((1, 2, 3)), 'fish'),
     (SampledFrom((1, 2, 3)), 5),

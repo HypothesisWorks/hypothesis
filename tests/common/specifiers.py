@@ -18,8 +18,8 @@ from collections import namedtuple
 from hypothesis.specifiers import one_of, sampled_from
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.searchstrategy.narytree import Leaf, NAryTree
-from hypothesis.searchstrategy.strategies import \
-    MappedSearchStrategy, strategy
+from hypothesis.searchstrategy.strategies import MappedSearchStrategy, \
+    strategy
 
 primitive_types = [
     int, float, text_type, binary_type, bool, complex, type(None)]

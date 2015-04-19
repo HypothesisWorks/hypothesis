@@ -24,8 +24,7 @@ from hypothesis.core import given
 from hypothesis.types import RandomWithSeed
 from hypothesis.specifiers import Just, OneOf, SampledFrom, just
 from hypothesis.utils.show import show
-from tests.common.specifiers import Descriptor, \
-    primitive_types
+from tests.common.specifiers import Descriptor, primitive_types
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.searchstrategy.strategies import BuildContext, strategy
 

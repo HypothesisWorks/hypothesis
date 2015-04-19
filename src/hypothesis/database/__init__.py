@@ -79,8 +79,7 @@ class ExampleDatabase(object):
                 )))
 
     def storage_for(self, specifier, strategy=None):
-        """Get a storage object corresponding to this specifier.
-        """
+        """Get a storage object corresponding to this specifier."""
         return Storage(
             specifier=specifier,
             database=self,

@@ -14,22 +14,17 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 from random import Random
+from collections import namedtuple
 
 import pytest
 from hypothesis import Settings, given, assume, strategy
 from hypothesis.database import ExampleDatabase
-from hypothesis.specifiers import just, floats_in_range, integers_in_range, \
-    one_of, sampled_from
-from hypothesis.searchstrategy.strategies import BuildContext
-
-
-from collections import namedtuple
-
+from hypothesis.specifiers import just, one_of, sampled_from, \
+    floats_in_range, integers_in_range
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.searchstrategy.narytree import Leaf, NAryTree
-from hypothesis.searchstrategy.strategies import \
+from hypothesis.searchstrategy.strategies import BuildContext, \
     MappedSearchStrategy
-
 
 ConstantLists = strategy(int).flatmap(lambda i: [just(i)])
 
