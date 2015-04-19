@@ -68,7 +68,8 @@ quality_settings = Settings(
 def minimal(definition, condition=None, settings=None, timeout_after=10):
     strat = strategy(definition)
     condition = condition or (lambda x: True)
-    settings = settings or quality_settings
+    with settings or quality_settings:
+        settings = Settings(timeout=timeout_after * 0.95)
 
     def template_satisfies(x):
         t = strat.reify(x)
