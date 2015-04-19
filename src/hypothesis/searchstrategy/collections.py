@@ -204,19 +204,18 @@ class ListStrategy(SearchStrategy):
             yield self.shared_simplification(simplify)
 
         for i in hrange(len(template)):
-            for simplify in self.element_strategy.simplifiers(template[i]):
-                yield self.simplifier_for_index(i, simplify)
+            yield self.simplifier_for_index(i)
 
-    def simplifier_for_index(self, i, simplifier):
+    def simplifier_for_index(self, i):
         def accept(random, template):
             if i >= len(template):
                 return
             replacement = list(template)
-            for s in simplifier(random, template[i]):
+            for s in self.element_strategy.full_simplify(random, template[i]):
                 replacement[i] = s
                 yield tuple(replacement)
         accept.__name__ = str(
-            'simplifier_for_index(%d, %s)' % (i, simplifier.__name__)
+            'simplifier_for_index(%d)' % (i,)
         )
         return accept
 
@@ -468,6 +467,8 @@ class SetStrategy(SearchStrategy):
         def accept(random, template):
             for value in simplifier(random, tuple(template)):
                 yield self.convert_template(value)
+        accept.__name__ = str(
+            'convert_simplifier(%s)' % (simplifier.__name__,))
         return accept
 
     def simplifiers(self, template):
