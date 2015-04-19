@@ -383,12 +383,14 @@ def given(*generator_arguments, **generator_kwargs):
                 tuple(map(convert_to_specifier, arguments)),
                 {k: convert_to_specifier(v) for k, v in kwargs.items()}
             )
-            if settings.database:
-                storage = settings.database.storage_for(given_specifier)
-            else:
-                storage = None
 
             search_strategy = strategy(given_specifier, settings)
+
+            if settings.database:
+                storage = settings.database.storage_for(
+                    given_specifier, search_strategy)
+            else:
+                storage = None
 
             def is_template_example(xs):
                 try:

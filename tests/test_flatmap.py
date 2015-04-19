@@ -18,8 +18,18 @@ from random import Random
 import pytest
 from hypothesis import Settings, given, assume, strategy
 from hypothesis.database import ExampleDatabase
-from hypothesis.specifiers import just, floats_in_range, integers_in_range
+from hypothesis.specifiers import just, floats_in_range, integers_in_range, \
+    one_of, sampled_from
 from hypothesis.searchstrategy.strategies import BuildContext
+
+
+from collections import namedtuple
+
+from hypothesis.internal.compat import text_type, binary_type
+from hypothesis.searchstrategy.narytree import Leaf, NAryTree
+from hypothesis.searchstrategy.strategies import \
+    MappedSearchStrategy
+
 
 ConstantLists = strategy(int).flatmap(lambda i: [just(i)])
 
@@ -89,3 +99,40 @@ def test_can_recover_from_bad_data_in_mapped_strategy(r):
     assert type(reified) == tuple
     x, y = reified
     assert x < y
+
+
+class Foo(object):
+    pass
+
+
+def nary_tree_to_descriptor(tree):
+    if isinstance(tree, Leaf):
+        return int
+    else:
+        return tuple(map(nary_tree_to_descriptor, tree.children))
+
+
+@strategy.extend_static(Foo)
+def dav_strategy(cls, settings):
+    return strategy(NAryTree(int, int, int), settings).flatmap(
+        nary_tree_to_descriptor
+    )
+
+
+def test_will_find_a_failure_from_the_database():
+    db = ExampleDatabase()
+
+    class Rejected(Exception):
+        pass
+
+    @given(
+        Foo,
+        settings=Settings(max_examples=10, database=db))
+    def nope(x):
+        print(x)
+        raise Rejected()
+    try:
+        with pytest.raises(Rejected):
+            nope()  # pragma: no branch
+    finally:
+        db.close()
