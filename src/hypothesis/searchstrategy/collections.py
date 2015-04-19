@@ -13,6 +13,7 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+from random import Random
 from collections import namedtuple
 
 import hypothesis.internal.distributions as dist
@@ -203,19 +204,24 @@ class ListStrategy(SearchStrategy):
         ):
             yield self.shared_simplification(simplify)
 
-        for i in hrange(len(template)):
-            yield self.simplifier_for_index(i)
+        worst = self.index_of_maximally_complex_element(template)
+        for simplify in self.element_strategy.simplifiers(template[worst]):
+            yield self.simplifier_for_index(worst, simplify)
 
-    def simplifier_for_index(self, i):
+        for i in hrange(len(template)):
+            yield self.simplifier_for_index(
+                i, self.element_strategy.full_simplify)
+
+    def simplifier_for_index(self, i, simplify):
         def accept(random, template):
             if i >= len(template):
                 return
             replacement = list(template)
-            for s in self.element_strategy.full_simplify(random, template[i]):
+            for s in simplify(random, template[i]):
                 replacement[i] = s
                 yield tuple(replacement)
         accept.__name__ = str(
-            'simplifier_for_index(%d)' % (i,)
+            'simplifier_for_index(%d, %s)' % (i, simplify.__name__)
         )
         return accept
 
@@ -326,6 +332,18 @@ class ListStrategy(SearchStrategy):
                 if random.randint(0, 1):
                     results.append(t)
             yield tuple(results)
+
+    def index_of_maximally_complex_element(self, x):
+        assert x
+        random = Random(repr(x))
+        indices = list(hrange(len(x)))
+        random.shuffle(indices)
+        worst = indices[0]
+        for i in hrange(len(x)):
+            y = x[i]
+            if self.element_strategy.strictly_simpler(x[worst], y):
+                worst = i
+        return worst
 
     def simplify_with_single_deletes(self, random, x):
         assert isinstance(x, tuple)
