@@ -212,7 +212,7 @@ def test_puts_the_condition_in_the_error_message():
             condition=positive)()
     message = e.value.args[0]
     assert 'x == 0.0' in message
-    assert 'lambda not in message'
+    assert 'lambda' not in message
     assert 'rejected' in message
     assert 'positive' in message
 
