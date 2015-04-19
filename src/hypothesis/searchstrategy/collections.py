@@ -190,12 +190,12 @@ class ListStrategy(SearchStrategy):
         if not template:
             return
 
-        yield self.simplify_to_empty
-        yield self.simplify_arrange_by_pivot
-        yield self.simplify_to_ends
+        if len(template) <= 1:
+            yield self.simplify_to_empty
         yield self.simplify_with_random_discards
-        yield self.simplify_with_single_deletes
         yield self.simplify_with_example_cloning
+        yield self.simplify_arrange_by_pivot
+        yield self.simplify_with_single_deletes
         yield self.enlarge_clones
 
         for simplify in self.element_strategy.simplifiers(
@@ -203,12 +203,6 @@ class ListStrategy(SearchStrategy):
             template[0]
         ):
             yield self.shared_simplification(simplify)
-
-        worst = self.index_of_maximally_complex_element(random, template)
-        for simplify in self.element_strategy.simplifiers(
-            random, template[worst]
-        ):
-            yield self.simplifier_for_index(worst, simplify)
 
         for i in hrange(len(template)):
             yield self.simplifier_for_index(
@@ -346,16 +340,27 @@ class ListStrategy(SearchStrategy):
                 worst = i
         return worst
 
+    def indices_roughly_from_worst_to_best(self, random, x):
+        if not x:
+            return []
+        pivot = random.choice(x)
+        bad = []
+        good = []
+        y = list(hrange(len(x)))
+        random.shuffle(y)
+        for t in y:
+            if self.element_strategy.strictly_simpler(x[t], pivot):
+                good.append(t)
+            else:
+                bad.append(t)
+        return bad + good
+
     def simplify_with_single_deletes(self, random, x):
         assert isinstance(x, tuple)
         if len(x) <= 1:
             return
-        yield x[1:]
-        yield x[:-1]
 
-        indices = list(hrange(1, len(x) - 1))
-        random.shuffle(indices)
-        for i in indices:
+        for i in self.indices_roughly_from_worst_to_best(random, x):
             y = list(x)
             del y[i]
             yield tuple(y)

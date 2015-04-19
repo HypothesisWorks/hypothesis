@@ -370,8 +370,8 @@ def test_minimize_long():
 
 def test_non_reversible_ints_as_decimals():
     def not_reversible(xs):
-        xs = list(map(Decimal, xs))
-        return sum(xs) != sum(reversed(xs))
+        ts = list(map(Decimal, xs))
+        return sum(ts) != sum(reversed(ts))
 
     sigh = minimal([int], not_reversible, timeout_after=20)
     assert len(sigh) < 10
