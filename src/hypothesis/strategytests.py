@@ -193,7 +193,7 @@ def strategy_test_suite(
             def nope(x):
                 raise Rejected()
             try:
-                for _ in hrange(3):
+                for i in hrange(3):
                     with self.assertRaises(Rejected):
                         nope()  # pragma: no branch
             finally:

@@ -20,7 +20,6 @@ import hypothesis.settings as hs
 from hypothesis import given, strategy
 from hypothesis.errors import Timeout
 from hypothesis.database import ExampleDatabase
-from tests.common.specifiers import DescriptorWithValue
 from hypothesis.internal.compat import hrange, text_type, integer_types
 from hypothesis.database.backend import Backend, SQLiteBackend
 from hypothesis.database.formats import Format, JSONFormat
@@ -94,11 +93,6 @@ settings = hs.Settings(
     max_examples=500,
     average_list_length=3.0,
 )
-
-
-@given(DescriptorWithValue, settings=settings)
-def test_can_round_trip_a_single_value_through_the_database(dav):
-    run_round_trip(dav.specifier, dav.template)
 
 
 def test_errors_if_given_incompatible_format_and_backend():

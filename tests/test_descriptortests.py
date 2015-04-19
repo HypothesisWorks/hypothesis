@@ -21,7 +21,7 @@ from collections import OrderedDict, namedtuple
 from hypothesis import strategy
 from hypothesis.specifiers import just, one_of, strings, dictionary, \
     sampled_from, integers_from, floats_in_range, integers_in_range
-from tests.common.specifiers import Descriptor, DescriptorWithValue
+from tests.common.specifiers import Descriptor
 from hypothesis.strategytests import TemplatesFor, strategy_test_suite
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.searchstrategy.narytree import NAryTree
@@ -84,8 +84,6 @@ TestDecimal = strategy_test_suite(Decimal)
 TestFraction = strategy_test_suite(Fraction)
 
 TestDescriptor = strategy_test_suite(Descriptor)
-TestDescriptorWithValue = strategy_test_suite(DescriptorWithValue)
-
 
 TestNonEmptyLists = strategy_test_suite(
     strategy([int]).filter(lambda x: x)

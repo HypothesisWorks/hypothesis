@@ -24,7 +24,7 @@ from hypothesis.core import given
 from hypothesis.types import RandomWithSeed
 from hypothesis.specifiers import Just, OneOf, SampledFrom, just
 from hypothesis.utils.show import show
-from tests.common.specifiers import Descriptor, DescriptorWithValue, \
+from tests.common.specifiers import Descriptor, \
     primitive_types
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.searchstrategy.strategies import BuildContext, strategy
@@ -126,9 +126,3 @@ def last(it):
     for i in it:
         pass
     return i
-
-
-@given(DescriptorWithValue, settings=settings)
-def test_integrity_check_dav(dav):
-    strat = strategy(dav.specifier, settings)
-    assert show(dav.value) == show(strat.reify(dav.template))
