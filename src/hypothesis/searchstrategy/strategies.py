@@ -344,7 +344,7 @@ class SearchStrategy(object):
         """
         return False
 
-    def simplifiers(self, template):
+    def simplifiers(self, random, template):
         """Yield a sequence of functions which each take a Random object and a
         single template and produce a generator over "simpler" versions of that
         template.
@@ -383,7 +383,7 @@ class SearchStrategy(object):
         turn.
 
         """
-        for simplifier in self.simplifiers(template):
+        for simplifier in self.simplifiers(random, template):
             for value in simplifier(random, template):
                 yield value
 
@@ -476,9 +476,9 @@ class OneOfStrategy(SearchStrategy):
         )
         return accept
 
-    def simplifiers(self, template):
+    def simplifiers(self, random, template):
         i, value = template
-        for simplify in self.element_strategies[i].simplifiers(value):
+        for simplify in self.element_strategies[i].simplifiers(random, value):
             yield self.element_simplifier(i, simplify)
 
     def to_basic(self, template):
@@ -537,8 +537,8 @@ class MappedSearchStrategy(SearchStrategy):
     def reify(self, value):
         return self.pack(self.mapped_strategy.reify(value))
 
-    def simplifiers(self, template):
-        return self.mapped_strategy.simplifiers(template)
+    def simplifiers(self, random, template):
+        return self.mapped_strategy.simplifiers(random, template)
 
     def strictly_simpler(self, x, y):
         return self.mapped_strategy.strictly_simpler(x, y)
@@ -623,15 +623,18 @@ class FlatMapStrategy(SearchStrategy):
                 template_seed=template_seed,
             )
 
-    def simplifiers(self, template):
+    def simplifiers(self, random, template):
         for simplify in self.flatmapped_strategy.simplifiers(
+            random,
             template.source_template
         ):
             yield self.left_simplifier(simplify)
         if template.source_template in self.strategy_cache:
             target_strategy = self.strategy_cache[template.source_template]
             target_template = self.target_template(template)
-            for simplify in target_strategy.simplifiers(target_template):
+            for simplify in target_strategy.simplifiers(
+                random, target_template
+            ):
                 yield self.right_simplifier(
                     template.source_template, simplify
                 )

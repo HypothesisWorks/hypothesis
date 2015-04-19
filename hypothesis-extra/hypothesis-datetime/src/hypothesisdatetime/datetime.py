@@ -147,7 +147,7 @@ class DatetimeStrategy(SearchStrategy):
     def supports_naive(self):
         return True in self.naive_options
 
-    def simplifiers(self, template):
+    def simplifiers(self, random, template):
         yield self.simplify_timezones
         yield self.simplify_towards_2000
 

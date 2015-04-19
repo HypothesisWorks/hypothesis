@@ -156,7 +156,7 @@ def simplify_template_such_that(search_strategy, random, t, f, tracker):
     changed = True
     while changed:
         changed = False
-        for simplify in search_strategy.simplifiers(t):
+        for simplify in search_strategy.simplifiers(random, t):
             while True:
                 simpler = simplify(random, t)
                 for s in simpler:

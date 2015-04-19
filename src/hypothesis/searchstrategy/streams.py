@@ -91,9 +91,11 @@ class StreamStrategy(SearchStrategy):
                 yield self.source_strategy.draw_template(context, parameter)
         return StreamTemplate(seed, parameter_seed, templates())
 
-    def simplifiers(self, template):
+    def simplifiers(self, random, template):
         for i in hrange(len(template.stream.fetched)):
-            for s in self.source_strategy.simplifiers(template.stream[i]):
+            for s in self.source_strategy.simplifiers(
+                random, template.stream[i]
+            ):
                 yield self.simplifier_for_index(s, i)
 
     def simplifier_for_index(self, simplify, i):

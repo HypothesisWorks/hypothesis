@@ -13,7 +13,6 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from random import Random
 from collections import namedtuple
 
 import hypothesis.internal.distributions as dist
@@ -102,12 +101,12 @@ class TupleStrategy(SearchStrategy):
         )
         return accept
 
-    def simplifiers(self, template):
+    def simplifiers(self, random, template):
         if not template:
             return
         for i in hrange(len(self.element_strategies)):
             strat = self.element_strategies[i]
-            for simplifier in strat.simplifiers(template[i]):
+            for simplifier in strat.simplifiers(random, template[i]):
                 yield self.simplifier_for_index(i, simplifier)
 
     def to_basic(self, value):
@@ -185,7 +184,7 @@ class ListStrategy(SearchStrategy):
                     context, pv.child_parameter))
         return tuple(result)
 
-    def simplifiers(self, template):
+    def simplifiers(self, random, template):
         if not self.element_strategy:
             return
         if not template:
@@ -200,12 +199,15 @@ class ListStrategy(SearchStrategy):
         yield self.enlarge_clones
 
         for simplify in self.element_strategy.simplifiers(
+            random,
             template[0]
         ):
             yield self.shared_simplification(simplify)
 
-        worst = self.index_of_maximally_complex_element(template)
-        for simplify in self.element_strategy.simplifiers(template[worst]):
+        worst = self.index_of_maximally_complex_element(random, template)
+        for simplify in self.element_strategy.simplifiers(
+            random, template[worst]
+        ):
             yield self.simplifier_for_index(worst, simplify)
 
         for i in hrange(len(template)):
@@ -333,9 +335,8 @@ class ListStrategy(SearchStrategy):
                     results.append(t)
             yield tuple(results)
 
-    def index_of_maximally_complex_element(self, x):
+    def index_of_maximally_complex_element(self, random, x):
         assert x
-        random = Random(repr(x))
         indices = list(hrange(len(x)))
         random.shuffle(indices)
         worst = indices[0]
@@ -489,8 +490,8 @@ class SetStrategy(SearchStrategy):
             'convert_simplifier(%s)' % (simplifier.__name__,))
         return accept
 
-    def simplifiers(self, template):
-        for simplify in self.list_strategy.simplifiers(template):
+    def simplifiers(self, random, template):
+        for simplify in self.list_strategy.simplifiers(random, template):
             yield self.convert_simplifier(simplify)
 
     def to_basic(self, value):

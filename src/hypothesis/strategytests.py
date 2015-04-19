@@ -58,8 +58,8 @@ class TemplatesStrategy(SearchStrategy):
     def from_basic(self, data):
         return self.base_strategy.from_basic(data)
 
-    def simplifiers(self, template):
-        return self.base_strategy.simplifiers(template)
+    def simplifiers(self, random, template):
+        return self.base_strategy.simplifiers(random, template)
 
 
 @strategy.extend(TemplatesFor)
@@ -279,7 +279,7 @@ def strategy_test_suite(
             assume(path)
             current_template = template
             for local_route in path:
-                simplifiers = list(strat.simplifiers(current_template))
+                simplifiers = list(strat.simplifiers(random, current_template))
                 if not simplifiers:
                     break
                 for i in local_route:

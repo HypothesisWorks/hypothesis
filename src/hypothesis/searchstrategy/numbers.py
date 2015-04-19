@@ -44,7 +44,7 @@ class IntStrategy(SearchStrategy):
     def to_basic(self, template):
         return template
 
-    def simplifiers(self, template):
+    def simplifiers(self, random, template):
         yield self.try_negate
         yield self.try_small_numbers
         i = 1
