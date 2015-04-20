@@ -71,6 +71,5 @@ def test_includes_intermediate_results_in_verbose_mode():
 
         test_foo()
     lines = o.getvalue().splitlines()
-    print(lines)
     assert len([l for l in lines if 'example' in l]) > 2
     assert len([l for l in lines if 'AssertionError' in l])
