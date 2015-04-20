@@ -23,6 +23,7 @@ import os
 import inspect
 import threading
 from collections import namedtuple
+from functools import total_ordering
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.utils.conventions import not_set
@@ -309,4 +310,45 @@ Settings.define_setting(
 used to save examples to and load previous examples from. May be None
 in which case no storage will be used.
 """
+)
+
+
+@total_ordering
+class Verbosity(object):
+    def __repr__(self):
+        return "Verbosity.%s" % (self.name,)
+
+    def __init__(self, name, level):
+        self.name = name
+        self.level = level
+
+    def __eq__(self, other):
+        return isinstance(other, Verbosity) and (
+            self.level == other.level
+        )
+
+    def __hash__(self):
+        return self.level
+
+    def __lt__(self, other):
+        return self.level < other.level
+
+    @classmethod
+    def __getitem__(cls, key):
+        result = getattr(cls, key, None)
+        if isinstance(result, Verbosity):
+            return result
+        raise KeyError("No such verbosity level %r" % (key,))
+
+Verbosity.quiet = Verbosity('quiet', 0)
+Verbosity.normal = Verbosity('normal', 1)
+Verbosity.verbose = Verbosity('verbose', 2)
+Verbosity.all = [Verbosity.quiet, Verbosity.normal, Verbosity.verbose]
+
+
+Settings.define_setting(
+    'verbosity',
+    options=Verbosity.all,
+    default=Verbosity.normal,
+    description="Control the verbosity level of Hypothesis messages",
 )

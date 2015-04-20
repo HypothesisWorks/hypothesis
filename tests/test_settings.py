@@ -14,7 +14,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import pytest
-from hypothesis import Settings
+from hypothesis.settings import Settings, Verbosity
 from hypothesis.errors import InvalidArgument
 
 TEST_DESCRIPTION = 'This is a setting just for these tests'
@@ -117,3 +117,9 @@ def test_cannot_define_a_setting_with_default_not_valid():
             default=8, description="Kittens are pretty great",
             options=(1, 2, 3, 4),
         )
+
+
+def test_can_set_verbosity():
+    Settings(verbosity=Verbosity.quiet)
+    Settings(verbosity=Verbosity.normal)
+    Settings(verbosity=Verbosity.verbose)
