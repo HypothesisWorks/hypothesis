@@ -15,10 +15,10 @@ from __future__ import division, print_function, absolute_import, \
 
 import inspect
 
-from hypothesis.utils.dynamicvariables import DynamicVariable
+from hypothesis.errors import InvalidArgument
 from hypothesis.settings import Settings, Verbosity
 from hypothesis.internal.compat import text_type
-from hypothesis.errors import InvalidArgument
+from hypothesis.utils.dynamicvariables import DynamicVariable
 
 
 def silent(value):
@@ -49,7 +49,7 @@ def to_text(textish):
         textish = textish()
     if not isinstance(textish, text_type):
         raise InvalidArgument(
-            "Invalid type for reporting. Expected %s but got %s" % (
+            'Invalid type for reporting. Expected %s but got %s' % (
                 text_type.__name__, type(textish).__name__,))
     return textish
 

@@ -22,8 +22,8 @@ from __future__ import division, print_function, absolute_import, \
 import os
 import inspect
 import threading
-from collections import namedtuple
 from functools import total_ordering
+from collections import namedtuple
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.utils.conventions import not_set
@@ -181,7 +181,7 @@ class Settings(object):
             options = tuple(options)
             if default not in options:
                 raise InvalidArgument(
-                    "Default value %r is not in options %r" % (
+                    'Default value %r is not in options %r' % (
                         default, options
                     )
                 )
@@ -195,7 +195,7 @@ class Settings(object):
             setting = all_settings[name]
             if setting.options is not None and value not in setting.options:
                 raise InvalidArgument(
-                    "Invalid %s, %r. Valid options: %r" % (
+                    'Invalid %s, %r. Valid options: %r' % (
                         name, value, setting.options
                     )
                 )
@@ -315,8 +315,9 @@ in which case no storage will be used.
 
 @total_ordering
 class Verbosity(object):
+
     def __repr__(self):
-        return "Verbosity.%s" % (self.name,)
+        return 'Verbosity.%s' % (self.name,)
 
     def __init__(self, name, level):
         self.name = name
@@ -338,7 +339,7 @@ class Verbosity(object):
         result = getattr(cls, key, None)
         if isinstance(result, Verbosity):
             return result
-        raise InvalidArgument("No such verbosity level %r" % (key,))
+        raise InvalidArgument('No such verbosity level %r' % (key,))
 
 Verbosity.quiet = Verbosity('quiet', 0)
 Verbosity.normal = Verbosity('normal', 1)
@@ -357,5 +358,5 @@ Settings.define_setting(
     'verbosity',
     options=Verbosity.all,
     default=DEFAULT_VERBOSITY,
-    description="Control the verbosity level of Hypothesis messages",
+    description='Control the verbosity level of Hypothesis messages',
 )

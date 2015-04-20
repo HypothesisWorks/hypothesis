@@ -32,12 +32,12 @@ from hypothesis.settings import Settings
 from hypothesis.executors import executor
 from hypothesis.reporting import report, verbose_report
 from hypothesis.specifiers import just
+from hypothesis.utils.show import show
 from hypothesis.internal.tracker import Tracker
 from hypothesis.internal.reflection import arg_string, copy_argspec, \
     function_digest, get_pretty_function_description
 from hypothesis.internal.examplesource import ParameterSource
 from hypothesis.searchstrategy.strategies import BuildContext, strategy
-from hypothesis.utils.show import show
 
 [assume]
 
@@ -210,12 +210,12 @@ def best_satisfying_template(
         if storage is not None:
             storage.save(satisfying_example)
     if not successful_shrinks:
-        verbose_report("Could not shrink example")
+        verbose_report('Could not shrink example')
     elif successful_shrinks == 1:
-        verbose_report("Successfully shrunk example once")
+        verbose_report('Successfully shrunk example once')
     else:
         verbose_report(
-            "Successfully shrunk example %d times" % (successful_shrinks,))
+            'Successfully shrunk example %d times' % (successful_shrinks,))
     return satisfying_example
 
 
@@ -474,16 +474,16 @@ def find(specifier, condition, settings=None, random=None):
             successful_examples[0] += 1
 
         if not successful_examples[0]:
-            verbose_report(lambda: "Trying example %s" % (
+            verbose_report(lambda: 'Trying example %s' % (
                 show(result),
             ))
         elif success:
             if successful_examples[0] == 1:
-                verbose_report(lambda: "Found satisfying example %s" % (
+                verbose_report(lambda: 'Found satisfying example %s' % (
                     show(result),
                 ))
             else:
-                verbose_report(lambda: "Shrunk example to %s" % (
+                verbose_report(lambda: 'Shrunk example to %s' % (
                     show(result),
                 ))
         return assume(success)

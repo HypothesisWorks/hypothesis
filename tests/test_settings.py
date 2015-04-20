@@ -14,8 +14,8 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import pytest
-from hypothesis.settings import Settings, Verbosity
 from hypothesis.errors import InvalidArgument
+from hypothesis.settings import Settings, Verbosity
 
 TEST_DESCRIPTION = 'This is a setting just for these tests'
 
@@ -28,7 +28,7 @@ Settings.define_setting(
 
 Settings.define_setting(
     'a_setting_with_limited_options',
-    default=3, description="Something something spoon",
+    default=3, description='Something something spoon',
     options=(1, 2, 3, 4),
 )
 
@@ -103,7 +103,7 @@ def test_can_repeatedly_push_the_same_thing():
 
 def test_cannot_create_settings_with_invalid_options():
     with pytest.raises(InvalidArgument):
-        Settings(a_setting_with_limited_options="spoon")
+        Settings(a_setting_with_limited_options='spoon')
 
 
 def test_can_create_settings_with_valid_options():
@@ -114,7 +114,7 @@ def test_cannot_define_a_setting_with_default_not_valid():
     with pytest.raises(InvalidArgument):
         Settings.define_setting(
             'kittens',
-            default=8, description="Kittens are pretty great",
+            default=8, description='Kittens are pretty great',
             options=(1, 2, 3, 4),
         )
 
