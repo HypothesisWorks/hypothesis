@@ -78,14 +78,14 @@ class ExampleDatabase(object):
                     self.format.data_type(), self.backend.data_type()
                 )))
 
-    def storage_for(self, specifier, strategy=None):
+    def storage_for(self, specifier, search_strategy=None):
         """Get a storage object corresponding to this specifier."""
         return Storage(
             specifier=specifier,
             database=self,
             backend=self.backend,
             format=self.format,
-            strategy=strategy or strategy(specifier),
+            strategy=search_strategy or strategy(specifier),
         )
 
     def close(self):
