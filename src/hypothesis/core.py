@@ -190,7 +190,7 @@ def best_satisfying_template(
         tracker = Tracker()
     start_time = time.time()
 
-    successful_shrinks = 0
+    successful_shrinks = -1
     with settings:
         satisfying_example = find_satisfying_template(
             search_strategy, random, condition, tracker, settings, storage

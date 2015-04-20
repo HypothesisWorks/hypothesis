@@ -30,6 +30,16 @@ def capture_verbosity(level):
                 yield o
 
 
+def test_reports_no_shrinks():
+    with capture_verbosity(Verbosity.verbose) as o:
+        @fails
+        @given(())
+        def test_foo(x):
+            assert False
+        test_foo()
+    assert 'Could not shrink example' in o.getvalue()
+
+
 def test_does_not_log_in_quiet_mode():
     with capture_verbosity(Verbosity.quiet) as o:
         @fails
