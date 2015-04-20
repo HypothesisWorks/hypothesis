@@ -64,6 +64,6 @@ setup(
     ],
     long_description=open(README).read(),
     tests_require=[
-        'pytest', 'pytest-rerunfailures', 'pytest-faulthandler', 'flake8'],
+        'pytest', 'flake8'],
     cmdclass={'test': PyTest},
 )
