@@ -19,11 +19,10 @@ import sys
 import pytest
 from hypothesis import given
 from hypothesis.strategytests import strategy_test_suite
-from hypothesis.internal.debug import timeout
+from hypothesis.internal.debug import minimal, timeout
 from hypothesis.searchstrategy import BasicStrategy
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.searchstrategy.basic import basic_strategy
-from hypothesis.internal.debug import minimal
 
 
 def simplify_bitfield(random, value):

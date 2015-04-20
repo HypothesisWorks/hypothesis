@@ -19,7 +19,7 @@ from random import Random
 import pytest
 from hypothesis import Settings, find, given, assume
 from hypothesis.errors import NoSuchExample, DefinitelyNoSuchExample
-from hypothesis.specifiers import streaming, sampled_from, dictionary
+from hypothesis.specifiers import streaming, dictionary, sampled_from
 
 
 @given(Random, settings=Settings(max_examples=10, min_satisfying_examples=1))
