@@ -24,6 +24,7 @@ import inspect
 import threading
 from collections import namedtuple
 
+from hypothesis.errors import InvalidArgument
 from hypothesis.utils.conventions import not_set
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
@@ -152,7 +153,8 @@ class Settings(object):
             setattr(self, setting.name, value)
         self._database = kwargs.pop('database', not_set)
         if kwargs:
-            raise TypeError('Invalid arguments %s' % (', '.join(kwargs),))
+            raise InvalidArgument(
+                'Invalid arguments %s' % (', '.join(kwargs),))
         self.storage = threading.local()
 
     def defaults_stack(self):
@@ -163,7 +165,7 @@ class Settings(object):
             return self.storage.defaults_stack
 
     @classmethod
-    def define_setting(cls, name, description, default):
+    def define_setting(cls, name, description, default, options=None):
         """Add a new setting.
 
         - name is the name of the property that will be used to access the
@@ -174,10 +176,28 @@ class Settings(object):
           the first time it is accessed on any given Settings object.
 
         """
-        all_settings[name] = Setting(name, description.strip(), default)
+        if options is not None:
+            options = tuple(options)
+            if default not in options:
+                raise InvalidArgument(
+                    "Default value %r is not in options %r" % (
+                        default, options
+                    )
+                )
+
+        all_settings[name] = Setting(
+            name, description.strip(), default, options)
         setattr(cls, name, SettingsProperty(name))
 
     def __setattr__(self, name, value):
+        if name in all_settings:
+            setting = all_settings[name]
+            if setting.options is not None and value not in setting.options:
+                raise InvalidArgument(
+                    "Invalid %s, %r. Valid options: %r" % (
+                        name, value, setting.options
+                    )
+                )
         if (
             name not in all_settings and
             name not in ('storage', '_database')
@@ -229,7 +249,7 @@ class Settings(object):
 
 Settings.default_variable = DynamicVariable(Settings())
 
-Setting = namedtuple('Setting', ('name', 'description', 'default'))
+Setting = namedtuple('Setting', ('name', 'description', 'default', 'options'))
 
 
 Settings.define_setting(
