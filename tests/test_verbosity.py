@@ -20,6 +20,7 @@ from tests.common.utils import fails, capture_out
 from hypothesis.settings import Settings, Verbosity
 from hypothesis.reporting import default as default_reporter
 from hypothesis.reporting import with_reporter
+from hypothesis.searchstrategy import BasicStrategy
 
 
 @contextmanager
@@ -28,6 +29,25 @@ def capture_verbosity(level):
         with with_reporter(default_reporter):
             with Settings(verbosity=level):
                 yield o
+
+
+class SillyStrategy(BasicStrategy):
+    def generate(self, random, parameter_value):
+        return True
+
+    def simplify(self, random, value):
+        if value:
+            yield False
+
+
+def test_reports_differently_for_single_shrink():
+    with capture_verbosity(Verbosity.verbose) as o:
+        @fails
+        @given(SillyStrategy)
+        def test_foo(x):
+            assert False
+        test_foo()
+    assert 'shrunk example once' in o.getvalue()
 
 
 def test_reports_no_shrinks():
