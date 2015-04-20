@@ -196,7 +196,6 @@ class ListStrategy(SearchStrategy):
         yield self.simplify_with_example_cloning
         yield self.simplify_arrange_by_pivot
         yield self.simplify_with_single_deletes
-        yield self.enlarge_clones
 
         for simplify in self.element_strategy.simplifiers(
             random,
@@ -342,24 +341,6 @@ class ListStrategy(SearchStrategy):
         for indices in same_valued_indices.values():
             if len(indices) > 1:
                 yield tuple(indices)
-
-    def enlarge_clones(self, random, x):
-        sharing = list(self.shared_indices(x))
-        if not sharing:
-            return
-        sharing.sort(key=len, reverse=True)
-
-        for indices in sharing:
-            value = x[indices[0]]
-            for i, t in enumerate(x):
-                if (
-                    i not in indices and
-                    self.element_strategy.strictly_simpler(t, value)
-                ):
-                    copy = list(x)
-                    for i in indices:
-                        copy[i] = t
-                    yield tuple(copy)
 
     def shared_simplification(self, simplify):
         def accept(random, x):
