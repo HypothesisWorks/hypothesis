@@ -17,8 +17,8 @@ import sys
 import math
 
 import pytest
-from hypothesis import find, assume
-from hypothesis.specifiers import integers_from, integers_in_range
+from hypothesis import find
+from hypothesis.specifiers import integers_from
 
 
 def test_minimize_negative_int():
