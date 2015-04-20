@@ -310,8 +310,9 @@ def test_does_not_print_on_success():
     def test_is_an_int(x):
         return True
 
-    with capture_out() as out:
-        test_is_an_int()
+    with hs.Settings(verbosity=hs.Verbosity.normal):
+        with capture_out() as out:
+            test_is_an_int()
     out = out.getvalue()
     lines = [l.strip() for l in out.split('\n')]
     assert all(not l for l in lines)

@@ -13,7 +13,12 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+import inspect
+
 from hypothesis.utils.dynamicvariables import DynamicVariable
+from hypothesis.settings import Settings, Verbosity
+from hypothesis.internal.compat import text_type
+from hypothesis.errors import InvalidArgument
 
 
 def silent(value):
@@ -33,3 +38,27 @@ def current_reporter():
 
 def with_reporter(new_reporter):
     return reporter.with_value(new_reporter)
+
+
+def current_verbosity():
+    return Settings.default.verbosity
+
+
+def to_text(textish):
+    if inspect.isfunction(textish):
+        textish = textish()
+    if not isinstance(textish, text_type):
+        raise InvalidArgument(
+            "Invalid type for reporting. Expected %s but got %s" % (
+                text_type.__name__, type(textish).__name__,))
+    return textish
+
+
+def verbose_report(text):
+    if current_verbosity() >= Verbosity.verbose:
+        current_reporter()(to_text(text))
+
+
+def report(text):
+    if current_verbosity() >= Verbosity.normal:
+        current_reporter()(to_text(text))

@@ -29,13 +29,14 @@ from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
 from hypothesis.control import assume
 from hypothesis.settings import Settings
 from hypothesis.executors import executor
-from hypothesis.reporting import current_reporter
+from hypothesis.reporting import report, verbose_report
 from hypothesis.specifiers import just
 from hypothesis.internal.tracker import Tracker
 from hypothesis.internal.reflection import arg_string, copy_argspec, \
     function_digest, get_pretty_function_description
 from hypothesis.internal.examplesource import ParameterSource
 from hypothesis.searchstrategy.strategies import BuildContext, strategy
+from hypothesis.utils.show import show
 
 [assume]
 
@@ -188,22 +189,32 @@ def best_satisfying_template(
         tracker = Tracker()
     start_time = time.time()
 
-    satisfying_example = find_satisfying_template(
-        search_strategy, random, condition, tracker, settings, storage
-    )
+    successful_shrinks = 0
+    with settings:
+        satisfying_example = find_satisfying_template(
+            search_strategy, random, condition, tracker, settings, storage
+        )
 
-    for simpler in simplify_template_such_that(
-        search_strategy, random, satisfying_example, condition, tracker
-    ):
-        satisfying_example = simpler
-        if time_to_call_it_a_day(settings, start_time):
-            # It's very hard to reliably hit this line even though we have
-            # tests for it. No cover prevents this from causing a flaky build.
-            break  # pragma: no cover
+        for simpler in simplify_template_such_that(
+            search_strategy, random, satisfying_example, condition, tracker
+        ):
+            successful_shrinks += 1
+            satisfying_example = simpler
+            if time_to_call_it_a_day(settings, start_time):
+                # It's very hard to reliably hit this line even though we have
+                # tests for it. No cover prevents this from causing a flaky
+                # build.
+                break  # pragma: no cover
 
-    if storage is not None:
-        storage.save(satisfying_example)
-
+        if storage is not None:
+            storage.save(satisfying_example)
+    if not successful_shrinks:
+        verbose_report("Could not shrink example")
+    elif successful_shrinks == 1:
+        verbose_report("Successfully shrunk example once")
+    else:
+        verbose_report(
+            "Successfully shrunk example %d times" % (successful_shrinks,))
     return satisfying_example
 
 
@@ -243,8 +254,17 @@ def reify_and_execute(search_strategy, template, test, print_example=False):
     def run():
         args, kwargs = search_strategy.reify(template)
         if print_example:
-            current_reporter()(
-                'Falsifying example: %s(%s)' % (
+            report(
+                lambda: 'Falsifying example: %s(%s)' % (
+                    test.__name__,
+                    arg_string(
+                        test, args, kwargs
+                    )
+                )
+            )
+        else:
+            verbose_report(
+                lambda: 'Trying example: %s(%s)' % (
                     test.__name__,
                     arg_string(
                         test, args, kwargs
@@ -442,9 +462,29 @@ def find(specifier, condition, settings=None, random=None):
 
     search = strategy(specifier, settings)
     random = random or Random()
+    successful_examples = [0]
 
     def template_condition(template):
-        return assume(condition(search.reify(template)))
+        result = search.reify(template)
+        success = condition(result)
+
+        if success:
+            successful_examples[0] += 1
+
+        if not successful_examples[0]:
+            verbose_report(lambda: "Trying example %s" % (
+                show(result),
+            ))
+        elif success:
+            if successful_examples[0] == 1:
+                verbose_report(lambda: "Found satisfying example %s" % (
+                    show(result),
+                ))
+            else:
+                verbose_report(lambda: "Shrunk example to %s" % (
+                    show(result),
+                ))
+        return assume(success)
 
     template_condition.__name__ = condition.__name__
     tracker = Tracker()

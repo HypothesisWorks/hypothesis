@@ -334,11 +334,11 @@ class Verbosity(object):
         return self.level < other.level
 
     @classmethod
-    def __getitem__(cls, key):
+    def by_name(cls, key):
         result = getattr(cls, key, None)
         if isinstance(result, Verbosity):
             return result
-        raise KeyError("No such verbosity level %r" % (key,))
+        raise InvalidArgument("No such verbosity level %r" % (key,))
 
 Verbosity.quiet = Verbosity('quiet', 0)
 Verbosity.normal = Verbosity('normal', 1)
@@ -346,9 +346,16 @@ Verbosity.verbose = Verbosity('verbose', 2)
 Verbosity.all = [Verbosity.quiet, Verbosity.normal, Verbosity.verbose]
 
 
+ENVIRONMENT_VERBOSITY_OVERRIDE = os.getenv('HYPOTHESIS_VERBOSITY_LEVEL')
+
+if ENVIRONMENT_VERBOSITY_OVERRIDE:
+    DEFAULT_VERBOSITY = Verbosity.by_name(ENVIRONMENT_VERBOSITY_OVERRIDE)
+else:
+    DEFAULT_VERBOSITY = Verbosity.normal
+
 Settings.define_setting(
     'verbosity',
     options=Verbosity.all,
-    default=Verbosity.normal,
+    default=DEFAULT_VERBOSITY,
     description="Control the verbosity level of Hypothesis messages",
 )
