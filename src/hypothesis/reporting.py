@@ -47,11 +47,7 @@ def current_verbosity():
 def to_text(textish):
     if inspect.isfunction(textish):
         textish = textish()
-    if not isinstance(textish, text_type):
-        raise InvalidArgument(
-            'Invalid type for reporting. Expected %s but got %s' % (
-                text_type.__name__, type(textish).__name__,))
-    return textish
+    return text_type(textish)
 
 
 def verbose_report(text):
