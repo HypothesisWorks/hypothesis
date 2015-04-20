@@ -1,10 +1,26 @@
+# coding=utf-8
+
+# Copyright (C) 2013-2015 David R. MacIver (david@drmaciver.com)
+
+# This file is part of Hypothesis (https://github.com/DRMacIver/hypothesis)
+
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file, You can
+# obtain one at http://mozilla.org/MPL/2.0/.
+
+# END HEADER
+
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
+
 from random import Random
+from collections import namedtuple
+
 import pytest
 from hypothesis import find, strategy
-from hypothesis.searchstrategy.strategies import BuildContext
-from collections import namedtuple
 from hypothesis.specifiers import dictionary
 from hypothesis.internal.debug import via_database
+from hypothesis.searchstrategy.strategies import BuildContext
 
 
 @pytest.mark.parametrize('col', [
@@ -107,7 +123,7 @@ def test_deeply_nested_sets():
     assert strategy(f(10)).size_lower_bound == float('inf')
 
 
-standard_random = Random("tests.coverage.test_simple_collections")
+standard_random = Random('tests.coverage.test_simple_collections')
 
 
 @pytest.mark.parametrize('typ', [
