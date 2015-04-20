@@ -15,7 +15,6 @@ from __future__ import division, print_function, absolute_import, \
 
 import inspect
 
-from hypothesis.errors import InvalidArgument
 from hypothesis.settings import Settings, Verbosity
 from hypothesis.internal.compat import text_type
 from hypothesis.utils.dynamicvariables import DynamicVariable
