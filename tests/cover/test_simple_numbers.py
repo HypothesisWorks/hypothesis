@@ -18,7 +18,8 @@ import math
 
 import pytest
 from hypothesis import find
-from hypothesis.specifiers import integers_from
+from hypothesis.specifiers import integers_from, floats_in_range, \
+    integers_in_range
 
 
 def test_minimize_negative_int():
@@ -50,6 +51,48 @@ def test_minimizes_ints_from_down_to_boundary(boundary):
         integers_from(boundary - 10), lambda x: x >= boundary) == boundary
 
     assert find(integers_from(boundary), lambda x: True) == boundary
+
+
+@boundaries
+def test_minimizes_integer_range_to_boundary(boundary):
+    assert find(
+        integers_in_range(boundary, boundary + 100), lambda x: True
+    ) == boundary
+
+
+def test_single_integer_range_is_range():
+    assert find(integers_in_range(1, 1), lambda x: True) == 1
+
+
+def test_find_small_number_in_large_range():
+    assert find(
+        integers_in_range((-2 ** 32), 2 ** 32), lambda x: x >= 101) == 101
+
+
+def test_find_small_sum_float_list():
+    xs = find(
+        [float],
+        lambda x: len(x) >= 10 and sum(x) >= 1.0
+    )
+    assert sum(xs) <= 2.0
+
+
+def test_finds_boundary_floats():
+    assert find(floats_in_range(-1, 1), lambda x: True) == -1
+
+
+def test_find_non_boundary_float():
+    x = find(floats_in_range(1, 9), lambda x: x > 2)
+    assert 2 < x < 3
+
+
+def test_can_find_standard_complex_numbers():
+    find(complex, lambda x: x.imag != 0) == 0j
+    find(complex, lambda x: x.real != 0) == 1
+
+
+def test_minimial_float_is_zero():
+    assert find(float, lambda x: True) == 0.0
 
 
 def test_negative_floats_simplify_to_zero():

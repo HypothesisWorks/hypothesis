@@ -453,10 +453,10 @@ class FixedBoundedFloatStrategy(FloatStrategy):
     def basic_simplify(self, random, value):
         if value == self.lower_bound:
             return
-        yield self.lower_bound
-        yield self.upper_bound
-        mid = (self.lower_bound + self.upper_bound) * 0.5
-        yield mid
+        lb = self.lower_bound
+        for _ in hrange(32):
+            yield lb
+            lb = (lb + value) * 0.5
 
 
 class BoundedFloatStrategy(FloatStrategy):
