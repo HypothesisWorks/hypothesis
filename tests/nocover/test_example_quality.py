@@ -53,18 +53,6 @@ def test_minimize_list_of_sets_on_large_structure():
     assert len(set(x)) == 1
 
 
-def test_minimal_infinite_float_is_positive():
-    assert minimal(float, math.isinf) == float('inf')
-
-    def list_of_infinities(xs):
-        assume(len(xs) >= 10)
-        return len([
-            t for t in xs if (math.isinf(t) or math.isnan(t))
-        ]) >= 10
-
-    assert minimal([float], list_of_infinities) == [float('inf')] * 10
-
-
 def test_integers_from_minizes_leftwards():
     assert minimal(integers_from(101)) == 101
 
@@ -87,10 +75,6 @@ def test_minimal_fractions_4():
     ) == [Fraction(1)] * 20
 
 
-def test_minimal_fractional_float():
-    assert minimal(float, lambda x: x >= 1.5) in (1.5, 2.0)
-
-
 def test_finding_decimals_with_defined_precision():
     def is_integral(x):
         try:
@@ -102,24 +86,6 @@ def test_finding_decimals_with_defined_precision():
     assert is_integral(minimal(
         Decimal, lambda x: is_integral(x * 100) and 0 < x < 1
     ) * 10)
-
-
-def test_minimize_nan():
-    assert math.isnan(minimal(float, math.isnan))
-
-
-def test_minimize_very_large_float():
-    t = sys.float_info.max / 2
-    assert t <= minimal(float, lambda x: x >= t) < float('inf')
-
-
-def test_list_of_fractional_float():
-    assert set(minimal(
-        [float], lambda x: len([t for t in x if t >= 1.5]) >= 10
-    )) in (
-        {1.5},
-        {1.5, 2.0}
-    )
 
 
 def test_minimize_list_of_floats_on_large_structure():
@@ -135,14 +101,6 @@ def test_minimize_list_of_floats_on_large_structure():
     assert result == [0.0] * 20 + [3.0] * 30
 
 
-def test_negative_floats_simplify_to_zero():
-    assert minimal(float, lambda x: x <= -1.0) == -1.0
-
-
-def test_minimize_list_to_empty():
-    assert minimal([int]) == []
-
-
 def test_minimize_string_to_empty():
     assert minimal(text_type) == ''
 
@@ -152,29 +110,6 @@ def test_minimize_one_of():
         assert minimal(one_of((int, str, bool))) in (
             0, '', False
         )
-
-
-def test_minimize_negative_int():
-    assert minimal(int, lambda x: x < 0) == -1
-    assert minimal(int, lambda x: x < -1) == -2
-
-
-def test_positive_negative_int():
-    assert minimal(int, lambda x: x > 0) == 1
-    assert minimal(int, lambda x: x > 1) == 2
-
-
-boundaries = pytest.mark.parametrize('boundary', [0, 1, 11, 23, 64, 10000])
-
-
-@boundaries
-def test_minimizes_int_down_to_boundary(boundary):
-    assert minimal(int, lambda x: x >= boundary) == boundary
-
-
-@boundaries
-def test_minimizes_int_up_to_boundary(boundary):
-    assert minimal(int, lambda x: x <= -boundary) == -boundary
 
 
 def test_minimize_mixed_list():
