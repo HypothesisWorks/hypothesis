@@ -60,15 +60,6 @@ def test_can_find_nans():
         assert 2 <= len(x) <= 3
 
 
-def test_find_large_structure():
-    def test_list_in_range(xs):
-        return len(list(filter(None, xs))) >= 50
-
-    x = find([frozenset({int})], test_list_in_range)
-    assert len(x) == 50
-    assert len(set(x)) == 1
-
-
 def test_find_streaming_int():
     n = 100
     r = find(streaming(int), lambda x: all(t >= 1 for t in x[:n]))
@@ -76,8 +67,12 @@ def test_find_streaming_int():
 
 
 def test_raises_when_no_example():
+    settings = Settings(
+        max_examples=20,
+        min_satisfying_examples=0,
+    )
     with pytest.raises(NoSuchExample):
-        find(int, lambda x: False)
+        find(int, lambda x: False, settings=settings)
 
 
 def test_raises_more_specifically_when_exhausted():
@@ -86,17 +81,21 @@ def test_raises_more_specifically_when_exhausted():
 
 
 def test_condition_is_name():
-    with pytest.raises(NoSuchExample) as e:
-        find(bool, lambda x: False)
+    settings = Settings(
+        max_examples=20,
+        min_satisfying_examples=0,
+    )
+    with pytest.raises(DefinitelyNoSuchExample) as e:
+        find(bool, lambda x: False, settings=settings)
     assert 'lambda x:' in e.value.args[0]
 
     with pytest.raises(NoSuchExample) as e:
-        find(int, lambda x: '☃' in str(x))
+        find(int, lambda x: '☃' in str(x), settings=settings)
     assert 'lambda x:' in e.value.args[0]
 
     def bad(x):
         return False
 
     with pytest.raises(NoSuchExample) as e:
-        find(int, bad)
+        find(int, bad, settings=settings)
     assert 'bad' in e.value.args[0]

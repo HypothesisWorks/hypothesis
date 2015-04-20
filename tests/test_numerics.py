@@ -27,6 +27,6 @@ def test_all_decimals_can_be_exact_floats(x):
     assert Decimal(float(x)) == x
 
 
-@given([Fraction])
-def test_reversing_preserves_fraction_addition(xs):
-    assert sum(xs) == sum(reversed(xs))
+@given(Fraction, Fraction, Fraction)
+def test_fraction_addition_is_well_behaved(x, y, z):
+    assert x + y + z == y + x + z
