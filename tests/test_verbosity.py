@@ -41,6 +41,16 @@ class SillyStrategy(BasicStrategy):
             yield False
 
 
+def test_prints_intermediate_in_success():
+    with capture_verbosity(Verbosity.verbose) as o:
+        @given(bool)
+        def test_works(x):
+            pass
+        test_works()
+    lines = o.getvalue().splitlines()
+    assert len([l for l in lines if 'example' in l]) == 2
+
+
 def test_reports_differently_for_single_shrink():
     with capture_verbosity(Verbosity.verbose) as o:
         @fails
