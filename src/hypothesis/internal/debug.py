@@ -19,7 +19,7 @@ from random import Random
 from functools import wraps
 
 from hypothesis import Settings, strategy
-from hypothesis.core import best_satisfying_template
+from hypothesis.core import find
 from hypothesis.database import ExampleDatabase
 from hypothesis.searchstrategy.strategies import BuildContext
 
@@ -66,23 +66,18 @@ quality_settings = Settings(
 
 
 def minimal(definition, condition=None, settings=None, timeout_after=10):
-    strat = strategy(definition)
     condition = condition or (lambda x: True)
     with settings or quality_settings:
         settings = Settings(timeout=timeout_after * 0.95)
 
-    def template_satisfies(x):
-        t = strat.reify(x)
-        return condition(t)
-
     @timeout(timeout_after)
     def run():
-        return best_satisfying_template(
-            strat,
-            Random(), template_satisfies,
-            settings, None
+        return find(
+            definition,
+            condition,
+            settings=settings
         )
-    return strat.reify(run())
+    return run()
 
 
 def some_template(spec):
