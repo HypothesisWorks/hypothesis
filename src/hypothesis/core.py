@@ -18,6 +18,7 @@ from __future__ import division, print_function, absolute_import, \
 import time
 import inspect
 import functools
+import traceback
 from random import Random
 from itertools import islice
 from collections import namedtuple
@@ -419,6 +420,7 @@ def given(*generator_arguments, **generator_kwargs):
                 except UnsatisfiedAssumption as e:
                     raise e
                 except Exception:
+                    verbose_report(traceback.format_exc)
                     return True
 
             is_template_example.__name__ = test.__name__
