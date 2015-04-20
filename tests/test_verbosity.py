@@ -93,6 +93,22 @@ def test_includes_progress_in_verbose_mode():
     assert 'Found satisfying example' in out
 
 
+def test_prints_initial_attempts_on_find():
+
+    with capture_verbosity(Verbosity.verbose) as o:
+        with Settings(verbosity=Verbosity.verbose):
+            seen = []
+
+            def not_first(x):
+                if not seen:
+                    seen.append(x)
+                    return False
+                return x not in seen
+            find(int, not_first)
+
+    assert 'Trying example' in o.getvalue()
+
+
 def test_includes_intermediate_results_in_verbose_mode():
     with capture_verbosity(Verbosity.verbose) as o:
         @fails
