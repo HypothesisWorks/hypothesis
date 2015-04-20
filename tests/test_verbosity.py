@@ -32,6 +32,7 @@ def capture_verbosity(level):
 
 
 class SillyStrategy(BasicStrategy):
+
     def generate(self, random, parameter_value):
         return True
 
