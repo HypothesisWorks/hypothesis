@@ -202,7 +202,6 @@ def best_satisfying_template(
             break  # pragma: no cover
 
     if storage is not None:
-        print(satisfying_example)
         storage.save(satisfying_example)
 
     return satisfying_example
