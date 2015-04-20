@@ -49,6 +49,8 @@ def test_minimizes_ints_from_down_to_boundary(boundary):
     assert find(
         integers_from(boundary - 10), lambda x: x >= boundary) == boundary
 
+    assert find(integers_from(boundary), lambda x: True) == boundary
+
 
 def test_negative_floats_simplify_to_zero():
     assert find(float, lambda x: x <= -1.0) == -1.0
