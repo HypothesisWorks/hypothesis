@@ -48,6 +48,13 @@ def test_can_simplify_bitfields(i):
     assert minimal(bitfield, lambda x: x & (1 << i)) == 1 << i
 
 
+def test_can_find_bitfields_without_simplifying():
+    assert minimal(
+        basic_strategy(generate=lambda r, p: r.getrandbits(128)),
+        lambda x: x & 1
+    )
+
+
 def gc_clear():
     try:
         sys.exc_clear()
