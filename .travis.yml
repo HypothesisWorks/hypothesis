@@ -20,11 +20,11 @@ env:
         - TOXENV=coverage
         - TOXENV=lint
         - TOXENV=pypy
-        - TOXENV=pypy3
-        - TOXENV=py27
-        - TOXENV=py32
-        - TOXENV=py33
         - TOXENV=py34
+        - TOXENV=py27
+        - TOXENV=pypy3
+        - TOXENV=py33
+        - TOXENV=py32
 
 install:
     - ./.travis/install.sh
