@@ -15,6 +15,7 @@ from __future__ import division, print_function, absolute_import, \
 
 import hashlib
 from random import Random
+
 import pytest
 from hypothesis import strategy
 from tests.common import standard_types
@@ -26,7 +27,7 @@ from hypothesis.internal.debug import via_database
     'spec', standard_types, ids=list(map(show, standard_types)))
 def test_round_tripping_via_the_database(spec):
     random = Random(hashlib.md5(
-        (show(spec) + ":test_round_tripping_via_the_database").encode('utf-8')
+        (show(spec) + ':test_round_tripping_via_the_database').encode('utf-8')
     ).digest())
     strat = strategy(spec)
     template = strat.draw_and_produce_from_random(random)
