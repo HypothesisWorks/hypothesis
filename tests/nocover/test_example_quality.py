@@ -310,8 +310,8 @@ def test_non_reversible_ints_as_decimals():
         ts = list(map(Decimal, xs))
         return sum(ts) != sum(reversed(ts))
 
-    sigh = minimal([int], not_reversible, timeout_after=20)
-    assert len(sigh) < 10
+    sigh = minimal([int], not_reversible, timeout_after=30)
+    assert len(sigh) <= 10
 
 
 def test_non_reversible_fractions_as_decimals():
