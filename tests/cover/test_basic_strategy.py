@@ -18,7 +18,8 @@ import sys
 
 import pytest
 from hypothesis import given
-from tests.common.basic import Bitfields, simplify_bitfield, BoringBitfields
+from tests.common.basic import Bitfields, BoringBitfields, \
+    simplify_bitfield
 from tests.common.utils import fails
 from hypothesis.internal.debug import minimal, timeout
 from hypothesis.internal.compat import integer_types
