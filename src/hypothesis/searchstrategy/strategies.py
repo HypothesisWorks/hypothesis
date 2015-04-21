@@ -386,9 +386,15 @@ class SearchStrategy(object):
         turn.
 
         """
-        simplifiers = list(self.simplifiers(random, template))
-        random.shuffle(simplifiers)
-        for simplifier in simplifiers:
+        saved_for_later = []
+        for simplifier in self.simplifiers(random, template):
+            if random.randint(0, 1):
+                for value in simplifier(random, template):
+                    yield value
+            else:
+                saved_for_later.append(simplifier)
+        random.shuffle(saved_for_later)
+        for simplifier in saved_for_later:
             for value in simplifier(random, template):
                 yield value
 
