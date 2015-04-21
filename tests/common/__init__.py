@@ -10,13 +10,14 @@
 
 # END HEADER
 
-import hypothesis.settings as hs
-from hypothesis.internal.debug import timeout
-from hypothesis import strategy
 
+import sys
 from decimal import Decimal
 from fractions import Fraction
 
+import hypothesis.settings as hs
+from hypothesis.internal.debug import timeout
+from hypothesis import strategy
 from hypothesis.specifiers import integers_from, floats_in_range, \
     integers_in_range, just, one_of, sampled_from, streaming
 from hypothesis.internal.compat import text_type, binary_type
@@ -64,5 +65,6 @@ standard_types = [
     [[bool]],
     OrderedPair, ConstantList(int),
     strategy(streaming(int)).map(lambda x: list(x[:2]) and x),
-    strategy(int).filter(lambda x: abs(x) > 100)
+    strategy(int).filter(lambda x: abs(x) > 100),
+    floats_in_range(-sys.float_info.max, sys.float_info.max)
 ]
