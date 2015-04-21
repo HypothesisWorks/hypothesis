@@ -33,7 +33,7 @@ def popcount(x):
     return tot
 
 
-@pytest.mark.parametrize('i', range(128))
+@pytest.mark.parametrize('i', [0, 1, 3, 10, 21, 65, 127])
 def test_can_simplify_bitfields(i):
     bitfield = basic_strategy(
         parameter=lambda r: r.getrandbits(128),
