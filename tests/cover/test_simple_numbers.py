@@ -20,6 +20,7 @@ import pytest
 from hypothesis import find
 from hypothesis.specifiers import integers_from, floats_in_range, \
     integers_in_range
+from hypothesis.searchstrategy.numbers import is_integral
 
 
 def test_minimize_negative_int():
@@ -103,6 +104,14 @@ def test_find_infinite_float_is_positive():
     assert find(float, math.isinf) == float('inf')
 
 
+def test_can_find_infinite_negative_float():
+    assert find(float, lambda x: x < -sys.float_info.max)
+
+
+def test_can_find_float_on_boundary_of_representable():
+    find(float, lambda x: x + 1 == x and not math.isinf(x))
+
+
 def test_minimize_nan():
     assert math.isnan(find(float, math.isnan))
 
@@ -110,6 +119,14 @@ def test_minimize_nan():
 def test_minimize_very_large_float():
     t = sys.float_info.max / 2
     assert t <= find(float, lambda x: x >= t) < float('inf')
+
+
+def test_can_find_float_far_from_integral():
+    find(float, lambda x: not (
+        math.isnan(x) or
+        math.isinf(x) or
+        is_integral(x * (2 ** 32))
+    ))
 
 
 def test_list_of_fractional_float():

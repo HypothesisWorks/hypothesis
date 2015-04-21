@@ -625,6 +625,11 @@ class FlatMapStrategy(SearchStrategy):
                 template_seed=template_seed,
             )
 
+    def strictly_simpler(self, x, y):
+        return self.flatmapped_strategy.strictly_simpler(
+            x.source_template, y.source_template
+        )
+
     def simplifiers(self, random, template):
         for simplify in self.flatmapped_strategy.simplifiers(
             random,

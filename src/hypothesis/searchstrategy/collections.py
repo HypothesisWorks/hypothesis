@@ -196,6 +196,7 @@ class ListStrategy(SearchStrategy):
         yield self.simplify_with_example_cloning
         yield self.simplify_arrange_by_pivot
         yield self.simplify_with_single_deletes
+        yield self.simplify_to_singletons
 
         for simplify in self.element_strategy.simplifiers(
             random,
@@ -226,6 +227,10 @@ class ListStrategy(SearchStrategy):
             return
 
         yield ()
+
+    def simplify_to_singletons(self, random, x):
+        for t in x:
+            yield (t,)
 
     def strictly_simpler(self, x, y):
         if len(x) > len(y):

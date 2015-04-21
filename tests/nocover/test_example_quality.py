@@ -14,7 +14,6 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import sys
-import math
 import operator
 from decimal import Decimal
 from fractions import Fraction
@@ -22,6 +21,7 @@ from collections import Counter, OrderedDict
 
 import pytest
 from hypothesis import assume, strategy
+from tests.common import OrderedPair, ConstantList
 from hypothesis.specifiers import just, one_of, dictionary, \
     integers_from, integers_in_range
 from hypothesis.internal.debug import minimal
@@ -373,3 +373,22 @@ def test_find_large_union_list():
         for y in result:
             if x is not y:
                 assert not (x & y)
+
+
+def test_anti_sorted_ordered_pair():
+    result = minimal(
+        [OrderedPair],
+        lambda x: (
+            len(x) >= 50 and
+            2 < length_of_longest_ordered_sequence(x) <= 10))
+    assert len(result) == 50
+
+
+def test_constant_lists_of_diverse_length():
+    # This does not currently work very well. We delete, but we don't actually
+    # get all that far with simplification of the individual elements.
+    result = minimal(
+        [ConstantList(int)], lambda x: len(set(map(len, x))) >= 30,
+    )
+
+    assert len(result) == 30

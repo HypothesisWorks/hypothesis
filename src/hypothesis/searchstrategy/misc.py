@@ -20,7 +20,7 @@ import hypothesis.specifiers as specifiers
 import hypothesis.internal.distributions as dist
 from hypothesis.types import RandomWithSeed
 from hypothesis.utils.show import show
-from hypothesis.internal.compat import integer_types
+from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.internal.chooser import chooser
 from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
     strategy, check_type, check_data_type
@@ -153,6 +153,13 @@ class SampledFromStrategy(SearchStrategy):
                 'Index out of range: %d >= %d' % (data, len(self.elements)))
 
         return data
+
+    def basic_simplify(self, random, template):
+        for i in hrange(0, template):
+            yield i
+
+    def strictly_simpler(self, x, y):
+        return x < y
 
     def __repr__(self):
         return 'SampledFromStrategy(%r)' % (self.elements,)

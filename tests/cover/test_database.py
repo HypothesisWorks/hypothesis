@@ -118,7 +118,7 @@ def test_storage_cleans_up_invalid_data_from_the_db():
     assert list(database.backend.fetch(ints.key)) == []
 
 
-@given(text_type)
+@pytest.mark.parametrize('s', ['', 'abcdefg', '☃'])
 def test_can_save_all_strings(s):
     db = ExampleDatabase()
     storage = db.storage_for(text_type)
