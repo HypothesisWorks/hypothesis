@@ -19,6 +19,7 @@ import pytest
 from hypothesis import Settings, given, assume, strategy
 from hypothesis.database import ExampleDatabase
 from hypothesis.specifiers import just, floats_in_range, integers_in_range
+from hypothesis.internal.debug import some_template
 from hypothesis.searchstrategy.narytree import Leaf, NAryTree
 from hypothesis.searchstrategy.strategies import BuildContext
 
@@ -127,3 +128,14 @@ def test_will_find_a_failure_from_the_database():
             nope()  # pragma: no branch
     finally:
         db.close()
+
+
+def test_can_still_simplify_if_not_reified():
+    strat = strategy(ConstantLists)
+    random = Random('test_constant_lists_are_constant')
+    template = some_template(strat, random)
+    try:
+        while True:
+            template = next(strat.full_simplify(random, template))
+    except StopIteration:
+        pass
