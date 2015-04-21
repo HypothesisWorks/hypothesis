@@ -19,11 +19,15 @@ from fractions import Fraction
 from collections import OrderedDict, namedtuple
 
 from hypothesis import strategy
-from hypothesis.specifiers import just, one_of, strings, dictionary, \
-    sampled_from, integers_from, floats_in_range, integers_in_range
+from tests.common.basic import Bitfields, BoringBitfields, \
+    simplify_bitfield
+from hypothesis.specifiers import just, one_of, strings, streaming, \
+    dictionary, sampled_from, integers_from, floats_in_range, \
+    integers_in_range
 from tests.common.specifiers import Descriptor
 from hypothesis.strategytests import TemplatesFor, strategy_test_suite
 from hypothesis.internal.compat import text_type, binary_type
+from hypothesis.searchstrategy.basic import basic_strategy
 from hypothesis.searchstrategy.narytree import NAryTree
 
 TestIntegerRange = strategy_test_suite(integers_in_range(0, 5))
@@ -110,6 +114,55 @@ TestManyFlatmaps = strategy_test_suite(
     .flatmap(integers_from)
     .flatmap(integers_from)
     .flatmap(integers_from)
+)
+
+TestIntStreams = strategy_test_suite(streaming(int))
+TestStreamLists = strategy_test_suite(streaming(int))
+TestIntStreamStreams = strategy_test_suite(streaming(streaming(int)))
+
+
+TestBoringBitfieldsClass = strategy_test_suite(BoringBitfields)
+TestBitfieldsClass = strategy_test_suite(Bitfields)
+TestBitfieldsInstance = strategy_test_suite(Bitfields())
+
+
+TestBitfields = strategy_test_suite([
+    basic_strategy(
+        generate=lambda r, p: r.getrandbits(128),
+        simplify=simplify_bitfield,
+        copy=lambda x: x,
+    )
+])
+
+TestBitfieldsSet = strategy_test_suite({
+    basic_strategy(
+        generate=lambda r, p: r.getrandbits(128),
+        simplify=simplify_bitfield,
+        copy=lambda x: x,
+    )
+})
+
+
+TestBitfield = strategy_test_suite(
+    basic_strategy(
+        generate=lambda r, p: r.getrandbits(128),
+        simplify=simplify_bitfield,
+        copy=lambda x: x,
+    )
+)
+
+TestBitfieldJustGenerate = strategy_test_suite(
+    basic_strategy(
+        generate=lambda r, p: r.getrandbits(128),
+    )
+)
+
+
+TestBitfieldWithParameter = strategy_test_suite(
+    basic_strategy(
+        parameter=lambda r: r.getrandbits(128),
+        generate=lambda r, p: r.getrandbits(128) & p,
+    )
 )
 
 

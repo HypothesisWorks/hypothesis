@@ -16,18 +16,13 @@ from __future__ import division, print_function, absolute_import, \
 from itertools import islice
 
 import pytest
-from hypothesis import given, assume
+from hypothesis import given
 from hypothesis.errors import InvalidArgument
 from hypothesis.specifiers import streaming
 from hypothesis.utils.show import show
-from hypothesis.strategytests import strategy_test_suite
 from hypothesis.internal.debug import minimal, via_database, some_template
 from hypothesis.internal.compat import text_type, integer_types
 from hypothesis.searchstrategy.streams import Stream, StreamTemplate
-
-TestIntStreams = strategy_test_suite(streaming(int))
-TestStreamLists = strategy_test_suite(streaming(int))
-TestIntStreamStreams = strategy_test_suite(streaming(streaming(int)))
 
 
 @given([bool])
@@ -57,12 +52,6 @@ def test_can_stream_infinite():
 def test_fetched_repr_is_in_stream_repr(s):
     assert repr(s) == 'Stream(...)'
     assert show(next(iter(s))) in show(s)
-
-
-@given(streaming(int))
-def test_streams_are_arbitrarily_long(ss):
-    for i in islice(ss, 100):
-        assert isinstance(i, integer_types)
 
 
 def test_cannot_thunk_past_end_of_list():
@@ -141,9 +130,3 @@ def test_template_equality():
     assert t2 != t5
 
     assert len({t, t2, t3, t4, t5}) == 4
-
-
-@given(streaming(int))
-def test_can_adaptively_assume_about_streams(xs):
-    for i in islice(xs, 200):
-        assume(i >= 0)
