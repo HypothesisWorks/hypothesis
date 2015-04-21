@@ -48,7 +48,13 @@ def constant_list_strategy(spec, settings):
     )
 
 
+ABC = namedtuple('ABC', ('a', 'b', 'c'))
+
 standard_types = [
+    [], (), set(), frozenset(), {},
+    ABC(bool, bool, bool),
+    ABC(bool, bool, int),
+    {"a": int, "b": bool},
     one_of((int, (bool,))),
     sampled_from(range(10)),
     one_of((just('a'), just('b'), just('c'))),
