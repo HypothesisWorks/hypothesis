@@ -15,13 +15,14 @@ from __future__ import division, print_function, absolute_import, \
 
 import gc
 import sys
+from random import Random
 
 import pytest
-from hypothesis import given
+from hypothesis import given, strategy
 from tests.common.basic import Bitfields, BoringBitfields, \
     simplify_bitfield
 from tests.common.utils import fails
-from hypothesis.internal.debug import minimal, timeout
+from hypothesis.internal.debug import minimal, timeout, some_template
 from hypothesis.internal.compat import integer_types
 from hypothesis.searchstrategy.basic import basic_strategy
 
@@ -148,3 +149,15 @@ def test_can_find_adjacent_one_bits():
     for _ in range(5):
         with pytest.raises(Nope):
             has_no_adjacent_one_bits()
+
+
+def test_can_recalculate_shrinks_without_reify_cache():
+    random = Random("test_can_recalculate_shrinks_without_reify_cache")
+    strat = strategy(Bitfields)
+    template = some_template(strat, random)
+    for shrunk_template in strat.full_simplify(random, template):
+        strat.reify_cache.pop(shrunk_template, None)
+        strat.reify_cache.pop(template, None)
+        assert not (~strat.reify(template) & strat.reify(shrunk_template))
+    new_template = strat.from_basic(strat.to_basic(template))
+    assert strat.reify(template) == strat.reify(new_template)
