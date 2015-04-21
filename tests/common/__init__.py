@@ -10,7 +10,6 @@
 
 # END HEADER
 
-
 import sys
 from decimal import Decimal
 from fractions import Fraction
