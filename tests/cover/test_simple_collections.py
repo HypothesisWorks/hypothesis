@@ -123,3 +123,17 @@ def test_deeply_nested_sets():
         return frozenset((f(n - 1),))
 
     assert strategy(f(10)).size_lower_bound == float('inf')
+
+
+def test_list_simplicity():
+    # Testing internal details because this is too damn hard to hit reliably
+    s = strategy([bool])
+
+    assert not s.strictly_simpler((), ())
+    assert s.strictly_simpler((), (False,))
+    assert not s.strictly_simpler((True,), ())
+    assert s.strictly_simpler((True,), (False, True))
+    assert s.strictly_simpler((False,), (True,))
+    assert not s.strictly_simpler((True,), (False,))
+    assert s.strictly_simpler((False, False,), (False, True))
+    assert not s.strictly_simpler((False, True), (False, True))
