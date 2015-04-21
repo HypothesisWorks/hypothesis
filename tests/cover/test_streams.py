@@ -21,7 +21,7 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.specifiers import streaming
 from hypothesis.utils.show import show
 from hypothesis.internal.debug import minimal, via_database, some_template
-from hypothesis.internal.compat import text_type, integer_types
+from hypothesis.internal.compat import text_type
 from hypothesis.searchstrategy.streams import Stream, StreamTemplate
 
 
