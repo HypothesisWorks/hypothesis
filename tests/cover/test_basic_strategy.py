@@ -152,7 +152,7 @@ def test_can_find_adjacent_one_bits():
 
 
 def test_can_recalculate_shrinks_without_reify_cache():
-    random = Random("test_can_recalculate_shrinks_without_reify_cache")
+    random = Random('test_can_recalculate_shrinks_without_reify_cache')
     strat = strategy(Bitfields)
     template = some_template(strat, random)
     for shrunk_template in strat.full_simplify(random, template):
