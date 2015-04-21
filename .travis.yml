@@ -17,6 +17,7 @@ cache:
 
 env:
     matrix:
+        - TOXENV=coverage
         - TOXENV=lint
         - TOXENV=pypy
         - TOXENV=pypy3
@@ -33,6 +34,8 @@ script:
 
 matrix:
     exclude:
+        - os: osx
+          env: TOXENV=coverage
         - os: osx
           env: TOXENV=lint
         - os: osx
