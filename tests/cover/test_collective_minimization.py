@@ -14,7 +14,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import pytest
-from hypothesis import Settings, find
+from hypothesis import Settings, find, strategy
 from tests.common import standard_types
 from hypothesis.utils.show import show
 
@@ -25,6 +25,9 @@ def test_can_collectively_minimize(spec):
     """This should generally exercise strategies' strictly_simpler heuristic by
     putting us in a state where example cloning is required to get to the
     answer fast enough."""
+
+    if strategy(spec).size_upper_bound < 2:
+        return
 
     xs = find(
         [spec],

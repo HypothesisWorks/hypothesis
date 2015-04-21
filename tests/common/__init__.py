@@ -13,6 +13,7 @@
 import sys
 from decimal import Decimal
 from fractions import Fraction
+from random import Random
 
 import hypothesis.settings as hs
 from hypothesis.internal.debug import timeout
@@ -65,5 +66,6 @@ standard_types = [
     OrderedPair, ConstantList(int),
     strategy(streaming(int)).map(lambda x: list(x[:2]) and x),
     strategy(int).filter(lambda x: abs(x) > 100),
-    floats_in_range(-sys.float_info.max, sys.float_info.max)
+    floats_in_range(-sys.float_info.max, sys.float_info.max),
+    None, Random,
 ]

@@ -23,7 +23,7 @@ from hypothesis.utils.show import show
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.internal.chooser import chooser
 from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
-    strategy, check_type, check_data_type
+    strategy, check_type, check_data_type, MappedSearchStrategy
 
 
 class BoolStrategy(SearchStrategy):
@@ -95,7 +95,7 @@ class JustStrategy(SearchStrategy):
         return None
 
 
-class RandomStrategy(SearchStrategy):
+class RandomStrategy(MappedSearchStrategy):
 
     """A strategy which produces Random objects.
 
@@ -103,22 +103,8 @@ class RandomStrategy(SearchStrategy):
     a 128 bits of data chosen uniformly at random.
 
     """
-
-    def from_basic(self, data):
-        check_data_type(integer_types, data)
-        return data
-
-    def to_basic(self, template):
-        return template
-
-    def produce_parameter(self, random):
-        return None
-
-    def produce_template(self, context, pv):
-        return context.random.getrandbits(128)
-
-    def reify(self, template):
-        return RandomWithSeed(template)
+    def pack(self, i):
+        return RandomWithSeed(i)
 
 
 class SampledFromStrategy(SearchStrategy):
@@ -191,7 +177,7 @@ def define_just_strategy(specifier, settings):
 
 @strategy.extend_static(Random)
 def define_random_strategy(specifier, settings):
-    return RandomStrategy()
+    return RandomStrategy(strategy(int, settings))
 
 
 @strategy.extend(specifiers.SampledFrom)
