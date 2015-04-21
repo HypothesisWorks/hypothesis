@@ -20,7 +20,7 @@ from functools import wraps
 
 from hypothesis import Settings, strategy
 from hypothesis.core import find
-from hypothesis.errors import UnsatisfiedAssumption, NoExamples
+from hypothesis.errors import NoExamples, UnsatisfiedAssumption
 from hypothesis.database import ExampleDatabase
 from hypothesis.internal.compat import hrange
 
@@ -93,7 +93,7 @@ def some_template(spec, random=None):
         except UnsatisfiedAssumption:
             pass
     else:
-        raise NoExamples("some_template called on strategy with no examples")
+        raise NoExamples('some_template called on strategy with no examples')
 
 
 def via_database(spec, strat, template):

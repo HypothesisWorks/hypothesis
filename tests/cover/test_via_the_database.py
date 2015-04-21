@@ -17,13 +17,13 @@ import hashlib
 from random import Random
 
 import pytest
-from hypothesis import strategy, Settings
-from hypothesis.searchstrategy.strategies import BadData
+from hypothesis import Settings, strategy
 from tests.common import standard_types
 from hypothesis.utils.show import show
-from hypothesis.internal.debug import via_database, minimal_elements, \
-    some_template
+from hypothesis.internal.debug import via_database, some_template, \
+    minimal_elements
 from hypothesis.internal.compat import hrange
+from hypothesis.searchstrategy.strategies import BadData
 
 
 @pytest.mark.parametrize(
@@ -58,7 +58,7 @@ __minimal_basic = None
 def minimal_basic():
     global __minimal_basic
     if __minimal_basic is None:
-        random = Random("__minimal_templates_as_basic_data")
+        random = Random('__minimal_templates_as_basic_data')
         __minimal_basic = []
         for typ in standard_types:
             strat = strategy(typ, Settings(average_list_length=2))

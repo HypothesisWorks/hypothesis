@@ -17,7 +17,7 @@ import hashlib
 from random import Random
 
 import pytest
-from hypothesis import strategy, Settings
+from hypothesis import Settings, strategy
 from tests.common import standard_types
 from hypothesis.utils.show import show
 from hypothesis.internal.debug import minimal_elements
