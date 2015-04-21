@@ -31,25 +31,25 @@ from hypothesis.internal.compat import PY3, hrange, reduce, text_type, \
 
 def test_minimize_list_on_large_structure():
     def test_list_in_range(xs):
-        assume(len(xs) >= 50)
+        assume(len(xs) >= 30)
         return len([
             x for x in xs
             if x >= 10
-        ]) >= 70
+        ]) >= 60
 
-    assert minimal([int], test_list_in_range) == [10] * 70
+    assert minimal([int], test_list_in_range) == [10] * 60
 
 
 def test_minimize_list_of_sets_on_large_structure():
     def test_list_in_range(xs):
-        assume(len(xs) >= 100)
-        return len(list(filter(None, xs))) >= 100
+        assume(len(xs) >= 50)
+        return len(list(filter(None, xs))) >= 50
 
     x = minimal(
         [frozenset({int})], test_list_in_range,
         timeout_after=20,
     )
-    assert len(x) == 100
+    assert len(x) == 50
     assert len(set(x)) == 1
 
 
@@ -163,9 +163,9 @@ def test_minimal_unsorted_strings(string):
 
     result = minimal(
         strategy([string]).map(dedupe),
-        lambda xs: assume(len(xs) >= 10) and sorted(xs) != xs
+        lambda xs: assume(len(xs) >= 5) and sorted(xs) != xs
     )
-    assert len(result) == 10
+    assert len(result) == 5
     for example in result:
         if len(example) > 1:
             for i in hrange(len(example)):
@@ -351,11 +351,12 @@ def length_of_longest_ordered_sequence(xs):
 
 def test_increasing_sequence():
     xs = minimal(
-        [int], lambda t: length_of_longest_ordered_sequence(t) >= 5,
+        [int], lambda t: (
+            len(t) <= 30 and length_of_longest_ordered_sequence(t) >= 8),
         timeout_after=60,
     )
     start = xs[0]
-    assert xs == list(range(start, start + 5))
+    assert xs == list(range(start, start + 8))
 
 
 def test_find_large_union_list():
@@ -363,12 +364,12 @@ def test_find_large_union_list():
         assume(xs)
         assume(all(xs))
         union = reduce(operator.or_, xs)
-        return len(union) >= 50
+        return len(union) >= 30
 
     result = minimal([{int}], large_mostly_non_overlapping, timeout_after=30)
     union = reduce(operator.or_, result)
-    assert len(union) == 50
-    assert union == set(range(min(union), max(union) + 1))
+    assert len(union) == 30
+    assert max(union) == min(union) + len(union) - 1
     for x in result:
         for y in result:
             if x is not y:
@@ -379,20 +380,20 @@ def test_anti_sorted_ordered_pair():
     result = minimal(
         [OrderedPair],
         lambda x: (
-            len(x) >= 50 and
+            len(x) >= 30 and
             2 < length_of_longest_ordered_sequence(x) <= 10))
-    assert len(result) == 50
+    assert len(result) == 30
 
 
 def test_constant_lists_of_diverse_length():
     # This does not currently work very well. We delete, but we don't actually
     # get all that far with simplification of the individual elements.
     result = minimal(
-        [ConstantList(int)], lambda x: len(set(map(len, x))) >= 30,
+        [ConstantList(int)], lambda x: len(set(map(len, x))) >= 20,
         timeout_after=30,
     )
 
-    assert len(result) == 30
+    assert len(result) == 20
 
 
 def test_finds_non_reversible_floats():
