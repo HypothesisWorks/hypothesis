@@ -288,6 +288,9 @@ class SearchStrategy(object):
         return self.draw_template(
             context, self.draw_parameter(context.random))
 
+    def draw_and_produce_from_random(self, random):
+        return self.draw_and_produce(BuildContext(random))
+
     def size(self, template):
         """Gives an approximate estimate of how "large" this template value is.
 
