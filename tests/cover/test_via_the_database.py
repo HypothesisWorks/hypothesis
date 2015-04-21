@@ -17,10 +17,10 @@ import hashlib
 from random import Random
 
 import pytest
-from hypothesis import strategy
+from hypothesis import strategy, Settings
 from tests.common import standard_types
 from hypothesis.utils.show import show
-from hypothesis.internal.debug import via_database
+from hypothesis.internal.debug import via_database, minimal_elements
 
 
 @pytest.mark.parametrize(
@@ -33,3 +33,15 @@ def test_round_tripping_via_the_database(spec):
     template = strat.draw_and_produce_from_random(random)
     template_via_db = via_database(spec, template)
     assert show(strat.reify(template)) == show(strat.reify(template_via_db))
+
+
+@pytest.mark.parametrize(
+    'spec', standard_types, ids=list(map(show, standard_types)))
+def test_all_minimal_elements_round_trip_via_the_database(spec):
+    random = Random(hashlib.md5((
+        show(spec) + ':test_all_minimal_elements_round_trip_via_the_database'
+    ).encode('utf-8')).digest())
+    strat = strategy(spec, Settings(average_list_length=2))
+    for elt in minimal_elements(strat, random):
+        elt_via_db = via_database(spec, elt)
+        assert show(strat.reify(elt)) == show(strat.reify(elt_via_db))

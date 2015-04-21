@@ -22,6 +22,7 @@ from hypothesis import Settings, strategy
 from hypothesis.core import find
 from hypothesis.database import ExampleDatabase
 from hypothesis.searchstrategy.strategies import BuildContext
+from hypothesis.internal.compat import hrange
 
 
 class Timeout(BaseException):
@@ -92,3 +93,27 @@ def via_database(spec, template):
     results = list(s.fetch())
     assert len(results) == 1
     return results[0]
+
+
+def minimal_element(strategy, random):
+    element = strategy.draw_and_produce_from_random(random)
+    while True:
+        try:
+            element = next(strategy.full_simplify(random, element))
+        except StopIteration:
+            return element
+
+
+def minimal_elements(strategy, random):
+    found = set()
+    dupe_count = 0
+    for _ in hrange(10):
+        x = minimal_element(strategy, random)
+        if x in found:
+            dupe_count += 1
+            if dupe_count > 1:
+                break
+        else:
+            dupe_count = 0
+            found.add(x)
+    return frozenset(found)
