@@ -23,7 +23,7 @@ from hypothesis.utils.show import show
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.internal.chooser import chooser
 from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
-    strategy, check_type, check_data_type, MappedSearchStrategy
+    MappedSearchStrategy, strategy, check_type, check_data_type
 
 
 class BoolStrategy(SearchStrategy):
@@ -103,6 +103,7 @@ class RandomStrategy(MappedSearchStrategy):
     a 128 bits of data chosen uniformly at random.
 
     """
+
     def pack(self, i):
         return RandomWithSeed(i)
 

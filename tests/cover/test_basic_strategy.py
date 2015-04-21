@@ -18,7 +18,8 @@ import sys
 
 import pytest
 from hypothesis import given
-from tests.common.basic import Bitfields, simplify_bitfield
+from tests.common.basic import Bitfields, simplify_bitfield, BoringBitfields
+from tests.common.utils import fails
 from hypothesis.internal.debug import minimal, timeout
 from hypothesis.internal.compat import integer_types
 from hypothesis.searchstrategy.basic import basic_strategy
@@ -91,6 +92,12 @@ def test_cache_is_cleaned_up_on_gc_2():
 
     assert all(isinstance(v, integer_types) for v in st.reify_cache.values())
     assert len(st.reify_cache) == 0, len(st.reify_cache)
+
+
+@fails
+@given(BoringBitfields)
+def test_boring_failure(x):
+    assert x & 1
 
 
 def test_does_not_get_stuck_in_a_loop():

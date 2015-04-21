@@ -14,6 +14,7 @@ import sys
 from decimal import Decimal
 from fractions import Fraction
 from random import Random
+from collections import namedtuple
 
 import hypothesis.settings as hs
 from hypothesis.internal.debug import timeout
@@ -21,7 +22,9 @@ from hypothesis import strategy
 from hypothesis.specifiers import integers_from, floats_in_range, \
     integers_in_range, just, one_of, sampled_from, streaming
 from hypothesis.internal.compat import text_type, binary_type
-from collections import namedtuple
+from hypothesis.searchstrategy.narytree import NAryTree
+from tests.common.basic import Bitfields
+
 
 settings = hs.Settings(max_examples=100, timeout=4)
 
@@ -51,10 +54,12 @@ def constant_list_strategy(spec, settings):
 ABC = namedtuple('ABC', ('a', 'b', 'c'))
 
 standard_types = [
+    Bitfields,
     [], (), set(), frozenset(), {},
+    NAryTree(bool, bool, bool),
     ABC(bool, bool, bool),
     ABC(bool, bool, int),
-    {"a": int, "b": bool},
+    {'a': int, 'b': bool},
     one_of((int, (bool,))),
     sampled_from(range(10)),
     one_of((just('a'), just('b'), just('c'))),
