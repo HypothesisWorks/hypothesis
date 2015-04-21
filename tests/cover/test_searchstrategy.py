@@ -86,9 +86,7 @@ def test_rejects_invalid_ranges():
 
 
 def test_random_repr_has_seed():
-    strat = strategy(random.Random)
-    rnd = strat.reify(
-        strat.produce_template(BuildContext(random.Random()), None))
+    rnd = strategy(random.Random).example()
     seed = rnd.seed
     assert text_type(seed) in repr(rnd)
 
