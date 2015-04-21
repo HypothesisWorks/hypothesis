@@ -20,8 +20,8 @@ from functools import wraps
 
 from hypothesis import Settings, strategy
 from hypothesis.core import find
+from hypothesis.errors import UnsatisfiedAssumption, NoExamples
 from hypothesis.database import ExampleDatabase
-from hypothesis.searchstrategy.strategies import BuildContext
 from hypothesis.internal.compat import hrange
 
 
@@ -81,14 +81,24 @@ def minimal(definition, condition=None, settings=None, timeout_after=10):
     return run()
 
 
-def some_template(spec):
-    return strategy(spec).draw_and_produce(BuildContext(Random()))
-
-
-def via_database(spec, template):
+def some_template(spec, random=None):
+    if random is None:
+        random = Random()
     strat = strategy(spec)
+    for _ in hrange(10):
+        element = strat.draw_and_produce_from_random(random)
+        try:
+            strat.reify(element)
+            return element
+        except UnsatisfiedAssumption:
+            pass
+    else:
+        raise NoExamples("some_template called on strategy with no examples")
+
+
+def via_database(spec, strat, template):
     db = ExampleDatabase()
-    s = db.storage_for(strat)
+    s = db.storage_for(strat, strat)
     s.save(template)
     results = list(s.fetch())
     assert len(results) == 1
@@ -96,12 +106,18 @@ def via_database(spec, template):
 
 
 def minimal_element(strategy, random):
-    element = strategy.draw_and_produce_from_random(random)
+    element = some_template(strategy, random)
     while True:
-        try:
-            element = next(strategy.full_simplify(random, element))
-        except StopIteration:
-            return element
+        for new_element in strategy.full_simplify(random, element):
+            try:
+                strategy.reify(new_element)
+                element = new_element
+                break
+            except UnsatisfiedAssumption:
+                pass
+        else:
+            break
+    return element
 
 
 def minimal_elements(strategy, random):

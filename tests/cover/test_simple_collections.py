@@ -13,14 +13,11 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from random import Random
 from collections import namedtuple
 
 import pytest
 from hypothesis import find, strategy
 from hypothesis.specifiers import dictionary
-from hypothesis.internal.debug import via_database
-from hypothesis.searchstrategy.strategies import BuildContext
 
 
 @pytest.mark.parametrize('col', [
@@ -121,20 +118,3 @@ def test_deeply_nested_sets():
         return frozenset((f(n - 1),))
 
     assert strategy(f(10)).size_lower_bound == float('inf')
-
-
-standard_random = Random('tests.coverage.test_simple_collections')
-
-
-@pytest.mark.parametrize('typ', [
-    (bool, bool),
-    {int},
-    [int],
-    frozenset({bool}),
-    [], set(), frozenset(), {}, (),
-])
-def test_type_converts_via_database(typ):
-    strat = strategy(typ)
-    template = strat.draw_and_produce(BuildContext(standard_random))
-    template2 = via_database(typ, template)
-    assert strat.reify(template) == strat.reify(template2)

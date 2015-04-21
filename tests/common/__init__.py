@@ -18,7 +18,7 @@ from decimal import Decimal
 from fractions import Fraction
 
 from hypothesis.specifiers import integers_from, floats_in_range, \
-    integers_in_range, just, one_of, sampled_from
+    integers_in_range, just, one_of, sampled_from, streaming
 from hypothesis.internal.compat import text_type, binary_type
 from collections import namedtuple
 
@@ -63,4 +63,6 @@ standard_types = [
     Decimal,
     [[bool]],
     OrderedPair, ConstantList(int),
+    strategy(streaming(int)).map(lambda x: list(x[:2]) and x),
+    strategy(int).filter(lambda x: abs(x) > 100)
 ]

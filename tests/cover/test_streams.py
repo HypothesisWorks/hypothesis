@@ -20,7 +20,7 @@ from hypothesis import given
 from hypothesis.errors import InvalidArgument
 from hypothesis.specifiers import streaming
 from hypothesis.utils.show import show
-from hypothesis.internal.debug import minimal, via_database, some_template
+from hypothesis.internal.debug import minimal, some_template
 from hypothesis.internal.compat import text_type
 from hypothesis.searchstrategy.streams import Stream, StreamTemplate
 
@@ -98,16 +98,6 @@ def test_can_minimize():
 
 def test_default_stream_is_empty():
     assert list(Stream()) == []
-
-
-def test_can_save_minimized_in_database():
-    spec = streaming(bool)
-    t = some_template(spec)
-    assert isinstance(t.stream[10], bool)
-    s = t.with_value(10, not t.stream[10])
-    assert s != t
-    sd = via_database(spec, s)
-    assert s == sd
 
 
 def test_template_equality():
