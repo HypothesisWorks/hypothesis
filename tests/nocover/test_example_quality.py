@@ -392,3 +392,9 @@ def test_constant_lists_of_diverse_length():
     )
 
     assert len(result) == 30
+
+
+def test_finds_non_reversible_floats():
+    t = minimal(
+        [float], lambda xs: sum(xs) != sum(reversed(xs)))
+    assert len(t) <= 3
