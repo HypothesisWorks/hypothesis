@@ -389,6 +389,7 @@ def test_constant_lists_of_diverse_length():
     # get all that far with simplification of the individual elements.
     result = minimal(
         [ConstantList(int)], lambda x: len(set(map(len, x))) >= 30,
+        timeout_after=30,
     )
 
     assert len(result) == 30
