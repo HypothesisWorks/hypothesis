@@ -91,15 +91,6 @@ class Unsatisfiable(HypothesisException):
 
     """
 
-    def __init__(self, hypothesis, examples, run_time):
-        super(Unsatisfiable, self).__init__((
-            'Unable to satisfy assumptions of hypothesis %s. ' +
-            'Only %s examples found after %g seconds'
-        ) % (
-            get_pretty_function_description(hypothesis),
-            str(examples),
-            run_time))
-
 
 class Flaky(HypothesisException):
 

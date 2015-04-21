@@ -129,10 +129,20 @@ def find_satisfying_template(
         )
     elif satisfying_examples < min_satisfying_examples:
         if timed_out:
-            raise Timeout(condition, satisfying_examples, run_time)
+            raise Timeout((
+                'Ran out of time before finding a satisfying example for %s.' +
+                ' Only found %d examples (%d satisfying assumptions) in %.2fs.'
+            ) % (
+                get_pretty_function_description(condition),
+                len(tracker), satisfying_examples, run_time
+            ))
         else:
-            raise Unsatisfiable(
-                condition, satisfying_examples, run_time)
+            raise Unsatisfiable((
+                'Unable to satisfy assumptions of hypothesis %s. ' +
+                'Only %d out of %d examples considered satisfied assumptions'
+            ) % (
+                get_pretty_function_description(condition),
+                satisfying_examples, len(tracker)))
     else:
         raise NoSuchExample(get_pretty_function_description(condition))
 

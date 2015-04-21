@@ -201,7 +201,7 @@ def test_contains_the_test_function_name_in_the_exception_string():
 
     calls = [0]
 
-    @given(int)
+    @given(int, settings=hs.Settings(max_examples=10))
     def this_has_a_totally_unique_name(x):
         calls[0] += 1
         assume(False)
@@ -216,7 +216,7 @@ def test_contains_the_test_function_name_in_the_exception_string():
 
     class Foo(object):
 
-        @given(int)
+        @given(int, settings=hs.Settings(max_examples=10))
         def this_has_a_unique_name_and_lives_on_a_class(self, x):
             calls2[0] += 1
             assume(False)

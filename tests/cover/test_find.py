@@ -14,11 +14,13 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import math
+import time
 from random import Random
 
 import pytest
 from hypothesis import Settings, find, given, assume
-from hypothesis.errors import NoSuchExample, DefinitelyNoSuchExample
+from hypothesis.errors import Timeout, NoSuchExample, \
+    DefinitelyNoSuchExample
 from hypothesis.specifiers import streaming, dictionary, sampled_from
 
 
@@ -105,3 +107,13 @@ def test_find_dictionary():
     assert len(find(
         dictionary(int, int),
         lambda xs: any(kv[0] > kv[1] for kv in xs.items()))) == 1
+
+
+def test_times_out():
+    with pytest.raises(Timeout) as e:
+        find(
+            int,
+            lambda x: time.sleep(0.05) or False,
+            settings=Settings(timeout=0.01))
+
+    e.value.args[0]
