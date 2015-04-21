@@ -56,8 +56,13 @@ def test_minimize_long_list():
 
 
 def test_minimize_list_of_longish_lists():
-    xs = find([[bool]], lambda x: len([t for t in x if len(t) >= 3]) >= 10)
-    assert xs == [[False] * 3] * 10
+    xs = find(
+        [[bool]],
+        lambda x: len([t for t in x if any(t) and len(t) >= 3]) >= 10)
+    assert len(xs) == 10
+    for x in xs:
+        assert len(x) == 3
+        assert len([t for t in x if t]) == 1
 
 
 def test_minimize_list_of_fairly_non_unique_ints():
