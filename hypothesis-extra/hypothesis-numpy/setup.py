@@ -13,6 +13,7 @@
 from distutils.core import setup
 from setuptools import find_packages
 import os
+import platform
 
 
 def local_file(name):
@@ -21,6 +22,12 @@ def local_file(name):
 SOURCE = local_file("src")
 REQUIREMENTS = local_file("requirements.txt")
 README = local_file("README.rst")
+
+install_requires = [
+    "hypothesis>=1.3,<1.3.99",
+]
+if platform.python_implementation() == 'CPython':
+    install_requires.append("numpy>=1.9.0,<1.9.99")
 
 setup(
     name='hypothesis-numpy',
@@ -32,10 +39,7 @@ setup(
     url='https://github.com/DRMacIver/hypothesis',
     license='MPL v2',
     description='Adds support for generating datetime to Hypothesis',
-    install_requires=[
-        "hypothesis>=1.3,<1.3.99",
-        "numpy>=1.9.0,<1.9.99",
-    ],
+    install_requires=install_requires,
     long_description=open(README).read(),
     entry_points={
         'hypothesis.extra': 'hypothesisnumpy = hypothesisnumpy'
