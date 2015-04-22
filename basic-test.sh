@@ -1,6 +1,10 @@
 #!/bin/bash
 set -e -o xtrace
 
+if [ "$(python -c 'import platform; print(platform.python_implementation())')" = "PyPy" ]; then
+    pip install git+https://bitbucket.org/pypy/numpy.git
+fi
+
 pip install --upgrade hypothesis-extra/hypothesis-datetime/
 pip install --upgrade hypothesis-extra/hypothesis-fakefactory/
 pip install --upgrade hypothesis-extra/hypothesis-pytest/
