@@ -39,7 +39,7 @@ def dtype_strategy(dtype, settings):
         result = text_type
     else:
         raise NotImplementedError(
-            "No strategy implementation for %r" % (dtype,)
+            'No strategy implementation for %r' % (dtype,)
         )
     return strategy(result, settings).map(dtype.type)
 

@@ -13,19 +13,22 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from collections import namedtuple
 import operator
+from collections import namedtuple
 
 import numpy as np
-from hypothesis.internal.compat import reduce, hrange, text_type, binary_type
 from hypothesis import strategy
 from hypothesis.searchstrategy import SearchStrategy
-from hypothesis.searchstrategy.strategies import check_data_type, check_length
+from hypothesis.internal.compat import hrange, reduce, text_type, \
+    binary_type
+from hypothesis.searchstrategy.strategies import check_length, \
+    check_data_type
 
 ArrayDescription = namedtuple('ArrayDescription', ('dtype', 'shape'))
 
 
 class ArrayStrategy(SearchStrategy):
+
     def __init__(self, element_strategy, shape, dtype):
         self.shape = tuple(shape)
         assert shape
