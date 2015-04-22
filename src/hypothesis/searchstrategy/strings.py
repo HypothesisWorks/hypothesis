@@ -39,7 +39,12 @@ class OneCharStringStrategy(SearchStrategy):
         alphabet_size = 1 + dist.geometric(random, 0.1)
         alphabet = []
         while len(alphabet) < alphabet_size:
-            char = hunichr(random.randint(0, sys.maxunicode))
+            if random.randint(0, 10):
+                codepoint = random.randint(0, sys.maxunicode)
+            else:
+                codepoint = dist.geometric(random, 1.0 / 127)
+
+            char = hunichr(codepoint)
             if unicodedata.category(char) != 'Cs':
                 alphabet.append(char)
         return tuple(alphabet)
