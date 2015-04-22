@@ -49,7 +49,7 @@ setup(
     install_requires=[
         "hypothesis>=1.3,<1.3.99",
         "hypothesis-datetime>=1.3,<1.3.99",
-        "hypothesis-fakefactory>=0.6.0,<0.6.99",
+        "hypothesis-fakefactory>=0.7.0,<0.7.99",
         "django>=1.7",
     ],
     long_description=open(README).read(),
