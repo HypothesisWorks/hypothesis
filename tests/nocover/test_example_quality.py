@@ -367,7 +367,7 @@ def test_increasing_string_sequence():
     lb = '✐'
     xs = minimal(
         [text_type], lambda t: (
-            n <= len(t) <= 50 and
+            n <= len(t) and
             all(t) and
             t[0] >= lb and
             t[-1] >= lb and
