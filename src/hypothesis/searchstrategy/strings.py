@@ -15,7 +15,6 @@ from __future__ import division, print_function, absolute_import, \
 
 import sys
 import base64
-import string
 import unicodedata
 
 import hypothesis.specifiers as specifiers
@@ -31,10 +30,10 @@ class OneCharStringStrategy(SearchStrategy):
 
     """A strategy which generates single character strings of text type."""
     specifier = text_type
-    ascii_characters = (
-        text_type('0123456789') + text_type(string.ascii_letters) +
-        text_type(' \t\n')
+    ascii_characters = ''.join(
+        chr(i) for i in hrange(128)
     )
+    zero_point = ord('0')
 
     def produce_parameter(self, random):
         alphabet_size = 1 + dist.geometric(random, 0.1)
@@ -50,6 +49,45 @@ class OneCharStringStrategy(SearchStrategy):
 
     def reify(self, value):
         return value
+
+    def simplifiers(self, random, template):
+        yield self.try_ascii
+        i = self.zero_point
+        while i < ord(template):
+            yield self.try_shrink(i, 2 * i)
+            i *= 2
+
+    def try_shrink(self, lo, hi):
+        def accept(random, template):
+            x = ord(template)
+            if x <= lo:
+                return
+
+            lb = lo
+            while True:
+                yield hunichr(lb)
+                new_lb = (lb + x) // 2
+                if new_lb <= lb or new_lb >= hi:
+                    return
+                if new_lb > lb + 2:
+                    yield hunichr(random.randint(lb + 1, new_lb - 1))
+                lb = new_lb
+        accept.__name__ = str(
+            'try_shrink(%d, %d)' % (lo, hi)
+        )
+        return accept
+
+    def try_ascii(self, random, template):
+        if template < '0':
+            for i in hrange(ord(template) + 1, self.zero_point):
+                yield hunichr(i)
+
+        for i in self.ascii_characters:
+            if i < '0':
+                continue
+            if i >= template:
+                break
+            yield i
 
     def basic_simplify(self, random, x):
         if x in self.ascii_characters:

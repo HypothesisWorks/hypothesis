@@ -21,7 +21,7 @@ from collections import Counter, OrderedDict
 
 import pytest
 from hypothesis import assume, strategy
-from tests.common import OrderedPair, ConstantList
+from tests.common import OrderedPair, ConstantList, parametrize
 from hypothesis.specifiers import just, one_of, dictionary, \
     integers_from, integers_in_range
 from hypothesis.internal.debug import minimal
@@ -152,7 +152,10 @@ def test_minimize_sets_of_sets():
             )
 
 
-@pytest.mark.parametrize(('string',), [(text_type,), (binary_type,)])
+@pytest.mark.parametrize(
+    ('string',), [(text_type,), (binary_type,)],
+    ids=['text_type', 'binary_type']
+)
 def test_minimal_unsorted_strings(string):
     def dedupe(xs):
         result = []
@@ -240,7 +243,7 @@ def test_can_simplify_on_both_sides_of_flatmap():
     ) == [0] * 10
 
 
-@pytest.mark.parametrize('dict_class', [dict, OrderedDict])
+@parametrize('dict_class', [dict, OrderedDict])
 def test_dictionary(dict_class):
     assert minimal(dictionary(int, text_type, dict_class)) == dict_class()
 
@@ -357,6 +360,22 @@ def test_increasing_sequence():
     )
     start = xs[0]
     assert xs == list(range(start, start + 8))
+
+
+def test_increasing_string_sequence():
+    n = 8
+    xs = minimal(
+        [text_type], lambda t: (
+            n <= len(t) <= 50 and
+            all(t) and
+            ord(t[0][0]) >= 10000 and
+            length_of_longest_ordered_sequence(t) >= n
+        ),
+        timeout_after=20,
+    )
+    assert len(xs) == n
+    for i in hrange(len(xs) - 1):
+        assert abs(len(xs[i + 1]) - len(xs[i])) <= 1
 
 
 def test_find_large_union_list():

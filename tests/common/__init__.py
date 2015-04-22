@@ -16,6 +16,8 @@ from fractions import Fraction
 from random import Random
 from collections import namedtuple
 
+import pytest
+
 import hypothesis.settings as hs
 from hypothesis.internal.debug import timeout
 from hypothesis import strategy
@@ -24,6 +26,7 @@ from hypothesis.specifiers import integers_from, floats_in_range, \
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.searchstrategy.narytree import NAryTree
 from tests.common.basic import Bitfields
+from hypothesis.utils.show import show
 
 
 settings = hs.Settings(max_examples=100, timeout=4)
@@ -80,3 +83,7 @@ standard_types = [
     floats_in_range(-sys.float_info.max, sys.float_info.max),
     None, Random,
 ]
+
+
+def parametrize(args, values):
+    return pytest.mark.parametrize(args, values, ids=list(map(show, values)))
