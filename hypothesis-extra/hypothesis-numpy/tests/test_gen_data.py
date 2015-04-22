@@ -3,6 +3,11 @@ import pytest
 from hypothesis import given, find, strategy
 from hypothesis.internal.compat import binary_type, text_type
 from hypothesis.extra.numpy import arrays
+from hypothesis.strategytests import strategy_test_suite
+
+TestFloats = strategy_test_suite(arrays(float, ()))
+TestIntMatrix = strategy_test_suite(arrays(int, (3, 2)))
+TestBoolTensor = strategy_test_suite(arrays(bool, (2, 2, 2)))
 
 
 STANDARD_TYPES = list(map(np.dtype, [
@@ -38,6 +43,11 @@ def test_generates_composite_types_as_scalars(x):
 @given(arrays('uint32', (5, 5)))
 def test_generates_unsigned_ints(x):
     assert (x >= 0).all()
+
+
+@given(arrays(int, (1,)))
+def test_assert_fits_in_machine_size(x):
+    pass
 
 
 def test_generates_and_minimizes():

@@ -20,6 +20,7 @@ import numpy as np
 from hypothesis.internal.compat import reduce, hrange, text_type, binary_type
 from hypothesis import strategy
 from hypothesis.searchstrategy import SearchStrategy
+from hypothesis.searchstrategy.strategies import check_data_type, check_length
 
 ArrayDescription = namedtuple('ArrayDescription', ('dtype', 'shape'))
 
@@ -36,14 +37,16 @@ class ArrayStrategy(SearchStrategy):
         return self.element_strategy.produce_parameter(random)
 
     def produce_template(self, context, parameter_value):
-        template = np.zeros(shape=self.array_size, dtype=object)
-        for i in hrange(self.array_size):
-            template[i] = self.element_strategy.produce_template(
+        result = tuple(
+            self.element_strategy.produce_template(
                 context, parameter_value
             )
-        return template
+            for i in hrange(self.array_size)
+        )
+        return result
 
     def simplifiers(self, random, template):
+        assert isinstance(template, tuple)
         yield self.simplify_with_example_cloning
         yield self.shared_simplification(self.element_strategy.full_simplify)
 
@@ -55,10 +58,10 @@ class ArrayStrategy(SearchStrategy):
         def accept(random, template):
             if i >= len(template):
                 return
-            replacement = np.array(template)
+            replacement = list(template)
             for s in simplify(random, template[i]):
                 replacement[i] = s
-                yield np.array(replacement)
+                yield tuple(replacement)
         accept.__name__ = str(
             'simplifier_for_index(%d, %s)' % (i, simplify.__name__)
         )
@@ -73,6 +76,7 @@ class ArrayStrategy(SearchStrategy):
         return False
 
     def simplify_with_example_cloning(self, random, x):
+        assert isinstance(x, tuple)
         if len(x) <= 1:
             return
 
@@ -88,10 +92,10 @@ class ArrayStrategy(SearchStrategy):
                 any_shrinks = self.element_strategy.strictly_simpler(best, t)
 
         if any_shrinks:
-            yield np.repeat(best, len(x))
+            yield (best,) * len(x)
 
         for _ in hrange(20):
-            result = np.array(x)
+            result = list(x)
             pivot = random.choice(x)
             for _ in hrange(10):
                 new_pivot = random.choice(x)
@@ -106,7 +110,7 @@ class ArrayStrategy(SearchStrategy):
             indices = indices[:random.randint(1, len(x) - 1)]
             for j in indices:
                 result[j] = pivot
-            yield np.array(result)
+            yield tuple(result)
 
     def simplify_with_random_discards(self, random, x):
         assert isinstance(x, tuple)
@@ -156,20 +160,30 @@ class ArrayStrategy(SearchStrategy):
             for indices in sharing:
                 value = x[indices[0]]
                 for simpler in simplify(random, value):
-                    copy = np.array(x)
+                    copy = list(x)
                     for i in indices:
                         copy[i] = simpler
-                    yield np.array(copy)
+                    yield tuple(copy)
         accept.__name__ = str(
             'shared_simplification(%s)' % (simplify.__name__,)
         )
         return accept
 
+    def to_basic(self, template):
+        return list(map(self.element_strategy.to_basic, template))
+
+    def from_basic(self, data):
+        check_data_type(list, data)
+        check_length(self.array_size, data)
+        return (
+            tuple(map(self.element_strategy.from_basic, data))
+        )
+
     def reify(self, template):
-        intermediate = np.array([
+        result = np.array([
             self.element_strategy.reify(t) for t in template
-        ], dtype=object)
-        return intermediate.astype(self.dtype).reshape(self.shape)
+        ], dtype=self.dtype)
+        return result.reshape(self.shape)
 
 
 def arrays(specifier, shape):
@@ -190,14 +204,18 @@ def arrays(specifier, shape):
 @strategy.extend(ArrayDescription)
 def array_strategy(specifier, settings):
     dtype = specifier.dtype
-    if isinstance(dtype, str):
+    if isinstance(dtype, (text_type, binary_type)):
         dtype = np.dtype(dtype)
-    if not isinstance(dtype, np.dtype) and dtype not in (
-        int, bool, float, complex
-    ):
-        dtype = np.dtype(object)
+
+    if not isinstance(dtype, np.dtype):
+        dtype = np.dtype(dtype)
+    if dtype.kind != 'O':
+        typ = dtype
+    else:
+        typ = specifier.dtype
+
     return ArrayStrategy(
         shape=specifier.shape,
         dtype=dtype,
-        element_strategy=strategy(specifier.dtype, settings),
+        element_strategy=strategy(typ, settings),
     )
