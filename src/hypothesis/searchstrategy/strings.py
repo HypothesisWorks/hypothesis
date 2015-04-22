@@ -84,7 +84,7 @@ class OneCharStringStrategy(SearchStrategy):
 
     def try_ascii(self, random, template):
         if template < '0':
-            for i in hrange(ord(template) + 1, self.zero_point):
+            for i in hrange(ord(template) + 1, self.zero_point + 1):
                 yield hunichr(i)
 
         for i in self.ascii_characters:

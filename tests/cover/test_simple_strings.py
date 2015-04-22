@@ -17,6 +17,11 @@ from hypothesis import find
 from hypothesis.internal.compat import text_type
 
 
+def test_can_minimize_up_to_zero():
+    s = find(text_type, lambda x: len([t for t in x if t <= '0']) >= 10)
+    assert s == '0' * 10
+
+
 def test_minimizes_towards_ascii_zero():
     s = find(text_type, lambda x: any(t < '0' for t in x))
     assert len(s) == 1
