@@ -229,6 +229,63 @@ strategies. These will be picked up by all settings objects.
     >>> s.some_custom_setting
     3
 
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+Seeing intermediate result
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To see what's going on while Hypothesis runs your tests, you can turn
+up the verbosity setting. This works with both find and @given.
+
+(The following examples are somewhat manually truncated because the results
+of verbose output are, well, verbose, but they should convey the idea).
+
+.. code:: python
+    >>> from hypothesis import find, Settings, Verbosity
+    >>> find([bool], any, settings=Settings(verbosity=Verbosity.verbose))
+    Found satisfying example [True, True, ...
+    Shrunk example to [False, False, False, True, ...
+    Shrunk example to [False, False, True, False, False, ...
+    Shrunk example to [False, True, False, True, True, ...
+    Shrunk example to [True, True, True]
+    Shrunk example to [True, True]
+    Shrunk example to [True]
+    [True]
+
+    >>> from hypothesis import given
+    >>> Settings.default.verbosity = Verbosity.verbose
+    >>> @given(int)
+    ... def test_foo(x):
+    ...     assert x > 0
+    ... 
+    >>> test_foo()
+    Trying example: test_foo(x=-565872324465712963891750807252490657219)
+    Traceback (most recent call last):
+      ...
+      File "<stdin>", line 3, in test_foo
+    AssertionError
+
+    Trying example: test_foo(x=565872324465712963891750807252490657219)
+    Trying example: test_foo(x=0)
+    Traceback (most recent call last):
+    ...
+    File "<stdin>", line 3, in test_foo
+    AssertionError
+    Falsifying example: test_foo(x=0)
+    Traceback (most recent call last):
+    ...
+    AssertionError
+
+
+The three levels are quiet, normal and verbose. normal is the default, while
+in quiet Hypothesis will not print anything out, even the final falsifying
+example. 
+
+You can also override the default by setting the environment variable
+HYPOTHESIS_VERBOSITY_LEVEL to the name of the level you want. So e.g.
+setting HYPOTHESIS_VERBOSITY_LEVEL=verbose will run all your tests printing
+intermediate results and errors.
+
 ---------------------------------------
 SearchStrategy and converting arguments
 ---------------------------------------

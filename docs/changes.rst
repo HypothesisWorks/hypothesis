@@ -6,8 +6,36 @@ This is a record of all past Hypothesis releases and what went into them,
 in reverse chronological order. All previous releases should still be available
 on pip.
 
-All Hypothesis releases since 1.0 are `semantically versioned <http://semver.org/>`,
+All Hypothesis releases since 1.0 are `semantically versioned <http://semver.org/>`_,
 with everything in this documentation considered public API.
+
+
+------------------
+1.3.0 - 2015-04-22
+------------------
+
+New features:
+
+* New verbosity level API for printing intermediate results and exceptions.
+* New specifier for strings generated from a specified alphabet.
+* Better error messages for tests that are failing because of a lack of enough
+  examples.
+
+Bug fixes:
+
+* Fix error where use of ForkingTestCase would sometimes result in too many
+  open files.
+* Fix error where saving a failing example that used flatmap could error.
+
+
+General improvements:
+
+* Better range of examples when using one_of or sampled_from.
+* Fix some pathological performance issues when simplifying lists of complex
+  values.
+* Fix some pathological performance issues when simplifying examples that
+  require unicode strings with high codepoints.
+
 
 ------------------
 1.2.1 - 2015-04-16

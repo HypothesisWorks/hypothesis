@@ -233,6 +233,25 @@ strategy(one_of((x, y, z))) is the same as strategy(x) | strategy(y) | strategy(
   >>> strategy([one_of((int, bool))]).example()
   [-4397, False, -8789, -13191, True, 5800, -16392, True, False, -3042]
 
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Strings from specific alphabets
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+By default Hypothesis generates unicode strings with a very large range of
+unicode characters. Often what you want is something more specific. Hypothesis
+provides a strings() specifier which lets you specify the alphabet to draw
+from.
+
+.. code:: python
+
+    >>> strategy([strings("abc")]).example()
+    ['aaaaacc', 'acacacacaaaabaacc', 'aaacccc', 'cba']
+    >>> strategy([strings(chr(i) for i in range(128))]).example()
+    [' rce 13< 61ce8o> e8> 63e >3 c r', 'are<e3nnn1boeno> 3']
+
+
 ~~~~~~~~~~~~~~
 Integer ranges
 ~~~~~~~~~~~~~~
