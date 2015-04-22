@@ -94,18 +94,6 @@ class OneCharStringStrategy(SearchStrategy):
                 break
             yield i
 
-    def basic_simplify(self, random, x):
-        if x in self.ascii_characters:
-            for i in hrange(0, self.ascii_characters.index(x)):
-                yield self.ascii_characters[i]
-        else:
-            o = ord(x)
-            for c in self.ascii_characters:
-                yield text_type(c)
-            yield hunichr(o // 2)
-            for t in hrange(o - 1, max(o - 10, -1), -1):
-                yield hunichr(t)
-
     def to_basic(self, template):
         return template
 
