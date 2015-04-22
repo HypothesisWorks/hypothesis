@@ -364,16 +364,18 @@ def test_increasing_sequence():
 
 def test_increasing_string_sequence():
     n = 8
+    lb = '✐'
     xs = minimal(
         [text_type], lambda t: (
             n <= len(t) <= 50 and
             all(t) and
-            ord(t[0][0]) >= 10000 and
+            t[0] >= lb and
+            t[-1] >= lb and
             length_of_longest_ordered_sequence(t) >= n
         ),
         timeout_after=20,
     )
-    assert len(xs) == n
+    assert n <= len(xs) <= n + 2
     for i in hrange(len(xs) - 1):
         assert abs(len(xs[i + 1]) - len(xs[i])) <= 1
 
