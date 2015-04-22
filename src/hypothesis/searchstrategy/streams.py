@@ -77,7 +77,7 @@ class StreamStrategy(SearchStrategy):
         self.source_strategy = source_strategy
 
     def __repr__(self):
-        return "StreamStrategy(%r)" % (self.source_strategy,)
+        return 'StreamStrategy(%r)' % (self.source_strategy,)
 
     def produce_parameter(self, random):
         return random.getrandbits(1024)
