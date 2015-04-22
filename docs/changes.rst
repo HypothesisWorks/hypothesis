@@ -26,6 +26,8 @@ Bug fixes:
 * Fix error where use of ForkingTestCase would sometimes result in too many
   open files.
 * Fix error where saving a failing example that used flatmap could error.
+* Implement simplification for sampled_from, which apparently never supported
+  it previously. Oops.
 
 
 General improvements:
@@ -35,6 +37,7 @@ General improvements:
   values.
 * Fix some pathological performance issues when simplifying examples that
   require unicode strings with high codepoints.
+* Random will now simplify to more readable examples.
 
 
 ------------------
