@@ -13,9 +13,9 @@ The two major places for community discussion are:
 Feel free to use these to ask for help, provide feedback, or discuss anything remotely
 Hypothesis related at all.
 
-The IRC channel is the more active of the two.
-Even if you don't know how to use IRC, you can use IRCCloud to access it. Just click `this link to join #hypothesis <https://www.irccloud.com/#!/chat.freenode.net:6667/%23hypothesis>`_.
-You'll be taken through the IRCCloud sign up flow, after which you will find yourself in the IRC channel. Say hi.
+The IRC channel is the more active of the two. If you don't know how to use
+IRC, don't worry about it. Just `click here to sign up to IRCCloud and log in <https://www.irccloud.com/invite?hostname=irc.freenode.net&channel=%23hypothesis>`_
+(don't worry, it's free).
 
 (IRCCloud is made by friends of mine, but that's not why I'm recommending it. I'm
 recommending it because it's great).

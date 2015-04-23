@@ -241,6 +241,7 @@ up the verbosity setting. This works with both find and @given.
 of verbose output are, well, verbose, but they should convey the idea).
 
 .. code:: python
+
     >>> from hypothesis import find, Settings, Verbosity
     >>> find([bool], any, settings=Settings(verbosity=Verbosity.verbose))
     Found satisfying example [True, True, ...
