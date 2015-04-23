@@ -23,8 +23,33 @@ from hypothesis.internal.compat import hrange, reduce, text_type, \
     binary_type
 from hypothesis.searchstrategy.strategies import check_length, \
     check_data_type
+from hypothesis.specifiers import integers_in_range
 
 ArrayDescription = namedtuple('ArrayDescription', ('dtype', 'shape'))
+
+
+@strategy.extend(np.dtype)
+def dtype_strategy(dtype, settings):
+    if dtype.kind == 'b':
+        result = bool
+    elif dtype.kind == 'f':
+        result = float
+    elif dtype.kind == 'c':
+        result = complex
+    elif dtype.kind in ('S', 'a', 'V'):
+        result = binary_type
+    elif dtype.kind == 'u':
+        result = integers_in_range(0, 1 << (4 * dtype.itemsize) - 1)
+    elif dtype.kind == 'i':
+        min_integer = -1 << (4 * dtype.itemsize - 1)
+        result = integers_in_range(min_integer, -min_integer - 1)
+    elif dtype.kind == 'U':
+        result = text_type
+    else:
+        raise NotImplementedError(
+            'No strategy implementation for %r' % (dtype,)
+        )
+    return strategy(result, settings).map(dtype.type)
 
 
 class ArrayStrategy(SearchStrategy):
@@ -115,18 +140,6 @@ class ArrayStrategy(SearchStrategy):
                 result[j] = pivot
             yield tuple(result)
 
-    def simplify_with_random_discards(self, random, x):
-        assert isinstance(x, tuple)
-        if len(x) <= 3:
-            return
-
-        for _ in hrange(10):
-            results = []
-            for t in x:
-                if random.randint(0, 1):
-                    results.append(t)
-            yield tuple(results)
-
     def indices_roughly_from_worst_to_best(self, random, x):
         pivot = random.choice(x)
         bad = []
@@ -183,9 +196,9 @@ class ArrayStrategy(SearchStrategy):
         )
 
     def reify(self, template):
-        result = np.array([
-            self.element_strategy.reify(t) for t in template
-        ], dtype=self.dtype)
+        result = np.zeros(dtype=self.dtype, shape=self.array_size)
+        for i in hrange(self.array_size):
+            result[i] = self.element_strategy.reify(template[i])
         return result.reshape(self.shape)
 
 
@@ -204,6 +217,12 @@ def arrays(specifier, shape):
         return ArrayDescription(specifier, shape)
 
 
+def is_scalar(spec):
+    return spec in (
+        int, bool, text_type, binary_type, float, complex
+    )
+
+
 @strategy.extend(ArrayDescription)
 def array_strategy(specifier, settings):
     dtype = specifier.dtype
@@ -211,7 +230,11 @@ def array_strategy(specifier, settings):
         dtype = np.dtype(dtype)
 
     if not isinstance(dtype, np.dtype):
-        dtype = np.dtype(dtype)
+        if is_scalar(dtype):
+            dtype = np.dtype(dtype)
+        else:
+            dtype = np.dtype('object')
+
     if dtype.kind != 'O':
         typ = dtype
     else:

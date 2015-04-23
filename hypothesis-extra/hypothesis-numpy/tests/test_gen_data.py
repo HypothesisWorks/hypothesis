@@ -38,6 +38,7 @@ def test_produces_instances(t):
     @given(t)
     def test_is_t(x):
         assert isinstance(x, t.type)
+        assert x.dtype.kind == t.kind
     test_is_t()
 
 
@@ -89,3 +90,9 @@ def test_can_create_arrays_of_composite_types():
     arr = find(arrays(Foo, 100), lambda x: True)
     for x in arr:
         assert isinstance(x, Foo)
+
+
+def test_can_create_arrays_of_tuples():
+    arr = find(arrays((int, int), 10), lambda x: all(t[0] < t[1] for t in x))
+    for a in arr:
+        assert a in ((0, 1), (-1, 0))
