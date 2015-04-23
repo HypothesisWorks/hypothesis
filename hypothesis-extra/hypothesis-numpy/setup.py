@@ -31,7 +31,7 @@ if platform.python_implementation() == 'CPython':
 
 setup(
     name='hypothesis-numpy',
-    version='0.1',
+    version='0.1.1',
     author='David R. MacIver',
     author_email='david@drmaciver.com',
     packages=find_packages(SOURCE),
