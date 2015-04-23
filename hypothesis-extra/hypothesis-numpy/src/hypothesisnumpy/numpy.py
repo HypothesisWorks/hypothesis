@@ -18,12 +18,12 @@ from collections import namedtuple
 
 import numpy as np
 from hypothesis import strategy
+from hypothesis.specifiers import integers_in_range
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import hrange, reduce, text_type, \
     binary_type
 from hypothesis.searchstrategy.strategies import check_length, \
     check_data_type
-from hypothesis.specifiers import integers_in_range
 
 ArrayDescription = namedtuple('ArrayDescription', ('dtype', 'shape'))
 
