@@ -192,7 +192,7 @@ def test_assertion_error_message():
         define_test(float, 0.5, lambda x: x == 0.0)()
     message = e.value.args[0]
     assert 'x == 0.0' in message
-    assert 'lambda not in message'
+    assert 'lambda' not in message
     assert 'rejected' in message
 
 
