@@ -11,6 +11,16 @@ I'm particularly interested in notable companies and open source projects of
 course, but I'm happy to add any non-trivial use of Hypothesis here.
 
 
+
+--------------------------------------------
+`Kristian Glass <http://www.laterpay.net/>`_
+--------------------------------------------
+
+Hypothesis has been brilliant for expanding the coverage of our test cases,
+and also for making them much easier to read and understand,
+so we're sure we're testing the things we want in the way we want.
+
+
 -------------------------------------------
 `Your name goes here <http://example.com>`_
 -------------------------------------------
