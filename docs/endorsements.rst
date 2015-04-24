@@ -12,7 +12,7 @@ course, but I'm happy to add any non-trivial use of Hypothesis here.
 
 
 -------------------------------------------
-`Your name goes here <http://example.com>_`
+`Your name goes here <http://example.com>`_
 -------------------------------------------
 
 We are definitely a serious company that uses Hypothesis for serious testing things.
