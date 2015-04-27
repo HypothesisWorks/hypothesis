@@ -59,6 +59,8 @@ Lets see how you'd do that with Hypothesis:
 
 .. code:: python
 
+  from hypothesis import given
+
   @given(str)
   def test_decode_inverts_encode(s):
       assert decode(encode(s)) == s
