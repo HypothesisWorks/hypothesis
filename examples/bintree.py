@@ -1,3 +1,15 @@
+# coding=utf-8
+
+# Copyright (C) 2013-2015 David R. MacIver (david@drmaciver.com)
+
+# This file is part of Hypothesis (https://github.com/DRMacIver/hypothesis)
+
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file, You can
+# obtain one at http://mozilla.org/MPL/2.0/.
+
+# END HEADER
+
 """This is a tutorial for building a strategy from scratch rather than using
 the strategy combinators.
 
@@ -464,6 +476,8 @@ def size(tree):
 
 
 def test_simplifies_to_single_leaf():
+    """The simplest possible tree should be a single leaf with the simplest
+    possible label. If it's not we've done something very wrong"""
     assert find(BinaryTrees(int), lambda x: True) == Leaf(0)
 
 
