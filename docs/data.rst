@@ -519,10 +519,8 @@ understand anything about monads to use this, or anything else in Hypothesis).
 Defining entirely new strategies
 --------------------------------
 
-The details of how SearchStrategy works are not part of the Hypothesis public
-API and probably never will be, mostly so as to not block further innovations
-in example simplification and discovery. Additionally the full interface is
-really quite large and confusing.
+The full SearchStrategy API is only "semi-public", in that it may (but usually
+won't) break between minor versions but won't break between patch releases.
 
 However Hypothesis exposes a simplified version of the interface that you can
 use to build pretty good strategies. In general it's pretty strongly recommended
@@ -609,3 +607,19 @@ use BasicStrategy. These caveats should be read in the light of the fact that
 the full Hypothesis SearchStrategy interface is really very powerful, and the
 ones using BasicStrategy are merely a bit better than the normal quickcheck
 interface.
+
+
+-------------------------------------
+Using the SearchStrategy API directly
+-------------------------------------
+
+If you're really super enthused about this search strategies thing and you want
+to learn all the gory details of how it works under the hood, you can use the
+full blown raw SearchStrategy interface to experience the full power of
+Hypothesis.
+
+As mentioned, this is not a public API. If you use this API your code may
+break between minor version updates and I won't feel bad about it.
+
+The API is defined and relatively well commented in `strategies.py <https://github.com/DRMacIver/hypothesis/blob/master/src/hypothesis/searchstrategy/strategies.py>`_ 
+and there is `a worked example available here <https://github.com/DRMacIver/hypothesis/blob/master/examples/bintree.py>`_.

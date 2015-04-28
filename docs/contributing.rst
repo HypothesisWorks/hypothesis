@@ -1,6 +1,6 @@
-------------
+============
 Contributing
-------------
+============
 
 External contributions to Hypothesis are currently less easy than I would like
 them to be. You might want to consider any of the following in preference to

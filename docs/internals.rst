@@ -12,6 +12,9 @@ Nothing here is stable public API and might all be prone to change between
 minor releases. The purpose of this document is to share the ideas, not to
 specify the behaviour.
 
+If you want to see all of these how most of these pieces fit together, there
+is also `a worked example available here <https://github.com/DRMacIver/hypothesis/blob/master/examples/bintree.py>`_.
+
 This is sorted roughly in order of most interesting to least technically interesting.
 
 ----------
