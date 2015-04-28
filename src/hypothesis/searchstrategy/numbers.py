@@ -56,13 +56,12 @@ class IntStrategy(SearchStrategy):
         return int(template)
 
     def strictly_simpler(self, x, y):
-        if (not x) and y:
-            return True
-        if x > 0 and y < 0:
-            return True
-        if 0 <= x < y:
-            return True
-        return False
+        if y < 0:
+            return x > y
+        if y == 0:
+            return False
+        if y >= 0:
+            return 0 <= x < y
 
     def try_negate(self, random, x):
         if x >= 0:
@@ -267,19 +266,14 @@ class FloatStrategy(SearchStrategy):
     def complexity_tuple(self, value):
 
         good_conditions = (
-            not math.isnan(value),
-            is_integral(value),
-            value + 1 == value,
             value >= 0,
+            is_integral(value),
+            not math.isnan(value),
+            value + 1 > value,
         )
-        t = abs(value)
-        if t > 0:
-            score = min(t, 1.0 / t)
-        else:
-            score = 0.0
         return tuple(
             not x for x in good_conditions
-        ) + (score,)
+        ) + (abs(value),)
 
     def strictly_simpler(self, x, y):
         return self.complexity_tuple(x) < self.complexity_tuple(y)
@@ -302,9 +296,15 @@ class FloatStrategy(SearchStrategy):
     def reify(self, value):
         return value
 
-    def basic_simplify(self, random, x):
+    def simplifiers(self, random, x):
         if x == 0.0:
             return
+        yield self.simplify_weird_values
+        yield self.push_towards_one
+        yield self.simplify_integral
+        yield self.basic_simplify
+
+    def simplify_weird_values(self, random, x):
         if math.isnan(x):
             yield 0.0
             yield float('inf')
@@ -318,39 +318,47 @@ class FloatStrategy(SearchStrategy):
                 yield -x
             return
 
+    def push_towards_one(self, random, x):
+        if x > 1.0:
+            assert self.strictly_simpler(1.0, x)
+            yield 1.0
+            y = math.sqrt(x)
+            if self.strictly_simpler(y, x):
+                yield y
+
+    def simplify_integral(self, random, x):
+        if not is_integral(x):
+            try:
+                yield float(math.floor(x))
+            except (OverflowError, ValueError):
+                pass
+            return
+        for m in self.int_strategy.full_simplify(random, int(x)):
+            yield float(m)
+
+    def basic_simplify(self, random, x):
+        if x == 0.0:
+            return
+
+        yield 0.0
+
         if x < 0:
             yield -x
             for t in self.basic_simplify(random, -x):
                 yield -t
             return
 
-        yield 0.0
-        if x != 1.0:
-            yield 1.0
-            yield math.sqrt(x)
-
-        if is_integral(x):
-            for m in self.int_strategy.full_simplify(random, int(x)):
-                yield float(m)
-        else:
+        if not is_integral(x):
             for e in range(10):
                 scale = 2 ** e
-                y = math.floor(x * scale) / scale
+                try:
+                    y = float(math.floor(x * scale)) / scale
+                except (OverflowError, ValueError):
+                    break
                 if x != y:
                     yield y
                 else:
                     break
-        if abs(x) > 1.0:
-            bits = []
-            t = x
-            while True:
-                t *= random.random()
-                if t <= 1.0:
-                    break
-                bits.append(t)
-            bits.sort()
-            for b in bits:
-                yield b
 
 
 class WrapperFloatStrategy(FloatStrategy):
@@ -429,7 +437,7 @@ class FixedBoundedFloatStrategy(FloatStrategy):
     )
 
     def __init__(self, lower_bound, upper_bound):
-        SearchStrategy.__init__(self)
+        FloatStrategy.__init__(self)
         self.lower_bound = float(lower_bound)
         self.upper_bound = float(upper_bound)
 

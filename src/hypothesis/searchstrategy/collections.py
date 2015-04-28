@@ -198,11 +198,7 @@ class ListStrategy(SearchStrategy):
         yield self.simplify_with_single_deletes
         yield self.simplify_to_singletons
 
-        for simplify in self.element_strategy.simplifiers(
-            random,
-            template[0]
-        ):
-            yield self.shared_simplification(simplify)
+        yield self.shared_simplification(self.element_strategy.full_simplify)
 
         for i in self.indices_roughly_from_worst_to_best(random, template):
             yield self.simplifier_for_index(

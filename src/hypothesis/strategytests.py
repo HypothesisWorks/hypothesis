@@ -301,11 +301,20 @@ def strategy_test_suite(
             assert list(strat.full_simplify(rnd, simplest)) == []
 
         @specifier_test
-        def test_can_run_long_falsify_loop(self, template, rnd):
+        def test_full_simplify_completes(self, template, rnd):
             # Cut off at 1000 for the occasional case where we get
             # really very large templates which have too many simplifies.
             for x in islice(strat.full_simplify(rnd, template), 1000):
                 pass
+
+        @specifier_test
+        def test_does_not_increase_complexity(self, template, rnd):
+            simplifiers = list(strat.simplifiers(rnd, template))
+            rnd.shuffle(simplifiers)
+            simplifiers = simplifiers[:10]
+            for simplify in simplifiers:
+                for s in islice(simplify(rnd, template), 50):
+                    assert not strat.strictly_simpler(template, s)
 
         @given(Random, settings=Settings(max_examples=1000))
         def test_can_create_templates(self, random):
