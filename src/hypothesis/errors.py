@@ -50,7 +50,7 @@ class NoSuchExample(HypothesisException):
 
     def __init__(self, condition_string, extra=''):
         super(NoSuchExample, self).__init__(
-            'No examples of conditition %s%s' % (
+            'No examples found of conditition %s%s' % (
                 condition_string, extra)
         )
 
