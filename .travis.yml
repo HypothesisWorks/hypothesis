@@ -36,6 +36,10 @@ script:
 
 matrix:
     exclude:
+        - os: linux
+          env: TOXENV=examples2
+        - os: osx
+          env: TOXENV=examples3
         - os: osx
           env: TOXENV=coverage
         - os: osx
