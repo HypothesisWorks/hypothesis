@@ -1,6 +1,5 @@
-"""
-This is a tutorial for building a strategy from scratch rather than
-using the strategy combinators.
+"""This is a tutorial for building a strategy from scratch rather than using
+the strategy combinators.
 
 Note that the API described herein is "semi-public". This means it will not
 break between patch releases but may break between minor versions. However
@@ -19,6 +18,7 @@ To run these tests, install pytest (ideally in a virtualenv) and from the root
 of a hypothesis checkout run
 
 PYTHONPATH=src python -m pytest examples/bintree.py
+
 """
 
 from collections import namedtuple
@@ -35,11 +35,12 @@ class BinaryTree(object):
 
 
 class Leaf(BinaryTree):
+
     def __init__(self, label):
         self.label = label
 
     def __repr__(self):
-        return "Leaf(%r)" % (self.label,)
+        return 'Leaf(%r)' % (self.label,)
 
     def __eq__(self, other):
         return isinstance(other, Leaf) and self.label == other.label
@@ -49,12 +50,13 @@ class Leaf(BinaryTree):
 
 
 class Split(BinaryTree):
+
     def __init__(self, left, right):
         self.left = left
         self.right = right
 
     def __repr__(self):
-        return "Split(%r, %r)" % (self.left, self.right)
+        return 'Split(%r, %r)' % (self.left, self.right)
 
     def __eq__(self, other):
         return (
@@ -68,11 +70,13 @@ class Split(BinaryTree):
 
 
 class BinaryTreeStrategy(SearchStrategy):
+
     def __init__(self, leaf_strategy):
-        """
-        In order to create a strategy for binary trees, we need a strategy
-        for creating labels for its leaves. Everything else we can handle
-        ourselves.
+        """In order to create a strategy for binary trees, we need a strategy
+        for creating labels for its leaves.
+
+        Everything else we can handle ourselves.
+
         """
         super(BinaryTreeStrategy, self).__init__()
         self.leaf_strategy = leaf_strategy
@@ -83,10 +87,9 @@ class BinaryTreeStrategy(SearchStrategy):
     )
 
     def produce_parameter(self, random):
-        """
-        A parameter controls the "shape" of the data. Data generation proceeds
-        by first drawing a parameter and then drawing a template given that
-        parameter.
+        """A parameter controls the "shape" of the data. Data generation
+        proceeds by first drawing a parameter and then drawing a template given
+        that parameter.
 
         This has two main benefits: Firstly, it lets us produce more
         interesting data, because the results are typically less uniform and
@@ -95,6 +98,7 @@ class BinaryTreeStrategy(SearchStrategy):
 
         Parameters can be any value at all. In this case we've defined a custom
         namedtuple to hold our data.
+
         """
 
         # Our parameter has three important details:
@@ -125,13 +129,15 @@ class BinaryTreeStrategy(SearchStrategy):
         )
 
     def produce_template(self, context, parameter_value):
-        """
-        We now produce a template, which is a value that we will later turn
-        into a binary tree. There are a number of reasons for the distinction
-        which we won't go into here, but think of a template as an easier to
-        work with intermediate representation of the final value. In particular
-        templates are always hashable and comparable for equality, even if the
-        finished product is not.
+        """We now produce a template, which is a value that we will later turn
+        into a binary tree.
+
+        There are a number of reasons for the distinction which we won't
+        go into here, but think of a template as an easier to work with
+        intermediate representation of the final value. In particular
+        templates are always hashable and comparable for equality, even
+        if the finished product is not.
+
         """
 
         # Context is mostly a wrapper object for a random. This is the only
@@ -204,13 +210,13 @@ class BinaryTreeStrategy(SearchStrategy):
         )
 
     def reify(self, template):
-        """
-        Reify is the point at which we take our templates and turn them into
+        """Reify is the point at which we take our templates and turn them into
         the values we actually want.
 
-        Our templates here quite closely map to the desired end type, so all
-        we have to do is make sure to reify the leaves and then assemble the
-        templates into the appropriate BinaryTree subtype.
+        Our templates here quite closely map to the desired end type, so
+        all we have to do is make sure to reify the leaves and then
+        assemble the templates into the appropriate BinaryTree subtype.
+
         """
         assert 1 <= len(template) <= 2
         if len(template) == 1:
@@ -231,14 +237,14 @@ class BinaryTreeStrategy(SearchStrategy):
     # So we now need to define rules for simplifying.
 
     def simplifiers(self, random, template):
-        """
-        simplifiers are functions which take a pair (random, template) and
+        """simplifiers are functions which take a pair (random, template) and
         return a generator over simpler versions of that template.
 
-        Rather than each strategy having a single simplifier, strategies have
-        many. This allows us to focus on only using simplifiers that work well
-        for a particular problem, rather than continually trying ones that
-        will never work.
+        Rather than each strategy having a single simplifier, strategies
+        have many. This allows us to focus on only using simplifiers
+        that work well for a particular problem, rather than continually
+        trying ones that will never work.
+
         """
         # The purpose of the template argument is that it lets us skip
         # simplifiers we know will be useless for this particular template.
@@ -258,9 +264,8 @@ class BinaryTreeStrategy(SearchStrategy):
                 yield self.convert_leaf_simplifier(s)
 
     def simplify_to_subtrees(self, random, template):
-        """
-        If this template corresponds to a Split, yield the templates for each
-        subtree in a random order. Otherwise do nothing.
+        """If this template corresponds to a Split, yield the templates for
+        each subtree in a random order. Otherwise do nothing.
 
         This would be useful for e.g. tests that only care about the presence
         or absence of a particular leaf label in order to fail, and would allow
@@ -270,6 +275,7 @@ class BinaryTreeStrategy(SearchStrategy):
         better to make random choices when one is presented to you because it
         makes you more robust against hitting pathological edge cases from
         certain structures.
+
         """
         if len(template) == 2:
             start = random.randint(0, 1)
@@ -277,11 +283,13 @@ class BinaryTreeStrategy(SearchStrategy):
             yield template[1 - start]
 
     def simplify_single_subtree(self, index):
-        """
-        Defines a simplifier that simplifies a single subtree of a split. This
+        """Defines a simplifier that simplifies a single subtree of a split.
+
+        This
         can be useful when you're testing things that look e.g. like having a
         very deep left subtree: It means that you can happily simplify the
         right hand side without bothering to keep trying to shrink the left.
+
         """
         def accept(random, template):
             if len(template) != 2:
@@ -303,10 +311,9 @@ class BinaryTreeStrategy(SearchStrategy):
         return accept
 
     def convert_leaf_simplifier(self, simplifier):
-        """
-        This takes a single simplifier for leaf labels and turns it into a
-        simplifier for trees that will only do something if the tree is a leaf.
-        """
+        """This takes a single simplifier for leaf labels and turns it into a
+        simplifier for trees that will only do something if the tree is a
+        leaf."""
 
         def accept(random, template):
             if len(template) != 1:
@@ -315,20 +322,22 @@ class BinaryTreeStrategy(SearchStrategy):
             for label in simplifier(random, template[0]):
                 yield (label,)
         accept.__name__ = str(
-            "convert_leaf_simplifier(%s)" % (simplifier.__name__,)
+            'convert_leaf_simplifier(%s)' % (simplifier.__name__,)
         )
         return accept
 
     def strictly_simpler(self, x, y):
-        """
-        This returns True in if x should be regarded as strictly simpler than
-        y. This is a heuristic that is mainly used in collection simplification
+        """This returns True in if x should be regarded as strictly simpler
+        than y. This is a heuristic that is mainly used in collection
+        simplification.
+
         - it allows us to e.g. simplify long lists by replacing more complex
         elements of the list with simpler ones and seeing if test still fails.
 
         It is not strictly necessary to implement this, but it will improve
         quality and performance when testing lists of values, so it's a good
         idea.
+
         """
         # We always consider leaves simpler than splits
         if len(x) < len(y):
@@ -357,11 +366,9 @@ class BinaryTreeStrategy(SearchStrategy):
     # of other basic data.
 
     def to_basic(self, template):
-        """
-        We simply convert our templates to lists, but note that we must also
+        """We simply convert our templates to lists, but note that we must also
         use the defined to_basic for our leaves so that those are also
-        correctly serialized.
-        """
+        correctly serialized."""
         if len(template) == 2:
             return list(map(self.to_basic, template))
         else:
@@ -407,10 +414,8 @@ BinaryTrees = namedtuple('BinaryTrees', ('leaves',))
 # BinaryTrees.
 @strategy.extend(BinaryTrees)
 def binary_trees_strategy(spec, settings):
-    """
-    Build a binary tree strategy by building a strategy for the leaf type and
-    then constructing the strategy we defined above.
-    """
+    """Build a binary tree strategy by building a strategy for the leaf type
+    and then constructing the strategy we defined above."""
     return BinaryTreeStrategy(strategy(spec.leaves, settings))
 
 
@@ -431,10 +436,8 @@ TestBinaryTreeOfInts = strategy_test_suite(BinaryTrees(int))
 # different areas of the search space and testing our results.
 
 def labels(tree):
-    """
-    Convenience function for getting all labels out of a tree, no matter how
-    deep they are.
-    """
+    """Convenience function for getting all labels out of a tree, no matter how
+    deep they are."""
     if isinstance(tree, Leaf):
         yield tree.label
     else:
@@ -444,8 +447,8 @@ def labels(tree):
 
 
 def depth(tree):
-    """We'll want to know the depth of various trees to test that we can
-    reach certain regions"""
+    """We'll want to know the depth of various trees to test that we can reach
+    certain regions."""
     if isinstance(tree, Leaf):
         return 1
     else:
@@ -453,7 +456,7 @@ def depth(tree):
 
 
 def size(tree):
-    """Return the number of leaf nodes in a tree"""
+    """Return the number of leaf nodes in a tree."""
     if isinstance(tree, Leaf):
         return 1
     else:
@@ -466,31 +469,34 @@ def test_simplifies_to_single_leaf():
 
 def test_simplifies_leaves_deep_in_the_tree():
     """Make sure that leaves are fully simplified even if they are deep in the
-    tree rather than at the surface"""
+    tree rather than at the surface."""
     deep_tree = find(BinaryTrees(int), lambda x: depth(x) >= 5)
     for l in labels(deep_tree):
         assert l == 0
 
 
 def test_simplifies_large_lists_of_trees_to_empty():
-    """This uses the simplify_such_that heuristic. Simplifying individual
-    elements of this list could take a very long time, but because we don't
-    actually care about the elements we can use example cloning to skip over
-    that process by just copying our current simplest example everywhere"""
+    """This uses the simplify_such_that heuristic.
+
+    Simplifying individual elements of this list could take a very long
+    time, but because we don't actually care about the elements we can
+    use example cloning to skip over that process by just copying our
+    current simplest example everywhere
+
+    """
     forest = find([BinaryTrees(int)], lambda x: len(x) >= 50)
     assert forest == [Leaf(0)] * 50
 
 
 def test_simplifies_list_of_trees_with_more_complex_structure():
-    """
-    This on the other hand is test for lists where we do care about the list
-    """
+    """This on the other hand is test for lists where we do care about the
+    list."""
     forest = find([BinaryTrees(None)], lambda x: sum(map(depth, x)) >= 50)
     assert sum(map(depth, forest)) == 50
 
 
 def test_finds_a_large_tree():
     """Make sure that we are able to find large as well as small trees, and
-    that we have no trouble simplifying down to that size boundary"""
+    that we have no trouble simplifying down to that size boundary."""
     tree = find(BinaryTrees(None), lambda x: size(x) >= 100)
     assert size(tree) == 100
