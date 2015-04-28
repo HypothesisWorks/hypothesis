@@ -87,6 +87,13 @@ class Split(BinaryTree):
 
 class BinaryTreeStrategy(SearchStrategy):
 
+    """An implementation of a strategy for generating BinaryTree instances.
+
+    All methods specific to this implementation are prefixed with _, all
+    others are implementing the SearchStrategy interface.
+
+    """
+
     def __init__(self, leaf_strategy):
         """In order to create a strategy for binary trees, we need a strategy
         for creating labels for its leaves.
@@ -187,11 +194,11 @@ class BinaryTreeStrategy(SearchStrategy):
 
         # We now need to need to figure out how to distribute the leaves.
         # We do this recursively, so farm off to another method.
-        return self.split_leaf_list(
+        return self._split_leaf_list(
             leaf_templates, random, parameter_value.split_location
         )
 
-    def split_leaf_list(self, leaves, random, split_location):
+    def _split_leaf_list(self, leaves, random, split_location):
         # Calling this on an empty list is a logical error.
         assert leaves
 
@@ -221,8 +228,8 @@ class BinaryTreeStrategy(SearchStrategy):
         # We now have two nice little piles of nodes to put on the left and
         # the right side of this split, and we must split those too.
         return (
-            self.split_leaf_list(tuple(left), random, split_location),
-            self.split_leaf_list(tuple(right), random, split_location),
+            self._split_leaf_list(tuple(left), random, split_location),
+            self._split_leaf_list(tuple(right), random, split_location),
         )
 
     def reify(self, template):
@@ -267,19 +274,19 @@ class BinaryTreeStrategy(SearchStrategy):
         # All simplifiers *must* work for every template, but "work" just means
         # doesn't error. It doesn't matter if they don't do anything useful.
         if len(template) == 2:
-            yield self.simplify_to_subtrees
+            yield self._simplify_to_subtrees
             # We try the subtrees in a random order because this generallly
             # seems to help. It's not really necessary, but it's often useful
             # and is easy to do so we might as well.
             start = random.randint(0, 1)
-            yield self.simplify_single_subtree(start)
-            yield self.simplify_single_subtree(1 - start)
+            yield self._simplify_single_subtree(start)
+            yield self._simplify_single_subtree(1 - start)
         else:
             assert len(template) == 1
             for s in self.leaf_strategy.simplifiers(random, template[0]):
-                yield self.convert_leaf_simplifier(s)
+                yield self._convert_leaf_simplifier(s)
 
-    def simplify_to_subtrees(self, random, template):
+    def _simplify_to_subtrees(self, random, template):
         """If this template corresponds to a Split, yield the templates for
         each subtree in a random order. Otherwise do nothing.
 
@@ -298,7 +305,7 @@ class BinaryTreeStrategy(SearchStrategy):
             yield template[start]
             yield template[1 - start]
 
-    def simplify_single_subtree(self, index):
+    def _simplify_single_subtree(self, index):
         """Defines a simplifier that simplifies a single subtree of a split.
 
         This
@@ -323,10 +330,10 @@ class BinaryTreeStrategy(SearchStrategy):
                 yield tuple(result)
         # Assigning the name of a simplifier is not strictly necessary but it
         # helps for debugging
-        accept.__name__ = str('simplify_single_subtree(%d)' % (index,))
+        accept.__name__ = str('_simplify_single_subtree(%d)' % (index,))
         return accept
 
-    def convert_leaf_simplifier(self, simplifier):
+    def _convert_leaf_simplifier(self, simplifier):
         """This takes a single simplifier for leaf labels and turns it into a
         simplifier for trees that will only do something if the tree is a
         leaf."""
@@ -338,7 +345,7 @@ class BinaryTreeStrategy(SearchStrategy):
             for label in simplifier(random, template[0]):
                 yield (label,)
         accept.__name__ = str(
-            'convert_leaf_simplifier(%s)' % (simplifier.__name__,)
+            '_convert_leaf_simplifier(%s)' % (simplifier.__name__,)
         )
         return accept
 
