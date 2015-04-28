@@ -33,13 +33,17 @@ PYTHONPATH=src python -m pytest examples/bintree.py
 
 """
 
-from collections import namedtuple
-from hypothesis.searchstrategy import SearchStrategy
-import math
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
-from hypothesis.searchstrategy.strategies import check_length, check_data_type
+import math
+from collections import namedtuple
+
+from hypothesis import find, strategy
 from hypothesis.strategytests import strategy_test_suite
-from hypothesis import strategy, find
+from hypothesis.searchstrategy import SearchStrategy
+from hypothesis.searchstrategy.strategies import check_length, \
+    check_data_type
 
 
 class BinaryTree(object):
@@ -477,7 +481,11 @@ def size(tree):
 
 def test_simplifies_to_single_leaf():
     """The simplest possible tree should be a single leaf with the simplest
-    possible label. If it's not we've done something very wrong"""
+    possible label.
+
+    If it's not we've done something very wrong
+
+    """
     assert find(BinaryTrees(int), lambda x: True) == Leaf(0)
 
 
