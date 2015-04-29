@@ -22,18 +22,21 @@ execution to date.
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+import inspect
 from random import Random
 from unittest import TestCase
+from collections import namedtuple
 
 from hypothesis.core import find
 from hypothesis.types import Stream
 from hypothesis.settings import Settings
-from hypothesis.errors import Flaky, NoSuchExample
+from hypothesis.errors import Flaky, NoSuchExample, InvalidDefinition
 from hypothesis.reporting import report
 from hypothesis.utils.show import show
 from hypothesis.internal.compat import hrange
 from hypothesis.searchstrategy.strategies import BadData, BuildContext, \
-    SearchStrategy
+    SearchStrategy, strategy
+from hypothesis.specifiers import sampled_from, just, one_of
 from hypothesis.internal.distributions import geometric
 
 
@@ -103,6 +106,8 @@ class GenericStateMachine(object):
             try:
                 runner.run(state_machine_class())
                 return False
+            except InvalidDefinition:
+                raise
             except Exception:
                 return True
         return find(
@@ -345,3 +350,159 @@ class StateMachineSearchStrategy(SearchStrategy):
                     n_steps=template.n_steps,
                     record=new_record,
                 )
+
+
+Rule = namedtuple(
+    'Rule',
+    ('targets', 'function', 'arguments')
+
+)
+
+Bundle = namedtuple('Bundle', ('name',))
+
+
+class RuleWrapper(object):
+    def __init__(self, targets, function, arguments):
+        self.targets = targets
+        self.function = function
+        self.arguments = arguments
+
+    def __get__(self, obj, typ=None):
+        return self.function
+
+    def __set__(self, obj, value):
+        obj.define_rule(
+            targets=self.targets,
+            function=self.function,
+            arguments=self.arguments
+        )
+
+    def __delete__(self, obj):
+        return
+
+
+RULE_MARKER = 'hypothesis_stateful_rule'
+
+
+def rule(targets=(), target=None, **kwargs):
+    if target is not None:
+        targets += (target,)
+
+    def accept(f):
+        setattr(f, RULE_MARKER, Rule(
+            targets=targets, arguments=kwargs, function=f
+        ))
+        return f
+    return accept
+
+
+VarReference = namedtuple('VarReference', ('name',))
+
+
+class RuleBasedStateMachine(GenericStateMachine):
+    _rules_per_class = {}
+
+    def __init__(self):
+        if not self.rules():
+            raise InvalidDefinition("Type %s defines no rules" % (
+                type(self).__name__,
+            ))
+        self.bundles = {}
+        self.name_counter = 1
+        self.names_to_values = {}
+
+    def __repr__(self):
+        return "%s(%s)" % (
+            type(self).__name__,
+            show(self.bundles),
+        )
+
+    def upcoming_name(self):
+        return "v%d" % (self.name_counter,)
+
+    def new_name(self):
+        result = self.upcoming_name()
+        self.name_counter += 1
+        return result
+
+    def bundle(self, name):
+        return self.bundles.setdefault(name, [])
+
+    @classmethod
+    def rules(cls):
+        try:
+            return cls._rules_per_class[cls]
+        except KeyError:
+            pass
+
+        result = list(filter(None, [
+            getattr(v, RULE_MARKER, None)
+            for k, v in inspect.getmembers(cls)
+        ]))
+        cls._rules_per_class[cls] = result
+        return result
+
+    @classmethod
+    def define_rule(cls, targets, function, arguments):
+        converted_arguments = {}
+        for k, v in arguments.items():
+            if not isinstance(v, Bundle):
+                v = strategy(v)
+            converted_arguments[k] = v
+
+        return cls.rules.append(
+            Rule(targets, function, converted_arguments)
+        )
+
+    def steps(self):
+        strategies = []
+        for rule in self.rules():
+            converted_arguments = {}
+            valid = True
+            for k, v in rule.arguments.items():
+                if isinstance(v, Bundle):
+                    bundle = self.bundle(v.name)
+                    if not bundle:
+                        valid = False
+                        break
+                    else:
+                        v = strategy(sampled_from(bundle))
+                converted_arguments[k] = v
+            if valid:
+                strategies.append(strategy((
+                    just(rule), converted_arguments
+                )))
+        if not strategies:
+            raise InvalidDefinition(
+                "No progress can be made from state %r" % (self,)
+            )
+        return strategy(one_of(strategies))
+
+    def print_step(self, step):
+        rule, data = step
+        data_repr = {}
+        for k, v in data.items():
+            if isinstance(v, VarReference):
+                data_repr[k] = v.name
+            else:
+                data_repr[k] = show(v)
+        self.step_count = getattr(self, 'step_count', 0) + 1
+        report('Step #%d: %s%s(%s)' % (
+            self.step_count,
+            '%s = ' % (self.upcoming_name(),) if rule.targets else "",
+            rule.function.__name__,
+            ', '.join("%s=%s" % kv for kv in data_repr.items())
+        ))
+
+    def execute_step(self, step):
+        rule, data = step
+        data = dict(data)
+        for k, v in data.items():
+            if isinstance(v, VarReference):
+                data[k] = self.names_to_values[v.name]
+        result = rule.function(self, **data)
+        if rule.targets:
+            name = self.new_name()
+            self.names_to_values[name] = result
+            for target in rule.targets:
+                self.bundle(target).append(VarReference(name))

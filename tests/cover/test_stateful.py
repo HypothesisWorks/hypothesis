@@ -14,10 +14,13 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import pytest
+from collections import namedtuple
+
 from hypothesis import strategy, Settings
 from tests.common.utils import capture_out
 from hypothesis.specifiers import just, sampled_from, integers_in_range
-from hypothesis.experimental.stateful import GenericStateMachine
+from hypothesis.experimental.stateful import GenericStateMachine, \
+    RuleBasedStateMachine, Bundle, rule
 
 
 class SetStateMachine(GenericStateMachine):
@@ -66,7 +69,38 @@ class GoodSet(GenericStateMachine):
         pass
 
 
-bad_machines = (OrderedStateMachine, SetStateMachine)
+Leaf = namedtuple('Leaf', ('label',))
+Split = namedtuple('Split', ('left', 'right'))
+
+
+class BalancedTrees(RuleBasedStateMachine):
+    trees = 'BinaryTree'
+
+    @rule(target=trees, x=bool)
+    def leaf(self, x):
+        return Leaf(x)
+
+    @rule(target=trees, left=Bundle(trees), right=Bundle(trees))
+    def split(self, left, right):
+        return Split(left, right)
+
+    @rule(tree=Bundle(trees))
+    def test_is_balanced(self, tree):
+        if isinstance(tree, Leaf):
+            return
+        else:
+            assert abs(self.size(tree.left) - self.size(tree.right)) <= 2
+            self.test_is_balanced(tree.left)
+            self.test_is_balanced(tree.right)
+
+    def size(self, tree):
+        if isinstance(tree, Leaf):
+            return 1
+        else:
+            return 1 + self.size(tree.left) + self.size(tree.right)
+
+
+bad_machines = (OrderedStateMachine, SetStateMachine, BalancedTrees)
 
 
 @pytest.mark.parametrize(
@@ -75,9 +109,13 @@ bad_machines = (OrderedStateMachine, SetStateMachine)
 )
 def test_bad_machines_fail(machine):
     test_class = machine.TestCase
-    with capture_out() as o:
-        with pytest.raises(AssertionError):
-            test_class().runTest()
+    try:
+        with capture_out() as o:
+            with pytest.raises(AssertionError):
+                test_class().runTest()
+    except Exception:
+        print(o.getvalue())
+        raise
     v = o.getvalue()
     assert 'Step #1' in v
     assert 'Step #9' not in v

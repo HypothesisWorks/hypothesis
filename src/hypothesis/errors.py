@@ -141,6 +141,12 @@ class InvalidArgument(HypothesisException, TypeError):
     some manner incorrect."""
 
 
+class InvalidDefinition(HypothesisException, TypeError):
+
+    """Used to indicate that a class definition was not well put together and
+    has something wrong with it."""
+
+
 class AbnormalExit(HypothesisException):
 
     """Raised when a test running in a child process exits without returning or
