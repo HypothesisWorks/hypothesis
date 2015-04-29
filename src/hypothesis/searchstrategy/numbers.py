@@ -60,8 +60,7 @@ class IntStrategy(SearchStrategy):
             return x > y
         if y == 0:
             return False
-        if y >= 0:
-            return 0 <= x < y
+        return 0 <= x < y
 
     def try_negate(self, random, x):
         if x >= 0:
@@ -454,6 +453,12 @@ class FixedBoundedFloatStrategy(FloatStrategy):
             left = cut
             right = self.upper_bound
         return left + random.random() * (right - left)
+
+    def strictly_simpler(self, x, y):
+        return x < y
+
+    def simplifiers(self, random, template):
+        yield self.basic_simplify
 
     def basic_simplify(self, random, value):
         if value == self.lower_bound:

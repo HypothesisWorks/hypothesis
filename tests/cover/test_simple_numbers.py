@@ -79,7 +79,10 @@ def test_find_small_sum_float_list():
 
 
 def test_finds_boundary_floats():
-    assert find(floats_in_range(-1, 1), lambda x: True) == -1
+    def f(x):
+        print(x)
+        return True
+    assert find(floats_in_range(-1, 1), f) == -1
 
 
 def test_find_non_boundary_float():
@@ -134,9 +137,16 @@ def test_list_of_fractional_float():
         [float], lambda x: len([t for t in x if t >= 1.5]) >= 10
     )) in (
         {1.5},
-        {1.5, 2.0}
+        {1.5, 2.0},
+        {2.0},
     )
 
 
 def test_minimal_fractional_float():
     assert find(float, lambda x: x >= 1.5) in (1.5, 2.0)
+
+
+def test_minimizes_lists_of_negative_ints_up_to_boundary():
+    result = find(
+        [int], lambda x: len([t for t in x if t <= -1]) >= 10)
+    assert result == [-1] * 10
