@@ -14,7 +14,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import pytest
-from hypothesis import Settings, strategy
+from hypothesis import strategy, Settings
 from tests.common.utils import capture_out
 from hypothesis.specifiers import just, sampled_from, integers_in_range
 from hypothesis.experimental.stateful import GenericStateMachine
@@ -56,7 +56,6 @@ class OrderedStateMachine(GenericStateMachine):
 
 
 class GoodSet(GenericStateMachine):
-
     def __init__(self):
         self.stuff = set()
 
@@ -75,7 +74,7 @@ bad_machines = (OrderedStateMachine, SetStateMachine)
     bad_machines, ids=[t.__name__ for t in bad_machines]
 )
 def test_bad_machines_fail(machine):
-    test_class = machine.to_test_case()
+    test_class = machine.TestCase
     with capture_out() as o:
         with pytest.raises(AssertionError):
             test_class().runTest()
@@ -86,4 +85,4 @@ def test_bad_machines_fail(machine):
 
 def test_good_machine_does_not_fail():
     with Settings(max_examples=50):
-        GoodSet.to_test_case()().runTest()
+        GoodSet.TestCase().runTest()

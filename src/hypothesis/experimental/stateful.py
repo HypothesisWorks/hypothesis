@@ -27,14 +27,28 @@ from unittest import TestCase
 
 from hypothesis.core import find
 from hypothesis.types import Stream
-from hypothesis.errors import Flaky, NoSuchExample
 from hypothesis.settings import Settings
+from hypothesis.errors import Flaky, NoSuchExample
 from hypothesis.reporting import report
 from hypothesis.utils.show import show
 from hypothesis.internal.compat import hrange
-from hypothesis.internal.distributions import geometric
 from hypothesis.searchstrategy.strategies import BadData, BuildContext, \
     SearchStrategy
+from hypothesis.internal.distributions import geometric
+
+
+class TestCaseProperty(object):
+
+    def __get__(self, obj, typ=None):
+        if obj is not None:
+            typ = type(obj)
+        return typ._to_test_case()
+
+    def __set__(self, obj, value):
+        raise AttributeError('Cannot set TestCase')
+
+    def __delete__(self, obj):
+        raise AttributeError('Cannot delete TestCase')
 
 
 class GenericStateMachine(object):
@@ -97,8 +111,10 @@ class GenericStateMachine(object):
 
     _test_case_cache = {}
 
+    TestCase = TestCaseProperty()
+
     @classmethod
-    def to_test_case(state_machine_class):
+    def _to_test_case(state_machine_class):
         try:
             return state_machine_class._test_case_cache[state_machine_class]
         except KeyError:
