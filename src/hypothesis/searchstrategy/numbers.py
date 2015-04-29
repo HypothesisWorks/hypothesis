@@ -355,10 +355,7 @@ class FloatStrategy(SearchStrategy):
                     y = float(math.floor(x * scale)) / scale
                 except (OverflowError, ValueError):
                     break
-                if x != y:
-                    yield y
-                else:
-                    break
+                yield y
 
 
 class WrapperFloatStrategy(FloatStrategy):
