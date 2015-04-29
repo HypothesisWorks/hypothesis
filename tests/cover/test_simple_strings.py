@@ -33,6 +33,15 @@ def test_can_handle_large_codepoints():
     assert s == '☃'
 
 
+def test_can_find_mixed_ascii_and_non_ascii_stringgs():
+    s = find(
+        text_type, lambda x: (
+            any(t >= '☃' for t in x) and
+            any(ord(t) <= 127 for t in x)))
+    assert len(s) == 2
+    assert sorted(s) == ['0', '☃']
+
+
 def test_will_find_ascii_examples_given_the_chance():
     s = find((text_type, text_type), lambda x: x[0] and (x[0] < x[1]))
     assert s == ('0', '1')

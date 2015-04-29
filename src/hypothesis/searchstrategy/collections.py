@@ -198,11 +198,25 @@ class ListStrategy(SearchStrategy):
         yield self.simplify_with_single_deletes
         yield self.simplify_to_singletons
 
-        yield self.shared_simplification(self.element_strategy.full_simplify)
+        for simplify in self.element_strategy.simplifiers(
+            random,
+            self.maximally_complex_element(template), 
+        ):
+            yield self.shared_simplification(simplify)
 
         for i in self.indices_roughly_from_worst_to_best(random, template):
             yield self.simplifier_for_index(
                 i, self.element_strategy.full_simplify)
+
+    def maximally_complex_element(self, template):
+        assert template
+        result = template[0]
+        for e in template[1:]:
+            if self.element_strategy.strictly_simpler(
+                result, e
+            ):
+                result = e
+        return result
 
     def simplifier_for_index(self, i, simplify):
         def accept(random, template):
