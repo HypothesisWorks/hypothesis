@@ -237,7 +237,7 @@ class BinaryTreeStrategy(SearchStrategy):
         )
 
     def _template_size(self, template):
-        """Get the number of leaf nodes below a template"""
+        """Get the number of leaf nodes below a template."""
         if len(template) == 1:
             return 1
         else:
@@ -245,7 +245,7 @@ class BinaryTreeStrategy(SearchStrategy):
 
     def _make_split(self, left, right):
         """Smart constructor for a split template which handles getting the
-        size right automatically"""
+        size right automatically."""
         return (
             left, right,
             self._template_size(left) + self._template_size(right)
