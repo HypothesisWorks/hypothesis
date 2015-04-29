@@ -313,7 +313,8 @@ def source_exec_as_module(source):
     f.write(source)
     f.close()
     assert os.path.exists(filepath)
-    assert open(filepath).read() == source
+    with open(filepath) as r:
+        assert r.read() == source
     importlib_invalidate_caches()
     result = __import__(name)
     eval_cache[source] = result
