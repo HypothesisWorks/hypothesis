@@ -17,6 +17,7 @@ from hypothesis.internal.tracker import Tracker
 
 
 class Foo(object):
+
     def __trackas__(self):
         return 1
 

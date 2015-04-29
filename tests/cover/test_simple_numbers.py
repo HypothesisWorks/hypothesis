@@ -20,8 +20,8 @@ import pytest
 from hypothesis import find
 from hypothesis.specifiers import integers_from, floats_in_range, \
     integers_in_range
-from hypothesis.searchstrategy.strategies import strategy, BadData
 from hypothesis.searchstrategy.numbers import is_integral
+from hypothesis.searchstrategy.strategies import BadData, strategy
 
 
 def test_minimize_negative_int():

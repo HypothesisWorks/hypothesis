@@ -18,6 +18,7 @@ import contextlib
 from io import StringIO
 
 import pytest
+from hypothesis.reporting import default, with_reporter
 from hypothesis.internal.reflection import proxies
 
 
@@ -27,7 +28,8 @@ def capture_out():
     try:
         new_out = StringIO()
         sys.stdout = new_out
-        yield new_out
+        with with_reporter(default):
+            yield new_out
     finally:
         sys.stdout = old_out
 
