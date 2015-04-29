@@ -200,7 +200,7 @@ class ListStrategy(SearchStrategy):
 
         for simplify in self.element_strategy.simplifiers(
             random,
-            self.maximally_complex_element(template), 
+            self.maximally_complex_element(template),
         ):
             yield self.shared_simplification(simplify)
 

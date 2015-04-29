@@ -167,9 +167,11 @@ class BinaryTreeStrategy(SearchStrategy):
         # feature we will care about here.
         random = context.random
 
-        # Our templates will be tuples of 1 or 2 elements. A tuple of 1 element
-        # is a leaf and will contain a leaf template, a tuple of 2 elements is
-        # a split and will contain two BinaryTree templates.
+        # Our templates will be tuples of 1 or 3 elements. A tuple of 1 element
+        # is a leaf and will contain a leaf template, a tuple of 3 elements is
+        # a split and will contain two BinaryTree templates followed by an int
+        # which caches the number of leaf nodes in the tree. The reason for the
+        # latter will become clear later.
 
         # Rather than attempt to do this recursively, we build a list of leaves
         # of a fixed size and then split that up into a tree. This allows us
@@ -205,12 +207,12 @@ class BinaryTreeStrategy(SearchStrategy):
         if len(leaves) == 1:
             # If we have only one leaf then this is already the template for
             # a single node and we're done.
-            return leaves
+            return tuple(leaves)
         if len(leaves) == 2:
             # If we only have two, this can only be produced as a single split
             # with a leaf on either side.
-            return tuple(
-                (x,) for x in leaves
+            return (
+                (leaves[0],), (leaves[1],), 2
             )
         # We now need to split the remaining leaves into two piles, one for the
         # left branch and one for the right. We first ensure that each pile is
@@ -225,11 +227,28 @@ class BinaryTreeStrategy(SearchStrategy):
             else:
                 right.append(leaf)
 
+        left_template = self._split_leaf_list(left, random, split_location)
+        right_template = self._split_leaf_list(right, random, split_location)
+
         # We now have two nice little piles of nodes to put on the left and
         # the right side of this split, and we must split those too.
+        return self._make_split(
+            left_template, right_template,
+        )
+
+    def _template_size(self, template):
+        """Get the number of leaf nodes below a template"""
+        if len(template) == 1:
+            return 1
+        else:
+            return template[-1]
+
+    def _make_split(self, left, right):
+        """Smart constructor for a split template which handles getting the
+        size right automatically"""
         return (
-            self._split_leaf_list(tuple(left), random, split_location),
-            self._split_leaf_list(tuple(right), random, split_location),
+            left, right,
+            self._template_size(left) + self._template_size(right)
         )
 
     def reify(self, template):
@@ -241,7 +260,7 @@ class BinaryTreeStrategy(SearchStrategy):
         assemble the templates into the appropriate BinaryTree subtype.
 
         """
-        assert 1 <= len(template) <= 2
+        assert len(template) in (1, 3)
         if len(template) == 1:
             return Leaf(self.leaf_strategy.reify(template[0]))
         else:
@@ -273,7 +292,7 @@ class BinaryTreeStrategy(SearchStrategy):
         # simplifiers we know will be useless for this particular template.
         # All simplifiers *must* work for every template, but "work" just means
         # doesn't error. It doesn't matter if they don't do anything useful.
-        if len(template) == 2:
+        if len(template) == 3:
             yield self._simplify_to_subtrees
             # We try the subtrees in a random order because this generallly
             # seems to help. It's not really necessary, but it's often useful
@@ -300,7 +319,7 @@ class BinaryTreeStrategy(SearchStrategy):
         certain structures.
 
         """
-        if len(template) == 2:
+        if len(template) == 3:
             start = random.randint(0, 1)
             yield template[start]
             yield template[1 - start]
@@ -315,7 +334,7 @@ class BinaryTreeStrategy(SearchStrategy):
 
         """
         def accept(random, template):
-            if len(template) != 2:
+            if len(template) != 3:
                 return
 
             # full_simplify tries all the simplifiers available for a template
@@ -327,7 +346,9 @@ class BinaryTreeStrategy(SearchStrategy):
             for simpler in self.full_simplify(random, template[index]):
                 result = list(template)
                 result[index] = simpler
-                yield tuple(result)
+                # Rebuild the split so that any changes to the sizes of
+                # subtrees are taken into account.
+                yield self._make_split(*result[:2])
         # Assigning the name of a simplifier is not strictly necessary but it
         # helps for debugging
         accept.__name__ = str('_simplify_single_subtree(%d)' % (index,))
@@ -371,7 +392,27 @@ class BinaryTreeStrategy(SearchStrategy):
         if len(x) == 1:
             # For leaves we delegate to the leaf strategy
             return self.leaf_strategy.strictly_simpler(x[0], y[0])
-        assert len(x) == 2
+        assert len(x) == 3
+
+        # We now compare number of leaf nodes. A template with fewer nodes is
+        # always strictly simpler. We do this to preserve the required
+        # invariant that a simplifier cannot produce something such that the
+        # original would be consider strictly simpler: Without this step,
+        # passing to a subtree could result in a more complex element.
+
+        # This is also why we cache the template size on the tuple: It's
+        # important for strictly_simpler to be relatively cheap to perform,
+        # and this would have to do the full size calculation at every split,
+        # then would recursively do it during the lexicographical ordering,
+        # which turns this comparison into an O(n^2) ones.
+
+        x_size = self._template_size(x)
+        y_size = self._template_size(y)
+
+        if x_size < y_size:
+            return True
+        if x_size > y_size:
+            return False
 
         # We then order lexicographically: That is, we first determine if the
         # left tree of either side is simpler than the other and use that, then
@@ -392,9 +433,12 @@ class BinaryTreeStrategy(SearchStrategy):
         """We simply convert our templates to lists, but note that we must also
         use the defined to_basic for our leaves so that those are also
         correctly serialized."""
-        if len(template) == 2:
-            return list(map(self.to_basic, template))
+        if len(template) == 3:
+            return [
+                self.to_basic(template[0]), self.to_basic(template[1])
+            ]
         else:
+            assert len(template) == 1
             return [self.leaf_strategy.to_basic(template[0])]
 
     def from_basic(self, data):
@@ -419,7 +463,7 @@ class BinaryTreeStrategy(SearchStrategy):
         else:
             # Same deal: If the length is not 2, raise BadData.
             check_length(2, data)
-            return tuple(map(self.from_basic, data))
+            return self._make_split(*map(self.from_basic, data))
 
 
 # We can now explicitly construct instances of our strategy, but we wish to
