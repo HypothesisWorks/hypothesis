@@ -20,6 +20,7 @@ import pytest
 from hypothesis import find
 from hypothesis.specifiers import integers_from, floats_in_range, \
     integers_in_range
+from hypothesis.searchstrategy.strategies import strategy, BadData
 from hypothesis.searchstrategy.numbers import is_integral
 
 
@@ -150,3 +151,18 @@ def test_minimizes_lists_of_negative_ints_up_to_boundary():
     result = find(
         [int], lambda x: len([t for t in x if t <= -1]) >= 10)
     assert result == [-1] * 10
+
+
+def test_out_of_range_integers_are_bad():
+    with pytest.raises(BadData):
+        strategy(integers_in_range(0, 1)).from_basic(-1)
+
+    with pytest.raises(BadData):
+        strategy(integers_from(11)).from_basic(9)
+
+
+def test_out_of_range_floats_are_bad():
+    with pytest.raises(BadData):
+        strategy(floats_in_range(11, 12)).from_basic(
+            strategy(floats_in_range(-1, 1)).to_basic(0.0)
+        )

@@ -127,6 +127,10 @@ class IntegersFromStrategy(SearchStrategy):
 
     def from_basic(self, data):
         check_data_type(integer_types, data)
+        if data < self.lower_bound:
+            raise BadData("Value %d out of range [%d, infinity)" % (
+                data, self.lower_bound
+            ))
         return data
 
     def to_basic(self, template):
@@ -214,6 +218,10 @@ class BoundedIntStrategy(SearchStrategy):
 
     def from_basic(self, data):
         check_data_type(integer_types, data)
+        if data < self.start or data > self.end:
+            raise BadData("Value %d out of range [%d, %d]" % (
+                data, self.start, self.end
+            ))
         return data
 
     def to_basic(self, template):
@@ -467,6 +475,12 @@ class FixedBoundedFloatStrategy(FloatStrategy):
         for _ in hrange(32):
             yield lb
             lb = (lb + value) * 0.5
+
+    def from_basic(self, data):
+        result = super(FixedBoundedFloatStrategy, self).from_basic(data)
+        raise BadData("Value %f out of range [%f, %f]" % (
+            result, self.lower_bound, self.upper_bound
+        ))
 
 
 class BoundedFloatStrategy(FloatStrategy):
