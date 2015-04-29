@@ -28,9 +28,11 @@ from unittest import TestCase
 from hypothesis.core import find
 from hypothesis.types import Stream
 from hypothesis.errors import Flaky, NoSuchExample
+from hypothesis.settings import Settings
 from hypothesis.reporting import report
 from hypothesis.utils.show import show
 from hypothesis.internal.compat import hrange
+from hypothesis.internal.distributions import geometric
 from hypothesis.searchstrategy.strategies import BadData, BuildContext, \
     SearchStrategy
 
@@ -90,7 +92,7 @@ class GenericStateMachine(object):
             except Exception:
                 return True
         return find(
-            StateMachineSearchStrategy(), is_breaking_run
+            StateMachineSearchStrategy(), is_breaking_run, Settings.default,
         )
 
     _test_case_cache = {}
@@ -230,13 +232,18 @@ class StateMachineSearchStrategy(SearchStrategy):
         return template
 
     def produce_parameter(self, random):
-        return random.getrandbits(64)
+        return (
+            random.random(),
+            random.getrandbits(64),
+        )
 
     def produce_template(self, context, parameter_value):
+        size_dropoff, parameter_seed = parameter_value
+        size = min(1000, 1 + geometric(context.random, size_dropoff))
         return StateMachineRunner(
-            parameter_value,
+            parameter_seed,
             context.random.getrandbits(64),
-            n_steps=200,
+            n_steps=size,
         )
 
     def simplifiers(self, random, template):
