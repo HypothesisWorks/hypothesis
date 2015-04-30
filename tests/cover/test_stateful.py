@@ -13,10 +13,11 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+from random import Random
 from collections import namedtuple
 
 import pytest
-from hypothesis import Settings, strategy
+from hypothesis import Settings, assume, strategy
 from tests.common.utils import capture_out
 from hypothesis.specifiers import just, sampled_from, integers_in_range
 from hypothesis.experimental.stateful import Bundle, GenericStateMachine, \
@@ -70,6 +71,23 @@ class GoodSet(GenericStateMachine):
         pass
 
 
+class UnreliableStrategyState(GenericStateMachine):
+
+    def __init__(self):
+        self.random = Random()
+        self.counter = 0
+
+    def steps(self):
+        if self.random.randint(0, 1):
+            return strategy([bool])
+        else:
+            return strategy(int)
+
+    def execute_step(self, step):
+        self.counter += 1
+        assert self.counter < 10
+
+
 Leaf = namedtuple('Leaf', ('label',))
 Split = namedtuple('Split', ('left', 'right'))
 
@@ -101,7 +119,19 @@ class BalancedTrees(RuleBasedStateMachine):
             return 1 + self.size(tree.left) + self.size(tree.right)
 
 
-bad_machines = (OrderedStateMachine, SetStateMachine, BalancedTrees)
+class GivenLikeStateMachine(GenericStateMachine):
+
+    def steps(self):
+        return strategy([bool])
+
+    def execute_step(self, step):
+        assume(any(step))
+
+
+bad_machines = (
+    OrderedStateMachine, SetStateMachine, BalancedTrees,
+    UnreliableStrategyState,
+)
 
 
 @pytest.mark.parametrize(
@@ -125,3 +155,4 @@ def test_bad_machines_fail(machine):
 
 with Settings(max_examples=50):
     TestGoodSets = GoodSet.TestCase
+    TestGivenLike = GivenLikeStateMachine.TestCase

@@ -147,7 +147,9 @@ def find_satisfying_template(
         raise NoSuchExample(get_pretty_function_description(condition))
 
 
-def simplify_template_such_that(search_strategy, random, t, f, tracker):
+def simplify_template_such_that(
+    search_strategy, random, t, f, tracker, settings
+):
     """Perform a greedy search to produce a "simplest" version of a template
     that satisfies some predicate.
 
@@ -164,9 +166,10 @@ def simplify_template_such_that(search_strategy, random, t, f, tracker):
     assert isinstance(random, Random)
 
     yield t
+    successful_shrinks = 0
 
     changed = True
-    while changed:
+    while changed and successful_shrinks < settings.max_shrinks:
         changed = False
         for simplify in search_strategy.simplifiers(random, t):
             while True:
@@ -176,6 +179,7 @@ def simplify_template_such_that(search_strategy, random, t, f, tracker):
                         continue
                     try:
                         if f(s):
+                            successful_shrinks += 1
                             changed = True
                             yield s
                             t = s
@@ -184,6 +188,9 @@ def simplify_template_such_that(search_strategy, random, t, f, tracker):
                         pass
                 else:
                     break
+
+            if successful_shrinks >= settings.max_shrinks:
+                break
 
 
 def best_satisfying_template(
@@ -207,7 +214,8 @@ def best_satisfying_template(
         )
 
         for simpler in simplify_template_such_that(
-            search_strategy, random, satisfying_example, condition, tracker
+            search_strategy, random, satisfying_example, condition, tracker,
+            settings
         ):
             successful_shrinks += 1
             satisfying_example = simpler

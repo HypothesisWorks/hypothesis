@@ -274,6 +274,16 @@ do not meet the assumptions of the test.
 )
 
 Settings.define_setting(
+    'max_shrinks',
+    default=500,
+    description="""
+Once this many successful shrinks have been performed, Hypothesis will assume
+something has gone a bit wrong and give up rather than continuing to try to
+shrink the example.
+"""
+)
+
+Settings.define_setting(
     'timeout',
     default=60,
     description="""

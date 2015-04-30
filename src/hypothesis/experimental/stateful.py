@@ -29,7 +29,8 @@ from collections import namedtuple
 
 from hypothesis.core import find
 from hypothesis.types import Stream
-from hypothesis.errors import Flaky, NoSuchExample, InvalidDefinition
+from hypothesis.errors import Flaky, NoSuchExample, InvalidDefinition, \
+    UnsatisfiedAssumption
 from hypothesis.settings import Settings
 from hypothesis.reporting import report
 from hypothesis.specifiers import just, one_of, sampled_from
@@ -105,7 +106,7 @@ class GenericStateMachine(object):
             try:
                 runner.run(state_machine_class())
                 return False
-            except InvalidDefinition:
+            except (InvalidDefinition, UnsatisfiedAssumption):
                 raise
             except Exception:
                 return True
