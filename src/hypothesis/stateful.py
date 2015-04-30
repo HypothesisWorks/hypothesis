@@ -151,10 +151,10 @@ class GenericStateMachine(object):
                 )
 
         base_name = state_machine_class.__name__
-        StateMachineTestCase.__name__ = (
+        StateMachineTestCase.__name__ = str(
             base_name + '.TestCase'
         )
-        StateMachineTestCase.__qualname__ = (
+        StateMachineTestCase.__qualname__ = str(
             getattr(state_machine_class, '__qualname__', base_name) +
             '.TestCase'
         )
@@ -337,9 +337,9 @@ class StateMachineSearchStrategy(SearchStrategy):
                     n_steps=template.n_steps,
                     record=new_record,
                 )
-        accept.__name__ = 'convert_simplifier(%s, %d)' % (
+        accept.__name__ = str('convert_simplifier(%s, %d)' % (
             simplifier.__name__, i
-        )
+        ))
         return accept
 
     def random_discards(self, random, template):
