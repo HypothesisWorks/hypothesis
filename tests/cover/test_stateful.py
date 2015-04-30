@@ -21,7 +21,7 @@ from hypothesis import Settings, assume, strategy
 from tests.common.utils import capture_out
 from hypothesis.specifiers import just, sampled_from, integers_in_range
 from hypothesis.experimental.stateful import Bundle, GenericStateMachine, \
-    RuleBasedStateMachine, rule
+    RuleBasedStateMachine, rule, StateMachineSearchStrategy
 
 
 class SetStateMachine(GenericStateMachine):
@@ -118,20 +118,51 @@ class BalancedTrees(RuleBasedStateMachine):
         else:
             return 1 + self.size(tree.left) + self.size(tree.right)
 
-
-class GivenLikeStateMachine(GenericStateMachine):
-
-    def steps(self):
-        return strategy([bool])
-
-    def execute_step(self, step):
-        assume(any(step))
-
-
 bad_machines = (
     OrderedStateMachine, SetStateMachine, BalancedTrees,
     UnreliableStrategyState,
 )
+
+
+cheap_bad_machines = list(bad_machines)
+cheap_bad_machines.remove(BalancedTrees)
+cheap_bad_machines.remove(UnreliableStrategyState)
+
+
+with_cheap_bad_machines = pytest.mark.parametrize(
+    'machine',
+    cheap_bad_machines, ids=[t.__name__ for t in cheap_bad_machines]
+)
+
+
+@with_cheap_bad_machines
+def test_can_serialize_statemachine_execution(machine):
+    runner = machine.find_breaking_runner()
+    strategy = StateMachineSearchStrategy()
+    new_runner = strategy.from_basic(strategy.to_basic(runner))
+    with pytest.raises(AssertionError):
+        new_runner.run(machine())
+    r = Random(1)
+
+    for simplifier in strategy.simplifiers(r, new_runner):
+        try:
+            next(simplifier(r, new_runner))
+        except StopIteration:
+            pass
+
+
+@with_cheap_bad_machines
+def test_can_shrink_deserialized_execution_without_running(machine):
+    runner = machine.find_breaking_runner()
+    strategy = StateMachineSearchStrategy()
+    new_runner = strategy.from_basic(strategy.to_basic(runner))
+    r = Random(1)
+
+    for simplifier in strategy.simplifiers(r, new_runner):
+        try:
+            next(simplifier(r, new_runner))
+        except StopIteration:
+            pass
 
 
 @pytest.mark.parametrize(
@@ -151,6 +182,15 @@ def test_bad_machines_fail(machine):
     print(v)
     assert 'Step #1' in v
     assert 'Step #15' not in v
+
+
+class GivenLikeStateMachine(GenericStateMachine):
+
+    def steps(self):
+        return strategy([bool])
+
+    def execute_step(self, step):
+        assume(any(step))
 
 
 with Settings(max_examples=50):

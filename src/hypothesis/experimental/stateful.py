@@ -35,9 +35,9 @@ from hypothesis.settings import Settings
 from hypothesis.reporting import report
 from hypothesis.specifiers import just, one_of, sampled_from
 from hypothesis.utils.show import show
-from hypothesis.internal.compat import hrange
+from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.searchstrategy.strategies import BadData, BuildContext, \
-    SearchStrategy, strategy
+    SearchStrategy, strategy, check_data_type, check_length
 
 
 class TestCaseProperty(object):
@@ -245,7 +245,7 @@ class StateMachineSearchStrategy(SearchStrategy):
 
     def produce_parameter(self, random):
         return (
-            random.getrandbits(64),
+            random.getrandbits(64)
         )
 
     def produce_template(self, context, parameter_value):
@@ -257,6 +257,41 @@ class StateMachineSearchStrategy(SearchStrategy):
             n_steps=size,
         )
 
+    def to_basic(self, template):
+        return [
+            template.parameter_seed,
+            template.template_seed,
+            template.n_steps,
+            [
+                [data[1]]
+                if data != TOMBSTONE else None
+                for data in template.record
+            ]
+        ]
+
+    def from_basic(self, data):
+        check_data_type(list, data)
+        check_length(4, data)
+        check_data_type(integer_types, data[0])
+        check_data_type(integer_types, data[1])
+        check_data_type(integer_types, data[2])
+        check_data_type(list, data[3])
+
+        record = []
+
+        for record_data in data[3]:
+            if record_data is None:
+                record.append(TOMBSTONE)
+            else:
+                check_data_type(list, record_data)
+                check_length(1, record_data)
+                record.append((None, record_data[0]))
+        return StateMachineRunner(
+            parameter_seed=data[0], template_seed=data[1],
+            n_steps=data[2],
+            record=record,
+        )
+
     def simplifiers(self, random, template):
         yield self.cut_steps
         yield self.random_discards
@@ -264,6 +299,8 @@ class StateMachineSearchStrategy(SearchStrategy):
         for i in hrange(len(template.record)):
             if template.record[i] != TOMBSTONE:
                 strategy, data = template.record[i]
+                if strategy is None:
+                    continue
                 child_template = strategy.from_basic(data)
                 for simplifier in strategy.simplifiers(random, child_template):
                     yield self.convert_simplifier(strategy, simplifier, i)
@@ -335,7 +372,7 @@ class StateMachineSearchStrategy(SearchStrategy):
                 record=template.record,
             )
             new_record = list(template.record)
-            for i in hrange(mid):
+            for i in hrange(min(mid, len(new_record))):
                 new_record[i] = TOMBSTONE
             yield StateMachineRunner(
                 parameter_seed=template.parameter_seed,
