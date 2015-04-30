@@ -520,6 +520,8 @@ def find(specifier, condition, settings=None, random=None):
             search, random, template_condition, settings, None,
             tracker=tracker,
         ))
+    except Timeout:
+        raise
     except (NoSuchExample, Unsatisfiable):
         if search.size_upper_bound <= len(tracker):
             raise DefinitelyNoSuchExample(
