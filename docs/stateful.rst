@@ -145,6 +145,11 @@ So lets balance some trees.
               self.check_balanced(tree.left)
               self.check_balanced(tree.right)
 
+
+    @rule(target=balanced_trees, tree=trees)
+    def balance_tree(self, tree):
+        return self.split_leaves(self.flatten(tree))
+
       def size(self, tree):
           if isinstance(tree, Leaf):
               return 1
