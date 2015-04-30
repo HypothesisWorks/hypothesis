@@ -127,7 +127,7 @@ class GenericStateMachine(object):
             pass
 
         class StateMachineTestCase(TestCase):
-            settings = Settings.default
+            settings = Settings()
 
             def runTest(self):
                 try:
