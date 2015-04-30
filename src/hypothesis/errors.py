@@ -14,13 +14,6 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 
-def get_pretty_function_description(f):
-    # Lazily load this so as to prevent recursive dependencies
-    from hypothesis.internal.reflection import \
-        get_pretty_function_description as g
-    return g(f)
-
-
 class HypothesisException(Exception):
 
     """Generic parent class for exceptions thrown by Hypothesis."""

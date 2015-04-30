@@ -37,7 +37,7 @@ from hypothesis.specifiers import just, one_of, sampled_from
 from hypothesis.utils.show import show
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.searchstrategy.strategies import BadData, BuildContext, \
-    SearchStrategy, strategy, check_data_type, check_length
+    SearchStrategy, strategy, check_length, check_data_type
 
 
 class TestCaseProperty(object):  # pragma: no cover

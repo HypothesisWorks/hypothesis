@@ -23,7 +23,7 @@ from hypothesis.errors import Flaky, InvalidDefinition
 from tests.common.utils import capture_out
 from hypothesis.specifiers import just, sampled_from, integers_in_range
 from hypothesis.experimental.stateful import Bundle, GenericStateMachine, \
-    RuleBasedStateMachine, rule, StateMachineSearchStrategy
+    RuleBasedStateMachine, StateMachineSearchStrategy, rule
 
 
 class SetStateMachine(GenericStateMachine):
@@ -127,6 +127,7 @@ class BalancedTrees(RuleBasedStateMachine):
 
 
 class DepthCharge(object):
+
     def __init__(self, value):
         if value is None:
             self.depth = 0
@@ -266,6 +267,7 @@ def test_can_get_test_case_off_machine_instance():
 
 
 class FlakyStateMachine(RuleBasedStateMachine):
+
     @rule()
     def boom(self):
         assert not any(
@@ -289,6 +291,7 @@ def test_empty_machine_is_invalid():
 
 def test_machine_with_no_terminals_is_invalid():
     class NonTerminalMachine(RuleBasedStateMachine):
+
         @rule(value=Bundle('hi'))
         def bye(self, hi):
             pass
@@ -298,6 +301,7 @@ def test_machine_with_no_terminals_is_invalid():
 
 
 class DynamicMachine(RuleBasedStateMachine):
+
     @rule(value=Bundle('hi'))
     def test_stuff(x):
         pass
