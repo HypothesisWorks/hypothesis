@@ -240,7 +240,11 @@ def best_satisfying_template(
 def test_is_flaky(test):
     @functools.wraps(test)
     def test_or_flaky(*args, **kwargs):
-        raise Flaky(test, (args, kwargs))
+        raise Flaky(
+            (
+                'Hypothesis %r produces unreliable results: %r falsified it on'
+                ' the first call but did not on a subsequent one'
+            ) % (get_pretty_function_description(test), example))
     return test_or_flaky
 
 
@@ -437,7 +441,9 @@ def given(*generator_arguments, **generator_kwargs):
                     return False
                 except UnsatisfiedAssumption as e:
                     raise e
-                except Exception:
+                except Exception as e:
+                    if settings.max_shrinks <= 0:
+                        raise e
                     verbose_report(traceback.format_exc)
                     return True
 
