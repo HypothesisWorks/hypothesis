@@ -510,7 +510,7 @@ def find(specifier, condition, settings=None, random=None):
                 verbose_report(lambda: 'Shrunk example to %s' % (
                     show(result),
                 ))
-        return assume(success)
+        return success
 
     template_condition.__name__ = condition.__name__
     tracker = Tracker()
