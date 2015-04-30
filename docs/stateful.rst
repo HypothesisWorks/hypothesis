@@ -238,14 +238,17 @@ changes in the state. It's not required, but the less your steps() change the
 higher the quality of examples you'll get). 
 
 If any of execute_step or teardown produces an error, Hypothesis will try to
-find a minimal sequence of values steps such that:
+find a minimal sequence of values steps such that the following throws an
+exception:
 
 .. code:: python
 
-  machine = MyStateMachine()
-  for step in steps:
-    machine.execute_step(step)
-  machine.teardown()
+  try:
+    machine = MyStateMachine()
+    for step in steps:
+      machine.execute_step(step)
+  finally:
+    machine.teardown()
 
 and such that at every point, the step executed is one that could plausible
 have come from a call to steps() in the current state.
