@@ -22,7 +22,7 @@ from hypothesis import Settings, assume, strategy
 from hypothesis.errors import Flaky, InvalidDefinition
 from tests.common.utils import capture_out
 from hypothesis.specifiers import just, sampled_from, integers_in_range
-from hypothesis.experimental.stateful import Bundle, GenericStateMachine, \
+from hypothesis.stateful import Bundle, GenericStateMachine, \
     RuleBasedStateMachine, StateMachineSearchStrategy, rule
 
 

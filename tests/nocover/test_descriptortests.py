@@ -28,7 +28,7 @@ from tests.common.specifiers import Descriptor
 from hypothesis.strategytests import TemplatesFor, strategy_test_suite
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.searchstrategy.basic import basic_strategy
-from hypothesis.experimental.stateful import StateMachineSearchStrategy
+from hypothesis.stateful import StateMachineSearchStrategy
 from hypothesis.searchstrategy.narytree import NAryTree
 
 TestIntegerRange = strategy_test_suite(integers_in_range(0, 5))
