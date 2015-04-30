@@ -361,3 +361,24 @@ def test_settings_are_independent():
         )
         Foo.TestCase.settings.max_examples = 1000000
     assert s.max_examples == orig
+
+
+def test_minimizes_errors_in_teardown():
+    class Foo(GenericStateMachine):
+        def __init__(self):
+            self.counter = 0
+
+        def steps(self):
+            return strategy(())
+
+        def execute_step(self, value):
+            self.counter += 1
+
+        def teardown(self):
+            assert not self.counter
+
+    runner = Foo.find_breaking_runner()
+    assert runner.n_steps == 1
+
+    with pytest.raises(AssertionError):
+        runner.run(Foo(), print_steps=True)
