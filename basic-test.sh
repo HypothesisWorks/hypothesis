@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e -o xtrace
 
+python -m pytest tests
+
 for extra in datetime fakefactory pytest ; do
     pip install --upgrade hypothesis-extra/hypothesis-$extra/
 done
