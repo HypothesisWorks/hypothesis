@@ -21,9 +21,9 @@ import pytest
 from hypothesis import Settings, assume, strategy
 from hypothesis.errors import Flaky, InvalidDefinition
 from tests.common.utils import capture_out
-from hypothesis.specifiers import just, sampled_from, integers_in_range
 from hypothesis.stateful import Bundle, GenericStateMachine, \
     RuleBasedStateMachine, StateMachineSearchStrategy, rule
+from hypothesis.specifiers import just, sampled_from, integers_in_range
 
 
 class SetStateMachine(GenericStateMachine):
@@ -365,6 +365,7 @@ def test_settings_are_independent():
 
 def test_minimizes_errors_in_teardown():
     class Foo(GenericStateMachine):
+
         def __init__(self):
             self.counter = 0
 

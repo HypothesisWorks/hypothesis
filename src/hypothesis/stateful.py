@@ -39,7 +39,6 @@ from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.searchstrategy.strategies import BadData, BuildContext, \
     SearchStrategy, strategy, check_length, check_data_type
 
-
 Settings.define_setting(
     name='stateful_step_count',
     default=100,
@@ -250,6 +249,7 @@ class StateMachineRunner(object):
 
 
 class StateMachineSearchStrategy(SearchStrategy):
+
     def __init__(self, settings=None):
         self.program_size = (settings or Settings.default).stateful_step_count
 
