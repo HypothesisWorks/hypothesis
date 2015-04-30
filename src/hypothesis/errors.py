@@ -110,12 +110,6 @@ class Flaky(HypothesisException):
            dont' do that and testing those instead.
     """
 
-    def __init__(self, hypothesis, example):
-        super(Flaky, self).__init__((
-            'Hypothesis %r produces unreliable results: %r falsified it on the'
-            ' first call but did not on a subsequent one'
-        ) % (get_pretty_function_description(hypothesis), example))
-
 
 class Timeout(Unsatisfiable):
 

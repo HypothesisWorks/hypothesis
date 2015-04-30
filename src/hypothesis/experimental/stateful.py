@@ -40,7 +40,7 @@ from hypothesis.searchstrategy.strategies import BadData, BuildContext, \
     SearchStrategy, strategy, check_data_type, check_length
 
 
-class TestCaseProperty(object):
+class TestCaseProperty(object):  # pragma: no cover
 
     def __get__(self, obj, typ=None):
         if obj is not None:
@@ -331,25 +331,25 @@ class StateMachineSearchStrategy(SearchStrategy):
         return accept
 
     def random_discards(self, random, template):
-        for _ in hrange(100):
-            new_record = list(template.record)
-            live = 0
-            kept = 0
-            for i in hrange(len(template.record)):
-                if new_record[i] != TOMBSTONE:
-                    live += 1
-                    if random.randint(0, 2) == 0:
-                        new_record[i] = TOMBSTONE
-            if live <= 10:
-                break
-            if kept >= 0.9 * live:
-                continue
-            yield StateMachineRunner(
-                parameter_seed=template.parameter_seed,
-                template_seed=template.template_seed,
-                n_steps=template.n_steps,
-                record=new_record,
-            )
+        live = len([
+            r for r in template.record if r != TOMBSTONE
+        ])
+        if live < 10:
+            return
+
+        for k in hrange(1, 8):
+            for _ in hrange(10):
+                new_record = list(template.record)
+                for i in hrange(len(template.record)):
+                    if new_record[i] != TOMBSTONE:
+                        if random.randint(0, 9) <= k:
+                            new_record[i] = TOMBSTONE
+                yield StateMachineRunner(
+                    parameter_seed=template.parameter_seed,
+                    template_seed=template.template_seed,
+                    n_steps=template.n_steps,
+                    record=new_record,
+                )
 
     def cut_steps(self, random, template):
         if len(template.record) < template.n_steps:
@@ -382,8 +382,14 @@ class StateMachineSearchStrategy(SearchStrategy):
             )
 
     def delete_elements(self, random, template):
-        for i in hrange(len(template.record)):
+        deletes = 0
+        indices = list(hrange(len(template.record)))
+        random.shuffle(indices)
+        for i in indices:
+            if deletes >= 10:
+                break
             if template.record[i] != TOMBSTONE:
+                deletes += 1
                 new_record = list(template.record)
                 new_record[i] = TOMBSTONE
                 yield StateMachineRunner(
@@ -401,27 +407,6 @@ Rule = namedtuple(
 )
 
 Bundle = namedtuple('Bundle', ('name',))
-
-
-class RuleWrapper(object):
-
-    def __init__(self, targets, function, arguments):
-        self.targets = targets
-        self.function = function
-        self.arguments = arguments
-
-    def __get__(self, obj, typ=None):
-        return self.function
-
-    def __set__(self, obj, value):
-        obj.define_rule(
-            targets=self.targets,
-            function=self.function,
-            arguments=self.arguments
-        )
-
-    def __delete__(self, obj):
-        return
 
 
 RULE_MARKER = 'hypothesis_stateful_rule'
@@ -450,9 +435,13 @@ def rule(targets=(), target=None, **kwargs):
         converted_targets.append(t)
 
     def accept(f):
-        setattr(f, RULE_MARKER, Rule(
-            targets=tuple(converted_targets), arguments=kwargs, function=f
-        ))
+        if not hasattr(f, RULE_MARKER):
+            setattr(f, RULE_MARKER, [])
+        getattr(f, RULE_MARKER).append(
+            Rule(
+                targets=tuple(converted_targets), arguments=kwargs, function=f
+            )
+        )
         return f
     return accept
 
@@ -473,6 +462,7 @@ class RuleBasedStateMachine(GenericStateMachine):
 
     """
     _rules_per_class = {}
+    _base_rules_per_class = {}
 
     def __init__(self):
         if not self.rules():
@@ -507,9 +497,10 @@ class RuleBasedStateMachine(GenericStateMachine):
         except KeyError:
             pass
 
-        result = list(filter(None, [
-            getattr(v, RULE_MARKER, None)
+        result = cls._base_rules_per_class.get(cls, []) + list(filter(None, [
+            r
             for k, v in inspect.getmembers(cls)
+            for r in getattr(v, RULE_MARKER, ())
         ]))
         cls._rules_per_class[cls] = result
         return result
@@ -521,8 +512,12 @@ class RuleBasedStateMachine(GenericStateMachine):
             if not isinstance(v, Bundle):
                 v = strategy(v)
             converted_arguments[k] = v
+        if cls in cls._rules_per_class:
+            target = cls._rules_per_class[cls]
+        else:
+            target = cls._base_rules_per_class.setdefault(cls, [])
 
-        return cls.rules.append(
+        return target.append(
             Rule(targets, function, converted_arguments)
         )
 
