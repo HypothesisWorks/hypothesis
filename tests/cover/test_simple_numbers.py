@@ -133,6 +133,13 @@ def test_can_find_float_far_from_integral():
     ))
 
 
+def test_can_find_integrish():
+    find(float, lambda x: (
+        is_integral(x * (2 ** 32))
+        and not is_integral(x * 16)
+    ))
+
+
 def test_list_of_fractional_float():
     assert set(find(
         [float], lambda x: len([t for t in x if t >= 1.5]) >= 10
