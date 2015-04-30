@@ -40,6 +40,15 @@ from hypothesis.searchstrategy.strategies import BadData, BuildContext, \
     SearchStrategy, strategy, check_length, check_data_type
 
 
+Settings.define_setting(
+    name='stateful_step_count',
+    default=100,
+    description="""
+Number of steps to run a stateful program for before giving up on it breaking.
+"""
+)
+
+
 class TestCaseProperty(object):  # pragma: no cover
 
     def __get__(self, obj, typ=None):
@@ -111,7 +120,9 @@ class GenericStateMachine(object):
             except Exception:
                 return True
         return find(
-            StateMachineSearchStrategy(), is_breaking_run,
+            StateMachineSearchStrategy(
+                state_machine_class.TestCase.settings
+            ), is_breaking_run,
             state_machine_class.TestCase.settings,
         )
 
@@ -239,6 +250,8 @@ class StateMachineRunner(object):
 
 
 class StateMachineSearchStrategy(SearchStrategy):
+    def __init__(self, settings=None):
+        self.program_size = (settings or Settings.default).stateful_step_count
 
     def reify(self, template):
         return template
@@ -250,11 +263,10 @@ class StateMachineSearchStrategy(SearchStrategy):
 
     def produce_template(self, context, parameter_value):
         parameter_seed = parameter_value
-        size = 200
         return StateMachineRunner(
             parameter_seed,
             context.random.getrandbits(64),
-            n_steps=size,
+            n_steps=self.program_size,
         )
 
     def to_basic(self, template):
