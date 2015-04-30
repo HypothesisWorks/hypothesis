@@ -478,9 +478,11 @@ class FixedBoundedFloatStrategy(FloatStrategy):
 
     def from_basic(self, data):
         result = super(FixedBoundedFloatStrategy, self).from_basic(data)
-        raise BadData('Value %f out of range [%f, %f]' % (
-            result, self.lower_bound, self.upper_bound
-        ))
+        if result < self.lower_bound or result > self.upper_bound:
+            raise BadData('Value %f out of range [%f, %f]' % (
+                result, self.lower_bound, self.upper_bound
+            ))
+        return result
 
 
 class BoundedFloatStrategy(FloatStrategy):

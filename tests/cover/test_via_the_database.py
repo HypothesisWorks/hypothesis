@@ -34,6 +34,7 @@ def test_round_tripping_via_the_database(spec):
     ).digest())
     strat = strategy(spec)
     template = some_template(strat, random)
+    strat.from_basic(strat.to_basic(template))
     template_via_db = via_database(spec, strat, template)
     assert show(strat.reify(template)) == show(strat.reify(template_via_db))
 
