@@ -13,14 +13,14 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-import pytest
 from collections import namedtuple
 
-from hypothesis import strategy, Settings
+import pytest
+from hypothesis import Settings, strategy
 from tests.common.utils import capture_out
 from hypothesis.specifiers import just, sampled_from, integers_in_range
-from hypothesis.experimental.stateful import GenericStateMachine, \
-    RuleBasedStateMachine, Bundle, rule
+from hypothesis.experimental.stateful import Bundle, GenericStateMachine, \
+    RuleBasedStateMachine, rule
 
 
 class SetStateMachine(GenericStateMachine):
@@ -59,6 +59,7 @@ class OrderedStateMachine(GenericStateMachine):
 
 
 class GoodSet(GenericStateMachine):
+
     def __init__(self):
         self.stuff = set()
 
@@ -117,10 +118,10 @@ def test_bad_machines_fail(machine):
         print(o.getvalue())
         raise
     v = o.getvalue()
+    print(v)
     assert 'Step #1' in v
-    assert 'Step #9' not in v
+    assert 'Step #15' not in v
 
 
-def test_good_machine_does_not_fail():
-    with Settings(max_examples=50):
-        GoodSet.TestCase().runTest()
+with Settings(max_examples=50):
+    TestGoodSets = GoodSet.TestCase

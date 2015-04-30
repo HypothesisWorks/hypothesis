@@ -29,15 +29,14 @@ from collections import namedtuple
 
 from hypothesis.core import find
 from hypothesis.types import Stream
-from hypothesis.settings import Settings
 from hypothesis.errors import Flaky, NoSuchExample, InvalidDefinition
+from hypothesis.settings import Settings
 from hypothesis.reporting import report
+from hypothesis.specifiers import just, one_of, sampled_from
 from hypothesis.utils.show import show
 from hypothesis.internal.compat import hrange
 from hypothesis.searchstrategy.strategies import BadData, BuildContext, \
     SearchStrategy, strategy
-from hypothesis.specifiers import sampled_from, just, one_of
-from hypothesis.internal.distributions import geometric
 
 
 class TestCaseProperty(object):
@@ -111,7 +110,8 @@ class GenericStateMachine(object):
             except Exception:
                 return True
         return find(
-            StateMachineSearchStrategy(), is_breaking_run, Settings.default,
+            StateMachineSearchStrategy(), is_breaking_run,
+            state_machine_class.TestCase.settings,
         )
 
     _test_case_cache = {}
@@ -126,6 +126,7 @@ class GenericStateMachine(object):
             pass
 
         class StateMachineTestCase(TestCase):
+            settings = Settings.default
 
             def runTest(self):
                 try:
@@ -181,8 +182,6 @@ class StateMachineRunner(object):
         self.templates = seeds(template_seed)
         self.record = list(record or ())
 
-        self.shows = []
-
     def __trackas__(self):
         return (
             StateMachineRunner,
@@ -192,13 +191,10 @@ class StateMachineRunner(object):
         )
 
     def __repr__(self):
-        trail = []
-        for s in self.shows:
-            if s is not None:
-                trail.append(s)
         return (
-            'StateMachineRunner(%s)' % (
-                ', '.join(trail)
+            'StateMachineRunner(%d/%d steps)' % (
+                len([t for t in self.record if t != TOMBSTONE]),
+                self.n_steps,
             )
         )
 
@@ -210,8 +206,6 @@ class StateMachineRunner(object):
                 template_set = False
                 if i < len(self.record):
                     if self.record[i] is TOMBSTONE:
-                        if i < len(self.shows):
-                            self.shows[i] = None
                         continue
                     _, data = self.record[i]
                     try:
@@ -236,10 +230,6 @@ class StateMachineRunner(object):
 
                 value = strategy.reify(template)
 
-                if i < len(self.shows):
-                    self.shows[i] = show(value)
-                else:
-                    self.shows.append(show(value))
                 if print_steps:
                     state_machine.print_step(value)
                 state_machine.execute_step(value)
@@ -254,13 +244,12 @@ class StateMachineSearchStrategy(SearchStrategy):
 
     def produce_parameter(self, random):
         return (
-            random.random(),
             random.getrandbits(64),
         )
 
     def produce_template(self, context, parameter_value):
-        size_dropoff, parameter_seed = parameter_value
-        size = min(1000, 1 + geometric(context.random, size_dropoff))
+        parameter_seed = parameter_value
+        size = 200
         return StateMachineRunner(
             parameter_seed,
             context.random.getrandbits(64),
@@ -304,11 +293,19 @@ class StateMachineSearchStrategy(SearchStrategy):
         return accept
 
     def random_discards(self, random, template):
-        for _ in hrange(10):
+        for _ in hrange(100):
             new_record = list(template.record)
+            live = 0
+            kept = 0
             for i in hrange(len(template.record)):
-                if new_record[i] != TOMBSTONE and random.randint(0, 1):
-                    new_record[i] = TOMBSTONE
+                if new_record[i] != TOMBSTONE:
+                    live += 1
+                    if random.randint(0, 2) == 0:
+                        new_record[i] = TOMBSTONE
+            if live <= 10:
+                break
+            if kept >= 0.9 * live:
+                continue
             yield StateMachineRunner(
                 parameter_seed=template.parameter_seed,
                 template_seed=template.template_seed,
@@ -317,6 +314,13 @@ class StateMachineSearchStrategy(SearchStrategy):
             )
 
     def cut_steps(self, random, template):
+        if len(template.record) < template.n_steps:
+            yield StateMachineRunner(
+                parameter_seed=template.parameter_seed,
+                template_seed=template.template_seed,
+                n_steps=len(template.record),
+                record=template.record,
+            )
         mid = 0
         while True:
             next_mid = (template.n_steps + mid) // 2
@@ -362,6 +366,7 @@ Bundle = namedtuple('Bundle', ('name',))
 
 
 class RuleWrapper(object):
+
     def __init__(self, targets, function, arguments):
         self.targets = targets
         self.function = function
@@ -385,12 +390,30 @@ RULE_MARKER = 'hypothesis_stateful_rule'
 
 
 def rule(targets=(), target=None, **kwargs):
+    """Decorator for RuleBasedStateMachine. Any name present in target or
+    targets will define where the end result of this function should go. If
+    both are empty then the end result will be discarded.
+
+    targets may either be a Bundle or the name of a Bundle.
+
+    kwargs then define the arguments that will be passed to the function
+    invocation. If their value is a Bundle then values that have previously
+    been produced for that bundle will be provided, if they are anything else
+    it will be turned into a strategy and values from that will be provided.
+
+    """
     if target is not None:
         targets += (target,)
 
+    converted_targets = []
+    for t in targets:
+        while isinstance(t, Bundle):
+            t = t.name
+        converted_targets.append(t)
+
     def accept(f):
         setattr(f, RULE_MARKER, Rule(
-            targets=targets, arguments=kwargs, function=f
+            targets=tuple(converted_targets), arguments=kwargs, function=f
         ))
         return f
     return accept
@@ -400,11 +423,22 @@ VarReference = namedtuple('VarReference', ('name',))
 
 
 class RuleBasedStateMachine(GenericStateMachine):
+
+    """A RuleBasedStateMachine gives you a more structured way to define state
+    machines.
+
+    The idea is that a state machine carries a bunch of types of data
+    divided into Bundles, and has a set of rules which may read data
+    from bundles (or just from normal strategies) and push data onto
+    bundles. At any given point a random applicable rule will be
+    executed.
+
+    """
     _rules_per_class = {}
 
     def __init__(self):
         if not self.rules():
-            raise InvalidDefinition("Type %s defines no rules" % (
+            raise InvalidDefinition('Type %s defines no rules' % (
                 type(self).__name__,
             ))
         self.bundles = {}
@@ -412,13 +446,13 @@ class RuleBasedStateMachine(GenericStateMachine):
         self.names_to_values = {}
 
     def __repr__(self):
-        return "%s(%s)" % (
+        return '%s(%s)' % (
             type(self).__name__,
             show(self.bundles),
         )
 
     def upcoming_name(self):
-        return "v%d" % (self.name_counter,)
+        return 'v%d' % (self.name_counter,)
 
     def new_name(self):
         result = self.upcoming_name()
@@ -474,7 +508,7 @@ class RuleBasedStateMachine(GenericStateMachine):
                 )))
         if not strategies:
             raise InvalidDefinition(
-                "No progress can be made from state %r" % (self,)
+                'No progress can be made from state %r' % (self,)
             )
         return strategy(one_of(strategies))
 
@@ -489,9 +523,9 @@ class RuleBasedStateMachine(GenericStateMachine):
         self.step_count = getattr(self, 'step_count', 0) + 1
         report('Step #%d: %s%s(%s)' % (
             self.step_count,
-            '%s = ' % (self.upcoming_name(),) if rule.targets else "",
+            '%s = ' % (self.upcoming_name(),) if rule.targets else '',
             rule.function.__name__,
-            ', '.join("%s=%s" % kv for kv in data_repr.items())
+            ', '.join('%s=%s' % kv for kv in data_repr.items())
         ))
 
     def execute_step(self, step):
