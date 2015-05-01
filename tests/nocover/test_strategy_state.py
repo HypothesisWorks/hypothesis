@@ -21,7 +21,7 @@ from decimal import Decimal
 from fractions import Fraction
 
 from hypothesis import Settings, Verbosity, find, given, assume, strategy
-from hypothesis.errors import NoExamples
+from hypothesis.errors import NoExamples, NoSuchExample
 from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, \
     StateMachineSearchStrategy, rule
@@ -78,10 +78,19 @@ class HypothesisSpec(RuleBasedStateMachine):
     def build_stream(self, strat):
         return strategy(streaming(strat))
 
-    @rule(stream_strat=streaming_strategies, index=integers_in_range(0, 500))
+    @rule(
+        targets=(strategies, streaming_strategies),
+        strat=strategies, i=integers_in_range(1, 500))
+    def evalled_stream(self, strat, i):
+        return strategy(streaming(strat)).map(lambda x: list(x[:i]) and x)
+
+    @rule(stream_strat=streaming_strategies, index=integers_in_range(0, 50))
     def eval_stream(self, stream_strat, index):
-        stream = stream_strat.example()
-        list(stream[:index])
+        try:
+            stream = stream_strat.example()
+            list(stream[:index])
+        except NoExamples:
+            pass
 
     @rule(target=strats_with_templates, st=strats_with_templates, r=Random)
     def simplify(self, st, r):
@@ -266,18 +275,31 @@ class HypothesisSpec(RuleBasedStateMachine):
                 found.append(x)
 
     @rule(strat=strategies)
-    def can_simultaneously_simplify(self, strat):
+    def can_simultaneously_simplify_templates(self, strat):
         if strat.size_upper_bound < 2:
             return
-        lists = strategy([strat])
-        simul = find(
-            lists,
-            lambda x: (
-                20 <= len(x) <= 30 and
-                len(set(map(show, x))) >= 2
-            ), settings=Settings(verbosity=Verbosity.quiet, timeout=2.0))
-        assert len(simul) == 20
-        assert len(set(map(show, simul))) == 2
+        lists = strategy([TemplatesFor(strat)])
+
+        def force_a_bit_of_eval(x):
+            try:
+                next(iter(x))
+            except (TypeError, StopIteration):
+                pass
+            return True
+        try:
+            with Settings(verbosity=Verbosity.quiet):
+                simul = find(
+                    lists,
+                    lambda x: (
+                        force_a_bit_of_eval(x) and
+                        20 <= len(x) <= 30 and
+                        len(set(map(show, x))) >= 2
+                    ), settings=Settings(
+                        verbosity=Verbosity.quiet))
+            assert len(simul) == 20
+            assert len(set(map(show, simul))) == 2
+        except NoSuchExample:
+            pass
 
 
 TestHypothesis = HypothesisSpec.TestCase
