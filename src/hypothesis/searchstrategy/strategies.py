@@ -660,6 +660,7 @@ class FlatMapStrategy(SearchStrategy):
                 )
             else:
                 return x.template_seed < y.template_seed
+        return False
 
     def simplifiers(self, random, template):
         for simplify in self.flatmapped_strategy.simplifiers(
