@@ -28,7 +28,6 @@ from unittest import TestCase
 from collections import namedtuple
 
 from hypothesis.core import find
-from hypothesis.types import Stream
 from hypothesis.errors import Flaky, NoSuchExample, InvalidDefinition, \
     UnsatisfiedAssumption
 from hypothesis.settings import Settings
@@ -166,13 +165,13 @@ class GenericStateMachine(object):
         return StateMachineTestCase
 
 
-def seeds(starting):
+def seeds(starting, n_steps):
     random = Random(starting)
 
-    def gen():
-        while True:
-            yield random.getrandbits(64)
-    return Stream(gen())
+    result = []
+    for _ in hrange(n_steps):
+        result.append(random.getrandbits(64))
+    return result
 
 
 # Sentinel value used to mark entries as deleted.
@@ -187,12 +186,16 @@ class StateMachineRunner(object):
 
     """
 
-    def __init__(self, parameter_seed, template_seed, n_steps, record=None):
+    def __init__(
+        self, parameter_seed, template_seed, n_steps,
+        record=None, templates=None,
+    ):
         self.parameter_seed = parameter_seed
         self.template_seed = template_seed
         self.n_steps = n_steps
 
-        self.templates = seeds(template_seed)
+        self.templates = templates or seeds(template_seed, n_steps)
+        assert len(self.templates) >= n_steps
         self.record = list(record or ())
 
     def __trackas__(self):
@@ -336,6 +339,7 @@ class StateMachineSearchStrategy(SearchStrategy):
                 yield StateMachineRunner(
                     parameter_seed=template.parameter_seed,
                     template_seed=template.template_seed,
+                    templates=template.templates,
                     n_steps=template.n_steps,
                     record=new_record,
                 )
@@ -361,6 +365,7 @@ class StateMachineSearchStrategy(SearchStrategy):
                 yield StateMachineRunner(
                     parameter_seed=template.parameter_seed,
                     template_seed=template.template_seed,
+                    templates=template.templates,
                     n_steps=template.n_steps,
                     record=new_record,
                 )
@@ -370,6 +375,7 @@ class StateMachineSearchStrategy(SearchStrategy):
             yield StateMachineRunner(
                 parameter_seed=template.parameter_seed,
                 template_seed=template.template_seed,
+                templates=template.templates,
                 n_steps=len(template.record),
                 record=template.record,
             )
@@ -382,6 +388,7 @@ class StateMachineSearchStrategy(SearchStrategy):
             yield StateMachineRunner(
                 parameter_seed=template.parameter_seed,
                 template_seed=template.template_seed,
+                templates=template.templates,
                 n_steps=mid,
                 record=template.record,
             )
@@ -391,6 +398,7 @@ class StateMachineSearchStrategy(SearchStrategy):
             yield StateMachineRunner(
                 parameter_seed=template.parameter_seed,
                 template_seed=template.template_seed,
+                templates=template.templates,
                 n_steps=template.n_steps,
                 record=new_record,
             )
@@ -409,6 +417,7 @@ class StateMachineSearchStrategy(SearchStrategy):
                 yield StateMachineRunner(
                     parameter_seed=template.parameter_seed,
                     template_seed=template.template_seed,
+                    templates=template.templates,
                     n_steps=template.n_steps,
                     record=new_record,
                 )
