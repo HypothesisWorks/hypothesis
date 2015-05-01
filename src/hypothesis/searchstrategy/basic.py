@@ -209,6 +209,9 @@ class BasicSearchStrategy(SearchStrategy):
             context.random.choice(template_choices), up
         )
 
+    def strictly_simpler(self, x, y):
+        return x.depth > y.depth
+
     def basic_simplify(self, random, template):
         if template.depth >= self.MAX_DEPTH:
             return

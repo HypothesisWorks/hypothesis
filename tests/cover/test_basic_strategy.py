@@ -158,6 +158,14 @@ def test_can_find_adjacent_one_bits():
             has_no_adjacent_one_bits()
 
 
+def test_simplifying_results_in_strictly_simpler():
+    random = Random('test_simplifying_results_in_strictly_simpler')
+    strat = strategy(Bitfields)
+    template = some_template(strat, random)
+    for shrunk_template in strat.full_simplify(random, template):
+        assert strat.strictly_simpler(shrunk_template, template)
+
+
 def test_can_recalculate_shrinks_without_reify_cache():
     random = Random('test_can_recalculate_shrinks_without_reify_cache')
     strat = strategy(Bitfields)

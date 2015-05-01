@@ -23,6 +23,8 @@ from hypothesis.internal.debug import some_template
 from hypothesis.searchstrategy.narytree import Leaf, NAryTree
 from hypothesis.searchstrategy.strategies import BuildContext
 
+from tests.common import Bitfields
+
 ConstantLists = strategy(int).flatmap(lambda i: [just(i)])
 
 OrderedPairs = strategy(integers_in_range(1, 200)).flatmap(
@@ -139,3 +141,13 @@ def test_can_still_simplify_if_not_reified():
             template = next(strat.full_simplify(random, template))
     except StopIteration:
         pass
+
+
+def test_two_incompatible_unreified_templates():
+    r = Random(1)
+    strat = strategy(Bitfields).map(lambda x: integers_in_range(0, x))
+    x = some_template(strat, r)
+    y = some_template(strat, r)
+    assert x != y
+    assert not strat.strictly_simpler(x, y)
+    assert not strat.strictly_simpler(y, x)
