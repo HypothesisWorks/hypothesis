@@ -490,6 +490,7 @@ def find(specifier, condition, settings=None, random=None):
     settings = settings or Settings(
         max_examples=2000,
         min_satisfying_examples=0,
+        max_shrinks=2000,
     )
 
     search = strategy(specifier, settings)
