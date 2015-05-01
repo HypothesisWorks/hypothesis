@@ -33,11 +33,13 @@ from hypothesis.errors import Flaky, NoSuchExample, InvalidDefinition, \
     UnsatisfiedAssumption
 from hypothesis.settings import Settings
 from hypothesis.reporting import report
-from hypothesis.specifiers import just, one_of, sampled_from
 from hypothesis.utils.show import show
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.searchstrategy.strategies import BadData, BuildContext, \
-    SearchStrategy, strategy, check_length, check_data_type
+    SearchStrategy, strategy, check_length, check_data_type, one_of_strategies
+from hypothesis.searchstrategy.collections import FixedKeysDictStrategy, \
+    TupleStrategy
+from hypothesis.searchstrategy.misc import SampledFromStrategy, JustStrategy
 
 Settings.define_setting(
     name='stateful_step_count',
@@ -509,13 +511,13 @@ class RuleBasedStateMachine(GenericStateMachine):
         except KeyError:
             pass
 
-        result = cls._base_rules_per_class.get(cls, []) + list(filter(None, [
-            r
-            for k, v in inspect.getmembers(cls)
-            for r in getattr(v, RULE_MARKER, ())
-        ]))
-        cls._rules_per_class[cls] = result
-        return result
+        for k, v in inspect.getmembers(cls):
+            for r in getattr(v, RULE_MARKER, ()):
+                cls.define_rule(
+                    r.targets, r.function, r.arguments
+                )
+        cls._rules_per_class[cls] = cls._base_rules_per_class.pop(cls, [])
+        return cls._rules_per_class[cls]
 
     @classmethod
     def define_rule(cls, targets, function, arguments):
@@ -545,17 +547,18 @@ class RuleBasedStateMachine(GenericStateMachine):
                         valid = False
                         break
                     else:
-                        v = strategy(sampled_from(bundle))
+                        v = SampledFromStrategy(bundle)
                 converted_arguments[k] = v
             if valid:
-                strategies.append(strategy((
-                    just(rule), converted_arguments
-                )))
+                strategies.append(TupleStrategy((
+                    JustStrategy(rule),
+                    FixedKeysDictStrategy(converted_arguments)
+                ), tuple))
         if not strategies:
             raise InvalidDefinition(
                 'No progress can be made from state %r' % (self,)
             )
-        return strategy(one_of(strategies))
+        return one_of_strategies(strategies)
 
     def print_step(self, step):
         rule, data = step
