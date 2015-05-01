@@ -643,9 +643,23 @@ class FlatMapStrategy(SearchStrategy):
             )
 
     def strictly_simpler(self, x, y):
-        return self.flatmapped_strategy.strictly_simpler(
+        if self.flatmapped_strategy.strictly_simpler(
             x.source_template, y.source_template
-        )
+        ):
+            return True
+        if self.flatmapped_strategy.strictly_simpler(
+            y.source_template, x.source_template
+        ):
+            return False
+        if x.source_template == y.source_template:
+            if x.source_template in self.strategy_cache:
+                strat = self.strategy_cache[x.source_template]
+                return strat.strictly_simpler(
+                    self.target_template(x),
+                    self.target_template(y),
+                )
+            else:
+                return x.template_seed < y.template_seed
 
     def simplifiers(self, random, template):
         for simplify in self.flatmapped_strategy.simplifiers(

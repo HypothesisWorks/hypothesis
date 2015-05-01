@@ -55,10 +55,13 @@ def constant_list_strategy(spec, settings):
     )
 
 
+EvalledIntStream = strategy(streaming(int)).map(lambda x: list(x[:10]) and x)
+
 ABC = namedtuple('ABC', ('a', 'b', 'c'))
 
 standard_types = [
     Bitfields,
+    EvalledIntStream,
     [], (), set(), frozenset(), {},
     NAryTree(bool, bool, bool),
     ABC(bool, bool, bool),
@@ -85,6 +88,9 @@ standard_types = [
     strategy(int).filter(lambda x: abs(x) > 100),
     floats_in_range(-sys.float_info.max, sys.float_info.max),
     None, Random,
+    strategy(()).flatmap(lambda x: EvalledIntStream),
+    TemplatesFor(strategy(integers_in_range(0, 0)).flatmap(
+        lambda x: integers_in_range(0, 0))),
 ]
 
 
