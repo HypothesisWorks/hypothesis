@@ -354,7 +354,10 @@ class Verbosity(object):
 Verbosity.quiet = Verbosity('quiet', 0)
 Verbosity.normal = Verbosity('normal', 1)
 Verbosity.verbose = Verbosity('verbose', 2)
-Verbosity.all = [Verbosity.quiet, Verbosity.normal, Verbosity.verbose]
+Verbosity.debug = Verbosity('debug', 3)
+Verbosity.all = [
+    Verbosity.quiet, Verbosity.normal, Verbosity.verbose, Verbosity.debug
+]
 
 
 ENVIRONMENT_VERBOSITY_OVERRIDE = os.getenv('HYPOTHESIS_VERBOSITY_LEVEL')
