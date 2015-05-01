@@ -69,6 +69,7 @@ standard_types = [
     sampled_from(('a', 'b', 'c')),
     int, integers_from(3), integers_in_range(-2 ** 32, 2 ** 64),
     float, floats_in_range(-2.0, 3.0),
+    floats_in_range(3.14, 3.14),
     text_type, binary_type,
     bool,
     (bool, bool),

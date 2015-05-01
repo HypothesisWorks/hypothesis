@@ -600,6 +600,9 @@ def define_stragy_for_integer_Range(specifier, settings):
 
 @strategy.extend(specifiers.FloatRange)
 def define_strategy_for_float_Range(specifier, settings):
+    if specifier.start == specifier.end:
+        return strategy(specifiers.just(specifier.start), settings)
+
     if math.isinf(specifier.end - specifier.start):
         assert specifier.start < 0 and specifier.end > 0
         return strategy(
