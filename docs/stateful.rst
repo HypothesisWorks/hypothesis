@@ -12,8 +12,8 @@ considered semi-public API: It may break between minor versions but won't
 break between patch releases.
 
 This also means that it's a somewhat less polished product than the rest of
-Hypothesis. It should *work*, but the quality is lacking in a few places and
-it really should be faster than it currently is.
+Hypothesis. It should generally work fine, but it has some rough edges that
+still need to be filed off.
 
 Additionally the stateful testing API feels a bit alien to the way Hypothesis
 otherwise works, and should perhaps be considered its own thing and merely
@@ -198,18 +198,18 @@ technical limitations, Hypothesis was unable to find that particular shrink.
 In general it's rare for examples produced to be long, but they might not
 always be minimal right now.
 
-The other thing you'll notice running this is that right now it is quite slow
-(this is partly because each test tests quite a lot, but it's also just
-slower than it should be). You may wish to configure settings to reduce the
-number of examples run:
+You can control the deailed behaviour with a Settings object on the TestCase
+(this is a normal hypothesis Settings object using the defaults at the time
+the TestCase class was first referenced). For example if you wanted to run
+fewer examples with larger programs you could change the settings to:
 
 .. code:: python
 
-  TestTrees.settings.max_examples = 20
+  TestTrees.settings.max_examples = 100
+  TestTrees.settings.stateful_step_count = 100
 
-You could also adjust the timeout but I prefer to control for examples, as it
-means that Hypothesis has more time to shrink the result at the end if it does
-find an error.
+Which doubles the number of steps each program runs and halves the number of
+runs relative to the example.
 
 ----------------------
 Generic state machines
@@ -259,44 +259,55 @@ and such that at every point, the step executed is one that could plausible
 have come from a call to steps() in the current state.
 
 Here's an example of using stateful testing to test a broken implementation
-of a set in terms of a list (note that you could easily do this example with
-the rule based testing instead, and probably should this is just for,
-illustration purposes):
+of a set in terms of a list (note that you could easily do something close to
+this example with the rule based testing instead, and probably should. This
+is mostly for illustration purposes):
 
 .. code:: python
 
-  import unittest
+    import unittest
 
-  from hypothesis.stateful import GenericStateMachine
-  from hypothesis import strategy
-  from hypothesis.specifiers import sampled_from
-
-
-  class BrokenSet(GenericStateMachine):
-      def __init__(self):
-          self.data = []
-
-      def steps(self):
-          return strategy((sampled_from(('add', 'delete')), int))
-
-      def execute_step(self, step):
-          action, value = step
-          if action == 'delete':
-              try:
-                  self.data.remove(value)
-              except ValueError:
-                  pass
-              assert value not in self.data
-          else:
-              assert action == 'add'
-              self.data.append(value)
-              assert value in self.data
+    from hypothesis.stateful import GenericStateMachine
+    from hypothesis import strategy
+    from hypothesis.specifiers import sampled_from, just
 
 
-  TestSet = BrokenSet.TestCase
+    class BrokenSet(GenericStateMachine):
+        def __init__(self):
+            self.data = []
 
-  if __name__ == '__main__':
-      unittest.main()
+        def steps(self):
+            add_strategy = strategy((just("add"), int))
+            if not self.data:
+                return add_strategy
+            else:
+                return (
+                    add_strategy |
+                    strategy((just("delete"), sampled_from(self.data)))
+                )
+
+        def execute_step(self, step):
+            action, value = step
+            if action == 'delete':
+                try:
+                    self.data.remove(value)
+                except ValueError:
+                    pass
+                assert value not in self.data
+            else:
+                assert action == 'add'
+                self.data.append(value)
+                assert value in self.data
+
+
+    TestSet = BrokenSet.TestCase
+
+    if __name__ == '__main__':
+        unittest.main()
+
+
+Note that the strategy changes each time based on the data that's currently
+in the state machine.
 
 Running this gives us the following:
 
@@ -315,4 +326,4 @@ Running this gives us the following:
   AssertionError
 
 So it adds two elements, then deletes one, and throws an assertion when it
-finds out that only deleted one of the elements.
+finds out that this only deleted one of the copies of the element.
