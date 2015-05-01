@@ -32,7 +32,7 @@ from hypothesis.core import find
 from hypothesis.errors import Flaky, NoSuchExample, InvalidDefinition, \
     UnsatisfiedAssumption
 from hypothesis.settings import Settings, Verbosity
-from hypothesis.reporting import report, current_verbosity, verbose_report
+from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.utils.show import show
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.searchstrategy.misc import JustStrategy, \
