@@ -54,7 +54,7 @@ def test_marking_negative_avoids_similar_examples():
         i += 1
         if i >= N_EXAMPLES:
             break
-    assert float(positive) / N_EXAMPLES >= 0.8
+    assert float(positive) / N_EXAMPLES >= 0.75
 
 
 def test_can_grow_the_set_of_available_parameters_if_doing_badly():
