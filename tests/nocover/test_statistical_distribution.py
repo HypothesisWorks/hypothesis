@@ -246,7 +246,7 @@ test_can_produce_nan = define_test(
 )
 
 test_can_produce_long_lists_of_positive_integers = define_test(
-    [int], 0.05, lambda x: all(t >= 0 for t in x),
+    [int], 0.03, lambda x: all(t >= 0 for t in x),
     condition=long_list
 )
 
