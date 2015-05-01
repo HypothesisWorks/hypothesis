@@ -154,7 +154,7 @@ class SampledFromStrategy(SearchStrategy):
         n = len(self.elements)
         if n == 1:
             return
-        return chooser(random.getrandbits(8) for _ in hrange(n))
+        return chooser(random.getrandbits(8) + 1 for _ in hrange(n))
 
     def produce_template(self, context, pv):
         if len(self.elements) == 1:

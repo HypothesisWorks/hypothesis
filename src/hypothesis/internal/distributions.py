@@ -62,32 +62,3 @@ def non_empty_subset(random, elements, activation_chance=None):
             if biased_coin(random, activation_chance)
         ]
     return result
-
-
-def dirichlet(random, weights):
-    """Draw from a dirichlet distribution with the provided weights.
-
-    This results in a list of floats of the same length with all elements > 0
-    and summing to 1. The expected value of coordinate i is weights[i] / sum(
-    weights)
-
-    """
-    weights = list(map(float, weights))
-    if not weights:
-        raise InvalidArgument('Cannot draw an empty dirichlet distribution')
-    for w in weights:
-        if w <= 0:
-            raise InvalidArgument('Invalid weight %f <= 0' % (w,))
-    if len(weights) == 1:
-        return [1.0]
-    multiplier = 1.0
-    result = []
-    while len(weights) > 1:
-        last = weights.pop()
-        t = random.betavariate(last, sum(weights))
-        result.append(t * multiplier)
-        multiplier *= (1 - t)
-    result.append(multiplier)
-    result.reverse()
-    assert 0.99 <= sum(result) <= 1.01
-    return result

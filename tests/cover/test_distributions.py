@@ -17,7 +17,6 @@ import random
 
 import pytest
 import hypothesis.internal.distributions as dist
-from hypothesis.errors import InvalidArgument
 
 
 def test_non_empty_of_empty_errors():
@@ -41,22 +40,3 @@ def test_non_empty_of_10():
 def test_non_empty_with_explicit_activation_chance():
     assert len(dist.non_empty_subset(
         random, range(100), activation_chance=0.99)) > 2
-
-
-def test_empty_dirichlet_is_invalid():
-    with pytest.raises(InvalidArgument):
-        dist.dirichlet(random, [])
-
-
-def test_zeros_in_dirichlet_are_invalid():
-    with pytest.raises(InvalidArgument):
-        dist.dirichlet(random, [0.0, 1.0])
-
-
-def test_dirichlet_biases_towaards_weights():
-    t = dist.dirichlet(random, [10000000000, 1, 1])
-    assert t[0] >= 0.8
-
-
-def test_single_dirichlet_is_always_one():
-    assert dist.dirichlet(random, [11]) == [1.0]

@@ -251,7 +251,7 @@ test_can_produce_long_lists_of_positive_integers = define_test(
 )
 
 test_can_produce_long_lists_of_negative_integers = define_test(
-    [int], 0.05, lambda x: all(t <= 0 for t in x),
+    [int], 0.03, lambda x: all(t <= 0 for t in x),
     condition=lambda x: len(x) >= 20
 )
 
@@ -349,12 +349,12 @@ test_mixes_2_reasonably_often = define_test(
 )
 
 test_partial_mixes_3_reasonably_often = define_test(
-    [bool, (), specifiers.just('hi')], 0.25,
+    [bool, (), specifiers.just('hi')], 0.15,
     lambda x: 1 < len(set(map(type, x))) < 3,
     condition=bool,
 )
 
 test_mixes_not_too_often = define_test(
-    [bool, ()], 0.25, lambda x: len(set(map(type, x))) == 1,
+    [bool, ()], 0.1, lambda x: len(set(map(type, x))) == 1,
     condition=bool,
 )
