@@ -490,3 +490,8 @@ def test_when_set_to_no_simplifies_only_runs_failing_example_once():
                 foo()
     assert failing == [1]
     assert 'Trying example' in out.getvalue()
+
+
+@given(int, settings=hs.Settings(max_examples=1))
+def test_should_not_fail_if_max_examples_less_than_min_satisfying(x):
+    pass

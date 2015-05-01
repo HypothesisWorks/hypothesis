@@ -73,7 +73,10 @@ def find_satisfying_template(
     satisfying_examples = 0
     timed_out = False
     max_examples = settings.max_examples
-    min_satisfying_examples = settings.min_satisfying_examples
+    min_satisfying_examples = min(
+        settings.min_satisfying_examples,
+        max_examples,
+    )
     start_time = time.time()
 
     if storage:
