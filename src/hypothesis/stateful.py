@@ -23,6 +23,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import inspect
+import traceback
 from random import Random
 from unittest import TestCase
 from collections import namedtuple
@@ -31,7 +32,7 @@ from hypothesis.core import find
 from hypothesis.errors import Flaky, NoSuchExample, InvalidDefinition, \
     UnsatisfiedAssumption
 from hypothesis.settings import Settings, Verbosity
-from hypothesis.reporting import report, current_verbosity
+from hypothesis.reporting import report, current_verbosity, verbose_report
 from hypothesis.utils.show import show
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.searchstrategy.misc import JustStrategy, \
@@ -120,6 +121,7 @@ class GenericStateMachine(object):
             except (InvalidDefinition, UnsatisfiedAssumption):
                 raise
             except Exception:
+                verbose_report(traceback.format_exc)
                 return True
         return find(
             StateMachineSearchStrategy(
