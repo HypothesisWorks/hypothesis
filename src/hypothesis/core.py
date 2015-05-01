@@ -90,6 +90,8 @@ def find_satisfying_template(
                 satisfying_examples += 1
             except UnsatisfiedAssumption:
                 pass
+            if len(tracker) >= max_examples:
+                break
 
     build_context = BuildContext(random)
 

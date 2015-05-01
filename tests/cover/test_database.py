@@ -180,3 +180,45 @@ def test_can_time_out_when_reading_from_database():
         assert len(examples) == 1
     finally:
         db.close()
+
+
+def test_can_handle_more_than_max_examples_values_in_db():
+    """
+    This is checking that if we store a large number of examples in the DB
+    and then subsequently reduce max_examples below that count, we a) don't
+    error (which is how this bug was found) and b) stop at max_examples
+    rather than continuing onwards.
+    """
+    db = ExampleDatabase()
+
+    try:
+        settings = hs.Settings(database=db, max_examples=2)
+        seen = []
+        first = [True]
+        for _ in range(10):
+            first[0] = True
+
+            @given(int, settings=settings)
+            def test_seen(x):
+                if x not in seen:
+                    if first[0]:
+                        first[0] = False
+                        seen.append(x)
+                assert x in seen
+
+            try:
+                test_seen()
+            except AssertionError:
+                pass
+
+        assert len(seen) >= 2
+
+        seen = []
+
+        @given(int, settings=hs.Settings(max_examples=1, database=db))
+        def test_seen(x):
+            seen.append(x)
+        test_seen()
+        assert len(seen) == 1
+    finally:
+        db.close()
