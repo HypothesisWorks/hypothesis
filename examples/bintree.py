@@ -347,11 +347,9 @@ class BinaryTreeStrategy(SearchStrategy):
         return accept
 
     def _delete_leaf_at(self, index, template):
-        """
-        If this tree is a split with at least index leaves, return a template
-        that is the same as this template with that leaf deleted, otherwise
-        return the template unchanged.
-        """
+        """If this tree is a split with at least index leaves, return a
+        template that is the same as this template with that leaf deleted,
+        otherwise return the template unchanged."""
         assert index >= 0
         if len(template) != 3:
             return template
@@ -378,7 +376,7 @@ class BinaryTreeStrategy(SearchStrategy):
                 )
 
     def _delete_leaves(self, random, template):
-        """Simplifier that tries to delete individual leaves one at a time"""
+        """Simplifier that tries to delete individual leaves one at a time."""
         if len(template) == 1:
             return
         for i in range(self._template_size(template)):
