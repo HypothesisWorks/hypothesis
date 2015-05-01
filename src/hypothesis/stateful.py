@@ -42,7 +42,7 @@ from hypothesis.searchstrategy.misc import SampledFromStrategy, JustStrategy
 
 Settings.define_setting(
     name='stateful_step_count',
-    default=100,
+    default=50,
     description="""
 Number of steps to run a stateful program for before giving up on it breaking.
 """
