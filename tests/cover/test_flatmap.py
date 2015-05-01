@@ -144,9 +144,9 @@ def test_can_still_simplify_if_not_reified():
 
 def test_two_incompatible_unreified_templates():
     r = Random(1)
-    strat = strategy(Bitfields).map(lambda x: integers_in_range(0, x))
+    strat = strategy(Bitfields).flatmap(lambda x: integers_in_range(0, x))
     x = some_template(strat, r)
     y = some_template(strat, r)
-    assert x != y
+    assert x.source_template != y.source_template
     assert not strat.strictly_simpler(x, y)
     assert not strat.strictly_simpler(y, x)
