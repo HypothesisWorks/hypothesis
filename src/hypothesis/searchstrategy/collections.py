@@ -500,9 +500,14 @@ class FixedKeysDictStrategy(MappedSearchStrategy):
     """
 
     def __init__(self, strategy_dict):
-        self.keys = tuple(sorted(
-            strategy_dict.keys(), key=show
-        ))
+        try:
+            self.keys = tuple(sorted(
+                strategy_dict.keys(),
+            ))
+        except TypeError:
+            self.keys = tuple(sorted(
+                strategy_dict.keys(), key=show,
+            ))
         super(FixedKeysDictStrategy, self).__init__(
             strategy=TupleStrategy(
                 (strategy_dict[k] for k in self.keys), tuple
