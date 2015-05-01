@@ -538,8 +538,8 @@ class MappedSearchStrategy(SearchStrategy):
 
     def __repr__(self):
         return 'MappedSearchStrategy(%r, %s)' % (
-            self.mapped_strategy, self.pack.__name__
-        )
+            self.mapped_strategy, getattr(
+                self.pack, '__name__', type(self.pack).__name__))
 
     def produce_parameter(self, random):
         return self.mapped_strategy.produce_parameter(random)
@@ -600,7 +600,8 @@ class FlatMapStrategy(SearchStrategy):
 
     def __repr__(self):
         return 'FlatMapStrategy(%r, %s)' % (
-            self.flatmapped_strategy, self.expand.__name__
+            self.flatmapped_strategy,
+            getattr(self.expand, '__name__', type(self.expand).__name__)
         )
 
     def __init__(
