@@ -5,6 +5,7 @@ include =
     .tox/*/lib/*/site-packages/hypothesis/**/*.py
 omit =
     **/settings.py
+    **/strategytests.py
     **/internal/debug.py
     **/compat.py
     **/extra/__init__.py
