@@ -484,6 +484,9 @@ def test_when_set_to_no_simplifies_only_runs_failing_example_once():
             failing[0] += 1
             assert False
 
-    with pytest.raises(AssertionError):
-        foo()
+    with hs.Settings(verbosity=hs.Verbosity.normal):
+        with pytest.raises(AssertionError):
+            with capture_out() as out:
+                foo()
     assert failing == [1]
+    assert 'Trying example' in out.getvalue()

@@ -28,9 +28,9 @@ from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
     Unsatisfiable, InvalidArgument, UnsatisfiedAssumption, \
     DefinitelyNoSuchExample
 from hypothesis.control import assume
-from hypothesis.settings import Settings
+from hypothesis.settings import Settings, Verbosity
 from hypothesis.executors import executor
-from hypothesis.reporting import report, verbose_report
+from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.specifiers import just
 from hypothesis.utils.show import show
 from hypothesis.internal.tracker import Tracker
@@ -273,7 +273,10 @@ def example(*args, **kwargs):
     return accept
 
 
-def reify_and_execute(search_strategy, template, test, print_example=False):
+def reify_and_execute(
+    search_strategy, template, test,
+    print_example=False, always_print=False,
+):
     def run():
         args, kwargs = search_strategy.reify(template)
         if print_example:
@@ -285,8 +288,8 @@ def reify_and_execute(search_strategy, template, test, print_example=False):
                     )
                 )
             )
-        else:
-            verbose_report(
+        elif current_verbosity() >= Verbosity.verbose or always_print:
+            report(
                 lambda: 'Trying example: %s(%s)' % (
                     test.__name__,
                     arg_string(
@@ -437,7 +440,10 @@ def given(*generator_arguments, **generator_kwargs):
 
             def is_template_example(xs):
                 try:
-                    test_runner(reify_and_execute(search_strategy, xs, test))
+                    test_runner(reify_and_execute(
+                        search_strategy, xs, test,
+                        always_print=settings.max_shrinks <= 0
+                    ))
                     return False
                 except UnsatisfiedAssumption as e:
                     raise e
