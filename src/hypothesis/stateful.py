@@ -472,6 +472,14 @@ def rule(targets=(), target=None, **kwargs):
 VarReference = namedtuple('VarReference', ('name',))
 
 
+class SimpleSampledFromStrategy(SampledFromStrategy):
+    def produce_parameter(self, random):
+        return None
+
+    def produce_template(self, context, parameter_value):
+        return context.random.randint(0, len(self.elements) - 1)
+
+
 class RuleBasedStateMachine(GenericStateMachine):
 
     """A RuleBasedStateMachine gives you a more structured way to define state
@@ -556,7 +564,7 @@ class RuleBasedStateMachine(GenericStateMachine):
                         valid = False
                         break
                     else:
-                        v = SampledFromStrategy(bundle)
+                        v = SimpleSampledFromStrategy(bundle)
                 converted_arguments[k] = v
             if valid:
                 strategies.append(TupleStrategy((

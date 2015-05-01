@@ -15,8 +15,6 @@ from __future__ import division, print_function, absolute_import, \
 
 import math
 
-from hypothesis.errors import InvalidArgument
-
 
 def uniform_float(random, start, end):
     return start + random.random() * (end - start)
