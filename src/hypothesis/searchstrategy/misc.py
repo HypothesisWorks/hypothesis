@@ -13,7 +13,6 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from math import sqrt
 from random import Random
 
 import hypothesis.specifiers as specifiers
@@ -155,7 +154,7 @@ class SampledFromStrategy(SearchStrategy):
         n = len(self.elements)
         if n == 1:
             return
-        return chooser(dist.dirichlet(random, [sqrt(n)] * n))
+        return chooser(random.getrandbits(8) for _ in hrange(n))
 
     def produce_template(self, context, pv):
         if len(self.elements) == 1:
