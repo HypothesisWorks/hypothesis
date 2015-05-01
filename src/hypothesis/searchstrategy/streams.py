@@ -101,6 +101,16 @@ class StreamStrategy(SearchStrategy):
             ):
                 yield self.simplifier_for_index(s, i)
 
+    def initial_template_tuple(self, x):
+        return (x.changed, x.seed, x.parameter_seed)
+
+    def strictly_simpler(self, x, y):
+        xt = self.initial_template_tuple(x)
+        yt = self.initial_template_tuple(y)
+        if xt > yt:
+            return True
+        return False
+
     def simplifier_for_index(self, simplify, i):
         def accept(random, template):
             stream = template.stream
