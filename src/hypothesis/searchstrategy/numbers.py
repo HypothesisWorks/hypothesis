@@ -25,7 +25,8 @@ import hypothesis.internal.distributions as dist
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.searchstrategy.misc import SampledFromStrategy
 from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
-    MappedSearchStrategy, strategy, check_type, check_data_type
+    MappedSearchStrategy, strategy, check_type, check_data_type, \
+    EFFECTIVELY_INFINITE
 
 
 class IntStrategy(SearchStrategy):
@@ -103,6 +104,9 @@ class IntegersFromStrategy(SearchStrategy):
     def __init__(self, lower_bound):
         super(IntegersFromStrategy, self).__init__()
         self.lower_bound = lower_bound
+
+    def __repr__(self):
+        return "IntegersFromStrategy(%d)" % (self.lower_bound,)
 
     def produce_parameter(self, random):
         return random.random()
@@ -201,7 +205,9 @@ class BoundedIntStrategy(SearchStrategy):
         if start > end:
             raise ValueError('Invalid range [%d, %d]' % (start, end))
         self.size_lower_bound = end - start + 1
-        self.size_upper_bound = end - start + 1
+        if self.size_lower_bound >= EFFECTIVELY_INFINITE:
+            self.size_lower_bound = float('inf')
+        self.size_upper_bound = self.size_lower_bound
 
     def __repr__(self):
         return 'BoundedIntStrategy(%d, %d)' % (self.start, self.end)

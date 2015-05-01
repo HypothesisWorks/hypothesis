@@ -22,7 +22,17 @@ from hypothesis.utils.show import show
 from hypothesis.internal.compat import hrange
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
     MappedSearchStrategy, strategy, check_type, check_length, \
-    check_data_type, one_of_strategies
+    check_data_type, one_of_strategies, EFFECTIVELY_INFINITE
+
+
+def safe_mul(x, y):
+    try:
+        result = x * y
+        if result >= EFFECTIVELY_INFINITE:
+            return float('inf')
+        return result
+    except OverflowError:
+        return float('inf')
 
 
 class TupleStrategy(SearchStrategy):
@@ -43,8 +53,10 @@ class TupleStrategy(SearchStrategy):
         self.size_lower_bound = 1
         self.size_upper_bound = 1
         for e in self.element_strategies:
-            self.size_lower_bound *= e.size_lower_bound
-            self.size_upper_bound *= e.size_upper_bound
+            self.size_lower_bound = safe_mul(
+                e.size_lower_bound, self.size_lower_bound)
+            self.size_upper_bound = safe_mul(
+                e.size_upper_bound, self.size_upper_bound)
 
     def reify(self, value):
         return self.newtuple([

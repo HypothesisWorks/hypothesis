@@ -46,6 +46,14 @@ strategy = StrategyExtMethod()
 
 
 Infinity = float('inf')
+EFFECTIVELY_INFINITE = 2 ** 32
+
+
+def infinitish(x):
+    if x >= EFFECTIVELY_INFINITE:
+        return Infinity
+    else:
+        return x
 
 
 def check_type(typ, value, e=WrongFormat):
@@ -437,9 +445,10 @@ class OneOfStrategy(SearchStrategy):
         self.size_lower_bound = 0
         self.size_upper_bound = 0
         for e in self.element_strategies:
-            self.size_lower_bound = max(
-                self.size_lower_bound, e.size_lower_bound)
+            self.size_lower_bound += e.size_lower_bound
             self.size_upper_bound += e.size_upper_bound
+        self.size_lower_bound = infinitish(self.size_lower_bound)
+        self.size_upper_bound = infinitish(self.size_upper_bound)
 
     def __repr__(self):
         return ' | '.join(map(repr, self.element_strategies))
