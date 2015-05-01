@@ -13,6 +13,7 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+from copy import copy, deepcopy
 from itertools import islice
 
 import pytest
@@ -23,7 +24,6 @@ from hypothesis.utils.show import show
 from hypothesis.internal.debug import minimal, some_template
 from hypothesis.internal.compat import text_type
 from hypothesis.searchstrategy.streams import Stream, StreamTemplate
-from copy import copy, deepcopy
 
 
 @given([bool])
