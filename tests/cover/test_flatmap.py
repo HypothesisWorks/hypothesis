@@ -17,13 +17,12 @@ from random import Random
 
 import pytest
 from hypothesis import Settings, given, assume, strategy
+from tests.common import Bitfields
 from hypothesis.database import ExampleDatabase
 from hypothesis.specifiers import just, floats_in_range, integers_in_range
 from hypothesis.internal.debug import some_template
 from hypothesis.searchstrategy.narytree import Leaf, NAryTree
 from hypothesis.searchstrategy.strategies import BuildContext
-
-from tests.common import Bitfields
 
 ConstantLists = strategy(int).flatmap(lambda i: [just(i)])
 
