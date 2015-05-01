@@ -291,10 +291,10 @@ class FloatStrategy(SearchStrategy):
             return False
         if y > 0:
             return 0 <= x < y
-        elif y < 0:
-            return x > y
         else:
-            return False
+            # The y == 0 case is handled by is_integral(y)
+            assert y < 0
+            return x > y
 
     def to_basic(self, value):
         check_type(float, value)
