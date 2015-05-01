@@ -173,3 +173,22 @@ def test_out_of_range_floats_are_bad():
         strategy(floats_in_range(11, 12)).from_basic(
             strategy(floats_in_range(-1, 1)).to_basic(0.0)
         )
+
+
+def test_float_simplicity():
+    s = strategy(float).strictly_simpler
+
+    def order(x, y):
+        x = float(x)
+        y = float(y)
+        assert s(x, y)
+        assert not s(y, x)
+
+    order(1.0, 0.5)
+    order(1.0, 2.0)
+    order(2, -1)
+    order('inf', 'nan')
+    order('inf', '-inf')
+    order('0.25', '0.5')
+    order(-1, 0.5)
+    order(1.5, '-inf')
