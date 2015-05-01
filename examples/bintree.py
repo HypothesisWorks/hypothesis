@@ -293,13 +293,19 @@ class BinaryTreeStrategy(SearchStrategy):
         # All simplifiers *must* work for every template, but "work" just means
         # doesn't error. It doesn't matter if they don't do anything useful.
         if len(template) == 3:
+            # We first try passing to subtrees because this has the potential
+            # to make the template a lot smaller, which we want to prioritise.
+            # In general you want to leave small changes to later because it
+            # is a lot faster to throw away as much of the template as possible
+            # rather than performing lots of small shrinks.
             yield self._simplify_to_subtrees
-            # We try the subtrees in a random order because this generallly
-            # seems to help. It's not really necessary, but it's often useful
-            # and is easy to do so we might as well.
-            start = random.randint(0, 1)
-            yield self._simplify_single_subtree(start)
-            yield self._simplify_single_subtree(1 - start)
+
+            # Note that we try deleting leaves before we try simplifying them.
+            # This is because it's likely to be a lot cheaper this way round,
+            # as if we can delete a leaf we never have to try simplifying it.
+            yield self._delete_leaves
+            for i in range(self._template_size(template)):
+                yield self._leaf_simplifier(i)
         else:
             assert len(template) == 1
             for s in self.leaf_strategy.simplifiers(random, template[0]):
@@ -324,36 +330,6 @@ class BinaryTreeStrategy(SearchStrategy):
             yield template[start]
             yield template[1 - start]
 
-    def _simplify_single_subtree(self, index):
-        """Defines a simplifier that simplifies a single subtree of a split.
-
-        This
-        can be useful when you're testing things that look e.g. like having a
-        very deep left subtree: It means that you can happily simplify the
-        right hand side without bothering to keep trying to shrink the left.
-
-        """
-        def accept(random, template):
-            if len(template) != 3:
-                return
-
-            # full_simplify tries all the simplifiers available for a template
-            # on it, not necessarily in the specified order. The reason we use
-            # this rather than using each simplifier for a template in turn is
-            # that that would cause a combinatorial explosion, where a single
-            # template could potentially have a vast number of simplifiers.
-            # By using full_simplify at each level we can collapse that.
-            for simpler in self.full_simplify(random, template[index]):
-                result = list(template)
-                result[index] = simpler
-                # Rebuild the split so that any changes to the sizes of
-                # subtrees are taken into account.
-                yield self._make_split(*result[:2])
-        # Assigning the name of a simplifier is not strictly necessary but it
-        # helps for debugging
-        accept.__name__ = str('_simplify_single_subtree(%d)' % (index,))
-        return accept
-
     def _convert_leaf_simplifier(self, simplifier):
         """This takes a single simplifier for leaf labels and turns it into a
         simplifier for trees that will only do something if the tree is a
@@ -367,6 +343,87 @@ class BinaryTreeStrategy(SearchStrategy):
                 yield (label,)
         accept.__name__ = str(
             '_convert_leaf_simplifier(%s)' % (simplifier.__name__,)
+        )
+        return accept
+
+    def _delete_leaf_at(self, index, template):
+        """If this tree is a split with at least index leaves, return a
+        template that is the same as this template with that leaf deleted,
+        otherwise return the template unchanged."""
+        assert index >= 0
+        if len(template) != 3:
+            return template
+        if index >= self._template_size(template):
+            return template
+        left_size = self._template_size(template[0])
+        right_size = self._template_size(template[1])
+
+        if index < left_size:
+            if left_size == 1:
+                return template[1]
+            else:
+                return self._make_split(
+                    self._delete_leaf_at(index, template[0]),
+                    template[1]
+                )
+        else:
+            if right_size == 1:
+                return template[0]
+            else:
+                return self._make_split(
+                    template[0],
+                    self._delete_leaf_at(index - left_size, template[1])
+                )
+
+    def _delete_leaves(self, random, template):
+        """Simplifier that tries to delete individual leaves one at a time."""
+        if len(template) == 1:
+            return
+        for i in range(self._template_size(template)):
+            yield self._delete_leaf_at(i, template)
+
+    def _simplify_leaf_at(self, index, random, template):
+        """Simplifier that applies a full simplify to each leaf. Note that
+        unlike the behaviour when our top level template is a leaf we use
+        full_simplify. This is to prevent a combinatorial explosion: If we
+        were to use all the individual simplifiers of the leaves we would
+        potentially have a very large numbeer of simplifiers to consider.
+
+        All full_simplify does is run each simplifier (albeit in a slightly
+        randomized order), so we still get the same amount of simplification.
+        This does prevent certain optimisations in how simplify normally works.
+        It's a trade-off - you have to strike a balance between number of
+        simplifiers and quality of simplification. Usually the only way to
+        find the right balance is trial and error.
+        """
+        assert index >= 0
+        if index >= self._template_size(template):
+            return
+        if len(template) == 1:
+            for simpler in self.leaf_strategy.full_simplify(
+                random, template[0]
+            ):
+                yield (simpler,)
+        else:
+            assert len(template) == 3
+            left = self._template_size(template[0])
+            if index < left:
+                for simpler in self._simplify_leaf_at(
+                    index, random, template[0]
+                ):
+                    yield self._make_split(simpler, template[1])
+            else:
+                for simpler in self._simplify_leaf_at(
+                    index - left, random, template[1]
+                ):
+                    yield self._make_split(template[0], simpler)
+
+    def _leaf_simplifier(self, index):
+        def accept(random, template):
+            for result in self._simplify_leaf_at(index, random, template):
+                yield result
+        accept.__name__ = str(
+            'leaf_simplifier(%d)' % (index,)
         )
         return accept
 

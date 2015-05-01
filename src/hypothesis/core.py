@@ -28,9 +28,9 @@ from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
     Unsatisfiable, InvalidArgument, UnsatisfiedAssumption, \
     DefinitelyNoSuchExample
 from hypothesis.control import assume
-from hypothesis.settings import Settings
+from hypothesis.settings import Settings, Verbosity
 from hypothesis.executors import executor
-from hypothesis.reporting import report, verbose_report
+from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.specifiers import just
 from hypothesis.utils.show import show
 from hypothesis.internal.tracker import Tracker
@@ -147,7 +147,9 @@ def find_satisfying_template(
         raise NoSuchExample(get_pretty_function_description(condition))
 
 
-def simplify_template_such_that(search_strategy, random, t, f, tracker):
+def simplify_template_such_that(
+    search_strategy, random, t, f, tracker, settings
+):
     """Perform a greedy search to produce a "simplest" version of a template
     that satisfies some predicate.
 
@@ -164,9 +166,10 @@ def simplify_template_such_that(search_strategy, random, t, f, tracker):
     assert isinstance(random, Random)
 
     yield t
+    successful_shrinks = 0
 
     changed = True
-    while changed:
+    while changed and successful_shrinks < settings.max_shrinks:
         changed = False
         for simplify in search_strategy.simplifiers(random, t):
             while True:
@@ -176,6 +179,7 @@ def simplify_template_such_that(search_strategy, random, t, f, tracker):
                         continue
                     try:
                         if f(s):
+                            successful_shrinks += 1
                             changed = True
                             yield s
                             t = s
@@ -184,6 +188,9 @@ def simplify_template_such_that(search_strategy, random, t, f, tracker):
                         pass
                 else:
                     break
+
+            if successful_shrinks >= settings.max_shrinks:
+                break
 
 
 def best_satisfying_template(
@@ -207,7 +214,8 @@ def best_satisfying_template(
         )
 
         for simpler in simplify_template_such_that(
-            search_strategy, random, satisfying_example, condition, tracker
+            search_strategy, random, satisfying_example, condition, tracker,
+            settings
         ):
             successful_shrinks += 1
             satisfying_example = simpler
@@ -232,7 +240,11 @@ def best_satisfying_template(
 def test_is_flaky(test):
     @functools.wraps(test)
     def test_or_flaky(*args, **kwargs):
-        raise Flaky(test, (args, kwargs))
+        raise Flaky(
+            (
+                'Hypothesis %r produces unreliable results: %r falsified it on'
+                ' the first call but did not on a subsequent one'
+            ) % (get_pretty_function_description(test), example))
     return test_or_flaky
 
 
@@ -261,7 +273,10 @@ def example(*args, **kwargs):
     return accept
 
 
-def reify_and_execute(search_strategy, template, test, print_example=False):
+def reify_and_execute(
+    search_strategy, template, test,
+    print_example=False, always_print=False,
+):
     def run():
         args, kwargs = search_strategy.reify(template)
         if print_example:
@@ -273,8 +288,8 @@ def reify_and_execute(search_strategy, template, test, print_example=False):
                     )
                 )
             )
-        else:
-            verbose_report(
+        elif current_verbosity() >= Verbosity.verbose or always_print:
+            report(
                 lambda: 'Trying example: %s(%s)' % (
                     test.__name__,
                     arg_string(
@@ -425,11 +440,16 @@ def given(*generator_arguments, **generator_kwargs):
 
             def is_template_example(xs):
                 try:
-                    test_runner(reify_and_execute(search_strategy, xs, test))
+                    test_runner(reify_and_execute(
+                        search_strategy, xs, test,
+                        always_print=settings.max_shrinks <= 0
+                    ))
                     return False
                 except UnsatisfiedAssumption as e:
                     raise e
-                except Exception:
+                except Exception as e:
+                    if settings.max_shrinks <= 0:
+                        raise e
                     verbose_report(traceback.format_exc)
                     return True
 
@@ -470,6 +490,7 @@ def find(specifier, condition, settings=None, random=None):
     settings = settings or Settings(
         max_examples=2000,
         min_satisfying_examples=0,
+        max_shrinks=2000,
     )
 
     search = strategy(specifier, settings)
@@ -496,7 +517,7 @@ def find(specifier, condition, settings=None, random=None):
                 verbose_report(lambda: 'Shrunk example to %s' % (
                     show(result),
                 ))
-        return assume(success)
+        return success
 
     template_condition.__name__ = condition.__name__
     tracker = Tracker()
@@ -506,7 +527,9 @@ def find(specifier, condition, settings=None, random=None):
             search, random, template_condition, settings, None,
             tracker=tracker,
         ))
-    except NoSuchExample:
+    except Timeout:
+        raise
+    except (NoSuchExample, Unsatisfiable):
         if search.size_upper_bound <= len(tracker):
             raise DefinitelyNoSuchExample(
                 get_pretty_function_description(condition),

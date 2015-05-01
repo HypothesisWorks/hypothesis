@@ -14,13 +14,6 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 
-def get_pretty_function_description(f):
-    # Lazily load this so as to prevent recursive dependencies
-    from hypothesis.internal.reflection import \
-        get_pretty_function_description as g
-    return g(f)
-
-
 class HypothesisException(Exception):
 
     """Generic parent class for exceptions thrown by Hypothesis."""
@@ -110,12 +103,6 @@ class Flaky(HypothesisException):
            dont' do that and testing those instead.
     """
 
-    def __init__(self, hypothesis, example):
-        super(Flaky, self).__init__((
-            'Hypothesis %r produces unreliable results: %r falsified it on the'
-            ' first call but did not on a subsequent one'
-        ) % (get_pretty_function_description(hypothesis), example))
-
 
 class Timeout(Unsatisfiable):
 
@@ -139,6 +126,12 @@ class InvalidArgument(HypothesisException, TypeError):
 
     """Used to indicate that the arguments to a Hypothesis function were in
     some manner incorrect."""
+
+
+class InvalidDefinition(HypothesisException, TypeError):
+
+    """Used to indicate that a class definition was not well put together and
+    has something wrong with it."""
 
 
 class AbnormalExit(HypothesisException):

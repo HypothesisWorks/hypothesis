@@ -473,3 +473,20 @@ def test_empty_strings(x):
 @given(strings('abcdefg'))
 def test_mixed_strings(x):
     assert set(x).issubset(set('abcdefg'))
+
+
+def test_when_set_to_no_simplifies_only_runs_failing_example_once():
+    failing = [0]
+
+    @given(int, settings=hs.Settings(max_shrinks=0))
+    def foo(x):
+        if x > 11:
+            failing[0] += 1
+            assert False
+
+    with hs.Settings(verbosity=hs.Verbosity.normal):
+        with pytest.raises(AssertionError):
+            with capture_out() as out:
+                foo()
+    assert failing == [1]
+    assert 'Trying example' in out.getvalue()

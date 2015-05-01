@@ -21,6 +21,7 @@ from collections import OrderedDict, namedtuple
 from hypothesis import strategy
 from tests.common.basic import Bitfields, BoringBitfields, \
     simplify_bitfield
+from hypothesis.stateful import StateMachineSearchStrategy
 from hypothesis.specifiers import just, one_of, strings, streaming, \
     dictionary, sampled_from, integers_from, floats_in_range, \
     integers_in_range
@@ -164,6 +165,9 @@ TestBitfieldWithParameter = strategy_test_suite(
         generate=lambda r, p: r.getrandbits(128) & p,
     )
 )
+
+
+TestStatemachine = strategy_test_suite(StateMachineSearchStrategy())
 
 
 def test_repr_has_specifier_in_it():

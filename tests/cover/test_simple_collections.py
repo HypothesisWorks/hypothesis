@@ -116,6 +116,11 @@ def test_minimize_multi_key_dicts():
     assert find(dictionary(bool, bool), bool) == {False: False}
 
 
+def test_minimize_dicts_with_incompatible_keys():
+    assert find(
+        {1: bool, 'hi': [bool]}, lambda x: True) == {1: False, 'hi': []}
+
+
 def test_deeply_nested_sets():
     def f(n):
         if n <= 0:

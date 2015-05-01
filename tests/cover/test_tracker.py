@@ -16,6 +16,24 @@ from __future__ import division, print_function, absolute_import, \
 from hypothesis.internal.tracker import Tracker
 
 
+class Foo(object):
+
+    def __trackas__(self):
+        return 1
+
+
+def test_tracking_custom():
+    t = Tracker()
+    assert t.track(Foo()) == 1
+    assert t.track(Foo()) == 2
+
+
+def test_tracking_classes_of_custom():
+    t = Tracker()
+    assert t.track(Foo) == 1
+    assert t.track(Foo) == 2
+
+
 def test_track_ints():
     t = Tracker()
     assert t.track(1) == 1

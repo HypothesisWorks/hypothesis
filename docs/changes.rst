@@ -6,9 +6,20 @@ This is a record of all past Hypothesis releases and what went into them,
 in reverse chronological order. All previous releases should still be available
 on pip.
 
-All Hypothesis releases since 1.0 are `semantically versioned <http://semver.org/>`_,
-with everything in this documentation considered public API.
+Hypothesis APIs come in three flavours:
 
+* Public: Hypothesis releases since 1.0 are `semantically versioned <http://semver.org/>`_
+  with respect to these parts of the API. These will not break except between
+  major version bumps. All APIs mentioned in this documentation are public unless
+  explicitly noted otherwise.
+* Semi-public: These are APIs that are considered ready to use but are not wholly
+  nailed down yet. They will not break in patch releases and will *usually* not break
+  in minor releases, but when necessary  minor releases may break semi-public APIs.
+* Internal: These may break at any time and you really should not use them at
+  all.
+
+You should generally assume that an API is internal unless you have specific
+information to the contrary.
 
 ------------------
 1.3.0 - 2015-04-22
