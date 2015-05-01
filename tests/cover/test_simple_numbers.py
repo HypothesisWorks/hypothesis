@@ -184,6 +184,7 @@ def test_float_simplicity():
         assert s(x, y)
         assert not s(y, x)
 
+    order(sys.float_info.max, '-inf')
     order(1.0, 0.5)
     order(1.0, 2.0)
     order(2, -1)

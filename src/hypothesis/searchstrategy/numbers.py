@@ -289,8 +289,6 @@ class FloatStrategy(SearchStrategy):
             return True
         if math.isinf(x) and not math.isinf(y):
             return False
-        if math.isinf(x) and not math.isinf(x):
-            return True
         if y > 0:
             return 0 <= x < y
         elif y < 0:
