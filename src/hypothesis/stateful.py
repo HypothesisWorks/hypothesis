@@ -298,11 +298,11 @@ class StateMachineSearchStrategy(SearchStrategy):
         check_data_type(list, data[3])
 
         if data[2] < 0:
-            raise BadData("Invalid negative number of steps: %d" % (
+            raise BadData('Invalid negative number of steps: %d' % (
                 data[2],
             ))
         if data[2] > Settings.default.stateful_step_count * 1000:
-            raise BadData("Implausibly large number of steps: %d" % (
+            raise BadData('Implausibly large number of steps: %d' % (
                 data[2],
             ))
 

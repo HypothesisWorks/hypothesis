@@ -19,7 +19,7 @@ from collections import namedtuple
 
 import pytest
 from hypothesis import Settings, assume, strategy
-from hypothesis.errors import Flaky, InvalidDefinition, BadData
+from hypothesis.errors import Flaky, BadData, InvalidDefinition
 from tests.common.utils import capture_out
 from hypothesis.stateful import Bundle, GenericStateMachine, \
     RuleBasedStateMachine, StateMachineSearchStrategy, rule
