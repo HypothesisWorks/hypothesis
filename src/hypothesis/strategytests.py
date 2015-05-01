@@ -202,6 +202,16 @@ def strategy_test_suite(
             finally:
                 db.close()
 
+        @given(
+            TemplatesFor(specifier), TemplatesFor(specifier),
+            settings=settings
+        )
+        def test_simplicity_is_asymmetric(self, x, y):
+            assert not (
+                strat.strictly_simpler(x, y) and
+                strat.strictly_simpler(y, x)
+            )
+
         def test_will_handle_a_really_weird_failure(self):
             db = ExampleDatabase()
 

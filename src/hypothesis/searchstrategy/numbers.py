@@ -276,20 +276,27 @@ class FloatStrategy(SearchStrategy):
     def __repr__(self):
         return '%s()' % (self.__class__.__name__,)
 
-    def complexity_tuple(self, value):
-
-        good_conditions = (
-            value >= 0,
-            is_integral(value),
-            not math.isnan(value),
-            value + 1 > value,
-        )
-        return tuple(
-            not x for x in good_conditions
-        ) + (abs(value),)
-
     def strictly_simpler(self, x, y):
-        return self.complexity_tuple(x) < self.complexity_tuple(y)
+        if is_integral(x):
+            if not is_integral(y):
+                return True
+            return self.int_strategy.strictly_simpler(int(x), int(y))
+        if is_integral(y):
+            return False
+        if math.isnan(x):
+            return False
+        if math.isnan(y):
+            return True
+        if math.isinf(x) and not math.isinf(y):
+            return False
+        if math.isinf(x) and not math.isinf(x):
+            return True
+        if y > 0:
+            return 0 <= x < y
+        elif y < 0:
+            return x > y
+        else:
+            return False
 
     def to_basic(self, value):
         check_type(float, value)
@@ -337,6 +344,7 @@ class FloatStrategy(SearchStrategy):
             yield 1.0
             y = math.sqrt(x)
             if self.strictly_simpler(y, x):
+                assert not self.strictly_simpler(x, y)
                 yield y
 
     def simplify_integral(self, random, x):
