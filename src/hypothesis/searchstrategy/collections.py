@@ -47,9 +47,9 @@ class TupleStrategy(SearchStrategy):
             self.size_upper_bound *= e.size_upper_bound
 
     def reify(self, value):
-        return self.newtuple(
+        return self.newtuple([
             e.reify(v) for e, v in zip(self.element_strategies, value)
-        )
+        ])
 
     def __repr__(self):
         if len(self.element_strategies) == 1:
@@ -68,10 +68,10 @@ class TupleStrategy(SearchStrategy):
             return self.tuple_type(*xs)
 
     def produce_parameter(self, random):
-        return tuple(
+        return tuple([
             e.draw_parameter(random)
             for e in self.element_strategies
-        )
+        ])
 
     def produce_template(self, context, pv):
         es = self.element_strategies
