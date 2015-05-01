@@ -34,11 +34,13 @@ from hypothesis.settings import Settings
 from hypothesis.reporting import report
 from hypothesis.utils.show import show
 from hypothesis.internal.compat import hrange, integer_types
+from hypothesis.searchstrategy.misc import JustStrategy, \
+    SampledFromStrategy
 from hypothesis.searchstrategy.strategies import BadData, BuildContext, \
-    SearchStrategy, strategy, check_length, check_data_type, one_of_strategies
-from hypothesis.searchstrategy.collections import FixedKeysDictStrategy, \
-    TupleStrategy
-from hypothesis.searchstrategy.misc import SampledFromStrategy, JustStrategy
+    SearchStrategy, strategy, check_length, check_data_type, \
+    one_of_strategies
+from hypothesis.searchstrategy.collections import TupleStrategy, \
+    FixedKeysDictStrategy
 
 Settings.define_setting(
     name='stateful_step_count',
@@ -473,6 +475,7 @@ VarReference = namedtuple('VarReference', ('name',))
 
 
 class SimpleSampledFromStrategy(SampledFromStrategy):
+
     def produce_parameter(self, random):
         return None
 
