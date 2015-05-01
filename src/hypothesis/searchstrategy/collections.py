@@ -26,13 +26,10 @@ from hypothesis.searchstrategy.strategies import EFFECTIVELY_INFINITE, \
 
 
 def safe_mul(x, y):
-    try:
-        result = x * y
-        if result >= EFFECTIVELY_INFINITE:
-            return float('inf')
-        return result
-    except OverflowError:
+    result = x * y
+    if result >= EFFECTIVELY_INFINITE:
         return float('inf')
+    return result
 
 
 class TupleStrategy(SearchStrategy):
