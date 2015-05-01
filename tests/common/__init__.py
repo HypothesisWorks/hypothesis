@@ -20,10 +20,11 @@ import pytest
 
 import hypothesis.settings as hs
 from hypothesis.internal.debug import timeout
+from hypothesis.strategytests import TemplatesFor
 from hypothesis import strategy
 from hypothesis.specifiers import integers_from, floats_in_range, \
     integers_in_range, just, one_of, sampled_from, streaming
-from hypothesis.internal.compat import text_type, binary_type
+from hypothesis.internal.compat import text_type, binary_type, hrange
 from hypothesis.searchstrategy.narytree import NAryTree
 from tests.common.basic import Bitfields
 from hypothesis.utils.show import show
@@ -62,6 +63,7 @@ standard_types = [
     NAryTree(bool, bool, bool),
     ABC(bool, bool, bool),
     ABC(bool, bool, int),
+    TemplatesFor(one_of(just(i) for i in hrange(10))),
     {'a': int, 'b': bool},
     one_of((int, (bool,))),
     sampled_from(range(10)),

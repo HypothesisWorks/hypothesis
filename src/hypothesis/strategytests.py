@@ -46,6 +46,9 @@ class TemplatesStrategy(SearchStrategy):
     def produce_parameter(self, random):
         return self.base_strategy.produce_parameter(random)
 
+    def strictly_simpler(self, x, y):
+        return self.base_strategy.strictly_simpler(x, y)
+
     def produce_template(self, context, pv):
         return self.base_strategy.produce_template(context, pv)
 
