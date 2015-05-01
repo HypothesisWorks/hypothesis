@@ -353,17 +353,18 @@ def length_of_longest_ordered_sequence(xs):
 
 
 def test_increasing_sequence():
+    k = 6
     xs = minimal(
         [int], lambda t: (
-            len(t) <= 30 and length_of_longest_ordered_sequence(t) >= 8),
+            len(t) <= 30 and length_of_longest_ordered_sequence(t) >= k),
         timeout_after=60,
     )
     start = xs[0]
-    assert xs == list(range(start, start + 8))
+    assert xs == list(range(start, start + k))
 
 
 def test_increasing_string_sequence():
-    n = 8
+    n = 7
     lb = '✐'
     xs = minimal(
         [text_type], lambda t: (
