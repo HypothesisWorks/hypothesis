@@ -195,6 +195,7 @@ class StateMachineRunner(object):
         self.parameter_seed = parameter_seed
         self.template_seed = template_seed
         self.n_steps = n_steps
+        assert 0 <= n_steps <= 1000000
 
         self.templates = templates or seeds(template_seed, n_steps)
         assert len(self.templates) >= n_steps
@@ -295,6 +296,15 @@ class StateMachineSearchStrategy(SearchStrategy):
         check_data_type(integer_types, data[1])
         check_data_type(integer_types, data[2])
         check_data_type(list, data[3])
+
+        if data[2] < 0:
+            raise BadData("Invalid negative number of steps: %d" % (
+                data[2],
+            ))
+        if data[2] > Settings.default.stateful_step_count * 1000:
+            raise BadData("Implausibly large number of steps: %d" % (
+                data[2],
+            ))
 
         record = []
 
