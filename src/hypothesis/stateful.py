@@ -264,6 +264,9 @@ class StateMachineSearchStrategy(SearchStrategy):
     def __init__(self, settings=None):
         self.program_size = (settings or Settings.default).stateful_step_count
 
+    def __repr__(self):
+        return 'StateMachineSearchStrategy()'
+
     def reify(self, template):
         return template
 

@@ -183,12 +183,10 @@ def test_can_time_out_when_reading_from_database():
 
 
 def test_can_handle_more_than_max_examples_values_in_db():
-    """
-    This is checking that if we store a large number of examples in the DB
+    """This is checking that if we store a large number of examples in the DB
     and then subsequently reduce max_examples below that count, we a) don't
-    error (which is how this bug was found) and b) stop at max_examples
-    rather than continuing onwards.
-    """
+    error (which is how this bug was found) and b) stop at max_examples rather
+    than continuing onwards."""
     db = ExampleDatabase()
 
     try:
