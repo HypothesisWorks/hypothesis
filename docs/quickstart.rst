@@ -216,7 +216,10 @@ Here are some other examples of how you could use that:
 
     @given([int])
     def test_reversing_twice_gives_same_list(xs):
-        assert xs == list(reversed(reversed(xs)))
+        ys = list(xs)
+        ys.reverse()
+        ys.reverse()
+        assert xs == ys
 
     @given((int, int))
     def test_look_tuples_work_too(t):
