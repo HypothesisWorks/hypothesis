@@ -16,13 +16,14 @@ from __future__ import division, print_function, absolute_import, \
 from itertools import islice
 
 import pytest
-from hypothesis import given
+from hypothesis import given, strategy
 from hypothesis.errors import InvalidArgument
 from hypothesis.specifiers import streaming
 from hypothesis.utils.show import show
 from hypothesis.internal.debug import minimal, some_template
 from hypothesis.internal.compat import text_type
 from hypothesis.searchstrategy.streams import Stream, StreamTemplate
+from copy import copy, deepcopy
 
 
 @given([bool])
@@ -120,3 +121,13 @@ def test_template_equality():
     assert t2 != t5
 
     assert len({t, t2, t3, t4, t5}) == 4
+
+
+def test_streams_copy_as_self():
+    x = strategy(streaming(bool)).example()
+    assert copy(x) is x
+    assert deepcopy(x) is x
+
+    y = x.map(lambda x: not x)
+    assert copy(y) is y
+    assert deepcopy(y) is y

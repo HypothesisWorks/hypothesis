@@ -116,3 +116,9 @@ class Stream(object):
         return 'Stream(%s, ...)' % (
             ', '.join(map(show, self.fetched))
         )
+
+    def __deepcopy__(self, table):
+        return self
+
+    def __copy__(self):
+        return self
