@@ -30,7 +30,8 @@ from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
 from hypothesis.control import assume
 from hypothesis.settings import Settings, Verbosity
 from hypothesis.executors import executor
-from hypothesis.reporting import report, verbose_report, current_verbosity
+from hypothesis.reporting import report, verbose_report, current_verbosity, \
+    debug_report
 from hypothesis.specifiers import just
 from hypothesis.utils.show import show
 from hypothesis.internal.tracker import Tracker
@@ -177,6 +178,9 @@ def simplify_template_such_that(
     while changed and successful_shrinks < settings.max_shrinks:
         changed = False
         for simplify in search_strategy.simplifiers(random, t):
+            debug_report("Applying simplification pass %s" % (
+                simplify.__name__,
+            ))
             while True:
                 simpler = simplify(random, t)
                 for s in simpler:

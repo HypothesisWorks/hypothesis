@@ -54,6 +54,11 @@ def verbose_report(text):
         current_reporter()(to_text(text))
 
 
+def debug_report(text):
+    if current_verbosity() >= Verbosity.debug:
+        current_reporter()(to_text(text))
+
+
 def report(text):
     if current_verbosity() >= Verbosity.normal:
         current_reporter()(to_text(text))
