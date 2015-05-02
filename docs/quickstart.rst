@@ -221,11 +221,14 @@ Here are some other examples of how you could use that:
         ys.reverse()
         assert xs == ys
 
-    @given((int, int))
+    @given((bool, str))
     def test_look_tuples_work_too(t):
+        # A tuple is generated as the one you provided, with the corresponding
+        # types in those positions.
         assert len(t) == 2
-        assert isinstance(t[0], int)
-        assert isinstance(t[1], int)
+        assert isinstance(t[0], bool)
+        assert isinstance(t[1], str)
+
 
 Note that you can pass arguments to @given either as positional or as keywords.
 
