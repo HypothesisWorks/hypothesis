@@ -13,6 +13,8 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+from random import Random
+from itertools import islice
 from collections import namedtuple
 
 import pytest
@@ -142,3 +144,20 @@ def test_list_simplicity():
     assert not s.strictly_simpler((True,), (False,))
     assert s.strictly_simpler((False, False,), (False, True))
     assert not s.strictly_simpler((False, True), (False, True))
+
+
+def test_nested_set_complexity():
+    strat = strategy(frozenset({frozenset({complex})}))
+
+    rnd = Random(0)
+    template = (
+        ((float('inf'), 1.0), (-1.0325215252103651e-149, 1.0)),
+        ((-1.677443578786644e-309, -1.0), (-2.2250738585072014e-308, 0.0))
+    )
+    simplifiers = list(strat.simplifiers(rnd, template))
+    rnd.shuffle(simplifiers)
+    simplifiers = simplifiers[:10]
+    for simplify in simplifiers:
+        print(simplify.__name__)
+        for s in islice(simplify(rnd, template), 50):
+            assert not strat.strictly_simpler(template, s)

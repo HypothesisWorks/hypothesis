@@ -435,16 +435,6 @@ class SetStrategy(SearchStrategy):
             if x not in seen:
                 seen.add(x)
                 deduped.append(x)
-        if self.list_strategy.element_strategy:
-            simpler = self.list_strategy.element_strategy.strictly_simpler
-            for i in hrange(1, len(deduped)):
-                j = i
-                while j > 0:
-                    if simpler(deduped[j], deduped[j - 1]):
-                        deduped[j - 1], deduped[j] = deduped[j], deduped[j - 1]
-                        j -= 1
-                    else:
-                        break
         return tuple(deduped)
 
     def produce_template(self, context, pv):
