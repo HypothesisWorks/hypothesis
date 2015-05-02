@@ -175,7 +175,7 @@ well, but do file bug reports.
 Known limitations:
 
 1. If your model has a non-nullable field type that Hypothesis doesn't support
-   then this will error with ModelNotSupported. If it is has a nullable field
+   then this will error with ModelNotSupported. If it has a nullable field
    type that Hypothesis doesn't support it will always be null.
 2. Cycles (e.g. if A has a foreign key pointing to B and B has a foreign key
    pointing back to A) are not supported. In some limited cases a cycle where

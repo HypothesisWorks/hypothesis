@@ -275,7 +275,7 @@ population prefer A to B, B to C and C to A.
 
 Wouldn't it be neat if we could use Hypothesis to provide an example of this?
 
-Well as you can probably guess from the presence in this section, we can! This
+Well as you can probably guess from the presence of this section, we can! This
 is slightly surprising because it's not really obvious how we would generate an
 election given the types that Hypothesis knows about.
 
