@@ -100,7 +100,7 @@ def find_satisfying_template(
 
     for parameter in islice(
         parameter_source, max_examples - len(tracker)
-    ):
+    ):  # pragma: no branch
         if len(tracker) >= search_strategy.size_upper_bound:
             break
 
