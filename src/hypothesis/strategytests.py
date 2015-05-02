@@ -88,6 +88,11 @@ def mutate_basic(basic, random):
     return mess_with_basic_data(basic, random)
 
 
+@mess_with_basic_data.extend(object)
+def test_mess_with_anything(o, random):
+    return o
+
+
 def mess_with_int(i, random):  # pragma: no cover
     s = random.randint(0, 4)
     if s == 0:

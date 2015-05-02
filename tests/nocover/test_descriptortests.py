@@ -26,7 +26,8 @@ from hypothesis.specifiers import just, one_of, strings, streaming, \
     dictionary, sampled_from, integers_from, floats_in_range, \
     integers_in_range
 from tests.common.specifiers import Descriptor
-from hypothesis.strategytests import TemplatesFor, strategy_test_suite
+from hypothesis.strategytests import TemplatesFor, strategy_test_suite, \
+    mutate_basic
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.searchstrategy.basic import basic_strategy
 from hypothesis.searchstrategy.narytree import NAryTree
@@ -174,3 +175,7 @@ def test_repr_has_specifier_in_it():
     suite = TestComplex(
         'test_can_round_trip_through_the_database')
     assert repr(suite) == 'strategy_test_suite(complex)'
+
+
+def test_can_mutate_non_basic():
+    mutate_basic(1.0, Random(0))
