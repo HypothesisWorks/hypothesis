@@ -20,9 +20,9 @@ from hypothesis.settings import Settings
 from hypothesis.specifiers import Dictionary
 from hypothesis.utils.show import show
 from hypothesis.internal.compat import hrange
-from hypothesis.searchstrategy.strategies import SearchStrategy, \
-    MappedSearchStrategy, strategy, check_type, check_length, \
-    check_data_type, one_of_strategies, EFFECTIVELY_INFINITE
+from hypothesis.searchstrategy.strategies import EFFECTIVELY_INFINITE, \
+    SearchStrategy, MappedSearchStrategy, strategy, check_type, \
+    check_length, check_data_type, one_of_strategies
 
 
 def safe_mul(x, y):

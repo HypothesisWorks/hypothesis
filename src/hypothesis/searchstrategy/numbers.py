@@ -24,9 +24,9 @@ import hypothesis.specifiers as specifiers
 import hypothesis.internal.distributions as dist
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.searchstrategy.misc import SampledFromStrategy
-from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
-    MappedSearchStrategy, strategy, check_type, check_data_type, \
-    EFFECTIVELY_INFINITE
+from hypothesis.searchstrategy.strategies import EFFECTIVELY_INFINITE, \
+    BadData, SearchStrategy, MappedSearchStrategy, strategy, check_type, \
+    check_data_type
 
 
 class IntStrategy(SearchStrategy):
@@ -106,7 +106,7 @@ class IntegersFromStrategy(SearchStrategy):
         self.lower_bound = lower_bound
 
     def __repr__(self):
-        return "IntegersFromStrategy(%d)" % (self.lower_bound,)
+        return 'IntegersFromStrategy(%d)' % (self.lower_bound,)
 
     def produce_parameter(self, random):
         return random.random()
