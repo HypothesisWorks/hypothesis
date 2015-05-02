@@ -125,11 +125,11 @@ class IntegersFromStrategy(SearchStrategy):
     def reify(self, template):
         return template
 
-    def try_shrink(self, lo, hi):
+    def try_shrink(self, i):
+        lo = self.lower_bound + i
+        hi = self.lower_bound + 2 * i
+
         def accept(random, x):
-            if x < 0:
-                for i in accept(random, -x):
-                    yield -i
             if x <= lo:
                 return
 
@@ -157,7 +157,7 @@ class IntegersFromStrategy(SearchStrategy):
         i = 1
         lb = self.lower_bound
         while i + lb < abs(template):
-            yield self.try_shrink(i + lb, 2 * i + lb)
+            yield self.try_shrink(i)
             i *= 2
 
     def from_basic(self, data):
