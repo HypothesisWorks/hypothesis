@@ -21,14 +21,14 @@ from decimal import Decimal
 from fractions import Fraction
 
 from hypothesis import Settings, Verbosity, find, given, assume, strategy
-from hypothesis.errors import NoExamples, NoSuchExample
+from hypothesis.errors import BadData, NoExamples
 from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, \
     StateMachineSearchStrategy, rule
 from hypothesis.specifiers import just, streaming, sampled_from, \
     floats_in_range, integers_in_range
 from hypothesis.utils.show import show
-from hypothesis.strategytests import TemplatesFor
+from hypothesis.strategytests import TemplatesFor, mutate_basic
 from hypothesis.internal.compat import text_type, binary_type
 from hypothesis.searchstrategy.strategies import BuildContext
 
@@ -45,12 +45,30 @@ class HypothesisSpec(RuleBasedStateMachine):
     tuples = Bundle('tuples')
     objects = Bundle('objects')
     streaming_strategies = Bundle('streams')
+    basic_data = Bundle('basic')
 
     strats_with_parameters = Bundle('strats_with_parameters')
     strats_with_templates = Bundle('strats_with_templates')
+    strats_with_2_templates = Bundle('strats_with_2_templates')
 
     def teardown(self):
         self.clear_database()
+
+    @rule(target=basic_data, st=strats_with_templates)
+    def to_basic(self, st):
+        return st[0].to_basic(st[1])
+
+    @rule(data=basic_data, strat=strategies)
+    def from_basic(self, data, strat):
+        try:
+            template = strat.from_basic(data)
+        except BadData:
+            return
+        strat.reify(template)
+
+    @rule(target=basic_data, data=basic_data, r=Random)
+    def mess_with_basic(self, data, r):
+        return mutate_basic(data, r)
 
     @rule()
     def clear_database(self):
@@ -80,7 +98,7 @@ class HypothesisSpec(RuleBasedStateMachine):
 
     @rule(
         targets=(strategies, streaming_strategies),
-        strat=strategies, i=integers_in_range(1, 500))
+        strat=strategies, i=integers_in_range(1, 10))
     def evalled_stream(self, strat, i):
         return strategy(streaming(strat)).map(lambda x: list(x[:i]) and x)
 
@@ -99,12 +117,13 @@ class HypothesisSpec(RuleBasedStateMachine):
             break
         return (strat, temp)
 
-    @rule(strat=strategies, r=Random)
-    def find_constant_failure(self, strat, r):
+    @rule(strat=strategies, r=Random, mshr=integers_in_range(0, 100))
+    def find_constant_failure(self, strat, r, mshr):
         with Settings(
             verbosity=Verbosity.quiet, max_examples=1,
             min_satisfying_examples=0,
             database=self.database,
+            max_shrinks=mshr,
         ):
             @given(strat, random=r,)
             def test(x):
@@ -115,18 +134,22 @@ class HypothesisSpec(RuleBasedStateMachine):
             except AssertionError:
                 pass
 
-    @rule(strat=strategies, r=Random, mex=integers_in_range(1, 500))
-    def find_weird_failure(self, strat, r, mex):
+    @rule(
+        strat=strategies, r=Random, p=floats_in_range(0, 1),
+        mex=integers_in_range(1, 10), mshr=integers_in_range(1, 100)
+    )
+    def find_weird_failure(self, strat, r, mex, p, mshr):
         with Settings(
             verbosity=Verbosity.quiet, max_examples=mex,
             min_satisfying_examples=0,
             database=self.database,
+            max_shrinks=mshr,
         ):
             @given(strat, random=r,)
             def test(x):
                 assert Random(
                     hashlib.md5(show(x).encode('utf-8')).digest()
-                ).randint(0, 5)
+                ).random() <= p
 
             try:
                 test()
@@ -141,6 +164,15 @@ class HypothesisSpec(RuleBasedStateMachine):
     def draw_template(self, sp, r):
         strat, param = sp
         return (strat, strat.draw_template(BuildContext(r), param))
+
+    @rule(target=strats_with_2_templates, sp=strats_with_parameters, r=Random)
+    def draw_templates(self, sp, r):
+        strat, param = sp
+        return (
+            strat,
+            strat.draw_template(BuildContext(r), param),
+            strat.draw_template(BuildContext(r), param),
+        )
 
     @rule(st=strats_with_templates)
     def check_serialization(self, st):
@@ -228,10 +260,6 @@ class HypothesisSpec(RuleBasedStateMachine):
                 return result2
         return source.flatmap(do_map)
 
-    @rule(strat=strategies)
-    def is_size_consistent(self, strat):
-        assert strat.size_lower_bound == strat.size_upper_bound
-
     @rule(target=strategies, value=objects)
     def just_strategy(self, value):
         return strategy(just(value))
@@ -262,8 +290,8 @@ class HypothesisSpec(RuleBasedStateMachine):
     def repr_is_good(self, strat):
         assert ' at 0x' not in repr(strat)
 
-    @rule(strat=strategies)
-    def can_find_as_many_templates_as_size(self, strat):
+    @rule(strat=strategies, r=Random)
+    def can_find_as_many_templates_as_size(self, strat, r):
         tempstrat = strategy(TemplatesFor(strat))
         n = min(10, strat.size_lower_bound)
         found = []
@@ -271,40 +299,18 @@ class HypothesisSpec(RuleBasedStateMachine):
             for _ in range(n):
                 x = find(
                     tempstrat, lambda t: t not in found,
+                    random=r,
                 )
                 found.append(x)
-
-    @rule(strat=strategies)
-    def can_simultaneously_simplify_templates(self, strat):
-        if strat.size_upper_bound < 2:
-            return
-        lists = strategy([TemplatesFor(strat)])
-
-        def force_a_bit_of_eval(x):
-            try:
-                next(iter(x))
-            except (TypeError, StopIteration):
-                pass
-            return True
-        try:
-            with Settings(verbosity=Verbosity.quiet):
-                simul = find(
-                    lists,
-                    lambda x: (
-                        force_a_bit_of_eval(x) and
-                        20 <= len(x) <= 30 and
-                        len(set(map(show, x))) >= 2
-                    ), settings=Settings(
-                        verbosity=Verbosity.quiet))
-            assert len(simul) == 20
-            assert len(set(map(show, simul))) == 2
-        except NoSuchExample:
-            pass
 
 
 TestHypothesis = HypothesisSpec.TestCase
 
-TestHypothesis.settings.stateful_step_count = 30
+TestHypothesis.settings.stateful_step_count = 200
 TestHypothesis.settings.max_shrinks = 500
 TestHypothesis.settings.timeout = 60
 TestHypothesis.settings.min_satisfying_examples = 1
+
+if __name__ == '__main__':
+    TestHypothesis.settings.timeout = 500
+    TestHypothesis().runTest()
