@@ -125,17 +125,34 @@ class IntegersFromStrategy(SearchStrategy):
     def reify(self, template):
         return template
 
-    def basic_simplify(self, random, template):
-        assert template >= self.lower_bound
-        if template == self.lower_bound:
-            return
-        yield self.lower_bound
-        for i in hrange(
-            self.lower_bound, min(template, self.lower_bound + 10)
-        ):
-            yield i
-        yield (template + self.lower_bound) // 2
-        yield template - 1
+    def try_shrink(self, lo, hi):
+        def accept(random, x):
+            if x < 0:
+                for i in accept(random, -x):
+                    yield -i
+            if x <= lo:
+                return
+
+            lb = lo
+            while True:
+                yield lb
+                new_lb = (lb + x) // 2
+                if new_lb <= lb or new_lb >= hi:
+                    return
+                if new_lb > lb + 2:
+                    yield random.randint(lb + 1, new_lb - 1)
+                lb = new_lb
+        accept.__name__ = str(
+            'try_shrink(%d, %d)' % (lo, hi)
+        )
+        return accept
+
+    def simplifiers(self, random, template):
+        i = 1
+        lb = self.lower_bound
+        while i + lb < abs(template):
+            yield self.try_shrink(i + lb, 2 * i + lb)
+            i *= 2
 
     def from_basic(self, data):
         data = integer_or_bad(data)

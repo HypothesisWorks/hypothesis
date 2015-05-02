@@ -379,6 +379,21 @@ def test_increasing_string_sequence():
         assert abs(len(xs[i + 1]) - len(xs[i])) <= 1
 
 
+def test_increasing_integers_from_sequence():
+    n = 6
+    lb = 10000
+    xs = minimal(
+        [integers_from(0)], lambda t: (
+            n <= len(t) and
+            all(t) and
+            t[0] >= lb and
+            length_of_longest_ordered_sequence(t) >= n
+        ),
+        timeout_after=20,
+    )
+    assert n <= len(xs) <= n + 2
+
+
 def test_find_large_union_list():
     def large_mostly_non_overlapping(xs):
         assume(xs)
