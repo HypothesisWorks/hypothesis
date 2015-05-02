@@ -331,12 +331,8 @@ def strategy_test_suite(
 
         @specifier_test
         def test_does_not_increase_complexity(self, template, rnd):
-            simplifiers = list(strat.simplifiers(rnd, template))
-            rnd.shuffle(simplifiers)
-            simplifiers = simplifiers[:10]
-            for simplify in simplifiers:
-                for s in islice(simplify(rnd, template), 50):
-                    assert not strat.strictly_simpler(template, s)
+            for s in islice(strat.full_simplify(rnd, template), 100):
+                assert not strat.strictly_simpler(template, s)
 
         @given(Random, settings=Settings(max_examples=1000))
         def test_can_create_templates(self, random):
