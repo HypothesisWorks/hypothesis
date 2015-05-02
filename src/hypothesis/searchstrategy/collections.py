@@ -392,13 +392,16 @@ class ListStrategy(SearchStrategy):
 
 
 class SingleElementListStrategy(MappedSearchStrategy):
-    """
-    A SearchStrategy for lists where the space of element has only one
-    template. This may seem like a ridiculous special case, but it's actually
+
+    """A SearchStrategy for lists where the space of element has only one
+    template.
+
+    This may seem like a ridiculous special case, but it's actually
     worth doing: The reason is twowold: Firstly, we can be much more efficient
     here. Secondly, the normal representation is super *in*efficient here for
     the problem of detecting duplicates, which are much more likely when there
     is only one element template.
+
     """
 
     def __init__(self, element_strategy, length_strategy):
