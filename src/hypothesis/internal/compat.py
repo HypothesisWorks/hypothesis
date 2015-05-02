@@ -30,7 +30,39 @@ if PY3:
 else:
     text_type = unicode
     binary_type = str
-    from __builtin__ import xrange as hrange
+
+    def hrange(start_or_finish, finish=None, step=None):
+        try:
+            if step is None:
+                if finish is None:
+                    return xrange(start_or_finish)
+                else:
+                    return xrange(start_or_finish, finish)
+            else:
+                return xrange(start_or_finish, finish, step)
+        except OverflowError:
+            if step is None:
+                step = 1
+            if finish is not None:
+                start = start_or_finish
+            else:
+                start = 0
+                finish = start_or_finish
+            assert step != 0
+            if step > 0:
+                def shimrange():
+                    i = start
+                    while i < finish:
+                        yield i
+                        i += step
+            else:
+                def shimrange():
+                    i = start
+                    while i > finish:
+                        yield i
+                        i += step
+            return shimrange()
+
     ARG_NAME_ATTRIBUTE = 'id'
     integer_types = (int, long)
     hunichr = unichr
