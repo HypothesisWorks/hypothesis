@@ -41,6 +41,8 @@ else:
             else:
                 return xrange(start_or_finish, finish, step)
         except OverflowError:
+            if step == 0:
+                raise ValueError('step argument may not be zero')
             if step is None:
                 step = 1
             if finish is not None:

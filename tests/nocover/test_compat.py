@@ -13,6 +13,7 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+import pytest
 from hypothesis.internal.compat import hrange
 
 
@@ -25,3 +26,7 @@ def test_small_hrange():
 def test_large_hrange():
     n = 1 << 1024
     assert list(hrange(n, n + 5, 2)) == [n, n + 2, n + 4]
+    assert list(hrange(n, n)) == []
+
+    with pytest.raises(ValueError):
+        hrange(n, n, 0)
