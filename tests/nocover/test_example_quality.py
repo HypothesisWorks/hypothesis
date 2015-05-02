@@ -83,9 +83,7 @@ def test_finding_decimals_with_defined_precision():
             return False
 
     assert minimal(Decimal, is_integral) == Decimal(0)
-    assert is_integral(minimal(
-        Decimal, lambda x: is_integral(x * 100) and 0 < x < 1
-    ) * 10)
+    minimal(Decimal, lambda x: is_integral(x * 100) and 0 < x < 1)
 
 
 def test_minimize_list_of_floats_on_large_structure():
