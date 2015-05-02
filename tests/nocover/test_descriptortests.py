@@ -28,7 +28,7 @@ from hypothesis.specifiers import just, one_of, strings, streaming, \
 from tests.common.specifiers import Descriptor
 from hypothesis.strategytests import TemplatesFor, mutate_basic, \
     strategy_test_suite
-from hypothesis.internal.compat import text_type, binary_type
+from hypothesis.internal.compat import text_type, binary_type, hrange
 from hypothesis.searchstrategy.basic import basic_strategy
 from hypothesis.searchstrategy.narytree import NAryTree
 
@@ -42,6 +42,7 @@ TestSampled1 = strategy_test_suite(sampled_from(elements=(1,)))
 TestSampled2 = strategy_test_suite(sampled_from(elements=(1, 2)))
 
 TestIntegersFrom = strategy_test_suite(integers_from(13))
+TestIntegersFrom = strategy_test_suite(integers_from(1 << 1024))
 
 TestOneOf = strategy_test_suite(one_of((int, int, bool)))
 TestOneOfSameType = strategy_test_suite(
@@ -179,3 +180,9 @@ def test_repr_has_specifier_in_it():
 
 def test_can_mutate_non_basic():
     mutate_basic(1.0, Random(0))
+
+
+def test_can_mutate_large_int():
+    r = Random(0)
+    for _ in hrange(20):
+        mutate_basic(1 << 1024, r)

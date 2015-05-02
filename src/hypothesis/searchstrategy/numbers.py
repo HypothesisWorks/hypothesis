@@ -22,11 +22,19 @@ from collections import namedtuple
 
 import hypothesis.specifiers as specifiers
 import hypothesis.internal.distributions as dist
-from hypothesis.internal.compat import hrange, integer_types
+from hypothesis.internal.compat import hrange, text_type, integer_types
 from hypothesis.searchstrategy.misc import SampledFromStrategy
 from hypothesis.searchstrategy.strategies import EFFECTIVELY_INFINITE, \
     BadData, SearchStrategy, MappedSearchStrategy, strategy, check_type, \
     check_data_type
+
+
+def integer_or_bad(data):
+    check_data_type(text_type, data)
+    try:
+        return int(data)
+    except ValueError:
+        raise BadData('Invalid integer %r' % (data,))
 
 
 class IntStrategy(SearchStrategy):
@@ -39,11 +47,10 @@ class IntStrategy(SearchStrategy):
     """
 
     def from_basic(self, data):
-        check_data_type(integer_types, data)
-        return data
+        return integer_or_bad(data)
 
     def to_basic(self, template):
-        return template
+        return text_type(template)
 
     def simplifiers(self, random, template):
         yield self.try_negate
@@ -130,7 +137,7 @@ class IntegersFromStrategy(SearchStrategy):
         yield template - 1
 
     def from_basic(self, data):
-        check_data_type(integer_types, data)
+        data = integer_or_bad(data)
         if data < self.lower_bound:
             raise BadData('Value %d out of range [%d, infinity)' % (
                 data, self.lower_bound
@@ -138,7 +145,7 @@ class IntegersFromStrategy(SearchStrategy):
         return data
 
     def to_basic(self, template):
-        return template
+        return text_type(template)
 
 
 class RandomGeometricIntStrategy(IntStrategy):
@@ -223,7 +230,7 @@ class BoundedIntStrategy(SearchStrategy):
         return results
 
     def from_basic(self, data):
-        check_data_type(integer_types, data)
+        data = integer_or_bad(data)
         if data < self.start or data > self.end:
             raise BadData('Value %d out of range [%d, %d]' % (
                 data, self.start, self.end
@@ -231,7 +238,7 @@ class BoundedIntStrategy(SearchStrategy):
         return data
 
     def to_basic(self, template):
-        return template
+        return text_type(template)
 
     def reify(self, value):
         return value
