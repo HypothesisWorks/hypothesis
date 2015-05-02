@@ -23,6 +23,7 @@ from hypothesis.core import find
 from hypothesis.errors import NoExamples, UnsatisfiedAssumption
 from hypothesis.database import ExampleDatabase
 from hypothesis.internal.compat import hrange
+from hypothesis.internal.tracker import Tracker
 
 
 class Timeout(BaseException):
@@ -107,9 +108,12 @@ def via_database(spec, strat, template):
 
 
 def minimal_element(strategy, random):
+    tracker = Tracker()
     element = some_template(strategy, random)
     while True:
         for new_element in strategy.full_simplify(random, element):
+            if tracker.track(new_element) > 1:
+                continue
             try:
                 strategy.reify(new_element)
                 element = new_element
