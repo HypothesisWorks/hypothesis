@@ -97,6 +97,7 @@ TestNonEmptyLists = strategy_test_suite(
     strategy([int]).filter(lambda x: x)
 )
 
+TestNoneLists = strategy_test_suite([None])
 
 TestConstantLists = strategy_test_suite(
     strategy(int).flatmap(lambda i: [just(i)])

@@ -13,6 +13,7 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+from random import Random
 from collections import namedtuple
 
 import hypothesis.internal.distributions as dist
@@ -390,6 +391,39 @@ class ListStrategy(SearchStrategy):
         return tuple(map(self.element_strategy.from_basic, value))
 
 
+class SingleElementListStrategy(MappedSearchStrategy):
+    """
+    A SearchStrategy for lists where the space of element has only one
+    template. This may seem like a ridiculous special case, but it's actually
+    worth doing: The reason is twowold: Firstly, we can be much more efficient
+    here. Secondly, the normal representation is super *in*efficient here for
+    the problem of detecting duplicates, which are much more likely when there
+    is only one element template.
+    """
+
+    def __init__(self, element_strategy, length_strategy):
+        super(SingleElementListStrategy, self).__init__(
+            strategy=length_strategy,
+        )
+        assert element_strategy.size_upper_bound == 1
+        self.element_strategy = element_strategy
+        self.length_strategy = length_strategy
+
+        # If the strategy isn't lying to us we don't need to do this more than
+        # once.
+        self.base_template = element_strategy.draw_and_produce_from_random(
+            Random(0)
+        )
+
+    def pack(self, length):
+        return [
+            self.new_element() for _ in hrange(length)
+        ]
+
+    def new_element(self):
+        return self.element_strategy.reify(self.base_template)
+
+
 class SetStrategy(SearchStrategy):
 
     """A strategy for sets of values, defined in terms of a strategy for lists
@@ -528,6 +562,14 @@ def define_frozen_set_strategy(specifier, settings):
 
 @strategy.extend(list)
 def define_list_strategy(specifier, settings):
+    if len(specifier) == 1:
+        elt = strategy(specifier[0], settings)
+        from hypothesis.searchstrategy.numbers import IntegersFromStrategy
+        if elt.size_upper_bound == 1:
+            return SingleElementListStrategy(
+                elt,
+                IntegersFromStrategy(
+                    0, average_size=settings.average_list_length))
     return ListStrategy(
         [strategy(d, settings) for d in specifier],
         average_length=settings.average_list_length

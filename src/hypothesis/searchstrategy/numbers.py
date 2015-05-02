@@ -108,15 +108,16 @@ class IntStrategy(SearchStrategy):
 
 class IntegersFromStrategy(SearchStrategy):
 
-    def __init__(self, lower_bound):
+    def __init__(self, lower_bound, average_size=100.0):
         super(IntegersFromStrategy, self).__init__()
         self.lower_bound = lower_bound
+        self.average_size = average_size
 
     def __repr__(self):
         return 'IntegersFromStrategy(%d)' % (self.lower_bound,)
 
     def produce_parameter(self, random):
-        return random.random()
+        return random.random() * 2 / self.average_size
 
     def produce_template(self, context, parameter):
         return self.lower_bound + dist.geometric(context.random, parameter)

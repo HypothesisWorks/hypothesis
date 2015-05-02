@@ -158,6 +158,11 @@ def test_nested_set_complexity():
     rnd.shuffle(simplifiers)
     simplifiers = simplifiers[:10]
     for simplify in simplifiers:
-        print(simplify.__name__)
         for s in islice(simplify(rnd, template), 50):
             assert not strat.strictly_simpler(template, s)
+
+
+def test_multiple_empty_lists_are_independent():
+    x = find([[]], lambda t: len(t) >= 2)
+    u, v = x
+    assert u is not v
