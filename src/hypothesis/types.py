@@ -18,7 +18,6 @@ from random import Random
 from itertools import islice
 
 from hypothesis.errors import InvalidArgument
-from hypothesis.utils.show import show
 
 
 class RandomWithSeed(Random):
@@ -114,7 +113,7 @@ class Stream(object):
             return 'Stream(...)'
 
         return 'Stream(%s, ...)' % (
-            ', '.join(map(show, self.fetched))
+            ', '.join(map(repr, self.fetched))
         )
 
     def __deepcopy__(self, table):
