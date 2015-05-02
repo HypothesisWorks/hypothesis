@@ -147,7 +147,11 @@ class IntegersFromStrategy(SearchStrategy):
         )
         return accept
 
+    def simplify_to_lower_bound(self, random, template):
+        yield self.lower_bound
+
     def simplifiers(self, random, template):
+        yield self.simplify_to_lower_bound
         i = 1
         lb = self.lower_bound
         while i + lb < abs(template):
