@@ -14,6 +14,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import random
+from itertools import islice
 
 import pytest
 from hypothesis.internal.compat import hrange
@@ -113,3 +114,22 @@ def test_tries_each_parameter_at_least_min_index_times():
             source.mark_bad()
     # The last index may not have been fully populated
     assert all(c >= 5 for c in source.counts[:-1])
+
+
+def test_culls_valid_parameters_if_lots_are_bad():
+    source = ParameterSource(
+        context=BuildContext(random.Random()),
+        strategy=strategy(int),
+        min_tries=5
+    )
+    for _ in islice(source, 200):
+        source.mark_bad()
+
+    for i in hrange(len(source.parameters)):
+        assert source.counts[i] >= source.bad_counts[i]
+
+    for i in hrange(len(source.parameters)):
+        assert source.counts[i] == source.bad_counts[i]
+
+    print(source.bad_counts, source.counts)
+    assert len(source.valid_parameters) <= 1

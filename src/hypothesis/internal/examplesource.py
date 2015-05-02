@@ -13,8 +13,6 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from hypothesis.internal.compat import hrange
-
 
 class ParameterSource(object):
 
@@ -49,6 +47,7 @@ class ParameterSource(object):
         self.total_bad_count = 0
         self.mark_set = False
         self.started = False
+        self.valid_parameters = []
 
     def mark_bad(self):
         """The last example was bad.
@@ -71,7 +70,17 @@ class ParameterSource(object):
         self.parameters.append(result)
         self.bad_counts.append(0)
         self.counts.append(1)
+        index = len(self.parameters) - 1
+        self.valid_parameters.append(index)
+        self.last_parameter_index = index
+        self.mark_set = False
         return result
+
+    def draw_parameter(self, index):
+        self.last_parameter_index = index
+        self.mark_set = False
+        self.counts[index] += 1
+        return self.parameters[index]
 
     def draw_parameter_score(self, i):
         beta_prior = 2.0 * (
@@ -107,13 +116,9 @@ class ParameterSource(object):
            we've drawn are terrible.
 
         """
-        self.mark_set = False
         self.total_count += 1
         if self.parameters and self.counts[-1] < self.min_tries:
-            index = len(self.parameters) - 1
-            self.counts[index] += 1
-            self.last_parameter_index = index
-            return self.parameters[index]
+            return self.draw_parameter(len(self.parameters) - 1)
         if len(self.parameters) < self.min_parameters:
             return self.new_parameter()
         else:
@@ -122,7 +127,14 @@ class ParameterSource(object):
             )
             best_index = -1
 
-            for i in hrange(len(self.parameters)):
+            while self.valid_parameters:
+                i = self.valid_parameters[-1]
+                if self.counts[i] == self.bad_counts[i]:
+                    self.valid_parameters.pop()
+                else:
+                    break
+
+            for i in self.valid_parameters:
                 # If we've never seen a good parameter from this then we're
                 # not even going to bother with it.
                 if self.counts[i] == self.bad_counts[i]:
@@ -132,11 +144,9 @@ class ParameterSource(object):
                     best_score = score
                     best_index = i
             if best_index < 0:
-                self.last_parameter_index = len(self.parameters)
                 return self.new_parameter()
-            self.last_parameter_index = best_index
-            self.counts[self.last_parameter_index] += 1
-            return self.parameters[self.last_parameter_index]
+            else:
+                return self.draw_parameter(best_index)
 
     def __iter__(self):
         self.started = True
