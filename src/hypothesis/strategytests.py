@@ -82,7 +82,10 @@ def mutate_basic(basic, random):
         if isinstance(basic, text_type):
             return list(basic)
         elif isinstance(basic, integer_types):
-            return float(basic)
+            try:
+                return float(basic)
+            except OverflowError:
+                return -basic
         else:
             return text_type(repr(basic))
     return mess_with_basic_data(basic, random)
@@ -248,12 +251,13 @@ def strategy_test_suite(
         @specifier_test
         def test_is_basic(self, value, rnd):
             def is_basic(v):
-                return isinstance(
-                    v, integer_types + (list, type(None), text_type)
-                ) and (
-                    not isinstance(v, list) or
-                    all(is_basic(w) for w in v)
-                )
+                if v is None or isinstance(v, text_type):
+                    return True
+                if isinstance(v, integer_types):
+                    return not (abs(v) >> 64)
+                if isinstance(v, list):
+                    return all(is_basic(w) for w in v)
+                return False
             supposedly_basic = strat.to_basic(value)
             self.assertTrue(is_basic(supposedly_basic), repr(supposedly_basic))
 
