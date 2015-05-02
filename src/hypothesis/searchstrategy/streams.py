@@ -14,6 +14,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 from random import Random
+from itertools import islice
 
 from hypothesis.types import Stream
 from hypothesis.specifiers import Streaming
@@ -101,15 +102,13 @@ class StreamStrategy(SearchStrategy):
             ):
                 yield self.simplifier_for_index(s, i)
 
-    def initial_template_tuple(self, x):
-        return (x.changed, x.seed, x.parameter_seed)
-
     def strictly_simpler(self, x, y):
-        xt = self.initial_template_tuple(x)
-        yt = self.initial_template_tuple(y)
-        if xt > yt:
-            return True
-        return False
+        for u, v in islice(zip(x.stream, y.stream), max(x.changed, y.changed)):
+            if self.source_strategy.strictly_simpler(u, v):
+                return True
+            if self.source_strategy.strictly_simpler(v, u):
+                return False
+        return x.seed < y.seed
 
     def simplifier_for_index(self, simplify, i):
         def accept(random, template):
