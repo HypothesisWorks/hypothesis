@@ -18,7 +18,7 @@ from decimal import Decimal
 from fractions import Fraction
 from collections import OrderedDict, namedtuple
 
-from hypothesis import strategy
+from hypothesis import strategy, Settings
 from tests.common.basic import Bitfields, BoringBitfields, \
     simplify_bitfield
 from hypothesis.stateful import StateMachineSearchStrategy
@@ -64,7 +64,8 @@ TestJust = strategy_test_suite(just('hi'))
 TestTemplates = strategy_test_suite(TemplatesFor({int}))
 
 TestEmptyString = strategy_test_suite(strings(alphabet=''))
-TestSingleString = strategy_test_suite(strings(alphabet='a'))
+TestSingleString = strategy_test_suite(strategy(
+    strings(alphabet='a'), Settings(average_list_length=10.0)))
 TestManyString = strategy_test_suite(strings(alphabet='abcdef☃'))
 
 Stuff = namedtuple('Stuff', ('a', 'b'))
