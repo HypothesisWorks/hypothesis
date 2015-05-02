@@ -201,6 +201,12 @@ class ListStrategy(SearchStrategy):
 
         if len(template) <= 1:
             yield self.simplify_to_empty
+
+        if len(template) == 1:
+            for simplify in self.element_strategy.simplifiers(
+                random, template[0]
+            ):
+                yield self.simplifier_for_index(0, simplify)
         yield self.simplify_with_random_discards
         yield self.simplify_with_example_cloning
         yield self.simplify_arrange_by_pivot

@@ -13,6 +13,8 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+from random import Random
+
 from hypothesis import find
 from hypothesis.internal.compat import text_type
 
@@ -45,3 +47,7 @@ def test_can_find_mixed_ascii_and_non_ascii_stringgs():
 def test_will_find_ascii_examples_given_the_chance():
     s = find((text_type, text_type), lambda x: x[0] and (x[0] < x[1]))
     assert s == ('0', '1')
+
+
+def test_finds_single_element_strings():
+    assert find(str, bool, random=Random(4)) == "0"
