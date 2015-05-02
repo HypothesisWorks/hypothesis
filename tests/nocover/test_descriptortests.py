@@ -18,7 +18,7 @@ from decimal import Decimal
 from fractions import Fraction
 from collections import OrderedDict, namedtuple
 
-from hypothesis import strategy, Settings
+from hypothesis import Settings, strategy
 from tests.common.basic import Bitfields, BoringBitfields, \
     simplify_bitfield
 from hypothesis.stateful import StateMachineSearchStrategy

@@ -135,10 +135,6 @@ class ParameterSource(object):
                     break
 
             for i in self.valid_parameters:
-                # If we've never seen a good parameter from this then we're
-                # not even going to bother with it.
-                if self.counts[i] == self.bad_counts[i]:
-                    continue
                 score = self.draw_parameter_score(i)
                 if score > best_score:
                     best_score = score
