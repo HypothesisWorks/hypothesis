@@ -81,10 +81,10 @@ class StreamStrategy(SearchStrategy):
         return 'StreamStrategy(%r)' % (self.source_strategy,)
 
     def produce_parameter(self, random):
-        return random.getrandbits(1024)
+        return random.getrandbits(64)
 
     def produce_template(self, context, parameter):
-        return self.new_template(context.random.getrandbits(1024), parameter)
+        return self.new_template(context.random.getrandbits(64), parameter)
 
     def new_template(self, seed, parameter_seed):
         context = BuildContext(Random(seed))
