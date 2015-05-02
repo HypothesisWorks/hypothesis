@@ -60,8 +60,6 @@ class ParameterSource(object):
         if self.mark_set:
             raise ValueError('This parameter has already been marked')
         self.mark_set = True
-        if self.last_parameter_index < 0:
-            return
         self.total_bad_count += 1
         self.bad_counts[self.last_parameter_index] += 1
 
