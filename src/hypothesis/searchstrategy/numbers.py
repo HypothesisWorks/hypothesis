@@ -151,6 +151,8 @@ class IntegersFromStrategy(SearchStrategy):
         yield self.lower_bound
 
     def simplifiers(self, random, template):
+        if template == self.lower_bound:
+            return
         yield self.simplify_to_lower_bound
         i = 1
         lb = self.lower_bound
