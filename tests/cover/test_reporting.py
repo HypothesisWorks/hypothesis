@@ -15,7 +15,9 @@ from __future__ import division, print_function, absolute_import, \
 
 import pytest
 from hypothesis import given, reporting
+from hypothesis.reporting import debug_report, verbose_report
 from tests.common.utils import capture_out
+from hypothesis.settings import Settings, Verbosity
 
 
 def test_can_suppress_output():
@@ -40,3 +42,24 @@ def test_prints_output_by_default():
             with pytest.raises(AssertionError):
                 test_int()
     assert 'Falsifying example' in o.getvalue()
+
+
+def test_does_not_print_debug_in_verbose():
+    with Settings(verbosity=Verbosity.verbose):
+        with capture_out() as o:
+            debug_report('Hi')
+    assert not o.getvalue()
+
+
+def test_does_print_debug_in_debug():
+    with Settings(verbosity=Verbosity.debug):
+        with capture_out() as o:
+            debug_report('Hi')
+    assert 'Hi' in o.getvalue()
+
+
+def test_does_print_verbose_in_debug():
+    with Settings(verbosity=Verbosity.debug):
+        with capture_out() as o:
+            verbose_report('Hi')
+    assert 'Hi' in o.getvalue()
