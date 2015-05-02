@@ -146,6 +146,7 @@ class StreamStrategy(SearchStrategy):
         changed = list(map(self.source_strategy.from_basic, data[2]))
         template.stream._thunk_to(len(changed))
         assert len(template.stream.fetched) == len(changed)
+        template.changed = len(changed)
         template.stream.fetched = changed
         return template
 

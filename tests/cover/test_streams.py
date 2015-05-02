@@ -14,16 +14,18 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 from copy import copy, deepcopy
+from random import Random
 from itertools import islice
 
 import pytest
 from hypothesis import given, strategy
 from hypothesis.errors import InvalidArgument
-from hypothesis.specifiers import streaming
+from hypothesis.specifiers import streaming, floats_in_range
 from hypothesis.utils.show import show
 from hypothesis.internal.debug import minimal, some_template
 from hypothesis.internal.compat import text_type
 from hypothesis.searchstrategy.streams import Stream, StreamTemplate
+from hypothesis.searchstrategy.strategies import BuildContext
 
 
 @given([bool])
@@ -131,3 +133,17 @@ def test_streams_copy_as_self():
     y = x.map(lambda x: not x)
     assert copy(y) is y
     assert deepcopy(y) is y
+
+
+def test_check_serialization_preserves_changed_marker():
+    strat = strategy(
+        streaming(floats_in_range(0.0, 2.2250738585072014e-308)))
+    template = strat.draw_template(
+        BuildContext(Random(0)), strat.draw_parameter(Random(0)))
+    strat.reify(template)[0]
+    simpler = next(strat.full_simplify(
+        Random(0), template
+    ))
+
+    as_basic = strat.to_basic(simpler)
+    assert as_basic == strat.to_basic(strat.from_basic(as_basic))
