@@ -50,4 +50,4 @@ def test_will_find_ascii_examples_given_the_chance():
 
 
 def test_finds_single_element_strings():
-    assert find(str, bool, random=Random(4)) == "0"
+    assert find(str, bool, random=Random(4)) == '0'
