@@ -15,29 +15,12 @@ from __future__ import division, print_function, absolute_import, \
 
 import math
 import time
-from random import Random
 
 import pytest
-from hypothesis import Settings, find, given, assume
+from hypothesis import Settings, find
 from hypothesis.errors import Timeout, NoSuchExample, \
     DefinitelyNoSuchExample
-from hypothesis.specifiers import streaming, dictionary, sampled_from
-
-
-@given(Random, settings=Settings(max_examples=10, min_satisfying_examples=1))
-def test_only_raises_if_actually_considered_all(r):
-    examples = set()
-    settings = Settings(min_satisfying_examples=0, max_examples=100)
-
-    def consider_and_append(x):
-        examples.add(x)
-        return False
-    s = sampled_from(range(100))
-    with pytest.raises(NoSuchExample) as e:
-        find(s, consider_and_append, settings=settings)
-
-    assume(len(examples) < 100)
-    assert not isinstance(e.value, DefinitelyNoSuchExample)
+from hypothesis.specifiers import streaming, dictionary
 
 
 def test_can_find_an_int():

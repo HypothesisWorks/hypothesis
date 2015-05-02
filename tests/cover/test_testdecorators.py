@@ -495,3 +495,15 @@ def test_when_set_to_no_simplifies_only_runs_failing_example_once():
 @given(int, settings=hs.Settings(max_examples=1))
 def test_should_not_fail_if_max_examples_less_than_min_satisfying(x):
     pass
+
+
+def test_should_not_count_duplicates_towards_max_examples():
+    seen = set()
+
+    @given(integers_in_range(1, 10), settings=hs.Settings(
+        max_examples=9
+    ))
+    def test_i_see_you(x):
+        seen.add(x)
+    test_i_see_you()
+    assert len(seen) == 9

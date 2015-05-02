@@ -20,7 +20,6 @@ import inspect
 import functools
 import traceback
 from random import Random
-from itertools import islice
 from collections import namedtuple
 
 from hypothesis.extra import load_entry_points
@@ -101,10 +100,10 @@ def find_satisfying_template(
         min_parameters=max(2, int(float(max_examples) / 10))
     )
 
-    for parameter in islice(
-        parameter_source, max_examples - len(tracker)
-    ):  # pragma: no branch
+    for parameter in parameter_source:  # pragma: no branch
         if len(tracker) >= search_strategy.size_upper_bound:
+            break
+        if len(tracker) >= max_examples:
             break
 
         if time_to_call_it_a_day(settings, start_time):
