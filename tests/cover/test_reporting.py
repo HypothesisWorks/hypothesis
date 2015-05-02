@@ -15,9 +15,9 @@ from __future__ import division, print_function, absolute_import, \
 
 import pytest
 from hypothesis import given, reporting
-from hypothesis.reporting import debug_report, verbose_report
 from tests.common.utils import capture_out
 from hypothesis.settings import Settings, Verbosity
+from hypothesis.reporting import debug_report, verbose_report
 
 
 def test_can_suppress_output():

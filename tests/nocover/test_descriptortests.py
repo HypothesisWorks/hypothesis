@@ -28,7 +28,7 @@ from hypothesis.specifiers import just, one_of, strings, streaming, \
 from tests.common.specifiers import Descriptor
 from hypothesis.strategytests import TemplatesFor, mutate_basic, \
     strategy_test_suite
-from hypothesis.internal.compat import text_type, binary_type, hrange
+from hypothesis.internal.compat import hrange, text_type, binary_type
 from hypothesis.searchstrategy.basic import basic_strategy
 from hypothesis.searchstrategy.narytree import NAryTree
 
