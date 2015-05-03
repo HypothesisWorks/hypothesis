@@ -181,8 +181,6 @@ def simplify_template_such_that(
                 simplify.__name__,
             ))
             while True:
-                if time_to_call_it_a_day(settings, start_time):
-                    return
                 simpler = simplify(random, t)
                 for s in simpler:
                     if tracker.track(s) > 1:
@@ -196,6 +194,8 @@ def simplify_template_such_that(
                             break
                     except UnsatisfiedAssumption:
                         pass
+                    if time_to_call_it_a_day(settings, start_time):
+                        return
                 else:
                     break
 

@@ -13,6 +13,7 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+import math
 import time
 import string
 import inspect
@@ -25,6 +26,7 @@ import hypothesis.reporting as reporting
 from hypothesis import given, assume, strategy
 from hypothesis.errors import Flaky, Unsatisfiable, InvalidArgument
 from tests.common.utils import fails, fails_with, capture_out
+from hypothesis.internal import debug
 from hypothesis.specifiers import just, one_of, strings, sampled_from, \
     integers_from, floats_in_range, integers_in_range
 from hypothesis.internal.compat import text_type, binary_type
@@ -507,3 +509,19 @@ def test_should_not_count_duplicates_towards_max_examples():
         seen.add(x)
     test_i_see_you()
     assert len(seen) == 9
+
+
+def test_can_timeout_during_an_unsuccessful_simplify():
+    record = []
+
+    @debug.timeout(3)
+    @given([float], settings=hs.Settings(timeout=1))
+    def first_bad_float_list(xs):
+        if record:
+            assert record[0] != xs
+        elif len(xs) >= 10 and any(math.isinf(x) for x in xs):
+            record.append(xs)
+            assert False
+
+    with pytest.raises(AssertionError):
+        first_bad_float_list()
