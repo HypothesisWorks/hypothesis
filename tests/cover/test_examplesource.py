@@ -41,20 +41,20 @@ def test_negative_is_not_too_far_off_mean():
 
 
 def test_marking_negative_avoids_similar_examples():
-    source = ParameterSource(
-        context=BuildContext(random.Random()),
-        strategy=strategy(int),
-    )
     positive = 0
-    i = 0
-    for example in source.examples():
-        if example >= 0:
-            positive += 1
-        else:
-            source.mark_bad()
-        i += 1
-        if i >= N_EXAMPLES:
-            break
+    k = 10
+
+    for _ in hrange(k):
+        source = ParameterSource(
+            context=BuildContext(random.Random()),
+            strategy=strategy(int),
+        )
+        n = N_EXAMPLES // k
+        for example in islice(source.examples(), n):
+            if example >= 0:
+                positive += 1
+            else:
+                source.mark_bad()
     assert float(positive) / N_EXAMPLES >= 0.7
 
 
