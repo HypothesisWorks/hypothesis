@@ -21,6 +21,84 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+
+------------------
+1.4.0 - upcoming
+------------------
+
+Codename: What a state.
+
+The *big* feature of this release is the new and slightly experimental
+stateful testing API. You can read more about that in :stateful:`the
+appropriate section>`.
+
+Two minor features the were driven out in the course of developing this:
+
+* You can now set settings.max_shrinks to limit the number of times
+  Hypothesis will try to shrink arguments to your test. If this is set to
+  <= 0 then Hypothesis will not rerun your test and will just raise the
+  failure directly. Note that due to technical limitations if max_shrinks
+  is <= 0 then Hypothesis will print *every* example it calls your test
+  with rather than just the failing one. Note also that I don't consider
+  settings max_shrinks to zero a sensible way to run your tests and it
+  should really be considered a debug feature.
+* There is a new debug level of verbosity which is even *more* verbose than
+  verbose. You probably don't want this.
+
+Breakage of semi-public SearchStrategy API:
+
+* It is now a required invariant of SearchStrategy that if u simplifies to
+  v then it is not the case that strictly_simpler(u, v). i.e. simplifying
+  should not *increase* the complexity even though it is not required to
+  decrease it. Enforcing this invariant lead to finding some bugs where
+  simplifying of integers, floats and sets was suboptimal.
+* Integers in basic data are now required to fit into 64 bits. As a result
+  python integer types are now serialized as strings, and some types have
+  stopped using quite so needlessly large random seeds.
+
+Hypothesis Stateful testing was then turned upon Hypothesis itself, which lead
+to an amazing number of minor bugs being found in Hypothesis itself.
+
+Bugs fixed (most but not all from the result of stateful testing) include:
+
+* Serialization of streaming examples was flaky in a way that you would
+  probably never notice: If you generate a template, simplify it, serialize
+  it, deserialize it, serialize it again and then deserialize it you would
+  get the original stream instead of the simplified one.
+* If you reduced max_examples below the number of examples already saved in
+  the database, you would have got a ValueError
+* @given will no longer count duplicate examples (which it never called
+  your function with) towards max_examples. This may result in your tests
+  running slower, but that's probably just because they're trying more
+  examples.
+* General improvements to example search which should result in better
+  performance and higher quality examples. In particular parameters which
+  have a history of producing useless results will be more aggressively
+  culled. This is useful both because it decreases the chance of useless
+  examples and also because it's much faster to not check parameters which
+  we were unlikely to ever pick!
+* integers_from and lists of types with only one value (e.g. [None]) would
+  previously have had a very high duplication rate so you were probably
+  only getting a handful of examples. They now have a much lower
+  duplication rate, as well as the improvements to search making this
+  less of a problem in the first place.
+* You would sometimes see simplification taking significantly longer than
+  your defined timeout. This would happen because timeout was only being
+  checked after each *successful* simplification, so if Hypothesis was
+  spending a lot of time unsuccessfully simplifying things it wouldn't
+  stop in time. The timeout is now applied for unsuccessful simplifications
+  too.
+* In Python 2.7, integers_from strategies would have failed during
+  simplification with an OverflowError if their starting point was at or
+  near to the maximum size of a 64-bit integer.
+* flatmap and map would have failed if called with a function without a
+  __name__ attribute.
+
+Some minor quality improvements:
+
+* Lists of streams, flatmapped strategies and basic strategies should now
+  now have slightly better simplificaiton.
+
 ------------------
 1.3.0 - 2015-04-22
 ------------------
