@@ -134,6 +134,19 @@ def test_culls_valid_parameters_if_lots_are_bad():
     assert len(source.valid_parameters) <= 1
 
 
+def test_caps_number_of_parameters_tried():
+    source = ParameterSource(
+        context=BuildContext(random.Random()),
+        strategy=strategy(bool),
+        max_tries=1,
+    )
+
+    for p in islice(source, 200):
+        pass
+
+    assert all(t <= 1 for t in source.counts)
+
+
 def test_eventually_culls_parameters_which_stop_being_valid():
     source = ParameterSource(
         context=BuildContext(random.Random()),

@@ -32,18 +32,23 @@ class ParameterSource(object):
         self,
         context, strategy,
         min_parameters=25, min_tries=2,
-        start_invalidating_add=5,
+        start_invalidating_at=5,
         invalidation_threshold=0.75,
+        max_tries=None,
     ):
+        if max_tries is None:
+            max_tries = 50
         random = context.random
         self.context = context
         self.strategy = strategy
+        self.max_tries = max_tries
+        min_tries = min(min_tries, max_tries)
         self.random = random
         self.parameters = []
         self.last_parameter_index = -1
         self.last_but_one_parameter_index = -1
         self.min_parameters = min_parameters
-        self.start_invalidating_add = start_invalidating_add
+        self.start_invalidating_at = start_invalidating_at
         self.invalidation_threshold = invalidation_threshold
         self.min_tries = min_tries
         self.bad_counts = []
@@ -140,13 +145,17 @@ class ParameterSource(object):
 
             to_invalidate = []
             for i in self.valid_parameters:
-                if self.counts[i] >= self.start_invalidating_add:
-                    if (
-                        self.bad_counts[i] >= (
-                            self.invalidation_threshold * self.counts[i])
-                    ):
-                        to_invalidate.append(i)
-                        continue
+                if self.counts[i] >= self.max_tries:
+                    to_invalidate.append(i)
+                    continue
+
+                if (
+                    self.counts[i] >= self.start_invalidating_at and
+                    self.bad_counts[i] >= (
+                        self.invalidation_threshold * self.counts[i])
+                ):
+                    to_invalidate.append(i)
+                    continue
                 score = self.draw_parameter_score(i)
                 if score > best_score:
                     best_score = score

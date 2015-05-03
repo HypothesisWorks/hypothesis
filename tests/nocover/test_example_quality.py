@@ -402,12 +402,12 @@ def test_increasing_float_sequence():
 
 def test_increasing_integers_from_sequence():
     n = 6
-    lb = 10000
+    lb = 50000
     xs = minimal(
         [integers_from(0)], lambda t: (
             n <= len(t) and
             all(t) and
-            t[0] >= lb and
+            any(s >= lb for s in t) and
             length_of_longest_ordered_sequence(t) >= n
         ),
         timeout_after=20,

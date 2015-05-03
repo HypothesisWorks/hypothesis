@@ -50,7 +50,8 @@ def time_to_call_it_a_day(settings, start_time):
 
 
 def find_satisfying_template(
-    search_strategy, random, condition, tracker, settings, storage=None
+    search_strategy, random, condition, tracker, settings, storage=None,
+    max_parameter_tries=None,
 ):
     """Attempt to find a template for search_strategy such that condition is
     truthy.
@@ -97,7 +98,8 @@ def find_satisfying_template(
 
     parameter_source = ParameterSource(
         context=build_context, strategy=search_strategy,
-        min_parameters=max(2, int(float(max_examples) / 10))
+        min_parameters=max(2, int(float(max_examples) / 10)),
+        max_tries=max_parameter_tries,
     )
 
     for parameter in parameter_source:  # pragma: no branch
@@ -204,7 +206,8 @@ def simplify_template_such_that(
 
 
 def best_satisfying_template(
-    search_strategy, random, condition, settings, storage, tracker=None
+    search_strategy, random, condition, settings, storage, tracker=None,
+    max_parameter_tries=None,
 ):
     """Find and then minimize a satisfying template.
 
@@ -220,7 +223,8 @@ def best_satisfying_template(
     successful_shrinks = -1
     with settings:
         satisfying_example = find_satisfying_template(
-            search_strategy, random, condition, tracker, settings, storage
+            search_strategy, random, condition, tracker, settings, storage,
+            max_parameter_tries=max_parameter_tries,
         )
 
         for simpler in simplify_template_such_that(
@@ -535,7 +539,7 @@ def find(specifier, condition, settings=None, random=None):
     try:
         return search.reify(best_satisfying_template(
             search, random, template_condition, settings, None,
-            tracker=tracker,
+            tracker=tracker, max_parameter_tries=2,
         ))
     except Timeout:
         raise
