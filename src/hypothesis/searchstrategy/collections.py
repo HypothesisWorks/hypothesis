@@ -208,6 +208,7 @@ class ListStrategy(SearchStrategy):
                 random, template[0]
             ):
                 yield self.simplifier_for_index(0, simplify)
+        yield self.simplify_to_mid
         yield self.simplify_with_random_discards
         yield self.simplify_with_example_cloning
         yield self.simplify_arrange_by_pivot
@@ -315,6 +316,14 @@ class ListStrategy(SearchStrategy):
             for j in indices:
                 result[j] = pivot
             yield tuple(result)
+
+    def simplify_to_mid(self, random, x):
+        if len(x) <= 1:
+            return
+
+        mid = len(x) // 2
+        yield x[:mid]
+        yield x[mid:]
 
     def simplify_with_random_discards(self, random, x):
         assert isinstance(x, tuple)
