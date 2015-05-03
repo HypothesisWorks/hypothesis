@@ -66,7 +66,9 @@ Bugs fixed (most but not all from the result of stateful testing) include:
   it, deserialize it, serialize it again and then deserialize it you would
   get the original stream instead of the simplified one.
 * If you reduced max_examples below the number of examples already saved in
-  the database, you would have got a ValueError
+  the database, you would have got a ValueError. Additionally, if you had
+  more than max_examples in the database all of them would have been
+  considered.
 * @given will no longer count duplicate examples (which it never called
   your function with) towards max_examples. This may result in your tests
   running slower, but that's probably just because they're trying more
@@ -93,6 +95,9 @@ Bugs fixed (most but not all from the result of stateful testing) include:
   near to the maximum size of a 64-bit integer.
 * flatmap and map would have failed if called with a function without a
   __name__ attribute.
+* If max_examples was less than min_satisfying_examples this would always
+  error. Now min_satisfying_examples is capped to max_examples. Note that
+  if you have assumptions to satisfy here this will still cause an error.
 
 Some minor quality improvements:
 
