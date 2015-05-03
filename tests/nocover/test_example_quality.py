@@ -21,7 +21,7 @@ from fractions import Fraction
 from collections import Counter, OrderedDict
 
 import pytest
-from hypothesis import assume, strategy, Settings
+from hypothesis import Settings, assume, strategy
 from tests.common import OrderedPair, ConstantList, parametrize
 from hypothesis.specifiers import just, one_of, dictionary, \
     integers_from, integers_in_range
