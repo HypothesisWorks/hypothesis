@@ -21,7 +21,7 @@ from hypothesis.internal.compat import hrange
 from hypothesis.internal.examplesource import ParameterSource
 from hypothesis.searchstrategy.strategies import BuildContext, strategy
 
-N_EXAMPLES = 1000
+N_EXAMPLES = 2500
 
 
 def test_negative_is_not_too_far_off_mean():
@@ -55,7 +55,7 @@ def test_marking_negative_avoids_similar_examples():
         i += 1
         if i >= N_EXAMPLES:
             break
-    assert float(positive) / N_EXAMPLES >= 0.75
+    assert float(positive) / N_EXAMPLES >= 0.7
 
 
 def test_can_grow_the_set_of_available_parameters_if_doing_badly():
