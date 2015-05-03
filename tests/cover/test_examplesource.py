@@ -131,5 +131,26 @@ def test_culls_valid_parameters_if_lots_are_bad():
     for i in hrange(len(source.parameters)):
         assert source.counts[i] == source.bad_counts[i]
 
-    print(source.bad_counts, source.counts)
     assert len(source.valid_parameters) <= 1
+
+
+def test_eventually_culls_parameters_which_stop_being_valid():
+    source = ParameterSource(
+        context=BuildContext(random.Random()),
+        strategy=strategy(bool),
+        min_tries=5
+    )
+    seen = set()
+    for p in islice(source, 200):
+        if p in seen:
+            source.mark_bad()
+        else:
+            seen.add(p)
+
+    for i in hrange(len(source.parameters)):
+        assert source.counts[i] >= source.bad_counts[i]
+
+    for i in hrange(len(source.parameters)):
+        assert source.counts[i] == source.bad_counts[i] + 1
+
+    assert len(source.valid_parameters) <= len(source.parameters) // 2
