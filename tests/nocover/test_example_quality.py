@@ -396,7 +396,6 @@ def test_increasing_float_sequence():
             t for t in x if t >= 0
         ]) >= 7 and len([t for t in x if t >= 500.0]) >= 4
     )
-    assert xs[0] == 0.0
     assert max(xs) < 1000
     assert not any(math.isinf(x) for x in xs)
 
