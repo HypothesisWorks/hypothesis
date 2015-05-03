@@ -25,6 +25,7 @@ class ParameterSource(object):
     The algorithm used is variant Thompson Sampling with a bunch of additional
     heuristics and special cases to attempt to drive towards both novelty and
     reliability.
+
     """
 
     def __init__(
