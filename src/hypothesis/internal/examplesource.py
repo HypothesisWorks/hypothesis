@@ -16,16 +16,15 @@ from __future__ import division, print_function, absolute_import, \
 
 class ParameterSource(object):
 
-    """An object that provides you with an a stream of examples to work with.
+    """An object that provides you with an a stream of parameters to work with.
 
-    Starts by fetching examples from storage if storage has been provided but
-    if storage is None will happily continue without. Follows by generating new
-    examples, but if the strategy is None then will stop there. Must have at
-    least one of strategy and storage but does not have to have both.
+    After being provided with a parameter, either by iterating or through use
+    of pick_a_parameter() you can call mark_bad() to request fewer instances of
+    that parameter in future.
 
-    This does not handle deduplication or make decisions as to when to stop.
-    That's up to the caller.
-
+    The algorithm used is variant Thompson Sampling with a bunch of additional
+    heuristics and special cases to attempt to drive towards both novelty and
+    reliability.
     """
 
     def __init__(
@@ -66,7 +65,7 @@ class ParameterSource(object):
 
         """
         if not self.started:
-            raise ValueError('No examples have been generated yet')
+            raise ValueError('No parameters have been generated yet')
         if self.mark_set:
             raise ValueError('This parameter has already been marked')
         self.mark_set = True
