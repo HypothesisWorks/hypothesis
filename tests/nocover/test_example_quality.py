@@ -14,13 +14,14 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import sys
+import math
 import operator
 from decimal import Decimal
 from fractions import Fraction
 from collections import Counter, OrderedDict
 
 import pytest
-from hypothesis import assume, strategy
+from hypothesis import assume, strategy, Settings
 from tests.common import OrderedPair, ConstantList, parametrize
 from hypothesis.specifiers import just, one_of, dictionary, \
     integers_from, integers_in_range
@@ -377,6 +378,27 @@ def test_increasing_string_sequence():
     assert n <= len(xs) <= n + 2
     for i in hrange(len(xs) - 1):
         assert abs(len(xs[i + 1]) - len(xs[i])) <= 1
+
+
+def test_small_sum_lists():
+    xs = minimal(
+        [float],
+        lambda x:
+            len(x) >= 100 and sum(t for t in x if float('inf') > t >= 0) >= 1,
+        settings=Settings(average_list_length=200),
+    )
+    assert 1.0 <= sum(t for t in xs if t >= 0) <= 1.01
+
+
+def test_increasing_float_sequence():
+    xs = minimal(
+        [float], lambda x: length_of_longest_ordered_sequence([
+            t for t in x if t >= 0
+        ]) >= 7 and len([t for t in x if t >= 500.0]) >= 4
+    )
+    assert xs[0] == 0.0
+    assert max(xs) < 1000
+    assert not any(math.isinf(x) for x in xs)
 
 
 def test_increasing_integers_from_sequence():

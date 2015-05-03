@@ -368,13 +368,14 @@ class FloatStrategy(SearchStrategy):
             return
 
     def push_towards_one(self, random, x):
-        if x > 1.0:
+        if x > 1.0 and not math.isinf(x):
             assert self.strictly_simpler(1.0, x)
             yield 1.0
             y = math.sqrt(x)
-            if self.strictly_simpler(y, x):
-                assert not self.strictly_simpler(x, y)
-                yield y
+            if is_integral(x):
+                y = float(math.floor(y))
+            assert(self.strictly_simpler(y, x))
+            yield y
 
     def simplify_integral(self, random, x):
         if not is_integral(x):
