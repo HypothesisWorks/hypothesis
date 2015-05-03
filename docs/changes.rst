@@ -29,8 +29,8 @@ information to the contrary.
 Codename: What a state.
 
 The *big* feature of this release is the new and slightly experimental
-stateful testing API. You can read more about that in :stateful:`the
-appropriate section>`.
+stateful testing API. You can read more about that in :doc:`the
+appropriate section <stateful>`.
 
 Two minor features the were driven out in the course of developing this:
 
