@@ -373,7 +373,7 @@ def test_increasing_string_sequence():
             t[-1] >= lb and
             length_of_longest_ordered_sequence(t) >= n
         ),
-        timeout_after=20,
+        timeout_after=30,
     )
     assert n <= len(xs) <= n + 2
     for i in hrange(len(xs) - 1):
