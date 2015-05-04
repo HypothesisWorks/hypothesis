@@ -23,7 +23,7 @@ information to the contrary.
 
 
 ------------------
-1.4.0 - upcoming
+1.4.0 - 2015-05-04
 ------------------
 
 Codename: What a state.
