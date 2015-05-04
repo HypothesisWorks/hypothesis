@@ -54,7 +54,6 @@ install:
   - "%CMD_IN_ENV% pip install ./hypothesis-extra/hypothesis-datetime/"
   - "%CMD_IN_ENV% pip install ./hypothesis-extra/hypothesis-pytest/"
   - "%CMD_IN_ENV% pip install ./hypothesis-extra/hypothesis-fakefactory/"
-  - "%CMD_IN_ENV% pip install ./hypothesis-extra/hypothesis-numpy/"
 
 build: false  # Not a C# project, build stuff at the test step instead.
 
@@ -64,4 +63,3 @@ test_script:
   - "%CMD_IN_ENV% python -m pytest hypothesis-extra/hypothesis-datetime/tests"
   - "%CMD_IN_ENV% python -m pytest hypothesis-extra/hypothesis-pytest/tests"
   - "%CMD_IN_ENV% python -m pytest hypothesis-extra/hypothesis-fakefactory/tests"
-  - "%CMD_IN_ENV% python -m pytest hypothesis-extra/hypothesis-numpy/tests"
