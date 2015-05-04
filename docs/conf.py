@@ -37,8 +37,8 @@ author = u'David R. MacIver'
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
-version = '1.3'
-release = '1.3'
+version = '1.4'
+release = '1.4'
 
 language = None
 
