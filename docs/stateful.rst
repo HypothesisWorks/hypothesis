@@ -12,7 +12,7 @@ The idea doesn't originate with Hypothesis, though Hypothesis's implementation
 and approach is mostly not based on an existing implementation and should be
 considered some mix of novel and independent reinventions.
 
-This is style of testing is useful both for programs which involve some sort
+This style of testing is useful both for programs which involve some sort
 of mutable state and for complex APIs where there's no state per se but the
 actions you perform involve e.g. taking data from one function and feeding it
 into another.
@@ -20,10 +20,11 @@ into another.
 The idea is that you teach Hypothesis how to interact with your program: Be it
 a server, a python API, whatever. All you need is to be able to answer the
 question "Given what I've done so far, what could I do now?". After that,
-Hypothesis takes over and tries to find sequences of actions which
+Hypothesis takes over and tries to find sequences of actions which cause a
+test failure.
 
 Right now the stateful testing is a bit new and experimental and should be
-considered semi-public API: It may break between minor versions but won't
+considered as a semi-public API: It may break between minor versions but won't
 break between patch releases, and there are still some rough edges in the API
 that will need to be filed off.
 
