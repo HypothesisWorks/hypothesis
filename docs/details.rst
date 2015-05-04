@@ -230,6 +230,8 @@ strategies. These will be picked up by all settings objects.
     3
 
 
+.. _verbose-output:
+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 Seeing intermediate result
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -278,9 +280,10 @@ of verbose output are, well, verbose, but they should convey the idea).
     AssertionError
 
 
-The three levels are quiet, normal and verbose. normal is the default, while
-in quiet Hypothesis will not print anything out, even the final falsifying
-example. 
+The four levels are quiet, normal, verbose and debug. normal is the default,
+while in quiet Hypothesis will not print anything out, even the final
+falsifying example. debug is basically verbose but a bit more so. You probably
+don't want it.
 
 You can also override the default by setting the environment variable
 HYPOTHESIS_VERBOSITY_LEVEL to the name of the level you want. So e.g.

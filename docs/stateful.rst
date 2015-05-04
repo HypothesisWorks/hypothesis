@@ -45,6 +45,8 @@ Rule based state machines
 -------------------------
 
 Rule based state machines are the ones you're most likely to want to use.
+They're significantly more user friendly and should be good enough for most
+things you'd want to do. 
 
 A rule based state machine is a collection of functions (possibly with side
 effects) which may depend on both values that Hypothesis can generate and
@@ -187,8 +189,9 @@ So lets balance some trees.
 We've now written a really noddy tree balancing implementation. 
 
 If you run this it will sit their silently for a while (you can turn on
-verbose output to get slightly more information about what's happening) and
-then run, telling you your test has passed! Our balancing algorithm worked.
+:ref:`verbose output <verbose-output>` to get slightly more information about
+what's happening. debug will give you all the intermediate programs being run)
+and then run, telling you your test has passed! Our balancing algorithm worked.
 
 Now lets break it to make sure the test is still valid:
 
@@ -206,8 +209,8 @@ balance, which gives us the following counter-example:
 
 Note that the example could be shrunk further by deleting v3. Due to some
 technical limitations, Hypothesis was unable to find that particular shrink.
-In general it's rare for examples produced to be long, but they might not
-always be minimal right now.
+In general it's rare for examples produced to be long, but they won't always be
+minimal.
 
 You can control the deailed behaviour with a Settings object on the TestCase
 (this is a normal hypothesis Settings object using the defaults at the time
@@ -220,7 +223,7 @@ fewer examples with larger programs you could change the settings to:
   TestTrees.settings.stateful_step_count = 100
 
 Which doubles the number of steps each program runs and halves the number of
-runs relative to the example.
+runs relative to the example. settings.timeout will also be respected as usual.
 
 ----------------------
 Generic state machines
@@ -247,11 +250,15 @@ It essentially executes the following loop:
     machine.teardown()
 
 Where steps() and execute_step() are methods you must implement, and teardown
-is a method you can implement if you need to clean something up at the end. steps 
-returns a strategy, which is allowed to depend arbitrarily on the current
-state of the test execution (though ideally should be robust against minor
-changes in the state. It's not required, but the less your steps() change the
-higher the quality of examples you'll get). 
+is a method you can implement if you need to clean something up at the end.
+steps  returns a strategy, which is allowed to depend arbitrarily on the
+current state of the test execution. *Ideally* a good steps implementation
+should be robust against minor changes in the state. steps that changea  lot
+between slightly different executions will tend to produce worse quality
+examples because they're hard to simplify.
+
+The steps method *may* depend on external state, but it's not advisable and
+may produce flaky tests.
 
 If any of execute_step or teardown produces an error, Hypothesis will try to
 find a minimal sequence of values steps such that the following throws an
