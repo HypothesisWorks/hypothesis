@@ -15,6 +15,7 @@ from __future__ import division, print_function, absolute_import, \
 
 import math
 import random
+import functools
 from collections import namedtuple
 
 import pytest
@@ -143,3 +144,18 @@ def test_one_of_strategy_goes_infinite():
     for _ in hrange(10):
         x |= x
     assert math.isinf(x.size_lower_bound)
+
+
+def nameless_const(x):
+    def f(u, v):
+        return u
+    return functools.partial(f, x)
+
+
+def test_can_map_nameless():
+    assert '0x' not in repr(strategy(int).map(nameless_const(2)))
+
+
+def test_can_flatmap_nameless():
+    assert '0x' not in repr(strategy(int).flatmap(
+        nameless_const(specifiers.just(3))))

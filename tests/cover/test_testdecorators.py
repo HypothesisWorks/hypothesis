@@ -17,6 +17,7 @@ import math
 import time
 import string
 import inspect
+import functools
 from random import Random
 from collections import namedtuple
 
@@ -525,3 +526,21 @@ def test_can_timeout_during_an_unsuccessful_simplify():
 
     with pytest.raises(AssertionError):
         first_bad_float_list()
+
+
+def nameless_const(x):
+    def f(u, v):
+        return u
+    return functools.partial(f, x)
+
+
+@given(strategy({bool}).map(nameless_const(2)))
+def test_can_map_nameless(x):
+    assert x == 2
+
+
+@given(
+    strategy(integers_in_range(0, 10)).flatmap(
+        nameless_const(just(3))))
+def test_can_flatmap_nameless(x):
+    assert x == 3
