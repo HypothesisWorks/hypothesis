@@ -136,57 +136,68 @@ So lets balance some trees.
 
 .. code:: python
 
-  class BalancedTrees(RuleBasedStateMachine):
-      trees = Bundle('BinaryTree')
-      balanced_trees = Bundle('balanced BinaryTree')
+    from collections import namedtuple
 
-      @rule(target=trees, x=int)
-      def leaf(self, x):
-          return Leaf(x)
-
-      @rule(target=trees, left=trees, right=trees)
-      def split(self, left, right):
-          return Split(left, right)
-
-      @rule(tree=balanced_trees)
-      def check_balanced(self, tree):
-          if isinstance(tree, Leaf):
-              return
-          else:
-              assert abs(self.size(tree.left) - self.size(tree.right)) <= 1, \
-                  repr(tree)
-              self.check_balanced(tree.left)
-              self.check_balanced(tree.right)
+    from hypothesis.stateful import RuleBasedStateMachine, Bundle, rule
 
 
-    @rule(target=balanced_trees, tree=trees)
-    def balance_tree(self, tree):
-        return self.split_leaves(self.flatten(tree))
+    Leaf = namedtuple('Leaf', ('label',))
+    Split = namedtuple('Split', ('left', 'right'))
 
-      def size(self, tree):
-          if isinstance(tree, Leaf):
-              return 1
-          else:
-              return self.size(tree.left) + self.size(tree.right)
 
-      def flatten(self, tree):
-          if isinstance(tree, Leaf):
-              return (tree.label,)
-          else:
-              return self.flatten(tree.left) + self.flatten(tree.right)
+    class BalancedTrees(RuleBasedStateMachine):
+        trees = Bundle('BinaryTree')
+        balanced_trees = Bundle('balanced BinaryTree')
 
-      def split_leaves(self, leaves):
-          assert leaves
-          if len(leaves) == 1:
-              return Leaf(leaves[0])
-          else:
-              mid = len(leaves) // 2
-              return Split(
-                  self.split_leaves(leaves[:mid]),
-                  self.split_leaves(leaves[mid:]),
-              )
+        @rule(target=trees, x=int)
+        def leaf(self, x):
+            return Leaf(x)
 
-We've now written a really noddy tree balancing implementation. 
+        @rule(target=trees, left=trees, right=trees)
+        def split(self, left, right):
+            return Split(left, right)
+
+        @rule(tree=balanced_trees)
+        def check_balanced(self, tree):
+            if isinstance(tree, Leaf):
+                return
+            else:
+                assert abs(self.size(tree.left) - self.size(tree.right)) <= 1, \
+                    repr(tree)
+                self.check_balanced(tree.left)
+                self.check_balanced(tree.right)
+
+        @rule(target=balanced_trees, tree=trees)
+        def balance_tree(self, tree):
+            return self.split_leaves(self.flatten(tree))
+
+        def size(self, tree):
+            if isinstance(tree, Leaf):
+                return 1
+            else:
+                return self.size(tree.left) + self.size(tree.right)
+
+        def flatten(self, tree):
+            if isinstance(tree, Leaf):
+                return (tree.label,)
+            else:
+                return self.flatten(tree.left) + self.flatten(tree.right)
+
+        def split_leaves(self, leaves):
+            assert leaves
+            if len(leaves) == 1:
+                return Leaf(leaves[0])
+            else:
+                mid = len(leaves) // 2
+                return Split(
+                    self.split_leaves(leaves[:mid]),
+                    self.split_leaves(leaves[mid:]),
+                )
+
+
+We've now written a really noddy tree balancing implementation.  This takes
+trees and puts them into a new bundle of data, and we only assert that things
+in the balanced_trees bundle are actually balanced.
 
 If you run this it will sit their silently for a while (you can turn on
 :ref:`verbose output <verbose-output>` to get slightly more information about
