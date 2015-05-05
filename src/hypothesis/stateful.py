@@ -359,10 +359,8 @@ class StateMachineSearchStrategy(SearchStrategy):
                 return
             if template.record[i][0] is not strategy:
                 return
-            try:
-                reconstituted = strategy.from_basic(template.record[i][1][-1])
-            except BadData:
-                return
+
+            reconstituted = strategy.from_basic(template.record[i][1][-1])
 
             for t in simplifier(random, reconstituted):
                 new_record = list(template.record)
