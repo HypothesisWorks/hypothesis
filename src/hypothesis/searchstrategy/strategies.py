@@ -14,6 +14,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 from random import Random
+from warnings import warn
 from collections import namedtuple
 
 from hypothesis.errors import BadData, NoExamples, WrongFormat, \
@@ -35,6 +36,15 @@ class BuildContext(object):
 class StrategyExtMethod(ExtMethod):
 
     def __call__(self, specifier, settings=None):
+        if isinstance(specifier, SearchStrategy):
+            return specifier
+
+        warn(DeprecationWarning((
+            'Calling strategy on non-strategy object %r is deprecated '
+            'and will be removed in Hypothesis 2.0') % (
+                specifier,
+        )))
+
         if settings is None:
             settings = Settings()
         result = super(StrategyExtMethod, self).__call__(specifier, settings)

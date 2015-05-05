@@ -601,6 +601,7 @@ class ExponentialFloatStrategy(FloatStrategy):
 
 
 class FloatsFromBase(FloatStrategy):
+
     def __init__(self, base, sign):
         super(FloatsFromBase, self).__init__()
         self.base = base

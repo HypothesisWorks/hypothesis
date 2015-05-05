@@ -22,6 +22,7 @@ import traceback
 from random import Random
 from collections import namedtuple
 
+import hypothesis.strategies as sd
 from hypothesis.extra import load_entry_points
 from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
     Unsatisfiable, InvalidArgument, UnsatisfiedAssumption, \
@@ -435,13 +436,14 @@ def given(*generator_arguments, **generator_kwargs):
 
             def convert_to_specifier(v):
                 if isinstance(v, HypothesisProvided):
-                    return v.value
+                    return strategy(v.value, settings)
                 else:
                     return just(v)
 
-            given_specifier = (
-                tuple(map(convert_to_specifier, arguments)),
-                {k: convert_to_specifier(v) for k, v in kwargs.items()}
+            given_specifier = sd.tuples(
+                sd.tuples(*map(convert_to_specifier, arguments)),
+                sd.dictionaries({
+                    k: convert_to_specifier(v) for k, v in kwargs.items()})
             )
 
             search_strategy = strategy(given_specifier, settings)

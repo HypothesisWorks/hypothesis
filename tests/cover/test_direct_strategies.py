@@ -1,7 +1,21 @@
-import pytest
+# coding=utf-8
 
-from hypothesis.errors import InvalidArgument
+# Copyright (C) 2013-2015 David R. MacIver (david@drmaciver.com)
+
+# This file is part of Hypothesis (https://github.com/DRMacIver/hypothesis)
+
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file, You can
+# obtain one at http://mozilla.org/MPL/2.0/.
+
+# END HEADER
+
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
+
+import pytest
 import hypothesis.strategies as ds
+from hypothesis.errors import InvalidArgument
 
 
 def fn_test(*fnkwargs):
@@ -42,14 +56,14 @@ def fn_ktest(*fnkwargs):
     (ds.lists, {'min_size': -10}),
     (ds.lists, {'max_size': 10, 'average_size': 20}),
     (ds.lists, {'min_size': 1.0, 'average_size': 0.5}),
-    (ds.lists, {'elements': "hi"}),
+    (ds.lists, {'elements': 'hi'}),
     (ds.text, {'min_size': 10, 'max_size': 9}),
     (ds.text, {'max_size': 10, 'average_size': 20}),
     (ds.binary, {'min_size': 10, 'max_size': 9}),
     (ds.binary, {'max_size': 10, 'average_size': 20}),
     (ds.floats, {'min_value': float('nan')}),
     (ds.floats, {'max_value': 0.0, 'min_value': 1.0}),
-    (ds.dictionaries, {'fixed': "fish"}),
+    (ds.dictionaries, {'fixed': 'fish'}),
     (ds.dictionaries, {'variable': (ds.integers(),)}),
     (ds.dictionaries, {'variable': (ds.integers(), 1)}),
     (ds.dictionaries, {'variable': 1}),
@@ -70,7 +84,7 @@ def test_validates_keyword_arguments(fn, kwargs):
     (ds.lists, {'elements': ds.booleans(), 'min_size': 5}),
     (ds.lists, {'elements': ds.booleans(), 'min_size': 5, 'max_size': 10}),
     (ds.booleans, {}),
-    (ds.just, {'value': "hi"}),
+    (ds.just, {'value': 'hi'}),
     (ds.integers, {'min_value': 12, 'max_value': 12}),
     (ds.floats, {}),
     (ds.floats, {'min_value': 1.0}),
@@ -85,8 +99,8 @@ def test_validates_keyword_arguments(fn, kwargs):
         'variable': (ds.booleans(), ds.integers())}),
     (ds.dictionaries, {'variable': ds.lists(ds.tuples(
         ds.booleans(), ds.integers()))}),
-    (ds.text, {'alphabet': "abc"}),
-    (ds.text, {'alphabet': ds.sampled_from("abc")}),
+    (ds.text, {'alphabet': 'abc'}),
+    (ds.text, {'alphabet': ds.sampled_from('abc')}),
 )
 def test_produces_valid_examples_from_keyword(fn, kwargs):
     fn(**kwargs).example()
@@ -113,7 +127,7 @@ def test_produces_valid_examples_from_args(fn, args):
 
 def test_tuples_raise_error_on_bad_kwargs():
     with pytest.raises(TypeError):
-        ds.tuples(stuff="things")
+        ds.tuples(stuff='things')
 
 
 def test_streaming_streams():

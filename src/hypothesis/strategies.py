@@ -15,8 +15,8 @@ from __future__ import division, print_function, absolute_import, \
 
 import math
 
-from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.errors import InvalidArgument
+from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import text_type, integer_types
 
 
@@ -25,10 +25,10 @@ def check_type(typ, arg):
         if isinstance(typ, type):
             typ_string = typ.__name__
         else:
-            typ_string = "one of %s" % (
+            typ_string = 'one of %s' % (
                 ', '.join(t.__name__ for t in typ))
         raise InvalidArgument(
-            "Expected %s but got %r" % (typ_string, arg,))
+            'Expected %s but got %r' % (typ_string, arg,))
 
 
 def check_strategy(arg):
@@ -54,7 +54,7 @@ def one_of(arg, *args):
 def tuples(*args, **kwargs):
     tuple_class = kwargs.pop('tuple_class', None) or tuple
     for k in kwargs:
-        raise TypeError("tuples() got an unexpected keyword argument %r" % (
+        raise TypeError('tuples() got an unexpected keyword argument %r' % (
             k,
         ))
     for arg in args:
@@ -85,7 +85,7 @@ def integers(min_value=None, max_value=None):
                 return just(min_value)
             elif min_value > max_value:
                 raise InvalidArgument(
-                    "Cannot have max_value=%r < min_value=%r" % (
+                    'Cannot have max_value=%r < min_value=%r' % (
                         max_value, min_value
                     ))
             return BoundedIntStrategy(min_value, max_value)
@@ -99,7 +99,7 @@ def booleans():
 def floats(min_value=None, max_value=None):
     for e in (min_value, max_value):
         if e is not None and math.isnan(e):
-            raise InvalidArgument("nan is not a valid end point")
+            raise InvalidArgument('nan is not a valid end point')
 
     from hypothesis.searchstrategy.numbers import WrapperFloatStrategy, \
         GaussianFloatStrategy, BoundedFloatStrategy, ExponentialFloatStrategy,\
@@ -117,7 +117,7 @@ def floats(min_value=None, max_value=None):
     elif min_value is not None and max_value is not None:
         if max_value < min_value:
             raise InvalidArgument(
-                "Cannot have max_value=%r < min_value=%r" % (
+                'Cannot have max_value=%r < min_value=%r' % (
                     max_value, min_value
                 ))
         return FixedBoundedFloatStrategy(min_value, max_value)
@@ -137,7 +137,7 @@ def sampled_from(elements):
     elements = tuple(iter(elements))
     if not elements:
         raise InvalidArgument(
-            "sampled_from requires at least one value"
+            'sampled_from requires at least one value'
         )
     if len(elements) == 1:
         return just(elements[0])
@@ -149,9 +149,9 @@ def check_valid_size(value):
         return
     check_type(integer_types + (float,), value)
     if value < 0:
-        raise InvalidArgument("Invalid size %r < 0" % (value,))
+        raise InvalidArgument('Invalid size %r < 0' % (value,))
     if isinstance(value, float) and math.isnan(value):
-        raise InvalidArgument("Invalid size %r" % (value,))
+        raise InvalidArgument('Invalid size %r' % (value,))
 
 
 def lists(elements=None, max_size=None, min_size=None, average_size=None):
@@ -171,26 +171,26 @@ def lists(elements=None, max_size=None, min_size=None, average_size=None):
     if max_size is not None:
         if max_size < min_size:
             raise InvalidArgument(
-                "Cannot have max_size=%r < min_size=%r" % (
+                'Cannot have max_size=%r < min_size=%r' % (
                     max_size, min_size
                 ))
 
         if max_size < average_size:
             raise InvalidArgument(
-                "Cannot have max_size=%r < average_size=%r" % (
+                'Cannot have max_size=%r < average_size=%r' % (
                     max_size, average_size
                 ))
 
     if average_size < min_size:
         raise InvalidArgument(
-            "Cannot have average_size=%r < min_size=%r" % (
+            'Cannot have average_size=%r < min_size=%r' % (
                 average_size, min_size
             ))
 
     if elements is None:
         if max_size is None or max_size > 0:
             raise InvalidArgument(
-                "Cannot create non-empty lists without an element type"
+                'Cannot create non-empty lists without an element type'
             )
         else:
             return ListStrategy(())
@@ -220,12 +220,12 @@ def dictionaries(fixed={}, variable=None, dict_class=dict):
             from collections import Iterable
             if not isinstance(variable, Iterable):
                 raise InvalidArgument(
-                    "Expected variable to be iterable but got %r" % (
+                    'Expected variable to be iterable but got %r' % (
                         variable,))
             variable = tuple(variable)
             if len(variable) != 2:
                 raise InvalidArgument(
-                    "Expected two values in variable but got %r" % (
+                    'Expected two values in variable but got %r' % (
                         variable,))
             for m in variable:
                 check_strategy(m)
