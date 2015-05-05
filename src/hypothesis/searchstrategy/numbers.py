@@ -600,6 +600,19 @@ class ExponentialFloatStrategy(FloatStrategy):
         return pv.zero_point + value
 
 
+class FloatsFromBase(FloatStrategy):
+    def __init__(self, base, sign):
+        super(FloatsFromBase, self).__init__()
+        self.base = base
+        self.sign = sign
+
+    def produce_parameter(self, random):
+        return random.gammavariate(2, 50)
+
+    def produce_template(self, context, pv):
+        return self.base + self.sign * context.random.expovariate(pv)
+
+
 class NastyFloats(SampledFromStrategy):
 
     def __init__(self):
