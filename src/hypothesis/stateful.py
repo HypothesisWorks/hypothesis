@@ -179,7 +179,7 @@ def seeds(starting, n_steps):
 
 
 # Sentinel value used to mark entries as deleted.
-TOMBSTONE = [object(), 'TOMBSTONE FOR STATEFUL TESTING']
+TOMBSTONE = [object(), ['TOMBSTONE FOR STATEFUL TESTING']]
 
 
 class StateMachineRunner(object):
@@ -232,26 +232,37 @@ class StateMachineRunner(object):
                     if self.record[i] is TOMBSTONE:
                         continue
                     _, data = self.record[i]
-                    try:
-                        template = strategy.from_basic(data)
-                        template_set = True
-                    except BadData:
-                        pass
+                    data = list(data)
+                    for data_index in hrange(len(data) - 1, -1, -1):
+                        try:
+                            template = strategy.from_basic(data[data_index])
+                            template_set = True
+                            break
+                        except BadData:
+                            pass
+                    if template_set:
+                        data[data_index], data[-1] = (
+                            data[-1], data[data_index]
+                        )
+                else:
+                    data = []
                 if not template_set:
                     parameter = strategy.draw_parameter(Random(
                         self.parameter_seed
                     ))
                     template = strategy.draw_template(
                         BuildContext(Random(self.templates[i])), parameter)
+                    data.append(strategy.to_basic(template))
 
                 new_record = (
-                    strategy, strategy.to_basic(template)
+                    strategy, data,
                 )
                 if i < len(self.record):
                     self.record[i] = new_record
                 else:
                     self.record.append(new_record)
 
+                strategy.from_basic(self.record[i][1][-1])
                 value = strategy.reify(template)
 
                 if print_steps:
@@ -338,7 +349,7 @@ class StateMachineSearchStrategy(SearchStrategy):
                 strategy, data = template.record[i]
                 if strategy is None:
                     continue
-                child_template = strategy.from_basic(data)
+                child_template = strategy.from_basic(data[-1])
                 for simplifier in strategy.simplifiers(random, child_template):
                     yield self.convert_simplifier(strategy, simplifier, i)
 
@@ -346,16 +357,18 @@ class StateMachineSearchStrategy(SearchStrategy):
         def accept(random, template):
             if i >= len(template.record):
                 return
-            if template.record[i] == TOMBSTONE:
+            if template.record[i][0] is not strategy:
                 return
             try:
-                reconstituted = strategy.from_basic(template.record[i][1])
+                reconstituted = strategy.from_basic(template.record[i][1][-1])
             except BadData:
                 return
 
             for t in simplifier(random, reconstituted):
                 new_record = list(template.record)
-                new_record[i] = (strategy, strategy.to_basic(t))
+                existing = new_record[i]
+                new_record[i] = (existing[0], list(existing[1]))
+                new_record[i][1][-1] = strategy.to_basic(t)
                 yield StateMachineRunner(
                     parameter_seed=template.parameter_seed,
                     template_seed=template.template_seed,

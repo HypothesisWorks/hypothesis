@@ -79,6 +79,7 @@ class GoodSet(GenericStateMachine):
 
 
 class UnreliableStrategyState(GenericStateMachine):
+    n = 8
 
     def __init__(self):
         self.random = Random()
@@ -92,7 +93,7 @@ class UnreliableStrategyState(GenericStateMachine):
 
     def execute_step(self, step):
         self.counter += 1
-        assert self.counter < 10
+        assert self.counter < self.n
 
 
 Leaf = namedtuple('Leaf', ('label',))
@@ -396,3 +397,15 @@ def test_minimizes_errors_in_teardown():
 
     with pytest.raises(AssertionError):
         runner.run(Foo(), print_steps=True)
+
+
+def test_can_produce_minimal_outcomes_from_unreliable_strategies():
+    runner = UnreliableStrategyState.find_breaking_runner()
+    n = UnreliableStrategyState.n
+
+    assert runner.n_steps == n
+    assert len(runner.record) >= n
+    for strat, data in runner.record[:n]:
+        template = strat.from_basic(data[-1])
+        value = strat.reify(template)
+        assert value in ([], 0)
