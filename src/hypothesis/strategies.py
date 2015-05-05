@@ -124,12 +124,12 @@ def floats(min_value=None, max_value=None):
     elif min_value is not None:
         return FloatsFromBase(
             base=min_value, sign=1,
-        )
+        ) | just(float('inf'))
     else:
         assert max_value is not None
         return FloatsFromBase(
             base=max_value, sign=-1
-        )
+        ) | just(float('-inf'))
 
 
 def sampled_from(elements):

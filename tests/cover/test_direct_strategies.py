@@ -13,7 +13,10 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+import math
+
 import pytest
+from hypothesis import given, find
 import hypothesis.strategies as ds
 from hypothesis.errors import InvalidArgument
 
@@ -133,3 +136,34 @@ def test_tuples_raise_error_on_bad_kwargs():
 def test_streaming_streams():
     for v in ds.streaming(ds.integers(max_value=1000)).example()[:10]:
         assert v <= 1000
+
+
+@given(ds.lists(ds.booleans(), min_size=10, max_size=10))
+def test_has_specified_length(xs):
+    assert len(xs) == 10
+
+
+@given(ds.integers(max_value=100))
+def test_has_upper_bound(x):
+    assert x <= 100
+
+
+@given(ds.integers(min_value=100))
+def test_has_lower_bound(x):
+    assert x >= 100
+
+
+@given(ds.integers(min_value=1, max_value=2))
+def test_is_in_bounds(x):
+    assert 1 <= x <= 2
+
+
+def test_float_can_find_max_value_inf():
+    assert find(ds.floats(), lambda x: math.isinf(x)) == float('inf')
+    assert find(
+        ds.floats(min_value=0.0), lambda x: math.isinf(x)) == float('inf')
+
+
+def test_float_can_find_min_value_inf():
+    find(ds.floats(), lambda x: x < 0 and math.isinf(x))
+    find(ds.floats(max_value=0.0), lambda x: math.isinf(x))
