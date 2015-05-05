@@ -32,7 +32,6 @@ from hypothesis.settings import Settings, Verbosity
 from hypothesis.executors import executor
 from hypothesis.reporting import report, debug_report, verbose_report, \
     current_verbosity
-from hypothesis.specifiers import just
 from hypothesis.utils.show import show
 from hypothesis.internal.tracker import Tracker
 from hypothesis.internal.reflection import arg_string, copy_argspec, \
@@ -438,7 +437,7 @@ def given(*generator_arguments, **generator_kwargs):
                 if isinstance(v, HypothesisProvided):
                     return strategy(v.value, settings)
                 else:
-                    return just(v)
+                    return sd.just(v)
 
             given_specifier = sd.tuples(
                 sd.tuples(*map(convert_to_specifier, arguments)),
