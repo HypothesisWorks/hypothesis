@@ -91,6 +91,11 @@ def floats(min_value=None, max_value=None):
         if e is not None and math.isnan(e):
             raise InvalidArgument('nan is not a valid end point')
 
+    if min_value == float('-inf'):
+        min_value = None
+    if max_value == float('inf'):
+        max_value = None
+
     from hypothesis.searchstrategy.numbers import WrapperFloatStrategy, \
         GaussianFloatStrategy, BoundedFloatStrategy, ExponentialFloatStrategy,\
         JustIntFloats, NastyFloats, FullRangeFloats, \
