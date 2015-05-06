@@ -15,6 +15,7 @@ from __future__ import division, print_function, absolute_import, \
 
 import sys
 import math
+from random import Random
 
 import pytest
 from hypothesis import find
@@ -190,3 +191,11 @@ def test_float_simplicity():
     order('0.25', '0.5')
     order(-1, 0.5)
     order(1.5, '-inf')
+
+
+def test_floats_can_simplify_extreme_values():
+    s = floats()
+    r = Random(1)
+    for simplify in s.simplifiers(r, 3.14159):
+        for v in (float('nan'), float('inf'), float('-inf')):
+            list(simplify(r, v))
