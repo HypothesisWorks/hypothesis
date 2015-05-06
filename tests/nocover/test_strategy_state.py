@@ -23,13 +23,12 @@ from hypothesis.errors import BadData, NoExamples
 from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, \
     StateMachineSearchStrategy, rule
-from hypothesis.strategies import just, streaming, sampled_from, \
-    floats, integers, randoms, decimals, fractions, tuples, lists, \
-    booleans, complexes, text, binary, none
+from hypothesis.strategies import just, none, text, lists, binary, \
+    floats, tuples, randoms, booleans, decimals, integers, complexes, \
+    fractions, streaming, sampled_from
 from hypothesis.utils.show import show
-from hypothesis.strategytests import templates_for, mutate_basic
+from hypothesis.strategytests import mutate_basic, templates_for
 from hypothesis.searchstrategy.strategies import BuildContext
-
 
 AVERAGE_LIST_LENGTH = 2
 

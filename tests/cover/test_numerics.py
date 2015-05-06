@@ -14,6 +14,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 from decimal import Decimal
+
 from hypothesis import given, assume
 from tests.common.utils import fails
 from hypothesis.strategies import decimals, fractions

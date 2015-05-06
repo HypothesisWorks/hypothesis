@@ -13,15 +13,15 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-import pytest
-
 from random import Random
-from fractions import Fraction
 from decimal import Decimal
+from fractions import Fraction
 
-from hypothesis import Settings, strategy
+import pytest
 import hypothesis.specifiers as s
-from hypothesis.internal.compat import text_type, binary_type, integer_types
+from hypothesis import Settings, strategy
+from hypothesis.internal.compat import text_type, binary_type, \
+    integer_types
 
 original_strictness = Settings.default.strict
 
