@@ -18,7 +18,8 @@ from unittest import TestCase
 import pytest
 from hypothesis import given, example
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import text_type, integer_types
+from hypothesis.strategies import text, integers
+from hypothesis.internal.compat import integer_types
 
 
 class TestInstanceMethods(TestCase):
@@ -33,7 +34,7 @@ class TestInstanceMethods(TestCase):
     def test_hi_2(self, x):
         assert isinstance(x, integer_types)
 
-    @given(x=int)
+    @given(x=integers())
     @example(x=1)
     def test_hi_3(self, x):
         assert isinstance(x, integer_types)
@@ -74,7 +75,7 @@ def test_can_use_examples_after_given():
     long_str = "This is a very long string that you've no chance of hitting"
 
     @example(long_str)
-    @given(text_type)
+    @given(text())
     def test_not_long_str(x):
         assert x != long_str
 
@@ -85,7 +86,7 @@ def test_can_use_examples_after_given():
 def test_can_use_examples_before_given():
     long_str = "This is a very long string that you've no chance of hitting"
 
-    @given(text_type)
+    @given(text())
     @example(long_str)
     def test_not_long_str(x):
         assert x != long_str
@@ -101,7 +102,7 @@ def test_can_use_examples_around_given():
     seen = []
 
     @example(short_str)
-    @given(text_type)
+    @given(text())
     @example(long_str)
     def test_not_long_str(x):
         seen.append(x)
@@ -112,7 +113,7 @@ def test_can_use_examples_around_given():
 
 @pytest.mark.parametrize(('x', 'y'), [(1, False), (2, True)])
 @example(z=10)
-@given(z=int)
+@given(z=integers())
 def test_is_a_thing(x, y, z):
     pass
 
