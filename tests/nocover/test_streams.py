@@ -16,17 +16,17 @@ from __future__ import division, print_function, absolute_import, \
 from itertools import islice
 
 from hypothesis import given, assume
-from hypothesis.specifiers import streaming
+from hypothesis.strategies import integers, streaming
 from hypothesis.internal.compat import integer_types
 
 
-@given(streaming(int))
+@given(streaming(integers()))
 def test_can_adaptively_assume_about_streams(xs):
     for i in islice(xs, 200):
         assume(i >= 0)
 
 
-@given(streaming(int))
+@given(streaming(integers()))
 def test_streams_are_arbitrarily_long(ss):
     for i in islice(ss, 100):
         assert isinstance(i, integer_types)
