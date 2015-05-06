@@ -348,7 +348,13 @@ class FloatStrategy(SearchStrategy):
             return
         yield self.simplify_weird_values
         yield self.push_towards_one
-        yield self.simplify_integral
+        try:
+            for simplify in self.int_strategy.simplifiers(
+                random, int(math.floor(x))
+            ):
+                yield self.simplify_integral(simplify)
+        except (OverflowError, ValueError):
+            pass
         yield self.basic_simplify
 
     def simplify_weird_values(self, random, x):
@@ -375,15 +381,20 @@ class FloatStrategy(SearchStrategy):
             assert(self.strictly_simpler(y, x))
             yield y
 
-    def simplify_integral(self, random, x):
-        if not is_integral(x):
-            try:
-                yield float(math.floor(x))
-            except (OverflowError, ValueError):
-                pass
-            return
-        for m in self.int_strategy.full_simplify(random, int(x)):
-            yield float(m)
+    def simplify_integral(self, simplify):
+        def accept(random, x):
+            if not is_integral(x):
+                try:
+                    yield float(math.floor(x))
+                except (OverflowError, ValueError):
+                    pass
+                return
+            for m in simplify(random, int(math.floor(x))):
+                yield float(m)
+        accept.__name__ = str(
+            'simplify_integral(%s)' % (simplify.__name__,)
+        )
+        return accept
 
     def basic_simplify(self, random, x):
         if x == 0.0:
@@ -395,6 +406,8 @@ class FloatStrategy(SearchStrategy):
             yield -x
             for t in self.basic_simplify(random, -x):
                 yield -t
+            return
+        if x < 1:
             return
 
         if not is_integral(x):
