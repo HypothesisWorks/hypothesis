@@ -13,20 +13,19 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from decimal import Decimal
-from fractions import Fraction
-
+from decimals import Decimal
 from hypothesis import given, assume
 from tests.common.utils import fails
+from hypothesis.strategies import decimals, fractions
 
 
 @fails
-@given(Decimal)
+@given(decimals())
 def test_all_decimals_can_be_exact_floats(x):
     assume(x.is_finite())
     assert Decimal(float(x)) == x
 
 
-@given(Fraction, Fraction, Fraction)
+@given(fractions(), fractions(), fractions())
 def test_fraction_addition_is_well_behaved(x, y, z):
     assert x + y + z == y + x + z
