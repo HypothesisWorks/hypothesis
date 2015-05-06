@@ -20,25 +20,26 @@ import pytest
 from hypothesis import Settings, find
 from hypothesis.errors import Timeout, NoSuchExample, \
     DefinitelyNoSuchExample
-from hypothesis.specifiers import streaming, dictionary
+from hypothesis.strategies import lists, floats, booleans, integers, \
+    streaming, dictionaries
 
 
 def test_can_find_an_int():
-    assert find(int, lambda x: True) == 0
-    assert find(int, lambda x: x >= 13) == 13
+    assert find(integers(), lambda x: True) == 0
+    assert find(integers(), lambda x: x >= 13) == 13
 
 
 def test_can_find_list():
-    x = find([int], lambda x: sum(x) >= 10)
+    x = find(lists(integers()), lambda x: sum(x) >= 10)
     assert sum(x) == 10
 
 
 def test_can_find_nan():
-    find(float, math.isnan)
+    find(floats(), math.isnan)
 
 
 def test_can_find_nans():
-    x = find([float], lambda x: math.isnan(sum(x)))
+    x = find(lists(floats()), lambda x: math.isnan(sum(x)))
     if len(x) == 1:
         assert math.isnan(x[0])
     else:
@@ -47,7 +48,7 @@ def test_can_find_nans():
 
 def test_find_streaming_int():
     n = 100
-    r = find(streaming(int), lambda x: all(t >= 1 for t in x[:n]))
+    r = find(streaming(integers()), lambda x: all(t >= 1 for t in x[:n]))
     assert list(r[:n]) == [1] * n
 
 
@@ -57,12 +58,12 @@ def test_raises_when_no_example():
         min_satisfying_examples=0,
     )
     with pytest.raises(NoSuchExample):
-        find(int, lambda x: False, settings=settings)
+        find(integers(), lambda x: False, settings=settings)
 
 
 def test_raises_more_specifically_when_exhausted():
     with pytest.raises(DefinitelyNoSuchExample):
-        find(bool, lambda x: False)
+        find(booleans(), lambda x: False)
 
 
 def test_condition_is_name():
@@ -71,31 +72,31 @@ def test_condition_is_name():
         min_satisfying_examples=0,
     )
     with pytest.raises(DefinitelyNoSuchExample) as e:
-        find(bool, lambda x: False, settings=settings)
+        find(booleans(), lambda x: False, settings=settings)
     assert 'lambda x:' in e.value.args[0]
 
     with pytest.raises(NoSuchExample) as e:
-        find(int, lambda x: '☃' in str(x), settings=settings)
+        find(integers(), lambda x: '☃' in str(x), settings=settings)
     assert 'lambda x:' in e.value.args[0]
 
     def bad(x):
         return False
 
     with pytest.raises(NoSuchExample) as e:
-        find(int, bad, settings=settings)
+        find(integers(), bad, settings=settings)
     assert 'bad' in e.value.args[0]
 
 
 def test_find_dictionary():
     assert len(find(
-        dictionary(int, int),
+        dictionaries(variable=(integers(), integers())),
         lambda xs: any(kv[0] > kv[1] for kv in xs.items()))) == 1
 
 
 def test_times_out():
     with pytest.raises(Timeout) as e:
         find(
-            int,
+            integers(),
             lambda x: time.sleep(0.05) or False,
             settings=Settings(timeout=0.01))
 
