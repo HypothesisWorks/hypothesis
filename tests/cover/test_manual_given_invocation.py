@@ -17,6 +17,7 @@ import inspect
 
 import pytest
 from hypothesis import given
+from hypothesis.strategies import booleans, integers
 
 
 def has_one_arg(hello):
@@ -40,11 +41,11 @@ def has_kwargs(**kwargs):
 
 basic_test_cases = [
     (has_one_arg, given(integers())),
-    (has_one_arg, given(hello=int)),
+    (has_one_arg, given(hello=integers())),
     (has_two_args, given(integers())),
-    (has_two_args, given(int, bool)),
-    (has_a_default, given(int, int)),
-    (has_a_default, given(int, int, int)),
+    (has_two_args, given(integers(), booleans())),
+    (has_a_default, given(integers(), integers())),
+    (has_a_default, given(integers(), integers(), integers())),
 ]
 
 
