@@ -15,13 +15,12 @@ from __future__ import division, print_function, absolute_import, \
 
 from random import Random
 
-from hypothesis import strategy
-from hypothesis.specifiers import one_of
+from hypothesis.strategies import lists, one_of, booleans
 
 
 def test_can_apply_simplifiers_to_other_types():
     r = Random(0)
-    s = strategy(one_of((bool, [bool])))
+    s = one_of(booleans(), lists(booleans()))
     template1 = s.draw_and_produce_from_random(r)
     while True:
         template2 = s.draw_and_produce_from_random(r)
