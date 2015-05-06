@@ -18,10 +18,11 @@ import sys
 from random import Random
 
 import pytest
-from hypothesis import given, strategy
+from hypothesis import given
 from tests.common.basic import Bitfields, BoringBitfields, \
     simplify_bitfield
 from tests.common.utils import fails
+from hypothesis.strategies import basic
 from hypothesis.internal.debug import minimal, timeout, some_template
 from hypothesis.internal.compat import integer_types
 from hypothesis.searchstrategy.basic import basic_strategy
@@ -104,7 +105,7 @@ def test_cache_is_cleaned_up_on_gc_2():
 
 
 @fails
-@given(BoringBitfields)
+@given(basic(BoringBitfields))
 def test_boring_failure(x):
     assert x & 1
 
@@ -148,7 +149,7 @@ def test_can_find_adjacent_one_bits():
     class Nope(Exception):
         pass
 
-    @given(Bitfields)
+    @given(basic(Bitfields))
     def has_no_adjacent_one_bits(x):
         if has_adjacent_one_bits(x):
             raise Nope()
@@ -160,7 +161,7 @@ def test_can_find_adjacent_one_bits():
 
 def test_simplifying_results_in_strictly_simpler():
     random = Random('test_simplifying_results_in_strictly_simpler')
-    strat = strategy(Bitfields)
+    strat = basic(Bitfields)
     template = some_template(strat, random)
     for shrunk_template in strat.full_simplify(random, template):
         assert strat.strictly_simpler(shrunk_template, template)
@@ -168,7 +169,7 @@ def test_simplifying_results_in_strictly_simpler():
 
 def test_can_recalculate_shrinks_without_reify_cache():
     random = Random('test_can_recalculate_shrinks_without_reify_cache')
-    strat = strategy(Bitfields)
+    strat = basic(Bitfields)
     template = some_template(strat, random)
     for shrunk_template in strat.full_simplify(random, template):
         strat.reify_cache.pop(shrunk_template, None)
