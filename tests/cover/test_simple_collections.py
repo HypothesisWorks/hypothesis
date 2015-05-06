@@ -19,47 +19,56 @@ from collections import namedtuple
 
 import pytest
 from hypothesis import find, strategy
-from hypothesis.specifiers import dictionary
+from hypothesis.strategies import sets, lists, tuples, booleans, \
+    integers, complexes, frozensets, dictionaries
 
 
-@pytest.mark.parametrize('col', [
-    (), [], set(), frozenset(), {},
+@pytest.mark.parametrize(('col', 'strat'), [
+    ((), tuples()),
+    ([], lists(max_size=0)),
+    (set(), sets(max_size=0)),
+    (frozenset(), frozensets(max_size=0)),
+    ({}, dictionaries()),
 ])
-def test_find_empty_collection_gives_empty(col):
-    assert find(col, lambda x: True) == col
+def test_find_empty_collection_gives_empty(col, strat):
+    assert find(strat, lambda x: True) == col
 
 
-@pytest.mark.parametrize('coltype', [
-    list, set, frozenset, tuple
+@pytest.mark.parametrize(('coltype', 'strat'), [
+    (list, lists),
+    (set, sets),
+    (frozenset, frozensets),
 ])
-def test_find_non_empty_collection_gives_single_zero(coltype):
+def test_find_non_empty_collection_gives_single_zero(coltype, strat):
     assert find(
-        coltype((int,)), bool
+        strat(integers()), bool
     ) == coltype((0,))
 
 
-@pytest.mark.parametrize('coltype', [
-    list, set, frozenset,
+@pytest.mark.parametrize(('coltype', 'strat'), [
+    (list, lists),
+    (set, sets),
+    (frozenset, frozensets),
 ])
-def test_minimizes_to_empty(coltype):
+def test_minimizes_to_empty(coltype, strat):
     assert find(
-        coltype((int,)), lambda x: True
+        strat(integers()), lambda x: True
     ) == coltype()
 
 
 def test_minimizes_list_of_lists():
-    xs = find([[bool]], lambda x: any(x) and not all(x))
+    xs = find(lists(lists(booleans())), lambda x: any(x) and not all(x))
     xs.sort()
     assert xs == [[], [False]]
 
 
 def test_minimize_long_list():
-    assert find([bool], lambda x: len(x) >= 70) == [False] * 70
+    assert find(lists(booleans()), lambda x: len(x) >= 70) == [False] * 70
 
 
 def test_minimize_list_of_longish_lists():
     xs = find(
-        [[bool]],
+        lists(lists(booleans())),
         lambda x: len([t for t in x if any(t) and len(t) >= 3]) >= 10)
     assert len(xs) == 10
     for x in xs:
@@ -68,19 +77,19 @@ def test_minimize_list_of_longish_lists():
 
 
 def test_minimize_list_of_fairly_non_unique_ints():
-    xs = find([int], lambda x: len(set(x)) < len(x))
+    xs = find(lists(integers()), lambda x: len(set(x)) < len(x))
     assert len(xs) == 2
 
 
 def test_list_with_complex_sorting_structure():
     xs = find(
-        [[bool]],
+        lists(lists(booleans())),
         lambda x: [list(reversed(t)) for t in x] > x and len(x) > 3)
     assert len(xs) == 4
 
 
 def test_list_with_wide_gap():
-    xs = find([int], lambda x: x and (max(x) > min(x) + 10 > 0))
+    xs = find(lists(integers()), lambda x: x and (max(x) > min(x) + 10 > 0))
     assert len(xs) == 2
     xs.sort()
     assert xs[1] == 11 + xs[0]
@@ -88,53 +97,68 @@ def test_list_with_wide_gap():
 
 def test_minimize_namedtuple():
     T = namedtuple('T', ('a', 'b'))
-    tab = find(T(int, int), lambda x: x.a < x.b)
+    tab = find(
+        tuples(integers(), integers(), tuple_class=T),
+        lambda x: x.a < x.b)
     assert tab.b == tab.a + 1
 
 
 def test_minimize_dict():
-    tab = find({'a': bool, 'b': bool}, lambda x: x['a'] or x['b'])
+    tab = find(
+        dictionaries({'a': booleans(), 'b': booleans()}),
+        lambda x: x['a'] or x['b']
+    )
     assert not (tab['a'] and tab['b'])
 
 
 def test_minimize_list_of_sets():
-    assert find([{bool}], lambda x: len(list(filter(None, x))) >= 3) == (
+    assert find(
+        lists(sets(booleans())),
+        lambda x: len(list(filter(None, x))) >= 3) == (
         [{False}] * 3
     )
 
 
 def test_minimize_list_of_lists():
-    assert find([[int]], lambda x: len(list(filter(None, x))) >= 3) == (
+    assert find(
+        lists(lists(integers())),
+        lambda x: len(list(filter(None, x))) >= 3) == (
         [[0]] * 3
     )
 
 
 def test_minimize_list_of_tuples():
-    xs = find([(int, int)], lambda x: len(x) >= 2)
+    xs = find(
+        lists(tuples(integers(), integers())), lambda x: len(x) >= 2)
     assert xs == [(0, 0), (0, 0)]
 
 
 def test_minimize_multi_key_dicts():
-    assert find(dictionary(bool, bool), bool) == {False: False}
+    assert find(
+        dictionaries(variable=(booleans(), booleans())),
+        bool
+    ) == {False: False}
 
 
 def test_minimize_dicts_with_incompatible_keys():
     assert find(
-        {1: bool, 'hi': [bool]}, lambda x: True) == {1: False, 'hi': []}
+        dictionaries({1: booleans(), 'hi': lists(booleans())}),
+        lambda x: True
+    ) == {1: False, 'hi': []}
 
 
 def test_deeply_nested_sets():
     def f(n):
         if n <= 0:
-            return bool
-        return frozenset((f(n - 1),))
+            return booleans()
+        return sets(f(n - 1))
 
     assert strategy(f(10)).size_lower_bound == float('inf')
 
 
 def test_list_simplicity():
     # Testing internal details because this is too damn hard to hit reliably
-    s = strategy([bool])
+    s = lists(booleans())
 
     assert not s.strictly_simpler((), ())
     assert s.strictly_simpler((), (False,))
@@ -147,7 +171,7 @@ def test_list_simplicity():
 
 
 def test_nested_set_complexity():
-    strat = strategy(frozenset({frozenset({complex})}))
+    strat = frozensets(frozensets(complexes()))
 
     rnd = Random(0)
     template = (
@@ -163,6 +187,6 @@ def test_nested_set_complexity():
 
 
 def test_multiple_empty_lists_are_independent():
-    x = find([[]], lambda t: len(t) >= 2)
+    x = find(lists(lists(max_size=0)), lambda t: len(t) >= 2)
     u, v = x
     assert u is not v
