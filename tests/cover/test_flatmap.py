@@ -19,15 +19,16 @@ import pytest
 from hypothesis import Settings, given, assume, strategy
 from tests.common import Bitfields
 from hypothesis.database import ExampleDatabase
-from hypothesis.specifiers import just, floats_in_range, integers_in_range
+from hypothesis.strategies import just, basic, lists, floats, tuples, \
+    randoms, integers
 from hypothesis.internal.debug import some_template
-from hypothesis.searchstrategy.narytree import Leaf, NAryTree
+from hypothesis.searchstrategy.narytree import Leaf, n_ary_tree
 from hypothesis.searchstrategy.strategies import BuildContext
 
-ConstantLists = strategy(int).flatmap(lambda i: [just(i)])
+ConstantLists = integers().flatmap(lambda i: lists(just(i)))
 
-OrderedPairs = strategy(integers_in_range(1, 200)).flatmap(
-    lambda e: (integers_in_range(0, e - 1), just(e))
+OrderedPairs = strategy(integers(1, 200)).flatmap(
+    lambda e: tuples(integers(0, e - 1), just(e))
 )
 
 with Settings(max_examples=200):
@@ -42,8 +43,8 @@ with Settings(max_examples=200):
 
 
 def test_flatmap_retrieve_from_db():
-    constant_float_lists = strategy(floats_in_range(0, 1)).flatmap(
-        lambda x: [just(x)]
+    constant_float_lists = strategy(floats(0, 1)).flatmap(
+        lambda x: lists(just(x))
     )
 
     track = []
@@ -70,7 +71,7 @@ def test_flatmap_retrieve_from_db():
     assert track[0] == example
 
 
-@given(Random)
+@given(randoms())
 def test_can_recover_from_bad_data_in_mapped_strategy(r):
     param = OrderedPairs.draw_parameter(r)
     template = OrderedPairs.draw_template(BuildContext(r), param)
@@ -94,22 +95,16 @@ def test_can_recover_from_bad_data_in_mapped_strategy(r):
     assert x < y
 
 
-class Foo(object):
-    pass
-
-
-def nary_tree_to_descriptor(tree):
+def nary_tree_to_strategy(tree):
     if isinstance(tree, Leaf):
-        return int
+        return integers()
     else:
-        return tuple(map(nary_tree_to_descriptor, tree.children))
+        return tuples(*map(nary_tree_to_strategy, tree.children))
 
 
-@strategy.extend_static(Foo)
-def dav_strategy(cls, settings):
-    return strategy(NAryTree(int, int, int), settings).flatmap(
-        nary_tree_to_descriptor
-    )
+dav_strategy = n_ary_tree(just(None), just(None), just(None)).flatmap(
+    nary_tree_to_strategy
+)
 
 
 def test_will_find_a_failure_from_the_database():
@@ -119,7 +114,7 @@ def test_will_find_a_failure_from_the_database():
         pass
 
     @given(
-        Foo,
+        dav_strategy,
         settings=Settings(max_examples=10, database=db))
     def nope(x):
         print(x)
@@ -144,7 +139,7 @@ def test_can_still_simplify_if_not_reified():
 
 def test_two_incompatible_unreified_templates():
     r = Random(1)
-    strat = strategy(Bitfields).flatmap(lambda x: integers_in_range(0, x))
+    strat = basic(Bitfields).flatmap(lambda x: integers(0, x))
     x = some_template(strat, r)
     y = some_template(strat, r)
     assert x.source_template != y.source_template
