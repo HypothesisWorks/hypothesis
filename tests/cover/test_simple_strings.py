@@ -16,28 +16,28 @@ from __future__ import division, print_function, absolute_import, \
 from random import Random
 
 from hypothesis import find
-from hypothesis.internal.compat import text_type
+from hypothesis.strategies import text, tuples
 
 
 def test_can_minimize_up_to_zero():
-    s = find(text_type, lambda x: len([t for t in x if t <= '0']) >= 10)
+    s = find(text(), lambda x: len([t for t in x if t <= '0']) >= 10)
     assert s == '0' * 10
 
 
 def test_minimizes_towards_ascii_zero():
-    s = find(text_type, lambda x: any(t < '0' for t in x))
+    s = find(text(), lambda x: any(t < '0' for t in x))
     assert len(s) == 1
     assert ord(s) == ord('0') - 1
 
 
 def test_can_handle_large_codepoints():
-    s = find(text_type, lambda x: x >= '☃')
+    s = find(text(), lambda x: x >= '☃')
     assert s == '☃'
 
 
 def test_can_find_mixed_ascii_and_non_ascii_stringgs():
     s = find(
-        text_type, lambda x: (
+        text(), lambda x: (
             any(t >= '☃' for t in x) and
             any(ord(t) <= 127 for t in x)))
     assert len(s) == 2
@@ -45,9 +45,9 @@ def test_can_find_mixed_ascii_and_non_ascii_stringgs():
 
 
 def test_will_find_ascii_examples_given_the_chance():
-    s = find((text_type, text_type), lambda x: x[0] and (x[0] < x[1]))
+    s = find(tuples(text(), text()), lambda x: x[0] and (x[0] < x[1]))
     assert s == ('0', '1')
 
 
 def test_finds_single_element_strings():
-    assert find(text_type, bool, random=Random(4)) == '0'
+    assert find(text(), bool, random=Random(4)) == '0'
