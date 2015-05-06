@@ -21,16 +21,18 @@ from collections import namedtuple
 import pytest
 import hypothesis.specifiers as specifiers
 from hypothesis.types import RandomWithSeed
-from hypothesis.errors import NoExamples
+from hypothesis.errors import NoExamples, InvalidArgument
+from hypothesis.strategies import just, tuples, randoms, booleans, \
+    integers, frozensets, sampled_from
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.searchstrategy.numbers import BoundedIntStrategy, \
     RandomGeometricIntStrategy
 from hypothesis.searchstrategy.strategies import BuildContext, \
-    OneOfStrategy, strategy, one_of_strategies
+    OneOfStrategy, one_of_strategies
 
 
 def test_or_errors_when_given_non_strategy():
-    bools = strategy((bool,))
+    bools = tuples(booleans())
     with pytest.raises(ValueError):
         bools | 'foo'
 
@@ -48,12 +50,13 @@ SomeNamedTuple = namedtuple('SomeNamedTuple', ('a', 'b'))
 
 
 def test_strategy_for_integer_range_produces_only_integers_in_that_range():
-    just_one_integer = strategy(specifiers.IntegerRange(1, 1))
+    just_one_integer = integers(1, 1)
     for _ in hrange(100):
         pv = just_one_integer.draw_parameter(random)
-        x = just_one_integer.produce_template(BuildContext(random), pv)
+        t = just_one_integer.produce_template(BuildContext(random), pv)
+        x = just_one_integer.reify(t)
         assert x == 1
-    some_integers = strategy(specifiers.IntegerRange(1, 10))
+    some_integers = integers(1, 10)
     for _ in hrange(100):
         pv = some_integers.produce_parameter(random)
         x = some_integers.produce_template(BuildContext(random), pv)
@@ -61,7 +64,7 @@ def test_strategy_for_integer_range_produces_only_integers_in_that_range():
 
 
 def test_strategy_for_integer_range_can_produce_end_points():
-    some_integers = strategy(specifiers.IntegerRange(1, 10))
+    some_integers = integers(1, 10)
     found = set()
     for _ in hrange(1000):  # pragma: no branch
         pv = some_integers.produce_parameter(random)
@@ -88,13 +91,13 @@ def test_rejects_invalid_ranges():
 
 
 def test_random_repr_has_seed():
-    rnd = strategy(random.Random).example()
+    rnd = randoms().example()
     seed = rnd.seed
     assert text_type(seed) in repr(rnd)
 
 
 def test_random_only_produces_special_random():
-    st = strategy(random.Random)
+    st = randoms()
     assert isinstance(st.example(), RandomWithSeed)
 
 
@@ -105,41 +108,41 @@ def test_just_strategy_uses_repr():
             return 'ABCDEFG'
 
     assert repr(
-        strategy(specifiers.just(WeirdRepr()))
+        just(WeirdRepr())
     ) == 'JustStrategy(value=%r)' % (WeirdRepr(),)
 
 
 def test_can_map():
-    s = strategy(int).map(pack=lambda t: 'foo')
+    s = integers().map(pack=lambda t: 'foo')
     assert s.example() == 'foo'
 
 
 def test_sample_from_empty_errors():
-    with pytest.raises(ValueError):
-        strategy(specifiers.sampled_from([]))
+    with pytest.raises(InvalidArgument):
+        sampled_from([])
 
 
 def test_example_raises_unsatisfiable_when_too_filtered():
     with pytest.raises(NoExamples):
-        strategy(int).filter(lambda x: False).example()
+        integers().filter(lambda x: False).example()
 
 
 def test_large_enough_integer_ranges_are_infinite():
     assert math.isinf(
-        strategy(specifiers.integers_in_range(1, 2 ** 64)).size_lower_bound)
+        integers(1, 2 ** 64).size_lower_bound)
 
 
 def test_tuple_strategy_too_large_to_fit():
-    x = frozenset({specifiers.integers_in_range(0, 30)})
-    assert not math.isinf(strategy(x).size_lower_bound)
+    x = frozensets(integers(0, 30))
+    assert not math.isinf(x.size_lower_bound)
     for _ in hrange(8):
-        x = (x, x)
+        x = tuples(x, x)
     assert math.isinf(
-        strategy((int, x)).size_lower_bound)
+        tuples(integers(), x).size_lower_bound)
 
 
 def test_one_of_strategy_goes_infinite():
-    x = strategy(specifiers.integers_in_range(0, 2 ** 32 - 2))
+    x = integers(0, 2 ** 32 - 2)
     assert not math.isinf(x.size_lower_bound)
     for _ in hrange(10):
         x |= x
@@ -153,9 +156,9 @@ def nameless_const(x):
 
 
 def test_can_map_nameless():
-    assert '0x' not in repr(strategy(int).map(nameless_const(2)))
+    assert '0x' not in repr(integers().map(nameless_const(2)))
 
 
 def test_can_flatmap_nameless():
-    assert '0x' not in repr(strategy(int).flatmap(
+    assert '0x' not in repr(integers().flatmap(
         nameless_const(specifiers.just(3))))
