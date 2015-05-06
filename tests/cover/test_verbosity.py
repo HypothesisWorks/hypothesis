@@ -20,6 +20,7 @@ from tests.common.utils import fails, capture_out
 from hypothesis.settings import Settings, Verbosity
 from hypothesis.reporting import default as default_reporter
 from hypothesis.reporting import with_reporter
+from hypothesis.strategies import basic, lists, tuples, booleans, integers
 from hypothesis.searchstrategy import BasicStrategy
 
 
@@ -54,7 +55,7 @@ def test_prints_intermediate_in_success():
 def test_reports_differently_for_single_shrink():
     with capture_verbosity(Verbosity.verbose) as o:
         @fails
-        @given(SillyStrategy, settings=Settings(database=None))
+        @given(basic(SillyStrategy), settings=Settings(database=None))
         def test_foo(x):
             assert False
         test_foo()
@@ -64,7 +65,7 @@ def test_reports_differently_for_single_shrink():
 def test_reports_no_shrinks():
     with capture_verbosity(Verbosity.verbose) as o:
         @fails
-        @given(())
+        @given(tuples())
         def test_foo(x):
             assert False
         test_foo()
@@ -85,7 +86,7 @@ def test_does_not_log_in_quiet_mode():
 def test_includes_progress_in_verbose_mode():
     with capture_verbosity(Verbosity.verbose) as o:
         with Settings(verbosity=Verbosity.verbose):
-            find([int], lambda x: sum(x) >= 1000000)
+            find(lists(integers()), lambda x: sum(x) >= 1000000)
 
     out = o.getvalue()
     assert out
@@ -104,7 +105,7 @@ def test_prints_initial_attempts_on_find():
                     seen.append(x)
                     return False
                 return x not in seen
-            find(int, not_first)
+            find(integers(), not_first)
 
     assert 'Trying example' in o.getvalue()
 
@@ -112,7 +113,7 @@ def test_prints_initial_attempts_on_find():
 def test_includes_intermediate_results_in_verbose_mode():
     with capture_verbosity(Verbosity.verbose) as o:
         @fails
-        @given([int])
+        @given(lists(integers()))
         def test_foo(x):
             assert sum(x) < 1000000
 
