@@ -19,13 +19,13 @@ from decimal import Decimal
 from fractions import Fraction
 
 import pytest
-from hypothesis.errors import InvalidArgument
 import hypothesis.specifiers as s
 from hypothesis import Settings, strategy
+from hypothesis.errors import InvalidArgument
+from tests.common.basic import Bitfields
 from hypothesis.internal.compat import text_type, binary_type, \
     integer_types
-from hypothesis.searchstrategy.narytree import NAryTree, Branch, Leaf
-from tests.common.basic import Bitfields
+from hypothesis.searchstrategy.narytree import Leaf, Branch, NAryTree
 
 original_strictness = Settings.default.strict
 
@@ -134,12 +134,12 @@ def test_float_ranges(r):
 
 
 def test_strings():
-    x = strategy(s.strings("a")).example()
-    assert set(x).issubset({"a"})
+    x = strategy(s.strings('a')).example()
+    assert set(x).issubset({'a'})
 
 
 def test_empty_strings():
-    assert strategy(s.strings("")).example() == ""
+    assert strategy(s.strings('')).example() == ''
 
 
 def test_single_float_in_range():
