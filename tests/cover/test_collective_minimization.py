@@ -14,8 +14,9 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import pytest
-from hypothesis import Settings, find, strategy
+from hypothesis import Settings, find
 from tests.common import standard_types
+from hypothesis.strategies import lists
 from hypothesis.utils.show import show
 
 
@@ -26,11 +27,11 @@ def test_can_collectively_minimize(spec):
     putting us in a state where example cloning is required to get to the
     answer fast enough."""
 
-    if strategy(spec).size_upper_bound < 2:
+    if spec.size_upper_bound < 2:
         return
 
     xs = find(
-        [spec],
+        lists(spec),
         lambda x: len(x) >= 10 and len(set((map(repr, x)))) >= 2,
         settings=Settings(timeout=1.0, average_list_length=3))
     assert len(xs) == 10

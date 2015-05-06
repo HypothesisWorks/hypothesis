@@ -26,6 +26,10 @@ def just(value):
     return JustStrategy(value)
 
 
+def none():
+    return just(None)
+
+
 def one_of(arg, *args):
     if not args:
         check_strategy(arg)
@@ -106,6 +110,13 @@ def floats(min_value=None, max_value=None):
                 'Cannot have max_value=%r < min_value=%r' % (
                     max_value, min_value
                 ))
+        elif min_value == max_value:
+            return just(min_value)
+        elif math.isinf(max_value - min_value):
+            assert min_value < 0 and max_value > 0
+            return floats(min_value=0, max_value=max_value) | floats(
+                min_value=min_value, max_value=0
+            )
         return FixedBoundedFloatStrategy(min_value, max_value)
     elif min_value is not None:
         return FloatsFromBase(
@@ -196,18 +207,20 @@ def lists(elements=None, max_size=None, min_size=None, average_size=None):
         return base
 
 
-def sets(elements):
-    check_strategy(elements)
+def sets(elements=None, max_size=None):
     from hypothesis.searchstrategy.collections import SetStrategy
+    if max_size == 0:
+        return SetStrategy(())
+    check_strategy(elements)
     return SetStrategy(
         (elements,),
         average_length=Settings.default.average_list_length
     )
 
 
-def frozensets(elements):
+def frozensets(elements=None, max_size=None):
     from hypothesis.searchstrategy.collections import FrozenSetStrategy
-    return FrozenSetStrategy(sets(elements))
+    return FrozenSetStrategy(sets(elements, max_size=max_size))
 
 
 def dictionaries(fixed={}, variable=None, dict_class=dict):
@@ -302,6 +315,23 @@ def basic(
 def randoms():
     from hypothesis.searchstrategy.misc import RandomStrategy
     return RandomStrategy(integers())
+
+
+def fractions():
+    from fractions import Fraction
+    return tuples(integers(), integers(min_value=1)).map(
+        lambda t: Fraction(*t)
+    )
+
+
+def decimals():
+    from decimals import Decimal
+    return (
+        floats().map(Decimal) |
+        fractions().map(
+            lambda f: Decimal(f.numerator) / f.denominator
+        )
+    )
 
 
 def check_type(typ, arg):

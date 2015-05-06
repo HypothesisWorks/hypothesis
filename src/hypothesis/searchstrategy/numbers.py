@@ -489,6 +489,11 @@ class FixedBoundedFloatStrategy(FloatStrategy):
         self.lower_bound = float(lower_bound)
         self.upper_bound = float(upper_bound)
 
+    def __repr__(self):
+        return 'FixedBoundedFloatStrategy(%s, %s)' % (
+            self.lower_bound, self.upper_bound,
+        )
+
     def produce_parameter(self, random):
         return self.Parameter(
             cut=random.random(),
