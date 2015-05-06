@@ -268,8 +268,6 @@ class BoundedIntStrategy(SearchStrategy):
         return value
 
     def produce_template(self, context, parameter):
-        if self.start == self.end:
-            return self.start
         return context.random.choice(parameter)
 
     def basic_simplify(self, random, x):

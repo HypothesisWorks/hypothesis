@@ -162,14 +162,18 @@ def test_is_in_bounds(x):
 
 
 def test_float_can_find_max_value_inf():
-    assert find(ds.floats(), lambda x: math.isinf(x)) == float('inf')
+    assert find(
+        ds.floats(max_value=float('inf')), lambda x: math.isinf(x)
+    ) == float('inf')
     assert find(
         ds.floats(min_value=0.0), lambda x: math.isinf(x)) == float('inf')
 
 
 def test_float_can_find_min_value_inf():
     find(ds.floats(), lambda x: x < 0 and math.isinf(x))
-    find(ds.floats(max_value=0.0), lambda x: math.isinf(x))
+    find(
+        ds.floats(min_value=float('-inf'), max_value=0.0),
+        lambda x: math.isinf(x))
 
 
 def test_can_use_basic_strategies():

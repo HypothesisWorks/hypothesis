@@ -13,15 +13,19 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+import sys
 from random import Random
 from decimal import Decimal
 from fractions import Fraction
 
 import pytest
+from hypothesis.errors import InvalidArgument
 import hypothesis.specifiers as s
 from hypothesis import Settings, strategy
 from hypothesis.internal.compat import text_type, binary_type, \
     integer_types
+from hypothesis.searchstrategy.narytree import NAryTree, Branch, Leaf
+from tests.common.basic import Bitfields
 
 original_strictness = Settings.default.strict
 
@@ -62,6 +66,10 @@ def test_lists_mix():
     assert all(1 <= len(y) <= 2 for y in x)
 
 
+def test_none_lists():
+    assert not any(strategy([None]).example())
+
+
 def test_sampled_from_samples():
     x = strategy(s.sampled_from((1, 2, 3)))
     assert x.example() in (1, 2, 3)
@@ -99,3 +107,53 @@ def test_one_of():
 
 def test_fixed_dict():
     assert strategy({'k': None}).example() == {'k': None}
+
+
+def test_sampled_from_one():
+    assert strategy(s.sampled_from((1,))).example() == 1
+
+
+def test_basic():
+    assert isinstance(strategy(Bitfields).example(), integer_types)
+    assert isinstance(strategy(Bitfields()).example(), integer_types)
+
+
+def test_tree():
+    tree = strategy(NAryTree(bool, bool, bool)).example()
+    assert isinstance(tree, (Branch, Leaf))
+
+
+@pytest.mark.parametrize('r', [
+    s.floats_in_range(0, 1),
+    s.floats_in_range(1, 2),
+    s.floats_in_range(1, 1),
+    s.floats_in_range(-sys.float_info.max, sys.float_info.max),
+])
+def test_float_ranges(r):
+    assert r.start <= strategy(r).example() <= r.end
+
+
+def test_strings():
+    x = strategy(s.strings("a")).example()
+    assert set(x).issubset({"a"})
+
+
+def test_empty_strings():
+    assert strategy(s.strings("")).example() == ""
+
+
+def test_single_float_in_range():
+    assert strategy(s.floats_in_range(1, 1)).example() == 1
+
+
+def test_float_range_validates():
+    with pytest.raises(InvalidArgument):
+        s.floats_in_range(2, 1)
+
+    with pytest.raises(InvalidArgument):
+        s.floats_in_range(1, float('inf'))
+
+
+def test_sampled_from_validates():
+    with pytest.raises(ValueError):
+        strategy(s.sampled_from([]))

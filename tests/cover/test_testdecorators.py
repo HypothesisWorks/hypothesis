@@ -31,7 +31,6 @@ from hypothesis.internal import debug
 from hypothesis.strategies import just, sets, text, lists, binary, \
     floats, one_of, tuples, booleans, integers, frozensets, sampled_from
 from hypothesis.internal.compat import text_type
-from hypothesis.searchstrategy.numbers import IntStrategy
 
 
 @given(integers(), integers())
@@ -388,22 +387,6 @@ def test_fails_only_once(x):
     if first_call:
         first_call = False
         assert False
-
-
-class SpecialIntStrategy(IntStrategy):
-    specifier = int
-
-    def produce_parameter(self, random):
-        return None
-
-    def produce_template(self, context, parameter):
-        return 1
-
-
-@given(lists(SpecialIntStrategy()))
-def test_can_use_custom_strategies(xs):
-    assert isinstance(xs, list)
-    assert all(x == 1 for x in xs)
 
 
 def test_uses_random():

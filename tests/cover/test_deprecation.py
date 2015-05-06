@@ -17,12 +17,18 @@ import pytest
 from hypothesis import Settings, given, strategy
 from hypothesis.specifiers import just
 from hypothesis.strategies import booleans
+from hypothesis.deprecation import HypothesisDeprecationWarning
 
 
 def test_strategy_does_not_warn_on_strategies(recwarn):
     strategy(booleans())
     with pytest.raises(AssertionError):
         recwarn.pop(DeprecationWarning)
+
+
+def test_raises_in_strict_mode():
+    with pytest.raises(HypothesisDeprecationWarning):
+        strategy(just('test_raises_in_strict_mode'), Settings(strict=True))
 
 
 def test_strategy_warns_on_non_strategies(recwarn):

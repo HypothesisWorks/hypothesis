@@ -94,7 +94,7 @@ def check_length(l, value, e=BadData):
     try:
         actual = len(value)
     except TypeError:
-        raise e('Excepted type with length but got %r' % (value,))
+        raise e('Expected type with length but got %r' % (value,))
     if actual != l:
         raise e('Expected %d elements but got %d from %r' % (
             l, actual, value
