@@ -425,11 +425,6 @@ class SearchStrategy(object):
         return iter(())
 
 
-@strategy.extend(SearchStrategy)
-def strategy_strategy(strategy, settings):
-    return strategy
-
-
 class OneOfStrategy(SearchStrategy):
 
     """Implements a union of strategies. Given a number of strategies this
