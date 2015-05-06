@@ -43,7 +43,7 @@ class SillyStrategy(BasicStrategy):
 
 def test_prints_intermediate_in_success():
     with capture_verbosity(Verbosity.verbose) as o:
-        @given(bool)
+        @given(booleans())
         def test_works(x):
             pass
         test_works()
@@ -74,7 +74,7 @@ def test_reports_no_shrinks():
 def test_does_not_log_in_quiet_mode():
     with capture_verbosity(Verbosity.quiet) as o:
         @fails
-        @given(int)
+        @given(integers())
         def test_foo(x):
             assert False
 

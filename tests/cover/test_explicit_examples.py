@@ -23,12 +23,12 @@ from hypothesis.internal.compat import text_type, integer_types
 
 class TestInstanceMethods(TestCase):
 
-    @given(int)
+    @given(integers())
     @example(1)
     def test_hi_1(self, x):
         assert isinstance(x, integer_types)
 
-    @given(int)
+    @given(integers())
     @example(x=1)
     def test_hi_2(self, x):
         assert isinstance(x, integer_types)
@@ -42,7 +42,7 @@ class TestInstanceMethods(TestCase):
 def test_kwarg_example_on_testcase():
     class Stuff(TestCase):
 
-        @given(int)
+        @given(integers())
         @example(x=1)
         def test_hi(self, x):
             assert isinstance(x, integer_types)

@@ -21,7 +21,7 @@ from hypothesis.reporting import debug_report, verbose_report
 
 
 def test_can_suppress_output():
-    @given(int)
+    @given(integers())
     def test_int(x):
         assert False
 
@@ -33,7 +33,7 @@ def test_can_suppress_output():
 
 
 def test_prints_output_by_default():
-    @given(int)
+    @given(integers())
     def test_int(x):
         assert False
 

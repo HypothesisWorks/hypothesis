@@ -20,7 +20,7 @@ from hypothesis.database import ExampleDatabase
 
 
 def test_finite_space_errors_if_all_unsatisfiable():
-    @given(bool)
+    @given(booleans())
     def test_no(x):
         assume(False)
 
@@ -29,7 +29,7 @@ def test_finite_space_errors_if_all_unsatisfiable():
 
 
 def test_finite_space_does_not_error_if_some_unsatisfiable():
-    @given(bool)
+    @given(booleans())
     def test_check(x):
         assume(x)
 

@@ -39,9 +39,9 @@ def has_kwargs(**kwargs):
     pass
 
 basic_test_cases = [
-    (has_one_arg, given(int)),
+    (has_one_arg, given(integers())),
     (has_one_arg, given(hello=int)),
-    (has_two_args, given(int)),
+    (has_two_args, given(integers())),
     (has_two_args, given(int, bool)),
     (has_a_default, given(int, int)),
     (has_a_default, given(int, int, int)),

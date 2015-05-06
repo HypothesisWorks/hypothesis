@@ -44,7 +44,7 @@ def test_raises_abnormal_exit_if_bad_pickle_in_exception():
 
     class TestBoo(ForkingTestCase):
 
-        @given(int)
+        @given(integers())
         def test_boo(self, x):
             raise Boo()
 
@@ -55,7 +55,7 @@ def test_raises_abnormal_exit_if_bad_pickle_in_exception():
 def test_raises_abnormal_exit_on_premature_child_death():
     class TestForking(ForkingTestCase):
 
-        @given(int)
+        @given(integers())
         def test_handles_abnormal_exit(self, x):
             os._exit(1)
 
@@ -68,7 +68,7 @@ def test_raises_abnormal_exit_on_premature_child_death():
 def test_passes_exceptions_back():
     class TestForking(ForkingTestCase):
 
-        @given(int)
+        @given(integers())
         def test_positive(self, x):
             assert x > 0
 
@@ -81,7 +81,7 @@ def test_passes_exceptions_back():
 def test_captures_output_from_child():
     class TestForking(ForkingTestCase):
 
-        @given(int)
+        @given(integers())
         def test_positive(self, x):
             assert x > 0
 

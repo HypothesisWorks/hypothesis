@@ -21,7 +21,7 @@ from hypothesis.specifiers import floats_in_range
 
 def test_errors_when_given_varargs():
     with pytest.raises(InvalidArgument) as e:
-        @given(int)
+        @given(integers())
         def has_varargs(*args):
             pass
     assert 'varargs' in e.value.args[0]
@@ -48,7 +48,7 @@ def test_errors_on_too_many_positional_args():
 
 def test_errors_on_any_varargs():
     with pytest.raises(InvalidArgument):
-        @given(int)
+        @given(integers())
         def oops(*args):
             pass
 

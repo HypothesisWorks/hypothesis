@@ -17,6 +17,7 @@ from unittest import TestCase
 
 import pytest
 from hypothesis import given, example
+from hypothesis.strategies import booleans, integers
 
 
 def test_must_use_result_of_test():
@@ -25,7 +26,7 @@ def test_must_use_result_of_test():
         def execute_example(self, function):
             return function()()
 
-        @given(bool)
+        @given(booleans())
         def boom(self, b):
             def f():
                 raise ValueError()
@@ -37,7 +38,7 @@ def test_must_use_result_of_test():
 
 class TestTryReallyHard(TestCase):
 
-    @given(int)
+    @given(integers())
     def test_something(self, i):
         pass
 
@@ -54,16 +55,16 @@ class Valueless(object):
         except ValueError:
             return None
 
-    @given(int)
+    @given(integers())
     @example(1)
     def test_no_boom_on_example(self, x):
         raise ValueError()
 
-    @given(int)
+    @given(integers())
     def test_no_boom(self, x):
         raise ValueError()
 
-    @given(int)
+    @given(integers())
     def test_boom(self, x):
         assert False
 
