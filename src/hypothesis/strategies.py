@@ -270,3 +270,22 @@ def binary(average_size=None, min_size=None, max_size=None):
             average_size=average_size, min_size=min_size, max_size=max_size
         )
     )
+
+
+def basic(
+    basic=None,
+    generate_parameter=None, generate=None, simplify=None, copy=None
+):
+    from hypothesis.searchstrategy.basic import basic_strategy, BasicStrategy
+    if basic is not None:
+        if isinstance(basic, type):
+            basic = basic()
+        check_type(BasicStrategy, basic)
+        generate_parameter = generate_parameter or basic.generate_parameter
+        generate = generate or basic.generate
+        simplify = simplify or basic.simplify
+        copy = copy or basic.copy
+    return basic_strategy(
+        parameter=generate_parameter,
+        generate=generate, simplify=simplify, copy=copy
+    )

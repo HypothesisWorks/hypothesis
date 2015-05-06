@@ -17,7 +17,6 @@ import pytest
 from hypothesis import given, strategy
 from hypothesis.specifiers import just
 from hypothesis.strategies import booleans
-from hypothesis.searchstrategy.basic import BasicStrategy
 
 
 def test_strategy_does_not_warn_on_strategies(recwarn):
@@ -39,21 +38,3 @@ def test_given_does_not_warn_when_using_strategies_directly(recwarn):
     foo()
     with pytest.raises(AssertionError):
         recwarn.pop(DeprecationWarning)
-
-
-class LocalBasicStrategy(BasicStrategy):
-
-    def generate(self, random, pv):
-        return 'hi'
-
-
-def test_does_not_warn_for_basic_strategy_classes(recwarn):
-    strategy(LocalBasicStrategy)
-    with pytest.raises(AssertionError):
-        print(recwarn.pop(DeprecationWarning))
-
-
-def test_does_not_warn_for_basic_strategy_instances(recwarn):
-    strategy(LocalBasicStrategy())
-    with pytest.raises(AssertionError):
-        print(recwarn.pop(DeprecationWarning))
