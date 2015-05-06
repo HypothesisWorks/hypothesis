@@ -20,22 +20,22 @@ from itertools import islice
 import pytest
 from hypothesis import given, strategy
 from hypothesis.errors import InvalidArgument
-from hypothesis.specifiers import streaming, floats_in_range
+from hypothesis.strategies import text, lists, floats, booleans, \
+    integers, streaming
 from hypothesis.utils.show import show
 from hypothesis.internal.debug import minimal, some_template
-from hypothesis.internal.compat import text_type
 from hypothesis.searchstrategy.streams import Stream, StreamTemplate
 from hypothesis.searchstrategy.strategies import BuildContext
 
 
-@given([bool])
+@given(lists(booleans()))
 def test_stream_give_lists(xs):
     s = Stream(iter(xs))
     assert list(s) == xs
     assert list(s) == xs
 
 
-@given([bool])
+@given(lists(booleans()))
 def test_can_zip_streams_with_self(xs):
     s = Stream(iter(xs))
     assert list(zip(s, s)) == list(zip(xs, xs))
@@ -51,7 +51,7 @@ def test_can_stream_infinite():
     assert list(islice(s, 100)) == [False] * 100
 
 
-@given(streaming(text_type))
+@given(streaming(text()))
 def test_fetched_repr_is_in_stream_repr(s):
     assert repr(s) == 'Stream(...)'
     assert show(next(iter(s))) in show(s)
@@ -94,7 +94,7 @@ def test_can_replace_value():
 
 
 def test_can_minimize():
-    x = minimal(streaming(int), lambda x: x[10] >= 1)
+    x = minimal(streaming(integers()), lambda x: x[10] >= 1)
     ts = list(x[:11])
     assert ts == [0] * 10 + [1]
 
@@ -104,11 +104,11 @@ def test_default_stream_is_empty():
 
 
 def test_template_equality():
-    t = some_template(streaming(bool))
+    t = some_template(streaming(booleans()))
     t2 = StreamTemplate(t.seed, t.parameter_seed, Stream(t.stream))
 
     while True:
-        t3 = some_template(streaming(bool))
+        t3 = some_template(streaming(booleans()))
         if t3.seed != t.seed:
             break
     assert t == t2
@@ -126,7 +126,7 @@ def test_template_equality():
 
 
 def test_streams_copy_as_self():
-    x = strategy(streaming(bool)).example()
+    x = streaming(booleans()).example()
     assert copy(x) is x
     assert deepcopy(x) is x
 
@@ -137,7 +137,7 @@ def test_streams_copy_as_self():
 
 def test_check_serialization_preserves_changed_marker():
     strat = strategy(
-        streaming(floats_in_range(0.0, 2.2250738585072014e-308)))
+        streaming(floats(min_value=0.0, max_value=2.2250738585072014e-308)))
     template = strat.draw_template(
         BuildContext(Random(0)), strat.draw_parameter(Random(0)))
     strat.reify(template)[0]
