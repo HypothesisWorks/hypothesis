@@ -20,6 +20,7 @@ import hypothesis.settings as hs
 from hypothesis import given, strategy
 from hypothesis.errors import Timeout
 from hypothesis.database import ExampleDatabase
+from hypothesis.strategies import text, tuples, integers
 from hypothesis.internal.compat import hrange, text_type, integer_types
 from hypothesis.database.backend import Backend, SQLiteBackend
 from hypothesis.database.formats import Format, JSONFormat
@@ -104,14 +105,14 @@ def test_errors_if_given_incompatible_format_and_backend():
 
 def test_storage_does_not_error_if_the_database_is_invalid():
     database = ExampleDatabase()
-    ints = database.storage_for(int)
+    ints = database.storage_for(integers())
     database.backend.save(ints.key, '["hi", "there"]')
     assert list(ints.fetch()) == []
 
 
 def test_storage_cleans_up_invalid_data_from_the_db():
     database = ExampleDatabase()
-    ints = database.storage_for(int)
+    ints = database.storage_for(integers())
     database.backend.save(ints.key, '[false, false, true]')
     assert list(database.backend.fetch(ints.key)) != []
     assert list(ints.fetch()) == []
@@ -121,7 +122,7 @@ def test_storage_cleans_up_invalid_data_from_the_db():
 @pytest.mark.parametrize('s', ['', 'abcdefg', '☃'])
 def test_can_save_all_strings(s):
     db = ExampleDatabase()
-    storage = db.storage_for(text_type)
+    storage = db.storage_for(text())
     storage.save(tuple(s))
 
 
@@ -133,7 +134,7 @@ def test_db_has_path_in_repr():
 
 def test_storage_has_specifier_in_repr():
     db = ExampleDatabase()
-    d = (int, int)
+    d = tuples(integers(), integers())
     s = db.storage_for(d)
     assert repr(d) in repr(s)
 
@@ -149,7 +150,7 @@ def test_can_time_out_when_reading_from_database():
     db = ExampleDatabase()
 
     try:
-        @given(int, settings=hs.Settings(timeout=0.1, database=db))
+        @given(integers(), settings=hs.Settings(timeout=0.1, database=db))
         def test_run_test(x):
             examples.append(x)
             if should_timeout:
@@ -196,7 +197,7 @@ def test_can_handle_more_than_max_examples_values_in_db():
         for _ in range(10):
             first[0] = True
 
-            @given(int, settings=settings)
+            @given(integers(), settings=settings)
             def test_seen(x):
                 if x not in seen:
                     if first[0]:
@@ -213,7 +214,7 @@ def test_can_handle_more_than_max_examples_values_in_db():
 
         seen = []
 
-        @given(int, settings=hs.Settings(max_examples=1, database=db))
+        @given(integers(), settings=hs.Settings(max_examples=1, database=db))
         def test_seen(x):
             seen.append(x)
         test_seen()
