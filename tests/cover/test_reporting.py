@@ -18,6 +18,7 @@ from hypothesis import given, reporting
 from tests.common.utils import capture_out
 from hypothesis.settings import Settings, Verbosity
 from hypothesis.reporting import debug_report, verbose_report
+from hypothesis.strategies import integers
 
 
 def test_can_suppress_output():
