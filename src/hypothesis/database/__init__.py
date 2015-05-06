@@ -10,6 +10,10 @@
 
 # END HEADER
 
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
+
+
 from hypothesis.utils.show import show
 from hypothesis.searchstrategy.strategies import BadData, strategy
 from hypothesis.database.formats import JSONFormat

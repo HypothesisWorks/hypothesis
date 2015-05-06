@@ -10,6 +10,10 @@
 
 # END HEADER
 
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
+
+
 """hypothesis.utils is a package for things that you can consider part of the
 stable Hypothesis API but aren't really the core point.
 
