@@ -23,7 +23,8 @@ from hypothesis.errors import Flaky, BadData, InvalidDefinition
 from tests.common.utils import capture_out
 from hypothesis.stateful import Bundle, GenericStateMachine, \
     RuleBasedStateMachine, StateMachineSearchStrategy, rule
-from hypothesis.specifiers import just, sampled_from, integers_in_range
+from hypothesis.strategies import just, none, lists, tuples, booleans, \
+    integers, sampled_from
 
 
 class SetStateMachine(GenericStateMachine):
@@ -32,9 +33,9 @@ class SetStateMachine(GenericStateMachine):
         self.elements = []
 
     def steps(self):
-        strat = strategy((just(False), int))
+        strat = tuples(just(False), integers())
         if self.elements:
-            strat |= strategy((just(True), sampled_from(self.elements)))
+            strat |= tuples(just(True), sampled_from(self.elements))
         return strat
 
     def execute_step(self, step):
@@ -53,7 +54,7 @@ class OrderedStateMachine(GenericStateMachine):
 
     def steps(self):
         return strategy(
-            integers_in_range(self.counter - 1, self.counter + 50)
+            integers(self.counter - 1, self.counter + 50)
         )
 
     def execute_step(self, step):
@@ -67,7 +68,7 @@ class GoodSet(GenericStateMachine):
         self.stuff = set()
 
     def steps(self):
-        return strategy((bool, int))
+        return tuples(booleans(), integers())
 
     def execute_step(self, step):
         delete, value = step
@@ -87,9 +88,9 @@ class UnreliableStrategyState(GenericStateMachine):
 
     def steps(self):
         if self.random.randint(0, 1):
-            return strategy([bool])
+            return lists(booleans())
         else:
-            return strategy(int)
+            return integers()
 
     def execute_step(self, step):
         self.counter += 1
@@ -103,7 +104,7 @@ Split = namedtuple('Split', ('left', 'right'))
 class BalancedTrees(RuleBasedStateMachine):
     trees = 'BinaryTree'
 
-    @rule(target=trees, x=bool)
+    @rule(target=trees, x=booleans())
     def leaf(self, x):
         return Leaf(x)
 
@@ -140,7 +141,7 @@ class DepthMachine(RuleBasedStateMachine):
     charges = Bundle('charges')
 
     @rule(targets=(charges,), child=charges)
-    @rule(targets=(charges,), child=None)
+    @rule(targets=(charges,), child=none())
     def charge(self, child):
         return DepthCharge(child)
 
@@ -225,7 +226,7 @@ def test_can_truncate_template_record():
             self.counter = type(self).counter_start
 
         def steps(self):
-            return strategy(int)
+            return integers()
 
         def execute_step(self, step):
             self.counter += 1
@@ -269,7 +270,7 @@ def test_bad_machines_fail(machine):
 class GivenLikeStateMachine(GenericStateMachine):
 
     def steps(self):
-        return strategy([bool])
+        return lists(booleans())
 
     def execute_step(self, step):
         assume(any(step))
@@ -330,13 +331,13 @@ class IntAdder(RuleBasedStateMachine):
 
 IntAdder.define_rule(
     targets=('ints',), function=lambda self, x: x, arguments={
-        'x': int
+        'x': integers()
     }
 )
 
 IntAdder.define_rule(
     targets=('ints',), function=lambda self, x, y: x, arguments={
-        'x': int, 'y': Bundle('ints'),
+        'x': integers(), 'y': Bundle('ints'),
     }
 )
 
@@ -384,7 +385,7 @@ def test_minimizes_errors_in_teardown():
             self.counter = 0
 
         def steps(self):
-            return strategy(())
+            return tuples()
 
         def execute_step(self, value):
             self.counter += 1
