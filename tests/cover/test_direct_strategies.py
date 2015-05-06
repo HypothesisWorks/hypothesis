@@ -16,8 +16,8 @@ from __future__ import division, print_function, absolute_import, \
 import math
 
 import pytest
-from hypothesis import given, find
 import hypothesis.strategies as ds
+from hypothesis import find, given
 from hypothesis.errors import InvalidArgument
 
 
