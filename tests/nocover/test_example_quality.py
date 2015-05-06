@@ -22,7 +22,7 @@ from collections import Counter, OrderedDict
 
 import pytest
 from hypothesis import Settings, assume, strategy
-from tests.common import OrderedPair, ConstantList, parametrize
+from tests.common import OrderedPair, parametrize, constant_list
 from hypothesis.specifiers import just, one_of, dictionary, \
     integers_from, integers_in_range
 from hypothesis.internal.debug import minimal
@@ -445,7 +445,7 @@ def test_constant_lists_of_diverse_length():
     # This does not currently work very well. We delete, but we don't actually
     # get all that far with simplification of the individual elements.
     result = minimal(
-        [ConstantList(int)], lambda x: len(set(map(len, x))) >= 20,
+        [constant_list(int)], lambda x: len(set(map(len, x))) >= 20,
         timeout_after=30,
     )
 
