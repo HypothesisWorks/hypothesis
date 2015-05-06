@@ -17,22 +17,21 @@ import math
 import hashlib
 from copy import deepcopy
 from random import Random
-from decimal import Decimal
-from fractions import Fraction
 
 from hypothesis import Settings, Verbosity, find, given, assume, strategy
 from hypothesis.errors import BadData, NoExamples
 from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, \
     StateMachineSearchStrategy, rule
-from hypothesis.specifiers import just, streaming, sampled_from, \
-    floats_in_range, integers_in_range
+from hypothesis.strategies import just, streaming, sampled_from, \
+    floats, integers, randoms, decimals, fractions, tuples, lists, \
+    booleans, complexes, text, binary, none
 from hypothesis.utils.show import show
-from hypothesis.strategytests import TemplatesFor, mutate_basic
-from hypothesis.internal.compat import text_type, binary_type
+from hypothesis.strategytests import templates_for, mutate_basic
 from hypothesis.searchstrategy.strategies import BuildContext
 
-small_settings = Settings(average_list_length=2)
+
+AVERAGE_LIST_LENGTH = 2
 
 
 class HypothesisSpec(RuleBasedStateMachine):
@@ -42,7 +41,7 @@ class HypothesisSpec(RuleBasedStateMachine):
         self.database = None
 
     strategies = Bundle('strategy')
-    tuples = Bundle('tuples')
+    strategy_tuples = Bundle('tuples')
     objects = Bundle('objects')
     streaming_strategies = Bundle('streams')
     basic_data = Bundle('basic')
@@ -66,7 +65,7 @@ class HypothesisSpec(RuleBasedStateMachine):
             return
         strat.reify(template)
 
-    @rule(target=basic_data, data=basic_data, r=Random)
+    @rule(target=basic_data, data=basic_data, r=randoms())
     def mess_with_basic(self, data, r):
         return mutate_basic(data, r)
 
@@ -98,11 +97,11 @@ class HypothesisSpec(RuleBasedStateMachine):
 
     @rule(
         targets=(strategies, streaming_strategies),
-        strat=strategies, i=integers_in_range(1, 10))
+        strat=strategies, i=integers(1, 10))
     def evalled_stream(self, strat, i):
         return strategy(streaming(strat)).map(lambda x: list(x[:i]) and x)
 
-    @rule(stream_strat=streaming_strategies, index=integers_in_range(0, 50))
+    @rule(stream_strat=streaming_strategies, index=integers(0, 50))
     def eval_stream(self, stream_strat, index):
         try:
             stream = stream_strat.example()
@@ -110,14 +109,14 @@ class HypothesisSpec(RuleBasedStateMachine):
         except NoExamples:
             pass
 
-    @rule(target=strats_with_templates, st=strats_with_templates, r=Random)
+    @rule(target=strats_with_templates, st=strats_with_templates, r=randoms())
     def simplify(self, st, r):
         strat, temp = st
         for temp in strat.full_simplify(r, temp):
             break
         return (strat, temp)
 
-    @rule(strat=strategies, r=Random, mshr=integers_in_range(0, 100))
+    @rule(strat=strategies, r=randoms(), mshr=integers(0, 100))
     def find_constant_failure(self, strat, r, mshr):
         with Settings(
             verbosity=Verbosity.quiet, max_examples=1,
@@ -135,8 +134,8 @@ class HypothesisSpec(RuleBasedStateMachine):
                 pass
 
     @rule(
-        strat=strategies, r=Random, p=floats_in_range(0, 1),
-        mex=integers_in_range(1, 10), mshr=integers_in_range(1, 100)
+        strat=strategies, r=randoms(), p=floats(0, 1),
+        mex=integers(1, 10), mshr=integers(1, 100)
     )
     def find_weird_failure(self, strat, r, mex, p, mshr):
         with Settings(
@@ -156,16 +155,18 @@ class HypothesisSpec(RuleBasedStateMachine):
             except AssertionError:
                 pass
 
-    @rule(target=strats_with_parameters, strat=strategies, r=Random)
+    @rule(target=strats_with_parameters, strat=strategies, r=randoms())
     def draw_parameter(self, strat, r):
         return (strat, strat.draw_parameter(r))
 
-    @rule(target=strats_with_templates, sp=strats_with_parameters, r=Random)
+    @rule(target=strats_with_templates, sp=strats_with_parameters, r=randoms())
     def draw_template(self, sp, r):
         strat, param = sp
         return (strat, strat.draw_template(BuildContext(r), param))
 
-    @rule(target=strats_with_2_templates, sp=strats_with_parameters, r=Random)
+    @rule(
+        target=strats_with_2_templates,
+        sp=strats_with_parameters, r=randoms())
     def draw_templates(self, sp, r):
         strat, param = sp
         return (
@@ -183,19 +184,22 @@ class HypothesisSpec(RuleBasedStateMachine):
         assert as_basic == strat.to_basic(strat.from_basic(as_basic))
 
     @rule(target=strategies, spec=sampled_from((
-        int, bool, float, complex, Fraction, Decimal,
-        text_type, binary_type, None, StateMachineSearchStrategy(),
-        (),
+        integers(), booleans(), floats(), complexes(), fractions(), decimals(),
+        text(), binary(), none(), StateMachineSearchStrategy(),
+        tuples(),
     )))
-    @rule(target=strategies, spec=tuples)
     def strategy(self, spec):
-        return strategy(spec, settings=small_settings)
+        return spec
+
+    @rule(target=strategies, spec=strategy_tuples)
+    def strategy_for_tupes(self, spec):
+        return tuples(*spec)
 
     @rule(
         target=strategies,
         source=strategies,
-        level=integers_in_range(1, 10),
-        mixer=text_type)
+        level=integers(1, 10),
+        mixer=text())
     def filtered_strategy(s, source, level, mixer):
         def is_good(x):
             return bool(Random(
@@ -205,7 +209,7 @@ class HypothesisSpec(RuleBasedStateMachine):
 
     @rule(target=strategies, elements=strategies)
     def list_strategy(self, elements):
-        return strategy([elements], settings=small_settings)
+        return lists(elements, average_size=AVERAGE_LIST_LENGTH)
 
     @rule(target=strategies, l=strategies, r=strategies)
     def or_strategy(self, l, r):
@@ -213,7 +217,7 @@ class HypothesisSpec(RuleBasedStateMachine):
 
     @rule(
         target=strategies,
-        source=strategies, result=strategies, mixer=text_type)
+        source=strategies, result=strategies, mixer=text())
     def mapped_strategy(self, source, result, mixer):
         cache = {}
 
@@ -233,19 +237,19 @@ class HypothesisSpec(RuleBasedStateMachine):
 
     @rule(
         target=strategies,
-        left=float, right=float
+        left=floats(), right=floats()
     )
     def float_range(self, left, right):
         for f in (math.isnan, math.isinf):
             for x in (left, right):
                 assume(not f(x))
         left, right = sorted((left, right))
-        return strategy(floats_in_range(left, right))
+        return strategy(floats(left, right))
 
     @rule(
         target=strategies,
         source=strategies, result1=strategies, result2=strategies,
-        mixer=text_type, p=floats_in_range(0, 1))
+        mixer=text(), p=floats(0, 1))
     def flatmapped_strategy(self, source, result1, result2, mixer, p):
         assume(result1 is not result2)
 
@@ -264,11 +268,11 @@ class HypothesisSpec(RuleBasedStateMachine):
     def just_strategy(self, value):
         return strategy(just(value))
 
-    @rule(target=tuples, source=strategies)
+    @rule(target=strategy_tuples, source=strategies)
     def single_tuple(self, source):
         return (source,)
 
-    @rule(target=tuples, l=tuples, r=tuples)
+    @rule(target=strategy_tuples, l=strategy_tuples, r=strategy_tuples)
     def cat_tuples(self, l, r):
         return l + r
 
@@ -281,18 +285,18 @@ class HypothesisSpec(RuleBasedStateMachine):
             # have any examples.
             pass
 
-    @rule(target=strategies, left=int, right=int)
+    @rule(target=strategies, left=integers(), right=integers())
     def integer_range(self, left, right):
         left, right = sorted((left, right))
-        return strategy(integers_in_range(left, right))
+        return strategy(integers(left, right))
 
     @rule(strat=strategies)
     def repr_is_good(self, strat):
         assert ' at 0x' not in repr(strat)
 
-    @rule(strat=strategies, r=Random)
+    @rule(strat=strategies, r=randoms())
     def can_find_as_many_templates_as_size(self, strat, r):
-        tempstrat = strategy(TemplatesFor(strat))
+        tempstrat = templates_for(strat)
         n = min(10, strat.size_lower_bound)
         found = []
         with Settings(verbosity=Verbosity.quiet, timeout=2.0):
