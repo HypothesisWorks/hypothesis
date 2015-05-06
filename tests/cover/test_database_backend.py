@@ -15,11 +15,11 @@ from __future__ import division, print_function, absolute_import, \
 
 from hypothesis import given
 from tests.common import settings as small_settings
-from hypothesis.internal.compat import text_type
+from hypothesis.strategies import text, lists, tuples
 from hypothesis.database.backend import SQLiteBackend
 
 
-@given([(text_type, text_type)], settings=small_settings)
+@given(lists(tuples(text(), text())), settings=small_settings)
 def test_backend_returns_what_you_put_in(xs):
     backend = SQLiteBackend(':memory:')
     mapping = {}
