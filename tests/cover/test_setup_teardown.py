@@ -14,7 +14,8 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import pytest
-from hypothesis import given, assume, strategy
+from hypothesis import given, assume
+from hypothesis.strategies import text, integers
 
 
 class HasSetup(object):
@@ -33,27 +34,27 @@ class HasTeardown(object):
 
 class SomeGivens(object):
 
-    @given(int)
+    @given(integers())
     def give_me_an_int(self, x):
         pass
 
-    @given(str)
+    @given(text())
     def give_me_a_string(myself, x):
         pass
 
-    @given(int)
+    @given(integers())
     def give_me_a_positive_int(self, x):
         assert x >= 0
 
-    @given(strategy(int).map(lambda x: x.nope))
+    @given(integers().map(lambda x: x.nope))
     def fail_in_reify(self, x):
         pass
 
-    @given(int)
+    @given(integers())
     def assume_some_stuff(self, x):
         assume(x > 0)
 
-    @given(strategy(int).filter(lambda x: x > 0))
+    @given(integers().filter(lambda x: x > 0))
     def assume_in_reify(self, x):
         pass
 
