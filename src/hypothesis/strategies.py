@@ -167,7 +167,8 @@ def lists(elements=None, max_size=None, min_size=None, average_size=None):
     check_valid_size(min_size)
     check_valid_size(max_size)
     check_valid_size(average_size)
-    from hypothesis.searchstrategy.collections import ListStrategy
+    from hypothesis.searchstrategy.collections import ListStrategy, \
+        SingleElementListStrategy
     if min_size is None:
         min_size = 0
     if average_size is None:
@@ -204,6 +205,12 @@ def lists(elements=None, max_size=None, min_size=None, average_size=None):
             return ListStrategy(())
     else:
         check_strategy(elements)
+        if elements.size_upper_bound == 1:
+            from hypothesis.searchstrategy.numbers import IntegersFromStrategy
+            return SingleElementListStrategy(
+                elements,
+                IntegersFromStrategy(
+                    0, average_size=average_size))
         base = ListStrategy((elements,), average_length=average_size)
         if min_size > 0:
             base = base.filter(lambda x: len(x) >= min_size)
@@ -303,6 +310,7 @@ def basic(
     generate_parameter=None, generate=None, simplify=None, copy=None
 ):
     from hypothesis.searchstrategy.basic import basic_strategy, BasicStrategy
+    from copy import deepcopy
     if basic is not None:
         if isinstance(basic, type):
             basic = basic()
@@ -313,7 +321,7 @@ def basic(
         copy = copy or basic.copy
     return basic_strategy(
         parameter=generate_parameter,
-        generate=generate, simplify=simplify, copy=copy
+        generate=generate, simplify=simplify, copy=copy or deepcopy
     )
 
 

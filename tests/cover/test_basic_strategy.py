@@ -159,6 +159,14 @@ def test_can_find_adjacent_one_bits():
             has_no_adjacent_one_bits()
 
 
+def test_can_provide_just_param_and_generate():
+    bf = basic(
+        generate_parameter=lambda r: r.getrandbits(128),
+        generate=lambda r, p: r.getrandbits(128) & p,
+    )
+    assert minimal(bf)
+
+
 def test_simplifying_results_in_strictly_simpler():
     random = Random('test_simplifying_results_in_strictly_simpler')
     strat = basic(Bitfields)
