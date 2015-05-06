@@ -115,6 +115,7 @@ def find_satisfying_template(
             build_context, parameter
         )
         if tracker.track(example) > 1:
+            debug_report('Skipping duplicate example')
             parameter_source.mark_bad()
             continue
         try:

@@ -22,9 +22,8 @@ from hypothesis import Settings, strategy
 from tests.common.basic import Bitfields, BoringBitfields, \
     simplify_bitfield
 from hypothesis.stateful import StateMachineSearchStrategy
-from hypothesis.specifiers import just, one_of, strings, streaming, \
-    dictionary, sampled_from, integers_from, floats_in_range, \
-    integers_in_range
+from hypothesis.strategies import just, text, floats, one_of, tuples, \
+    booleans, integers, streaming, dictionaries, sampled_from
 from tests.common.specifiers import Descriptor
 from hypothesis.strategytests import TemplatesFor, mutate_basic, \
     strategy_test_suite
@@ -32,41 +31,47 @@ from hypothesis.internal.compat import hrange, text_type, binary_type
 from hypothesis.searchstrategy.basic import basic_strategy
 from hypothesis.searchstrategy.narytree import NAryTree
 
-TestIntegerRange = strategy_test_suite(integers_in_range(0, 5))
+TestIntegerRange = strategy_test_suite(integers(min_value=0, max_value=5))
 TestGiantIntegerRange = strategy_test_suite(
-    integers_in_range(-(2 ** 129), 2 ** 129)
+    integers(min_value=(-(2 ** 129)), max_value=(2 ** 129))
 )
-TestFloatRange = strategy_test_suite(floats_in_range(0.5, 10))
+TestFloatRange = strategy_test_suite(floats(min_value=0.5, max_value=10))
 TestSampled10 = strategy_test_suite(sampled_from(elements=list(range(10))))
 TestSampled1 = strategy_test_suite(sampled_from(elements=(1,)))
 TestSampled2 = strategy_test_suite(sampled_from(elements=(1, 2)))
 
-TestIntegersFrom = strategy_test_suite(integers_from(13))
-TestIntegersFrom = strategy_test_suite(integers_from(1 << 1024))
+TestIntegersFrom = strategy_test_suite(integers(min_value=13))
+TestIntegersFrom = strategy_test_suite(integers(min_value=1 << 1024))
 
-TestOneOf = strategy_test_suite(one_of((int, int, bool)))
+TestOneOf = strategy_test_suite(one_of(
+    integers(), integers(), booleans()))
+
 TestOneOfSameType = strategy_test_suite(
-    one_of((integers_in_range(1, 10), integers_in_range(8, 15)))
+    one_of(
+        integers(min_value=1, max_value=10),
+        integers(min_value=8, max_value=15),
+    )
 )
 TestRandom = strategy_test_suite(Random)
 TestInts = strategy_test_suite(int)
 TestBoolLists = strategy_test_suite([bool])
-TestDictionaries = strategy_test_suite(dictionary((int, int), bool))
+TestDictionaries = strategy_test_suite(
+    dictionaries(variable=(tuples(integers(), integers()), booleans())))
 TestOrderedDictionaries = strategy_test_suite(
-    dictionary(int, int, OrderedDict)
+    dictionaries(variable=(integers(), integers()), dict_class=OrderedDict)
 )
 TestString = strategy_test_suite(text_type)
 BinaryString = strategy_test_suite(binary_type)
-TestIntBool = strategy_test_suite((int, bool))
+TestIntBool = strategy_test_suite(tuples(integers(), booleans()))
 TestFloats = strategy_test_suite(float)
 TestComplex = strategy_test_suite(complex)
 TestJust = strategy_test_suite(just('hi'))
 TestTemplates = strategy_test_suite(TemplatesFor({int}))
 
-TestEmptyString = strategy_test_suite(strings(alphabet=''))
+TestEmptyString = strategy_test_suite(text(alphabet=''))
 TestSingleString = strategy_test_suite(strategy(
-    strings(alphabet='a'), Settings(average_list_length=10.0)))
-TestManyString = strategy_test_suite(strings(alphabet='abcdef☃'))
+    text(alphabet='a'), Settings(average_list_length=10.0)))
+TestManyString = strategy_test_suite(text(alphabet='abcdef☃'))
 
 Stuff = namedtuple('Stuff', ('a', 'b'))
 TestNamedTuple = strategy_test_suite(Stuff(int, int))
@@ -104,14 +109,18 @@ TestConstantLists = strategy_test_suite(
 )
 
 TestOrderedPairs = strategy_test_suite(
-    strategy(integers_in_range(1, 200)).flatmap(
-        lambda e: (integers_in_range(0, e - 1), just(e))
+    strategy(integers(min_value=1, max_value=200)).flatmap(
+        lambda e: (integers(min_value=0, max_value=e - 1), just(e))
     )
 )
 
 TestMappedSampling = strategy_test_suite(
     strategy([int]).filter(bool).flatmap(sampled_from)
 )
+
+
+def integers_from(x):
+    return integers(min_value=x)
 
 TestManyFlatmaps = strategy_test_suite(
     strategy(int)
@@ -121,9 +130,9 @@ TestManyFlatmaps = strategy_test_suite(
     .flatmap(integers_from)
 )
 
-TestIntStreams = strategy_test_suite(streaming(int))
-TestStreamLists = strategy_test_suite(streaming(int))
-TestIntStreamStreams = strategy_test_suite(streaming(streaming(int)))
+TestIntStreams = strategy_test_suite(streaming(integers()))
+TestStreamLists = strategy_test_suite(streaming(integers()))
+TestIntStreamStreams = strategy_test_suite(streaming(streaming(integers())))
 
 
 TestBoringBitfieldsClass = strategy_test_suite(BoringBitfields)

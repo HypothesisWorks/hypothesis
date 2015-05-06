@@ -250,6 +250,8 @@ def text(alphabet=None, average_size=None, min_size=None, max_size=None):
         StringStrategy
     if alphabet is None:
         char_strategy = OneCharStringStrategy()
+    elif not alphabet:
+        return just('')
     elif isinstance(alphabet, SearchStrategy):
         char_strategy = alphabet
     else:

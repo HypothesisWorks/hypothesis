@@ -17,7 +17,7 @@ import math
 
 import pytest
 import hypothesis.strategies as ds
-from hypothesis import find, given
+from hypothesis import Settings, find, given
 from hypothesis.errors import InvalidArgument
 
 
@@ -103,6 +103,7 @@ def test_validates_keyword_arguments(fn, kwargs):
     (ds.dictionaries, {'variable': ds.lists(ds.tuples(
         ds.booleans(), ds.integers()))}),
     (ds.text, {'alphabet': 'abc'}),
+    (ds.text, {'alphabet': ''}),
     (ds.text, {'alphabet': ds.sampled_from('abc')}),
 )
 def test_produces_valid_examples_from_keyword(fn, kwargs):
@@ -143,7 +144,7 @@ def test_has_specified_length(xs):
     assert len(xs) == 10
 
 
-@given(ds.integers(max_value=100))
+@given(ds.integers(max_value=100), settings=Settings(max_examples=100))
 def test_has_upper_bound(x):
     assert x <= 100
 

@@ -108,7 +108,7 @@ class IntStrategy(SearchStrategy):
 
 class IntegersFromStrategy(SearchStrategy):
 
-    def __init__(self, lower_bound, average_size=100.0):
+    def __init__(self, lower_bound, average_size=1000.0):
         super(IntegersFromStrategy, self).__init__()
         self.lower_bound = lower_bound
         self.average_size = average_size
