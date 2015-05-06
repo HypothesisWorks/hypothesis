@@ -41,15 +41,21 @@ class StrategyExtMethod(ExtMethod):
         if isinstance(specifier, SearchStrategy):
             return specifier
 
-        warn(HypothesisDeprecationWarning((
+        warning = HypothesisDeprecationWarning((
             'Calling strategy with non-strategy object %s is deprecated '
             'and will be removed in Hypothesis 2.0. Use the functions in '
             'hypothesis.strategies instead.') % (
                 show(specifier),
-        )), stacklevel=2)
+        ))
 
         if settings is None:
             settings = Settings()
+
+        if settings.strict:
+            raise warning
+
+        warn(warning, stacklevel=2)
+
         result = super(StrategyExtMethod, self).__call__(specifier, settings)
         assert isinstance(result, SearchStrategy)
         return result

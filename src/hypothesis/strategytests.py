@@ -25,6 +25,7 @@ from hypothesis import given, assume
 from hypothesis.errors import BadData, Unsatisfiable
 from hypothesis.database import ExampleDatabase
 from hypothesis.settings import Settings
+from hypothesis.strategies import lists, randoms, integers
 from hypothesis.utils.show import show
 from hypothesis.internal.compat import hrange, text_type, integer_types
 from hypothesis.utils.extmethod import ExtMethod
@@ -66,8 +67,12 @@ class TemplatesStrategy(SearchStrategy):
 
 
 @strategy.extend(TemplatesFor)
-def templates_for(specifier, settings):
+def templates_for_strategy(specifier, settings):
     return TemplatesStrategy(strategy(specifier.base, settings))
+
+
+def templates_for(strat):
+    return TemplatesStrategy(strategy(strat))
 
 
 class Rejected(Exception):
@@ -163,7 +168,7 @@ def strategy_test_suite(
     random = random or Random()
     strat = strategy(specifier, settings)
     specifier_test = given(
-        TemplatesFor(specifier), Random, settings=settings
+        templates_for(specifier), randoms(), settings=settings
     )
 
     class ValidationSuite(TestCase):
@@ -181,7 +186,7 @@ def strategy_test_suite(
             strat.example()
 
         def test_can_give_list_of_examples(self):
-            strategy([strat]).example()
+            strategy(lists(strat)).example()
 
         def test_will_give_unsatisfiable_if_all_rejected(self):
             @given(specifier, settings=settings)
@@ -211,7 +216,7 @@ def strategy_test_suite(
                 db.close()
 
         @given(
-            TemplatesFor(specifier), TemplatesFor(specifier),
+            templates_for(specifier), templates_for(specifier),
             settings=settings
         )
         def test_simplicity_is_asymmetric(self, x, y):
@@ -292,8 +297,8 @@ def strategy_test_suite(
             hash(strat.from_basic(strat.to_basic(template)))
 
         @given(
-            TemplatesFor(specifier), Random,
-            [[int]],
+            templates_for(specifier), randoms(),
+            lists(lists(integers())),
             settings=settings
         )
         def test_apply_all_simplifiers(self, template, rnd, path):
@@ -334,7 +339,7 @@ def strategy_test_suite(
             for s in islice(strat.full_simplify(rnd, template), 100):
                 assert not strat.strictly_simpler(template, s)
 
-        @given(Random, settings=Settings(max_examples=1000))
+        @given(randoms(), settings=Settings(max_examples=1000))
         def test_can_create_templates(self, random):
             parameter = strat.draw_parameter(random)
             strat.draw_template(BuildContext(random), parameter)

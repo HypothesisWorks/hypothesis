@@ -14,7 +14,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import pytest
-from hypothesis import given, strategy
+from hypothesis import Settings, given, strategy
 from hypothesis.specifiers import just
 from hypothesis.strategies import booleans
 
@@ -26,7 +26,9 @@ def test_strategy_does_not_warn_on_strategies(recwarn):
 
 
 def test_strategy_warns_on_non_strategies(recwarn):
-    strategy(just('test_strategy_warns_on_non_strategies'))
+    strategy(
+        just('test_strategy_warns_on_non_strategies'),
+        Settings(strict=False))
     assert recwarn.pop(DeprecationWarning) is not None
 
 

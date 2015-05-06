@@ -40,6 +40,7 @@ import math
 from collections import namedtuple
 
 from hypothesis import find, strategy
+from hypothesis.strategies import just, lists, integers
 from hypothesis.strategytests import strategy_test_suite
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.searchstrategy.strategies import check_length, \
@@ -523,32 +524,22 @@ class BinaryTreeStrategy(SearchStrategy):
             return self._make_split(*map(self.from_basic, data))
 
 
-# We can now explicitly construct instances of our strategy, but we wish to
-# hook it into the strategy definition mechanism.
-# If our BinaryTree did not have a particular type of leaf node we could just
-# define how to convert the BinaryTree type into a strategy, but because it
-# does we need more data to build one and need to define a custom specifier.
+# Hypothesis convention is to wrap all strategy production into helper
+# functions rather than expose strategy classes directly. This isn't strictly
+# necessary in this case but is generally good practice.
 
-# These don't have to be namedtuples but they're convenient so they usually are
-BinaryTrees = namedtuple('BinaryTrees', ('leaves',))
-
-
-# strategy.extend(BinaryTrees) lets us provide an implementation for what will
-# happen when we call strategy(spec, settings) with spec an instance of
-# BinaryTrees.
-@strategy.extend(BinaryTrees)
-def binary_trees_strategy(spec, settings):
-    """Build a binary tree strategy by building a strategy for the leaf type
-    and then constructing the strategy we defined above."""
-    return BinaryTreeStrategy(strategy(spec.leaves, settings))
-
+def binary_trees(leaves):
+    # The call to strategy is part of the deprecated strategy building API.
+    # Until Hypothesis 2.0 this will work but will emit a warning (error in
+    # strict mode) when called with a non-strategy argument.
+    return BinaryTreeStrategy(strategy(leaves))
 
 # We now want to test our implementation. Hypothesis provides a standard suite
 # of tests you can run to check that your implementation is working correctly.
 # We test two examples: One with empty labels, the other with integer labels.
 
-TestBinaryTreeOfNone = strategy_test_suite(BinaryTrees(None))
-TestBinaryTreeOfInts = strategy_test_suite(BinaryTrees(int))
+TestBinaryTreeOfNone = strategy_test_suite(binary_trees(just(None)))
+TestBinaryTreeOfInts = strategy_test_suite(binary_trees(integers()))
 
 
 # If we've got to here we should now have a working strategy. Now lets look
@@ -594,13 +585,13 @@ def test_simplifies_to_single_leaf():
     If it's not we've done something very wrong
 
     """
-    assert find(BinaryTrees(int), lambda x: True) == Leaf(0)
+    assert find(binary_trees(integers()), lambda x: True) == Leaf(0)
 
 
 def test_simplifies_leaves_deep_in_the_tree():
     """Make sure that leaves are fully simplified even if they are deep in the
     tree rather than at the surface."""
-    deep_tree = find(BinaryTrees(int), lambda x: depth(x) >= 5)
+    deep_tree = find(binary_trees(integers()), lambda x: depth(x) >= 5)
     for l in labels(deep_tree):
         assert l == 0
 
@@ -614,19 +605,20 @@ def test_simplifies_large_lists_of_trees_to_empty():
     current simplest example everywhere
 
     """
-    forest = find([BinaryTrees(int)], lambda x: len(x) >= 50)
+    forest = find(lists(binary_trees(integers())), lambda x: len(x) >= 50)
     assert forest == [Leaf(0)] * 50
 
 
 def test_simplifies_list_of_trees_with_more_complex_structure():
     """This on the other hand is test for lists where we do care about the
     list."""
-    forest = find([BinaryTrees(None)], lambda x: sum(map(depth, x)) >= 50)
+    forest = find(
+        lists(binary_trees(just(None))), lambda x: sum(map(depth, x)) >= 50)
     assert sum(map(depth, forest)) == 50
 
 
 def test_finds_a_large_tree():
     """Make sure that we are able to find large as well as small trees, and
     that we have no trouble simplifying down to that size boundary."""
-    tree = find(BinaryTrees(None), lambda x: size(x) >= 100)
+    tree = find(binary_trees(just(None)), lambda x: size(x) >= 100)
     assert size(tree) == 100

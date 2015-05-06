@@ -310,6 +310,15 @@ find novel breakages.
 )
 
 Settings.define_setting(
+    'strict',
+    default=os.getenv('HYPOTHESIS_STRICT_MODE') == 'true',
+    description="""
+If set to True, anything that would cause Hypothesis to issue a warning will
+instead raise an error.
+"""
+)
+
+Settings.define_setting(
     'database_file',
     default=lambda: (
         os.getenv('HYPOTHESIS_DATABASE_FILE') or

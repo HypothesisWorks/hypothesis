@@ -289,3 +289,8 @@ def basic(
         parameter=generate_parameter,
         generate=generate, simplify=simplify, copy=copy
     )
+
+
+def randoms():
+    from hypothesis.searchstrategy.misc import RandomStrategy
+    return RandomStrategy(integers())
