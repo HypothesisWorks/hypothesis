@@ -15,6 +15,8 @@ from __future__ import division, print_function, absolute_import, \
 
 from collections import namedtuple
 
+from hypothesis import Settings
+from hypothesis.strategies import lists, tuples
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.distributions import geometric, uniform_float
 from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
@@ -52,9 +54,8 @@ class NAryTreeStrategy(SearchStrategy):
         self.branch_label_strategy = strategy(
             specifier.branch_labels, settings)
 
-        self.child_strategy = strategy(
-            [(self.branch_key_strategy, self)], settings
-        )
+        self.child_strategy = (
+            lists(tuples(self.branch_key_strategy, self)))
 
     def produce_parameter(self, random):
         return self.Parameter(
@@ -154,3 +155,7 @@ class NAryTreeStrategy(SearchStrategy):
 @strategy.extend(NAryTree)
 def nary_tree_strategy(specifier, settings):
     return NAryTreeStrategy(specifier, settings)
+
+
+def n_ary_tree(*args, **kwargs):
+    return NAryTreeStrategy(NAryTree(*args, **kwargs), Settings.default)

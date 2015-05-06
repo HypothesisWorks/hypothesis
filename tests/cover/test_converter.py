@@ -13,40 +13,39 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from random import Random
-
 import pytest
-from hypothesis.specifiers import Just, OneOf, SampledFrom
-from hypothesis.internal.compat import text_type, binary_type
-from hypothesis.searchstrategy.narytree import NAryTree
+from hypothesis.strategies import just, sets, text, lists, binary, \
+    floats, one_of, tuples, randoms, booleans, integers, complexes, \
+    frozensets, dictionaries, sampled_from
+from hypothesis.searchstrategy.narytree import n_ary_tree
 from hypothesis.searchstrategy.strategies import BadData, strategy
 
 
 @pytest.mark.parametrize(('specifier', 'data'), [
-    ({text_type}, 0j),
-    (complex, {'hi'}),
-    ([{bool}], 0),
-    (Just(1), 'hi'),
-    (binary_type, 0.0),
-    (binary_type, frozenset()),
-    ({True: {int}}, []),
-    (Random, []),
-    (int, ''),
-    (text_type, 'kittens'),
-    ((int, int, int), (1, 2)),
-    (SampledFrom((1, 2, 3)), 'fish'),
-    (SampledFrom((1, 2, 3)), 5),
-    (SampledFrom((1, 2, 3)), -2),
-    (OneOf((int, float)), 1),
-    (OneOf((int, float)), 'tv'),
-    (OneOf((int, float)), [-2, 0]),
-    (binary_type, '1'),
-    (float, -1),
-    ([frozenset({float}), frozenset({float})], [[8, 0], []]),
-    (float, 252010555201342071294067021251680995120),
-    ((int, int), 10),
-    (NAryTree(int, int, int), []),
-    (NAryTree(int, int, int), [1, 2, 3, 4, 5]),
+    (sets(text()), 0j),
+    (complexes(), {'hi'}),
+    (lists(sets(booleans())), 0),
+    (just(1), 'hi'),
+    (binary(), 0.0),
+    (binary(), frozenset()),
+    (dictionaries({True: sets(integers())}), []),
+    (randoms(), []),
+    (integers(), ''),
+    (text(), 'kittens'),
+    (tuples(integers(), integers(), integers()), (1, 2)),
+    (sampled_from((1, 2, 3)), 'fish'),
+    (sampled_from((1, 2, 3)), 5),
+    (sampled_from((1, 2, 3)), -2),
+    (one_of(integers(), floats()), 1),
+    (one_of(integers(), floats()), 'tv'),
+    (one_of(integers(), floats()), [-2, 0]),
+    (binary(), '1'),
+    (floats(), -1),
+    (lists(one_of(frozensets(floats()), frozensets(floats()))), [[8, 0], []]),
+    (floats(), 252010555201342071294067021251680995120),
+    (tuples(integers(), integers()), 10),
+    (n_ary_tree(integers(), integers(), integers()), []),
+    (n_ary_tree(integers(), integers(), integers()), [1, 2, 3, 4, 5]),
 ])
 def test_simple_data_validation(specifier, data):
     converter = strategy(specifier)

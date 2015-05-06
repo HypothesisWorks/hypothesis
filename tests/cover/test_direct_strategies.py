@@ -68,6 +68,7 @@ def fn_ktest(*fnkwargs):
     (ds.floats, {'min_value': float('nan')}),
     (ds.floats, {'max_value': 0.0, 'min_value': 1.0}),
     (ds.dictionaries, {'fixed': 'fish'}),
+    (ds.dictionaries, {'fixed': {1: 'fish'}}),
     (ds.dictionaries, {'variable': (ds.integers(),)}),
     (ds.dictionaries, {'variable': (ds.integers(), 1)}),
     (ds.dictionaries, {'variable': 1}),

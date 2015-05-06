@@ -16,23 +16,9 @@ from __future__ import division, print_function, absolute_import, \
 import math
 
 from hypothesis.errors import InvalidArgument
+from hypothesis.settings import Settings
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import text_type, integer_types
-
-
-def check_type(typ, arg):
-    if not isinstance(arg, typ):
-        if isinstance(typ, type):
-            typ_string = typ.__name__
-        else:
-            typ_string = 'one of %s' % (
-                ', '.join(t.__name__ for t in typ))
-        raise InvalidArgument(
-            'Expected %s but got %r' % (typ_string, arg,))
-
-
-def check_strategy(arg):
-    check_type(SearchStrategy, arg)
 
 
 def just(value):
@@ -132,6 +118,13 @@ def floats(min_value=None, max_value=None):
         ) | just(float('-inf'))
 
 
+def complexes():
+    from hypothesis.searchstrategy.numbers import ComplexStrategy
+    return ComplexStrategy(
+        tuples(floats(), floats())
+    )
+
+
 def sampled_from(elements):
     from hypothesis.searchstrategy.misc import SampledFromStrategy
     elements = tuple(iter(elements))
@@ -163,7 +156,6 @@ def lists(elements=None, max_size=None, min_size=None, average_size=None):
         min_size = 0
     if average_size is None:
         if max_size is None:
-            from hypothesis.settings import Settings
             average_size = Settings.default.average_list_length
         else:
             average_size = (min_size + max_size) * 0.5
@@ -204,6 +196,20 @@ def lists(elements=None, max_size=None, min_size=None, average_size=None):
         return base
 
 
+def sets(elements):
+    check_strategy(elements)
+    from hypothesis.searchstrategy.collections import SetStrategy
+    return SetStrategy(
+        (elements,),
+        average_length=Settings.default.average_list_length
+    )
+
+
+def frozensets(elements):
+    from hypothesis.searchstrategy.collections import FrozenSetStrategy
+    return FrozenSetStrategy(sets(elements))
+
+
 def dictionaries(fixed={}, variable=None, dict_class=dict):
     from hypothesis.searchstrategy.collections import FixedKeysDictStrategy
 
@@ -213,6 +219,8 @@ def dictionaries(fixed={}, variable=None, dict_class=dict):
         base = fixed
     else:
         fixed = dict_class(fixed)
+        for v in fixed.values():
+            check_type(SearchStrategy, v)
         base = FixedKeysDictStrategy(fixed).map(dict_class)
 
     if variable is not None:
@@ -294,3 +302,18 @@ def basic(
 def randoms():
     from hypothesis.searchstrategy.misc import RandomStrategy
     return RandomStrategy(integers())
+
+
+def check_type(typ, arg):
+    if not isinstance(arg, typ):
+        if isinstance(typ, type):
+            typ_string = typ.__name__
+        else:
+            typ_string = 'one of %s' % (
+                ', '.join(t.__name__ for t in typ))
+        raise InvalidArgument(
+            'Expected %s but got %r' % (typ_string, arg,))
+
+
+def check_strategy(arg):
+    check_type(SearchStrategy, arg)
