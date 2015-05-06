@@ -17,6 +17,7 @@ import pytest
 from hypothesis import Settings, given, assume
 from hypothesis.errors import Unsatisfiable
 from hypothesis.database import ExampleDatabase
+from hypothesis.strategies import tuples, booleans
 
 
 def test_finite_space_errors_if_all_unsatisfiable():
@@ -39,7 +40,7 @@ def test_finite_space_does_not_error_if_some_unsatisfiable():
 def test_finite_test_does_not_fail_if_example_comes_from_db():
     is_bad = [True]
 
-    @given((), settings=Settings(database=ExampleDatabase()))
+    @given(tuples(), settings=Settings(database=ExampleDatabase()))
     def is_not_bad(x):
         assert not is_bad[0]
 
