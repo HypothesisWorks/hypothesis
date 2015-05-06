@@ -16,7 +16,8 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+from hypothesis.strategies import sets, booleans, integers
 from hypothesis.strategytests import strategy_test_suite
 
-TestBoolSets = strategy_test_suite({bool})
-TestInts = strategy_test_suite(int)
+TestBoolSets = strategy_test_suite(sets(booleans()))
+TestInts = strategy_test_suite(integers())
