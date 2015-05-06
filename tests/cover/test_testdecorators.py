@@ -24,51 +24,51 @@ from collections import namedtuple
 import pytest
 import hypothesis.settings as hs
 import hypothesis.reporting as reporting
-from hypothesis import given, assume, strategy
+from hypothesis import given, assume
 from hypothesis.errors import Flaky, Unsatisfiable, InvalidArgument
 from tests.common.utils import fails, fails_with, capture_out
 from hypothesis.internal import debug
-from hypothesis.specifiers import just, one_of, strings, sampled_from, \
-    integers_from, floats_in_range, integers_in_range
-from hypothesis.internal.compat import text_type, binary_type
+from hypothesis.strategies import just, sets, text, lists, binary, \
+    floats, one_of, tuples, booleans, integers, frozensets, sampled_from
+from hypothesis.internal.compat import text_type
 from hypothesis.searchstrategy.numbers import IntStrategy
 
 
-@given(int, int)
+@given(integers(), integers())
 def test_int_addition_is_commutative(x, y):
     assert x + y == y + x
 
 
 @fails
-@given(text_type, text_type)
+@given(text(), text())
 def test_str_addition_is_commutative(x, y):
     assert x + y == y + x
 
 
 @fails
-@given(binary_type, binary_type)
+@given(binary(), binary())
 def test_bytes_addition_is_commutative(x, y):
     assert x + y == y + x
 
 
-@given(int, int, int)
+@given(integers(), integers(), integers())
 def test_int_addition_is_associative(x, y, z):
     assert x + (y + z) == (x + y) + z
 
 
 @fails
-@given(float, float, float)
+@given(floats(), floats(), floats())
 def test_float_addition_is_associative(x, y, z):
     assert x + (y + z) == (x + y) + z
 
 
-@given([int])
+@given(lists(integers()))
 def test_reversing_preserves_integer_addition(xs):
     assert sum(xs) == sum(reversed(xs))
 
 
 def test_still_minimizes_on_non_assertion_failures():
-    @given(int)
+    @given(integers())
     def is_not_too_large(x):
         if x >= 10:
             raise ValueError('No, %s is just too large. Sorry' % x)
@@ -79,7 +79,7 @@ def test_still_minimizes_on_non_assertion_failures():
     assert ' 10 ' in exinfo.value.args[0]
 
 
-@given(int)
+@given(integers())
 def test_integer_division_shrinks_positive_integers(n):
     assume(n > 0)
     assert n / 2 < n
@@ -87,30 +87,30 @@ def test_integer_division_shrinks_positive_integers(n):
 
 class TestCases(object):
 
-    @given(int)
+    @given(integers())
     def test_abs_non_negative(self, x):
         assert abs(x) >= 0
 
     @fails
-    @given(int)
+    @given(integers())
     def test_int_is_always_negative(self, x):
         assert x < 0
 
     @fails
-    @given(float, float)
+    @given(floats(), floats())
     def test_float_addition_cancels(self, x, y):
         assert x + (y - x) == y
 
 
 @fails
-@given(int, name=str)
+@given(integers(), name=text())
 def test_can_be_given_keyword_args(x, name):
     assume(x > 0)
     assert len(name) < x
 
 
 @fails_with(Unsatisfiable)
-@given(int, settings=hs.Settings(timeout=0.1))
+@given(integers(), settings=hs.Settings(timeout=0.1))
 def test_slow_test_times_out(x):
     time.sleep(0.05)
 
@@ -124,7 +124,7 @@ timeout_settings = hs.Settings(timeout=0.2)
 # The following tests exist to test that verifiers start their timeout
 # from when the test first executes, not from when it is defined.
 @fails
-@given(int, settings=timeout_settings)
+@given(integers(), settings=timeout_settings)
 def test_slow_failing_test_1(x):
     time.sleep(0.05)
     assert not calls[0]
@@ -132,7 +132,7 @@ def test_slow_failing_test_1(x):
 
 
 @fails
-@given(int, settings=timeout_settings)
+@given(integers(), settings=timeout_settings)
 def test_slow_failing_test_2(x):
     time.sleep(0.05)
     assert not calls[1]
@@ -140,7 +140,7 @@ def test_slow_failing_test_2(x):
 
 
 @fails
-@given(int, settings=timeout_settings)
+@given(integers(), settings=timeout_settings)
 def test_slow_failing_test_3(x):
     time.sleep(0.05)
     assert not calls[2]
@@ -148,7 +148,7 @@ def test_slow_failing_test_3(x):
 
 
 @fails
-@given(int, settings=timeout_settings)
+@given(integers(), settings=timeout_settings)
 def test_slow_failing_test_4(x):
     time.sleep(0.05)
     assert not calls[3]
@@ -156,7 +156,7 @@ def test_slow_failing_test_4(x):
 
 
 @fails
-@given(one_of([float, bool]), one_of([float, bool]))
+@given(one_of(floats(), booleans()), one_of(floats(), booleans()))
 def test_one_of_produces_different_values(x, y):
     assert type(x) == type(y)
 
@@ -167,23 +167,23 @@ def test_is_the_answer(x):
 
 
 @fails
-@given(text_type, text_type)
+@given(text(), text())
 def test_text_addition_is_not_commutative(x, y):
     assert x + y == y + x
 
 
 @fails
-@given(binary_type, binary_type)
+@given(binary(), binary())
 def test_binary_addition_is_not_commutative(x, y):
     assert x + y == y + x
 
 
-@given(integers_in_range(1, 10))
+@given(integers(1, 10))
 def test_integers_are_in_range(x):
     assert 1 <= x <= 10
 
 
-@given(integers_from(100))
+@given(integers(min_value=100))
 def test_integers_from_are_from(x):
     assert x >= 100
 
@@ -191,7 +191,7 @@ def test_integers_from_are_from(x):
 def test_does_not_catch_interrupt_during_falsify():
     calls = [0]
 
-    @given(int)
+    @given(integers())
     def flaky_base_exception(x):
         if not calls[0]:
             calls[0] = 1
@@ -204,7 +204,7 @@ def test_contains_the_test_function_name_in_the_exception_string():
 
     calls = [0]
 
-    @given(int, settings=hs.Settings(max_examples=10))
+    @given(integers(), settings=hs.Settings(max_examples=10))
     def this_has_a_totally_unique_name(x):
         calls[0] += 1
         assume(False)
@@ -219,7 +219,7 @@ def test_contains_the_test_function_name_in_the_exception_string():
 
     class Foo(object):
 
-        @given(int, settings=hs.Settings(max_examples=10))
+        @given(integers(), settings=hs.Settings(max_examples=10))
         def this_has_a_unique_name_and_lives_on_a_class(self, x):
             calls2[0] += 1
             assume(False)
@@ -233,7 +233,7 @@ def test_contains_the_test_function_name_in_the_exception_string():
     ) in e.value.args[0]
 
 
-@given([int], int)
+@given(lists(integers()), integers())
 def test_removing_an_element_from_a_unique_list(xs, y):
     assume(len(set(xs)) == len(xs))
 
@@ -246,7 +246,7 @@ def test_removing_an_element_from_a_unique_list(xs, y):
 
 
 @fails
-@given([int], int)
+@given(lists(integers()), integers())
 def test_removing_an_element_from_a_non_unique_list(xs, y):
     assume(y in xs)
     xs.remove(y)
@@ -254,7 +254,7 @@ def test_removing_an_element_from_a_non_unique_list(xs, y):
 
 
 def test_errors_even_if_does_not_error_on_final_call():
-    @given(int)
+    @given(integers())
     def rude(x):
         assert not any(
             t[3] == 'best_satisfying_template'
@@ -265,13 +265,13 @@ def test_errors_even_if_does_not_error_on_final_call():
         rude()
 
 
-@given(set([sampled_from(list(range(10)))]))
+@given(sets(sampled_from(list(range(10)))))
 def test_can_test_sets_sampled_from(xs):
     assert all(isinstance(x, int) for x in xs)
     assert all(0 <= x < 10 for x in xs)
 
 
-mix = one_of((sampled_from([1, 2, 3]), str))
+mix = one_of(sampled_from([1, 2, 3]), text())
 
 
 @fails
@@ -281,13 +281,13 @@ def test_can_mix_sampling_with_generating(x, y):
 
 
 @fails
-@given(frozenset([int]))
+@given(frozensets(integers()))
 def test_can_find_large_sum_frozenset(xs):
     assert sum(xs) < 100
 
 
 def test_prints_on_failure_by_default():
-    @given(int, int)
+    @given(integers(), integers())
     def test_ints_are_sorted(balthazar, evans):
         assume(evans >= 0)
         assert balthazar <= evans
@@ -303,7 +303,7 @@ def test_prints_on_failure_by_default():
 
 
 def test_does_not_print_on_success():
-    @given(int)
+    @given(integers())
     def test_is_an_int(x):
         return True
 
@@ -321,37 +321,37 @@ def test_can_sample_from_single_element(x):
 
 
 @fails
-@given([int])
+@given(lists(integers()))
 def test_list_is_sorted(xs):
     assert sorted(xs) == xs
 
 
 @fails
-@given(floats_in_range(1.0, 2.0))
+@given(floats(1.0, 2.0))
 def test_is_an_endpoint(x):
     assert x == 1.0 or x == 2.0
 
 
 @pytest.mark.parametrize('t', [1, 10, 100, 1000])
 @fails
-@given(x=int)
+@given(x=integers())
 def test_is_bounded(t, x):
     assert x < t
 
 
-@given(x=bool)
+@given(x=booleans())
 def test_can_test_kwargs_only_methods(**kwargs):
     assert isinstance(kwargs['x'], bool)
 
 
 @fails_with(UnicodeEncodeError)
-@given(text_type)
+@given(text())
 def test_is_ascii(x):
     x.encode('ascii')
 
 
 @fails
-@given(text_type)
+@given(text())
 def test_is_not_ascii(x):
     try:
         x.encode('ascii')
@@ -361,13 +361,13 @@ def test_is_not_ascii(x):
 
 
 @fails
-@given(text_type)
+@given(text())
 def test_can_find_string_with_duplicates(s):
     assert len(set(s)) == len(s)
 
 
 @fails
-@given(text_type)
+@given(text())
 def test_has_ascii(x):
     if not x:
         return
@@ -382,7 +382,7 @@ first_call = True
 
 
 @fails_with(Flaky)
-@given(int)
+@given(integers())
 def test_fails_only_once(x):
     global first_call
     if first_call:
@@ -400,7 +400,7 @@ class SpecialIntStrategy(IntStrategy):
         return 1
 
 
-@given([SpecialIntStrategy()])
+@given(lists(SpecialIntStrategy()))
 def test_can_use_custom_strategies(xs):
     assert isinstance(xs, list)
     assert all(x == 1 for x in xs)
@@ -411,7 +411,7 @@ def test_uses_random():
     initial = random.getstate()
     assert random.getstate() == initial
 
-    @given(int, random=random)
+    @given(integers(), random=random)
     def test_foo(x):
         pass
     test_foo()
@@ -420,7 +420,10 @@ def test_uses_random():
 
 def test_does_not_accept_random_if_derandomize():
     with pytest.raises(InvalidArgument):
-        @given(int, settings=hs.Settings(derandomize=True), random=Random())
+        @given(
+            integers(),
+            settings=hs.Settings(derandomize=True), random=Random()
+        )
         def test_blah(x):
             pass
         test_blah()
@@ -428,7 +431,7 @@ def test_does_not_accept_random_if_derandomize():
 
 def test_can_derandomize():
     @fails
-    @given(int, settings=hs.Settings(derandomize=True))
+    @given(integers(), settings=hs.Settings(derandomize=True))
     def test_blah(x):
         assert x > 0
 
@@ -436,14 +439,14 @@ def test_can_derandomize():
 
 
 def test_can_run_without_database():
-    @given(int, settings=hs.Settings(database=None))
+    @given(integers(), settings=hs.Settings(database=None))
     def test_blah(x):
         assert False
     with pytest.raises(AssertionError):
         test_blah()
 
 
-@given(int)
+@given(integers())
 def test_can_call_an_argument_f(f):
     # See issue https://github.com/DRMacIver/hypothesis/issues/38 for details
     pass
@@ -452,36 +455,36 @@ def test_can_call_an_argument_f(f):
 Litter = namedtuple('Litter', ('kitten1', 'kitten2'))
 
 
-@given(Litter(int, int))
+@given(tuples(integers(), integers(), tuple_class=Litter))
 def test_named_tuples_are_of_right_type(litter):
     assert isinstance(litter, Litter)
 
 
 @fails_with(AttributeError)
-@given(strategy(int).map(lambda x: x.nope))
+@given(integers().map(lambda x: x.nope))
 def test_fails_in_reify(x):
     pass
 
 
-@given(strings('a'))
-def test_a_strings(x):
+@given(text('a'))
+def test_a_text(x):
     assert set(x).issubset({'a'})
 
 
-@given(strings(''))
-def test_empty_strings(x):
+@given(text(''))
+def test_empty_text(x):
     assert not x
 
 
-@given(strings('abcdefg'))
-def test_mixed_strings(x):
+@given(text('abcdefg'))
+def test_mixed_text(x):
     assert set(x).issubset(set('abcdefg'))
 
 
 def test_when_set_to_no_simplifies_only_runs_failing_example_once():
     failing = [0]
 
-    @given(int, settings=hs.Settings(max_shrinks=0))
+    @given(integers(), settings=hs.Settings(max_shrinks=0))
     def foo(x):
         if x > 11:
             failing[0] += 1
@@ -495,7 +498,7 @@ def test_when_set_to_no_simplifies_only_runs_failing_example_once():
     assert 'Trying example' in out.getvalue()
 
 
-@given(int, settings=hs.Settings(max_examples=1))
+@given(integers(), settings=hs.Settings(max_examples=1))
 def test_should_not_fail_if_max_examples_less_than_min_satisfying(x):
     pass
 
@@ -503,7 +506,7 @@ def test_should_not_fail_if_max_examples_less_than_min_satisfying(x):
 def test_should_not_count_duplicates_towards_max_examples():
     seen = set()
 
-    @given(integers_in_range(1, 10), settings=hs.Settings(
+    @given(integers(1, 10), settings=hs.Settings(
         max_examples=9
     ))
     def test_i_see_you(x):
@@ -516,7 +519,7 @@ def test_can_timeout_during_an_unsuccessful_simplify():
     record = []
 
     @debug.timeout(3)
-    @given([float], settings=hs.Settings(timeout=1))
+    @given(lists(floats()), settings=hs.Settings(timeout=1))
     def first_bad_float_list(xs):
         if record:
             assert record[0] != xs
@@ -534,13 +537,12 @@ def nameless_const(x):
     return functools.partial(f, x)
 
 
-@given(strategy({bool}).map(nameless_const(2)))
+@given(sets(booleans()).map(nameless_const(2)))
 def test_can_map_nameless(x):
     assert x == 2
 
 
 @given(
-    strategy(integers_in_range(0, 10)).flatmap(
-        nameless_const(just(3))))
+    integers(0, 10).flatmap(nameless_const(just(3))))
 def test_can_flatmap_nameless(x):
     assert x == 3
