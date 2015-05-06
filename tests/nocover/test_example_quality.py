@@ -21,13 +21,13 @@ from fractions import Fraction
 from collections import Counter, OrderedDict
 
 import pytest
-from hypothesis import Settings, assume, strategy
-from tests.common import OrderedPair, parametrize, constant_list
-from hypothesis.specifiers import just, one_of, dictionary, \
-    integers_from, integers_in_range
+from hypothesis import Settings, assume
+from tests.common import parametrize, ordered_pair, constant_list
+from hypothesis.strategies import just, sets, text, lists, binary, \
+    floats, tuples, booleans, decimals, integers, fractions, frozensets, \
+    dictionaries
 from hypothesis.internal.debug import minimal
-from hypothesis.internal.compat import PY3, hrange, reduce, text_type, \
-    binary_type
+from hypothesis.internal.compat import PY3, hrange, reduce
 
 
 def test_minimize_list_on_large_structure():
@@ -38,7 +38,7 @@ def test_minimize_list_on_large_structure():
             if x >= 10
         ]) >= 60
 
-    assert minimal([int], test_list_in_range) == [10] * 60
+    assert minimal(lists(integers()), test_list_in_range) == [10] * 60
 
 
 def test_minimize_list_of_sets_on_large_structure():
@@ -47,7 +47,7 @@ def test_minimize_list_of_sets_on_large_structure():
         return len(list(filter(None, xs))) >= 50
 
     x = minimal(
-        [frozenset({int})], test_list_in_range,
+        lists(frozensets(integers())), test_list_in_range,
         timeout_after=20,
     )
     assert len(x) == 50
@@ -55,24 +55,25 @@ def test_minimize_list_of_sets_on_large_structure():
 
 
 def test_integers_from_minizes_leftwards():
-    assert minimal(integers_from(101)) == 101
+    assert minimal(integers(min_value=101)) == 101
 
 
 def test_minimal_fractions_1():
-    assert minimal(Fraction) == Fraction(0)
+    assert minimal(fractions()) == Fraction(0)
 
 
 def test_minimal_fractions_2():
-    assert minimal(Fraction, lambda x: x >= 1) == Fraction(1)
+    assert minimal(fractions(), lambda x: x >= 1) == Fraction(1)
 
 
 def test_minimal_fractions_3():
-    assert minimal([Fraction], lambda s: len(s) >= 20) == [Fraction(0)] * 20
+    assert minimal(
+        lists(fractions()), lambda s: len(s) >= 20) == [Fraction(0)] * 20
 
 
 def test_minimal_fractions_4():
     assert minimal(
-        [Fraction], lambda s: len(s) >= 20 and all(t >= 1 for t in s)
+        lists(fractions()), lambda s: len(s) >= 20 and all(t >= 1 for t in s)
     ) == [Fraction(1)] * 20
 
 
@@ -83,8 +84,8 @@ def test_finding_decimals_with_defined_precision():
         except (ValueError, OverflowError):
             return False
 
-    assert minimal(Decimal, is_integral) == Decimal(0)
-    minimal(Decimal, lambda x: is_integral(x * 100) and 0 < x < 1)
+    assert minimal(decimals(), is_integral) == Decimal(0)
+    minimal(decimals(), lambda x: is_integral(x * 100) and 0 < x < 1)
 
 
 def test_minimize_list_of_floats_on_large_structure():
@@ -95,51 +96,53 @@ def test_minimize_list_of_floats_on_large_structure():
             if x >= 3
         ]) >= 30
 
-    result = minimal([float], test_list_in_range)
+    result = minimal(lists(floats()), test_list_in_range)
     result.sort()
     assert result == [0.0] * 20 + [3.0] * 30
 
 
 def test_minimize_string_to_empty():
-    assert minimal(text_type) == ''
+    assert minimal(text()) == ''
 
 
 def test_minimize_one_of():
     for _ in hrange(100):
-        assert minimal(one_of((int, str, bool))) in (
+        assert minimal(integers() | text() | booleans()) in (
             0, '', False
         )
 
 
 def test_minimize_mixed_list():
-    mixed = minimal([int, text_type], lambda x: len(x) >= 10)
+    mixed = minimal(lists(integers() | text()), lambda x: len(x) >= 10)
     assert set(mixed).issubset({0, ''})
 
 
 def test_minimize_longer_string():
-    assert minimal(text_type, lambda x: len(x) >= 10) == '0' * 10
+    assert minimal(text(), lambda x: len(x) >= 10) == '0' * 10
 
 
 def test_minimize_longer_list_of_strings():
-    assert minimal([text_type], lambda x: len(x) >= 10) == [''] * 10
+    assert minimal(lists(text()), lambda x: len(x) >= 10) == [''] * 10
 
 
 def test_minimize_3_set():
-    assert minimal({int}, lambda x: len(x) >= 3) in (
+    assert minimal(sets(integers()), lambda x: len(x) >= 3) in (
         {0, 1, 2},
         {-1, 0, 1},
     )
 
 
 def test_minimize_3_set_of_tuples():
-    assert minimal({(int,)}, lambda x: len(x) >= 2) == {(0,), (1,)}
+    assert minimal(
+        sets(tuples(integers())),
+        lambda x: len(x) >= 2) == {(0,), (1,)}
 
 
 def test_minimize_sets_of_sets():
-    elements = integers_in_range(1, 100)
+    elements = integers(1, 100)
     size = 15
     set_of_sets = minimal(
-        {frozenset({elements})}, lambda s: len(s) >= size
+        sets(frozensets(elements)), lambda s: len(s) >= size
     )
     assert frozenset() in set_of_sets
     assert len(set_of_sets) == size
@@ -152,8 +155,8 @@ def test_minimize_sets_of_sets():
 
 
 @pytest.mark.parametrize(
-    ('string',), [(text_type,), (binary_type,)],
-    ids=['text_type', 'binary_type']
+    ('string',), [(text(),), (binary(),)],
+    ids=['text', 'binary()']
 )
 def test_minimal_unsorted_strings(string):
     def dedupe(xs):
@@ -164,7 +167,7 @@ def test_minimal_unsorted_strings(string):
         return result
 
     result = minimal(
-        strategy([string]).map(dedupe),
+        lists(string).map(dedupe),
         lambda xs: assume(len(xs) >= 5) and sorted(xs) != xs
     )
     assert len(result) == 5
@@ -181,7 +184,7 @@ def test_finds_list_with_plenty_duplicates():
         return max(Counter(xs).values()) >= 3
 
     result = minimal(
-        [str], is_good
+        lists(text()), is_good
     )
     assert len(result) == 3
     assert len(set(result)) == 1
@@ -204,49 +207,56 @@ def test_minimal_mixed_list_propagates_leftwards():
             return False
         return True
 
-    assert minimal([bool, (int,)], long_list_with_enough_bools) == [False] * 50
+    assert minimal(
+        lists(booleans() | tuples(integers())),
+        long_list_with_enough_bools
+    ) == [False] * 50
 
 
 def test_tuples_do_not_block_cloning():
     assert minimal(
-        [(one_of((bool, (int,))),)],
+        lists(tuples(booleans() | tuples(integers()))),
         lambda x: len(x) >= 50 and any(isinstance(t[0], bool) for t in x)
     ) == [(False,)] * 50
 
 
 def test_can_simplify_flatmap_with_bounded_left_hand_size():
     assert minimal(
-        strategy(bool).flatmap(lambda x: [just(x)]),
+        booleans().flatmap(lambda x: lists(just(x))),
         lambda x: len(x) >= 10) == [False] * 10
 
 
 def test_can_simplify_across_flatmap_of_just():
-    assert minimal(strategy(int).flatmap(just)) == 0
+    assert minimal(integers().flatmap(just)) == 0
 
 
 def test_can_simplify_on_right_hand_strategy_of_flatmap():
-    assert minimal(strategy(int).flatmap(lambda x: [just(x)])) == []
+    assert minimal(integers().flatmap(lambda x: lists(just(x)))) == []
 
 
 def test_can_ignore_left_hand_side_of_flatmap():
     assert minimal(
-        strategy(int).flatmap(lambda x: [int]),
+        integers().flatmap(lambda x: lists(integers())),
         lambda x: len(x) >= 10
     ) == [0] * 10
 
 
 def test_can_simplify_on_both_sides_of_flatmap():
     assert minimal(
-        strategy(int).flatmap(lambda x: [just(x)]),
+        integers().flatmap(lambda x: lists(just(x))),
         lambda x: len(x) >= 10
     ) == [0] * 10
 
 
 @parametrize('dict_class', [dict, OrderedDict])
 def test_dictionary(dict_class):
-    assert minimal(dictionary(int, text_type, dict_class)) == dict_class()
+    assert minimal(dictionaries(
+        variable=(integers(), text()),
+        dict_class=dict_class)) == dict_class()
 
-    x = minimal(dictionary(int, text_type, dict_class), lambda t: len(t) >= 3)
+    x = minimal(
+        dictionaries(variable=(integers(), text()), dict_class=dict_class),
+        lambda t: len(t) >= 3)
     assert isinstance(x, dict_class)
     assert set(x.values()) == {''}
     for k in x:
@@ -257,7 +267,7 @@ def test_dictionary(dict_class):
 
 
 def test_minimize_single_element_in_silly_large_int_range():
-    ir = integers_in_range(-(2 ** 256), 2 ** 256)
+    ir = integers(-(2 ** 256), 2 ** 256)
     assert minimal(ir, lambda x: x >= -(2 ** 255)) == -(2 ** 255)
 
 
@@ -268,9 +278,9 @@ def test_minimize_multiple_elements_in_silly_large_int_range():
         assume(len(x) >= 20)
         return all(t >= -(2 ** 255) for t in x)
 
-    ir = integers_in_range(-(2 ** 256), 2 ** 256)
+    ir = integers(-(2 ** 256), 2 ** 256)
     x = minimal(
-        [ir],
+        lists(ir),
         condition,
         # This is quite hard and I don't yet have a good solution for
         # making it less so, so this one gets a higher timeout.
@@ -280,11 +290,11 @@ def test_minimize_multiple_elements_in_silly_large_int_range():
 
 
 def test_minimize_multiple_elements_in_silly_large_int_range_min_is_not_dupe():
-    ir = integers_in_range(0, 2 ** 256)
+    ir = integers(0, 2 ** 256)
     target = list(range(20))
 
     x = minimal(
-        [ir],
+        lists(ir),
         lambda x: (
             assume(len(x) >= 20) and all(x[i] >= target[i] for i in target))
     )
@@ -292,8 +302,9 @@ def test_minimize_multiple_elements_in_silly_large_int_range_min_is_not_dupe():
 
 
 def test_minimize_one_of_distinct_types():
+    y = booleans() | binary()
     x = minimal(
-        (one_of((bool, binary_type)), one_of((bool, binary_type))),
+        tuples(y, y),
         lambda x: type(x[0]) != type(x[1])
     )
     assert x in (
@@ -304,7 +315,8 @@ def test_minimize_one_of_distinct_types():
 
 @pytest.mark.skipif(PY3, reason='Python 3 has better integers')
 def test_minimize_long():
-    assert minimal(int, lambda x: type(x).__name__ == 'long') == sys.maxint + 1
+    assert minimal(
+        integers(), lambda x: type(x).__name__ == 'long') == sys.maxint + 1
 
 
 def test_non_reversible_ints_as_decimals():
@@ -312,7 +324,7 @@ def test_non_reversible_ints_as_decimals():
         ts = list(map(Decimal, xs))
         return sum(ts) != sum(reversed(ts))
 
-    sigh = minimal([int], not_reversible, timeout_after=30)
+    sigh = minimal(lists(integers()), not_reversible, timeout_after=30)
     assert len(sigh) <= 10
 
 
@@ -321,7 +333,7 @@ def test_non_reversible_fractions_as_decimals():
         xs = [Decimal(x.numerator) / x.denominator for x in xs]
         return sum(xs) != sum(reversed(xs))
 
-    sigh = minimal([Fraction], not_reversible, timeout_after=20)
+    sigh = minimal(lists(fractions()), not_reversible, timeout_after=20)
     assert len(sigh) < 10
 
 
@@ -329,7 +341,7 @@ def test_non_reversible_decimals():
     def not_reversible(xs):
         assume(all(x.is_finite() for x in xs))
         return sum(xs) != sum(reversed(xs))
-    sigh = minimal([Decimal], not_reversible, timeout_after=30)
+    sigh = minimal(lists(decimals()), not_reversible, timeout_after=30)
     assert len(sigh) < 10
 
 
@@ -354,7 +366,7 @@ def length_of_longest_ordered_sequence(xs):
 def test_increasing_sequence():
     k = 6
     xs = minimal(
-        [int], lambda t: (
+        lists(integers()), lambda t: (
             len(t) <= 30 and length_of_longest_ordered_sequence(t) >= k),
         timeout_after=60,
     )
@@ -366,7 +378,7 @@ def test_increasing_string_sequence():
     n = 7
     lb = '✐'
     xs = minimal(
-        [text_type], lambda t: (
+        lists(text()), lambda t: (
             n <= len(t) and
             all(t) and
             t[0] >= lb and
@@ -382,7 +394,7 @@ def test_increasing_string_sequence():
 
 def test_small_sum_lists():
     xs = minimal(
-        [float],
+        lists(floats()),
         lambda x:
             len(x) >= 100 and sum(t for t in x if float('inf') > t >= 0) >= 1,
         settings=Settings(average_list_length=200),
@@ -392,7 +404,7 @@ def test_small_sum_lists():
 
 def test_increasing_float_sequence():
     xs = minimal(
-        [float], lambda x: length_of_longest_ordered_sequence([
+        lists(floats()), lambda x: length_of_longest_ordered_sequence([
             t for t in x if t >= 0
         ]) >= 7 and len([t for t in x if t >= 500.0]) >= 4
     )
@@ -404,7 +416,7 @@ def test_increasing_integers_from_sequence():
     n = 6
     lb = 50000
     xs = minimal(
-        [integers_from(0)], lambda t: (
+        lists(integers(min_value=0)), lambda t: (
             n <= len(t) and
             all(t) and
             any(s >= lb for s in t) and
@@ -422,7 +434,9 @@ def test_find_large_union_list():
         union = reduce(operator.or_, xs)
         return len(union) >= 30
 
-    result = minimal([{int}], large_mostly_non_overlapping, timeout_after=30)
+    result = minimal(
+        lists(sets(integers())),
+        large_mostly_non_overlapping, timeout_after=30)
     union = reduce(operator.or_, result)
     assert len(union) == 30
     assert max(union) == min(union) + len(union) - 1
@@ -434,7 +448,7 @@ def test_find_large_union_list():
 
 def test_anti_sorted_ordered_pair():
     result = minimal(
-        [OrderedPair],
+        lists(ordered_pair),
         lambda x: (
             len(x) >= 30 and
             2 < length_of_longest_ordered_sequence(x) <= 10))
@@ -445,7 +459,8 @@ def test_constant_lists_of_diverse_length():
     # This does not currently work very well. We delete, but we don't actually
     # get all that far with simplification of the individual elements.
     result = minimal(
-        [constant_list(int)], lambda x: len(set(map(len, x))) >= 20,
+        lists(constant_list(integers())),
+        lambda x: len(set(map(len, x))) >= 20,
         timeout_after=30,
     )
 
@@ -454,7 +469,7 @@ def test_constant_lists_of_diverse_length():
 
 def test_finds_non_reversible_floats():
     t = minimal(
-        [float], lambda xs: sum(xs) != sum(reversed(xs)),
+        lists(floats()), lambda xs: sum(xs) != sum(reversed(xs)),
         timeout_after=20,
     )
     assert len(t) <= 10
