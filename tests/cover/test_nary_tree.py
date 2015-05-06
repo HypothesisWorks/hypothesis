@@ -13,13 +13,14 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+from hypothesis.strategies import integers
 from hypothesis.internal.debug import minimal
-from hypothesis.searchstrategy.narytree import Leaf, Branch, NAryTree
+from hypothesis.searchstrategy.narytree import Leaf, Branch, n_ary_tree
 
 
 def smallest_tree(predicate):
     return minimal(
-        NAryTree(int, int, int), predicate
+        n_ary_tree(integers(), integers(), integers()), predicate
     )
 
 
