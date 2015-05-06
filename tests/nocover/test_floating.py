@@ -18,34 +18,33 @@ from __future__ import division, print_function, absolute_import, \
 
 import sys
 import math
-from random import Random
 
 from hypothesis import Settings, given, assume
 from hypothesis.errors import Unsatisfiable
 from tests.common.utils import fails, fails_with
-from hypothesis.specifiers import floats_in_range
+from hypothesis.strategies import lists, floats, randoms
 from hypothesis.searchstrategy.numbers import NastyFloats
 
 
-@given(float)
+@given(floats())
 def test_is_float(x):
     assert isinstance(x, float)
 
 
 @fails
-@given(float)
+@given(floats())
 def test_inversion_is_imperfect(x):
     assume(x != 0.0)
     y = 1.0 / x
     assert x * y == 1.0
 
 
-@given(floats_in_range(-sys.float_info.max, sys.float_info.max))
+@given(floats(-sys.float_info.max, sys.float_info.max))
 def test_largest_range(x):
     assert not math.isinf(x)
 
 
-@given(float)
+@given(floats())
 def test_negation_is_self_inverse(x):
     assume(not math.isnan(x))
     y = -x
@@ -53,41 +52,41 @@ def test_negation_is_self_inverse(x):
 
 
 @fails
-@given([float])
+@given(lists(floats()))
 def test_is_not_nan(xs):
     assert not any(math.isnan(x) for x in xs)
 
 
 @fails
-@given(float)
+@given(floats())
 def test_is_not_positive_infinite(x):
     assume(x > 0)
     assert not math.isinf(x)
 
 
 @fails
-@given(float)
+@given(floats())
 def test_is_not_negative_infinite(x):
     assume(x < 0)
     assert not math.isinf(x)
 
 
 @fails
-@given(float)
+@given(floats())
 def test_is_int(x):
     assume(not (math.isinf(x) or math.isnan(x)))
     assert x == int(x)
 
 
 @fails
-@given(float)
+@given(floats())
 def test_is_not_int(x):
     assume(not (math.isinf(x) or math.isnan(x)))
     assert x != int(x)
 
 
 @fails
-@given(float)
+@given(floats())
 def test_is_in_exact_int_range(x):
     assume(not (math.isinf(x) or math.isnan(x)))
     assert x + 1 != x
@@ -104,32 +103,32 @@ else:
 
 
 @fails
-@given(float)
+@given(floats())
 def test_can_generate_really_small_positive_floats(x):
     assume(x > 0)
     assert x >= REALLY_SMALL_FLOAT
 
 
 @fails
-@given(float)
+@given(floats())
 def test_can_generate_really_small_negative_floats(x):
     assume(x < 0)
     assert x <= -REALLY_SMALL_FLOAT
 
 
 @fails
-@given(float)
+@given(floats())
 def test_can_find_floats_that_do_not_round_trip_through_strings(x):
     assert float(str(x)) == x
 
 
 @fails
-@given(float)
+@given(floats())
 def test_can_find_floats_that_do_not_round_trip_through_reprs(x):
     assert float(repr(x)) == x
 
 
-@given(float, float, Random)
+@given(floats(), floats(), randoms())
 def test_floats_are_in_range(x, y, rand):
     assume(not (math.isnan(x) or math.isnan(y)))
     assume(not (math.isinf(x) or math.isinf(y)))
@@ -137,7 +136,7 @@ def test_floats_are_in_range(x, y, rand):
     assume(x < y)
 
     with Settings(max_examples=10):
-        @given(floats_in_range(x, y), random=rand)
+        @given(floats(x, y), random=rand)
         def test_is_in_range(t):
             assert x <= t <= y
 
