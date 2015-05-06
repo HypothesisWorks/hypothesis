@@ -19,6 +19,7 @@ from random import Random
 import pytest
 from hypothesis import Settings, strategy
 from tests.common import standard_types
+from hypothesis.strategies import lists
 from hypothesis.utils.show import show
 from hypothesis.internal.debug import via_database, some_template, \
     minimal_elements
@@ -45,7 +46,7 @@ def test_round_tripping_lists_via_the_database(spec):
     random = Random(hashlib.md5(
         (show(spec) + ':test_round_tripping_via_the_database').encode('utf-8')
     ).digest())
-    strat = strategy([spec], Settings(average_list_length=10))
+    strat = lists(spec)
     template = some_template(strat, random)
     template_via_db = via_database(spec, strat, template)
     assert show(strat.reify(template)) == show(strat.reify(template_via_db))
@@ -85,9 +86,8 @@ def minimal_basic():
 
 
 @pytest.mark.parametrize(
-    'spec', standard_types, ids=list(map(show, standard_types)))
-def test_only_raises_bad_data_on_minimal(spec):
-    strat = strategy(spec)
+    'strat', standard_types, ids=list(map(show, standard_types)))
+def test_only_raises_bad_data_on_minimal(strat):
     for m in minimal_basic():
         try:
             strat.from_basic(m)
