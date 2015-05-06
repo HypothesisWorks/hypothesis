@@ -17,9 +17,10 @@ import random
 from itertools import islice
 
 import pytest
+from hypothesis.strategies import booleans, integers
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.examplesource import ParameterSource
-from hypothesis.searchstrategy.strategies import BuildContext, strategy
+from hypothesis.searchstrategy.strategies import BuildContext
 
 N_EXAMPLES = 2500
 
@@ -27,7 +28,7 @@ N_EXAMPLES = 2500
 def test_negative_is_not_too_far_off_mean():
     source = ParameterSource(
         context=BuildContext(random.Random()),
-        strategy=strategy(int),
+        strategy=integers(),
     )
     positive = 0
     i = 0
@@ -47,7 +48,7 @@ def test_marking_negative_avoids_similar_examples():
     for _ in hrange(k):
         source = ParameterSource(
             context=BuildContext(random.Random()),
-            strategy=strategy(int),
+            strategy=integers(),
         )
         n = N_EXAMPLES // k
         for example in islice(source.examples(), n):
@@ -64,7 +65,7 @@ def test_can_grow_the_set_of_available_parameters_if_doing_badly():
     for _ in hrange(runs):
         source = ParameterSource(
             context=BuildContext(random.Random()),
-            strategy=strategy(int),
+            strategy=integers(),
             min_parameters=1,
         )
         i = 0
@@ -82,7 +83,7 @@ def test_can_grow_the_set_of_available_parameters_if_doing_badly():
 def test_errors_if_you_mark_bad_twice():
     source = ParameterSource(
         context=BuildContext(random.Random()),
-        strategy=strategy(int),
+        strategy=integers(),
     )
     next(iter(source))
     source.mark_bad()
@@ -93,7 +94,7 @@ def test_errors_if_you_mark_bad_twice():
 def test_errors_if_you_mark_bad_before_fetching():
     source = ParameterSource(
         context=BuildContext(random.Random()),
-        strategy=strategy(int),
+        strategy=integers(),
     )
     with pytest.raises(ValueError):
         source.mark_bad()
@@ -102,7 +103,7 @@ def test_errors_if_you_mark_bad_before_fetching():
 def test_tries_each_parameter_at_least_min_index_times():
     source = ParameterSource(
         context=BuildContext(random.Random()),
-        strategy=strategy(int),
+        strategy=integers(),
         min_tries=5
     )
     i = 0
@@ -119,7 +120,7 @@ def test_tries_each_parameter_at_least_min_index_times():
 def test_culls_valid_parameters_if_lots_are_bad():
     source = ParameterSource(
         context=BuildContext(random.Random()),
-        strategy=strategy(int),
+        strategy=integers(),
         min_tries=5
     )
     for _ in islice(source, 200):
@@ -137,7 +138,7 @@ def test_culls_valid_parameters_if_lots_are_bad():
 def test_caps_number_of_parameters_tried():
     source = ParameterSource(
         context=BuildContext(random.Random()),
-        strategy=strategy(bool),
+        strategy=booleans(),
         max_tries=1,
     )
 
@@ -150,7 +151,7 @@ def test_caps_number_of_parameters_tried():
 def test_eventually_culls_parameters_which_stop_being_valid():
     source = ParameterSource(
         context=BuildContext(random.Random()),
-        strategy=strategy(bool),
+        strategy=booleans(),
         min_tries=5
     )
     seen = set()
