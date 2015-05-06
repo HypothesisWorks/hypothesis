@@ -338,7 +338,7 @@ def fractions():
 
 
 def decimals():
-    from decimals import Decimal
+    from decimal import Decimal
     return (
         floats().map(Decimal) |
         fractions().map(
