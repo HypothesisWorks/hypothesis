@@ -14,15 +14,16 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import pytest
-from hypothesis import given, strategy
+from hypothesis import given
+from hypothesis.strategies import lists, integers
 
 
 @pytest.mark.parametrize(('specifier', 'condition'), [
-    (int, lambda x: x > 1),
-    ([int], bool),
+    (integers(), lambda x: x > 1),
+    (lists(integers()), bool),
 ])
 def test_filter_correctly(specifier, condition):
-    @given(strategy(specifier).filter(condition))
+    @given(specifier.filter(condition))
     def test_is_filtered(x):
         assert condition(x)
 
