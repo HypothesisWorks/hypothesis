@@ -22,6 +22,8 @@ from hypothesis.errors import BadData, NoExamples, WrongFormat, \
 from hypothesis.control import assume
 from hypothesis.settings import Settings
 from hypothesis.specifiers import OneOf
+from hypothesis.utils.show import show
+from hypothesis.deprecation import HypothesisDeprecationWarning
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.utils.extmethod import ExtMethod
 from hypothesis.internal.chooser import chooser
@@ -39,11 +41,12 @@ class StrategyExtMethod(ExtMethod):
         if isinstance(specifier, SearchStrategy):
             return specifier
 
-        warn(DeprecationWarning((
-            'Calling strategy on non-strategy object %r is deprecated '
-            'and will be removed in Hypothesis 2.0') % (
-                specifier,
-        )))
+        warn(HypothesisDeprecationWarning((
+            'Calling strategy with non-strategy object %s is deprecated '
+            'and will be removed in Hypothesis 2.0. Use the functions in '
+            'hypothesis.strategies instead.') % (
+                show(specifier),
+        )), stacklevel=2)
 
         if settings is None:
             settings = Settings()

@@ -54,7 +54,7 @@ def test_prints_intermediate_in_success():
 def test_reports_differently_for_single_shrink():
     with capture_verbosity(Verbosity.verbose) as o:
         @fails
-        @given(SillyStrategy)
+        @given(SillyStrategy, settings=Settings(database=None))
         def test_foo(x):
             assert False
         test_foo()
