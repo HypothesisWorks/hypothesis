@@ -33,6 +33,6 @@ def test_can_collectively_minimize(spec):
     xs = find(
         lists(spec),
         lambda x: len(x) >= 10 and len(set((map(repr, x)))) >= 2,
-        settings=Settings(timeout=1.0, average_list_length=3))
+        settings=Settings(timeout=2.0, average_list_length=3))
     assert len(xs) == 10
     assert len(set((map(repr, xs)))) == 2
