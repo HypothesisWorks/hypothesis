@@ -20,6 +20,7 @@ import hypothesis.reporting as reporting
 from hypothesis import given
 from hypothesis.errors import AbnormalExit
 from tests.common.utils import capture_out
+from hypothesis.strategies import sets, booleans, integers
 
 ForkingTestCase = pytest.importorskip(
     'hypothesis.testrunners.forking'
@@ -29,7 +30,7 @@ ForkingTestCase = pytest.importorskip(
 def test_runs_normally_if_no_failure():
     class Foo(ForkingTestCase):
 
-        @given({bool})
+        @given(sets(booleans()))
         def runs_normally(self, x):
             pass
 
