@@ -21,7 +21,3 @@ class HypothesisDeprecationWarning(DeprecationWarning):
 
 
 warnings.simplefilter('once', HypothesisDeprecationWarning)
-
-
-def warn_deprecation(msg):
-    warnings.warn(HypothesisDeprecationWarning(msg), stacklevel=2)
