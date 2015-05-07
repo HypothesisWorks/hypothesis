@@ -3,7 +3,11 @@
 set -e
 set -x
 
-ulimit -m 2000000 -v 2000000
+if [ "$TOXENV" != "pypy" ]; then
+    if [ "$TOXENV" != "pypy3" ];  then
+        ulimit -m 2000000 -v 2000000
+    fi
+fi
 
 export PATH="$HOME/snakepit:$HOME/.pyenv/bin:$PATH"
 eval "$(pyenv init -)"
