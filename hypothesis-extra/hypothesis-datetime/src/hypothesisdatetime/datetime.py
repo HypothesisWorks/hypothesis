@@ -18,6 +18,7 @@ from collections import namedtuple
 
 import pytz
 import hypothesis.internal.distributions as dist
+from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
     strategy, check_length, check_data_type
@@ -57,14 +58,13 @@ class DatetimeStrategy(SearchStrategy):
             'p_second',
             'month',
             'naive_chance',
-            'utc_chance',
             'timezones',
-            'naive_options',
         )
     )
 
-    def __init__(self, naive_options=None):
-        self.naive_options = naive_options or {False, True}
+    def __init__(self, allow_naive, timezones):
+        self.allow_naive = allow_naive
+        self.timezones = timezones
 
     def produce_parameter(self, random):
         return self.Parameter(
@@ -73,15 +73,8 @@ class DatetimeStrategy(SearchStrategy):
             p_second=dist.uniform_float(random, 0, 1),
             month=dist.non_empty_subset(random, list(range(1, 13))),
             naive_chance=dist.uniform_float(random, 0, 0.5),
-            utc_chance=dist.uniform_float(random, 0, 1),
-            timezones=dist.non_empty_subset(
-                random,
-                list(
-                    map(pytz.timezone, pytz.all_timezones))
-            ),
-            naive_options=dist.non_empty_subset(random,
-                                                self.naive_options
-                                                )
+            timezones=self.timezones and dist.non_empty_subset(
+                random, self.timezones),
         )
 
     def produce_template(self, context, pv):
@@ -97,21 +90,15 @@ class DatetimeStrategy(SearchStrategy):
             second=maybe_zero_or(random, pv.p_second, random.randint(0, 59)),
             microsecond=random.randint(0, 1000000 - 1),
         )
-        if not self.supports_timezones():
+        if not pv.timezones:
             return self.templateize(base)
 
-        if random.random() <= pv.utc_chance:
-            timezone = pytz.UTC
-        else:
-            timezone = random.choice(pv.timezones)
+        timezone = random.choice(pv.timezones)
 
-        if not self.supports_naive():
+        if not self.allow_naive:
             return self.templateize(timezone.localize(base))
 
-        if len(pv.naive_options) == 1:
-            naive = list(pv.naive_options)[0]
-        else:
-            naive = random.random() <= pv.naive_chance
+        naive = random.random() <= pv.naive_chance
 
         if naive:
             return self.templateize(base)
@@ -141,24 +128,21 @@ class DatetimeStrategy(SearchStrategy):
             d = pytz.timezone(tz).localize(d)
         return d
 
-    def supports_timezones(self):
-        return False in self.naive_options
-
-    def supports_naive(self):
-        return True in self.naive_options
-
     def simplifiers(self, random, template):
         yield self.simplify_timezones
         yield self.simplify_towards_2000
 
     def simplify_timezones(self, random, value):
         value = self.reify(value)
-        if self.supports_timezones():
+        if self.timezones:
             if not value.tzinfo:
-                yield self.templateize(pytz.UTC.localize(value))
-            elif value.tzinfo != pytz.UTC:
-                yield self.templateize(
-                    pytz.UTC.normalize(value.astimezone(pytz.UTC)))
+                yield self.templateize(self.timezones[0].localize(value))
+            else:
+                for j in hrange(len(self.timezones)):
+                    tz = self.timezones[j]
+                    if tz.zone == value.tzinfo.zone:
+                        break
+                    yield self.templateize(tz.normalize(value.astimezone(tz)))
 
     def simplify_towards_2000(self, random, value):
         value = self.reify(value)
@@ -213,11 +197,44 @@ class DatetimeStrategy(SearchStrategy):
         return tuple(values)
 
 
+def datetimes(allow_naive=None, timezones=None):
+    """Return a strategy for generating datetimes.
+
+    allow_naive=True will cause the values to sometimes be naive.
+    timezones is the set of permissible timezones. If set to an empty
+    collection all timezones must be naive. If set to None all available
+    timezones will be used.
+
+    """
+    if timezones is None:
+        timezones = list(pytz.all_timezones)
+        timezones.remove('UTC')
+        timezones.insert(0, 'UTC')
+    timezones = [
+        tz if isinstance(tz, dt.tzinfo) else pytz.timezone(tz)
+        for tz in timezones
+    ]
+    if allow_naive is None:
+        allow_naive = not timezones
+    if not (timezones or allow_naive):
+        raise InvalidArgument(
+            'Cannot create non-naive datetimes with no timezones allowed'
+        )
+    return DatetimeStrategy(
+        allow_naive=allow_naive, timezones=timezones
+    )
+
+
 @strategy.extend_static(dt.datetime)
 def datetime_strategy(cls, settings):
-    return DatetimeStrategy()
+    return datetimes()
 
 
 @strategy.extend(DatetimeSpec)
 def datetime_specced_strategy(spec, settings):
-    return DatetimeStrategy(spec.naive_options)
+    if not spec.naive_options:
+        raise InvalidArgument('Must allow either naive or non-naive datetimes')
+    return datetimes(
+        allow_naive=(True in spec.naive_options),
+        timezones=(None if False in spec.naive_options else [])
+    )
