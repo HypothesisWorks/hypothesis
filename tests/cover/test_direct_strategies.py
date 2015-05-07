@@ -178,6 +178,7 @@ def test_float_can_find_min_value_inf():
 
 def test_can_use_basic_strategies():
     assert find(ds.basic(Bitfields), lambda x: True) == 0
+    assert find(ds.basic(Bitfields()), lambda x: True) == 0
     assert find(ds.basic(BoringBitfields), lambda x: True) != 0
 
 
