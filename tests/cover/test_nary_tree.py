@@ -34,6 +34,23 @@ def test_tree_minimizes_number_of_branch_children():
     )
 
 
+def depth(tree):
+    if isinstance(tree, Leaf):
+        return 1
+    else:
+        if not tree.keyed_children:
+            return 1
+        return 1 + max(depth(v) for k, v in tree.keyed_children)
+
+
+def test_deep_trees():
+    tree = smallest_tree(lambda t:  depth(t) >= 3)
+    assert depth(tree) == 3
+    while isinstance(tree, Branch):
+        assert len(tree.keyed_children) == 1
+        tree = tree.keyed_children[0][1]
+
+
 def test_tree_minimizes_individual_branch_children():
     assert smallest_tree(
         lambda t: len(getattr(t, 'keyed_children', ())) > 1) == Branch(
