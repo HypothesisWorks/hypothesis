@@ -30,7 +30,7 @@ def from_dtype(dtype):
     elif dtype.kind == 'f':
         result = st.floats()
     elif dtype.kind == 'c':
-        result = st.complexes()
+        result = st.complex_numbers()
     elif dtype.kind in ('S', 'a', 'V'):
         result = st.binary()
     elif dtype.kind == 'u':

@@ -15,15 +15,15 @@ from __future__ import division, print_function, absolute_import, \
 
 import pytest
 from hypothesis.strategies import just, sets, text, lists, binary, \
-    floats, one_of, tuples, randoms, booleans, integers, complexes, \
-    frozensets, dictionaries, sampled_from
+    floats, one_of, tuples, randoms, booleans, integers, frozensets, \
+    dictionaries, sampled_from, complex_numbers
 from hypothesis.searchstrategy.narytree import n_ary_tree
 from hypothesis.searchstrategy.strategies import BadData, strategy
 
 
 @pytest.mark.parametrize(('specifier', 'data'), [
     (sets(text()), 0j),
-    (complexes(), {'hi'}),
+    (complex_numbers(), {'hi'}),
     (lists(sets(booleans())), 0),
     (just(1), 'hi'),
     (binary(), 0.0),

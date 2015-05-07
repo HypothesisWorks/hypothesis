@@ -22,8 +22,8 @@ from tests.common.basic import Bitfields, BoringBitfields, \
 from hypothesis.stateful import StateMachineSearchStrategy
 from hypothesis.strategies import just, none, sets, text, basic, lists, \
     binary, floats, one_of, tuples, randoms, booleans, decimals, \
-    integers, complexes, fractions, streaming, frozensets, dictionaries, \
-    sampled_from
+    integers, fractions, streaming, frozensets, dictionaries, \
+    sampled_from, complex_numbers
 from hypothesis.strategytests import mutate_basic, templates_for, \
     strategy_test_suite
 from hypothesis.internal.compat import hrange
@@ -63,7 +63,7 @@ with Settings(average_list_length=5.0):
     BinaryString = strategy_test_suite(binary())
     TestIntBool = strategy_test_suite(tuples(integers(), booleans()))
     TestFloats = strategy_test_suite(floats())
-    TestComplex = strategy_test_suite(complexes())
+    TestComplex = strategy_test_suite(complex_numbers())
     TestJust = strategy_test_suite(just('hi'))
     TestTemplates = strategy_test_suite(templates_for(sets(integers())))
 
@@ -84,7 +84,7 @@ with Settings(average_list_length=5.0):
     TestFrozenSets = strategy_test_suite(frozensets(booleans()))
 
     TestNestedSets = strategy_test_suite(
-        frozensets(frozensets(complexes())))
+        frozensets(frozensets(complex_numbers())))
 
     TestMisc1 = strategy_test_suite(dictionaries(
         {(2, -374): frozensets(none())}))
@@ -185,7 +185,7 @@ TestStatemachine = strategy_test_suite(StateMachineSearchStrategy())
 def test_repr_has_specifier_in_it():
     suite = TestComplex(
         'test_can_round_trip_through_the_database')
-    assert repr(suite) == 'strategy_test_suite(%r)' % (complexes(),)
+    assert repr(suite) == 'strategy_test_suite(%r)' % (complex_numbers(),)
 
 
 def test_can_mutate_non_basic():

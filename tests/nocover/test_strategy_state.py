@@ -24,8 +24,8 @@ from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, \
     StateMachineSearchStrategy, rule
 from hypothesis.strategies import just, none, text, lists, binary, \
-    floats, tuples, randoms, booleans, decimals, integers, complexes, \
-    fractions, streaming, sampled_from
+    floats, tuples, randoms, booleans, decimals, integers, fractions, \
+    streaming, sampled_from, complex_numbers
 from hypothesis.utils.show import show
 from hypothesis.strategytests import mutate_basic, templates_for
 from hypothesis.searchstrategy.strategies import BuildContext
@@ -183,9 +183,9 @@ class HypothesisSpec(RuleBasedStateMachine):
         assert as_basic == strat.to_basic(strat.from_basic(as_basic))
 
     @rule(target=strategies, spec=sampled_from((
-        integers(), booleans(), floats(), complexes(), fractions(), decimals(),
-        text(), binary(), none(), StateMachineSearchStrategy(),
-        tuples(),
+        integers(), booleans(), floats(), complex_numbers(),
+        fractions(), decimals(), text(), binary(), none(),
+        StateMachineSearchStrategy(), tuples(),
     )))
     def strategy(self, spec):
         return spec

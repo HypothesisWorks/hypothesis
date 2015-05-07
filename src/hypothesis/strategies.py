@@ -134,7 +134,7 @@ def floats(min_value=None, max_value=None):
         ) | just(float('-inf'))
 
 
-def complexes():
+def complex_numbers():
     from hypothesis.searchstrategy.numbers import ComplexStrategy
     return ComplexStrategy(
         tuples(floats(), floats())

@@ -19,7 +19,7 @@ from random import Random
 
 import pytest
 from hypothesis import find
-from hypothesis.strategies import lists, floats, integers, complexes
+from hypothesis.strategies import lists, floats, integers, complex_numbers
 from hypothesis.searchstrategy.numbers import is_integral
 from hypothesis.searchstrategy.strategies import BadData
 
@@ -92,8 +92,8 @@ def test_find_non_boundary_float():
 
 
 def test_can_find_standard_complex_numbers():
-    find(complexes(), lambda x: x.imag != 0) == 0j
-    find(complexes(), lambda x: x.real != 0) == 1
+    find(complex_numbers(), lambda x: x.imag != 0) == 0j
+    find(complex_numbers(), lambda x: x.real != 0) == 1
 
 
 def test_minimial_float_is_zero():

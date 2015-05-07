@@ -20,7 +20,7 @@ from collections import namedtuple
 import pytest
 from hypothesis import find, strategy
 from hypothesis.strategies import sets, lists, tuples, booleans, \
-    integers, complexes, frozensets, dictionaries
+    integers, frozensets, dictionaries, complex_numbers
 
 
 @pytest.mark.parametrize(('col', 'strat'), [
@@ -171,7 +171,7 @@ def test_list_simplicity():
 
 
 def test_nested_set_complexity():
-    strat = frozensets(frozensets(complexes()))
+    strat = frozensets(frozensets(complex_numbers()))
 
     rnd = Random(0)
     template = (
