@@ -64,7 +64,7 @@ class NAryTreeStrategy(SearchStrategy):
                 random),
             branch_label_parameter=self.branch_label_strategy.draw_parameter(
                 random),
-            branch_factor=uniform_float(random, 0.6, 0.99),
+            branch_factor=uniform_float(random, 0.75, 0.99),
         )
 
     def produce_template(self, context, pv):

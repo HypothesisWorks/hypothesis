@@ -66,6 +66,7 @@ with Settings(average_list_length=10.0):
         lists(max_size=0), tuples(), sets(max_size=0), frozensets(max_size=0),
         dictionaries(),
         n_ary_tree(booleans(), booleans(), booleans()),
+        n_ary_tree(integers(), integers(), integers()),
         abc(booleans(), booleans(), booleans()),
         abc(booleans(), booleans(), integers()),
         templates_for(one_of(*map(just, hrange(10)))),
