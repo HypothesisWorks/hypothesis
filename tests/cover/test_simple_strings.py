@@ -46,7 +46,8 @@ def test_can_find_mixed_ascii_and_non_ascii_stringgs():
 
 def test_will_find_ascii_examples_given_the_chance():
     s = find(tuples(text(), text()), lambda x: x[0] and (x[0] < x[1]))
-    assert s == ('0', '1')
+    assert ord(s[1]) == ord(s[0]) + 1
+    assert '0' in s
 
 
 def test_finds_single_element_strings():
