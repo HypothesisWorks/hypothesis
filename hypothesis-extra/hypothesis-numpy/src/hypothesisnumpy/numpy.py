@@ -14,42 +14,38 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import operator
-from collections import namedtuple
 
 import numpy as np
-from hypothesis import strategy
-from hypothesis.specifiers import integers_in_range
+import hypothesis.strategies as st
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import hrange, reduce, text_type, \
     binary_type
 from hypothesis.searchstrategy.strategies import check_length, \
     check_data_type
 
-ArrayDescription = namedtuple('ArrayDescription', ('dtype', 'shape'))
 
-
-@strategy.extend(np.dtype)
-def dtype_strategy(dtype, settings):
+def from_dtype(dtype):
     if dtype.kind == 'b':
-        result = bool
+        result = st.booleans()
     elif dtype.kind == 'f':
-        result = float
+        result = st.floats()
     elif dtype.kind == 'c':
-        result = complex
+        result = st.complexes()
     elif dtype.kind in ('S', 'a', 'V'):
-        result = binary_type
+        result = st.binary()
     elif dtype.kind == 'u':
-        result = integers_in_range(0, 1 << (4 * dtype.itemsize) - 1)
+        result = st.integers(
+            min_value=0, max_value=1 << (4 * dtype.itemsize) - 1)
     elif dtype.kind == 'i':
         min_integer = -1 << (4 * dtype.itemsize - 1)
-        result = integers_in_range(min_integer, -min_integer - 1)
+        result = st.integers(min_value=min_integer, max_value=-min_integer - 1)
     elif dtype.kind == 'U':
-        result = text_type
+        result = st.text()
     else:
         raise NotImplementedError(
             'No strategy implementation for %r' % (dtype,)
         )
-    return strategy(result, settings).map(dtype.type)
+    return result.map(dtype.type)
 
 
 class ArrayStrategy(SearchStrategy):
@@ -202,46 +198,26 @@ class ArrayStrategy(SearchStrategy):
         return result.reshape(self.shape)
 
 
-def arrays(specifier, shape):
-    if isinstance(shape, int):
-        shape = (shape,)
-    if isinstance(specifier, (text_type, binary_type)):
-        specifier = np.dtype(specifier)
-    shape = tuple(shape)
-    if not shape:
-        dt = np.dtype(specifier)
-        if dt.kind != 'O':
-            return dt
-        return specifier
-    else:
-        return ArrayDescription(specifier, shape)
-
-
 def is_scalar(spec):
     return spec in (
         int, bool, text_type, binary_type, float, complex
     )
 
 
-@strategy.extend(ArrayDescription)
-def array_strategy(specifier, settings):
-    dtype = specifier.dtype
-    if isinstance(dtype, (text_type, binary_type)):
-        dtype = np.dtype(dtype)
-
+def arrays(dtype, shape, elements=None):
     if not isinstance(dtype, np.dtype):
-        if is_scalar(dtype):
-            dtype = np.dtype(dtype)
-        else:
-            dtype = np.dtype('object')
-
-    if dtype.kind != 'O':
-        typ = dtype
+        dtype = np.dtype(dtype)
+    if elements is None:
+        elements = from_dtype(dtype)
+    if isinstance(shape, int):
+        shape = (shape,)
+    shape = tuple(shape)
+    if not shape:
+        if dtype.kind != 'O':
+            return elements
     else:
-        typ = specifier.dtype
-
-    return ArrayStrategy(
-        shape=specifier.shape,
-        dtype=dtype,
-        element_strategy=strategy(typ, settings),
-    )
+        return ArrayStrategy(
+            shape=shape,
+            dtype=dtype,
+            element_strategy=elements
+        )

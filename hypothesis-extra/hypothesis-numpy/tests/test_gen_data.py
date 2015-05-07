@@ -15,8 +15,9 @@ from __future__ import division, print_function, absolute_import, \
 
 import numpy as np
 import pytest
-from hypothesis import find, given, strategy
-from hypothesis.extra.numpy import arrays
+import hypothesis.strategies as st
+from hypothesis import find, given
+from hypothesis.extra.numpy import arrays, from_dtype
 from hypothesis.strategytests import strategy_test_suite
 from hypothesis.internal.compat import text_type, binary_type
 
@@ -35,7 +36,7 @@ STANDARD_TYPES = list(map(np.dtype, [
 
 @pytest.mark.parametrize('t', STANDARD_TYPES)
 def test_produces_instances(t):
-    @given(t)
+    @given(from_dtype(t))
     def test_is_t(x):
         assert isinstance(x, t.type)
         assert x.dtype.kind == t.kind
@@ -45,15 +46,6 @@ def test_produces_instances(t):
 @given(arrays(float, ()))
 def test_empty_dimensions_are_scalars(x):
     assert isinstance(x, np.dtype(float).type)
-
-
-class Foo(object):
-    pass
-
-
-@given(arrays(Foo, ()))
-def test_generates_composite_types_as_scalars(x):
-    assert isinstance(x, Foo)
 
 
 @given(arrays('uint32', (5, 5)))
@@ -81,18 +73,22 @@ def test_can_minimize_float_arrays():
     assert 1.0 <= x.sum() <= 1.01
 
 
-@strategy.extend_static(Foo)
-def sf(spec, settings):
-    return strategy((), settings).map(lambda x: Foo())
+class Foo(object):
+    pass
+
+
+foos = st.tuples().map(lambda _: Foo())
 
 
 def test_can_create_arrays_of_composite_types():
-    arr = find(arrays(Foo, 100), lambda x: True)
+    arr = find(arrays(object, 100, foos), lambda x: True)
     for x in arr:
         assert isinstance(x, Foo)
 
 
 def test_can_create_arrays_of_tuples():
-    arr = find(arrays((int, int), 10), lambda x: all(t[0] < t[1] for t in x))
+    arr = find(
+        arrays(object, 10, st.tuples(st.integers(), st.integers())),
+        lambda x: all(t[0] < t[1] for t in x))
     for a in arr:
         assert a in ((0, 1), (-1, 0))
