@@ -14,12 +14,14 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import django.db.models as dm
+import hypothesis.strategies as st
+import hypothesis.extra.fakefactory as ff
 from django.db import IntegrityError
+from hypothesis.errors import InvalidArgument
 from hypothesis.control import assume
-from hypothesis.specifiers import one_of, integers_in_range
-from hypothesis.internal.compat import text_type, binary_type
-from hypothesis.searchstrategy.strategies import MappedSearchStrategy, \
-    strategy
+from hypothesis.extra.datetime import datetimes
+from hypothesis.searchstrategy.strategies import SearchStrategy, \
+    MappedSearchStrategy
 
 
 class ModelNotSupported(Exception):
@@ -38,63 +40,77 @@ def referenced_models(model, seen=None):
     return seen
 
 
-def model_to_base_specifier(model):
-    import hypothesis.extra.fakefactory as ff
-    from hypothesis.extra.datetime import timezone_aware_datetime
-    mappings = {
-        dm.SmallIntegerField: integers_in_range(-32768, 32767),
-        dm.IntegerField: integers_in_range(-2147483648, 2147483647),
-        dm.BigIntegerField:
-            integers_in_range(-9223372036854775808, 9223372036854775807),
-        dm.PositiveIntegerField: integers_in_range(0, 2147483647),
-        dm.PositiveSmallIntegerField: integers_in_range(0, 32767),
-        dm.BinaryField: binary_type,
-        dm.BooleanField: bool,
-        dm.CharField: text_type,
-        dm.DateTimeField: timezone_aware_datetime,
-        dm.EmailField: ff.FakeFactory('email'),
-        dm.FloatField: float,
-        dm.NullBooleanField: one_of((None, bool)),
-    }
+__default_field_mappings = None
 
+
+def field_mappings():
+    global __default_field_mappings
+
+    if __default_field_mappings is None:
+        __default_field_mappings = {
+            dm.SmallIntegerField: st.integers(-32768, 32767),
+            dm.IntegerField: st.integers(-2147483648, 2147483647),
+            dm.BigIntegerField:
+                st.integers(-9223372036854775808, 9223372036854775807),
+            dm.PositiveIntegerField: st.integers(0, 2147483647),
+            dm.PositiveSmallIntegerField: st.integers(0, 32767),
+            dm.BinaryField: st.binary(),
+            dm.BooleanField: st.booleans(),
+            dm.CharField: st.text(),
+            dm.DateTimeField: datetimes(allow_naive=False),
+            dm.EmailField: ff.fake_factory('email'),
+            dm.FloatField: st.floats(),
+            dm.NullBooleanField: st.one_of(st.none(), st.booleans()),
+        }
+    return __default_field_mappings
+
+
+def add_default_field_mapping(field_type, strategy):
+    field_mappings()[field_type] = strategy
+
+
+def models(model, **extra):
     result = {}
+    mappings = field_mappings()
+    mandatory = set()
     for f in model._meta.concrete_fields:
         if isinstance(f, dm.AutoField):
             continue
         try:
             mapped = mappings[type(f)]
         except KeyError:
-            if isinstance(f, dm.ForeignKey):
-                mapped = f.rel.to
-                if model in referenced_models(mapped):
-                    if f.null:
-                        continue
-                    else:
-                        raise ModelNotSupported((
-                            'non-nullable cycle starting %s -> %s. This is '
-                            'currently not supported.'
-                        ) % (model.__name__, mapped.__name__))
-            elif f.null:
-                continue
-            else:
-                raise ModelNotSupported((
-                    'No mapping defined for field type %s and %s is not '
-                    'nullable') % (
-                    type(f).__name__, f.name
-                ))
+            if not f.null:
+                mandatory.add(f.name)
+            continue
         if f.null:
-            mapped = one_of((None, mapped))
+            mapped = st.one_of(st.none(), mapped)
         result[f.name] = mapped
-    return result
+    missed = {x for x in mandatory if x not in extra}
+    if missed:
+        raise InvalidArgument((
+            'Missing arguments for mandatory field%s %s for model %s' % (
+                's' if len(missed) > 1 else '',
+                ', '.join(missed),
+                model.__name__,
+            )))
+    for k, v in extra.items():
+        if isinstance(v, SearchStrategy):
+            result[k] = v
+        else:
+            result[k] = st.just(v)
+    result.update(extra)
+    return ModelStrategy(model, result)
 
 
 class ModelStrategy(MappedSearchStrategy):
 
-    def __init__(self, model, settings):
+    def __init__(self, model, mappings):
         self.model = model
-        specifier = model_to_base_specifier(model)
         super(ModelStrategy, self).__init__(
-            strategy=strategy(specifier, settings))
+            strategy=st.dictionaries(mappings))
+
+    def __repr__(self):
+        return 'ModelStrategy(%s)' % (self.model.__name__,)
 
     def pack(self, value):
         try:
@@ -103,8 +119,3 @@ class ModelStrategy(MappedSearchStrategy):
             return result
         except IntegrityError:
             assume(False)
-
-
-@strategy.extend_static(dm.Model)
-def define_model_strategy(model, settings):
-    return ModelStrategy(model, settings)

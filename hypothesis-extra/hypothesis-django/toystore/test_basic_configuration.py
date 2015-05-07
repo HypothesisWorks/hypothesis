@@ -15,14 +15,15 @@ from __future__ import division, print_function, absolute_import, \
 
 from django.db import IntegrityError
 
-from hypothesis import given, strategy
+from hypothesis import given
 from toystore.models import Company
 from hypothesis.extra.django import TestCase, TransactionTestCase
 from unittest import TestCase as VanillaTestCase
+from hypothesis.strategies import integers
 
 
 class SomeStuff(object):
-    @given(int)
+    @given(integers())
     def test_is_blank_slate(self, unused):
         Company.objects.create(name='MickeyCo')
 
@@ -48,7 +49,7 @@ class TestWorkflow(VanillaTestCase):
             Company.objects.create(name='MickeyCo')
 
         class LocalTest(TestCase):
-            @given(strategy(int).map(break_the_db))
+            @given(integers().map(break_the_db))
             def test_does_not_break_other_things(self, unused):
                 pass
 

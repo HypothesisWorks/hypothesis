@@ -15,4 +15,4 @@ from __future__ import division, print_function, absolute_import, \
 
 
 def load():
-    __import__('hypothesis.extra.django.models')
+    pass

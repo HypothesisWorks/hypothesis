@@ -30,6 +30,15 @@ class CharmField(models.Field):
         return "char(1)"
 
 
+class CustomishField(models.Field):
+    def db_type(self, connection):
+        return "char(1)"
+
+
+class Customish(models.Model):
+    customish = CustomishField()
+
+
 class Customer(models.Model):
     name = models.CharField(max_length=100, unique=True)
     email = models.EmailField(max_length=100, unique=True)

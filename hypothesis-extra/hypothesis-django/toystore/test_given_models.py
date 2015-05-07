@@ -13,25 +13,28 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+from hypothesis.errors import InvalidArgument
 from hypothesis.extra.django import TestCase, TransactionTestCase
-from hypothesis.extra.django.models import ModelNotSupported
-from hypothesis import given, assume, strategy
+from hypothesis.extra.django.models import models, add_default_field_mapping
+from hypothesis import given, assume
 from toystore.models import Company, Customer, CouldBeCharming, Store, \
-    SelfLoop, LoopA, LoopB, ManyInts
-from unittest import TestCase as VanillaTestCase
+    SelfLoop, ManyInts, CustomishField, Customish
+from hypothesis.strategies import lists, just
+
+add_default_field_mapping(CustomishField, just("a"))
 
 
 class TestGetsBasicModels(TestCase):
-    @given(Company)
+    @given(models(Company))
     def test_is_company(self, company):
         self.assertIsInstance(company, Company)
         self.assertIsNotNone(company.pk)
 
-    @given(Store)
+    @given(models(Store, company=models(Company)))
     def test_can_get_a_store(self, store):
         assert store.company.pk
 
-    @given([Company])
+    @given(lists(models(Company)))
     def test_can_get_multiple_models_with_unique_field(self, companies):
         assume(len(companies) > 1)
         for c in companies:
@@ -40,38 +43,36 @@ class TestGetsBasicModels(TestCase):
             len(companies), len({c.name for c in companies})
         )
 
-    @given(Customer)
+    @given(models(Customer))
     def test_is_customer(self, customer):
         self.assertIsInstance(customer, Customer)
         self.assertIsNotNone(customer.pk)
         self.assertIsNotNone(customer.email)
 
-    @given(CouldBeCharming)
+    @given(models(CouldBeCharming))
     def test_is_not_charming(self, not_charming):
         self.assertIsInstance(not_charming, CouldBeCharming)
         self.assertIsNotNone(not_charming.pk)
         self.assertIsNone(not_charming.charm)
 
-    @given(SelfLoop)
+    @given(models(SelfLoop))
     def test_sl(self, sl):
         self.assertIsNone(sl.me)
 
-    @given([ManyInts])
+    @given(lists(models(ManyInts)))
     def test_no_overflow_in_integer(self, manyints):
         pass
+
+    @given(models(Customish))
+    def test_custom_field(self, x):
+        assert x.customish == "a"
+
+    def test_mandatory_fields_are_mandatory(self):
+        with self.assertRaises(InvalidArgument):
+            models(Store)
 
 
 class TestsNeedingRollback(TransactionTestCase):
     def test_can_get_examples(self):
         for _ in range(200):
-            strategy(Company).example()
-
-
-class TestUnsupportedModels(VanillaTestCase):
-
-    def test_mutual_loop_is_unsupported(self):
-        with self.assertRaises(ModelNotSupported):
-            strategy(LoopA)
-
-    def test_nullable_loop_is_supported(self):
-        strategy(LoopB)
+            models(Company).example()
