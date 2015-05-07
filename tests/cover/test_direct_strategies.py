@@ -202,4 +202,4 @@ def test_fractions():
 
 
 def test_decimals():
-    assert find(ds.decimals(), lambda f: f.is_fine() and f >= 1) == 1
+    assert find(ds.decimals(), lambda f: f.is_finite() and f >= 1) == 1
