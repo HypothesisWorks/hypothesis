@@ -182,7 +182,24 @@ def test_can_use_basic_strategies():
     assert find(ds.basic(BoringBitfields), lambda x: True) != 0
 
 
+def test_can_use_basic_strategies_with_only_kwargs():
+    assert find(
+        ds.basic(generate=BoringBitfields().generate), lambda x: True) != 0
+
+
 def test_can_override_simplify_in_basic_strategies():
     assert find(
         ds.basic(BoringBitfields, simplify=Bitfields().simplify),
         lambda x: True) == 0
+
+
+def test_can_find_none_list():
+    assert find(ds.lists(ds.none()), lambda x: len(x) >= 3) == [None] * 3
+
+
+def test_fractions():
+    assert find(ds.fractions(), lambda f: f >= 1) == 1
+
+
+def test_decimals():
+    assert find(ds.decimals(), lambda f: f >= 1) == 1
