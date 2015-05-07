@@ -100,11 +100,14 @@ def some_template(spec, random=None):
 
 def via_database(spec, strat, template):
     db = ExampleDatabase()
-    s = db.storage_for(strat, strat)
-    s.save(template)
-    results = list(s.fetch())
-    assert len(results) == 1
-    return results[0]
+    try:
+        s = db.storage_for(strat, strat)
+        s.save(template)
+        results = list(s.fetch())
+        assert len(results) == 1
+        return results[0]
+    finally:
+        db.close()
 
 
 def minimal_element(strategy, random):
