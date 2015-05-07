@@ -18,57 +18,38 @@ import hypothesis.internal.distributions as dist
 from faker import AVAILABLE_LOCALES
 from hypothesis.internal.compat import text_type
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
-    strategy, check_data_type
+    check_data_type
 
 
-class FakeFactory(object):
+def fake_factory(source, locale=None, locales=None, providers=()):
+    test_faker = faker.Faker()
 
-    def __init__(self, source, locale=None, locales=None, providers=()):
-        test_faker = faker.Faker()
+    for provider in providers:
+        test_faker.add_provider(provider)
 
-        for provider in providers:
-            test_faker.add_provider(provider)
-
-        self.source = source
-        if not hasattr(test_faker, source) or source[0] == '_':
-            raise ValueError('No such source %r' % (source,))
-        if locale is not None and locales is not None:
-            raise ValueError('Cannot specify both single and multiple locales')
-        if locale:
-            self.locales = (locale,)
-        elif locales:
-            self.locales = tuple(locales)
-        else:
-            self.locales = None
-        if self.locales:
-            for l in self.locales:
-                if l not in AVAILABLE_LOCALES:
-                    raise ValueError('Unsupported locale %r' % (l,))
-        self.providers = tuple(providers)
-
-    def __eq__(self, other):
-        return (
-            type(other) == type(self) and
-            self.source == other.source and
-            self.locales == other.locales and
-            self.providers == other.providers
-        )
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __hash__(self):
-        return hash((
-            type(self), self.source, self.locales
-        ))
+    if not hasattr(test_faker, source) or source[0] == '_':
+        raise ValueError('No such source %r' % (source,))
+    if locale is not None and locales is not None:
+        raise ValueError('Cannot specify both single and multiple locales')
+    if locale:
+        locales = (locale,)
+    elif locales:
+        locales = tuple(locales)
+    else:
+        locales = None
+    for l in (locales or ()):
+        if l not in AVAILABLE_LOCALES:
+            raise ValueError('Unsupported locale %r' % (l,))
+    locales = locales or AVAILABLE_LOCALES
+    return FakeFactoryStrategy(source, providers, locales)
 
 
 class FakeFactoryStrategy(SearchStrategy):
 
-    def __init__(self, details):
-        self.source = details.source
-        self.providers = details.providers
-        self.locales = details.locales or AVAILABLE_LOCALES
+    def __init__(self, source, providers, locales):
+        self.source = source
+        self.providers = tuple(providers)
+        self.locales = tuple(locales)
 
     def produce_parameter(self, random):
         return dist.non_empty_subset(random, self.locales)
@@ -89,8 +70,3 @@ class FakeFactoryStrategy(SearchStrategy):
     def from_basic(self, value):
         check_data_type(text_type, value)
         return value
-
-
-@strategy.extend(FakeFactory)
-def fake_factory_strategy(d, settings):
-    return FakeFactoryStrategy(d)
