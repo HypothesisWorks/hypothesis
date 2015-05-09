@@ -178,14 +178,21 @@ def simplify_template_such_that(
     successful_shrinks = 0
 
     changed = True
-    max_warmup = 10
-    warmup = 1
+    max_warmup = 5
+    warmup = 0
     while (
         (changed or warmup < max_warmup) and
         successful_shrinks < settings.max_shrinks
     ):
         changed = False
         warmup += 1
+        if warmup < max_warmup:
+            debug_report('Running warmup simplification round %d' % (
+                warmup
+            ))
+        elif warmup == max_warmup:
+            debug_report('Warmup is done. Moving on to fully simplifying')
+
         for simplify in search_strategy.simplifiers(random, t):
             debug_report('Applying simplification pass %s' % (
                 simplify.__name__,
