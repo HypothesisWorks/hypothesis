@@ -302,18 +302,22 @@ class ListStrategy(SearchStrategy):
         for _ in hrange(20):
             result = list(x)
             pivot = random.choice(x)
-            for _ in hrange(10):
-                new_pivot = random.choice(x)
-                if self.element_strategy.strictly_simpler(new_pivot, pivot):
-                    pivot = new_pivot
             indices = [
                 j for j in hrange(len(x))
                 if self.element_strategy.strictly_simpler(pivot, x[j])]
             if not indices:
-                break
+                continue
             random.shuffle(indices)
-            for j in indices:
+            # For slightly silly reasons we first try cloning to all but one
+            # index, then to all of them. This is because empirically in some
+            # artificial examples this is more likely to hit, and if we're in
+            # the warmup phase we only get one.
+            # It's unlikely this is actually of much benefit in practical cases
+            # but it makes the tests pass. Sorry.
+            for j in indices[:-1]:
                 result[j] = pivot
+            yield tuple(result)
+            result[indices[-1]] = pivot
             yield tuple(result)
             for i in indices[:-2]:
                 result[i] = x[i]
