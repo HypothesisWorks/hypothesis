@@ -44,7 +44,7 @@ def depth(tree):
 
 
 def test_deep_trees():
-    tree = smallest_tree(lambda t:  depth(t) >= 3)
+    tree = smallest_tree(lambda t: depth(t) >= 3)
     assert depth(tree) == 3
     while isinstance(tree, Branch):
         assert len(tree.keyed_children) == 1
