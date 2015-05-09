@@ -19,7 +19,6 @@ env:
     matrix:
         - TOXENV=coverage
         - TOXENV=lint
-        - TOXENV=strict
         - TOXENV=examples2
         - TOXENV=examples3
         - TOXENV=pypy
@@ -41,8 +40,6 @@ matrix:
           env: TOXENV=examples2
         - os: osx
           env: TOXENV=examples3
-        - os: osx
-          env: TOXENV=strict
         - os: osx
           env: TOXENV=coverage
         - os: osx
