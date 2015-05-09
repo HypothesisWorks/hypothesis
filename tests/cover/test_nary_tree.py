@@ -13,7 +13,8 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from hypothesis.strategies import integers
+from hypothesis import given, Settings
+from hypothesis.strategies import integers, booleans
 from hypothesis.internal.debug import minimal
 from hypothesis.searchstrategy.narytree import Leaf, Branch, n_ary_tree
 
@@ -56,3 +57,12 @@ def test_tree_minimizes_individual_branch_children():
         lambda t: len(getattr(t, 'keyed_children', ())) > 1) == Branch(
             0, ((0, Leaf(0)), (0, Leaf(0)))
     )
+
+
+@given(n_ary_tree(booleans(), booleans(), booleans()), settings=Settings(
+    max_examples=100
+))
+def test_serializes_arbitrary_trees(tree):
+    strat = n_ary_tree(booleans(), booleans(), booleans())
+
+    assert strat.from_basic(strat.to_basic(tree)) == tree
