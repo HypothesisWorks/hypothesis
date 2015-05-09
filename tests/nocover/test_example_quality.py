@@ -392,6 +392,24 @@ def test_increasing_string_sequence():
         assert abs(len(xs[i + 1]) - len(xs[i])) <= 1
 
 
+def test_decreasing_string_sequence():
+    n = 7
+    lb = '✐'
+    xs = minimal(
+        lists(text()), lambda t: (
+            n <= len(t) and
+            all(t) and
+            t[0] >= lb and
+            t[-1] >= lb and
+            length_of_longest_ordered_sequence(list(reversed(t))) >= n
+        ),
+        timeout_after=30,
+    )
+    assert n <= len(xs) <= n + 2
+    for i in hrange(len(xs) - 1):
+        assert abs(len(xs[i + 1]) - len(xs[i])) <= 1
+
+
 def test_small_sum_lists():
     xs = minimal(
         lists(floats()),
