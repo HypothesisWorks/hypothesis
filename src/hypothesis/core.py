@@ -20,6 +20,7 @@ import inspect
 import functools
 import traceback
 from random import Random
+from itertools import islice
 from collections import namedtuple
 
 import hypothesis.strategies as sd
@@ -177,14 +178,22 @@ def simplify_template_such_that(
     successful_shrinks = 0
 
     changed = True
-    while changed and successful_shrinks < settings.max_shrinks:
+    max_warmup = 10
+    warmup = 1
+    while (
+        (changed or warmup < max_warmup) and
+        successful_shrinks < settings.max_shrinks
+    ):
         changed = False
+        warmup += 1
         for simplify in search_strategy.simplifiers(random, t):
             debug_report('Applying simplification pass %s' % (
                 simplify.__name__,
             ))
             while True:
                 simpler = simplify(random, t)
+                if warmup < max_warmup:
+                    simpler = islice(simpler, warmup)
                 for s in simpler:
                     if tracker.track(s) > 1:
                         continue
