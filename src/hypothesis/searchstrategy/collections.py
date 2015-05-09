@@ -312,10 +312,12 @@ class ListStrategy(SearchStrategy):
             if not indices:
                 break
             random.shuffle(indices)
-            indices = indices[:random.randint(1, len(x) - 1)]
             for j in indices:
                 result[j] = pivot
             yield tuple(result)
+            for i in indices[:-2]:
+                result[i] = x[i]
+                yield tuple(result)
 
     def simplify_to_mid(self, random, x):
         if len(x) <= 1:
