@@ -217,9 +217,11 @@ class ListStrategy(SearchStrategy):
 
         yield self.shared_simplification(self.element_strategy.full_simplify)
 
-        for i in self.indices_roughly_from_worst_to_best(random, template):
+        for i in hrange(len(template)):
             yield self.simplifier_for_index(
                 i, self.element_strategy.full_simplify)
+            yield self.simplifier_for_index(
+                len(template) - i - 1, self.element_strategy.full_simplify)
 
     def simplifier_for_index(self, i, simplify):
         def accept(random, template):
