@@ -68,7 +68,10 @@ quality_settings = Settings(
 )
 
 
-def minimal(definition, condition=None, settings=None, timeout_after=10):
+def minimal(
+        definition, condition=None,
+        settings=None, timeout_after=10, random=None
+):
     condition = condition or (lambda x: True)
     with settings or quality_settings:
         settings = Settings(timeout=timeout_after * 0.95)
@@ -78,7 +81,8 @@ def minimal(definition, condition=None, settings=None, timeout_after=10):
         return find(
             definition,
             condition,
-            settings=settings
+            settings=settings,
+            random=random,
         )
     return run()
 
