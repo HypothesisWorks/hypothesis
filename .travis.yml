@@ -26,7 +26,6 @@ env:
         - TOXENV=py27
         - TOXENV=pypy3
         - TOXENV=py33
-        - TOXENV=py32
 
 install:
     - ./.travis/install.sh
@@ -50,8 +49,6 @@ matrix:
           env: TOXENV=pypy3
         - os: linux
           env: TOXENV=py27
-        - os: osx
-          env: TOXENV=py32
         - os: linux
           env: TOXENV=py33
         - os: osx
