@@ -13,8 +13,8 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from hypothesis import given, Settings
-from hypothesis.strategies import integers, booleans
+from hypothesis import Settings, given
+from hypothesis.strategies import booleans, integers
 from hypothesis.internal.debug import minimal
 from hypothesis.searchstrategy.narytree import Leaf, Branch, n_ary_tree
 
