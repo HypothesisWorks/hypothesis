@@ -14,7 +14,6 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 from random import Random
-from warnings import warn
 from collections import namedtuple
 
 from hypothesis.errors import BadData, NoExamples, WrongFormat, \
@@ -23,7 +22,7 @@ from hypothesis.control import assume
 from hypothesis.settings import Settings
 from hypothesis.specifiers import OneOf
 from hypothesis.utils.show import show
-from hypothesis.deprecation import HypothesisDeprecationWarning
+from hypothesis.deprecation import note_deprecation
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.utils.extmethod import ExtMethod
 from hypothesis.internal.chooser import chooser
@@ -41,20 +40,15 @@ class StrategyExtMethod(ExtMethod):
         if isinstance(specifier, SearchStrategy):
             return specifier
 
-        warning = HypothesisDeprecationWarning((
+        if settings is None:
+            settings = Settings()
+
+        note_deprecation((
             'Calling strategy with non-strategy object %s is deprecated '
             'and will be removed in Hypothesis 2.0. Use the functions in '
             'hypothesis.strategies instead.') % (
                 show(specifier),
-        ))
-
-        if settings is None:
-            settings = Settings()
-
-        if settings.strict:
-            raise warning
-
-        warn(warning, stacklevel=2)
+        ), settings)
 
         result = super(StrategyExtMethod, self).__call__(specifier, settings)
         assert isinstance(result, SearchStrategy)
@@ -179,7 +173,7 @@ class SearchStrategy(object):
         This method shouldn't be taken too seriously. It's here for interactive
         exploration of the API, not for any sort of real testing.
 
-        This method is part of the  public API.
+        This method is part of the public API.
 
         """
         random = Random()
@@ -201,13 +195,13 @@ class SearchStrategy(object):
                 'Could not find any valid examples in 20 tries'
             )
 
-        return min(parts, key=lambda tr: self.size(tr[0]))[1]
+        return min(parts, key=lambda tr: self._template_size(tr[0]))[1]
 
     def map(self, pack):
         """Returns a new strategy that generates values by generating a value
         from this strategy and then calling pack() on the result, giving that.
 
-        This method is part of the  public API.
+        This method is part of the public API.
 
         """
         return MappedSearchStrategy(
@@ -219,7 +213,7 @@ class SearchStrategy(object):
         from this strategy, say x, then generating a value from
         strategy(expand(x))
 
-        This method is part of the  public API.
+        This method is part of the public API.
 
         """
         return FlatMapStrategy(
@@ -232,7 +226,7 @@ class SearchStrategy(object):
         hard to satisfy this might result in your tests failing with
         Unsatisfiable.
 
-        This method is part of the  public API.
+        This method is part of the public API.
 
         """
         return FilteredStrategy(
@@ -244,7 +238,7 @@ class SearchStrategy(object):
         """Return a strategy which produces values by randomly drawing from one
         of this strategy or the other strategy.
 
-        This method is part of the  public API.
+        This method is part of the public API.
 
         """
         if not isinstance(other, SearchStrategy):
@@ -283,15 +277,25 @@ class SearchStrategy(object):
             '%s.reify()' % (self.__class__.__name__))
 
     def to_basic(self, template):
-        """Convert a template value for this strategy into basic data (see
-        hypothesis.dabase.formats for the definition of basic data)"""
+        """Convert a template value for this strategy into basic data.
+
+        Basic data is any of:
+
+            1. A bool, None, an int that fits into 64 bits, or a unicode string
+            2. A list of basic data
+        """
         raise NotImplementedError(  # pragma: no cover
             '%s.to_basic()' % (self.__class__.__name__))
 
     def from_basic(self, value):
         """Convert basic data back to a template, raising BadData if the
         provided data cannot be converted into a valid template for this
-        strategy."""
+        strategy.
+
+        It is not required that from_basic(to_basic(template)) == template. It
+        is however required that to_basic(from_basic(data)) == data (if this
+        does not raise an exception).
+        """
         raise NotImplementedError(  # pragma: no cover
             '%s.from_basic()' % (self.__class__.__name__))
 
@@ -317,7 +321,7 @@ class SearchStrategy(object):
     def draw_and_produce_from_random(self, random):
         return self.draw_and_produce(BuildContext(random))
 
-    def size(self, template):
+    def __template_size(self, template):
         """Gives an approximate estimate of how "large" this template value is.
 
         This doesn't really matter for anything, it's just a convenience
@@ -368,8 +372,6 @@ class SearchStrategy(object):
         This is used for hinting in certain cases. The default implementation
         of it always returns False and this is perfectly acceptable to leave
         as is.
-
-        Note: Cheap to call is more important than high quality.
         """
         return False
 
@@ -378,10 +380,11 @@ class SearchStrategy(object):
         single template and produce a generator over "simpler" versions of that
         template.
 
-        The template argument is provided to allow picking simplifiers that are
-        likely to be useful. Each returned simplifier must be valid (in the
-        sense of not erroring. It doesn't have to do anything useful) for all
-        templates for this strategy.
+        The only other required invariant that each simplifier must satisfy is
+        it should not be the case that strictly_simpler(x, y) for any y in
+        simplify(random, x). That is, it's OK if the simplify doesn't produce
+        a strictly simpler value but it must not produce a strictly more
+        complex one.
 
         General tips for a good simplify function:
 
@@ -397,11 +400,15 @@ class SearchStrategy(object):
                shortcuts in the graph will speed up the simplification process
                a lot.
 
+        The template argument is provided to allow picking simplifiers that are
+        likely to be useful. It should be considered only a hint, and each
+        simplifier must be valid (in the sense of not erroring. It doesn't have
+        to do anything useful) for all templates valid for this strategy.
+
         By default this just yields the basic_simplify function (which in turn
         by default does not do anything useful). If you override this function
         and also override basic_simplify you should make sure to yield it, or
         it will not be called.
-
         """
         yield self.basic_simplify
 
@@ -411,6 +418,9 @@ class SearchStrategy(object):
         Run each simplifier over this template and yield the results in
         turn.
 
+        The order in which simplifiers are run is lightly randomized from the
+        order in which simplifiers provides them, in order to avoid certain
+        pathological cases.
         """
         saved_for_later = []
         for simplifier in self.simplifiers(random, template):
@@ -425,7 +435,7 @@ class SearchStrategy(object):
                 yield value
 
     def basic_simplify(self, random, template):
-        """A convenience method for subclasses that do not have complex complex
+        """A convenience method for subclasses that do not have complex
         simplification requirements to override.
 
         See simplifiers for details.

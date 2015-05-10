@@ -14,6 +14,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import warnings
+from hypothesis.settings import Settings, Verbosity
 
 
 class HypothesisDeprecationWarning(DeprecationWarning):
@@ -21,3 +22,12 @@ class HypothesisDeprecationWarning(DeprecationWarning):
 
 
 warnings.simplefilter('once', HypothesisDeprecationWarning)
+
+
+def note_deprecation(message, settings):
+    settings = settings or Settings.default
+    warning = HypothesisDeprecationWarning(message)
+    if settings.strict:
+        raise warning
+    elif settings.verbosity > Verbosity.quiet:
+        warnings.warn(warning, stacklevel=3)

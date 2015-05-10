@@ -16,7 +16,7 @@ serialized format.
 Before you get here, you must convert your objects into *basic data*. Basic
 data is any of the following:
 
-    1. A bool, None, int, or unicode string
+    1. A bool, None, an int that fits into 64 bits, or a unicode string
     2. A list of basic data
 
 """

@@ -102,7 +102,7 @@ class TestCases(object):
 
 
 @fails
-@given(integers(), name=text())
+@given(x=integers(), name=text())
 def test_can_be_given_keyword_args(x, name):
     assume(x > 0)
     assert len(name) < x

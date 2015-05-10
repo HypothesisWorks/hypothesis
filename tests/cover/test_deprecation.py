@@ -38,6 +38,11 @@ def test_strategy_warns_on_non_strategies(recwarn):
     assert recwarn.pop(DeprecationWarning) is not None
 
 
+def test_given_warns_when_mixing_positional_with_keyword(recwarn):
+    given(booleans(), y=booleans(), settings=Settings(strict=False))
+    assert recwarn.pop(DeprecationWarning) is not None
+
+
 def test_given_does_not_warn_when_using_strategies_directly(recwarn):
     @given(booleans(), booleans())
     def foo(x, y):

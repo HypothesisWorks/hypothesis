@@ -14,14 +14,29 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import math
-from inspect import getargspec
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.control import assume
 from hypothesis.settings import Settings
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import text_type, integer_types
-from hypothesis.internal.reflection import copy_argspec
+
+
+__all__ = [
+    'just', 'one_of',
+
+    'booleans', 'integers', 'floats', 'complex_numbers', 'fractions',
+    'decimals',
+
+    'text', 'binary',
+
+    'tuples', 'lists', 'sets', 'frozensets',
+    'dictionaries', 'fixed_dictionaries',
+
+    'builds',
+
+    'streaming', 'basic',
+]
 
 
 def just(value):
@@ -51,15 +66,6 @@ def one_of(arg, *args):
     for arg in args:
         check_strategy(arg)
     return OneOfStrategy(args)
-
-
-def tuples(*args):
-    """Return a strategy which generates a tuple of the same length as args by
-    generating the value at index i from args[i]"""
-    for arg in args:
-        check_strategy(arg)
-    from hypothesis.searchstrategy.collections import TupleStrategy
-    return TupleStrategy(args, tuple)
 
 
 def integers(min_value=None, max_value=None):
@@ -168,6 +174,19 @@ def complex_numbers():
     )
 
 
+def tuples(*args):
+    """Return a strategy which generates a tuple of the same length as args by
+    generating the value at index i from args[i].
+
+    e.g. tuples(integers(), integers()) would generate a tuple of length two
+    with both values an integer.
+    """
+    for arg in args:
+        check_strategy(arg)
+    from hypothesis.searchstrategy.collections import TupleStrategy
+    return TupleStrategy(args, tuple)
+
+
 def sampled_from(elements):
     """Returns a strategy which generates any value present in the iterable
     elements.
@@ -263,12 +282,11 @@ def sets(elements=None, min_size=None, average_size=None, max_size=None):
     return result
 
 
-@copy_argspec('frozensets', getargspec(sets))
-def frozensets(*args, **kwargs):
+def frozensets(elements=None, min_size=None, average_size=None, max_size=None):
     """This is identical to the sets function but instead returns
     frozensets."""
     from hypothesis.searchstrategy.collections import FrozenSetStrategy
-    return FrozenSetStrategy(sets(*args, **kwargs))
+    return FrozenSetStrategy(sets(elements, min_size, average_size, max_size))
 
 
 def fixed_dictionaries(mapping):
@@ -324,7 +342,9 @@ def dictionaries(
 
 
 def streaming(elements):
-    """Generates infinite streams of values drawn from elements."""
+    """Generates an infinite stream of values where each value is drawn from
+    elements. The result is iterable (the iterator will never terminate) and
+    indexable."""
     check_strategy(elements)
     from hypothesis.searchstrategy.streams import StreamStrategy
     return StreamStrategy(elements)

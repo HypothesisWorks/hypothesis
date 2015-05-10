@@ -25,6 +25,7 @@ from collections import namedtuple
 
 import hypothesis.strategies as sd
 from hypothesis.extra import load_entry_points
+from hypothesis.deprecation import note_deprecation
 from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
     Unsatisfiable, InvalidArgument, UnsatisfiedAssumption, \
     DefinitelyNoSuchExample
@@ -354,6 +355,12 @@ def given(*generator_arguments, **generator_kwargs):
     if not (generator_arguments or generator_kwargs):
         raise InvalidArgument(
             'given must be called with at least one argument')
+
+    if generator_arguments and generator_kwargs:
+        note_deprecation(
+            "Mixing positional and keyword arguments in a call to given is "
+            "deprecated. Use one or the other.", settings
+        )
 
     def run_test_with_generator(test):
         if settings.derandomize:
