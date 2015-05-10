@@ -110,7 +110,7 @@ class BinaryTreeStrategy(SearchStrategy):
         ('size_control', 'split_location', 'leaf_parameter'),
     )
 
-    def produce_parameter(self, random):
+    def draw_parameter(self, random):
         """A parameter controls the "shape" of the data. Data generation
         proceeds by first drawing a parameter and then drawing a template given
         that parameter.
@@ -145,14 +145,14 @@ class BinaryTreeStrategy(SearchStrategy):
             split_location=0.2 + 0.8 * random.random(),
 
             # We need a parameter to control the shape of our leaf distribution
-            # too. Note that we call draw_parameter rather than
-            # produce_parameter. produce_parameter is the implementation, but
-            # draw_parameter wraps it as the API you're supposed to interact
-            # with.
+            # too. We use whatever the parameter normally associated with the
+            # leaf strategy is. Note this is completely opaque to us: We can't
+            # do anything with it except feed it back into the leaf strategy
+            # later.
             leaf_parameter=self.leaf_strategy.draw_parameter(random)
         )
 
-    def produce_template(self, context, parameter_value):
+    def draw_template(self, random, parameter_value):
         """We now produce a template, which is a value that we will later turn
         into a binary tree.
 
@@ -163,10 +163,6 @@ class BinaryTreeStrategy(SearchStrategy):
         if the finished product is not.
 
         """
-
-        # Context is mostly a wrapper object for a random. This is the only
-        # feature we will care about here.
-        random = context.random
 
         # Our templates will be tuples of 1 or 3 elements. A tuple of 1 element
         # is a leaf and will contain a leaf template, a tuple of 3 elements is
@@ -187,11 +183,9 @@ class BinaryTreeStrategy(SearchStrategy):
             math.log1p(-parameter_value.size_control)
         )
 
-        # We now draw templates for each leaf. Note that again there is the
-        # draw_template / produce_template distinction.
         leaf_templates = tuple(
             self.leaf_strategy.draw_template(
-                context, parameter_value.leaf_parameter)
+                random, parameter_value.leaf_parameter)
             for _ in range(n_leaf_labels)
         )
 
