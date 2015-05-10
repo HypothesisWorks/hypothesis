@@ -23,7 +23,7 @@ from hypothesis.stateful import StateMachineSearchStrategy
 from hypothesis.strategies import just, none, sets, text, basic, lists, \
     binary, builds, floats, one_of, tuples, randoms, booleans, decimals, \
     integers, fractions, streaming, frozensets, dictionaries, \
-    sampled_from, complex_numbers
+    sampled_from, complex_numbers, fixed_dictionaries
 from hypothesis.strategytests import mutate_basic, templates_for, \
     strategy_test_suite
 from hypothesis.internal.compat import hrange
@@ -86,9 +86,9 @@ with Settings(average_list_length=5.0):
     TestNestedSets = strategy_test_suite(
         frozensets(frozensets(complex_numbers())))
 
-    TestMisc1 = strategy_test_suite(dictionaries(
+    TestMisc1 = strategy_test_suite(fixed_dictionaries(
         {(2, -374): frozensets(none())}))
-    TestMisc2 = strategy_test_suite(dictionaries(
+    TestMisc2 = strategy_test_suite(fixed_dictionaries(
         {b'': frozensets(integers())}))
     TestMisc3 = strategy_test_suite(tuples(sets(none() | text())))
 
@@ -96,7 +96,7 @@ with Settings(average_list_length=5.0):
     TestEmptyList = strategy_test_suite(lists(max_size=0))
     TestEmptySet = strategy_test_suite(sets(max_size=0))
     TestEmptyFrozenSet = strategy_test_suite(frozensets(max_size=0))
-    TestEmptyDict = strategy_test_suite(dictionaries({}))
+    TestEmptyDict = strategy_test_suite(fixed_dictionaries({}))
 
     TestDecimal = strategy_test_suite(decimals())
     TestFraction = strategy_test_suite(fractions())
