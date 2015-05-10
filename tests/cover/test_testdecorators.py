@@ -29,7 +29,7 @@ from hypothesis.errors import Flaky, Unsatisfiable, InvalidArgument
 from tests.common.utils import fails, fails_with, capture_out
 from hypothesis.internal import debug
 from hypothesis.strategies import just, sets, text, lists, binary, \
-    floats, one_of, tuples, booleans, integers, frozensets, sampled_from
+    builds, floats, one_of, booleans, integers, frozensets, sampled_from
 from hypothesis.internal.compat import text_type
 
 
@@ -438,7 +438,7 @@ def test_can_call_an_argument_f(f):
 Litter = namedtuple('Litter', ('kitten1', 'kitten2'))
 
 
-@given(tuples(integers(), integers(), tuple_class=Litter))
+@given(builds(Litter, integers(), integers()))
 def test_named_tuples_are_of_right_type(litter):
     assert isinstance(litter, Litter)
 

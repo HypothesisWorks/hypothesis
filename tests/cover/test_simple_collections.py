@@ -19,7 +19,7 @@ from collections import namedtuple
 
 import pytest
 from hypothesis import find, strategy
-from hypothesis.strategies import sets, lists, tuples, booleans, \
+from hypothesis.strategies import sets, lists, builds, tuples, booleans, \
     integers, frozensets, dictionaries, complex_numbers
 
 
@@ -98,7 +98,7 @@ def test_list_with_wide_gap():
 def test_minimize_namedtuple():
     T = namedtuple('T', ('a', 'b'))
     tab = find(
-        tuples(integers(), integers(), tuple_class=T),
+        builds(T, integers(), integers()),
         lambda x: x.a < x.b)
     assert tab.b == tab.a + 1
 

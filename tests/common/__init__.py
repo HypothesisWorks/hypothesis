@@ -26,7 +26,7 @@ from tests.common.basic import Bitfields
 from hypothesis.strategies import integers, floats, just, one_of, \
     sampled_from, streaming, basic, lists, booleans, dictionaries, tuples, \
     frozensets, complex_numbers, sets, text, binary, decimals, fractions, none, \
-    randoms
+    randoms, builds
 from hypothesis.internal.compat import hrange
 from hypothesis.searchstrategy.narytree import n_ary_tree
 from hypothesis.utils.show import show
@@ -57,7 +57,7 @@ ABC = namedtuple('ABC', ('a', 'b', 'c'))
 
 
 def abc(x, y, z):
-    return tuples(x, y, z, tuple_class=ABC)
+    return builds(ABC, x, y, z)
 
 with Settings(average_list_length=10.0):
     standard_types = [

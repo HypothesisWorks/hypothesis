@@ -21,7 +21,7 @@ from tests.common.basic import Bitfields, BoringBitfields, \
     simplify_bitfield
 from hypothesis.stateful import StateMachineSearchStrategy
 from hypothesis.strategies import just, none, sets, text, basic, lists, \
-    binary, floats, one_of, tuples, randoms, booleans, decimals, \
+    binary, builds, floats, one_of, tuples, randoms, booleans, decimals, \
     integers, fractions, streaming, frozensets, dictionaries, \
     sampled_from, complex_numbers
 from hypothesis.strategytests import mutate_basic, templates_for, \
@@ -74,7 +74,7 @@ with Settings(average_list_length=5.0):
 
     Stuff = namedtuple('Stuff', ('a', 'b'))
     TestNamedTuple = strategy_test_suite(
-        tuples(integers(), integers(), tuple_class=Stuff))
+        builds(Stuff, integers(), integers()))
 
     TestTrees = strategy_test_suite(
         n_ary_tree(integers(), integers(), integers()))

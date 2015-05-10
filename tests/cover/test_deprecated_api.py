@@ -17,10 +17,11 @@ import sys
 from random import Random
 from decimal import Decimal
 from fractions import Fraction
+from collections import namedtuple
 
 import pytest
 import hypothesis.specifiers as s
-from hypothesis import Settings, strategy
+from hypothesis import Settings, find, strategy
 from hypothesis.errors import InvalidArgument
 from tests.common.basic import Bitfields
 from hypothesis.internal.compat import text_type, binary_type, \
@@ -157,3 +158,9 @@ def test_float_range_validates():
 def test_sampled_from_validates():
     with pytest.raises(ValueError):
         strategy(s.sampled_from([]))
+
+
+def test_can_generate_named_tuples():
+    T = namedtuple('T', ('a', 'b'))
+    t = find(T(int, int), lambda x: x.a < x.b)
+    assert t.b == t.a + 1

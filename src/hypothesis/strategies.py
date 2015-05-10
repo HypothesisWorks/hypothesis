@@ -41,16 +41,11 @@ def one_of(arg, *args):
     return OneOfStrategy(args)
 
 
-def tuples(*args, **kwargs):
-    tuple_class = kwargs.pop('tuple_class', None) or tuple
-    for k in kwargs:
-        raise TypeError('tuples() got an unexpected keyword argument %r' % (
-            k,
-        ))
+def tuples(*args):
     for arg in args:
         check_strategy(arg)
     from hypothesis.searchstrategy.collections import TupleStrategy
-    return TupleStrategy(args, tuple_class)
+    return TupleStrategy(args, tuple)
 
 
 def integers(min_value=None, max_value=None):
@@ -345,6 +340,17 @@ def decimals():
             lambda f: Decimal(f.numerator) / f.denominator
         )
     )
+
+
+def builds(target, *args, **kwargs):
+    def splat(value):
+        return target(*value[0], **value[1])
+    splat.__name__ = str(
+        'splat(%s)' % (
+            getattr(target, '__name__', type(target).__name__)
+        )
+    )
+    return tuples(tuples(*args), dictionaries(**kwargs)).map(splat)
 
 
 def check_type(typ, arg):
