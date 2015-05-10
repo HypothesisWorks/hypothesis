@@ -51,10 +51,10 @@ class FakeFactoryStrategy(SearchStrategy):
         self.providers = tuple(providers)
         self.locales = tuple(locales)
 
-    def produce_parameter(self, random):
+    def draw_parameter(self, random):
         return dist.non_empty_subset(random, self.locales)
 
-    def produce_template(self, context, pv):
+    def draw_template(self, context, pv):
         factory = faker.Faker(locale=context.random.choice(pv))
         factory.seed(context.random.getrandbits(128))
         for p in self.providers:

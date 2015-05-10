@@ -44,14 +44,14 @@ class TemplatesStrategy(SearchStrategy):
         self.size_lower_bound = base_strategy.size_lower_bound
         self.size_upper_bound = base_strategy.size_upper_bound
 
-    def produce_parameter(self, random):
-        return self.base_strategy.produce_parameter(random)
+    def draw_parameter(self, random):
+        return self.base_strategy.draw_parameter(random)
 
     def strictly_simpler(self, x, y):
         return self.base_strategy.strictly_simpler(x, y)
 
-    def produce_template(self, context, pv):
-        return self.base_strategy.produce_template(context, pv)
+    def draw_template(self, context, pv):
+        return self.base_strategy.draw_template(context, pv)
 
     def reify(self, template):
         return template

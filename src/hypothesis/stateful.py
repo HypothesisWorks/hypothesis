@@ -283,12 +283,12 @@ class StateMachineSearchStrategy(SearchStrategy):
     def reify(self, template):
         return template
 
-    def produce_parameter(self, random):
+    def draw_parameter(self, random):
         return (
             random.getrandbits(64)
         )
 
-    def produce_template(self, context, parameter_value):
+    def draw_template(self, context, parameter_value):
         parameter_seed = parameter_value
         return StateMachineRunner(
             parameter_seed,
@@ -505,10 +505,10 @@ VarReference = namedtuple('VarReference', ('name',))
 
 class SimpleSampledFromStrategy(SampledFromStrategy):
 
-    def produce_parameter(self, random):
+    def draw_parameter(self, random):
         return None
 
-    def produce_template(self, context, parameter_value):
+    def draw_template(self, context, parameter_value):
         return context.random.randint(0, len(self.elements) - 1)
 
 

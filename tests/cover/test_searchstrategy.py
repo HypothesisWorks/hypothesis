@@ -53,13 +53,13 @@ def test_strategy_for_integer_range_produces_only_integers_in_that_range():
     just_one_integer = integers(1, 1)
     for _ in hrange(100):
         pv = just_one_integer.draw_parameter(random)
-        t = just_one_integer.produce_template(BuildContext(random), pv)
+        t = just_one_integer.draw_template(BuildContext(random), pv)
         x = just_one_integer.reify(t)
         assert x == 1
     some_integers = integers(1, 10)
     for _ in hrange(100):
-        pv = some_integers.produce_parameter(random)
-        x = some_integers.produce_template(BuildContext(random), pv)
+        pv = some_integers.draw_parameter(random)
+        x = some_integers.draw_template(BuildContext(random), pv)
         assert 1 <= x <= 10
 
 
@@ -67,8 +67,8 @@ def test_strategy_for_integer_range_can_produce_end_points():
     some_integers = integers(1, 10)
     found = set()
     for _ in hrange(1000):  # pragma: no branch
-        pv = some_integers.produce_parameter(random)
-        x = some_integers.produce_template(BuildContext(random), pv)
+        pv = some_integers.draw_parameter(random)
+        x = some_integers.draw_template(BuildContext(random), pv)
         found.add(x)
         if 1 in found and 10 in found:
             break

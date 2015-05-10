@@ -78,13 +78,13 @@ class TupleStrategy(SearchStrategy):
         else:
             return self.tuple_type(*xs)
 
-    def produce_parameter(self, random):
+    def draw_parameter(self, random):
         return tuple([
             e.draw_parameter(random)
             for e in self.element_strategies
         ])
 
-    def produce_template(self, context, pv):
+    def draw_template(self, context, pv):
         es = self.element_strategies
         return self.newtuple([
             g.draw_template(context, v)
@@ -178,7 +178,7 @@ class ListStrategy(SearchStrategy):
             self.element_strategy,
         )
 
-    def produce_parameter(self, random):
+    def draw_parameter(self, random):
         if self.element_strategy is None:
             return None
         else:
@@ -188,7 +188,7 @@ class ListStrategy(SearchStrategy):
                 child_parameter=self.element_strategy.draw_parameter(random),
             )
 
-    def produce_template(self, context, pv):
+    def draw_template(self, context, pv):
         if self.element_strategy is None:
             return ()
         length = clamp(
@@ -491,8 +491,8 @@ class SetStrategy(SearchStrategy):
     def reify(self, value):
         return set(self.list_strategy.reify(tuple(value)))
 
-    def produce_parameter(self, random):
-        return self.list_strategy.produce_parameter(random)
+    def draw_parameter(self, random):
+        return self.list_strategy.draw_parameter(random)
 
     def convert_template(self, template):
         seen = set()
@@ -506,9 +506,9 @@ class SetStrategy(SearchStrategy):
                     break
         return tuple(deduped)
 
-    def produce_template(self, context, pv):
+    def draw_template(self, context, pv):
         return self.convert_template(
-            (self.list_strategy.produce_template(context, pv)))
+            (self.list_strategy.draw_template(context, pv)))
 
     def strictly_simpler(self, x, y):
         return self.list_strategy.strictly_simpler(x, y)

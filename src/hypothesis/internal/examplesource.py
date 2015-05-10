@@ -74,7 +74,7 @@ class ParameterSource(object):
         self.bad_counts[self.last_parameter_index] += 1
 
     def new_parameter(self):
-        result = self.strategy.produce_parameter(self.random)
+        result = self.strategy.draw_parameter(self.random)
         self.parameters.append(result)
         self.bad_counts.append(0)
         self.counts.append(1)

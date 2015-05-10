@@ -45,10 +45,10 @@ class BoolStrategy(SearchStrategy):
         if value:
             yield False
 
-    def produce_parameter(self, random):
+    def draw_parameter(self, random):
         return random.random()
 
-    def produce_template(self, context, p):
+    def draw_template(self, context, p):
         return dist.biased_coin(context.random, p)
 
     def to_basic(self, value):
@@ -75,10 +75,10 @@ class JustStrategy(SearchStrategy):
     def __repr__(self):
         return 'JustStrategy(value=%r)' % (self.value,)
 
-    def produce_parameter(self, random):
+    def draw_parameter(self, random):
         return None
 
-    def produce_template(self, context, pv):
+    def draw_template(self, context, pv):
         return None
 
     def reify(self, template):
@@ -150,13 +150,13 @@ class SampledFromStrategy(SearchStrategy):
     def __repr__(self):
         return 'SampledFromStrategy(%r)' % (self.elements,)
 
-    def produce_parameter(self, random):
+    def draw_parameter(self, random):
         n = len(self.elements)
         if n == 1:
             return
         return chooser(random.getrandbits(8) + 1 for _ in hrange(n))
 
-    def produce_template(self, context, pv):
+    def draw_template(self, context, pv):
         if len(self.elements) == 1:
             return 0
         return pv.choose(context.random)

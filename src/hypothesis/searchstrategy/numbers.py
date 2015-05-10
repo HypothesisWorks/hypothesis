@@ -116,10 +116,10 @@ class IntegersFromStrategy(SearchStrategy):
     def __repr__(self):
         return 'IntegersFromStrategy(%d)' % (self.lower_bound,)
 
-    def produce_parameter(self, random):
+    def draw_parameter(self, random):
         return random.random() * 2 / self.average_size
 
-    def produce_template(self, context, parameter):
+    def draw_template(self, context, parameter):
         return self.lower_bound + dist.geometric(context.random, parameter)
 
     def reify(self, template):
@@ -190,13 +190,13 @@ class RandomGeometricIntStrategy(IntStrategy):
     def __repr__(self):
         return 'RandomGeometricIntStrategy()'
 
-    def produce_parameter(self, random):
+    def draw_parameter(self, random):
         return self.Parameter(
             negative_probability=random.betavariate(0.5, 0.5),
             p=random.betavariate(0.2, 1.8),
         )
 
-    def produce_template(self, context, parameter):
+    def draw_template(self, context, parameter):
         value = dist.geometric(context.random, parameter.p)
         if dist.biased_coin(context.random, parameter.negative_probability):
             value = -value
@@ -212,13 +212,13 @@ class WideRangeIntStrategy(IntStrategy):
     def __repr__(self):
         return 'WideRangeIntStrategy()'
 
-    def produce_parameter(self, random):
+    def draw_parameter(self, random):
         return self.Parameter(
             center=random.randint(-2 ** 129, 2 ** 129),
             width=2 ** random.randint(0, 256),
         )
 
-    def produce_template(self, context, parameter):
+    def draw_template(self, context, parameter):
         return parameter.center + context.random.randint(
             -parameter.width, parameter.width
         )
@@ -246,7 +246,7 @@ class BoundedIntStrategy(SearchStrategy):
     def strictly_simpler(self, x, y):
         return x < y
 
-    def produce_parameter(self, random):
+    def draw_parameter(self, random):
         n = 1 + dist.geometric(random, 0.01)
         results = []
         for _ in hrange(n):
@@ -267,7 +267,7 @@ class BoundedIntStrategy(SearchStrategy):
     def reify(self, value):
         return value
 
-    def produce_template(self, context, parameter):
+    def draw_template(self, context, parameter):
         return context.random.choice(parameter)
 
     def basic_simplify(self, random, x):
@@ -429,12 +429,12 @@ class WrapperFloatStrategy(FloatStrategy):
     def __repr__(self):
         return 'WrapperFloatStrategy(%r)' % (self.sub_strategy,)
 
-    def produce_parameter(self, random):
-        return self.sub_strategy.produce_parameter(random)
+    def draw_parameter(self, random):
+        return self.sub_strategy.draw_parameter(random)
 
-    def produce_template(self, context, pv):
+    def draw_template(self, context, pv):
         return self.sub_strategy.reify(
-            self.sub_strategy.produce_template(context, pv))
+            self.sub_strategy.draw_template(context, pv))
 
 
 class JustIntFloats(FloatStrategy):
@@ -443,10 +443,10 @@ class JustIntFloats(FloatStrategy):
         super(JustIntFloats, self).__init__()
         self.int_strategy = RandomGeometricIntStrategy()
 
-    def produce_parameter(self, random):
+    def draw_parameter(self, random):
         return self.int_strategy.draw_parameter(random)
 
-    def produce_template(self, context, pv):
+    def draw_template(self, context, pv):
         return float(self.int_strategy.draw_template(context, pv))
 
 
@@ -462,13 +462,13 @@ class FullRangeFloats(FloatStrategy):
         ('negative_probability', 'subnormal_probability')
     )
 
-    def produce_parameter(self, random):
+    def draw_parameter(self, random):
         return self.Parameter(
             negative_probability=dist.uniform_float(random, 0, 1),
             subnormal_probability=dist.uniform_float(random, 0, 0.5),
         )
 
-    def produce_template(self, context, pv):
+    def draw_template(self, context, pv):
         sign = int(dist.biased_coin(context.random, pv.negative_probability))
         if dist.biased_coin(context.random, pv.subnormal_probability):
             exponent = 0
@@ -505,13 +505,13 @@ class FixedBoundedFloatStrategy(FloatStrategy):
             self.lower_bound, self.upper_bound,
         )
 
-    def produce_parameter(self, random):
+    def draw_parameter(self, random):
         return self.Parameter(
             cut=random.random(),
             leftwards=dist.biased_coin(random, 0.5)
         )
 
-    def produce_template(self, context, pv):
+    def draw_template(self, context, pv):
         random = context.random
         cut = self.lower_bound + pv.cut * (self.upper_bound - self.lower_bound)
         if pv.leftwards:
@@ -559,14 +559,14 @@ class BoundedFloatStrategy(FloatStrategy):
         super(BoundedFloatStrategy, self).__init__()
         self.inner_strategy = FixedBoundedFloatStrategy(0, 1)
 
-    def produce_parameter(self, random):
+    def draw_parameter(self, random):
         return self.Parameter(
             left=random.normalvariate(0, 1),
             length=random.expovariate(1),
             spread=self.inner_strategy.draw_parameter(random),
         )
 
-    def produce_template(self, context, pv):
+    def draw_template(self, context, pv):
         return pv.left + self.inner_strategy.draw_template(
             context, pv.spread
         ) * pv.length
@@ -577,14 +577,14 @@ class GaussianFloatStrategy(FloatStrategy):
     """A float strategy such that every conditional distribution is drawn from
     a gaussian."""
 
-    def produce_parameter(self, random):
+    def draw_parameter(self, random):
         size = 1000.0
         return (
             random.normalvariate(0, size),
             random.expovariate(1.0 / size)
         )
 
-    def produce_template(self, context, param):
+    def draw_template(self, context, param):
         mean, sd = param
         return context.random.normalvariate(mean, sd)
 
@@ -602,14 +602,14 @@ class ExponentialFloatStrategy(FloatStrategy):
         ('lambd', 'zero_point', 'negative'),
     )
 
-    def produce_parameter(self, random):
+    def draw_parameter(self, random):
         return self.Parameter(
             lambd=random.gammavariate(2, 50),
             zero_point=random.normalvariate(0, 1),
             negative=dist.biased_coin(random, 0.5),
         )
 
-    def produce_template(self, context, pv):
+    def draw_template(self, context, pv):
         value = context.random.expovariate(pv.lambd)
         if pv.negative:
             value = -value
@@ -623,10 +623,10 @@ class FloatsFromBase(FloatStrategy):
         self.base = base
         self.sign = sign
 
-    def produce_parameter(self, random):
+    def draw_parameter(self, random):
         return random.gammavariate(2, 50)
 
-    def produce_template(self, context, pv):
+    def draw_template(self, context, pv):
         return self.base + self.sign * context.random.expovariate(pv)
 
 

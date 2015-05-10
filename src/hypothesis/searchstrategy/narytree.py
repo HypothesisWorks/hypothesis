@@ -57,7 +57,7 @@ class NAryTreeStrategy(SearchStrategy):
         self.child_strategy = (
             lists(tuples(self.branch_key_strategy, self)))
 
-    def produce_parameter(self, random):
+    def draw_parameter(self, random):
         return self.Parameter(
             leaf_parameter=self.leaf_strategy.draw_parameter(random),
             branch_key_parameter=self.branch_key_strategy.draw_parameter(
@@ -67,7 +67,7 @@ class NAryTreeStrategy(SearchStrategy):
             branch_factor=uniform_float(random, 0.75, 0.99),
         )
 
-    def produce_template(self, context, pv):
+    def draw_template(self, context, pv):
         n_children = geometric(context.random, pv.branch_factor)
         if not n_children:
             return Leaf(self.leaf_strategy.draw_template(
@@ -77,7 +77,7 @@ class NAryTreeStrategy(SearchStrategy):
             children = tuple(
                 (self.branch_key_strategy.draw_template(
                     context, pv.branch_key_parameter),
-                 self.produce_template(context, pv))
+                 self.draw_template(context, pv))
                 for _ in hrange(n_children))
             label = self.branch_label_strategy.draw_template(
                 context, pv.branch_label_parameter

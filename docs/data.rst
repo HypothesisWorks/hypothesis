@@ -327,5 +327,4 @@ but will not break in patch versions, but it should be considered relatively
 stable and most minor versions won't break it.
 
 .. autoclass:: SearchStrategy
-  :members: produce_parameter, produce_template, reify, simplifiers, basic_simplify,
-    full_simplify, to_basic, from_basic 
+  :members:

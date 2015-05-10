@@ -79,10 +79,10 @@ class StreamStrategy(SearchStrategy):
     def __repr__(self):
         return 'StreamStrategy(%r)' % (self.source_strategy,)
 
-    def produce_parameter(self, random):
+    def draw_parameter(self, random):
         return random.getrandbits(64)
 
-    def produce_template(self, context, parameter):
+    def draw_template(self, context, parameter):
         return self.new_template(context.random.getrandbits(64), parameter)
 
     def new_template(self, seed, parameter_seed):

@@ -57,12 +57,12 @@ class ArrayStrategy(SearchStrategy):
         self.dtype = dtype
         self.element_strategy = element_strategy
 
-    def produce_parameter(self, random):
-        return self.element_strategy.produce_parameter(random)
+    def draw_parameter(self, random):
+        return self.element_strategy.draw_parameter(random)
 
-    def produce_template(self, context, parameter_value):
+    def draw_template(self, context, parameter_value):
         result = tuple(
-            self.element_strategy.produce_template(
+            self.element_strategy.draw_template(
                 context, parameter_value
             )
             for i in hrange(self.array_size)

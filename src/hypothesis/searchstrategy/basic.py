@@ -192,7 +192,7 @@ class BasicSearchStrategy(SearchStrategy):
             name_if(self.user_simplify),
         )
 
-    def produce_parameter(self, random):
+    def draw_parameter(self, random):
         if self.user_parameter is not None:
             up = random.getrandbits(64)
         else:
@@ -203,7 +203,7 @@ class BasicSearchStrategy(SearchStrategy):
         )
         return (up, template_choices)
 
-    def produce_template(self, context, parameter):
+    def draw_template(self, context, parameter):
         up, template_choices = parameter
         return Generated(
             context.random.choice(template_choices), up

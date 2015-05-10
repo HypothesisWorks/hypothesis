@@ -155,7 +155,7 @@ class SearchStrategy(object):
     Given these, data generation happens in three phases:
 
     1. Draw a parameter value from a random number (defined by
-       produce_parameter)
+       draw_parameter)
     2. Given a parameter value and a build context, draw a random template
     3. Reify a template value, deterministically turning it into a value of
        the desired type.
@@ -250,7 +250,7 @@ class SearchStrategy(object):
 
     # Methods to be overridden by subclasses
 
-    def produce_parameter(self, random):
+    def draw_parameter(self, random):
         """Produce a random valid parameter for this strategy, using only data
         from the provided random number generator.
 
@@ -258,9 +258,9 @@ class SearchStrategy(object):
 
         """
         raise NotImplementedError(  # pragma: no cover
-            '%s.produce_parameter()' % (self.__class__.__name__))
+            '%s.draw_parameter()' % (self.__class__.__name__))
 
-    def produce_template(self, context, parameter_value):
+    def draw_template(self, context, parameter_value):
         """Given this build context and this parameter value, produce a random
         valid template for this strategy.
 
@@ -268,7 +268,7 @@ class SearchStrategy(object):
 
         """
         raise NotImplementedError(  # pragma: no cover
-            '%s.produce_template()' % (self.__class__.__name__))
+            '%s.draw_template()' % (self.__class__.__name__))
 
     def reify(self, template):
         """Given a template value, deterministically convert it into a value of
@@ -336,27 +336,6 @@ class SearchStrategy(object):
                 return 1
             return sum(map(basic_size, x))
         return basic_size(self.to_basic(template))
-
-    def draw_parameter(self, random):
-        """Draw a new parameter value given this random number generator.
-
-        You should not override this method. Override produce_parameter
-        instead. Right now this calls produce_parameter directly, but
-        it's a placeholder for when that might not be the case later.
-
-        """
-        return self.produce_parameter(random)
-
-    def draw_template(self, context, parameter_value):
-        """Draw a new template value given this build context and parameter
-        value.
-
-        You should not override this method. Override produce_template
-        instead. Right now this calls produce_template directly, but
-        it's a placeholder for when that might not be the case later.
-
-        """
-        return self.produce_template(context, parameter_value)
 
     def strictly_simpler(self, x, y):
         """
@@ -490,7 +469,7 @@ class OneOfStrategy(SearchStrategy):
         s, x = value
         return self.element_strategies[s].reify(x)
 
-    def produce_parameter(self, random):
+    def draw_parameter(self, random):
         n = len(self.element_strategies)
         return self.Parameter(
             chooser=chooser(
@@ -499,7 +478,7 @@ class OneOfStrategy(SearchStrategy):
                 s.draw_parameter(random) for s in self.element_strategies]
         )
 
-    def produce_template(self, context, pv):
+    def draw_template(self, context, pv):
         child = pv.chooser.choose(context.random)
         return (
             child,
@@ -565,11 +544,11 @@ class MappedSearchStrategy(SearchStrategy):
             self.mapped_strategy, getattr(
                 self.pack, '__name__', type(self.pack).__name__))
 
-    def produce_parameter(self, random):
-        return self.mapped_strategy.produce_parameter(random)
+    def draw_parameter(self, random):
+        return self.mapped_strategy.draw_parameter(random)
 
-    def produce_template(self, context, pv):
-        return self.mapped_strategy.produce_template(context, pv)
+    def draw_template(self, context, pv):
+        return self.mapped_strategy.draw_template(context, pv)
 
     def pack(self, x):
         """Take a value produced by the underlying mapped_strategy and turn it
@@ -635,13 +614,13 @@ class FlatMapStrategy(SearchStrategy):
         self.expand = expand
         self.strategy_cache = {}
 
-    def produce_parameter(self, random):
+    def draw_parameter(self, random):
         return (
             self.flatmapped_strategy.draw_parameter(random),
             random.getrandbits(64),
         )
 
-    def produce_template(self, context, parameter):
+    def draw_template(self, context, parameter):
         source_template = self.flatmapped_strategy.draw_template(
             context, parameter[0])
         parameter_seed = context.random.getrandbits(64)

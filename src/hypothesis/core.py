@@ -113,7 +113,7 @@ def find_satisfying_template(
         if time_to_call_it_a_day(settings, start_time):
             break
 
-        example = search_strategy.produce_template(
+        example = search_strategy.draw_template(
             build_context, parameter
         )
         if tracker.track(example) > 1:

@@ -66,7 +66,7 @@ class DatetimeStrategy(SearchStrategy):
         self.allow_naive = allow_naive
         self.timezones = timezones
 
-    def produce_parameter(self, random):
+    def draw_parameter(self, random):
         return self.Parameter(
             p_hour=dist.uniform_float(random, 0, 1),
             p_minute=dist.uniform_float(random, 0, 1),
@@ -77,7 +77,7 @@ class DatetimeStrategy(SearchStrategy):
                 random, self.timezones),
         )
 
-    def produce_template(self, context, pv):
+    def draw_template(self, context, pv):
         random = context.random
         year = random.randint(dt.MINYEAR, dt.MAXYEAR)
         month = random.choice(pv.month)

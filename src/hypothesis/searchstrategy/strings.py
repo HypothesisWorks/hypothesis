@@ -35,7 +35,7 @@ class OneCharStringStrategy(SearchStrategy):
     )
     zero_point = ord('0')
 
-    def produce_parameter(self, random):
+    def draw_parameter(self, random):
         alphabet_size = 1 + dist.geometric(random, 0.1)
         alphabet = []
         while len(alphabet) < alphabet_size:
@@ -49,7 +49,7 @@ class OneCharStringStrategy(SearchStrategy):
                 alphabet.append(char)
         return tuple(alphabet)
 
-    def produce_template(self, context, p):
+    def draw_template(self, context, p):
         return context.random.choice(p)
 
     def reify(self, value):
