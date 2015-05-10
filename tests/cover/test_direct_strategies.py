@@ -67,11 +67,10 @@ def fn_ktest(*fnkwargs):
     (ds.binary, {'max_size': 10, 'average_size': 20}),
     (ds.floats, {'min_value': float('nan')}),
     (ds.floats, {'max_value': 0.0, 'min_value': 1.0}),
-    (ds.dictionaries, {'fixed': 'fish'}),
-    (ds.dictionaries, {'fixed': {1: 'fish'}}),
-    (ds.dictionaries, {'variable': (ds.integers(),)}),
-    (ds.dictionaries, {'variable': (ds.integers(), 1)}),
-    (ds.dictionaries, {'variable': 1}),
+    (ds.fixed_dictionaries, {'mapping': 'fish'}),
+    (ds.fixed_dictionaries, {'mapping': {1: 'fish'}}),
+    (ds.dictionaries, {'keys': ds.integers(), 'values': 1}),
+    (ds.dictionaries, {'keys': 1, 'values': ds.integers()}),
 )
 def test_validates_keyword_arguments(fn, kwargs):
     with pytest.raises(InvalidArgument):
@@ -97,13 +96,8 @@ def test_validates_keyword_arguments(fn, kwargs):
     (ds.floats, {'max_value': 1.0, 'min_value': -1.0}),
     (ds.sampled_from, {'elements': [1]}),
     (ds.sampled_from, {'elements': [1, 2, 3]}),
-    (ds.dictionaries, {'fixed': {1: ds.integers()}}),
-    (ds.dictionaries, {'variable': (ds.booleans(), ds.integers())}),
-    (ds.dictionaries, {
-        'fixed': {3: ds.text()},
-        'variable': (ds.booleans(), ds.integers())}),
-    (ds.dictionaries, {'variable': ds.lists(ds.tuples(
-        ds.booleans(), ds.integers()))}),
+    (ds.fixed_dictionaries, {'mapping': {1: ds.integers()}}),
+    (ds.dictionaries, {'keys': ds.booleans(), 'values': ds.integers()}),
     (ds.text, {'alphabet': 'abc'}),
     (ds.text, {'alphabet': ''}),
     (ds.text, {'alphabet': ds.sampled_from('abc')}),
@@ -123,7 +117,6 @@ def test_validates_args(fn, args):
 @fn_test(
     (ds.one_of, (ds.booleans(), ds.tuples(ds.booleans()))),
     (ds.one_of, (ds.booleans(),)),
-    (ds.dictionaries, (ds.dictionaries(),)),
     (ds.text, ()),
     (ds.binary, ()),
 )
@@ -203,3 +196,9 @@ def test_fractions():
 
 def test_decimals():
     assert find(ds.decimals(), lambda f: f.is_finite() and f >= 1) == 1
+
+
+def test_validates_min_size_for_sets():
+    ds.sets(ds.booleans(), min_size=2)
+    with pytest.raises(InvalidArgument):
+        ds.sets(ds.booleans(), min_size=3)

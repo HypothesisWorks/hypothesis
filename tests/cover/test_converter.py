@@ -16,7 +16,7 @@ from __future__ import division, print_function, absolute_import, \
 import pytest
 from hypothesis.strategies import just, sets, text, lists, binary, \
     floats, one_of, tuples, randoms, booleans, integers, frozensets, \
-    dictionaries, sampled_from, complex_numbers
+    sampled_from, complex_numbers, fixed_dictionaries
 from hypothesis.searchstrategy.narytree import n_ary_tree
 from hypothesis.searchstrategy.strategies import BadData, strategy
 
@@ -28,7 +28,7 @@ from hypothesis.searchstrategy.strategies import BadData, strategy
     (just(1), 'hi'),
     (binary(), 0.0),
     (binary(), frozenset()),
-    (dictionaries({True: sets(integers())}), []),
+    (fixed_dictionaries({True: sets(integers())}), []),
     (randoms(), []),
     (integers(), ''),
     (text(), 'kittens'),

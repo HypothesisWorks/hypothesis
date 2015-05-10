@@ -26,7 +26,7 @@ from tests.common.basic import Bitfields
 from hypothesis.strategies import integers, floats, just, one_of, \
     sampled_from, streaming, basic, lists, booleans, dictionaries, tuples, \
     frozensets, complex_numbers, sets, text, binary, decimals, fractions, none, \
-    randoms, builds
+    randoms, builds, fixed_dictionaries
 from hypothesis.internal.compat import hrange
 from hypothesis.searchstrategy.narytree import n_ary_tree
 from hypothesis.utils.show import show
@@ -64,13 +64,15 @@ with Settings(average_list_length=10.0):
         basic(Bitfields),
         EvalledIntStream,
         lists(max_size=0), tuples(), sets(max_size=0), frozensets(max_size=0),
-        dictionaries(),
+        fixed_dictionaries({}),
         n_ary_tree(booleans(), booleans(), booleans()),
         n_ary_tree(integers(), integers(), integers()),
         abc(booleans(), booleans(), booleans()),
         abc(booleans(), booleans(), integers()),
         templates_for(one_of(*map(just, hrange(10)))),
-        dictionaries({'a': integers(), 'b': booleans()}),
+        fixed_dictionaries({'a': integers(), 'b': booleans()}),
+        dictionaries(booleans(), integers()),
+        dictionaries(text(), booleans()),
         one_of(integers(), tuples(booleans())),
         sampled_from(range(10)),
         one_of(just('a'), just('b'), just('c')),

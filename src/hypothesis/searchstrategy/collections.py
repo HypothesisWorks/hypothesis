@@ -14,12 +14,13 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 from random import Random
-from collections import namedtuple
+from collections import OrderedDict, namedtuple
 
 import hypothesis.internal.distributions as dist
 from hypothesis.settings import Settings
 from hypothesis.specifiers import Dictionary
 from hypothesis.utils.show import show
+from hypothesis.utils.size import clamp
 from hypothesis.internal.compat import hrange
 from hypothesis.searchstrategy.strategies import EFFECTIVELY_INFINITE, \
     SearchStrategy, MappedSearchStrategy, strategy, check_type, \
@@ -149,12 +150,16 @@ class ListStrategy(SearchStrategy):
         'Parameter', ('child_parameter', 'average_length')
     )
 
-    def __init__(self,
-                 strategies, average_length=50.0):
+    def __init__(
+        self,
+        strategies, average_length=50.0, min_size=0, max_size=float('inf')
+    ):
         SearchStrategy.__init__(self)
 
         self.average_length = average_length
         strategies = tuple(strategies)
+        self.min_size = min_size
+        self.max_size = max_size
         if strategies:
             self.element_strategy = one_of_strategies(strategies)
         else:
@@ -186,7 +191,11 @@ class ListStrategy(SearchStrategy):
     def produce_template(self, context, pv):
         if self.element_strategy is None:
             return ()
-        length = dist.geometric(context.random, 1.0 / (1 + pv.average_length))
+        length = clamp(
+            self.min_size,
+            dist.geometric(context.random, 1.0 / (1 + pv.average_length)),
+            self.max_size,
+        )
         result = []
         for _ in hrange(length):
             result.append(
@@ -459,8 +468,11 @@ class SetStrategy(SearchStrategy):
             self.list_strategy,
         )
 
-    def __init__(self, strategies, average_length=50.0):
-        self.list_strategy = ListStrategy(strategies, average_length)
+    def __init__(self, strategies, average_length=50.0, max_size=None):
+        self.list_strategy = ListStrategy(
+            strategies, average_length=average_length
+        )
+        self.max_size = max_size
 
         def powset(n):
             if n >= 32:
@@ -489,6 +501,9 @@ class SetStrategy(SearchStrategy):
             if x not in seen:
                 seen.add(x)
                 deduped.append(x)
+            if self.max_size is not None:
+                if len(deduped) >= self.max_size:
+                    break
         return tuple(deduped)
 
     def produce_template(self, context, pv):
@@ -545,14 +560,19 @@ class FixedKeysDictStrategy(MappedSearchStrategy):
     """
 
     def __init__(self, strategy_dict):
-        try:
-            self.keys = tuple(sorted(
-                strategy_dict.keys(),
-            ))
-        except TypeError:
-            self.keys = tuple(sorted(
-                strategy_dict.keys(), key=show,
-            ))
+        self.dict_type = type(strategy_dict)
+
+        if isinstance(strategy_dict, OrderedDict):
+            self.keys = tuple(strategy_dict.keys())
+        else:
+            try:
+                self.keys = tuple(sorted(
+                    strategy_dict.keys(),
+                ))
+            except TypeError:
+                self.keys = tuple(sorted(
+                    strategy_dict.keys(), key=show,
+                ))
         super(FixedKeysDictStrategy, self).__init__(
             strategy=TupleStrategy(
                 (strategy_dict[k] for k in self.keys), tuple
@@ -564,7 +584,7 @@ class FixedKeysDictStrategy(MappedSearchStrategy):
             self.keys, self.mapped_strategy)
 
     def pack(self, value):
-        return dict(zip(self.keys, value))
+        return self.dict_type(zip(self.keys, value))
 
 
 @strategy.extend(set)

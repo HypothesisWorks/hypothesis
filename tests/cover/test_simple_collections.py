@@ -18,9 +18,10 @@ from itertools import islice
 from collections import namedtuple
 
 import pytest
-from hypothesis import find, strategy
+from hypothesis import Settings, find, given, strategy
 from hypothesis.strategies import sets, lists, builds, tuples, booleans, \
-    integers, frozensets, dictionaries, complex_numbers
+    integers, frozensets, dictionaries, complex_numbers, \
+    fixed_dictionaries
 
 
 @pytest.mark.parametrize(('col', 'strat'), [
@@ -28,7 +29,7 @@ from hypothesis.strategies import sets, lists, builds, tuples, booleans, \
     ([], lists(max_size=0)),
     (set(), sets(max_size=0)),
     (frozenset(), frozensets(max_size=0)),
-    ({}, dictionaries()),
+    ({}, fixed_dictionaries({})),
 ])
 def test_find_empty_collection_gives_empty(col, strat):
     assert find(strat, lambda x: True) == col
@@ -105,7 +106,7 @@ def test_minimize_namedtuple():
 
 def test_minimize_dict():
     tab = find(
-        dictionaries({'a': booleans(), 'b': booleans()}),
+        fixed_dictionaries({'a': booleans(), 'b': booleans()}),
         lambda x: x['a'] or x['b']
     )
     assert not (tab['a'] and tab['b'])
@@ -135,14 +136,14 @@ def test_minimize_list_of_tuples():
 
 def test_minimize_multi_key_dicts():
     assert find(
-        dictionaries(variable=(booleans(), booleans())),
+        dictionaries(keys=booleans(), values=booleans()),
         bool
     ) == {False: False}
 
 
 def test_minimize_dicts_with_incompatible_keys():
     assert find(
-        dictionaries({1: booleans(), 'hi': lists(booleans())}),
+        fixed_dictionaries({1: booleans(), 'hi': lists(booleans())}),
         lambda x: True
     ) == {1: False, 'hi': []}
 
@@ -190,3 +191,10 @@ def test_multiple_empty_lists_are_independent():
     x = find(lists(lists(max_size=0)), lambda t: len(t) >= 2)
     u, v = x
     assert u is not v
+
+
+@given(sets(integers(0, 100), min_size=2, max_size=10), settings=Settings(
+    max_examples=100
+))
+def test_sets_are_size_bounded(xs):
+    assert 2 <= len(xs) <= 10

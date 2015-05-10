@@ -55,10 +55,10 @@ with Settings(average_list_length=5.0):
     TestInts = strategy_test_suite(integers())
     TestBoolLists = strategy_test_suite(lists(booleans()))
     TestDictionaries = strategy_test_suite(
-        dictionaries(variable=(tuples(integers(), integers()), booleans())))
+        dictionaries(keys=tuples(integers(), integers()), values=booleans()))
     TestOrderedDictionaries = strategy_test_suite(
-        dictionaries(variable=(integers(), integers()), dict_class=OrderedDict)
-    )
+        dictionaries(
+            keys=integers(), values=integers(), dict_class=OrderedDict))
     TestString = strategy_test_suite(text())
     BinaryString = strategy_test_suite(binary())
     TestIntBool = strategy_test_suite(tuples(integers(), booleans()))

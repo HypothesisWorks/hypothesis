@@ -251,11 +251,11 @@ def test_can_simplify_on_both_sides_of_flatmap():
 @parametrize('dict_class', [dict, OrderedDict])
 def test_dictionary(dict_class):
     assert minimal(dictionaries(
-        variable=(integers(), text()),
+        keys=integers(), values=text(),
         dict_class=dict_class)) == dict_class()
 
     x = minimal(
-        dictionaries(variable=(integers(), text()), dict_class=dict_class),
+        dictionaries(keys=integers(), values=text(), dict_class=dict_class),
         lambda t: len(t) >= 3)
     assert isinstance(x, dict_class)
     assert set(x.values()) == {''}

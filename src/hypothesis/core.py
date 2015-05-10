@@ -458,7 +458,7 @@ def given(*generator_arguments, **generator_kwargs):
 
             given_specifier = sd.tuples(
                 sd.tuples(*map(convert_to_specifier, arguments)),
-                sd.dictionaries({
+                sd.fixed_dictionaries({
                     k: convert_to_specifier(v) for k, v in kwargs.items()})
             )
 
