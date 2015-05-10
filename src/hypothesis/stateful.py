@@ -37,9 +37,8 @@ from hypothesis.utils.show import show
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.searchstrategy.misc import JustStrategy, \
     SampledFromStrategy
-from hypothesis.searchstrategy.strategies import BadData, BuildContext, \
-    SearchStrategy, strategy, check_length, check_data_type, \
-    one_of_strategies
+from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
+    strategy, check_length, check_data_type, one_of_strategies
 from hypothesis.searchstrategy.collections import TupleStrategy, \
     FixedKeysDictStrategy
 
@@ -251,7 +250,7 @@ class StateMachineRunner(object):
                         self.parameter_seed
                     ))
                     template = strategy.draw_template(
-                        BuildContext(Random(self.templates[i])), parameter)
+                        Random(self.templates[i]), parameter)
                     data.append(strategy.to_basic(template))
 
                 new_record = (
@@ -288,11 +287,11 @@ class StateMachineSearchStrategy(SearchStrategy):
             random.getrandbits(64)
         )
 
-    def draw_template(self, context, parameter_value):
+    def draw_template(self, random, parameter_value):
         parameter_seed = parameter_value
         return StateMachineRunner(
             parameter_seed,
-            context.random.getrandbits(64),
+            random.getrandbits(64),
             n_steps=self.program_size,
         )
 
@@ -508,8 +507,8 @@ class SimpleSampledFromStrategy(SampledFromStrategy):
     def draw_parameter(self, random):
         return None
 
-    def draw_template(self, context, parameter_value):
-        return context.random.randint(0, len(self.elements) - 1)
+    def draw_template(self, random, parameter_value):
+        return random.randint(0, len(self.elements) - 1)
 
 
 class RuleBasedStateMachine(GenericStateMachine):

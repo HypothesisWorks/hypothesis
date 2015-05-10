@@ -84,10 +84,10 @@ class TupleStrategy(SearchStrategy):
             for e in self.element_strategies
         ])
 
-    def draw_template(self, context, pv):
+    def draw_template(self, random, pv):
         es = self.element_strategies
         return self.newtuple([
-            g.draw_template(context, v)
+            g.draw_template(random, v)
             for g, v in zip(es, pv)
         ])
 
@@ -188,19 +188,19 @@ class ListStrategy(SearchStrategy):
                 child_parameter=self.element_strategy.draw_parameter(random),
             )
 
-    def draw_template(self, context, pv):
+    def draw_template(self, random, pv):
         if self.element_strategy is None:
             return ()
         length = clamp(
             self.min_size,
-            dist.geometric(context.random, 1.0 / (1 + pv.average_length)),
+            dist.geometric(random, 1.0 / (1 + pv.average_length)),
             self.max_size,
         )
         result = []
         for _ in hrange(length):
             result.append(
                 self.element_strategy.draw_template(
-                    context, pv.child_parameter))
+                    random, pv.child_parameter))
         return tuple(result)
 
     def simplifiers(self, random, template):
@@ -440,7 +440,7 @@ class SingleElementListStrategy(MappedSearchStrategy):
 
         # If the strategy isn't lying to us we don't need to do this more than
         # once.
-        self.base_template = element_strategy.draw_and_produce_from_random(
+        self.base_template = element_strategy.draw_and_produce(
             Random(0)
         )
 
@@ -506,9 +506,9 @@ class SetStrategy(SearchStrategy):
                     break
         return tuple(deduped)
 
-    def draw_template(self, context, pv):
+    def draw_template(self, random, pv):
         return self.convert_template(
-            (self.list_strategy.draw_template(context, pv)))
+            (self.list_strategy.draw_template(random, pv)))
 
     def strictly_simpler(self, x, y):
         return self.list_strategy.strictly_simpler(x, y)

@@ -67,20 +67,20 @@ class NAryTreeStrategy(SearchStrategy):
             branch_factor=uniform_float(random, 0.75, 0.99),
         )
 
-    def draw_template(self, context, pv):
-        n_children = geometric(context.random, pv.branch_factor)
+    def draw_template(self, random, pv):
+        n_children = geometric(random, pv.branch_factor)
         if not n_children:
             return Leaf(self.leaf_strategy.draw_template(
-                context, pv.leaf_parameter
+                random, pv.leaf_parameter
             ))
         else:
             children = tuple(
                 (self.branch_key_strategy.draw_template(
-                    context, pv.branch_key_parameter),
-                 self.draw_template(context, pv))
+                    random, pv.branch_key_parameter),
+                 self.draw_template(random, pv))
                 for _ in hrange(n_children))
             label = self.branch_label_strategy.draw_template(
-                context, pv.branch_label_parameter
+                random, pv.branch_label_parameter
             )
             return Branch(
                 label=label, keyed_children=children

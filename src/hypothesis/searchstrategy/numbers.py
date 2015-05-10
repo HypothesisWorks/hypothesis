@@ -119,8 +119,8 @@ class IntegersFromStrategy(SearchStrategy):
     def draw_parameter(self, random):
         return random.random() * 2 / self.average_size
 
-    def draw_template(self, context, parameter):
-        return self.lower_bound + dist.geometric(context.random, parameter)
+    def draw_template(self, random, parameter):
+        return self.lower_bound + dist.geometric(random, parameter)
 
     def reify(self, template):
         return template
@@ -196,9 +196,9 @@ class RandomGeometricIntStrategy(IntStrategy):
             p=random.betavariate(0.2, 1.8),
         )
 
-    def draw_template(self, context, parameter):
-        value = dist.geometric(context.random, parameter.p)
-        if dist.biased_coin(context.random, parameter.negative_probability):
+    def draw_template(self, random, parameter):
+        value = dist.geometric(random, parameter.p)
+        if dist.biased_coin(random, parameter.negative_probability):
             value = -value
         return value
 
@@ -218,8 +218,8 @@ class WideRangeIntStrategy(IntStrategy):
             width=2 ** random.randint(0, 256),
         )
 
-    def draw_template(self, context, parameter):
-        return parameter.center + context.random.randint(
+    def draw_template(self, random, parameter):
+        return parameter.center + random.randint(
             -parameter.width, parameter.width
         )
 
@@ -267,8 +267,8 @@ class BoundedIntStrategy(SearchStrategy):
     def reify(self, value):
         return value
 
-    def draw_template(self, context, parameter):
-        return context.random.choice(parameter)
+    def draw_template(self, random, parameter):
+        return random.choice(parameter)
 
     def basic_simplify(self, random, x):
         if x == self.start:
@@ -432,9 +432,9 @@ class WrapperFloatStrategy(FloatStrategy):
     def draw_parameter(self, random):
         return self.sub_strategy.draw_parameter(random)
 
-    def draw_template(self, context, pv):
+    def draw_template(self, random, pv):
         return self.sub_strategy.reify(
-            self.sub_strategy.draw_template(context, pv))
+            self.sub_strategy.draw_template(random, pv))
 
 
 class JustIntFloats(FloatStrategy):
@@ -446,8 +446,8 @@ class JustIntFloats(FloatStrategy):
     def draw_parameter(self, random):
         return self.int_strategy.draw_parameter(random)
 
-    def draw_template(self, context, pv):
-        return float(self.int_strategy.draw_template(context, pv))
+    def draw_template(self, random, pv):
+        return float(self.int_strategy.draw_template(random, pv))
 
 
 def compose_float(sign, exponent, fraction):
@@ -468,17 +468,17 @@ class FullRangeFloats(FloatStrategy):
             subnormal_probability=dist.uniform_float(random, 0, 0.5),
         )
 
-    def draw_template(self, context, pv):
-        sign = int(dist.biased_coin(context.random, pv.negative_probability))
-        if dist.biased_coin(context.random, pv.subnormal_probability):
+    def draw_template(self, random, pv):
+        sign = int(dist.biased_coin(random, pv.negative_probability))
+        if dist.biased_coin(random, pv.subnormal_probability):
             exponent = 0
         else:
-            exponent = context.random.getrandbits(11)
+            exponent = random.getrandbits(11)
 
         return compose_float(
             sign,
             exponent,
-            context.random.getrandbits(52)
+            random.getrandbits(52)
         )
 
 
@@ -511,8 +511,8 @@ class FixedBoundedFloatStrategy(FloatStrategy):
             leftwards=dist.biased_coin(random, 0.5)
         )
 
-    def draw_template(self, context, pv):
-        random = context.random
+    def draw_template(self, random, pv):
+        random = random
         cut = self.lower_bound + pv.cut * (self.upper_bound - self.lower_bound)
         if pv.leftwards:
             left = self.lower_bound
@@ -566,9 +566,9 @@ class BoundedFloatStrategy(FloatStrategy):
             spread=self.inner_strategy.draw_parameter(random),
         )
 
-    def draw_template(self, context, pv):
+    def draw_template(self, random, pv):
         return pv.left + self.inner_strategy.draw_template(
-            context, pv.spread
+            random, pv.spread
         ) * pv.length
 
 
@@ -584,9 +584,9 @@ class GaussianFloatStrategy(FloatStrategy):
             random.expovariate(1.0 / size)
         )
 
-    def draw_template(self, context, param):
+    def draw_template(self, random, param):
         mean, sd = param
-        return context.random.normalvariate(mean, sd)
+        return random.normalvariate(mean, sd)
 
 
 class ExponentialFloatStrategy(FloatStrategy):
@@ -609,8 +609,8 @@ class ExponentialFloatStrategy(FloatStrategy):
             negative=dist.biased_coin(random, 0.5),
         )
 
-    def draw_template(self, context, pv):
-        value = context.random.expovariate(pv.lambd)
+    def draw_template(self, random, pv):
+        value = random.expovariate(pv.lambd)
         if pv.negative:
             value = -value
         return pv.zero_point + value
@@ -626,8 +626,8 @@ class FloatsFromBase(FloatStrategy):
     def draw_parameter(self, random):
         return random.gammavariate(2, 50)
 
-    def draw_template(self, context, pv):
-        return self.base + self.sign * context.random.expovariate(pv)
+    def draw_template(self, random, pv):
+        return self.base + self.sign * random.expovariate(pv)
 
 
 class NastyFloats(SampledFromStrategy):

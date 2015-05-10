@@ -60,7 +60,7 @@ class ArrayStrategy(SearchStrategy):
     def draw_parameter(self, random):
         return self.element_strategy.draw_parameter(random)
 
-    def draw_template(self, context, parameter_value):
+    def draw_template(self, random, parameter_value):
         result = tuple(
             self.element_strategy.draw_template(
                 context, parameter_value

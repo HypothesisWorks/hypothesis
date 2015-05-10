@@ -25,7 +25,6 @@ from hypothesis.strategies import text, lists, floats, booleans, \
 from hypothesis.utils.show import show
 from hypothesis.internal.debug import minimal, some_template
 from hypothesis.searchstrategy.streams import Stream, StreamTemplate
-from hypothesis.searchstrategy.strategies import BuildContext
 
 
 @given(lists(booleans()))
@@ -139,7 +138,7 @@ def test_check_serialization_preserves_changed_marker():
     strat = strategy(
         streaming(floats(min_value=0.0, max_value=2.2250738585072014e-308)))
     template = strat.draw_template(
-        BuildContext(Random(0)), strat.draw_parameter(Random(0)))
+        Random(0), strat.draw_parameter(Random(0)))
     strat.reify(template)[0]
     simpler = next(strat.full_simplify(
         Random(0), template

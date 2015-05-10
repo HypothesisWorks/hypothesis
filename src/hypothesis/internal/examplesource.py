@@ -30,7 +30,7 @@ class ParameterSource(object):
 
     def __init__(
         self,
-        context, strategy,
+        random, strategy,
         min_parameters=25, min_tries=2,
         start_invalidating_at=5,
         invalidation_threshold=0.75,
@@ -38,8 +38,6 @@ class ParameterSource(object):
     ):
         if max_tries is None:
             max_tries = 50
-        random = context.random
-        self.context = context
         self.strategy = strategy
         self.max_tries = max_tries
         min_tries = min(min_tries, max_tries)
@@ -177,6 +175,6 @@ class ParameterSource(object):
         while True:
             p = self.pick_a_parameter()
             template = self.strategy.draw_template(
-                self.context, p
+                self.random, p
             )
             yield self.strategy.reify(template)

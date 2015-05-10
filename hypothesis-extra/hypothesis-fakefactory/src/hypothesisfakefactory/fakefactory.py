@@ -54,9 +54,9 @@ class FakeFactoryStrategy(SearchStrategy):
     def draw_parameter(self, random):
         return dist.non_empty_subset(random, self.locales)
 
-    def draw_template(self, context, pv):
-        factory = faker.Faker(locale=context.random.choice(pv))
-        factory.seed(context.random.getrandbits(128))
+    def draw_template(self, random, pv):
+        factory = faker.Faker(locale=random.choice(pv))
+        factory.seed(random.getrandbits(128))
         for p in self.providers:
             factory.add_provider(p)
         return text_type(getattr(factory, self.source)())

@@ -92,7 +92,7 @@ def some_template(spec, random=None):
         random = Random()
     strat = strategy(spec)
     for _ in hrange(10):
-        element = strat.draw_and_produce_from_random(random)
+        element = strat.draw_and_produce(random)
         try:
             strat.reify(element)
             return element

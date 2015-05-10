@@ -19,8 +19,8 @@ from hypothesis.types import Stream
 from hypothesis.specifiers import Streaming
 from hypothesis.utils.show import show
 from hypothesis.internal.compat import hrange, integer_types
-from hypothesis.searchstrategy.strategies import BuildContext, \
-    SearchStrategy, strategy, check_length, check_data_type
+from hypothesis.searchstrategy.strategies import SearchStrategy, \
+    strategy, check_length, check_data_type
 
 
 class StreamTemplate(object):
@@ -82,16 +82,17 @@ class StreamStrategy(SearchStrategy):
     def draw_parameter(self, random):
         return random.getrandbits(64)
 
-    def draw_template(self, context, parameter):
-        return self.new_template(context.random.getrandbits(64), parameter)
+    def draw_template(self, random, parameter):
+        return self.new_template(random.getrandbits(64), parameter)
 
     def new_template(self, seed, parameter_seed):
-        context = BuildContext(Random(seed))
         parameter = self.source_strategy.draw_parameter(Random(parameter_seed))
+
+        random = Random(seed)
 
         def templates():
             while True:
-                yield self.source_strategy.draw_template(context, parameter)
+                yield self.source_strategy.draw_template(random, parameter)
         return StreamTemplate(seed, parameter_seed, templates())
 
     def simplifiers(self, random, template):

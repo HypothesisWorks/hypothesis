@@ -21,9 +21,9 @@ from hypothesis.strategies import lists, one_of, booleans
 def test_can_apply_simplifiers_to_other_types():
     r = Random(0)
     s = one_of(booleans(), lists(booleans()))
-    template1 = s.draw_and_produce_from_random(r)
+    template1 = s.draw_and_produce(r)
     while True:
-        template2 = s.draw_and_produce_from_random(r)
+        template2 = s.draw_and_produce(r)
         if template2[0] != template1[0]:
             break
     for simplify in s.simplifiers(r, template1):

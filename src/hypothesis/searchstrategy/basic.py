@@ -203,10 +203,10 @@ class BasicSearchStrategy(SearchStrategy):
         )
         return (up, template_choices)
 
-    def draw_template(self, context, parameter):
+    def draw_template(self, random, parameter):
         up, template_choices = parameter
         return Generated(
-            context.random.choice(template_choices), up
+            random.choice(template_choices), up
         )
 
     def strictly_simpler(self, x, y):

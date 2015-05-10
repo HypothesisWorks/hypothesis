@@ -23,7 +23,6 @@ from hypothesis.strategies import just, basic, lists, floats, tuples, \
     randoms, integers
 from hypothesis.internal.debug import some_template
 from hypothesis.searchstrategy.narytree import Leaf, n_ary_tree
-from hypothesis.searchstrategy.strategies import BuildContext
 
 ConstantLists = integers().flatmap(lambda i: lists(just(i)))
 
@@ -74,7 +73,7 @@ def test_flatmap_retrieve_from_db():
 @given(randoms())
 def test_can_recover_from_bad_data_in_mapped_strategy(r):
     param = OrderedPairs.draw_parameter(r)
-    template = OrderedPairs.draw_template(BuildContext(r), param)
+    template = OrderedPairs.draw_template(r, param)
     OrderedPairs.reify(template)
     for simplification in OrderedPairs.full_simplify(r, template):
         if isinstance(simplification, OrderedPairs.TemplateFromTemplate):

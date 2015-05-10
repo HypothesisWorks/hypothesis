@@ -48,8 +48,8 @@ class BoolStrategy(SearchStrategy):
     def draw_parameter(self, random):
         return random.random()
 
-    def draw_template(self, context, p):
-        return dist.biased_coin(context.random, p)
+    def draw_template(self, random, p):
+        return dist.biased_coin(random, p)
 
     def to_basic(self, value):
         check_type(bool, value)
@@ -78,7 +78,7 @@ class JustStrategy(SearchStrategy):
     def draw_parameter(self, random):
         return None
 
-    def draw_template(self, context, pv):
+    def draw_template(self, random, pv):
         return None
 
     def reify(self, template):
@@ -156,10 +156,10 @@ class SampledFromStrategy(SearchStrategy):
             return
         return chooser(random.getrandbits(8) + 1 for _ in hrange(n))
 
-    def draw_template(self, context, pv):
+    def draw_template(self, random, pv):
         if len(self.elements) == 1:
             return 0
-        return pv.choose(context.random)
+        return pv.choose(random)
 
     def reify(self, template):
         return self.elements[template]

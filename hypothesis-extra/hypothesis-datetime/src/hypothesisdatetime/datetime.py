@@ -77,8 +77,8 @@ class DatetimeStrategy(SearchStrategy):
                 random, self.timezones),
         )
 
-    def draw_template(self, context, pv):
-        random = context.random
+    def draw_template(self, random, pv):
+        random = random
         year = random.randint(dt.MINYEAR, dt.MAXYEAR)
         month = random.choice(pv.month)
         base = dt.datetime(

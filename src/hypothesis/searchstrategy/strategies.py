@@ -28,12 +28,6 @@ from hypothesis.utils.extmethod import ExtMethod
 from hypothesis.internal.chooser import chooser
 
 
-class BuildContext(object):
-
-    def __init__(self, random):
-        self.random = random
-
-
 class StrategyExtMethod(ExtMethod):
 
     def __call__(self, specifier, settings=None):
@@ -156,7 +150,7 @@ class SearchStrategy(object):
 
     1. Draw a parameter value from a random number (defined by
        draw_parameter)
-    2. Given a parameter value and a build context, draw a random template
+    2. Given a parameter value and a Random, draw a random template
     3. Reify a template value, deterministically turning it into a value of
        the desired type.
 
@@ -177,7 +171,6 @@ class SearchStrategy(object):
 
         """
         random = Random()
-        context = BuildContext(random)
 
         parts = []
 
@@ -185,7 +178,7 @@ class SearchStrategy(object):
             if len(parts) >= 3:
                 break
             try:
-                template = self.draw_and_produce(context)
+                template = self.draw_and_produce(random)
                 reified = self.reify(template)
                 parts.append((template, reified))
             except UnsatisfiedAssumption:
@@ -252,21 +245,13 @@ class SearchStrategy(object):
 
     def draw_parameter(self, random):
         """Produce a random valid parameter for this strategy, using only data
-        from the provided random number generator.
-
-        Note: You should not call this directly. Call draw_parameter instead.
-
-        """
+        from the provided random number generator."""
         raise NotImplementedError(  # pragma: no cover
             '%s.draw_parameter()' % (self.__class__.__name__))
 
-    def draw_template(self, context, parameter_value):
-        """Given this build context and this parameter value, produce a random
-        valid template for this strategy.
-
-        Note: You should not call this directly. Call draw_template instead.
-
-        """
+    def draw_template(self, random, parameter_value):
+        """Given this Random and this parameter value, produce a random valid
+        template for this strategy."""
         raise NotImplementedError(  # pragma: no cover
             '%s.draw_template()' % (self.__class__.__name__))
 
@@ -283,6 +268,7 @@ class SearchStrategy(object):
 
             1. A bool, None, an int that fits into 64 bits, or a unicode string
             2. A list of basic data
+
         """
         raise NotImplementedError(  # pragma: no cover
             '%s.to_basic()' % (self.__class__.__name__))
@@ -295,6 +281,7 @@ class SearchStrategy(object):
         It is not required that from_basic(to_basic(template)) == template. It
         is however required that to_basic(from_basic(data)) == data (if this
         does not raise an exception).
+
         """
         raise NotImplementedError(  # pragma: no cover
             '%s.from_basic()' % (self.__class__.__name__))
@@ -314,12 +301,8 @@ class SearchStrategy(object):
     def __init__(self):
         pass
 
-    def draw_and_produce(self, context):
-        return self.draw_template(
-            context, self.draw_parameter(context.random))
-
-    def draw_and_produce_from_random(self, random):
-        return self.draw_and_produce(BuildContext(random))
+    def draw_and_produce(self, random):
+        return self.draw_template(random, self.draw_parameter(random))
 
     def __template_size(self, template):
         """Gives an approximate estimate of how "large" this template value is.
@@ -388,6 +371,7 @@ class SearchStrategy(object):
         by default does not do anything useful). If you override this function
         and also override basic_simplify you should make sure to yield it, or
         it will not be called.
+
         """
         yield self.basic_simplify
 
@@ -400,6 +384,7 @@ class SearchStrategy(object):
         The order in which simplifiers are run is lightly randomized from the
         order in which simplifiers provides them, in order to avoid certain
         pathological cases.
+
         """
         saved_for_later = []
         for simplifier in self.simplifiers(random, template):
@@ -478,12 +463,12 @@ class OneOfStrategy(SearchStrategy):
                 s.draw_parameter(random) for s in self.element_strategies]
         )
 
-    def draw_template(self, context, pv):
-        child = pv.chooser.choose(context.random)
+    def draw_template(self, random, pv):
+        child = pv.chooser.choose(random)
         return (
             child,
             self.element_strategies[child].draw_template(
-                context, pv.child_parameters[child]))
+                random, pv.child_parameters[child]))
 
     def element_simplifier(self, s, simplifier):
         def accept(random, template):
@@ -547,8 +532,8 @@ class MappedSearchStrategy(SearchStrategy):
     def draw_parameter(self, random):
         return self.mapped_strategy.draw_parameter(random)
 
-    def draw_template(self, context, pv):
-        return self.mapped_strategy.draw_template(context, pv)
+    def draw_template(self, random, pv):
+        return self.mapped_strategy.draw_template(random, pv)
 
     def pack(self, x):
         """Take a value produced by the underlying mapped_strategy and turn it
@@ -620,17 +605,17 @@ class FlatMapStrategy(SearchStrategy):
             random.getrandbits(64),
         )
 
-    def draw_template(self, context, parameter):
+    def draw_template(self, random, parameter):
         source_template = self.flatmapped_strategy.draw_template(
-            context, parameter[0])
-        parameter_seed = context.random.getrandbits(64)
-        template_seed = context.random.getrandbits(64)
+            random, parameter[0])
+        parameter_seed = random.getrandbits(64)
+        template_seed = random.getrandbits(64)
 
         if source_template in self.strategy_cache:
             target = self.strategy_cache[source_template]
             target_parameter = target.draw_parameter(Random(parameter_seed))
             target_template = target.draw_template(
-                BuildContext(Random(template_seed)),
+                Random(template_seed),
                 target_parameter,
             )
             return self.TemplateFromTemplate(
@@ -727,7 +712,7 @@ class FlatMapStrategy(SearchStrategy):
             Random(template.parameter_seed)
         )
         return target_strategy.draw_template(
-            BuildContext(Random(template.template_seed)),
+            Random(template.template_seed),
             target_parameter,
         )
 

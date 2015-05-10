@@ -49,8 +49,8 @@ class OneCharStringStrategy(SearchStrategy):
                 alphabet.append(char)
         return tuple(alphabet)
 
-    def draw_template(self, context, p):
-        return context.random.choice(p)
+    def draw_template(self, random, p):
+        return random.choice(p)
 
     def reify(self, value):
         return value

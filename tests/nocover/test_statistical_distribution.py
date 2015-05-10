@@ -33,7 +33,7 @@ import hypothesis.internal.reflection as reflection
 from hypothesis.strategies import just, sets, lists, floats, tuples, \
     booleans, integers, sampled_from
 from hypothesis.internal.compat import hrange
-from hypothesis.searchstrategy.strategies import BuildContext, strategy
+from hypothesis.searchstrategy.strategies import strategy
 
 # We run each individual test at a very high level of significance to the
 # point where it will basically only fail if it's really really wildly wrong.
@@ -152,7 +152,7 @@ def define_test(specifier, q, predicate, condition=None):
         s = strategy(specifier)
         for _ in hrange(MAX_RUNS):
             pv = s.draw_parameter(random)
-            x = s.reify(s.draw_template(BuildContext(random), pv))
+            x = s.reify(s.draw_template(random, pv))
             if not _condition(x):
                 continue
             successful_runs += 1

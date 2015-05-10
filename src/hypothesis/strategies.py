@@ -21,7 +21,6 @@ from hypothesis.settings import Settings
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import text_type, integer_types
 
-
 __all__ = [
     'just', 'one_of',
 
@@ -178,8 +177,9 @@ def tuples(*args):
     """Return a strategy which generates a tuple of the same length as args by
     generating the value at index i from args[i].
 
-    e.g. tuples(integers(), integers()) would generate a tuple of length two
-    with both values an integer.
+    e.g. tuples(integers(), integers()) would generate a tuple of length
+    two with both values an integer.
+
     """
     for arg in args:
         check_strategy(arg)
@@ -343,8 +343,12 @@ def dictionaries(
 
 def streaming(elements):
     """Generates an infinite stream of values where each value is drawn from
-    elements. The result is iterable (the iterator will never terminate) and
-    indexable."""
+    elements.
+
+    The result is iterable (the iterator will never terminate) and
+    indexable.
+
+    """
     check_strategy(elements)
     from hypothesis.searchstrategy.streams import StreamStrategy
     return StreamStrategy(elements)

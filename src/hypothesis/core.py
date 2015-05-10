@@ -25,7 +25,6 @@ from collections import namedtuple
 
 import hypothesis.strategies as sd
 from hypothesis.extra import load_entry_points
-from hypothesis.deprecation import note_deprecation
 from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
     Unsatisfiable, InvalidArgument, UnsatisfiedAssumption, \
     DefinitelyNoSuchExample
@@ -35,11 +34,12 @@ from hypothesis.executors import executor
 from hypothesis.reporting import report, debug_report, verbose_report, \
     current_verbosity
 from hypothesis.utils.show import show
+from hypothesis.deprecation import note_deprecation
 from hypothesis.internal.tracker import Tracker
 from hypothesis.internal.reflection import arg_string, copy_argspec, \
     function_digest, get_pretty_function_description
 from hypothesis.internal.examplesource import ParameterSource
-from hypothesis.searchstrategy.strategies import BuildContext, strategy
+from hypothesis.searchstrategy.strategies import strategy
 
 [assume]
 
@@ -96,10 +96,8 @@ def find_satisfying_template(
             if len(tracker) >= max_examples:
                 break
 
-    build_context = BuildContext(random)
-
     parameter_source = ParameterSource(
-        context=build_context, strategy=search_strategy,
+        random=random, strategy=search_strategy,
         min_parameters=max(2, int(float(max_examples) / 10)),
         max_tries=max_parameter_tries,
     )
@@ -114,7 +112,7 @@ def find_satisfying_template(
             break
 
         example = search_strategy.draw_template(
-            build_context, parameter
+            random, parameter
         )
         if tracker.track(example) > 1:
             debug_report('Skipping duplicate example')
@@ -358,8 +356,8 @@ def given(*generator_arguments, **generator_kwargs):
 
     if generator_arguments and generator_kwargs:
         note_deprecation(
-            "Mixing positional and keyword arguments in a call to given is "
-            "deprecated. Use one or the other.", settings
+            'Mixing positional and keyword arguments in a call to given is '
+            'deprecated. Use one or the other.', settings
         )
 
     def run_test_with_generator(test):

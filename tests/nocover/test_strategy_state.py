@@ -28,7 +28,6 @@ from hypothesis.strategies import just, none, text, lists, binary, \
     streaming, sampled_from, complex_numbers
 from hypothesis.utils.show import show
 from hypothesis.strategytests import mutate_basic, templates_for
-from hypothesis.searchstrategy.strategies import BuildContext
 
 AVERAGE_LIST_LENGTH = 2
 
@@ -161,7 +160,7 @@ class HypothesisSpec(RuleBasedStateMachine):
     @rule(target=strats_with_templates, sp=strats_with_parameters, r=randoms())
     def draw_template(self, sp, r):
         strat, param = sp
-        return (strat, strat.draw_template(BuildContext(r), param))
+        return (strat, strat.draw_template(r, param))
 
     @rule(
         target=strats_with_2_templates,
@@ -170,8 +169,8 @@ class HypothesisSpec(RuleBasedStateMachine):
         strat, param = sp
         return (
             strat,
-            strat.draw_template(BuildContext(r), param),
-            strat.draw_template(BuildContext(r), param),
+            strat.draw_template(r, param),
+            strat.draw_template(r, param),
         )
 
     @rule(st=strats_with_templates)
@@ -229,7 +228,7 @@ class HypothesisSpec(RuleBasedStateMachine):
             random = Random(
                 hashlib.md5((mixer + rep).encode('utf-8')).digest()
             )
-            outcome_template = result.draw_and_produce_from_random(random)
+            outcome_template = result.draw_and_produce(random)
             cache[rep] = result.reify(outcome_template)
             return deepcopy(cache[rep])
         return source.map(do_map)

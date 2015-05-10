@@ -30,8 +30,7 @@ from hypothesis.utils.show import show
 from hypothesis.internal.compat import hrange, text_type, integer_types
 from hypothesis.utils.extmethod import ExtMethod
 from hypothesis.database.backend import SQLiteBackend
-from hypothesis.searchstrategy.strategies import BuildContext, \
-    SearchStrategy, strategy
+from hypothesis.searchstrategy.strategies import SearchStrategy, strategy
 
 TemplatesFor = namedtuple('TemplatesFor', ('base',))
 
@@ -50,8 +49,8 @@ class TemplatesStrategy(SearchStrategy):
     def strictly_simpler(self, x, y):
         return self.base_strategy.strictly_simpler(x, y)
 
-    def draw_template(self, context, pv):
-        return self.base_strategy.draw_template(context, pv)
+    def draw_template(self, random, pv):
+        return self.base_strategy.draw_template(random, pv)
 
     def reify(self, template):
         return template
@@ -342,6 +341,6 @@ def strategy_test_suite(
         @given(randoms(), settings=Settings(max_examples=1000))
         def test_can_create_templates(self, random):
             parameter = strat.draw_parameter(random)
-            strat.draw_template(BuildContext(random), parameter)
+            strat.draw_template(random, parameter)
 
     return ValidationSuite

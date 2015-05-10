@@ -27,8 +27,8 @@ from hypothesis.strategies import just, tuples, randoms, booleans, \
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.searchstrategy.numbers import BoundedIntStrategy, \
     RandomGeometricIntStrategy
-from hypothesis.searchstrategy.strategies import BuildContext, \
-    OneOfStrategy, one_of_strategies
+from hypothesis.searchstrategy.strategies import OneOfStrategy, \
+    one_of_strategies
 
 
 def test_or_errors_when_given_non_strategy():
@@ -53,13 +53,13 @@ def test_strategy_for_integer_range_produces_only_integers_in_that_range():
     just_one_integer = integers(1, 1)
     for _ in hrange(100):
         pv = just_one_integer.draw_parameter(random)
-        t = just_one_integer.draw_template(BuildContext(random), pv)
+        t = just_one_integer.draw_template(random, pv)
         x = just_one_integer.reify(t)
         assert x == 1
     some_integers = integers(1, 10)
     for _ in hrange(100):
         pv = some_integers.draw_parameter(random)
-        x = some_integers.draw_template(BuildContext(random), pv)
+        x = some_integers.draw_template(random, pv)
         assert 1 <= x <= 10
 
 
@@ -68,7 +68,7 @@ def test_strategy_for_integer_range_can_produce_end_points():
     found = set()
     for _ in hrange(1000):  # pragma: no branch
         pv = some_integers.draw_parameter(random)
-        x = some_integers.draw_template(BuildContext(random), pv)
+        x = some_integers.draw_template(random, pv)
         found.add(x)
         if 1 in found and 10 in found:
             break
