@@ -288,13 +288,15 @@ class SearchStrategy(object):
 
     # Gory implementation details
 
-    # Provide bounds on the number of available templates
-    # The intended interpretation is that template_upper_bound means "if you've
-    # only found this many templates don't worry about it" and template_upper_bound
-    # means "if you've found this many templates there definitely aren't any
-    # more. Stop"
-    # Generally speaking once this reaches numbers >= 1000 or so you might as
-    # well just consider it infinite.
+    #: Provide an upper bound on the number of available templates.
+    #: The intended interpretation is that template_upper_bound means "if
+    #: you've only found this many templates don't worry about it". It is also
+    #: used internally in a few places for certain optimisations.
+    #: Generally speaking once this reaches numbers >= 2 ** 32 or so you might
+    #: as well just return float('inf').
+    #: Note that there may be more distinct templates than there are
+    #: representable values, because some templates may not reify and some may
+    #: lead to the same value.
     template_upper_bound = Infinity
 
     def __init__(self):
