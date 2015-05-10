@@ -154,7 +154,7 @@ def test_deeply_nested_sets():
             return booleans()
         return sets(f(n - 1))
 
-    assert strategy(f(10)).size_lower_bound == float('inf')
+    assert strategy(f(10)).template_upper_bound == float('inf')
 
 
 def test_list_simplicity():

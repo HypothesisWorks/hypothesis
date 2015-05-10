@@ -24,7 +24,7 @@ import hypothesis.specifiers as specifiers
 import hypothesis.internal.distributions as dist
 from hypothesis.internal.compat import hrange, text_type, integer_types
 from hypothesis.searchstrategy.misc import SampledFromStrategy
-from hypothesis.searchstrategy.strategies import EFFECTIVELY_INFINITE, \
+from hypothesis.searchstrategy.strategies import infinitish, \
     BadData, SearchStrategy, MappedSearchStrategy, strategy, check_type, \
     check_data_type
 
@@ -235,10 +235,7 @@ class BoundedIntStrategy(SearchStrategy):
         self.end = end
         if start > end:
             raise ValueError('Invalid range [%d, %d]' % (start, end))
-        self.size_lower_bound = end - start + 1
-        if self.size_lower_bound >= EFFECTIVELY_INFINITE:
-            self.size_lower_bound = float('inf')
-        self.size_upper_bound = self.size_lower_bound
+        self.template_upper_bound = infinitish(end - start)
 
     def __repr__(self):
         return 'BoundedIntStrategy(%d, %d)' % (self.start, self.end)

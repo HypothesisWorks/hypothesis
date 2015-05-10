@@ -29,8 +29,7 @@ class BoolStrategy(SearchStrategy):
 
     """A strategy that produces Booleans with a Bernoulli conditional
     distribution."""
-    size_lower_bound = 2
-    size_upper_bound = 2
+    template_upper_bound = 2
 
     def __repr__(self):
         return 'BoolStrategy()'
@@ -65,8 +64,7 @@ class JustStrategy(SearchStrategy):
     """
     A strategy which simply returns a single fixed value with probability 1.
     """
-    size_lower_bound = 1
-    size_upper_bound = 1
+    template_upper_bound = 1
 
     def __init__(self, value):
         SearchStrategy.__init__(self)
@@ -124,8 +122,7 @@ class SampledFromStrategy(SearchStrategy):
         if not self.elements:
             raise ValueError(
                 'SampledFromStrategy requires at least one element')
-        self.size_lower_bound = len(elements)
-        self.size_upper_bound = len(elements)
+        self.template_upper_bound = len(elements)
 
     def to_basic(self, template):
         return template

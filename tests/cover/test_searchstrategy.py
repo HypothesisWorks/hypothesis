@@ -129,24 +129,24 @@ def test_example_raises_unsatisfiable_when_too_filtered():
 
 def test_large_enough_integer_ranges_are_infinite():
     assert math.isinf(
-        integers(1, 2 ** 64).size_lower_bound)
+        integers(1, 2 ** 64).template_upper_bound)
 
 
 def test_tuple_strategy_too_large_to_fit():
     x = frozensets(integers(0, 30))
-    assert not math.isinf(x.size_lower_bound)
+    assert not math.isinf(x.template_upper_bound)
     for _ in hrange(8):
         x = tuples(x, x)
     assert math.isinf(
-        tuples(integers(), x).size_lower_bound)
+        tuples(integers(), x).template_upper_bound)
 
 
 def test_one_of_strategy_goes_infinite():
     x = integers(0, 2 ** 32 - 2)
-    assert not math.isinf(x.size_lower_bound)
+    assert not math.isinf(x.template_upper_bound)
     for _ in hrange(10):
         x |= x
-    assert math.isinf(x.size_lower_bound)
+    assert math.isinf(x.template_upper_bound)
 
 
 def nameless_const(x):

@@ -239,7 +239,7 @@ def lists(elements=None, min_size=None, average_size=None, max_size=None):
             return ListStrategy(())
     else:
         check_strategy(elements)
-        if elements.size_upper_bound == 1:
+        if elements.template_upper_bound == 1:
             from hypothesis.searchstrategy.numbers import IntegersFromStrategy
             if max_size is None:
                 length_strat = IntegersFromStrategy(
@@ -266,11 +266,11 @@ def sets(elements=None, min_size=None, average_size=None, max_size=None):
     if max_size == 0:
         return SetStrategy(())
     check_strategy(elements)
-    if min_size is not None and elements.size_upper_bound < min_size:
+    if min_size is not None and elements.template_upper_bound < min_size:
         raise InvalidArgument((
             'Cannot generate sets of size %d from %r, which contains '
             'no more than %d distinct values') % (
-                min_size, elements, elements.size_upper_bound,
+                min_size, elements, elements.template_upper_bound,
         ))
     result = SetStrategy(
         (elements,),

@@ -49,13 +49,10 @@ class TupleStrategy(SearchStrategy):
         strategies = tuple(strategies)
         self.tuple_type = tuple_type
         self.element_strategies = strategies
-        self.size_lower_bound = 1
-        self.size_upper_bound = 1
+        self.template_upper_bound = 1
         for e in self.element_strategies:
-            self.size_lower_bound = safe_mul(
-                e.size_lower_bound, self.size_lower_bound)
-            self.size_upper_bound = safe_mul(
-                e.size_upper_bound, self.size_upper_bound)
+            self.template_upper_bound = safe_mul(
+                e.template_upper_bound, self.template_upper_bound)
 
     def reify(self, value):
         return self.newtuple([
@@ -164,8 +161,7 @@ class ListStrategy(SearchStrategy):
             self.element_strategy = one_of_strategies(strategies)
         else:
             self.element_strategy = None
-            self.size_upper_bound = 1
-            self.size_lower_bound = 1
+            self.template_upper_bound = 1
 
     def reify(self, value):
         if self.element_strategy is not None:
@@ -434,7 +430,7 @@ class SingleElementListStrategy(MappedSearchStrategy):
         super(SingleElementListStrategy, self).__init__(
             strategy=length_strategy,
         )
-        assert element_strategy.size_upper_bound == 1
+        assert element_strategy.template_upper_bound == 1
         self.element_strategy = element_strategy
         self.length_strategy = length_strategy
 
@@ -482,11 +478,9 @@ class SetStrategy(SearchStrategy):
         elements = self.list_strategy.element_strategy
 
         if not elements:
-            self.size_lower_bound = 1
-            self.size_upper_bound = 1
+            self.template_upper_bound = 1
         else:
-            self.size_lower_bound = powset(elements.size_lower_bound)
-            self.size_upper_bound = powset(elements.size_upper_bound)
+            self.template_upper_bound = powset(elements.template_upper_bound)
 
     def reify(self, value):
         return set(self.list_strategy.reify(tuple(value)))
@@ -605,7 +599,7 @@ def define_list_strategy(specifier, settings):
     if len(specifier) == 1:
         elt = strategy(specifier[0], settings)
         from hypothesis.searchstrategy.numbers import IntegersFromStrategy
-        if elt.size_upper_bound == 1:
+        if elt.template_upper_bound == 1:
             return SingleElementListStrategy(
                 elt,
                 IntegersFromStrategy(

@@ -103,7 +103,7 @@ def find_satisfying_template(
     )
 
     for parameter in parameter_source:  # pragma: no branch
-        if len(tracker) >= search_strategy.size_upper_bound:
+        if len(tracker) >= search_strategy.template_upper_bound:
             break
         if len(tracker) >= max_examples:
             break
@@ -129,7 +129,7 @@ def find_satisfying_template(
     timed_out = settings.timeout >= 0 and run_time >= settings.timeout
     if (
         satisfying_examples and
-        len(tracker) >= search_strategy.size_lower_bound
+        len(tracker) >= search_strategy.template_upper_bound
     ):
         raise DefinitelyNoSuchExample(
             get_pretty_function_description(condition),
@@ -567,10 +567,10 @@ def find(specifier, condition, settings=None, random=None):
     except Timeout:
         raise
     except (NoSuchExample, Unsatisfiable):
-        if search.size_upper_bound <= len(tracker):
+        if search.template_upper_bound <= len(tracker):
             raise DefinitelyNoSuchExample(
                 get_pretty_function_description(condition),
-                search.size_upper_bound,
+                search.template_upper_bound,
             )
         raise NoSuchExample(get_pretty_function_description(condition))
 

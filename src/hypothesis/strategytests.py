@@ -40,8 +40,7 @@ class TemplatesStrategy(SearchStrategy):
     def __init__(self, base_strategy):
         super(TemplatesStrategy, self).__init__()
         self.base_strategy = base_strategy
-        self.size_lower_bound = base_strategy.size_lower_bound
-        self.size_upper_bound = base_strategy.size_upper_bound
+        self.template_upper_bound = base_strategy.template_upper_bound
 
     def draw_parameter(self, random):
         return self.base_strategy.draw_parameter(random)

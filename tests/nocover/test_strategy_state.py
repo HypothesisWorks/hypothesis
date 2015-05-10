@@ -295,7 +295,7 @@ class HypothesisSpec(RuleBasedStateMachine):
     @rule(strat=strategies, r=randoms())
     def can_find_as_many_templates_as_size(self, strat, r):
         tempstrat = templates_for(strat)
-        n = min(10, strat.size_lower_bound)
+        n = min(10, strat.template_upper_bound)
         found = []
         with Settings(verbosity=Verbosity.quiet, timeout=2.0):
             for _ in range(n):

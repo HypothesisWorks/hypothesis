@@ -289,14 +289,13 @@ class SearchStrategy(object):
     # Gory implementation details
 
     # Provide bounds on the number of available templates
-    # The intended interpretation is that size_lower_bound means "if you've
-    # only found this many templates don't worry about it" and size_upper_bound
+    # The intended interpretation is that template_upper_bound means "if you've
+    # only found this many templates don't worry about it" and template_upper_bound
     # means "if you've found this many templates there definitely aren't any
     # more. Stop"
     # Generally speaking once this reaches numbers >= 1000 or so you might as
     # well just consider it infinite.
-    size_lower_bound = Infinity
-    size_upper_bound = Infinity
+    template_upper_bound = Infinity
 
     def __init__(self):
         pass
@@ -430,13 +429,11 @@ class OneOfStrategy(SearchStrategy):
         if len(strategies) <= 1:
             raise ValueError('Need at least 2 strategies to choose amongst')
         self.element_strategies = list(strategies)
-        self.size_lower_bound = 0
-        self.size_upper_bound = 0
+        self.template_upper_bound = 0
         for e in self.element_strategies:
-            self.size_lower_bound += e.size_lower_bound
-            self.size_upper_bound += e.size_upper_bound
-        self.size_lower_bound = infinitish(self.size_lower_bound)
-        self.size_upper_bound = infinitish(self.size_upper_bound)
+            self.template_upper_bound += e.template_upper_bound
+            self.template_upper_bound += e.template_upper_bound
+        self.template_upper_bound = infinitish(self.template_upper_bound)
 
     def __repr__(self):
         return ' | '.join(map(repr, self.element_strategies))
@@ -519,8 +516,7 @@ class MappedSearchStrategy(SearchStrategy):
     def __init__(self, strategy, pack=None):
         SearchStrategy.__init__(self)
         self.mapped_strategy = strategy
-        self.size_lower_bound = self.mapped_strategy.size_lower_bound
-        self.size_upper_bound = self.mapped_strategy.size_upper_bound
+        self.template_upper_bound = self.mapped_strategy.template_upper_bound
         if pack is not None:
             self.pack = pack
 

@@ -27,7 +27,7 @@ def test_can_collectively_minimize(spec):
     putting us in a state where example cloning is required to get to the
     answer fast enough."""
 
-    if spec.size_upper_bound < 2:
+    if spec.template_upper_bound < 2:
         return
 
     xs = find(
