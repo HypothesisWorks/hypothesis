@@ -14,8 +14,14 @@
 
 # on_rtd is whether we are on readthedocs.org
 import os
+import sys
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
+sys.path.append(
+    os.path.join(os.path.dirname(__file__), "..", "src")
+)
+
+autodoc_member_order = 'bysource'
 
 extensions = [
     'sphinx.ext.autodoc',

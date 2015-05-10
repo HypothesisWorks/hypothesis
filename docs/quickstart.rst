@@ -60,8 +60,9 @@ Lets see how you'd do that with Hypothesis:
 .. code:: python
 
   from hypothesis import given
+  from hypothesis.strategies import strings
 
-  @given(str)
+  @given(strings)
   def test_decode_inverts_encode(s):
       assert decode(encode(s)) == s
 

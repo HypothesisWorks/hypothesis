@@ -3,335 +3,21 @@ What you can generate and how
 =============================
 
 The general philosophy of Hypothesis data generation is that everything
-should be possible to generate and most things should be easy. Although this
+should be possible to generate and most things should be easy. Most things in
+the standard library 
 is more aspirational than achieved, the state of the art is already pretty
 good.
 
 This document is a guide to what strategies are available for generating data
 and how to build them. Strategies have a variety of other important internal
-features, but the type of data they generate is the only public part of their
-API.
+features, such as how they simplify, but the data they can generate is the only
+public part of their API.
 
---------------
-Built-in types
---------------
+Functions for building strategies are all available in the hypothesis.strategies
+module. The salient functions from it are as follows:
 
-~~~~~~~~~~
-Primitives
-~~~~~~~~~~
-
-The following "primitive" types all have out of the box high quality strategies
-written for them which you can get as the result of calling strategy on their
-type (or using their type in @given).
-
-1. int (on python 2.7 this will also generate longs)
-2. bool
-3. None
-4. float
-5. complex
-6. Decimal
-7. Fraction
-8. Unicode text (str on 3, unicode on 2.7)
-9. Binary text (bytes on 3, str on 2.7)
-10. Random
-
-Some examples:
-
-.. code:: python
-
-  >>> strategy(float).example()
-  1.33e-321
-  >>> strategy(int).example()
-  -12576855
-
-None is also supported as a convenient alias so you don't have to use type(None):
-
-
-.. code:: python
-
-  >>> print(strategy(None).example())
-  None
-
-
-~~~~~~
-Tuples
-~~~~~~
-
-Given values x1, ..., xn, the tuple (x1, ..., xn) gives a strategy which
-produces a tuple of that length where each coordinate has data drawn from
-the strategy of the corresponding coordinate. So e.g. strategy((x, y)).example()
-looks like (strategy(x).example(), strategy(y).example()).
-
-Examples:
-
-.. code:: python
-
-  >>> strategy((int, bool)).example()
-  (-8, False)
-  >>> strategy((int, int, int)).example()
-  (-6, -37837571, -8)
-
-The empty tuple gives the strategy that only generates the empty tuple:
-
-.. code:: python
-
-  >>> strategy(()).example()
-  ()
-  
-
-collections.namedtuple instances also work out of the box, and in exactly the
-same way:
-
-.. code:: python
-
-  >>> from collections import namedtuple
-  >>> T = namedtuple('T', ('a', 'b', 'c'))
-  >>> strategy(T(int, int, float)).example()
-  T(a=1572, b=187, c=-1.1575520623614878e-260)
-
-~~~~~
-Lists
-~~~~~
-
-You can generate lists of anything you can generate a strategy of.
-strategy([x]).example() is a list with zero or more values drawn from
-strategy(x).example().
-
-e.g.
-
-.. code:: python
-
-  >>> strategy([int]).example()
-  [-40, -8, -17, -2, 25, -37, 5, 8, -31, -28, -40, -23, -28]
-  >>> strategy([bool]).example()
-  []
-  >>> strategy([bool]).example()
-  [False, False, False]
-
-The strategy corresponding to a list of multiple elements draws elements from
-a mix of its contents. So strategy([x, y]).example() would potentially have
-elements from either strategy(x).example() or strategy(y).example().
-
-e.g. 
-
-.. code:: python
-
-  >>> strategy([float, bool]).example()
-  []
-  >>> strategy([float, bool]).example()
-  [nan, True, nan, -7.2244003034848e-310, -9.90765688276e-312, True, -3e-323]
-  >>> strategy([float, bool]).example()
-  [True]
-
-An empty list will give you a strategy generating only empty lists:
-
-.. code:: python
-
-  >>> strategy([]).example()
-  []
-
-~~~~~~~~~~~~~~~~~~~
-Sets and frozensets
-~~~~~~~~~~~~~~~~~~~
-
-Sets and frozensets behave identically to lists:
-
-.. code:: python
-
-  >>> strategy({int}).example()
-  set()
-  >>> strategy({int}).example()
-  {0, 2, -1}
-  >>> strategy(frozenset({int})).example()
-  frozenset({-7, -3, -2, -1})
-  >>> strategy(set()).example()
-  set()
-  >>> strategy(frozenset()).example()
-  frozenset()
-
-~~~~~~~~~~~~
-Dictionaries
-~~~~~~~~~~~~
-
-Dictionaries with fixed keys work like tuples: They generate the dictionary
-with those keys, with the examples for the values drawn from the strategy
-corresponding to the values in the source.
-
-.. code:: python
-
-  >>> strategy({"foo": int, "bar": bool}).example()
-  {'bar': True, 'foo': -367}
-  >>> strategy({}).example()
-  {}
-
-
------------------
-Mixing strategies
------------------
-
-Given strategies a and b, a | b is a strategy that generates data from either
-of them:
-
-.. code:: python
-
-  >>> (strategy(int) | strategy(bool)).example()
-  True
-  >>> (strategy(int) | strategy(bool)).example()
-  -7
-
-Note that the strategy for [x, y] is the same as the strategy for [x | y] (in
-fact this is how it is implemented under the hood).
-
-------------------
-Special specifiers
-------------------
-
-The module hypothesis.specifiers has a number of types you can use to define
-more specific strategies for data.
-
-~~~~~~~~~~
-dictionary
-~~~~~~~~~~
-
-The strategy for dictionary instances just gives you dictionaries with fixed
-keys. If instead you want dictionaries with variable keys you use this function
-. It takes two arguments - one generates keys, the other values.
-
-.. code:: python
-
-    >>> from hypothesis.specifiers import dictionary
-    >>> strategy(dictionary(int, int)).example()
-    {}
-    >>> strategy(dictionary(int, int)).example()
-    {20819: -157}
-    >>> strategy(dictionary(int, int)).example()
-    {288: 13, 911: 12, -259: 9, -121: -4}
-
-It also takes an optional third argument you can use for custom dictionary
-classes (these don't have to be dict subtypes, anything that can be build
-from a list of (key, value) pairs will do):
-
-.. code:: python
-
-    >>> from collections import OrderedDict
-    >>> strategy(dictionary(int, int, OrderedDict)).example()
-    OrderedDict([(0, 0), (1, 0)])
-    >>> strategy(dictionary(int, int, OrderedDict)).example()
-    OrderedDict()
-    >>> strategy(dictionary(int, int, OrderedDict)).example()
-    OrderedDict([(-3, -213), (3, 203), (18, 0)])
-
-~~~~~~
-one_of
-~~~~~~
-
-one_of takes a collection of values and generates a value from any of them.
-strategy(one_of((x, y, z))) is the same as strategy(x) | strategy(y) | strategy(z).
-
-.. code:: python
-
-  >>> strategy([one_of((int, bool))]).example()
-  [-4397, False, -8789, -13191, True, 5800, -16392, True, False, -3042]
-
-
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Strings from specific alphabets
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-By default Hypothesis generates unicode strings with a very large range of
-unicode characters. Often what you want is something more specific. Hypothesis
-provides a strings() specifier which lets you specify the alphabet to draw
-from.
-
-.. code:: python
-
-    >>> strategy([strings("abc")]).example()
-    ['aaaaacc', 'acacacacaaaabaacc', 'aaacccc', 'cba']
-    >>> strategy([strings(chr(i) for i in range(128))]).example()
-    [' rce 13< 61ce8o> e8> 63e >3 c r', 'are<e3nnn1boeno> 3']
-
-
-~~~~~~~~~~~~~~
-Integer ranges
-~~~~~~~~~~~~~~
-
-specifiers offers two special classes of integer strategy: integers_in_range
-and integers_from. strategy(integers_in_range(a, b)) generates an integers x
-such that a <= x <= b:
-
-
-.. code:: python
-
-  >>> strategy([integers_in_range(0, 1)]).example()
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-  >>> strategy([integers_in_range(0, 1)]).example()
-  [0, 1, 0, 1]
-
-integers_from(a) generates integers such that a <= x:
-
-.. code:: python
-
-  >>> strategy([integers_from(10)]).example()
-  [12, 17]
-  >>> strategy([integers_from(10)]).example()
-  [10, 12, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
-
-
-~~~~~~~~~~~~
-Float ranges
-~~~~~~~~~~~~
-
-Similar to integers_in_range, floats_in_range(a, b) generates a float x such
-that a <= x <= b:
-
-.. code:: python
-
-  >>> strategy([floats_in_range(0.5, 3)]).example()
-  [2.604271306355233, 2.0002340854172322, 0.6189895621739885]
-
-~~~~
-just
-~~~~
-
-The only example just(x) produces is x.
-
-.. code:: python
-
-  >>> strategy(just(1)).example()
-  1
-
-Note that this returns exactly that value, with no copying:
-
-
-.. code:: python
-
-  >>> s = strategy(just(object()))
-  >>> s.example() is s.example()
-  True
-
-This means that you should be careful about using it with mutable objects,
-as it will be repeatedly passed to test functions which may  mutate it.
-
-~~~~~~~~~~~~
-sampled_from
-~~~~~~~~~~~~
-
-sampled_from(x) gives a strategy such that strategy(sampled_from(x)).example()
-in x.
-
-.. code:: python
-
-  >>> x = ["a", "b", "c"]  
-  >>> strategy([sampled_from(x)]).example()
-  ['a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a']
-  >>> strategy([sampled_from(x)]).example()
-  ['a', 'c']
-  >>> strategy([sampled_from(x)]).example()
-  ['a', 'b', 'c', 'a', 'c', 'b']
-
-Note that once again these values are not copied, so be careful using this on
-mutable data.
+.. automodule:: hypothesis.strategies
+  :members:
 
 ~~~~~~~~~~~~~~~~
 Infinite streams
@@ -446,6 +132,9 @@ e.g.:
   >>> strategy([int]).map(sorted).example()
   [1, 5, 17, 21, 24, 30, 45, 82, 88, 88, 90, 96, 105]
 
+Note that many things that you might use mapping for can also be done with the
+builds function in hypothesis.strategies.
+
 ~~~~~~~~~
 Filtering
 ~~~~~~~~~
@@ -478,6 +167,7 @@ don't want rather than attempting to cut out a large chunk of the search space.
 A technique that often works well here is to use map to first transform the data
 and then use filter to remove things that didn't work out. So for example if you
 wanted pairs of integers (x,y) such that x < y you could do the following:
+
 
 .. code:: python
 
@@ -578,25 +268,39 @@ greedily apply it to your data to produce the simplest example it possible can.
 You should avoid having cycles or unbounded paths in the graph, as this will tend
 to hurt example quality and performance.
 
-You don't need to register subclasses of BasicStrategy. They work out of the box,
-either as classes or instances:
+Instances of BasicStrategy are not actually strategies and must be converted
+to them using the basic function from hypothesis.strategies. You can convert
+either a class or an instance:
 
 .. code:: python
 
-  >>> strategy(Bitfields).example()
+  >>> basic(Bitfields).example()
   70449389301502165026254673882738917538
   >>> strategy(Bitfields()).example()
   180947746395888412520415493036267606532
 
+You can also skip the class definition if you prefer and just pass functions to
+basic. e.g.
+
+.. code:: python
+
+  >>> basic(generate=lambda random, _: random.getrandbits(8)).example()
+  88
+
+The arguments to basic have the same names as the methods you would define on
+BasicStrategy.
+
 Caveats:
 
-* BasicStrategy is not a subclass of SearchStrategy, only convertible to it.
+* Remember that BasicStrategy is not a subclass of SearchStrategy, only
+  convertible to one.
 * The values produced by BasicStrategy are opaque to Hypothesis in a way that
   ones it is more intimately familiar with are not, because it's impossible
   to safely and sensibly deduplicate arbitrary Python objects. This is mostly
   fine but it blocks certain heuristics and optimisations Hypothesis uses for
   improving the simplification process. As such implementations using
-  BasicStrategy might get slightly worse examples than the equivalent native ones.
+  BasicStrategy might get slightly worse examples than the equivalent native
+  ones.
 * You should not use BasicData for anything which you need control over the
   life cycle of, e.g. ORM objects. Hypothesis will keep instances of these
   values around for a potentially arbitrarily long time and will not do any
@@ -618,8 +322,10 @@ to learn all the gory details of how it works under the hood, you can use the
 full blown raw SearchStrategy interface to experience the full power of
 Hypothesis.
 
-As mentioned, this is not a public API. If you use this API your code may
-break between minor version updates and I won't feel bad about it.
+This is only semi-public API, meaning that it may break between minor versions
+but will not break in patch versions, but it should be considered relatively
+stable and most minor versions won't break it.
 
-The API is defined and relatively well commented in `strategies.py <https://github.com/DRMacIver/hypothesis/blob/master/src/hypothesis/searchstrategy/strategies.py>`_ 
-and there is `a worked example available here <https://github.com/DRMacIver/hypothesis/blob/master/examples/bintree.py>`_.
+.. autoclass:: SearchStrategy
+  :members: produce_parameter, produce_template, reify, simplifiers, basic_simplify,
+    full_simplify, to_basic, from_basic 

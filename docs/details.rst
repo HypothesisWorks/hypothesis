@@ -27,8 +27,9 @@ For example suppose had the following test:
 .. code:: python
 
   from hypothesis import given
+  from hypothesis.strategies import floats
 
-  @given(float)
+  @given(floats())
   def test_negation_is_self_inverse(x):
       assert x == -(-x)
       
@@ -49,9 +50,10 @@ So lets block off this particular example:
 .. code:: python
 
   from hypothesis import given, assume
+  from hypothesis.strategies import floats
   from math import isnan
 
-  @given(float)
+  @given(floats())
   def test_negation_is_self_inverse_for_non_nan(x):
       assume(not isnan(x))
       assert x == -(-x)
@@ -70,6 +72,7 @@ If we'd written:
 .. code:: python
 
   from hypothesis import given, assume
+  from hypothesis.strategies import floats
 
   @given(float)
   def test_negation_is_self_inverse_for_non_nan(x):
@@ -96,7 +99,7 @@ Suppose we had the following:
 
 .. code:: python
 
-  @given([int])
+  @given(lists(integers()))
   def test_sum_is_positive(xs):
     assert sum(xs) > 0
 
@@ -123,7 +126,7 @@ Here's what happens if we try to run this:
 
 .. code:: python
 
-  @given([int])
+  @given(lists(integers()))
   def test_sum_is_positive(xs):
       assume(len(xs) > 10)
       assume(all(x > 0 for x in xs))
@@ -159,7 +162,7 @@ The mechanism for doing this is the Settings object. You can pass this to a
 
     from hypothesis import given, Settings
 
-    @given(int, settings=Settings(max_examples=500))
+    @given(integers(), settings=Settings(max_examples=500))
     def test_this_thoroughly(x):
         pass
 
@@ -206,7 +209,7 @@ You can use this by nesting test definitions inside the context:
     from hypothesis import given, Settings
 
     with Settings(max_examples=500):
-        @given(int)
+        @given(integers())
         def test_this_thoroughly(x):
             pass
 
@@ -216,18 +219,6 @@ with custom defined settings of course.
 
 As well as max_examples there are a variety of other settings you can use.
 help(Settings) in an interactive environment will give you a full list of them.
-
-Settings are also extensible. You can add new settings if you want to extend
-this. This is useful for adding additional parameters for customising your
-strategies. These will be picked up by all settings objects.
-
-.. code:: python
-
-    >>> Settings.define_setting(
-    ... name="some_custom_setting", default=3,
-    ... description="This is a custom settings we've just added")
-    >>> s.some_custom_setting
-    3
 
 
 .. _verbose-output:
@@ -245,7 +236,8 @@ of verbose output are, well, verbose, but they should convey the idea).
 .. code:: python
 
     >>> from hypothesis import find, Settings, Verbosity
-    >>> find([bool], any, settings=Settings(verbosity=Verbosity.verbose))
+    >>> from hypothesis.strategies import lists, booleans
+    >>> find(lists(booleans()), any, settings=Settings(verbosity=Verbosity.verbose))
     Found satisfying example [True, True, ...
     Shrunk example to [False, False, False, True, ...
     Shrunk example to [False, False, True, False, False, ...
@@ -256,8 +248,9 @@ of verbose output are, well, verbose, but they should convey the idea).
     [True]
 
     >>> from hypothesis import given
+    >>> from hypothesis.strategies import integers()
     >>> Settings.default.verbosity = Verbosity.verbose
-    >>> @given(int)
+    >>> @given(integers())
     ... def test_foo(x):
     ...     assert x > 0
     ... 
@@ -290,95 +283,45 @@ HYPOTHESIS_VERBOSITY_LEVEL to the name of the level you want. So e.g.
 setting HYPOTHESIS_VERBOSITY_LEVEL=verbose will run all your tests printing
 intermediate results and errors.
 
----------------------------------------
-SearchStrategy and converting arguments
----------------------------------------
+---------------------
+Definining strategies
+---------------------
 
 The type of object that is used to explore the examples given to your test
-function is called a SearchStrategy. The arguments to @given are passed to
-the function *strategy*. This is used to convert arbitrary objects to
-a SearchStrategy.
+function is called a SearchStrategy. These are created using the functions
+exposed in the hypothesis.strategies module.
 
-From most usage, strategy looks like a normal function:
-
-.. code:: python
-
-  >>> from hypothesis import strategy
-
-  >>> strategy(int)
-  RandomGeometricIntStrategy()
-
-  >>> strategy((int, int))
-  TupleStrategy((RandomGeometricIntStrategy(), RandomGeometricIntStrategy()), tuple) 
-
-If you try to call it on something with no implementation defined you will
-get a NotImplementedError:
-
+Many of these strategies expose a variety of arguments you can use to customize
+generation. For example for integers you can specify min and max values of
+integers you want:
 
 .. code:: python
 
-  >>> strategy(1)
-  NotImplementedError: No implementation available for 1
+  >>> from hypothesis.strategies
+  >>> integers()
+  RandomGeometricIntStrategy() | WideRangeIntStrategy()
+  >>> integers(min_value=0)
+  IntegersFromStrategy(0)
+  >>> integers(min_value=0, max_value=10)
+  BoundedIntStrategy(0, 10)
 
-Although we have a strategy for producing ints it doesn't make sense to convert
-an *individual* int into a strategy.
-
-Conversely there's no implementation for the type "tuple" because we need to know
-the shape of the tuple and what sort of elements to put in it:
-
-.. code:: python
-
-  In[5]: strategy(tuple)
-  NotImplementedError: No implementation available for <class 'tuple'>
-
-
-The general idea is that arguments to strategy should "look like types" and
-should generate things that are instances of that type. With collections and
-similar you also need to specify the types of the elements. So e.g. the
-strategy you get for (int, int, int) is a strategy for generating triples
-of ints.
-
-If you want to see the sort of data that a strategy produces you can ask it
-for an example:
+If you want to see exactly what a strategy produces you can ask for an example:
 
 .. code:: python
 
-  >>> strategy(int).example()
-  192
- 
-  >>> strategy(str).example()
-  '\U0009d5dc\U000989fc\U00106f82\U00033731'
+  >>> integers(min_value=0, max_value=10).example()
+  7
 
-  >>> strategy(float).example()
-  -1.7551092389086e-308
-
-  >>> strategy((int, int)).example()
-  (548, 12)
-
-Note: example is just a method that's available for this sort of interactive debugging.
-It's not actually part of the process that Hypothesis uses to feed tests, though
-it is of course built on the same basic mechanisms.
-
-
-strategy can also accept a settings object which will customise the SearchStrategy
-returned:
+Many strategies are build out of other strategies. For example, if you want
+to define a tuple you need to say what goes in each element:
 
 .. code:: python
 
-    >>> strategy([[int]], Settings(average_list_length=0.5)).example()
-    [[], [0]]
+  >>> from hypothesis.strategies import tuples
+  >>> tuples(integers(), integers()).example()
+  (-1953, 85733644253897814191482551773726674360154905303788466954)
 
- 
-You can also generate lists (like tuples you generate lists from a list describing
-what should be in the list rather than from the type):
-
-.. code:: python
-
-  >>> strategy([int]).example()
-  [0, 0, -1, 0, -1, -2]
-
-
-Details of what exactly you can generate are :doc:`available in a separate document <data>`.
+Further details are :doc:`available in a separate document <data>`.
 
 ------------------------------------
 The gory details of given parameters
@@ -392,29 +335,25 @@ For example all of the following are valid uses:
 
 .. code:: python
 
-  @given(int, int)
+  @given(integers(), integers())
   def a(x, y):
     pass
 
-  @given(int, y=int)
+  @given(integers())
   def b(x, y):
     pass
 
-  @given(int)
+  @given(y=integers())
   def c(x, y):
     pass
 
-  @given(y=int)
-  def d(x, y):
-    pass
-
   @given(x=int, y=int)
-  def e(x, **kwargs):
+  def d(x, **kwargs):
     pass
 
 
   class SomeTest(TestCase):
-      @given(int)
+      @given(integers())
       def test_a_thing(self, x):
           pass
 
@@ -422,11 +361,11 @@ The following are not:
 
 .. code:: python
 
-  @given(int, int, int)
+  @given(integers(), integers(), integers())
   def e(x, y):
       pass
 
-  @given(x=int)
+  @given(x=integers())
   def f(x, y):
       pass
 
@@ -437,102 +376,34 @@ The following are not:
 
 The rules for determining what are valid uses of given are as follows:
 
-1. Arguments passed as keyword arguments must cover the right hand side of the argument list.
-2. Positional arguments fill up from the right, starting from the first argument not covered by a keyword argument.
-3. If the function has kwargs, additional arguments will be added corresponding to any keyword arguments passed. These will be to the right of the normal argument list in an arbitrary order.
+1. Arguments passed as keyword arguments must cover the right hand side
+   of the argument list. That is, if you provide an argument as a keyword
+   you must also provide everything to the right of it.
+2. Positional arguments fill up from the right, starting from the first
+   argument not covered by a keyword argument. (Note: Mixing keyword and
+   positional arguments is supported but deprecated as its semantics are
+   highly confusing and difficult to support. You'll get a warning if you
+   do). 
+3. If the function has variable keywords, additional arguments will be
+   added corresponding to any keyword arguments passed. These will be to
+   the right of the normal argument list in an arbitrary order.
 4. varargs are forbidden on functions used with @given.
 
-If you don't have kwargs then the function returned by @given will have the same argspec (i.e. same arguments, keyword arguments, etc) as the original but with different defaults.
+If you don't have kwargs then the function returned by @given will have
+the same argspec (i.e. same arguments, keyword arguments, etc) as the
+original but with different defaults.
 
-The reason for the "filling up from the right" behaviour is so that using @given with instance methods works: self will be passed to the function as normal and not be parametrized over.
-
-If all this seems really confusing, my recommendation is to just not mix positional and keyword arguments. It will probably make your life easier.
-
------------------------------------
-Extending Hypothesis with new types
------------------------------------
-
-You can build new strategies out of other strategies. For example:
-
-.. code:: python
-
-  >>> s = strategy(int).map(Decimal)
-  >>> s.example()
-  Decimal('6029418')
-
-map takes a function which takes a value produced by the original strategy and
-returns a new value. It returns a strategy whose values are values from the
-original strategy with that function applied to them, so here we have a strategy
-which produces Decimals by first generating an int and then calling Decimal on
-that int.
-
-This is generally the encouraged way to define your own strategies: The details of how SearchStrategy
-works are not currently considered part of the public API and may be liable to change.
-
-If you want to register this so that strategy works for your custom types you
-can do this by extending the strategy method:
-
-.. code:: python
-
-  >>> @strategy.extend_static(Decimal)
-  ... def decimal_strategy(d, settings):
-  ...   return strategy(int, settings).map(Decimal)
-  >>> strategy(Decimal).example()
-  Decimal('13')
-
-You can also define types for your own custom data generation if you need something
-more specific. For example here is a strategy that lets you specify the exact length
-of list you want:
-
-.. code:: python
-
-  >>> from collections import namedtuple
-  >>> ListsOfFixedLength = namedtuple('ListsOfFixedLength', ('length', 'elements'))
-  >>> @strategy.extend(ListsOfFixedLength)
-  ... def fixed_length_lists_strategy(specifier, settings):
-  ...     return strategy((specifier.elements,) * specifier.length, settings).map(
-  ...        pack=list)
-  ... 
-  >>> strategy(ListsOfFixedLength(5, int)).example()
-  [0, 2190, 899, 2, -1326]
-
-(You don't have to use namedtuple for this, but I tend to because they're
-convenient)
-
-Hypothesis also provides a standard test suite you can use for testing strategies
-you've defined.
-
-
-.. code:: python
-
-  from hypothesis.strategytests import strategy_test_suite
-  TestDecimal = strategy_test_suite(Decimal)
-
-TestDecimal is a TestCase class (from unittest) that will run a bunch of tests against the
-strategy you've provided for Decimal to make sure it works correctly.
-
-~~~~~~~~~~~~~~~~~~~~~
-Extending a function?
-~~~~~~~~~~~~~~~~~~~~~
-
-The way this works is that Hypothesis has something that looks suspiciously
-like its own object system, called ExtMethod.
-
-It mirrors the Python object system as closely as possible and has the
-same method resolution order, but allows for methods that are defined externally
-to the class that uses them. This allows extensibly doing different things
-based on the type of an argument without worrying about the namespacing problems
-caused by MonkeyPatching.
-
-strategy is the main ExtMethod you are likely to interact with directly, but
-there are a number of others that Hypothesis uses under the hood.
+The reason for the "filling up from the right" behaviour is so that
+using @given with instance methods works: self will be passed to the
+function as normal and not be parametrized over.
 
 
 -------------------------
 Custom function execution
 -------------------------
 
-Hypothesis provides you with a hook that lets you control how it runs examples.
+Hypothesis provides you with a hook that lets you control how it runs
+examples.
 
 This lets you do things like set up and tear down around each example, run
 examples in a subprocess, transform coroutine tests into normal tests, etc.
