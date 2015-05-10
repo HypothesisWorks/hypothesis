@@ -195,7 +195,7 @@ class SearchStrategy(object):
                 'Could not find any valid examples in 20 tries'
             )
 
-        return min(parts, key=lambda tr: self._template_size(tr[0]))[1]
+        return min(parts, key=lambda tr: self.__template_size(tr[0]))[1]
 
     def map(self, pack):
         """Returns a new strategy that generates values by generating a value
