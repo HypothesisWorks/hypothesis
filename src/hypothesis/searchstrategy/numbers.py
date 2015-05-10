@@ -24,8 +24,8 @@ import hypothesis.specifiers as specifiers
 import hypothesis.internal.distributions as dist
 from hypothesis.internal.compat import hrange, text_type, integer_types
 from hypothesis.searchstrategy.misc import SampledFromStrategy
-from hypothesis.searchstrategy.strategies import infinitish, \
-    BadData, SearchStrategy, MappedSearchStrategy, strategy, check_type, \
+from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
+    MappedSearchStrategy, strategy, check_type, infinitish, \
     check_data_type
 
 
