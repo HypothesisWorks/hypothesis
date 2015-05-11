@@ -17,7 +17,7 @@ import time
 
 import pytest
 import hypothesis.settings as hs
-from hypothesis import given, strategy, assume
+from hypothesis import given, assume, strategy
 from hypothesis.errors import Timeout, Unsatisfiable
 from hypothesis.database import ExampleDatabase
 from hypothesis.strategies import text, tuples, integers
@@ -244,7 +244,7 @@ def test_can_handle_more_than_max_iterations_in_db():
                         first[0] = False
                         seen.append(x)
                 if x not in seen:
-                    raise ValueError("Weird")
+                    raise ValueError('Weird')
 
             try:
                 test_seen()

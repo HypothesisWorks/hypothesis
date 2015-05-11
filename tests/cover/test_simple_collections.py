@@ -15,7 +15,7 @@ from __future__ import division, print_function, absolute_import, \
 
 from random import Random
 from itertools import islice
-from collections import namedtuple, OrderedDict
+from collections import OrderedDict, namedtuple
 
 import pytest
 from hypothesis import Settings, find, given, strategy
@@ -207,4 +207,3 @@ def test_ordered_dictionaries_preserve_keys():
     x = fixed_dictionaries(
         OrderedDict([(k, booleans()) for k in keys])).example()
     assert list(x.keys()) == keys
-
