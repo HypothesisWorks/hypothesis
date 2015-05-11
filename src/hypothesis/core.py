@@ -75,7 +75,7 @@ def find_satisfying_template(
     """
     satisfying_examples = 0
     timed_out = False
-    max_iterations = settings.max_iterations
+    max_iterations = max(settings.max_iterations, settings.max_examples)
     max_examples = min(max_iterations, settings.max_examples)
     min_satisfying_examples = min(
         settings.min_satisfying_examples,
