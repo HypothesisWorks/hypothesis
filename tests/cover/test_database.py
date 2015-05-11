@@ -17,8 +17,8 @@ import time
 
 import pytest
 import hypothesis.settings as hs
-from hypothesis import given, strategy
-from hypothesis.errors import Timeout
+from hypothesis import given, strategy, assume
+from hypothesis.errors import Timeout, Unsatisfiable
 from hypothesis.database import ExampleDatabase
 from hypothesis.strategies import text, tuples, integers
 from hypothesis.internal.compat import hrange, text_type, integer_types
@@ -191,7 +191,7 @@ def test_can_handle_more_than_max_examples_values_in_db():
     db = ExampleDatabase()
 
     try:
-        settings = hs.Settings(database=db, max_examples=2)
+        settings = hs.Settings(database=db, max_examples=10)
         seen = []
         first = [True]
         for _ in range(10):
@@ -219,5 +219,50 @@ def test_can_handle_more_than_max_examples_values_in_db():
             seen.append(x)
         test_seen()
         assert len(seen) == 1
+    finally:
+        db.close()
+
+
+def test_can_handle_more_than_max_iterations_in_db():
+    """This is checking that if we store a large number of examples in the DB
+    and then subsequently reduce max_examples below that count, we a) don't
+    error (which is how this bug was found) and b) stop at max_examples rather
+    than continuing onwards."""
+    db = ExampleDatabase()
+
+    try:
+        settings = hs.Settings(database=db, max_examples=10, max_iterations=10)
+        seen = []
+        first = [True]
+        for _ in range(10):
+            first[0] = True
+
+            @given(integers(), settings=settings)
+            def test_seen(x):
+                if x not in seen:
+                    if first[0]:
+                        first[0] = False
+                        seen.append(x)
+                if x not in seen:
+                    raise ValueError("Weird")
+
+            try:
+                test_seen()
+            except ValueError:
+                pass
+
+        assert len(seen) >= 3
+
+        seen = []
+
+        @given(
+            integers(), settings=hs.Settings(
+                max_examples=1, max_iterations=2, database=db))
+        def test_seen(x):
+            seen.append(x)
+            assume(False)
+        with pytest.raises(Unsatisfiable):
+            test_seen()
+        assert len(seen) == 2
     finally:
         db.close()

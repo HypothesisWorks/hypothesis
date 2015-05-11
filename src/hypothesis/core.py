@@ -87,6 +87,8 @@ def find_satisfying_template(
         for example in storage.fetch():
             if time_to_call_it_a_day(settings, start_time):
                 break
+            if len(tracker) >= max_iterations:
+                break
             tracker.track(example)
             try:
                 if condition(example):
@@ -94,8 +96,6 @@ def find_satisfying_template(
                 satisfying_examples += 1
             except UnsatisfiedAssumption:
                 pass
-            if len(tracker) >= max_iterations:
-                break
             if satisfying_examples >= max_examples:
                 break
 
@@ -246,7 +246,6 @@ def best_satisfying_template(
             search_strategy, random, condition, tracker, settings, storage,
             max_parameter_tries=max_parameter_tries,
         )
-
         for simpler in simplify_template_such_that(
             search_strategy, random, satisfying_example, condition, tracker,
             settings, start_time,
@@ -258,7 +257,6 @@ def best_satisfying_template(
                 # tests for it. No cover prevents this from causing a flaky
                 # build.
                 break  # pragma: no cover
-
         if storage is not None:
             storage.save(satisfying_example)
     if not successful_shrinks:
