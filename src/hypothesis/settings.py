@@ -267,9 +267,18 @@ Settings.define_setting(
     'max_examples',
     default=200,
     description="""
-Once this many examples have been considered without finding any counter-
-example, falsification will terminate. Note that this includes examples which
-do not meet the assumptions of the test.
+Once this many satisfying examples have been considered without finding any
+counter-example, falsification will terminate.
+"""
+)
+
+Settings.define_setting(
+    'max_iterations',
+    default=1000,
+    description="""
+Once this many iterations of the example loop have run, including ones which
+failed to satisfy assumptions and ones which produced duplicates, falsification
+will terminate.
 """
 )
 

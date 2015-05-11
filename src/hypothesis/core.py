@@ -75,7 +75,8 @@ def find_satisfying_template(
     """
     satisfying_examples = 0
     timed_out = False
-    max_examples = settings.max_examples
+    max_iterations = settings.max_iterations
+    max_examples = min(max_iterations, settings.max_examples)
     min_satisfying_examples = min(
         settings.min_satisfying_examples,
         max_examples,
@@ -93,7 +94,9 @@ def find_satisfying_template(
                 satisfying_examples += 1
             except UnsatisfiedAssumption:
                 pass
-            if len(tracker) >= max_examples:
+            if len(tracker) >= max_iterations:
+                break
+            if satisfying_examples >= max_examples:
                 break
 
     parameter_source = ParameterSource(
@@ -105,9 +108,10 @@ def find_satisfying_template(
     for parameter in parameter_source:  # pragma: no branch
         if len(tracker) >= search_strategy.template_upper_bound:
             break
-        if len(tracker) >= max_examples:
+        if len(tracker) >= max_iterations:
             break
-
+        if satisfying_examples >= max_examples:
+            break
         if time_to_call_it_a_day(settings, start_time):
             break
 
@@ -566,7 +570,7 @@ def find(specifier, condition, settings=None, random=None):
         ))
     except Timeout:
         raise
-    except (NoSuchExample, Unsatisfiable):
+    except NoSuchExample:
         if search.template_upper_bound <= len(tracker):
             raise DefinitelyNoSuchExample(
                 get_pretty_function_description(condition),
