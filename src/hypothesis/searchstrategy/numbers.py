@@ -22,6 +22,7 @@ from collections import namedtuple
 
 import hypothesis.specifiers as specifiers
 import hypothesis.internal.distributions as dist
+from hypothesis.utils.size import clamp
 from hypothesis.internal.compat import hrange, text_type, integer_types
 from hypothesis.searchstrategy.misc import SampledFromStrategy
 from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
@@ -117,7 +118,11 @@ class IntegersFromStrategy(SearchStrategy):
         return 'IntegersFromStrategy(%d)' % (self.lower_bound,)
 
     def draw_parameter(self, random):
-        return random.random() * 2 / self.average_size
+        return clamp(
+            0.0,
+            random.random() * 2 / self.average_size,
+            1 - 10e-6,
+        )
 
     def draw_template(self, random, parameter):
         return self.lower_bound + dist.geometric(random, parameter)
