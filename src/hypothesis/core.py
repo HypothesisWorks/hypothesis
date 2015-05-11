@@ -74,6 +74,7 @@ def find_satisfying_template(
 
     """
     satisfying_examples = 0
+    examples_considered = 0
     timed_out = False
     max_iterations = max(settings.max_iterations, settings.max_examples)
     max_examples = min(max_iterations, settings.max_examples)
@@ -85,9 +86,10 @@ def find_satisfying_template(
 
     if storage:
         for example in storage.fetch():
-            if time_to_call_it_a_day(settings, start_time):
+            if examples_considered >= max_iterations:
                 break
-            if len(tracker) >= max_iterations:
+            examples_considered += 1
+            if time_to_call_it_a_day(settings, start_time):
                 break
             tracker.track(example)
             try:
@@ -108,12 +110,13 @@ def find_satisfying_template(
     for parameter in parameter_source:  # pragma: no branch
         if len(tracker) >= search_strategy.template_upper_bound:
             break
-        if len(tracker) >= max_iterations:
+        if examples_considered >= max_iterations:
             break
         if satisfying_examples >= max_examples:
             break
         if time_to_call_it_a_day(settings, start_time):
             break
+        examples_considered += 1
 
         example = search_strategy.draw_template(
             random, parameter
