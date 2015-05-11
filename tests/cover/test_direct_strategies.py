@@ -14,6 +14,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import math
+from decimal import Decimal
 
 import pytest
 import hypothesis.strategies as ds
@@ -88,6 +89,11 @@ def test_validates_keyword_arguments(fn, kwargs):
     (ds.lists, {'elements': ds.integers(), 'max_size': 5}),
     (ds.lists, {'elements': ds.booleans(), 'min_size': 5}),
     (ds.lists, {'elements': ds.booleans(), 'min_size': 5, 'max_size': 10}),
+    (ds.lists, {
+        'average_size': 20, 'elements': ds.booleans(), 'max_size': 25}),
+    (ds.sets, {
+        'min_size': 10, 'max_size': 10, 'elements': ds.integers(),
+    }),
     (ds.booleans, {}),
     (ds.just, {'value': 'hi'}),
     (ds.integers, {'min_value': 12, 'max_value': 12}),
@@ -120,6 +126,7 @@ def test_validates_args(fn, args):
     (ds.one_of, (ds.booleans(),)),
     (ds.text, ()),
     (ds.binary, ()),
+    (ds.builds, (lambda x, y: x + y, ds.integers(), ds.integers())),
 )
 def test_produces_valid_examples_from_args(fn, args):
     fn(*args).example()
@@ -197,6 +204,10 @@ def test_fractions():
 
 def test_decimals():
     assert find(ds.decimals(), lambda f: f.is_finite() and f >= 1) == 1
+
+
+def test_non_float_decimal():
+    find(ds.decimals(), lambda d: Decimal(float(d)) != d)
 
 
 def test_validates_min_size_for_sets():
