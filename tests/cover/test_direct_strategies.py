@@ -71,6 +71,7 @@ def fn_ktest(*fnkwargs):
     (ds.fixed_dictionaries, {'mapping': {1: 'fish'}}),
     (ds.dictionaries, {'keys': ds.integers(), 'values': 1}),
     (ds.dictionaries, {'keys': 1, 'values': ds.integers()}),
+    (ds.text, {'alphabet': '', 'min_size': 1}),
 )
 def test_validates_keyword_arguments(fn, kwargs):
     with pytest.raises(InvalidArgument):
@@ -202,3 +203,38 @@ def test_validates_min_size_for_sets():
     ds.sets(ds.booleans(), min_size=2)
     with pytest.raises(InvalidArgument):
         ds.sets(ds.booleans(), min_size=3)
+
+
+def test_produces_dictionaries_of_at_least_minimum_size():
+    t = find(
+        ds.dictionaries(ds.booleans(), ds.integers(), min_size=2),
+        lambda x: True)
+    assert t == {False: 0, True: 0}
+
+
+@given(
+    ds.dictionaries(ds.integers(), ds.integers(), max_size=5),
+    settings=Settings(max_examples=50))
+def test_dictionaries_respect_size(d):
+    assert len(d) <= 5
+
+
+@given(
+    ds.dictionaries(ds.integers(), ds.integers(), max_size=0),
+    settings=Settings(max_examples=50))
+def test_dictionaries_respect_zero_size(d):
+    assert len(d) <= 5
+
+
+@given(
+    ds.lists(ds.none(), max_size=5)
+)
+def test_none_lists_respect_max_size(ls):
+    assert len(ls) <= 5
+
+
+@given(
+    ds.lists(ds.none(), max_size=5, min_size=1)
+)
+def test_none_lists_respect_max_and_min_size(ls):
+    assert 1 <= len(ls) <= 5
