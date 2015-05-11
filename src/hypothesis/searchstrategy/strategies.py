@@ -434,7 +434,6 @@ class OneOfStrategy(SearchStrategy):
         self.template_upper_bound = 0
         for e in self.element_strategies:
             self.template_upper_bound += e.template_upper_bound
-            self.template_upper_bound += e.template_upper_bound
         self.template_upper_bound = infinitish(self.template_upper_bound)
 
     def __repr__(self):

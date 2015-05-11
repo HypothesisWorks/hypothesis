@@ -235,7 +235,7 @@ class BoundedIntStrategy(SearchStrategy):
         self.end = end
         if start > end:
             raise ValueError('Invalid range [%d, %d]' % (start, end))
-        self.template_upper_bound = infinitish(end - start)
+        self.template_upper_bound = infinitish(end - start + 1)
 
     def __repr__(self):
         return 'BoundedIntStrategy(%d, %d)' % (self.start, self.end)

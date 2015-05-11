@@ -24,7 +24,7 @@ from hypothesis.utils.size import clamp
 from hypothesis.internal.compat import hrange
 from hypothesis.searchstrategy.strategies import EFFECTIVELY_INFINITE, \
     SearchStrategy, MappedSearchStrategy, strategy, check_type, \
-    check_length, check_data_type, one_of_strategies
+    infinitish, check_length, check_data_type, one_of_strategies
 
 
 def safe_mul(x, y):
@@ -475,12 +475,30 @@ class SetStrategy(SearchStrategy):
                 return float('inf')
             return 2 ** n
 
+        def fact(n):
+            x = 1
+            for k in hrange(1, n + 1):
+                x = safe_mul(x, k)
+                if x >= EFFECTIVELY_INFINITE:
+                    break
+            return infinitish(x)
+
         elements = self.list_strategy.element_strategy
 
         if not elements:
             self.template_upper_bound = 1
         else:
-            self.template_upper_bound = powset(elements.template_upper_bound)
+            if powset(elements.template_upper_bound) >= EFFECTIVELY_INFINITE:
+                self.template_upper_bound = float('inf')
+            else:
+                f = fact(elements.template_upper_bound)
+                if f >= EFFECTIVELY_INFINITE:
+                    self.template_upper_bound = float('inf')
+                else:
+                    tot = 0
+                    for k in hrange(elements.template_upper_bound + 1):
+                        tot += f // fact(k)
+                    self.template_upper_bound = tot
 
     def reify(self, value):
         return set(self.list_strategy.reify(tuple(value)))
