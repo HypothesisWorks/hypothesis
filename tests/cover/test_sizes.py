@@ -18,8 +18,8 @@ from random import Random
 
 import pytest
 import hypothesis.strategies as s
-from hypothesis.internal.compat import hrange
 from hypothesis.utils.size import clamp
+from hypothesis.internal.compat import hrange
 
 finite = [
     s.booleans(), s.sets(s.booleans()), s.integers(-10, 10),

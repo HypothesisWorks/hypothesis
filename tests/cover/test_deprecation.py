@@ -14,7 +14,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import pytest
-from hypothesis import Settings, given, strategy, Verbosity
+from hypothesis import Settings, Verbosity, given, strategy
 from hypothesis.specifiers import just
 from hypothesis.strategies import booleans
 from hypothesis.deprecation import HypothesisDeprecationWarning
