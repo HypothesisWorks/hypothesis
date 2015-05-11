@@ -133,10 +133,11 @@ def test_large_enough_integer_ranges_are_infinite():
 
 
 def test_tuple_strategy_too_large_to_fit():
-    x = frozensets(integers(0, 30))
+    x = frozensets(integers(0, 5))
     assert not math.isinf(x.template_upper_bound)
-    for _ in hrange(8):
-        x = tuples(x, x)
+    x = tuples(x, x)
+    assert not math.isinf(x.template_upper_bound)
+    assert math.isinf(tuples(x, x).template_upper_bound)
     assert math.isinf(
         tuples(integers(), x).template_upper_bound)
 
