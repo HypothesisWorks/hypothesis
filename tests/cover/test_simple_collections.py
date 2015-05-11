@@ -15,7 +15,7 @@ from __future__ import division, print_function, absolute_import, \
 
 from random import Random
 from itertools import islice
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 
 import pytest
 from hypothesis import Settings, find, given, strategy
@@ -198,3 +198,13 @@ def test_multiple_empty_lists_are_independent():
 ))
 def test_sets_are_size_bounded(xs):
     assert 2 <= len(xs) <= 10
+
+
+def test_ordered_dictionaries_preserve_keys():
+    r = Random()
+    keys = list(range(100))
+    r.shuffle(keys)
+    x = fixed_dictionaries(
+        OrderedDict([(k, booleans()) for k in keys])).example()
+    assert list(x.keys()) == keys
+
