@@ -64,6 +64,7 @@ except AttributeError:
 
 quality_settings = Settings(
     max_examples=5000,
+    max_iterations=10000,
     max_shrinks=5000,
 )
 
