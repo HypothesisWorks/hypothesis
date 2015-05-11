@@ -53,4 +53,5 @@ def test_stops_after_max_iterations_if_not_satisfying():
             track, settings=Settings(
                 max_examples=max_examples, max_iterations=max_iterations))
 
-    assert len(tracker) == max_iterations
+    # May be less because of duplication
+    assert len(tracker) <= max_iterations
