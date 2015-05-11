@@ -524,7 +524,7 @@ def check_valid_sizes(min_size, average_size, max_size):
                         max_size, average_size
                     ))
 
-    if average_size is not None:
+    if average_size is not None and min_size is not None:
         if average_size < min_size:
             raise InvalidArgument(
                 'Cannot have average_size=%r < min_size=%r' % (
