@@ -63,7 +63,7 @@ class ArrayStrategy(SearchStrategy):
     def draw_template(self, random, parameter_value):
         result = tuple(
             self.element_strategy.draw_template(
-                context, parameter_value
+                random, parameter_value
             )
             for i in hrange(self.array_size)
         )
