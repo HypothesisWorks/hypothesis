@@ -84,7 +84,7 @@ with Settings(average_list_length=5.0):
     TestFrozenSets = strategy_test_suite(frozensets(booleans()))
 
     TestNestedSets = strategy_test_suite(
-        frozensets(frozensets(complex_numbers())))
+        frozensets(frozensets(complex_numbers(), max_size=2)))
 
     TestMisc1 = strategy_test_suite(fixed_dictionaries(
         {(2, -374): frozensets(none())}))
