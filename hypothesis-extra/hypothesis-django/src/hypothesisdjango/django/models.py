@@ -107,7 +107,7 @@ class ModelStrategy(MappedSearchStrategy):
     def __init__(self, model, mappings):
         self.model = model
         super(ModelStrategy, self).__init__(
-            strategy=st.dictionaries(mappings))
+            strategy=st.fixed_dictionaries(mappings))
 
     def __repr__(self):
         return 'ModelStrategy(%s)' % (self.model.__name__,)
