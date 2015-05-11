@@ -14,7 +14,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import pytest
-from hypothesis import Settings, given, strategy
+from hypothesis import Settings, given, strategy, Verbosity
 from hypothesis.specifiers import just
 from hypothesis.strategies import booleans
 from hypothesis.deprecation import HypothesisDeprecationWarning
@@ -49,5 +49,11 @@ def test_given_does_not_warn_when_using_strategies_directly(recwarn):
         pass
 
     foo()
+    with pytest.raises(AssertionError):
+        recwarn.pop(DeprecationWarning)
+
+
+def test_warnings_are_suppressed_in_quiet_mode(recwarn):
+    strategy(bool, settings=Settings(strict=False, verbosity=Verbosity.quiet))
     with pytest.raises(AssertionError):
         recwarn.pop(DeprecationWarning)
