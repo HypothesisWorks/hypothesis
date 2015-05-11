@@ -19,6 +19,7 @@ from random import Random
 import pytest
 import hypothesis.strategies as s
 from hypothesis.internal.compat import hrange
+from hypothesis.utils.size import clamp
 
 finite = [
     s.booleans(), s.sets(s.booleans()), s.integers(-10, 10),
@@ -47,3 +48,10 @@ def test_covers_entire_finite_space(strat):
 def test_large_enough_sets_are_infinite():
     assert s.sets(s.integers(0, 30)).template_upper_bound == float('inf')
     assert s.sets(s.integers(0, 100)).template_upper_bound == float('inf')
+
+
+def test_clamp():
+    assert clamp(None, 1, None) == 1
+    assert clamp(None, 10, 1) == 1
+    assert clamp(1, 0, 1) == 1
+    assert clamp(1, 0, None) == 1
