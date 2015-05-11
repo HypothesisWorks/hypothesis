@@ -42,3 +42,8 @@ def test_covers_entire_finite_space(strat):
         s.add(strat.draw_and_produce(random))
 
     assert len(s) == strat.template_upper_bound
+
+
+def test_large_enough_sets_are_infinite():
+    assert s.sets(s.integers(0, 30)).template_upper_bound == float('inf')
+    assert s.sets(s.integers(0, 100)).template_upper_bound == float('inf')
