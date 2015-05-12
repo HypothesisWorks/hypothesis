@@ -22,9 +22,9 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 
-------------------
-1.4.0 - 2015-05-04
-------------------
+---------------------------------------------------------------------
+`1.4.0 <https://hypothesis.readthedocs.org/en/v1.4.0/>`_ - 2015-05-04
+---------------------------------------------------------------------
 
 Codename: What a state.
 
@@ -104,9 +104,9 @@ Some minor quality improvements:
 * Lists of streams, flatmapped strategies and basic strategies should now
   now have slightly better simplificaiton.
 
-------------------
-1.3.0 - 2015-04-22
-------------------
+---------------------------------------------------------------------
+`1.3.0 <https://hypothesis.readthedocs.org/en/v1.3.0/>`_ - 2015-05-22
+---------------------------------------------------------------------
 
 New features:
 
@@ -134,17 +134,17 @@ General improvements:
 * Random will now simplify to more readable examples.
 
 
-------------------
-1.2.1 - 2015-04-16
-------------------
+---------------------------------------------------------------------
+`1.2.1 <https://hypothesis.readthedocs.org/en/v1.2.1/>`_ - 2015-04-16
+---------------------------------------------------------------------
 
 A small patch release for a bug in the new executors feature. Tests which require
 doing something to their result in order to fail would have instead reported as
 flaky.
 
-------------------
-1.2.0 - 2015-04-15
-------------------
+---------------------------------------------------------------------
+`1.2.0 <https://hypothesis.readthedocs.org/en/v1.2.0/>`_ - 2015-04-15
+---------------------------------------------------------------------
 
 Codename: Finders keepers.
 
@@ -175,9 +175,9 @@ A bunch of new features and improvements.
   This would have resulted in generating infinite values instead of ones inside
   the range.
 
-------------------
-1.1.1 - 2015-04-07
-------------------
+---------------------------------------------------------------------
+`1.1.1 <https://hypothesis.readthedocs.org/en/v1.1.1/>`_ - 2015-04-07
+---------------------------------------------------------------------
 
 Codename: Nothing to see here
 
@@ -191,9 +191,9 @@ I'd happened to have finished in time.
 * Bias floating point numbers somewhat less aggressively towards very small numbers
 
 
-------------------
-1.1.0 - 2015-04-06
-------------------
+---------------------------------------------------------------------
+`1.1.0 <https://hypothesis.readthedocs.org/en/v1.1.0/>`_ - 2015-04-06
+---------------------------------------------------------------------
 
 Codename: No-one mention the M word.
 
@@ -216,9 +216,9 @@ Codename: No-one mention the M word.
   full horror or non-public nature of the SearchStrategy interface.
 
 
-------------------
-1.0.0 - 2015-03-27
-------------------
+---------------------------------------------------------------------
+`1.0.0 <https://hypothesis.readthedocs.org/en/v1.0.0/>`_ - 2015-03-27
+---------------------------------------------------------------------
 
 Codename: Blast-off!
 
