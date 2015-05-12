@@ -24,6 +24,16 @@ SOURCE = local_file("src")
 README = local_file("README.rst")
 
 
+# Assignment to placate pyflakes. The actual version is from the exec that
+# follows.
+__version__ = None
+
+with open(local_file("src/hypothesis/version.py")) as o:
+    exec(o.read())
+
+assert __version__ is not None
+
+
 class PyTest(TestCommand):
     def finalize_options(self):
         TestCommand.finalize_options(self)
@@ -37,7 +47,7 @@ class PyTest(TestCommand):
 
 setup(
     name='hypothesis',
-    version='1.4.1',
+    version=__version__,
     author='David R. MacIver',
     author_email='david@drmaciver.com',
     packages=find_packages(SOURCE),

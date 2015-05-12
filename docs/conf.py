@@ -21,6 +21,9 @@ sys.path.append(
     os.path.join(os.path.dirname(__file__), "..", "src")
 )
 
+from hypothesis import __version__
+
+
 autodoc_member_order = 'bysource'
 
 extensions = [
@@ -40,11 +43,8 @@ project = u'Hypothesis'
 copyright = u'2015, David R. MacIver'
 author = u'David R. MacIver'
 
-# The version info for the project you're documenting, acts as replacement for
-# |version| and |release|, also used in various other places throughout the
-# built documents.
-version = '1.4'
-release = '1.4'
+version = __version__
+release = __version__
 
 language = None
 

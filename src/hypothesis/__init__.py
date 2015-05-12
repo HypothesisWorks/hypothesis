@@ -23,7 +23,7 @@ from __future__ import division, print_function, absolute_import, \
 
 from hypothesis.searchstrategy import strategy
 from hypothesis.settings import Settings, Verbosity
-
+from hypothesis.version import __version_info__, __version__
 from hypothesis.core import given, assume, find, example
 
 __all__ = [
@@ -34,4 +34,6 @@ __all__ = [
     'strategy',
     'find',
     'example',
+    '__version__',
+    '__version_info__',
 ]
