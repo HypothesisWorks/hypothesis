@@ -62,9 +62,11 @@ class DatetimeStrategy(SearchStrategy):
         )
     )
 
-    def __init__(self, allow_naive, timezones):
+    def __init__(self, allow_naive, timezones, min_year=None, max_year=None):
         self.allow_naive = allow_naive
         self.timezones = timezones
+        self.min_year = min_year or dt.MINYEAR
+        self.max_year = max_year or dt.MAXYEAR
 
     def draw_parameter(self, random):
         return self.Parameter(
@@ -79,7 +81,7 @@ class DatetimeStrategy(SearchStrategy):
 
     def draw_template(self, random, pv):
         random = random
-        year = random.randint(dt.MINYEAR, dt.MAXYEAR)
+        year = random.randint(self.min_year, self.max_year)
         month = random.choice(pv.month)
         base = dt.datetime(
             year=year,
@@ -144,6 +146,9 @@ class DatetimeStrategy(SearchStrategy):
                         break
                     yield self.templateize(tz.normalize(value.astimezone(tz)))
 
+    def year_in_bounds(self, year):
+        return self.min_year <= year <= self.max_year
+
     def simplify_towards_2000(self, random, value):
         value = self.reify(value)
         s = {value}
@@ -153,7 +158,8 @@ class DatetimeStrategy(SearchStrategy):
         s.add(value.replace(hour=0))
         s.add(value.replace(day=1))
         s.add(value.replace(month=1))
-        s.add(value.replace(year=2000))
+        if self.year_in_bounds(2000):
+            s.add(value.replace(year=2000))
         s.remove(value)
         for t in s:
             yield self.templateize(t)
@@ -169,7 +175,7 @@ class DatetimeStrategy(SearchStrategy):
         # leap year and the current year is not a leap year.
         # Note that 2000 was a leap year which is why we didn't need one above.
         mid = (year + 2000) // 2
-        if mid != 2000 and mid != year:
+        if mid != 2000 and mid != year and self.year_in_bounds(mid):
             try:
                 yield self.templateize(value.replace(year=mid))
             except ValueError:
@@ -180,7 +186,8 @@ class DatetimeStrategy(SearchStrategy):
             if year == mid:
                 continue
             try:
-                yield self.templateize(value.replace(year))
+                if self.year_in_bounds(year):
+                    yield self.templateize(value.replace(year))
             except ValueError:
                 pass
 
@@ -197,7 +204,7 @@ class DatetimeStrategy(SearchStrategy):
         return tuple(values)
 
 
-def datetimes(allow_naive=None, timezones=None):
+def datetimes(allow_naive=None, timezones=None, min_year=None, max_year=None):
     """Return a strategy for generating datetimes.
 
     allow_naive=True will cause the values to sometimes be naive.
@@ -221,7 +228,8 @@ def datetimes(allow_naive=None, timezones=None):
             'Cannot create non-naive datetimes with no timezones allowed'
         )
     return DatetimeStrategy(
-        allow_naive=allow_naive, timezones=timezones
+        allow_naive=allow_naive, timezones=timezones,
+        min_year=min_year, max_year=max_year,
     )
 
 

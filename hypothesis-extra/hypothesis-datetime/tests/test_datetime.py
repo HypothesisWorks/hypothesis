@@ -115,3 +115,11 @@ def test_legacy_api():
         assert minimal(naive_datetime).tzinfo is None
         assert minimal(timezone_aware_datetime) == x
         assert minimal(any_datetime) == x
+
+
+def test_min_year_is_respected():
+    assert minimal(datetimes(min_year=2003)).year == 2003
+
+
+def test_max_year_is_respected():
+    assert minimal(datetimes(max_year=1998)).year == 1998
