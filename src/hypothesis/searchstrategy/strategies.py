@@ -21,7 +21,6 @@ from hypothesis.errors import BadData, NoExamples, WrongFormat, \
 from hypothesis.control import assume
 from hypothesis.settings import Settings
 from hypothesis.specifiers import OneOf
-from hypothesis.utils.show import show
 from hypothesis.deprecation import note_deprecation
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.utils.extmethod import ExtMethod
@@ -41,7 +40,7 @@ class StrategyExtMethod(ExtMethod):
             'Calling strategy with non-strategy object %s is deprecated '
             'and will be removed in Hypothesis 2.0. Use the functions in '
             'hypothesis.strategies instead.') % (
-                show(specifier),
+                repr(specifier),
         ), settings)
 
         result = super(StrategyExtMethod, self).__call__(specifier, settings)

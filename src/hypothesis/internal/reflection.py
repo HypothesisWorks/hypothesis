@@ -249,7 +249,6 @@ def get_pretty_function_description(f):
 
 
 def arg_string(f, args, kwargs):
-    from hypothesis.utils.show import show
     args, kwargs = convert_positional_arguments(f, args, kwargs)
 
     argspec = inspect.getargspec(f)
@@ -258,13 +257,13 @@ def arg_string(f, args, kwargs):
 
     for a in argspec.args:
         if a in kwargs:
-            bits.append('%s=%s' % (a, show(kwargs.pop(a))))
+            bits.append('%s=%s' % (a, repr(kwargs.pop(a))))
     if kwargs:
         for a in sorted(kwargs):
-            bits.append('%s=%s' % (a, show(kwargs[a])))
+            bits.append('%s=%s' % (a, repr(kwargs[a])))
 
     return ', '.join(
-        [show(x) for x in args] +
+        [repr(x) for x in args] +
         bits
     )
 

@@ -26,7 +26,6 @@ from hypothesis.errors import BadData, Unsatisfiable
 from hypothesis.database import ExampleDatabase
 from hypothesis.settings import Settings
 from hypothesis.strategies import lists, randoms, integers
-from hypothesis.utils.show import show
 from hypothesis.internal.compat import hrange, text_type, integer_types
 from hypothesis.utils.extmethod import ExtMethod
 from hypothesis.database.backend import SQLiteBackend
@@ -173,7 +172,7 @@ def strategy_test_suite(
 
         def __repr__(self):
             return 'strategy_test_suite(%s)' % (
-                show(specifier),
+                repr(specifier),
             )
 
         @given(specifier, settings=settings)
@@ -236,7 +235,7 @@ def strategy_test_suite(
                 )
             )
             def nope(x):
-                s = hashlib.sha1(show(x).encode('utf-8')).digest()
+                s = hashlib.sha1(repr(x).encode('utf-8')).digest()
                 if Random(s).randint(0, 1):
                     raise Rejected()
             try:

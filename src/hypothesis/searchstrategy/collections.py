@@ -171,8 +171,11 @@ class ListStrategy(SearchStrategy):
             return []
 
     def __repr__(self):
-        return 'ListStrategy(%r)' % (
-            self.element_strategy,
+        return (
+            'ListStrategy(%r, min_size=%r, average_size=%r, max_size=%r)'
+        ) % (
+            self.element_strategy, self.min_size, self.average_length,
+            self.max_size
         )
 
     def draw_parameter(self, random):
@@ -216,7 +219,7 @@ class ListStrategy(SearchStrategy):
                 yield self.simplifier_for_index(0, simplify)
             return
 
-        yield self.simplify_to_mid
+        # yield self.simplify_to_mid
         yield self.simplify_with_random_discards
         yield self.simplify_with_example_cloning
         yield self.simplify_arrange_by_pivot

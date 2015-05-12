@@ -33,7 +33,6 @@ from hypothesis.errors import Flaky, NoSuchExample, InvalidDefinition, \
     UnsatisfiedAssumption
 from hypothesis.settings import Settings, Verbosity
 from hypothesis.reporting import report, verbose_report, current_verbosity
-from hypothesis.utils.show import show
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.searchstrategy.misc import JustStrategy, \
     SampledFromStrategy
@@ -100,7 +99,7 @@ class GenericStateMachine(object):
 
         """
         self.step_count = getattr(self, 'step_count', 0) + 1
-        report('Step #%d: %s' % (self.step_count, show(step)))
+        report('Step #%d: %s' % (self.step_count, repr(step)))
 
     def teardown(self):
         """Called after a run has finished executing to clean up any necessary
@@ -538,7 +537,7 @@ class RuleBasedStateMachine(GenericStateMachine):
     def __repr__(self):
         return '%s(%s)' % (
             type(self).__name__,
-            show(self.bundles),
+            repr(self.bundles),
         )
 
     def upcoming_name(self):
@@ -615,7 +614,7 @@ class RuleBasedStateMachine(GenericStateMachine):
             if isinstance(v, VarReference):
                 data_repr[k] = v.name
             else:
-                data_repr[k] = show(v)
+                data_repr[k] = repr(v)
         self.step_count = getattr(self, 'step_count', 0) + 1
         report('Step #%d: %s%s(%s)' % (
             self.step_count,

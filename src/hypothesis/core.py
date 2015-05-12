@@ -548,16 +548,16 @@ def find(specifier, condition, settings=None, random=None):
 
         if not successful_examples[0]:
             verbose_report(lambda: 'Trying example %s' % (
-                show(result),
+                repr(result),
             ))
         elif success:
             if successful_examples[0] == 1:
                 verbose_report(lambda: 'Found satisfying example %s' % (
-                    show(result),
+                    repr(result),
                 ))
             else:
                 verbose_report(lambda: 'Shrunk example to %s' % (
-                    show(result),
+                    repr(result),
                 ))
         return success
 

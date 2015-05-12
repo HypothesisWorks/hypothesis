@@ -90,6 +90,7 @@ with Settings(average_list_length=10.0):
         fractions(),
         decimals(),
         lists(lists(booleans())),
+        lists(lists(booleans(), average_size=100)),
         lists(floats(0.0, 0.0), average_size=1.0),
         ordered_pair, constant_list(integers()),
         streaming(integers()).map(lambda x: list(x[:2]) and x),

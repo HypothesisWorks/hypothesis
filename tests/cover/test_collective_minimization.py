@@ -30,9 +30,17 @@ def test_can_collectively_minimize(spec):
     if spec.template_upper_bound < 2:
         return
 
+    def distinct_reprs(x):
+        result = set()
+        for t in x:
+            result.add(repr(t))
+            if len(result) >= 2:
+                return True
+        return False
+
     xs = find(
         lists(spec),
-        lambda x: len(x) >= 10 and len(set((map(repr, x)))) >= 2,
+        lambda x: len(x) >= 10 and distinct_reprs(x),
         settings=Settings(timeout=2.0, average_list_length=3))
     assert len(xs) == 10
     assert len(set((map(repr, xs)))) == 2
