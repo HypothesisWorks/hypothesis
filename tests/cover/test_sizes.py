@@ -39,7 +39,7 @@ def test_covers_entire_finite_space(strat):
     ).digest())
 
     s = set()
-    for _ in hrange(1000):
+    for _ in hrange(2000):
         s.add(strat.draw_and_produce(random))
 
     assert len(s) == strat.template_upper_bound
