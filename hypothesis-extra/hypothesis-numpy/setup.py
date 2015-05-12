@@ -24,14 +24,14 @@ REQUIREMENTS = local_file("requirements.txt")
 README = local_file("README.rst")
 
 install_requires = [
-    "hypothesis>=1.4,<1.4.99",
+    "hypothesis>=1.5,<1.5.99",
 ]
 if platform.python_implementation() == 'CPython':
     install_requires.append("numpy>=1.9.0,<1.9.99")
 
 setup(
     name='hypothesis-numpy',
-    version='0.2.0',
+    version='0.3.0',
     author='David R. MacIver',
     author_email='david@drmaciver.com',
     packages=find_packages(SOURCE),

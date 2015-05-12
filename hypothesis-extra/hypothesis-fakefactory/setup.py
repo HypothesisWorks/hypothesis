@@ -38,7 +38,7 @@ README = local_file("README.rst")
 
 setup(
     name='hypothesis-fakefactory',
-    version='0.8.0',
+    version='0.9.0',
     author='David R. MacIver',
     author_email='david@drmaciver.com',
     packages=find_packages(SOURCE),
@@ -47,7 +47,7 @@ setup(
     license='MPL v2',
     description='Adds support for generating fake-factory data to Hypothesis',
     install_requires=[
-        "hypothesis>=1.4.0,<1.4.99",
+        "hypothesis>=1.5.0,<1.5.99",
         "fake-factory==0.4.2",
     ],
     long_description=open(README).read(),
