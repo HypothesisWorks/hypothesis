@@ -74,7 +74,7 @@ If we'd written:
   from hypothesis import given, assume
   from hypothesis.strategies import floats
 
-  @given(float)
+  @given(floats())
   def test_negation_is_self_inverse_for_non_nan(x):
       assume(False)
       assert x == -(-x)
@@ -136,9 +136,9 @@ Here's what happens if we try to run this:
   In: test_sum_is_positive()
   [17, 12, 7, 13, 11, 3, 6, 9, 8, 11, 47, 27, 1, 31, 1]
   [6, 2, 29, 30, 25, 34, 19, 15, 50, 16, 10, 3, 16]
-  [25, 17, 9, 19, 15, 2, 2, 4, 22, 10, 10, 27, 3, 1, 14, 17, 13, 8, 16, 9, 2, 26, 5, 18, 16, 4]
+  [25, 17, 9, 19, 15, 2, 2, 4, 22, 10, 10, 27, 3, 1, 14, 17, 13, 8, 16, 9, 2...
   [17, 65, 78, 1, 8, 29, 2, 79, 28, 18, 39]
-  [13, 26, 8, 3, 4, 76, 6, 14, 20, 27, 21, 32, 14, 42, 9, 24, 33, 9, 5, 15, 30, 40, 58, 2, 2, 4, 40, 1, 42, 33, 22, 45, 51, 2, 8, 4, 11, 5, 35, 18, 1, 46]
+  [13, 26, 8, 3, 4, 76, 6, 14, 20, 27, 21, 32, 14, 42, 9, 24, 33, 9, 5, 15, ...
   [2, 1, 2, 2, 3, 10, 12, 11, 21, 11, 1, 16]
 
 As you can see, Hypothesis doesn't find *many* examples here, but it finds some - enough to
@@ -347,7 +347,7 @@ For example all of the following are valid uses:
   def c(x, y):
     pass
 
-  @given(x=int, y=int)
+  @given(x=integers(), y=integers())
   def d(x, **kwargs):
     pass
 
@@ -428,7 +428,7 @@ the following executor runs all its code twice:
     from unittest import TestCase
 
     class TestTryReallyHard(TestCase):
-        @given(int)
+        @given(integers())
         def test_something(self, i):
             perform_some_unreliable_operation(i)
 
@@ -463,11 +463,11 @@ executor for this:
 
     class TestForking(ForkingTestCase):
 
-        @given(int)
+        @given(integers())
         def test_handles_abnormal_exit(self, i):
             os._exit(1)
 
-        @given(int)
+        @given(integers())
         def test_normal_exceptions_work_too(self, i):
             assert False
 
@@ -496,11 +496,12 @@ some predicate:
 .. code:: python
 
   >>> from hypothesis import find
-  >>> find([int], lambda x: sum(x) >= 10)
+  >>> from hypothesis.strategies import sets, lists, integers
+  >>> find(lists(integers()), lambda x: sum(x) >= 10)
   [10]
-  >>> find([int], lambda x: sum(x) >= 10 and len(x) >= 3)
+  >>> find(lists(integers()), lambda x: sum(x) >= 10 and len(x) >= 3)
   [0, 0, 10]
-  >>> find({int}, lambda x: sum(x) >= 10 and len(x) >= 3)
+  >>> find(sets(integers()), lambda x: sum(x) >= 10 and len(x) >= 3)
   {0, 1, 9}
 
 The first argument to find describes data in the usual way for an argument to
@@ -513,11 +514,12 @@ example to a condition that is always false it will raise an error:
 
 .. code:: python
 
-  >>> find(int, lambda x: False)
+  >>> find(integers(), lambda x: False)
   Traceback (most recent call last):
   ...
   hypothesis.errors.NoSuchExample: No examples of conditition lambda x: <unknown>
-  >>> find(bool, lambda x: False)
+  >>> from hypothesis.strategies import booleans
+  >>> find(booleans(), lambda x: False)
   Traceback (most recent call last):
   ...
   hypothesis.errors.DefinitelyNoSuchExample: No examples of conditition lambda x: <unknown> (all 2 considered)
@@ -541,8 +543,9 @@ You can explicitly ask Hypothesis to try a particular example as follows:
 .. code:: python
 
   from hypothesis import given, example
+  from hypothesis.strategies import text
 
-  @given(str)
+  @given(text())
   @example("Hello world")
   @example(x="Some very long string")
   def test_some_code(x):
@@ -566,10 +569,11 @@ will also work:
 
   from unittest import TestCase
   from hypothesis import given, example
+  from hypothesis.strategies import text
 
 
   class TestThings(TestCase):
-      @given(str)
+      @given(text())
       @example("Hello world")
       @example(x="Some very long string")
       def test_some_code(self, x):

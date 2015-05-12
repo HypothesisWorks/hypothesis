@@ -14,67 +14,59 @@ integrating it into an existing testing framework.
 hypothesis-datetime
 -------------------
 
-As might be expected, this adds support for datetime to Hypothesis.
+As might be expected, this provides a strategy which generates instances of
+datetime. It depends on pytz.
 
-If you install the hypothesis-datetime package then you get a strategy for datetime
-out of the box:
+hypothesis-datetime lives in the hypothesis.extra.datetime package:
 
-.. code:: python
+.. code-block:: pycon
 
   >>> from datetime import datetime
-  >>> from hypothesis import strategy
+  >>> datetimes().example()
+  datetime.datetime(1705, 1, 20, 0, 32, 0, 973139, tzinfo=<DstTzInfo 'Israel...
+  >>> datetimes().example()
+  datetime.datetime(7274, 6, 9, 23, 0, 31, 75498, tzinfo=<DstTzInfo 'America...
 
-  >>> strategy(datetime).example()
-  datetime.datetime(6360, 1, 3, 12, 30, 56, 185849)
+As you can see, it produces years from quite a wide range. If you want to
+narrow it down you can ask for a more specific range of years:
 
-  >>> strategy(datetime).example()
-  datetime.datetime(6187, 6, 11, 0, 0, 23, 809965, tzinfo=<UTC>)
+.. code-block:: pycon
 
-  >>> strategy(datetime).example()
-  datetime.datetime(4076, 8, 7, 0, 15, 55, 127297, tzinfo=<DstTzInfo 'Turkey' EET+2:00:00 STD>)
+  >>> datetimes(min_year=2001, max_year=2010).example()
+  datetime.datetime(2010, 7, 7, 0, 15, 0, 614034, tzinfo=<DstTzInfo 'Pacif...
+  >>> datetimes(min_year=2001, max_year=2010).example()
+  datetime.datetime(2006, 9, 26, 22, 0, 0, 220365, tzinfo=<DstTzInfo 'Asia...
 
-So things like the following work:
+You can also specify timezones:
 
-.. code:: python
+.. code-block:: pycon
 
-  @given(datetime)
-  def test_365_days_are_one_year(d):
-      assert (d + timedelta(days=365)).year > d.year
+  >>> import pytz
+  >>> pytz.all_timezones[:3]
+  ['Africa/Abidjan', 'Africa/Accra', 'Africa/Addis_Ababa']
+  >>> datetimes(timezones=pytz.all_timezones[:3]).example()
+  datetime.datetime(6257, 8, 21, 13, 6, 24, 8751, tzinfo=<DstTzInfo 'Africa/Accra' GMT0:00:00 STD>)
+  >>> datetimes(timezones=pytz.all_timezones[:3]).example()
+  datetime.datetime(7851, 2, 3, 0, 0, 0, 767400, tzinfo=<DstTzInfo 'Africa/Accra' GMT0:00:00 STD>)
+  >>> datetimes(timezones=pytz.all_timezones[:3]).example()
+  datetime.datetime(8262, 6, 22, 16, 0, 0, 154235, tzinfo=<DstTzInfo 'Africa/Abidjan' GMT0:00:00 STD>)
 
+If the set of timezones is empty you will get a naive datetime:
 
-Or rather, the test correctly fails:
+.. code-block:: pycon
 
-.. 
+  >>> datetimes(timezones=[]).example()
+  datetime.datetime(918, 11, 26, 2, 0, 35, 916439)
 
-  Falsifying example: test_add_one_year(d=datetime.datetime(2000, 1, 1, 0, 0, tzinfo=<UTC>))
+You can also explicitly get a mix of naive and non-naive datetimes if you
+want:
 
-We forgot about leap years.
+.. code-block:: pycon
 
-(Note: Actually most of the time you run that test it will pass because Hypothesis does not hit
-January 1st on a leap year with high enough probability that it will often find it.
-However the advantage of the Hypothesis database is that once this example is found
-it will stay found)
-
-We can also restrict ourselves to just naive datetimes or just timezone aware
-datetimes.
-
-
-.. code:: python
-
-  from hypothesis.extra.datetime import naive_datetime, timezone_aware_datetime
-
-  @given(naive_datetime)
-  def test_naive_datetime(xs):
-    assert isinstance(xs, datetime)
-    assert xs.tzinfo is None
-
-  @given(timezone_aware_datetime)
-  def test_non_naive_datetime(xs):
-    assert isinstance(xs, datetime)
-    assert xs.tzinfo is not None
-
-
-Both of the above will pass.
+    >>> datetimes(allow_naive=True).example()
+    datetime.datetime(2433, 3, 20, 0, 0, 44, 460383, tzinfo=<DstTzInfo 'Asia/Hovd' HOVT+7:00:00 STD>)
+    >>> datetimes(allow_naive=True).example()
+    datetime.datetime(7003, 1, 22, 0, 0, 52, 401259)
 
 ----------------------
 hypothesis-fakefactory
@@ -84,58 +76,54 @@ hypothesis-fakefactory
 library for data generation. hypothesis-fakefactory is a package which lets you
 use fake-factory generators to parametrize tests.
 
-In hypothesis.extra.fakefactory it defines the type FakeFactory which is a
-placeholder for producing data from any FakeFactory type.
+It currently only supports the 0.4.2 release of fake-factory, due to some
+issues with the 0.5.0 release. These are known to be fixed in master but there
+hasn't been a release containing the fixes yet.
+
+hypothesis.extra.fakefactory defines a function fake_factory which returns a
+strategy for producing text data from any FakeFactory provider.
 
 So for example the following will parametrize a test by an email address:
 
 
-.. code:: python
+.. code-block:: pycon
 
-  @given(FakeFactory('email'))
-  def test_email(email):
-      assert '@' in email
+    >>> fake_factory('email').example()
+    'tnader@prosacco.info'
 
+    >>> fake_factory('name').example()
+    'Zbyněk Černý CSc.'
 
-Naturally you can compose these in all the usual ways, so e.g.
+You can explicitly specify the locale (otherwise it uses any of the available
+locales), either as a single locale or as several:
 
-.. code:: python
+.. code-block:: pycon
 
-  >>> from hypothesis.extra.fakefactory import FakeFactory
-  >>> from hypothesis import strategy
-  >>> strategy([FakeFactory('email')]).example()
-  
-  ['.@.com',
-   '.@yahoo.com',
-   'kalvelis.paulius@yahoo.com',
-   'eraslan.mohsim@demirkoruturk.info']
-
-You can also specify locales:
-
-
-.. code:: python
-
-  >>> strategy(FakeFactory('name', locale='en_US')).example()
-  'Kai Grant'
-
-  >>> strategy(FakeFactory('name', locale='fr_FR')).example()
-  'Édouard Paul'
-
-Or if you want you can specify several locales:
-
-.. code:: python
-
-  >>> strategy([FakeFactory('name', locales=['en_US', 'fr_FR'])]).example()
-  
-  ['Michel Blanchet',
-   'Victor Collin',
-   'Eugène Perrin',
-   'Miss Bernice Satterfield MD']
+    >>> fake_factory('name', locale='en_GB').example()
+    'Antione Gerlach'
+    >>> fake_factory('name', locales=['en_GB', 'cs_CZ']).example()
+    'Miloš Šťastný'
+    >>> fake_factory('name', locales=['en_GB', 'cs_CZ']).example()
+    'Harm Sanford'
 
 If you want to your own FakeFactory providers you can do that too, passing them
-in as a providers argument to the FakeFactory type. It will generally be more
-powerful to use Hypothesis's custom strategies though unless you have a
-specific existing provider you want to use.
+in as a providers argument:
+
+.. code-block:: pycon
+
+    >>> from faker.providers import BaseProvider
+    >>> class KittenProvider(BaseProvider):
+    ...     def meows(self):
+    ...             return 'meow %d' % (self.random_number(digits=10),)
+    ... 
+    >>> fake_factory('meows', providers=[KittenProvider]).example()
+    'meow 9139348419'
+
+Generally you probably shouldn't do this unless you're reusing a provider you
+already have - Hypothesis's facilities for strategy generation are much more
+powerful and easier to use. Consider using something like BasicStrategy instead
+if you want to write a strategy from scratch. This is only here to provide easy
+reuse of things you already have.
 
 -----------------
 hypothesis-pytest
@@ -165,35 +153,61 @@ Because Hypothesis runs this in a loop the performance problems it normally has
 are significantly exacerbated and your tests will be really slow.
 
 In addition to the above, Hypothesis has some limited support for automatically
-generating instances of your models. You can use @given(MyModelClass) and this
-will usually work.
+deriving strategies for your model types, which you can then customize further.
 
-The test suite integration should be pretty solid, but the automatic model
-generation is highly experimental. Don't be surprised if it doesn't work very
-well, but do file bug reports.
+Warning: Hypothesis creates saved models. This will run inside your testing
+transaction when using the test runner, but if you use the dev console this
+will leave debris in your database.
 
-Known limitations:
+For example, using the trivial django project I have for testing:
 
-1. If your model has a non-nullable field type that Hypothesis doesn't support
-   then this will error with ModelNotSupported. If it has a nullable field
-   type that Hypothesis doesn't support it will always be null.
-2. Cycles (e.g. if A has a foreign key pointing to B and B has a foreign key
-   pointing back to A) are not supported. In some limited cases a cycle where
-   the foreign key is nullable will be supported but always null.
-3. Children will not be populated. So if A has many B and you ask for A, you
-   will get an A with no Bs referencing it.
-4. Parents will not be shared, so if you ask for a list of [B] in the above,
-   each of them wil have a unique A.
-5. Particularly hairy constraints will sometimes cause Hypothesis to not be
-   able to provide enough examples.
+.. code-block:: pycon
 
-Basically if a model is mostly a simple data storage thing with few constraints
-you should probably expect to just be able to ask Hypothesis for an instance
-and have everything work. For more complicated dependencies you'll probably
-want to write your own generators.
+    >>> from hypothesis.extra.django.models import models
+    >>> from toystore.models import Customer
+    >>> c = models(Customer).example()
+    >>> c
+    <Customer: Customer object>
+    >>> c.email
+    'jaime.urbina@gmail.com'
+    >>> c.name
+    '\U00109d3d\U000e07be\U000165f8\U0003fabf\U000c12cd\U000f1910\U00059f12\U000519b0\U0003fabf\U000f1910\U000423fb\U000423fb\U00059f12\U000e07be\U000c12cd\U000e07be\U000519b0\U000165f8\U0003fabf\U0007bc31'
+    >>> c.age
+    -873375803
 
-Fortunately, writing your own generators is entirely feasible! All of the
-:doc:`normal data generation methods <data>` work fine with models. In
-particular you should feel free to create models inside map and flatmap (or
-filter if you really want to I guess). These will only ever be run inside the
-transaction and anything created in them will be cleaned up as normal.
+Hypothesis has just created this with whatever the relevant type of data is.
+
+Obviously the customer's age is implausible, so lets fix that:
+
+.. code-block:: pycon
+
+    >>> from hypothesis.strategies import integers
+    >>> c = models(Customer, age=integers(min_value=0, max_value=120)).example()
+    >>> c
+    <Customer: Customer object>
+    >>> c.age
+    5
+
+You can use this to override any fields you like. Sometimes this will be
+mandatory: If you have a non-nullable field of a type Hypothesis doesn't know
+how to create (e.g. a foreign key) then the models function will error unless
+you explicitly pass a strategy to use there.
+
+You can also register a default strategy for a field type if you have custom
+one that Hypothesis doesn't know about or want to override the normal behaviour
+for some reason:
+
+.. code-block:: pycon
+
+    >>> from toystore.models import CustomishField, Customish
+    >>> models(Customish).example()
+    hypothesis.errors.InvalidArgument: Missing arguments for mandatory field
+        customish for model Customish
+    >>> from hypothesis.extra.django.models import add_default_field_mapping
+    >>> from hypothesis.strategies import just
+    >>> add_default_field_mapping(CustomishField, just("hi"))
+    >>> x = models(Customish).example()
+    >>> x.customish
+    'hi'
+
+Note that this mapping is on exact type. Subtypes will not inherit it.

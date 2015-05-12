@@ -28,20 +28,20 @@ you're not sure how many you'll need in advance. For this, we have streaming
 types.
 
 
-.. code:: python
+.. code-block:: pycon
 
-    >>>> from hypothesis import strategy
-    >>>> from hypothesis.specifiers import streaming
-    >>>> x = strategy(streaming(int)).example()
-    >>>> x
+    >>> from hypothesis import strategy
+    >>> from hypothesis.strategies import streaming, integers
+    >>> x = strategy(streaming(integers())).example()
+    >>> x
     Stream(...)
-    >>>> x[2]
+    >>> x[2]
     209
-    >>>> x
+    >>> x
     Stream(32, 132, 209, ...)
-    >>>> x[10]
+    >>> x[10]
     130
-    >>>> x
+    >>> x
     Stream(32, 132, 209, 843, -19, 58, 141, -1046, 37, 243, 130, ...)
 
 Think of a Stream as an infinite list where we've only evaluated as much as
@@ -51,48 +51,48 @@ that index and no further.
 You can iterate over it too (warning: iter on a stream given to you
 by Hypothesis in this way will never terminate):
 
-.. code:: python
+.. code-block:: pycon
 
-    >>>> it = iter(x)
-    >>>> next(it)
+    >>> it = iter(x)
+    >>> next(it)
     32
-    >>>> next(it)
+    >>> next(it)
     132
-    >>>> next(it)
+    >>> next(it)
     209
-    >>>> next(it)
+    >>> next(it)
     843
 
 Slicing will also work, and will give you back Streams. If you set an upper
 bound then iter on those streams *will* terminate:
 
-.. code:: python
+.. code-block:: pycon
 
-    >>>> list(x[:5])
+    >>> list(x[:5])
     [32, 132, 209, 843, -19]
-    >>>> y = x[1::2]
-    >>>> y
+    >>> y = x[1::2]
+    >>> y
     Stream(...)
-    >>>> y[0]
+    >>> y[0]
     132
-    >>>> y[1]
+    >>> y[1]
     843
-    >>>> y
+    >>> y
     Stream(132, 843, ...)
 
 You can also apply a function to transform a stream:
 
-.. code:: python
+.. code-block:: pycon
 
-    >>>> t = strategy(streaming(int)).example()
-    >>>> tm = t.map(lambda n: n * 2)
-    >>>> tm[0]
+    >>> t = strategy(streaming(int)).example()
+    >>> tm = t.map(lambda n: n * 2)
+    >>> tm[0]
     26
-    >>>> t[0]
+    >>> t[0]
     13
-    >>>> tm
+    >>> tm
     Stream(26, ...)
-    >>>> t
+    >>> t
     Stream(13, ...)
 
 map creates a new stream where each element of the stream is the function
@@ -127,7 +127,7 @@ f(s.example()). i.e. we draw an example from s and then apply f to it.
 
 e.g.:
 
-.. code:: python
+.. code-block:: pycon
 
   >>> strategy([int]).map(sorted).example()
   [1, 5, 17, 21, 24, 30, 45, 82, 88, 88, 90, 96, 105]
@@ -142,7 +142,7 @@ Filtering
 filter lets you reject some examples. s.filter(f).example() is some example
 of s such that f(s) is truthy.
 
-.. code:: python
+.. code-block:: pycon
 
   >>> strategy(int).filter(lambda x: x > 11).example()
   1873
@@ -152,7 +152,7 @@ of s such that f(s) is truthy.
 It's important to note that filter isn't magic and if your condition is too
 hard to satisfy then this can fail:
 
-.. code:: python
+.. code-block:: pycon
 
   >>> strategy(int).filter(lambda x: False).example()
   Traceback (most recent call last):
@@ -169,7 +169,7 @@ and then use filter to remove things that didn't work out. So for example if you
 wanted pairs of integers (x,y) such that x < y you could do the following:
 
 
-.. code:: python
+.. code-block:: pycon
 
   >>> strategy((int, int)).map(
   ... lambda x: tuple(sorted(x))).filter(lambda x: x[0] != x[1]).example()
@@ -186,15 +186,28 @@ It may not be obvious why you want this at first, but it turns out to be
 quite useful because it lets you generate different types of data with
 relationships to eachother.
 
-For example suppose we wanted to generate a list of tuples all of the same
+For example suppose we wanted to generate a list of lists of the same
 length:
 
-  >>> strategy(
-  ... integers_in_range(0, 10)).flatmap(lambda n: [(int,) * n]).example()
-  [(170, -747, 564), (-534, 7226, 4), (83, 11647, 170)]
+
+.. code-block:: pycon
+
+  >>> from hypothesis.strategies import integers, lists
+  >>> from hypothesis import find
+  >>> rectangle_lists = integers(min_value=0, max_value=10).flatmap(lambda n:
+  ... lists(lists(integers(), min_size=n, max_size=n)))
+  >>> find(rectangle_lists, lambda x: True)
+  []
+  >>> find(rectangle_lists, lambda x: len(x) >= 10)
+  [[], [], [], [], [], [], [], [], [], []]
+  >>> find(rectangle_lists, lambda t: len(t) >= 3 and len(t[0])  >= 3)
+  [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+  >>> find(rectangle_lists, lambda t: sum(len(s) for s in t) >= 10)
+  [[0], [0], [0], [0], [0], [0], [0], [0], [0], [0]]
 
 In this example we first choose a length for our tuples, then we build a
-description of a list of tuples of those lengths.
+strategy which generates lists containing lists precisely of that length. The
+finds show what simple examples for this look like.
 
 Most of the time you probably don't want flatmap, but unlike filter and map
 which are just conveniences for things you could just do in your tests,
