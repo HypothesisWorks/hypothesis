@@ -33,7 +33,6 @@ from hypothesis.settings import Settings, Verbosity
 from hypothesis.executors import executor
 from hypothesis.reporting import report, debug_report, verbose_report, \
     current_verbosity
-from hypothesis.utils.show import show
 from hypothesis.deprecation import note_deprecation
 from hypothesis.internal.tracker import Tracker
 from hypothesis.internal.reflection import arg_string, copy_argspec, \
