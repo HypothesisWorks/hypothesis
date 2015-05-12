@@ -213,3 +213,22 @@ def test_ordered_dictionaries_preserve_keys():
 def test_lists_of_fixed_length(n):
     assert find(
         lists(integers(), min_size=n, max_size=n), lambda x: True) == [0] * n
+
+
+@pytest.mark.parametrize('n', range(10))
+def test_lists_of_lower_bounded_length(n):
+    x = find(
+        lists(integers(), min_size=n), lambda x: sum(x) >= 2 * n
+    )
+    assert n <= len(x) <= 2 * n
+    assert all(t >= 0 for t in x)
+    assert len(x) == n or all(t > 0 for t in x)
+    assert sum(x) == 2 * n
+
+
+@pytest.mark.parametrize('n', range(10))
+def test_lists_forced_near_top(n):
+    assert find(
+        lists(integers(), min_size=n, max_size=n + 2),
+        lambda t: len(t) == n + 2
+    ) == [0] * (n + 2)

@@ -330,16 +330,6 @@ class ListStrategy(SearchStrategy):
                 result[i] = x[i]
                 yield tuple(result)
 
-    def simplify_to_mid(self, random, x):
-        if len(x) <= 1:
-            return
-
-        mid = len(x) // 2
-        if mid >= self.min_size:
-            yield x[:mid]
-        if len(x) - mid >= self.min_size:
-            yield x[mid:]
-
     def simplify_with_random_discards(self, random, x):
         assert isinstance(x, tuple)
         if len(x) <= 3:
