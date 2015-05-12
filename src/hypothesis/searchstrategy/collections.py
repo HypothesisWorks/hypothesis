@@ -302,23 +302,13 @@ class ListStrategy(SearchStrategy):
         if len(x) <= 1:
             return
 
-        best = x[0]
-        any_shrinks = False
-        for t in x:
-            if self.element_strategy.strictly_simpler(
-                t, best
-            ):
-                any_shrinks = True
-                best = t
-            if not any_shrinks:
-                any_shrinks = self.element_strategy.strictly_simpler(best, t)
-
-        if any_shrinks:
-            yield (best,) * len(x)
-
         for _ in hrange(20):
             result = list(x)
             pivot = random.choice(x)
+            for _ in hrange(3):
+                alt_pivot = random.choice(x)
+                if self.element_strategy.strictly_simpler(alt_pivot, pivot):
+                    pivot = alt_pivot
             indices = [
                 j for j in hrange(len(x))
                 if self.element_strategy.strictly_simpler(pivot, x[j])]
