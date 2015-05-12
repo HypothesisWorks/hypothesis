@@ -153,6 +153,7 @@ class ListStrategy(SearchStrategy):
     ):
         SearchStrategy.__init__(self)
 
+        assert average_length > 0
         self.average_length = average_length
         strategies = tuple(strategies)
         self.min_size = min_size
@@ -205,7 +206,7 @@ class ListStrategy(SearchStrategy):
         if not template:
             return
 
-        if len(template) <= 1:
+        if len(template) <= 1 and self.min_size <= 0:
             yield self.simplify_to_empty
 
         if len(template) == 1:
@@ -213,6 +214,8 @@ class ListStrategy(SearchStrategy):
                 random, template[0]
             ):
                 yield self.simplifier_for_index(0, simplify)
+            return
+
         yield self.simplify_to_mid
         yield self.simplify_with_random_discards
         yield self.simplify_with_example_cloning
@@ -249,6 +252,8 @@ class ListStrategy(SearchStrategy):
         yield ()
 
     def simplify_to_singletons(self, random, x):
+        if self.min_size > 1:
+            return
         for t in x:
             yield (t,)
 
@@ -269,6 +274,8 @@ class ListStrategy(SearchStrategy):
     def simplify_arrange_by_pivot(self, random, x):
         if len(x) <= 1:
             return
+        if len(x) <= self.min_size + 1:
+            return
         for _ in hrange(10):
             pivot = random.choice(x)
             left = []
@@ -284,7 +291,7 @@ class ListStrategy(SearchStrategy):
                     center.append(y)
             bits = list(map(tuple, (left, center, right)))
             for t in bits:
-                if t and len(t) < len(x):
+                if t and len(t) < len(x) and len(t) >= self.min_size:
                     yield tuple(t)
 
     def simplify_with_example_cloning(self, random, x):
@@ -335,12 +342,16 @@ class ListStrategy(SearchStrategy):
             return
 
         mid = len(x) // 2
-        yield x[:mid]
-        yield x[mid:]
+        if mid >= self.min_size:
+            yield x[:mid]
+        if len(x) - mid >= self.min_size:
+            yield x[mid:]
 
     def simplify_with_random_discards(self, random, x):
         assert isinstance(x, tuple)
         if len(x) <= 3:
+            return
+        if len(x) <= self.min_size + 1:
             return
 
         for _ in hrange(10):
@@ -348,7 +359,8 @@ class ListStrategy(SearchStrategy):
             for t in x:
                 if random.randint(0, 1):
                     results.append(t)
-            yield tuple(results)
+            if len(results) >= self.min_size:
+                yield tuple(results)
 
     def indices_roughly_from_worst_to_best(self, random, x):
         pivot = random.choice(x)
@@ -366,6 +378,8 @@ class ListStrategy(SearchStrategy):
     def simplify_with_single_deletes(self, random, x):
         assert isinstance(x, tuple)
         if len(x) <= 1:
+            return
+        if len(x) <= self.min_size:
             return
 
         for i in self.indices_roughly_from_worst_to_best(random, x):

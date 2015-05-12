@@ -207,3 +207,9 @@ def test_ordered_dictionaries_preserve_keys():
     x = fixed_dictionaries(
         OrderedDict([(k, booleans()) for k in keys])).example()
     assert list(x.keys()) == keys
+
+
+@pytest.mark.parametrize('n', range(10))
+def test_lists_of_fixed_length(n):
+    assert find(
+        lists(integers(), min_size=n, max_size=n), lambda x: True) == [0] * n

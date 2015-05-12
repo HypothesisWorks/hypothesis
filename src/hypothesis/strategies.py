@@ -230,7 +230,7 @@ def lists(elements=None, min_size=None, average_size=None, max_size=None):
         else:
             average_size = (min_size + max_size) * 0.5
 
-    if elements is None:
+    if elements is None or (max_size is not None and max_size <= 0):
         if max_size is None or max_size > 0:
             raise InvalidArgument(
                 'Cannot create non-empty lists without an element type'
