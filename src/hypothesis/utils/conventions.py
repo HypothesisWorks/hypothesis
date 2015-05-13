@@ -1,7 +1,3 @@
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
-
-
 # coding=utf-8
 
 # Copyright (C) 2013-2015 David R. MacIver (david@drmaciver.com)
@@ -13,6 +9,10 @@ from __future__ import division, print_function, absolute_import, \
 # obtain one at http://mozilla.org/MPL/2.0/.
 
 # END HEADER
+
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
+
 
 class UniqueIdentifier(object):
 
