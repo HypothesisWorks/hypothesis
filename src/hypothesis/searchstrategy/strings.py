@@ -17,13 +17,11 @@ import sys
 import base64
 import unicodedata
 
-import hypothesis.specifiers as specifiers
 import hypothesis.internal.distributions as dist
 from hypothesis.internal.compat import hrange, hunichr, text_type, \
     binary_type
 from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
-    MappedSearchStrategy, strategy, check_type, check_length, \
-    check_data_type
+    MappedSearchStrategy, check_type, check_length, check_data_type
 
 
 class OneCharStringStrategy(SearchStrategy):
@@ -146,23 +144,3 @@ class BinaryStringStrategy(MappedSearchStrategy):
             return tuple(bytearray(base64.b64decode(data.encode('utf-8'))))
         except Exception as e:
             raise BadData(*e.args)
-
-
-@strategy.extend(specifiers.Strings)
-def define_text_type_from_alphabet(specifier, settings):
-    if not specifier.alphabet:
-        return StringStrategy(strategy([], settings))
-    return StringStrategy(strategy(
-        [specifiers.sampled_from(specifier.alphabet)], settings))
-
-
-@strategy.extend_static(text_type)
-def define_text_type_strategy(specifier, settings):
-    return StringStrategy(strategy([OneCharStringStrategy()], settings))
-
-
-@strategy.extend_static(binary_type)
-def define_binary_strategy(specifier, settings):
-    return BinaryStringStrategy(
-        strategy=strategy([specifiers.integers_in_range(0, 255)], settings),
-    )

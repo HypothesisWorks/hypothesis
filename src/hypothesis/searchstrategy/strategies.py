@@ -20,7 +20,6 @@ from hypothesis.errors import BadData, NoExamples, WrongFormat, \
     UnsatisfiedAssumption
 from hypothesis.control import assume
 from hypothesis.settings import Settings
-from hypothesis.specifiers import OneOf
 from hypothesis.deprecation import note_deprecation
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.utils.extmethod import ExtMethod
@@ -96,11 +95,6 @@ def one_of_strategies(xs):
     if len(xs) == 1:
         return xs[0]
     return OneOfStrategy(xs)
-
-
-@strategy.extend(OneOf)
-def strategy_for_one_of(oneof, settings):
-    return one_of_strategies([strategy(d, settings) for d in oneof.elements])
 
 
 class SearchStrategy(object):

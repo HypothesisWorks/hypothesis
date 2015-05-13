@@ -26,6 +26,10 @@ from hypothesis.settings import Settings, Verbosity
 from hypothesis.version import __version_info__, __version__
 from hypothesis.core import given, assume, find, example
 
+# Force strategy extensions to be loaded here
+import hypothesis.strategies as unused
+[unused]
+
 __all__ = [
     'Settings',
     'Verbosity',

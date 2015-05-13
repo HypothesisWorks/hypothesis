@@ -16,18 +16,14 @@ from __future__ import division, print_function, absolute_import, \
 import sys
 import math
 import struct
-from decimal import Decimal
-from fractions import Fraction
 from collections import namedtuple
 
-import hypothesis.specifiers as specifiers
 import hypothesis.internal.distributions as dist
 from hypothesis.utils.size import clamp
 from hypothesis.internal.compat import hrange, text_type, integer_types
 from hypothesis.searchstrategy.misc import SampledFromStrategy
 from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
-    MappedSearchStrategy, strategy, check_type, infinitish, \
-    check_data_type
+    MappedSearchStrategy, check_type, infinitish, check_data_type
 
 
 def integer_or_bad(data):
@@ -661,71 +657,3 @@ class ComplexStrategy(MappedSearchStrategy):
 
     def pack(self, value):
         return complex(*value)
-
-
-@strategy.extend(specifiers.IntegerRange)
-def define_stragy_for_integer_Range(specifier, settings):
-    return BoundedIntStrategy(specifier.start, specifier.end)
-
-
-@strategy.extend(specifiers.FloatRange)
-def define_strategy_for_float_Range(specifier, settings):
-    if specifier.start == specifier.end:
-        return strategy(specifiers.just(specifier.start), settings)
-
-    if math.isinf(specifier.end - specifier.start):
-        assert specifier.start < 0 and specifier.end > 0
-        return strategy(
-            specifiers.FloatRange(0, specifier.end), settings
-        ) | strategy(
-            specifiers.FloatRange(specifier.start, 0), settings
-        )
-
-    return FixedBoundedFloatStrategy(specifier.start, specifier.end)
-
-
-@strategy.extend_static(int)
-def int_strategy(specifier, settings):
-    return (
-        RandomGeometricIntStrategy() |
-        WideRangeIntStrategy()
-    )
-
-
-@strategy.extend(specifiers.IntegersFrom)
-def integers_from_strategy(specifier, settings):
-    return IntegersFromStrategy(specifier.lower_bound)
-
-
-@strategy.extend_static(float)
-def define_float_strategy(specifier, settings):
-    return WrapperFloatStrategy(
-        GaussianFloatStrategy() |
-        BoundedFloatStrategy() |
-        ExponentialFloatStrategy() |
-        JustIntFloats() |
-        NastyFloats() |
-        FullRangeFloats()
-    )
-
-
-@strategy.extend_static(complex)
-def define_complex_strategy(specifier, settings):
-    return ComplexStrategy(strategy((float, float), settings))
-
-
-@strategy.extend_static(Decimal)
-def define_decimal_strategy(specifier, settings):
-    return (
-        strategy(float, settings).map(specifier) |
-        strategy(Fraction, settings).map(
-            lambda f: specifier(f.numerator) / f.denominator
-        )
-    )
-
-
-@strategy.extend_static(Fraction)
-def define_fraction_strategy(specifier, settings):
-    return strategy((int, specifiers.integers_from(1))).map(
-        lambda t: Fraction(*t)
-    )

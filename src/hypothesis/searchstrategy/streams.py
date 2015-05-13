@@ -16,11 +16,10 @@ from __future__ import division, print_function, absolute_import, \
 from random import Random
 
 from hypothesis.types import Stream
-from hypothesis.specifiers import Streaming
 from hypothesis.utils.show import show
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
-    strategy, check_length, check_data_type
+    check_length, check_data_type
 
 
 class StreamTemplate(object):
@@ -151,8 +150,3 @@ class StreamStrategy(SearchStrategy):
         template.changed = len(changed)
         template.stream.fetched = changed
         return template
-
-
-@strategy.extend(Streaming)
-def stream_strategy(streaming, settings):
-    return StreamStrategy(strategy(streaming.data, settings))

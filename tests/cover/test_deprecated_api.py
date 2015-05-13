@@ -156,7 +156,7 @@ def test_float_range_validates():
 
 
 def test_sampled_from_validates():
-    with pytest.raises(ValueError):
+    with pytest.raises(InvalidArgument):
         strategy(s.sampled_from([]))
 
 

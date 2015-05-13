@@ -18,13 +18,12 @@ from collections import OrderedDict, namedtuple
 
 import hypothesis.internal.distributions as dist
 from hypothesis.settings import Settings
-from hypothesis.specifiers import Dictionary
 from hypothesis.utils.show import show
 from hypothesis.utils.size import clamp
 from hypothesis.internal.compat import hrange
 from hypothesis.searchstrategy.strategies import EFFECTIVELY_INFINITE, \
-    SearchStrategy, MappedSearchStrategy, strategy, check_type, \
-    infinitish, check_length, check_data_type, one_of_strategies
+    SearchStrategy, MappedSearchStrategy, check_type, infinitish, \
+    check_length, check_data_type, one_of_strategies
 
 
 def safe_mul(x, y):
@@ -596,59 +595,8 @@ class FixedKeysDictStrategy(MappedSearchStrategy):
         return self.dict_type(zip(self.keys, value))
 
 
-@strategy.extend(set)
-def define_set_strategy(specifier, settings):
-    return SetStrategy(
-        (strategy(d, settings) for d in specifier),
-        average_length=settings.average_list_length
-    )
-
-
-@strategy.extend(frozenset)
-def define_frozen_set_strategy(specifier, settings):
-    return FrozenSetStrategy(strategy(set(specifier), settings))
-
-
-@strategy.extend(list)
-def define_list_strategy(specifier, settings):
-    if len(specifier) == 1:
-        elt = strategy(specifier[0], settings)
-        from hypothesis.searchstrategy.numbers import IntegersFromStrategy
-        if elt.template_upper_bound == 1:
-            return SingleElementListStrategy(
-                elt,
-                IntegersFromStrategy(
-                    0, average_size=settings.average_list_length))
-    return ListStrategy(
-        [strategy(d, settings) for d in specifier],
-        average_length=settings.average_list_length
-    )
-
 Settings.define_setting(
     'average_list_length',
     default=50.0,
     description='Average length of lists to use'
 )
-
-
-@strategy.extend(tuple)
-def define_tuple_strategy(specifier, settings):
-    return TupleStrategy(
-        tuple(strategy(d, settings) for d in specifier),
-        tuple_type=type(specifier)
-    )
-
-
-@strategy.extend(dict)
-def define_dict_strategy(specifier, settings):
-    strategy_dict = {}
-    for k, v in specifier.items():
-        strategy_dict[k] = strategy(v, settings)
-    return FixedKeysDictStrategy(strategy_dict)
-
-
-@strategy.extend(Dictionary)
-def define_dictionary_strategy(specifier, settings):
-    return strategy(
-        [(specifier.keys, specifier.values)], settings
-    ).map(specifier.dict_class)

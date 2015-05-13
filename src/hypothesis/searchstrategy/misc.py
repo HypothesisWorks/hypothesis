@@ -13,15 +13,12 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from random import Random
-
-import hypothesis.specifiers as specifiers
 import hypothesis.internal.distributions as dist
 from hypothesis.types import RandomWithSeed
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.internal.chooser import chooser
 from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
-    MappedSearchStrategy, strategy, check_type, check_data_type
+    MappedSearchStrategy, check_type, check_data_type
 
 
 class BoolStrategy(SearchStrategy):
@@ -159,29 +156,3 @@ class SampledFromStrategy(SearchStrategy):
 
     def reify(self, template):
         return self.elements[template]
-
-
-@strategy.extend_static(bool)
-def bool_strategy(cls, settings):
-    return BoolStrategy()
-
-
-@strategy.extend(specifiers.Just)
-def define_just_strategy(specifier, settings):
-    return JustStrategy(specifier.value)
-
-
-@strategy.extend_static(Random)
-def define_random_strategy(specifier, settings):
-    return RandomStrategy(strategy(int, settings))
-
-
-@strategy.extend(specifiers.SampledFrom)
-def define_sampled_strategy(specifier, settings):
-    return SampledFromStrategy(specifier.elements)
-
-
-@strategy.extend(type(None))
-@strategy.extend_static(type(None))
-def define_none_strategy(specifier, settings):
-    return JustStrategy(None)

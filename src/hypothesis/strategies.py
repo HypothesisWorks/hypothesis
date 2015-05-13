@@ -14,12 +14,17 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import math
+from random import Random
+from decimal import Decimal
+from fractions import Fraction
 
+import hypothesis.specifiers as spec
 from hypothesis.errors import InvalidArgument
 from hypothesis.control import assume
 from hypothesis.settings import Settings
-from hypothesis.searchstrategy import SearchStrategy
-from hypothesis.internal.compat import text_type, integer_types
+from hypothesis.searchstrategy import SearchStrategy, strategy
+from hypothesis.internal.compat import text_type, binary_type, \
+    integer_types
 
 __all__ = [
     'just', 'one_of',
@@ -530,3 +535,146 @@ def check_valid_sizes(min_size, average_size, max_size):
                 'Cannot have average_size=%r < min_size=%r' % (
                     average_size, min_size
                 ))
+
+
+@strategy.extend(tuple)
+def define_tuple_strategy(specifier, settings):
+    from hypothesis.searchstrategy.collections import TupleStrategy
+    return TupleStrategy(
+        tuple(strategy(d, settings) for d in specifier),
+        tuple_type=type(specifier)
+    )
+
+
+@strategy.extend(dict)
+def define_dict_strategy(specifier, settings):
+    strategy_dict = {}
+    for k, v in specifier.items():
+        strategy_dict[k] = strategy(v, settings)
+    return fixed_dictionaries(strategy_dict)
+
+
+@strategy.extend(spec.Dictionary)
+def define_dictionary_strategy(specifier, settings):
+    return strategy(
+        [(specifier.keys, specifier.values)], settings
+    ).map(specifier.dict_class)
+
+
+@strategy.extend(spec.IntegerRange)
+def define_strategy_for_integer_Range(specifier, settings):
+    return integers(min_value=specifier.start, max_value=specifier.end)
+
+
+@strategy.extend(spec.FloatRange)
+def define_strategy_for_float_Range(specifier, settings):
+    return floats(specifier.start, specifier.end)
+
+
+@strategy.extend_static(int)
+def int_strategy(specifier, settings):
+    return integers()
+
+
+@strategy.extend(spec.IntegersFrom)
+def integers_from_strategy(specifier, settings):
+    return integers(min_value=specifier.lower_bound)
+
+
+@strategy.extend_static(float)
+def define_float_strategy(specifier, settings):
+    return floats()
+
+
+@strategy.extend_static(complex)
+def define_complex_strategy(specifier, settings):
+    return complex_numbers()
+
+
+@strategy.extend_static(Decimal)
+def define_decimal_strategy(specifier, settings):
+    return decimals()
+
+
+@strategy.extend_static(Fraction)
+def define_fraction_strategy(specifier, settings):
+    return fractions()
+
+
+@strategy.extend(set)
+def define_set_strategy(specifier, settings):
+    if not specifier:
+        return sets(max_size=0)
+    else:
+        with settings:
+            return sets(one_of(*[strategy(s, settings) for s in specifier]))
+
+
+@strategy.extend(frozenset)
+def define_frozen_set_strategy(specifier, settings):
+    if not specifier:
+        return frozensets(max_size=0)
+    else:
+        with settings:
+            return frozensets(
+                one_of(*[strategy(s, settings) for s in specifier]))
+
+
+@strategy.extend(list)
+def define_list_strategy(specifier, settings):
+    if not specifier:
+        return lists(max_size=0)
+    else:
+        with settings:
+            return lists(one_of(*[strategy(s, settings) for s in specifier]))
+
+
+@strategy.extend_static(bool)
+def bool_strategy(cls, settings):
+    return booleans()
+
+
+@strategy.extend(spec.Just)
+def define_just_strategy(specifier, settings):
+    return just(specifier.value)
+
+
+@strategy.extend_static(Random)
+def define_random_strategy(specifier, settings):
+    return randoms()
+
+
+@strategy.extend(spec.SampledFrom)
+def define_sampled_strategy(specifier, settings):
+    return sampled_from(specifier.elements)
+
+
+@strategy.extend(type(None))
+@strategy.extend_static(type(None))
+def define_none_strategy(specifier, settings):
+    return none()
+
+
+@strategy.extend(spec.OneOf)
+def strategy_for_one_of(oneof, settings):
+    return one_of(*[strategy(d, settings) for d in oneof.elements])
+
+
+@strategy.extend(spec.Strings)
+def define_text_type_from_alphabet(specifier, settings):
+    return text(alphabet=specifier.alphabet)
+
+
+@strategy.extend_static(text_type)
+def define_text_type_strategy(specifier, settings):
+    return text()
+
+
+@strategy.extend_static(binary_type)
+def define_binary_strategy(specifier, settings):
+    return binary()
+
+
+@strategy.extend(spec.Streaming)
+def stream_strategy(stream, settings):
+    return streaming(strategy(stream.data, settings))
