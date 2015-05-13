@@ -115,10 +115,7 @@ class SampledFromStrategy(SearchStrategy):
     def __init__(self, elements):
         SearchStrategy.__init__(self)
         self.elements = tuple(elements)
-        if not self.elements:
-            raise ValueError(
-                'SampledFromStrategy requires at least one element')
-        self.template_upper_bound = len(elements)
+        assert self.elements
 
     def to_basic(self, template):
         return template
@@ -145,13 +142,9 @@ class SampledFromStrategy(SearchStrategy):
 
     def draw_parameter(self, random):
         n = len(self.elements)
-        if n == 1:
-            return
         return chooser(random.getrandbits(8) + 1 for _ in hrange(n))
 
     def draw_template(self, random, pv):
-        if len(self.elements) == 1:
-            return 0
         return pv.choose(random)
 
     def reify(self, template):
