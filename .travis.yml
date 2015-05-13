@@ -14,7 +14,6 @@ cache:
         - $HOME/.pyenv
         - $HOME/.venv
         - $HOME/.cache/pip
-        - $HOME/.hypothesis-tox
 
 env:
     matrix:
