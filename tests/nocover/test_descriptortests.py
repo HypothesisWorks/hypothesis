@@ -118,7 +118,7 @@ with Settings(average_list_length=5.0):
     )
 
     TestMappedSampling = strategy_test_suite(
-        lists(integers()).filter(bool).flatmap(sampled_from)
+        lists(integers(), min_size=1).flatmap(sampled_from)
     )
 
     def integers_from(x):
