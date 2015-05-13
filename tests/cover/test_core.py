@@ -13,6 +13,7 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+import time
 import pytest
 import hypothesis.strategies as s
 from hypothesis import Settings, find, assume
@@ -55,3 +56,17 @@ def test_stops_after_max_iterations_if_not_satisfying():
 
     # May be less because of duplication
     assert len(tracker) <= max_iterations
+
+
+def test_can_time_out_in_simplify():
+    def slow_always_true(x):
+        time.sleep(0.1)
+        return True
+    start = time.time()
+    find(
+        s.lists(s.booleans()), slow_always_true,
+        settings=Settings(timeout=0.1, database=None)
+    )
+    finish = time.time()
+    run_time = finish - start
+    assert run_time <= 0.3

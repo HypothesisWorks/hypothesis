@@ -207,6 +207,8 @@ def simplify_template_such_that(
                 if warmup < max_warmup:
                     simpler = islice(simpler, warmup)
                 for s in simpler:
+                    if time_to_call_it_a_day(settings, start_time):
+                        return
                     if tracker.track(s) > 1:
                         continue
                     try:
@@ -218,8 +220,6 @@ def simplify_template_such_that(
                             break
                     except UnsatisfiedAssumption:
                         pass
-                    if time_to_call_it_a_day(settings, start_time):
-                        return
                 else:
                     break
 
@@ -254,11 +254,6 @@ def best_satisfying_template(
         ):
             successful_shrinks += 1
             satisfying_example = simpler
-            if time_to_call_it_a_day(settings, start_time):
-                # It's very hard to reliably hit this line even though we have
-                # tests for it. No cover prevents this from causing a flaky
-                # build.
-                break  # pragma: no cover
         if storage is not None:
             storage.save(satisfying_example)
     if not successful_shrinks:
