@@ -19,7 +19,7 @@ from random import Random
 import pytest
 from hypothesis import Settings, strategy
 from tests.common import standard_types
-from hypothesis.strategies import lists
+from hypothesis.strategies import lists, booleans
 from hypothesis.utils.show import show
 from hypothesis.internal.debug import via_database, some_template, \
     minimal_elements
@@ -93,3 +93,15 @@ def test_only_raises_bad_data_on_minimal(strat):
             strat.from_basic(m)
         except BadData:
             pass
+
+
+def test_lists_of_incompatible_sizes_are_checked():
+    s10 = lists(booleans(), min_size=10)
+    s2 = lists(booleans(), max_size=9)
+
+    x10 = s10.to_basic(some_template(s10))
+    x2 = s2.to_basic(some_template(s2))
+    with pytest.raises(BadData):
+        s2.from_basic(x10)
+    with pytest.raises(BadData):
+        s10.from_basic(x2)

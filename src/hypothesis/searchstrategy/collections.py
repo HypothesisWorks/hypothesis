@@ -22,8 +22,8 @@ from hypothesis.utils.show import show
 from hypothesis.utils.size import clamp
 from hypothesis.internal.compat import hrange
 from hypothesis.searchstrategy.strategies import EFFECTIVELY_INFINITE, \
-    SearchStrategy, MappedSearchStrategy, check_type, infinitish, \
-    check_length, check_data_type, one_of_strategies
+    BadData, SearchStrategy, MappedSearchStrategy, check_type, \
+    infinitish, check_length, check_data_type, one_of_strategies
 
 
 def safe_mul(x, y):
@@ -155,7 +155,7 @@ class ListStrategy(SearchStrategy):
         assert average_length > 0
         self.average_length = average_length
         strategies = tuple(strategies)
-        self.min_size = min_size
+        self.min_size = min_size or 0
         self.max_size = max_size
         if strategies:
             self.element_strategy = one_of_strategies(strategies)
@@ -406,6 +406,14 @@ class ListStrategy(SearchStrategy):
         check_data_type(list, value)
         if self.element_strategy is None:
             return ()
+        if len(value) < (self.min_size or 0):
+            raise BadData('List too short. len(%r)=%d < self.min_size=%d' % (
+                value, len(value), self.min_size
+            ))
+        if len(value) > (self.max_size or len(value)):
+            raise BadData('List too long. len(%r)=%d > self.min_size=%d' % (
+                value, len(value), self.max_size
+            ))
         return tuple(map(self.element_strategy.from_basic, value))
 
 
