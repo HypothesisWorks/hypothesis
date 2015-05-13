@@ -95,23 +95,17 @@ First we need to define a strategy for Node:
 .. code:: python
 
   from hypothesis import Settings, strategy
+  import hypothesis.strategies as s
 
-  @strategy.extend_static(Node)
-  def node_strategy(_, settings):
-      with settings:
-          values = strategy([bool], Settings(average_list_length=5.0))
-      return strategy((int, values), settings).map(
-          lambda kv: Node(*kv)
-      )
+  NodeStrategy = s.builds(
+    Node, 
+    s.integers(),
+    s.lists(s.booleans(), average_size=5, max_size=10))
 
-What we're doing is a little subtle here: We want to generate *short* lists of values
-so that there's a decent chance of one being a prefix of the other (this is also why
-the choice of bool as the elements), so we explicitly create a strategy that overrides
-a setting that controls the list length. We use the passed in settings as a context
-manager to inherit its defaults.
-
-Once we have the strategy for the values, we map over a strategy for a tuple of a label 
-and the values to produce a node. We then install this as the strategy for nodes.
+We want to generate *short* lists of values so that there's a decent chance of
+one being a prefix of the other (this is also why the choice of bool as the
+elements). We then define a strategy which builds a node out of an integer and
+one of those short lists of booleans.
 
 We can now write a test:
 
@@ -119,7 +113,7 @@ We can now write a test:
 
   from hypothesis import given
 
-  @given([Node])
+  @given(s.lists(Node))
   def test_sorting_nodes_is_prefix_sorted(xs):
       sort_nodes(xs)
       assert is_prefix_sorted(xs)
@@ -147,7 +141,7 @@ we actually wanted our labels to be unique. Lets change the test to do that.
         return list(table.values())
 
 
-    NodeSet = strategy([Node]).map(deduplicate_nodes_by_label)
+    NodeSet = s.lists(Node).map(deduplicate_nodes_by_label)
 
 We define a function to deduplicate nodes by labels, and then map that over a strategy
 for lists of nodes to give us a strategy for lists of nodes with unique labels. We can
@@ -207,8 +201,8 @@ Hypothesis, and how the hypothesis-datetime extra package works.
 .. code:: python
 
     from hypothesis import given, Settings
-    from hypothesis.extra.datetime import naive_datetime, timezone_aware_datetime
-    from hypothesis.specifiers import sampled_from
+    from hypothesis.extra.datetime import datetimes
+    from hypothesis.strategies import sampled_from
     import pytz
     from datetime import timedelta
 
@@ -218,7 +212,7 @@ Hypothesis, and how the hypothesis-datetime extra package works.
     # examples just to be sure
     with Settings(max_examples=1000):
         @given(
-            timezone_aware_datetime,
+            datetimes(),  # datetimes generated are non-naive by default
             sampled_from(ALL_TIMEZONES), sampled_from(ALL_TIMEZONES),
         )
         def test_convert_via_intermediary(dt, tz1, tz2):
@@ -229,7 +223,7 @@ Hypothesis, and how the hypothesis-datetime extra package works.
             assert dt.astimezone(tz1).astimezone(tz2) == dt.astimezone(tz2)
 
         @given(
-            naive_datetime,
+            datetimes(timezones=[]),  # Now generate naive datetimes
             sampled_from(ALL_TIMEZONES), sampled_from(ALL_TIMEZONES),
         )
         def test_convert_to_and_fro(dt, tz1, tz2):
@@ -241,7 +235,7 @@ Hypothesis, and how the hypothesis-datetime extra package works.
             assert dt == dt.astimezone(tz2).astimezone(tz1)
 
         @given(
-            timezone_aware_datetime,
+            datetimes(),
             sampled_from(ALL_TIMEZONES),
         )
         def test_adding_an_hour_commutes(dt, tz):
@@ -253,7 +247,7 @@ Hypothesis, and how the hypothesis-datetime extra package works.
             assert (dt + an_hour).astimezone(tz) == dt.astimezone(tz) + an_hour
 
         @given(
-            timezone_aware_datetime,
+            datetimes(),
             sampled_from(ALL_TIMEZONES),
         )
         def test_adding_a_day_commutes(dt, tz):
@@ -289,7 +283,7 @@ Without further ado, here is the code:
 .. code:: python
 
     from hypothesis import given, assume
-    from hypothesis.specifiers import integers_in_range
+    from hypothesis.strategies import integers, lists
     from collections import Counter
 
 
@@ -325,7 +319,7 @@ Without further ado, here is the code:
         return rebuilt_votes
 
 
-    @given([[integers_in_range(1, 5)]])
+    @given(lists(lists(integers(min_value=1, max_value=5))))
     def test_elections_are_transitive(election):
         election = build_election(election)
         # Small elections are unlikely to be interesting
@@ -400,7 +394,7 @@ then use the result and go on to do other things are definitely also possible.
     import random
     import time
     import math
-    from hypothesis.specifiers import one_of, sampled_from
+    from hypothesis.strategies import one_of, sampled_from, lists
 
     # These tests will be quite slow because we have to talk to an external
     # service. Also we'll put in a sleep between calls so as to not hammer it.
@@ -419,9 +413,9 @@ then use the result and go on to do other things are definitely also possible.
 
     GoalData = {
         'title': str,
-        'goal_type': sampled_from([
+        'goal_type': sampled_from(lists
             "hustler", "biker", "gainer", "fatloser", "inboxer",
-            "drinker", "custom"]),
+            "drinker", "custom")),
         'goaldate': one_of((None, float)),
         'goalval': one_of((None, float)),
         'rate': one_of((None, float)),
