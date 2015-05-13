@@ -216,6 +216,29 @@ def test_lists_of_fixed_length(n):
 
 
 @pytest.mark.parametrize('n', range(10))
+def test_sets_of_fixed_length(n):
+    x = find(
+        sets(integers(), min_size=n, max_size=n), lambda x: True)
+
+    if not n:
+        assert x == set()
+    else:
+        assert x == set(range(min(x), min(x) + n))
+
+
+@pytest.mark.parametrize('n', range(10))
+def test_dictionaries_of_fixed_length(n):
+    x = set(find(
+        dictionaries(integers(), booleans(), min_size=n, max_size=n),
+        lambda x: True).keys())
+
+    if not n:
+        assert x == set()
+    else:
+        assert x == set(range(min(x), min(x) + n))
+
+
+@pytest.mark.parametrize('n', range(10))
 def test_lists_of_lower_bounded_length(n):
     x = find(
         lists(integers(), min_size=n), lambda x: sum(x) >= 2 * n
