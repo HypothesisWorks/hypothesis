@@ -18,20 +18,6 @@ from decimal import Decimal
 from hypothesis import given, assume
 from tests.common.utils import fails
 from hypothesis.strategies import decimals, fractions
-from hypothesis.internal.debug import minimal
-
-
-def is_integral(d):
-    if d.is_infinite() or d.is_nan():
-        return False
-    return d == int(d)
-
-
-def test_can_find_things_divisible_by_5():
-    assert minimal(
-        decimals(),
-        lambda x: is_integral(x * 5) and not is_integral(x * 2)
-    ) == Decimal('0.2')
 
 
 @fails
