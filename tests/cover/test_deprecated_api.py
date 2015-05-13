@@ -80,8 +80,27 @@ def test_none_is_none():
     assert strategy(None).example() is None
 
 
-def test_sets_give_sets():
-    assert isinstance(strategy(set()).example(), set)
+@pytest.mark.parametrize(
+    'col', [
+        [], set(), frozenset(), {},
+    ]
+)
+def test_sets_give_sets(col):
+    x = strategy(col).example()
+    assert x == col
+    assert type(x) == type(col)
+
+
+@pytest.mark.parametrize(
+    'coltype', [
+        list, set, tuple, frozenset,
+    ]
+)
+def test_single_boolean(coltype):
+    x = find(
+        coltype((bool,)), lambda x: len(x) >= 1
+    )
+    assert x == coltype((False,))
 
 
 def test_frozensets_give_frozensets():
@@ -164,3 +183,11 @@ def test_can_generate_named_tuples():
     T = namedtuple('T', ('a', 'b'))
     t = find(T(int, int), lambda x: x.a < x.b)
     assert t.b == t.a + 1
+
+
+def test_integers_from():
+    assert find(s.integers_from(10), lambda x: True) == 10
+
+
+def test_integers_range():
+    assert find(s.integers_in_range(10, 100), lambda x: x > 10) == 11
