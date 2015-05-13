@@ -1,4 +1,5 @@
 import subprocess
+import os
 
 HEADER_FILE = "misc/header.py"
 
@@ -21,10 +22,15 @@ def all_python_files():
 
 
 def main():
+    rootdir = os.path.dirname(__file__)
+    if rootdir:
+        print("cd %r" % (rootdir,))
+        os.chdir(rootdir)
     files = all_python_files()
     files.remove("enforce_header.py")
 
     for f in files:
+        print(f)
         lines = []
         with open(f) as o:
             for l in o.readlines():
