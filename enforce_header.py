@@ -22,10 +22,9 @@ def all_python_files():
 
 
 def main():
-    rootdir = os.path.dirname(__file__)
-    if rootdir:
-        print("cd %r" % (rootdir,))
-        os.chdir(rootdir)
+    rootdir = os.path.abspath(os.path.dirname(__file__))
+    print("cd %r" % (rootdir,))
+    os.chdir(rootdir)
     files = all_python_files()
     files.remove("enforce_header.py")
 
