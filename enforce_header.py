@@ -31,14 +31,14 @@ def main():
     for f in files:
         print(f)
         lines = []
-        with open(f) as o:
+        with open(f, encoding="utf-8") as o:
             for l in o.readlines():
                 if 'END HEADER' in l:
                     lines = []
                 else:
                     lines.append(l)
         source = ''.join(lines).strip()
-        with open(f, "w") as o:
+        with open(f, "w", encoding="utf-8") as o:
             o.write(HEADER_SOURCE)
             o.write("\n\n")
             o.write(source)
