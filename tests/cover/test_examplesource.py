@@ -21,7 +21,7 @@ from hypothesis.strategies import integers
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.examplesource import ParameterSource
 
-N_EXAMPLES = 2500
+N_EXAMPLES = 25000
 
 
 def test_can_use_none_max_tries():
