@@ -17,11 +17,20 @@ import random
 from itertools import islice
 
 import pytest
-from hypothesis.strategies import booleans, integers
+from hypothesis.strategies import integers
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.examplesource import ParameterSource
 
 N_EXAMPLES = 2500
+
+
+def test_can_use_none_max_tries():
+    source = ParameterSource(
+        random=random.Random(),
+        strategy=integers(),
+        max_tries=None,
+    )
+    source.pick_a_parameter()
 
 
 def test_negative_is_not_too_far_off_mean():

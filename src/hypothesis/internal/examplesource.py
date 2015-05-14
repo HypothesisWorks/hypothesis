@@ -30,9 +30,9 @@ class ParameterSource(object):
 
     def __init__(
         self,
-        random, strategy, max_tries=10,
+        random, strategy, max_tries=None,
     ):
-        self.max_tries = max_tries
+        self.max_tries = max_tries or 10
         self.random = random
         self.strategy = strategy
         self.new_parameter()
