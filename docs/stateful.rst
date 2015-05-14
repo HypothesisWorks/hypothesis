@@ -357,3 +357,17 @@ Running this gives us the following:
 
 So it adds two elements, then deletes one, and throws an assertion when it
 finds out that this only deleted one of the copies of the element.
+
+
+-------------------------
+More fine grained control
+-------------------------
+
+If you want to bypass the TestCase infrastructure you can invoke these
+manually. The stateful module exposes the function run_state_machine_as_test,
+which takes an arbitrary function returning a GenericStateMachine and an
+optional settings parameter and does the same as the class based runTest
+provided.
+
+In particular this may be useful if you wish to pass parameters to a custom
+__init__ in your subclass.

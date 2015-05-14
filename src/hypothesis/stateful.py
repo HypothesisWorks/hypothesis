@@ -64,6 +64,50 @@ class TestCaseProperty(object):  # pragma: no cover
         raise AttributeError('Cannot delete TestCase')
 
 
+def find_breaking_runner(state_machine_factory, settings=None):
+    def is_breaking_run(runner):
+        try:
+            runner.run(state_machine_factory())
+            return False
+        except (InvalidDefinition, UnsatisfiedAssumption):
+            raise
+        except Exception:
+            verbose_report(traceback.format_exc)
+            return True
+    if settings is None:
+        try:
+            settings = state_machine_factory.TestCase.settings
+        except AttributeError:
+            settings = Settings.default
+
+    return find(
+        StateMachineSearchStrategy(
+            settings
+        ), is_breaking_run,
+        settings,
+    )
+
+
+def run_state_machine_as_test(state_machine_factory, settings=None):
+    """Run a state machine definition as a test, either silently doing nothing
+    or printing a minimal breaking program and raising an exception.
+
+    state_machine_factory is anything which returns an instance of
+    GenericStateMachine when called with no arguments - it can be a class or a
+    function. settings will be used to control the execution of the test.
+
+    """
+    try:
+        breaker = find_breaking_runner(state_machine_factory, settings)
+    except NoSuchExample:
+        return
+
+    breaker.run(state_machine_factory(), print_steps=True)
+    raise Flaky(
+        'Run failed initially by succeeded on a second try'
+    )
+
+
 class GenericStateMachine(object):
 
     """A GenericStateMachine is the basic entry point into Hypothesis's
@@ -110,24 +154,6 @@ class GenericStateMachine(object):
         """
         pass
 
-    @classmethod
-    def find_breaking_runner(state_machine_class):
-        def is_breaking_run(runner):
-            try:
-                runner.run(state_machine_class())
-                return False
-            except (InvalidDefinition, UnsatisfiedAssumption):
-                raise
-            except Exception:
-                verbose_report(traceback.format_exc)
-                return True
-        return find(
-            StateMachineSearchStrategy(
-                state_machine_class.TestCase.settings
-            ), is_breaking_run,
-            state_machine_class.TestCase.settings,
-        )
-
     _test_case_cache = {}
 
     TestCase = TestCaseProperty()
@@ -143,15 +169,7 @@ class GenericStateMachine(object):
             settings = Settings()
 
             def runTest(self):
-                try:
-                    breaker = state_machine_class.find_breaking_runner()
-                except NoSuchExample:
-                    return
-
-                breaker.run(state_machine_class(), print_steps=True)
-                raise Flaky(
-                    'Run failed initially by succeeded on a second try'
-                )
+                run_state_machine_as_test(state_machine_class)
 
         base_name = state_machine_class.__name__
         StateMachineTestCase.__name__ = str(
@@ -165,6 +183,8 @@ class GenericStateMachine(object):
             StateMachineTestCase
         )
         return StateMachineTestCase
+
+GenericStateMachine.find_breaking_runner = classmethod(find_breaking_runner)
 
 
 def seeds(starting, n_steps):

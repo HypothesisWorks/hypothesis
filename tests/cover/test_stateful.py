@@ -22,7 +22,8 @@ from hypothesis import Settings, assume, strategy
 from hypothesis.errors import Flaky, BadData, InvalidDefinition
 from tests.common.utils import capture_out
 from hypothesis.stateful import Bundle, GenericStateMachine, \
-    RuleBasedStateMachine, StateMachineSearchStrategy, rule
+    RuleBasedStateMachine, StateMachineSearchStrategy, rule, \
+    run_state_machine_as_test
 from hypothesis.strategies import just, none, lists, tuples, booleans, \
     integers, sampled_from
 
@@ -410,3 +411,51 @@ def test_can_produce_minimal_outcomes_from_unreliable_strategies():
         template = strat.from_basic(data[-1])
         value = strat.reify(template)
         assert value in ([], 0)
+
+
+class RequiresInit(GenericStateMachine):
+
+    def __init__(self, threshold):
+        super(RequiresInit, self).__init__()
+        self.threshold = threshold
+
+    def steps(self):
+        return integers()
+
+    def execute_step(self, value):
+        if value > self.threshold:
+            raise ValueError('%d is too high' % (value,))
+
+
+def test_can_use_factory_for_tests():
+    with pytest.raises(ValueError):
+        run_state_machine_as_test(lambda: RequiresInit(42))
+
+
+class FailsEventually(GenericStateMachine):
+
+    def __init__(self):
+        super(FailsEventually, self).__init__()
+        self.counter = 0
+
+    def steps(self):
+        return none()
+
+    def execute_step(self, _):
+        self.counter += 1
+        assert self.counter < 10
+
+FailsEventually.TestCase.settings.stateful_step_count = 5
+
+TestDoesNotFail = FailsEventually.TestCase
+
+
+def test_can_explicitly_pass_settings():
+    try:
+        FailsEventually.TestCase.settings.stateful_step_count = 15
+        run_state_machine_as_test(
+            FailsEventually, settings=Settings(
+                stateful_step_count=2,
+            ))
+    finally:
+        FailsEventually.TestCase.settings.stateful_step_count = 5
