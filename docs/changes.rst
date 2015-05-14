@@ -58,6 +58,8 @@ Other changes:
     max_examples counted duplicates, so this was very hard to hit in a way that mattered.
   * A number of internal simplifications to the SearchStrategy API.
   * You can now access the current Hypothesis version as hypothesis.__version__. 
+  * A top level function is provided for running the stateful tests without the
+    TestCase infrastructure.
 
 ---------------------------------------------------------------------
 `1.4.0 <https://hypothesis.readthedocs.org/en/v1.4.0/>`_ - 2015-05-04
