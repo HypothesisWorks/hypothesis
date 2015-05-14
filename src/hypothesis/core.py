@@ -102,7 +102,6 @@ def find_satisfying_template(
 
     parameter_source = ParameterSource(
         random=random, strategy=search_strategy,
-        min_parameters=max(2, int(float(max_examples) / 10)),
         max_tries=max_parameter_tries,
     )
 

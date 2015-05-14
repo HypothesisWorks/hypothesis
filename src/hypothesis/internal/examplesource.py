@@ -30,32 +30,16 @@ class ParameterSource(object):
 
     def __init__(
         self,
-        random, strategy,
-        min_parameters=25, min_tries=2,
-        start_invalidating_at=5,
-        invalidation_threshold=0.75,
-        max_tries=None,
+        random, strategy, max_tries=10,
     ):
-        if max_tries is None:
-            max_tries = 50
-        self.strategy = strategy
         self.max_tries = max_tries
-        min_tries = min(min_tries, max_tries)
         self.random = random
-        self.parameters = []
-        self.last_parameter_index = -1
-        self.last_but_one_parameter_index = -1
-        self.min_parameters = min_parameters
-        self.start_invalidating_at = start_invalidating_at
-        self.invalidation_threshold = invalidation_threshold
-        self.min_tries = min_tries
-        self.bad_counts = []
-        self.counts = []
-        self.total_count = 0
-        self.total_bad_count = 0
-        self.mark_set = False
+        self.strategy = strategy
+        self.new_parameter()
         self.started = False
-        self.valid_parameters = []
+        self.mark_set = False
+        self.should_switch = False
+        self.count = 0
 
     def mark_bad(self):
         """The last example was bad.
@@ -67,40 +51,14 @@ class ParameterSource(object):
             raise ValueError('No parameters have been generated yet')
         if self.mark_set:
             raise ValueError('This parameter has already been marked')
+        self.should_switch = True
         self.mark_set = True
-        self.total_bad_count += 1
-        self.bad_counts[self.last_parameter_index] += 1
 
     def new_parameter(self):
-        result = self.strategy.draw_parameter(self.random)
-        self.parameters.append(result)
-        self.bad_counts.append(0)
-        self.counts.append(1)
-        index = len(self.parameters) - 1
-        self.valid_parameters.append(index)
-        self.last_but_one_parameter_index = self.last_parameter_index
-        self.last_parameter_index = index
-        self.mark_set = False
-        return result
-
-    def draw_parameter(self, index):
-        self.last_parameter_index = index
-        self.mark_set = False
-        self.counts[index] += 1
-        return self.parameters[index]
-
-    def draw_parameter_score(self, i):
-        beta_prior = 2.0 * (
-            1.0 + self.total_bad_count
-        ) / (1.0 + self.total_count)
-        alpha_prior = 2.0 - beta_prior
-
-        beta = beta_prior + self.bad_counts[i]
-        alpha = alpha_prior + self.counts[i] - self.bad_counts[i]
-        assert self.counts[i] > 0
-        assert self.bad_counts[i] >= 0
-        assert self.bad_counts[i] <= self.counts[i]
-        return self.random.betavariate(alpha, beta)
+        self.count = 0
+        self.should_switch = False
+        self.current_parameter = self.strategy.draw_parameter(self.random)
+        return self.current_parameter
 
     def pick_a_parameter(self):
         """Draw a parameter value, either picking one we've already generated
@@ -123,47 +81,13 @@ class ParameterSource(object):
            we've drawn are terrible.
 
         """
-        self.total_count += 1
-        if self.parameters and self.counts[-1] < self.min_tries:
-            return self.draw_parameter(len(self.parameters) - 1)
-        if len(self.parameters) < self.min_parameters:
+        self.started = True
+        self.mark_set = False
+        if self.should_switch or self.count >= self.max_tries:
             return self.new_parameter()
         else:
-            best_score = self.draw_parameter_score(
-                self.random.randint(0, len(self.parameters) - 1)
-            )
-            best_index = -1
-
-            while self.valid_parameters:
-                i = self.valid_parameters[-1]
-                if self.counts[i] == self.bad_counts[i]:
-                    self.valid_parameters.pop()
-                else:
-                    break
-
-            to_invalidate = []
-            for i in self.valid_parameters:
-                if self.counts[i] >= self.max_tries:
-                    to_invalidate.append(i)
-                    continue
-
-                if (
-                    self.counts[i] >= self.start_invalidating_at and
-                    self.bad_counts[i] >= (
-                        self.invalidation_threshold * self.counts[i])
-                ):
-                    to_invalidate.append(i)
-                    continue
-                score = self.draw_parameter_score(i)
-                if score > best_score:
-                    best_score = score
-                    best_index = i
-            for i in to_invalidate:
-                self.valid_parameters.remove(i)
-            if best_index < 0:
-                return self.new_parameter()
-            else:
-                return self.draw_parameter(best_index)
+            self.count += 1
+            return self.current_parameter
 
     def __iter__(self):
         self.started = True
