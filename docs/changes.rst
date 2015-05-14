@@ -21,6 +21,43 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+----------------
+1.5.0 - Upcoming
+----------------
+
+Codename: Strategic withdrawal.
+
+The purpose of this release is a radical simplification of the API for building
+strategies. Instead of the old approach of @strategy.extend and things that
+get converted to strategies, you just build strategies directly.
+
+The old method of defining strategies will still work until Hypothesis 2.0,
+because it's a major breaking change, but will now emit deprecation warnings.
+
+The new API is also a lot more powerful as the functions for defining strategies
+give you a lot of dials to turn. See :doc:`the updated data section <data>` for
+details.
+
+Other changes:
+
+  * Mixing keyword and positional arguments in a call to @given is deprecated as well.
+  * There is a new setting called 'strict'. When set to True, Hypothesis will raise
+    warnings instead of merely printing them. Turning it on by default is inadvisable because
+    it means that Hypothesis minor releases can break your code, but it may be useful for
+    making sure you catch all uses of deprecated APIs.
+  * max_examples in settings is now interpreted as meaning the maximum number
+    of unique (ish) examples satisfying assumptions. A new setting max_iterations
+    which defaults to a larger value has the old interpretation.
+  * Example generation should be significantly faster due to a new faster parameter
+    selection algorithm. This will mostly show up for simple data types - for complex
+    ones the parameter selection is almost certainly dominated.
+  * Simplification has some new heuristics that will tend to cut down on cases
+    where it could previously take a very long time.
+  * timeout would previously not have been respected in cases where there were a lot
+    of duplicate examples. You probably wouldn't have previously noticed this because
+    max_examples counted duplicates, so this was very hard to hit in a way that mattered.
+  * A number of internal simplifications to the SearchStrategy API.
+  * You can now access the current Hypothesis version as hypothesis.__version__. 
 
 ---------------------------------------------------------------------
 `1.4.0 <https://hypothesis.readthedocs.org/en/v1.4.0/>`_ - 2015-05-04
