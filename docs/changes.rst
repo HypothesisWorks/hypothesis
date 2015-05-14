@@ -21,9 +21,10 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
-----------------
-1.5.0 - Upcoming
-----------------
+---------------------------------------------------------------------
+`1.5.0 <https://hypothesis.readthedocs.org/en/v1.5.0/>`_ - 2015-05-14
+---------------------------------------------------------------------
+
 
 Codename: Strategic withdrawal.
 
