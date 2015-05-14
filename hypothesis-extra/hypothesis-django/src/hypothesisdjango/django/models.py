@@ -117,5 +117,5 @@ class ModelStrategy(MappedSearchStrategy):
             result = self.model(**value)
             result.save()
             return result
-        except IntegrityError:
+        except (IntegrityError, ValidationError):
             assume(False)
