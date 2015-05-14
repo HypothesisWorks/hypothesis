@@ -417,7 +417,7 @@ def test_small_sum_lists():
             len(x) >= 100 and sum(t for t in x if float('inf') > t >= 0) >= 1,
         settings=Settings(average_list_length=200),
     )
-    assert 1.0 <= sum(t for t in xs if t >= 0) <= 1.01
+    assert 1.0 <= sum(t for t in xs if t >= 0) <= 1.5
 
 
 def test_increasing_float_sequence():
