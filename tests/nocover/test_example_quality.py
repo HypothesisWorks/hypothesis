@@ -77,17 +77,6 @@ def test_minimal_fractions_4():
     ) == [Fraction(1)] * 20
 
 
-def test_finding_decimals_with_defined_precision():
-    def is_integral(x):
-        try:
-            return x == int(x)
-        except (ValueError, OverflowError):
-            return False
-
-    assert minimal(decimals(), is_integral) == Decimal(0)
-    minimal(decimals(), lambda x: is_integral(x * 100) and 0 < x < 1)
-
-
 def test_minimize_list_of_floats_on_large_structure():
     def test_list_in_range(xs):
         assume(len(xs) >= 50)
