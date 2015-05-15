@@ -17,6 +17,7 @@ import django.db.models as dm
 import hypothesis.strategies as st
 import hypothesis.extra.fakefactory as ff
 from django.db import IntegrityError
+from django.core.exceptions import ValidationError
 from hypothesis.errors import InvalidArgument
 from hypothesis.control import assume
 from hypothesis.extra.datetime import datetimes
