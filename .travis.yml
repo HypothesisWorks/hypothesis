@@ -28,10 +28,10 @@ env:
         - TOXENV=py33
 
 install:
-    - ./.travis/install.sh
+    - ./scripts/install.sh
 
 script:
-    - ./.travis/run.sh
+    - ./scripts/run.sh
 
 matrix:
     exclude:
