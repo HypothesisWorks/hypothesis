@@ -34,7 +34,7 @@ def run_round_trip(specifier, value, format=None, backend=None):
     db = ExampleDatabase(format=format, backend=backend)
     strat = strategy(specifier)
     try:
-        storage = db.storage("round trip")
+        storage = db.storage('round trip')
         storage.save(value, strat)
         saved = list(storage.fetch(strat))
         assert len(saved) == 1
@@ -106,7 +106,7 @@ def test_errors_if_given_incompatible_format_and_backend():
 def test_storage_does_not_error_if_the_database_is_invalid():
     database = ExampleDatabase()
     strat = integers()
-    key = "wtf"
+    key = 'wtf'
     ints = database.storage(key)
     database.backend.save(key, '["hi", "there"]')
     assert list(ints.fetch(strat)) == []
@@ -115,7 +115,7 @@ def test_storage_does_not_error_if_the_database_is_invalid():
 @pytest.mark.parametrize('s', ['', 'abcdefg', '☃'])
 def test_can_save_all_strings(s):
     db = ExampleDatabase()
-    storage = db.storage("text")
+    storage = db.storage('text')
     storage.save(tuple(s), text())
 
 

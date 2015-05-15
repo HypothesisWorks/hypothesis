@@ -37,7 +37,7 @@ else:
 
     def qualname(f):
         try:
-            return f.im_class.__name__ + "." + f.__name__
+            return f.im_class.__name__ + '.' + f.__name__
         except AttributeError:
             return f.__name__
 

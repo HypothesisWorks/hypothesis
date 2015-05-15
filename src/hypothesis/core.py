@@ -34,10 +34,11 @@ from hypothesis.executors import executor
 from hypothesis.reporting import report, debug_report, verbose_report, \
     current_verbosity
 from hypothesis.deprecation import note_deprecation
+from hypothesis.internal.compat import qualname
 from hypothesis.internal.tracker import Tracker
 from hypothesis.internal.reflection import arg_string, copy_argspec, \
-    function_digest, get_pretty_function_description, fully_qualified_name
-from hypothesis.internal.compat import qualname
+    function_digest, fully_qualified_name, \
+    get_pretty_function_description
 from hypothesis.internal.examplesource import ParameterSource
 from hypothesis.searchstrategy.strategies import strategy
 

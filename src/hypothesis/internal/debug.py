@@ -105,7 +105,7 @@ def some_template(spec, random=None):
 
 def via_database(spec, strat, template):
     db = ExampleDatabase()
-    key = "via_database"
+    key = 'via_database'
     try:
         s = db.storage(key)
         s.save(template, strat)
