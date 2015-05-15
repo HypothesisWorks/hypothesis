@@ -21,7 +21,7 @@ examples of usage are `available at readthedocs <https://hypothesis.readthedocs.
 If you want to talk to people about using Hypothesis, `we have both an IRC channel
 and a mailing list <https://hypothesis.readthedocs.org/en/latest/community.html>`_.
 
-If you want to contribute to Hypothesis, `guidelines are here <https://hypothesis.readthedocs.org/en/latest/contributing.html>`_.
+If you want to contribute to Hypothesis, `instructions are here <https://github.com/DRMacIver/hypothesis/blob/master/CONTRIBUTING.rst>`_.
 
 If you're looking for inspiration for writing your own QuickCheck clone,
 `here's a list of ideas you might want to borrow <https://hypothesis.readthedocs.org/en/latest/internals.html>`_.
