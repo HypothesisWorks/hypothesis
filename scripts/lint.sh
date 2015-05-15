@@ -4,7 +4,7 @@ set -o xtrace -e
 
 export LC_ALL=en_GB.UTF-8
 
-python enforce_header.py
+python scripts/enforce_header.py
 isort -p hypothesis -ls -m 2 -w 75 \
     -a  "from __future__ import absolute_import, print_function, unicode_literals, division" \
     -rc src tests examples hypothesis-extra/*/{src,tests}

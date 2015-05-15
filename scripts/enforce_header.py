@@ -1,7 +1,7 @@
 import subprocess
 import os
 
-HEADER_FILE = "misc/header.py"
+HEADER_FILE = "scripts/header.py"
 
 HEADER_SOURCE = open(HEADER_FILE).read().strip()
 
@@ -22,11 +22,11 @@ def all_python_files():
 
 
 def main():
-    rootdir = os.path.abspath(os.path.dirname(__file__))
+    rootdir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     print("cd %r" % (rootdir,))
     os.chdir(rootdir)
     files = all_python_files()
-    files.remove("enforce_header.py")
+    files.remove("scripts/enforce_header.py")
 
     for f in files:
         print(f)
