@@ -28,18 +28,9 @@ if PY3:
     integer_types = (int,)
     hunichr = chr
     from functools import reduce
-
-    def qualname(f):
-        return f.__qualname__
 else:
     text_type = unicode
     binary_type = str
-
-    def qualname(f):
-        try:
-            return f.im_class.__name__ + '.' + f.__name__
-        except AttributeError:
-            return f.__name__
 
     def hrange(start_or_finish, finish=None, step=None):
         try:
@@ -79,6 +70,18 @@ else:
     integer_types = (int, long)
     hunichr = unichr
     reduce = reduce
+
+
+def qualname(f):
+    try:
+        return f.__qualname__
+    except AttributeError:
+        pass
+    try:
+        return f.im_class.__name__ + '.' + f.__name__
+    except AttributeError:
+        return f.__name__
+
 
 importlib_invalidate_caches = getattr(
     importlib, 'invalidate_caches', lambda: ())
