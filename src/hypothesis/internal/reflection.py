@@ -27,7 +27,15 @@ from functools import wraps
 
 from hypothesis.settings import storage_directory
 from hypothesis.internal.compat import ARG_NAME_ATTRIBUTE, hrange, \
-    text_type, importlib_invalidate_caches
+    text_type, importlib_invalidate_caches, qualname
+
+
+def fully_qualified_name(f):
+    """
+    Returns a unique identifier for f pointing to the module it was define
+    on, and an containing functions.
+    """
+    return f.__module__ + "." + qualname(f)
 
 
 def function_digest(function):

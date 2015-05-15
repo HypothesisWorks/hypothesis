@@ -14,8 +14,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 
-from hypothesis.utils.show import show
-from hypothesis.searchstrategy.strategies import BadData, strategy
+from hypothesis.searchstrategy.strategies import BadData
 from hypothesis.database.formats import JSONFormat
 from hypothesis.database.backend import SQLiteBackend
 
@@ -28,31 +27,26 @@ class Storage(object):
         return 'Storage(%s)' % (self.specifier,)
 
     def __init__(
-        self, backend, specifier, strategy, format,
+        self, backend, key, format,
         database
     ):
         self.database = database
         self.backend = backend
-        self.specifier = specifier
         self.format = format
-        self.strategy = strategy
-        self.key = show(specifier)
+        self.key = key
 
-    def save(self, value):
-        converted = self.strategy.to_basic(value)
+    def save(self, value, strategy):
+        converted = strategy.to_basic(value)
         serialized = self.format.serialize_basic(converted)
         self.backend.save(self.key, serialized)
 
-    def fetch(self):
+    def fetch(self, strategy):
         for data in self.backend.fetch(self.key):
             try:
-                deserialized = self.strategy.from_basic(
+                yield strategy.from_basic(
                     self.format.deserialize_data(data))
             except BadData:
-                self.backend.delete(self.key, data)
                 continue
-
-            yield deserialized
 
 
 class ExampleDatabase(object):
@@ -82,14 +76,13 @@ class ExampleDatabase(object):
                     self.format.data_type(), self.backend.data_type()
                 )))
 
-    def storage_for(self, specifier, search_strategy=None):
+    def storage(self, key):
         """Get a storage object corresponding to this specifier."""
         return Storage(
-            specifier=specifier,
+            key=key,
             database=self,
             backend=self.backend,
             format=self.format,
-            strategy=search_strategy or strategy(specifier),
         )
 
     def close(self):

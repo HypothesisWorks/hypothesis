@@ -18,6 +18,7 @@ import sys
 import importlib
 
 PY3 = sys.version_info[0] == 3
+BAD_PY3 = PY3 and (sys.version_info[1] <= 2)
 
 if PY3:
     text_type = str
@@ -27,9 +28,18 @@ if PY3:
     integer_types = (int,)
     hunichr = chr
     from functools import reduce
+
+    def qualname(f):
+        return f.__qualname__
 else:
     text_type = unicode
     binary_type = str
+
+    def qualname(f):
+        try:
+            return f.im_class.__name__ + "." + f.__name__
+        except AttributeError:
+            return f.__name__
 
     def hrange(start_or_finish, finish=None, step=None):
         try:

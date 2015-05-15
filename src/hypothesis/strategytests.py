@@ -279,9 +279,9 @@ def strategy_test_suite(
                 backend=SQLiteBackend(':memory:'),
             )
             try:
-                storage = empty_db.storage_for(specifier)
-                storage.save(template)
-                values = list(storage.fetch())
+                storage = empty_db.storage("round trip")
+                storage.save(template, strat)
+                values = list(storage.fetch(strat))
                 assert len(values) == 1
                 assert strat.to_basic(template) == strat.to_basic(values[0])
             finally:

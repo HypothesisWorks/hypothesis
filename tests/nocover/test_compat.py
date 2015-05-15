@@ -14,7 +14,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import pytest
-from hypothesis.internal.compat import hrange
+from hypothesis.internal.compat import hrange, qualname, BAD_PY3
 
 
 def test_small_hrange():
@@ -30,3 +30,18 @@ def test_large_hrange():
 
     with pytest.raises(ValueError):
         hrange(n, n, 0)
+
+
+class Foo():
+    def bar(self):
+        pass
+
+
+@pytest.mark.skipif(
+    BAD_PY3,
+    reason="Python 3.2 and less have a terrible object model."
+)
+def test_qualname():
+    assert qualname(Foo.bar) == "Foo.bar"
+    assert qualname(Foo().bar) == "Foo.bar"
+    assert qualname(qualname) == "qualname"

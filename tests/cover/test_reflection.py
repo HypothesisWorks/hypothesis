@@ -21,7 +21,7 @@ import pytest
 from hypothesis.internal.reflection import arg_string, copy_argspec, \
     unbind_method, function_digest, source_exec_as_module, \
     convert_keyword_arguments, convert_positional_arguments, \
-    get_pretty_function_description
+    get_pretty_function_description, fully_qualified_name
 
 
 def do_conversion_test(f, args, kwargs):
@@ -495,3 +495,17 @@ def test_copy_argspec_validates_function_name():
     with pytest.raises(ValueError):
         copy_argspec('hello world', inspect.ArgSpec(
             args=['a', 'b'], varargs=None, keywords=None, defaults=None))
+
+
+class Container(object):
+    def funcy(self):
+        pass
+
+
+def test_fully_qualified_name():
+    assert fully_qualified_name(test_copying_preserves_argspec) == \
+        "tests.cover.test_reflection.test_copying_preserves_argspec"
+    assert fully_qualified_name(Container.funcy) == \
+        "tests.cover.test_reflection.Container.funcy"
+    assert fully_qualified_name(fully_qualified_name) == \
+        "hypothesis.internal.reflection.fully_qualified_name"

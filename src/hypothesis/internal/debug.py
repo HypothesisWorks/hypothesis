@@ -105,10 +105,11 @@ def some_template(spec, random=None):
 
 def via_database(spec, strat, template):
     db = ExampleDatabase()
+    key = "via_database"
     try:
-        s = db.storage_for(strat, strat)
-        s.save(template)
-        results = list(s.fetch())
+        s = db.storage(key)
+        s.save(template, strat)
+        results = list(s.fetch(strat))
         assert len(results) == 1
         return results[0]
     finally:

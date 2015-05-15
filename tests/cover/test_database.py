@@ -20,7 +20,7 @@ import hypothesis.settings as hs
 from hypothesis import given, assume, strategy
 from hypothesis.errors import Timeout, Unsatisfiable
 from hypothesis.database import ExampleDatabase
-from hypothesis.strategies import text, tuples, integers
+from hypothesis.strategies import text, integers
 from hypothesis.internal.compat import hrange, text_type, integer_types
 from hypothesis.database.backend import Backend, SQLiteBackend
 from hypothesis.database.formats import Format, JSONFormat
@@ -32,12 +32,12 @@ def run_round_trip(specifier, value, format=None, backend=None):
     else:
         backend = SQLiteBackend()
     db = ExampleDatabase(format=format, backend=backend)
+    strat = strategy(specifier)
     try:
-        storage = db.storage_for(specifier)
-        storage.save(value)
-        saved = list(storage.fetch())
+        storage = db.storage("round trip")
+        storage.save(value, strat)
+        saved = list(storage.fetch(strat))
         assert len(saved) == 1
-        strat = strategy(specifier)
         assert strat.to_basic(saved[0]) == strat.to_basic(value)
     finally:
         db.close()
@@ -105,38 +105,24 @@ def test_errors_if_given_incompatible_format_and_backend():
 
 def test_storage_does_not_error_if_the_database_is_invalid():
     database = ExampleDatabase()
-    ints = database.storage_for(integers())
-    database.backend.save(ints.key, '["hi", "there"]')
-    assert list(ints.fetch()) == []
-
-
-def test_storage_cleans_up_invalid_data_from_the_db():
-    database = ExampleDatabase()
-    ints = database.storage_for(integers())
-    database.backend.save(ints.key, '[false, false, true]')
-    assert list(database.backend.fetch(ints.key)) != []
-    assert list(ints.fetch()) == []
-    assert list(database.backend.fetch(ints.key)) == []
+    strat = integers()
+    key = "wtf"
+    ints = database.storage(key)
+    database.backend.save(key, '["hi", "there"]')
+    assert list(ints.fetch(strat)) == []
 
 
 @pytest.mark.parametrize('s', ['', 'abcdefg', '☃'])
 def test_can_save_all_strings(s):
     db = ExampleDatabase()
-    storage = db.storage_for(text())
-    storage.save(tuple(s))
+    storage = db.storage("text")
+    storage.save(tuple(s), text())
 
 
 def test_db_has_path_in_repr():
     backend = SQLiteBackend(':memory:')
     db = ExampleDatabase(backend=backend)
     assert ':memory:' in repr(db)
-
-
-def test_storage_has_specifier_in_repr():
-    db = ExampleDatabase()
-    d = tuples(integers(), integers())
-    s = db.storage_for(d)
-    assert repr(d) in repr(s)
 
 
 def test_json_format_repr_is_nice():

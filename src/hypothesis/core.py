@@ -36,7 +36,8 @@ from hypothesis.reporting import report, debug_report, verbose_report, \
 from hypothesis.deprecation import note_deprecation
 from hypothesis.internal.tracker import Tracker
 from hypothesis.internal.reflection import arg_string, copy_argspec, \
-    function_digest, get_pretty_function_description
+    function_digest, get_pretty_function_description, fully_qualified_name
+from hypothesis.internal.compat import qualname
 from hypothesis.internal.examplesource import ParameterSource
 from hypothesis.searchstrategy.strategies import strategy
 
@@ -84,7 +85,7 @@ def find_satisfying_template(
     start_time = time.time()
 
     if storage:
-        for example in storage.fetch():
+        for example in storage.fetch(search_strategy):
             if examples_considered >= max_iterations:
                 break
             examples_considered += 1
@@ -254,7 +255,7 @@ def best_satisfying_template(
             successful_shrinks += 1
             satisfying_example = simpler
         if storage is not None:
-            storage.save(satisfying_example)
+            storage.save(satisfying_example, search_strategy)
     if not successful_shrinks:
         verbose_report('Could not shrink example')
     elif successful_shrinks == 1:
@@ -468,8 +469,8 @@ def given(*generator_arguments, **generator_kwargs):
             search_strategy = strategy(given_specifier, settings)
 
             if settings.database:
-                storage = settings.database.storage_for(
-                    given_specifier, search_strategy)
+                storage = settings.database.storage(
+                    fully_qualified_name(test))
             else:
                 storage = None
 
@@ -489,8 +490,7 @@ def given(*generator_arguments, **generator_kwargs):
                     return True
 
             is_template_example.__name__ = test.__name__
-            is_template_example.__qualname__ = getattr(
-                test, '__qualname__', test.__name__)
+            is_template_example.__qualname__ = qualname(test)
 
             falsifying_template = None
             try:
