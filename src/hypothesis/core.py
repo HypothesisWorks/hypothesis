@@ -17,6 +17,7 @@ from __future__ import division, print_function, absolute_import, \
 
 import time
 import inspect
+import binascii
 import functools
 import traceback
 from random import Random
@@ -530,6 +531,14 @@ def find(specifier, condition, settings=None, random=None, storage=None):
     )
 
     search = strategy(specifier, settings)
+
+    if storage is None and settings.database is not None:
+        storage = settings.database.storage(
+            'find(%s)' % (
+                binascii.hexlify(function_digest(condition)).decode('ascii'),
+            )
+        )
+
     random = random or Random()
     successful_examples = [0]
 
