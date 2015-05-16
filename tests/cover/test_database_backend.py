@@ -62,3 +62,11 @@ def test_can_delete_keys():
     backend.save('foo', 'baz')
     backend.delete('foo', 'bar')
     assert list(backend.fetch('foo')) == ['baz']
+
+
+def test_can_fetch_all_keys():
+    backend = SQLiteBackend(':memory:')
+    backend.save('foo', 'bar')
+    backend.save('foo', 'baz')
+    backend.save('boib', 'baz')
+    assert len(list(backend.keys())) == 2

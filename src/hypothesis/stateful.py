@@ -80,11 +80,20 @@ def find_breaking_runner(state_machine_factory, settings=None):
         except AttributeError:
             settings = Settings.default
 
+    search_strategy = StateMachineSearchStrategy(settings)
+    if settings.database is not None:
+        storage = settings.database.storage(
+            getattr(
+                state_machine_factory, '__name__',
+                type(state_machine_factory).__name__))
+    else:
+        storage = None
+
     return find(
-        StateMachineSearchStrategy(
-            settings
-        ), is_breaking_run,
+        search_strategy,
+        is_breaking_run,
         settings,
+        storage=storage,
     )
 
 

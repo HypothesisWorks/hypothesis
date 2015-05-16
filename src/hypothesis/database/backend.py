@@ -123,6 +123,16 @@ class SQLiteBackend(Backend):
             """, (key,))
             return [value for (value,) in cursor]
 
+    def keys(self):
+        """Iterate over all keys in the database."""
+        self.create_db_if_needed()
+        with self.cursor() as cursor:
+            cursor.execute("""
+                select distinct key from hypothesis_data_mapping
+            """)
+            for (key,) in cursor:
+                yield key
+
     def create_db_if_needed(self):
         if self.db_created:
             return

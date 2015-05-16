@@ -21,6 +21,7 @@ import pytest
 from hypothesis import Settings, assume, strategy
 from hypothesis.errors import Flaky, BadData, InvalidDefinition
 from tests.common.utils import capture_out
+from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import Bundle, GenericStateMachine, \
     RuleBasedStateMachine, StateMachineSearchStrategy, rule, \
     run_state_machine_as_test
@@ -459,3 +460,17 @@ def test_can_explicitly_pass_settings():
             ))
     finally:
         FailsEventually.TestCase.settings.stateful_step_count = 5
+
+
+def test_saves_failing_example_in_database():
+    db = ExampleDatabase()
+    with pytest.raises(AssertionError):
+        run_state_machine_as_test(
+            SetStateMachine, Settings(database=db))
+    assert len(list(db.backend.keys())) == 1
+
+
+def test_can_run_with_no_db():
+    with pytest.raises(AssertionError):
+        run_state_machine_as_test(
+            SetStateMachine, Settings(database=None))

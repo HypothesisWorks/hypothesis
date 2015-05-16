@@ -522,7 +522,7 @@ def given(*generator_arguments, **generator_kwargs):
     return run_test_with_generator
 
 
-def find(specifier, condition, settings=None, random=None):
+def find(specifier, condition, settings=None, random=None, storage=None):
     settings = settings or Settings(
         max_examples=2000,
         min_satisfying_examples=0,
@@ -560,8 +560,9 @@ def find(specifier, condition, settings=None, random=None):
 
     try:
         return search.reify(best_satisfying_template(
-            search, random, template_condition, settings, None,
+            search, random, template_condition, settings,
             tracker=tracker, max_parameter_tries=2,
+            storage=storage,
         ))
     except Timeout:
         raise
