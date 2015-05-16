@@ -280,25 +280,31 @@ def test_digest_returns_the_same_value_for_two_calls():
     )
 
 
+def test_can_digest_a_built_in_function():
+    import math
+    assert function_digest(math.isnan) != function_digest(range)
+
+
 def test_digest_is_stable_across_process_runs():
     # Hard coded as the only sensible way to check this doesn't change between
     # process runs. There's nothing special about these values. If you update
     # the code just update them to match.
     digest = function_digest(test_digests_are_reasonably_unique)
     print(repr(digest))
-    assert digest == b'\x8d\x07\xdb\xe1\xbeC\x92\xec-\xb4PWj\x0c%\x87'
+    assert digest == b'\xf567tg\x80lvq\x9e\x1a y\x0e\x00\x84'
 
 
 def test_lambda_digests_are_stable_across_process_runs():
     digest = function_digest(lambda x: 42)
     print(repr(digest))
-    assert digest == b'\x96=\xed6\x07\x1d\xb6:\x1a\x8b\x8eA\xd0\x19\xd7\x9c'
+    assert digest == b'\xed\xca\xfa\xd5{\x80\xe3f8\t\xb2/M\x19\xd66'
 
 
 def test_evalled_lambda_digests_are_stable_across_process_runs():
     digest = function_digest(eval('lambda x: 42'))
     print(repr(digest))
-    assert digest == b'\x86\x95\xf2\xab\x8a\x83\x91F|1\xbdi\x05\xdeC?'
+    assert digest == \
+        b'\xdd\xc8\x8d\x94\x91\x12\xa3S\x03\xfa\x81g\xe5\x80\x18\x8c'
 
 
 def test_arg_string_is_in_order():

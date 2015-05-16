@@ -48,10 +48,13 @@ def function_digest(function):
     try:
         hasher.update(inspect.getsource(function).encode('utf-8'))
     # Different errors on different versions of python. What fun.
-    except (OSError, IOError):
+    except (OSError, IOError, TypeError):
         pass
-    hasher.update(function.__name__.encode('utf-8'))
-    hasher.update(repr(inspect.getargspec(function)).encode('utf-8'))
+    hasher.update(fully_qualified_name(function).encode('utf-8'))
+    try:
+        hasher.update(repr(inspect.getargspec(function)).encode('utf-8'))
+    except TypeError:
+        pass
     return hasher.digest()
 
 
