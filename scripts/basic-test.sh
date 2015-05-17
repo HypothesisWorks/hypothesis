@@ -1,6 +1,11 @@
 #!/bin/bash
 set -e -o xtrace
 
+python -c '
+import os
+for k, v in sorted(dict(os.environ).items()):
+    print("%s=%s" % (k, v))
+'
 python -u -m pytest tests
 
 for extra in datetime fakefactory pytest ; do
