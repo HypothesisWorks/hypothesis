@@ -50,7 +50,14 @@ def function_digest(function):
     # Different errors on different versions of python. What fun.
     except (OSError, IOError, TypeError):
         pass
-    hasher.update(fully_qualified_name(function).encode('utf-8'))
+    try:
+        hasher.update(function.__name__.encode('utf-8'))
+    except AttributeError:
+        pass
+    try:
+        hasher.update(function.__module__.__name__.encode('utf-8'))
+    except AttributeError:
+        pass
     try:
         hasher.update(repr(inspect.getargspec(function)).encode('utf-8'))
     except TypeError:
