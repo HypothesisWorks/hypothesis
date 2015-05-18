@@ -20,6 +20,18 @@ Hypothesis has been brilliant for expanding the coverage of our test cases,
 and also for making them much easier to read and understand,
 so we're sure we're testing the things we want in the way we want.
 
+-----------------------------------------------
+`Seth Morton <https://github.com/SethMMorton>`_
+-----------------------------------------------
+
+When I first heard about Hypothesis, I knew I had to include it in my two
+open-source Python libraries, `natsort <https://github.com/SethMMorton/natsort>`_
+and `fastnumbers <https://github.com/SethMMorton/fastnumbers>`_ . Quite frankly,
+I was a little appalled at the number of bugs and "holes" I found in the code. I can
+now say with confidence that my libraries are more robust to "the wild." In
+addition, Hypothesis gave me the confidence to expand these libraries to fully
+support Unicode input, which I never would have had the stomach for without such
+thorough testing capabilities. Thanks!
 
 -------------------------------------------
 `Your name goes here <http://example.com>`_
