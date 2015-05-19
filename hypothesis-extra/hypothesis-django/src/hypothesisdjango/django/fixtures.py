@@ -65,7 +65,7 @@ class Fixture(object):
         return self.execute(run)
 
     def _set_template(self):
-        verbosity = 1
+        verbosity = 0
         old_config = setup_databases(
             verbosity=verbosity, interactive=False
         )
