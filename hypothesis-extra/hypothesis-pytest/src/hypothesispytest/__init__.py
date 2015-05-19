@@ -29,16 +29,16 @@ def pytest_pyfunc_call(pyfuncitem):
     with with_reporter(store):
         yield
     if store.results:
-        pyfuncitem.hypothesis_falsifying_example = store.results[-1]
+        pyfuncitem.hypothesis_report_information = list(store.results)
 
 
 @pytest.mark.tryfirst
 def pytest_runtest_makereport(item, call, __multicall__):
     report = __multicall__.execute()
-    if hasattr(item, 'hypothesis_falsifying_example'):
+    if hasattr(item, 'hypothesis_report_information'):
         report.sections.append((
             'Hypothesis',
-            item.hypothesis_falsifying_example
+            '\n'.join(item.hypothesis_report_information)
         ))
     return report
 
