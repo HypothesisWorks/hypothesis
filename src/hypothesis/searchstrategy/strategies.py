@@ -623,6 +623,17 @@ class FlatMapStrategy(SearchStrategy):
             random.getrandbits(64),
         )
 
+    def strictly_simpler(self, x, y):
+        if self.flatmapped_strategy.strictly_simpler(
+            x.source_template, y.source_template
+        ):
+            return True
+        if self.flatmapped_strategy.strictly_simpler(
+            y.source_template, x.source_template
+        ):
+            return False
+        return x.target_template_seed < y.target_template_seed
+
     def draw_template(self, random, parameter):
         source_parameter, parameter_seed = parameter
         source_template = self.flatmapped_strategy.draw_template(
