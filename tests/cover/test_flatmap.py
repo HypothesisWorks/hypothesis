@@ -22,6 +22,7 @@ from hypothesis.database import ExampleDatabase
 from hypothesis.strategies import just, basic, lists, floats, tuples, \
     randoms, integers
 from hypothesis.internal.debug import some_template
+from hypothesis.utils.conventions import not_set
 from hypothesis.searchstrategy.narytree import Leaf, n_ary_tree
 
 ConstantLists = integers().flatmap(lambda i: lists(just(i)))
@@ -75,19 +76,13 @@ def test_can_recover_from_bad_data_in_mapped_strategy(r):
     param = OrderedPairs.draw_parameter(r)
     template = OrderedPairs.draw_template(r, param)
     OrderedPairs.reify(template)
-    for simplification in OrderedPairs.full_simplify(r, template):
-        if isinstance(simplification, OrderedPairs.TemplateFromTemplate):
-            break
-    else:
-        assume(False)
-    assume(isinstance(simplification, OrderedPairs.TemplateFromTemplate))
-    basic = OrderedPairs.to_basic(simplification)
+    assert template.target_data != not_set
+    basic = OrderedPairs.to_basic(template)
     assert len(basic) == 4
     assert isinstance(basic, list)
     assert isinstance(basic[-1], list)
     basic[-1] = 1
     new_template = OrderedPairs.from_basic(basic)
-    assert isinstance(new_template, OrderedPairs.TemplateFromBasic)
     reified = OrderedPairs.reify(new_template)
     assert type(reified) == tuple
     x, y = reified
