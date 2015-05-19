@@ -559,6 +559,13 @@ class FilteredStrategy(MappedSearchStrategy):
         return value
 
 
+def tupleize(data):
+    if isinstance(data, list):
+        return tuple(map(tupleize, data))
+    else:
+        return data
+
+
 class FlatMapTemplate(object):
 
     def __init__(
@@ -571,6 +578,10 @@ class FlatMapTemplate(object):
         self.target_template_seed = target_template_seed
         self.target_data = target_data
         self.last_strategy = last_strategy
+        trace = [source_template, target_parameter_seed, target_template_seed]
+        if target_data != not_set:
+            trace.append(tupleize(target_data))
+        self.trace = tuple(trace)
 
     def __trackas__(self):
         result = [
@@ -581,6 +592,17 @@ class FlatMapTemplate(object):
             result.append(self.target_data)
         return result
 
+    def __eq__(self, other):
+        return isinstance(other, FlatMapTemplate) and (
+            self.trace == other.trace
+        )
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __hash__(self):
+        return hash(self.trace)
+
 
 class FlatMapStrategy(SearchStrategy):
 
@@ -589,7 +611,6 @@ class FlatMapStrategy(SearchStrategy):
     ):
         self.flatmapped_strategy = strategy
         self.expand = expand
-        self.strategy_cache = {}
 
     def draw_parameter(self, random):
         return (
