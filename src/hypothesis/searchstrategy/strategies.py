@@ -612,6 +612,11 @@ class FlatMapStrategy(SearchStrategy):
         self.flatmapped_strategy = strategy
         self.expand = expand
 
+    def __repr__(self):
+        return 'FlatMapStrategy(%r, %s)' % (
+            self.flatmapped_strategy, getattr(
+                self.expand, '__name__', type(self.expand).__name__))
+
     def draw_parameter(self, random):
         return (
             self.flatmapped_strategy.draw_parameter(random),
