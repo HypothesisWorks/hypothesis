@@ -121,6 +121,13 @@ with Settings(average_list_length=5.0):
         lists(integers(), min_size=1).flatmap(sampled_from)
     )
 
+    TestDiverseFlatmap = strategy_test_suite(
+        sampled_from((
+            lists(integers()), lists(text()), tuples(text(), text()),
+            booleans(), sets(complex_numbers())
+        )).flatmap(lambda x: x)
+    )
+
     def integers_from(x):
         return integers(min_value=x)
 

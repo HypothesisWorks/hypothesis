@@ -701,8 +701,6 @@ class FlatMapStrategy(SearchStrategy):
 
     def right_simplifier(self, simplify, target_strategy):
         def accept(random, template):
-            if template.target_data == not_set:
-                return
             try:
                 target_template = target_strategy.from_basic(
                     template.target_data)

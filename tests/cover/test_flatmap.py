@@ -19,7 +19,7 @@ import pytest
 from hypothesis import Settings, given, assume, strategy
 from hypothesis.database import ExampleDatabase
 from hypothesis.strategies import just, lists, floats, tuples, randoms, \
-    integers
+    booleans, integers, complex_numbers
 from hypothesis.internal.debug import some_template
 from hypothesis.utils.conventions import not_set
 from hypothesis.searchstrategy.narytree import Leaf, n_ary_tree
@@ -133,3 +133,22 @@ def test_can_still_simplify_if_not_reified():
 def test_flatmap_does_not_reuse_strategies():
     s = lists(max_size=0).flatmap(just)
     assert s.example() is not s.example()
+
+
+def test_flatmap_can_apply_all_inapplicable_simplifiers():
+    random = Random(1)
+    s = booleans().flatmap(lambda x: complex_numbers() if x else booleans())
+    source_to_total = {}
+
+    while len(source_to_total) < 2:
+        t = s.draw_and_produce(random)
+        source_to_total[t.source_template] = t
+    u = source_to_total[False]
+    v = source_to_total[True]
+    s.reify(u)
+    s.reify(v)
+
+    for p in ((u, v), (v, u)):
+        for simplify in s.simplifiers(random, p[0]):
+            for target in simplify(random, p[1]):
+                assert not s.strictly_simpler(p[1], target)

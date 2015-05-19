@@ -100,6 +100,7 @@ with Settings(average_list_length=10.0):
         tuples().flatmap(lambda x: EvalledIntStream),
         templates_for(integers(min_value=0, max_value=0).flatmap(
             lambda x: integers(min_value=0, max_value=0))),
+        booleans().flatmap(lambda x: booleans() if x else complex_numbers()),
     ]
 
 
