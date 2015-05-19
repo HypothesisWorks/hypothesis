@@ -27,7 +27,7 @@ from functools import wraps
 
 from hypothesis.settings import storage_directory
 from hypothesis.internal.compat import ARG_NAME_ATTRIBUTE, hrange, \
-    qualname, text_type, importlib_invalidate_caches, to_unicode
+    qualname, text_type, to_unicode, importlib_invalidate_caches
 
 
 def fully_qualified_name(f):

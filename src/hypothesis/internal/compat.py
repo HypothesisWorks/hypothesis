@@ -74,8 +74,8 @@ else:
 
 def a_good_encoding():
     result = sys.getdefaultencoding()
-    if result == "ascii":
-        return "utf-8"
+    if result == 'ascii':
+        return 'utf-8'
     else:
         return result
 
