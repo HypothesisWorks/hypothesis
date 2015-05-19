@@ -695,6 +695,7 @@ class FlatMapStrategy(SearchStrategy):
         return start
 
     def from_basic(self, data):
+        check_data_type(list, data)
         if len(data) < 3:
             raise BadData('Expected at least 3 elements but got %d' % (
                 len(data),
