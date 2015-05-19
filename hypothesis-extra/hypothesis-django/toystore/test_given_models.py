@@ -40,7 +40,7 @@ class TestGetsBasicModels(TestCase):
         for c in companies:
             self.assertIsNotNone(c.pk)
         self.assertEqual(
-            len(companies), len({c.name for c in companies})
+            len({c.pk for c in companies}), len({c.name for c in companies})
         )
 
     @given(models(Customer))
