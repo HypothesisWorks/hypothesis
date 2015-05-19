@@ -23,6 +23,16 @@ a_company = fixture(
     lambda c: c.name,
 )
 
+another_company = fixture(
+    models(Company),
+    lambda c: c.name,
+)
+
+some_companies = fixture(
+    lists(models(Company)),
+    lambda ls: len({c.pk for c in ls}) >= 5
+)
+
 
 def with_some_stores(company):
     child_strategy = lists(
@@ -44,6 +54,15 @@ a_gendered_customer = fixture(
 class TestFinding(TestCase):
     def test_can_find_unique_name(self):
         assert len(a_company().name) == 1
+
+    def test_same_fixture_twice_is_same_object(self):
+        assert a_company().pk == a_company().pk
+
+    def test_different_fixtures_with_same_constraint_are_different(self):
+        assert a_company().name != another_company().name
+
+    def test_can_get_multiple_companies(self):
+        assert len(some_companies()) == 5
 
     def test_can_find_with_multiple_unique(self):
         x = a_gendered_customer()
