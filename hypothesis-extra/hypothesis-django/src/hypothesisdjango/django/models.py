@@ -114,8 +114,7 @@ class ModelStrategy(MappedSearchStrategy):
 
     def pack(self, value):
         try:
-            result = self.model(**value)
-            result.save()
+            result, _ = self.model.objects.get_or_create(**value)
             return result
         except IntegrityError:
             assume(False)
