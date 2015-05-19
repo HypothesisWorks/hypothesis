@@ -17,15 +17,8 @@ cache:
 
 env:
     matrix:
-        - TOXENV=coverage
-        - TOXENV=lint
-        - TOXENV=examples2
-        - TOXENV=examples3
         - TOXENV=pypy
-        - TOXENV=py34
         - TOXENV=py27
-        - TOXENV=pypy3
-        - TOXENV=py33
 
 install:
     - ./scripts/install.sh
