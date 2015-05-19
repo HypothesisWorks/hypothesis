@@ -17,10 +17,9 @@ from random import Random
 
 import pytest
 from hypothesis import Settings, given, assume, strategy
-from tests.common import Bitfields
 from hypothesis.database import ExampleDatabase
-from hypothesis.strategies import just, basic, lists, floats, tuples, \
-    randoms, integers
+from hypothesis.strategies import just, lists, floats, tuples, randoms, \
+    integers
 from hypothesis.internal.debug import some_template
 from hypothesis.utils.conventions import not_set
 from hypothesis.searchstrategy.narytree import Leaf, n_ary_tree
@@ -129,16 +128,6 @@ def test_can_still_simplify_if_not_reified():
             template = next(strat.full_simplify(random, template))
     except StopIteration:
         pass
-
-
-def test_two_incompatible_unreified_templates():
-    r = Random(1)
-    strat = basic(Bitfields).flatmap(lambda x: integers(0, x))
-    x = some_template(strat, r)
-    y = some_template(strat, r)
-    assert x.source_template != y.source_template
-    assert not strat.strictly_simpler(x, y)
-    assert not strat.strictly_simpler(y, x)
 
 
 def test_flatmap_does_not_reuse_strategies():
