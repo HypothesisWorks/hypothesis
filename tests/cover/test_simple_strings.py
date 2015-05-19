@@ -70,3 +70,10 @@ def test_can_safely_mix_simplifiers():
             for simplify in s.simplifiers(r, u):
                 for w in simplify(r, v):
                     assert not s.strictly_simpler(v, w)
+
+
+def test_does_not_simplify_into_surrogates():
+    f = find(text(), lambda x: x >= '\udfff')
+    assert f == '\ue000'
+    f = find(text(), lambda x: len([t for t in x if t >= '\udfff']) >= 10)
+    assert f == '\ue000' * 10

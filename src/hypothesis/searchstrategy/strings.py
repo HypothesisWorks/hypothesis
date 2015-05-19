@@ -43,9 +43,12 @@ class OneCharStringStrategy(SearchStrategy):
                 codepoint = dist.geometric(random, 1.0 / 127)
 
             char = hunichr(codepoint)
-            if unicodedata.category(char) != 'Cs':
+            if self.is_good(char):
                 alphabet.append(char)
         return tuple(alphabet)
+
+    def is_good(self, char):
+        return unicodedata.category(char) != 'Cs'
 
     def draw_template(self, random, p):
         return random.choice(p)
@@ -68,12 +71,16 @@ class OneCharStringStrategy(SearchStrategy):
 
             lb = lo
             while True:
-                yield hunichr(lb)
+                c = hunichr(lb)
+                if self.is_good(c):
+                    yield c
                 new_lb = (lb + x) // 2
                 if new_lb <= lb or new_lb >= hi:
                     return
                 if new_lb > lb + 2:
-                    yield hunichr(random.randint(lb + 1, new_lb - 1))
+                    c = hunichr(random.randint(lb + 1, new_lb - 1))
+                    if self.is_good(c):
+                        yield c
                 lb = new_lb
         accept.__name__ = str(
             'try_shrink(%d, %d)' % (lo, hi)
