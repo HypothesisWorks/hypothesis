@@ -144,3 +144,8 @@ def test_two_incompatible_unreified_templates():
     assert x.source_template != y.source_template
     assert not strat.strictly_simpler(x, y)
     assert not strat.strictly_simpler(y, x)
+
+
+def test_flatmap_does_not_reuse_strategies():
+    s = lists(max_size=0).flatmap(just)
+    assert s.example() is not s.example()
