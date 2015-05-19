@@ -8,6 +8,17 @@ from random import Random
 from hypothesis.core import best_satisfying_template
 from hypothesis.settings import Settings
 from hypothesis.errors import UnsatisfiedAssumption
+import weakref
+
+
+ALL_FIXTURES = []
+
+
+def active_fixtures():
+    for f in ALL_FIXTURES:
+        t = f()
+        if t is not None:
+            yield t
 
 
 class Fixture(object):
@@ -23,11 +34,17 @@ class Fixture(object):
         self.constraint = constraint or (lambda x: True)
         self.execute = execute or (lambda f: f())
         self._set_template()
+        ALL_FIXTURES.append(weakref.ref(self))
 
     def template_condition(self, template):
         def run():
             try:
                 with transaction.atomic():
+                    for f in active_fixtures():
+                        assert f is not self
+                        if f.template == template:
+                            return False
+                        f()
                     result = self.constraint(self.strategy.reify(template))
                     transaction.set_rollback(True)
                 return result
