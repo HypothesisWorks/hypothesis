@@ -286,6 +286,10 @@ def test_can_digest_a_built_in_function():
     assert function_digest(math.isnan) != function_digest(range)
 
 
+def test_can_digest_a_unicode_lambda():
+    function_digest(lambda x: '☃' in str(x))
+
+
 def test_can_digest_a_function_with_no_name():
     def foo(x, y):
         pass

@@ -72,6 +72,21 @@ else:
     reduce = reduce
 
 
+def a_good_encoding():
+    result = sys.getdefaultencoding()
+    if result == "ascii":
+        return "utf-8"
+    else:
+        return result
+
+
+def to_unicode(x):
+    if isinstance(x, text_type):
+        return x
+    else:
+        return x.decode(a_good_encoding())
+
+
 def qualname(f):
     try:
         return f.__qualname__

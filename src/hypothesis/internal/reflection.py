@@ -27,7 +27,7 @@ from functools import wraps
 
 from hypothesis.settings import storage_directory
 from hypothesis.internal.compat import ARG_NAME_ATTRIBUTE, hrange, \
-    qualname, text_type, importlib_invalidate_caches
+    qualname, text_type, importlib_invalidate_caches, to_unicode
 
 
 def fully_qualified_name(f):
@@ -46,7 +46,7 @@ def function_digest(function):
     """
     hasher = hashlib.md5()
     try:
-        hasher.update(inspect.getsource(function).encode('utf-8'))
+        hasher.update(to_unicode(inspect.getsource(function)).encode('utf-8'))
     # Different errors on different versions of python. What fun.
     except (OSError, IOError, TypeError):
         pass
