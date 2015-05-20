@@ -21,6 +21,37 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+----------------
+1.6.0 - upcoming
+----------------
+
+This is a smallish release designed to fix a number of bugs and smooth out
+some weird behaviours.
+
+* Fix a critical bug in flatmap where it would reuse old strategies. If all
+  your flatmap code was pure you're fine. If it's not, I'm surprised it's
+  working at all. In particular if you want to use flatmap with django models,
+  you desperately need to upgrade to this version.
+* flatmap simplification performance should now be better in some cases where
+  it previously had to redo work.
+* Fix for a bug where invalid unicode data with surrogates could be generated
+  during simplification (it was already filtered out during actual generation).
+* The Hypothesis database is now keyed off the name of the test instead of the
+  type of data. This makes much more sense now with the new strategies API and
+  is generally more robust. This means you will lose old examples on upgrade.
+* The database will now not delete values which fail to deserialize correctly,
+  just skip them. This is to handle cases where multiple incompatible strategies
+  share the same key.
+* find now also saves and loads values from the database, keyed off a hash of the
+  function you're finding from.
+* Stateful tests now serialize and load values from the database. They should have
+  before, really. This was a bug.
+* Passing a different verbosity level into a test would not have worked entirely
+  correctly, leaving off some messages. This is now fixed.
+* Fix a bug where derandomized tests with unicode characters in the function
+  body would error on Python 2.7.
+
+
 ---------------------------------------------------------------------
 `1.5.0 <https://hypothesis.readthedocs.org/en/v1.5.0/>`_ - 2015-05-14
 ---------------------------------------------------------------------
