@@ -25,6 +25,7 @@ env:
         - TOXENV=py34
         - TOXENV=py27
         - TOXENV=pypy3
+        - TOXENV=pypy3-nojit
         - TOXENV=py33
 
 install:
@@ -47,6 +48,8 @@ matrix:
           env: TOXENV=pypy
         - os: linux
           env: TOXENV=pypy3
+        - os: linux
+          env: TOXENV=pypy3-nojit
         - os: linux
           env: TOXENV=py27
         - os: linux
