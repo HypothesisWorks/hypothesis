@@ -298,11 +298,17 @@ class HypothesisSpec(RuleBasedStateMachine):
         n = min(10, strat.template_upper_bound)
         found = []
         with Settings(verbosity=Verbosity.quiet, timeout=2.0):
-            for _ in range(n):
-                x = find(
-                    tempstrat, lambda t: t not in found,
-                    random=r,
-                )
+            for i in range(n):
+                try:
+                    x = find(
+                        tempstrat, lambda t: t not in found,
+                        random=r,
+                    )
+                except:
+                    print("Exception at %d/%d. template_upper_bound=%r" % (
+                        i, n, strat.template_upper_bound
+                    ))
+                    raise
                 found.append(x)
 
 
