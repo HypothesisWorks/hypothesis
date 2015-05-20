@@ -15,10 +15,12 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import sys
+import platform
 import importlib
 
 PY3 = sys.version_info[0] == 3
 BAD_PY3 = PY3 and (sys.version_info[1] <= 2)
+PYPY = platform.python_implementation() == 'PyPy'
 
 if PY3:
     text_type = str

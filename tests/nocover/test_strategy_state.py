@@ -28,6 +28,7 @@ from hypothesis.strategies import just, none, text, lists, binary, \
     streaming, sampled_from, complex_numbers
 from hypothesis.utils.show import show
 from hypothesis.strategytests import mutate_basic, templates_for
+from hypothesis.internal.compat import PY3, PYPY
 
 AVERAGE_LIST_LENGTH = 2
 
@@ -305,21 +306,24 @@ class HypothesisSpec(RuleBasedStateMachine):
                         random=r,
                     )
                 except:
-                    print("Exception at %d/%d. template_upper_bound=%r" % (
+                    print('Exception at %d/%d. template_upper_bound=%r' % (
                         i, n, strat.template_upper_bound
                     ))
                     raise
                 found.append(x)
 
+MAIN = __name__ == '__main__'
 
-TestHypothesis = HypothesisSpec.TestCase
+if MAIN or not (PYPY and PY3):
+    # Currently experiencing plausible jit bugs bugs on pypy3
+    TestHypothesis = HypothesisSpec.TestCase
 
-TestHypothesis.settings.stateful_step_count = 100
-TestHypothesis.settings.max_shrinks = 500
-TestHypothesis.settings.timeout = 60
-TestHypothesis.settings.min_satisfying_examples = 0
-TestHypothesis.settings.verbosity = Verbosity.verbose
+    TestHypothesis.settings.stateful_step_count = 100
+    TestHypothesis.settings.max_shrinks = 500
+    TestHypothesis.settings.timeout = 60
+    TestHypothesis.settings.min_satisfying_examples = 0
+    TestHypothesis.settings.verbosity = Verbosity.verbose
 
-if __name__ == '__main__':
+if MAIN:
     TestHypothesis.settings.timeout = 500
     TestHypothesis().runTest()
