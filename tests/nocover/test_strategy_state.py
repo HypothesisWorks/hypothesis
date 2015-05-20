@@ -312,6 +312,7 @@ TestHypothesis.settings.stateful_step_count = 100
 TestHypothesis.settings.max_shrinks = 500
 TestHypothesis.settings.timeout = 60
 TestHypothesis.settings.min_satisfying_examples = 0
+TestHypothesis.settings.verbosity = Verbosity.verbose
 
 if __name__ == '__main__':
     TestHypothesis.settings.timeout = 500

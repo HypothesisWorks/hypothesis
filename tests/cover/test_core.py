@@ -17,7 +17,7 @@ import time
 
 import pytest
 import hypothesis.strategies as s
-from hypothesis import Settings, find, assume
+from hypothesis import Settings, find, given, assume
 from hypothesis.errors import NoSuchExample, Unsatisfiable
 from hypothesis.internal.tracker import Tracker
 
@@ -71,3 +71,20 @@ def test_can_time_out_in_simplify():
     finish = time.time()
     run_time = finish - start
     assert run_time <= 0.3
+
+some_normal_settings = Settings()
+
+
+def test_is_not_normally_default():
+    assert Settings.default is not some_normal_settings
+
+
+@given(s.booleans(), settings=some_normal_settings)
+def test_settings_are_default_in_given(x):
+    assert Settings.default is some_normal_settings
+
+
+def test_settings_are_default_in_find():
+    find(
+        s.booleans(), lambda x: Settings.default is some_normal_settings,
+        settings=some_normal_settings)

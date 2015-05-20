@@ -92,7 +92,7 @@ def find_breaking_runner(state_machine_factory, settings=None):
     return find(
         search_strategy,
         is_breaking_run,
-        settings,
+        settings=settings,
         storage=storage,
     )
 

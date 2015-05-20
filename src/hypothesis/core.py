@@ -258,14 +258,14 @@ def best_satisfying_template(
             satisfying_example = simpler
         if storage is not None:
             storage.save(satisfying_example, search_strategy)
-    if not successful_shrinks:
-        verbose_report('Could not shrink example')
-    elif successful_shrinks == 1:
-        verbose_report('Successfully shrunk example once')
-    else:
-        verbose_report(
-            'Successfully shrunk example %d times' % (successful_shrinks,))
-    return satisfying_example
+        if not successful_shrinks:
+            verbose_report('Could not shrink example')
+        elif successful_shrinks == 1:
+            verbose_report('Successfully shrunk example once')
+        else:
+            verbose_report(
+                'Successfully shrunk example %d times' % (successful_shrinks,))
+        return satisfying_example
 
 
 def test_is_flaky(test):
@@ -503,15 +503,16 @@ def given(*generator_arguments, **generator_kwargs):
             except NoSuchExample:
                 return
 
-            test_runner(reify_and_execute(
-                search_strategy, falsifying_template, test,
-                print_example=True
-            ))
+            with settings:
+                test_runner(reify_and_execute(
+                    search_strategy, falsifying_template, test,
+                    print_example=True
+                ))
 
-            test_runner(reify_and_execute(
-                search_strategy, falsifying_template, test_is_flaky(test),
-                print_example=True
-            ))
+                test_runner(reify_and_execute(
+                    search_strategy, falsifying_template, test_is_flaky(test),
+                    print_example=True
+                ))
 
         wrapped_test.__name__ = test.__name__
         wrapped_test.__doc__ = test.__doc__
