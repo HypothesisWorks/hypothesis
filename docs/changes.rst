@@ -22,6 +22,14 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 ---------------------------------------------------------------------
+`1.6.1 <https://hypothesis.readthedocs.org/en/v1.6.1/>`_ - 2015-05-21
+---------------------------------------------------------------------
+
+This is a small patch release that fixes a bug where 1.6.0 broke the use
+of flatmap with the deprecated API and assumed the passed in function returned
+a SearchStrategy instance rather than converting it to a strategy.
+
+---------------------------------------------------------------------
 `1.6.0 <https://hypothesis.readthedocs.org/en/v1.6.0/>`_ - 2015-05-21
 ---------------------------------------------------------------------
 
