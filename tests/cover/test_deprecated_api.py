@@ -191,3 +191,8 @@ def test_integers_from():
 
 def test_integers_range():
     assert find(s.integers_in_range(10, 100), lambda x: x > 10) == 11
+
+
+def test_can_flatmap_non_strategies():
+    x = strategy(int).flatmap(lambda x: bool)
+    assert isinstance(x.example(), bool)

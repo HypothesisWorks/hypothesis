@@ -611,6 +611,7 @@ class FlatMapStrategy(SearchStrategy):
     ):
         self.flatmapped_strategy = strategy
         self.expand = expand
+        self.settings = Settings.default
 
     def __repr__(self):
         return 'FlatMapStrategy(%r, %s)' % (
@@ -647,7 +648,7 @@ class FlatMapStrategy(SearchStrategy):
 
     def reify(self, template):
         source = self.flatmapped_strategy.reify(template.source_template)
-        target_strategy = self.expand(source)
+        target_strategy = strategy(self.expand(source), self.settings)
         template.last_strategy = target_strategy
         target_template = not_set
         if template.target_data != not_set:
