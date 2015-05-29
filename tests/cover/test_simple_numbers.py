@@ -18,7 +18,8 @@ import math
 from random import Random
 
 import pytest
-from hypothesis import find
+
+from hypothesis import find, given
 from hypothesis.strategies import lists, floats, integers, complex_numbers
 from hypothesis.searchstrategy.numbers import is_integral
 from hypothesis.searchstrategy.strategies import BadData
@@ -83,7 +84,7 @@ def test_finds_boundary_floats():
     def f(x):
         print(x)
         return True
-    assert find(floats(min_value=-1, max_value=1), f) == -1
+    assert find(floats(min_value=-1, max_value=1), f) == 0
 
 
 def test_find_non_boundary_float():
@@ -170,7 +171,7 @@ def test_out_of_range_integers_are_bad():
 
 def test_out_of_range_floats_are_bad():
     with pytest.raises(BadData):
-        floats(11, 12).from_basic(floats(-1, 1).to_basic(0.0))
+        floats(11, 12).from_basic(floats(0, 1).to_basic(0.0))
 
 
 def test_float_simplicity():
@@ -183,13 +184,13 @@ def test_float_simplicity():
         assert not s(y, x)
 
     order(sys.float_info.max, '-inf')
-    order(1.0, 0.5)
+    order(0.5, 1.0)
     order(1.0, 2.0)
     order(2, -1)
     order('inf', 'nan')
     order('inf', '-inf')
     order('0.25', '0.5')
-    order(-1, 0.5)
+    order(0.5, -1)
     order(1.5, '-inf')
 
 
@@ -199,3 +200,8 @@ def test_floats_can_simplify_extreme_values():
     for simplify in s.simplifiers(r, 3.14159):
         for v in (float('nan'), float('inf'), float('-inf')):
             list(simplify(r, v))
+
+
+@given(floats(0, 5e-324))
+def test_floats_in_constrained_range(x):
+    assert x >= 0

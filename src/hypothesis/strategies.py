@@ -158,7 +158,17 @@ def floats(min_value=None, max_value=None):
             return floats(min_value=0, max_value=max_value) | floats(
                 min_value=min_value, max_value=0
             )
-        return FixedBoundedFloatStrategy(min_value, max_value)
+        if min_value < 0:
+            if max_value <= 0:
+                return FixedBoundedFloatStrategy(-max_value, -min_value).map(
+                    lambda x: -x
+                )
+            else:
+                return floats(min_value=min_value, max_value=0) | (
+                    FixedBoundedFloatStrategy(0, max_value)
+                )
+        else:
+            return FixedBoundedFloatStrategy(min_value, max_value)
     elif min_value is not None:
         return FloatsFromBase(
             base=min_value, sign=1,
