@@ -243,6 +243,7 @@ class HypothesisSpec(RuleBasedStateMachine):
             for x in (left, right):
                 assume(not f(x))
         left, right = sorted((left, right))
+        assert left <= right
         return strategy(floats(left, right))
 
     @rule(
