@@ -18,6 +18,7 @@ import hashlib
 from copy import deepcopy
 from random import Random
 
+from hypothesis.utils.size import clamp
 from hypothesis import Settings, Verbosity, find, given, assume, strategy
 from hypothesis.errors import BadData, NoExamples
 from hypothesis.database import ExampleDatabase
@@ -27,6 +28,7 @@ from hypothesis.strategies import just, none, text, lists, binary, \
     floats, tuples, randoms, booleans, decimals, integers, fractions, \
     streaming, sampled_from, complex_numbers
 from hypothesis.utils.show import show
+from hypothesis.searchstrategy.numbers import float_to_int, int_to_float
 from hypothesis.strategytests import mutate_basic, templates_for
 from hypothesis.internal.compat import PY3, PYPY
 
@@ -44,6 +46,7 @@ class HypothesisSpec(RuleBasedStateMachine):
     objects = Bundle('objects')
     streaming_strategies = Bundle('streams')
     basic_data = Bundle('basic')
+    varied_floats = Bundle('varied_floats')
 
     strats_with_parameters = Bundle('strats_with_parameters')
     strats_with_templates = Bundle('strats_with_templates')
@@ -234,9 +237,23 @@ class HypothesisSpec(RuleBasedStateMachine):
             return deepcopy(cache[rep])
         return source.map(do_map)
 
+    @rule(target=varied_floats, source=floats())
+    def float(self, source):
+        return source
+
+    @rule(
+        target=varied_floats,
+        source=varied_floats, offset=integers(-100, 100))
+    def adjust_float(self, source, offset):
+        return int_to_float(clamp(
+            0,
+            float_to_int(source) + offset,
+            2 ** 64 - 1
+        ))
+
     @rule(
         target=strategies,
-        left=floats(), right=floats()
+        left=varied_floats, right=varied_floats
     )
     def float_range(self, left, right):
         for f in (math.isnan, math.isinf):
@@ -323,7 +340,9 @@ if MAIN or not (PYPY and PY3):
     TestHypothesis.settings.max_shrinks = 500
     TestHypothesis.settings.timeout = 60
     TestHypothesis.settings.min_satisfying_examples = 0
-    TestHypothesis.settings.verbosity = Verbosity.verbose
+    TestHypothesis.settings.verbosity = max(
+        TestHypothesis.settings.verbosity, Verbosity.verbose
+    )
 
 if MAIN:
     TestHypothesis.settings.timeout = 500

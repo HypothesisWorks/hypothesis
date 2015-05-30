@@ -316,49 +316,118 @@ class FloatStrategy(SearchStrategy):
         return '%s()' % (self.__class__.__name__,)
 
     def strictly_simpler(self, x, y):
-        return self.to_basic(x) < self.to_basic(y)
+        if is_integral(x):
+            if not is_integral(y):
+                return True
+            return self.int_strategy.strictly_simpler(int(x), int(y))
+        if is_integral(y):
+            return False
+        if math.isnan(x):
+            return False
+        if math.isnan(y):
+            return True
+        if math.isinf(x) and not math.isinf(y):
+            return False
+        if y > 0:
+            return 0 <= x < y
+        else:
+            # The y == 0 case is handled by is_integral(y)
+            assert y < 0
+            return x > y
 
     def to_basic(self, value):
         check_type(float, value)
-        return float_to_int(value)
+        return (
+            struct.unpack(b'!Q', struct.pack(b'!d', value))[0]
+        )
 
     def from_basic(self, value):
         check_data_type(integer_types, value)
         try:
-            return int_to_float(value)
+            return (
+                struct.unpack(b'!d', struct.pack(b'!Q', value))[0]
+            )
         except (struct.error, ValueError, OverflowError) as e:
             raise BadData(e.args[0])
 
     def reify(self, value):
         return value
 
-    def simplifiers(self, random, template):
-        yield self.try_negate
-        yield self.try_floor
-        for s in self.int_strategy.simplifiers(
-            random, self.to_basic(template)
-        ):
-            yield self.convert_simplifier(s)
-
-    def try_negate(self, random, template):
-        if template < 0:
-            yield -template
-
-    def try_floor(self, random, template):
+    def simplifiers(self, random, x):
+        if x == 0.0:
+            return
+        yield self.simplify_weird_values
+        yield self.push_towards_one
         try:
-            if template < 0:
-                yield float(math.ceil(template))
-            if template > 0:
-                yield float(math.floor(template))
+            for simplify in self.int_strategy.simplifiers(
+                random, int(math.floor(x))
+            ):
+                yield self.simplify_integral(simplify)
         except (OverflowError, ValueError):
+            pass
+        yield self.basic_simplify
+
+    def simplify_weird_values(self, random, x):
+        if math.isnan(x):
+            yield 0.0
+            yield float('inf')
+            yield -float('inf')
+            return
+        if math.isinf(x):
+            yield math.copysign(
+                sys.float_info.max, x
+            )
+            if x < 0:
+                yield -x
             return
 
-    def convert_simplifier(self, simplify):
-        def accept(random, template):
-            for t in simplify(random, self.to_basic(template)):
-                yield self.from_basic(t)
-        accept.__name__ = simplify.__name__
+    def push_towards_one(self, random, x):
+        if x > 1.0 and not math.isinf(x):
+            assert self.strictly_simpler(1.0, x)
+            yield 1.0
+            y = math.sqrt(x)
+            if is_integral(x):
+                y = float(math.floor(y))
+            assert(self.strictly_simpler(y, x))
+            yield y
+
+    def simplify_integral(self, simplify):
+        def accept(random, x):
+            if not is_integral(x):
+                try:
+                    yield float(math.floor(x))
+                except (OverflowError, ValueError):
+                    pass
+                return
+            for m in simplify(random, int(math.floor(x))):
+                yield float(m)
+        accept.__name__ = str(
+            'simplify_integral(%s)' % (simplify.__name__,)
+        )
         return accept
+
+    def basic_simplify(self, random, x):
+        if x == 0.0:
+            return
+
+        yield 0.0
+
+        if x < 0:
+            yield -x
+            for t in self.basic_simplify(random, -x):
+                yield -t
+            return
+        if x < 1:
+            return
+
+        if not is_integral(x):
+            for e in range(10):
+                scale = 2 ** e
+                try:
+                    y = float(math.floor(x * scale)) / scale
+                except (OverflowError, ValueError):
+                    break
+                yield y
 
 
 class WrapperFloatStrategy(FloatStrategy):
@@ -422,30 +491,81 @@ class FullRangeFloats(FloatStrategy):
             random.getrandbits(52)
         )
 
+MAX_NEGATIVE_FLOAT_AS_INT = float_to_int(-int_to_float(1))
 
-class FixedBoundedFloatStrategy(MappedSearchStrategy):
 
-    """A strategy for floats distributed between two endpoints."""
+class FixedBoundedFloatStrategy(FloatStrategy):
+
+    """A strategy for floats distributed between two endpoints.
+
+    The conditional distribution tries to produce values clustered
+    closer to one of the ends.
+
+    """
     Parameter = namedtuple(
         'Parameter',
         ('cut', 'leftwards')
     )
 
     def __init__(self, lower_bound, upper_bound):
-        assert lower_bound >= 0
-        assert upper_bound >= lower_bound
+        FloatStrategy.__init__(self)
         self.lower_bound = float(lower_bound)
         self.upper_bound = float(upper_bound)
-        super(FixedBoundedFloatStrategy, self).__init__(
-            strategy=BoundedIntStrategy(
-                float_to_int(lower_bound), float_to_int(upper_bound)
-            ), pack=int_to_float
-        )
+        assert upper_bound >= lower_bound
+        if lower_bound >= 0 or upper_bound < 0:
+            self.template_upper_bound = infinitish(
+                float_to_int(upper_bound) - float_to_int(lower_bound) + 1
+            )
+        else:
+            self.template_upper_bound = infinitish(
+                float_to_int(upper_bound) + (
+                    MAX_NEGATIVE_FLOAT_AS_INT - float_to_int(lower_bound) + 2
+                )
+            )
 
     def __repr__(self):
         return 'FixedBoundedFloatStrategy(%s, %s)' % (
             self.lower_bound, self.upper_bound,
         )
+
+    def draw_parameter(self, random):
+        return self.Parameter(
+            cut=random.random(),
+            leftwards=dist.biased_coin(random, 0.5)
+        )
+
+    def draw_template(self, random, pv):
+        random = random
+        cut = self.lower_bound + pv.cut * (self.upper_bound - self.lower_bound)
+        if pv.leftwards:
+            left = self.lower_bound
+            right = cut
+        else:
+            left = cut
+            right = self.upper_bound
+        return left + random.random() * (right - left)
+
+    def strictly_simpler(self, x, y):
+        return x < y
+
+    def simplifiers(self, random, template):
+        yield self.basic_simplify
+
+    def basic_simplify(self, random, value):
+        if value == self.lower_bound:
+            return
+        lb = self.lower_bound
+        for _ in hrange(32):
+            yield lb
+            lb = (lb + value) * 0.5
+
+    def from_basic(self, data):
+        result = super(FixedBoundedFloatStrategy, self).from_basic(data)
+        if result < self.lower_bound or result > self.upper_bound:
+            raise BadData('Value %f out of range [%f, %f]' % (
+                result, self.lower_bound, self.upper_bound
+            ))
+        return result
 
 
 class BoundedFloatStrategy(FloatStrategy):

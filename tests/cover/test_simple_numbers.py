@@ -84,7 +84,7 @@ def test_finds_boundary_floats():
     def f(x):
         print(x)
         return True
-    assert find(floats(min_value=-1, max_value=1), f) == 0
+    assert -1 <= find(floats(min_value=-1, max_value=1), f) <= 1
 
 
 def test_find_non_boundary_float():
@@ -206,8 +206,15 @@ def test_floats_can_simplify_extreme_values():
     (0.0, 5e-324),
     (-5e-324, 0.0),
     (-5e-324, 5e-324),
+    (5e-324, 1e-323),
 ])
 def test_floats_in_constrained_range(left, right):
     @given(floats(left, right))
     def test_in_range(r):
         assert left <= r <= right
+    test_in_range()
+
+
+def test_floats_of_small_range_are_bounded():
+    assert floats(0, 5e-324).template_upper_bound == 2
+    assert floats(-5e-324, 5e-324).template_upper_bound == 3
