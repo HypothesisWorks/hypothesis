@@ -54,8 +54,7 @@ of the things you need to know to begin testing your code with it.
   :hidden:
 
   quickstart
-  community
-  manifesto
+  django
   details
   data
   extras
@@ -63,5 +62,6 @@ of the things you need to know to begin testing your code with it.
   supported
   examples
   internals
+  community
+  manifesto
   changes
-  contributing

@@ -123,6 +123,7 @@ well as positional. The following would have worked just as well:
   @example(s='')
   def test_decode_inverts_encode(s):
       assert decode(encode(s)) == s
+
 Anyway, suppose we had a more interesting bug and forgot to reset the count
 each time.
 

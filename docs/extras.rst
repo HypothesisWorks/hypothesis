@@ -133,81 +133,10 @@ hypothesis-pytest is the world's most basic pytest plugin. Install it to get
 slightly better integrated example reporting when using @given and running
 under pytest. That's basically all it does.
 
-.. _hypothesis-django:
-
 -----------------
 hypothesis-django
 -----------------
 
 hypothesis-django adds support for testing your Django models with Hypothesis.
-Using it is quite straightforward: All you need to do is subclass 
-hypothesis.extra.django.TestCase or hypothesis.extra.django.TransactionTestCase
-and you can use @given as normal, and the transactions will be per example
-rather than per test function as they would be if you used @given with a normal
-django test suite (this is important because your test function will be called
-multiple times and you don't want them to interfere with eachother). Test cases
-on these classes that do not use @given will be run as normal.
 
-I strongly recommend not using TransactionTestCase unless you really have to.
-Because Hypothesis runs this in a loop the performance problems it normally has
-are significantly exacerbated and your tests will be really slow.
-
-In addition to the above, Hypothesis has some limited support for automatically
-deriving strategies for your model types, which you can then customize further.
-
-Warning: Hypothesis creates saved models. This will run inside your testing
-transaction when using the test runner, but if you use the dev console this
-will leave debris in your database.
-
-For example, using the trivial django project I have for testing:
-
-.. code-block:: pycon
-
-    >>> from hypothesis.extra.django.models import models
-    >>> from toystore.models import Customer
-    >>> c = models(Customer).example()
-    >>> c
-    <Customer: Customer object>
-    >>> c.email
-    'jaime.urbina@gmail.com'
-    >>> c.name
-    '\U00109d3d\U000e07be\U000165f8\U0003fabf\U000c12cd\U000f1910\U00059f12\U000519b0\U0003fabf\U000f1910\U000423fb\U000423fb\U00059f12\U000e07be\U000c12cd\U000e07be\U000519b0\U000165f8\U0003fabf\U0007bc31'
-    >>> c.age
-    -873375803
-
-Hypothesis has just created this with whatever the relevant type of data is.
-
-Obviously the customer's age is implausible, so lets fix that:
-
-.. code-block:: pycon
-
-    >>> from hypothesis.strategies import integers
-    >>> c = models(Customer, age=integers(min_value=0, max_value=120)).example()
-    >>> c
-    <Customer: Customer object>
-    >>> c.age
-    5
-
-You can use this to override any fields you like. Sometimes this will be
-mandatory: If you have a non-nullable field of a type Hypothesis doesn't know
-how to create (e.g. a foreign key) then the models function will error unless
-you explicitly pass a strategy to use there.
-
-You can also register a default strategy for a field type if you have custom
-one that Hypothesis doesn't know about or want to override the normal behaviour
-for some reason:
-
-.. code-block:: pycon
-
-    >>> from toystore.models import CustomishField, Customish
-    >>> models(Customish).example()
-    hypothesis.errors.InvalidArgument: Missing arguments for mandatory field
-        customish for model Customish
-    >>> from hypothesis.extra.django.models import add_default_field_mapping
-    >>> from hypothesis.strategies import just
-    >>> add_default_field_mapping(CustomishField, just("hi"))
-    >>> x = models(Customish).example()
-    >>> x.customish
-    'hi'
-
-Note that this mapping is on exact type. Subtypes will not inherit it.
+It's large enough that it is :doc:`documented elsewhere <django>`.

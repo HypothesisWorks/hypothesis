@@ -23,6 +23,11 @@ a_company = fixture(
     lambda c: c.name,
 )
 
+a_different_company = fixture(
+    models(Company),
+    lambda c: len(c.name) > len(a_company().name)
+)
+
 another_company = fixture(
     models(Company),
     lambda c: c.name,
@@ -54,6 +59,9 @@ a_gendered_customer = fixture(
 class TestFinding(TestCase):
     def test_can_find_unique_name(self):
         assert len(a_company().name) == 1
+
+    def test_can_reference_a_fixture_from_within_a_fixture(self):
+        assert len(a_different_company().name) > len(a_company().name)
 
     def test_same_fixture_twice_is_same_object(self):
         assert a_company().pk == a_company().pk
