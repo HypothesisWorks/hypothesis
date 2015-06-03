@@ -31,14 +31,11 @@ __all__ = [
 
     'booleans', 'integers', 'floats', 'complex_numbers', 'fractions',
     'decimals',
-
     'text', 'binary',
-
     'tuples', 'lists', 'sets', 'frozensets',
     'dictionaries', 'fixed_dictionaries',
-
+    'sampled_from',
     'builds',
-
     'streaming', 'basic',
 ]
 
