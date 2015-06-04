@@ -57,6 +57,7 @@ def field_mappings():
             dm.BinaryField: st.binary(),
             dm.BooleanField: st.booleans(),
             dm.CharField: st.text(),
+            dm.TextField: st.text(),
             dm.DateTimeField: datetimes(allow_naive=False),
             dm.EmailField: ff.fake_factory('email'),
             dm.FloatField: st.floats(),
