@@ -16,10 +16,10 @@ from __future__ import division, print_function, absolute_import, \
 import faker
 import hypothesis.internal.distributions as dist
 from faker import AVAILABLE_LOCALES
-from hypothesis.internal.compat import text_type, hrange
+from hypothesis.internal.compat import hrange, text_type
+from hypothesis.internal.distributions import geometric
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
     check_data_type
-from hypothesis.internal.distributions import geometric
 
 
 def fake_factory(source, locale=None, locales=None, providers=()):

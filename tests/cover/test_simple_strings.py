@@ -14,10 +14,10 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 from random import Random
-import pytest
 
+import pytest
 from hypothesis import find, given
-from hypothesis.strategies import text, tuples, binary
+from hypothesis.strategies import text, binary, tuples
 
 
 def test_can_minimize_up_to_zero():

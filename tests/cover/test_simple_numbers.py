@@ -18,7 +18,6 @@ import math
 from random import Random
 
 import pytest
-
 from hypothesis import find, given
 from hypothesis.strategies import lists, floats, integers, complex_numbers
 from hypothesis.searchstrategy.numbers import is_integral

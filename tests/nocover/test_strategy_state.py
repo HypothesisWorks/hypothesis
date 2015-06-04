@@ -18,7 +18,6 @@ import hashlib
 from copy import deepcopy
 from random import Random
 
-from hypothesis.utils.size import clamp
 from hypothesis import Settings, Verbosity, find, given, assume, strategy
 from hypothesis.errors import BadData, NoExamples
 from hypothesis.database import ExampleDatabase
@@ -28,9 +27,10 @@ from hypothesis.strategies import just, none, text, lists, binary, \
     floats, tuples, randoms, booleans, decimals, integers, fractions, \
     streaming, sampled_from, complex_numbers
 from hypothesis.utils.show import show
-from hypothesis.searchstrategy.numbers import float_to_int, int_to_float
+from hypothesis.utils.size import clamp
 from hypothesis.strategytests import mutate_basic, templates_for
 from hypothesis.internal.compat import PY3, PYPY
+from hypothesis.searchstrategy.numbers import float_to_int, int_to_float
 
 AVERAGE_LIST_LENGTH = 2
 
