@@ -16,9 +16,10 @@ from __future__ import division, print_function, absolute_import, \
 import faker
 import hypothesis.internal.distributions as dist
 from faker import AVAILABLE_LOCALES
-from hypothesis.internal.compat import text_type
+from hypothesis.internal.compat import text_type, hrange
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
     check_data_type
+from hypothesis.internal.distributions import geometric
 
 
 def fake_factory(source, locale=None, locales=None, providers=()):
@@ -52,14 +53,19 @@ class FakeFactoryStrategy(SearchStrategy):
         self.locales = tuple(locales)
 
     def draw_parameter(self, random):
-        return dist.non_empty_subset(random, self.locales)
+        locales = dist.non_empty_subset(random, self.locales)
+        n = 1 + geometric(random, 0.1)
+        options = []
+        for _ in hrange(n):
+            factory = faker.Faker(locale=random.choice(locales))
+            factory.seed(random.getrandbits(128))
+            for p in self.providers:
+                factory.add_provider(p)
+            options.append(text_type(getattr(factory, self.source)()))
+        return options
 
     def draw_template(self, random, pv):
-        factory = faker.Faker(locale=random.choice(pv))
-        factory.seed(random.getrandbits(128))
-        for p in self.providers:
-            factory.add_provider(p)
-        return text_type(getattr(factory, self.source)())
+        return random.choice(pv)
 
     def reify(self, template):
         return template
