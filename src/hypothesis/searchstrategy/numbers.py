@@ -316,24 +316,7 @@ class FloatStrategy(SearchStrategy):
         return '%s()' % (self.__class__.__name__,)
 
     def strictly_simpler(self, x, y):
-        if is_integral(x):
-            if not is_integral(y):
-                return True
-            return self.int_strategy.strictly_simpler(int(x), int(y))
-        if is_integral(y):
-            return False
-        if math.isnan(x):
-            return False
-        if math.isnan(y):
-            return True
-        if math.isinf(x) and not math.isinf(y):
-            return False
-        if y > 0:
-            return 0 <= x < y
-        else:
-            # The y == 0 case is handled by is_integral(y)
-            assert y < 0
-            return x > y
+        return self.to_basic(x) < self.to_basic(y)
 
     def to_basic(self, value):
         check_type(float, value)
@@ -354,80 +337,22 @@ class FloatStrategy(SearchStrategy):
         return value
 
     def simplifiers(self, random, x):
-        if x == 0.0:
-            return
-        yield self.simplify_weird_values
-        yield self.push_towards_one
-        try:
-            for simplify in self.int_strategy.simplifiers(
-                random, int(math.floor(x))
-            ):
-                yield self.simplify_integral(simplify)
-        except (OverflowError, ValueError):
-            pass
-        yield self.basic_simplify
-
-    def simplify_weird_values(self, random, x):
-        if math.isnan(x):
-            yield 0.0
-            yield float('inf')
-            yield -float('inf')
-            return
-        if math.isinf(x):
-            yield math.copysign(
-                sys.float_info.max, x
-            )
-            if x < 0:
-                yield -x
-            return
-
-    def push_towards_one(self, random, x):
-        if x > 1.0 and not math.isinf(x):
-            assert self.strictly_simpler(1.0, x)
-            yield 1.0
-            y = math.sqrt(x)
-            if is_integral(x):
-                y = float(math.floor(y))
-            assert(self.strictly_simpler(y, x))
-            yield y
-
-    def simplify_integral(self, simplify):
-        def accept(random, x):
-            if not is_integral(x):
-                try:
-                    yield float(math.floor(x))
-                except (OverflowError, ValueError):
-                    pass
-                return
-            for m in simplify(random, int(math.floor(x))):
-                yield float(m)
-        accept.__name__ = str(
-            'simplify_integral(%s)' % (simplify.__name__,)
-        )
-        return accept
-
-    def basic_simplify(self, random, x):
-        if x == 0.0:
-            return
-
-        yield 0.0
-
         if x < 0:
-            yield -x
-            for t in self.basic_simplify(random, -x):
-                yield -t
-            return
-        if x < 1:
-            return
+            yield self.try_negate
+        as_int = self.to_basic(x)
+        for simplify in self.int_strategy.simplifiers(random, as_int):
+            yield self.convert_strategy(simplify)
 
-        if not is_integral(x):
-            for e in range(10):
-                scale = 2 ** e
-                try:
-                    y = float(math.floor(x * scale)) / scale
-                except (OverflowError, ValueError):
-                    break
-                yield y
+    def try_negate(self, random, template):
+        if template < 0:
+            yield -template
+
+    def convert_strategy(self, simplify):
+        def accept(random, template):
+            for i in simplify(random, self.to_basic(template)):
+                yield self.from_basic(i)
+        accept.__name__ = simplify.__name__
+        return accept
 
 
 class WrapperFloatStrategy(FloatStrategy):
