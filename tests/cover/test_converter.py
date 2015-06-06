@@ -31,6 +31,7 @@ from hypothesis.searchstrategy.strategies import BadData, strategy
     (fixed_dictionaries({True: sets(integers())}), []),
     (randoms(), []),
     (integers(), ''),
+    (integers(), [0, '']),
     (text(), 'kittens'),
     (tuples(integers(), integers(), integers()), (1, 2)),
     (sampled_from((1, 2, 3)), 'fish'),
