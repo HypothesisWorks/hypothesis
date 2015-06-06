@@ -14,6 +14,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import sys
+import math
 import struct
 from collections import namedtuple
 
@@ -315,6 +316,10 @@ class FloatStrategy(SearchStrategy):
         return '%s()' % (self.__class__.__name__,)
 
     def strictly_simpler(self, x, y):
+        if x < 0 and y >= 0:
+            return False
+        if y < 0 and x >= 0:
+            return True
         if is_integral(x):
             if not is_integral(y):
                 return True

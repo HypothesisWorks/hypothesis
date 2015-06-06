@@ -183,7 +183,7 @@ def test_float_simplicity():
         assert not s(y, x)
 
     order(sys.float_info.max, '-inf')
-    order(0.5, 1.0)
+    order(1.0, 0.5)
     order(1.0, 2.0)
     order(2, -1)
     order('inf', 'nan')
