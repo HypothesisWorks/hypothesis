@@ -38,7 +38,7 @@ README = local_file("README.rst")
 
 setup(
     name='hypothesis-fakefactory',
-    version='0.10.0',
+    version='0.11.0',
     author='David R. MacIver',
     author_email='david@drmaciver.com',
     packages=find_packages(SOURCE),
