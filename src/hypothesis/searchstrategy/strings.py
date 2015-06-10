@@ -14,14 +14,13 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import sys
-import base64
 import unicodedata
 
 import hypothesis.internal.distributions as dist
 from hypothesis.internal.compat import hrange, hunichr, text_type, \
     binary_type
-from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
-    MappedSearchStrategy, check_type, check_length, check_data_type
+from hypothesis.searchstrategy.strategies import SearchStrategy, \
+    MappedSearchStrategy, check_length, check_data_type
 
 
 class OneCharStringStrategy(SearchStrategy):
@@ -137,17 +136,3 @@ class BinaryStringStrategy(MappedSearchStrategy):
         assert isinstance(x, list), repr(x)
         ba = bytearray(x)
         return binary_type(ba)
-
-    def to_basic(self, value):
-        check_type(tuple, value)
-        if value:
-            check_type(int, value[0])
-        packed = binary_type(bytearray(value))
-        return base64.b64encode(packed).decode('utf-8')
-
-    def from_basic(self, data):
-        check_data_type(text_type, data)
-        try:
-            return tuple(bytearray(base64.b64decode(data.encode('utf-8'))))
-        except Exception as e:
-            raise BadData(*e.args)

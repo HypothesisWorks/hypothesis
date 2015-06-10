@@ -22,6 +22,21 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 ---------------------------------------------------------------------
+`1.6.2 <https://hypothesis.readthedocs.org/en/v1.6.2/>`_ - 2015-06-08
+---------------------------------------------------------------------
+
+This is just a few small bug fixes:
+
+* Size bounds were not validated for values for a binary() strategy when
+  reading examples from the database.
+* sampled\_from is now in __all__ in hypothesis.strategies
+* floats no longer consider negative integers to be simpler than positive
+  non-integers
+* Small floating point intervals now correctly count members, so if you have a
+  floating point interval so narrow there are only a handful of values in it,
+  this will no longer cause an error when Hypothesis runs out of values.
+
+---------------------------------------------------------------------
 `1.6.1 <https://hypothesis.readthedocs.org/en/v1.6.1/>`_ - 2015-05-21
 ---------------------------------------------------------------------
 

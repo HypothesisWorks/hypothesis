@@ -15,8 +15,9 @@ from __future__ import division, print_function, absolute_import, \
 
 from random import Random
 
-from hypothesis import find
-from hypothesis.strategies import text, tuples
+import pytest
+from hypothesis import find, given
+from hypothesis.strategies import text, binary, tuples
 
 
 def test_can_minimize_up_to_zero():
@@ -70,6 +71,19 @@ def test_can_safely_mix_simplifiers():
             for simplify in s.simplifiers(r, u):
                 for w in simplify(r, v):
                     assert not s.strictly_simpler(v, w)
+
+
+def test_binary_respects_changes_in_size():
+    @given(binary())
+    def test_foo(x):
+        assert len(x) <= 150
+    with pytest.raises(AssertionError):
+        test_foo()
+
+    @given(binary(max_size=150))
+    def test_foo(x):
+        assert len(x) <= 150
+    test_foo()
 
 
 def test_does_not_simplify_into_surrogates():
