@@ -15,7 +15,7 @@ And indeed I'll be delighted with you if you do! If you need any help with any
 of these, get in touch and I'll be extremely happy to provide it.
 
 If however you're feeling really keen and you still want to contribute, go for
-it. It's certainly a lot easier than it used to be. You might find it easier to
+it. It's certainly a lot easier than it used to be! You might find it easier to
 start with one of the extra packages (hypothesis-django could sure use some love
 from someone who knows Django better than I do), but whatever you do the process
 is the same.
@@ -36,7 +36,7 @@ terms.
 Finally, if it is not there already, add your name (and a link to your github
 and email address if you want) account to the list of contributors found at
 the end of this document, in alphabetical order. It doesn't have to be your
-"real" name (whatever that means), any sort of publical identifier
+"real" name (whatever that means), any sort of public identifier
 is fine. In particular a Github account is sufficient.
 
 -----------------------
