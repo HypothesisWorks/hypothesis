@@ -66,7 +66,6 @@ List of Contributors
 --------------------
 
 The primary author for most of Hypothesis is David R. MacIver (me). However the following
-
 people have also contributed work. As well as my thanks, they also have copyright over
 their individual contributions.
 
