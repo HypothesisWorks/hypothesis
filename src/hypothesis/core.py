@@ -47,7 +47,6 @@ from hypothesis.internal.reflection import arg_string, copy_argspec, \
 from hypothesis.internal.examplesource import ParameterSource
 from hypothesis.searchstrategy.strategies import strategy
 
-[assume]
 
 
 def time_to_call_it_a_day(settings, start_time):
