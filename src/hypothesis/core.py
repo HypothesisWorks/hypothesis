@@ -33,7 +33,7 @@ from hypothesis.extra import load_entry_points
 from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
     Unsatisfiable, InvalidArgument, UnsatisfiedAssumption, \
     DefinitelyNoSuchExample
-from hypothesis.control import assume
+from hypothesis.control import assume  # noqa
 from hypothesis.settings import Settings, Verbosity
 from hypothesis.executors import executor
 from hypothesis.reporting import report, debug_report, verbose_report, \
@@ -46,8 +46,6 @@ from hypothesis.internal.reflection import arg_string, copy_argspec, \
     get_pretty_function_description
 from hypothesis.internal.examplesource import ParameterSource
 from hypothesis.searchstrategy.strategies import strategy
-
-[assume]
 
 
 def time_to_call_it_a_day(settings, start_time):
