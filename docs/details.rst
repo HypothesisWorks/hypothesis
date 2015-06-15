@@ -284,7 +284,7 @@ setting HYPOTHESIS_VERBOSITY_LEVEL=verbose will run all your tests printing
 intermediate results and errors.
 
 ---------------------
-Definining strategies
+Defining strategies
 ---------------------
 
 The type of object that is used to explore the examples given to your test
@@ -297,7 +297,7 @@ integers you want:
 
 .. code:: python
 
-  >>> from hypothesis.strategies
+  >>> from hypothesis.strategies import integers
   >>> integers()
   RandomGeometricIntStrategy() | WideRangeIntStrategy()
   >>> integers(min_value=0)
