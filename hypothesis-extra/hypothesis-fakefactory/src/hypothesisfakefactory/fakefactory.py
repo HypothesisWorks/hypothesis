@@ -14,6 +14,8 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import faker
+from random import Random
+
 import hypothesis.internal.distributions as dist
 from faker.factory import AVAILABLE_LOCALES
 from hypothesis.internal.compat import hrange, text_type
@@ -69,7 +71,8 @@ class FakeFactoryStrategy(SearchStrategy):
 
     def basic_simplify(self, random, template):
         for _ in hrange(10):
-            y = self.gen_example(random, self.locales)
+            y = self.gen_example(
+                Random(template.encode('utf-8')), self.locales)
             if self.strictly_simpler(y, template):
                 yield y
 
