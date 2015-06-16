@@ -144,3 +144,11 @@ def test_year_bounds_are_respected_in_deserialization():
         above.from_basic(basic)
     with pytest.raises(BadData):
         below.from_basic(basic)
+
+
+def test_timezones_are_checked_in_deserialization():
+    s = datetimes()
+    r = Random(1)
+    basic = s.to_basic(s.draw_template(r, s.draw_parameter(r)))
+    with pytest.raises(BadData):
+        datetimes(timezones=[]).from_basic(basic)
