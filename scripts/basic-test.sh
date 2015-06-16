@@ -12,6 +12,10 @@ for extra in datetime fakefactory pytest ; do
     pip install --upgrade hypothesis-extra/hypothesis-$extra/
 done
 
+for extra in datetime fakefactory pytest ; do
+    python -m pytest hypothesis-extra/hypothesis-$extra/tests/
+done
+
 if [ "$(python -c 'import platform; print(platform.python_implementation())')" != "PyPy" ]; then
     pip install --upgrade hypothesis-extra/hypothesis-numpy/
     python -u -m pytest hypothesis-extra/hypothesis-numpy/tests --durations=20
