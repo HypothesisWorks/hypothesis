@@ -13,9 +13,9 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-import faker
 from random import Random
 
+import faker
 import hypothesis.internal.distributions as dist
 from faker.factory import AVAILABLE_LOCALES
 from hypothesis.internal.compat import hrange, text_type
