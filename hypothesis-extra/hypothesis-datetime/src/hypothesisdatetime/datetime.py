@@ -20,7 +20,7 @@ import pytz
 import hypothesis.internal.distributions as dist
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import hrange, text_type
-from hypothesis.searchstrategy.strategies import SearchStrategy, \
+from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
     strategy, check_length, check_data_type
 
 DatetimeSpec = namedtuple('DatetimeSpec', ('naive_options',))
@@ -201,6 +201,10 @@ class DatetimeStrategy(SearchStrategy):
             check_data_type(int, d)
         if values[-1] is not None:
             check_data_type(text_type, values[-1])
+        if values[0] < self.min_year or values[0] > self.max_year:
+            raise BadData('Year %d out of bounds [%d, %d]' % (
+                values[0], self.min_year, self.max_year
+            ))
         return tuple(values)
 
 

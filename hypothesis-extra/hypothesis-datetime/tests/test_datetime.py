@@ -13,9 +13,11 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+from random import Random
 from datetime import datetime
 
 import pytz
+import pytest
 import hypothesis.settings as hs
 from hypothesis import given, assume
 from hypothesis.strategytests import strategy_test_suite
@@ -23,6 +25,7 @@ from hypothesis.extra.datetime import datetimes, any_datetime, \
     naive_datetime, timezone_aware_datetime
 from hypothesis.internal.debug import minimal
 from hypothesis.internal.compat import hrange
+from hypothesis.searchstrategy.strategies import BadData
 
 hs.Settings.default.max_examples = 1000
 
@@ -123,3 +126,17 @@ def test_min_year_is_respected():
 
 def test_max_year_is_respected():
     assert minimal(datetimes(max_year=1998)).year == 1998
+
+
+def test_year_bounds_are_respected_in_deserialization():
+    s = datetimes()
+    r = Random(1)
+    template = s.draw_template(r, s.draw_parameter(r))
+    year = s.reify(template).year
+    basic = s.to_basic(template)
+    above = datetimes(min_year=year + 1)
+    below = datetimes(max_year=year - 1)
+    with pytest.raises(BadData):
+        above.from_basic(basic)
+    with pytest.raises(BadData):
+        below.from_basic(basic)
