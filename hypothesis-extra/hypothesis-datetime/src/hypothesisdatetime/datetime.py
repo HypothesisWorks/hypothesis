@@ -107,6 +107,18 @@ class DatetimeStrategy(SearchStrategy):
         else:
             return self.templateize(timezone.localize(base))
 
+    def is_valid_template(self, template):
+        if not (self.min_year <= template[0] <= self.max_year):
+            return False
+        tz = template[-1]
+        if tz is None:
+            return self.allow_naive
+        else:
+            return any(
+                text_type(z.zone) == tz
+                for z in self.timezones
+            )
+
     def templateize(self, dt):
         return (
             dt.year,
@@ -201,11 +213,12 @@ class DatetimeStrategy(SearchStrategy):
             check_data_type(int, d)
         if values[-1] is not None:
             check_data_type(text_type, values[-1])
-        if values[0] < self.min_year or values[0] > self.max_year:
-            raise BadData('Year %d out of bounds [%d, %d]' % (
-                values[0], self.min_year, self.max_year
+        template = tuple(values)
+        if not self.is_valid_template(template):
+            raise BadData('Invalid template %r' % (
+                template,
             ))
-        return tuple(values)
+        return template
 
 
 def datetimes(allow_naive=None, timezones=None, min_year=None, max_year=None):
