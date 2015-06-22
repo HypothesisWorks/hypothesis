@@ -21,7 +21,7 @@ hypothesis-datetime lives in the hypothesis.extra.datetime package:
 
 .. code-block:: pycon
 
-  >>> from datetime import datetimes
+  >>> from hypothesis.extra.datetime import datetimes
   >>> datetimes().example()
   datetime.datetime(1705, 1, 20, 0, 32, 0, 973139, tzinfo=<DstTzInfo 'Israel...
   >>> datetimes().example()
