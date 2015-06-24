@@ -34,3 +34,5 @@ thorough testing capabilities. Thanks!
 -------------------------------------------
 
 Do you use Hypothesis? I'd love it if you'd write something here to say so!
+`This file is in Git <https://github.com/DRMacIver/hypothesis/blob/master/docs/endorsements.rst>`_.
+Fork the repo and send me a pull request.
