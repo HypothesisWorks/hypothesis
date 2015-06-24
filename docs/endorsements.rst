@@ -30,6 +30,29 @@ support Unicode input, which I never would have had the stomach for without such
 thorough testing capabilities. Thanks!
 
 -------------------------------------------
+`Sixty North <http://sixty-north.com>`_
+-------------------------------------------
+
+At Sixty North we use Hypothesis for testing
+`Segpy <https://github.com/sixty-north/segpy>`_ an open source Python library for
+shifting data between Python data structures and SEG Y files which contain
+geophysical data from the seismic reflection surveys used in oil and gas
+exploration.
+
+This is our first experience of property-based testing – as opposed to example-based
+testing.  Not only are our tests more powerful, they are also much better
+explanations of what we expect of the production code. In fact, the tests are much
+closer to being specifications.  Hypothesis has located real defects in our code
+which went undetected by traditional test cases, simply because Hypothesis is more
+relentlessly devious about test case generation than us mere humans!  We found
+Hypothesis particularly beneficial for Segpy because SEG Y is an antiquated format
+that uses legacy text encodings (EBCDIC) and even a legacy floating point format
+we implemented from scratch in Python.
+
+Hypothesis is sure to find a place in most of our future Python codebases and many
+existing ones too.
+
+-------------------------------------------
 `Your name goes here <http://example.com>`_
 -------------------------------------------
 
