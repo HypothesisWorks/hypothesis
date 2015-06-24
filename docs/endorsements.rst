@@ -3,9 +3,9 @@ Who is using Hypothesis?
 ========================
 
 This is a page for listing people who are using Hypothesis and how excited they
-are about that. If that's you, please send me a pull request with your name, a
-link to your site, and a short paragraph about who you are and your usage of
-Hypothesis.
+are about that. If that's you and your name is not on the list, `this file is in
+Git <https://github.com/DRMacIver/hypothesis/blob/master/docs/endorsements.rst>`_
+and I'd love it if you sent me a pull request to fix that.
 
 
 --------------------------------------------
@@ -33,6 +33,7 @@ thorough testing capabilities. Thanks!
 `Your name goes here <http://example.com>`_
 -------------------------------------------
 
-Do you use Hypothesis? I'd love it if you'd write something here to say so!
-`This file is in Git <https://github.com/DRMacIver/hypothesis/blob/master/docs/endorsements.rst>`_.
-Fork the repo and send me a pull request.
+I know there are many more, because I keep finding out about new people I'd never
+even heard of using Hypothesis. If you're looking to way to give back to a tool you
+love, adding your name here only takes a moment and would really help a lot. As per
+instructions at the top, just send me a pull request and I'll add you to the list.
