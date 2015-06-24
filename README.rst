@@ -25,3 +25,6 @@ If you want to contribute to Hypothesis, `instructions are here <https://github.
 
 If you're looking for inspiration for writing your own QuickCheck clone,
 `here's a list of ideas you might want to borrow <https://hypothesis.readthedocs.org/en/latest/internals.html>`_.
+
+If you want to hear from people who are already using Hypothesis, some of them `have written
+about it <https://hypothesis.readthedocs.org/en/latest/endorsements.html>_`.
