@@ -18,7 +18,11 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 from random import Random
-from collections import OrderedDict, namedtuple
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
+from collections import namedtuple
 
 from hypothesis import Settings, strategy
 from tests.common.basic import Bitfields, BoringBitfields, \

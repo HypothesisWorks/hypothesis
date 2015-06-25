@@ -29,9 +29,9 @@ from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
 
 DatetimeSpec = namedtuple('DatetimeSpec', ('naive_options',))
 
-naive_datetime = DatetimeSpec({True})
-timezone_aware_datetime = DatetimeSpec({False})
-any_datetime = DatetimeSpec({False, True})
+naive_datetime = DatetimeSpec(set((True,)))
+timezone_aware_datetime = DatetimeSpec(set((False,)))
+any_datetime = DatetimeSpec(set((False, True)))
 
 
 def draw_day_for_month(random, year, month):
@@ -180,7 +180,7 @@ class DatetimeStrategy(SearchStrategy):
 
     def simplify_towards_2000(self, random, value):
         value = self.reify(value)
-        s = {value}
+        s = set((value,))
         s.add(value.replace(microsecond=0))
         s.add(value.replace(second=0))
         s.add(value.replace(minute=0))

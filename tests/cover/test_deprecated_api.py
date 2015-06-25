@@ -159,7 +159,7 @@ def test_float_ranges(r):
 
 def test_strings():
     x = strategy(s.strings('a')).example()
-    assert set(x).issubset({'a'})
+    assert set(x).issubset(set('a'))
 
 
 def test_empty_strings():
