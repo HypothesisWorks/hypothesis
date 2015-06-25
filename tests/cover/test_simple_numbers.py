@@ -148,9 +148,9 @@ def test_list_of_fractional_float():
     assert set(find(
         lists(floats()), lambda x: len([t for t in x if t >= 1.5]) >= 10
     )) in (
-        {1.5},
-        {1.5, 2.0},
-        {2.0},
+        set((1.5,)),
+        set((1.5, 2.0)),
+        set((2.0,)),
     )
 
 

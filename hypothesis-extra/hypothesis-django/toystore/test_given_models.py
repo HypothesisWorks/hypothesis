@@ -72,8 +72,7 @@ class TestGetsBasicModels(TestCase):
         assert x.customish == "a"
 
     def test_mandatory_fields_are_mandatory(self):
-        with self.assertRaises(InvalidArgument):
-            models(Store)
+        self.assertRaises(InvalidArgument, models, Store)
 
 
 class TestsNeedingRollback(TransactionTestCase):

@@ -27,7 +27,7 @@ from hypothesis.searchstrategy.strategies import BadData, strategy
 
 @pytest.mark.parametrize(('specifier', 'data'), [
     (sets(text()), 0j),
-    (complex_numbers(), {'hi'}),
+    (complex_numbers(), set('hi')),
     (lists(sets(booleans())), 0),
     (just(1), 'hi'),
     (binary(), 0.0),

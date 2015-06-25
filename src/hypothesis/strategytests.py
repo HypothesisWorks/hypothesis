@@ -193,15 +193,13 @@ def strategy_test_suite(
             @given(specifier, settings=settings)
             def nope(x):
                 assume(False)
-            with self.assertRaises(Unsatisfiable):
-                nope()
+            self.assertRaises(Unsatisfiable, nope)
 
         def test_will_find_a_constant_failure(self):
             @given(specifier, settings=settings)
             def nope(x):
                 raise Rejected()
-            with self.assertRaises(Rejected):
-                nope()
+            self.assertRaises(Rejected, nope)
 
         def test_will_find_a_failure_from_the_database(self):
             db = ExampleDatabase()
@@ -211,8 +209,7 @@ def strategy_test_suite(
                 raise Rejected()
             try:
                 for i in hrange(3):
-                    with self.assertRaises(Rejected):
-                        nope()  # pragma: no branch
+                    self.assertRaises(Rejected, nope)  # pragma: no cover
             finally:
                 db.close()
 

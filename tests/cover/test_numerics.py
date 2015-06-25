@@ -17,18 +17,16 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from decimal import Decimal
-
 from hypothesis import given, assume
 from tests.common.utils import fails
-from hypothesis.strategies import decimals, fractions
+from hypothesis.strategies import decimals, fractions, float_to_decimal
 
 
 @fails
 @given(decimals())
 def test_all_decimals_can_be_exact_floats(x):
     assume(x.is_finite())
-    assert Decimal(float(x)) == x
+    assert float_to_decimal(float(x)) == x
 
 
 @given(fractions(), fractions(), fractions())
