@@ -26,7 +26,6 @@ from __future__ import division, print_function, absolute_import, \
 import os
 import inspect
 import threading
-from functools import total_ordering
 from collections import namedtuple
 
 from hypothesis.errors import InvalidArgument
@@ -345,7 +344,6 @@ in which case no storage will be used.
 )
 
 
-@total_ordering
 class Verbosity(object):
 
     def __repr__(self):
@@ -360,11 +358,23 @@ class Verbosity(object):
             self.level == other.level
         )
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __hash__(self):
         return self.level
 
     def __lt__(self, other):
         return self.level < other.level
+
+    def __le__(self, other):
+        return self.level <= other.level
+
+    def __gt__(self, other):
+        return self.level > other.level
+
+    def __ge__(self, other):
+        return self.level >= other.level
 
     @classmethod
     def by_name(cls, key):

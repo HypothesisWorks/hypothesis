@@ -112,7 +112,7 @@ def test_can_use_examples_around_given():
         seen.append(x)
 
     test_not_long_str()
-    assert set(seen[:2]) == {long_str, short_str}
+    assert set(seen[:2]) == set((long_str, short_str))
 
 
 @pytest.mark.parametrize(('x', 'y'), [(1, False), (2, True)])

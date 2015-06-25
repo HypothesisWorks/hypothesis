@@ -455,7 +455,7 @@ def test_fails_in_reify(x):
 
 @given(text('a'))
 def test_a_text(x):
-    assert set(x).issubset({'a'})
+    assert set(x).issubset(set('a'))
 
 
 @given(text(''))

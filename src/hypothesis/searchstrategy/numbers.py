@@ -355,7 +355,7 @@ class FloatStrategy(SearchStrategy):
             return (
                 struct.unpack(b'!d', struct.pack(b'!Q', value))[0]
             )
-        except (struct.error, ValueError, OverflowError) as e:
+        except (struct.error, ValueError, OverflowError, TypeError) as e:
             raise BadData(e.args[0])
 
     def reify(self, value):

@@ -19,6 +19,8 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+import pytest
+import sys
 import unittest
 from collections import namedtuple
 
@@ -45,6 +47,7 @@ def test_show_for_nasty_complex():
         complex(float('inf'), 0.0)) == "complex('inf+0j')"
 
 
+@pytest.mark.skipif(sys.version_info < (2,7), reason='complex is picky in python 2.6')
 def test_show_for_nasty_in_just():
     assert show(
         specifiers.just(complex('inf+1.9j'))
@@ -81,6 +84,7 @@ def test_uses_show_inside_unnamed_tuples():
     assert show((1, float('nan'))) == "(1, float('nan'))"
 
 
+@pytest.mark.skipif(sys.version_info < (2,7), reason='complex is picky in python 2.6')
 def test_does_not_strip_brackets_when_not_present():
     assert show(complex('nanj')) == "complex('nanj')"
 
@@ -142,11 +146,11 @@ def test_list_str_is_repr():
 
 
 def test_set_str_is_sorted_repr():
-    assert show({4, 3, 2, 1}) == '{1, 2, 3, 4}'
+    assert show(set((4, 3, 2, 1))) == '{1, 2, 3, 4}'
 
 
 def test_frozenset_str_is_sorted_repr():
-    assert show(frozenset({4, 3, 2, 1})) == 'frozenset({1, 2, 3, 4})'
+    assert show(frozenset(set((4, 3, 2, 1)))) == 'frozenset({1, 2, 3, 4})'
 
 
 def test_dict_str_is_sorted_repr():
