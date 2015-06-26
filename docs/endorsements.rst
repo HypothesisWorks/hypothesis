@@ -8,9 +8,9 @@ Git <https://github.com/DRMacIver/hypothesis/blob/master/docs/endorsements.rst>`
 and I'd love it if you sent me a pull request to fix that.
 
 
---------------------------------------------
-`Kristian Glass <http://www.laterpay.net/>`_
---------------------------------------------
+--------------------------------------------------------------------------------------
+Kristian Glass - Director of Technology at `LaterPay GmbH <http://www.laterpay.net/>`_
+--------------------------------------------------------------------------------------
 
 Hypothesis has been brilliant for expanding the coverage of our test cases,
 and also for making them much easier to read and understand,
