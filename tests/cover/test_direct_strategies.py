@@ -18,7 +18,6 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import math
-from decimal import Decimal
 
 import pytest
 import hypothesis.strategies as ds
@@ -211,7 +210,7 @@ def test_decimals():
 
 
 def test_non_float_decimal():
-    find(ds.decimals(), lambda d: Decimal(float(d)) != d)
+    find(ds.decimals(), lambda d: ds.float_to_decimal(float(d)) != d)
 
 
 def test_validates_min_size_for_sets():

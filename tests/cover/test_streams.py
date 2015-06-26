@@ -125,7 +125,7 @@ def test_template_equality():
     t5 = StreamTemplate(t.seed, t.parameter_seed + 1, Stream(t.stream))
     assert t2 != t5
 
-    assert len({t, t2, t3, t4, t5}) == 4
+    assert len(set((t, t2, t3, t4, t5))) == 4
 
 
 def test_streams_copy_as_self():

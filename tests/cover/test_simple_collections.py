@@ -19,7 +19,11 @@ from __future__ import division, print_function, absolute_import, \
 
 from random import Random
 from itertools import islice
-from collections import OrderedDict, namedtuple
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
+from collections import namedtuple
 
 import pytest
 from hypothesis import Settings, find, given, strategy
@@ -120,7 +124,7 @@ def test_minimize_list_of_sets():
     assert find(
         lists(sets(booleans())),
         lambda x: len(list(filter(None, x))) >= 3) == (
-        [{False}] * 3
+        [set((False,))] * 3
     )
 
 

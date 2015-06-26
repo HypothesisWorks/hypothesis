@@ -6,7 +6,7 @@ import os
 for k, v in sorted(dict(os.environ).items()):
     print("%s=%s" % (k, v))
 '
-python -u -m pytest tests
+python -u setup.py test
 
 for extra in datetime fakefactory pytest ; do
     pip install --upgrade hypothesis-extra/hypothesis-$extra/
@@ -21,9 +21,10 @@ if [ "$(python -c 'import platform; print(platform.python_implementation())')" !
     python -u -m pytest hypothesis-extra/hypothesis-numpy/tests --durations=20
 fi
 
-pip install --upgrade hypothesis-extra/hypothesis-django/
-
-pushd hypothesis-extra/hypothesis-django
-    python -u manage.py test
-popd
+if [ "$(python -c 'import sys; print(sys.version_info <= (2, 6))')" ] ; then
+    pip install --upgrade hypothesis-extra/hypothesis-django/
+    pushd hypothesis-extra/hypothesis-django
+        python -u manage.py test
+    popd
+fi
 

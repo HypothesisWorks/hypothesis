@@ -60,6 +60,7 @@ setup(
     license='MPL v2',
     description='A library for property based testing',
     zip_safe=False,
+    install_requires=['importlib', 'ordereddict'],
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
@@ -78,6 +79,6 @@ setup(
     ],
     long_description=open(README).read(),
     tests_require=[
-        'pytest', 'flake8'],
+        'pytest', 'flake8', 'Counter'],
     cmdclass={'test': PyTest},
 )
