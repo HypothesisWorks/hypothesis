@@ -483,6 +483,23 @@ def builds(target, *args, **kwargs):
     return tuples(tuples(*args), fixed_dictionaries(kwargs)).map(splat)
 
 
+def permutations(values):
+    """Return a strategy which returns permutations of the collection
+    "values"."""
+    values = list(values)
+    if not values:
+        return just(()).map(lambda _: [])
+
+    def build_permutation(swaps):
+        initial = list(values)
+        for i, j in swaps:
+            initial[i], initial[j] = initial[j], initial[i]
+        return initial
+    n = len(values)
+    index = integers(0, n - 1)
+    return lists(tuples(index, index), max_size=n ** 2).map(build_permutation)
+
+
 # Private API below here
 
 def check_type(typ, arg):
