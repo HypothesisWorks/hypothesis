@@ -96,7 +96,7 @@ def some_template(spec, random=None):
     if random is None:
         random = Random()
     strat = strategy(spec)
-    for _ in hrange(10):
+    for _ in hrange(100):
         element = strat.draw_and_produce(random)
         try:
             strat.reify(element)
