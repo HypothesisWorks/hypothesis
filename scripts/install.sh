@@ -93,8 +93,8 @@ case "${TOXENV}" in
         ln -s $PYENVS/3.3.6/bin/python $SNAKEPIT/python3.3
         ;;
     pypy)
-        pyenv install -s pypy-2.5.1
-        ln -s $PYENVS/pypy-2.5.1/bin/pypy $SNAKEPIT/pypy
+        pyenv install -s pypy-2.6.0
+        ln -s $PYENVS/pypy-2.6.0/bin/pypy $SNAKEPIT/pypy
         ;;
     pypy3)
         pyenv install -s pypy3-2.4.0
