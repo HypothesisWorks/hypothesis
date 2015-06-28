@@ -47,7 +47,8 @@ def test_show_for_nasty_complex():
         complex(float('inf'), 0.0)) == "complex('inf+0j')"
 
 
-@pytest.mark.skipif(sys.version_info < (2, 7), reason='complex is picky in python 2.6')
+@pytest.mark.skipif(
+    sys.version_info < (2, 7), reason='complex is picky in python 2.6')
 def test_show_for_nasty_in_just():
     assert show(
         specifiers.just(complex('inf+1.9j'))
@@ -84,7 +85,8 @@ def test_uses_show_inside_unnamed_tuples():
     assert show((1, float('nan'))) == "(1, float('nan'))"
 
 
-@pytest.mark.skipif(sys.version_info < (2, 7), reason='complex is picky in python 2.6')
+@pytest.mark.skipif(
+    sys.version_info < (2, 7), reason='complex is picky in python 2.6')
 def test_does_not_strip_brackets_when_not_present():
     assert show(complex('nanj')) == "complex('nanj')"
 
