@@ -478,6 +478,8 @@ def given(*generator_arguments, **generator_kwargs):
             else:
                 storage = None
 
+            last_exception = [None]
+
             def is_template_example(xs):
                 try:
                     test_runner(reify_and_execute(
@@ -490,7 +492,8 @@ def given(*generator_arguments, **generator_kwargs):
                 except Exception as e:
                     if settings.max_shrinks <= 0:
                         raise e
-                    verbose_report(traceback.format_exc)
+                    last_exception[0] = traceback.format_exc()
+                    verbose_report(last_exception[0])
                     return True
 
             is_template_example.__name__ = test.__name__
@@ -505,14 +508,22 @@ def given(*generator_arguments, **generator_kwargs):
             except NoSuchExample:
                 return
 
+            assert last_exception[0] is not None
+
             with settings:
                 test_runner(reify_and_execute(
                     search_strategy, falsifying_template, test,
                     print_example=True
                 ))
 
+                report(
+                    'Failed to reproduce exception. Expected: \n' +
+                    last_exception[0],
+                )
+
                 test_runner(reify_and_execute(
-                    search_strategy, falsifying_template, test_is_flaky(test),
+                    search_strategy, falsifying_template,
+                    test_is_flaky(test),
                     print_example=True
                 ))
 
