@@ -17,13 +17,21 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from hypothesis import given
+from hypothesis import given, example
 from tests.common import settings as small_settings
 from hypothesis.strategies import text, lists, tuples
+from hypothesis.internal.compat import PY26, hrange
 from hypothesis.database.backend import SQLiteBackend
 
+if PY26:
+    alphabet = [chr(i) for i in hrange(128)]
+else:
+    alphabet = None
 
-@given(lists(tuples(text(), text())), settings=small_settings)
+
+@given(
+    lists(tuples(text(alphabet=alphabet), text(alphabet=alphabet))),
+    settings=small_settings)
 def test_backend_returns_what_you_put_in(xs):
     backend = SQLiteBackend(':memory:')
     mapping = {}
