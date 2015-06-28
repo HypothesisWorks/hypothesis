@@ -34,7 +34,7 @@ from hypothesis.utils.show import show
 from hypothesis.utils.size import clamp
 from hypothesis.strategytests import mutate_basic, templates_for
 from hypothesis.internal.compat import PY3, PYPY
-from hypothesis.searchstrategy.numbers import float_to_int, int_to_float
+from hypothesis.strategies import float_to_int, int_to_float
 
 AVERAGE_LIST_LENGTH = 2
 
