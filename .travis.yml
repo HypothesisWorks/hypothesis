@@ -24,7 +24,6 @@ env:
         - TOXENV=pypy
         - TOXENV=py34
         - TOXENV=py27
-        - TOXENV=pypy3
         - TOXENV=py33
 
 install:
