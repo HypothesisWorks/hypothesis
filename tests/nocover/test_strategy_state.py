@@ -29,12 +29,11 @@ from hypothesis.stateful import Bundle, RuleBasedStateMachine, \
     StateMachineSearchStrategy, rule
 from hypothesis.strategies import just, none, text, lists, binary, \
     floats, tuples, randoms, booleans, decimals, integers, fractions, \
-    streaming, sampled_from, complex_numbers
+    streaming, float_to_int, int_to_float, sampled_from, complex_numbers
 from hypothesis.utils.show import show
 from hypothesis.utils.size import clamp
 from hypothesis.strategytests import mutate_basic, templates_for
 from hypothesis.internal.compat import PY3, PYPY
-from hypothesis.strategies import float_to_int, int_to_float
 
 AVERAGE_LIST_LENGTH = 2
 
