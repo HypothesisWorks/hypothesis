@@ -17,7 +17,7 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from hypothesis import given, example
+from hypothesis import given
 from tests.common import settings as small_settings
 from hypothesis.strategies import text, lists, tuples
 from hypothesis.internal.compat import PY26, hrange
