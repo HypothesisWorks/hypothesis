@@ -18,7 +18,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 from random import Random
-from datetime import datetime
+from datetime import MAXYEAR, datetime
 
 import pytz
 import pytest
@@ -152,3 +152,10 @@ def test_timezones_are_checked_in_deserialization():
     basic = s.to_basic(s.draw_template(r, s.draw_parameter(r)))
     with pytest.raises(BadData):
         datetimes(timezones=[]).from_basic(basic)
+
+
+def test_can_draw_times_in_the_final_year():
+    last_year = datetimes(min_year=MAXYEAR)
+    r = Random(1)
+    for _ in hrange(1000):
+        last_year.reify(last_year.draw_and_produce(r))

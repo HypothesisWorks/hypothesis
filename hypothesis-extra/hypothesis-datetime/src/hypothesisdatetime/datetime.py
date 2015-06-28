@@ -71,6 +71,14 @@ class DatetimeStrategy(SearchStrategy):
         self.timezones = timezones
         self.min_year = min_year or dt.MINYEAR
         self.max_year = max_year or dt.MAXYEAR
+        if self.min_year < dt.MINYEAR:
+            raise InvalidArgument('min_year out of range: %d < %d' % (
+                min_year, dt.MINYEAR
+            ))
+        if self.max_year > dt.MAXYEAR:
+            raise InvalidArgument('max_year out of range: %d > %d' % (
+                max_year, dt.MAXYEAR
+            ))
 
     def draw_parameter(self, random):
         return self.Parameter(
@@ -84,32 +92,37 @@ class DatetimeStrategy(SearchStrategy):
         )
 
     def draw_template(self, random, pv):
-        random = random
-        year = random.randint(self.min_year, self.max_year)
-        month = random.choice(pv.month)
-        base = dt.datetime(
-            year=year,
-            month=month,
-            day=draw_day_for_month(random, year, month),
-            hour=maybe_zero_or(random, pv.p_hour, random.randint(0, 23)),
-            minute=maybe_zero_or(random, pv.p_minute, random.randint(0, 59)),
-            second=maybe_zero_or(random, pv.p_second, random.randint(0, 59)),
-            microsecond=random.randint(0, 1000000 - 1),
-        )
-        if not pv.timezones:
-            return self.templateize(base)
+        while True:
+            random = random
+            year = random.randint(self.min_year, self.max_year)
+            month = random.choice(pv.month)
+            base = dt.datetime(
+                year=year,
+                month=month,
+                day=draw_day_for_month(random, year, month),
+                hour=maybe_zero_or(random, pv.p_hour, random.randint(0, 23)),
+                minute=maybe_zero_or(
+                    random, pv.p_minute, random.randint(0, 59)),
+                second=maybe_zero_or(
+                    random, pv.p_second, random.randint(0, 59)),
+                microsecond=random.randint(0, 1000000 - 1),
+            )
+            try:
+                if not pv.timezones:
+                    return self.templateize(base)
 
-        timezone = random.choice(pv.timezones)
+                timezone = random.choice(pv.timezones)
 
-        if not self.allow_naive:
-            return self.templateize(timezone.localize(base))
+                if not self.allow_naive:
+                    return self.templateize(timezone.localize(base))
 
-        naive = random.random() <= pv.naive_chance
-
-        if naive:
-            return self.templateize(base)
-        else:
-            return self.templateize(timezone.localize(base))
+                naive = random.random() <= pv.naive_chance
+                if naive:
+                    return self.templateize(base)
+                else:
+                    return self.templateize(timezone.localize(base))
+            except OverflowError:
+                pass
 
     def is_valid_template(self, template):
         if not (self.min_year <= template[0] <= self.max_year):
