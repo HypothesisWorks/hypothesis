@@ -49,6 +49,13 @@ class PyTest(TestCommand):
         errno = pytest.main(self.test_args)
         sys.exit(errno)
 
+
+if sys.version_info[:2] == (2, 6):
+    dependencies = ['importlib', 'ordereddict']
+else:
+    dependencies = []
+
+
 setup(
     name='hypothesis',
     version=__version__,
@@ -60,7 +67,7 @@ setup(
     license='MPL v2',
     description='A library for property based testing',
     zip_safe=False,
-    install_requires=['importlib', 'ordereddict'],
+    install_requires=dependencies,
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
