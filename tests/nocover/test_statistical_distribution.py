@@ -39,8 +39,7 @@ from hypothesis.strategies import just, sets, lists, floats, tuples, \
 from hypothesis.internal.compat import PY26, hrange
 from hypothesis.searchstrategy.strategies import strategy
 
-
-pytestmark = pytest.mark.skipif(PY26, reason="2.6 lacks erf")
+pytestmark = pytest.mark.skipif(PY26, reason='2.6 lacks erf')
 
 # We run each individual test at a very high level of significance to the
 # point where it will basically only fail if it's really really wildly wrong.

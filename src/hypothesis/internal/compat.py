@@ -22,10 +22,40 @@ import sys
 import platform
 import importlib
 
+from decimal import Context, Decimal, Inexact
+
 PY3 = sys.version_info[0] == 3
 BAD_PY3 = PY3 and (sys.version_info[1] <= 2)
 PYPY = platform.python_implementation() == 'PyPy'
 PY26 = sys.version_info[:2] == (2, 6)
+
+
+if PY26:
+    _special_floats = {
+        float('inf'): Decimal('Infinity'),
+        float('-inf'): Decimal('-Infinity'),
+    }
+
+    def float_to_decimal(f):
+        """Convert a floating point number to a Decimal with no loss of
+        information."""
+        if f in _special_floats:
+            return _special_floats[f]
+        elif math.isnan(f):
+            return Decimal('NaN')
+        n, d = f.as_integer_ratio()
+        numerator, denominator = Decimal(n), Decimal(d)
+        ctx = Context(prec=60)
+        result = ctx.divide(numerator, denominator)
+        while ctx.flags[Inexact]:
+            ctx.flags[Inexact] = False
+            ctx.prec *= 2
+            result = ctx.divide(numerator, denominator)
+        return result
+else:
+    def float_to_decimal(f):
+        return Decimal(f)
+
 
 if PY3:
     text_type = str

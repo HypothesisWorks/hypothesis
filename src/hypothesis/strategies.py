@@ -19,7 +19,7 @@ from __future__ import division, print_function, absolute_import, \
 
 import math
 from random import Random
-from decimal import Context, Decimal, Inexact
+from decimal import Decimal
 from fractions import Fraction
 
 import hypothesis.specifiers as spec
@@ -28,7 +28,7 @@ from hypothesis.control import assume
 from hypothesis.settings import Settings
 from hypothesis.searchstrategy import SearchStrategy, strategy
 from hypothesis.internal.compat import text_type, binary_type, \
-    integer_types
+    integer_types, float_to_decimal
 
 __all__ = [
     'just', 'one_of',
@@ -452,30 +452,6 @@ def fractions():
     return tuples(integers(), integers(min_value=1)).map(
         lambda t: Fraction(*t)
     )
-
-
-_special_floats = {
-    float('inf'): Decimal('Infinity'),
-    float('-inf'): Decimal('-Infinity'),
-}
-
-
-def float_to_decimal(f):
-    """Convert a floating point number to a Decimal with no loss of
-    information."""
-    if f in _special_floats:
-        return _special_floats[f]
-    elif math.isnan(f):
-        return Decimal('NaN')
-    n, d = f.as_integer_ratio()
-    numerator, denominator = Decimal(n), Decimal(d)
-    ctx = Context(prec=60)
-    result = ctx.divide(numerator, denominator)
-    while ctx.flags[Inexact]:
-        ctx.flags[Inexact] = False
-        ctx.prec *= 2
-        result = ctx.divide(numerator, denominator)
-    return result
 
 
 def decimals():
