@@ -80,6 +80,10 @@ pyenv global 3.4.3
 pyenv local 3.4.3
 
 case "${TOXENV}" in
+    py26|examples2)
+        pyenv install -s 2.6.9
+        ln -s $PYENVS/2.6.9/bin/python $SNAKEPIT/python2.6
+        ;;
     py27|examples2)
         pyenv install -s 2.7.9
         ln -s $PYENVS/2.7.9/bin/python $SNAKEPIT/python2.7

@@ -22,6 +22,7 @@ env:
         - TOXENV=examples2
         - TOXENV=examples3
         - TOXENV=pypy
+        - TOXENV=py26
         - TOXENV=py34
         - TOXENV=py27
         - TOXENV=py33
@@ -48,6 +49,8 @@ matrix:
           env: TOXENV=pypy3
         - os: linux
           env: TOXENV=py27
+        - os: osx
+          env: TOXENV=py26
         - os: linux
           env: TOXENV=py33
         - os: osx
