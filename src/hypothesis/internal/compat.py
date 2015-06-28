@@ -21,7 +21,6 @@ from __future__ import division, print_function, absolute_import, \
 import sys
 import platform
 import importlib
-
 from decimal import Context, Decimal, Inexact
 
 PY3 = sys.version_info[0] == 3
