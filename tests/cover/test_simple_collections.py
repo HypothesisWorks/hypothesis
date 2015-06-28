@@ -19,10 +19,6 @@ from __future__ import division, print_function, absolute_import, \
 
 from random import Random
 from itertools import islice
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict
 from collections import namedtuple
 
 import pytest
@@ -30,6 +26,11 @@ from hypothesis import Settings, find, given, strategy
 from hypothesis.strategies import sets, lists, builds, tuples, booleans, \
     integers, frozensets, dictionaries, complex_numbers, \
     fixed_dictionaries
+
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
 
 
 @pytest.mark.parametrize(('col', 'strat'), [

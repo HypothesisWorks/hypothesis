@@ -18,10 +18,6 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 from random import Random
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict
 from collections import namedtuple
 
 import hypothesis.internal.distributions as dist
@@ -32,6 +28,11 @@ from hypothesis.internal.compat import hrange
 from hypothesis.searchstrategy.strategies import EFFECTIVELY_INFINITE, \
     BadData, SearchStrategy, MappedSearchStrategy, check_type, \
     infinitish, check_length, check_data_type, one_of_strategies
+
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
 
 
 def safe_mul(x, y):

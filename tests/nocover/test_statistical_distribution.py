@@ -27,21 +27,20 @@ data from the distribution produced by some specifier is >= REQUIRED_P
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from hypothesis.internal.compat import PY26
-
-pytestmark = pytest.mark.skipif(PY26)
-
 import re
 import math
 import random
-from collections import Counter
+import collections
 
 import pytest
 import hypothesis.internal.reflection as reflection
 from hypothesis.strategies import just, sets, lists, floats, tuples, \
     booleans, integers, sampled_from
-from hypothesis.internal.compat import hrange
+from hypothesis.internal.compat import PY26, hrange
 from hypothesis.searchstrategy.strategies import strategy
+
+
+pytestmark = pytest.mark.skipif(PY26, reason="2.6 lacks erf")
 
 # We run each individual test at a very high level of significance to the
 # point where it will basically only fail if it's really really wildly wrong.
@@ -306,7 +305,7 @@ test_can_produce_the_same_int_twice = define_test(
 
 
 def distorted_value(x):
-    c = Counter(x)
+    c = collections.Counter(x)
     return min(c.values()) * 3 <= max(c.values())
 
 

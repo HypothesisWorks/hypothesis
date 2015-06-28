@@ -22,11 +22,6 @@ import math
 import operator
 from decimal import Decimal
 from fractions import Fraction
-try:
-    from collections import Counter, OrderedDict
-except ImportError:
-    from counter import Counter
-    from ordereddict import OrderedDict
 
 import pytest
 from hypothesis import Settings, assume
@@ -36,6 +31,12 @@ from hypothesis.strategies import just, sets, text, lists, binary, \
     dictionaries
 from hypothesis.internal.debug import minimal
 from hypothesis.internal.compat import PY3, hrange, reduce
+
+try:
+    from collections import Counter, OrderedDict
+except ImportError:
+    from counter import Counter
+    from ordereddict import OrderedDict
 
 
 def test_minimize_list_on_large_structure():

@@ -461,7 +461,8 @@ _special_floats = {
 
 
 def float_to_decimal(f):
-    "Convert a floating point number to a Decimal with no loss of information"
+    """Convert a floating point number to a Decimal with no loss of
+    information."""
     if f in _special_floats:
         return _special_floats[f]
     elif math.isnan(f):
