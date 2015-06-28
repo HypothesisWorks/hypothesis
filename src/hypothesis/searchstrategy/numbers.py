@@ -489,8 +489,6 @@ class FullRangeFloats(FloatStrategy):
             random.getrandbits(52)
         )
 
-MAX_NEGATIVE_FLOAT_AS_INT = float_to_int(-int_to_float(1))
-
 
 class FixedBoundedFloatStrategy(FloatStrategy):
 
@@ -510,16 +508,6 @@ class FixedBoundedFloatStrategy(FloatStrategy):
         self.lower_bound = float(lower_bound)
         self.upper_bound = float(upper_bound)
         assert upper_bound >= lower_bound
-        if lower_bound >= 0 or upper_bound < 0:
-            self.template_upper_bound = infinitish(
-                float_to_int(upper_bound) - float_to_int(lower_bound) + 1
-            )
-        else:
-            self.template_upper_bound = infinitish(
-                float_to_int(upper_bound) + (
-                    MAX_NEGATIVE_FLOAT_AS_INT - float_to_int(lower_bound) + 2
-                )
-            )
 
     def __repr__(self):
         return 'FixedBoundedFloatStrategy(%s, %s)' % (

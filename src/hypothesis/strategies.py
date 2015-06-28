@@ -188,7 +188,11 @@ def floats(min_value=None, max_value=None):
             return floats(min_value=0, max_value=max_value) | floats(
                 min_value=min_value, max_value=0
             )
-        if is_negative(max_value):
+        elif count_between_floats(min_value, max_value) > 1000:
+            return FixedBoundedFloatStrategy(
+                lower_bound=min_value, upper_bound=max_value
+            )
+        elif is_negative(max_value):
             assert is_negative(min_value)
             ub_int = float_to_int(max_value)
             lb_int = float_to_int(min_value)
