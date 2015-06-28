@@ -25,6 +25,7 @@ import importlib
 PY3 = sys.version_info[0] == 3
 BAD_PY3 = PY3 and (sys.version_info[1] <= 2)
 PYPY = platform.python_implementation() == 'PyPy'
+PY26 = sys.version_info[:2] == (2, 6)
 
 if PY3:
     text_type = str

@@ -27,13 +27,14 @@ data from the distribution produced by some specifier is >= REQUIRED_P
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+from hypothesis.internal.compat import PY26
+
+pytestmark = pytest.mark.skipif(PY26)
+
 import re
 import math
 import random
-try:
-    from collections import Counter
-except ImportError:
-    from counter import Counter
+from collections import Counter
 
 import pytest
 import hypothesis.internal.reflection as reflection
@@ -50,31 +51,6 @@ REQUIRED_P = 10e-6
 FALSE_POSITIVE_RATE = 0.01
 MIN_RUNS = 500
 MAX_RUNS = MIN_RUNS * 20
-
-
-if not hasattr(math, 'erf'):
-    def erf(x):
-        # constants
-        a1 =  0.254829592
-        a2 = -0.284496736
-        a3 =  1.421413741
-        a4 = -1.453152027
-        a5 =  1.061405429
-        p  =  0.3275911
-
-        # Save the sign of x
-        sign = 1
-        if x < 0:
-            sign = -1
-        x = abs(x)
-
-        # A & S 7.1.26
-        t = 1.0/(1.0 + p*x)
-        y = 1.0 - (((((a5*t + a4)*t) + a3)*t + a2)*t + a1)*t*math.exp(-x*x)
-
-        return sign*y
-
-    math.erf = erf
 
 
 def cumulative_normal(x):
