@@ -190,6 +190,7 @@ def test_float_simplicity():
     order(1.0, 0.5)
     order(1.0, 2.0)
     order(2, -1)
+    order(-1.5, float('inf'))
     order('inf', 'nan')
     order('inf', '-inf')
     order('0.25', '0.5')

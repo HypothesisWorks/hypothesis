@@ -320,6 +320,14 @@ class FloatStrategy(SearchStrategy):
         return '%s()' % (self.__class__.__name__,)
 
     def strictly_simpler(self, x, y):
+        if math.isnan(x):
+            return False
+        if math.isnan(y):
+            return True
+        if math.isinf(y) and not math.isinf(x):
+            return True
+        if math.isinf(x) and not math.isinf(y):
+            return False
         if x < 0 and y >= 0:
             return False
         if y < 0 and x >= 0:
@@ -334,8 +342,6 @@ class FloatStrategy(SearchStrategy):
             return False
         if math.isnan(y):
             return True
-        if math.isinf(x) and not math.isinf(y):
-            return False
         if y > 0:
             return 0 <= x < y
         else:
