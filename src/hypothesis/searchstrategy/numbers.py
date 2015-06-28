@@ -296,18 +296,6 @@ def is_integral(value):
         return False
 
 
-def float_to_int(value):
-    return (
-        struct.unpack(b'!Q', struct.pack(b'!d', value))[0]
-    )
-
-
-def int_to_float(value):
-    return (
-        struct.unpack(b'!d', struct.pack(b'!Q', value))[0]
-    )
-
-
 class FloatStrategy(SearchStrategy):
 
     """Generic superclass for strategies which produce floats."""
@@ -500,109 +488,6 @@ class FullRangeFloats(FloatStrategy):
             exponent,
             random.getrandbits(52)
         )
-
-MAX_NEGATIVE_FLOAT_AS_INT = float_to_int(-int_to_float(1))
-
-
-class FixedBoundedFloatStrategy(FloatStrategy):
-
-    """A strategy for floats distributed between two endpoints.
-
-    The conditional distribution tries to produce values clustered
-    closer to one of the ends.
-
-    """
-    Parameter = namedtuple(
-        'Parameter',
-        ('cut', 'leftwards')
-    )
-
-    def __init__(self, lower_bound, upper_bound):
-        FloatStrategy.__init__(self)
-        self.lower_bound = float(lower_bound)
-        self.upper_bound = float(upper_bound)
-        assert upper_bound >= lower_bound
-        if lower_bound >= 0 or upper_bound < 0:
-            self.template_upper_bound = infinitish(
-                float_to_int(upper_bound) - float_to_int(lower_bound) + 1
-            )
-        else:
-            self.template_upper_bound = infinitish(
-                float_to_int(upper_bound) + (
-                    MAX_NEGATIVE_FLOAT_AS_INT - float_to_int(lower_bound) + 2
-                )
-            )
-
-    def __repr__(self):
-        return 'FixedBoundedFloatStrategy(%s, %s)' % (
-            self.lower_bound, self.upper_bound,
-        )
-
-    def draw_parameter(self, random):
-        return self.Parameter(
-            cut=random.random(),
-            leftwards=dist.biased_coin(random, 0.5)
-        )
-
-    def draw_template(self, random, pv):
-        random = random
-        cut = self.lower_bound + pv.cut * (self.upper_bound - self.lower_bound)
-        if pv.leftwards:
-            left = self.lower_bound
-            right = cut
-        else:
-            left = cut
-            right = self.upper_bound
-        return left + random.random() * (right - left)
-
-    def strictly_simpler(self, x, y):
-        return x < y
-
-    def simplifiers(self, random, template):
-        yield self.basic_simplify
-
-    def basic_simplify(self, random, value):
-        if value == self.lower_bound:
-            return
-        lb = self.lower_bound
-        for _ in hrange(32):
-            yield lb
-            lb = (lb + value) * 0.5
-
-    def from_basic(self, data):
-        result = super(FixedBoundedFloatStrategy, self).from_basic(data)
-        if result < self.lower_bound or result > self.upper_bound:
-            raise BadData('Value %f out of range [%f, %f]' % (
-                result, self.lower_bound, self.upper_bound
-            ))
-        return result
-
-
-class BoundedFloatStrategy(FloatStrategy):
-
-    """A float strategy such that every conditional distribution is bounded but
-    the endpoints may be arbitrary."""
-
-    Parameter = namedtuple(
-        'Parameter',
-        ('left', 'length', 'spread'),
-    )
-
-    def __init__(self):
-        super(BoundedFloatStrategy, self).__init__()
-        self.inner_strategy = FixedBoundedFloatStrategy(0, 1)
-
-    def draw_parameter(self, random):
-        return self.Parameter(
-            left=random.normalvariate(0, 1),
-            length=random.expovariate(1),
-            spread=self.inner_strategy.draw_parameter(random),
-        )
-
-    def draw_template(self, random, pv):
-        return pv.left + self.inner_strategy.draw_template(
-            random, pv.spread
-        ) * pv.length
 
 
 class GaussianFloatStrategy(FloatStrategy):

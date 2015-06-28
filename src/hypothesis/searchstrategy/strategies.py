@@ -60,6 +60,7 @@ EFFECTIVELY_INFINITE = 2 ** 32
 
 
 def infinitish(x):
+    assert x >= 0
     if x >= EFFECTIVELY_INFINITE:
         return Infinity
     else:

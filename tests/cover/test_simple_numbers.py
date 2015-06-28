@@ -22,7 +22,7 @@ import math
 from random import Random
 
 import pytest
-from hypothesis import find, given
+from hypothesis import find, given, assume
 from hypothesis.strategies import lists, floats, integers, complex_numbers
 from hypothesis.searchstrategy.numbers import is_integral
 from hypothesis.searchstrategy.strategies import BadData
@@ -221,4 +221,17 @@ def test_floats_in_constrained_range(left, right):
 
 def test_floats_of_small_range_are_bounded():
     assert floats(0, 5e-324).template_upper_bound == 2
-    assert floats(-5e-324, 5e-324).template_upper_bound == 3
+    assert floats(-5e-324, 5e-324).template_upper_bound == 4
+
+
+@given(floats(), floats())
+def test_bounds_are_valid(left, right):
+    for x in (left, right):
+        assume(not (math.isinf(x) or math.isnan(x)))
+    assume(left <= right)
+    ub = floats(left, right).template_upper_bound
+    assert ub >= 0
+    if isinstance(ub, float):
+        assert math.isinf(ub)
+    else:
+        assert isinstance(ub, int)

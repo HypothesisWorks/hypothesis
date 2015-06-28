@@ -315,6 +315,15 @@ class HypothesisSpec(RuleBasedStateMachine):
     def repr_is_good(self, strat):
         assert ' at 0x' not in repr(strat)
 
+    @rule(strat=strategies)
+    def template_upper_bound_is_valid(self, strat):
+        ub = strat.template_upper_bound
+        assert ub >= 0
+        if isinstance(ub, float):
+            assert math.isinf(ub)
+        else:
+            assert isinstance(ub, int)
+
     @rule(strat=strategies, r=randoms())
     def can_find_as_many_templates_as_size(self, strat, r):
         tempstrat = templates_for(strat)

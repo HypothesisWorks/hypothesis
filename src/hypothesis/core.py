@@ -110,6 +110,8 @@ def find_satisfying_template(
         max_tries=max_parameter_tries,
     )
 
+    assert search_strategy.template_upper_bound >= 0
+
     for parameter in parameter_source:  # pragma: no branch
         if len(tracker) >= search_strategy.template_upper_bound:
             break
