@@ -31,7 +31,7 @@ from hypothesis.searchstrategy.strategies import EFFECTIVELY_INFINITE, \
 
 try:
     from collections import OrderedDict
-except ImportError:
+except ImportError:  # pragma: no cover
     from ordereddict import OrderedDict
 
 
