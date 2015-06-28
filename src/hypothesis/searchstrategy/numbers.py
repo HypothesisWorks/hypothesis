@@ -338,10 +338,6 @@ class FloatStrategy(SearchStrategy):
             return self.int_strategy.strictly_simpler(int(x), int(y))
         if is_integral(y):
             return False
-        if math.isnan(x):
-            return False
-        if math.isnan(y):
-            return True
         if y > 0:
             return 0 <= x < y
         else:
