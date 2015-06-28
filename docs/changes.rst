@@ -144,7 +144,7 @@ Other changes:
     of duplicate examples. You probably wouldn't have previously noticed this because
     max_examples counted duplicates, so this was very hard to hit in a way that mattered.
   * A number of internal simplifications to the SearchStrategy API.
-  * You can now access the current Hypothesis version as hypothesis.__version__. 
+  * You can now access the current Hypothesis version as hypothesis.__version__.
   * A top level function is provided for running the stateful tests without the
     TestCase infrastructure.
 
@@ -349,7 +349,7 @@ Codename: No-one mention the M word.
 Codename: Blast-off!
 
 There are no code changes in this release. This is precisely the 0.9.2 release
-with some updated documentation. 
+with some updated documentation.
 
 ------------------
 0.9.2 - 2015-03-26
@@ -461,7 +461,7 @@ Bug fixes:
   in its body would error.
 
 Hypothesis Extra:
-    
+
 hypothesis-fakefactory\: An extension for using faker data in hypothesis. Depends
     on fake-factory.
 
@@ -516,7 +516,7 @@ Depends on pytest.
 0.4.3 - 2015-02-05
 ------------------
 
-Codename: TIL narrow Python builds are a thing 
+Codename: TIL narrow Python builds are a thing
 
 This just fixes the one bug.
 
@@ -573,7 +573,7 @@ Bug fixes:
   were equal but should not be coalesced. e.g. a strategy for one_of((frozenset({int}), {int}))
   would have reported its descriptor as {int}. This is unlikely to have caused you
   any problems
-* If you had strategies that could produce NaN (which float previously couldn't but 
+* If you had strategies that could produce NaN (which float previously couldn't but
   e.g. a Just(float('nan')) could) then this would have sent hypothesis into an infinite
   loop that would have only been terminated when it hit the timeout.
 * Given elements that can take a long time to minimize, minimization of floats or tuples
@@ -730,7 +730,7 @@ Bugs fixed:
 * Distinguish between byte and unicode types.
 * Fix issues where FloatStrategy could raise.
 * Allow stateful testing to request constructor args.
-* Fix for issue where test annotations would timeout based on when the 
+* Fix for issue where test annotations would timeout based on when the
   module was loaded instead of when the test started
 
 
@@ -762,11 +762,11 @@ Bugs fixed:
 
 
 ------------------
-0.1.1 - 2013-03-24 
+0.1.1 - 2013-03-24
 ------------------
 
 * Python 3.x support via 2to3.
-* Use new style classes (oops). 
+* Use new style classes (oops).
 
 
 ------------------
@@ -784,7 +784,7 @@ Bugs fixed:
 * No changes except trying to fix packaging
 
 ------------------
-0.0.4 - 2013-03-13 
+0.0.4 - 2013-03-13
 ------------------
 
 * No changes except that I checked in a failing test case for 0.0.3
@@ -799,12 +799,12 @@ Bugs fixed:
 * Test integration.
 
 ------------------
-0.0.2 - 2013-03-12 
+0.0.2 - 2013-03-12
 ------------------
 
 * Starting to tighten up on the internals.
 * Change API to allow more flexibility in configuration.
-* More testing. 
+* More testing.
 
 ------------------
 0.0.1 - 2013-03-10
