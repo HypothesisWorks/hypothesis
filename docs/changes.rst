@@ -21,6 +21,37 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+
+-------------------------------------------------------------------
+`1.7.1 <https://hypothesis.readthedocs.org/en/v1.6.2/>`_ - upcoming
+-------------------------------------------------------------------
+
+Codename: There is no 1.7.0.
+
+A slight technical hitch with a premature upload means there's was a yanked
+1.7.0 release. Oops.
+
+The major feature of this release is Python 2.6 support. Thanks to Jeff Meadows
+for doing most of the work there.
+
+Other minor features
+
+* strategies now has a permutations() function which returns a strategy
+  yielding permutations of values from a given collection.
+* if you have a flaky test it will print the exception that it last saw before
+  failing with Flaky, even if you do not have verbose reporting on.
+* Slightly experimental git merge script available as "python -m
+  hypothesis.tools.mergedbs". Instructions on how to use it in the docstring
+  of that file.
+
+Bug fixes:
+
+* Better performance from use of filter. In particular tests which involve large
+  numbers of heavily filtered strategies should perform a lot better.
+* floats() with a negative min_value would not have worked correctly (worryingly,
+  it would have just silently failed to run any examples). This is now fixed.
+
+
 ---------------------------------------------------------------------
 `1.6.2 <https://hypothesis.readthedocs.org/en/v1.6.2/>`_ - 2015-06-08
 ---------------------------------------------------------------------
