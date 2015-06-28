@@ -19,6 +19,7 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+import math
 import time
 import inspect
 import binascii
@@ -111,6 +112,10 @@ def find_satisfying_template(
     )
 
     assert search_strategy.template_upper_bound >= 0
+    if isinstance(search_strategy.template_upper_bound, float):
+        assert math.isinf(search_strategy.template_upper_bound)
+    else:
+        assert isinstance(search_strategy.template_upper_bound, int)
 
     for parameter in parameter_source:  # pragma: no branch
         if len(tracker) >= search_strategy.template_upper_bound:

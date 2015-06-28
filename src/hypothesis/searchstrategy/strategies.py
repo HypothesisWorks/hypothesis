@@ -64,7 +64,7 @@ def infinitish(x):
     if x >= EFFECTIVELY_INFINITE:
         return Infinity
     else:
-        return x
+        return int(x)
 
 
 def check_type(typ, value, e=WrongFormat):
