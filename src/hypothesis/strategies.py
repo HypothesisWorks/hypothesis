@@ -151,12 +151,13 @@ def floats(min_value=None, max_value=None):
         max_value = None
 
     from hypothesis.searchstrategy.numbers import WrapperFloatStrategy, \
-        GaussianFloatStrategy, ExponentialFloatStrategy,\
+        GaussianFloatStrategy, BoundedFloatStrategy, ExponentialFloatStrategy,\
         JustIntFloats, NastyFloats, FullRangeFloats, \
-        FloatsFromBase
+        FixedBoundedFloatStrategy, FloatsFromBase
     if min_value is None and max_value is None:
         return WrapperFloatStrategy(
             GaussianFloatStrategy() |
+            BoundedFloatStrategy() |
             ExponentialFloatStrategy() |
             JustIntFloats() |
             NastyFloats() |
