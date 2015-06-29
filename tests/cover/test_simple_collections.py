@@ -264,3 +264,8 @@ def test_lists_forced_near_top(n):
         lists(integers(), min_size=n, max_size=n + 2),
         lambda t: len(t) == n + 2
     ) == [0] * (n + 2)
+
+
+def test_cloning_is_a_no_op_on_short_lists():
+    s = lists(booleans())
+    assert list(s.simplify_with_example_cloning(Random(), (False,))) == []
