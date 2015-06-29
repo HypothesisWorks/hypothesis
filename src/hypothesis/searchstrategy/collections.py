@@ -227,7 +227,6 @@ class ListStrategy(SearchStrategy):
                 yield self.simplifier_for_index(0, simplify)
             return
 
-        # yield self.simplify_to_mid
         yield self.simplify_with_random_discards
         yield self.simplify_with_example_cloning
         yield self.simplify_arrange_by_pivot
@@ -307,9 +306,6 @@ class ListStrategy(SearchStrategy):
 
     def simplify_with_example_cloning(self, random, x):
         assert isinstance(x, tuple)
-        if len(x) <= 1:
-            return
-
         for _ in hrange(20):
             result = list(x)
             pivot = random.choice(x)
