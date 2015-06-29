@@ -48,6 +48,7 @@ from __future__ import division, print_function, absolute_import, \
 
 import sys
 import sqlite3
+from collections import namedtuple
 
 
 def get_rows(cursor):
@@ -59,32 +60,74 @@ def get_rows(cursor):
         yield tuple(r)
 
 
-def merge_dbs(source, destination):
-    destination = sqlite3.connect(destination)
-    source = sqlite3.connect(source)
-    source_cursor = source.cursor()
-    source_cursor.execute("""
+Report = namedtuple('Report', ('inserts', 'deletes'))
+
+def merge_paths(ancestor, current, other):
+    ancestor = sqlite3.connect(ancestor)
+    current = sqlite3.connect(current)
+    other = sqlite3.connect(other)
+    result = merge_dbs(ancestor, current, other)
+    ancestor.close()
+    current.close()
+    other.close()
+    return result
+    
+
+def contains(db, key, value):
+    cursor = db.cursor()
+    cursor.execute("""
+        select 1 from hypothesis_data_mapping
+        where key = ? and value = ?
+    """, (key, value))
+    result = bool(list(cursor))
+    cursor.close()
+    return result
+
+
+def merge_dbs(ancestor, current, other):
+    other_cursor = other.cursor()
+    other_cursor.execute("""
         select key, value
         from hypothesis_data_mapping
     """)
-    destination_cursor = destination.cursor()
-    successes = 0
-    for r in source_cursor:
-        try:
-            destination_cursor.execute("""
-                insert into hypothesis_data_mapping(key, value)
-                values(?, ?)
-            """, tuple(r))
-            successes += 1
-        except sqlite3.IntegrityError:
-            pass
-        destination.commit()
-    print('%d new entries from merge' % (successes,))
+    current_cursor = current.cursor()
+    inserts = 0
+    for r in other_cursor:
+        if not contains(ancestor, *r):
+            try:
+                current_cursor.execute("""
+                    insert into hypothesis_data_mapping(key, value)
+                    values(?, ?)
+                """, tuple(r))
+                inserts += 1
+            except sqlite3.IntegrityError:
+                pass
+            current.commit()
+    deletes = 0
+    ancestor_cursor = ancestor.cursor()
+    ancestor_cursor.execute("""
+        select key, value
+        from hypothesis_data_mapping
+    """)
+    for r in ancestor_cursor:
+        if not contains(other, *r):
+            try:
+                current_cursor.execute("""
+                    delete from hypothesis_data_mapping
+                    where key = ? and value = ?
+                """, tuple(r))
+                inserts += 1
+                current.commit()
+            except sqlite3.IntegrityError:
+                pass
+                
 
+    return Report(inserts, 0)
 
 def main():
     _, _, current, other = sys.argv
-    merge_dbs(destination=current, source=other)
+    result = merge_dbs(destination=current, source=other)
+    print('%d new entries from merge' % (result.inserts,))
 
 if __name__ == '__main__':
     main()

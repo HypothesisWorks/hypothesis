@@ -1,0 +1,114 @@
+from hypothesis.stateful import GenericStateMachine
+import sqlite3
+from hypothesis.tools.mergedbs import merge_dbs
+from collections import namedtuple
+from hypothesis.internal.compat import PY26
+from hypothesis.database.backend import SQLiteBackend
+import hypothesis.strategies as s
+
+
+FORK_NOW = "fork"
+Insert = namedtuple('Insert', ('key', 'value', 'target'))
+Delete = namedtuple('Delete', ('key', 'value', 'target'))
+
+
+class TestingBackend(SQLiteBackend):
+    def __init__(self):
+        super(TestingBackend, self).__init__()
+        self.create_db_if_needed()
+        self.mirror = set()
+
+    def save(self, key, value):
+        super(TestingBackend, self).save(key, value)
+        self.mirror.add((key, value))
+
+    def delete(self, key, value):
+        super(TestingBackend, self).delete(key, value)
+        try:
+            self.mirror.remove((key, value))
+        except KeyError:
+            pass
+
+    def refresh_mirror(self):
+        self.mirror = set()
+        with self.cursor() as cursor:
+            cursor.execute("""
+                select key, value
+                from hypothesis_data_mapping
+            """)
+            for r in cursor:
+                self.mirror.add(tuple(r))
+
+
+class DatabaseMergingState(GenericStateMachine):
+
+    def __init__(self):
+        super(DatabaseMergingState, self).__init__()
+        self.forked = False
+        self.original = TestingBackend()
+        self.left = TestingBackend()
+        self.right = TestingBackend()
+        self.seen_strings = set()
+
+    def values(self):
+        if PY26:
+            base = s.text(alphabet=[chr(i) for i in hrange(128)])
+        else:
+            base = s.text()
+        if self.seen_strings:
+            return s.sampled_from(sorted(self.seen_strings)) | base
+        else:
+            return base
+
+    def steps(self):
+        values = self.values()
+        if not self.forked:
+            return (
+                s.just(FORK_NOW) |
+                s.builds(Insert, values, values, s.none()) |
+                s.builds(Delete , values, values, s.none())
+            )
+        else:
+            targets = s.sampled_from((self.left, self.right))
+            return (
+                s.builds(Insert, values, values, targets) |
+                s.builds(Delete , values, values, targets)
+            )
+
+    def execute_step(self, step):
+        if step == FORK_NOW:
+            self.forked = True
+        else:
+            assert isinstance(step, (Insert, Delete))
+            self.seen_strings.add(step.key)
+            self.seen_strings.add(step.value)
+            if self.forked:
+                targets = (step.target,)
+            else:
+                targets = (self.original, self.left, self.right)
+            for target in targets:
+                if isinstance(step, Insert):
+                    target.save(step.key, step.value)
+                else:
+                    assert isinstance(step, Delete)
+                    target.delete(step.key, step.value)
+
+    def teardown(self):
+        target_mirror = (self.left.mirror | self.right.mirror) - (
+            (self.original.mirror - self.left.mirror) | 
+            (self.original.mirror - self.right.mirror)
+        )
+
+        merge_dbs(
+            self.original.connection(),
+            self.left.connection(),
+            self.right.connection()
+        )
+        self.left.refresh_mirror()
+        self.original.close()
+        self.left.close()
+        self.right.close()
+        assert self.left.mirror == target_mirror
+
+
+TestMerging = DatabaseMergingState.TestCase
