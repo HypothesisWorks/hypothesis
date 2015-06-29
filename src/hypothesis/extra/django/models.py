@@ -65,6 +65,7 @@ def field_mappings():
             dm.EmailField: ff.fake_factory(u'email'),
             dm.FloatField: st.floats(),
             dm.NullBooleanField: st.one_of(st.none(), st.booleans()),
+            dm.DecimalField: st.decimals(),
         }
     return __default_field_mappings
 
