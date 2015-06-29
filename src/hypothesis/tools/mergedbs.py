@@ -62,6 +62,7 @@ def get_rows(cursor):
 
 Report = namedtuple('Report', ('inserts', 'deletes'))
 
+
 def merge_paths(ancestor, current, other):
     ancestor = sqlite3.connect(ancestor)
     current = sqlite3.connect(current)
@@ -71,7 +72,7 @@ def merge_paths(ancestor, current, other):
     current.close()
     other.close()
     return result
-    
+
 
 def contains(db, key, value):
     cursor = db.cursor()
@@ -120,9 +121,9 @@ def merge_dbs(ancestor, current, other):
                 current.commit()
             except sqlite3.IntegrityError:
                 pass
-                
 
     return Report(inserts, 0)
+
 
 def main():
     _, _, current, other = sys.argv

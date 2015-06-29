@@ -1,18 +1,38 @@
-from hypothesis.stateful import GenericStateMachine
+# coding=utf-8
+
+# This file is part of Hypothesis (https://github.com/DRMacIver/hypothesis)
+
+# Most of this work is copyright (C) 2013-2015 David R. MacIver
+# (david@drmaciver.com), but it contains contributions by other. See
+# https://github.com/DRMacIver/hypothesis/blob/master/CONTRIBUTING.rst for a
+# full list of people who may hold copyright, and consult the git log if you
+# need to determine who owns an individual contribution.
+
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file, You can
+# obtain one at http://mozilla.org/MPL/2.0/.
+
+# END HEADER
+
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
+
 import sqlite3
-from hypothesis.tools.mergedbs import merge_dbs
 from collections import namedtuple
+
+import hypothesis.strategies as s
+from hypothesis.stateful import GenericStateMachine
+from hypothesis.tools.mergedbs import merge_dbs
 from hypothesis.internal.compat import PY26
 from hypothesis.database.backend import SQLiteBackend
-import hypothesis.strategies as s
 
-
-FORK_NOW = "fork"
+FORK_NOW = 'fork'
 Insert = namedtuple('Insert', ('key', 'value', 'target'))
 Delete = namedtuple('Delete', ('key', 'value', 'target'))
 
 
 class TestingBackend(SQLiteBackend):
+
     def __init__(self):
         super(TestingBackend, self).__init__()
         self.create_db_if_needed()
@@ -66,13 +86,13 @@ class DatabaseMergingState(GenericStateMachine):
             return (
                 s.just(FORK_NOW) |
                 s.builds(Insert, values, values, s.none()) |
-                s.builds(Delete , values, values, s.none())
+                s.builds(Delete, values, values, s.none())
             )
         else:
             targets = s.sampled_from((self.left, self.right))
             return (
                 s.builds(Insert, values, values, targets) |
-                s.builds(Delete , values, values, targets)
+                s.builds(Delete, values, values, targets)
             )
 
     def execute_step(self, step):
@@ -95,7 +115,7 @@ class DatabaseMergingState(GenericStateMachine):
 
     def teardown(self):
         target_mirror = (self.left.mirror | self.right.mirror) - (
-            (self.original.mirror - self.left.mirror) | 
+            (self.original.mirror - self.left.mirror) |
             (self.original.mirror - self.right.mirror)
         )
 
