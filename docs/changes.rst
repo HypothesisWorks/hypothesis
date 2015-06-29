@@ -22,9 +22,9 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 
--------------------------------------------------------------------
-`1.7.1 <https://hypothesis.readthedocs.org/en/v1.6.2/>`_ - upcoming
--------------------------------------------------------------------
+---------------------------------------------------------------------
+`1.7.1 <https://hypothesis.readthedocs.org/en/v1.6.2/>`_ - 2015-06-29
+---------------------------------------------------------------------
 
 Codename: There is no 1.7.0.
 
