@@ -278,7 +278,7 @@ test_can_produce_floats_in_middle = define_test(
 )
 
 test_can_produce_long_lists = define_test(
-    lists(integers()), 0.5, long_list
+    lists(integers()), 0.3, long_list
 )
 
 test_can_produce_short_lists = define_test(

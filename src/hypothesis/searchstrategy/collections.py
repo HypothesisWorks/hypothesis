@@ -614,6 +614,6 @@ class FixedKeysDictStrategy(MappedSearchStrategy):
 
 Settings.define_setting(
     'average_list_length',
-    default=50.0,
+    default=25.0,
     description='Average length of lists to use'
 )
