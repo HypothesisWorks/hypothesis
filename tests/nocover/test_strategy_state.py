@@ -348,7 +348,7 @@ if MAIN or not (PYPY and PY3):
     # Currently experiencing plausible jit bugs bugs on pypy3
     TestHypothesis = HypothesisSpec.TestCase
 
-    TestHypothesis.settings.stateful_step_count = 100
+    TestHypothesis.settings.stateful_step_count = 50
     TestHypothesis.settings.max_shrinks = 500
     TestHypothesis.settings.timeout = 60
     TestHypothesis.settings.min_satisfying_examples = 0
