@@ -239,7 +239,7 @@ def strategy_test_suite(
                 s = hashlib.sha1(repr(x).encode('utf-8')).digest()
                 assert Random(s).randint(0, 1) == Random(s).randint(0, 1)
                 if Random(s).randint(0, 1):
-                    raise Rejected("%r with digest %r" % (
+                    raise Rejected('%r with digest %r' % (
                         x, s
                     ))
             try:
