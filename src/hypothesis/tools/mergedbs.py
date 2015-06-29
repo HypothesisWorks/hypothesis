@@ -111,24 +111,25 @@ def merge_dbs(ancestor, current, other):
         from hypothesis_data_mapping
     """)
     for r in ancestor_cursor:
-        if not contains(other, *r):
+        if not contains(other, *r) and contains(current, *r):
             try:
                 current_cursor.execute("""
                     delete from hypothesis_data_mapping
                     where key = ? and value = ?
                 """, tuple(r))
-                inserts += 1
+                deletes += 1
                 current.commit()
             except sqlite3.IntegrityError:
                 pass
 
-    return Report(inserts, 0)
+    return Report(inserts, deletes)
 
 
 def main():
     _, _, current, other = sys.argv
     result = merge_dbs(destination=current, source=other)
-    print('%d new entries from merge' % (result.inserts,))
+    print('%d new entries and %d deletions from merge' % (
+        result.inserts, result.deletions))
 
 if __name__ == '__main__':
     main()

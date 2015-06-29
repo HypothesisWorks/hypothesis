@@ -17,13 +17,12 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-import sqlite3
 from collections import namedtuple
 
 import hypothesis.strategies as s
 from hypothesis.stateful import GenericStateMachine
 from hypothesis.tools.mergedbs import merge_dbs
-from hypothesis.internal.compat import PY26
+from hypothesis.internal.compat import PY26, hrange
 from hypothesis.database.backend import SQLiteBackend
 
 FORK_NOW = 'fork'
@@ -119,11 +118,18 @@ class DatabaseMergingState(GenericStateMachine):
             (self.original.mirror - self.right.mirror)
         )
 
-        merge_dbs(
+        n_inserts = len(
+            self.right.mirror - self.left.mirror - self.original.mirror)
+        n_deletes = len(
+            (self.original.mirror - self.right.mirror) & self.left.mirror)
+
+        result = merge_dbs(
             self.original.connection(),
             self.left.connection(),
             self.right.connection()
         )
+        assert result.inserts == n_inserts
+        assert result.deletes == n_deletes
         self.left.refresh_mirror()
         self.original.close()
         self.left.close()
