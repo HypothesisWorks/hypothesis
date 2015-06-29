@@ -196,6 +196,10 @@ class HypothesisSpec(RuleBasedStateMachine):
     def strategy(self, spec):
         return spec
 
+    @rule(target=strategies, values=lists(integers() | text(), min_size=1))
+    def sampled_from_strategy(self, values):
+        return sampled_from(values)
+
     @rule(target=strategies, spec=strategy_tuples)
     def strategy_for_tupes(self, spec):
         return tuples(*spec)

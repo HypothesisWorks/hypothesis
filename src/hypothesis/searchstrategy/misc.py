@@ -119,6 +119,7 @@ class SampledFromStrategy(SearchStrategy):
     def __init__(self, elements):
         SearchStrategy.__init__(self)
         self.elements = tuple(elements)
+        self.template_upper_bound = len(self.elements)
         assert self.elements
 
     def to_basic(self, template):
