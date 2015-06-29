@@ -50,6 +50,8 @@ Bug fixes:
   numbers of heavily filtered strategies should perform a lot better.
 * floats() with a negative min_value would not have worked correctly (worryingly,
   it would have just silently failed to run any examples). This is now fixed.
+* tests using sampled\_from would error if the number of sampled elements was smaller
+  than min\_satisfying\_examples.
 
 
 ---------------------------------------------------------------------
