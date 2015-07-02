@@ -51,9 +51,9 @@ setup(
     license='MPL v2',
     description='Adds support for Django testing to Hypothesis',
     install_requires=[
-        "hypothesis>=1.7.0,<1.7.99",
-        "hypothesis-datetime>=1.7.0,<1.7.99",
-        "hypothesis-fakefactory>=0.13.1,<0.13.99",
+        "hypothesis>=1.8.0,<1.8.99",
+        "hypothesis-datetime>=1.8.0,<1.8.99",
+        "hypothesis-fakefactory>=0.14.0,<0.14.99",
         "django>=1.7",
     ],
     long_description=open(README).read(),
