@@ -534,6 +534,9 @@ The reason for the two different types of errors is that there are only a small
 number of booleans, so it is feasible for Hypothesis to enumerate all of them
 and simply check that your condition is never true. 
 
+
+.. _providing-explicit-examples:
+
 ---------------------------
 Providing explicit examples
 ---------------------------
@@ -553,10 +556,6 @@ You can explicitly ask Hypothesis to try a particular example as follows:
 
 Hypothesis will run all examples you've asked for first. If any of them fail it
 will not go on to look for more examples. 
-
-This can be useful both because it's easier to share and version examples in
-source code than it is to share the example database, and it can also allow you
-to feed specific examples that Hypothesis is unlikely to figure out on its own.
 
 It doesn't matter whether you put the example decorator before or after given.
 Any permutation of the decorators in the above will do the same thing. 
