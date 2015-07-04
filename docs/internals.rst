@@ -138,7 +138,7 @@ single pass, using the function
           for s in shrink(x):
               yield s
 
-Empirically this general appraoch seems to be much faster for classes of
+Empirically this general approach seems to be much faster for classes of
 example where one of the passes is constrained, while still producing high
 quality results.
 
