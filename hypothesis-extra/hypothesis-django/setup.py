@@ -42,7 +42,7 @@ README = local_file("README.rst")
 
 setup(
     name='hypothesis-django',
-    version='0.9.0',
+    version='0.9.1',
     author='David R. MacIver',
     author_email='david@drmaciver.com',
     packages=find_packages(SOURCE),
@@ -53,7 +53,7 @@ setup(
     install_requires=[
         "hypothesis>=1.7.0,<1.7.99",
         "hypothesis-datetime>=1.7.0,<1.7.99",
-        "hypothesis-fakefactory>=0.13.0,<0.13.99",
+        "hypothesis-fakefactory>=0.13.1,<0.13.99",
         "django>=1.7",
     ],
     long_description=open(README).read(),
