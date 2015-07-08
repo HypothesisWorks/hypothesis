@@ -683,6 +683,7 @@ class NastyFloats(SampledFromStrategy):
             self,
             elements=[
                 0.0,
+                -0.0,
                 sys.float_info.min,
                 -sys.float_info.min,
                 -sys.float_info.max,
