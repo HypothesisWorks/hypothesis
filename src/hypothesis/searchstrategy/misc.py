@@ -147,7 +147,12 @@ class SampledFromStrategy(SearchStrategy):
 
     def draw_parameter(self, random):
         n = len(self.elements)
-        return chooser(random.getrandbits(8) + 1 for _ in hrange(n))
+        active = list(range(n))
+        random.shuffle(active)
+        n_active = min(random.randint(1, n), random.randint(1, n))
+        active = set(active[:n_active])
+        return chooser(
+            random.getrandbits(8) + 1 if i in active else 0 for i in hrange(n))
 
     def draw_template(self, random, pv):
         return pv.choose(random)

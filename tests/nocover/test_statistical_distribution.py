@@ -316,20 +316,20 @@ def distorted(x):
     return distorted_value(map(type, x))
 
 
-test_sampled_from_large_number_usually_mixes_some = define_test(
-    lists(sampled_from(range(50))), 0.5, lambda x: len(set(x)) >= 25,
+test_sampled_from_large_number_can_mix = define_test(
+    lists(sampled_from(range(50))), 0.1, lambda x: len(set(x)) >= 25,
     condition=lambda t: len(t) >= 50,
 )
 
 
-test_sampled_from_usually_distorted = define_test(
-    lists(sampled_from(range(5))), 0.5, distorted_value,
+test_sampled_from_often_distorted = define_test(
+    lists(sampled_from(range(5))), 0.28, distorted_value,
     condition=lambda x: len(x) >= 3,
 )
 
 
 test_non_empty_subset_of_two_is_usually_large = define_test(
-    sets(sampled_from((1, 2))), 0.6,
+    sets(sampled_from((1, 2))), 0.15,
     lambda t: len(t) == 2
 )
 
@@ -364,7 +364,7 @@ test_mixing_is_sometimes_distorted = define_test(
 )
 
 test_mixes_2_reasonably_often = define_test(
-    lists(booleans() | tuples()), 0.25, lambda x: len(set(map(type, x))) > 1,
+    lists(booleans() | tuples()), 0.15, lambda x: len(set(map(type, x))) > 1,
     condition=bool,
 )
 
