@@ -221,9 +221,16 @@ def floats(min_value=None, max_value=None):
                 min_value=min_value, max_value=0
             )
         elif count_between_floats(min_value, max_value) > 1000:
+            critical_values = [
+                min_value, max_value, min_value + (max_value - min_value) / 2]
+            if min_value <= 0 <= max_value:
+                if not is_negative(max_value):
+                    critical_values.append(0.0)
+                if is_negative(min_value):
+                    critical_values.append(-0.0)
             return FixedBoundedFloatStrategy(
                 lower_bound=min_value, upper_bound=max_value
-            )
+            ) | sampled_from(critical_values)
         elif is_negative(max_value):
             assert is_negative(min_value)
             ub_int = float_to_int(max_value)
@@ -244,14 +251,24 @@ def floats(min_value=None, max_value=None):
                 int_to_float
             )
     elif min_value is not None:
+        critical_values = [min_value, float('inf')]
+        if is_negative(min_value):
+            critical_values.append(-0.0)
+        if min_value <= 0:
+            critical_values.append(0.0)
         return FloatsFromBase(
             base=min_value, sign=1,
-        ) | just(float('inf'))
+        ) | sampled_from(critical_values)
     else:
         assert max_value is not None
+        critical_values = [max_value, float('-inf')]
+        if max_value >= 0:
+            critical_values.append(-0.0)
+            if not is_negative(max_value):
+                critical_values.append(0.0)
         return FloatsFromBase(
             base=max_value, sign=-1
-        ) | just(float('-inf'))
+        ) | sampled_from(critical_values)
 
 
 @defines_strategy

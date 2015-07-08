@@ -290,13 +290,13 @@ test_can_produce_short_lists = define_test(
 )
 
 test_can_produce_lists_bunched_near_left = define_test(
-    lists(floats(0, 1)), 0.1,
+    lists(floats(0, 1)), 0.05,
     lambda ts: all(t < 0.2 for t in ts),
     condition=long_list,
 )
 
 test_can_produce_lists_bunched_near_right = define_test(
-    lists(floats(0, 1)), 0.1,
+    lists(floats(0, 1)), 0.05,
     lambda ts: all(t > 0.8 for t in ts),
     condition=long_list,
 )

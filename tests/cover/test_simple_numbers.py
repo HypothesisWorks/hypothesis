@@ -24,7 +24,8 @@ from random import Random
 import pytest
 from hypothesis import find, given, assume
 from hypothesis.strategies import lists, floats, integers, complex_numbers
-from hypothesis.searchstrategy.numbers import is_integral
+from hypothesis.searchstrategy.numbers import FixedBoundedFloatStrategy, \
+    is_integral
 from hypothesis.searchstrategy.strategies import BadData
 
 
@@ -173,7 +174,12 @@ def test_out_of_range_integers_are_bad():
 
 def test_out_of_range_floats_are_bad():
     with pytest.raises(BadData):
-        floats(11, 12).from_basic(floats(0, 1).to_basic(0.0))
+        floats(11, 12).from_basic(floats(0, 1).to_basic((0, 0.0)))
+
+    with pytest.raises(BadData):
+        FixedBoundedFloatStrategy(11, 12).from_basic(
+            floats().to_basic(float('nan'))
+        )
 
 
 def test_float_simplicity():
