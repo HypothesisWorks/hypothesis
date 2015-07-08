@@ -482,8 +482,24 @@ class OneOfStrategy(SearchStrategy):
 
     def simplifiers(self, random, template):
         i, value = template
+        for j in hrange(i):
+            yield self.redraw_simplifier(j)
+
         for simplify in self.element_strategies[i].simplifiers(random, value):
             yield self.element_simplifier(i, simplify)
+
+    def redraw_simplifier(self, child):
+        def accept(random, template):
+            i, value = template
+            if child >= i:
+                return
+            for _ in hrange(20):
+                redraw = self.element_strategies[child].draw_and_produce(
+                    random)
+                yield child, redraw
+        accept.__name__ = str(
+            'redraw_simplifier(%d)' % (child,))
+        return accept
 
     def to_basic(self, template):
         i, value = template
