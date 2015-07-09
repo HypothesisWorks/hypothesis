@@ -547,6 +547,8 @@ class FixedBoundedFloatStrategy(FloatStrategy):
 
     def from_basic(self, data):
         result = super(FixedBoundedFloatStrategy, self).from_basic(data)
+        if math.isnan(result):
+            raise BadData('NaN not allowed in range')
         if result < self.lower_bound or result > self.upper_bound:
             raise BadData('Value %f out of range [%f, %f]' % (
                 result, self.lower_bound, self.upper_bound
@@ -637,6 +639,19 @@ class FloatsFromBase(FloatStrategy):
 
     def draw_template(self, random, pv):
         return self.base + self.sign * random.expovariate(pv)
+
+    def is_valid_value(self, template, value):
+        if template != value:
+            return False
+        if self.sign > 0:
+            return value >= self.base
+        return value <= self.base
+
+    def from_basic(self, data):
+        result = super(FloatsFromBase, self).from_basic(data)
+        if not self.is_valid_value(result, result):
+            raise BadData('Value %f out of range' % (result,))
+        return result
 
 
 class NastyFloats(SampledFromStrategy):
