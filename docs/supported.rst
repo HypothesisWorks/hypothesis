@@ -13,7 +13,9 @@ Python versions
 
 Hypothesis has quite wide version support. It is supported and tested on python 2.7
 and python 3.2+. Supporting 3.0 or 3.1 wouldn't be infeasible but I'd need a good
-reason to. Supporting python before 2.7 isn't going to happen.
+reason to. Python 2.6 is supported on a "best effort" basis. It is supported in the 1.7.x
+versions of Hypothesis and will most likely continue being supported through all of the 1.x
+versions, however I'm not committing to that.
 
 Hypothesis also supports PyPy (PyPy3 should also work but isn't part of
 the CI at the moment), and should support 32-bit and narrow builds, though
