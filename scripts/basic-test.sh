@@ -8,6 +8,8 @@ for k, v in sorted(dict(os.environ).items()):
 '
 python -u setup.py test
 
+pip install --no-use-wheel fake-factory==0.5.2
+
 for extra in datetime fakefactory pytest ; do
     pip install --upgrade hypothesis-extra/hypothesis-$extra/
 done
