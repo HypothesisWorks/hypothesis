@@ -449,7 +449,7 @@ def text(
 def binary(
     min_size=None, average_size=None, max_size=None
 ):
-    """Generates the appropriate binary type (str in python 2, binary in python
+    """Generates the appropriate binary type (str in python 2, bytes in python
     3).
 
     min_size, average_size and max_size have the usual interpretations.
