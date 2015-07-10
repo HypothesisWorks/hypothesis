@@ -223,7 +223,8 @@ def strategy_test_suite(
                 strat.strictly_simpler(y, x)
             )
 
-        def test_will_handle_a_really_weird_failure(self):
+        @given(randoms(), settings=settings)
+        def test_will_handle_a_really_weird_failure(self, rnd):
             db = ExampleDatabase()
 
             @given(
@@ -233,7 +234,7 @@ def strategy_test_suite(
                     max_examples=max_examples,
                     min_satisfying_examples=2,
                     average_list_length=2.0,
-                )
+                ), random=rnd
             )
             def nope(x):
                 s = hashlib.sha1(repr(x).encode('utf-8')).digest()
