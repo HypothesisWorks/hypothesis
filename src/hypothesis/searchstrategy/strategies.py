@@ -698,7 +698,6 @@ class FlatMapStrategy(SearchStrategy):
                     source_template=new_source_template,
                     target_parameter_seed=template.target_parameter_seed,
                     target_template_seed=template.target_template_seed,
-                    target_data=template.target_data,
                 )
         accept.__name__ = str(
             'left(%s)' % (simplify.__name__,)
