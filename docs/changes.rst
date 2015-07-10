@@ -21,9 +21,30 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+---------------------------------------------------------------------
+`1.7.2 <https://hypothesis.readthedocs.org/en/v1.7.2/>`_ - 2015-07-10
+---------------------------------------------------------------------
+
+This is purely a bug fix release:
+
+* When using floats() with stale data in the database you could sometimes get
+  values in your tests that did not respect min_value or max_value.
+* When getting a Flaky error from an unreliable test it would have incorrectly
+  displayed the example that caused it.
+* 2.6 dependency on backports was incorrectly specified. This would only have
+  caused you problems if you were building a universal wheel from Hypothesis,
+  which is not how Hypothesis ships, so unless you're explicitly building wheels
+  for your dependencies and support Python 2.6 plus a later version of Python
+  this probably would never have affected you.
+* If you use flatmap in a way that the strategy on the right hand side depends
+  sensitively on the left hand side you may have occasionally seen Flaky errors
+  caused by producing unreliable examples when minimizing a bug. This use case
+  may still be somewhat fraught to be honest. This code is due a major rearchitecture
+  for 1.8, but in the meantime this release fixes the only source of this error that
+  I'm aware of.
 
 ---------------------------------------------------------------------
-`1.7.1 <https://hypothesis.readthedocs.org/en/v1.6.2/>`_ - 2015-06-29
+`1.7.1 <https://hypothesis.readthedocs.org/en/v1.7.1/>`_ - 2015-06-29
 ---------------------------------------------------------------------
 
 Codename: There is no 1.7.0.
