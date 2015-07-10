@@ -282,9 +282,9 @@ def test_is_flaky(test):
     def test_or_flaky(*args, **kwargs):
         raise Flaky(
             (
-                'Hypothesis %r produces unreliable results: %r falsified it on'
+                'Hypothesis %s(%s) produces unreliable results: Falsified on'
                 ' the first call but did not on a subsequent one'
-            ) % (get_pretty_function_description(test), example))
+            ) % (test.__name__, arg_string(test, args, kwargs),))
     return test_or_flaky
 
 
