@@ -24,8 +24,8 @@ from functools import partial
 
 import pytest
 from hypothesis.internal.compat import BAD_PY3
-from hypothesis.internal.reflection import arg_string, copy_argspec, \
-    unbind_method, function_digest, fully_qualified_name, \
+from hypothesis.internal.reflection import proxies, arg_string, \
+    copy_argspec, unbind_method, function_digest, fully_qualified_name, \
     source_exec_as_module, convert_keyword_arguments, \
     convert_positional_arguments, get_pretty_function_description
 
@@ -419,19 +419,13 @@ def test_copying_sets_name():
 def test_uses_defaults():
     f = copy_argspec(
         'foo', inspect.getargspec(has_a_default))(universal_acceptor)
-    assert f(3, 2) == ((), {'z': 1, 'x': 3, 'y': 2})
+    assert f(3, 2) == ((3, 2, 1), {})
 
 
 def test_uses_varargs():
     f = copy_argspec(
         'foo', inspect.getargspec(has_varargs))(universal_acceptor)
     assert f(1, 2) == ((1, 2), {})
-
-
-def test_passes_args_as_keyword():
-    f = copy_argspec(
-        'foo', inspect.getargspec(has_two_args))(universal_acceptor)
-    assert f(1, 2) == ((), {'hello': 1, 'world': 2})
 
 
 DEFINE_FOO_FUNCTION = """
@@ -514,3 +508,25 @@ def test_fully_qualified_name():
         'tests.cover.test_reflection.Container.funcy'
     assert fully_qualified_name(fully_qualified_name) == \
         'hypothesis.internal.reflection.fully_qualified_name'
+
+
+def test_can_proxy_functions_with_mixed_args_and_varargs():
+    def foo(a, *args):
+        return (a, args)
+
+    @proxies(foo)
+    def bar(*args, **kwargs):
+        return foo(*args, **kwargs)
+
+    assert bar(1, 2) == (1, (2,))
+
+
+def test_can_delegate_to_a_function_with_no_positional_args():
+    def foo(a, b):
+        return (a, b)
+
+    @proxies(foo)
+    def bar(**kwargs):
+        return foo(**kwargs)
+
+    assert bar(2, 1) == (2, 1)

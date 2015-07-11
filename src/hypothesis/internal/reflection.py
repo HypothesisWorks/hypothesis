@@ -373,13 +373,12 @@ def copy_argspec(name, argspec):
     used_names = list(argspec.args)
 
     invocation_parts = []
+    for a in argspec.args:
+        invocation_parts.append(a)
     if argspec.varargs:
         used_names.append(argspec.varargs)
         parts.append('*' + argspec.varargs)
         invocation_parts.append('*' + argspec.varargs)
-
-    for a in argspec.args:
-        invocation_parts.append('%s=%s' % (a, a))
 
     if argspec.keywords:
         used_names.append(argspec.keywords)
