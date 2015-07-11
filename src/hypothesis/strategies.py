@@ -28,8 +28,9 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.control import assume
 from hypothesis.settings import Settings
 from hypothesis.searchstrategy import SearchStrategy, strategy
-from hypothesis.internal.compat import text_type, binary_type, \
+from hypothesis.internal.compat import hrange, text_type, binary_type, \
     integer_types, float_to_decimal
+from hypothesis.searchstrategy.reprwrapper import ReprWrapperStrategy
 
 __all__ = [
     'just', 'one_of',
@@ -45,6 +46,33 @@ __all__ = [
 ]
 
 
+def defines_strategy(strategy_definition):
+    from hypothesis.internal.reflection import proxies, arg_string, \
+        convert_positional_arguments
+    import inspect
+    argspec = inspect.getargspec(strategy_definition)
+    defaults = {}
+    if argspec.defaults is not None:
+        for k in hrange(1, len(argspec.defaults) + 1):
+            defaults[argspec.args[-k]] = argspec.defaults[-k]
+
+    @proxies(strategy_definition)
+    def accept(*args, **kwargs):
+        result = strategy_definition(*args, **kwargs)
+        args, kwargs = convert_positional_arguments(
+            strategy_definition, args, kwargs)
+        kwargs_for_repr = dict(kwargs)
+        for k, v in defaults.items():
+            if k in kwargs_for_repr and kwargs_for_repr[k] is defaults[k]:
+                del kwargs_for_repr[k]
+        representation = '%s(%s)' % (
+            strategy_definition.__name__,
+            arg_string(strategy_definition, args, kwargs_for_repr)
+        )
+        return ReprWrapperStrategy(result, representation)
+    return accept
+
+
 def just(value):
     """Return a strategy which only generates value.
 
@@ -52,9 +80,11 @@ def just(value):
 
     """
     from hypothesis.searchstrategy.misc import JustStrategy
-    return JustStrategy(value)
+    return ReprWrapperStrategy(
+        JustStrategy(value), 'just(%r)' % (value,))
 
 
+@defines_strategy
 def none():
     """Return a strategy which only generates None."""
     return just(None)
@@ -74,6 +104,7 @@ def one_of(arg, *args):
     return OneOfStrategy(args)
 
 
+@defines_strategy
 def integers(min_value=None, max_value=None):
     """Returns a strategy which generates integers (in Python 2 these may be
     ints or longs).
@@ -110,6 +141,7 @@ def integers(min_value=None, max_value=None):
             return BoundedIntStrategy(min_value, max_value)
 
 
+@defines_strategy
 def booleans():
     """Returns a strategy which generates instances of bool."""
     from hypothesis.searchstrategy.misc import BoolStrategy
@@ -144,6 +176,7 @@ def int_to_float(value):
     )
 
 
+@defines_strategy
 def floats(min_value=None, max_value=None):
     """Returns a strategy which generates floats. If min_value is not None,
     all values will be >= min_value. If max_value is not None, all values will
@@ -222,6 +255,7 @@ def floats(min_value=None, max_value=None):
         ) | just(float('-inf'))
 
 
+@defines_strategy
 def complex_numbers():
     """Returns a strategy that generates complex numbers."""
     from hypothesis.searchstrategy.numbers import ComplexStrategy
@@ -230,6 +264,7 @@ def complex_numbers():
     )
 
 
+@defines_strategy
 def tuples(*args):
     """Return a strategy which generates a tuple of the same length as args by
     generating the value at index i from args[i].
@@ -244,6 +279,7 @@ def tuples(*args):
     return TupleStrategy(args, tuple)
 
 
+@defines_strategy
 def sampled_from(elements):
     """Returns a strategy which generates any value present in the iterable
     elements.
@@ -264,6 +300,7 @@ def sampled_from(elements):
     return SampledFromStrategy(elements)
 
 
+@defines_strategy
 def lists(elements=None, min_size=None, average_size=None, max_size=None):
     """Returns a list containining values drawn from elements length in the
     interval [min_size, max_size] (no bounds in that direction if these are
@@ -310,6 +347,7 @@ def lists(elements=None, min_size=None, average_size=None, max_size=None):
         )
 
 
+@defines_strategy
 def sets(elements=None, min_size=None, average_size=None, max_size=None):
     """This has the same behaviour as lists, but returns sets instead.
 
@@ -339,6 +377,7 @@ def sets(elements=None, min_size=None, average_size=None, max_size=None):
     return result
 
 
+@defines_strategy
 def frozensets(elements=None, min_size=None, average_size=None, max_size=None):
     """This is identical to the sets function but instead returns
     frozensets."""
@@ -346,6 +385,7 @@ def frozensets(elements=None, min_size=None, average_size=None, max_size=None):
     return FrozenSetStrategy(sets(elements, min_size, average_size, max_size))
 
 
+@defines_strategy
 def fixed_dictionaries(mapping):
     """Generate a dictionary of the same type as mapping with a fixed set of
     keys mapping to strategies. mapping must be a dict subclass.
@@ -363,6 +403,7 @@ def fixed_dictionaries(mapping):
     return FixedKeysDictStrategy(mapping)
 
 
+@defines_strategy
 def dictionaries(
     keys, values, dict_class=dict,
     min_size=None, average_size=None, max_size=None
@@ -398,6 +439,7 @@ def dictionaries(
     ).map(build_dict)
 
 
+@defines_strategy
 def streaming(elements):
     """Generates an infinite stream of values where each value is drawn from
     elements.
@@ -411,6 +453,7 @@ def streaming(elements):
     return StreamStrategy(elements)
 
 
+@defines_strategy
 def text(
     alphabet=None,
     min_size=None, average_size=None, max_size=None
@@ -446,6 +489,7 @@ def text(
     ))
 
 
+@defines_strategy
 def binary(
     min_size=None, average_size=None, max_size=None
 ):
@@ -464,6 +508,7 @@ def binary(
     )
 
 
+@defines_strategy
 def basic(
     basic=None,
     generate_parameter=None, generate=None, simplify=None, copy=None
@@ -490,6 +535,7 @@ def basic(
     )
 
 
+@defines_strategy
 def randoms():
     """Generates instances of Random (actually a Hypothesis specific
     RandomWithSeed class which displays what it was initially seeded with)"""
@@ -497,6 +543,7 @@ def randoms():
     return RandomStrategy(integers())
 
 
+@defines_strategy
 def fractions():
     """Generates instances of fractions.Fraction."""
     from fractions import Fraction
@@ -505,6 +552,7 @@ def fractions():
     )
 
 
+@defines_strategy
 def decimals():
     """Generates instances of decimals.Decimal."""
     return (
@@ -526,14 +574,20 @@ def builds(target, *args, **kwargs):
     """
     def splat(value):
         return target(*value[0], **value[1])
+    target_name = getattr(target, '__name__', type(target).__name__)
     splat.__name__ = str(
-        'splat(%s)' % (
-            getattr(target, '__name__', type(target).__name__)
-        )
+        'splat(%s)' % (target_name,)
     )
-    return tuples(tuples(*args), fixed_dictionaries(kwargs)).map(splat)
+    return ReprWrapperStrategy(
+        tuples(tuples(*args), fixed_dictionaries(kwargs)).map(splat),
+        'builds(%s, %s)' % (
+            target_name,
+            ', '.join(
+                list(map(repr, args)) +
+                ['%s=%r' % (k, v) for k, v in kwargs.items()])))
 
 
+@defines_strategy
 def permutations(values):
     """Return a strategy which returns permutations of the collection
     "values"."""

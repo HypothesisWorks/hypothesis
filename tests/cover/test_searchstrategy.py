@@ -113,7 +113,7 @@ def test_just_strategy_uses_repr():
 
     assert repr(
         just(WeirdRepr())
-    ) == 'JustStrategy(value=%r)' % (WeirdRepr(),)
+    ) == 'just(%r)' % (WeirdRepr(),)
 
 
 def test_can_map():

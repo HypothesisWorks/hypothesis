@@ -385,7 +385,7 @@ def copy_argspec(name, argspec):
             parts.append('*' + argspec.varargs)
             invocation_parts.append('*' + argspec.varargs)
         for k in must_pass_as_kwargs:
-            invocation_parts.append("%(k)s=%(k)s" % {'k': k})
+            invocation_parts.append('%(k)s=%(k)s' % {'k': k})
 
         if argspec.keywords:
             used_names.append(argspec.keywords)

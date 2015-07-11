@@ -267,5 +267,5 @@ def test_lists_forced_near_top(n):
 
 
 def test_cloning_is_a_no_op_on_short_lists():
-    s = lists(booleans())
+    s = lists(booleans()).wrapped_strategy
     assert list(s.simplify_with_example_cloning(Random(), (False,))) == []
