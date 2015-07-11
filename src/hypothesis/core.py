@@ -43,7 +43,7 @@ from hypothesis.deprecation import note_deprecation
 from hypothesis.internal.compat import qualname
 from hypothesis.internal.tracker import Tracker
 from hypothesis.internal.reflection import arg_string, copy_argspec, \
-    function_digest, fully_qualified_name, \
+    function_digest, fully_qualified_name, convert_positional_arguments, \
     get_pretty_function_description
 from hypothesis.internal.examplesource import ParameterSource
 from hypothesis.searchstrategy.strategies import strategy
@@ -428,6 +428,8 @@ def given(*generator_arguments, **generator_kwargs):
         )
         def wrapped_test(*arguments, **kwargs):
             selfy = None
+            arguments, kwargs = convert_positional_arguments(
+                wrapped_test, arguments, kwargs)
             # Because we converted all kwargs to given into real args and
             # error if we have neither args nor kwargs, this should always
             # be valid

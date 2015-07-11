@@ -361,7 +361,6 @@ def copy_argspec(name, argspec):
     if argspec.keywords is not None:
         check_valid_identifier(argspec.keywords)
     n_defaults = len(argspec.defaults or ())
-    invocation_parts = []
     if n_defaults:
         parts = []
         for a in argspec.args[:-n_defaults]:
@@ -372,36 +371,43 @@ def copy_argspec(name, argspec):
         parts = list(argspec.args)
     used_names = list(argspec.args)
 
-    invocation_parts = []
-    for a in argspec.args:
-        invocation_parts.append(a)
-    if argspec.varargs:
-        used_names.append(argspec.varargs)
-        parts.append('*' + argspec.varargs)
-        invocation_parts.append('*' + argspec.varargs)
-
-    if argspec.keywords:
-        used_names.append(argspec.keywords)
-        parts.append('**' + argspec.keywords)
-        invocation_parts.append('**' + argspec.keywords)
-
-    candidate_names = ['f'] + [
-        'f_%d' % (i,) for i in hrange(1, len(used_names) + 2)
-    ]
-
-    for funcname in candidate_names:  # pragma: no branch
-        if funcname not in used_names:
-            break
-
-    base_accept = source_exec_as_module(
-        COPY_ARGSPEC_SCRIPT % {
-            'name': name,
-            'funcname': funcname,
-            'argspec': ', '.join(parts),
-            'invocation': ', '.join(invocation_parts)
-        }).accept
-
     def accept(f):
+        fargspec = inspect.getargspec(f)
+        must_pass_as_kwargs = []
+        invocation_parts = []
+        for a in argspec.args:
+            if a not in fargspec.args and not fargspec.varargs:
+                must_pass_as_kwargs.append(a)
+            else:
+                invocation_parts.append(a)
+        if argspec.varargs:
+            used_names.append(argspec.varargs)
+            parts.append('*' + argspec.varargs)
+            invocation_parts.append('*' + argspec.varargs)
+        for k in must_pass_as_kwargs:
+            invocation_parts.append("%(k)s=%(k)s" % {'k': k})
+
+        if argspec.keywords:
+            used_names.append(argspec.keywords)
+            parts.append('**' + argspec.keywords)
+            invocation_parts.append('**' + argspec.keywords)
+
+        candidate_names = ['f'] + [
+            'f_%d' % (i,) for i in hrange(1, len(used_names) + 2)
+        ]
+
+        for funcname in candidate_names:  # pragma: no branch
+            if funcname not in used_names:
+                break
+
+        base_accept = source_exec_as_module(
+            COPY_ARGSPEC_SCRIPT % {
+                'name': name,
+                'funcname': funcname,
+                'argspec': ', '.join(parts),
+                'invocation': ', '.join(invocation_parts)
+            }).accept
+
         result = base_accept(f)
         result.__defaults__ = argspec.defaults
         return result
