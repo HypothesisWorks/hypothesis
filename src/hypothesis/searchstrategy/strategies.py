@@ -173,7 +173,7 @@ class SearchStrategy(object):
 
         parts = []
 
-        for _ in hrange(20):
+        for _ in hrange(100):
             if len(parts) >= 3:
                 break
             try:
@@ -184,7 +184,7 @@ class SearchStrategy(object):
                 pass
         if not parts:
             raise NoExamples(
-                'Could not find any valid examples in 20 tries'
+                'Could not find any valid examples in 100 tries'
             )
 
         return min(parts, key=lambda tr: self.__template_size(tr[0]))[1]
