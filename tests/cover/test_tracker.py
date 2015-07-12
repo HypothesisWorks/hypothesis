@@ -17,6 +17,7 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+import pytest
 from hypothesis.internal.tracker import Tracker
 
 
@@ -84,3 +85,15 @@ def test_track_complex_with_nan():
     assert t.track(complex(0, nan)) == 2
     assert t.track(complex(nan, nan)) == 1
     assert t.track(complex(nan, nan)) == 2
+
+
+class Hello(object):
+
+    def __repr__(self):
+        return 'hello world'
+
+
+def test_includes_repr_in_marshal_error():
+    with pytest.raises(ValueError) as e:
+        Tracker().track(Hello())
+    assert 'hello world' in e.value.args[0]

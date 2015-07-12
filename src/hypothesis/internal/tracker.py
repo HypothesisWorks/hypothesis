@@ -51,7 +51,12 @@ def flatten(o):
 
 
 def object_to_tracking_key(o):
-    k = marshal.dumps(flatten(o))
+    o = flatten(o)
+
+    try:
+        k = marshal.dumps(o)
+    except ValueError:
+        raise ValueError('unmarshallable object %r' % (o,))
 
     if len(k) < 20:
         return k
