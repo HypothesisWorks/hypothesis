@@ -125,14 +125,14 @@ class IntegersFromStrategy(SearchStrategy):
         )
 
     def draw_template(self, random, parameter):
-        return self.lower_bound + dist.geometric(random, parameter)
+        return dist.geometric(random, parameter)
 
     def reify(self, template):
-        return template
+        return self.lower_bound + template
 
     def try_shrink(self, i):
-        lo = self.lower_bound + i
-        hi = self.lower_bound + 2 * i
+        lo = i
+        hi = 2 * i
 
         def accept(random, x):
             if x <= lo:
@@ -153,23 +153,22 @@ class IntegersFromStrategy(SearchStrategy):
         return accept
 
     def simplify_to_lower_bound(self, random, template):
-        yield self.lower_bound
+        yield 0
 
     def simplifiers(self, random, template):
-        if template == self.lower_bound:
+        if template == 0:
             return
         yield self.simplify_to_lower_bound
         i = 1
-        lb = self.lower_bound
-        while i + lb < abs(template):
+        while i < abs(template):
             yield self.try_shrink(i)
             i *= 2
 
     def from_basic(self, data):
         data = integer_or_bad(data)
-        if data < self.lower_bound:
-            raise BadData('Value %d out of range [%d, infinity)' % (
-                data, self.lower_bound
+        if data < 0:
+            raise BadData('Value %d out of range [0, infinity)' % (
+                data,
             ))
         return data
 
