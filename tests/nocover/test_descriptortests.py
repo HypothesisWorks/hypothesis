@@ -30,14 +30,8 @@ from hypothesis.strategies import just, none, sets, text, basic, lists, \
     sampled_from, complex_numbers, fixed_dictionaries
 from hypothesis.strategytests import mutate_basic, templates_for, \
     strategy_test_suite
-from hypothesis.internal.compat import hrange
+from hypothesis.internal.compat import OrderedDict, hrange
 from hypothesis.searchstrategy.narytree import n_ary_tree
-
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict
-
 
 with Settings(average_list_length=5.0):
     TestIntegerRange = strategy_test_suite(integers(min_value=0, max_value=5))

@@ -24,6 +24,13 @@ import platform
 import importlib
 from decimal import Context, Decimal, Inexact
 
+try:
+    from collections import OrderedDict, Counter
+except ImportError:  # pragma: no cover
+    from ordereddict import OrderedDict
+    from counter import Counter
+
+
 PY3 = sys.version_info[0] == 3
 BAD_PY3 = PY3 and (sys.version_info[1] <= 2)
 PYPY = platform.python_implementation() == 'PyPy'

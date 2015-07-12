@@ -26,11 +26,7 @@ from hypothesis import Settings, find, given, strategy
 from hypothesis.strategies import sets, lists, builds, tuples, booleans, \
     integers, frozensets, dictionaries, complex_numbers, \
     fixed_dictionaries
-
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict
+from hypothesis.internal.compat import OrderedDict
 
 
 @pytest.mark.parametrize(('col', 'strat'), [

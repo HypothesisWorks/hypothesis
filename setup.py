@@ -62,7 +62,7 @@ setup(
     description='A library for property based testing',
     zip_safe=False,
     extras_require={
-        ":python_version == '2.6'": ['importlib', 'ordereddict'],
+        ":python_version == '2.6'": ['importlib', 'ordereddict', 'Counter'],
     },
     classifiers=[
         "Development Status :: 5 - Production/Stable",
@@ -84,6 +84,6 @@ setup(
     ],
     long_description=open(README).read(),
     tests_require=[
-        'pytest', 'flake8', 'Counter'],
+        'pytest', 'flake8'],
     cmdclass={'test': PyTest},
 )

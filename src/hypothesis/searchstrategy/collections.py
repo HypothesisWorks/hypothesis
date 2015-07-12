@@ -24,15 +24,10 @@ import hypothesis.internal.distributions as dist
 from hypothesis.settings import Settings
 from hypothesis.utils.show import show
 from hypothesis.utils.size import clamp
-from hypothesis.internal.compat import hrange
+from hypothesis.internal.compat import OrderedDict, hrange
 from hypothesis.searchstrategy.strategies import EFFECTIVELY_INFINITE, \
     BadData, SearchStrategy, MappedSearchStrategy, check_type, \
     infinitish, check_length, check_data_type, one_of_strategies
-
-try:
-    from collections import OrderedDict
-except ImportError:  # pragma: no cover
-    from ordereddict import OrderedDict
 
 
 def safe_mul(x, y):
