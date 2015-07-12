@@ -31,6 +31,7 @@ from hypothesis.strategies import just, none, sets, text, basic, lists, \
 from hypothesis.strategytests import mutate_basic, templates_for, \
     strategy_test_suite
 from hypothesis.internal.compat import OrderedDict, hrange
+from hypothesis.searchstrategy.morphers import MorpherStrategy
 from hypothesis.searchstrategy.narytree import n_ary_tree
 
 with Settings(average_list_length=5.0):
@@ -142,6 +143,10 @@ with Settings(average_list_length=5.0):
         .flatmap(integers_from)
         .flatmap(integers_from)
     )
+
+    TestBareMorphers = strategy_test_suite(MorpherStrategy())
+    TestMasqueradingMorphers = strategy_test_suite(
+        MorpherStrategy().map(lambda m: m.become(lists(integers()))))
 
     TestIntStreams = strategy_test_suite(streaming(integers()))
     TestStreamLists = strategy_test_suite(streaming(integers()))
