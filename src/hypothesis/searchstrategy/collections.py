@@ -17,6 +17,7 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+from copy import deepcopy
 from random import Random
 from collections import namedtuple
 
@@ -325,9 +326,9 @@ class ListStrategy(SearchStrategy):
             # It's unlikely this is actually of much benefit in practical cases
             # but it makes the tests pass. Sorry.
             for j in indices[:-1]:
-                result[j] = pivot
+                result[j] = deepcopy(pivot)
             yield tuple(result)
-            result[indices[-1]] = pivot
+            result[indices[-1]] = deepcopy(pivot)
             yield tuple(result)
             for i in indices[:-2]:
                 result[i] = x[i]
@@ -393,7 +394,7 @@ class ListStrategy(SearchStrategy):
                 for simpler in simplify(random, value):
                     copy = list(x)
                     for i in indices:
-                        copy[i] = simpler
+                        copy[i] = deepcopy(simpler)
                     yield tuple(copy)
         accept.__name__ = str(
             'shared_simplification(%s)' % (simplify.__name__,)
