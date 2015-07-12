@@ -20,6 +20,7 @@ from __future__ import division, print_function, absolute_import, \
 import pytest
 from hypothesis import Settings, find
 from tests.common import standard_types
+from hypothesis.errors import NoSuchExample
 from hypothesis.strategies import lists
 from hypothesis.utils.show import show
 
@@ -43,9 +44,12 @@ def test_can_collectively_minimize(spec):
                 return True
         return False
 
-    xs = find(
-        lists(spec, min_size=n, max_size=n),
-        distinct_reprs,
-        settings=Settings(timeout=2.0, average_list_length=3))
-    assert len(xs) == n
-    assert len(set((map(repr, xs)))) == 2
+    try:
+        xs = find(
+            lists(spec, min_size=n, max_size=n),
+            distinct_reprs,
+            settings=Settings(timeout=2.0, average_list_length=3))
+        assert len(xs) == n
+        assert len(set((map(repr, xs)))) == 2
+    except NoSuchExample:
+        pass

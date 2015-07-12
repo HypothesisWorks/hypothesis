@@ -22,10 +22,8 @@ from random import Random
 import pytest
 from hypothesis import Settings, given, assume, strategy
 from hypothesis.database import ExampleDatabase
-from hypothesis.strategies import just, lists, floats, tuples, randoms, \
-    booleans, integers, complex_numbers
+from hypothesis.strategies import just, lists, floats, tuples, integers
 from hypothesis.internal.debug import some_template
-from hypothesis.utils.conventions import not_set
 from hypothesis.searchstrategy.narytree import Leaf, n_ary_tree
 
 ConstantLists = integers().flatmap(lambda i: lists(just(i)))
@@ -72,24 +70,6 @@ def test_flatmap_retrieve_from_db():
         record_and_test_size()
 
     assert track[0] == example
-
-
-@given(randoms())
-def test_can_recover_from_bad_data_in_mapped_strategy(r):
-    param = OrderedPairs.draw_parameter(r)
-    template = OrderedPairs.draw_template(r, param)
-    OrderedPairs.reify(template)
-    assert template.target_data != not_set
-    basic = OrderedPairs.to_basic(template)
-    assert len(basic) == 4
-    assert isinstance(basic, list)
-    assert isinstance(basic[-1], list)
-    basic[-1] = 1
-    new_template = OrderedPairs.from_basic(basic)
-    reified = OrderedPairs.reify(new_template)
-    assert type(reified) == tuple
-    x, y = reified
-    assert x < y
 
 
 def nary_tree_to_strategy(tree):
@@ -139,20 +119,7 @@ def test_flatmap_does_not_reuse_strategies():
     assert s.example() is not s.example()
 
 
-def test_flatmap_can_apply_all_inapplicable_simplifiers():
-    random = Random(1)
-    s = booleans().flatmap(lambda x: complex_numbers() if x else booleans())
-    source_to_total = {}
-
-    while len(source_to_total) < 2:
-        t = s.draw_and_produce(random)
-        source_to_total[t.source_template] = t
-    u = source_to_total[False]
-    v = source_to_total[True]
-    s.reify(u)
-    s.reify(v)
-
-    for p in ((u, v), (v, u)):
-        for simplify in s.simplifiers(random, p[0]):
-            for target in simplify(random, p[1]):
-                assert not s.strictly_simpler(p[1], target)
+def test_flatmap_has_original_strategy_repr():
+    ints = integers()
+    ints_up = ints.flatmap(lambda n: integers(min_value=n))
+    assert repr(ints) in repr(ints_up)
