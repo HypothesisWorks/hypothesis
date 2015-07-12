@@ -234,3 +234,8 @@ def test_bounds_are_valid(left, right):
         assert math.isinf(ub)
     else:
         assert isinstance(ub, int)
+
+
+def test_bounds_are_respected():
+    assert find(floats(min_value=1.0), lambda x: True) == 1.0
+    assert find(floats(max_value=-1.0), lambda x: True) == -1.0
