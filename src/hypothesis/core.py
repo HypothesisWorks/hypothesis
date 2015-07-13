@@ -277,14 +277,25 @@ def best_satisfying_template(
         return satisfying_example
 
 
-def test_is_flaky(test):
+def test_is_flaky(test, expected_repr):
     @functools.wraps(test)
     def test_or_flaky(*args, **kwargs):
-        raise Flaky(
-            (
-                'Hypothesis %s(%s) produces unreliable results: Falsified on'
-                ' the first call but did not on a subsequent one'
-            ) % (test.__name__, arg_string(test, args, kwargs),))
+        text_repr = arg_string(test, args, kwargs)
+        if text_repr == expected_repr:
+            raise Flaky(
+                (
+                    'Hypothesis %s(%s) produces unreliable results: Falsified'
+                    ' on the first call but did not on a subsequent one'
+                ) % (test.__name__, text_repr,))
+        else:
+            raise Flaky(
+                (
+                    'Hypothesis %s produces unreliable results: Falsified'
+                    ' on the first call but did not on a subsequent one. This '
+                    ' is possibly due to unreliable values, which may be a bug'
+                    ' in the strategy. Saw %s on the first call but %s on the'
+                    ' second'
+                ) % (test.__name__, expected_repr, text_repr,))
     return test_or_flaky
 
 
@@ -315,28 +326,21 @@ def example(*args, **kwargs):
 
 def reify_and_execute(
     search_strategy, template, test,
-    print_example=False, always_print=False,
+    print_example=False, always_print=False, record_repr=None,
 ):
     def run():
         args, kwargs = search_strategy.reify(template)
+        text_version = arg_string(test, args, kwargs)
         if print_example:
             report(
                 lambda: 'Falsifying example: %s(%s)' % (
-                    test.__name__,
-                    arg_string(
-                        test, args, kwargs
-                    )
-                )
-            )
+                    test.__name__, text_version,))
         elif current_verbosity() >= Verbosity.verbose or always_print:
             report(
                 lambda: 'Trying example: %s(%s)' % (
-                    test.__name__,
-                    arg_string(
-                        test, args, kwargs
-                    )
-                )
-            )
+                    test.__name__, text_version))
+        if record_repr is not None:
+            record_repr[0] = text_version
         return test(*args, **kwargs)
     return run
 
@@ -488,12 +492,15 @@ def given(*generator_arguments, **generator_kwargs):
                 storage = None
 
             last_exception = [None]
+            repr_for_last_exception = [None]
 
             def is_template_example(xs):
+                record_repr = [None]
                 try:
                     test_runner(reify_and_execute(
                         search_strategy, xs, test,
-                        always_print=settings.max_shrinks <= 0
+                        always_print=settings.max_shrinks <= 0,
+                        record_repr=record_repr,
                     ))
                     return False
                 except UnsatisfiedAssumption as e:
@@ -502,6 +509,7 @@ def given(*generator_arguments, **generator_kwargs):
                     if settings.max_shrinks <= 0:
                         raise e
                     last_exception[0] = traceback.format_exc()
+                    repr_for_last_exception[0] = record_repr[0]
                     verbose_report(last_exception[0])
                     return True
 
@@ -532,7 +540,7 @@ def given(*generator_arguments, **generator_kwargs):
 
                 test_runner(reify_and_execute(
                     search_strategy, falsifying_template,
-                    test_is_flaky(test),
+                    test_is_flaky(test, repr_for_last_exception[0]),
                     print_example=True
                 ))
 
