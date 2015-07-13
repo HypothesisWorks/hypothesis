@@ -268,6 +268,27 @@ def test_errors_even_if_does_not_error_on_final_call():
         rude()
 
 
+class DifferentReprEachTime(object):
+    counter = 0
+
+    def __repr__(self):
+        DifferentReprEachTime.counter += 1
+        return 'DifferentReprEachTime(%d)' % (DifferentReprEachTime.counter,)
+
+
+def test_reports_repr_diff_in_flaky_error():
+    @given(builds(DifferentReprEachTime))
+    def rude(x):
+        assert not any(
+            t[3] == 'best_satisfying_template'
+            for t in inspect.getouterframes(inspect.currentframe())
+        )
+
+    with pytest.raises(Flaky) as e:
+        rude()
+    assert 'Call 1:' in e.value.args[0]
+
+
 @given(sets(sampled_from(list(range(10)))))
 def test_can_test_sets_sampled_from(xs):
     assert all(isinstance(x, int) for x in xs)
