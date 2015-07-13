@@ -88,7 +88,7 @@ with Settings(average_list_length=5.0):
     TestFrozenSets = strategy_test_suite(frozensets(booleans()))
 
     TestNestedSets = strategy_test_suite(
-        frozensets(frozensets(complex_numbers(), max_size=2)))
+        frozensets(frozensets(integers(), max_size=2)))
 
     TestMisc1 = strategy_test_suite(fixed_dictionaries(
         {(2, -374): frozensets(none())}))
@@ -128,7 +128,7 @@ with Settings(average_list_length=5.0):
     TestDiverseFlatmap = strategy_test_suite(
         sampled_from((
             lists(integers()), lists(text()), tuples(text(), text()),
-            booleans(), sets(complex_numbers())
+            booleans(), lists(complex_numbers())
         )).flatmap(lambda x: x)
     )
 
