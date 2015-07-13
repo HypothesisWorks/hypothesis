@@ -546,9 +546,7 @@ class SetStrategy(SearchStrategy):
             yield self.convert_simplifier(simplify)
 
     def to_basic(self, value):
-        result = self.list_strategy.to_basic(value)
-        result.sort()
-        return result
+        return self.list_strategy.to_basic(value)
 
     def from_basic(self, value):
         check_data_type(list, value)
