@@ -293,8 +293,7 @@ def test_is_flaky(test, expected_repr):
                     'Hypothesis %s produces unreliable results: Falsified'
                     ' on the first call but did not on a subsequent one. This '
                     ' is possibly due to unreliable values, which may be a bug'
-                    ' in the strategy. Saw %s on the first call but %s on the'
-                    ' second'
+                    ' in the strategy.\nCall 1: %s\nCall 2: %s\n'
                 ) % (test.__name__, expected_repr, text_repr,))
     return test_or_flaky
 
