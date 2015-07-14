@@ -19,7 +19,8 @@ from __future__ import division, print_function, absolute_import, \
 
 from random import Random
 
-from hypothesis.strategies import sets, integers
+from hypothesis import find
+from hypothesis.strategies import sets, lists, integers, frozensets
 
 
 def test_template_equality():
@@ -48,7 +49,6 @@ def test_simplifying_unreified_template_does_not_error():
 
 def test_reified_templates_are_simpler():
     s = sets(integers())
-
     t1 = s.draw_and_produce(Random(1))
     t2 = s.draw_and_produce(Random(1))
 
@@ -56,6 +56,28 @@ def test_reified_templates_are_simpler():
     assert not s.strictly_simpler(t1, t2)
 
     s.reify(t1)
-    print(t1, t2)
     assert s.strictly_simpler(t1, t2)
     assert not s.strictly_simpler(t2, t1)
+
+
+def test_simplify_does_not_error_on_unreified_data():
+    s = sets(integers())
+    for i in range(100):
+        t1 = s.draw_and_produce(Random(i))
+        t2 = s.draw_and_produce(Random(i))
+        if t1.size > 1:
+            break
+
+    s.reify(t1)
+    simplifiers = list(s.simplifiers(Random(1), t1))
+    assert len(simplifiers) > 2
+    for s in simplifiers:
+        assert list(s(Random(1), t2)) == []
+
+
+def test_can_clone_same_length_items():
+    ls = find(
+        lists(frozensets(integers(), min_size=10, max_size=10)),
+        lambda x: len(x) >= 20
+    )
+    assert len(set(ls)) == 1
