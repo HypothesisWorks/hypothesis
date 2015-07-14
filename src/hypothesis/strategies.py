@@ -25,7 +25,6 @@ from fractions import Fraction
 
 import hypothesis.specifiers as spec
 from hypothesis.errors import InvalidArgument
-from hypothesis.control import assume
 from hypothesis.settings import Settings
 from hypothesis.searchstrategy import SearchStrategy, strategy
 from hypothesis.internal.compat import hrange, text_type, binary_type, \
@@ -301,7 +300,10 @@ def sampled_from(elements):
 
 
 @defines_strategy
-def lists(elements=None, min_size=None, average_size=None, max_size=None):
+def lists(
+    elements=None, min_size=None, average_size=None, max_size=None,
+    unique_by=None
+):
     """Returns a list containining values drawn from elements length in the
     interval [min_size, max_size] (no bounds in that direction if these are
     None). If max_size is 0 then elements may be None and only the empty list
@@ -311,7 +313,39 @@ def lists(elements=None, min_size=None, average_size=None, max_size=None):
     of list but it may not be the actual average of sizes you get, due
     to a variety of factors.
 
+    if unique_by is not None it must be a function returning a hashable type
+    when given a value drawn from elements. The resulting list will satisfy the
+    condition that for i != j, unique_by(result[i]) != unique_by(result[j]).
+
     """
+    if unique_by is not None:
+        from hypothesis.searchstrategy.collections import UniqueListStrategy
+        if max_size == 0:
+            return builds(list)
+        check_strategy(elements)
+        if min_size is not None and elements.template_upper_bound < min_size:
+            raise InvalidArgument((
+                'Cannot generate unique lists of size %d from %r, which '
+                'contains no more than %d distinct values') % (
+                    min_size, elements, elements.template_upper_bound,
+            ))
+        min_size = min_size or 0
+        max_size = max_size or float('inf')
+        max_size = min(max_size, elements.template_upper_bound)
+        if average_size is None:
+            if max_size < float('inf'):
+                average_size = (min_size + max_size) / 2
+            else:
+                average_size = Settings.default.average_list_length
+        check_valid_sizes(min_size, average_size, max_size)
+        result = UniqueListStrategy(
+            elements=elements,
+            average_size=average_size,
+            max_size=max_size,
+            min_size=min_size,
+            key=unique_by
+        )
+        return result
 
     check_valid_sizes(min_size, average_size, max_size)
     from hypothesis.searchstrategy.collections import ListStrategy, \
@@ -356,33 +390,20 @@ def sets(elements=None, min_size=None, average_size=None, max_size=None):
     for sets of an unhashable type but it will fail at test time.
 
     """
-    check_valid_sizes(min_size, average_size, max_size)
-    from hypothesis.searchstrategy.collections import SetStrategy
-    if max_size == 0:
-        return SetStrategy(())
-    check_strategy(elements)
-    if min_size is not None and elements.template_upper_bound < min_size:
-        raise InvalidArgument((
-            'Cannot generate sets of size %d from %r, which contains '
-            'no more than %d distinct values') % (
-                min_size, elements, elements.template_upper_bound,
-        ))
-    result = SetStrategy(
-        (elements,),
-        average_length=average_size or Settings.default.average_list_length,
-        max_size=max_size,
-    )
-    if min_size is not None:
-        result = result.filter(lambda x: len(x) >= min_size)
-    return result
+    return lists(
+        elements=elements, min_size=min_size, average_size=average_size,
+        max_size=max_size, unique_by=lambda x: x
+    ).map(set)
 
 
 @defines_strategy
 def frozensets(elements=None, min_size=None, average_size=None, max_size=None):
     """This is identical to the sets function but instead returns
     frozensets."""
-    from hypothesis.searchstrategy.collections import FrozenSetStrategy
-    return FrozenSetStrategy(sets(elements, min_size, average_size, max_size))
+    return lists(
+        elements=elements, min_size=min_size, average_size=average_size,
+        max_size=max_size, unique_by=lambda x: x
+    ).map(frozenset)
 
 
 @defines_strategy
@@ -420,23 +441,11 @@ def dictionaries(
     check_strategy(keys)
     check_strategy(values)
 
-    def build_dict(data):
-        result = dict_class()
-        for k, v in data:
-            result[k] = v
-            if max_size is not None and len(result) >= max_size:
-                break
-        assume(min_size is None or len(result) >= min_size)
-        return result
-
-    if min_size is not None:
-        base_average = min_size * 2
-        average_size = max(average_size or 0, base_average)
-
     return lists(
         tuples(keys, values),
-        min_size=min_size, average_size=average_size,
-    ).map(build_dict)
+        min_size=min_size, average_size=average_size, max_size=max_size,
+        unique_by=lambda x: x[0]
+    ).map(dict_class)
 
 
 @defines_strategy

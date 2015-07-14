@@ -26,11 +26,9 @@ from hypothesis.utils.size import clamp
 from hypothesis.internal.compat import hrange
 
 finite = [
-    s.booleans(), s.sets(s.booleans()), s.integers(-10, 10),
+    s.booleans(), s.integers(-10, 10),
     s.integers(0, 10) | s.integers(0, 1),
     s.tuples(s.booleans(), s.booleans()),
-    s.frozensets(s.booleans()),
-    s.sets(s.integers(0, 3)),
 ]
 
 
@@ -47,11 +45,6 @@ def test_covers_entire_finite_space(strat):
         s.add(strat.draw_and_produce(random))
 
     assert len(s) == strat.template_upper_bound
-
-
-def test_large_enough_sets_are_infinite():
-    assert s.sets(s.integers(0, 30)).template_upper_bound == float('inf')
-    assert s.sets(s.integers(0, 100)).template_upper_bound == float('inf')
 
 
 def test_clamp():

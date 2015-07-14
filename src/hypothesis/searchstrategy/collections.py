@@ -22,13 +22,14 @@ from random import Random
 from collections import namedtuple
 
 import hypothesis.internal.distributions as dist
+from hypothesis.control import assume
 from hypothesis.settings import Settings
 from hypothesis.utils.show import show
 from hypothesis.utils.size import clamp
-from hypothesis.internal.compat import OrderedDict, hrange
+from hypothesis.internal.compat import OrderedDict, hrange, integer_types
 from hypothesis.searchstrategy.strategies import EFFECTIVELY_INFINITE, \
     BadData, SearchStrategy, MappedSearchStrategy, check_type, \
-    infinitish, check_length, check_data_type, one_of_strategies
+    check_length, check_data_type, one_of_strategies
 
 
 def safe_mul(x, y):
@@ -458,114 +459,254 @@ class SingleElementListStrategy(MappedSearchStrategy):
         return self.element_strategy.reify(self.base_template)
 
 
-class SetStrategy(SearchStrategy):
+class UniqueListTemplate(object):
 
-    """A strategy for sets of values, defined in terms of a strategy for lists
-    of values."""
+    def __init__(self, size, parameter_seed, parameter, template_seed, values):
+        self.size = size
+        self.parameter_seed = parameter_seed
+        self.parameter = parameter
+        self.template_seed = template_seed
+        self.created_as_seed = False
+        if size == 0:
+            self.values = ()
+        elif values is None:
+            self.values = None
+            self.created_as_seed = True
+        else:
+            self.values = tuple(values)
+
+    def __repr__(self):
+        if self.values is not None:
+            return 'UniqueListTemplate(%d, %r)' % (self.size, self.values)
+        else:
+            return 'UniqueListTemplate(%d, ...)' % (self.size,)
+
+    def __eq__(self, other):
+        if not isinstance(other, UniqueListTemplate):
+            return False
+        if self.created_as_seed != other.created_as_seed:
+            return False
+        if self.created_as_seed:
+            return self.parameter_seed == other.parameter_seed and (
+                self.template_seed == other.template_seed
+            )
+        return self.values == other.values
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __hash__(self):
+        if self.created_as_seed:
+            return hash(self.template_seed)
+        else:
+            return hash(self.values)
+
+    def __trackas__(self):
+        if self.created_as_seed:
+            return (False, self.parameter_seed, self.template_seed)
+        else:
+            return (True, self.values)
+
+
+class UniqueListStrategy(SearchStrategy):
+
+    def __init__(
+        self,
+        elements, min_size, max_size, average_size,
+        key
+    ):
+        super(UniqueListStrategy, self).__init__()
+        assert min_size <= average_size <= max_size
+        assert max_size <= elements.template_upper_bound
+        self.min_size = min_size
+        self.max_size = max_size
+        self.average_size = average_size
+        self.elements = elements
+        self.key = key
 
     Parameter = namedtuple(
-        'Parameter',
-        ('stopping_chance', 'child_parameter'),
+        'Parameter', ('average_length', 'parameter_seed', 'parameter')
     )
 
-    def __repr__(self):
-        return 'SetStrategy(list_strategy=%r)' % (
-            self.list_strategy,
-        )
-
-    def __init__(self, strategies, average_length=50.0, max_size=None):
-        self.list_strategy = ListStrategy(
-            strategies, average_length=average_length
-        )
-        self.max_size = max_size
-
-        def powset(n):
-            if n >= 32:
-                return float('inf')
-            return 2 ** n
-
-        def fact(n):
-            x = 1
-            for k in hrange(1, n + 1):
-                x = safe_mul(x, k)
-                if x >= EFFECTIVELY_INFINITE:
-                    break
-            return infinitish(x)
-
-        elements = self.list_strategy.element_strategy
-
-        if not elements:
-            self.template_upper_bound = 1
-        else:
-            if powset(elements.template_upper_bound) >= EFFECTIVELY_INFINITE:
-                self.template_upper_bound = float('inf')
-            else:
-                f = fact(elements.template_upper_bound)
-                if f >= EFFECTIVELY_INFINITE:
-                    self.template_upper_bound = float('inf')
-                else:
-                    tot = 0
-                    for k in hrange(elements.template_upper_bound + 1):
-                        tot += f // fact(k)
-                    self.template_upper_bound = tot
-
-    def reify(self, value):
-        return set(self.list_strategy.reify(tuple(value)))
+    def strictly_simpler(self, x, y):
+        if x.size < y.size:
+            return True
+        if y.size < x.size:
+            return False
+        if x.values is None:
+            return False
+        if y.values is None:
+            return True
+        for u, v in zip(x.values, y.values):
+            if self.elements.strictly_simpler(u, v):
+                return True
+            if self.elements.strictly_simpler(v, u):
+                return False
+        return False
 
     def draw_parameter(self, random):
-        return self.list_strategy.draw_parameter(random)
+        parameter_seed = random.getrandbits(64)
+        return self.Parameter(
+            random.expovariate(1.0 / (1 + self.average_size)),
+            parameter_seed,
+            self.elements.draw_parameter(Random(parameter_seed)))
 
-    def convert_template(self, template):
-        seen = set()
-        deduped = []
-        for x in template:
-            if x not in seen:
-                seen.add(x)
-                deduped.append(x)
-            if self.max_size is not None:
-                if len(deduped) >= self.max_size:
-                    break
-        return tuple(deduped)
-
-    def draw_template(self, random, pv):
-        return self.convert_template(
-            (self.list_strategy.draw_template(random, pv)))
-
-    def strictly_simpler(self, x, y):
-        return self.list_strategy.strictly_simpler(x, y)
-
-    def convert_simplifier(self, simplifier):
-        def accept(random, template):
-            for value in simplifier(random, tuple(template)):
-                yield self.convert_template(value)
-        accept.__name__ = simplifier.__name__
-        return accept
-
-    def simplifiers(self, random, template):
-        for simplify in self.list_strategy.simplifiers(random, template):
-            yield self.convert_simplifier(simplify)
-
-    def to_basic(self, value):
-        return self.list_strategy.to_basic(value)
-
-    def from_basic(self, value):
-        check_data_type(list, value)
-        return self.convert_template(self.list_strategy.from_basic(value))
-
-
-class FrozenSetStrategy(MappedSearchStrategy):
-
-    """A strategy for frozensets of values, defined in terms of a strategy for
-    lists of values."""
-
-    def __init__(self, set_strategy):
-        super(FrozenSetStrategy, self).__init__(
-            strategy=set_strategy,
-            pack=frozenset,
+    def draw_template(self, random, parameter):
+        length = clamp(
+            self.min_size,
+            dist.geometric(random, 1.0 / (1 + parameter.average_length)),
+            self.max_size,
         )
 
-    def __repr__(self):
-        return 'FrozenSetStrategy(%r)' % (self.mapped_strategy,)
+        return UniqueListTemplate(
+            length, parameter[1], parameter[2],
+            random.getrandbits(64), None
+        )
+
+    def reify(self, template):
+        assert self.min_size <= template.size <= self.max_size
+        if template.values is not None:
+            assert len(template.values) == template.size
+            seen = set()
+            result = []
+            for t in template.values:
+                v = self.elements.reify(t)
+                k = self.key(v)
+                assume(k not in seen)
+                seen.add(k)
+                result.append(v)
+            assert len(result) == len(template.values)
+            return result
+        values = []
+        results = []
+        seen = set()
+        random = Random(template.template_seed)
+        for _ in range(template.size * 100):
+            assert len(values) < template.size
+            eltemplate = self.elements.draw_template(
+                random, template.parameter)
+            elvalue = self.elements.reify(eltemplate)
+            k = self.key(elvalue)
+            if k in seen:
+                continue
+            seen.add(k)
+            values.append(eltemplate)
+            results.append(elvalue)
+            if len(results) == template.size:
+                template.values = values
+                return results
+        assume(False)
+
+    def simplifiers(self, random, template):
+        if template.values:
+            yield self.simplify_to_subsets
+            yield self.reduce_size
+            for i in hrange(template.size):
+                yield self.simplify_index(i)
+
+    def simplify_to_subsets(self, random, template):
+        if not template.values:
+            return
+        if template.size <= self.min_size + 1:
+            return
+        if template.size <= self.min_size + 10:
+            sizes = list(hrange(self.min_size, template.size - 1))
+        else:
+            sizes = sorted(set(
+                random.randint(self.min_size, template.size - 1)
+                for _ in hrange(10)))
+
+        indices = list(hrange(template.size))
+
+        for n in sizes:
+            random.shuffle(indices)
+            values = [template.values[i] for i in sorted(indices[:n])]
+            yield UniqueListTemplate(
+                size=n,
+                parameter_seed=0,
+                parameter=None,
+                template_seed=0,
+                values=values
+            )
+
+    def simplify_index(self, i):
+        def accept(random, template):
+            if i >= template.size:
+                return
+            if not template.values:
+                return
+            for simpler in self.elements.full_simplify(
+                random, template.values[i]
+            ):
+                if simpler in template.values:
+                    continue
+                values = list(template.values)
+                values[i] = simpler
+                yield UniqueListTemplate(
+                    size=template.size,
+                    parameter_seed=template.parameter_seed,
+                    parameter=template.parameter,
+                    template_seed=template.template_seed,
+                    values=values
+                )
+        accept.__name__ = str('simplify_index(%d)' % (i,))
+        return accept
+
+    def reduce_size(self, random, template):
+        if not template.values:
+            return
+        if template.size == self.min_size:
+            return
+        assert template.size > self.min_size
+        assert len(template.values) == template.size
+        for i in hrange(template.size):
+            values = list(template.values)
+            del values[i]
+            yield UniqueListTemplate(
+                size=template.size - 1,
+                parameter_seed=template.parameter_seed,
+                parameter=template.parameter,
+                template_seed=template.template_seed,
+                values=values
+            )
+
+    def to_basic(self, template):
+        if template.values is not None:
+            return [
+                0, template.size,
+                list(map(self.elements.to_basic, template.values))
+            ]
+        else:
+            return [
+                1, template.size, [
+                    template.parameter_seed, template.template_seed]
+            ]
+
+    def from_basic(self, data):
+        check_length(3, data)
+        check_data_type(integer_types, data[0])
+        check_data_type(integer_types, data[1])
+        if data[1] < self.min_size or data[1] > self.max_size:
+            raise BadData('Size %d out of range [%d, %r]' % (
+                data[1], self.min_size, self.max_size))
+        if data[0] == 0:
+            check_data_type(list, data[2])
+            return UniqueListTemplate(
+                size=data[1], template_seed=0, parameter_seed=0,
+                parameter=None,
+                values=list(map(self.elements.from_basic, data[2]))
+            )
+        else:
+            if data[0] != 1:
+                raise BadData('Bad type tag %d' % (data[0],))
+            check_length(2, data[2])
+            check_data_type(integer_types, data[2][0])
+            check_data_type(integer_types, data[2][1])
+            parameter_seed = data[2][0]
+            parameter = self.elements.draw_parameter(Random(parameter_seed))
+            return UniqueListTemplate(
+                size=data[1], parameter_seed=parameter_seed,
+                template_seed=data[2][1], values=None, parameter=parameter)
 
 
 class FixedKeysDictStrategy(MappedSearchStrategy):

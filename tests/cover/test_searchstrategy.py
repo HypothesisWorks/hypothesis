@@ -27,7 +27,7 @@ import hypothesis.specifiers as specifiers
 from hypothesis.types import RandomWithSeed
 from hypothesis.errors import NoExamples, InvalidArgument
 from hypothesis.strategies import just, tuples, randoms, booleans, \
-    integers, frozensets, sampled_from
+    integers, sampled_from
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.searchstrategy.numbers import BoundedIntStrategy, \
     RandomGeometricIntStrategy
@@ -134,16 +134,6 @@ def test_example_raises_unsatisfiable_when_too_filtered():
 def test_large_enough_integer_ranges_are_infinite():
     assert math.isinf(
         integers(1, 2 ** 64).template_upper_bound)
-
-
-def test_tuple_strategy_too_large_to_fit():
-    x = frozensets(integers(0, 5))
-    assert not math.isinf(x.template_upper_bound)
-    x = tuples(x, x)
-    assert not math.isinf(x.template_upper_bound)
-    assert math.isinf(tuples(x, x).template_upper_bound)
-    assert math.isinf(
-        tuples(integers(), x).template_upper_bound)
 
 
 def test_one_of_strategy_goes_infinite():

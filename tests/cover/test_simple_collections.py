@@ -18,14 +18,12 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 from random import Random
-from itertools import islice
 from collections import namedtuple
 
 import pytest
 from hypothesis import Settings, find, given, strategy
-from hypothesis.strategies import sets, lists, builds, tuples, booleans, \
-    integers, frozensets, dictionaries, complex_numbers, \
-    fixed_dictionaries
+from hypothesis.strategies import sets, text, lists, builds, tuples, \
+    booleans, integers, frozensets, dictionaries, fixed_dictionaries
 from hypothesis.internal.compat import OrderedDict
 
 
@@ -176,22 +174,6 @@ def test_list_simplicity():
     assert not s.strictly_simpler((False, True), (False, True))
 
 
-def test_nested_set_complexity():
-    strat = frozensets(frozensets(complex_numbers()))
-
-    rnd = Random(0)
-    template = (
-        ((float('inf'), 1.0), (-1.0325215252103651e-149, 1.0)),
-        ((-1.677443578786644e-309, -1.0), (-2.2250738585072014e-308, 0.0))
-    )
-    simplifiers = list(strat.simplifiers(rnd, template))
-    rnd.shuffle(simplifiers)
-    simplifiers = simplifiers[:10]
-    for simplify in simplifiers:
-        for s in islice(simplify(rnd, template), 50):
-            assert not strat.strictly_simpler(template, s)
-
-
 def test_multiple_empty_lists_are_independent():
     x = find(lists(lists(max_size=0)), lambda t: len(t) >= 2)
     u, v = x
@@ -224,6 +206,7 @@ def test_lists_of_fixed_length(n):
 def test_sets_of_fixed_length(n):
     x = find(
         sets(integers(), min_size=n, max_size=n), lambda x: True)
+    assert len(x) == n
 
     if not n:
         assert x == set()
@@ -265,3 +248,23 @@ def test_lists_forced_near_top(n):
 def test_cloning_is_a_no_op_on_short_lists():
     s = lists(booleans()).wrapped_strategy
     assert list(s.simplify_with_example_cloning(Random(), (False,))) == []
+
+
+def test_can_find_unique_lists_of_non_set_order():
+    ls = find(
+        lists(text(), unique_by=lambda x: x),
+        lambda x: list(set(x)) != x
+    )
+    assert len(set(ls)) == len(ls)
+    assert len(ls) == 2
+
+
+def test_can_find_sets_unique_by_incomplete_data():
+    ls = find(
+        lists(lists(integers(min_value=0), min_size=2), unique_by=max),
+        lambda x: len(x) >= 10
+    )
+    assert len(ls) == 10
+    assert sorted(list(map(max, ls))) == list(range(10))
+    for v in ls:
+        assert 0 in v

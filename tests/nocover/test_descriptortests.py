@@ -116,6 +116,9 @@ with Settings(average_list_length=5.0):
         integers().flatmap(lambda i: lists(just(i)))
     )
 
+    TestListsWithUniqueness = strategy_test_suite(
+        lists(lists(integers()), unique_by=lambda x: tuple(sorted(x))))
+
     TestOrderedPairs = strategy_test_suite(
         strategy(integers(min_value=1, max_value=200)).flatmap(
             lambda e: tuples(integers(min_value=0, max_value=e - 1), just(e))

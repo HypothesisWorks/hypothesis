@@ -29,8 +29,8 @@ from hypothesis.strategytests import templates_for
 from tests.common.basic import Bitfields
 from hypothesis.strategies import integers, floats, just, one_of, \
     sampled_from, streaming, basic, lists, booleans, dictionaries, tuples, \
-    frozensets, complex_numbers, sets, text, binary, decimals, fractions, none, \
-    randoms, builds, fixed_dictionaries
+    frozensets, complex_numbers, sets, text, binary, decimals, fractions, \
+    none, randoms, builds, fixed_dictionaries
 from hypothesis.internal.compat import hrange
 from hypothesis.searchstrategy.narytree import n_ary_tree
 from hypothesis.utils.show import show
@@ -93,6 +93,7 @@ with Settings(average_list_length=10.0):
         booleans(),
         tuples(booleans(), booleans()),
         frozensets(integers()),
+        sets(frozensets(booleans())),
         complex_numbers(),
         fractions(),
         decimals(),
