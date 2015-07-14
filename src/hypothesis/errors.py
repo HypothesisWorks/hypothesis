@@ -32,8 +32,12 @@ class UnsatisfiedAssumption(HypothesisException):
 
     """
 
-    def __init__(self):
-        super(UnsatisfiedAssumption, self).__init__('Unsatisfied assumption')
+    def __init__(self, *args, **kwargs):
+        if args or kwargs:
+            super(UnsatisfiedAssumption, self).__init__(*args, **kwargs)
+        else:
+            super(UnsatisfiedAssumption, self).__init__(
+                'Unsatisfied assumption')
 
 
 class NoSuchExample(HypothesisException):

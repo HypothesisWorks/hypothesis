@@ -21,7 +21,7 @@ import os
 
 import pytest
 import hypothesis.reporting as reporting
-from hypothesis import given
+from hypothesis import given, assume
 from hypothesis.errors import AbnormalExit
 from tests.common.utils import capture_out
 from hypothesis.strategies import sets, booleans, integers
@@ -39,6 +39,15 @@ def test_runs_normally_if_no_failure():
             pass
 
     Foo('runs_normally').runs_normally()
+
+
+def test_can_assume_in_a_fork():
+    class Foo(ForkingTestCase):
+
+        @given(booleans())
+        def only_true(self, x):
+            assume(x)
+    Foo('only_true').only_true()
 
 
 def test_raises_abnormal_exit_if_bad_pickle_in_exception():
