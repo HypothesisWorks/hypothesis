@@ -29,7 +29,7 @@ from hypothesis import given, assume
 from hypothesis.errors import BadData, Unsatisfiable
 from hypothesis.database import ExampleDatabase
 from hypothesis.settings import Settings
-from hypothesis.strategies import lists, randoms
+from hypothesis.strategies import lists, randoms, integers
 from hypothesis.internal.compat import hrange, text_type, integer_types
 from hypothesis.utils.extmethod import ExtMethod
 from hypothesis.database.backend import SQLiteBackend
@@ -222,6 +222,27 @@ def strategy_test_suite(
                 strat.strictly_simpler(x, y) and
                 strat.strictly_simpler(y, x)
             )
+
+        @given(integers(), settings=settings)
+        def test_templates_generated_from_same_random_are_equal(self, i):
+            t1 = strat.draw_and_produce(Random(i))
+            t2 = strat.draw_and_produce(Random(i))
+
+            if t1 is not t2:
+                assert t1 == t2
+                assert hash(t1) == hash(t2)
+
+        @given(integers(), settings=settings)
+        def test_templates_generated_from_same_random_are_equal_after_reify(
+            self, i
+        ):
+            t1 = strat.draw_and_produce(Random(i))
+            t2 = strat.draw_and_produce(Random(i))
+            if t1 is not t2:
+                strat.reify(t1)
+                strat.reify(t2)
+                assert t1 == t2
+                assert hash(t1) == hash(t2)
 
         @given(randoms(), settings=settings)
         def test_will_handle_a_really_weird_failure(self, rnd):
