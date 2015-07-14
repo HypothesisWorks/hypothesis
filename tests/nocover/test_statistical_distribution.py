@@ -34,6 +34,7 @@ import collections
 
 import pytest
 import hypothesis.internal.reflection as reflection
+from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.strategies import just, sets, lists, floats, tuples, \
     booleans, integers, sampled_from
 from hypothesis.internal.compat import PY26, hrange
@@ -158,7 +159,10 @@ def define_test(specifier, q, predicate, condition=None):
         s = strategy(specifier)
         for _ in hrange(MAX_RUNS):
             pv = s.draw_parameter(random)
-            x = s.reify(s.draw_template(random, pv))
+            try:
+                x = s.reify(s.draw_template(random, pv))
+            except UnsatisfiedAssumption:
+                continue
             if not _condition(x):
                 continue
             successful_runs += 1
