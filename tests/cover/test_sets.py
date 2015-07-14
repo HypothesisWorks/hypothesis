@@ -19,7 +19,9 @@ from __future__ import division, print_function, absolute_import, \
 
 from random import Random
 
+import pytest
 from hypothesis import find
+from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import sets, lists, integers, frozensets
 
 
@@ -81,3 +83,8 @@ def test_can_clone_same_length_items():
         lambda x: len(x) >= 20
     )
     assert len(set(ls)) == 1
+
+
+def test_unique_lists_error_on_too_large_average_size():
+    with pytest.raises(InvalidArgument):
+        lists(integers(), unique_by=lambda x: x, average_size=10, max_size=5)
