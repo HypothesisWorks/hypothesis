@@ -28,6 +28,7 @@ from hypothesis.deprecation import note_deprecation
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.utils.extmethod import ExtMethod
 from hypothesis.internal.chooser import chooser
+from hypothesis.internal.reflection import get_pretty_function_description
 
 
 class StrategyExtMethod(ExtMethod):
@@ -537,9 +538,12 @@ class MappedSearchStrategy(SearchStrategy):
             self.pack = pack
 
     def __repr__(self):
-        return 'MappedSearchStrategy(%r, %s)' % (
-            self.mapped_strategy, getattr(
-                self.pack, '__name__', type(self.pack).__name__))
+        if not hasattr(self, '_cached_repr'):
+            self._cached_repr = '%r.map(%s)' % (
+                self.mapped_strategy, get_pretty_function_description(
+                    self.pack)
+            )
+        return self._cached_repr
 
     def draw_parameter(self, random):
         return self.mapped_strategy.draw_parameter(random)
@@ -574,6 +578,15 @@ class FilteredStrategy(MappedSearchStrategy):
     def __init__(self, strategy, condition):
         super(FilteredStrategy, self).__init__(strategy=strategy)
         self.condition = condition
+        self.filtered_strategy = strategy
+
+    def __repr__(self):
+        if not hasattr(self, '_cached_repr'):
+            self._cached_repr = '%r.filter(%s)' % (
+                self.filtered_strategy, get_pretty_function_description(
+                    self.condition)
+            )
+        return self._cached_repr
 
     def pack(self, value):
         assume(self.condition(value))

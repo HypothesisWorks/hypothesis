@@ -151,7 +151,7 @@ def nameless_const(x):
 
 
 def test_can_map_nameless():
-    assert '0x' not in repr(integers().map(nameless_const(2)))
+    assert 'nameless_const' in repr(integers().map(nameless_const(2)))
 
 
 def test_can_flatmap_nameless():

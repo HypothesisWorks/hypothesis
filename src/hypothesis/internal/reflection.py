@@ -257,6 +257,8 @@ def extract_lambda_source(f):
 
 
 def get_pretty_function_description(f):
+    if not hasattr(f, '__name__'):
+        return repr(f)
     name = f.__name__
     if name == '<lambda>':
         result = extract_lambda_source(f)
