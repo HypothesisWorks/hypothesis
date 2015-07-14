@@ -26,9 +26,9 @@ from hypothesis import Settings, assume, strategy
 from hypothesis.errors import Flaky, BadData, InvalidDefinition
 from tests.common.utils import capture_out
 from hypothesis.database import ExampleDatabase
-from hypothesis.stateful import Bundle, GenericStateMachine, \
-    RuleBasedStateMachine, StateMachineSearchStrategy, rule, \
-    run_state_machine_as_test
+from hypothesis.stateful import Bundle, StateMachineRunner, \
+    GenericStateMachine, RuleBasedStateMachine, \
+    StateMachineSearchStrategy, rule, run_state_machine_as_test
 from hypothesis.strategies import just, none, lists, tuples, booleans, \
     integers, sampled_from
 
@@ -478,3 +478,11 @@ def test_can_run_with_no_db():
     with pytest.raises(AssertionError):
         run_state_machine_as_test(
             SetStateMachine, Settings(database=None))
+
+
+def test_statemachine_equality():
+    assert StateMachineRunner(1, 1, 1) != 1
+    assert StateMachineRunner(1, 1, 1) == StateMachineRunner(1, 1, 1)
+    assert hash(StateMachineRunner(1, 1, 1)) == hash(
+        StateMachineRunner(1, 1, 1))
+    assert StateMachineRunner(1, 1, 1) != StateMachineRunner(1, 1, 2)
