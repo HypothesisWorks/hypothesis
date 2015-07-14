@@ -234,6 +234,23 @@ class StateMachineRunner(object):
         assert len(self.templates) >= n_steps
         self.record = list(record or ())
 
+    def __eq__(self, other):
+        return isinstance(other, StateMachineRunner) and (
+            self.parameter_seed == other.parameter_seed and
+            self.template_seed == other.template_seed and
+            self.n_steps == other.n_steps
+        )
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __hash__(self):
+        return hash((
+            self.parameter_seed,
+            self.template_seed,
+            self.n_steps,
+        ))
+
     def __trackas__(self):
         return (
             StateMachineRunner,
