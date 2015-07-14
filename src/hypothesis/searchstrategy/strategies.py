@@ -17,7 +17,6 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-import itertools
 from random import Random
 from collections import namedtuple
 
@@ -573,16 +572,12 @@ class MappedSearchStrategy(SearchStrategy):
 class FilteredStrategy(MappedSearchStrategy):
 
     def __init__(self, strategy, condition):
-        from hypothesis.searchstrategy.streams import StreamStrategy
-        super(FilteredStrategy, self).__init__(
-            strategy=StreamStrategy(strategy))
+        super(FilteredStrategy, self).__init__(strategy=strategy)
         self.condition = condition
 
     def pack(self, value):
-        for attempt in itertools.islice(value, 20):
-            if self.condition(attempt):
-                return attempt
-        assume(False)
+        assume(self.condition(value))
+        return value
 
 
 def tupleize(data):
