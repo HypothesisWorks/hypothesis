@@ -529,7 +529,7 @@ class UniqueListStrategy(SearchStrategy):
         self.key = key
 
     Parameter = namedtuple(
-        'Parameter', ('average_length', 'parameter_seed', 'parameter')
+        'Parameter', ('parameter_seed', 'parameter')
     )
 
     def strictly_simpler(self, x, y):
@@ -551,41 +551,31 @@ class UniqueListStrategy(SearchStrategy):
     def draw_parameter(self, random):
         parameter_seed = random.getrandbits(64)
 
-        if self.min_size == self.max_size:
-            sizes = [self.min_size]
-        else:
-            n_sizes = dist.geometric(random, 0.25) + 1
-            if self.max_size < float('inf'):
-                lower = math.floor(self.average_size)
-                upper = math.ceil(self.average_size)
-                mid_of_lower = (lower + self.min_size) / 2
-                mid_of_upper = (upper + self.max_size) / 2
-                p = (mid_of_upper - self.average_size) / (
-                    mid_of_upper - mid_of_lower)
-                sizes = [
-                    random.randint(self.min_size, lower)
-                    if random.random() <= p
-                    else random.randint(upper, self.max_size)
-                    for _ in hrange(n_sizes)
-                ]
-            else:
-                sizes = [
-                    self.min_size + dist.geometric(
-                        random, 1.0 / (self.average_size - self.min_size + 1))
-                    for _ in hrange(n_sizes)
-                ]
-
-        random = Random(parameter_seed)
+        rnd = Random(parameter_seed)
         return self.Parameter(
-            sizes,
             parameter_seed,
-            Stream(self.elements.draw_parameter(random) for _ in hrange(10)))
+            Stream(self.elements.draw_parameter(rnd) for _ in hrange(10)))
 
     def draw_template(self, random, parameter):
-        length = random.choice(parameter.average_length)
+        if self.min_size == self.max_size:
+            size = self.min_size
+        elif self.max_size < float('inf'):
+            lower = math.floor(self.average_size)
+            upper = math.ceil(self.average_size)
+            mid_of_lower = (lower + self.min_size) / 2
+            mid_of_upper = (upper + self.max_size) / 2
+            p = (mid_of_upper - self.average_size) / (
+                mid_of_upper - mid_of_lower)
+            if random.random() <= p:
+                size = random.randint(self.min_size, lower)
+            else:
+                size = random.randint(upper, self.max_size)
+        else:
+            size = self.min_size + dist.geometric(
+                random, 1.0 / (self.average_size - self.min_size + 1))
 
         return UniqueListTemplate(
-            length, parameter[1], parameter[2],
+            size, parameter[0], parameter[1],
             random.getrandbits(64), None
         )
 
