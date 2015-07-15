@@ -333,6 +333,15 @@ test_non_empty_subset_of_two_is_usually_large = define_test(
     lambda t: len(t) == 2
 )
 
+test_subset_of_ten_is_sometimes_empty = define_test(
+    sets(integers(1, 10)), 0.05, lambda t: len(t) == 0
+)
+
+test_subset_of_ten_with_large_average_is_usually_full = define_test(
+    sets(integers(1, 10), average_size=9.5), 0.6, lambda t: len(t) == 10
+)
+
+
 test_mostly_sensible_floats = define_test(
     floats(), 0.5,
     lambda t: t + 1 > t

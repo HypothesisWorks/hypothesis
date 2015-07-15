@@ -334,7 +334,10 @@ def lists(
         max_size = min(max_size, elements.template_upper_bound)
         if average_size is None:
             if max_size < float('inf'):
-                average_size = (min_size + max_size) / 2
+                if max_size <= 5:
+                    average_size = min_size + 0.75 * (max_size - min_size)
+                else:
+                    average_size = (max_size + min_size) / 2
             else:
                 average_size = Settings.default.average_list_length
         check_valid_sizes(min_size, average_size, max_size)

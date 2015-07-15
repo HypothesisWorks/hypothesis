@@ -17,6 +17,7 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+import math
 from copy import deepcopy
 from random import Random
 from collections import namedtuple
@@ -546,17 +547,37 @@ class UniqueListStrategy(SearchStrategy):
 
     def draw_parameter(self, random):
         parameter_seed = random.getrandbits(64)
+
+        if self.min_size == self.max_size:
+            sizes = [self.min_size]
+        else:
+            n_sizes = dist.geometric(random, 0.5) + 1
+            if self.max_size < float('inf'):
+                lower = math.floor(self.average_size)
+                upper = math.ceil(self.average_size)
+                mid_of_lower = (lower + self.min_size) / 2
+                mid_of_upper = (upper + self.max_size) / 2
+                p = (mid_of_upper - self.average_size) / (
+                    mid_of_upper - mid_of_lower)
+                sizes = [
+                    random.randint(self.min_size, lower)
+                    if random.random() <= p
+                    else random.randint(upper, self.max_size)
+                    for _ in hrange(n_sizes)
+                ]
+            else:
+                sizes = [
+                    self.min_size + dist.geometric(
+                        random, 1.0 / (self.average_size - self.min_size + 1))
+                    for _ in hrange(n_sizes)
+                ]
         return self.Parameter(
-            random.expovariate(1.0 / (1 + self.average_size)),
+            sizes,
             parameter_seed,
             self.elements.draw_parameter(Random(parameter_seed)))
 
     def draw_template(self, random, parameter):
-        length = clamp(
-            self.min_size,
-            dist.geometric(random, 1.0 / (1 + parameter.average_length)),
-            self.max_size,
-        )
+        length = random.choice(parameter.average_length)
 
         return UniqueListTemplate(
             length, parameter[1], parameter[2],
