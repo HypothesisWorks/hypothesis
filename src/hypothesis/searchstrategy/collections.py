@@ -612,7 +612,10 @@ class UniqueListStrategy(SearchStrategy):
                 if len(results) == template.size:
                     template.values = values
                     return results
-        assume(False)
+        assume(len(results) >= self.min_size)
+        template.values = values
+        template.size = len(results)
+        return results
 
     def simplifiers(self, random, template):
         if template.values:
