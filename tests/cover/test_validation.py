@@ -20,7 +20,8 @@ from __future__ import division, print_function, absolute_import, \
 import pytest
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import floats, integers
+from hypothesis.strategies import sets, floats, booleans, integers, \
+    dictionaries
 
 
 def test_errors_when_given_varargs():
@@ -69,3 +70,13 @@ def test_float_ranges():
         floats(float('nan'), 0)
     with pytest.raises(InvalidArgument):
         floats(1, -1)
+
+
+def test_dictionary_key_size():
+    with pytest.raises(InvalidArgument):
+        dictionaries(keys=booleans(), values=integers(), min_size=3)
+
+
+def test_set_size():
+    with pytest.raises(InvalidArgument):
+        sets(elements=booleans(), min_size=3)
