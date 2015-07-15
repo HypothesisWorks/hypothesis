@@ -444,6 +444,18 @@ def dictionaries(
     check_strategy(keys)
     check_strategy(values)
 
+    if min_size is not None and min_size > keys.template_upper_bound:
+        raise InvalidArgument((
+            'Cannot generate dictionaries of size %d with keys from %r, which '
+            'contains no more than %d distinct values') % (
+                min_size, keys, keys.template_upper_bound,
+        ))
+
+    if max_size is None:
+        max_size = keys.template_upper_bound
+    else:
+        max_size = min(max_size, keys.template_upper_bound)
+
     return lists(
         tuples(keys, values),
         min_size=min_size, average_size=average_size, max_size=max_size,
