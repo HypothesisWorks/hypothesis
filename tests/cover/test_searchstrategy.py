@@ -156,5 +156,5 @@ def test_can_map_nameless():
 
 
 def test_can_flatmap_nameless():
-    assert '0x' not in repr(integers().flatmap(
-        nameless_const(specifiers.just(3))))
+    f = nameless_const(specifiers.just(3))
+    assert repr(f) in repr(integers().flatmap(f))

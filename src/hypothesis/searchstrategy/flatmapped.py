@@ -18,6 +18,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 from hypothesis.settings import Settings
+from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.searchstrategy.morphers import MorpherStrategy
 from hypothesis.searchstrategy.strategies import MappedSearchStrategy, \
     strategy
@@ -37,9 +38,11 @@ class FlatMapStrategy(MappedSearchStrategy):
         self.settings = Settings.default
 
     def __repr__(self):
-        return 'FlatMapStrategy(%r, %s)' % (
-            self.flatmapped_strategy, getattr(
-                self.expand, '__name__', type(self.expand).__name__))
+        if not hasattr(self, '_cached_repr'):
+            self._cached_repr = '%r.flatmap(%s)' % (
+                self.flatmapped_strategy, get_pretty_function_description(
+                    self.expand))
+        return self._cached_repr
 
     def pack(self, source_and_morpher):
         source, morpher = source_and_morpher

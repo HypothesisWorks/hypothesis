@@ -46,3 +46,8 @@ def test_map_repr():
 def test_filter_repr():
     assert repr(st.integers().filter(lambda x: x != 3)) == \
         'integers().filter(lambda x: x != 3)'
+
+
+def test_flatmap_repr():
+    assert repr(st.integers().flatmap(lambda x: st.booleans())) == \
+        'integers().flatmap(lambda x: st.booleans())'
