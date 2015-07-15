@@ -20,9 +20,10 @@ from __future__ import division, print_function, absolute_import, \
 from random import Random
 
 import pytest
-from hypothesis import find
+from hypothesis import find, given
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import sets, lists, integers, frozensets
+from hypothesis.strategies import sets, lists, randoms, booleans, \
+    integers, frozensets
 
 
 def test_template_equality():
@@ -88,3 +89,11 @@ def test_can_clone_same_length_items():
 def test_unique_lists_error_on_too_large_average_size():
     with pytest.raises(InvalidArgument):
         lists(integers(), unique_by=lambda x: x, average_size=10, max_size=5)
+
+
+@given(randoms())
+def test_templates_reify_to_same_value_before_and_after(rnd):
+    s = sets(booleans())
+    t = s.draw_and_produce(rnd)
+    t2 = s.from_basic(s.to_basic(t))
+    assert s.reify(t) == s.reify(t2)
