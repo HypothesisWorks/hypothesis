@@ -22,8 +22,8 @@ from copy import deepcopy
 from random import Random
 from collections import namedtuple
 
-from hypothesis.types import Stream
 import hypothesis.internal.distributions as dist
+from hypothesis.types import Stream
 from hypothesis.control import assume
 from hypothesis.settings import Settings
 from hypothesis.utils.show import show
