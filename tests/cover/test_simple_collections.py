@@ -253,7 +253,7 @@ def test_cloning_is_a_no_op_on_short_lists():
 def test_can_find_unique_lists_of_non_set_order():
     ls = find(
         lists(text(), unique_by=lambda x: x),
-        lambda x: list(set(x)) != x
+        lambda x: list(set(reversed(x))) != x
     )
     assert len(set(ls)) == len(ls)
     assert len(ls) == 2
