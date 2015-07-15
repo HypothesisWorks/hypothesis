@@ -554,7 +554,7 @@ class UniqueListStrategy(SearchStrategy):
         if self.min_size == self.max_size:
             sizes = [self.min_size]
         else:
-            n_sizes = dist.geometric(random, 0.5) + 1
+            n_sizes = dist.geometric(random, 0.25) + 1
             if self.max_size < float('inf'):
                 lower = math.floor(self.average_size)
                 upper = math.ceil(self.average_size)
