@@ -44,6 +44,10 @@ in your code:
 * flatmap should now have better simplification for complicated cases, as well
   as generally being (I hope) more reliable.
 
+Bug fixes:
+
+* You could not previously use assume() if you were using the forking executor.
+
 
 ---------------------------------------------------------------------
 `1.7.2 <https://hypothesis.readthedocs.org/en/v1.7.2/>`_ - 2015-07-10
