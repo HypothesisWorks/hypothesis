@@ -22,6 +22,30 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 ---------------------------------------------------------------------
+`1.8.0 <https://hypothesis.readthedocs.org/en/v1.7.2/>`_ - 2015-07-16
+---------------------------------------------------------------------
+
+New features:
+
+* Much more sensible reprs for strategies, especially ones that come from
+  hypothesis.strategies. These should now have as reprs python code that 
+  would produce the same strategy.
+* lists() accepts a unique_by argument which forces the generated lists to be
+  only contain elements unique according to some function key (which must
+  return a hashable value).
+* Better error messages from flaky tests to help you debug things.
+
+Mostly invisible implementation details that may result in finding new bugs
+in your code:
+
+* Sets and dictionary generation should now produce a better range of results.
+* floats with bounds now focus more on 'critical values', trying to produce
+  values at edge cases.
+* flatmap should now have better simplification for complicated cases, as well
+  as generally being (I hope) more reliable.
+
+
+---------------------------------------------------------------------
 `1.7.2 <https://hypothesis.readthedocs.org/en/v1.7.2/>`_ - 2015-07-10
 ---------------------------------------------------------------------
 
