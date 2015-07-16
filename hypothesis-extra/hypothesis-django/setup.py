@@ -42,7 +42,7 @@ README = local_file("README.rst")
 
 setup(
     name='hypothesis-django',
-    version='0.9.1',
+    version='0.10.0',
     author='David R. MacIver',
     author_email='david@drmaciver.com',
     packages=find_packages(SOURCE),
