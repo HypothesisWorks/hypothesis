@@ -552,6 +552,25 @@ def test_can_handle_unicode_repr():
     assert arg_string(foo, [], {'x': Snowman()}) == 'x=☃'
 
 
+class NoRepr(object):
+    pass
+
+
+def test_can_handle_repr_on_type():
+    def foo(x):
+        pass
+    assert arg_string(foo, [Snowman], {}) == 'x=%r' % (Snowman,)
+    assert arg_string(foo, [NoRepr], {}) == 'x=%r' % (NoRepr,)
+
+
+def test_can_handle_repr_of_none():
+    def foo(x):
+        pass
+
+    assert arg_string(foo, [None], {}) == 'x=None'
+    assert arg_string(foo, [], {'x': None}) == 'x=None'
+
+
 @pytest.mark.skipif(
     PY3, reason='repr must return unicode in py3 anyway'
 )

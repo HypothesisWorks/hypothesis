@@ -77,7 +77,11 @@ if PY3:
         return repr(x)
 else:
     def unicode_safe_repr(x):
-        r = type(x).__repr__(x)
+        try:
+            r = type(x).__repr__(x)
+        except TypeError:
+            # Workaround for https://bitbucket.org/pypy/pypy/issues/2083/
+            r = repr(x)
         if isinstance(r, unicode):
             return r
         else:
