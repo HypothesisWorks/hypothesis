@@ -31,7 +31,8 @@ from functools import wraps
 
 from hypothesis.settings import storage_directory
 from hypothesis.internal.compat import ARG_NAME_ATTRIBUTE, hrange, \
-    qualname, text_type, to_unicode, importlib_invalidate_caches
+    qualname, text_type, to_unicode, unicode_safe_repr, \
+    importlib_invalidate_caches
 
 
 def fully_qualified_name(f):
@@ -279,13 +280,13 @@ def arg_string(f, args, kwargs):
 
     for a in argspec.args:
         if a in kwargs:
-            bits.append('%s=%s' % (a, repr(kwargs.pop(a))))
+            bits.append('%s=%s' % (a, unicode_safe_repr(kwargs.pop(a))))
     if kwargs:
         for a in sorted(kwargs):
-            bits.append('%s=%s' % (a, repr(kwargs[a])))
+            bits.append('%s=%s' % (a, unicode_safe_repr(kwargs[a])))
 
     return ', '.join(
-        [repr(x) for x in args] +
+        [unicode_safe_repr(x) for x in args] +
         bits
     )
 

@@ -72,7 +72,17 @@ if PY3:
     integer_types = (int,)
     hunichr = chr
     from functools import reduce
+
+    def unicode_safe_repr(x):
+        return repr(x)
 else:
+    def unicode_safe_repr(x):
+        r = x.__repr__()
+        if isinstance(r, unicode):
+            return r
+        else:
+            return r.decode(a_good_encoding())
+
     text_type = unicode
     binary_type = str
 

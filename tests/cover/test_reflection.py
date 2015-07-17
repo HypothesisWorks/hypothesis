@@ -23,7 +23,7 @@ from copy import deepcopy
 from functools import partial
 
 import pytest
-from hypothesis.internal.compat import BAD_PY3
+from hypothesis.internal.compat import PY3, BAD_PY3
 from hypothesis.internal.reflection import proxies, arg_string, \
     copy_argspec, unbind_method, function_digest, fully_qualified_name, \
     source_exec_as_module, convert_keyword_arguments, \
@@ -530,3 +530,34 @@ def test_can_delegate_to_a_function_with_no_positional_args():
         return foo(**kwargs)
 
     assert bar(2, 1) == (2, 1)
+
+
+class Snowman(object):
+
+    def __repr__(self):
+        return '☃'
+
+
+class BittySnowman(object):
+
+    def __repr__(self):
+        return '☃'.encode('utf-8')
+
+
+def test_can_handle_unicode_repr():
+    def foo(x):
+        pass
+
+    assert arg_string(foo, [Snowman()], {}) == 'x=☃'
+    assert arg_string(foo, [], {'x': Snowman()}) == 'x=☃'
+
+
+@pytest.mark.skipif(
+    PY3, reason='repr must return unicode in py3 anyway'
+)
+def test_can_handle_non_unicode_repr_containing_non_ascii():
+    def foo(x):
+        pass
+
+    assert arg_string(foo, [BittySnowman()], {}) == 'x=☃'
+    assert arg_string(foo, [], {'x': BittySnowman()}) == 'x=☃'
