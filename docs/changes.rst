@@ -22,6 +22,16 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 ---------------------------------------------------------------------
+`1.8.1 <https://hypothesis.readthedocs.org/en/v1.7.2/>`_ - 2015-07-17
+---------------------------------------------------------------------
+
+This is a small release that contains a workaround for people who have
+bad reprs returning non ascii text on Python 2.7. This is not a bug fix
+for Hypothesis per se because that's not a thing that is actually supposed
+to work, but Hypothesis leans more heavily on repr than is typical so it's
+worth having a workaround for.
+
+---------------------------------------------------------------------
 `1.8.0 <https://hypothesis.readthedocs.org/en/v1.7.2/>`_ - 2015-07-16
 ---------------------------------------------------------------------
 
