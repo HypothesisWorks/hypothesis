@@ -22,6 +22,14 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 ---------------------------------------------------------------------
+`1.8.2 <https://hypothesis.readthedocs.org/en/v1.7.2/>`_ - 2015-07-18
+---------------------------------------------------------------------
+
+This release fixes a bug in ForkingTestCase where if a test case exited
+abnormally (e.g. due to os._exit) you would usually not get the falsifying
+example printed.
+
+---------------------------------------------------------------------
 `1.8.1 <https://hypothesis.readthedocs.org/en/v1.7.2/>`_ - 2015-07-17
 ---------------------------------------------------------------------
 
