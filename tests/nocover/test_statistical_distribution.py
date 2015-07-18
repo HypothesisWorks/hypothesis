@@ -35,8 +35,8 @@ import collections
 import pytest
 import hypothesis.internal.reflection as reflection
 from hypothesis.errors import UnsatisfiedAssumption
-from hypothesis.strategies import just, sets, lists, floats, tuples, \
-    booleans, integers, sampled_from
+from hypothesis.strategies import just, sets, text, lists, floats, \
+    tuples, booleans, integers, sampled_from
 from hypothesis.internal.compat import PY26, hrange
 from hypothesis.searchstrategy.strategies import strategy
 
@@ -243,6 +243,33 @@ test_can_produce_large_negative_integers = define_test(
 def long_list(xs):
     return len(xs) >= 20
 
+
+test_can_produce_unstripped_strings = define_test(
+    text(), 0.05, lambda x: x != x.strip()
+)
+
+test_can_produce_stripped_strings = define_test(
+    text(), 0.05, lambda x: x == x.strip()
+)
+
+test_can_produce_multi_line_strings = define_test(
+    text(), 0.1, lambda x: '\n' in x
+)
+
+test_can_produce_long_ascii_strings = define_test(
+    text(), 0.1, lambda x: all(ord(c) <= 127 for c in x),
+    condition=lambda x: len(x) >= 10
+)
+
+test_can_produce_long_strings_with_no_ascii = define_test(
+    text(), 0.05, lambda x: all(ord(c) > 127 for c in x),
+    condition=lambda x: len(x) >= 10
+)
+
+test_can_produce_short_strings_with_some_non_ascii = define_test(
+    text(), 0.1, lambda x: any(ord(c) > 127 for c in x),
+    condition=lambda x: len(x) <= 3
+)
 
 test_can_produce_positive_infinity = define_test(
     floats(), 0.02, lambda x: x == float('inf')

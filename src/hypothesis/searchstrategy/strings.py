@@ -26,6 +26,11 @@ from hypothesis.internal.compat import hrange, hunichr, text_type, \
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
     MappedSearchStrategy, check_length, check_data_type
 
+_spaces = [
+    i for i in range(sys.maxunicode)
+    if unicodedata.category(hunichr(i)) in ('Cc', 'Zs')
+]
+
 
 class OneCharStringStrategy(SearchStrategy):
 
@@ -39,15 +44,30 @@ class OneCharStringStrategy(SearchStrategy):
     def draw_parameter(self, random):
         alphabet_size = 1 + dist.geometric(random, 0.1)
         alphabet = []
+        buckets = 10
+        ascii_chance = random.randint(1, buckets)
+        if ascii_chance < buckets:
+            space_chance = random.randint(1, buckets - ascii_chance)
+        else:
+            space_chance = 0
         while len(alphabet) < alphabet_size:
-            if random.randint(0, 10):
-                codepoint = random.randint(0, sys.maxunicode)
-            else:
+            choice = random.randint(1, buckets)
+            if choice <= ascii_chance:
                 codepoint = dist.geometric(random, 1.0 / 127)
+            elif choice <= ascii_chance + space_chance:
+                while True:
+                    i = dist.geometric(random, 2 / len(_spaces))
+                    if i < len(_spaces):
+                        codepoint = _spaces[i]
+                        break
+            else:
+                codepoint = random.randint(0, sys.maxunicode)
 
             char = hunichr(codepoint)
             if self.is_good(char):
                 alphabet.append(char)
+        if '\n' not in alphabet and not random.randint(0, 10):
+            alphabet.append('\n')
         return tuple(alphabet)
 
     def is_good(self, char):
