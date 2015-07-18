@@ -42,6 +42,7 @@ Error = namedtuple('Error', ('exception',))
 def report_to(w):  # pragma: no cover
     def writer(s):
         pickle.dump(Report(s), w)
+        w.flush()
     return writer
 
 

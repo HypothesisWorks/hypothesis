@@ -107,3 +107,20 @@ def test_captures_output_from_child():
                 ).test_positive()
         out = out.getvalue()
         assert 'Falsifying example: test_positive' in out
+
+
+def test_captures_output_from_child_under_abnormal_exit():
+    class TestForking(ForkingTestCase):
+
+        @given(integers())
+        def test_death(self, x):
+            os._exit(1)
+
+    with reporting.with_reporter(reporting.default):
+        with capture_out() as out:
+            with pytest.raises(AbnormalExit):
+                TestForking(
+                    'test_death'
+                ).test_death()
+        out = out.getvalue()
+        assert 'Falsifying example: test_death' in out
