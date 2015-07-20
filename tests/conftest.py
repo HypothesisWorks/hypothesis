@@ -29,8 +29,6 @@ warnings.filterwarnings('error', category=UnicodeWarning)
 
 set_hypothesis_home_dir(mkdtemp())
 
-Settings.default.max_examples = 1000
-Settings.default.max_iterations = 1500
 Settings.default.timeout = -1
 Settings.default.strict = True
 
