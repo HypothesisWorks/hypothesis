@@ -22,6 +22,13 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 ---------------------------------------------------------------------
+`1.8.3 <https://hypothesis.readthedocs.org/en/v1.7.2/>`_ - 2015-07-20
+---------------------------------------------------------------------
+
+"Falsifying example" would not have been printed when the failure came from an
+explicit example.
+
+---------------------------------------------------------------------
 `1.8.2 <https://hypothesis.readthedocs.org/en/v1.7.2/>`_ - 2015-07-18
 ---------------------------------------------------------------------
 
