@@ -455,10 +455,19 @@ def given(*generator_arguments, **generator_kwargs):
                 for k, v in kwargs.items():
                     if not isinstance(v, HypothesisProvided):
                         example_kwargs[k] = v
-
-                test_runner(
-                    lambda: test(*arguments, **example_kwargs)
+                # Note: Test may mutate arguments and we can't rerun explicit
+                # examples, so we have to calculate the failure message at this
+                # point rather than than later.
+                message_on_failure = 'Falsifying example: %s(%s)' % (
+                    test.__name__, arg_string(test, arguments, example_kwargs)
                 )
+                try:
+                    test_runner(
+                        lambda: test(*arguments, **example_kwargs)
+                    )
+                except BaseException:
+                    report(message_on_failure)
+                    raise
 
             if not any(
                 isinstance(x, HypothesisProvided)

@@ -20,8 +20,9 @@ from __future__ import division, print_function, absolute_import, \
 from unittest import TestCase
 
 import pytest
-from hypothesis import given, example
+from hypothesis import given, example, reporting
 from hypothesis.errors import InvalidArgument
+from tests.common.utils import capture_out
 from hypothesis.strategies import text, integers
 from hypothesis.internal.compat import integer_types
 
@@ -130,3 +131,46 @@ def test_no_args_and_kwargs():
 def test_no_empty_examples():
     with pytest.raises(InvalidArgument):
         example()
+
+
+def test_does_not_print_on_explicit_examples_if_no_failure():
+    @example(1)
+    @given(integers())
+    def test_positive(x):
+        assert x > 0
+
+    with reporting.with_reporter(reporting.default):
+        with pytest.raises(AssertionError):
+            with capture_out() as out:
+                test_positive()
+    out = out.getvalue()
+    assert 'Falsifying example: test_positive(1)' not in out
+
+
+def test_prints_output_for_explicit_examples():
+    @example(-1)
+    @given(integers())
+    def test_positive(x):
+        assert x > 0
+
+    with reporting.with_reporter(reporting.default):
+        with pytest.raises(AssertionError):
+            with capture_out() as out:
+                test_positive()
+    out = out.getvalue()
+    assert 'Falsifying example: test_positive(x=-1)' in out
+
+
+def test_captures_original_repr_of_example():
+    @example(x=[])
+    @given(integers())
+    def test_mutation(x):
+        x.append(1)
+        assert not x
+
+    with reporting.with_reporter(reporting.default):
+        with pytest.raises(AssertionError):
+            with capture_out() as out:
+                test_mutation()
+    out = out.getvalue()
+    assert 'Falsifying example: test_mutation(x=[])' in out
