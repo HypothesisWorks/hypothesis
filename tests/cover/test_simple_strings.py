@@ -17,10 +17,11 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+import unicodedata
 from random import Random
 
 import pytest
-from hypothesis import find, given
+from hypothesis import Settings, find, given
 from hypothesis.strategies import text, binary, tuples
 
 
@@ -90,6 +91,11 @@ def test_binary_respects_changes_in_size():
     def test_foo(x):
         assert len(x) <= 150
     test_foo()
+
+
+@given(text(min_size=1, max_size=1), settings=Settings(max_examples=2000))
+def test_does_not_generate_surrogates(t):
+    assert unicodedata.category(t) != 'Cs'
 
 
 def test_does_not_simplify_into_surrogates():
