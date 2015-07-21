@@ -183,17 +183,11 @@ def args_for_lambda_ast(l):
     return [getattr(n, ARG_NAME_ATTRIBUTE) for n in l.args.args]
 
 
-def find_offset(string, line, column):
-    current_line = 1
-    current_line_offset = 0
-    while current_line < line:
-        current_line_offset = string.index('\n', current_line_offset + 1)
-        current_line += 1
-    return current_line_offset + column
-
-
+LINE_CONTINUATION = re.compile(r"\\\n")
 WHITESPACE = re.compile(r"\s+")
 PROBABLY_A_COMMENT = re.compile("""#[^'"]*$""")
+SPACE_FOLLOWS_OPEN_BRACKET = re.compile(r"\( ")
+SPACE_PRECEDES_CLOSE_BRACKET = re.compile(r"\( ")
 
 
 def extract_lambda_source(f):
@@ -228,15 +222,25 @@ def extract_lambda_source(f):
 
     if not isinstance(source, text_type):  # pragma: no branch
         source = source.decode('utf-8')  # pragma: no cover
+    source = LINE_CONTINUATION.sub(' ', source)
+    source = WHITESPACE.sub(' ', source)
+    source = source.strip()
 
     try:
-        try:
-            tree = ast.parse(source)
-        except IndentationError:
-            source = 'with 0:\n' + source
-            tree = ast.parse(source)
+        tree = ast.parse(source)
     except SyntaxError:
-        return if_confused
+        for i in hrange(len(source) - 1, len('lambda'), -1):
+            prefix = source[:i]
+            if 'lambda' not in prefix:
+                return if_confused
+            try:
+                tree = ast.parse(prefix)
+                source = prefix
+                break
+            except SyntaxError:
+                continue
+        else:
+            return if_confused
 
     all_lambdas = extract_all_lambdas(tree)
     aligned_lambdas = [
@@ -246,13 +250,11 @@ def extract_lambda_source(f):
     if len(aligned_lambdas) != 1:
         return if_confused
     lambda_ast = aligned_lambdas[0]
-    line_start = lambda_ast.lineno
-    column_offset = lambda_ast.col_offset
-    source = source[find_offset(source, line_start, column_offset):].strip()
+    assert lambda_ast.lineno == 1
+    source = source[lambda_ast.col_offset:].strip()
 
     source = source[source.index('lambda'):]
-
-    for i in hrange(len(source), -1, -1):  # pragma: no branch
+    for i in hrange(len(source), len('lambda'), -1):  # pragma: no branch
         try:
             parsed = ast.parse(source[:i])
             assert len(parsed.body) == 1
@@ -268,6 +270,8 @@ def extract_lambda_source(f):
     source = '\n'.join(lines)
 
     source = WHITESPACE.sub(' ', source)
+    source = SPACE_FOLLOWS_OPEN_BRACKET.sub('(', source)
+    source = SPACE_PRECEDES_CLOSE_BRACKET.sub(')', source)
     source = source.strip()
     return source
 

@@ -17,6 +17,7 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+import ast
 import sys
 import inspect
 from copy import deepcopy
@@ -177,6 +178,16 @@ def test_can_have_unicode_in_lambda_sources():
     )
 
 
+ordered_pair = (
+    lambda right: [].map(
+        lambda length: ()))
+
+
+def test_can_get_descriptions_of_nested_lambdas_with_different_names():
+    assert get_pretty_function_description(ordered_pair) == \
+        'lambda right: [].map(lambda length: ())'
+
+
 class Foo(object):
 
     @classmethod
@@ -269,6 +280,22 @@ def test_does_not_error_if_it_cannot_distinguish_between_two_lambdas():
     a, b = (lambda x: 1, lambda x: 2)  # pragma: no cover
     assert 'lambda x:' in get_pretty_function_description(a)
     assert 'lambda x:' in get_pretty_function_description(b)
+
+
+def test_lambda_source_break_after_def_with_brackets():
+    f = (lambda n:
+         'aaa')
+
+    source = get_pretty_function_description(f)
+    assert source == "lambda n: 'aaa'"
+
+
+def test_lambda_source_break_after_def_with_line_continuation():
+    f = lambda n:\
+        'aaa'
+
+    source = get_pretty_function_description(f)
+    assert source == "lambda n: 'aaa'"
 
 
 def test_digests_are_reasonably_unique():
