@@ -188,7 +188,10 @@ def floats(min_value=None, max_value=None):
     for e in (min_value, max_value):
         if e is not None and math.isnan(e):
             raise InvalidArgument('nan is not a valid end point')
-
+    if min_value is not None:
+        min_value = float(min_value)
+    if max_value is not None:
+        max_value = float(max_value)
     if min_value == float('-inf'):
         min_value = None
     if max_value == float('inf'):

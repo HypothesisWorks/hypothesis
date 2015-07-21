@@ -246,3 +246,26 @@ def test_bounds_are_valid(left, right):
 def test_bounds_are_respected():
     assert find(floats(min_value=1.0), lambda x: True) == 1.0
     assert find(floats(max_value=-1.0), lambda x: True) == -1.0
+
+
+class TestFloatsAreFloats(object):
+
+    @given(floats())
+    def test_unbounded(self, arg):
+        assert isinstance(arg, float)
+
+    @given(floats(min_value=0, max_value=2 ** 64 - 1))
+    def test_int_int(self, arg):
+        assert isinstance(arg, float)
+
+    @given(floats(min_value=0, max_value=float(2 ** 64 - 1)))
+    def test_int_float(self, arg):
+        assert isinstance(arg, float)
+
+    @given(floats(min_value=float(0), max_value=2 ** 64 - 1))
+    def test_float_int(self, arg):
+        assert isinstance(arg, float)
+
+    @given(floats(min_value=float(0), max_value=float(2 ** 64 - 1)))
+    def test_float_float(self, arg):
+        assert isinstance(arg, float)
