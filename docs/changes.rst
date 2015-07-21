@@ -21,15 +21,29 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+
 ---------------------------------------------------------------------
-`1.8.3 <https://hypothesis.readthedocs.org/en/v1.7.2/>`_ - 2015-07-20
+`1.8.4 <https://hypothesis.readthedocs.org/en/v1.7.2/>`_ - 2015-07-20
+---------------------------------------------------------------------
+
+Bugs fixed:
+
+* When a call to floats() had endpoints which were not floats but merely
+  convertible to one (e.g. integers), these would be included in the generated
+  data which would cause it to generate non-floats.
+* Splitting lambdas used in the definition of flatmap, map or filter over
+  multiple lines would break the repr, which would in turn break their usage.
+
+
+---------------------------------------------------------------------
+`1.8.3 <https://hypothesis.readthedocs.org/en/v1.8.3/>`_ - 2015-07-20
 ---------------------------------------------------------------------
 
 "Falsifying example" would not have been printed when the failure came from an
 explicit example.
 
 ---------------------------------------------------------------------
-`1.8.2 <https://hypothesis.readthedocs.org/en/v1.7.2/>`_ - 2015-07-18
+`1.8.2 <https://hypothesis.readthedocs.org/en/v1.8.2/>`_ - 2015-07-18
 ---------------------------------------------------------------------
 
 Another small bugfix release:
@@ -41,7 +55,7 @@ Another small bugfix release:
   whitespace in the alphabet.
 
 ---------------------------------------------------------------------
-`1.8.1 <https://hypothesis.readthedocs.org/en/v1.7.2/>`_ - 2015-07-17
+`1.8.1 <https://hypothesis.readthedocs.org/en/v1.8.1/>`_ - 2015-07-17
 ---------------------------------------------------------------------
 
 This is a small release that contains a workaround for people who have
@@ -51,7 +65,7 @@ to work, but Hypothesis leans more heavily on repr than is typical so it's
 worth having a workaround for.
 
 ---------------------------------------------------------------------
-`1.8.0 <https://hypothesis.readthedocs.org/en/v1.7.2/>`_ - 2015-07-16
+`1.8.0 <https://hypothesis.readthedocs.org/en/v1.8.0/>`_ - 2015-07-16
 ---------------------------------------------------------------------
 
 New features:
