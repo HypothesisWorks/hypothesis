@@ -120,14 +120,17 @@ def test_can_generate_really_small_negative_floats(x):
     assert x <= -REALLY_SMALL_FLOAT
 
 
+TRY_HARDER = Settings(max_examples=1000)
+
+
 @fails
-@given(floats())
+@given(floats(), settings=TRY_HARDER)
 def test_can_find_floats_that_do_not_round_trip_through_strings(x):
     assert float(str(x)) == x
 
 
 @fails
-@given(floats())
+@given(floats(), settings=TRY_HARDER)
 def test_can_find_floats_that_do_not_round_trip_through_reprs(x):
     assert float(repr(x)) == x
 
