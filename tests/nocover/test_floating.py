@@ -120,7 +120,7 @@ def test_can_generate_really_small_negative_floats(x):
     assert x <= -REALLY_SMALL_FLOAT
 
 
-TRY_HARDER = Settings(max_examples=1000)
+TRY_HARDER = Settings(max_examples=1000, max_iterations=2000)
 
 
 @fails
