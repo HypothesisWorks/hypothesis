@@ -23,19 +23,17 @@ import faker
 import hypothesis.internal.distributions as dist
 from faker.factory import AVAILABLE_LOCALES
 from hypothesis.internal.compat import hrange, text_type
+from hypothesis.internal.reflection import check_valid_identifier
 from hypothesis.internal.distributions import geometric
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
     check_data_type
 
 
 def fake_factory(source, locale=None, locales=None, providers=()):
-    test_faker = faker.Faker()
+    check_valid_identifier(source)
+    if source[0] == '_':
+        raise ValueError('Bad source name %s' % (source,))
 
-    for provider in providers:
-        test_faker.add_provider(provider)
-
-    if not hasattr(test_faker, source) or source[0] == '_':
-        raise ValueError('No such source %r' % (source,))
     if locale is not None and locales is not None:
         raise ValueError('Cannot specify both single and multiple locales')
     if locale:
@@ -47,7 +45,23 @@ def fake_factory(source, locale=None, locales=None, providers=()):
     for l in (locales or ()):
         if l not in AVAILABLE_LOCALES:
             raise ValueError('Unsupported locale %r' % (l,))
-    locales = locales or AVAILABLE_LOCALES
+
+    def supports_source(locale):
+        test_faker = faker.Faker(locale)
+        for provider in providers:
+            test_faker.add_provider(provider)
+        return hasattr(test_faker, source)
+
+    if locales is None:
+        locales = list(filter(supports_source, AVAILABLE_LOCALES))
+        if not locales:
+            raise ValueError('No such source %r' % (source,))
+    else:
+        for l in locales:
+            if not supports_source(locale):
+                raise ValueError('Unsupported source %s for locale %s' % (
+                    source, l
+                ))
     return FakeFactoryStrategy(source, providers, locales)
 
 

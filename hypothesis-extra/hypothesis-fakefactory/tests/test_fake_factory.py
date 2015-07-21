@@ -68,6 +68,11 @@ def test_fake_factory_errors_with_unsupported_locale():
         )
 
 
+def test_factory_errors_with_source_for_unsupported_locale():
+    with pytest.raises(ValueError):
+        fake_factory('state', locale='ja_JP')
+
+
 def test_fake_factory_errors_if_any_locale_is_unsupported():
     with pytest.raises(ValueError):
         fake_factory(
@@ -100,4 +105,8 @@ TestFakeNames = strategy_test_suite(
 
 TestFakeEnglishNames = strategy_test_suite(
     fake_factory('name', locale='en_US')
+)
+
+TestStates = strategy_test_suite(
+    fake_factory('state')
 )
