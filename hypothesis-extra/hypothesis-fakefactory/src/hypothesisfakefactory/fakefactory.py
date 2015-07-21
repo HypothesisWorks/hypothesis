@@ -57,6 +57,7 @@ class FakeFactoryStrategy(SearchStrategy):
         self.source = source
         self.providers = tuple(providers)
         self.locales = tuple(locales)
+        self.factories = {}
 
     def draw_parameter(self, random):
         locales = dist.non_empty_subset(random, self.locales)
@@ -66,11 +67,20 @@ class FakeFactoryStrategy(SearchStrategy):
             for _ in hrange(n)
         ]
 
-    def gen_example(self, random, locales):
-        factory = faker.Faker(locale=random.choice(locales))
-        factory.seed(random.getrandbits(128))
+    def factory_for(self, locale):
+        try:
+            return self.factories[locale]
+        except KeyError:
+            pass
+        factory = faker.Faker(locale=locale)
+        self.factories[locale] = factory
         for p in self.providers:
             factory.add_provider(p)
+        return factory
+
+    def gen_example(self, random, locales):
+        factory = self.factory_for(random.choice(locales))
+        factory.seed(random.getrandbits(128))
         return text_type(getattr(factory, self.source)())
 
     def basic_simplify(self, random, template):
