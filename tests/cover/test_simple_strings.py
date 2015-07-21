@@ -83,13 +83,13 @@ def test_can_safely_mix_simplifiers():
 def test_binary_respects_changes_in_size():
     @given(binary())
     def test_foo(x):
-        assert len(x) <= 150
+        assert len(x) <= 10
     with pytest.raises(AssertionError):
         test_foo()
 
-    @given(binary(max_size=150))
+    @given(binary(max_size=10))
     def test_foo(x):
-        assert len(x) <= 150
+        assert len(x) <= 10
     test_foo()
 
 
