@@ -632,6 +632,35 @@ def builds(target, *args, **kwargs):
 
 
 @defines_strategy
+def recursive(base, extend, max_leaves=100):
+    """
+    base: A strategy to start from
+    extend: A function which takes a strategy and returns a new strategy
+    max_leaves: The maximum number of elements to be drawn from base on a given
+        run.
+
+    This returns a strategy S such that S = extend(base | S). That is, values
+    maybe drawn from base, or from any strategy reachable by mixing
+    applications of | and extend.
+
+    An example may clarify: recursive(booleans(), lists) would return a
+    strategy that may return arbitrarily nested and mixed lists of booleans.
+    So e.g. False, [True], [False, []], [[[[True]]]], are all valid values to
+    be drawn from that strategy.
+    """
+
+    check_strategy(base)
+    extended = extend(base)
+    if not isinstance(extended, SearchStrategy):
+        raise InvalidArgument(
+            'Expected extend(%r) to be a SearchStrategy but got %r' % (
+                base, extended
+            ))
+    from hypothesis.searchstrategy.recursive import RecursiveStrategy
+    return RecursiveStrategy(base, extend, max_leaves)
+
+
+@defines_strategy
 def permutations(values):
     """Return a strategy which returns permutations of the collection
     "values"."""

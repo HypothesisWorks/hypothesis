@@ -17,10 +17,10 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from hypothesis.searchstrategy.wrappers import WrapperStrategy
+from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
-class ReprWrapperStrategy(WrapperStrategy):
+class WrapperStrategy(SearchStrategy):
 
     """A strategy which is defined purely by conversion to and from another
     strategy.
@@ -29,12 +29,13 @@ class ReprWrapperStrategy(WrapperStrategy):
 
     """
 
-    def __init__(self, strategy, representation):
-        super(ReprWrapperStrategy, self).__init__(strategy)
-        self.representation = representation
+    def __init__(self, strategy):
+        SearchStrategy.__init__(self)
+        self.wrapped_strategy = strategy
+        self.template_upper_bound = self.wrapped_strategy.template_upper_bound
 
     def __repr__(self):
-        return self.representation
+        return '%s(%r)' % (type(self).__name__, self.wrapped_strategy)
 
     def draw_parameter(self, random):
         return self.wrapped_strategy.draw_parameter(random)

@@ -26,7 +26,7 @@ from tests.common.basic import Bitfields, BoringBitfields, \
 from hypothesis.stateful import StateMachineSearchStrategy
 from hypothesis.strategies import just, none, sets, text, basic, lists, \
     binary, builds, floats, one_of, tuples, randoms, booleans, decimals, \
-    integers, fractions, streaming, frozensets, dictionaries, \
+    integers, fractions, recursive, streaming, frozensets, dictionaries, \
     sampled_from, complex_numbers, fixed_dictionaries
 from hypothesis.strategytests import mutate_basic, templates_for, \
     strategy_test_suite
@@ -194,6 +194,22 @@ with Settings(average_list_length=5.0):
         basic(
             generate_parameter=lambda r: r.getrandbits(128),
             generate=lambda r, p: r.getrandbits(128) & p,
+        )
+    )
+
+    TestRecursiveLowLeaves = strategy_test_suite(
+        recursive(
+            booleans(),
+            lambda x: tuples(x, x),
+            max_leaves=3,
+        )
+    )
+
+    TestRecursiveHighLeaves = strategy_test_suite(
+        recursive(
+            booleans(),
+            lambda x: lists(x, min_size=2, max_size=10),
+            max_leaves=200,
         )
     )
 
