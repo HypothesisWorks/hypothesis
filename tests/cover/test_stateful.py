@@ -160,6 +160,10 @@ bad_machines = (
     UnreliableStrategyState, DepthMachine,
 )
 
+for m in bad_machines:
+    m.TestCase.settings.max_examples = 1000
+    m.TestCase.settings.max_iterations = 2000
+
 
 cheap_bad_machines = list(bad_machines)
 cheap_bad_machines.remove(BalancedTrees)
