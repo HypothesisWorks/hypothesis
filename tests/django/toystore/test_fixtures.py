@@ -14,13 +14,14 @@
 
 # END HEADER
 
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
+
 from django.test import TestCase
+from hypothesis.strategies import just, lists
+from tests.django.toystore.models import Store, Company, Customer
 from hypothesis.extra.django.models import models
 from hypothesis.extra.django.fixtures import fixture
-from hypothesis.strategies import lists, just
-
-from toystore.models import Company, Customer, Store
-
 
 a_company = fixture(
     models(Company),
@@ -61,6 +62,7 @@ a_gendered_customer = fixture(
 
 
 class TestFinding(TestCase):
+
     def test_can_find_unique_name(self):
         assert len(a_company().name) == 1
 
@@ -78,8 +80,8 @@ class TestFinding(TestCase):
 
     def test_can_find_with_multiple_unique(self):
         x = a_gendered_customer()
-        self.assertEqual("0", x.name)
-        self.assertEqual("0", x.gender)
+        self.assertEqual('0', x.name)
+        self.assertEqual('0', x.gender)
 
     def test_can_find_with_children(self):
         x = a_company_with_some_stores()

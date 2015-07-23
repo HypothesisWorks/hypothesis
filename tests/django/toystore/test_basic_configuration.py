@@ -17,16 +17,17 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from django.db import IntegrityError
-
-from hypothesis import given
-from toystore.models import Company
-from hypothesis.extra.django import TestCase, TransactionTestCase
 from unittest import TestCase as VanillaTestCase
+
+from django.db import IntegrityError
+from hypothesis import given
 from hypothesis.strategies import integers
+from hypothesis.extra.django import TestCase, TransactionTestCase
+from tests.django.toystore.models import Company
 
 
 class SomeStuff(object):
+
     @given(integers())
     def test_is_blank_slate(self, unused):
         Company.objects.create(name='MickeyCo')
@@ -47,12 +48,14 @@ class TestConstraintsWithoutTransactions(SomeStuff, TransactionTestCase):
 
 
 class TestWorkflow(VanillaTestCase):
+
     def test_does_not_break_later_tests(self):
         def break_the_db(i):
             Company.objects.create(name='MickeyCo')
             Company.objects.create(name='MickeyCo')
 
         class LocalTest(TestCase):
+
             @given(integers().map(break_the_db))
             def test_does_not_break_other_things(self, unused):
                 pass

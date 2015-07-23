@@ -110,4 +110,4 @@ case "${TOXENV}" in
         ;;
 esac
 
-pip install --upgrade tox pip
+pip install --upgrade tox pip wheel

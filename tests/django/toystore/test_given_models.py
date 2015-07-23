@@ -17,18 +17,20 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from hypothesis.errors import InvalidArgument
-from hypothesis.extra.django import TestCase, TransactionTestCase
-from hypothesis.extra.django.models import models, add_default_field_mapping
 from hypothesis import given, assume
-from toystore.models import Company, Customer, CouldBeCharming, Store, \
-    SelfLoop, ManyInts, CustomishField, Customish
-from hypothesis.strategies import lists, just
+from hypothesis.errors import InvalidArgument
+from hypothesis.strategies import just, lists
+from hypothesis.extra.django import TestCase, TransactionTestCase
+from tests.django.toystore.models import Store, Company, Customer, \
+    ManyInts, SelfLoop, Customish, CustomishField, CouldBeCharming
+from hypothesis.extra.django.models import models, \
+    add_default_field_mapping
 
-add_default_field_mapping(CustomishField, just("a"))
+add_default_field_mapping(CustomishField, just('a'))
 
 
 class TestGetsBasicModels(TestCase):
+
     @given(models(Company))
     def test_is_company(self, company):
         self.assertIsInstance(company, Company)
@@ -69,13 +71,14 @@ class TestGetsBasicModels(TestCase):
 
     @given(models(Customish))
     def test_custom_field(self, x):
-        assert x.customish == "a"
+        assert x.customish == 'a'
 
     def test_mandatory_fields_are_mandatory(self):
         self.assertRaises(InvalidArgument, models, Store)
 
 
 class TestsNeedingRollback(TransactionTestCase):
+
     def test_can_get_examples(self):
         for _ in range(200):
             models(Company).example()

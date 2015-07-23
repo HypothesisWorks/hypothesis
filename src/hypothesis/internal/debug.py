@@ -66,19 +66,18 @@ except AttributeError:
         return decorate
 
 
-quality_settings = Settings(
-    max_examples=5000,
-    max_iterations=10000,
-    max_shrinks=5000,
-)
-
-
 def minimal(
         definition, condition=None,
         settings=None, timeout_after=10, random=None
 ):
+    settings = settings or Settings(
+        max_examples=5000,
+        max_iterations=10000,
+        max_shrinks=5000,
+    )
+
     condition = condition or (lambda x: True)
-    with settings or quality_settings:
+    with settings:
         settings = Settings(timeout=timeout_after * 0.95)
 
     @timeout(timeout_after)

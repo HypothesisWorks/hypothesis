@@ -6,27 +6,33 @@ import os
 for k, v in sorted(dict(os.environ).items()):
     print("%s=%s" % (k, v))
 '
-python -u setup.py test
+python -m pytest tests/cover
+python -m pytest tests/nocover
 
-pip install --no-use-wheel fake-factory==0.5.2
+pip install .[datetime]
+python -m pytest tests/datetime/
+pip uninstall -y pytz
 
-for extra in datetime fakefactory pytest ; do
-    pip install --upgrade hypothesis-extra/hypothesis-$extra/
-done
 
-for extra in datetime fakefactory pytest ; do
-    python -m pytest hypothesis-extra/hypothesis-$extra/tests/
-done
-
-if [ "$(python -c 'import platform; print(platform.python_implementation())')" != "PyPy" ]; then
-    pip install --upgrade hypothesis-extra/hypothesis-numpy/
-    python -u -m pytest hypothesis-extra/hypothesis-numpy/tests --durations=20
-fi
+# fake-factory doesn't have a correct universal wheel
+pip install --no-use-wheel .[fakefactory]
+python -m pytest tests/fakefactory/
 
 if [ "$(python -c 'import sys; print(sys.version_info[:2] <= (2, 6))')" != "True" ] ; then
-    pip install --upgrade hypothesis-extra/hypothesis-django/
-    pushd hypothesis-extra/hypothesis-django
-        python -u manage.py test
-    popd
+  pip install .[django]
+  python -m tests.django.manage test tests.django
+  pip uninstall -y django fake-factory
 fi
 
+if [ "$(python -c 'import platform; print(platform.python_implementation())')" != "PyPy" ]; then
+  if [ "$(python -c 'import sys; print(sys.version_info[:2] <= (2, 6))')" != "True" ] ; then
+    pushd $HOME
+      pip wheel numpy==1.9.2
+    popd
+    pip install $HOME/wheelhouse/numpy-1.9.2*
+  else
+    pip install numpy==1.9.2
+  fi
+  python -m pytest tests/numpy
+  pip uninstall -y numpy
+fi

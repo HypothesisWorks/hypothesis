@@ -30,13 +30,15 @@ class Store(models.Model):
 
 
 class CharmField(models.Field):
+
     def db_type(self, connection):
-        return "char(1)"
+        return 'char(1)'
 
 
 class CustomishField(models.Field):
+
     def db_type(self, connection):
-        return "char(1)"
+        return 'char(1)'
 
 
 class Customish(models.Model):

@@ -63,6 +63,10 @@ setup(
     zip_safe=False,
     extras_require={
         ":python_version == '2.6'": ['importlib', 'ordereddict', 'Counter'],
+        'datetime':  ["pytz"],
+        'fakefactory': ["fake-factory==0.5.2"],
+        'django': ['pytz', 'fake-factory==0.5.2', 'django>=1.7'],
+        'numpy': ['numpy>=1.9.0']
     },
     classifiers=[
         "Development Status :: 5 - Production/Stable",
