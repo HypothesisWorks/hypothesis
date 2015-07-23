@@ -363,3 +363,7 @@ if MAIN or not (PYPY and PY3):
 if MAIN:
     TestHypothesis.settings.timeout = 500
     TestHypothesis().runTest()
+
+
+if PYPY:
+    TestHypothesis.settings.stateful_step_count = 10
