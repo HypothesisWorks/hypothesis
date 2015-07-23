@@ -1,2 +1,1 @@
-Support for using `fake-factory <https://pypi.python.org/pypi/fake-factory>`_ data
-in `Hypothesis <https://github.com/DRMacIver/hypothesis>`.
+This package is deprecated and exists only for backwards compatibility reasons. You don't need it.

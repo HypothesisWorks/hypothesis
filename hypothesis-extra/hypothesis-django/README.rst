@@ -1,1 +1,1 @@
-This adds support for django to `Hypothesis <https://github.com/DRMacIver/hypothesis>`_.
+This package is deprecated and exists only for backwards compatibility reasons. You don't need it.
