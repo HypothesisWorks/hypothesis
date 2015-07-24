@@ -27,7 +27,7 @@ pip install .[datetime]
 python -m pytest tests/datetime/
 pip uninstall -y pytz
 
-if [ "$DARWIN" = true ] then
+if [ "$DARWIN" = true ]; then
   exit 0
 fi
 
