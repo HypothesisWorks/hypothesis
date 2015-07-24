@@ -42,7 +42,7 @@ README = local_file("README.rst")
 
 setup(
     name='hypothesis-datetime',
-    version='1.8.0',
+    version='1.8.1',
     author='David R. MacIver',
     author_email='david@drmaciver.com',
     packages=find_packages(SOURCE),
