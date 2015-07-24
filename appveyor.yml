@@ -51,12 +51,13 @@ install:
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
   - "%CMD_IN_ENV% pip install setuptools pip"
   - "%CMD_IN_ENV% pip install .[all]"
+  - "%CMD_IN_ENV% pip install ./hypothesis-extra/hypothesis-pytest/"
 
 build: false  # Not a C# project, build stuff at the test step instead.
 
 test_script:
   # Build the compiled extension and run the project tests
   - "%CMD_IN_ENV% python -m pytest tests/cover"
-  - "%CMD_IN_ENV% python -m pytest hypothesis-extra/hypothesis-datetime/tests"
+  - "%CMD_IN_ENV% python -m pytest tests/datetime"
+  - "%CMD_IN_ENV% python -m pytest tests/fakefactory"
   - "%CMD_IN_ENV% python -m pytest hypothesis-extra/hypothesis-pytest/tests"
-  - "%CMD_IN_ENV% python -m pytest hypothesis-extra/hypothesis-fakefactory/tests"
