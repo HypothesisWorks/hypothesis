@@ -39,11 +39,8 @@ def test_floats_are_in_range(l, r):
 
 def test_can_generate_both_zeros():
     find(
-        st.tuples(st.floats(), st.floats()),
-        lambda x: assume(x[0] == x[1]) and (
-            math.copysign(1, x[0]) != math.copysign(1, x[1])
-        )
-    )
+        st.floats(),
+        lambda x: assume(x >= 0) and math.copysign(1, x) < 0)
 
 
 @pytest.mark.parametrize(('l', 'r'), [
