@@ -2,22 +2,31 @@
 Additional packages
 ===================
 
-Hypothesis has a zero dependency policy for the core library. For things which need a
-dependency to work, these are farmed off into additional packages on pypi. These end
-up putting any additional things you need to import (if there are any) under the
-hypothesis.extra namespace.
+Hypothesis itself does not have any dependencies, but there are some packages that
+need additional things installed in order to work.
 
-Generally these will be for providing new sources of data for Hypothesis, or for better
-integrating it into an existing testing framework.
+You can install these dependencies using the setuptools extra feature as e.g.
+pip install hypothesis[django]. This will check installation of compatible versions.
 
--------------------
-hypothesis-datetime
--------------------
+You can also just install hypothesis into a project using them, ignore the version
+constraints, and hope for the best.
+
+In general "Which version is Hypothesis compatible with?" is a hard question to answer
+and even harder to regularly test. Hypothesis is always tested against the latest
+compatible version and each package will note the expected compatibility range. If
+you run into a bug with any of these please specify the dependency version.
+
+--------------------
+hypothesis[datetime]
+--------------------
 
 As might be expected, this provides a strategy which generates instances of
-datetime. It depends on pytz.
+datetime. It depends on pytz to work.
 
-hypothesis-datetime lives in the hypothesis.extra.datetime package:
+It should work with just about any version of pytz. pytz has a very stable API
+and Hypothesis works around a bug or two in older versions.
+
+It lives in the hypothesis.extra.datetime package:
 
 .. code-block:: pycon
 
@@ -68,17 +77,17 @@ want:
     >>> datetimes(allow_naive=True).example()
     datetime.datetime(7003, 1, 22, 0, 0, 52, 401259)
 
-----------------------
-hypothesis-fakefactory
-----------------------
+-----------------------
+hypothesis[fakefactory]
+-----------------------
 
 `Fake-factory <https://pypi.python.org/pypi/fake-factory>`_ is another Python
-library for data generation. hypothesis-fakefactory is a package which lets you
-use fake-factory generators to parametrize tests.
+library for data generation. hypothesis.extra.fakefactory is a package which
+lets you use fake-factory generators to parametrize tests.
 
-It currently only supports the 0.4.2 release of fake-factory, due to some
-issues with the 0.5.0 release. These are known to be fixed in master but there
-hasn't been a release containing the fixes yet.
+The fake-factory API is extremely unstable, even between patch releases, and
+Hypothesis's support for it is unlikely to work with anything except the exact
+version it has been tested against.
 
 hypothesis.extra.fakefactory defines a function fake_factory which returns a
 strategy for producing text data from any FakeFactory provider.
@@ -125,18 +134,26 @@ powerful and easier to use. Consider using something like BasicStrategy instead
 if you want to write a strategy from scratch. This is only here to provide easy
 reuse of things you already have.
 
+------------------
+hypothesis[django]
+------------------
+
+hypothesis.extra.django adds support for testing your Django models with Hypothesis.
+
+It should be compatible with any Django since 1.7, but is only tested extensively
+against 1.8.
+
+It's large enough that it is :doc:`documented elsewhere <django>`.
+
 -----------------
 hypothesis-pytest
 -----------------
+
+hypothesis-pytest is actually available as a separate package that is installed as
+hypothesis-pytest rather than hypothesis[pytest]. This may change in future but the
+package will remain for compatibility reasons if it does.
 
 hypothesis-pytest is the world's most basic pytest plugin. Install it to get
 slightly better integrated example reporting when using @given and running
 under pytest. That's basically all it does.
 
------------------
-hypothesis-django
------------------
-
-hypothesis-django adds support for testing your Django models with Hypothesis.
-
-It's large enough that it is :doc:`documented elsewhere <django>`.
