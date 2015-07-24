@@ -57,7 +57,14 @@ class Morpher(object):
         return result
 
     def clean_slate(self):
-        return Morpher(self.parameter_seed, self.template_seed, self.data)
+        result = Morpher(self.parameter_seed, self.template_seed, self.data)
+        for s in self.strategies():
+            template = result.template_for(s)
+            basic = s.to_basic(template)
+            result.data[result.owners.index(s)] = basic
+        result.cache = {}
+        result.owners = []
+        return result
 
     def __deepcopy__(self, table):
         return self.__copy__()
@@ -125,10 +132,6 @@ class Morpher(object):
         assert result.owners[i] is strategy
         result.data[i] = strategy.to_basic(template)
         return result
-
-    def has_deadweight(self):
-        return len(self.owners) < len(self.data) or any(
-            o is None for o in self.owners)
 
     def without_deadweight(self):
         result = Morpher(
@@ -206,24 +209,19 @@ class MorpherStrategy(SearchStrategy):
 
     def simplifiers(self, random, morpher):
         morpher.restore()
-        yield self.remove_deadweight
         for key, template in morpher.cache.items():
             strategy = key.value
             for simplifier in strategy.simplifiers(random, template):
                 yield self.convert_simplifier(strategy, simplifier)
 
-    def remove_deadweight(self, random, morpher):
-        if morpher.has_deadweight():
-            yield morpher.without_deadweight()
-
     def convert_simplifier(self, strategy, simplifier):
         def accept(random, morpher):
-            morpher.restore()
+            morpher = morpher.clean_slate()
             template = morpher.template_for(strategy)
             for new_template in simplifier(random, template):
                 yield morpher.replace_template(
                     strategy, new_template
-                )
+                ).clean_slate()
         accept.__name__ = str(
             'convert_simplifier(..., %s)' % (simplifier.__name__,)
         )
@@ -238,5 +236,5 @@ class MorpherStrategy(SearchStrategy):
             parameter_seed=data[0], template_seed=data[1], data=data[2])
 
     def to_basic(self, template):
-        template.collapse()
+        template = template.clean_slate()
         return [template.parameter_seed, template.template_seed, template.data]

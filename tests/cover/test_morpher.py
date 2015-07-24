@@ -17,8 +17,10 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+from random import Random
+
 import hypothesis.strategies as s
-from hypothesis import find, given
+from hypothesis import Settings, find, given, example
 from hypothesis.searchstrategy.morphers import Morpher, MorpherStrategy
 
 morphers = MorpherStrategy()
@@ -30,15 +32,22 @@ def test_can_simplify_through_a_morpher():
     assert m.become(intlists) == [0]
 
 
-def test_can_simplify_text_through_a_morpher():
-    m = find(morphers, lambda x: bool(x.become(s.text())))
+@example(Random(187))
+@example(Random(0))
+@given(s.randoms(), settings=Settings(max_examples=10))
+def test_can_simplify_text_through_a_morpher(rnd):
+    m = find(
+        morphers, lambda x: bool(x.become(s.text())), random=rnd,
+        settings=Settings(database=None)
+    )
     assert m.become(s.text()) == '0'
 
 
 def test_can_simplify_lists_of_morphers_of_single_type():
     ms = find(
         s.lists(morphers),
-        lambda x: sum(t.become(s.integers()) for t in x) >= 100
+        lambda x: sum(t.become(s.integers()) for t in x) >= 100,
+        settings=Settings(database=None)
     )
 
     ls = [t.become(s.integers()) for t in ms]
