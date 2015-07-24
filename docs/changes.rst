@@ -21,9 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+---------------------------------------------------------------------
+`1.8.5 <https://hypothesis.readthedocs.org/en/v1.8.5/>`_ - 2015-07-24
+---------------------------------------------------------------------
+
+This contains no functionality changes but fixes a mistake made with
+building the previous package that would have broken installation on
+Windows.
 
 ---------------------------------------------------------------------
-`1.8.4 <https://hypothesis.readthedocs.org/en/v1.7.2/>`_ - 2015-07-20
+`1.8.4 <https://hypothesis.readthedocs.org/en/v1.8.4/>`_ - 2015-07-20
 ---------------------------------------------------------------------
 
 Bugs fixed:
