@@ -32,13 +32,6 @@ set_hypothesis_home_dir(mkdtemp())
 Settings.default.timeout = -1
 Settings.default.strict = True
 
-try:
-    import resource
-    MAX_MEMORY = 10 ** 9
-    resource.setrlimit(resource.RLIMIT_AS, (MAX_MEMORY, MAX_MEMORY))
-except ImportError:
-    pass
-
 
 @pytest.fixture(scope='function', autouse=True)
 def some_fixture():
