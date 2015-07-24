@@ -46,7 +46,7 @@ if [ "$(python -c 'import platform; print(platform.python_implementation())')" !
     pushd $HOME
       pip wheel numpy==1.9.2
     popd
-    pip install $HOME/wheelhouse/numpy-1.9.2*
+    pip install --find-links=$HOME/wheelhouse numpy==1.9.2
   else
     pip install numpy==1.9.2
   fi
