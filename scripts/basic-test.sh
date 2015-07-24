@@ -7,7 +7,9 @@ for k, v in sorted(dict(os.environ).items()):
     print("%s=%s" % (k, v))
 '
 python -m pytest tests/cover
-python -m pytest tests/nocover
+for f in tests/nocover/*.py; do
+  python -m pytest $f
+done
 
 pip install .[datetime]
 python -m pytest tests/datetime/
