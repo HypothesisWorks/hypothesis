@@ -49,6 +49,17 @@ class PyTest(TestCommand):
         errno = pytest.main(self.test_args)
         sys.exit(errno)
 
+extras = {
+    'datetime':  ["pytz"],
+    'fakefactory': ["fake-factory==0.5.2"],
+    'django': ['pytz', 'django>=1.7'],
+    'numpy': ['numpy>=1.9.0']
+}
+
+extras['all'] = sum(extras.values(), [])
+extras['django'].extend(extras['fakefactory'])
+extras[":python_version == '2.6'"] = ['importlib', 'ordereddict', 'Counter']
+
 
 setup(
     name='hypothesis',
@@ -61,13 +72,7 @@ setup(
     license='MPL v2',
     description='A library for property based testing',
     zip_safe=False,
-    extras_require={
-        ":python_version == '2.6'": ['importlib', 'ordereddict', 'Counter'],
-        'datetime':  ["pytz"],
-        'fakefactory': ["fake-factory==0.5.2"],
-        'django': ['pytz', 'fake-factory==0.5.2', 'django>=1.7'],
-        'numpy': ['numpy>=1.9.0']
-    },
+    extras_require=extras,
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
