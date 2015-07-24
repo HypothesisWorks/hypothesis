@@ -17,6 +17,7 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+import math
 from random import Random
 from collections import namedtuple
 
@@ -212,6 +213,15 @@ with Settings(average_list_length=5.0):
             max_leaves=200,
         )
     )
+
+    TestJSON = strategy_test_suite(
+        recursive(
+            floats().filter(lambda f: not math.isnan(f) or math.isinf(f)) |
+            text() | booleans() | none(),
+            lambda js:
+                lists(js, average_size=2) |
+                dictionaries(text(), js, average_size=2),
+            max_leaves=10))
 
 
 TestStatemachine = strategy_test_suite(StateMachineSearchStrategy())

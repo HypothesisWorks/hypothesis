@@ -21,7 +21,7 @@ from random import Random
 from collections import namedtuple
 
 from hypothesis.errors import BadData, NoExamples, WrongFormat, \
-    UnsatisfiedAssumption
+    BadTemplateDraw, UnsatisfiedAssumption
 from hypothesis.control import assume
 from hypothesis.settings import Settings
 from hypothesis.deprecation import note_deprecation
@@ -180,7 +180,7 @@ class SearchStrategy(object):
                 template = self.draw_and_produce(random)
                 reified = self.reify(template)
                 parts.append((template, reified))
-            except UnsatisfiedAssumption:
+            except (BadTemplateDraw, UnsatisfiedAssumption):
                 pass
         if not parts:
             raise NoExamples(
@@ -500,9 +500,14 @@ class OneOfStrategy(SearchStrategy):
             if child >= i:
                 return
             for _ in hrange(20):
-                redraw = self.element_strategies[child].draw_and_produce(
-                    random)
-                yield child, redraw
+                try:
+                    redraw = self.element_strategies[child].draw_and_produce(
+                        random)
+                    yield child, redraw
+                except BadTemplateDraw:  # pragma: no cover
+                    # This is covered by tests but is quite hard to hit
+                    # reliably.
+                    pass
         accept.__name__ = str(
             'redraw_simplifier(%d)' % (child,))
         return accept

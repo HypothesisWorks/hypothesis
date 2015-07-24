@@ -40,6 +40,18 @@ class UnsatisfiedAssumption(HypothesisException):
                 'Unsatisfied assumption')
 
 
+class BadTemplateDraw(HypothesisException):
+
+    """An internal error raised when something unfortunate happened during
+    template generation and you should restart the draw, preferably with a new
+    parameter.
+
+    This is not an error condition internally, but if you ever see this
+    in your code it's probably a Hypothesis bug
+
+    """
+
+
 class NoSuchExample(HypothesisException):
 
     """The condition we have been asked to satisfy appears to be always false.

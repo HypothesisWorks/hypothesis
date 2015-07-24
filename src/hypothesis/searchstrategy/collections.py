@@ -23,7 +23,7 @@ from random import Random
 from collections import namedtuple
 
 import hypothesis.internal.distributions as dist
-from hypothesis.types import Stream
+from hypothesis.errors import BadTemplateDraw
 from hypothesis.control import assume
 from hypothesis.settings import Settings
 from hypothesis.utils.show import show
@@ -464,11 +464,11 @@ class SingleElementListStrategy(MappedSearchStrategy):
 class UniqueListTemplate(object):
 
     def __init__(
-        self, size, parameter_seed, parameters, template_seed, values
+        self, size, parameter_seed, parameter, template_seed, values
     ):
         self.size = size
         self.parameter_seed = parameter_seed
-        self.parameters = parameters
+        self.parameter = parameter
         self.template_seed = template_seed
         self.created_as_seed = False
         if size == 0:
@@ -551,10 +551,9 @@ class UniqueListStrategy(SearchStrategy):
     def draw_parameter(self, random):
         parameter_seed = random.getrandbits(64)
 
-        rnd = Random(parameter_seed)
         return self.Parameter(
             parameter_seed,
-            Stream(self.elements.draw_parameter(rnd) for _ in hrange(10)))
+            self.elements.draw_parameter(Random(parameter_seed)))
 
     def draw_template(self, random, parameter):
         if self.min_size == self.max_size:
@@ -597,21 +596,25 @@ class UniqueListStrategy(SearchStrategy):
         results = []
         seen = set()
         random = Random(template.template_seed)
-        for parameter in template.parameters:
-            for _ in range(template.size * 10):
-                assert len(values) < template.size
+        for i in range(template.size * 5):
+            if len(results) >= self.min_size and i >= template.size:
+                break
+            assert len(values) < template.size
+            try:
                 eltemplate = self.elements.draw_template(
-                    random, parameter)
-                elvalue = self.elements.reify(eltemplate)
-                k = self.key(elvalue)
-                if k in seen:
-                    continue
-                seen.add(k)
-                values.append(eltemplate)
-                results.append(elvalue)
-                if len(results) == template.size:
-                    template.values = values
-                    return results
+                    random, template.parameter)
+            except BadTemplateDraw:
+                continue
+            elvalue = self.elements.reify(eltemplate)
+            k = self.key(elvalue)
+            if k in seen:
+                continue
+            seen.add(k)
+            values.append(eltemplate)
+            results.append(elvalue)
+            if len(results) == template.size:
+                template.values = values
+                return results
         assume(len(results) >= self.min_size)
         template.values = values
         template.size = len(results)
@@ -644,7 +647,7 @@ class UniqueListStrategy(SearchStrategy):
             yield UniqueListTemplate(
                 size=n,
                 parameter_seed=0,
-                parameters=None,
+                parameter=None,
                 template_seed=0,
                 values=values
             )
@@ -665,7 +668,7 @@ class UniqueListStrategy(SearchStrategy):
                 yield UniqueListTemplate(
                     size=template.size,
                     parameter_seed=template.parameter_seed,
-                    parameters=template.parameters,
+                    parameter=template.parameter,
                     template_seed=template.template_seed,
                     values=values
                 )
@@ -685,7 +688,7 @@ class UniqueListStrategy(SearchStrategy):
             yield UniqueListTemplate(
                 size=template.size - 1,
                 parameter_seed=template.parameter_seed,
-                parameters=template.parameters,
+                parameter=template.parameter,
                 template_seed=template.template_seed,
                 values=values
             )
@@ -713,7 +716,7 @@ class UniqueListStrategy(SearchStrategy):
             check_data_type(list, data[2])
             return UniqueListTemplate(
                 size=data[1], template_seed=0, parameter_seed=0,
-                parameters=None,
+                parameter=None,
                 values=list(map(self.elements.from_basic, data[2]))
             )
         else:
@@ -727,8 +730,7 @@ class UniqueListStrategy(SearchStrategy):
             return UniqueListTemplate(
                 size=data[1], parameter_seed=parameter_seed,
                 template_seed=data[2][1], values=None,
-                parameters=Stream(
-                    self.elements.draw_parameter(random) for _ in hrange(10)))
+                parameter=self.elements.draw_parameter(random))
 
 
 class FixedKeysDictStrategy(MappedSearchStrategy):

@@ -17,7 +17,9 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from hypothesis.internal.compat import hrange
+from contextlib import contextmanager
+
+from hypothesis.errors import BadTemplateDraw
 from hypothesis.searchstrategy.wrappers import WrapperStrategy
 from hypothesis.searchstrategy.strategies import OneOfStrategy
 
@@ -31,43 +33,25 @@ class TemplateLimitedStrategy(WrapperStrategy):
     def __init__(self, strategy):
         super(TemplateLimitedStrategy, self).__init__(strategy)
         self.marker = 0
+        self.currently_capped = False
 
     def draw_template(self, random, parameter_value):
-        if self.marker <= 0:
-            raise TemplateLimitReached()
-        self.marker -= 1
+        if self.currently_capped:
+            if self.marker <= 0:
+                raise TemplateLimitReached()
+            self.marker -= 1
         return super(TemplateLimitedStrategy, self).draw_template(
             random, parameter_value)
 
-    def set_max_templates(self, max_templates):
-        self.marker = max_templates
-
-
-class LimitAwareOneOf(OneOfStrategy):
-
-    def __init__(self, strategies, base, limit):
-        super(LimitAwareOneOf, self).__init__(strategies)
-        self.base = base
-        self.limit = limit
-
-    def redraw_simplifier(self, child):
-        def accept(random, template):
-            i, value = template
-            if child >= i:
-                return
-            for _ in hrange(20):
-                self.base.set_max_templates(self.limit)
-                try:
-                    redraw = self.element_strategies[child].draw_and_produce(
-                        random)
-                    yield child, redraw
-                # This is reachable by tests but is incredibly hard to hit
-                # reliably.
-                except TemplateLimitReached:  # pragma: no cover
-                    continue
-        accept.__name__ = str(
-            'redraw_simplifier(%d)' % (child,))
-        return accept
+    @contextmanager
+    def capped(self, max_templates):
+        assert not self.currently_capped
+        try:
+            self.currently_capped = True
+            self.marker = max_templates
+            yield
+        finally:
+            self.currently_capped = False
 
 
 class RecursiveStrategy(WrapperStrategy):
@@ -80,29 +64,16 @@ class RecursiveStrategy(WrapperStrategy):
         strategies = [self.base, self.extend(self.base)]
         while 2 ** len(strategies) <= max_leaves:
             strategies.append(
-                extend(LimitAwareOneOf(
-                    tuple(strategies), self.base, self.max_leaves)))
+                extend(OneOfStrategy(tuple(strategies))))
         super(RecursiveStrategy, self).__init__(
-            LimitAwareOneOf(strategies, self.base, self.max_leaves)
+            OneOfStrategy(tuple(strategies))
         )
 
-    def draw_parameter(self, random):
-        while True:
-            pv = super(RecursiveStrategy, self).draw_parameter(random)
-            try:
-                self.base.set_max_templates(self.max_leaves)
-                super(
-                    RecursiveStrategy, self).draw_template(random, pv)
-                return pv
-            except TemplateLimitReached:
-                pass
-
     def draw_template(self, random, pv):
-        while True:
-            try:
-                self.base.set_max_templates(self.max_leaves)
+        try:
+            with self.base.capped(self.max_leaves):
                 return super(RecursiveStrategy, self).draw_template(
                     random, pv
                 )
-            except TemplateLimitReached:
-                pass
+        except TemplateLimitReached:
+            raise BadTemplateDraw()

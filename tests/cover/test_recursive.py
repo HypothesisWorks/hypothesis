@@ -19,8 +19,9 @@ from __future__ import division, print_function, absolute_import, \
 
 import pytest
 import hypothesis.strategies as st
-from hypothesis import find
+from hypothesis import Settings, find, given
 from hypothesis.errors import InvalidArgument
+from hypothesis.internal.compat import integer_types
 
 
 def test_can_generate_with_large_branching():
@@ -83,3 +84,60 @@ def test_drawing_many_near_boundary():
 def test_recursive_call_validates_expand_returns_strategies():
     with pytest.raises(InvalidArgument):
         st.recursive(st.booleans(), lambda x: 1)
+
+
+def test_can_use_recursive_data_in_sets():
+    nested_sets = st.recursive(
+        st.booleans(),
+        lambda js: st.frozensets(js),
+        max_leaves=50
+    )
+    nested_sets.example()
+
+    def flatten(x):
+        if isinstance(x, bool):
+            return frozenset((x,))
+        else:
+            result = frozenset()
+            for t in x:
+                result |= flatten(t)
+                if len(result) == 2:
+                    break
+            return result
+    x = find(nested_sets, lambda x: len(flatten(x)) == 2)
+    assert x == frozenset((False, True))
+
+
+def test_can_form_sets_of_recursive_data():
+    trees = st.sets(st.recursive(
+        st.booleans(), lambda x: st.lists(x).map(tuple), max_leaves=4))
+    xs = find(trees, lambda x: len(x) >= 10)
+    assert len(xs) == 10
+    assert False in xs
+    assert True in xs
+
+
+@given(st.randoms(), settings=Settings(max_examples=10))
+def test_can_simplify_hard_recursive_data_into_boolean_alternative(rnd):
+    """This test forces us to exercise the simplification through redrawing
+    functionality, thus testing that we can deal with bad templates."""
+    def leaves(ls):
+        if isinstance(ls, (bool,) + integer_types):
+            return [ls]
+        else:
+            return sum(map(leaves, ls), [])
+
+    def hard(base):
+        return st.recursive(
+            base, lambda x: st.lists(x, max_size=5), max_leaves=20)
+    r = find(
+        hard(st.booleans()) |
+        hard(st.booleans()) |
+        hard(st.booleans()) |
+        hard(st.integers()) |
+        hard(st.booleans()),
+        lambda x: len(leaves(x)) >= 3,
+        random=rnd, settings=Settings(database=None, max_examples=5000))
+    lvs = leaves(r)
+    assert lvs == [False] * 3
+    assert all(isinstance(v, bool) for v in lvs), repr(lvs)

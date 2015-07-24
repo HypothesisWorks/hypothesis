@@ -20,9 +20,9 @@ from __future__ import division, print_function, absolute_import, \
 from random import Random
 
 import pytest
-from hypothesis import find, given
+from hypothesis import Settings, find, given
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import sets, lists, randoms, booleans, \
+from hypothesis.strategies import sets, lists, floats, randoms, booleans, \
     integers, frozensets
 
 
@@ -97,3 +97,11 @@ def test_templates_reify_to_same_value_before_and_after(rnd):
     t = s.draw_and_produce(rnd)
     t2 = s.from_basic(s.to_basic(t))
     assert s.reify(t) == s.reify(t2)
+
+
+@given(randoms(), settings=Settings(max_examples=5))
+def test_can_draw_sets_of_hard_to_find_elements(rnd):
+    rarebool = floats(0, 1).map(lambda x: x <= 0.01)
+    find(
+        sets(rarebool, min_size=2), lambda x: True,
+        random=rnd, settings=Settings(database=None))

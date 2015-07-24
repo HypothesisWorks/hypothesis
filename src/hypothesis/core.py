@@ -32,8 +32,8 @@ from collections import namedtuple
 import hypothesis.strategies as sd
 from hypothesis.extra import load_entry_points
 from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
-    Unsatisfiable, InvalidArgument, UnsatisfiedAssumption, \
-    DefinitelyNoSuchExample
+    Unsatisfiable, BadTemplateDraw, InvalidArgument, \
+    UnsatisfiedAssumption, DefinitelyNoSuchExample
 from hypothesis.control import assume  # noqa
 from hypothesis.settings import Settings, Verbosity
 from hypothesis.executors import executor
@@ -128,9 +128,14 @@ def find_satisfying_template(
             break
         examples_considered += 1
 
-        example = search_strategy.draw_template(
-            random, parameter
-        )
+        try:
+            example = search_strategy.draw_template(
+                random, parameter
+            )
+        except BadTemplateDraw:
+            debug_report('Failed attempt to draw a template')
+            parameter_source.mark_bad()
+            continue
         if tracker.track(example) > 1:
             debug_report('Skipping duplicate example')
             parameter_source.mark_bad()

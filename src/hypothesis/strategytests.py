@@ -26,7 +26,7 @@ from itertools import islice
 from collections import namedtuple
 
 from hypothesis import given, assume
-from hypothesis.errors import BadData, Unsatisfiable
+from hypothesis.errors import BadData, Unsatisfiable, BadTemplateDraw
 from hypothesis.database import ExampleDatabase
 from hypothesis.settings import Settings
 from hypothesis.strategies import lists, randoms, integers
@@ -225,8 +225,11 @@ def strategy_test_suite(
 
         @given(integers(), settings=settings)
         def test_templates_generated_from_same_random_are_equal(self, i):
-            t1 = strat.draw_and_produce(Random(i))
-            t2 = strat.draw_and_produce(Random(i))
+            try:
+                t1 = strat.draw_and_produce(Random(i))
+                t2 = strat.draw_and_produce(Random(i))
+            except BadTemplateDraw:
+                assume(False)
 
             if t1 is not t2:
                 assert t1 == t2
@@ -236,8 +239,11 @@ def strategy_test_suite(
         def test_templates_generated_from_same_random_are_equal_after_reify(
             self, i
         ):
-            t1 = strat.draw_and_produce(Random(i))
-            t2 = strat.draw_and_produce(Random(i))
+            try:
+                t1 = strat.draw_and_produce(Random(i))
+                t2 = strat.draw_and_produce(Random(i))
+            except BadTemplateDraw:
+                assume(False)
             if t1 is not t2:
                 strat.reify(t1)
                 strat.reify(t2)
@@ -344,6 +350,9 @@ def strategy_test_suite(
         @given(randoms(), settings=Settings(max_examples=1000))
         def test_can_create_templates(self, random):
             parameter = strat.draw_parameter(random)
-            strat.draw_template(random, parameter)
+            try:
+                strat.draw_template(random, parameter)
+            except BadTemplateDraw:
+                assume(False)
 
     return ValidationSuite
