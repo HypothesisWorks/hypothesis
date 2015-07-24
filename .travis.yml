@@ -36,7 +36,7 @@ script:
 
 matrix:
     exclude:
-        - os: linux
+        - os: osx
           env: TOXENV=examples2
         - os: osx
           env: TOXENV=examples3
@@ -44,15 +44,3 @@ matrix:
           env: TOXENV=coverage
         - os: osx
           env: TOXENV=lint
-        - os: osx
-          env: TOXENV=pypy
-        - os: linux
-          env: TOXENV=pypy3
-        - os: linux
-          env: TOXENV=py27
-        - os: osx
-          env: TOXENV=py26
-        - os: linux
-          env: TOXENV=py33
-        - os: osx
-          env: TOXENV=py34
