@@ -133,15 +133,6 @@ class Morpher(object):
         result.data[i] = strategy.to_basic(template)
         return result
 
-    def without_deadweight(self):
-        result = Morpher(
-            self.parameter_seed, self.template_seed, [
-                self.data[i]
-                for i in hrange(len(self.data)) if self.owner(i) is not None])
-        for s in self.strategies():
-            result.template_for(s)
-        return result
-
     def collapse(self):
         self.restore()
         self.old_cache = self.cache
