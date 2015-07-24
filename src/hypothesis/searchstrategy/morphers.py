@@ -21,7 +21,7 @@ from copy import deepcopy
 from random import Random
 
 from hypothesis.utils.idkey import IdKey
-from hypothesis.internal.compat import OrderedDict, hrange, integer_types
+from hypothesis.internal.compat import OrderedDict, integer_types
 from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
     check_length, check_data_type
 
