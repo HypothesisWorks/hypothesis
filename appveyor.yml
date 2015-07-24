@@ -50,10 +50,7 @@ install:
   - "python --version"
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
   - "%CMD_IN_ENV% pip install setuptools pip"
-  - "%CMD_IN_ENV% pip install ."
-  - "%CMD_IN_ENV% pip install ./hypothesis-extra/hypothesis-datetime/"
-  - "%CMD_IN_ENV% pip install ./hypothesis-extra/hypothesis-pytest/"
-  - "%CMD_IN_ENV% pip install ./hypothesis-extra/hypothesis-fakefactory/"
+  - "%CMD_IN_ENV% pip install .[all]"
 
 build: false  # Not a C# project, build stuff at the test step instead.
 
