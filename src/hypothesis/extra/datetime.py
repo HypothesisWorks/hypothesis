@@ -23,6 +23,7 @@ from collections import namedtuple
 import pytz
 import hypothesis.internal.distributions as dist
 from hypothesis.errors import InvalidArgument
+from hypothesis.control import assume
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
     strategy, check_length, check_data_type
@@ -131,10 +132,16 @@ class DatetimeStrategy(SearchStrategy):
         if tz is None:
             return self.allow_naive
         else:
-            return any(
+            if not any(
                 text_type(z.zone) == tz
                 for z in self.timezones
-            )
+            ):
+                return False
+            try:
+                self.reify(template)
+                return True
+            except (OverflowError, ValueError):
+                return False
 
     def templateize(self, dt):
         return (
@@ -156,7 +163,10 @@ class DatetimeStrategy(SearchStrategy):
             microsecond=template[6]
         )
         if tz:
-            d = pytz.timezone(tz).localize(d)
+            try:
+                d = pytz.timezone(tz).localize(d)
+            except OverflowError:
+                assume(False)
         return d
 
     def simplifiers(self, random, template):
