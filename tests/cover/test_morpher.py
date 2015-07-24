@@ -90,25 +90,6 @@ def test_cloning_of_morphers_with_different_strategy_sizes():
     assert xs[2].become(s.integers()) == 0
 
 
-def test_morphers_are_judged_on_following_strategies():
-    m1 = find(
-        morphers,
-        lambda x: x.become(s.integers()) >= 0 and x.become(s.integers()) >= 100
-    )
-    m2 = find(
-        morphers,
-        lambda x: x.become(s.integers()) >= 0 and x.become(s.integers()) >= 200
-    )
-    assert morphers.strictly_simpler(m1, m2)
-    m1.collapse()
-    m2.collapse()
-
-    m1.become(s.integers())
-    m1.become(s.integers())
-    m2.become(s.integers())
-    assert morphers.strictly_simpler(m1, m2)
-
-
 def test_thorough_cloning():
     def check(x):
         ids = list(map(id, x))
