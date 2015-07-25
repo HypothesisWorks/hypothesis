@@ -596,9 +596,7 @@ class UniqueListStrategy(SearchStrategy):
         results = []
         seen = set()
         random = Random(template.template_seed)
-        for i in range(template.size * 5):
-            if len(results) >= self.min_size and i >= template.size:
-                break
+        for i in range(template.size * 10):
             assert len(values) < template.size
             try:
                 eltemplate = self.elements.draw_template(
