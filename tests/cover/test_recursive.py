@@ -17,11 +17,9 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from random import Random
-
 import pytest
 import hypothesis.strategies as st
-from hypothesis import Settings, find, given, example
+from hypothesis import Settings, find, given
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import integer_types
 
