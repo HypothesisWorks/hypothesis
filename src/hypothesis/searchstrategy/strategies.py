@@ -171,23 +171,15 @@ class SearchStrategy(object):
         """
         random = Random()
 
-        parts = []
-
         for _ in hrange(100):
-            if len(parts) >= 3:
-                break
             try:
                 template = self.draw_and_produce(random)
-                reified = self.reify(template)
-                parts.append((template, reified))
+                return self.reify(template)
             except (BadTemplateDraw, UnsatisfiedAssumption):
                 pass
-        if not parts:
-            raise NoExamples(
-                'Could not find any valid examples in 100 tries'
-            )
-
-        return min(parts, key=lambda tr: self.__template_size(tr[0]))[1]
+        raise NoExamples(
+            'Could not find any valid examples in 100 tries'
+        )
 
     def map(self, pack):
         """Returns a new strategy that generates values by generating a value
@@ -304,22 +296,6 @@ class SearchStrategy(object):
 
     def draw_and_produce(self, random):
         return self.draw_template(random, self.draw_parameter(random))
-
-    def __template_size(self, template):
-        """Gives an approximate estimate of how "large" this template value is.
-
-        This doesn't really matter for anything, it's just a convenience
-        used to implement example().
-
-        """
-        def basic_size(x):
-            try:
-                if len(x) == 1:
-                    return 1
-            except TypeError:
-                return 1
-            return sum(map(basic_size, x))
-        return basic_size(self.to_basic(template))
 
     def strictly_simpler(self, x, y):
         """
