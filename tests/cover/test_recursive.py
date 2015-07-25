@@ -17,9 +17,11 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+from random import Random
+
 import pytest
 import hypothesis.strategies as st
-from hypothesis import Settings, find, given
+from hypothesis import Settings, find, given, example
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import integer_types
 
@@ -141,3 +143,23 @@ def test_can_simplify_hard_recursive_data_into_boolean_alternative(rnd):
     lvs = leaves(r)
     assert lvs == [False] * 3
     assert all(isinstance(v, bool) for v in lvs), repr(lvs)
+
+
+def test_can_flatmap_to_recursive_data():
+    stuff = st.lists(st.integers(), min_size=1).flatmap(
+        lambda elts: st.recursive(
+            st.sampled_from(elts), st.lists
+        ))
+
+    def flatten(x):
+        if isinstance(x, integer_types):
+            return [x]
+        else:
+            return sum(map(flatten, x), [])
+
+    tree = find(
+        stuff, lambda x: sum(flatten(x)) >= 100,
+        settings=Settings(database=None, max_shrinks=1000, max_examples=1000)
+    )
+    flat = flatten(tree)
+    assert (sum(flat) == 1000) or (len(set(flat)) == 1)

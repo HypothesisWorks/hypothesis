@@ -20,6 +20,7 @@ from __future__ import division, print_function, absolute_import, \
 from copy import deepcopy
 from random import Random
 
+from hypothesis.errors import BadTemplateDraw
 from hypothesis.utils.idkey import IdKey
 from hypothesis.internal.compat import OrderedDict, integer_types
 from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
@@ -96,10 +97,16 @@ class Morpher(object):
             except BadData:
                 pass
         else:
-            parameter = strategy.draw_parameter(
-                Random(self.parameter_seed))
-            template = strategy.draw_template(
-                Random(self.template_seed), parameter)
+            parameter_random = Random(self.parameter_seed)
+            template_random = Random(self.template_seed)
+            while True:
+                try:
+                    parameter = strategy.draw_parameter(parameter_random)
+                    template = strategy.draw_template(
+                        template_random, parameter)
+                    break
+                except BadTemplateDraw:
+                    pass
             basic = strategy.to_basic(template)
             self.data.append(basic)
             template = strategy.from_basic(basic)
