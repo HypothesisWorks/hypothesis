@@ -223,6 +223,14 @@ with Settings(average_list_length=5.0):
                 dictionaries(text(), js, average_size=2),
             max_leaves=10))
 
+    TestWayTooClever = strategy_test_suite(
+        recursive(
+            frozensets(integers(), min_size=1),
+            lambda x: frozensets(x, min_size=2, max_size=4)).flatmap(
+            sampled_from
+        )
+    )
+
 
 TestStatemachine = strategy_test_suite(StateMachineSearchStrategy())
 
