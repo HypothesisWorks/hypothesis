@@ -106,9 +106,9 @@ will just eat up all your memory as it tries to build an infinitely long list)
 These are the only operations a Stream supports. There are a few more internal
 ones, but you shouldn't rely on them.
 
--------------------
+~~~~~~~~~~~~~~~~~~~
 Adapting strategies
--------------------
+~~~~~~~~~~~~~~~~~~~
 
 Often it is the case that a strategy doesn't produce exactly what you want it
 to and you need to adapt it. Sometimes you can do this in the test, but this
@@ -117,9 +117,9 @@ hurts reuse because you then have to repeat the adaption in every test.
 Hypothesis gives you ways to build strategies from other strategies given
 functions for transforming the data.
 
-~~~~~~~
+-------
 Mapping
-~~~~~~~
+-------
 
 Map is probably the easiest and most useful of these to use. If you have a
 strategy s and a function f, then an example s.map(f).example() is
@@ -135,9 +135,9 @@ e.g.:
 Note that many things that you might use mapping for can also be done with the
 builds function in hypothesis.strategies.
 
-~~~~~~~~~
+---------
 Filtering
-~~~~~~~~~
+---------
 
 filter lets you reject some examples. s.filter(f).example() is some example
 of s such that f(s) is truthy.
@@ -175,9 +175,9 @@ wanted pairs of integers (x,y) such that x < y you could do the following:
   ... lambda x: tuple(sorted(x))).filter(lambda x: x[0] != x[1]).example()
   (42, 1281698)
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------
 Chaining strategies together
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------
 
 Finally there is flatmap. Flatmap draws an example, then turns that example
 into a strategy, then draws an example from *that* strategy.
@@ -218,9 +218,62 @@ able to easily do.
 know Haskell, ignore everything in these parentheses. You do not need to
 understand anything about monads to use this, or anything else in Hypothesis).
 
---------------------------------
+
+--------------
+Recursive data
+--------------
+
+Sometimes the data you want to generate has a recursive definition. e.g. if you
+wanted to generate JSON data, valid JSON is:
+
+1. Any float, any boolean, any unicode string.
+2. Any list of valid JSON data
+3. Any dictionary mapping unicode strings to valid JSON data.
+
+The problem is that you cannot call a strategy recursively and expect it to not just
+blow up and eat all your memory.
+
+The way Hypothesis handles this is with the 'recursive' function in hypothesis.strategies
+which you pass in a base case and a function that given a strategy for your data type
+returns a new strategy for it. So for example:
+
+.. code-block:: pycon
+
+  >>> import hypothesis.strategies as st
+  >>> json = st.recursive(st.floats() | st.booleans() | st.text() | st.none(),
+    lambda children: st.lists(children) | st.dictionaries(st.text(), children))
+  >>> json.example()
+  {'': None, '\U000b3407\U000b3407\U000b3407': {
+      '': '"é""é\x11', '\x13': 1.6153068016570349e-282,
+      '\x00': '\x11\x11\x11"\x11"é"éé\x11""éé"\x11"éé\x11éé\x11é\x11',
+    '\x80': 'é\x11\x11\x11\x11\x11\x11', '\x13\x13\x00\x80\x80\x00': 4.643602465868519e-144
+    }, '\U000b3407': None}
+  >>> json.example()
+  []
+  >>> json.example()
+  '\x06ě\U000d25e4H\U000d25e4\x06ě'
+
+That is, we start with our leaf data and then we augment it by allowing lists and dictionaries of anything we can generate as JSON data.
+
+The size control of this works by limiting the maximum number of values that can be drawn from the base strategy. So for example if
+we wanted to only generate really small JSON we could do this as:
+
+
+.. code-block:: pycon
+
+  >>> small_lists = st.recursive(st.booleans(), st.lists, max_leaves=5)
+  >>> small_lists.example()
+  False
+  >>> small_lists.example()
+  [[False], [], [], [], [], []]
+  >>> small_lists.example()
+  False
+  >>> small_lists.example()
+  []
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Defining entirely new strategies
---------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The full SearchStrategy API is only "semi-public", in that it may (but usually
 won't) break between minor versions but won't break between patch releases.
@@ -326,9 +379,9 @@ ones using BasicStrategy are merely a bit better than the normal quickcheck
 interface.
 
 
--------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Using the SearchStrategy API directly
--------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you're really super enthused about this search strategies thing and you want
 to learn all the gory details of how it works under the hood, you can use the

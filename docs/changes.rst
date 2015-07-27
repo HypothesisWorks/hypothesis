@@ -22,6 +22,29 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 ---------------------------------------------------------------------
+`1.9.0 <https://hypothesis.readthedocs.org/en/v1.9.0/>`_ - 2015-07-27
+---------------------------------------------------------------------
+
+Codename: The great bundling.
+
+This release contains two fairly major changes.
+
+The first is the deprecation of the hypothesis-extra mechanism. From
+now on all the packages that were previously bundled under it other
+than hypothesis-pytest (which is a different beast and will remain
+separate). The functionality remains unchanged and you can still import
+them from exactly the same location, they just are no longer separate
+packages.
+
+The second is that this introduces a new way of building strategies
+which lets you build up strategies recursively from other strategies.
+
+It also contains the minor change that calling .example() on a
+strategy object will give you examples that are more representative of
+the actual data you'll get. There used to be some logic in there to make
+the examples artificially simple but this proved to be a bad idea.
+
+---------------------------------------------------------------------
 `1.8.5 <https://hypothesis.readthedocs.org/en/v1.8.5/>`_ - 2015-07-24
 ---------------------------------------------------------------------
 
