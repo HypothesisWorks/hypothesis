@@ -146,7 +146,7 @@ def test_can_simplify_hard_recursive_data_into_boolean_alternative(rnd):
 def test_can_flatmap_to_recursive_data():
     stuff = st.lists(st.integers(), min_size=1).flatmap(
         lambda elts: st.recursive(
-            st.sampled_from(elts), st.lists
+            st.sampled_from(elts), lambda x: st.lists(x, average_size=25)
         ))
 
     def flatten(x):
