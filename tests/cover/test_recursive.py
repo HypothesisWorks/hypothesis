@@ -86,11 +86,12 @@ def test_recursive_call_validates_expand_returns_strategies():
         st.recursive(st.booleans(), lambda x: 1)
 
 
-def test_can_use_recursive_data_in_sets():
+@given(st.randoms())
+def test_can_use_recursive_data_in_sets(rnd):
     nested_sets = st.recursive(
         st.booleans(),
         lambda js: st.frozensets(js),
-        max_leaves=50
+        max_leaves=10
     )
     nested_sets.example()
 
@@ -104,7 +105,7 @@ def test_can_use_recursive_data_in_sets():
                 if len(result) == 2:
                     break
             return result
-    x = find(nested_sets, lambda x: len(flatten(x)) == 2)
+    x = find(nested_sets, lambda x: len(flatten(x)) == 2, random=rnd)
     assert x == frozenset((False, True))
 
 
