@@ -18,6 +18,8 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import pkg_resources
+from hypothesis.settings import Settings
+from hypothesis.deprecation import note_deprecation
 
 
 loaded = set()
@@ -27,6 +29,32 @@ def load_entry_points(name=None):
     for entry_point in pkg_resources.iter_entry_points(
         group='hypothesis.extra', name=name
     ):
+        if entry_point.name in (
+            'hypothesisdatetime', 'hypothesisdjango',
+            'hypothesisfakefactory', 'hypothesisnumpy'
+        ):
+            base_name = entry_point.name.replace('hypothesis', '')
+
+            note_deprecation(
+                'Ignoring obsolete extra package hypothesis-%s. This '
+                'functionality is now included in hypothesis core. You '
+                'should uninstall the extra package.' % (base_name,),
+                Settings.default
+            )
+            continue
+        elif entry_point.name == 'hypothesispytest':
+            note_deprecation(
+                'You have an obsolete version of the hypothesis-pytest plugin '
+                'installed. Please update to a more recent version.',
+                Settings.default
+            )
+            continue
+        else:
+            note_deprecation(
+                'The extra package mechanism is deprecated and will go away '
+                "in Hypothesis 2.0. Just write a normal package and don't "
+                'have it in the Hypothesis namespace.', Settings.default
+            )
         package = entry_point.load()  # pragma: no cover
         if package not in loaded:
             loaded.add(package)

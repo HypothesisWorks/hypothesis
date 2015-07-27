@@ -42,7 +42,7 @@ README = local_file("README.rst")
 
 setup(
     name='hypothesis-fakefactory',
-    version='0.15.0',
+    version='2.0.0',
     author='David R. MacIver',
     author_email='david@drmaciver.com',
     packages=find_packages(SOURCE),
@@ -52,9 +52,6 @@ setup(
     description='Adds support for generating fake-factory data to Hypothesis',
     install_requires=["hypothesis[fakefactory]"],
     long_description=open(README).read(),
-    entry_points={
-        'hypothesis.extra': 'hypothesisfakefactory = hypothesisfakefactory'
-    },
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",

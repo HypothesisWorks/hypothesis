@@ -28,7 +28,7 @@ README = local_file("README.rst")
 
 setup(
     name='hypothesis-numpy',
-    version='0.7.0',
+    version='2.0.0',
     author='David R. MacIver',
     author_email='david@drmaciver.com',
     packages=find_packages(SOURCE),
@@ -38,9 +38,6 @@ setup(
     description='Adds support for generating datetime to Hypothesis',
     install_requires="hypothesis[numpy]",
     long_description=open(README).read(),
-    entry_points={
-        'hypothesis.extra': 'hypothesisnumpy = hypothesisnumpy'
-    },
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",

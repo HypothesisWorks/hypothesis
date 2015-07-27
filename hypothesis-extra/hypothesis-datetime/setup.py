@@ -42,7 +42,7 @@ README = local_file("README.rst")
 
 setup(
     name='hypothesis-datetime',
-    version='1.9.0',
+    version='2.0.0',
     author='David R. MacIver',
     author_email='david@drmaciver.com',
     packages=find_packages(SOURCE),
@@ -52,9 +52,6 @@ setup(
     description='Adds support for generating datetime to Hypothesis',
     install_requires=["hypothesis[datetime]"],
     long_description=open(README).read(),
-    entry_points={
-        'hypothesis.extra': 'hypothesisdatetime = hypothesisdatetime'
-    },
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
