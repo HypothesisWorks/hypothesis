@@ -105,7 +105,9 @@ def test_can_use_recursive_data_in_sets(rnd):
                 if len(result) == 2:
                     break
             return result
-    x = find(nested_sets, lambda x: len(flatten(x)) == 2, random=rnd)
+    x = find(
+        nested_sets, lambda x: len(flatten(x)) == 2, random=rnd,
+        settings=Settings(database=None))
     assert x == frozenset((False, True))
 
 
