@@ -28,7 +28,7 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.settings import Settings
 from hypothesis.searchstrategy import SearchStrategy, strategy
 from hypothesis.internal.compat import hrange, text_type, binary_type, \
-    integer_types, float_to_decimal
+    integer_types, float_to_decimal, unicode_safe_repr
 from hypothesis.searchstrategy.reprwrapper import ReprWrapperStrategy
 
 __all__ = [
@@ -80,7 +80,7 @@ def just(value):
     """
     from hypothesis.searchstrategy.misc import JustStrategy
     return ReprWrapperStrategy(
-        JustStrategy(value), 'just(%r)' % (value,))
+        JustStrategy(value), 'just(%s)' % (unicode_safe_repr(value),))
 
 
 @defines_strategy
@@ -298,7 +298,6 @@ def tuples(*args):
     return TupleStrategy(args, tuple)
 
 
-@defines_strategy
 def sampled_from(elements):
     """Returns a strategy which generates any value present in the iterable
     elements.
@@ -308,15 +307,22 @@ def sampled_from(elements):
 
     """
 
-    from hypothesis.searchstrategy.misc import SampledFromStrategy
+    from hypothesis.searchstrategy.misc import SampledFromStrategy, \
+        JustStrategy
     elements = tuple(iter(elements))
     if not elements:
         raise InvalidArgument(
             'sampled_from requires at least one value'
         )
     if len(elements) == 1:
-        return just(elements[0])
-    return SampledFromStrategy(elements)
+        result = JustStrategy(elements[0])
+    else:
+        result = SampledFromStrategy(elements)
+    return ReprWrapperStrategy(
+        result, 'sampled_from((%s))' % (', '.join(
+            map(unicode_safe_repr, elements)
+        ))
+    )
 
 
 @defines_strategy
