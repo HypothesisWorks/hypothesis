@@ -17,6 +17,7 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+from copy import deepcopy
 from random import Random
 from collections import namedtuple
 
@@ -385,6 +386,28 @@ class SearchStrategy(object):
         return iter(())
 
 
+class LazyParameter(object):
+
+    def __init__(self, strategy, random):
+        self.random = deepcopy(random)
+        self.strategy = strategy
+        self.evaluated = False
+        self.__value = None
+
+    def __repr__(self):
+        if not self.evaluated:
+            return 'LazyParameter(...)'
+        else:
+            return 'LazyParameter(%r)' % (self.__value,)
+
+    @property
+    def value(self):
+        if not self.evaluated:
+            self.evaluated = True
+            self.__value = self.strategy.draw_parameter(self.random)
+        return self.__value
+
+
 class OneOfStrategy(SearchStrategy):
 
     """Implements a union of strategies. Given a number of strategies this
@@ -439,7 +462,7 @@ class OneOfStrategy(SearchStrategy):
                 random.getrandbits(8) + 1 if i in active else 0
                 for i in hrange(n)),
             child_parameters=[
-                s.draw_parameter(random) for s in self.element_strategies]
+                LazyParameter(s, random) for s in self.element_strategies]
         )
 
     def draw_template(self, random, pv):
@@ -447,7 +470,7 @@ class OneOfStrategy(SearchStrategy):
         return (
             child,
             self.element_strategies[child].draw_template(
-                random, pv.child_parameters[child]))
+                random, pv.child_parameters[child].value))
 
     def element_simplifier(self, s, simplifier):
         def accept(random, template):
