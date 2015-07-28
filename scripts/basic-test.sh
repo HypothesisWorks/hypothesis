@@ -17,6 +17,10 @@ for k, v in sorted(dict(os.environ).items()):
 
 python -m pytest tests/cover
 
+if [ "$(python -c 'import sys; print(sys.version_info.major == 2')" = "True" ] ; then
+    python -m pytest tests/py2
+fi
+
 if [ "$DARWIN" != true ]; then
   for f in tests/nocover/*.py; do
     python -m pytest $f

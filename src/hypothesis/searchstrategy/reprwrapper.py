@@ -17,6 +17,7 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+import inspect
 from hypothesis.searchstrategy.wrappers import WrapperStrategy
 
 
@@ -34,6 +35,8 @@ class ReprWrapperStrategy(WrapperStrategy):
         self.representation = representation
 
     def __repr__(self):
+        if inspect.isfunction(self.representation):
+            self.representation = self.representation()
         return self.representation
 
     def draw_parameter(self, random):

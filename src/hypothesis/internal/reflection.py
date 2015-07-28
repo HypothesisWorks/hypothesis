@@ -205,7 +205,19 @@ def extract_lambda_source(f):
 
     """
     args = inspect.getargspec(f).args
-    if_confused = 'lambda %s: <unknown>' % (', '.join(args),)
+    arg_strings = []
+    bad_lambda = False
+    for a in args:
+        if isinstance(a, (tuple, list)):
+            arg_strings.append('(%s)' % (', '.join(a),))
+            bad_lambda = True
+        else:
+            assert isinstance(a, str)
+            arg_strings.append(a)
+
+    if_confused = 'lambda %s: <unknown>' % (', '.join(arg_strings),)
+    if bad_lambda:
+        return if_confused
     try:
         source = inspect.getsource(f)
     except IOError:
