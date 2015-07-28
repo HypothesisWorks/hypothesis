@@ -45,6 +45,9 @@ class TemplatesStrategy(SearchStrategy):
         self.base_strategy = base_strategy
         self.template_upper_bound = base_strategy.template_upper_bound
 
+    def __repr__(self):
+        return 'templates_for(%r)' % (self.base_strategy,)
+
     def draw_parameter(self, random):
         return self.base_strategy.draw_parameter(random)
 

@@ -61,6 +61,12 @@ class NAryTreeStrategy(SearchStrategy):
         self.child_strategy = (
             lists(tuples(self.branch_key_strategy, self)))
 
+    def __repr__(self):
+        return 'NAryTreeStrategy(leaves=%r, labels=%r, keys=%r)' % (
+            self.leaf_strategy, self.branch_label_strategy,
+            self.branch_key_strategy
+        )
+
     def draw_parameter(self, random):
         return self.Parameter(
             leaf_parameter=self.leaf_strategy.draw_parameter(random),
