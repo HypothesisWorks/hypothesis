@@ -206,9 +206,12 @@ def extract_lambda_source(f):
     """
     args = inspect.getargspec(f).args
     arg_strings = []
+    # In Python 2 you can have destructuring arguments to functions. This
+    # results in an argspec with non-string values. I'm not very interested in
+    # handling these properly, but it's important to not crash on them.
     bad_lambda = False
     for a in args:
-        if isinstance(a, (tuple, list)):
+        if isinstance(a, (tuple, list)):  # pragma: no cover
             arg_strings.append('(%s)' % (', '.join(a),))
             bad_lambda = True
         else:
@@ -216,7 +219,7 @@ def extract_lambda_source(f):
             arg_strings.append(a)
 
     if_confused = 'lambda %s: <unknown>' % (', '.join(arg_strings),)
-    if bad_lambda:
+    if bad_lambda:  # pragma: no cover
         return if_confused
     try:
         source = inspect.getsource(f)
