@@ -18,6 +18,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import inspect
+
 from hypothesis.searchstrategy.wrappers import WrapperStrategy
 
 

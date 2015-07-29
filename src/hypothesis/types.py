@@ -38,6 +38,14 @@ class RandomWithSeed(Random):
         super(RandomWithSeed, self).__init__(seed)
         self.seed = seed
 
+    def __copy__(self):
+        result = RandomWithSeed(self.seed)
+        result.setstate(self.getstate())
+        return result
+
+    def __deepcopy__(self, table):
+        return self.__copy__()
+
     def __repr__(self):
         return 'RandomWithSeed(%s)' % (self.seed,)
 

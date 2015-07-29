@@ -19,6 +19,7 @@ from __future__ import division, print_function, absolute_import, \
 
 from random import Random
 
+from hypothesis.types import RandomWithSeed
 from hypothesis.strategies import lists, one_of, booleans
 
 
@@ -32,3 +33,9 @@ def test_can_apply_simplifiers_to_other_types():
             break
     for simplify in s.simplifiers(r, template1):
         assert list(simplify(r, template2)) == []
+
+
+def test_can_draw_from_a_random_with_seed():
+    r = RandomWithSeed(0)
+    s = one_of(booleans(), lists(booleans()))
+    s.draw_and_produce(r)
