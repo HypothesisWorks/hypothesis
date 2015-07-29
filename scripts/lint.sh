@@ -10,4 +10,4 @@ isort -p hypothesis -ls -m 2 -w 75 \
     -rc src tests examples hypothesis-extra/*/{src,tests}
 find hypothesis-extra/*/{src,tests} src tests examples -name '*.py' | xargs pyformat -i
 git diff --exit-code
-flake8 src tests --exclude=compat.py,test_reflection.py --ignore=E731,E721
+flake8 src tests --exclude=compat.py,test_reflection.py,tests/py2 --ignore=E731,E721
