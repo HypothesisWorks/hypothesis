@@ -17,6 +17,7 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+import weakref
 from copy import deepcopy
 from random import Random
 from collections import namedtuple
@@ -390,9 +391,10 @@ class LazyParameter(object):
 
     def __init__(self, strategy, random):
         self.random = deepcopy(random)
-        self.strategy = strategy
+        # There is no sensible reason for this to be a weakref. It is a
+        # workaround for https://bitbucket.org/pypy/pypy/issues/2102
+        self.strategy = weakref.ref(strategy)
         self.evaluated = False
-        self.__value = None
 
     def __repr__(self):
         if not self.evaluated:
@@ -403,8 +405,10 @@ class LazyParameter(object):
     @property
     def value(self):
         if not self.evaluated:
+            strategy = self.strategy()
+            assert strategy is not None
             self.evaluated = True
-            self.__value = self.strategy.draw_parameter(self.random)
+            self.__value = strategy.draw_parameter(self.random)
         return self.__value
 
 
