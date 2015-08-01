@@ -351,6 +351,10 @@ For example all of the following are valid uses:
   def d(x, **kwargs):
     pass
 
+  @given(x=integers(), y=integers())
+  def e(x, *args, **kwargs):
+    pass
+
 
   class SomeTest(TestCase):
       @given(integers())
@@ -362,15 +366,19 @@ The following are not:
 .. code:: python
 
   @given(integers(), integers(), integers())
-  def e(x, y):
+  def f(x, y):
+      pass
+
+  @given(integers())
+  def g(x, *args):
       pass
 
   @given(x=integers())
-  def f(x, y):
+  def h(x, y):
       pass
 
   @given()
-  def f(x, y):
+  def i(x, y):
       pass
 
 
@@ -383,11 +391,12 @@ The rules for determining what are valid uses of given are as follows:
    argument not covered by a keyword argument. (Note: Mixing keyword and
    positional arguments is supported but deprecated as its semantics are
    highly confusing and difficult to support. You'll get a warning if you
-   do). 
+   do).
 3. If the function has variable keywords, additional arguments will be
    added corresponding to any keyword arguments passed. These will be to
    the right of the normal argument list in an arbitrary order.
-4. varargs are forbidden on functions used with @given.
+4. If the function has varargs, positional arguments to @given are not
+   supported. Keyword arguments may be passed, however.
 
 If you don't have kwargs then the function returned by @given will have
 the same argspec (i.e. same arguments, keyword arguments, etc) as the

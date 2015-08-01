@@ -32,6 +32,26 @@ def test_errors_when_given_varargs():
     assert 'varargs' in e.value.args[0]
 
 
+def test_varargs_without_positional_arguments_allowed():
+    @given(somearg=integers())
+    def has_varargs(somearg, *args):
+        pass
+
+
+def test_errors_when_given_varargs_and_kwargs_with_positional_arguments():
+    with pytest.raises(InvalidArgument) as e:
+        @given(integers())
+        def has_varargs(*args, **kw):
+            pass
+    assert 'varargs' in e.value.args[0]
+
+
+def test_varargs_and_kwargs_without_positional_arguments_allowed():
+    @given(somearg=integers())
+    def has_varargs(*args, **kw):
+        pass
+
+
 def test_bare_given_errors():
     with pytest.raises(InvalidArgument):
         given()

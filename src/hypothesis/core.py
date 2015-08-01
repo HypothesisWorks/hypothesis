@@ -388,9 +388,9 @@ def given(*generator_arguments, **generator_kwargs):
             random = provided_random or Random()
 
         original_argspec = inspect.getargspec(test)
-        if original_argspec.varargs:
+        if generator_arguments and original_argspec.varargs:
             raise InvalidArgument(
-                'varargs are not supported with @given'
+                'varargs are not supported with positional arguments to @given'
             )
         extra_kwargs = [
             k for k in generator_kwargs if k not in original_argspec.args]
