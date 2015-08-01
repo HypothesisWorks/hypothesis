@@ -479,6 +479,18 @@ class UniqueListTemplate(object):
         else:
             self.values = tuple(values)
 
+    def __copy__(self):
+        return UniqueListTemplate(
+            self.size, self.parameter_seed, self.parameter, self.template_seed,
+            self.values,
+        )
+
+    def __deepcopy__(self, table):
+        return UniqueListTemplate(
+            self.size, self.parameter_seed, self.parameter, self.template_seed,
+            deepcopy(self.values, table),
+        )
+
     def __repr__(self):
         if self.values is not None:
             return 'UniqueListTemplate(%d, %r)' % (self.size, self.values)
