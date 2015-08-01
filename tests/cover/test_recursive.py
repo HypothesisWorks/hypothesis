@@ -146,7 +146,8 @@ def test_can_simplify_hard_recursive_data_into_boolean_alternative(rnd):
     assert all(isinstance(v, bool) for v in lvs), repr(lvs)
 
 
-def test_can_flatmap_to_recursive_data():
+@given(st.randoms(), settings=Settings(max_examples=10))
+def test_can_flatmap_to_recursive_data(rnd):
     stuff = st.lists(st.integers(), min_size=1).flatmap(
         lambda elts: st.recursive(
             st.sampled_from(elts), lambda x: st.lists(x, average_size=25),
@@ -161,7 +162,8 @@ def test_can_flatmap_to_recursive_data():
 
     tree = find(
         stuff, lambda x: sum(flatten(x)) >= 100,
-        settings=Settings(database=None, max_shrinks=1000, max_examples=1000)
+        settings=Settings(database=None, max_shrinks=1000, max_examples=1000),
+        random=rnd
     )
     flat = flatten(tree)
     assert (sum(flat) == 1000) or (len(set(flat)) == 1)
