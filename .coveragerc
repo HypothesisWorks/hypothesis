@@ -18,3 +18,5 @@ exclude_lines =
     pragma: no cover
     __repr__
     __ne__
+    __copy__
+    __deepcopy__
