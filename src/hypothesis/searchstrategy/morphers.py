@@ -115,7 +115,7 @@ class Morpher(object):
         ]
 
     def __repr__(self):
-        return 'Morpher(%r, %r, %r)' % (
+        return 'Morpher(%d, %d, %r)' % (
             self.parameter_seed, self.template_seed, self.data)
 
 
