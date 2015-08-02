@@ -23,6 +23,7 @@ from random import Random
 import pytest
 from hypothesis import Settings, strategy
 from tests.common import standard_types
+from hypothesis.control import BuildContext
 from hypothesis.utils.show import show
 from hypothesis.internal.debug import minimal_elements
 
@@ -35,4 +36,5 @@ def test_all_minimal_elements_reify(spec):
     ).encode('utf-8')).digest())
     strat = strategy(spec, Settings(average_list_length=2))
     for elt in minimal_elements(strat, random):
-        strat.reify(elt)
+        with BuildContext():
+            strat.reify(elt)
