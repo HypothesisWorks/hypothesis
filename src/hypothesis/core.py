@@ -41,7 +41,7 @@ from hypothesis.executors import executor
 from hypothesis.reporting import report, debug_report, verbose_report, \
     current_verbosity
 from hypothesis.deprecation import note_deprecation
-from hypothesis.internal.compat import qualname
+from hypothesis.internal.compat import qualname, unicode_safe_repr
 from hypothesis.internal.tracker import Tracker
 from hypothesis.internal.reflection import arg_string, copy_argspec, \
     function_digest, fully_qualified_name, convert_positional_arguments, \
@@ -215,18 +215,25 @@ def simplify_template_such_that(
         elif warmup == max_warmup:
             debug_report('Warmup is done. Moving on to fully simplifying')
 
+        any_simplifiers = False
         for simplify in search_strategy.simplifiers(random, t):
             debug_report('Applying simplification pass %s' % (
                 simplify.__name__,
             ))
+            any_simplifiers = True
+            any_shrinks = False
             while True:
                 simpler = simplify(random, t)
                 if warmup < max_warmup:
                     simpler = islice(simpler, warmup)
                 for s in simpler:
+                    any_shrinks = True
                     if time_to_call_it_a_day(settings, start_time):
                         return
                     if tracker.track(s) > 1:
+                        debug_report('Skipping simplifying to duplicate %s' % (
+                            unicode_safe_repr(s),
+                        ))
                         continue
                     try:
                         if f(s):
@@ -239,7 +246,12 @@ def simplify_template_such_that(
                         pass
                 else:
                     break
-
+            if not any_simplifiers:
+                debug_report('No simplifiers for template %s' % (
+                    unicode_safe_repr(t),
+                ))
+            elif not any_shrinks:
+                debug_report('No shrinks possible')
             if successful_shrinks >= settings.max_shrinks:
                 break
 
@@ -620,6 +632,7 @@ def find(specifier, condition, settings=None, random=None, storage=None):
             tracker=tracker, max_parameter_tries=2,
             storage=storage,
         )
+        print('STUFF', template)
         with BuildContext():
             return search.reify(template)
     except Timeout:
