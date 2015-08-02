@@ -83,6 +83,9 @@ class JustStrategy(SearchStrategy):
         assert template is None
         return self.value
 
+    def simplifiers(self, random, template):
+        return ()
+
     def to_basic(self, template):
         return None
 

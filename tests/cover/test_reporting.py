@@ -18,11 +18,11 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import pytest
-from hypothesis import given, reporting
+from hypothesis import find, given, reporting
 from tests.common.utils import capture_out
 from hypothesis.settings import Settings, Verbosity
 from hypothesis.reporting import debug_report, verbose_report
-from hypothesis.strategies import integers
+from hypothesis.strategies import just, integers
 
 
 def test_can_suppress_output():
@@ -68,3 +68,12 @@ def test_does_print_verbose_in_debug():
         with capture_out() as o:
             verbose_report('Hi')
     assert 'Hi' in o.getvalue()
+
+
+def test_prints_debug_on_no_simplification():
+    with Settings(verbosity=Verbosity.debug):
+        with capture_out() as o:
+            find(just('hi'), bool)
+    v = o.getvalue()
+    print(v)
+    assert 'No simplifiers' in v

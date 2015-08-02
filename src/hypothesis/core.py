@@ -246,14 +246,15 @@ def simplify_template_such_that(
                         pass
                 else:
                     break
-            if not any_simplifiers:
-                debug_report('No simplifiers for template %s' % (
-                    unicode_safe_repr(t),
-                ))
-            elif not any_shrinks:
+            if not any_shrinks:
                 debug_report('No shrinks possible')
             if successful_shrinks >= settings.max_shrinks:
                 break
+        if not any_simplifiers:
+            debug_report('No simplifiers for template %s' % (
+                unicode_safe_repr(t),
+            ))
+            break
 
 
 def best_satisfying_template(
