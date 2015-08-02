@@ -633,7 +633,6 @@ def find(specifier, condition, settings=None, random=None, storage=None):
             tracker=tracker, max_parameter_tries=2,
             storage=storage,
         )
-        print('STUFF', template)
         with BuildContext():
             return search.reify(template)
     except Timeout:
