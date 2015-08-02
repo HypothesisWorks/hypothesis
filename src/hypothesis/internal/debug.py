@@ -25,6 +25,7 @@ from functools import wraps
 from hypothesis import Settings, strategy
 from hypothesis.core import find
 from hypothesis.errors import NoExamples, UnsatisfiedAssumption
+from hypothesis.control import BuildContext
 from hypothesis.database import ExampleDatabase
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.tracker import Tracker
@@ -98,7 +99,8 @@ def some_template(spec, random=None):
     for _ in hrange(100):
         element = strat.draw_and_produce(random)
         try:
-            strat.reify(element)
+            with BuildContext():
+                strat.reify(element)
             return element
         except UnsatisfiedAssumption:
             pass

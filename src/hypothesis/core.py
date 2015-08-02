@@ -35,6 +35,7 @@ from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
     Unsatisfiable, BadTemplateDraw, InvalidArgument, \
     UnsatisfiedAssumption, DefinitelyNoSuchExample
 from hypothesis.control import assume  # noqa
+from hypothesis.control import BuildContext
 from hypothesis.settings import Settings, Verbosity
 from hypothesis.executors import executor
 from hypothesis.reporting import report, debug_report, verbose_report, \
@@ -333,19 +334,20 @@ def reify_and_execute(
     print_example=False, always_print=False, record_repr=None,
 ):
     def run():
-        args, kwargs = search_strategy.reify(template)
-        text_version = arg_string(test, args, kwargs)
-        if print_example:
-            report(
-                lambda: 'Falsifying example: %s(%s)' % (
-                    test.__name__, text_version,))
-        elif current_verbosity() >= Verbosity.verbose or always_print:
-            report(
-                lambda: 'Trying example: %s(%s)' % (
-                    test.__name__, text_version))
-        if record_repr is not None:
-            record_repr[0] = text_version
-        return test(*args, **kwargs)
+        with BuildContext():
+            args, kwargs = search_strategy.reify(template)
+            text_version = arg_string(test, args, kwargs)
+            if print_example:
+                report(
+                    lambda: 'Falsifying example: %s(%s)' % (
+                        test.__name__, text_version,))
+            elif current_verbosity() >= Verbosity.verbose or always_print:
+                report(
+                    lambda: 'Trying example: %s(%s)' % (
+                        test.__name__, text_version))
+            if record_repr is not None:
+                record_repr[0] = text_version
+            return test(*args, **kwargs)
     return run
 
 
@@ -587,8 +589,9 @@ def find(specifier, condition, settings=None, random=None, storage=None):
     successful_examples = [0]
 
     def template_condition(template):
-        result = search.reify(template)
-        success = condition(result)
+        with BuildContext():
+            result = search.reify(template)
+            success = condition(result)
 
         if success:
             successful_examples[0] += 1
@@ -612,11 +615,13 @@ def find(specifier, condition, settings=None, random=None, storage=None):
     tracker = Tracker()
 
     try:
-        return search.reify(best_satisfying_template(
+        template = best_satisfying_template(
             search, random, template_condition, settings,
             tracker=tracker, max_parameter_tries=2,
             storage=storage,
-        ))
+        )
+        with BuildContext():
+            return search.reify(template)
     except Timeout:
         raise
     except NoSuchExample:

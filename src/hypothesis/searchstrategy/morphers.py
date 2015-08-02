@@ -21,6 +21,7 @@ from copy import deepcopy
 from random import Random
 
 from hypothesis.errors import BadTemplateDraw
+from hypothesis.control import cleanup
 from hypothesis.utils.idkey import IdKey
 from hypothesis.internal.compat import OrderedDict, integer_types
 from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
@@ -140,6 +141,11 @@ class Morpher(object):
         result.data[i] = strategy.to_basic(template)
         return result
 
+    def update_templates(self):
+        for i, strategy in enumerate(self.owners):
+            if strategy is not None:
+                self.data[i] = strategy.to_basic(self.template_for(strategy))
+
     def collapse(self):
         self.restore()
         self.old_cache = self.cache
@@ -203,6 +209,7 @@ class MorpherStrategy(SearchStrategy):
 
     def reify(self, template):
         template.collapse()
+        cleanup(template.update_templates)
         return template
 
     def simplifiers(self, random, morpher):

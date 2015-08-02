@@ -17,7 +17,11 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from hypothesis.errors import UnsatisfiedAssumption
+import traceback
+
+from hypothesis.errors import InvalidArgument, UnsatisfiedAssumption
+from hypothesis.reporting import report
+from hypothesis.utils.dynamicvariables import DynamicVariable
 
 
 def assume(condition):
@@ -31,3 +35,42 @@ def assume(condition):
     if not condition:
         raise UnsatisfiedAssumption()
     return True
+
+
+_current_build_context = DynamicVariable(None)
+
+
+class BuildContext(object):
+
+    def __init__(self):
+        self.tasks = []
+
+    def __enter__(self):
+        self.assign_variable = _current_build_context.with_value(self)
+        self.assign_variable.__enter__()
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        for task in self.tasks:
+            try:
+                task()
+            except:
+                report(traceback.format_exc())
+        return self.assign_variable.__exit__(*args, **kwargs)
+
+
+def cleanup(teardown):
+    """Register a function to be called when the current test has finished
+    executing. Any exceptions thrown in teardown will be printed but not
+    rethrown.
+
+    Inside a test this isn't very interesting, because you can just use
+    a finally block, but note that you can use this inside map, flatmap,
+    etc. in order to e.g. insist that a value is closed at the end.
+
+    """
+    context = _current_build_context.value
+    if context is None:
+        raise InvalidArgument(
+            'Cannot register cleanup outside of build context')
+    context.tasks.append(teardown)

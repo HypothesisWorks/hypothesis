@@ -27,6 +27,7 @@ from collections import namedtuple
 
 from hypothesis import given, assume
 from hypothesis.errors import BadData, Unsatisfiable, BadTemplateDraw
+from hypothesis.control import BuildContext
 from hypothesis.database import ExampleDatabase
 from hypothesis.settings import Settings
 from hypothesis.strategies import lists, randoms, integers
@@ -248,8 +249,10 @@ def strategy_test_suite(
             except BadTemplateDraw:
                 assume(False)
             if t1 is not t2:
-                strat.reify(t1)
-                strat.reify(t2)
+                with BuildContext():
+                    strat.reify(t1)
+                with BuildContext():
+                    strat.reify(t2)
                 assert t1 == t2
                 assert hash(t1) == hash(t2)
 

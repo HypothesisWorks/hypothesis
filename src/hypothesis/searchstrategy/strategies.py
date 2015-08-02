@@ -24,7 +24,7 @@ from collections import namedtuple
 
 from hypothesis.errors import BadData, NoExamples, WrongFormat, \
     BadTemplateDraw, UnsatisfiedAssumption
-from hypothesis.control import assume
+from hypothesis.control import BuildContext, assume
 from hypothesis.settings import Settings
 from hypothesis.deprecation import note_deprecation
 from hypothesis.internal.compat import hrange, integer_types
@@ -176,7 +176,8 @@ class SearchStrategy(object):
         for _ in hrange(100):
             try:
                 template = self.draw_and_produce(random)
-                return self.reify(template)
+                with BuildContext():
+                    return self.reify(template)
             except (BadTemplateDraw, UnsatisfiedAssumption):
                 pass
         raise NoExamples(
