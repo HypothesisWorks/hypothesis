@@ -23,6 +23,7 @@ from random import Random
 import pytest
 from hypothesis import Settings, strategy
 from tests.common import standard_types
+from hypothesis.control import BuildContext
 from hypothesis.strategies import lists, booleans
 from hypothesis.utils.show import show
 from hypothesis.internal.debug import via_database, some_template, \
@@ -41,7 +42,9 @@ def test_round_tripping_via_the_database(spec):
     template = some_template(strat, random)
     strat.from_basic(strat.to_basic(template))
     template_via_db = via_database(spec, strat, template)
-    assert show(strat.reify(template)) == show(strat.reify(template_via_db))
+    with BuildContext():
+        assert show(strat.reify(template)) == show(
+            strat.reify(template_via_db))
 
 
 @pytest.mark.parametrize(
@@ -53,7 +56,9 @@ def test_round_tripping_lists_via_the_database(spec):
     strat = lists(spec)
     template = some_template(strat, random)
     template_via_db = via_database(spec, strat, template)
-    assert show(strat.reify(template)) == show(strat.reify(template_via_db))
+    with BuildContext():
+        assert show(strat.reify(template)) == show(
+            strat.reify(template_via_db))
 
 
 @pytest.mark.parametrize(
@@ -65,7 +70,8 @@ def test_all_minimal_elements_round_trip_via_the_database(spec):
     strat = strategy(spec, Settings(average_list_length=2))
     for elt in minimal_elements(strat, random):
         elt_via_db = via_database(spec, strat, elt)
-        assert show(strat.reify(elt)) == show(strat.reify(elt_via_db))
+        with BuildContext():
+            assert show(strat.reify(elt)) == show(strat.reify(elt_via_db))
         elt_via_db_2 = via_database(spec, strat, elt_via_db)
         assert elt_via_db == elt_via_db_2
 

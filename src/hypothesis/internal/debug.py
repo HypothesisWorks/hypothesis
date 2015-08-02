@@ -129,7 +129,8 @@ def minimal_element(strategy, random):
             if tracker.track(new_element) > 1:
                 continue
             try:
-                strategy.reify(new_element)
+                with BuildContext():
+                    strategy.reify(new_element)
                 element = new_element
                 break
             except UnsatisfiedAssumption:
