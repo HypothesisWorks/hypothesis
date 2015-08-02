@@ -22,6 +22,7 @@ from random import Random
 import hypothesis.strategies as s
 from hypothesis import Settings, find, given, example
 from hypothesis.control import BuildContext
+from hypothesis.internal.tracker import Tracker
 from hypothesis.searchstrategy.morphers import Morpher, MorpherStrategy
 
 morphers = MorpherStrategy()
@@ -30,7 +31,7 @@ intlists = s.lists(s.integers())
 
 def test_can_simplify_through_a_morpher():
     m = find(morphers, lambda x: bool(x.become(intlists)))
-    assert m.become(intlists) == [0]
+    assert m.clean_slate().become(intlists) == [0]
 
 
 @example(Random(187))
@@ -42,7 +43,7 @@ def test_can_simplify_text_through_a_morpher(rnd):
         settings=Settings(database=None)
     )
     with BuildContext():
-        assert m.become(s.text()) == '0'
+        assert m.clean_slate().become(s.text()) == '0'
 
 
 def test_can_simplify_lists_of_morphers_of_single_type():
@@ -53,21 +54,21 @@ def test_can_simplify_lists_of_morphers_of_single_type():
     )
 
     with BuildContext():
-        ls = [t.become(s.integers()) for t in ms]
+        ls = [t.clean_slate().become(s.integers()) for t in ms]
     assert sum(ls) == 100
 
 
 def test_can_simplify_through_two_morphers():
     m = find(morphers, lambda x: bool(x.become(morphers).become(intlists)))
     with BuildContext():
-        assert m.become(morphers).become(intlists) == [0]
+        assert m.clean_slate().become(morphers).become(intlists) == [0]
 
 
 def test_a_morpher_retains_its_data_on_reserializing():
     m = find(morphers, lambda x: sum(x.become(intlists)) > 1)
     m2 = morphers.from_basic(morphers.to_basic(m))
     with BuildContext():
-        assert m.become(intlists) == m2.become(intlists)
+        assert m.clean_slate().become(intlists) == m2.become(intlists)
 
 
 def test_can_clone_morphers_into_inactive_morphers():
@@ -75,55 +76,33 @@ def test_can_clone_morphers_into_inactive_morphers():
         s.lists(morphers),
         lambda x: len(x) >= 2 and x[0].become(s.integers()) >= 0)
     with BuildContext():
-        m_as_ints = [x.become(s.integers()) for x in m]
+        m_as_ints = [x.clean_slate().become(s.integers()) for x in m]
     assert m_as_ints == [0, 0]
-
-
-def test_cloning_of_morphers_with_different_strategy_sizes():
-    xs = find(
-        s.lists(morphers),
-        lambda x:
-            len(x) >= 3 and all(
-            x[0].become(s.integers()) >= 2 for _ in range(3)) and
-            x[1].become(s.integers()) < 0 and
-            x[2].become(s.integers()) >= 0 and
-            x[2].become(s.integers()) >= 0 and
-            len(x[1].strategies()) <= 1 and
-            len(x[2].strategies()) <= 2)
-    assert len(xs) == 3
-    with BuildContext():
-        assert xs[0].become(s.integers()) == 2
-        assert xs[1].become(s.integers()) == -1
-        assert xs[2].become(s.integers()) == 0
 
 
 def test_thorough_cloning():
     def check(x):
         ids = list(map(id, x))
         assert len(set(ids)) == len(ids)
-        return len(x) >= 5 and any(m.become(s.integers()) > 0 for m in x)
+        return len(x) >= 5 and any(
+            m.become(s.integers()) > 0 for m in x)
     r = find(s.lists(morphers), check)
     with BuildContext():
-        results = [m.become(s.integers()) for m in r]
+        results = [m.clean_slate().become(s.integers()) for m in r]
     results.sort(key=abs)
     assert results == [0] * 4 + [1]
 
 
-def test_can_simplify_a_morpher_for_two_types_simultaneously():
-    m = find(
-        morphers, lambda x: x.become(s.integers()) and x.become(s.text())
-    )
-    assert m.become(s.text()) == '0'
-    assert m.become(s.integers()) == 1
-
-
 def test_can_simplify_lists_of_morphers_with_mixed_types():
     m = find(
-        s.lists(morphers),
-        lambda xs: any(x.become(s.text()) for x in xs) and any(
-            x.become(s.integers()) for x in xs))
-    assert 1 <= len(m) <= 2
+        s.lists(morphers, min_size=2),
+        lambda xs: xs[0].become(s.text()) and xs[-1].become(s.integers()))
+    assert len(m) == 2
+    for x in m:
+        x.clear()
     m_as_ints = [x.become(s.integers()) for x in m]
+    for x in m:
+        x.clear()
     m_as_text = [x.become(s.text()) for x in m]
     assert '0' in m_as_text
     assert 1 in m_as_ints
@@ -140,26 +119,22 @@ def test_without_strategies_morphers_synchronize():
 def test_a_morpher_accumulates_strategies():
     m = Morpher(1, 1)
     m.become(s.integers())
+    m.clear()
     m.become(s.text())
-    m.collapse()
-    m.collapse()
+    m.clear()
     assert len(m.data) == 2
 
 
-@given(
-    pseed=s.integers(), tseed=s.integers(),
-    order=s.permutations(range(1, 10))
-)
-def test_results_are_same_after_a_collapse(pseed, tseed, order):
-    morpher = Morpher(pseed, tseed)
+def test_can_track_morphers():
+    t = Tracker()
+    assert t.track(Morpher(0, 0)) == 1
+    assert t.track(Morpher(0, 0)) == 2
 
-    with BuildContext():
-        trace1 = [
-            morpher.become(s.sampled_from(list(range(i)))) for i in order]
-        trace2 = [
-            morpher.become(s.sampled_from(list(range(i)))) for i in order]
-        assert trace1 == trace2
-        morpher.collapse()
-        trace3 = [
-            morpher.become(s.sampled_from(list(range(i)))) for i in order]
-        assert trace1 == trace3
+    m1 = Morpher(0, 1)
+    m2 = Morpher(0, 1)
+
+    m1.become(s.lists(s.integers()))
+    m2.become(s.lists(s.integers()))
+
+    assert t.track(m1) == 1
+    assert t.track(m2) == 2

@@ -17,13 +17,12 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from copy import deepcopy
+from copy import copy
 from random import Random
 
-from hypothesis.errors import BadTemplateDraw
+from hypothesis.errors import BadTemplateDraw, InvalidArgument
 from hypothesis.control import cleanup
-from hypothesis.utils.idkey import IdKey
-from hypothesis.internal.compat import OrderedDict, integer_types
+from hypothesis.internal.compat import integer_types
 from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
     check_length, check_data_type
 
@@ -33,11 +32,55 @@ class Morpher(object):
     def __init__(self, parameter_seed, template_seed, data=None):
         self.parameter_seed = parameter_seed
         self.template_seed = template_seed
-        self.cache = OrderedDict()
         self.data = list(data or ())
-        self.owners = []
-        self.generation = 0
-        self.old_cache = None
+        self.current_template = None
+        self.current_index = -1
+        self.current_strategy = None
+        self.a_strategy = None
+
+    def clear(self):
+        self.flush()
+        self.current_template = None
+        self.current_index = -1
+        self.current_strategy = None
+
+    def flush(self):
+        if self.current_index >= 0:
+            self.data[self.current_index] = self.current_strategy.to_basic(
+                self.current_template
+            )
+
+    def install(self, strategy):
+        if self.current_strategy is not None:
+            raise InvalidArgument(
+                'Cannot install multiple strategies into a morpher')
+        self.a_strategy = strategy
+        self.current_strategy = strategy
+        for i, data in enumerate(self.data):
+            try:
+                self.current_template = strategy.from_basic(data)
+                self.current_index = i
+                return
+            except BadData:
+                pass
+        parameter_random = Random(self.parameter_seed)
+        template_random = Random(self.template_seed)
+        while True:
+            try:
+                parameter = strategy.draw_parameter(parameter_random)
+                template = strategy.draw_template(
+                    template_random, parameter)
+                break
+            except BadTemplateDraw:
+                pass
+        basic = strategy.to_basic(template)
+        self.data.append(basic)
+        self.current_template = strategy.from_basic(basic)
+        self.current_index = len(self.data) - 1
+
+    def become(self, strategy):
+        self.install(strategy)
+        return strategy.reify(self.current_template)
 
     def __eq__(self, other):
         return isinstance(other, Morpher) and (
@@ -54,152 +97,32 @@ class Morpher(object):
 
     def __copy__(self):
         result = self.clean_slate()
-        result.old_cache = deepcopy(self.old_cache)
-        result.cache = deepcopy(self.cache)
-        return result
-
-    def clean_slate(self):
-        result = Morpher(self.parameter_seed, self.template_seed, self.data)
-        for s in self.strategies():
-            template = result.template_for(s)
-            basic = s.to_basic(template)
-            result.data[result.owners.index(s)] = basic
-        result.cache = {}
-        result.owners = []
+        if self.current_strategy is not None:
+            result.install(self.current_strategy)
         return result
 
     def __deepcopy__(self, table):
         return self.__copy__()
 
-    def owner(self, i):
-        if i >= len(self.owners):
-            return None
-        return self.owners[i]
-
-    def set_owner(self, i, owner):
-        while i >= len(self.owners):
-            self.owners.append(None)
-        self.owners[i] = owner
-
-    def template_for(self, strategy):
-        key = IdKey(strategy)
-        try:
-            return self.cache[key]
-        except KeyError:
-            pass
-        for i, data in enumerate(self.data):
-            try:
-                existing = self.owner(i)
-                assert existing is not strategy
-                if existing is None:
-                    template = strategy.from_basic(data)
-                    self.set_owner(i, strategy)
-                    break
-            except BadData:
-                pass
-        else:
-            parameter_random = Random(self.parameter_seed)
-            template_random = Random(self.template_seed)
-            while True:
-                try:
-                    parameter = strategy.draw_parameter(parameter_random)
-                    template = strategy.draw_template(
-                        template_random, parameter)
-                    break
-                except BadTemplateDraw:
-                    pass
-            basic = strategy.to_basic(template)
-            self.data.append(basic)
-            template = strategy.from_basic(basic)
-            self.set_owner(len(self.data) - 1, strategy)
-        self.cache[key] = template
-        return template
-
-    def become(self, strategy):
-        return strategy.reify(self.template_for(strategy))
+    def clean_slate(self):
+        return Morpher(
+            self.parameter_seed, self.template_seed, self.data)
 
     def __trackas__(self):
         return [
-            self.parameter_seed, self.template_seed, len(self.cache),
+            self.parameter_seed, self.template_seed,
             self.data,
         ]
 
     def __repr__(self):
-        return 'Morpher(%s)' % (', '.join([
-            ('%r -> %r') % (key.value, template)
-            for (key, template) in self.cache.items()
-        ] + list(map(repr, self.data))),)
-
-    def replace_template(self, strategy, template):
-        result = Morpher(
+        return 'Morpher(%r, %r, %r)' % (
             self.parameter_seed, self.template_seed, self.data)
-        for s in self.strategies():
-            result.template_for(s)
-        result.template_for(strategy)
-        i = result.owners.index(strategy)
-        assert result.owners[i] is strategy
-        result.data[i] = strategy.to_basic(template)
-        return result
-
-    def update_templates(self):
-        for i, strategy in enumerate(self.owners):
-            if strategy is not None:
-                self.data[i] = strategy.to_basic(self.template_for(strategy))
-
-    def collapse(self):
-        self.restore()
-        self.old_cache = self.cache
-        self.cache = OrderedDict()
-        self.owners = []
-
-    def strategies(self):
-        if self.cache:
-            return [k.value for k in self.cache]
-        elif self.old_cache:
-            return [k.value for k in self.old_cache]
-        else:
-            return []
-
-    def restore(self):
-        if not self.cache and self.old_cache is not None:
-            self.owners = []
-            for key in self.old_cache:
-                self.template_for(key.value)
-        self.old_cache = None
 
 
 class MorpherStrategy(SearchStrategy):
 
     def draw_parameter(self, random):
         return random.getrandbits(64)
-
-    def strictly_simpler(self, x, y):
-        if x == y:
-            return False
-        xstrat = x.strategies()
-        ystrat = y.strategies()
-        if not (xstrat or ystrat):
-            return x.template_seed < y.template_seed
-        if xstrat and not ystrat:
-            return True
-        if ystrat and not xstrat:
-            return False
-
-        def direction_for(strats):
-            u = x.clean_slate()
-            v = y.clean_slate()
-            for s in strats:
-                us = u.template_for(s)
-                vs = v.template_for(s)
-                if s.strictly_simpler(us, vs):
-                    return -1
-                if s.strictly_simpler(vs, us):
-                    return 1
-            return 0
-
-        by_x = direction_for(xstrat)
-        by_y = direction_for(ystrat)
-        return max(by_x, by_y) <= 0 and min(by_x, by_y) < 0
 
     def draw_template(self, random, parameter):
         return Morpher(
@@ -208,25 +131,75 @@ class MorpherStrategy(SearchStrategy):
         )
 
     def reify(self, template):
-        template.collapse()
-        cleanup(template.update_templates)
+        strategy = template.current_strategy
+
+        def fix_morpher_in_response_to_changes():
+            if strategy is not None and template.current_strategy is None:
+                template.install(strategy)
+            else:
+                template.flush()
+        cleanup(fix_morpher_in_response_to_changes)
+        template.clear()
         return template
 
+    def strictly_simpler(self, x, y):
+        if x.current_strategy is None:
+            if y.current_strategy is None:
+                return x.template_seed < y.template_seed
+            else:
+                return False
+        else:
+            if y.current_strategy is None:
+                return True
+            elif x.current_strategy is y.current_strategy:
+                return x.current_strategy.strictly_simpler(
+                    x.current_template, y.current_template
+                )
+            else:
+                for s in (x.current_strategy, y.current_strategy):
+                    xs = x.clean_slate()
+                    ys = y.clean_slate()
+                    xs.install(s)
+                    ys.install(s)
+                    xt = xs.current_template
+                    yt = ys.current_template
+                    if not s.strictly_simpler(xt, yt):
+                        return False
+                return True
+
     def simplifiers(self, random, morpher):
-        morpher.restore()
-        for key, template in morpher.cache.items():
-            strategy = key.value
-            for simplifier in strategy.simplifiers(random, template):
+        strategy = morpher.a_strategy
+        if strategy is not None:
+            for simplifier in strategy.simplifiers(
+                random, morpher.current_template
+            ):
                 yield self.convert_simplifier(strategy, simplifier)
+            yield self.full_simplify_current
+
+    def full_simplify_current(self, random, template):
+        strategy = template.a_strategy
+        if strategy is not None:
+            for m in (
+                self.convert_simplifier(
+                    strategy, strategy.full_simplify)(random, template)
+            ):
+                yield m
 
     def convert_simplifier(self, strategy, simplifier):
         def accept(random, morpher):
-            morpher = morpher.clean_slate()
-            template = morpher.template_for(strategy)
-            for new_template in simplifier(random, template):
-                yield morpher.replace_template(
-                    strategy, new_template
-                ).clean_slate()
+            target = morpher.clean_slate()
+            target.install(strategy)
+            template = target.current_template
+            for simpler in simplifier(random, template):
+                new_template = copy(target)
+                i = new_template.current_index
+                assert i >= 0
+                d = new_template.data
+                d[i] = strategy.to_basic(simpler)
+                d[i], d[0] = d[0], d[i]
+                new_template.current_index = 0
+                new_template.current_template = simpler
+                yield new_template
         accept.__name__ = str(
             'convert_simplifier(..., %s)' % (simplifier.__name__,)
         )
