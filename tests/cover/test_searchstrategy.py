@@ -186,3 +186,7 @@ def test_basic_simplify_is_usable():
 
     with pytest.raises(ValueError):
         test_foo()
+
+
+def test_can_draw_from_random():
+    integers().draw_and_produce(random)

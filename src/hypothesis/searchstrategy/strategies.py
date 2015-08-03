@@ -17,6 +17,7 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+import inspect
 import weakref
 from copy import deepcopy
 from random import Random
@@ -383,7 +384,10 @@ class SearchStrategy(object):
 class LazyParameter(object):
 
     def __init__(self, strategy, random):
-        self.random = deepcopy(random)
+        if inspect.ismodule(random):
+            self.random = random
+        else:
+            self.random = deepcopy(random)
         # There is no sensible reason for this to be a weakref. It is a
         # workaround for https://bitbucket.org/pypy/pypy/issues/2102
         self.strategy = weakref.ref(strategy)
