@@ -55,7 +55,7 @@ def constant_list(strat):
     )
 
 
-EvalledIntStream = streaming(integers()).map(lambda x: list(x[:10]) and x)
+EvalledIntStream = streaming(integers()).map(lambda x: list(x[:5]) and x)
 
 ABC = namedtuple('ABC', ('a', 'b', 'c'))
 
