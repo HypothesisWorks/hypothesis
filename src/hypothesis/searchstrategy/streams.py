@@ -17,6 +17,7 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+from copy import deepcopy
 from random import Random
 
 from hypothesis.types import Stream
@@ -69,6 +70,14 @@ class StreamTemplate(object):
             max(i + 1, self.changed)
         )
 
+    def with_values(self, updates):
+        updates = list(updates)
+        return StreamTemplate(
+            self.seed, self.parameter_seed,
+            self.stream.with_values(updates),
+            max(self.changed, max(i + 1 for i, _ in updates))
+        )
+
     def __trackas__(self):
         return ('StreamTemplate', self.seed, list(self.stream[:self.changed]))
 
@@ -99,6 +108,8 @@ class StreamStrategy(SearchStrategy):
         return StreamTemplate(seed, parameter_seed, templates())
 
     def simplifiers(self, random, template):
+        yield self.stream_simplify_with_example_cloning
+        yield self.stream_shared_simplification
         for i in hrange(len(template.stream.fetched)):
             for s in self.source_strategy.simplifiers(
                 random, template.stream[i]
@@ -127,6 +138,42 @@ class StreamStrategy(SearchStrategy):
             )
         )
         return accept
+
+    def stream_simplify_with_example_cloning(self, random, x):
+        if x.changed <= 1:
+            return
+
+        for pivot in x.stream.fetched:
+            indices = [
+                j for j in hrange(len(x.stream.fetched))
+                if self.source_strategy.strictly_simpler(pivot, x.stream[j])]
+            if not indices:
+                continue
+            random.shuffle(indices)
+            if len(indices) > 1:
+                yield x.with_values((i, deepcopy(pivot)) for i in indices[:-1])
+            yield x.with_values((i, deepcopy(pivot)) for i in indices)
+
+    def stream_shared_simplification(self, random, template):
+        sharing = {}
+        for i, elt in enumerate(template.stream.fetched):
+            sharing.setdefault(elt, []).append(i)
+        if not sharing:
+            return
+        sharing = list(sharing.values())
+        for ls in list(sharing):
+            if len(ls) > 1:
+                ls = list(ls)
+                random.shuffle(ls)
+                ls.pop()
+                sharing.append(ls)
+        sharing.sort(key=len, reverse=True)
+
+        for indices in sharing:
+            value = template.stream[indices[0]]
+            for simpler in self.source_strategy.full_simplify(random, value):
+                yield template.with_values(
+                    (i, deepcopy(simpler)) for i in indices)
 
     def reify(self, template):
         return template.stream.map(self.source_strategy.reify)

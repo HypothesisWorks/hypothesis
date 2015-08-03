@@ -105,6 +105,13 @@ class Stream(object):
         s.fetched[i] = value
         return s
 
+    def with_values(self, updates):
+        s = Stream(self)
+        for i, value in updates:
+            s._thunk_to(i + 1)
+            s.fetched[i] = value
+        return s
+
     def _thunk_to(self, i):
         it = iter(self)
         try:
