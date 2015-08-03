@@ -49,7 +49,7 @@ def test_can_collectively_minimize(spec):
             lists(spec, min_size=n, max_size=n),
             distinct_reprs,
             settings=Settings(
-                timeout=2.0, average_list_length=3, max_examples=2000))
+                timeout=3.0, average_list_length=3, max_examples=2000))
         assert len(xs) == n
         assert len(set((map(repr, xs)))) == 2
     except NoSuchExample:
