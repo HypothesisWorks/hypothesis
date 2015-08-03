@@ -21,6 +21,37 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+
+-----------------------------------------------------------------------
+`1.10.0 <https://hypothesis.readthedocs.org/en/v1.10.0/>`_ - 2015-07-27
+-----------------------------------------------------------------------
+
+This is just a bugfix and perfomrance release, but it changes some
+semi-public APIs, hence the minor version bump.
+
+* Significant performance improvements for strategies which are one\_of()
+  many branches. In particular this included recursive() strategies. This
+  should take the case where you use one recursive() strategy as the base
+  strategy of another from unusably slow (tens of seconds per generated
+  example) to reasonably fast.
+* Better handling of just() and sampled_from() for values which have an
+  incorrect \_\_repr\_\_ implementation that returns non-ASCII unicode
+  on Python 2.
+* Better performance for flatmap from changing the internal morpher API
+  to be significantly less general purpose.
+* Introduce a new semi-public BuildContext/cleanup API. This allows
+  strategies to register cleanup activitieis that should run once the
+  example is complete. Note that this will interact somewhat weirdly with
+  find.
+* Better simplification behaviour for streaming strategies.
+* Don't error on lambdas which use destructuring arguments in Python 2.
+* Add some better reprs for a few strategies that were missing good ones.
+* The Random instances provided by randoms() are now copyable.
+* Slightly more debugging information about simplify when using a debug
+  verbosity level.
+* Support using given for functions with varargs, but not passing arguments
+  to it as positional.
+
 ---------------------------------------------------------------------
 `1.9.0 <https://hypothesis.readthedocs.org/en/v1.9.0/>`_ - 2015-07-27
 ---------------------------------------------------------------------

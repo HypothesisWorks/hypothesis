@@ -52,7 +52,7 @@ setup(
     license='MPL v2',
     description='Pytest plugin for better integration with hypothesis',
     install_requires=[
-        "hypothesis>=1.9,<1.9.99",
+        "hypothesis>=1.10,<1.10.99",
         "pytest>=2.6.0,<2.7.99",
     ],
     long_description=open(README).read(),
