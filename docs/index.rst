@@ -49,6 +49,10 @@ the :doc:`Quick start guide <quickstart>`, which will give you a worked
 example of how to use Hypothesis and a detailed outline
 of the things you need to know to begin testing your code with it.
 
+The author of Hypothesis, `David R. MacIver <http://www.drmaciver.com>`_, currently works
+full time on it. If you want him to continue to be able to do so, please `consider supporting
+him via his Patreon page <https://www.patreon.com/DRMacIver>`_.
+
 .. toctree::
   :maxdepth: 1
   :hidden:
