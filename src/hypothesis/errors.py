@@ -26,7 +26,7 @@ class HypothesisException(Exception):
 
 class CleanupFailed(HypothesisException):
 
-    """At least one cleanup task failed and no other exception was raised"""
+    """At least one cleanup task failed and no other exception was raised."""
 
 
 class UnsatisfiedAssumption(HypothesisException):

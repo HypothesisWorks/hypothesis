@@ -151,18 +151,18 @@ class StreamStrategy(SearchStrategy):
                 continue
             random.shuffle(indices)
             if len(indices) > 1:
-                yield x.with_values((i, deepcopy(pivot)) for i in indices[:-1])
-            yield x.with_values((i, deepcopy(pivot)) for i in indices)
+                yield x.with_values(  # pragma: no branch
+                    [(i, deepcopy(pivot)) for i in indices[:-1]])
+            yield x.with_values(  # pragma: no branch
+                [(i, deepcopy(pivot)) for i in indices])
 
     def stream_shared_simplification(self, random, template):
         sharing = {}
         for i, elt in enumerate(template.stream.fetched):
             sharing.setdefault(elt, []).append(i)
-        if not sharing:
-            return
         sharing = list(sharing.values())
         for ls in list(sharing):
-            if len(ls) > 1:
+            if len(ls) > 2:
                 ls = list(ls)
                 random.shuffle(ls)
                 ls.pop()
@@ -170,10 +170,12 @@ class StreamStrategy(SearchStrategy):
         sharing.sort(key=len, reverse=True)
 
         for indices in sharing:
+            if len(indices) <= 1:
+                continue
             value = template.stream[indices[0]]
             for simpler in self.source_strategy.full_simplify(random, value):
-                yield template.with_values(
-                    (i, deepcopy(simpler)) for i in indices)
+                yield template.with_values([  # pragma: no branch
+                    (i, deepcopy(simpler)) for i in indices])
 
     def reify(self, template):
         return template.stream.map(self.source_strategy.reify)

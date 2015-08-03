@@ -23,15 +23,15 @@ import functools
 from collections import namedtuple
 
 import pytest
-from hypothesis import given
 import hypothesis.specifiers as specifiers
+from hypothesis import given
 from hypothesis.types import RandomWithSeed
 from hypothesis.errors import NoExamples, InvalidArgument
 from hypothesis.strategies import just, tuples, randoms, booleans, \
     integers, sampled_from
 from hypothesis.internal.compat import hrange, text_type
-from hypothesis.searchstrategy.numbers import BoundedIntStrategy, \
-    RandomGeometricIntStrategy, SearchStrategy
+from hypothesis.searchstrategy.numbers import SearchStrategy, \
+    BoundedIntStrategy, RandomGeometricIntStrategy
 from hypothesis.searchstrategy.strategies import OneOfStrategy, \
     one_of_strategies
 

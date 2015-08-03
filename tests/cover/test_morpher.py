@@ -17,13 +17,13 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-import pytest
 from random import Random
 
+import pytest
 import hypothesis.strategies as s
 from hypothesis import Settings, find, given, example
-from hypothesis.control import BuildContext
 from hypothesis.errors import InvalidArgument
+from hypothesis.control import BuildContext
 from hypothesis.internal.tracker import Tracker
 from hypothesis.searchstrategy.morphers import Morpher, MorpherStrategy
 

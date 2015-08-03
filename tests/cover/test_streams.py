@@ -22,7 +22,7 @@ from random import Random
 from itertools import islice
 
 import pytest
-from hypothesis import given, strategy
+from hypothesis import find, given, strategy
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import text, lists, floats, booleans, \
     integers, streaming
@@ -150,3 +150,25 @@ def test_check_serialization_preserves_changed_marker():
 
     as_basic = strat.to_basic(simpler)
     assert as_basic == strat.to_basic(strat.from_basic(as_basic))
+
+
+def test_lists_of_streams():
+    x = find(
+        lists(streaming(integers()), min_size=10),
+        lambda x: all(t[3] for t in x))
+    assert [list(t[:4]) for t in x] == [[0] * 3 + [1]] * 10
+
+
+def test_streams_with_distinct_values():
+    x = find(streaming(integers()), lambda x: len(set(x[:10])) >= 10)
+    elts = sorted(set(x[:10]))
+    assert len(elts) == 10
+    assert elts == list(range(min(elts), max(elts) + 1))
+
+
+def test_decreasing_streams():
+    n = 10
+    x = find(
+        streaming(integers()), lambda x: all(
+            x[i] >= n - i for i in range(n + 1)))
+    assert list(x[:(n + 1)]) == list(range(n, -1, -1))

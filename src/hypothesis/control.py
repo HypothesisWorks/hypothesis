@@ -19,8 +19,8 @@ from __future__ import division, print_function, absolute_import, \
 
 import traceback
 
-from hypothesis.errors import InvalidArgument, UnsatisfiedAssumption, \
-    CleanupFailed
+from hypothesis.errors import CleanupFailed, InvalidArgument, \
+    UnsatisfiedAssumption
 from hypothesis.reporting import report
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
