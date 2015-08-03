@@ -174,16 +174,6 @@ class MorpherStrategy(SearchStrategy):
                 random, morpher.current_template
             ):
                 yield self.convert_simplifier(strategy, simplifier)
-            yield self.full_simplify_current
-
-    def full_simplify_current(self, random, template):
-        strategy = template.a_strategy
-        if strategy is not None:
-            for m in (
-                self.convert_simplifier(
-                    strategy, strategy.full_simplify)(random, template)
-            ):
-                yield m
 
     def convert_simplifier(self, strategy, simplifier):
         def accept(random, morpher):
