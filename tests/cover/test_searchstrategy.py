@@ -23,6 +23,7 @@ import functools
 from collections import namedtuple
 
 import pytest
+from hypothesis import given
 import hypothesis.specifiers as specifiers
 from hypothesis.types import RandomWithSeed
 from hypothesis.errors import NoExamples, InvalidArgument
@@ -30,7 +31,7 @@ from hypothesis.strategies import just, tuples, randoms, booleans, \
     integers, sampled_from
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.searchstrategy.numbers import BoundedIntStrategy, \
-    RandomGeometricIntStrategy
+    RandomGeometricIntStrategy, SearchStrategy
 from hypothesis.searchstrategy.strategies import OneOfStrategy, \
     one_of_strategies
 
@@ -158,3 +159,30 @@ def test_can_map_nameless():
 def test_can_flatmap_nameless():
     f = nameless_const(specifiers.just(3))
     assert repr(f) in repr(integers().flatmap(f))
+
+
+def test_basic_simplify_is_usable():
+    class FooStrategy(SearchStrategy):
+        template_upper_bound = 1
+
+        def draw_parameter(self, random):
+            return None
+
+        def draw_template(self, random, p):
+            return None
+
+        def reify(self, template):
+            return 42
+
+        def to_basic(self, template):
+            return None
+
+        def from_basic(self, data):
+            return None
+
+    @given(FooStrategy())
+    def test_foo(x):
+        raise ValueError()
+
+    with pytest.raises(ValueError):
+        test_foo()

@@ -17,11 +17,13 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
+import pytest
 from random import Random
 
 import hypothesis.strategies as s
 from hypothesis import Settings, find, given, example
 from hypothesis.control import BuildContext
+from hypothesis.errors import InvalidArgument
 from hypothesis.internal.tracker import Tracker
 from hypothesis.searchstrategy.morphers import Morpher, MorpherStrategy
 
@@ -138,3 +140,10 @@ def test_can_track_morphers():
 
     assert t.track(m1) == 1
     assert t.track(m2) == 2
+
+
+def test_cannot_install_into_morpher_twice():
+    m = Morpher(0, 1)
+    m.install(s.integers())
+    with pytest.raises(InvalidArgument):
+        m.install(s.integers())
