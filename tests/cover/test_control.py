@@ -18,7 +18,7 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import pytest
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import CleanupFailed, InvalidArgument
 from hypothesis.control import BuildContext, cleanup
 from tests.common.utils import capture_out
 
@@ -81,3 +81,11 @@ def test_runs_multiple_cleanup_with_teardown():
 
     assert 'ValueError' in o.getvalue()
     assert 'TypeError' in o.getvalue()
+
+
+def test_raises_error_if_cleanup_fails_but_block_does_not():
+    with pytest.raises(CleanupFailed):
+        with BuildContext():
+            def foo():
+                raise ValueError()
+            cleanup(foo)

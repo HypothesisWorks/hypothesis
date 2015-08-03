@@ -51,13 +51,17 @@ class BuildContext(object):
         self.assign_variable.__enter__()
         return self
 
-    def __exit__(self, *args, **kwargs):
+    def __exit__(self, exc_type, exc_value, tb):
+        any_failed = False
         for task in self.tasks:
             try:
                 task()
             except:
+                any_failed = True
                 report(traceback.format_exc())
-        return self.assign_variable.__exit__(*args, **kwargs)
+        self.assign_variable.__exit__(exc_type, exc_value, tb)
+        if exc_type is None and any_failed:
+            raise CleanupFailed()
 
 
 def cleanup(teardown):
