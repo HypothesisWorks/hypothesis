@@ -21,10 +21,10 @@ import weakref
 from random import Random
 
 from django.db import transaction
-from hypothesis.control import BuildContext
 from hypothesis.core import best_satisfying_template
 from hypothesis.errors import UnsatisfiedAssumption
 from django.test.runner import setup_databases
+from hypothesis.control import BuildContext
 from hypothesis.settings import Settings
 
 ALL_FIXTURES = []
