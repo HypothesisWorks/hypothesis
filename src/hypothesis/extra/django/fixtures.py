@@ -21,6 +21,7 @@ import weakref
 from random import Random
 
 from django.db import transaction
+from hypothesis.control import BuildContext
 from hypothesis.core import best_satisfying_template
 from hypothesis.errors import UnsatisfiedAssumption
 from django.test.runner import setup_databases
@@ -60,7 +61,8 @@ class Fixture(object):
                         if f.template == template:
                             return False
                         f()
-                    result = self.constraint(self.strategy.reify(template))
+                    with BuildContext():
+                        result = self.constraint(self.strategy.reify(template))
                     transaction.set_rollback(True)
                 return result
             except UnsatisfiedAssumption:
@@ -95,7 +97,8 @@ class Fixture(object):
                         old_name, verbosity, False)
 
     def __call__(self):
-        return self.strategy.reify(self.template)
+        with BuildContext():
+            return self.strategy.reify(self.template)
 
 
 def fixture(strategy, constraint=None, execute=None):
