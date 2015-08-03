@@ -46,7 +46,7 @@ some_companies = fixture(
 
 def with_some_stores(company):
     child_strategy = lists(
-        models(Store, company=just(company))
+        models(Store, company=just(company)), min_size=1
     )
     return child_strategy.map(lambda _: company)
 
