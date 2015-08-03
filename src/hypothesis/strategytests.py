@@ -34,6 +34,7 @@ from hypothesis.strategies import lists, randoms, integers
 from hypothesis.internal.compat import hrange, text_type, integer_types
 from hypothesis.utils.extmethod import ExtMethod
 from hypothesis.database.backend import SQLiteBackend
+from hypothesis.internal.tracker import Tracker
 from hypothesis.searchstrategy.strategies import SearchStrategy, strategy
 
 TemplatesFor = namedtuple('TemplatesFor', ('base',))
@@ -334,11 +335,14 @@ def strategy_test_suite(
         @specifier_test
         def test_can_minimize_to_empty(self, template, rnd):
             simplest = template
-            try:
-                while True:
-                    simplest = next(strat.full_simplify(rnd, simplest))
-            except StopIteration:
-                pass
+            tracker = Tracker()
+            while True:
+                for t in strat.full_simplify(rnd, simplest):
+                    if tracker.track(t) == 1:
+                        simplest = t
+                        break
+                else:
+                    break
             assert list(strat.full_simplify(rnd, simplest)) == []
 
         @specifier_test
