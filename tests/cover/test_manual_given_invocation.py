@@ -64,7 +64,7 @@ def test_argspec_lines_up(f, g):
 
 def test_converts_provided_kwargs_into_args():
     @given(hello=int, world=int)
-    def greet(**kwargs):
+    def greet(hello, **kwargs):
         pass
 
-    assert inspect.getargspec(greet).args == ['hello', 'world']
+    assert inspect.getargspec(greet).args == ['hello']

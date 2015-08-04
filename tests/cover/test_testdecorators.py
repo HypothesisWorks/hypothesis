@@ -93,6 +93,22 @@ class TestCases(object):
     @given(integers())
     def test_abs_non_negative(self, x):
         assert abs(x) >= 0
+        assert isinstance(self, TestCases)
+
+    @given(x=integers())
+    def test_abs_non_negative_varargs(self, x, *args):
+        assert abs(x) >= 0
+        assert isinstance(self, TestCases)
+
+    @given(x=integers())
+    def test_abs_non_negative_varargs_kwargs(self, *args, **kw):
+        assert abs(kw['x']) >= 0
+        assert isinstance(self, TestCases)
+
+    @given(x=integers())
+    def test_abs_non_negative_varargs_kwargs_only(*args, **kw):
+        assert abs(kw['x']) >= 0
+        assert isinstance(args[0], TestCases)
 
     @fails
     @given(integers())
