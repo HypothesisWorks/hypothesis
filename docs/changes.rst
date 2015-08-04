@@ -23,7 +23,7 @@ information to the contrary.
 
 
 -----------------------------------------------------------------------
-`1.10.0 <https://hypothesis.readthedocs.org/en/v1.10.0/>`_ - 2015-07-27
+`1.10.0 <https://hypothesis.readthedocs.org/en/v1.10.0/>`_ - 2015-08-04
 -----------------------------------------------------------------------
 
 This is just a bugfix and perfomrance release, but it changes some
