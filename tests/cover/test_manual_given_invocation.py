@@ -68,3 +68,12 @@ def test_converts_provided_kwargs_into_args():
         pass
 
     assert inspect.getargspec(greet).args == ['hello']
+
+
+def test_provided_kwargs_are_defaults():
+    @given(hello=booleans(), world=booleans())
+    def greet(hello, **kwargs):
+        assert hello == 'salve'
+        assert kwargs == {'world': 'mundi'}
+
+    greet('salve', world='mundi')

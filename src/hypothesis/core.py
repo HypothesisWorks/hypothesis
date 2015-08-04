@@ -459,7 +459,9 @@ def given(*generator_arguments, **generator_kwargs):
                 wrapped_test, arguments, kwargs)
             # Anything in unused_kwargs hasn't been injected through
             # argspec.defaults, so we need to add them.
-            kwargs.update(unused_kwargs)
+            for k in unused_kwargs:
+                if k not in kwargs:
+                    kwargs[k] = unused_kwargs[k]
             # If the test function is a method of some kind, the bound object
             # will be the first named argument if there are any, otherwise the
             # first vararg (if any).
