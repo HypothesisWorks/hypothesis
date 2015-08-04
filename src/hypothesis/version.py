@@ -17,5 +17,5 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-__version_info__ = (1, 10, 0)
+__version_info__ = (1, 10, 1)
 __version__ = '.'.join(map(str, __version_info__))
