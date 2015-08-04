@@ -62,7 +62,7 @@ def test_argspec_lines_up(f, g):
     assert af.varargs == ag.varargs
 
 
-def test_converts_provided_kwargs_into_args():
+def test_does_not_convert_unknown_kwargs_into_args():
     @given(hello=int, world=int)
     def greet(hello, **kwargs):
         pass
