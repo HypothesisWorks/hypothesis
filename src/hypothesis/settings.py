@@ -69,6 +69,7 @@ all_settings = {}
 
 
 class _DatabaseCache(threading.local):
+
     def __init__(self):
         self.dbs = {}
 
