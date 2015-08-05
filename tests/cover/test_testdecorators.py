@@ -21,6 +21,7 @@ import time
 import string
 import inspect
 import functools
+import threading
 from random import Random
 from collections import namedtuple
 
@@ -467,6 +468,28 @@ def test_can_run_without_database():
         assert False
     with pytest.raises(AssertionError):
         test_blah()
+
+
+def test_can_run_with_database_in_thread():
+    results = []
+
+    @given(integers())
+    def test_blah(x):
+        assert False
+
+    def run_test():
+        try:
+            test_blah()
+        except AssertionError:
+            results.append('success')
+
+    # Run once in the main thread and once in another thread. Execution is
+    # strictly serial, so no need for locking.
+    run_test()
+    thread = threading.Thread(target=run_test)
+    thread.start()
+    thread.join()
+    assert results == ['success', 'success']
 
 
 @given(integers())
