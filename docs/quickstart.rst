@@ -92,7 +92,7 @@ a passing test to).
 
 .. code:: python
 
-  
+
     if not input_string:
         return []
 
@@ -157,9 +157,9 @@ Hypothesis is `available on pypi as "hypothesis"
 
   pip install hypothesis
 
-or 
+or
 
-.. code:: bash 
+.. code:: bash
 
   easy_install hypothesis
 
@@ -175,7 +175,7 @@ do this with:
 
 .. code:: bash
 
-  python setup.py test 
+  python setup.py test
 
 Note that if they're not already installed this will try to install the test
 dependencies.
@@ -232,7 +232,8 @@ Writing tests
 
 A test in Hypothesis consists of two parts: A function that looks like a normal
 test in your test framework of choice but with some additional arguments, and
-a @given decorator that specifies how to provide those arguments.
+a :func:`@given <hypothesis.core.given>` decorator that specifies
+how to provide those arguments.
 
 Here are some other examples of how you could use that:
 
@@ -268,7 +269,7 @@ Here are some other examples of how you could use that:
         assert isinstance(t[1], str)
 
 
-Note that as we saw in the above example you can pass arguments to @given
+Note that as we saw in the above example you can pass arguments to :func:`@given <hypothesis.core.given>`
 either as positional or as keywords.
 
 --------------
