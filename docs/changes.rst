@@ -26,7 +26,7 @@ information to the contrary.
 `1.10.0 <https://hypothesis.readthedocs.org/en/v1.10.0/>`_ - 2015-08-04
 -----------------------------------------------------------------------
 
-This is just a bugfix and perfomrance release, but it changes some
+This is just a bugfix and performance release, but it changes some
 semi-public APIs, hence the minor version bump.
 
 * Significant performance improvements for strategies which are one\_of()
@@ -40,7 +40,7 @@ semi-public APIs, hence the minor version bump.
 * Better performance for flatmap from changing the internal morpher API
   to be significantly less general purpose.
 * Introduce a new semi-public BuildContext/cleanup API. This allows
-  strategies to register cleanup activitieis that should run once the
+  strategies to register cleanup activities that should run once the
   example is complete. Note that this will interact somewhat weirdly with
   find.
 * Better simplification behaviour for streaming strategies.

@@ -423,7 +423,7 @@ def given(*generator_arguments, **generator_kwargs):
                 ' expected at most %d') % (
                     test.__name__, len(generator_arguments),
                     len(original_argspec.args)))
-        arguments = original_argspec.args + sorted(extra_kwargs)
+        arguments = original_argspec.args
         specifiers = list(generator_arguments)
         seen_kwarg = None
         for a in arguments:
@@ -446,6 +446,10 @@ def given(*generator_arguments, **generator_kwargs):
             defaults=tuple(map(HypothesisProvided, specifiers))
         )
 
+        unused_kwargs = {}
+        for k in extra_kwargs:
+            unused_kwargs[k] = HypothesisProvided(generator_kwargs[k])
+
         @copy_argspec(
             test.__name__, argspec
         )
@@ -453,11 +457,18 @@ def given(*generator_arguments, **generator_kwargs):
             selfy = None
             arguments, kwargs = convert_positional_arguments(
                 wrapped_test, arguments, kwargs)
-            # Because we converted all kwargs to given into real args and
-            # error if we have neither args nor kwargs, this should always
-            # be valid
-            assert argspec.args
-            selfy = kwargs.get(argspec.args[0])
+            # Anything in unused_kwargs hasn't been injected through
+            # argspec.defaults, so we need to add them.
+            for k in unused_kwargs:
+                if k not in kwargs:
+                    kwargs[k] = unused_kwargs[k]
+            # If the test function is a method of some kind, the bound object
+            # will be the first named argument if there are any, otherwise the
+            # first vararg (if any).
+            if argspec.args:
+                selfy = kwargs.get(argspec.args[0])
+            elif arguments:
+                selfy = arguments[0]
             if isinstance(selfy, HypothesisProvided):
                 selfy = None
             test_runner = executor(selfy)

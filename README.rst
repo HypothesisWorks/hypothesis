@@ -11,14 +11,6 @@ Hypothesis is both extremely practical and also advances the state of the art of
 unit testing by some way. It's easy to use, stable, and extremely powerful. If
 you're not using Hypothesis to test your project then you're missing out.
 
--------
-Funding
--------
-
-The author, `David R. MacIver <http://www.drmaciver.com>`_, currently works full time on
-Hypothesis. If you want him to continue to be able to do so, please `consider supporting
-him via his Patreon page <https://www.patreon.com/DRMacIver>`_.
-
 -----------------
 Links of interest
 -----------------

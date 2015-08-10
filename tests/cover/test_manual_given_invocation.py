@@ -62,9 +62,18 @@ def test_argspec_lines_up(f, g):
     assert af.varargs == ag.varargs
 
 
-def test_converts_provided_kwargs_into_args():
+def test_does_not_convert_unknown_kwargs_into_args():
     @given(hello=int, world=int)
-    def greet(**kwargs):
+    def greet(hello, **kwargs):
         pass
 
-    assert inspect.getargspec(greet).args == ['hello', 'world']
+    assert inspect.getargspec(greet).args == ['hello']
+
+
+def test_provided_kwargs_are_defaults():
+    @given(hello=booleans(), world=booleans())
+    def greet(hello, **kwargs):
+        assert hello == 'salve'
+        assert kwargs == {'world': 'mundi'}
+
+    greet('salve', world='mundi')

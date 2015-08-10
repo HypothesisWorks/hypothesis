@@ -19,17 +19,20 @@ import pytest
 
 class StoringReporter(object):
 
-    def __init__(self):
+    def __init__(self, config):
+        self.config = config
         self.results = []
 
     def __call__(self, msg):
+        if self.config.getoption('capture', 'fd') == 'no':
+            print(msg)
         self.results.append(msg)
 
 
 @pytest.mark.hookwrapper
 def pytest_pyfunc_call(pyfuncitem):
     from hypothesis.reporting import with_reporter
-    store = StoringReporter()
+    store = StoringReporter(pyfuncitem.config)
     with with_reporter(store):
         yield
     if store.results:
