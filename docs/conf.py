@@ -33,6 +33,7 @@ autodoc_member_order = 'bysource'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
+    'sphinx.ext.intersphinx',
 ]
 
 templates_path = ['_templates']
@@ -57,6 +58,10 @@ exclude_patterns = ['_build']
 pygments_style = 'sphinx'
 
 todo_include_todos = False
+
+intersphinx_mapping = {
+    'python': ('http://docs.python.org/', None),
+}
 
 
 # -- Options for HTML output ----------------------------------------------

@@ -32,11 +32,11 @@ For example suppose had the following test:
   @given(floats())
   def test_negation_is_self_inverse(x):
       assert x == -(-x)
-      
+
 
 Running this gives us:
 
-.. 
+.. code::
 
   Falsifying example: test_negation_is_self_inverse(x=float('nan'))
   AssertionError
@@ -60,8 +60,10 @@ So lets block off this particular example:
 
 And this passes without a problem.
 
-assume throws an exception which terminates the test when provided with a false argument.
-It's essentially an assert, except that the exception it throws is one that Hypothesis
+:func:`~hypothesis.core.assume` throws an exception which
+terminates the test when provided with a false argument.
+It's essentially an :ref:`assert <python:assert>`, except that
+the exception it throws is one that Hypothesis
 identifies as meaning that this is a bad example, not a failing test.
 
 In order to avoid the easy trap where you assume a lot more than you intended, Hypothesis
@@ -82,10 +84,10 @@ If we'd written:
 
 Then on running we'd have got the exception:
 
-.. 
+.. code::
 
   Unsatisfiable: Unable to satisfy assumptions of hypothesis test_negation_is_self_inverse_for_non_nan. Only 0 examples found after 0.0791318 seconds
-  
+
 ~~~~~~~~~~~~~~~~~~~
 How good is assume?
 ~~~~~~~~~~~~~~~~~~~
@@ -105,9 +107,9 @@ Suppose we had the following:
 
 Unsurprisingly this fails and gives the falsifying example [].
 
-Adding assume(xs) to this removes the trivial empty example and gives us [0].
+Adding ``assume(xs)`` to this removes the trivial empty example and gives us [0].
 
-Adding assume(all(x > 0 for x in xs)) and it passes: A sum of a list of
+Adding ``assume(all(x > 0 for x in xs))`` and it passes: A sum of a list of
 positive integers is positive.
 
 The reason that this should be surprising is not that it doesn't find a
@@ -145,7 +147,7 @@ As you can see, Hypothesis doesn't find *many* examples here, but it finds some 
 keep it happy.
 
 In general if you *can* shape your strategies better to your tests you should - for example
-integers_in_range(1, 1000) is a lot better than assume(1 <= x <= 1000), but assume will take
+``integers_in_range(1, 1000)`` is a lot better than ``assume(1 <= x <= 1000)``, but assume will take
 you a long way if you can't.
 
 --------
@@ -155,8 +157,8 @@ Settings
 Hypothesis tries to have good defaults for its behaviour, but sometimes that's
 not enough and you need to tweak it.
 
-The mechanism for doing this is the Settings object. You can pass this to a
-@given invocation as follows:
+The mechanism for doing this is the :class:`~hypothesis.Settings` object. You can pass this to a
+:func:`@given <hypothesis.core.given>` invocation as follows:
 
 .. code:: python
 
@@ -166,7 +168,7 @@ The mechanism for doing this is the Settings object. You can pass this to a
     def test_this_thoroughly(x):
         pass
 
-This uses a Settings object which causes the test to receive a much larger
+This uses a :class:`~hypothesis.Settings` object which causes the test to receive a much larger
 set of examples than normal.
 
 There is a Settings.default object. This is both a Settings object you can
@@ -186,15 +188,15 @@ the defaults for newly created settings objects.
     >>> s.max_examples
     200
 
-You can also override the default locally by using a settings object as a context
-manager:
+You can also override the default locally by using a settings object
+as a :ref:`context manager <python:context-managers>`:
 
 
 .. code:: python
 
   >>> with Settings(max_examples=150):
   ...     print(Settings().max_examples)
-  ... 
+  ...
   150
   >>> Settings().max_examples
   200
@@ -217,8 +219,8 @@ All Settings objects created or tests defined inside the block will inherit thei
 defaults from the settings object used as the context. You can still override them
 with custom defined settings of course.
 
-As well as max_examples there are a variety of other settings you can use.
-help(Settings) in an interactive environment will give you a full list of them.
+As well as ``max_examples`` there are a variety of other settings you can use.
+``help(Settings)`` in an interactive environment will give you a full list of them.
 
 
 .. _verbose-output:
@@ -228,7 +230,7 @@ Seeing intermediate result
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To see what's going on while Hypothesis runs your tests, you can turn
-up the verbosity setting. This works with both find and @given.
+up the verbosity setting. This works with both :func:`~hypothesis.core.find` and :func:`@given <hypothesis.core.given>`.
 
 (The following examples are somewhat manually truncated because the results
 of verbose output are, well, verbose, but they should convey the idea).
@@ -253,7 +255,7 @@ of verbose output are, well, verbose, but they should convey the idea).
     >>> @given(integers())
     ... def test_foo(x):
     ...     assert x > 0
-    ... 
+    ...
     >>> test_foo()
     Trying example: test_foo(x=-565872324465712963891750807252490657219)
     Traceback (most recent call last):
@@ -279,8 +281,8 @@ falsifying example. debug is basically verbose but a bit more so. You probably
 don't want it.
 
 You can also override the default by setting the environment variable
-HYPOTHESIS_VERBOSITY_LEVEL to the name of the level you want. So e.g.
-setting HYPOTHESIS_VERBOSITY_LEVEL=verbose will run all your tests printing
+:envvar:`HYPOTHESIS_VERBOSITY_LEVEL` to the name of the level you want. So e.g.
+setting ``HYPOTHESIS_VERBOSITY_LEVEL=verbose`` will run all your tests printing
 intermediate results and errors.
 
 ---------------------
@@ -288,11 +290,12 @@ Defining strategies
 ---------------------
 
 The type of object that is used to explore the examples given to your test
-function is called a SearchStrategy. These are created using the functions
-exposed in the hypothesis.strategies module.
+function is called a :class:`~hypothesis.SearchStrategy`.
+These are created using the functions
+exposed in the :mod:`hypothesis.strategies` module.
 
 Many of these strategies expose a variety of arguments you can use to customize
-generation. For example for integers you can specify min and max values of
+generation. For example for integers you can specify ``min`` and ``max`` values of
 integers you want:
 
 .. code:: python
@@ -327,7 +330,8 @@ Further details are :doc:`available in a separate document <data>`.
 The gory details of given parameters
 ------------------------------------
 
-The @given decorator may be used to specify what arguments of a function should
+The :func:`@given <hypothesis.core.given>` decorator may be used
+to specify what arguments of a function should
 be parametrized over. You can use either positional or keyword arguments or a mixture
 of the two.
 
@@ -395,15 +399,15 @@ The rules for determining what are valid uses of given are as follows:
 3. If the function has variable keywords, additional arguments will be
    added corresponding to any keyword arguments passed. These will be to
    the right of the normal argument list in an arbitrary order.
-4. If the function has varargs, positional arguments to @given are not
+4. If the function has varargs, positional arguments to :func:`@given <hypothesis.core.given>` are not
    supported. Keyword arguments may be passed, however.
 
-If you don't have kwargs then the function returned by @given will have
+If you don't have kwargs then the function returned by :func:`@given <hypothesis.core.given>` will have
 the same argspec (i.e. same arguments, keyword arguments, etc) as the
 original but with different defaults.
 
 The reason for the "filling up from the right" behaviour is so that
-using @given with instance methods works: self will be passed to the
+using :func:`@given <hypothesis.core.given>` with instance methods works: self will be passed to the
 function as normal and not be parametrized over.
 
 
@@ -427,8 +431,8 @@ executor is:
         return function()
 
 You define executors by defining a method execute_example on a class. Any
-test methods on that class with @given used on them will use
-self.execute_example as an executor with which to run tests. For example,
+test methods on that class with :func:`@given <hypothesis.core.given>` used on them will use
+``self.execute_example`` as an executor with which to run tests. For example,
 the following executor runs all its code twice:
 
 
@@ -513,7 +517,7 @@ some predicate:
   >>> find(sets(integers()), lambda x: sum(x) >= 10 and len(x) >= 3)
   {0, 1, 9}
 
-The first argument to find describes data in the usual way for an argument to
+The first argument to :func:`~hypothesis.find` describes data in the usual way for an argument to
 given, and supports :doc:`all the same data types <data>`. The second is a
 predicate it must satisfy.
 
@@ -541,7 +545,7 @@ most of the time which contains the actual condition)
 
 The reason for the two different types of errors is that there are only a small
 number of booleans, so it is feasible for Hypothesis to enumerate all of them
-and simply check that your condition is never true. 
+and simply check that your condition is never true.
 
 
 .. _providing-explicit-examples:
@@ -564,10 +568,10 @@ You can explicitly ask Hypothesis to try a particular example as follows:
       assert True
 
 Hypothesis will run all examples you've asked for first. If any of them fail it
-will not go on to look for more examples. 
+will not go on to look for more examples.
 
 It doesn't matter whether you put the example decorator before or after given.
-Any permutation of the decorators in the above will do the same thing. 
+Any permutation of the decorators in the above will do the same thing.
 
 Note that examples can be positional or keyword based. If they're positional then
 they will be filled in from the right when calling, so things like the following

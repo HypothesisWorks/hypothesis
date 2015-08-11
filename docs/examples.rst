@@ -5,7 +5,7 @@ Some more examples
 This is a collection of examples of how to use Hypothesis in interesting ways.
 It's small for now but will grow over time.
 
-All of these examples are designed to be run under py.test (nose should probably
+All of these examples are designed to be run under `py.test`_ (`nose`_ should probably
 work too).
 
 ----------------------------------
@@ -36,11 +36,11 @@ Suppose we've got the following type:
 
 Each node is a label and a sequence of some data, and we have the relationship
 sorts_before meaning the data of the left is an initial segment of the right.
-So e.g. a node with value [1, 2] will sort before a node with value [1, 2, 3],
-but neither of [1, 2] nor [1, 3] will sort before the other.
+So e.g. a node with value ``[1, 2]`` will sort before a node with value ``[1, 2, 3]``,
+but neither of ``[1, 2]`` nor ``[1, 3]`` will sort before the other.
 
 We have a list of nodes, and we want to topologically sort them with respect to
-this ordering. That is, we want to arrange the list so that if x.sorts_before(y)
+this ordering. That is, we want to arrange the list so that if ``x.sorts_before(y)``
 then x appears earlier in the list than y. We naively think that the easiest way
 to do this is to extend the  partial order defined here to a total order by
 breaking ties arbitrarily and then using a normal sorting algorithm. So we
@@ -68,7 +68,7 @@ define the following code:
     def sort_nodes(xs):
         xs.sort(key=TopoKey)
 
-This takes the order defined by sorts_before and extends it by breaking ties by
+This takes the order defined by ``sorts_before`` and extends it by breaking ties by
 comparing the node labels.
 
 But now we want to test that it works.
@@ -88,7 +88,7 @@ This will return false if it ever finds a pair in the wrong order and
 return true otherwise.
 
 Given this function, what we want to do with Hypothesis is assert that for all
-sequences of nodes, the result of calling sort_nodes on it is sorted.
+sequences of nodes, the result of calling ``sort_nodes`` on it is sorted.
 
 First we need to define a strategy for Node:
 
@@ -98,7 +98,7 @@ First we need to define a strategy for Node:
   import hypothesis.strategies as s
 
   NodeStrategy = s.builds(
-    Node, 
+    Node,
     s.integers(),
     s.lists(s.booleans(), average_size=5, max_size=10))
 
@@ -480,3 +480,6 @@ then use the result and go on to do other things are definitely also possible.
 
     if __name__ == '__main__':
         unittest.main()
+
+.. _py.test: http://pytest.org/
+.. _nose: https://nose.readthedocs.org/

@@ -50,5 +50,13 @@ def pytest_runtest_makereport(item, call, __multicall__):
     return report
 
 
+def pytest_collection_modifyitems(items):
+    for item in items:
+        if not isinstance(item, pytest.Function):
+            continue
+        if getattr(item.function, 'is_hypothesis_test', False):
+            item.add_marker('hypothesis')
+
+
 def load():
     pass

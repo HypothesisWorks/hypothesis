@@ -73,6 +73,7 @@ their individual contributions.
 * `Alex Stapleton <https://www.github.com/public>`_ 
 * `Charles O'Farrell <https://www.github.com/charleso>`_ 
 * `Christopher Martin <https://www.github.com/chris-martin>`_ (`ch.martin@gmail.com <mailto:ch.martin@gmail.com>`_)
+* `Florian Bruhin <https://www.github.com/The-Compiler>`_
 * `follower <https://www.github.com/follower>`_
 * `Jonty Wareing <https://www.github.com/Jonty>`_ (`jonty@jonty.co.uk <mailto:jonty@jonty.co.uk>`_)
 * `kbara <https://www.github.com/kbara>`_

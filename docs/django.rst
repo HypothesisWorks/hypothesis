@@ -5,30 +5,36 @@ Hypothesis for Django users
 ===========================
 
 Hypothesis offers a number of features specific for Django testing, available
-in the hypothesis-django extra package.
+in the :mod:`hypothesis-django` extra package.
 
-Using it is quite straightforward: All you need to do is subclass 
-hypothesis.extra.django.TestCase or hypothesis.extra.django.TransactionTestCase
-and you can use @given as normal, and the transactions will be per example
+Using it is quite straightforward: All you need to do is subclass
+:class:`hypothesis.extra.django.TestCase` or
+:class:`hypothesis.extra.django.TransactionTestCase`
+and you can use :func:`@given <hypothesis.core.given>` as normal,
+and the transactions will be per example
 rather than per test function as they would be if you used @given with a normal
 django test suite (this is important because your test function will be called
 multiple times and you don't want them to interfere with eachother). Test cases
-on these classes that do not use @given will be run as normal.
+on these classes that do not use
+:func:`@given <hypothesis.core.given>` will be run as normal.
 
-I strongly recommend not using TransactionTestCase unless you really have to.
+I strongly recommend not using
+:class:`~hypothesis.extra.django.TransactionTestCase`
+unless you really have to.
 Because Hypothesis runs this in a loop the performance problems it normally has
 are significantly exacerbated and your tests will be really slow.
 
 In addition to the above, Hypothesis has some limited support for automatically
 deriving strategies for your model types, which you can then customize further.
 
-Warning: Hypothesis creates saved models. This will run inside your testing
-transaction when using the test runner, but if you use the dev console this
-will leave debris in your database.
+.. warning::
+    Hypothesis creates saved models. This will run inside your testing
+    transaction when using the test runner, but if you use the dev console this
+    will leave debris in your database.
 
 For example, using the trivial django project I have for testing:
 
-.. code-block:: pycon
+.. code-block:: python
 
     >>> from hypothesis.extra.django.models import models
     >>> from toystore.models import Customer
@@ -46,7 +52,7 @@ Hypothesis has just created this with whatever the relevant type of data is.
 
 Obviously the customer's age is implausible, so lets fix that:
 
-.. code-block:: pycon
+.. code-block:: python
 
     >>> from hypothesis.strategies import integers
     >>> c = models(Customer, age=integers(min_value=0, max_value=120)).example()
@@ -170,18 +176,18 @@ Some caveats:
    This is normal and you shouldn't be concerned if you notice it. It would be
    nice if this weren't necessary and if anyone has a better idea about how to
    do it, please talk to me...
-   
+
 ---------------
 Tips and tricks
 ---------------
- 
+
 Custom field types
 ==================
 
 If you have a custom Django field type you can register it with Hypothesis's
 model deriving functionality by registering a default strategy for it:
 
-.. code-block:: pycon
+.. code-block:: python
 
     >>> from toystore.models import CustomishField, Customish
     >>> models(Customish).example()
@@ -221,7 +227,7 @@ apply a function to it which gives us a new strategy. We then draw a value from
 *that* strategy. So in this case we're first drawing a company, and then we're
 drawing a list of shops belonging to that company: The *just* strategy is a
 strategy such that drawing it always produces the individual value, so
-models(Shop, company=just(company)) is a strategy that generates a Shop belonging
+``models(Shop, company=just(company))`` is a strategy that generates a Shop belonging
 to the original company.
 
 So the following code would give us a list of shops all belonging to the same
