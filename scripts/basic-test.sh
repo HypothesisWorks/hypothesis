@@ -27,6 +27,11 @@ if [ "$DARWIN" != true ]; then
   done
 fi
 
+pushd hypothesis-extra/hypothesis-pytest
+    python setup.py install
+    python -m pytest tests/
+popd
+
 pip install .[datetime]
 python -m pytest tests/datetime/
 pip uninstall -y pytz
