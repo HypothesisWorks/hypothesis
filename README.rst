@@ -11,6 +11,10 @@ Hypothesis is both extremely practical and also advances the state of the art of
 unit testing by some way. It's easy to use, stable, and extremely powerful. If
 you're not using Hypothesis to test your project then you're missing out.
 
+Hypothesis works with most widely used versions of Python. Officially it supports
+2.6, 2.7 and 3.3+, but 3.0 through 3.2 will probably also work in the unlikely event
+that you're using them. Both CPython and PyPy are fully supported.
+
 -----------------
 Links of interest
 -----------------
