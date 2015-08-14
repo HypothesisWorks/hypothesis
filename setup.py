@@ -22,7 +22,7 @@ import os
 
 
 def local_file(name):
-    return os.path.join(os.path.dirname(__file__), name)
+    return os.path.relpath(os.path.join(os.path.dirname(__file__), name))
 
 SOURCE = local_file("src")
 README = local_file("README.rst")
