@@ -16,8 +16,7 @@
 
 """This module provides the core primitives of Hypothesis, assume and given."""
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import math
 import time

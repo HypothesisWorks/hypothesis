@@ -17,8 +17,7 @@
 """This file can approximately be considered the collection of hypothesis going
 to really unreasonable lengths to produce pretty output."""
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import os
 import re

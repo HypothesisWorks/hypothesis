@@ -16,8 +16,7 @@
 
 """Support for testing your custom implementations of specifiers."""
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import hashlib
 from random import Random

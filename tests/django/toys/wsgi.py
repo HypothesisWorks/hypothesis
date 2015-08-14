@@ -23,8 +23,7 @@ https://docs.djangoproject.com/en/1.7/howto/deployment/wsgi/
 
 """
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import os
 

@@ -37,8 +37,7 @@ PYTHONPATH=src python -m pytest examples/bintree.py
 
 """
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import math
 from collections import namedtuple

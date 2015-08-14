@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import time
 
@@ -116,7 +115,7 @@ def test_storage_does_not_error_if_the_database_is_invalid():
     assert list(ints.fetch(strat)) == []
 
 
-@pytest.mark.parametrize('s', ['', 'abcdefg', '☃'])
+@pytest.mark.parametrize('s', ['', 'abcdefg', u'☃'])
 def test_can_save_all_strings(s):
     db = ExampleDatabase()
     storage = db.storage('text')
