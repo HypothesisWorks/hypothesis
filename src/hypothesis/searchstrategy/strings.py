@@ -35,7 +35,7 @@ class OneCharStringStrategy(SearchStrategy):
 
     """A strategy which generates single character strings of text type."""
     specifier = text_type
-    ascii_characters = ''.join(
+    ascii_characters = u''.join(
         chr(i) for i in hrange(128)
     )
     zero_point = ord('0')
