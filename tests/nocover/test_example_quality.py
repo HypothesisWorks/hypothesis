@@ -368,7 +368,7 @@ def test_increasing_sequence():
 
 def test_increasing_string_sequence():
     n = 7
-    lb = '✐'
+    lb = u'✐'
     xs = minimal(
         lists(text()), lambda t: (
             n <= len(t) and
@@ -386,7 +386,7 @@ def test_increasing_string_sequence():
 
 def test_decreasing_string_sequence():
     n = 7
-    lb = '✐'
+    lb = u'✐'
     xs = minimal(
         lists(text()), lambda t: (
             n <= len(t) and
