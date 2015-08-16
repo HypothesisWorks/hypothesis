@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import hashlib
 from random import Random
@@ -32,12 +31,12 @@ finite = [
 ]
 
 
-@pytest.mark.parametrize('strat', finite, ids=list(map(repr, finite)))
+@pytest.mark.parametrize(u'strat', finite, ids=list(map(repr, finite)))
 def test_covers_entire_finite_space(strat):
     assert strat.template_upper_bound <= 100
 
     random = Random(hashlib.md5(
-        (repr(strat) + ':test_covers_entire_finite_space').encode('utf-8')
+        (repr(strat) + u':test_covers_entire_finite_space').encode(u'utf-8')
     ).digest())
 
     s = set()

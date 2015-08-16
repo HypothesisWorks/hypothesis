@@ -14,9 +14,6 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
-
 import unittest
 
 import django.test as dt
@@ -32,7 +29,7 @@ class HypothesisTestCase(object):
 
     def __call__(self, result=None):
         testMethod = getattr(self, self._testMethodName)
-        if getattr(testMethod, 'is_hypothesis_test', False):
+        if getattr(testMethod, u'is_hypothesis_test', False):
             return unittest.TestCase.__call__(self, result)
         else:
             return dt.SimpleTestCase.__call__(self, result)

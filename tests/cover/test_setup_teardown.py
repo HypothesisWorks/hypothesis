@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import pytest
 from hypothesis import given, assume
@@ -25,14 +24,14 @@ from hypothesis.strategies import text, integers
 class HasSetup(object):
 
     def setup_example(self):
-        self.setups = getattr(self, 'setups', 0)
+        self.setups = getattr(self, u'setups', 0)
         self.setups += 1
 
 
 class HasTeardown(object):
 
     def teardown_example(self, ex):
-        self.teardowns = getattr(self, 'teardowns', 0)
+        self.teardowns = getattr(self, u'teardowns', 0)
         self.teardowns += 1
 
 
@@ -126,7 +125,7 @@ def test_sets_up_without_teardown():
     x = Foo()
     x.give_me_an_int()
     assert x.setups > 0
-    assert not hasattr(x, 'teardowns')
+    assert not hasattr(x, u'teardowns')
 
 
 def test_tears_down_without_setup():
@@ -136,4 +135,4 @@ def test_tears_down_without_setup():
     x = Foo()
     x.give_me_an_int()
     assert x.teardowns > 0
-    assert not hasattr(x, 'setups')
+    assert not hasattr(x, u'setups')

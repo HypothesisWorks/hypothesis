@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import math
 import time
@@ -77,18 +76,18 @@ def test_condition_is_name():
     )
     with pytest.raises(DefinitelyNoSuchExample) as e:
         find(booleans(), lambda x: False, settings=settings)
-    assert 'lambda x:' in e.value.args[0]
+    assert u'lambda x:' in e.value.args[0]
 
     with pytest.raises(NoSuchExample) as e:
-        find(integers(), lambda x: '☃' in str(x), settings=settings)
-    assert 'lambda x:' in e.value.args[0]
+        find(integers(), lambda x: u'☃' in str(x), settings=settings)
+    assert u'lambda x:' in e.value.args[0]
 
     def bad(x):
         return False
 
     with pytest.raises(NoSuchExample) as e:
         find(integers(), bad, settings=settings)
-    assert 'bad' in e.value.args[0]
+    assert u'bad' in e.value.args[0]
 
 
 def test_find_dictionary():

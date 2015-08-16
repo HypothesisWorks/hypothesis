@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import unicodedata
 from random import Random
@@ -26,28 +25,28 @@ from hypothesis.strategies import text, binary, tuples
 
 
 def test_can_minimize_up_to_zero():
-    s = find(text(), lambda x: len([t for t in x if t <= '0']) >= 10)
-    assert s == '0' * 10
+    s = find(text(), lambda x: len([t for t in x if t <= u'0']) >= 10)
+    assert s == u'0' * 10
 
 
 def test_minimizes_towards_ascii_zero():
-    s = find(text(), lambda x: any(t < '0' for t in x))
+    s = find(text(), lambda x: any(t < u'0' for t in x))
     assert len(s) == 1
-    assert ord(s) == ord('0') - 1
+    assert ord(s) == ord(u'0') - 1
 
 
 def test_can_handle_large_codepoints():
-    s = find(text(), lambda x: x >= '☃')
-    assert s == '☃'
+    s = find(text(), lambda x: x >= u'☃')
+    assert s == u'☃'
 
 
 def test_can_find_mixed_ascii_and_non_ascii_stringgs():
     s = find(
         text(), lambda x: (
-            any(t >= '☃' for t in x) and
+            any(t >= u'☃' for t in x) and
             any(ord(t) <= 127 for t in x)))
     assert len(s) == 2
-    assert sorted(s) == ['0', '☃']
+    assert sorted(s) == [u'0', u'☃']
 
 
 def test_will_find_ascii_examples_given_the_chance():
@@ -55,11 +54,11 @@ def test_will_find_ascii_examples_given_the_chance():
         tuples(text(max_size=1), text(max_size=1)),
         lambda x: x[0] and (x[0] < x[1]))
     assert ord(s[1]) == ord(s[0]) + 1
-    assert '0' in s
+    assert u'0' in s
 
 
 def test_finds_single_element_strings():
-    assert find(text(), bool, random=Random(4)) == '0'
+    assert find(text(), bool, random=Random(4)) == u'0'
 
 
 def test_can_safely_mix_simplifiers():
@@ -95,11 +94,11 @@ def test_binary_respects_changes_in_size():
 
 @given(text(min_size=1, max_size=1), settings=Settings(max_examples=2000))
 def test_does_not_generate_surrogates(t):
-    assert unicodedata.category(t) != 'Cs'
+    assert unicodedata.category(t) != u'Cs'
 
 
 def test_does_not_simplify_into_surrogates():
-    f = find(text(), lambda x: x >= '\udfff')
-    assert f == '\ue000'
-    f = find(text(), lambda x: len([t for t in x if t >= '\udfff']) >= 10)
-    assert f == '\ue000' * 10
+    f = find(text(), lambda x: x >= u'\udfff')
+    assert f == u'\ue000'
+    f = find(text(), lambda x: len([t for t in x if t >= u'\udfff']) >= 10)
+    assert f == u'\ue000' * 10

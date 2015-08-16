@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 from hypothesis import given
 from tests.common import settings as small_settings
@@ -33,7 +32,7 @@ else:
     lists(tuples(text(alphabet=alphabet), text(alphabet=alphabet))),
     settings=small_settings)
 def test_backend_returns_what_you_put_in(xs):
-    backend = SQLiteBackend(':memory:')
+    backend = SQLiteBackend(u':memory:')
     mapping = {}
     for key, value in xs:
         mapping.setdefault(key, set()).add(value)
@@ -46,7 +45,7 @@ def test_backend_returns_what_you_put_in(xs):
 
 
 def test_does_not_commit_in_error_state():
-    backend = SQLiteBackend(':memory:')
+    backend = SQLiteBackend(u':memory:')
     backend.create_db_if_needed()
     try:
         with backend.cursor() as cursor:
@@ -58,27 +57,27 @@ def test_does_not_commit_in_error_state():
     except ValueError:
         pass
 
-    assert backend.fetch('a') == []
+    assert backend.fetch(u'a') == []
 
 
 def test_can_double_close():
-    backend = SQLiteBackend(':memory:')
+    backend = SQLiteBackend(u':memory:')
     backend.create_db_if_needed()
     backend.close()
     backend.close()
 
 
 def test_can_delete_keys():
-    backend = SQLiteBackend(':memory:')
-    backend.save('foo', 'bar')
-    backend.save('foo', 'baz')
-    backend.delete('foo', 'bar')
-    assert list(backend.fetch('foo')) == ['baz']
+    backend = SQLiteBackend(u':memory:')
+    backend.save(u'foo', u'bar')
+    backend.save(u'foo', u'baz')
+    backend.delete(u'foo', u'bar')
+    assert list(backend.fetch(u'foo')) == [u'baz']
 
 
 def test_can_fetch_all_keys():
-    backend = SQLiteBackend(':memory:')
-    backend.save('foo', 'bar')
-    backend.save('foo', 'baz')
-    backend.save('boib', 'baz')
+    backend = SQLiteBackend(u':memory:')
+    backend.save(u'foo', u'bar')
+    backend.save(u'foo', u'baz')
+    backend.save(u'boib', u'baz')
     assert len(list(backend.keys())) == 2

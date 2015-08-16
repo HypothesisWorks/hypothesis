@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import pytest
 from hypothesis.internal.tracker import Tracker
@@ -65,20 +64,20 @@ def test_track_dict():
 
 def test_nested_unhashables():
     t = Tracker()
-    x = {'foo': [1, 2, set((3, 4, 5, 6))], 'bar': 10}
+    x = {u'foo': [1, 2, set((3, 4, 5, 6))], u'bar': 10}
     assert t.track(x) == 1
     assert t.track(x) == 2
 
 
 def test_track_nan():
     t = Tracker()
-    assert t.track(float('nan')) == 1
-    assert t.track(float('nan')) == 2
+    assert t.track(float(u'nan')) == 1
+    assert t.track(float(u'nan')) == 2
 
 
 def test_track_complex_with_nan():
     t = Tracker()
-    nan = float('nan')
+    nan = float(u'nan')
     assert t.track(complex(nan, 2)) == 1
     assert t.track(complex(nan, 2)) == 2
     assert t.track(complex(0, nan)) == 1
@@ -90,10 +89,10 @@ def test_track_complex_with_nan():
 class Hello(object):
 
     def __repr__(self):
-        return 'hello world'
+        return u'hello world'
 
 
 def test_includes_repr_in_marshal_error():
     with pytest.raises(ValueError) as e:
         Tracker().track(Hello())
-    assert 'hello world' in e.value.args[0]
+    assert u'hello world' in e.value.args[0]

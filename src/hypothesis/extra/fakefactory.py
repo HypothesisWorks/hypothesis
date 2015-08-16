@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 from random import Random
 
@@ -31,11 +30,11 @@ from hypothesis.searchstrategy.strategies import SearchStrategy, \
 
 def fake_factory(source, locale=None, locales=None, providers=()):
     check_valid_identifier(source)
-    if source[0] == '_':
-        raise ValueError('Bad source name %s' % (source,))
+    if source[0] == u'_':
+        raise ValueError(u'Bad source name %s' % (source,))
 
     if locale is not None and locales is not None:
-        raise ValueError('Cannot specify both single and multiple locales')
+        raise ValueError(u'Cannot specify both single and multiple locales')
     if locale:
         locales = (locale,)
     elif locales:
@@ -44,7 +43,7 @@ def fake_factory(source, locale=None, locales=None, providers=()):
         locales = None
     for l in (locales or ()):
         if l not in AVAILABLE_LOCALES:
-            raise ValueError('Unsupported locale %r' % (l,))
+            raise ValueError(u'Unsupported locale %r' % (l,))
 
     def supports_source(locale):
         test_faker = faker.Faker(locale)
@@ -55,11 +54,11 @@ def fake_factory(source, locale=None, locales=None, providers=()):
     if locales is None:
         locales = list(filter(supports_source, AVAILABLE_LOCALES))
         if not locales:
-            raise ValueError('No such source %r' % (source,))
+            raise ValueError(u'No such source %r' % (source,))
     else:
         for l in locales:
             if not supports_source(locale):
-                raise ValueError('Unsupported source %s for locale %s' % (
+                raise ValueError(u'Unsupported source %s for locale %s' % (
                     source, l
                 ))
     return FakeFactoryStrategy(source, providers, locales)
@@ -100,7 +99,7 @@ class FakeFactoryStrategy(SearchStrategy):
     def basic_simplify(self, random, template):
         for _ in hrange(10):
             y = self.gen_example(
-                Random(template.encode('utf-8')), self.locales)
+                Random(template.encode(u'utf-8')), self.locales)
             if self.strictly_simpler(y, template):
                 yield y
 

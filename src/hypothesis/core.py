@@ -16,8 +16,8 @@
 
 """This module provides the core primitives of Hypothesis, assume and given."""
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+
+from __future__ import division, print_function, absolute_import
 
 import math
 import time
@@ -134,11 +134,11 @@ def find_satisfying_template(
                 random, parameter
             )
         except BadTemplateDraw:
-            debug_report('Failed attempt to draw a template')
+            debug_report(u'Failed attempt to draw a template')
             parameter_source.mark_bad()
             continue
         if tracker.track(example) > 1:
-            debug_report('Skipping duplicate example')
+            debug_report(u'Skipping duplicate example')
             parameter_source.mark_bad()
             continue
         try:
@@ -161,16 +161,16 @@ def find_satisfying_template(
     elif satisfying_examples < min_satisfying_examples:
         if timed_out:
             raise Timeout((
-                'Ran out of time before finding a satisfying example for %s.' +
-                ' Only found %d examples (%d satisfying assumptions) in %.2fs.'
+                u'Ran out of time before finding a satisfying example for %s.' +
+                u' Only found %d examples (%d satisfying assumptions) in %.2fs.'
             ) % (
                 get_pretty_function_description(condition),
                 len(tracker), satisfying_examples, run_time
             ))
         else:
             raise Unsatisfiable((
-                'Unable to satisfy assumptions of hypothesis %s. ' +
-                'Only %d out of %d examples considered satisfied assumptions'
+                u'Unable to satisfy assumptions of hypothesis %s. ' +
+                u'Only %d out of %d examples considered satisfied assumptions'
             ) % (
                 get_pretty_function_description(condition),
                 satisfying_examples, len(tracker)))
@@ -209,15 +209,15 @@ def simplify_template_such_that(
         changed = False
         warmup += 1
         if warmup < max_warmup:
-            debug_report('Running warmup simplification round %d' % (
+            debug_report(u'Running warmup simplification round %d' % (
                 warmup
             ))
         elif warmup == max_warmup:
-            debug_report('Warmup is done. Moving on to fully simplifying')
+            debug_report(u'Warmup is done. Moving on to fully simplifying')
 
         any_simplifiers = False
         for simplify in search_strategy.simplifiers(random, t):
-            debug_report('Applying simplification pass %s' % (
+            debug_report(u'Applying simplification pass %s' % (
                 simplify.__name__,
             ))
             any_simplifiers = True
@@ -231,7 +231,7 @@ def simplify_template_such_that(
                     if time_to_call_it_a_day(settings, start_time):
                         return
                     if tracker.track(s) > 1:
-                        debug_report('Skipping simplifying to duplicate %s' % (
+                        debug_report(u'Skipping simplifying to duplicate %s' % (
                             unicode_safe_repr(s),
                         ))
                         continue
@@ -247,11 +247,11 @@ def simplify_template_such_that(
                 else:
                     break
             if not any_shrinks:
-                debug_report('No shrinks possible')
+                debug_report(u'No shrinks possible')
             if successful_shrinks >= settings.max_shrinks:
                 break
         if not any_simplifiers:
-            debug_report('No simplifiers for template %s' % (
+            debug_report(u'No simplifiers for template %s' % (
                 unicode_safe_repr(t),
             ))
             break
@@ -287,12 +287,12 @@ def best_satisfying_template(
         if storage is not None:
             storage.save(satisfying_example, search_strategy)
         if not successful_shrinks:
-            verbose_report('Could not shrink example')
+            verbose_report(u'Could not shrink example')
         elif successful_shrinks == 1:
-            verbose_report('Successfully shrunk example once')
+            verbose_report(u'Successfully shrunk example once')
         else:
             verbose_report(
-                'Successfully shrunk example %d times' % (successful_shrinks,))
+                u'Successfully shrunk example %d times' % (successful_shrinks,))
         return satisfying_example
 
 
@@ -303,23 +303,23 @@ def test_is_flaky(test, expected_repr):
         if text_repr == expected_repr:
             raise Flaky(
                 (
-                    'Hypothesis %s(%s) produces unreliable results: Falsified'
-                    ' on the first call but did not on a subsequent one'
+                    u'Hypothesis %s(%s) produces unreliable results: Falsified'
+                    u' on the first call but did not on a subsequent one'
                 ) % (test.__name__, text_repr,))
         else:
             raise Flaky(
                 (
-                    'Hypothesis %s produces unreliable results: Falsified'
-                    ' on the first call but did not on a subsequent one. This '
-                    ' is possibly due to unreliable values, which may be a bug'
-                    ' in the strategy.\nCall 1: %s\nCall 2: %s\n'
+                    u'Hypothesis %s produces unreliable results: Falsified'
+                    u' on the first call but did not on a subsequent one. This '
+                    u' is possibly due to unreliable values, which may be a bug'
+                    u' in the strategy.\nCall 1: %s\nCall 2: %s\n'
                 ) % (test.__name__, expected_repr, text_repr,))
     return test_or_flaky
 
 
-HypothesisProvided = namedtuple('HypothesisProvided', ('value,'))
+HypothesisProvided = namedtuple(u'HypothesisProvided', (u'value,'))
 
-Example = namedtuple('Example', ('args', 'kwargs'))
+Example = namedtuple(u'Example', (u'args', u'kwargs'))
 
 
 def example(*args, **kwargs):
@@ -327,15 +327,15 @@ def example(*args, **kwargs):
     test."""
     if args and kwargs:
         raise InvalidArgument(
-            'Cannot mix positional and keyword arguments for examples'
+            u'Cannot mix positional and keyword arguments for examples'
         )
     if not (args or kwargs):
         raise InvalidArgument(
-            'An example must provide at least one argument'
+            u'An example must provide at least one argument'
         )
 
     def accept(test):
-        if not hasattr(test, 'hypothesis_explicit_examples'):
+        if not hasattr(test, u'hypothesis_explicit_examples'):
             test.hypothesis_explicit_examples = []
         test.hypothesis_explicit_examples.append(Example(tuple(args), kwargs))
         return test
@@ -352,11 +352,11 @@ def reify_and_execute(
             text_version = arg_string(test, args, kwargs)
             if print_example:
                 report(
-                    lambda: 'Falsifying example: %s(%s)' % (
+                    lambda: u'Falsifying example: %s(%s)' % (
                         test.__name__, text_version,))
             elif current_verbosity() >= Verbosity.verbose or always_print:
                 report(
-                    lambda: 'Trying example: %s(%s)' % (
+                    lambda: u'Trying example: %s(%s)' % (
                         test.__name__, text_version))
             if record_repr is not None:
                 record_repr[0] = text_version
@@ -376,21 +376,21 @@ def given(*generator_arguments, **generator_kwargs):
     # Keyword only arguments but actually supported in the full range of
     # pythons Hypothesis handles. pop so we don't later pick these up as
     # if they were keyword specifiers for data to pass to the test.
-    provided_random = generator_kwargs.pop('random', None)
-    settings = generator_kwargs.pop('settings', None) or Settings.default
+    provided_random = generator_kwargs.pop(u'random', None)
+    settings = generator_kwargs.pop(u'settings', None) or Settings.default
 
     if (provided_random is not None) and settings.derandomize:
         raise InvalidArgument(
-            'Cannot both be derandomized and provide an explicit random')
+            u'Cannot both be derandomized and provide an explicit random')
 
     if not (generator_arguments or generator_kwargs):
         raise InvalidArgument(
-            'given must be called with at least one argument')
+            u'given must be called with at least one argument')
 
     if generator_arguments and generator_kwargs:
         note_deprecation(
-            'Mixing positional and keyword arguments in a call to given is '
-            'deprecated. Use one or the other.', settings
+            u'Mixing positional and keyword arguments in a call to given is '
+            u'deprecated. Use one or the other.', settings
         )
 
     def run_test_with_generator(test):
@@ -405,13 +405,13 @@ def given(*generator_arguments, **generator_kwargs):
         original_argspec = inspect.getargspec(test)
         if generator_arguments and original_argspec.varargs:
             raise InvalidArgument(
-                'varargs are not supported with positional arguments to @given'
+                u'varargs are not supported with positional arguments to @given'
             )
         extra_kwargs = [
             k for k in generator_kwargs if k not in original_argspec.args]
         if extra_kwargs and not original_argspec.keywords:
             raise InvalidArgument(
-                '%s() got an unexpected keyword argument %r' % (
+                u'%s() got an unexpected keyword argument %r' % (
                     test.__name__,
                     extra_kwargs[0]
                 ))
@@ -419,8 +419,8 @@ def given(*generator_arguments, **generator_kwargs):
             len(generator_arguments) > len(original_argspec.args)
         ):
             raise InvalidArgument((
-                'Too many positional arguments for %s() (got %d but'
-                ' expected at most %d') % (
+                u'Too many positional arguments for %s() (got %d but'
+                u' expected at most %d') % (
                     test.__name__, len(generator_arguments),
                     len(original_argspec.args)))
         arguments = original_argspec.args
@@ -433,9 +433,9 @@ def given(*generator_arguments, **generator_kwargs):
             else:
                 if seen_kwarg is not None:
                     raise InvalidArgument((
-                        'Argument %s comes after keyword %s which has been '
-                        'specified, but does not itself have a '
-                        'specification') % (
+                        u'Argument %s comes after keyword %s which has been '
+                        u'specified, but does not itself have a '
+                        u'specification') % (
                         a, seen_kwarg
                     ))
 
@@ -474,7 +474,7 @@ def given(*generator_arguments, **generator_kwargs):
             test_runner = executor(selfy)
 
             for example in getattr(
-                wrapped_test, 'hypothesis_explicit_examples', ()
+                wrapped_test, u'hypothesis_explicit_examples', ()
             ):
                 if example.args:
                     example_kwargs = dict(zip(
@@ -489,7 +489,7 @@ def given(*generator_arguments, **generator_kwargs):
                 # Note: Test may mutate arguments and we can't rerun explicit
                 # examples, so we have to calculate the failure message at this
                 # point rather than than later.
-                message_on_failure = 'Falsifying example: %s(%s)' % (
+                message_on_failure = u'Falsifying example: %s(%s)' % (
                     test.__name__, arg_string(test, arguments, example_kwargs)
                 )
                 try:
@@ -573,7 +573,7 @@ def given(*generator_arguments, **generator_kwargs):
                 ))
 
                 report(
-                    'Failed to reproduce exception. Expected: \n' +
+                    u'Failed to reproduce exception. Expected: \n' +
                     last_exception[0],
                 )
 
@@ -587,7 +587,7 @@ def given(*generator_arguments, **generator_kwargs):
         wrapped_test.__doc__ = test.__doc__
         wrapped_test.is_hypothesis_test = True
         wrapped_test.hypothesis_explicit_examples = getattr(
-            test, 'hypothesis_explicit_examples', []
+            test, u'hypothesis_explicit_examples', []
         )
         return wrapped_test
     return run_test_with_generator
@@ -604,8 +604,8 @@ def find(specifier, condition, settings=None, random=None, storage=None):
 
     if storage is None and settings.database is not None:
         storage = settings.database.storage(
-            'find(%s)' % (
-                binascii.hexlify(function_digest(condition)).decode('ascii'),
+            u'find(%s)' % (
+                binascii.hexlify(function_digest(condition)).decode(u'ascii'),
             )
         )
 
@@ -621,16 +621,16 @@ def find(specifier, condition, settings=None, random=None, storage=None):
             successful_examples[0] += 1
 
         if not successful_examples[0]:
-            verbose_report(lambda: 'Trying example %s' % (
+            verbose_report(lambda: u'Trying example %s' % (
                 repr(result),
             ))
         elif success:
             if successful_examples[0] == 1:
-                verbose_report(lambda: 'Found satisfying example %s' % (
+                verbose_report(lambda: u'Found satisfying example %s' % (
                     repr(result),
                 ))
             else:
-                verbose_report(lambda: 'Shrunk example to %s' % (
+                verbose_report(lambda: u'Shrunk example to %s' % (
                     repr(result),
                 ))
         return success

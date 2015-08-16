@@ -14,12 +14,11 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 from hypothesis.internal.reflection import get_pretty_function_description
 
 
 def test_destructuring_lambdas():
     assert get_pretty_function_description(lambda (x, y): 1) == \
-        'lambda (x, y): <unknown>'
+        u'lambda (x, y): <unknown>'

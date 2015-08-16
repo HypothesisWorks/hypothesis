@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import pytest
 from hypothesis import given
@@ -29,84 +28,84 @@ from hypothesis.extra.fakefactory import fake_factory
 class KittenProvider(BaseProvider):
 
     def kittens(self):
-        return 'meow %d' % (self.random_number(digits=10),)
+        return u'meow %d' % (self.random_number(digits=10),)
 
 
-@given(fake_factory('kittens', providers=[KittenProvider]))
+@given(fake_factory(u'kittens', providers=[KittenProvider]))
 def test_kittens_meow(kitten):
-    assert 'meow' in kitten
+    assert u'meow' in kitten
 
 
-@given(fake_factory('email'))
+@given(fake_factory(u'email'))
 def test_email(email):
-    assert '@' in email
+    assert u'@' in email
 
 
-@given(fake_factory('name', locale='en_US'))
+@given(fake_factory(u'name', locale=u'en_US'))
 def test_english_names_are_ascii(name):
-    name.encode('ascii')
+    name.encode(u'ascii')
 
 
 def test_french_names_may_have_an_accent():
     minimal(
-        fake_factory('name', locale='fr_FR'),
-        lambda x: 'é' not in x
+        fake_factory(u'name', locale=u'fr_FR'),
+        lambda x: u'é' not in x
     )
 
 
 def test_fake_factory_errors_with_both_locale_and_locales():
     with pytest.raises(ValueError):
         fake_factory(
-            'name', locale='fr_FR', locales=['fr_FR', 'en_US']
+            u'name', locale=u'fr_FR', locales=[u'fr_FR', u'en_US']
         )
 
 
 def test_fake_factory_errors_with_unsupported_locale():
     with pytest.raises(ValueError):
         fake_factory(
-            'name', locale='badger_BADGER'
+            u'name', locale=u'badger_BADGER'
         )
 
 
 def test_factory_errors_with_source_for_unsupported_locale():
     with pytest.raises(ValueError):
-        fake_factory('state', locale='ja_JP')
+        fake_factory(u'state', locale=u'ja_JP')
 
 
 def test_fake_factory_errors_if_any_locale_is_unsupported():
     with pytest.raises(ValueError):
         fake_factory(
-            'name', locales=['fr_FR', 'en_US', 'mushroom_MUSHROOM']
+            u'name', locales=[u'fr_FR', u'en_US', u'mushroom_MUSHROOM']
         )
 
 
 def test_fake_factory_errors_if_unsupported_method():
     with pytest.raises(ValueError):
-        fake_factory('spoon')
+        fake_factory(u'spoon')
 
 
 def test_fake_factory_errors_if_private_ish_method():
     with pytest.raises(ValueError):
-        fake_factory('_Generator__config')
+        fake_factory(u'_Generator__config')
 
 
 def test_can_get_specification_for_fake_factory():
-    ff = fake_factory('email')
+    ff = fake_factory(u'email')
     strategy(ff)
 
 
 TestFakeEmail = strategy_test_suite(
-    fake_factory('email')
+    fake_factory(u'email')
 )
 
 TestFakeNames = strategy_test_suite(
-    fake_factory('name')
+    fake_factory(u'name')
 )
 
 TestFakeEnglishNames = strategy_test_suite(
-    fake_factory('name', locale='en_US')
+    fake_factory(u'name', locale=u'en_US')
 )
 
 TestStates = strategy_test_suite(
-    fake_factory('state')
+    fake_factory(u'state')
 )

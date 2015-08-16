@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import warnings
 
@@ -26,7 +25,7 @@ class HypothesisDeprecationWarning(DeprecationWarning):
     pass
 
 
-warnings.simplefilter('once', HypothesisDeprecationWarning)
+warnings.simplefilter(u'once', HypothesisDeprecationWarning)
 
 
 def note_deprecation(message, settings):

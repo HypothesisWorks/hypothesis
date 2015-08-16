@@ -25,8 +25,8 @@ data is any of the following:
 
 """
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+
+from __future__ import division, print_function, absolute_import
 
 import json
 from abc import abstractmethod
@@ -44,7 +44,7 @@ class Format(object):
     """
 
     def __repr__(self):
-        return '%s()' % (self.__class__.__name__,)
+        return u'%s()' % (self.__class__.__name__,)
 
     @abstractmethod  # pragma: no cover
     def data_type(self):

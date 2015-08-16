@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import math
 import struct
@@ -64,7 +63,7 @@ def defines_strategy(strategy_definition):
         for k, v in defaults.items():
             if k in kwargs_for_repr and kwargs_for_repr[k] is defaults[k]:
                 del kwargs_for_repr[k]
-        representation = '%s(%s)' % (
+        representation = u'%s(%s)' % (
             strategy_definition.__name__,
             arg_string(strategy_definition, args, kwargs_for_repr)
         )
@@ -80,7 +79,7 @@ def just(value):
     """
     from hypothesis.searchstrategy.misc import JustStrategy
     return ReprWrapperStrategy(
-        JustStrategy(value), 'just(%s)' % (unicode_safe_repr(value),))
+        JustStrategy(value), u'just(%s)' % (unicode_safe_repr(value),))
 
 
 @defines_strategy
@@ -134,7 +133,7 @@ def integers(min_value=None, max_value=None):
                 return just(min_value)
             elif min_value > max_value:
                 raise InvalidArgument(
-                    'Cannot have max_value=%r < min_value=%r' % (
+                    u'Cannot have max_value=%r < min_value=%r' % (
                         max_value, min_value
                     ))
             return BoundedIntStrategy(min_value, max_value)
@@ -187,14 +186,14 @@ def floats(min_value=None, max_value=None):
 
     for e in (min_value, max_value):
         if e is not None and math.isnan(e):
-            raise InvalidArgument('nan is not a valid end point')
+            raise InvalidArgument(u'nan is not a valid end point')
     if min_value is not None:
         min_value = float(min_value)
     if max_value is not None:
         max_value = float(max_value)
-    if min_value == float('-inf'):
+    if min_value == float(u'-inf'):
         min_value = None
-    if max_value == float('inf'):
+    if max_value == float(u'inf'):
         max_value = None
 
     from hypothesis.searchstrategy.numbers import WrapperFloatStrategy, \
@@ -213,7 +212,7 @@ def floats(min_value=None, max_value=None):
     elif min_value is not None and max_value is not None:
         if max_value < min_value:
             raise InvalidArgument(
-                'Cannot have max_value=%r < min_value=%r' % (
+                u'Cannot have max_value=%r < min_value=%r' % (
                     max_value, min_value
                 ))
         elif min_value == max_value:
@@ -254,7 +253,7 @@ def floats(min_value=None, max_value=None):
                 int_to_float
             )
     elif min_value is not None:
-        critical_values = [min_value, float('inf')]
+        critical_values = [min_value, float(u'inf')]
         if is_negative(min_value):
             critical_values.append(-0.0)
         if min_value <= 0:
@@ -264,7 +263,7 @@ def floats(min_value=None, max_value=None):
         ) | sampled_from(critical_values)
     else:
         assert max_value is not None
-        critical_values = [max_value, float('-inf')]
+        critical_values = [max_value, float(u'-inf')]
         if max_value >= 0:
             critical_values.append(-0.0)
             if not is_negative(max_value):
@@ -312,14 +311,14 @@ def sampled_from(elements):
     elements = tuple(iter(elements))
     if not elements:
         raise InvalidArgument(
-            'sampled_from requires at least one value'
+            u'sampled_from requires at least one value'
         )
     if len(elements) == 1:
         result = JustStrategy(elements[0])
     else:
         result = SampledFromStrategy(elements)
     return ReprWrapperStrategy(
-        result, 'sampled_from((%s))' % (', '.join(
+        result, u'sampled_from((%s))' % (u', '.join(
             map(unicode_safe_repr, elements)
         ))
     )
@@ -351,15 +350,15 @@ def lists(
         check_strategy(elements)
         if min_size is not None and elements.template_upper_bound < min_size:
             raise InvalidArgument((
-                'Cannot generate unique lists of size %d from %r, which '
-                'contains no more than %d distinct values') % (
+                u'Cannot generate unique lists of size %d from %r, which '
+                u'contains no more than %d distinct values') % (
                     min_size, elements, elements.template_upper_bound,
             ))
         min_size = min_size or 0
-        max_size = max_size or float('inf')
+        max_size = max_size or float(u'inf')
         max_size = min(max_size, elements.template_upper_bound)
         if average_size is None:
-            if max_size < float('inf'):
+            if max_size < float(u'inf'):
                 if max_size <= 5:
                     average_size = min_size + 0.75 * (max_size - min_size)
                 else:
@@ -390,7 +389,7 @@ def lists(
     if elements is None or (max_size is not None and max_size <= 0):
         if max_size is None or max_size > 0:
             raise InvalidArgument(
-                'Cannot create non-empty lists without an element type'
+                u'Cannot create non-empty lists without an element type'
             )
         else:
             return ListStrategy(())
@@ -472,8 +471,8 @@ def dictionaries(
 
     if min_size is not None and min_size > keys.template_upper_bound:
         raise InvalidArgument((
-            'Cannot generate dictionaries of size %d with keys from %r, which '
-            'contains no more than %d distinct values') % (
+            u'Cannot generate dictionaries of size %d with keys from %r, which '
+            u'contains no more than %d distinct values') % (
                 min_size, keys, keys.template_upper_bound,
         ))
 
@@ -524,11 +523,11 @@ def text(
     elif not alphabet:
         if (min_size or 0) > 0:
             raise InvalidArgument(
-                'Invalid min_size %r > 0 for empty alphabet' % (
+                u'Invalid min_size %r > 0 for empty alphabet' % (
                     min_size,
                 )
             )
-        return just('')
+        return just(u'')
     elif isinstance(alphabet, SearchStrategy):
         char_strategy = alphabet
     else:
@@ -624,17 +623,17 @@ def builds(target, *args, **kwargs):
     """
     def splat(value):
         return target(*value[0], **value[1])
-    target_name = getattr(target, '__name__', type(target).__name__)
+    target_name = getattr(target, u'__name__', type(target).__name__)
     splat.__name__ = str(
-        'splat(%s)' % (target_name,)
+        u'splat(%s)' % (target_name,)
     )
     return ReprWrapperStrategy(
         tuples(tuples(*args), fixed_dictionaries(kwargs)).map(splat),
-        'builds(%s, %s)' % (
+        u'builds(%s, %s)' % (
             target_name,
-            ', '.join(
+            u', '.join(
                 list(map(repr, args)) +
-                ['%s=%r' % (k, v) for k, v in kwargs.items()])))
+                [u'%s=%r' % (k, v) for k, v in kwargs.items()])))
 
 
 @defines_strategy
@@ -659,7 +658,7 @@ def recursive(base, extend, max_leaves=100):
     extended = extend(base)
     if not isinstance(extended, SearchStrategy):
         raise InvalidArgument(
-            'Expected extend(%r) to be a SearchStrategy but got %r' % (
+            u'Expected extend(%r) to be a SearchStrategy but got %r' % (
                 base, extended
             ))
     from hypothesis.searchstrategy.recursive import RecursiveStrategy
@@ -691,10 +690,10 @@ def check_type(typ, arg):
         if isinstance(typ, type):
             typ_string = typ.__name__
         else:
-            typ_string = 'one of %s' % (
-                ', '.join(t.__name__ for t in typ))
+            typ_string = u'one of %s' % (
+                u', '.join(t.__name__ for t in typ))
         raise InvalidArgument(
-            'Expected %s but got %r' % (typ_string, arg,))
+            u'Expected %s but got %r' % (typ_string, arg,))
 
 
 def check_strategy(arg):
@@ -706,34 +705,34 @@ def check_valid_size(value, name):
         return
     check_type(integer_types + (float,), value)
     if value < 0:
-        raise InvalidArgument('Invalid size %s %r < 0' % (value, name))
+        raise InvalidArgument(u'Invalid size %s %r < 0' % (value, name))
     if isinstance(value, float) and math.isnan(value):
-        raise InvalidArgument('Invalid size %s %r' % (value, name))
+        raise InvalidArgument(u'Invalid size %s %r' % (value, name))
 
 
 def check_valid_sizes(min_size, average_size, max_size):
-    check_valid_size(min_size, 'min_size')
-    check_valid_size(max_size, 'max_size')
-    check_valid_size(average_size, 'average_size')
+    check_valid_size(min_size, u'min_size')
+    check_valid_size(max_size, u'max_size')
+    check_valid_size(average_size, u'average_size')
     if max_size is not None:
         if min_size is not None:
             if max_size < min_size:
                 raise InvalidArgument(
-                    'Cannot have max_size=%r < min_size=%r' % (
+                    u'Cannot have max_size=%r < min_size=%r' % (
                         max_size, min_size
                     ))
 
         if average_size is not None:
             if max_size < average_size:
                 raise InvalidArgument(
-                    'Cannot have max_size=%r < average_size=%r' % (
+                    u'Cannot have max_size=%r < average_size=%r' % (
                         max_size, average_size
                     ))
 
     if average_size is not None and min_size is not None:
         if average_size < min_size:
             raise InvalidArgument(
-                'Cannot have average_size=%r < min_size=%r' % (
+                u'Cannot have average_size=%r < min_size=%r' % (
                     average_size, min_size
                 ))
 

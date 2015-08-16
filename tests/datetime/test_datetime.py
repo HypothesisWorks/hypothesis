@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 from random import Random
 from datetime import MAXYEAR, datetime
@@ -94,7 +93,7 @@ def test_can_generate_non_naive_datetime():
 def test_can_generate_non_utc():
     minimal(
         datetimes(),
-        lambda d: assume(d.tzinfo) and d.tzinfo.zone != 'UTC')
+        lambda d: assume(d.tzinfo) and d.tzinfo.zone != u'UTC')
 
 
 @given(datetimes(timezones=[]))

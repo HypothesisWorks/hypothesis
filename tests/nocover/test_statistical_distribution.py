@@ -24,8 +24,8 @@ data from the distribution produced by some specifier is >= REQUIRED_P
 
 """
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+
+from __future__ import division, print_function, absolute_import
 
 import re
 import math
@@ -40,7 +40,7 @@ from hypothesis.strategies import just, sets, text, lists, floats, \
 from hypothesis.internal.compat import PY26, hrange
 from hypothesis.searchstrategy.strategies import strategy
 
-pytestmark = pytest.mark.skipif(PY26, reason='2.6 lacks erf')
+pytestmark = pytest.mark.skipif(PY26, reason=u'2.6 lacks erf')
 
 # We run each individual test at a very high level of significance to the
 # point where it will basically only fail if it's really really wildly wrong.
@@ -89,9 +89,9 @@ class Result(object):
 
     def description(self):
         condition_string = (
-            ' | ' + self.condition_string if self.condition_string else '')
+            u' | ' + self.condition_string if self.condition_string else u'')
         return (
-            'P(%s%s) >= %g: p = %g. Occurred in %d / %d = %g of runs. '
+            u'P(%s%s) >= %g: p = %g. Occurred in %d / %d = %g of runs. '
         ) % (
             strip_lambda(
                 reflection.get_pretty_function_description(self.predicate)),
@@ -106,7 +106,7 @@ class Result(object):
 def teardown_module(module):
     test_results = []
     for k, v in vars(module).items():
-        if 'test_' in k and hasattr(v, 'test_result'):
+        if u'test_' in k and hasattr(v, u'test_result'):
             test_results.append(v.test_result)
     test_results.sort(key=lambda x: x.p)
     n = len(test_results)
@@ -119,21 +119,21 @@ def teardown_module(module):
     if rejected:
         raise HypothesisFalsified(
             ((
-                'Although these tests were not significant at p < %g, '
-                'the Benjamini-Hochberg procedure demonstrates that the '
-                'following are rejected with a false discovery rate of %g: '
-                '\n\n'
-            ) % (REQUIRED_P, FALSE_POSITIVE_RATE)) + '\n'.join(
-                ('  ' + p.description())
+                u'Although these tests were not significant at p < %g, '
+                u'the Benjamini-Hochberg procedure demonstrates that the '
+                u'following are rejected with a false discovery rate of %g: '
+                u'\n\n'
+            ) % (REQUIRED_P, FALSE_POSITIVE_RATE)) + u'\n'.join(
+                (u'  ' + p.description())
                 for p in rejected
             ))
 
 
-INITIAL_LAMBDA = re.compile('^lambda[^:]*:\s*')
+INITIAL_LAMBDA = re.compile(u'^lambda[^:]*:\s*')
 
 
 def strip_lambda(s):
-    return INITIAL_LAMBDA.sub('', s)
+    return INITIAL_LAMBDA.sub(u'', s)
 
 
 class HypothesisFalsified(AssertionError):
@@ -148,7 +148,7 @@ def define_test(specifier, q, predicate, condition=None):
     def run_test():
         if condition is None:
             _condition = lambda x: True
-            condition_string = ''
+            condition_string = u''
         else:
             _condition = condition
             condition_string = strip_lambda(
@@ -170,8 +170,8 @@ def define_test(specifier, q, predicate, condition=None):
                 count += 1
         if successful_runs < MIN_RUNS:
             raise ConditionTooHard((
-                'Unable to find enough examples satisfying predicate %s '
-                'only found %d but required at least %d for validity'
+                u'Unable to find enough examples satisfying predicate %s '
+                u'only found %d but required at least %d for validity'
             ) % (
                 condition_string, successful_runs, MIN_RUNS
             ))
@@ -190,7 +190,7 @@ def define_test(specifier, q, predicate, condition=None):
         # the probability is at least q
         if p < REQUIRED_P:
             result.failed = True
-            raise HypothesisFalsified(result.description() + ' rejected')
+            raise HypothesisFalsified(result.description() + u' rejected')
     return run_test
 
 
@@ -202,15 +202,15 @@ def test_assertion_error_message():
     with pytest.raises(AssertionError) as e:
         define_test(floats(), 0.5, lambda x: x == 0.0)()
     message = e.value.args[0]
-    assert 'x == 0.0' in message
-    assert 'lambda' not in message
-    assert 'rejected' in message
+    assert u'x == 0.0' in message
+    assert u'lambda' not in message
+    assert u'rejected' in message
 
 
 def test_raises_an_error_on_impossible_conditions():
     with pytest.raises(ConditionTooHard) as e:
         define_test(floats(), 0.5, lambda x: True, condition=lambda x: False)()
-    assert 'only found 0 ' in e.value.args[0]
+    assert u'only found 0 ' in e.value.args[0]
 
 
 def test_puts_the_condition_in_the_error_message():
@@ -222,10 +222,10 @@ def test_puts_the_condition_in_the_error_message():
             floats(), 0.5, lambda x: x == 0.0,
             condition=positive)()
     message = e.value.args[0]
-    assert 'x == 0.0' in message
-    assert 'lambda not in message'
-    assert 'rejected' in message
-    assert 'positive' in message
+    assert u'x == 0.0' in message
+    assert u'lambda not in message'
+    assert u'rejected' in message
+    assert u'positive' in message
 
 
 test_can_produce_zero = define_test(integers(), 0.01, lambda x: x == 0)
@@ -253,7 +253,7 @@ test_can_produce_stripped_strings = define_test(
 )
 
 test_can_produce_multi_line_strings = define_test(
-    text(), 0.1, lambda x: '\n' in x
+    text(), 0.1, lambda x: u'\n' in x
 )
 
 test_can_produce_long_ascii_strings = define_test(
@@ -272,11 +272,11 @@ test_can_produce_short_strings_with_some_non_ascii = define_test(
 )
 
 test_can_produce_positive_infinity = define_test(
-    floats(), 0.02, lambda x: x == float('inf')
+    floats(), 0.02, lambda x: x == float(u'inf')
 )
 
 test_can_produce_negative_infinity = define_test(
-    floats(), 0.02, lambda x: x == float('-inf')
+    floats(), 0.02, lambda x: x == float(u'-inf')
 )
 
 test_can_produce_nan = define_test(
@@ -396,7 +396,7 @@ test_mixes_2_reasonably_often = define_test(
 )
 
 test_partial_mixes_3_reasonably_often = define_test(
-    lists(booleans() | tuples() | just('hi')), 0.15,
+    lists(booleans() | tuples() | just(u'hi')), 0.15,
     lambda x: 1 < len(set(map(type, x))) < 3,
     condition=bool,
 )

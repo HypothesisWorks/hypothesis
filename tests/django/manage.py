@@ -14,15 +14,14 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import os
 import sys
 
-if __name__ == '__main__':
+if __name__ == u'__main__':
     os.environ.setdefault(
-        'DJANGO_SETTINGS_MODULE', 'tests.django.toys.settings')
+        u'DJANGO_SETTINGS_MODULE', u'tests.django.toys.settings')
 
     from django.core.management import execute_from_command_line
 

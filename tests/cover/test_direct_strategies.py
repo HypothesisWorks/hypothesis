@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import math
 
@@ -29,9 +28,9 @@ from tests.common.basic import Bitfields, BoringBitfields
 def fn_test(*fnkwargs):
     fnkwargs = list(fnkwargs)
     return pytest.mark.parametrize(
-        ('fn', 'args'), fnkwargs,
+        (u'fn', u'args'), fnkwargs,
         ids=[
-            '%s(%s)' % (fn.__name__, ', '.join(map(repr, args)))
+            u'%s(%s)' % (fn.__name__, u', '.join(map(repr, args)))
             for fn, args in fnkwargs
         ]
     )
@@ -40,10 +39,10 @@ def fn_test(*fnkwargs):
 def fn_ktest(*fnkwargs):
     fnkwargs = list(fnkwargs)
     return pytest.mark.parametrize(
-        ('fn', 'kwargs'), fnkwargs,
+        (u'fn', u'kwargs'), fnkwargs,
         ids=[
-            '%s(%s)' % (fn.__name__, ', '.join(
-                '%s=%r' % (k, v)
+            u'%s(%s)' % (fn.__name__, u', '.join(
+                u'%s=%r' % (k, v)
                 for k, v in kwargs.items()
             ),)
             for fn, kwargs in fnkwargs
@@ -52,30 +51,30 @@ def fn_ktest(*fnkwargs):
 
 
 @fn_ktest(
-    (ds.integers, {'min_value': float('nan')}),
-    (ds.integers, {'min_value': 2, 'max_value': 1}),
-    (ds.sampled_from, {'elements': ()}),
+    (ds.integers, {u'min_value': float(u'nan')}),
+    (ds.integers, {u'min_value': 2, u'max_value': 1}),
+    (ds.sampled_from, {u'elements': ()}),
     (ds.lists, {}),
-    (ds.lists, {'average_size': float('nan')}),
-    (ds.lists, {'min_size': 10, 'max_size': 9}),
-    (ds.lists, {'min_size': -10, 'max_size': -9}),
-    (ds.lists, {'max_size': -9}),
-    (ds.lists, {'max_size': 10}),
-    (ds.lists, {'min_size': -10}),
-    (ds.lists, {'max_size': 10, 'average_size': 20}),
-    (ds.lists, {'min_size': 1.0, 'average_size': 0.5}),
-    (ds.lists, {'elements': 'hi'}),
-    (ds.text, {'min_size': 10, 'max_size': 9}),
-    (ds.text, {'max_size': 10, 'average_size': 20}),
-    (ds.binary, {'min_size': 10, 'max_size': 9}),
-    (ds.binary, {'max_size': 10, 'average_size': 20}),
-    (ds.floats, {'min_value': float('nan')}),
-    (ds.floats, {'max_value': 0.0, 'min_value': 1.0}),
-    (ds.fixed_dictionaries, {'mapping': 'fish'}),
-    (ds.fixed_dictionaries, {'mapping': {1: 'fish'}}),
-    (ds.dictionaries, {'keys': ds.integers(), 'values': 1}),
-    (ds.dictionaries, {'keys': 1, 'values': ds.integers()}),
-    (ds.text, {'alphabet': '', 'min_size': 1}),
+    (ds.lists, {u'average_size': float(u'nan')}),
+    (ds.lists, {u'min_size': 10, u'max_size': 9}),
+    (ds.lists, {u'min_size': -10, u'max_size': -9}),
+    (ds.lists, {u'max_size': -9}),
+    (ds.lists, {u'max_size': 10}),
+    (ds.lists, {u'min_size': -10}),
+    (ds.lists, {u'max_size': 10, u'average_size': 20}),
+    (ds.lists, {u'min_size': 1.0, u'average_size': 0.5}),
+    (ds.lists, {u'elements': u'hi'}),
+    (ds.text, {u'min_size': 10, u'max_size': 9}),
+    (ds.text, {u'max_size': 10, u'average_size': 20}),
+    (ds.binary, {u'min_size': 10, u'max_size': 9}),
+    (ds.binary, {u'max_size': 10, u'average_size': 20}),
+    (ds.floats, {u'min_value': float(u'nan')}),
+    (ds.floats, {u'max_value': 0.0, u'min_value': 1.0}),
+    (ds.fixed_dictionaries, {u'mapping': u'fish'}),
+    (ds.fixed_dictionaries, {u'mapping': {1: u'fish'}}),
+    (ds.dictionaries, {u'keys': ds.integers(), u'values': 1}),
+    (ds.dictionaries, {u'keys': 1, u'values': ds.integers()}),
+    (ds.text, {u'alphabet': u'', u'min_size': 1}),
 )
 def test_validates_keyword_arguments(fn, kwargs):
     with pytest.raises(InvalidArgument):
@@ -83,34 +82,34 @@ def test_validates_keyword_arguments(fn, kwargs):
 
 
 @fn_ktest(
-    (ds.integers, {'min_value': 0}),
-    (ds.integers, {'min_value': 11}),
-    (ds.integers, {'min_value': 11, 'max_value': 100}),
-    (ds.integers, {'max_value': 0}),
-    (ds.lists, {'max_size': 0}),
-    (ds.lists, {'elements': ds.integers()}),
-    (ds.lists, {'elements': ds.integers(), 'max_size': 5}),
-    (ds.lists, {'elements': ds.booleans(), 'min_size': 5}),
-    (ds.lists, {'elements': ds.booleans(), 'min_size': 5, 'max_size': 10}),
+    (ds.integers, {u'min_value': 0}),
+    (ds.integers, {u'min_value': 11}),
+    (ds.integers, {u'min_value': 11, u'max_value': 100}),
+    (ds.integers, {u'max_value': 0}),
+    (ds.lists, {u'max_size': 0}),
+    (ds.lists, {u'elements': ds.integers()}),
+    (ds.lists, {u'elements': ds.integers(), u'max_size': 5}),
+    (ds.lists, {u'elements': ds.booleans(), u'min_size': 5}),
+    (ds.lists, {u'elements': ds.booleans(), u'min_size': 5, u'max_size': 10}),
     (ds.lists, {
-        'average_size': 20, 'elements': ds.booleans(), 'max_size': 25}),
+        u'average_size': 20, u'elements': ds.booleans(), u'max_size': 25}),
     (ds.sets, {
-        'min_size': 10, 'max_size': 10, 'elements': ds.integers(),
+        u'min_size': 10, u'max_size': 10, u'elements': ds.integers(),
     }),
     (ds.booleans, {}),
-    (ds.just, {'value': 'hi'}),
-    (ds.integers, {'min_value': 12, 'max_value': 12}),
+    (ds.just, {u'value': u'hi'}),
+    (ds.integers, {u'min_value': 12, u'max_value': 12}),
     (ds.floats, {}),
-    (ds.floats, {'min_value': 1.0}),
-    (ds.floats, {'max_value': 1.0}),
-    (ds.floats, {'max_value': 1.0, 'min_value': -1.0}),
-    (ds.sampled_from, {'elements': [1]}),
-    (ds.sampled_from, {'elements': [1, 2, 3]}),
-    (ds.fixed_dictionaries, {'mapping': {1: ds.integers()}}),
-    (ds.dictionaries, {'keys': ds.booleans(), 'values': ds.integers()}),
-    (ds.text, {'alphabet': 'abc'}),
-    (ds.text, {'alphabet': ''}),
-    (ds.text, {'alphabet': ds.sampled_from('abc')}),
+    (ds.floats, {u'min_value': 1.0}),
+    (ds.floats, {u'max_value': 1.0}),
+    (ds.floats, {u'max_value': 1.0, u'min_value': -1.0}),
+    (ds.sampled_from, {u'elements': [1]}),
+    (ds.sampled_from, {u'elements': [1, 2, 3]}),
+    (ds.fixed_dictionaries, {u'mapping': {1: ds.integers()}}),
+    (ds.dictionaries, {u'keys': ds.booleans(), u'values': ds.integers()}),
+    (ds.text, {u'alphabet': u'abc'}),
+    (ds.text, {u'alphabet': u''}),
+    (ds.text, {u'alphabet': ds.sampled_from(u'abc')}),
 )
 def test_produces_valid_examples_from_keyword(fn, kwargs):
     fn(**kwargs).example()
@@ -137,7 +136,7 @@ def test_produces_valid_examples_from_args(fn, args):
 
 def test_tuples_raise_error_on_bad_kwargs():
     with pytest.raises(TypeError):
-        ds.tuples(stuff='things')
+        ds.tuples(stuff=u'things')
 
 
 def test_streaming_streams():
@@ -167,16 +166,16 @@ def test_is_in_bounds(x):
 
 def test_float_can_find_max_value_inf():
     assert find(
-        ds.floats(max_value=float('inf')), lambda x: math.isinf(x)
-    ) == float('inf')
+        ds.floats(max_value=float(u'inf')), lambda x: math.isinf(x)
+    ) == float(u'inf')
     assert find(
-        ds.floats(min_value=0.0), lambda x: math.isinf(x)) == float('inf')
+        ds.floats(min_value=0.0), lambda x: math.isinf(x)) == float(u'inf')
 
 
 def test_float_can_find_min_value_inf():
     find(ds.floats(), lambda x: x < 0 and math.isinf(x))
     find(
-        ds.floats(min_value=float('-inf'), max_value=0.0),
+        ds.floats(min_value=float(u'-inf'), max_value=0.0),
         lambda x: math.isinf(x))
 
 

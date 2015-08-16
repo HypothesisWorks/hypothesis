@@ -43,8 +43,7 @@ And in .git/config add:
 """
 
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import sys
 import sqlite3
@@ -60,7 +59,7 @@ def get_rows(cursor):
         yield tuple(r)
 
 
-Report = namedtuple('Report', ('inserts', 'deletes'))
+Report = namedtuple(u'Report', (u'inserts', u'deletes'))
 
 
 def merge_paths(ancestor, current, other):
@@ -128,8 +127,8 @@ def merge_dbs(ancestor, current, other):
 def main():
     _, _, current, other = sys.argv
     result = merge_dbs(destination=current, source=other)
-    print('%d new entries and %d deletions from merge' % (
+    print(u'%d new entries and %d deletions from merge' % (
         result.inserts, result.deletions))
 
-if __name__ == '__main__':
+if __name__ == u'__main__':
     main()

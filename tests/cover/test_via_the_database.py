@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import hashlib
 from random import Random
@@ -33,10 +32,10 @@ from hypothesis.searchstrategy.strategies import BadData
 
 
 @pytest.mark.parametrize(
-    'spec', standard_types, ids=list(map(show, standard_types)))
+    u'spec', standard_types, ids=list(map(show, standard_types)))
 def test_round_tripping_via_the_database(spec):
     random = Random(hashlib.md5(
-        (show(spec) + ':test_round_tripping_via_the_database').encode('utf-8')
+        (show(spec) + u':test_round_tripping_via_the_database').encode(u'utf-8')
     ).digest())
     strat = strategy(spec)
     template = some_template(strat, random)
@@ -48,10 +47,10 @@ def test_round_tripping_via_the_database(spec):
 
 
 @pytest.mark.parametrize(
-    'spec', standard_types, ids=list(map(show, standard_types)))
+    u'spec', standard_types, ids=list(map(show, standard_types)))
 def test_round_tripping_lists_via_the_database(spec):
     random = Random(hashlib.md5(
-        (show(spec) + ':test_round_tripping_via_the_database').encode('utf-8')
+        (show(spec) + u':test_round_tripping_via_the_database').encode(u'utf-8')
     ).digest())
     strat = lists(spec)
     template = some_template(strat, random)
@@ -62,11 +61,11 @@ def test_round_tripping_lists_via_the_database(spec):
 
 
 @pytest.mark.parametrize(
-    'spec', standard_types, ids=list(map(show, standard_types)))
+    u'spec', standard_types, ids=list(map(show, standard_types)))
 def test_all_minimal_elements_round_trip_via_the_database(spec):
     random = Random(hashlib.md5((
-        show(spec) + ':test_all_minimal_elements_round_trip_via_the_database'
-    ).encode('utf-8')).digest())
+        show(spec) + u':test_all_minimal_elements_round_trip_via_the_database'
+    ).encode(u'utf-8')).digest())
     strat = strategy(spec, Settings(average_list_length=2))
     for elt in minimal_elements(strat, random):
         elt_via_db = via_database(spec, strat, elt)
@@ -82,7 +81,7 @@ __minimal_basic = None
 def minimal_basic():
     global __minimal_basic
     if __minimal_basic is None:
-        random = Random('__minimal_templates_as_basic_data')
+        random = Random(u'__minimal_templates_as_basic_data')
         __minimal_basic = []
         for typ in standard_types:
             strat = strategy(typ, Settings(average_list_length=2))
@@ -96,7 +95,7 @@ def minimal_basic():
 
 
 @pytest.mark.parametrize(
-    'strat', standard_types, ids=list(map(show, standard_types)))
+    u'strat', standard_types, ids=list(map(show, standard_types)))
 def test_only_raises_bad_data_on_minimal(strat):
     for m in minimal_basic():
         try:

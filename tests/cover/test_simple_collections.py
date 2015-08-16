@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 from random import Random
 from collections import namedtuple
@@ -27,7 +26,7 @@ from hypothesis.strategies import sets, text, lists, builds, tuples, \
 from hypothesis.internal.compat import OrderedDict
 
 
-@pytest.mark.parametrize(('col', 'strat'), [
+@pytest.mark.parametrize((u'col', u'strat'), [
     ((), tuples()),
     ([], lists(max_size=0)),
     (set(), sets(max_size=0)),
@@ -38,7 +37,7 @@ def test_find_empty_collection_gives_empty(col, strat):
     assert find(strat, lambda x: True) == col
 
 
-@pytest.mark.parametrize(('coltype', 'strat'), [
+@pytest.mark.parametrize((u'coltype', u'strat'), [
     (list, lists),
     (set, sets),
     (frozenset, frozensets),
@@ -49,7 +48,7 @@ def test_find_non_empty_collection_gives_single_zero(coltype, strat):
     ) == coltype((0,))
 
 
-@pytest.mark.parametrize(('coltype', 'strat'), [
+@pytest.mark.parametrize((u'coltype', u'strat'), [
     (list, lists),
     (set, sets),
     (frozenset, frozensets),
@@ -100,7 +99,7 @@ def test_list_with_wide_gap():
 
 
 def test_minimize_namedtuple():
-    T = namedtuple('T', ('a', 'b'))
+    T = namedtuple(u'T', (u'a', u'b'))
     tab = find(
         builds(T, integers(), integers()),
         lambda x: x.a < x.b)
@@ -109,10 +108,10 @@ def test_minimize_namedtuple():
 
 def test_minimize_dict():
     tab = find(
-        fixed_dictionaries({'a': booleans(), 'b': booleans()}),
-        lambda x: x['a'] or x['b']
+        fixed_dictionaries({u'a': booleans(), u'b': booleans()}),
+        lambda x: x[u'a'] or x[u'b']
     )
-    assert not (tab['a'] and tab['b'])
+    assert not (tab[u'a'] and tab[u'b'])
 
 
 def test_minimize_list_of_sets():
@@ -146,9 +145,9 @@ def test_minimize_multi_key_dicts():
 
 def test_minimize_dicts_with_incompatible_keys():
     assert find(
-        fixed_dictionaries({1: booleans(), 'hi': lists(booleans())}),
+        fixed_dictionaries({1: booleans(), u'hi': lists(booleans())}),
         lambda x: True
-    ) == {1: False, 'hi': []}
+    ) == {1: False, u'hi': []}
 
 
 def test_deeply_nested_sets():
@@ -157,7 +156,7 @@ def test_deeply_nested_sets():
             return booleans()
         return sets(f(n - 1))
 
-    assert strategy(f(10)).template_upper_bound == float('inf')
+    assert strategy(f(10)).template_upper_bound == float(u'inf')
 
 
 def test_list_simplicity():
@@ -196,13 +195,13 @@ def test_ordered_dictionaries_preserve_keys():
     assert list(x.keys()) == keys
 
 
-@pytest.mark.parametrize('n', range(10))
+@pytest.mark.parametrize(u'n', range(10))
 def test_lists_of_fixed_length(n):
     assert find(
         lists(integers(), min_size=n, max_size=n), lambda x: True) == [0] * n
 
 
-@pytest.mark.parametrize('n', range(10))
+@pytest.mark.parametrize(u'n', range(10))
 def test_sets_of_fixed_length(n):
     x = find(
         sets(integers(), min_size=n, max_size=n), lambda x: True)
@@ -214,7 +213,7 @@ def test_sets_of_fixed_length(n):
         assert x == set(range(min(x), min(x) + n))
 
 
-@pytest.mark.parametrize('n', range(10))
+@pytest.mark.parametrize(u'n', range(10))
 def test_dictionaries_of_fixed_length(n):
     x = set(find(
         dictionaries(integers(), booleans(), min_size=n, max_size=n),
@@ -226,7 +225,7 @@ def test_dictionaries_of_fixed_length(n):
         assert x == set(range(min(x), min(x) + n))
 
 
-@pytest.mark.parametrize('n', range(10))
+@pytest.mark.parametrize(u'n', range(10))
 def test_lists_of_lower_bounded_length(n):
     x = find(
         lists(integers(), min_size=n), lambda x: sum(x) >= 2 * n
@@ -237,7 +236,7 @@ def test_lists_of_lower_bounded_length(n):
     assert sum(x) == 2 * n
 
 
-@pytest.mark.parametrize('n', range(10))
+@pytest.mark.parametrize(u'n', range(10))
 def test_lists_forced_near_top(n):
     assert find(
         lists(integers(), min_size=n, max_size=n + 2),
