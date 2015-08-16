@@ -105,7 +105,7 @@ def test_uses_binary_literals_for_binary_type():
 
 
 def test_uses_text_literals_for_text_type():
-    assert show('foo') == "'foo'"
+    assert show(u'foo') == "'foo'"
 
 
 def test_no_trailing_L_on_ints():
