@@ -34,9 +34,9 @@ from hypothesis.searchstrategy.strategies import BadData
 @pytest.mark.parametrize(
     u'spec', standard_types, ids=list(map(show, standard_types)))
 def test_round_tripping_via_the_database(spec):
-    random = Random(hashlib.md5(
-        (show(spec) + u':test_round_tripping_via_the_database').encode(u'utf-8')
-    ).digest())
+    random = Random(hashlib.md5((
+        show(spec) + u':test_round_tripping_via_the_database'
+    ).encode(u'utf-8')).digest())
     strat = strategy(spec)
     template = some_template(strat, random)
     strat.from_basic(strat.to_basic(template))
@@ -49,9 +49,9 @@ def test_round_tripping_via_the_database(spec):
 @pytest.mark.parametrize(
     u'spec', standard_types, ids=list(map(show, standard_types)))
 def test_round_tripping_lists_via_the_database(spec):
-    random = Random(hashlib.md5(
-        (show(spec) + u':test_round_tripping_via_the_database').encode(u'utf-8')
-    ).digest())
+    random = Random(hashlib.md5((
+        show(spec) + u':test_round_tripping_via_the_database'
+    ).encode(u'utf-8')).digest())
     strat = lists(spec)
     template = some_template(strat, random)
     template_via_db = via_database(spec, strat, template)
