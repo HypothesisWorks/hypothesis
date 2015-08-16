@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 from hypothesis.utils.extmethod import ExtMethod
 
@@ -47,10 +46,10 @@ def attr_based_executor(runner):
     except AttributeError:
         pass
 
-    if hasattr(runner, 'setup_example') or hasattr(runner, 'teardown_example'):
+    if hasattr(runner, u'setup_example') or hasattr(runner, u'teardown_example'):
         return setup_teardown_executor(
-            getattr(runner, 'setup_example', None),
-            getattr(runner, 'teardown_example', None),
+            getattr(runner, u'setup_example', None),
+            getattr(runner, u'teardown_example', None),
         )
 
     return default_executor

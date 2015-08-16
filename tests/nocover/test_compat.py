@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import pytest
 from hypothesis.internal.compat import BAD_PY3, hrange, qualname
@@ -44,9 +43,9 @@ class Foo():
 
 @pytest.mark.skipif(
     BAD_PY3,
-    reason='Python 3.2 and less have a terrible object model.'
+    reason=u'Python 3.2 and less have a terrible object model.'
 )
 def test_qualname():
-    assert qualname(Foo.bar) == 'Foo.bar'
-    assert qualname(Foo().bar) == 'Foo.bar'
-    assert qualname(qualname) == 'qualname'
+    assert qualname(Foo.bar) == u'Foo.bar'
+    assert qualname(Foo().bar) == u'Foo.bar'
+    assert qualname(qualname) == u'qualname'

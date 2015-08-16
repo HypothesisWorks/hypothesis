@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 from hypothesis import Settings, given
 from hypothesis.strategies import booleans, integers
@@ -58,7 +57,7 @@ def test_deep_trees():
 
 def test_tree_minimizes_individual_branch_children():
     assert smallest_tree(
-        lambda t: len(getattr(t, 'keyed_children', ())) > 1) == Branch(
+        lambda t: len(getattr(t, u'keyed_children', ())) > 1) == Branch(
             0, ((0, Leaf(0)), (0, Leaf(0)))
     )
 

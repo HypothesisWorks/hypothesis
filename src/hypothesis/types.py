@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import inspect
 from random import Random
@@ -47,7 +46,7 @@ class RandomWithSeed(Random):
         return self.__copy__()
 
     def __repr__(self):
-        return 'RandomWithSeed(%s)' % (self.seed,)
+        return u'RandomWithSeed(%s)' % (self.seed,)
 
 
 class Stream(object):
@@ -94,7 +93,7 @@ class Stream(object):
             ))
 
         if not isinstance(key, int):
-            raise InvalidArgument('Cannot index stream with %s' % (
+            raise InvalidArgument(u'Cannot index stream with %s' % (
                 type(key).__name__,))
         self._thunk_to(key + 1)
         return self.fetched[key]
@@ -119,7 +118,7 @@ class Stream(object):
                 next(it)
         except StopIteration:
             raise IndexError(
-                'Index %d out of bounds for finite stream of length %d' % (
+                u'Index %d out of bounds for finite stream of length %d' % (
                     i, len(self.fetched)
                 )
             )
@@ -129,10 +128,10 @@ class Stream(object):
 
     def __repr__(self):
         if not self.fetched:
-            return 'Stream(...)'
+            return u'Stream(...)'
 
-        return 'Stream(%s, ...)' % (
-            ', '.join(map(repr, self.fetched))
+        return u'Stream(%s, ...)' % (
+            u', '.join(map(repr, self.fetched))
         )
 
     def __deepcopy__(self, table):

@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 from unittest import TestCase as VanillaTestCase
 
@@ -30,13 +29,13 @@ class SomeStuff(object):
 
     @given(integers())
     def test_is_blank_slate(self, unused):
-        Company.objects.create(name='MickeyCo')
+        Company.objects.create(name=u'MickeyCo')
 
     def test_normal_test_1(self):
-        Company.objects.create(name='MickeyCo')
+        Company.objects.create(name=u'MickeyCo')
 
     def test_normal_test_2(self):
-        Company.objects.create(name='MickeyCo')
+        Company.objects.create(name=u'MickeyCo')
 
 
 class TestConstraintsWithTransactions(SomeStuff, TestCase):
@@ -51,8 +50,8 @@ class TestWorkflow(VanillaTestCase):
 
     def test_does_not_break_later_tests(self):
         def break_the_db(i):
-            Company.objects.create(name='MickeyCo')
-            Company.objects.create(name='MickeyCo')
+            Company.objects.create(name=u'MickeyCo')
+            Company.objects.create(name=u'MickeyCo')
 
         class LocalTest(TestCase):
 
@@ -61,9 +60,9 @@ class TestWorkflow(VanillaTestCase):
                 pass
 
             def test_normal_test_1(self):
-                Company.objects.create(name='MickeyCo')
+                Company.objects.create(name=u'MickeyCo')
 
-        t = LocalTest('test_normal_test_1')
+        t = LocalTest(u'test_normal_test_1')
         try:
             t.test_does_not_break_other_things()
         except IntegrityError:

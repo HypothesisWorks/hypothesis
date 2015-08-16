@@ -20,8 +20,8 @@ They're still single dispatch but are not defined on the class.
 
 """
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+
+from __future__ import division, print_function, absolute_import
 
 from hypothesis.internal.classmap import ClassMap
 
@@ -59,6 +59,6 @@ class ExtMethod(object):
                 f = self.mapping[type(dispatch_arg)]
             except KeyError:
                 raise NotImplementedError(
-                    'No implementation available for %r' % (
+                    u'No implementation available for %r' % (
                         dispatch_arg,))
         return f(dispatch_arg, *args, **kwargs)

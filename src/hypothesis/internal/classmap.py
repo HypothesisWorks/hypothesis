@@ -1,3 +1,6 @@
+from __future__ import division, print_function, absolute_import
+
+
 # coding=utf-8
 
 # This file is part of Hypothesis (https://github.com/DRMacIver/hypothesis)
@@ -13,10 +16,6 @@
 # obtain one at http://mozilla.org/MPL/2.0/.
 
 # END HEADER
-
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
-
 
 class ClassMap(object):
 

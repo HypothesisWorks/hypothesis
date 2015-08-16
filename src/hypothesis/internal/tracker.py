@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import hashlib
 import collections
@@ -30,10 +29,10 @@ def flatten(o):
 
     while stack:
         t = stack.pop()
-        if (not isinstance(t, type)) and hasattr(t, '__trackas__'):
+        if (not isinstance(t, type)) and hasattr(t, u'__trackas__'):
             t = t.__trackas__()
         if isinstance(t, type):
-            t = ('type', getattr(t, '__qualname__', t.__name__))
+            t = (u'type', getattr(t, u'__qualname__', t.__name__))
         if isinstance(t, (text_type, binary_type)):
             result.append(t)
         elif isinstance(t, collections.Mapping):
@@ -56,7 +55,7 @@ def object_to_tracking_key(o):
     try:
         k = marshal.dumps(o)
     except ValueError:
-        raise ValueError('unmarshallable object %r' % (o,))
+        raise ValueError(u'unmarshallable object %r' % (o,))
 
     if len(k) < 20:
         return k

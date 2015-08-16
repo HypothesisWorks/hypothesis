@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 from random import Random
 
@@ -105,7 +104,7 @@ def test_will_find_a_failure_from_the_database():
 
 def test_can_still_simplify_if_not_reified():
     strat = strategy(ConstantLists)
-    random = Random('test_constant_lists_are_constant')
+    random = Random(u'test_constant_lists_are_constant')
     template = some_template(strat, random)
     try:
         while True:

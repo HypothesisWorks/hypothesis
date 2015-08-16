@@ -16,8 +16,8 @@
 
 """Support for testing your custom implementations of specifiers."""
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+
+from __future__ import division, print_function, absolute_import
 
 import hashlib
 from random import Random
@@ -37,7 +37,7 @@ from hypothesis.database.backend import SQLiteBackend
 from hypothesis.internal.tracker import Tracker
 from hypothesis.searchstrategy.strategies import SearchStrategy, strategy
 
-TemplatesFor = namedtuple('TemplatesFor', ('base',))
+TemplatesFor = namedtuple(u'TemplatesFor', (u'base',))
 
 
 class TemplatesStrategy(SearchStrategy):
@@ -48,7 +48,7 @@ class TemplatesStrategy(SearchStrategy):
         self.template_upper_bound = base_strategy.template_upper_bound
 
     def __repr__(self):
-        return 'templates_for(%r)' % (self.base_strategy,)
+        return u'templates_for(%r)' % (self.base_strategy,)
 
     def draw_parameter(self, random):
         return self.base_strategy.draw_parameter(random)
@@ -128,7 +128,7 @@ for t in integer_types:
 @mess_with_basic_data.extend(text_type)
 def mess_with_text(text, random):  # pragma: no cover
     if random.randint(0, 1):
-        return text.encode('utf-8')
+        return text.encode(u'utf-8')
     else:
         return text
 
@@ -158,7 +158,7 @@ def mess_with_list(ls, random):  # pragma: no cover
 @mess_with_basic_data.extend(type(None))
 def mess_with_none(n, random):
     if not random.randint(0, 5):
-        return float('nan')
+        return float(u'nan')
 
 
 def strategy_test_suite(
@@ -180,7 +180,7 @@ def strategy_test_suite(
     class ValidationSuite(TestCase):
 
         def __repr__(self):
-            return 'strategy_test_suite(%s)' % (
+            return u'strategy_test_suite(%s)' % (
                 repr(specifier),
             )
 
@@ -271,10 +271,10 @@ def strategy_test_suite(
                 ), random=rnd
             )
             def nope(x):
-                s = hashlib.sha1(repr(x).encode('utf-8')).digest()
+                s = hashlib.sha1(repr(x).encode(u'utf-8')).digest()
                 assert Random(s).randint(0, 1) == Random(s).randint(0, 1)
                 if Random(s).randint(0, 1):
-                    raise Rejected('%r with digest %r' % (
+                    raise Rejected(u'%r with digest %r' % (
                         x, s
                     ))
             try:
@@ -315,10 +315,10 @@ def strategy_test_suite(
         @specifier_test
         def test_can_round_trip_through_the_database(self, template, rnd):
             empty_db = ExampleDatabase(
-                backend=SQLiteBackend(':memory:'),
+                backend=SQLiteBackend(u':memory:'),
             )
             try:
-                storage = empty_db.storage('round trip')
+                storage = empty_db.storage(u'round trip')
                 storage.save(template, strat)
                 values = list(storage.fetch(strat))
                 assert len(values) == 1

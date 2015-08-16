@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 from random import Random
 
@@ -45,7 +44,7 @@ def test_can_simplify_text_through_a_morpher(rnd):
         settings=Settings(database=None)
     )
     with BuildContext():
-        assert m.clean_slate().become(s.text()) == '0'
+        assert m.clean_slate().become(s.text()) == u'0'
 
 
 def test_can_simplify_lists_of_morphers_of_single_type():
@@ -106,7 +105,7 @@ def test_can_simplify_lists_of_morphers_with_mixed_types():
     for x in m:
         x.clear()
     m_as_text = [x.become(s.text()) for x in m]
-    assert '0' in m_as_text
+    assert u'0' in m_as_text
     assert 1 in m_as_ints
 
 

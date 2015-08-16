@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import traceback
 
@@ -77,5 +76,5 @@ def cleanup(teardown):
     context = _current_build_context.value
     if context is None:
         raise InvalidArgument(
-            'Cannot register cleanup outside of build context')
+            u'Cannot register cleanup outside of build context')
     context.tasks.append(teardown)

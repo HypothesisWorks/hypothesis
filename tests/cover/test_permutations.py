@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 from hypothesis import find, given
 from hypothesis.strategies import permutations
@@ -29,10 +28,10 @@ def test_can_find_non_trivial_permutation():
     assert x == [1, 0, 2, 3, 4]
 
 
-@given(permutations(list('abcd')))
+@given(permutations(list(u'abcd')))
 def test_permutation_values_are_permutations(perm):
     assert len(perm) == 4
-    assert set(perm) == set('abcd')
+    assert set(perm) == set(u'abcd')
 
 
 @given(permutations([]))

@@ -15,8 +15,8 @@
 # END HEADER
 
 # pylint: skip-file
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+
+from __future__ import division, print_function, absolute_import
 
 import sys
 import math
@@ -33,14 +33,14 @@ except ImportError:  # pragma: no cover
 
 PY3 = sys.version_info[0] == 3
 BAD_PY3 = PY3 and (sys.version_info[1] <= 2)
-PYPY = platform.python_implementation() == 'PyPy'
+PYPY = platform.python_implementation() == u'PyPy'
 PY26 = sys.version_info[:2] == (2, 6)
 
 
 if PY26:
     _special_floats = {
-        float('inf'): Decimal('Infinity'),
-        float('-inf'): Decimal('-Infinity'),
+        float(u'inf'): Decimal(u'Infinity'),
+        float(u'-inf'): Decimal(u'-Infinity'),
     }
 
     def float_to_decimal(f):
@@ -49,7 +49,7 @@ if PY26:
         if f in _special_floats:
             return _special_floats[f]
         elif math.isnan(f):
-            return Decimal('NaN')
+            return Decimal(u'NaN')
         n, d = f.as_integer_ratio()
         numerator, denominator = Decimal(n), Decimal(d)
         ctx = Context(prec=60)
@@ -68,7 +68,7 @@ if PY3:
     text_type = str
     binary_type = bytes
     hrange = range
-    ARG_NAME_ATTRIBUTE = 'arg'
+    ARG_NAME_ATTRIBUTE = u'arg'
     integer_types = (int,)
     hunichr = chr
     from functools import reduce
@@ -101,7 +101,7 @@ else:
                 return xrange(start_or_finish, finish, step)
         except OverflowError:
             if step == 0:
-                raise ValueError('step argument may not be zero')
+                raise ValueError(u'step argument may not be zero')
             if step is None:
                 step = 1
             if finish is not None:
@@ -124,7 +124,7 @@ else:
                         i += step
             return shimrange()
 
-    ARG_NAME_ATTRIBUTE = 'id'
+    ARG_NAME_ATTRIBUTE = u'id'
     integer_types = (int, long)
     hunichr = unichr
     reduce = reduce
@@ -132,8 +132,8 @@ else:
 
 def a_good_encoding():
     result = sys.getdefaultencoding()
-    if result == 'ascii':
-        return 'utf-8'
+    if result == u'ascii':
+        return u'utf-8'
     else:
         return result
 
@@ -151,10 +151,10 @@ def qualname(f):
     except AttributeError:
         pass
     try:
-        return f.im_class.__name__ + '.' + f.__name__
+        return f.im_class.__name__ + u'.' + f.__name__
     except AttributeError:
         return f.__name__
 
 
 importlib_invalidate_caches = getattr(
-    importlib, 'invalidate_caches', lambda: ())
+    importlib, u'invalidate_caches', lambda: ())

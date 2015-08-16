@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import gc
 import sys
@@ -41,7 +40,7 @@ def popcount(x):
     return tot
 
 
-@pytest.mark.parametrize('i', [0, 1, 3, 10, 21, 65, 127])
+@pytest.mark.parametrize(u'i', [0, 1, 3, 10, 21, 65, 127])
 def test_can_simplify_bitfields(i):
     bitfield = basic_strategy(
         parameter=lambda r: r.getrandbits(128),
@@ -128,7 +127,7 @@ def test_does_not_get_stuck_in_a_loop():
         oh_noes()
 
 
-@pytest.mark.parametrize('c', range(30))
+@pytest.mark.parametrize(u'c', range(30))
 def test_can_simplify_bitfields_with_composite(c):
     bitfield = basic_strategy(
         parameter=lambda r: r.getrandbits(128),
@@ -172,7 +171,7 @@ def test_can_provide_just_param_and_generate():
 
 
 def test_simplifying_results_in_strictly_simpler():
-    random = Random('test_simplifying_results_in_strictly_simpler')
+    random = Random(u'test_simplifying_results_in_strictly_simpler')
     strat = basic(Bitfields)
     template = some_template(strat, random)
     for shrunk_template in strat.full_simplify(random, template):
@@ -180,7 +179,7 @@ def test_simplifying_results_in_strictly_simpler():
 
 
 def test_can_recalculate_shrinks_without_reify_cache():
-    random = Random('test_can_recalculate_shrinks_without_reify_cache')
+    random = Random(u'test_can_recalculate_shrinks_without_reify_cache')
     strat = basic(Bitfields)
     template = some_template(strat, random)
     for shrunk_template in strat.full_simplify(random, template):
