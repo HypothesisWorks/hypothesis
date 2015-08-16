@@ -27,8 +27,6 @@ env:
         - TOXENV=py34
         - TOXENV=py27
         - TOXENV=py33
-        - TOXENV=py35
-        - TOXENV=py36
 
 install:
     - ./scripts/install.sh
@@ -46,5 +44,3 @@ matrix:
           env: TOXENV=coverage
         - os: osx
           env: TOXENV=lint
-        - os: osx
-          env: TOXENV=py36
