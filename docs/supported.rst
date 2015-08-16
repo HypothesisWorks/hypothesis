@@ -47,12 +47,22 @@ In general Hypothesis goes to quite a lot of effort to generate things that
 look like normal Python test functions that behave as closely to the originals
 as possible, so it should work sensibly out of the box with every test framework.
 
+If your testing relies on doing something other than calling a function and seeing
+if it raises an exception then it probably *won't* work out of the box. In particular
+things like tests which return generators and expect you to do something with them
+(e.g. nose's yield based tests) will not work. Use a decorator or similar to wrap the
+test to take this form.
+
 In terms of what's actually *known* to work:
 
   * Hypothesis integrates as smoothly with py.test and unittest as I can make it,
     and this is verified as part of the CI.
+  * py.test fixtures work correctly with Hypothesis based functions, but note that
+    function based fixtures will only run once for the whole function, not once per
+    example.
   * Nose has been tried at least once and works fine, and I'm aware of people who
-    use Hypothesis with Nose, but this isn't tested as part of the CI.
+    use Hypothesis with Nose, but this isn't tested as part of the CI. yield based
+    tests simply won't work.
   * Integration with Django's testing requires use of the :ref:`hypothesis-django` package.
     The issue is that in Django's tests' normal mode of execution it will reset the
     database one per test rather than once per example, which is not what you want.
