@@ -36,17 +36,17 @@ def test_minimizes_towards_ascii_zero():
 
 
 def test_can_handle_large_codepoints():
-    s = find(text(), lambda x: x >= '☃')
-    assert s == '☃'
+    s = find(text(), lambda x: x >= u'☃')
+    assert s == u'☃'
 
 
 def test_can_find_mixed_ascii_and_non_ascii_stringgs():
     s = find(
         text(), lambda x: (
-            any(t >= '☃' for t in x) and
+            any(t >= u'☃' for t in x) and
             any(ord(t) <= 127 for t in x)))
     assert len(s) == 2
-    assert sorted(s) == ['0', '☃']
+    assert sorted(s) == [u'0', u'☃']
 
 
 def test_will_find_ascii_examples_given_the_chance():
@@ -98,7 +98,7 @@ def test_does_not_generate_surrogates(t):
 
 
 def test_does_not_simplify_into_surrogates():
-    f = find(text(), lambda x: x >= '\udfff')
-    assert f == '\ue000'
-    f = find(text(), lambda x: len([t for t in x if t >= '\udfff']) >= 10)
-    assert f == '\ue000' * 10
+    f = find(text(), lambda x: x >= u'\udfff')
+    assert f == u'\ue000'
+    f = find(text(), lambda x: len([t for t in x if t >= u'\udfff']) >= 10)
+    assert f == u'\ue000' * 10
