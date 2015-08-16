@@ -15,8 +15,7 @@
 # END HEADER
 
 # pylint: skip-file
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import sys
 import math

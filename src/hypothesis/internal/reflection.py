@@ -17,8 +17,7 @@
 """This file can approximately be considered the collection of hypothesis going
 to really unreasonable lengths to produce pretty output."""
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import os
 import re
@@ -267,7 +266,7 @@ def extract_lambda_source(f):
             pass
     lines = source.split('\n')
     lines = [PROBABLY_A_COMMENT.sub('', l) for l in lines]
-    source = '\n'.join(lines)
+    source = u'\n'.join(lines)
 
     source = WHITESPACE.sub(' ', source)
     source = SPACE_FOLLOWS_OPEN_BRACKET.sub('(', source)

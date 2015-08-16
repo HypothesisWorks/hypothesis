@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import sys
 import math
@@ -369,7 +368,7 @@ def test_increasing_sequence():
 
 def test_increasing_string_sequence():
     n = 7
-    lb = '✐'
+    lb = u'✐'
     xs = minimal(
         lists(text()), lambda t: (
             n <= len(t) and
@@ -387,7 +386,7 @@ def test_increasing_string_sequence():
 
 def test_decreasing_string_sequence():
     n = 7
-    lb = '✐'
+    lb = u'✐'
     xs = minimal(
         lists(text()), lambda t: (
             n <= len(t) and

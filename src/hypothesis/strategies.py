@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import math
 import struct
@@ -528,11 +527,12 @@ def text(
                     min_size,
                 )
             )
-        return just('')
+        return just(u'')
     elif isinstance(alphabet, SearchStrategy):
         char_strategy = alphabet
     else:
         char_strategy = sampled_from(text_type(alphabet))
+
     return StringStrategy(lists(
         char_strategy, average_size=average_size, min_size=min_size,
         max_size=max_size

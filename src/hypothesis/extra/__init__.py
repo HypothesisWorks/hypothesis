@@ -14,8 +14,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
+
 
 import pkg_resources
 from hypothesis.settings import Settings

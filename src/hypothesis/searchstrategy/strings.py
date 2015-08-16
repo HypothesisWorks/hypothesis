@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import sys
 import unicodedata
@@ -36,7 +35,7 @@ class OneCharStringStrategy(SearchStrategy):
 
     """A strategy which generates single character strings of text type."""
     specifier = text_type
-    ascii_characters = ''.join(
+    ascii_characters = u''.join(
         chr(i) for i in hrange(128)
     )
     zero_point = ord('0')
@@ -66,8 +65,8 @@ class OneCharStringStrategy(SearchStrategy):
             char = hunichr(codepoint)
             if self.is_good(char):
                 alphabet.append(char)
-        if '\n' not in alphabet and not random.randint(0, 10):
-            alphabet.append('\n')
+        if u'\n' not in alphabet and not random.randint(0, 10):
+            alphabet.append(u'\n')
         return tuple(alphabet)
 
     def is_good(self, char):
@@ -111,12 +110,12 @@ class OneCharStringStrategy(SearchStrategy):
         return accept
 
     def try_ascii(self, random, template):
-        if template < '0':
+        if template < u'0':
             for i in hrange(ord(template) + 1, self.zero_point + 1):
                 yield hunichr(i)
 
         for i in self.ascii_characters:
-            if i < '0':
+            if i < u'0':
                 continue
             if i >= template:
                 break
@@ -145,7 +144,7 @@ class StringStrategy(MappedSearchStrategy):
         return 'StringStrategy()'
 
     def pack(self, ls):
-        return ''.join(ls)
+        return u''.join(ls)
 
 
 class BinaryStringStrategy(MappedSearchStrategy):

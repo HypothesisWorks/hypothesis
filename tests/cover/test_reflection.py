@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import ast
 import sys
@@ -562,21 +561,21 @@ def test_can_delegate_to_a_function_with_no_positional_args():
 class Snowman(object):
 
     def __repr__(self):
-        return '☃'
+        return u'☃'
 
 
 class BittySnowman(object):
 
     def __repr__(self):
-        return '☃'.encode('utf-8')
+        return u'☃'.encode('utf-8')
 
 
 def test_can_handle_unicode_repr():
     def foo(x):
         pass
 
-    assert arg_string(foo, [Snowman()], {}) == 'x=☃'
-    assert arg_string(foo, [], {'x': Snowman()}) == 'x=☃'
+    assert arg_string(foo, [Snowman()], {}) == u'x=☃'
+    assert arg_string(foo, [], {'x': Snowman()}) == u'x=☃'
 
 
 class NoRepr(object):
@@ -605,5 +604,5 @@ def test_can_handle_non_unicode_repr_containing_non_ascii():
     def foo(x):
         pass
 
-    assert arg_string(foo, [BittySnowman()], {}) == 'x=☃'
-    assert arg_string(foo, [], {'x': BittySnowman()}) == 'x=☃'
+    assert arg_string(foo, [BittySnowman()], {}) == u'x=☃'
+    assert arg_string(foo, [], {'x': BittySnowman()}) == u'x=☃'

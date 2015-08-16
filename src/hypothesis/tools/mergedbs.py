@@ -43,8 +43,7 @@ And in .git/config add:
 """
 
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import sys
 import sqlite3
