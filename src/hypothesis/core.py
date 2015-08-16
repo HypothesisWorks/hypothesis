@@ -161,8 +161,9 @@ def find_satisfying_template(
     elif satisfying_examples < min_satisfying_examples:
         if timed_out:
             raise Timeout((
-                u'Ran out of time before finding a satisfying example for %s.' +
-                u' Only found %d examples (%d satisfying assumptions) in %.2fs.'
+                u'Ran out of time before finding a satisfying example for '
+                u'%s. Only found %d examples (%d satisfying assumptions) in ' +
+                u'%.2fs.'
             ) % (
                 get_pretty_function_description(condition),
                 len(tracker), satisfying_examples, run_time
@@ -231,9 +232,10 @@ def simplify_template_such_that(
                     if time_to_call_it_a_day(settings, start_time):
                         return
                     if tracker.track(s) > 1:
-                        debug_report(u'Skipping simplifying to duplicate %s' % (
-                            unicode_safe_repr(s),
-                        ))
+                        debug_report(
+                            u'Skipping simplifying to duplicate %s' % (
+                                unicode_safe_repr(s),
+                            ))
                         continue
                     try:
                         if f(s):
@@ -292,7 +294,8 @@ def best_satisfying_template(
             verbose_report(u'Successfully shrunk example once')
         else:
             verbose_report(
-                u'Successfully shrunk example %d times' % (successful_shrinks,))
+                u'Successfully shrunk example %d times' % (
+                    successful_shrinks,))
         return satisfying_example
 
 
@@ -310,9 +313,9 @@ def test_is_flaky(test, expected_repr):
             raise Flaky(
                 (
                     u'Hypothesis %s produces unreliable results: Falsified'
-                    u' on the first call but did not on a subsequent one. This '
-                    u' is possibly due to unreliable values, which may be a bug'
-                    u' in the strategy.\nCall 1: %s\nCall 2: %s\n'
+                    u' on the first call but did not on a subsequent one.'
+                    u' This is possibly due to unreliable values, which may '
+                    u'be a bug in the strategy.\nCall 1: %s\nCall 2: %s\n'
                 ) % (test.__name__, expected_repr, text_repr,))
     return test_or_flaky
 
@@ -396,16 +399,15 @@ def given(*generator_arguments, **generator_kwargs):
     def run_test_with_generator(test):
         if settings.derandomize:
             assert provided_random is None
-            random = Random(
-                function_digest(test)
-            )
+            random = Random(function_digest(test))
         else:
             random = provided_random or Random()
 
         original_argspec = inspect.getargspec(test)
         if generator_arguments and original_argspec.varargs:
             raise InvalidArgument(
-                u'varargs are not supported with positional arguments to @given'
+                u'varargs are not supported with positional arguments to '
+                u'@given'
             )
         extra_kwargs = [
             k for k in generator_kwargs if k not in original_argspec.args]

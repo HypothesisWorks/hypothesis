@@ -471,8 +471,8 @@ def dictionaries(
 
     if min_size is not None and min_size > keys.template_upper_bound:
         raise InvalidArgument((
-            u'Cannot generate dictionaries of size %d with keys from %r, which '
-            u'contains no more than %d distinct values') % (
+            u'Cannot generate dictionaries of size %d with keys from %r, '
+            u'which contains no more than %d distinct values') % (
                 min_size, keys, keys.template_upper_bound,
         ))
 

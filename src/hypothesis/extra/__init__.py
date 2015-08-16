@@ -41,8 +41,8 @@ def load_entry_points(name=None):
             continue
         elif entry_point.name == u'hypothesispytest':
             note_deprecation(
-                u'You have an obsolete version of the hypothesis-pytest plugin '
-                u'installed. Please update to a more recent version.',
+                u'You have an obsolete version of the hypothesis-pytest '
+                u'plugin installed. Please update to a more recent version.',
                 Settings.default
             )
             continue
