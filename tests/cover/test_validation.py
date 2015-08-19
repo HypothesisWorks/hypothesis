@@ -19,8 +19,8 @@ from __future__ import division, print_function, absolute_import
 import pytest
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import sets, floats, booleans, integers, \
-    dictionaries
+from hypothesis.strategies import sets, lists, floats, booleans, \
+    integers, frozensets, dictionaries
 
 
 def test_errors_when_given_varargs():
@@ -99,3 +99,10 @@ def test_dictionary_key_size():
 def test_set_size():
     with pytest.raises(InvalidArgument):
         sets(elements=booleans(), min_size=3)
+
+
+def test_does_not_error_if_min_size_is_bigger_than_default_size():
+    lists(integers(), min_size=50)
+    sets(integers(), min_size=50)
+    frozensets(integers(), min_size=50)
+    lists(integers(), min_size=50, unique_by=lambda x: x)
