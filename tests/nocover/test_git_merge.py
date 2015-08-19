@@ -14,7 +14,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 from collections import namedtuple
 
@@ -24,9 +25,9 @@ from hypothesis.tools.mergedbs import merge_dbs
 from hypothesis.internal.compat import PY26, hrange
 from hypothesis.database.backend import SQLiteBackend
 
-FORK_NOW = u'fork'
-Insert = namedtuple(u'Insert', (u'key', u'value', u'target'))
-Delete = namedtuple(u'Delete', (u'key', u'value', u'target'))
+FORK_NOW = 'fork'
+Insert = namedtuple('Insert', ('key', 'value', 'target'))
+Delete = namedtuple('Delete', ('key', 'value', 'target'))
 
 
 class TestingBackend(SQLiteBackend):

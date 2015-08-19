@@ -14,7 +14,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 import pytest
 from hypothesis import Settings, given, assume

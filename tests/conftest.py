@@ -14,7 +14,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 import gc
 import warnings
@@ -24,7 +25,7 @@ import pytest
 from hypothesis import Settings
 from hypothesis.settings import set_hypothesis_home_dir
 
-warnings.filterwarnings(u'error', category=UnicodeWarning)
+warnings.filterwarnings('error', category=UnicodeWarning)
 
 set_hypothesis_home_dir(mkdtemp())
 
@@ -32,6 +33,6 @@ Settings.default.timeout = -1
 Settings.default.strict = True
 
 
-@pytest.fixture(scope=u'function', autouse=True)
+@pytest.fixture(scope='function', autouse=True)
 def some_fixture():
     gc.collect()

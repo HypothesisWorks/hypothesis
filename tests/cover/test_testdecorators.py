@@ -14,7 +14,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 import math
 import time
@@ -73,12 +74,12 @@ def test_still_minimizes_on_non_assertion_failures():
     @given(integers())
     def is_not_too_large(x):
         if x >= 10:
-            raise ValueError(u'No, %s is just too large. Sorry' % x)
+            raise ValueError('No, %s is just too large. Sorry' % x)
 
     with pytest.raises(ValueError) as exinfo:
         is_not_too_large()
 
-    assert u' 10 ' in exinfo.value.args[0]
+    assert ' 10 ' in exinfo.value.args[0]
 
 
 @given(integers())
@@ -101,12 +102,12 @@ class TestCases(object):
 
     @given(x=integers())
     def test_abs_non_negative_varargs_kwargs(self, *args, **kw):
-        assert abs(kw[u'x']) >= 0
+        assert abs(kw['x']) >= 0
         assert isinstance(self, TestCases)
 
     @given(x=integers())
     def test_abs_non_negative_varargs_kwargs_only(*args, **kw):
-        assert abs(kw[u'x']) >= 0
+        assert abs(kw['x']) >= 0
         assert isinstance(args[0], TestCases)
 
     @fails
@@ -229,7 +230,7 @@ def test_contains_the_test_function_name_in_the_exception_string():
 
     with pytest.raises(Unsatisfiable) as e:
         this_has_a_totally_unique_name()
-        print(u'Called %d times' % tuple(calls))
+        print('Called %d times' % tuple(calls))
 
     assert this_has_a_totally_unique_name.__name__ in e.value.args[0]
 
@@ -244,7 +245,7 @@ def test_contains_the_test_function_name_in_the_exception_string():
 
     with pytest.raises(Unsatisfiable) as e:
         Foo().this_has_a_unique_name_and_lives_on_a_class()
-        print(u'Called %d times' % tuple(calls2))
+        print('Called %d times' % tuple(calls2))
 
     assert (
         Foo.this_has_a_unique_name_and_lives_on_a_class.__name__
@@ -275,7 +276,7 @@ def test_errors_even_if_does_not_error_on_final_call():
     @given(integers())
     def rude(x):
         assert not any(
-            t[3] == u'best_satisfying_template'
+            t[3] == 'best_satisfying_template'
             for t in inspect.getouterframes(inspect.currentframe())
         )
 
@@ -288,20 +289,20 @@ class DifferentReprEachTime(object):
 
     def __repr__(self):
         DifferentReprEachTime.counter += 1
-        return u'DifferentReprEachTime(%d)' % (DifferentReprEachTime.counter,)
+        return 'DifferentReprEachTime(%d)' % (DifferentReprEachTime.counter,)
 
 
 def test_reports_repr_diff_in_flaky_error():
     @given(builds(DifferentReprEachTime))
     def rude(x):
         assert not any(
-            t[3] == u'best_satisfying_template'
+            t[3] == 'best_satisfying_template'
             for t in inspect.getouterframes(inspect.currentframe())
         )
 
     with pytest.raises(Flaky) as e:
         rude()
-    assert u'Call 1:' in e.value.args[0]
+    assert 'Call 1:' in e.value.args[0]
 
 
 @given(sets(sampled_from(list(range(10)))))
@@ -335,9 +336,9 @@ def test_prints_on_failure_by_default():
             with reporting.with_reporter(reporting.default):
                 test_ints_are_sorted()
     out = out.getvalue()
-    lines = [l.strip() for l in out.split(u'\n')]
+    lines = [l.strip() for l in out.split('\n')]
     assert (
-        u'Falsifying example: test_ints_are_sorted(balthazar=1, evans=0)'
+        'Falsifying example: test_ints_are_sorted(balthazar=1, evans=0)'
         in lines)
 
 
@@ -350,7 +351,7 @@ def test_does_not_print_on_success():
         with capture_out() as out:
             test_is_an_int()
     out = out.getvalue()
-    lines = [l.strip() for l in out.split(u'\n')]
+    lines = [l.strip() for l in out.split('\n')]
     assert all(not l for l in lines)
 
 
@@ -371,7 +372,7 @@ def test_is_an_endpoint(x):
     assert x == 1.0 or x == 2.0
 
 
-@pytest.mark.parametrize(u't', [1, 10, 100, 1000])
+@pytest.mark.parametrize('t', [1, 10, 100, 1000])
 @fails
 @given(x=integers())
 def test_is_bounded(t, x):
@@ -380,20 +381,20 @@ def test_is_bounded(t, x):
 
 @given(x=booleans())
 def test_can_test_kwargs_only_methods(**kwargs):
-    assert isinstance(kwargs[u'x'], bool)
+    assert isinstance(kwargs['x'], bool)
 
 
 @fails_with(UnicodeEncodeError)
 @given(text())
 def test_is_ascii(x):
-    x.encode(u'ascii')
+    x.encode('ascii')
 
 
 @fails
 @given(text())
 def test_is_not_ascii(x):
     try:
-        x.encode(u'ascii')
+        x.encode('ascii')
         assert False
     except UnicodeEncodeError:
         pass
@@ -411,8 +412,8 @@ def test_has_ascii(x):
     if not x:
         return
     ascii_characters = (
-        text_type(u'0123456789') + text_type(string.ascii_letters) +
-        text_type(u' \t\n')
+        text_type('0123456789') + text_type(string.ascii_letters) +
+        text_type(' \t\n')
     )
     assert any(c in ascii_characters for c in x)
 
@@ -475,7 +476,7 @@ def test_can_call_an_argument_f(f):
     pass
 
 
-Litter = namedtuple(u'Litter', (u'kitten1', u'kitten2'))
+Litter = namedtuple('Litter', ('kitten1', 'kitten2'))
 
 
 @given(builds(Litter, integers(), integers()))
@@ -489,19 +490,19 @@ def test_fails_in_reify(x):
     pass
 
 
-@given(text(u'a'))
+@given(text('a'))
 def test_a_text(x):
-    assert set(x).issubset(set(u'a'))
+    assert set(x).issubset(set('a'))
 
 
-@given(text(u''))
+@given(text(''))
 def test_empty_text(x):
     assert not x
 
 
-@given(text(u'abcdefg'))
+@given(text('abcdefg'))
 def test_mixed_text(x):
-    assert set(x).issubset(set(u'abcdefg'))
+    assert set(x).issubset(set('abcdefg'))
 
 
 def test_when_set_to_no_simplifies_only_runs_failing_example_once():
@@ -518,7 +519,7 @@ def test_when_set_to_no_simplifies_only_runs_failing_example_once():
             with capture_out() as out:
                 foo()
     assert failing == [1]
-    assert u'Trying example' in out.getvalue()
+    assert 'Trying example' in out.getvalue()
 
 
 @given(integers(), settings=hs.Settings(max_examples=1))

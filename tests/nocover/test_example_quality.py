@@ -14,7 +14,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 import sys
 import math
@@ -94,27 +95,27 @@ def test_minimize_list_of_floats_on_large_structure():
 
 
 def test_minimize_string_to_empty():
-    assert minimal(text()) == u''
+    assert minimal(text()) == ''
 
 
 def test_minimize_one_of():
     for _ in hrange(100):
         assert minimal(integers() | text() | booleans()) in (
-            0, u'', False
+            0, '', False
         )
 
 
 def test_minimize_mixed_list():
     mixed = minimal(lists(integers() | text()), lambda x: len(x) >= 10)
-    assert set(mixed).issubset(set((0, u'')))
+    assert set(mixed).issubset(set((0, '')))
 
 
 def test_minimize_longer_string():
-    assert minimal(text(), lambda x: len(x) >= 10) == u'0' * 10
+    assert minimal(text(), lambda x: len(x) >= 10) == '0' * 10
 
 
 def test_minimize_longer_list_of_strings():
-    assert minimal(lists(text()), lambda x: len(x) >= 10) == [u''] * 10
+    assert minimal(lists(text()), lambda x: len(x) >= 10) == [''] * 10
 
 
 def test_minimize_3_set():
@@ -147,8 +148,8 @@ def test_minimize_sets_of_sets():
 
 
 @pytest.mark.parametrize(
-    (u'string',), [(text(),), (binary(),)],
-    ids=[u'text', u'binary()']
+    ('string',), [(text(),), (binary(),)],
+    ids=['text', 'binary()']
 )
 def test_minimal_unsorted_strings(string):
     def dedupe(xs):
@@ -240,7 +241,7 @@ def test_can_simplify_on_both_sides_of_flatmap():
     ) == [0] * 10
 
 
-@parametrize(u'dict_class', [dict, OrderedDict])
+@parametrize('dict_class', [dict, OrderedDict])
 def test_dictionary(dict_class):
     assert minimal(dictionaries(
         keys=integers(), values=text(),
@@ -250,7 +251,7 @@ def test_dictionary(dict_class):
         dictionaries(keys=integers(), values=text(), dict_class=dict_class),
         lambda t: len(t) >= 3)
     assert isinstance(x, dict_class)
-    assert set(x.values()) == set((u'',))
+    assert set(x.values()) == set(('',))
     for k in x:
         if k < 0:
             assert k + 1 in x
@@ -305,10 +306,10 @@ def test_minimize_one_of_distinct_types():
     )
 
 
-@pytest.mark.skipif(PY3, reason=u'Python 3 has better integers')
+@pytest.mark.skipif(PY3, reason='Python 3 has better integers')
 def test_minimize_long():
     assert minimal(
-        integers(), lambda x: type(x).__name__ == u'long') == sys.maxint + 1
+        integers(), lambda x: type(x).__name__ == 'long') == sys.maxint + 1
 
 
 def test_non_reversible_ints_as_decimals():
@@ -368,7 +369,7 @@ def test_increasing_sequence():
 
 def test_increasing_string_sequence():
     n = 7
-    lb = u'✐'
+    lb = '✐'
     xs = minimal(
         lists(text()), lambda t: (
             n <= len(t) and
@@ -386,7 +387,7 @@ def test_increasing_string_sequence():
 
 def test_decreasing_string_sequence():
     n = 7
-    lb = u'✐'
+    lb = '✐'
     xs = minimal(
         lists(text()), lambda t: (
             n <= len(t) and
@@ -406,7 +407,7 @@ def test_small_sum_lists():
     xs = minimal(
         lists(floats()),
         lambda x:
-            len(x) >= 100 and sum(t for t in x if float(u'inf') > t >= 0) >= 1,
+            len(x) >= 100 and sum(t for t in x if float('inf') > t >= 0) >= 1,
         settings=Settings(average_list_length=200),
     )
     assert 1.0 <= sum(t for t in xs if t >= 0) <= 1.5

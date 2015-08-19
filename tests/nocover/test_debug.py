@@ -14,7 +14,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 import hashlib
 from random import Random
@@ -28,11 +29,11 @@ from hypothesis.internal.debug import minimal_elements
 
 
 @pytest.mark.parametrize(
-    u'spec', standard_types, ids=list(map(show, standard_types)))
+    'spec', standard_types, ids=list(map(show, standard_types)))
 def test_all_minimal_elements_reify(spec):
     random = Random(hashlib.md5((
-        show(spec) + u':test_all_minimal_elements_round_trip_via_the_database'
-    ).encode(u'utf-8')).digest())
+        show(spec) + ':test_all_minimal_elements_round_trip_via_the_database'
+    ).encode('utf-8')).digest())
     strat = strategy(spec, Settings(average_list_length=2))
     for elt in minimal_elements(strat, random):
         with BuildContext():

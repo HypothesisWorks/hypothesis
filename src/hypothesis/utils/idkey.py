@@ -1,6 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
-
 # coding=utf-8
 
 # This file is part of Hypothesis (https://github.com/DRMacIver/hypothesis)
@@ -17,10 +14,14 @@ from __future__ import division, print_function, absolute_import
 
 # END HEADER
 
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
+
+
 class IdKey(object):
 
     def __repr__(self):
-        return u'IdKey(%r)' % (self.value,)
+        return 'IdKey(%r)' % (self.value,)
 
     def __init__(self, value):
         self.value = value

@@ -14,7 +14,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 import inspect
 from random import Random
@@ -102,12 +103,12 @@ class UnreliableStrategyState(GenericStateMachine):
         assert self.counter < self.n
 
 
-Leaf = namedtuple(u'Leaf', (u'label',))
-Split = namedtuple(u'Split', (u'left', u'right'))
+Leaf = namedtuple('Leaf', ('label',))
+Split = namedtuple('Split', ('left', 'right'))
 
 
 class BalancedTrees(RuleBasedStateMachine):
-    trees = u'BinaryTree'
+    trees = 'BinaryTree'
 
     @rule(target=trees, x=booleans())
     def leaf(self, x):
@@ -143,7 +144,7 @@ class DepthCharge(object):
 
 
 class DepthMachine(RuleBasedStateMachine):
-    charges = Bundle(u'charges')
+    charges = Bundle('charges')
 
     @rule(targets=(charges,), child=charges)
     @rule(targets=(charges,), child=none())
@@ -170,7 +171,7 @@ cheap_bad_machines.remove(UnreliableStrategyState)
 
 
 with_cheap_bad_machines = pytest.mark.parametrize(
-    u'machine',
+    'machine',
     cheap_bad_machines, ids=[t.__name__ for t in cheap_bad_machines]
 )
 
@@ -247,7 +248,7 @@ def test_can_truncate_template_record():
     r = Random(1)
     simplifiers = list(strat.simplifiers(r, runner))
     assert simplifiers
-    assert any(u'convert_simplifier' in s.__name__ for s in simplifiers)
+    assert any('convert_simplifier' in s.__name__ for s in simplifiers)
     while runner.record:
         runner.record.pop()
 
@@ -258,7 +259,7 @@ def test_can_truncate_template_record():
 
 
 @pytest.mark.parametrize(
-    u'machine',
+    'machine',
     bad_machines, ids=[t.__name__ for t in bad_machines]
 )
 def test_bad_machines_fail(machine):
@@ -272,8 +273,8 @@ def test_bad_machines_fail(machine):
         raise
     v = o.getvalue()
     print(v)
-    assert u'Step #1' in v
-    assert u'Step #50' not in v
+    assert 'Step #1' in v
+    assert 'Step #50' not in v
 
 
 class GivenLikeStateMachine(GenericStateMachine):
@@ -295,7 +296,7 @@ class FlakyStateMachine(RuleBasedStateMachine):
     @rule()
     def boom(self):
         assert not any(
-            t[3] == u'find_breaking_runner'
+            t[3] == 'find_breaking_runner'
             for t in inspect.getouterframes(inspect.currentframe())
         )
 
@@ -316,7 +317,7 @@ def test_empty_machine_is_invalid():
 def test_machine_with_no_terminals_is_invalid():
     class NonTerminalMachine(RuleBasedStateMachine):
 
-        @rule(value=Bundle(u'hi'))
+        @rule(value=Bundle('hi'))
         def bye(self, hi):
             pass
 
@@ -326,7 +327,7 @@ def test_machine_with_no_terminals_is_invalid():
 
 class DynamicMachine(RuleBasedStateMachine):
 
-    @rule(value=Bundle(u'hi'))
+    @rule(value=Bundle('hi'))
     def test_stuff(x):
         pass
 
@@ -339,14 +340,14 @@ class IntAdder(RuleBasedStateMachine):
     pass
 
 IntAdder.define_rule(
-    targets=(u'ints',), function=lambda self, x: x, arguments={
-        u'x': integers()
+    targets=('ints',), function=lambda self, x: x, arguments={
+        'x': integers()
     }
 )
 
 IntAdder.define_rule(
-    targets=(u'ints',), function=lambda self, x, y: x, arguments={
-        u'x': integers(), u'y': Bundle(u'ints'),
+    targets=('ints',), function=lambda self, x, y: x, arguments={
+        'x': integers(), 'y': Bundle('ints'),
     }
 )
 
@@ -432,7 +433,7 @@ class RequiresInit(GenericStateMachine):
 
     def execute_step(self, value):
         if value > self.threshold:
-            raise ValueError(u'%d is too high' % (value,))
+            raise ValueError('%d is too high' % (value,))
 
 
 def test_can_use_factory_for_tests():

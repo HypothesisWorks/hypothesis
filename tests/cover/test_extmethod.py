@@ -14,7 +14,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 import pytest
 from hypothesis.utils.extmethod import ExtMethod
@@ -32,7 +33,7 @@ def test_will_use_tightest_class():
         return 1
 
     assert f(object()) == 0
-    assert f(u'') == 0
+    assert f('') == 0
     assert f(10) == 1
 
 

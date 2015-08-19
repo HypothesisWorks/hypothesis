@@ -14,7 +14,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 import math
 from random import Random
@@ -69,15 +70,15 @@ with Settings(average_list_length=5.0):
     TestIntBool = strategy_test_suite(tuples(integers(), booleans()))
     TestFloats = strategy_test_suite(floats())
     TestComplex = strategy_test_suite(complex_numbers())
-    TestJust = strategy_test_suite(just(u'hi'))
+    TestJust = strategy_test_suite(just('hi'))
     TestTemplates = strategy_test_suite(templates_for(sets(integers())))
 
-    TestEmptyString = strategy_test_suite(text(alphabet=u''))
+    TestEmptyString = strategy_test_suite(text(alphabet=''))
     TestSingleString = strategy_test_suite(strategy(
-        text(alphabet=u'a'), Settings(average_list_length=10.0)))
-    TestManyString = strategy_test_suite(text(alphabet=u'abcdef☃'))
+        text(alphabet='a'), Settings(average_list_length=10.0)))
+    TestManyString = strategy_test_suite(text(alphabet='abcdef☃'))
 
-    Stuff = namedtuple(u'Stuff', (u'a', u'b'))
+    Stuff = namedtuple('Stuff', ('a', 'b'))
     TestNamedTuple = strategy_test_suite(
         builds(Stuff, integers(), integers()))
 
@@ -236,8 +237,8 @@ TestStatemachine = strategy_test_suite(StateMachineSearchStrategy())
 
 def test_repr_has_specifier_in_it():
     suite = TestComplex(
-        u'test_can_round_trip_through_the_database')
-    assert repr(suite) == u'strategy_test_suite(%r)' % (complex_numbers(),)
+        'test_can_round_trip_through_the_database')
+    assert repr(suite) == 'strategy_test_suite(%r)' % (complex_numbers(),)
 
 
 def test_can_mutate_non_basic():

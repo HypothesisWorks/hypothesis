@@ -14,7 +14,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 import threading
 from contextlib import contextmanager
@@ -28,7 +29,7 @@ class DynamicVariable(object):
 
     @property
     def value(self):
-        return getattr(self.data, u'value', self.default)
+        return getattr(self.data, 'value', self.default)
 
     @contextmanager
     def with_value(self, value):

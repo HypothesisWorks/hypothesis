@@ -14,7 +14,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 from django.db import models
 
@@ -31,13 +32,13 @@ class Store(models.Model):
 class CharmField(models.Field):
 
     def db_type(self, connection):
-        return u'char(1)'
+        return 'char(1)'
 
 
 class CustomishField(models.Field):
 
     def db_type(self, connection):
-        return u'char(1)'
+        return 'char(1)'
 
 
 class Customish(models.Model):
@@ -61,15 +62,15 @@ class CouldBeCharming(models.Model):
 
 
 class SelfLoop(models.Model):
-    me = models.ForeignKey(u'self', null=True)
+    me = models.ForeignKey('self', null=True)
 
 
 class LoopA(models.Model):
-    b = models.ForeignKey(u'LoopB', null=False)
+    b = models.ForeignKey('LoopB', null=False)
 
 
 class LoopB(models.Model):
-    a = models.ForeignKey(u'LoopA', null=True)
+    a = models.ForeignKey('LoopA', null=True)
 
 
 class ManyInts(models.Model):

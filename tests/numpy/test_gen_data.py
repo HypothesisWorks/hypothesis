@@ -14,7 +14,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 import numpy as np
 import pytest
@@ -30,14 +31,14 @@ TestBoolTensor = strategy_test_suite(arrays(bool, (2, 2, 2)))
 
 
 STANDARD_TYPES = list(map(np.dtype, [
-    u'int8', u'int32', u'int64',
-    u'float', u'float32', u'float64',
+    'int8', 'int32', 'int64',
+    'float', 'float32', 'float64',
     complex,
     bool, text_type, binary_type
 ]))
 
 
-@pytest.mark.parametrize(u't', STANDARD_TYPES)
+@pytest.mark.parametrize('t', STANDARD_TYPES)
 def test_produces_instances(t):
     @given(from_dtype(t))
     def test_is_t(x):
@@ -51,7 +52,7 @@ def test_empty_dimensions_are_scalars(x):
     assert isinstance(x, np.dtype(float).type)
 
 
-@given(arrays(u'uint32', (5, 5)))
+@given(arrays('uint32', (5, 5)))
 def test_generates_unsigned_ints(x):
     assert (x >= 0).all()
 
@@ -67,7 +68,7 @@ def test_generates_and_minimizes():
 
 
 def test_can_minimize_large_arrays_easily():
-    x = find(arrays(u'uint32', 1000), lambda t: t.any())
+    x = find(arrays('uint32', 1000), lambda t: t.any())
     assert x.sum() == 1
 
 

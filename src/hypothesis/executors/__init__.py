@@ -36,6 +36,9 @@ between minor versions either.
 
 """
 
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
+
 
 from .executors import executor, default_executor
 

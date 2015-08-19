@@ -22,6 +22,8 @@ failing examples it finds.
 
 """
 
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 from hypothesis.searchstrategy import strategy
 from hypothesis.settings import Settings, Verbosity

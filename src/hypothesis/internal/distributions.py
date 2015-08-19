@@ -14,7 +14,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 import math
 
@@ -41,7 +42,7 @@ def biased_coin(random, p):
 def non_empty_subset(random, elements, activation_chance=None):
     elements = tuple(elements)
     if not elements:
-        raise ValueError(u'Must have at least one element')
+        raise ValueError('Must have at least one element')
     if len(elements) == 1:
         return list(elements)
     if activation_chance is None:

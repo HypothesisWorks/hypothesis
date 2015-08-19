@@ -14,7 +14,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 import sys
 import unicodedata
@@ -27,7 +28,7 @@ from hypothesis.searchstrategy.strategies import SearchStrategy, \
 
 _spaces = [
     i for i in range(sys.maxunicode)
-    if unicodedata.category(hunichr(i)) in (u'Cc', u'Zs')
+    if unicodedata.category(hunichr(i)) in ('Cc', 'Zs')
 ]
 
 
@@ -35,10 +36,10 @@ class OneCharStringStrategy(SearchStrategy):
 
     """A strategy which generates single character strings of text type."""
     specifier = text_type
-    ascii_characters = u''.join(
+    ascii_characters = ''.join(
         chr(i) for i in hrange(128)
     )
-    zero_point = ord(u'0')
+    zero_point = ord('0')
 
     def draw_parameter(self, random):
         alphabet_size = 1 + dist.geometric(random, 0.1)
@@ -65,12 +66,12 @@ class OneCharStringStrategy(SearchStrategy):
             char = hunichr(codepoint)
             if self.is_good(char):
                 alphabet.append(char)
-        if u'\n' not in alphabet and not random.randint(0, 10):
-            alphabet.append(u'\n')
+        if '\n' not in alphabet and not random.randint(0, 10):
+            alphabet.append('\n')
         return tuple(alphabet)
 
     def is_good(self, char):
-        return unicodedata.category(char) != u'Cs'
+        return unicodedata.category(char) != 'Cs'
 
     def draw_template(self, random, p):
         return random.choice(p)
@@ -105,17 +106,17 @@ class OneCharStringStrategy(SearchStrategy):
                         yield c
                 lb = new_lb
         accept.__name__ = str(
-            u'try_shrink(%d, %d)' % (lo, hi)
+            'try_shrink(%d, %d)' % (lo, hi)
         )
         return accept
 
     def try_ascii(self, random, template):
-        if template < u'0':
+        if template < '0':
             for i in hrange(ord(template) + 1, self.zero_point + 1):
                 yield hunichr(i)
 
         for i in self.ascii_characters:
-            if i < u'0':
+            if i < '0':
                 continue
             if i >= template:
                 break
@@ -141,10 +142,10 @@ class StringStrategy(MappedSearchStrategy):
         )
 
     def __repr__(self):
-        return u'StringStrategy()'
+        return 'StringStrategy()'
 
     def pack(self, ls):
-        return u''.join(ls)
+        return ''.join(ls)
 
 
 class BinaryStringStrategy(MappedSearchStrategy):
@@ -153,7 +154,7 @@ class BinaryStringStrategy(MappedSearchStrategy):
     lists of bytes."""
 
     def __repr__(self):
-        return u'BinaryStringStrategy()'
+        return 'BinaryStringStrategy()'
 
     def pack(self, x):
         assert isinstance(x, list), repr(x)

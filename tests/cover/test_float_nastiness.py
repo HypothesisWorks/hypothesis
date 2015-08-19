@@ -14,7 +14,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 import sys
 import math
@@ -24,7 +25,7 @@ import hypothesis.strategies as st
 from hypothesis import find, given, assume
 
 
-@pytest.mark.parametrize((u'l', u'r'), [
+@pytest.mark.parametrize(('l', 'r'), [
     # Exact values don't matter, but they're large enough so that x + y = inf.
     (9.9792015476736e+291, 1.7976931348623157e+308),
     (-sys.float_info.max, sys.float_info.max)
@@ -42,7 +43,7 @@ def test_can_generate_both_zeros():
         lambda x: assume(x >= 0) and math.copysign(1, x) < 0)
 
 
-@pytest.mark.parametrize((u'l', u'r'), [
+@pytest.mark.parametrize(('l', 'r'), [
     (-1.0, 1.0),
     (-0.0, 1.0),
     (-1.0, 0.0),
@@ -64,7 +65,7 @@ def test_does_not_generate_positive_if_right_boundary_is_negative(x):
     assert math.copysign(1, x) == -1
 
 
-@pytest.mark.parametrize((u'l', u'r'), [
+@pytest.mark.parametrize(('l', 'r'), [
     (0.0, 1.0),
     (-1.0, 0.0),
     (-sys.float_info.min, sys.float_info.min),

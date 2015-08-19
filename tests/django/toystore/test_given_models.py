@@ -14,7 +14,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 from hypothesis import given, assume
 from hypothesis.errors import InvalidArgument
@@ -25,7 +26,7 @@ from tests.django.toystore.models import Store, Company, Customer, \
 from hypothesis.extra.django.models import models, \
     add_default_field_mapping
 
-add_default_field_mapping(CustomishField, just(u'a'))
+add_default_field_mapping(CustomishField, just('a'))
 
 
 class TestGetsBasicModels(TestCase):
@@ -70,7 +71,7 @@ class TestGetsBasicModels(TestCase):
 
     @given(models(Customish))
     def test_custom_field(self, x):
-        assert x.customish == u'a'
+        assert x.customish == 'a'
 
     def test_mandatory_fields_are_mandatory(self):
         self.assertRaises(InvalidArgument, models, Store)

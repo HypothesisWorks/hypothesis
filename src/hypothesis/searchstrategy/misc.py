@@ -14,7 +14,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 import hypothesis.internal.distributions as dist
 from hypothesis.types import RandomWithSeed
@@ -31,7 +32,7 @@ class BoolStrategy(SearchStrategy):
     template_upper_bound = 2
 
     def __repr__(self):
-        return u'BoolStrategy()'
+        return 'BoolStrategy()'
 
     def reify(self, value):
         return value
@@ -70,7 +71,7 @@ class JustStrategy(SearchStrategy):
         self.value = value
 
     def __repr__(self):
-        return u'JustStrategy(value=%r)' % (self.value,)
+        return 'JustStrategy(value=%r)' % (self.value,)
 
     def draw_parameter(self, random):
         return None
@@ -90,7 +91,7 @@ class JustStrategy(SearchStrategy):
 
     def from_basic(self, data):
         if data is not None:
-            raise BadData(u'Expected None but got %r' % (repr(data,)))
+            raise BadData('Expected None but got %r' % (repr(data,)))
         return None
 
 
@@ -130,10 +131,10 @@ class SampledFromStrategy(SearchStrategy):
     def from_basic(self, data):
         check_data_type(integer_types, data)
         if data < 0:
-            raise BadData(u'Index out of range: %d < 0' % (data,))
+            raise BadData('Index out of range: %d < 0' % (data,))
         elif data >= len(self.elements):
             raise BadData(
-                u'Index out of range: %d >= %d' % (data, len(self.elements)))
+                'Index out of range: %d >= %d' % (data, len(self.elements)))
 
         return data
 
@@ -145,7 +146,7 @@ class SampledFromStrategy(SearchStrategy):
         return x < y
 
     def __repr__(self):
-        return u'SampledFromStrategy(%r)' % (self.elements,)
+        return 'SampledFromStrategy(%r)' % (self.elements,)
 
     def draw_parameter(self, random):
         n = len(self.elements)

@@ -14,7 +14,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 import pytest
 from hypothesis import find, given, reporting
@@ -33,7 +34,7 @@ def test_can_suppress_output():
         with reporting.with_reporter(reporting.silent):
             with pytest.raises(AssertionError):
                 test_int()
-    assert u'Falsifying example' not in o.getvalue()
+    assert 'Falsifying example' not in o.getvalue()
 
 
 def test_prints_output_by_default():
@@ -45,34 +46,34 @@ def test_prints_output_by_default():
         with reporting.with_reporter(reporting.default):
             with pytest.raises(AssertionError):
                 test_int()
-    assert u'Falsifying example' in o.getvalue()
+    assert 'Falsifying example' in o.getvalue()
 
 
 def test_does_not_print_debug_in_verbose():
     with Settings(verbosity=Verbosity.verbose):
         with capture_out() as o:
-            debug_report(u'Hi')
+            debug_report('Hi')
     assert not o.getvalue()
 
 
 def test_does_print_debug_in_debug():
     with Settings(verbosity=Verbosity.debug):
         with capture_out() as o:
-            debug_report(u'Hi')
-    assert u'Hi' in o.getvalue()
+            debug_report('Hi')
+    assert 'Hi' in o.getvalue()
 
 
 def test_does_print_verbose_in_debug():
     with Settings(verbosity=Verbosity.debug):
         with capture_out() as o:
-            verbose_report(u'Hi')
-    assert u'Hi' in o.getvalue()
+            verbose_report('Hi')
+    assert 'Hi' in o.getvalue()
 
 
 def test_prints_debug_on_no_simplification():
     with Settings(verbosity=Verbosity.debug):
         with capture_out() as o:
-            find(just(u'hi'), bool)
+            find(just('hi'), bool)
     v = o.getvalue()
     print(v)
-    assert u'No simplifiers' in v
+    assert 'No simplifiers' in v

@@ -14,7 +14,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 import sys
 import math
@@ -38,7 +39,7 @@ def test_positive_negative_int():
     assert find(integers(), lambda x: x > 1) == 2
 
 
-boundaries = pytest.mark.parametrize(u'boundary', [0, 1, 11, 23, 64, 10000])
+boundaries = pytest.mark.parametrize('boundary', [0, 1, 11, 23, 64, 10000])
 
 
 @boundaries
@@ -109,7 +110,7 @@ def test_negative_floats_simplify_to_zero():
 
 
 def test_find_infinite_float_is_positive():
-    assert find(floats(), math.isinf) == float(u'inf')
+    assert find(floats(), math.isinf) == float('inf')
 
 
 def test_can_find_infinite_negative_float():
@@ -126,7 +127,7 @@ def test_minimize_nan():
 
 def test_minimize_very_large_float():
     t = sys.float_info.max / 2
-    assert t <= find(floats(), lambda x: x >= t) < float(u'inf')
+    assert t <= find(floats(), lambda x: x >= t) < float('inf')
 
 
 def test_can_find_float_far_from_integral():
@@ -177,7 +178,7 @@ def test_out_of_range_floats_are_bad():
 
     with pytest.raises(BadData):
         FixedBoundedFloatStrategy(11, 12).from_basic(
-            floats().to_basic(float(u'nan'))
+            floats().to_basic(float('nan'))
         )
 
 
@@ -190,28 +191,28 @@ def test_float_simplicity():
         assert s(x, y)
         assert not s(y, x)
 
-    order(sys.float_info.max, u'-inf')
+    order(sys.float_info.max, '-inf')
     order(1.0, 0.5)
     order(1.0, 2.0)
     order(2, -1)
-    order(-1.5, float(u'inf'))
+    order(-1.5, float('inf'))
     order(-1.2, -1.3)
-    order(u'inf', u'nan')
-    order(u'inf', u'-inf')
-    order(u'0.25', u'0.5')
+    order('inf', 'nan')
+    order('inf', '-inf')
+    order('0.25', '0.5')
     order(0.5, -1)
-    order(1.5, u'-inf')
+    order(1.5, '-inf')
 
 
 def test_floats_can_simplify_extreme_values():
     s = floats()
     r = Random(1)
     for simplify in s.simplifiers(r, 3.14159):
-        for v in (float(u'nan'), float(u'inf'), float(u'-inf')):
+        for v in (float('nan'), float('inf'), float('-inf')):
             list(simplify(r, v))
 
 
-@pytest.mark.parametrize((u'left', u'right'), [
+@pytest.mark.parametrize(('left', 'right'), [
     (0.0, 5e-324),
     (-5e-324, 0.0),
     (-5e-324, 5e-324),

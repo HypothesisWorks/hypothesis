@@ -14,7 +14,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 import math
 import hashlib
@@ -43,16 +44,16 @@ class HypothesisSpec(RuleBasedStateMachine):
         super(HypothesisSpec, self).__init__()
         self.database = None
 
-    strategies = Bundle(u'strategy')
-    strategy_tuples = Bundle(u'tuples')
-    objects = Bundle(u'objects')
-    streaming_strategies = Bundle(u'streams')
-    basic_data = Bundle(u'basic')
-    varied_floats = Bundle(u'varied_floats')
+    strategies = Bundle('strategy')
+    strategy_tuples = Bundle('tuples')
+    objects = Bundle('objects')
+    streaming_strategies = Bundle('streams')
+    basic_data = Bundle('basic')
+    varied_floats = Bundle('varied_floats')
 
-    strats_with_parameters = Bundle(u'strats_with_parameters')
-    strats_with_templates = Bundle(u'strats_with_templates')
-    strats_with_2_templates = Bundle(u'strats_with_2_templates')
+    strats_with_parameters = Bundle('strats_with_parameters')
+    strats_with_templates = Bundle('strats_with_templates')
+    strats_with_2_templates = Bundle('strats_with_2_templates')
 
     def teardown(self):
         self.clear_database()
@@ -151,7 +152,7 @@ class HypothesisSpec(RuleBasedStateMachine):
             @given(strat, random=r,)
             def test(x):
                 assert Random(
-                    hashlib.md5(show(x).encode(u'utf-8')).digest()
+                    hashlib.md5(show(x).encode('utf-8')).digest()
                 ).random() <= p
 
             try:
@@ -211,7 +212,7 @@ class HypothesisSpec(RuleBasedStateMachine):
     def filtered_strategy(s, source, level, mixer):
         def is_good(x):
             return bool(Random(
-                hashlib.md5((mixer + show(x)).encode(u'utf-8')).digest()
+                hashlib.md5((mixer + show(x)).encode('utf-8')).digest()
             ).randint(0, level))
         return source.filter(is_good)
 
@@ -236,7 +237,7 @@ class HypothesisSpec(RuleBasedStateMachine):
             except KeyError:
                 pass
             random = Random(
-                hashlib.md5((mixer + rep).encode(u'utf-8')).digest()
+                hashlib.md5((mixer + rep).encode('utf-8')).digest()
             )
             outcome_template = result.draw_and_produce(random)
             cache[rep] = result.reify(outcome_template)
@@ -279,7 +280,7 @@ class HypothesisSpec(RuleBasedStateMachine):
         def do_map(value):
             rep = show(value)
             random = Random(
-                hashlib.md5((mixer + rep).encode(u'utf-8')).digest()
+                hashlib.md5((mixer + rep).encode('utf-8')).digest()
             )
             if random.random() <= p:
                 return result1
@@ -315,7 +316,7 @@ class HypothesisSpec(RuleBasedStateMachine):
 
     @rule(strat=strategies)
     def repr_is_good(self, strat):
-        assert u' at 0x' not in repr(strat)
+        assert ' at 0x' not in repr(strat)
 
     @rule(strat=strategies)
     def template_upper_bound_is_valid(self, strat):
@@ -339,13 +340,13 @@ class HypothesisSpec(RuleBasedStateMachine):
                         random=r,
                     )
                 except:
-                    print(u'Exception at %d/%d. template_upper_bound=%r' % (
+                    print('Exception at %d/%d. template_upper_bound=%r' % (
                         i, n, strat.template_upper_bound
                     ))
                     raise
                 found.append(x)
 
-MAIN = __name__ == u'__main__'
+MAIN = __name__ == '__main__'
 
 if MAIN or not (PYPY and PY3):
     # Currently experiencing plausible jit bugs bugs on pypy3

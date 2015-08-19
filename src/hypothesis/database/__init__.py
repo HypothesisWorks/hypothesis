@@ -14,6 +14,10 @@
 
 # END HEADER
 
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
+
+
 from hypothesis.searchstrategy.strategies import BadData
 from hypothesis.database.formats import JSONFormat
 from hypothesis.database.backend import SQLiteBackend
@@ -24,7 +28,7 @@ class Storage(object):
     """Handles saving and loading examples matching a particular specifier."""
 
     def __repr__(self):
-        return u'Storage(%s)' % (self.specifier,)
+        return 'Storage(%s)' % (self.specifier,)
 
     def __init__(
         self, backend, key, format,
@@ -58,7 +62,7 @@ class ExampleDatabase(object):
     """
 
     def __repr__(self):
-        return u'ExampleDatabase(%r, %r)' % (
+        return 'ExampleDatabase(%r, %r)' % (
             self.backend, self.format
         )
 
@@ -71,8 +75,8 @@ class ExampleDatabase(object):
         self.format = format or JSONFormat()
         if self.format.data_type() != self.backend.data_type():
             raise ValueError((
-                u'Inconsistent data types: format provides data of type %s '
-                u'but backend expects data of type %s' % (
+                'Inconsistent data types: format provides data of type %s '
+                'but backend expects data of type %s' % (
                     self.format.data_type(), self.backend.data_type()
                 )))
 

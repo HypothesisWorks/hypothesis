@@ -14,7 +14,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 import pytest
 from hypothesis import Settings, find
@@ -25,7 +26,7 @@ from hypothesis.utils.show import show
 
 
 @pytest.mark.parametrize(
-    u'spec', standard_types, ids=list(map(show, standard_types)))
+    'spec', standard_types, ids=list(map(show, standard_types)))
 def test_can_collectively_minimize(spec):
     """This should generally exercise strategies' strictly_simpler heuristic by
     putting us in a state where example cloning is required to get to the

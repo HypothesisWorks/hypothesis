@@ -20,8 +20,8 @@ Either an explicit Settings object can be used or the default object on
 this module can be modified.
 
 """
-
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 import os
 import inspect
@@ -50,11 +50,10 @@ def mkdir_p(path):
 def hypothesis_home_dir():
     global __hypothesis_home_directory
     if not __hypothesis_home_directory:
-        __hypothesis_home_directory = os.getenv(
-            u'HYPOTHESIS_STORAGE_DIRECTORY')
+        __hypothesis_home_directory = os.getenv('HYPOTHESIS_STORAGE_DIRECTORY')
     if not __hypothesis_home_directory:
         __hypothesis_home_directory = os.path.join(
-            os.getcwd(), u'.hypothesis'
+            os.getcwd(), '.hypothesis'
         )
     mkdir_p(__hypothesis_home_directory)
     return __hypothesis_home_directory
@@ -72,7 +71,7 @@ databases = {}
 
 
 def field_name(setting_name):
-    return u'_' + setting_name
+    return '_' + setting_name
 
 
 def get_class(obj, typ):
@@ -90,10 +89,10 @@ class DefaultSettings(object):
         return typ.default_variable.value
 
     def __set__(self, obj, value):
-        raise AttributeError(u'Cannot set default settings')
+        raise AttributeError('Cannot set default settings')
 
     def __delete__(self, obj):
-        raise AttributeError(u'Cannot delete default settings')
+        raise AttributeError('Cannot delete default settings')
 
 
 class SettingsProperty(object):
@@ -121,9 +120,9 @@ class SettingsProperty(object):
 
     @property
     def __doc__(self):
-        return u'\n'.join((
+        return '\n'.join((
             all_settings[self.name].description,
-            u'default value: %r' % (getattr(Settings.default, self.name),)
+            'default value: %r' % (getattr(Settings.default, self.name),)
         ))
 
 
@@ -145,7 +144,7 @@ class Settings(object):
                 d = d()
             return d
         else:
-            raise AttributeError(u'Settings has no attribute %s' % (name,))
+            raise AttributeError('Settings has no attribute %s' % (name,))
 
     def __init__(
             self,
@@ -156,10 +155,10 @@ class Settings(object):
             if value == not_set:
                 value = getattr(Settings.default, setting.name)
             setattr(self, setting.name, value)
-        self._database = kwargs.pop(u'database', not_set)
+        self._database = kwargs.pop('database', not_set)
         if kwargs:
             raise InvalidArgument(
-                u'Invalid arguments %s' % (u', '.join(kwargs),))
+                'Invalid arguments %s' % (', '.join(kwargs),))
         self.storage = threading.local()
 
     def defaults_stack(self):
@@ -185,7 +184,7 @@ class Settings(object):
             options = tuple(options)
             if default not in options:
                 raise InvalidArgument(
-                    u'Default value %r is not in options %r' % (
+                    'Default value %r is not in options %r' % (
                         default, options
                     )
                 )
@@ -199,15 +198,15 @@ class Settings(object):
             setting = all_settings[name]
             if setting.options is not None and value not in setting.options:
                 raise InvalidArgument(
-                    u'Invalid %s, %r. Valid options: %r' % (
+                    'Invalid %s, %r. Valid options: %r' % (
                         name, value, setting.options
                     )
                 )
         if (
             name not in all_settings and
-            name not in (u'storage', u'_database')
+            name not in ('storage', '_database')
         ):
-            raise AttributeError(u'No such setting %s' % (name,))
+            raise AttributeError('No such setting %s' % (name,))
         else:
             return object.__setattr__(self, name, value)
 
@@ -215,9 +214,9 @@ class Settings(object):
         bits = []
         for name in all_settings:
             value = getattr(self, name)
-            bits.append(u'%s=%r' % (name, value))
+            bits.append('%s=%r' % (name, value))
         bits.sort()
-        return u'Settings(%s)' % u', '.join(bits)
+        return 'Settings(%s)' % ', '.join(bits)
 
     @property
     def database(self):
@@ -254,12 +253,11 @@ class Settings(object):
 
 Settings.default_variable = DynamicVariable(Settings())
 
-Setting = namedtuple(
-    u'Setting', (u'name', u'description', u'default', u'options'))
+Setting = namedtuple('Setting', ('name', 'description', 'default', 'options'))
 
 
 Settings.define_setting(
-    u'min_satisfying_examples',
+    'min_satisfying_examples',
     default=5,
     description="""
 Raise Unsatisfiable for any tests which do not produce at least this many
@@ -269,7 +267,7 @@ search space.
 )
 
 Settings.define_setting(
-    u'max_examples',
+    'max_examples',
     default=200,
     description="""
 Once this many satisfying examples have been considered without finding any
@@ -278,7 +276,7 @@ counter-example, falsification will terminate.
 )
 
 Settings.define_setting(
-    u'max_iterations',
+    'max_iterations',
     default=1000,
     description="""
 Once this many iterations of the example loop have run, including ones which
@@ -288,7 +286,7 @@ will terminate.
 )
 
 Settings.define_setting(
-    u'max_shrinks',
+    'max_shrinks',
     default=500,
     description="""
 Once this many successful shrinks have been performed, Hypothesis will assume
@@ -298,7 +296,7 @@ shrink the example.
 )
 
 Settings.define_setting(
-    u'timeout',
+    'timeout',
     default=60,
     description="""
 Once this amount of time has passed, falsify will terminate even
@@ -310,7 +308,7 @@ applied.
 )
 
 Settings.define_setting(
-    u'derandomize',
+    'derandomize',
     default=False,
     description="""
 If this is True then hypothesis will run in deterministic mode
@@ -324,8 +322,8 @@ find novel breakages.
 )
 
 Settings.define_setting(
-    u'strict',
-    default=os.getenv(u'HYPOTHESIS_STRICT_MODE') == u'true',
+    'strict',
+    default=os.getenv('HYPOTHESIS_STRICT_MODE') == 'true',
     description="""
 If set to True, anything that would cause Hypothesis to issue a warning will
 instead raise an error.
@@ -333,10 +331,10 @@ instead raise an error.
 )
 
 Settings.define_setting(
-    u'database_file',
+    'database_file',
     default=lambda: (
-        os.getenv(u'HYPOTHESIS_DATABASE_FILE') or
-        os.path.join(hypothesis_home_dir(), u'examples.db')
+        os.getenv('HYPOTHESIS_DATABASE_FILE') or
+        os.path.join(hypothesis_home_dir(), 'examples.db')
     ),
     description="""
     database: An instance of hypothesis.database.ExampleDatabase that will be
@@ -349,7 +347,7 @@ in which case no storage will be used.
 class Verbosity(object):
 
     def __repr__(self):
-        return u'Verbosity.%s' % (self.name,)
+        return 'Verbosity.%s' % (self.name,)
 
     def __init__(self, name, level):
         self.name = name
@@ -383,18 +381,18 @@ class Verbosity(object):
         result = getattr(cls, key, None)
         if isinstance(result, Verbosity):
             return result
-        raise InvalidArgument(u'No such verbosity level %r' % (key,))
+        raise InvalidArgument('No such verbosity level %r' % (key,))
 
-Verbosity.quiet = Verbosity(u'quiet', 0)
-Verbosity.normal = Verbosity(u'normal', 1)
-Verbosity.verbose = Verbosity(u'verbose', 2)
-Verbosity.debug = Verbosity(u'debug', 3)
+Verbosity.quiet = Verbosity('quiet', 0)
+Verbosity.normal = Verbosity('normal', 1)
+Verbosity.verbose = Verbosity('verbose', 2)
+Verbosity.debug = Verbosity('debug', 3)
 Verbosity.all = [
     Verbosity.quiet, Verbosity.normal, Verbosity.verbose, Verbosity.debug
 ]
 
 
-ENVIRONMENT_VERBOSITY_OVERRIDE = os.getenv(u'HYPOTHESIS_VERBOSITY_LEVEL')
+ENVIRONMENT_VERBOSITY_OVERRIDE = os.getenv('HYPOTHESIS_VERBOSITY_LEVEL')
 
 if ENVIRONMENT_VERBOSITY_OVERRIDE:
     DEFAULT_VERBOSITY = Verbosity.by_name(ENVIRONMENT_VERBOSITY_OVERRIDE)
@@ -402,8 +400,8 @@ else:
     DEFAULT_VERBOSITY = Verbosity.normal
 
 Settings.define_setting(
-    u'verbosity',
+    'verbosity',
     options=Verbosity.all,
     default=DEFAULT_VERBOSITY,
-    description=u'Control the verbosity level of Hypothesis messages',
+    description='Control the verbosity level of Hypothesis messages',
 )

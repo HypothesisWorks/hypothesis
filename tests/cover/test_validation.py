@@ -14,7 +14,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 import pytest
 from hypothesis import given
@@ -28,7 +29,7 @@ def test_errors_when_given_varargs():
         @given(integers())
         def has_varargs(*args):
             pass
-    assert u'varargs' in e.value.args[0]
+    assert 'varargs' in e.value.args[0]
 
 
 def test_varargs_without_positional_arguments_allowed():
@@ -42,7 +43,7 @@ def test_errors_when_given_varargs_and_kwargs_with_positional_arguments():
         @given(integers())
         def has_varargs(*args, **kw):
             pass
-    assert u'varargs' in e.value.args[0]
+    assert 'varargs' in e.value.args[0]
 
 
 def test_varargs_and_kwargs_without_positional_arguments_allowed():
@@ -86,7 +87,7 @@ def test_cannot_put_kwargs_in_the_middle():
 
 def test_float_ranges():
     with pytest.raises(InvalidArgument):
-        floats(float(u'nan'), 0)
+        floats(float('nan'), 0)
     with pytest.raises(InvalidArgument):
         floats(1, -1)
 

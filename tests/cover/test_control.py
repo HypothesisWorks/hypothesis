@@ -14,7 +14,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 import pytest
 from hypothesis.errors import CleanupFailed, InvalidArgument
@@ -61,7 +62,7 @@ def test_suppresses_exceptions_in_teardown():
                 cleanup(foo)
                 assert False
 
-    assert u'ValueError' in o.getvalue()
+    assert 'ValueError' in o.getvalue()
 
 
 def test_runs_multiple_cleanup_with_teardown():
@@ -78,8 +79,8 @@ def test_runs_multiple_cleanup_with_teardown():
                 cleanup(bar)
                 assert False
 
-    assert u'ValueError' in o.getvalue()
-    assert u'TypeError' in o.getvalue()
+    assert 'ValueError' in o.getvalue()
+    assert 'TypeError' in o.getvalue()
 
 
 def test_raises_error_if_cleanup_fails_but_block_does_not():

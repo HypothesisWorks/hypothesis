@@ -14,7 +14,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 from contextlib import contextmanager
 
@@ -52,7 +53,7 @@ def test_prints_intermediate_in_success():
             pass
         test_works()
     lines = o.getvalue().splitlines()
-    assert len([l for l in lines if u'example' in l]) == 2
+    assert len([l for l in lines if 'example' in l]) == 2
 
 
 def test_reports_differently_for_single_shrink():
@@ -62,7 +63,7 @@ def test_reports_differently_for_single_shrink():
         def test_foo(x):
             assert False
         test_foo()
-    assert u'shrunk example once' in o.getvalue()
+    assert 'shrunk example once' in o.getvalue()
 
 
 def test_reports_no_shrinks():
@@ -72,7 +73,7 @@ def test_reports_no_shrinks():
         def test_foo(x):
             assert False
         test_foo()
-    assert u'Could not shrink example' in o.getvalue()
+    assert 'Could not shrink example' in o.getvalue()
 
 
 def test_does_not_log_in_quiet_mode():
@@ -93,8 +94,8 @@ def test_includes_progress_in_verbose_mode():
 
     out = o.getvalue()
     assert out
-    assert u'Shrunk example' in out
-    assert u'Found satisfying example' in out
+    assert 'Shrunk example' in out
+    assert 'Found satisfying example' in out
 
 
 def test_prints_initial_attempts_on_find():
@@ -110,7 +111,7 @@ def test_prints_initial_attempts_on_find():
                 return x not in seen
             find(integers(), not_first)
 
-    assert u'Trying example' in o.getvalue()
+    assert 'Trying example' in o.getvalue()
 
 
 def test_includes_intermediate_results_in_verbose_mode():
@@ -122,5 +123,5 @@ def test_includes_intermediate_results_in_verbose_mode():
 
         test_foo()
     lines = o.getvalue().splitlines()
-    assert len([l for l in lines if u'example' in l]) > 2
-    assert len([l for l in lines if u'AssertionError' in l])
+    assert len([l for l in lines if 'example' in l]) > 2
+    assert len([l for l in lines if 'AssertionError' in l])

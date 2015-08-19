@@ -1,6 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
-
 # coding=utf-8
 
 # This file is part of Hypothesis (https://github.com/DRMacIver/hypothesis)
@@ -17,6 +14,10 @@ from __future__ import division, print_function, absolute_import
 
 # END HEADER
 
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
+
+
 class UniqueIdentifier(object):
 
     def __init__(self, identifier):
@@ -26,4 +27,4 @@ class UniqueIdentifier(object):
         return self.identifier
 
 
-not_set = UniqueIdentifier(u'not_set')
+not_set = UniqueIdentifier('not_set')

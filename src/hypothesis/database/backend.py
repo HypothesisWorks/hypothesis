@@ -14,7 +14,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 import sqlite3
 from abc import abstractmethod
@@ -61,7 +62,7 @@ class Backend(object):
 
 class SQLiteBackend(Backend):
 
-    def __init__(self, path=u':memory:'):
+    def __init__(self, path=':memory:'):
         self.path = path
         self.db_created = False
         self.__connection = None
@@ -78,7 +79,7 @@ class SQLiteBackend(Backend):
             c.close()
 
     def __repr__(self):
-        return u'%s(%s)' % (self.__class__.__name__, self.path)
+        return '%s(%s)' % (self.__class__.__name__, self.path)
 
     def data_type(self):
         return text_type

@@ -14,7 +14,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 import django.db.models as dm
 import hypothesis.strategies as st
@@ -62,7 +63,7 @@ def field_mappings():
             dm.CharField: st.text(),
             dm.TextField: st.text(),
             dm.DateTimeField: datetimes(allow_naive=False),
-            dm.EmailField: ff.fake_factory(u'email'),
+            dm.EmailField: ff.fake_factory('email'),
             dm.FloatField: st.floats(),
             dm.NullBooleanField: st.one_of(st.none(), st.booleans()),
         }
@@ -92,9 +93,9 @@ def models(model, **extra):
     missed = {x for x in mandatory if x not in extra}
     if missed:
         raise InvalidArgument((
-            u'Missing arguments for mandatory field%s %s for model %s' % (
-                u's' if len(missed) > 1 else u'',
-                u', '.join(missed),
+            'Missing arguments for mandatory field%s %s for model %s' % (
+                's' if len(missed) > 1 else '',
+                ', '.join(missed),
                 model.__name__,
             )))
     for k, v in extra.items():
@@ -114,7 +115,7 @@ class ModelStrategy(MappedSearchStrategy):
             strategy=st.fixed_dictionaries(mappings))
 
     def __repr__(self):
-        return u'ModelStrategy(%s)' % (self.model.__name__,)
+        return 'ModelStrategy(%s)' % (self.model.__name__,)
 
     def pack(self, value):
         try:

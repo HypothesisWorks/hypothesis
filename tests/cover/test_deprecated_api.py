@@ -14,7 +14,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 import sys
 from random import Random
@@ -42,7 +43,7 @@ def teardown_module():
     Settings.default.strict = original_strictness
 
 
-@pytest.mark.parametrize(u'typ', [
+@pytest.mark.parametrize('typ', [
     complex, float, bool, Random, type(None), text_type, binary_type,
     Decimal, Fraction,
 ])
@@ -84,7 +85,7 @@ def test_none_is_none():
 
 
 @pytest.mark.parametrize(
-    u'col', [
+    'col', [
         [], set(), frozenset(), {},
     ]
 )
@@ -95,7 +96,7 @@ def test_sets_give_sets(col):
 
 
 @pytest.mark.parametrize(
-    u'coltype', [
+    'coltype', [
         list, set, tuple, frozenset,
     ]
 )
@@ -129,7 +130,7 @@ def test_one_of():
 
 
 def test_fixed_dict():
-    assert strategy({u'k': None}).example() == {u'k': None}
+    assert strategy({'k': None}).example() == {'k': None}
 
 
 def test_sampled_from_one():
@@ -146,7 +147,7 @@ def test_tree():
     assert isinstance(tree, (Branch, Leaf))
 
 
-@pytest.mark.parametrize(u'r', [
+@pytest.mark.parametrize('r', [
     s.floats_in_range(0, 1),
     s.floats_in_range(1, 2),
     s.floats_in_range(1, 1),
@@ -157,12 +158,12 @@ def test_float_ranges(r):
 
 
 def test_strings():
-    x = strategy(s.strings(u'a')).example()
-    assert set(x).issubset(set(u'a'))
+    x = strategy(s.strings('a')).example()
+    assert set(x).issubset(set('a'))
 
 
 def test_empty_strings():
-    assert strategy(s.strings(u'')).example() == u''
+    assert strategy(s.strings('')).example() == ''
 
 
 def test_single_float_in_range():
@@ -174,7 +175,7 @@ def test_float_range_validates():
         s.floats_in_range(2, 1)
 
     with pytest.raises(InvalidArgument):
-        s.floats_in_range(1, float(u'inf'))
+        s.floats_in_range(1, float('inf'))
 
 
 def test_sampled_from_validates():
@@ -183,7 +184,7 @@ def test_sampled_from_validates():
 
 
 def test_can_generate_named_tuples():
-    T = namedtuple(u'T', (u'a', u'b'))
+    T = namedtuple('T', ('a', 'b'))
     t = find(T(int, int), lambda x: x.a < x.b)
     assert t.b == t.a + 1
 

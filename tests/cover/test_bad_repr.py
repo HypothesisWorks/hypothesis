@@ -14,7 +14,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 import hypothesis.strategies as st
 from hypothesis import given
@@ -31,16 +32,16 @@ class BadRepr(object):
         return self.value
 
 
-Frosty = BadRepr(u'☃')
+Frosty = BadRepr('☃')
 
 
 def test_just_frosty():
-    assert unicode_safe_repr(st.just(Frosty)) == u'just(☃)'
+    assert unicode_safe_repr(st.just(Frosty)) == 'just(☃)'
 
 
 def test_sampling_snowmen():
     assert unicode_safe_repr(st.sampled_from((
-        Frosty, u'hi'))) == u'sampled_from((☃, %s))' % (repr(u'hi'),)
+        Frosty, 'hi'))) == 'sampled_from((☃, %s))' % (repr('hi'),)
 
 
 def varargs(*args, **kwargs):
@@ -48,12 +49,12 @@ def varargs(*args, **kwargs):
 
 
 def test_arg_strings_are_bad_repr_safe():
-    assert arg_string(varargs, (Frosty,), {}) == u'☃'
-    assert arg_string(varargs, (), {u'x': Frosty}) == u'x=☃'
+    assert arg_string(varargs, (Frosty,), {}) == '☃'
+    assert arg_string(varargs, (), {'x': Frosty}) == 'x=☃'
 
 
 @given(st.sampled_from([
-    u'✐', u'✑', u'✒', u'✓', u'✔', u'✕', u'✖', u'✗', u'✘',
-    u'✙', u'✚', u'✛', u'✜', u'✝', u'✞', u'✟', u'✠', u'✡', u'✢', u'✣']))
+    '✐', '✑', '✒', '✓', '✔', '✕', '✖', '✗', '✘',
+    '✙', '✚', '✛', '✜', '✝', '✞', '✟', '✠', '✡', '✢', '✣']))
 def test_sampled_from_bad_repr(c):
     pass

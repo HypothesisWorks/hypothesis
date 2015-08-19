@@ -14,7 +14,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 from django.test import TestCase
 from hypothesis.strategies import just, lists
@@ -79,8 +80,8 @@ class TestFinding(TestCase):
 
     def test_can_find_with_multiple_unique(self):
         x = a_gendered_customer()
-        self.assertEqual(u'0', x.name)
-        self.assertEqual(u'0', x.gender)
+        self.assertEqual('0', x.name)
+        self.assertEqual('0', x.gender)
 
     def test_can_find_with_children(self):
         x = a_company_with_some_stores()

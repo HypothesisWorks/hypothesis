@@ -14,7 +14,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 import os
 
@@ -26,7 +27,7 @@ from tests.common.utils import capture_out
 from hypothesis.strategies import sets, booleans, integers
 
 ForkingTestCase = pytest.importorskip(
-    u'hypothesis.testrunners.forking'
+    'hypothesis.testrunners.forking'
 ).ForkingTestCase
 
 
@@ -37,7 +38,7 @@ def test_runs_normally_if_no_failure():
         def runs_normally(self, x):
             pass
 
-    Foo(u'runs_normally').runs_normally()
+    Foo('runs_normally').runs_normally()
 
 
 def test_can_assume_in_a_fork():
@@ -46,7 +47,7 @@ def test_can_assume_in_a_fork():
         @given(booleans())
         def only_true(self, x):
             assume(x)
-    Foo(u'only_true').only_true()
+    Foo('only_true').only_true()
 
 
 def test_raises_abnormal_exit_if_bad_pickle_in_exception():
@@ -62,7 +63,7 @@ def test_raises_abnormal_exit_if_bad_pickle_in_exception():
             raise Boo()
 
     with pytest.raises(AbnormalExit):
-        TestBoo(u'test_boo').test_boo()
+        TestBoo('test_boo').test_boo()
 
 
 def test_raises_abnormal_exit_on_premature_child_death():
@@ -74,7 +75,7 @@ def test_raises_abnormal_exit_on_premature_child_death():
 
     with pytest.raises(AbnormalExit):
         TestForking(
-            u'test_handles_abnormal_exit'
+            'test_handles_abnormal_exit'
         ).test_handles_abnormal_exit()
 
 
@@ -87,7 +88,7 @@ def test_passes_exceptions_back():
 
     with pytest.raises(AssertionError):
         TestForking(
-            u'test_positive'
+            'test_positive'
         ).test_positive()
 
 
@@ -102,10 +103,10 @@ def test_captures_output_from_child():
         with capture_out() as out:
             with pytest.raises(AssertionError):
                 TestForking(
-                    u'test_positive'
+                    'test_positive'
                 ).test_positive()
         out = out.getvalue()
-        assert u'Falsifying example: test_positive' in out
+        assert 'Falsifying example: test_positive' in out
 
 
 def test_captures_output_from_child_under_abnormal_exit():
@@ -119,7 +120,7 @@ def test_captures_output_from_child_under_abnormal_exit():
         with capture_out() as out:
             with pytest.raises(AbnormalExit):
                 TestForking(
-                    u'test_death'
+                    'test_death'
                 ).test_death()
         out = out.getvalue()
-        assert u'Falsifying example: test_death' in out
+        assert 'Falsifying example: test_death' in out

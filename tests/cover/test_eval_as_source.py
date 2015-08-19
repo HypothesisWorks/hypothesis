@@ -14,18 +14,19 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 from hypothesis.internal.reflection import source_exec_as_module
 
 
 def test_can_eval_as_source():
-    assert source_exec_as_module(u'foo=1').foo == 1
+    assert source_exec_as_module('foo=1').foo == 1
 
 
 def test_caches():
-    x = source_exec_as_module(u'foo=2')
-    y = source_exec_as_module(u'foo=2')
+    x = source_exec_as_module('foo=2')
+    y = source_exec_as_module('foo=2')
     assert x is y
 
 

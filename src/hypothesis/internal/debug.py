@@ -14,7 +14,8 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 
 import time
 import signal
@@ -47,7 +48,7 @@ try:
 
                 def handler(signum, frame):
                     raise Timeout(
-                        u'Timed out after %.2fs' % (time.time() - start))
+                        'Timed out after %.2fs' % (time.time() - start))
 
                 old_handler = signal.signal(signal.SIGALRM, handler)
                 signal.alarm(seconds)
@@ -104,12 +105,12 @@ def some_template(spec, random=None):
         except UnsatisfiedAssumption:
             pass
     else:
-        raise NoExamples(u'some_template called on strategy with no examples')
+        raise NoExamples('some_template called on strategy with no examples')
 
 
 def via_database(spec, strat, template):
     db = ExampleDatabase()
-    key = u'via_database'
+    key = 'via_database'
     try:
         s = db.storage(key)
         s.save(template, strat)
