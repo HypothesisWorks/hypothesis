@@ -23,11 +23,11 @@ from decimal import Decimal
 from fractions import Fraction
 
 import pytest
-from hypothesis import Settings, assume
+from hypothesis import Settings, find, assume
 from tests.common import parametrize, ordered_pair, constant_list
 from hypothesis.strategies import just, sets, text, lists, binary, \
     floats, tuples, booleans, decimals, integers, fractions, frozensets, \
-    dictionaries
+    dictionaries, sampled_from
 from hypothesis.internal.debug import minimal
 from hypothesis.internal.compat import PY3, Counter, OrderedDict, hrange, \
     reduce
@@ -238,6 +238,19 @@ def test_can_simplify_on_both_sides_of_flatmap():
         integers().flatmap(lambda x: lists(just(x))),
         lambda x: len(x) >= 10
     ) == [0] * 10
+
+
+def test_flatmap_rectangles():
+    lengths = integers(min_value=0, max_value=10)
+
+    def lists_of_length(n):
+        return lists(sampled_from('ab'), min_size=n, max_size=n)
+
+    xs = find(lengths.flatmap(
+        lambda w: lists(lists_of_length(w))), lambda x: ['a', 'b'] in x,
+        settings=Settings(database=None, max_examples=2000)
+    )
+    assert xs == [['a', 'b']]
 
 
 @parametrize(u'dict_class', [dict, OrderedDict])

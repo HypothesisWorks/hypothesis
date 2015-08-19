@@ -108,10 +108,14 @@ class Morpher(object):
             self.parameter_seed, self.template_seed, self.data)
 
     def __trackas__(self):
-        return [
-            self.parameter_seed, self.template_seed,
-            self.data,
-        ]
+        if self.current_strategy is not None:
+            return [0, self.current_template]
+        else:
+            return [
+                1,
+                self.parameter_seed, self.template_seed,
+                self.data,
+            ]
 
     def __repr__(self):
         return u'Morpher(%d, %d, %r)' % (
