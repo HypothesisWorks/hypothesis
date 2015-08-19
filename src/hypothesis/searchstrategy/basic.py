@@ -21,6 +21,7 @@ from copy import deepcopy
 from random import Random
 from weakref import WeakKeyDictionary
 
+import hypothesis.internal.distributions as dist
 from hypothesis.settings import Settings
 from hypothesis.internal.compat import hrange, integer_types
 
@@ -200,17 +201,23 @@ class BasicSearchStrategy(SearchStrategy):
             up = random.getrandbits(64)
         else:
             up = 0
+        n_distinct_templates = dist.geometric(random, random.random())
         template_choices = tuple(
             random.getrandbits(64)
-            for _ in hrange(10)
+            for _ in hrange(n_distinct_templates)
         )
         return (up, template_choices)
 
     def draw_template(self, random, parameter):
         up, template_choices = parameter
-        return Generated(
-            random.choice(template_choices), up
-        )
+        if template_choices:
+            return Generated(
+                random.choice(template_choices), up
+            )
+        else:
+            return Generated(
+                random.getrandbits(64), up
+            )
 
     def strictly_simpler(self, x, y):
         return x.depth > y.depth
