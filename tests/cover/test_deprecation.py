@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import pytest
 from hypothesis import Settings, Verbosity, given, strategy
@@ -32,12 +31,12 @@ def test_strategy_does_not_warn_on_strategies(recwarn):
 
 def test_raises_in_strict_mode():
     with pytest.raises(HypothesisDeprecationWarning):
-        strategy(just('test_raises_in_strict_mode'), Settings(strict=True))
+        strategy(just(u'test_raises_in_strict_mode'), Settings(strict=True))
 
 
 def test_strategy_warns_on_non_strategies(recwarn):
     strategy(
-        just('test_strategy_warns_on_non_strategies'),
+        just(u'test_strategy_warns_on_non_strategies'),
         Settings(strict=False))
     assert recwarn.pop(DeprecationWarning) is not None
 

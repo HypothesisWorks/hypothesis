@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import math
 import unittest
@@ -33,7 +32,7 @@ class Show(ExtMethod):
         if seen is None:
             seen = IdentitySet()
         if value in seen:
-            return '(...)'
+            return u'(...)'
         seen.add(value)
         result = super(Show, self).__call__(value, seen)
         seen.remove(value)
@@ -50,13 +49,13 @@ def repr_string(value, seen):
 
 @show.extend(object)
 def generic_string(value, seen):
-    if hasattr(value, '__name__'):
+    if hasattr(value, u'__name__'):
         return value.__name__
     try:
         d = value.__dict__
     except AttributeError:
         if type(value) == object:
-            return 'object()'
+            return u'object()'
         else:
             return repr(value)
     if (
@@ -65,10 +64,10 @@ def generic_string(value, seen):
     ):
         return repr(value)
     else:
-        return '%s(%s)' % (
+        return u'%s(%s)' % (
             value.__class__.__name__,
-            ', '.join(
-                '%s=%s' % (
+            u', '.join(
+                u'%s=%s' % (
                     k2, show(v2, seen)
                 ) for k2, v2 in d.items()
             )
@@ -78,7 +77,7 @@ def generic_string(value, seen):
 @show.extend(text_type)
 def text_string(value, seen):
     result = repr(value)
-    if result[0] == 'u':  # pragma: no branch
+    if result[0] == u'u':  # pragma: no branch
         return result[1:]  # pragma: no cover
     else:
         return result  # pragma: no cover
@@ -87,8 +86,8 @@ def text_string(value, seen):
 @show.extend(binary_type)
 def binary_string(value, seen):
     result = repr(value)
-    if result[0] != 'b':  # pragma: no branch
-        return 'b' + result  # pragma: no cover
+    if result[0] != u'b':  # pragma: no branch
+        return u'b' + result  # pragma: no cover
     else:
         return result  # pragma: no cover
 
@@ -105,7 +104,7 @@ def is_nasty_float(x):
 @show.extend(float)
 def float_string(value, seen):
     if is_nasty_float(value):
-        return 'float(%r)' % (str(value),)
+        return u'float(%r)' % (str(value),)
     else:
         return repr(value)
 
@@ -114,16 +113,16 @@ def float_string(value, seen):
 def complex_string(x, seen):
     if is_nasty_float(x.real) or is_nasty_float(x.imag):
         r = repr(x)
-        if r[0] == '(' and r[-1] == ')':
+        if r[0] == u'(' and r[-1] == u')':
             r = r[1:-1]
-        return 'complex(%r)' % (r,)
+        return u'complex(%r)' % (r,)
     else:
         return repr(x)
 
 
 @show.extend(list)
 def list_string(value, seen):
-    return '[%s]' % (', '.join(
+    return u'[%s]' % (u', '.join(
         show(c, seen) for c in value
     ))
 
@@ -131,7 +130,7 @@ def list_string(value, seen):
 @show.extend(set)
 def set_string(value, seen):
     if value:
-        return '{%s}' % (', '.join(sorted(
+        return u'{%s}' % (u', '.join(sorted(
             show(c, seen) for c in value
         )))
     else:
@@ -141,7 +140,7 @@ def set_string(value, seen):
 @show.extend(frozenset)
 def frozenset_string(value, seen):
     if value:
-        return 'frozenset({%s})' % (', '.join(sorted(
+        return u'frozenset({%s})' % (u', '.join(sorted(
             show(c, seen) for c in value
         )))
     else:
@@ -150,32 +149,32 @@ def frozenset_string(value, seen):
 
 @show.extend(tuple)
 def tuple_string(value, seen):
-    if hasattr(value, '_fields'):
-        return '%s(%s)' % (
+    if hasattr(value, u'_fields'):
+        return u'%s(%s)' % (
             value.__class__.__name__,
-            ', '.join(
-                '%s=%s' % (f, show(getattr(value, f), seen))
+            u', '.join(
+                u'%s=%s' % (f, show(getattr(value, f), seen))
                 for f in value._fields))
     else:
-        core = ', '.join(
+        core = u', '.join(
             show(c, seen) for c in value
         )
         if len(value) == 1:
-            core += ','
-        return '(%s)' % (core,)
+            core += u','
+        return u'(%s)' % (core,)
 
 
 @show.extend(dict)
 def dict_string(value, seen):
-    return '{' + ', '.join(sorted([
-        show(k1, seen) + ': ' + show(v1, seen)
+    return u'{' + u', '.join(sorted([
+        show(k1, seen) + u': ' + show(v1, seen)
         for k1, v1 in value.items()
-    ])) + '}'
+    ])) + u'}'
 
 
 @show.extend(unittest.TestCase)
 def test_string(value, seen):
-    return '%s(methodName=%r)' % (
+    return u'%s(methodName=%r)' % (
         type(value).__name__,
         value._testMethodName,
     )
@@ -183,7 +182,7 @@ def test_string(value, seen):
 
 def int_string(value, seen):
     s = repr(value)
-    if s[-1] == 'L':  # pragma: no branch
+    if s[-1] == u'L':  # pragma: no branch
         s = s[:-1]  # pragma: no cover
     return s
 

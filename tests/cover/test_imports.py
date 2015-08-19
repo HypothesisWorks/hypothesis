@@ -16,14 +16,11 @@
 
 from __future__ import division, print_function, absolute_import
 
-import pytest
-import hypothesis.specifiers as specifiers
+from hypothesis import *
+from hypothesis.strategies import *
 
 
-def test_errors_on_empty_one_of():
-    with pytest.raises(ValueError):
-        specifiers.one_of([])
-
-
-def test_returns_just_a_single_element():
-    assert specifiers.one_of([1]) == 1
+def test_can_star_import_from_hypothesis():
+    find(lists(integers()), lambda x: sum(x) > 1, settings=Settings(
+        max_examples=10000, verbosity=Verbosity.quiet
+    ))

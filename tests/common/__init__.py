@@ -14,10 +14,6 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
-
-
 import sys
 from collections import namedtuple
 
@@ -38,10 +34,10 @@ from hypothesis.utils.show import show
 
 settings = Settings(max_examples=100, timeout=4)
 
-__all__ = ['small_verifier', 'timeout', 'standard_types', 'OrderedPair']
+__all__ = [u'small_verifier', u'timeout', u'standard_types', u'OrderedPair']
 
 
-OrderedPair = namedtuple('OrderedPair', ('left', 'right'))
+OrderedPair = namedtuple(u'OrderedPair', (u'left', u'right'))
 
 
 ordered_pair = integers().flatmap(
@@ -57,7 +53,7 @@ def constant_list(strat):
 
 EvalledIntStream = streaming(integers()).map(lambda x: list(x[:5]) and x)
 
-ABC = namedtuple('ABC', ('a', 'b', 'c'))
+ABC = namedtuple(u'ABC', (u'a', u'b', u'c'))
 
 
 def abc(x, y, z):
@@ -74,13 +70,13 @@ with Settings(average_list_length=10.0):
         abc(booleans(), booleans(), booleans()),
         abc(booleans(), booleans(), integers()),
         templates_for(one_of(*map(just, hrange(10)))),
-        fixed_dictionaries({'a': integers(), 'b': booleans()}),
+        fixed_dictionaries({u'a': integers(), u'b': booleans()}),
         dictionaries(booleans(), integers()),
         dictionaries(text(), booleans()),
         one_of(integers(), tuples(booleans())),
         sampled_from(range(10)),
-        one_of(just('a'), just('b'), just('c')),
-        sampled_from(('a', 'b', 'c')),
+        one_of(just(u'a'), just(u'b'), just(u'c')),
+        sampled_from((u'a', u'b', u'c')),
         integers(),
         integers(min_value=3),
         integers(min_value=(-2 ** 32), max_value=(2 ** 64)),

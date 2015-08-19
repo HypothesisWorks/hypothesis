@@ -14,14 +14,13 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import pytest
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import sets, floats, booleans, integers, \
-    dictionaries
+from hypothesis.strategies import sets, lists, floats, booleans, \
+    integers, frozensets, dictionaries
 
 
 def test_errors_when_given_varargs():
@@ -29,7 +28,7 @@ def test_errors_when_given_varargs():
         @given(integers())
         def has_varargs(*args):
             pass
-    assert 'varargs' in e.value.args[0]
+    assert u'varargs' in e.value.args[0]
 
 
 def test_varargs_without_positional_arguments_allowed():
@@ -43,7 +42,7 @@ def test_errors_when_given_varargs_and_kwargs_with_positional_arguments():
         @given(integers())
         def has_varargs(*args, **kw):
             pass
-    assert 'varargs' in e.value.args[0]
+    assert u'varargs' in e.value.args[0]
 
 
 def test_varargs_and_kwargs_without_positional_arguments_allowed():
@@ -87,7 +86,7 @@ def test_cannot_put_kwargs_in_the_middle():
 
 def test_float_ranges():
     with pytest.raises(InvalidArgument):
-        floats(float('nan'), 0)
+        floats(float(u'nan'), 0)
     with pytest.raises(InvalidArgument):
         floats(1, -1)
 
@@ -100,3 +99,10 @@ def test_dictionary_key_size():
 def test_set_size():
     with pytest.raises(InvalidArgument):
         sets(elements=booleans(), min_size=3)
+
+
+def test_does_not_error_if_min_size_is_bigger_than_default_size():
+    lists(integers(), min_size=50)
+    sets(integers(), min_size=50)
+    frozensets(integers(), min_size=50)
+    lists(integers(), min_size=50, unique_by=lambda x: x)

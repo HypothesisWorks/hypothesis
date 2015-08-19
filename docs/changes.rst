@@ -21,6 +21,33 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+-----------------------------------------------------------------------
+`1.10.3 <https://hypothesis.readthedocs.org/en/v1.10.2/>`_ - 2015-08-19
+-----------------------------------------------------------------------
+
+Another small bug fix release.
+
+* lists(elements, unique_by=some_function, min_size=n) would have raised a
+  ValidationError if n > Settings.default.average_list_length because it would
+  have wanted to use an average list length shorter than the minimum size of
+  the list, which is impossible. Now it instead defaults to twice the minimum
+  size in these circumstances.
+* basic() strategy would have only ever produced at most ten distinct values
+  per run of the test (which is bad if you e.g. have it inside a list). This
+  was obviously silly. It will now produce a much better distribution of data,
+  both duplicated and non duplicated.
+
+
+-----------------------------------------------------------------------
+`1.10.2 <https://hypothesis.readthedocs.org/en/v1.10.2/>`_ - 2015-08-19
+-----------------------------------------------------------------------
+
+This is a small bug fix release:
+
+* star imports from hypothesis should now work correctly.
+* example quality for examples using flatmap will be better, as the way it had
+  previously been implemented was causing problems where Hypothesis was
+  erroneously labelling some examples as being duplicates.
 
 -----------------------------------------------------------------------
 `1.10.0 <https://hypothesis.readthedocs.org/en/v1.10.0/>`_ - 2015-08-04

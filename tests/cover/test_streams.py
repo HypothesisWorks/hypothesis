@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 from copy import copy, deepcopy
 from random import Random
@@ -56,7 +55,7 @@ def test_can_stream_infinite():
 
 @given(streaming(text()))
 def test_fetched_repr_is_in_stream_repr(s):
-    assert repr(s) == 'Stream(...)'
+    assert repr(s) == u'Stream(...)'
     assert show(next(iter(s))) in show(s)
 
 
@@ -81,7 +80,7 @@ def test_thunking_map_evaluates_source():
 
 def test_wrong_index_raises_type_error():
     with pytest.raises(InvalidArgument):
-        Stream([])['kittens']
+        Stream([])[u'kittens']
 
 
 def test_can_index_into_unindexed():

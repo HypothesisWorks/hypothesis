@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import inspect
 
@@ -53,7 +52,7 @@ basic_test_cases = [
 ]
 
 
-@pytest.mark.parametrize(('f', 'g'), basic_test_cases)
+@pytest.mark.parametrize((u'f', u'g'), basic_test_cases)
 def test_argspec_lines_up(f, g):
     af = inspect.getargspec(f)
     ag = inspect.getargspec(g(f))
@@ -67,13 +66,13 @@ def test_does_not_convert_unknown_kwargs_into_args():
     def greet(hello, **kwargs):
         pass
 
-    assert inspect.getargspec(greet).args == ['hello']
+    assert inspect.getargspec(greet).args == [u'hello']
 
 
 def test_provided_kwargs_are_defaults():
     @given(hello=booleans(), world=booleans())
     def greet(hello, **kwargs):
-        assert hello == 'salve'
-        assert kwargs == {'world': 'mundi'}
+        assert hello == u'salve'
+        assert kwargs == {u'world': u'mundi'}
 
-    greet('salve', world='mundi')
+    greet(u'salve', world=u'mundi')

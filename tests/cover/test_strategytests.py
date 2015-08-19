@@ -17,8 +17,8 @@
 # most interesting tests of this nature are exected in nocover, but we have
 # a few here to make sure we have coverage of the strategytests module itself.
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+
+from __future__ import division, print_function, absolute_import
 
 from hypothesis.strategies import sets, booleans, integers
 from hypothesis.strategytests import strategy_test_suite

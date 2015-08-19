@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import ast
 import sys
@@ -48,10 +47,10 @@ def test_simple_conversion():
     assert convert_keyword_arguments(
         foo, (1, 2, 3), {}) == ((1, 2, 3), {})
     assert convert_keyword_arguments(
-        foo, (), {'a': 3, 'b': 2, 'c': 1}) == ((3, 2, 1), {})
+        foo, (), {u'a': 3, u'b': 2, u'c': 1}) == ((3, 2, 1), {})
 
-    do_conversion_test(foo, (1, 0), {'c': 2})
-    do_conversion_test(foo, (1,), {'c': 2, 'b': 'foo'})
+    do_conversion_test(foo, (1, 0), {u'c': 2})
+    do_conversion_test(foo, (1,), {u'c': 2, u'b': u'foo'})
 
 
 def test_populates_defaults():
@@ -59,7 +58,7 @@ def test_populates_defaults():
         pass
 
     assert convert_keyword_arguments(bar, (), {}) == (([], 1), {})
-    assert convert_keyword_arguments(bar, (), {'y': 42}) == (([], 42), {})
+    assert convert_keyword_arguments(bar, (), {u'y': 42}) == (([], 42), {})
     do_conversion_test(bar, (), {})
     do_conversion_test(bar, (1,), {})
 
@@ -68,14 +67,14 @@ def test_leaves_unknown_kwargs_in_dict():
     def bar(x, **kwargs):
         pass
 
-    assert convert_keyword_arguments(bar, (1,), {'foo': 'hi'}) == (
-        (1,), {'foo': 'hi'}
+    assert convert_keyword_arguments(bar, (1,), {u'foo': u'hi'}) == (
+        (1,), {u'foo': u'hi'}
     )
-    assert convert_keyword_arguments(bar, (), {'x': 1, 'foo': 'hi'}) == (
-        (1,), {'foo': 'hi'}
+    assert convert_keyword_arguments(bar, (), {u'x': 1, u'foo': u'hi'}) == (
+        (1,), {u'foo': u'hi'}
     )
     do_conversion_test(bar, (1,), {})
-    do_conversion_test(bar, (), {'x': 1, 'y': 1})
+    do_conversion_test(bar, (), {u'x': 1, u'y': 1})
 
 
 def test_errors_on_bad_kwargs():
@@ -83,7 +82,7 @@ def test_errors_on_bad_kwargs():
         pass    # pragma: no cover
 
     with pytest.raises(TypeError):
-        convert_keyword_arguments(bar, (), {'foo': 1})
+        convert_keyword_arguments(bar, (), {u'foo': 1})
 
 
 def test_passes_varargs_correctly():
@@ -99,7 +98,7 @@ def test_errors_if_keyword_precedes_positional():
     def foo(x, y):
         pass  # pragma: no cover
     with pytest.raises(TypeError):
-        convert_keyword_arguments(foo, (1,), {'x': 2})
+        convert_keyword_arguments(foo, (1,), {u'x': 2})
 
 
 def test_errors_if_not_enough_args():
@@ -107,7 +106,7 @@ def test_errors_if_not_enough_args():
         pass  # pragma: no cover
 
     with pytest.raises(TypeError):
-        convert_keyword_arguments(foo, (1, 2), {'d': 4})
+        convert_keyword_arguments(foo, (1, 2), {u'd': 4})
 
 
 def test_errors_on_extra_kwargs():
@@ -115,12 +114,12 @@ def test_errors_on_extra_kwargs():
         pass  # pragma: no cover
 
     with pytest.raises(TypeError) as e:
-        convert_keyword_arguments(foo, (1,), {'b': 1})
-    assert 'keyword' in e.value.args[0]
+        convert_keyword_arguments(foo, (1,), {u'b': 1})
+    assert u'keyword' in e.value.args[0]
 
     with pytest.raises(TypeError) as e2:
-        convert_keyword_arguments(foo, (1,), {'b': 1, 'c': 2})
-    assert 'keyword' in e2.value.args[0]
+        convert_keyword_arguments(foo, (1,), {u'b': 1, u'c': 2})
+    assert u'keyword' in e2.value.args[0]
 
 
 def test_positional_errors_if_too_many_args():
@@ -129,7 +128,7 @@ def test_positional_errors_if_too_many_args():
 
     with pytest.raises(TypeError) as e:
         convert_positional_arguments(foo, (1, 2), {})
-    assert '2 given' in e.value.args[0]
+    assert u'2 given' in e.value.args[0]
 
 
 def test_positional_errors_if_too_few_args():
@@ -144,7 +143,7 @@ def test_positional_does_not_error_if_extra_args_are_kwargs():
     def foo(a, b, c):
         pass
 
-    convert_positional_arguments(foo, (1, 2), {'c': 3})
+    convert_positional_arguments(foo, (1, 2), {u'c': 3})
 
 
 def test_positional_errors_if_given_bad_kwargs():
@@ -152,8 +151,8 @@ def test_positional_errors_if_given_bad_kwargs():
         pass
 
     with pytest.raises(TypeError) as e:
-        convert_positional_arguments(foo, (), {'b': 1})
-    assert 'unexpected keyword argument' in e.value.args[0]
+        convert_positional_arguments(foo, (), {u'b': 1})
+    assert u'unexpected keyword argument' in e.value.args[0]
 
 
 def test_positional_errors_if_given_duplicate_kwargs():
@@ -161,20 +160,20 @@ def test_positional_errors_if_given_duplicate_kwargs():
         pass
 
     with pytest.raises(TypeError) as e:
-        convert_positional_arguments(foo, (2,), {'a': 1})
-    assert 'multiple values' in e.value.args[0]
+        convert_positional_arguments(foo, (2,), {u'a': 1})
+    assert u'multiple values' in e.value.args[0]
 
 
 def test_names_of_functions_are_pretty():
     assert get_pretty_function_description(
         test_names_of_functions_are_pretty
-    ) == 'test_names_of_functions_are_pretty'
+    ) == u'test_names_of_functions_are_pretty'
 
 
 def test_can_have_unicode_in_lambda_sources():
-    t = lambda x: 'é' not in x
+    t = lambda x: u'é' not in x
     assert get_pretty_function_description(t) == (
-        "lambda x: 'é' not in x"
+        u"lambda x: u'é' not in x"
     )
 
 
@@ -185,7 +184,7 @@ ordered_pair = (
 
 def test_can_get_descriptions_of_nested_lambdas_with_different_names():
     assert get_pretty_function_description(ordered_pair) == \
-        'lambda right: [].map(lambda length: ())'
+        u'lambda right: [].map(lambda length: ())'
 
 
 class Foo(object):
@@ -198,21 +197,21 @@ class Foo(object):
         pass  # pragma: no cover
 
     def __repr__(self):
-        return 'SoNotFoo()'
+        return u'SoNotFoo()'
 
 
 def test_class_names_are_not_included_in_class_method_prettiness():
-    assert get_pretty_function_description(Foo.bar) == 'bar'
+    assert get_pretty_function_description(Foo.bar) == u'bar'
 
 
 def test_repr_is_included_in_bound_method_prettiness():
-    assert get_pretty_function_description(Foo().baz) == 'SoNotFoo().baz'
+    assert get_pretty_function_description(Foo().baz) == u'SoNotFoo().baz'
 
 
 def test_class_is_not_included_in_unbound_method():
     assert (
         get_pretty_function_description(Foo.baz)
-        == 'baz'
+        == u'baz'
     )
 
 
@@ -222,16 +221,16 @@ def test_class_is_not_included_in_unbound_method():
 def test_source_of_lambda_is_pretty():
     assert get_pretty_function_description(
         lambda x: True
-    ) == 'lambda x: True'  # pragma: no cover
+    ) == u'lambda x: True'  # pragma: no cover
 
 
 def test_variable_names_are_not_pretty():
     t = lambda x: True  # pragma: no cover
-    assert get_pretty_function_description(t) == 'lambda x: True'
+    assert get_pretty_function_description(t) == u'lambda x: True'
 
 
 def test_does_not_error_on_dynamically_defined_functions():
-    x = eval('lambda t: 1')
+    x = eval(u'lambda t: 1')
     get_pretty_function_description(x)
 
 
@@ -239,13 +238,13 @@ def test_collapses_whitespace_nicely():
     t = (
         lambda x,       y:           1  # pragma: no cover
     )
-    assert get_pretty_function_description(t) == 'lambda x, y: 1'
+    assert get_pretty_function_description(t) == u'lambda x, y: 1'
 
 
 def test_is_not_confused_by_tuples():
     p = (lambda x: x > 1, 2)[0]  # pragma: no cover
 
-    assert get_pretty_function_description(p) == 'lambda x: x > 1'
+    assert get_pretty_function_description(p) == u'lambda x: x > 1'
 
 
 def test_does_not_error_on_confused_sources():
@@ -262,40 +261,40 @@ def test_does_not_error_on_confused_sources():
 
 def test_strips_comments_from_the_end():
     t = lambda x: 1  # pragma: no cover
-    assert get_pretty_function_description(t) == 'lambda x: 1'
+    assert get_pretty_function_description(t) == u'lambda x: 1'
 
 
 def test_does_not_strip_hashes_within_a_string():
-    t = lambda x: '#'  # pragma: no cover
-    assert get_pretty_function_description(t) == "lambda x: '#'"
+    t = lambda x: u'#'  # pragma: no cover
+    assert get_pretty_function_description(t) == u"lambda x: u'#'"
 
 
 def test_can_distinguish_between_two_lambdas_with_different_args():
     a, b = (lambda x: 1, lambda y: 2)  # pragma: no cover
-    assert get_pretty_function_description(a) == 'lambda x: 1'
-    assert get_pretty_function_description(b) == 'lambda y: 2'
+    assert get_pretty_function_description(a) == u'lambda x: 1'
+    assert get_pretty_function_description(b) == u'lambda y: 2'
 
 
 def test_does_not_error_if_it_cannot_distinguish_between_two_lambdas():
     a, b = (lambda x: 1, lambda x: 2)  # pragma: no cover
-    assert 'lambda x:' in get_pretty_function_description(a)
-    assert 'lambda x:' in get_pretty_function_description(b)
+    assert u'lambda x:' in get_pretty_function_description(a)
+    assert u'lambda x:' in get_pretty_function_description(b)
 
 
 def test_lambda_source_break_after_def_with_brackets():
     f = (lambda n:
-         'aaa')
+         u'aaa')
 
     source = get_pretty_function_description(f)
-    assert source == "lambda n: 'aaa'"
+    assert source == u"lambda n: u'aaa'"
 
 
 def test_lambda_source_break_after_def_with_line_continuation():
     f = lambda n:\
-        'aaa'
+        u'aaa'
 
     source = get_pretty_function_description(f)
-    assert source == "lambda n: 'aaa'"
+    assert source == u"lambda n: u'aaa'"
 
 
 def test_digests_are_reasonably_unique():
@@ -318,7 +317,7 @@ def test_can_digest_a_built_in_function():
 
 
 def test_can_digest_a_unicode_lambda():
-    function_digest(lambda x: '☃' in str(x))
+    function_digest(lambda x: u'☃' in str(x))
 
 
 def test_can_digest_a_function_with_no_name():
@@ -331,10 +330,10 @@ def test_arg_string_is_in_order():
     def foo(c, a, b, f, a1):
         pass
 
-    assert arg_string(foo, (1, 2, 3, 4, 5), {}) == 'c=1, a=2, b=3, f=4, a1=5'
+    assert arg_string(foo, (1, 2, 3, 4, 5), {}) == u'c=1, a=2, b=3, f=4, a1=5'
     assert arg_string(
         foo, (1, 2),
-        {'b': 3, 'f': 4, 'a1': 5}) == 'c=1, a=2, b=3, f=4, a1=5'
+        {u'b': 3, u'f': 4, u'a1': 5}) == u'c=1, a=2, b=3, f=4, a1=5'
 
 
 def test_varkwargs_are_sorted_and_after_real_kwargs():
@@ -342,15 +341,15 @@ def test_varkwargs_are_sorted_and_after_real_kwargs():
         pass
 
     assert arg_string(
-        foo, (), {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6}
-    ) == 'd=4, e=5, f=6, a=1, b=2, c=3'
+        foo, (), {u'a': 1, u'b': 2, u'c': 3, u'd': 4, u'e': 5, u'f': 6}
+    ) == u'd=4, e=5, f=6, a=1, b=2, c=3'
 
 
 def test_varargs_come_without_equals():
     def foo(a, *args):
         pass
 
-    assert arg_string(foo, (1, 2, 3, 4), {}) == '2, 3, 4, a=1'
+    assert arg_string(foo, (1, 2, 3, 4), {}) == u'2, 3, 4, a=1'
 
 
 def test_can_mix_varargs_and_varkwargs():
@@ -358,15 +357,15 @@ def test_can_mix_varargs_and_varkwargs():
         pass
 
     assert arg_string(
-        foo, (1, 2, 3), {'c': 7}
-    ) == '1, 2, 3, c=7'
+        foo, (1, 2, 3), {u'c': 7}
+    ) == u'1, 2, 3, c=7'
 
 
 def test_arg_string_does_not_include_unprovided_defaults():
     def foo(a, b, c=9, d=10):
         pass
 
-    assert arg_string(foo, (1,), {'b': 1, 'd': 11}) == 'a=1, b=1, d=11'
+    assert arg_string(foo, (1,), {u'b': 1, u'd': 11}) == u'a=1, b=1, d=11'
 
 
 class A(object):
@@ -425,11 +424,11 @@ def has_kwargs(**kwargs):
 
 
 @pytest.mark.parametrize(
-    'f', [has_one_arg, has_two_args, has_varargs, has_kwargs]
+    u'f', [has_one_arg, has_two_args, has_varargs, has_kwargs]
 )
 def test_copying_preserves_argspec(f):
     af = inspect.getargspec(f)
-    t = copy_argspec('foo', inspect.getargspec(f))(universal_acceptor)
+    t = copy_argspec(u'foo', inspect.getargspec(f))(universal_acceptor)
     at = inspect.getargspec(t)
     assert af.args == at.args
     assert af.varargs == at.varargs
@@ -439,19 +438,19 @@ def test_copying_preserves_argspec(f):
 
 def test_copying_sets_name():
     f = copy_argspec(
-        'hello_world', inspect.getargspec(has_two_args))(universal_acceptor)
-    assert f.__name__ == 'hello_world'
+        u'hello_world', inspect.getargspec(has_two_args))(universal_acceptor)
+    assert f.__name__ == u'hello_world'
 
 
 def test_uses_defaults():
     f = copy_argspec(
-        'foo', inspect.getargspec(has_a_default))(universal_acceptor)
+        u'foo', inspect.getargspec(has_a_default))(universal_acceptor)
     assert f(3, 2) == ((3, 2, 1), {})
 
 
 def test_uses_varargs():
     f = copy_argspec(
-        'foo', inspect.getargspec(has_varargs))(universal_acceptor)
+        u'foo', inspect.getargspec(has_varargs))(universal_acceptor)
     assert f(1, 2) == ((1, 2), {})
 
 
@@ -475,12 +474,12 @@ def test_exec_as_module_caches():
 
 def test_exec_leaves_sys_path_unchanged():
     old_path = deepcopy(sys.path)
-    source_exec_as_module('hello_world = 42')
+    source_exec_as_module(u'hello_world = 42')
     assert sys.path == old_path
 
 
 def test_can_get_source_of_functions_from_exec():
-    assert 'foo(x)' in inspect.getsource(
+    assert u'foo(x)' in inspect.getsource(
         source_exec_as_module(DEFINE_FOO_FUNCTION).foo
     )
 
@@ -489,33 +488,33 @@ def test_copy_argspec_works_with_conflicts():
     def accepts_everything(*args, **kwargs):
         pass
 
-    copy_argspec('hello', inspect.ArgSpec(
-        args=('f',), varargs=None, keywords=None, defaults=None
+    copy_argspec(u'hello', inspect.ArgSpec(
+        args=(u'f',), varargs=None, keywords=None, defaults=None
     ))(accepts_everything)(1)
 
-    copy_argspec('hello', inspect.ArgSpec(
-        args=(), varargs='f', keywords=None, defaults=None
+    copy_argspec(u'hello', inspect.ArgSpec(
+        args=(), varargs=u'f', keywords=None, defaults=None
     ))(accepts_everything)(1)
 
-    copy_argspec('hello', inspect.ArgSpec(
-        args=(), varargs=None, keywords='f', defaults=None
+    copy_argspec(u'hello', inspect.ArgSpec(
+        args=(), varargs=None, keywords=u'f', defaults=None
     ))(accepts_everything)()
 
-    copy_argspec('hello', inspect.ArgSpec(
-        args=('f', 'f_3'), varargs='f_1', keywords='f_2', defaults=None
+    copy_argspec(u'hello', inspect.ArgSpec(
+        args=(u'f', u'f_3'), varargs=u'f_1', keywords=u'f_2', defaults=None
     ))(accepts_everything)(1, 2)
 
 
 def test_copy_argspec_validates_arguments():
     with pytest.raises(ValueError):
-        copy_argspec('hello_world', inspect.ArgSpec(
-            args=['a b'], varargs=None, keywords=None, defaults=None))
+        copy_argspec(u'hello_world', inspect.ArgSpec(
+            args=[u'a b'], varargs=None, keywords=None, defaults=None))
 
 
 def test_copy_argspec_validates_function_name():
     with pytest.raises(ValueError):
-        copy_argspec('hello world', inspect.ArgSpec(
-            args=['a', 'b'], varargs=None, keywords=None, defaults=None))
+        copy_argspec(u'hello world', inspect.ArgSpec(
+            args=[u'a', u'b'], varargs=None, keywords=None, defaults=None))
 
 
 class Container(object):
@@ -526,15 +525,15 @@ class Container(object):
 
 @pytest.mark.skipif(
     BAD_PY3,
-    reason='Python 3.2 and less have a terrible object model.'
+    reason=u'Python 3.2 and less have a terrible object model.'
 )
 def test_fully_qualified_name():
     assert fully_qualified_name(test_copying_preserves_argspec) == \
-        'tests.cover.test_reflection.test_copying_preserves_argspec'
+        u'tests.cover.test_reflection.test_copying_preserves_argspec'
     assert fully_qualified_name(Container.funcy) == \
-        'tests.cover.test_reflection.Container.funcy'
+        u'tests.cover.test_reflection.Container.funcy'
     assert fully_qualified_name(fully_qualified_name) == \
-        'hypothesis.internal.reflection.fully_qualified_name'
+        u'hypothesis.internal.reflection.fully_qualified_name'
 
 
 def test_can_proxy_functions_with_mixed_args_and_varargs():
@@ -562,21 +561,21 @@ def test_can_delegate_to_a_function_with_no_positional_args():
 class Snowman(object):
 
     def __repr__(self):
-        return '☃'
+        return u'☃'
 
 
 class BittySnowman(object):
 
     def __repr__(self):
-        return '☃'.encode('utf-8')
+        return u'☃'.encode(u'utf-8')
 
 
 def test_can_handle_unicode_repr():
     def foo(x):
         pass
 
-    assert arg_string(foo, [Snowman()], {}) == 'x=☃'
-    assert arg_string(foo, [], {'x': Snowman()}) == 'x=☃'
+    assert arg_string(foo, [Snowman()], {}) == u'x=☃'
+    assert arg_string(foo, [], {u'x': Snowman()}) == u'x=☃'
 
 
 class NoRepr(object):
@@ -586,24 +585,24 @@ class NoRepr(object):
 def test_can_handle_repr_on_type():
     def foo(x):
         pass
-    assert arg_string(foo, [Snowman], {}) == 'x=%r' % (Snowman,)
-    assert arg_string(foo, [NoRepr], {}) == 'x=%r' % (NoRepr,)
+    assert arg_string(foo, [Snowman], {}) == u'x=%r' % (Snowman,)
+    assert arg_string(foo, [NoRepr], {}) == u'x=%r' % (NoRepr,)
 
 
 def test_can_handle_repr_of_none():
     def foo(x):
         pass
 
-    assert arg_string(foo, [None], {}) == 'x=None'
-    assert arg_string(foo, [], {'x': None}) == 'x=None'
+    assert arg_string(foo, [None], {}) == u'x=None'
+    assert arg_string(foo, [], {u'x': None}) == u'x=None'
 
 
 @pytest.mark.skipif(
-    PY3, reason='repr must return unicode in py3 anyway'
+    PY3, reason=u'repr must return unicode in py3 anyway'
 )
 def test_can_handle_non_unicode_repr_containing_non_ascii():
     def foo(x):
         pass
 
-    assert arg_string(foo, [BittySnowman()], {}) == 'x=☃'
-    assert arg_string(foo, [], {'x': BittySnowman()}) == 'x=☃'
+    assert arg_string(foo, [BittySnowman()], {}) == u'x=☃'
+    assert arg_string(foo, [], {u'x': BittySnowman()}) == u'x=☃'

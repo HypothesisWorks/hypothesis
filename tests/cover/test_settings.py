@@ -14,25 +14,24 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import pytest
 from hypothesis.errors import InvalidArgument
 from hypothesis.settings import Settings, Verbosity
 
-TEST_DESCRIPTION = 'This is a setting just for these tests'
+TEST_DESCRIPTION = u'This is a setting just for these tests'
 
 Settings.define_setting(
-    'a_setting_just_for_these_tests',
+    u'a_setting_just_for_these_tests',
     default=3,
     description=TEST_DESCRIPTION,
 )
 
 
 Settings.define_setting(
-    'a_setting_with_limited_options',
-    default=3, description='Something something spoon',
+    u'a_setting_with_limited_options',
+    default=3, description=u'Something something spoon',
     options=(1, 2, 3, 4),
 )
 
@@ -43,7 +42,7 @@ def test_has_docstrings():
 
 def setup_function(fn):
     try:
-        delattr(Settings.default, 'a_setting_just_for_these_tests')
+        delattr(Settings.default, u'a_setting_just_for_these_tests')
     except AttributeError:
         pass
 
@@ -51,7 +50,7 @@ def setup_function(fn):
 def test_cannot_set_non_settings():
     s = Settings()
     with pytest.raises(AttributeError):
-        s.databas_file = 'some_file'
+        s.databas_file = u'some_file'
 
 
 def test_settings_uses_defaults():
@@ -107,7 +106,7 @@ def test_can_repeatedly_push_the_same_thing():
 
 def test_cannot_create_settings_with_invalid_options():
     with pytest.raises(InvalidArgument):
-        Settings(a_setting_with_limited_options='spoon')
+        Settings(a_setting_with_limited_options=u'spoon')
 
 
 def test_can_create_settings_with_valid_options():
@@ -117,8 +116,8 @@ def test_can_create_settings_with_valid_options():
 def test_cannot_define_a_setting_with_default_not_valid():
     with pytest.raises(InvalidArgument):
         Settings.define_setting(
-            'kittens',
-            default=8, description='Kittens are pretty great',
+            u'kittens',
+            default=8, description=u'Kittens are pretty great',
             options=(1, 2, 3, 4),
         )
 

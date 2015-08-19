@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import weakref
 from random import Random
@@ -77,7 +76,7 @@ class Fixture(object):
         )
         try:
             if self.settings.database:
-                storage = self.settings.database.storage('django.fixtures')
+                storage = self.settings.database.storage(u'django.fixtures')
             else:
                 storage = None
 

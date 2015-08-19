@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 from copy import deepcopy
 from random import Random
@@ -39,9 +38,9 @@ class StreamTemplate(object):
             self.stream = Stream(generator)
 
     def __repr__(self):
-        return 'StreamTemplate(%r, %r, (%s))' % (
+        return u'StreamTemplate(%r, %r, (%s))' % (
             self.seed, self.parameter_seed,
-            ', '.join(map(show, self.stream[:self.changed]))
+            u', '.join(map(show, self.stream[:self.changed]))
         )
 
     def __eq__(self, other):
@@ -79,7 +78,7 @@ class StreamTemplate(object):
         )
 
     def __trackas__(self):
-        return ('StreamTemplate', self.seed, list(self.stream[:self.changed]))
+        return (u'StreamTemplate', self.seed, list(self.stream[:self.changed]))
 
 
 class StreamStrategy(SearchStrategy):
@@ -89,7 +88,7 @@ class StreamStrategy(SearchStrategy):
         self.source_strategy = source_strategy
 
     def __repr__(self):
-        return 'StreamStrategy(%r)' % (self.source_strategy,)
+        return u'StreamStrategy(%r)' % (self.source_strategy,)
 
     def draw_parameter(self, random):
         return random.getrandbits(64)
@@ -133,7 +132,7 @@ class StreamStrategy(SearchStrategy):
             for t in simplify(random, stream[i]):
                 yield template.with_value(i, t)
         accept.__name__ = str(
-            'simplifier_for_index(%s, %d)' % (
+            u'simplifier_for_index(%s, %d)' % (
                 simplify.__name__, i
             )
         )

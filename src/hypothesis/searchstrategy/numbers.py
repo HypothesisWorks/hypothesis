@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import sys
 import math
@@ -35,7 +34,7 @@ def integer_or_bad(data):
     try:
         return int(data)
     except ValueError:
-        raise BadData('Invalid integer %r' % (data,))
+        raise BadData(u'Invalid integer %r' % (data,))
 
 
 class IntStrategy(SearchStrategy):
@@ -102,7 +101,7 @@ class IntStrategy(SearchStrategy):
                     yield random.randint(lb + 1, new_lb - 1)
                 lb = new_lb
         accept.__name__ = str(
-            'try_shrink(%d, %d)' % (lo, hi)
+            u'try_shrink(%d, %d)' % (lo, hi)
         )
         return accept
 
@@ -115,7 +114,7 @@ class IntegersFromStrategy(SearchStrategy):
         self.average_size = average_size
 
     def __repr__(self):
-        return 'IntegersFromStrategy(%d)' % (self.lower_bound,)
+        return u'IntegersFromStrategy(%d)' % (self.lower_bound,)
 
     def draw_parameter(self, random):
         return clamp(
@@ -148,7 +147,7 @@ class IntegersFromStrategy(SearchStrategy):
                     yield random.randint(lb + 1, new_lb - 1)
                 lb = new_lb
         accept.__name__ = str(
-            'try_shrink(%d, %d)' % (lo, hi)
+            u'try_shrink(%d, %d)' % (lo, hi)
         )
         return accept
 
@@ -167,7 +166,7 @@ class IntegersFromStrategy(SearchStrategy):
     def from_basic(self, data):
         data = integer_or_bad(data)
         if data < 0:
-            raise BadData('Value %d out of range [0, infinity)' % (
+            raise BadData(u'Value %d out of range [0, infinity)' % (
                 data,
             ))
         return data
@@ -187,12 +186,12 @@ class RandomGeometricIntStrategy(IntStrategy):
 
     """
     Parameter = namedtuple(
-        'Parameter',
-        ('negative_probability', 'p')
+        u'Parameter',
+        (u'negative_probability', u'p')
     )
 
     def __repr__(self):
-        return 'RandomGeometricIntStrategy()'
+        return u'RandomGeometricIntStrategy()'
 
     def draw_parameter(self, random):
         return self.Parameter(
@@ -209,12 +208,12 @@ class RandomGeometricIntStrategy(IntStrategy):
 
 class WideRangeIntStrategy(IntStrategy):
     Parameter = namedtuple(
-        'Parameter',
-        ('center', 'width'),
+        u'Parameter',
+        (u'center', u'width'),
     )
 
     def __repr__(self):
-        return 'WideRangeIntStrategy()'
+        return u'WideRangeIntStrategy()'
 
     def draw_parameter(self, random):
         return self.Parameter(
@@ -238,11 +237,11 @@ class BoundedIntStrategy(SearchStrategy):
         self.start = start
         self.end = end
         if start > end:
-            raise ValueError('Invalid range [%d, %d]' % (start, end))
+            raise ValueError(u'Invalid range [%d, %d]' % (start, end))
         self.template_upper_bound = infinitish(end - start + 1)
 
     def __repr__(self):
-        return 'BoundedIntStrategy(%d, %d)' % (self.start, self.end)
+        return u'BoundedIntStrategy(%d, %d)' % (self.start, self.end)
 
     def strictly_simpler(self, x, y):
         return x < y
@@ -257,7 +256,7 @@ class BoundedIntStrategy(SearchStrategy):
     def from_basic(self, data):
         data = integer_or_bad(data)
         if data < self.start or data > self.end:
-            raise BadData('Value %d out of range [%d, %d]' % (
+            raise BadData(u'Value %d out of range [%d, %d]' % (
                 data, self.start, self.end
             ))
         return data
@@ -304,7 +303,7 @@ class FloatStrategy(SearchStrategy):
         self.int_strategy = RandomGeometricIntStrategy()
 
     def __repr__(self):
-        return '%s()' % (self.__class__.__name__,)
+        return u'%s()' % (self.__class__.__name__,)
 
     def strictly_simpler(self, x, y):
         if math.isnan(x):
@@ -378,8 +377,8 @@ class FloatStrategy(SearchStrategy):
     def simplify_weird_values(self, random, x):
         if math.isnan(x):
             yield 0.0
-            yield float('inf')
-            yield -float('inf')
+            yield float(u'inf')
+            yield -float(u'inf')
             return
         if math.isinf(x):
             yield math.copysign(
@@ -410,7 +409,7 @@ class FloatStrategy(SearchStrategy):
             for m in simplify(random, int(math.floor(x))):
                 yield float(m)
         accept.__name__ = str(
-            'simplify_integral(%s)' % (simplify.__name__,)
+            u'simplify_integral(%s)' % (simplify.__name__,)
         )
         return accept
 
@@ -437,7 +436,7 @@ class FloatStrategy(SearchStrategy):
                     break
                 yield y
 
-STANDARD_NAN = float('nan')
+STANDARD_NAN = float(u'nan')
 
 
 class WrapperFloatStrategy(FloatStrategy):
@@ -447,7 +446,7 @@ class WrapperFloatStrategy(FloatStrategy):
         self.sub_strategy = sub_strategy
 
     def __repr__(self):
-        return 'WrapperFloatStrategy(%r)' % (self.sub_strategy,)
+        return u'WrapperFloatStrategy(%r)' % (self.sub_strategy,)
 
     def draw_parameter(self, random):
         return self.sub_strategy.draw_parameter(random)
@@ -482,8 +481,8 @@ def compose_float(sign, exponent, fraction):
 class FullRangeFloats(FloatStrategy):
 
     Parameter = namedtuple(
-        'Parameter',
-        ('negative_probability', 'subnormal_probability')
+        u'Parameter',
+        (u'negative_probability', u'subnormal_probability')
     )
 
     def draw_parameter(self, random):
@@ -515,8 +514,8 @@ class FixedBoundedFloatStrategy(FloatStrategy):
 
     """
     Parameter = namedtuple(
-        'Parameter',
-        ('cut', 'leftwards')
+        u'Parameter',
+        (u'cut', u'leftwards')
     )
 
     def __init__(self, lower_bound, upper_bound):
@@ -526,7 +525,7 @@ class FixedBoundedFloatStrategy(FloatStrategy):
         assert upper_bound >= lower_bound
 
     def __repr__(self):
-        return 'FixedBoundedFloatStrategy(%s, %s)' % (
+        return u'FixedBoundedFloatStrategy(%s, %s)' % (
             self.lower_bound, self.upper_bound,
         )
 
@@ -564,9 +563,9 @@ class FixedBoundedFloatStrategy(FloatStrategy):
     def from_basic(self, data):
         result = super(FixedBoundedFloatStrategy, self).from_basic(data)
         if math.isnan(result):
-            raise BadData('NaN not allowed in range')
+            raise BadData(u'NaN not allowed in range')
         if result < self.lower_bound or result > self.upper_bound:
-            raise BadData('Value %f out of range [%f, %f]' % (
+            raise BadData(u'Value %f out of range [%f, %f]' % (
                 result, self.lower_bound, self.upper_bound
             ))
         return result
@@ -578,8 +577,8 @@ class BoundedFloatStrategy(FloatStrategy):
     the endpoints may be arbitrary."""
 
     Parameter = namedtuple(
-        'Parameter',
-        ('left', 'length', 'spread'),
+        u'Parameter',
+        (u'left', u'length', u'spread'),
     )
 
     def __init__(self):
@@ -625,8 +624,8 @@ class ExponentialFloatStrategy(FloatStrategy):
     """
 
     Parameter = namedtuple(
-        'Parameter',
-        ('lambd', 'zero_point', 'negative'),
+        u'Parameter',
+        (u'lambd', u'zero_point', u'negative'),
     )
 
     def draw_parameter(self, random):
@@ -672,7 +671,7 @@ class FloatsFromBase(FloatStrategy):
     def from_basic(self, data):
         result = super(FloatsFromBase, self).from_basic(data)
         if not self.is_valid_value(result, result):
-            raise BadData('Value %f out of range' % (result,))
+            raise BadData(u'Value %f out of range' % (result,))
         return result
 
 
@@ -688,9 +687,9 @@ class NastyFloats(SampledFromStrategy):
                 -sys.float_info.min,
                 -sys.float_info.max,
                 sys.float_info.max,
-                float('inf'),
-                -float('inf'),
-                float('nan'),
+                float(u'inf'),
+                -float(u'inf'),
+                float(u'nan'),
             ]
         )
 
@@ -702,7 +701,7 @@ class ComplexStrategy(MappedSearchStrategy):
     numbers."""
 
     def __repr__(self):
-        return 'ComplexStrategy()'
+        return u'ComplexStrategy()'
 
     def pack(self, value):
         return complex(*value)

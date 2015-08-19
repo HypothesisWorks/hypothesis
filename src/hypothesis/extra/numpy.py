@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import operator
 
@@ -29,25 +28,25 @@ from hypothesis.searchstrategy.strategies import check_length, \
 
 
 def from_dtype(dtype):
-    if dtype.kind == 'b':
+    if dtype.kind == u'b':
         result = st.booleans()
-    elif dtype.kind == 'f':
+    elif dtype.kind == u'f':
         result = st.floats()
-    elif dtype.kind == 'c':
+    elif dtype.kind == u'c':
         result = st.complex_numbers()
-    elif dtype.kind in ('S', 'a', 'V'):
+    elif dtype.kind in (u'S', u'a', u'V'):
         result = st.binary()
-    elif dtype.kind == 'u':
+    elif dtype.kind == u'u':
         result = st.integers(
             min_value=0, max_value=1 << (4 * dtype.itemsize) - 1)
-    elif dtype.kind == 'i':
+    elif dtype.kind == u'i':
         min_integer = -1 << (4 * dtype.itemsize - 1)
         result = st.integers(min_value=min_integer, max_value=-min_integer - 1)
-    elif dtype.kind == 'U':
+    elif dtype.kind == u'U':
         result = st.text()
     else:
         raise NotImplementedError(
-            'No strategy implementation for %r' % (dtype,)
+            u'No strategy implementation for %r' % (dtype,)
         )
     return result.map(dtype.type)
 
@@ -91,7 +90,7 @@ class ArrayStrategy(SearchStrategy):
                 replacement[i] = s
                 yield tuple(replacement)
         accept.__name__ = str(
-            'simplifier_for_index(%d, %s)' % (i, simplify.__name__)
+            u'simplifier_for_index(%d, %s)' % (i, simplify.__name__)
         )
         return accept
 
@@ -181,7 +180,7 @@ class ArrayStrategy(SearchStrategy):
                         copy[i] = simpler
                     yield tuple(copy)
         accept.__name__ = str(
-            'shared_simplification(%s)' % (simplify.__name__,)
+            u'shared_simplification(%s)' % (simplify.__name__,)
         )
         return accept
 
@@ -217,7 +216,7 @@ def arrays(dtype, shape, elements=None):
         shape = (shape,)
     shape = tuple(shape)
     if not shape:
-        if dtype.kind != 'O':
+        if dtype.kind != u'O':
             return elements
     else:
         return ArrayStrategy(

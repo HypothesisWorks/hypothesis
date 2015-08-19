@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import math
 import random
@@ -39,7 +38,7 @@ from hypothesis.searchstrategy.strategies import OneOfStrategy, \
 def test_or_errors_when_given_non_strategy():
     bools = tuples(booleans())
     with pytest.raises(ValueError):
-        bools | 'foo'
+        bools | u'foo'
 
 
 def test_joining_zero_strategies_fails():
@@ -51,7 +50,7 @@ def test_directly_joining_one_strategy_also_fails():
     with pytest.raises(ValueError):
         OneOfStrategy([RandomGeometricIntStrategy()])
 
-SomeNamedTuple = namedtuple('SomeNamedTuple', ('a', 'b'))
+SomeNamedTuple = namedtuple(u'SomeNamedTuple', (u'a', u'b'))
 
 
 def test_strategy_for_integer_range_produces_only_integers_in_that_range():
@@ -110,16 +109,16 @@ def test_just_strategy_uses_repr():
     class WeirdRepr(object):
 
         def __repr__(self):
-            return 'ABCDEFG'
+            return u'ABCDEFG'
 
     assert repr(
         just(WeirdRepr())
-    ) == 'just(%r)' % (WeirdRepr(),)
+    ) == u'just(%r)' % (WeirdRepr(),)
 
 
 def test_can_map():
-    s = integers().map(pack=lambda t: 'foo')
-    assert s.example() == 'foo'
+    s = integers().map(pack=lambda t: u'foo')
+    assert s.example() == u'foo'
 
 
 def test_sample_from_empty_errors():

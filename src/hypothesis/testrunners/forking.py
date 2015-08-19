@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import os
 import pickle
@@ -30,13 +29,13 @@ try:
     os.fork
 except AttributeError:  # pragma: no cover
     raise ImportError(
-        'hypothesis.testrunner.forking is only available on '
-        'platforms with fork.'
+        u'hypothesis.testrunner.forking is only available on '
+        u'platforms with fork.'
     )
 
 
-Report = namedtuple('Report', ('data',))
-Error = namedtuple('Error', ('exception',))
+Report = namedtuple(u'Report', (u'data',))
+Error = namedtuple(u'Error', (u'exception',))
 
 
 def report_to(w):  # pragma: no cover
@@ -62,8 +61,8 @@ class ForkingTestCase(TestCase):
 
     def execute_example(self, function):
         r, w = os.pipe()
-        r = os.fdopen(r, 'rb')
-        w = os.fdopen(w, 'wb')
+        r = os.fdopen(r, u'rb')
+        w = os.fdopen(w, u'wb')
         pid = os.fork()
         if not pid:  # pragma: no cover
             succeeded = False

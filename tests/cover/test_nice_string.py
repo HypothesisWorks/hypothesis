@@ -16,8 +16,8 @@
 
 """Tests for specific string representations of values."""
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+
+from __future__ import division, print_function, absolute_import
 
 import sys
 import unittest
@@ -29,9 +29,9 @@ from hypothesis.utils.show import show
 
 
 def test_show_for_nasty_floats():
-    assert show(float('inf')) == "float('inf')"
-    assert show(float('-inf')) == "float('-inf')"
-    assert show(float('nan')) == "float('nan')"
+    assert show(float(u'inf')) == u"float('inf')"
+    assert show(float(u'-inf')) == u"float('-inf')"
+    assert show(float(u'nan')) == u"float('nan')"
 
 
 def test_nice_strint_for_nice_floats():
@@ -39,20 +39,20 @@ def test_nice_strint_for_nice_floats():
 
 
 def test_show_for_nice_complex():
-    assert show(1 + 1j) == '(1+1j)'
+    assert show(1 + 1j) == u'(1+1j)'
 
 
 def test_show_for_nasty_complex():
     assert show(
-        complex(float('inf'), 0.0)) == "complex('inf+0j')"
+        complex(float(u'inf'), 0.0)) == u"complex('inf+0j')"
 
 
 @pytest.mark.skipif(
-    sys.version_info < (2, 7), reason='complex is picky in python 2.6')
+    sys.version_info < (2, 7), reason=u'complex is picky in python 2.6')
 def test_show_for_nasty_in_just():
     assert show(
-        specifiers.just(complex('inf+1.9j'))
-    ) == "Just(value=complex('inf+1.9j'))"
+        specifiers.just(complex(u'inf+1.9j'))
+    ) == u"Just(value=complex('inf+1.9j'))"
 
 
 def test_show_for_sets_is_not_a_dict():
@@ -61,34 +61,34 @@ def test_show_for_sets_is_not_a_dict():
 
 
 def test_non_empty_frozensets_should_use_set_representation():
-    assert show(frozenset([int])) == 'frozenset({int})'
+    assert show(frozenset([int])) == u'frozenset({int})'
 
 
 def test_just_show_should_respect_its_values_reprs():
     class Stuff(object):
 
         def __repr__(self):
-            return 'Things()'
+            return u'Things()'
     assert show(
         specifiers.Just(Stuff())
-    ) == 'Just(value=Things())'
+    ) == u'Just(value=Things())'
 
 
 def test_uses_show_inside_named_tuples():
-    Foo = namedtuple('Foo', ('b', 'a'))
+    Foo = namedtuple(u'Foo', (u'b', u'a'))
     assert show(
-        Foo(1, float('nan'))
-    ) == "Foo(b=1, a=float('nan'))"
+        Foo(1, float(u'nan'))
+    ) == u"Foo(b=1, a=float('nan'))"
 
 
 def test_uses_show_inside_unnamed_tuples():
-    assert show((1, float('nan'))) == "(1, float('nan'))"
+    assert show((1, float(u'nan'))) == u"(1, float('nan'))"
 
 
 @pytest.mark.skipif(
-    sys.version_info < (2, 7), reason='complex is picky in python 2.6')
+    sys.version_info < (2, 7), reason=u'complex is picky in python 2.6')
 def test_does_not_strip_brackets_when_not_present():
-    assert show(complex('nanj')) == "complex('nanj')"
+    assert show(complex(u'nanj')) == u"complex('nanj')"
 
 
 class X(object):
@@ -98,19 +98,19 @@ class X(object):
 
 
 def test_can_nicely_display_things_without_repr():
-    assert show(X(1)) == 'X(x=1)'
+    assert show(X(1)) == u'X(x=1)'
 
 
 def test_uses_binary_literals_for_binary_type():
-    assert show(b'foo') == "b'foo'"
+    assert show(b'foo') == u"b'foo'"
 
 
 def test_uses_text_literals_for_text_type():
-    assert show('foo') == "'foo'"
+    assert show(u'foo') == u"'foo'"
 
 
 def test_no_trailing_L_on_ints():
-    s = '1000000000000000000000000000000000000000000000000000'
+    s = u'1000000000000000000000000000000000000000000000000000'
     i = int(s)
     assert show(i) == s
 
@@ -119,11 +119,11 @@ def test_show_of_a_function_is_its_name():
     def foo_bar_baz():
         pass
 
-    assert show(foo_bar_baz) == 'foo_bar_baz'
+    assert show(foo_bar_baz) == u'foo_bar_baz'
 
 
 def test_show_of_object_is_object():
-    assert show(object()) == 'object()'
+    assert show(object()) == u'object()'
 
 
 class SomeObject(object):
@@ -131,36 +131,36 @@ class SomeObject(object):
 
 
 def test_show_of_object_is_class():
-    assert show(SomeObject()) == 'SomeObject()'
+    assert show(SomeObject()) == u'SomeObject()'
 
 
 def test_show_of_bool_is_repr():
-    assert show(False) == 'False'
-    assert show(True) == 'True'
+    assert show(False) == u'False'
+    assert show(True) == u'True'
 
 
 def test_show_of_none_is_repr():
-    assert show(None) == 'None'
+    assert show(None) == u'None'
 
 
 def test_list_str_is_repr():
-    assert show([1, 2, 3]) == '[1, 2, 3]'
+    assert show([1, 2, 3]) == u'[1, 2, 3]'
 
 
 def test_set_str_is_sorted_repr():
-    assert show(set((4, 3, 2, 1))) == '{1, 2, 3, 4}'
+    assert show(set((4, 3, 2, 1))) == u'{1, 2, 3, 4}'
 
 
 def test_frozenset_str_is_sorted_repr():
-    assert show(frozenset(set((4, 3, 2, 1)))) == 'frozenset({1, 2, 3, 4})'
+    assert show(frozenset(set((4, 3, 2, 1)))) == u'frozenset({1, 2, 3, 4})'
 
 
 def test_dict_str_is_sorted_repr():
-    assert show({1: 2, 2: 3, 3: 4, 4: 5}) == '{1: 2, 2: 3, 3: 4, 4: 5}'
+    assert show({1: 2, 2: 3, 3: 4, 4: 5}) == u'{1: 2, 2: 3, 3: 4, 4: 5}'
 
 
 def test_show_of_1_tuple_includes_trailing_comma():
-    assert show((1,)) == '(1,)'
+    assert show((1,)) == u'(1,)'
 
 
 class TestEvalSelfTC(unittest.TestCase):
@@ -181,19 +181,19 @@ class TestEvalSelf(object):
 def test_can_handle_recursion():
     x = []
     x.append(x)
-    assert show(x) == '[(...)]'
+    assert show(x) == u'[(...)]'
 
     d = {}
     d[1] = d
-    assert show(d) == '{1: (...)}'
+    assert show(d) == u'{1: (...)}'
 
     t = ([],)
     t[0].append(t)
-    assert show(t) == '([(...)],)'
+    assert show(t) == u'([(...)],)'
 
     class Foo(object):
         pass
 
     f = Foo()
     f.stuff = f
-    assert show(f) == 'Foo(stuff=(...))'
+    assert show(f) == u'Foo(stuff=(...))'

@@ -14,11 +14,10 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 from hypothesis.utils.conventions import UniqueIdentifier
 
 
 def test_unique_identifier_repr():
-    assert repr(UniqueIdentifier('hello_world')) == 'hello_world'
+    assert repr(UniqueIdentifier(u'hello_world')) == u'hello_world'

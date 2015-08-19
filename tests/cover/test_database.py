@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import time
 
@@ -38,7 +37,7 @@ def run_round_trip(specifier, value, format=None, backend=None):
     db = ExampleDatabase(format=format, backend=backend)
     strat = strategy(specifier)
     try:
-        storage = db.storage('round trip')
+        storage = db.storage(u'round trip')
         storage.save(value, strat)
         saved = list(storage.fetch(strat))
         assert len(saved) == 1
@@ -110,27 +109,27 @@ def test_errors_if_given_incompatible_format_and_backend():
 def test_storage_does_not_error_if_the_database_is_invalid():
     database = ExampleDatabase()
     strat = integers()
-    key = 'wtf'
+    key = u'wtf'
     ints = database.storage(key)
-    database.backend.save(key, '["hi", "there"]')
+    database.backend.save(key, u'["hi", "there"]')
     assert list(ints.fetch(strat)) == []
 
 
-@pytest.mark.parametrize('s', ['', 'abcdefg', '☃'])
+@pytest.mark.parametrize(u's', [u'', u'abcdefg', u'☃'])
 def test_can_save_all_strings(s):
     db = ExampleDatabase()
-    storage = db.storage('text')
+    storage = db.storage(u'text')
     storage.save(tuple(s), text())
 
 
 def test_db_has_path_in_repr():
-    backend = SQLiteBackend(':memory:')
+    backend = SQLiteBackend(u':memory:')
     db = ExampleDatabase(backend=backend)
-    assert ':memory:' in repr(db)
+    assert u':memory:' in repr(db)
 
 
 def test_json_format_repr_is_nice():
-    assert repr(JSONFormat()) == 'JSONFormat()'
+    assert repr(JSONFormat()) == u'JSONFormat()'
 
 
 def test_can_time_out_when_reading_from_database():
@@ -234,7 +233,7 @@ def test_can_handle_more_than_max_iterations_in_db():
                         first[0] = False
                         seen.append(x)
                 if x not in seen:
-                    raise ValueError('Weird')
+                    raise ValueError(u'Weird')
 
             try:
                 test_seen()

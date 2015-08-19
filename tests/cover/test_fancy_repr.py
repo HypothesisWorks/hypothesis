@@ -14,18 +14,17 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import hypothesis.strategies as st
 
 
 def test_floats_is_floats():
-    assert repr(st.floats()) == 'floats()'
+    assert repr(st.floats()) == u'floats()'
 
 
 def test_includes_non_default_values():
-    assert repr(st.floats(max_value=1.0)) == 'floats(max_value=1.0)'
+    assert repr(st.floats(max_value=1.0)) == u'floats(max_value=1.0)'
 
 
 def foo(*args, **kwargs):
@@ -34,20 +33,20 @@ def foo(*args, **kwargs):
 
 def test_builds_repr():
     assert repr(st.builds(foo, st.just(1), x=st.just(10))) == \
-        'builds(foo, just(1), x=just(10))'
+        u'builds(foo, just(1), x=just(10))'
 
 
 def test_map_repr():
-    assert repr(st.integers().map(abs)) == 'integers().map(abs)'
+    assert repr(st.integers().map(abs)) == u'integers().map(abs)'
     assert repr(st.integers().map(lambda x: x * 2)) == \
-        'integers().map(lambda x: x * 2)'
+        u'integers().map(lambda x: x * 2)'
 
 
 def test_filter_repr():
     assert repr(st.integers().filter(lambda x: x != 3)) == \
-        'integers().filter(lambda x: x != 3)'
+        u'integers().filter(lambda x: x != 3)'
 
 
 def test_flatmap_repr():
     assert repr(st.integers().flatmap(lambda x: st.booleans())) == \
-        'integers().flatmap(lambda x: st.booleans())'
+        u'integers().flatmap(lambda x: st.booleans())'

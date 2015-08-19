@@ -14,8 +14,7 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 from unittest import TestCase
 
@@ -53,7 +52,7 @@ def test_kwarg_example_on_testcase():
         def test_hi(self, x):
             assert isinstance(x, integer_types)
 
-    Stuff('test_hi').test_hi()
+    Stuff(u'test_hi').test_hi()
 
 
 def test_errors_when_run_with_not_enough_args():
@@ -77,7 +76,7 @@ def test_errors_when_run_with_not_enough_kwargs():
 
 
 def test_can_use_examples_after_given():
-    long_str = "This is a very long string that you've no chance of hitting"
+    long_str = u"This is a very long string that you've no chance of hitting"
 
     @example(long_str)
     @given(text())
@@ -89,7 +88,7 @@ def test_can_use_examples_after_given():
 
 
 def test_can_use_examples_before_given():
-    long_str = "This is a very long string that you've no chance of hitting"
+    long_str = u"This is a very long string that you've no chance of hitting"
 
     @given(text())
     @example(long_str)
@@ -101,8 +100,8 @@ def test_can_use_examples_before_given():
 
 
 def test_can_use_examples_around_given():
-    long_str = "This is a very long string that you've no chance of hitting"
-    short_str = 'Still no chance'
+    long_str = u"This is a very long string that you've no chance of hitting"
+    short_str = u'Still no chance'
 
     seen = []
 
@@ -116,7 +115,7 @@ def test_can_use_examples_around_given():
     assert set(seen[:2]) == set((long_str, short_str))
 
 
-@pytest.mark.parametrize(('x', 'y'), [(1, False), (2, True)])
+@pytest.mark.parametrize((u'x', u'y'), [(1, False), (2, True)])
 @example(z=10)
 @given(z=integers())
 def test_is_a_thing(x, y, z):
@@ -144,7 +143,7 @@ def test_does_not_print_on_explicit_examples_if_no_failure():
             with capture_out() as out:
                 test_positive()
     out = out.getvalue()
-    assert 'Falsifying example: test_positive(1)' not in out
+    assert u'Falsifying example: test_positive(1)' not in out
 
 
 def test_prints_output_for_explicit_examples():
@@ -158,7 +157,7 @@ def test_prints_output_for_explicit_examples():
             with capture_out() as out:
                 test_positive()
     out = out.getvalue()
-    assert 'Falsifying example: test_positive(x=-1)' in out
+    assert u'Falsifying example: test_positive(x=-1)' in out
 
 
 def test_captures_original_repr_of_example():
@@ -173,4 +172,4 @@ def test_captures_original_repr_of_example():
             with capture_out() as out:
                 test_mutation()
     out = out.getvalue()
-    assert 'Falsifying example: test_mutation(x=[])' in out
+    assert u'Falsifying example: test_mutation(x=[])' in out

@@ -14,15 +14,14 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import pytest
 from hypothesis import given
 from hypothesis.strategies import lists, integers
 
 
-@pytest.mark.parametrize(('specifier', 'condition'), [
+@pytest.mark.parametrize((u'specifier', u'condition'), [
     (integers(), lambda x: x > 1),
     (lists(integers()), bool),
 ])

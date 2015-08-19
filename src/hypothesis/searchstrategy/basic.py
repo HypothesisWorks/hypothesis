@@ -14,14 +14,14 @@
 
 # END HEADER
 
-from __future__ import division, print_function, absolute_import, \
-    unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import hashlib
 from copy import deepcopy
 from random import Random
 from weakref import WeakKeyDictionary
 
+import hypothesis.internal.distributions as dist
 from hypothesis.settings import Settings
 from hypothesis.internal.compat import hrange, integer_types
 
@@ -77,7 +77,7 @@ class BasicStrategy(object):
         This is the only method you actually have to implement.
 
         """
-        raise NotImplementedError('BasicStrategy.generate')
+        raise NotImplementedError(u'BasicStrategy.generate')
 
     def simplify(self, random, value):
         """Given a random number generator and a value, return a collection of
@@ -136,7 +136,7 @@ class BasicTemplate(object):
 
 
 def add_int_to_hasher(hasher, i):
-    hasher.update(str(i).encode('utf-8'))
+    hasher.update(str(i).encode(u'utf-8'))
 
 
 class Generated(BasicTemplate):
@@ -188,8 +188,8 @@ class BasicSearchStrategy(SearchStrategy):
             return x.__name__ if x else repr(x)
 
         return (
-            'BasicSearchStrategy(generate=%s, '
-            'parameter=%s, simplify=%s)'
+            u'BasicSearchStrategy(generate=%s, '
+            u'parameter=%s, simplify=%s)'
         ) % (
             name_if(self.user_generate),
             name_if(self.user_parameter),
@@ -201,17 +201,23 @@ class BasicSearchStrategy(SearchStrategy):
             up = random.getrandbits(64)
         else:
             up = 0
+        n_distinct_templates = dist.geometric(random, random.random())
         template_choices = tuple(
             random.getrandbits(64)
-            for _ in hrange(10)
+            for _ in hrange(n_distinct_templates)
         )
         return (up, template_choices)
 
     def draw_template(self, random, parameter):
         up, template_choices = parameter
-        return Generated(
-            random.choice(template_choices), up
-        )
+        if template_choices:
+            return Generated(
+                random.choice(template_choices), up
+            )
+        else:
+            return Generated(
+                random.getrandbits(64), up
+            )
 
     def strictly_simpler(self, x, y):
         return x.depth > y.depth
