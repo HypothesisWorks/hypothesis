@@ -21,6 +21,16 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+-----------------------------------------------------------------------
+`1.10.2 <https://hypothesis.readthedocs.org/en/v1.10.2/>`_ - 2015-08-19
+-----------------------------------------------------------------------
+
+This is a small bug fix release:
+
+* star imports from hypothesis should now work correctly.
+* example quality for examples using flatmap will be better, as the way it had
+  previously been implemented was causing problems where Hypothesis was
+  erroneously labelling some examples as being duplicates.
 
 -----------------------------------------------------------------------
 `1.10.0 <https://hypothesis.readthedocs.org/en/v1.10.0/>`_ - 2015-08-04
