@@ -22,7 +22,17 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -----------------------------------------------------------------------
-`1.10.3 <https://hypothesis.readthedocs.org/en/v1.10.2/>`_ - 2015-08-19
+`1.10.4 <https://hypothesis.readthedocs.org/en/v1.10.4/>`_ - 2015-08-21
+-----------------------------------------------------------------------
+
+Tiny bug fix release:
+
+* If the database_file setting is set to None, this would have resulted in
+  an error when running tests. Now it does the same as setting database to
+  None.
+
+-----------------------------------------------------------------------
+`1.10.3 <https://hypothesis.readthedocs.org/en/v1.10.3/>`_ - 2015-08-19
 -----------------------------------------------------------------------
 
 Another small bug fix release.
