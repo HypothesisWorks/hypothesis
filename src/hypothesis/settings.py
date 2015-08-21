@@ -237,6 +237,8 @@ class Settings(object):
             self._database = databases.get(self.database_file) or (
                 ExampleDatabase(backend=SQLiteBackend(self.database_file)))
             databases[self.database_file] = self._database
+        if self._database is not_set:
+            self._database = None
         return self._database
 
     def __enter__(self):
