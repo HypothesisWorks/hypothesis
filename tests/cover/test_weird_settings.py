@@ -16,7 +16,8 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis import Settings, given, strategies as st
+from hypothesis import strategies as st
+from hypothesis import Settings, given
 
 
 def test_setting_database_to_none_disables_the_database():
