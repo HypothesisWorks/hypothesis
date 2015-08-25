@@ -41,7 +41,7 @@ __all__ = [
     'dictionaries', 'fixed_dictionaries',
     'sampled_from',
     'builds',
-    'streaming', 'basic',
+    'streaming', 'basic', 'recursive',
 ]
 
 
