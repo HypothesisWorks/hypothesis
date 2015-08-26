@@ -102,3 +102,13 @@ def test_does_not_simplify_into_surrogates():
     assert f == u'\ue000'
     f = find(text(), lambda x: len([t for t in x if t >= u'\udfff']) >= 10)
     assert f == u'\ue000' * 10
+
+
+@given(text(alphabet=[u'a', u'b']))
+def test_respects_alphabet_if_list(xs):
+    assert set(xs).issubset(set(u'ab'))
+
+
+@given(text(alphabet=u'cdef'))
+def test_respects_alphabet_if_string(xs):
+    assert set(xs).issubset(set(u'cdef'))

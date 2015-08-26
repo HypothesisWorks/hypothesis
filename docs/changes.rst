@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+
+-----------------------------------------------------------------------
+`1.10.7 <https://hypothesis.readthedocs.org/en/v1.10.7/>`_ - upcoming
+-----------------------------------------------------------------------
+
+* text() with a non-string alphabet would have used the repr() of the the alphabet
+  instead of its contexts. This is obviously silly. It now works with any sequence
+  of things convertible to unicode strings.
+
 -----------------------------------------------------------------------
 `1.10.6 <https://hypothesis.readthedocs.org/en/v1.10.6/>`_ - 2015-08-26
 -----------------------------------------------------------------------

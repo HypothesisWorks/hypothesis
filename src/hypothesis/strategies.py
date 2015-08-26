@@ -535,7 +535,7 @@ def text(
     elif isinstance(alphabet, SearchStrategy):
         char_strategy = alphabet
     else:
-        char_strategy = sampled_from(text_type(alphabet))
+        char_strategy = sampled_from(list(map(text_type, alphabet)))
     return StringStrategy(lists(
         char_strategy, average_size=average_size, min_size=min_size,
         max_size=max_size
