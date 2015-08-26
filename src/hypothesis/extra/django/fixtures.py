@@ -92,8 +92,7 @@ class Fixture(object):
             old_names, mirrors = old_config
             for connection, old_name, destroy in old_names:
                 if destroy:
-                    connection.creation.destroy_test_db(
-                        old_name, verbosity, False)
+                    connection.creation.destroy_test_db(old_name, verbosity)
 
     def __call__(self):
         with BuildContext():
