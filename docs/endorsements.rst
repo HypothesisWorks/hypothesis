@@ -53,6 +53,16 @@ Hypothesis is sure to find a place in most of our future Python codebases and ma
 existing ones too.
 
 -------------------------------------------
+`mulkieran <https://github.com/mulkieran>`_
+-------------------------------------------
+
+Just found out about this excellent QuickCheck for Python implementation and
+ran up a few tests for my `bytesize <https://github.com/mulkieran/bytesize>`
+package last night. Refuted a few hypotheses in the process.
+
+Looking forward to using it with a bunch of other projects as well.
+
+-------------------------------------------
 `Your name goes here <http://example.com>`_
 -------------------------------------------
 
