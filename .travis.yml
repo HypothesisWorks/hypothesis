@@ -19,6 +19,8 @@ cache:
 env:
     matrix:
         - TOXENV=coverage
+        - TOXENV=django17
+        - TOXENV=django18
         - TOXENV=lint
         - TOXENV=examples2
         - TOXENV=examples3
@@ -36,6 +38,10 @@ script:
 
 matrix:
     exclude:
+        - os: osx
+          env: TOXENV=django17
+        - os: osx
+          env: TOXENV=django18
         - os: osx
           env: TOXENV=examples2
         - os: osx
