@@ -22,6 +22,12 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -----------------------------------------------------------------------
+`1.10.6 <https://hypothesis.readthedocs.org/en/v1.10.6/>`_ - 2015-08-26
+-----------------------------------------------------------------------
+
+Fix support for fixtures on Django 1.7.
+
+-----------------------------------------------------------------------
 `1.10.4 <https://hypothesis.readthedocs.org/en/v1.10.4/>`_ - 2015-08-21
 -----------------------------------------------------------------------
 

@@ -16,5 +16,5 @@ from __future__ import division, print_function, absolute_import
 
 # END HEADER
 
-__version_info__ = (1, 10, 5)
+__version_info__ = (1, 10, 6)
 __version__ = u'.'.join(map(str, __version_info__))
