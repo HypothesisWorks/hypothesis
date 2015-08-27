@@ -23,7 +23,9 @@ from hypothesis.internal.compat import PY26, hrange
 from hypothesis.database.backend import SQLiteBackend
 
 if PY26:
-    alphabet = [chr(i) for i in hrange(128)]
+    # Workaround for bug with embedded null characters in a text string under
+    # python 2.6
+    alphabet = [chr(i) for i in hrange(1, 128)]
 else:
     alphabet = None
 
