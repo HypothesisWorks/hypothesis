@@ -22,7 +22,7 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -----------------------------------------------------------------------
-`1.11.0 <https://hypothesis.readthedocs.org/en/v1.11.0/>`_ - upcoming
+`1.11.0 <https://hypothesis.readthedocs.org/en/v1.11.0/>`_ - 2015-08-31
 -----------------------------------------------------------------------
 
 * text() with a non-string alphabet would have used the repr() of the the alphabet
