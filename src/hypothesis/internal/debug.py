@@ -23,7 +23,8 @@ from functools import wraps
 
 from hypothesis import Settings, strategy
 from hypothesis.core import find
-from hypothesis.errors import NoExamples, UnsatisfiedAssumption
+from hypothesis.errors import NoExamples, BadTemplateDraw, \
+    UnsatisfiedAssumption
 from hypothesis.control import BuildContext
 from hypothesis.database import ExampleDatabase
 from hypothesis.internal.compat import hrange
@@ -96,7 +97,10 @@ def some_template(spec, random=None):
         random = Random()
     strat = strategy(spec)
     for _ in hrange(100):
-        element = strat.draw_and_produce(random)
+        try:
+            element = strat.draw_and_produce(random)
+        except BadTemplateDraw:
+            continue
         try:
             with BuildContext():
                 strat.reify(element)
