@@ -25,7 +25,7 @@ import hypothesis.internal.distributions as dist
 from hypothesis.settings import Settings
 from hypothesis.internal.compat import hrange, integer_types
 
-from .strategies import SearchStrategy, strategy, check_length, \
+from .strategies import strategy, check_length, SearchStrategy, \
     check_data_type
 
 

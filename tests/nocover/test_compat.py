@@ -17,7 +17,7 @@
 from __future__ import division, print_function, absolute_import
 
 import pytest
-from hypothesis.internal.compat import BAD_PY3, hrange, qualname
+from hypothesis.internal.compat import hrange, BAD_PY3, qualname
 
 
 def test_small_hrange():

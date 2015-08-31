@@ -1,6 +1,6 @@
-from __future__ import division, print_function, absolute_import
-
 # coding=utf-8
+
+from __future__ import division, print_function, absolute_import
 
 # This file is part of Hypothesis (https://github.com/DRMacIver/hypothesis)
 

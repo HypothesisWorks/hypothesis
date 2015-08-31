@@ -22,8 +22,8 @@ from random import Random
 from hypothesis.types import Stream
 from hypothesis.utils.show import show
 from hypothesis.internal.compat import hrange, integer_types
-from hypothesis.searchstrategy.strategies import SearchStrategy, \
-    check_length, check_data_type
+from hypothesis.searchstrategy.strategies import check_length, \
+    SearchStrategy, check_data_type
 
 
 class StreamTemplate(object):

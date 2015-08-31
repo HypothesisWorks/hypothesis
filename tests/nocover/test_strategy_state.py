@@ -21,11 +21,11 @@ import hashlib
 from copy import deepcopy
 from random import Random
 
-from hypothesis import Settings, Verbosity, find, given, assume, strategy
+from hypothesis import find, given, assume, Settings, strategy, Verbosity
 from hypothesis.errors import BadData, NoExamples
 from hypothesis.database import ExampleDatabase
-from hypothesis.stateful import Bundle, RuleBasedStateMachine, \
-    StateMachineSearchStrategy, rule
+from hypothesis.stateful import rule, Bundle, RuleBasedStateMachine, \
+    StateMachineSearchStrategy
 from hypothesis.strategies import just, none, text, lists, binary, \
     floats, tuples, randoms, booleans, decimals, integers, fractions, \
     streaming, float_to_int, int_to_float, sampled_from, complex_numbers

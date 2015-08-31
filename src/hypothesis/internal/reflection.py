@@ -30,8 +30,8 @@ import inspect
 from functools import wraps
 
 from hypothesis.settings import storage_directory
-from hypothesis.internal.compat import ARG_NAME_ATTRIBUTE, hrange, \
-    qualname, text_type, to_unicode, unicode_safe_repr, \
+from hypothesis.internal.compat import hrange, qualname, text_type, \
+    to_unicode, unicode_safe_repr, ARG_NAME_ATTRIBUTE, \
     importlib_invalidate_caches
 
 

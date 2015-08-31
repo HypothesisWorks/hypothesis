@@ -20,7 +20,7 @@ from random import Random
 
 import pytest
 import hypothesis.strategies as s
-from hypothesis import Settings, find, given, example
+from hypothesis import find, given, example, Settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.control import BuildContext
 from hypothesis.internal.tracker import Tracker

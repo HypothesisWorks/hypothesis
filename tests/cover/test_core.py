@@ -20,7 +20,7 @@ import time
 
 import pytest
 import hypothesis.strategies as s
-from hypothesis import Settings, find, given, assume
+from hypothesis import find, given, assume, Settings
 from hypothesis.errors import NoSuchExample, Unsatisfiable
 from hypothesis.internal.tracker import Tracker
 

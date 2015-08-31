@@ -16,7 +16,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis import Settings, given
+from hypothesis import given, Settings
 from hypothesis.strategies import booleans, integers
 from hypothesis.internal.debug import minimal
 from hypothesis.searchstrategy.narytree import Leaf, Branch, n_ary_tree

@@ -23,14 +23,14 @@ from decimal import Decimal
 from fractions import Fraction
 
 import pytest
-from hypothesis import Settings, find, assume
+from hypothesis import find, assume, Settings
 from tests.common import parametrize, ordered_pair, constant_list
 from hypothesis.strategies import just, sets, text, lists, binary, \
     floats, tuples, booleans, decimals, integers, fractions, frozensets, \
     dictionaries, sampled_from
 from hypothesis.internal.debug import minimal
-from hypothesis.internal.compat import PY3, Counter, OrderedDict, hrange, \
-    reduce
+from hypothesis.internal.compat import PY3, hrange, reduce, Counter, \
+    OrderedDict
 
 
 def test_minimize_list_on_large_structure():

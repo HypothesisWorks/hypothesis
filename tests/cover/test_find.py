@@ -20,7 +20,7 @@ import math
 import time
 
 import pytest
-from hypothesis import Settings, find
+from hypothesis import find, Settings
 from hypothesis.errors import Timeout, NoSuchExample, \
     DefinitelyNoSuchExample
 from hypothesis.strategies import lists, floats, booleans, integers, \

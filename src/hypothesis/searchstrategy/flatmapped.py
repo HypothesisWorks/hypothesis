@@ -19,8 +19,8 @@ from __future__ import division, print_function, absolute_import
 from hypothesis.settings import Settings
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.searchstrategy.morphers import MorpherStrategy
-from hypothesis.searchstrategy.strategies import MappedSearchStrategy, \
-    strategy
+from hypothesis.searchstrategy.strategies import strategy, \
+    MappedSearchStrategy
 from hypothesis.searchstrategy.collections import TupleStrategy
 
 

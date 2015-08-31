@@ -21,7 +21,7 @@ import sys
 from random import Random
 
 import pytest
-from hypothesis import Settings, find, given
+from hypothesis import find, given, Settings
 from tests.common.basic import Bitfields, BoringBitfields, \
     simplify_bitfield
 from tests.common.utils import fails

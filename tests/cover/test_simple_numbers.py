@@ -23,8 +23,8 @@ from random import Random
 import pytest
 from hypothesis import find, given, assume
 from hypothesis.strategies import lists, floats, integers, complex_numbers
-from hypothesis.searchstrategy.numbers import FixedBoundedFloatStrategy, \
-    is_integral
+from hypothesis.searchstrategy.numbers import is_integral, \
+    FixedBoundedFloatStrategy
 from hypothesis.searchstrategy.strategies import BadData
 
 

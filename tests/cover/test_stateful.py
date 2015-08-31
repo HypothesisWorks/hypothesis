@@ -21,13 +21,13 @@ from random import Random
 from collections import namedtuple
 
 import pytest
-from hypothesis import Settings, assume, strategy
+from hypothesis import assume, Settings, strategy
 from hypothesis.errors import Flaky, BadData, InvalidDefinition
 from tests.common.utils import capture_out
 from hypothesis.database import ExampleDatabase
-from hypothesis.stateful import Bundle, StateMachineRunner, \
+from hypothesis.stateful import rule, Bundle, StateMachineRunner, \
     GenericStateMachine, RuleBasedStateMachine, \
-    StateMachineSearchStrategy, rule, run_state_machine_as_test
+    run_state_machine_as_test, StateMachineSearchStrategy
 from hypothesis.strategies import just, none, lists, tuples, booleans, \
     integers, sampled_from
 

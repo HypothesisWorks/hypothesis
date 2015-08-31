@@ -23,7 +23,7 @@ from __future__ import division, print_function, absolute_import
 import sys
 import math
 
-from hypothesis import Settings, given, assume
+from hypothesis import given, assume, Settings
 from hypothesis.errors import Unsatisfiable
 from tests.common.utils import fails, fails_with
 from hypothesis.strategies import lists, floats, randoms

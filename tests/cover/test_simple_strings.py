@@ -20,7 +20,7 @@ import unicodedata
 from random import Random
 
 import pytest
-from hypothesis import Settings, find, given
+from hypothesis import find, given, Settings
 from hypothesis.strategies import text, binary, tuples
 
 

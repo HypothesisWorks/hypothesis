@@ -22,8 +22,8 @@ from random import Random
 from hypothesis.errors import BadTemplateDraw, InvalidArgument
 from hypothesis.control import cleanup
 from hypothesis.internal.compat import integer_types
-from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
-    check_length, check_data_type
+from hypothesis.searchstrategy.strategies import BadData, check_length, \
+    SearchStrategy, check_data_type
 
 
 class Morpher(object):

@@ -25,8 +25,8 @@ import hypothesis.internal.distributions as dist
 from hypothesis.utils.size import clamp
 from hypothesis.internal.compat import hrange, text_type, integer_types
 from hypothesis.searchstrategy.misc import SampledFromStrategy
-from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
-    MappedSearchStrategy, check_type, infinitish, check_data_type
+from hypothesis.searchstrategy.strategies import BadData, check_type, \
+    infinitish, SearchStrategy, check_data_type, MappedSearchStrategy
 
 
 def integer_or_bad(data):

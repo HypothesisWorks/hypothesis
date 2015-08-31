@@ -22,8 +22,8 @@ import unicodedata
 import hypothesis.internal.distributions as dist
 from hypothesis.internal.compat import hrange, hunichr, text_type, \
     binary_type
-from hypothesis.searchstrategy.strategies import SearchStrategy, \
-    MappedSearchStrategy, check_length, check_data_type
+from hypothesis.searchstrategy.strategies import check_length, \
+    SearchStrategy, check_data_type, MappedSearchStrategy
 
 _spaces = [
     i for i in range(sys.maxunicode)

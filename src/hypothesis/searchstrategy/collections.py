@@ -27,10 +27,10 @@ from hypothesis.control import assume
 from hypothesis.settings import Settings
 from hypothesis.utils.show import show
 from hypothesis.utils.size import clamp
-from hypothesis.internal.compat import OrderedDict, hrange, integer_types
-from hypothesis.searchstrategy.strategies import EFFECTIVELY_INFINITE, \
-    BadData, SearchStrategy, MappedSearchStrategy, check_type, \
-    check_length, check_data_type, one_of_strategies
+from hypothesis.internal.compat import hrange, OrderedDict, integer_types
+from hypothesis.searchstrategy.strategies import BadData, check_type, \
+    check_length, SearchStrategy, check_data_type, one_of_strategies, \
+    EFFECTIVELY_INFINITE, MappedSearchStrategy
 
 
 def safe_mul(x, y):

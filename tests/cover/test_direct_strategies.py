@@ -20,7 +20,7 @@ import math
 
 import pytest
 import hypothesis.strategies as ds
-from hypothesis import Settings, find, given
+from hypothesis import find, given, Settings
 from hypothesis.errors import InvalidArgument
 from tests.common.basic import Bitfields, BoringBitfields
 

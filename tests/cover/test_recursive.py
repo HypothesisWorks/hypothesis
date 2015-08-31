@@ -18,7 +18,7 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 import hypothesis.strategies as st
-from hypothesis import Settings, find, given
+from hypothesis import find, given, Settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import integer_types
 

@@ -20,8 +20,8 @@ import hypothesis.internal.distributions as dist
 from hypothesis.types import RandomWithSeed
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.internal.chooser import chooser
-from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
-    MappedSearchStrategy, check_type, check_data_type
+from hypothesis.searchstrategy.strategies import BadData, check_type, \
+    SearchStrategy, check_data_type, MappedSearchStrategy
 
 
 class BoolStrategy(SearchStrategy):

@@ -30,7 +30,7 @@ from hypothesis.strategies import just, none, sets, text, basic, lists, \
     sampled_from, complex_numbers, fixed_dictionaries
 from hypothesis.strategytests import mutate_basic, templates_for, \
     strategy_test_suite
-from hypothesis.internal.compat import OrderedDict, hrange
+from hypothesis.internal.compat import hrange, OrderedDict
 from hypothesis.searchstrategy.morphers import MorpherStrategy
 from hypothesis.searchstrategy.narytree import n_ary_tree
 

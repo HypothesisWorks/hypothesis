@@ -22,8 +22,8 @@ from hypothesis import Settings
 from hypothesis.strategies import lists, tuples
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.distributions import geometric, uniform_float
-from hypothesis.searchstrategy.strategies import BadData, SearchStrategy, \
-    strategy, check_length, check_data_type
+from hypothesis.searchstrategy.strategies import BadData, strategy, \
+    check_length, SearchStrategy, check_data_type
 
 NAryTree = namedtuple(u'NAryTree', (
     u'branch_labels',

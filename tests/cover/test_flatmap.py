@@ -19,7 +19,7 @@ from __future__ import division, print_function, absolute_import
 from random import Random
 
 import pytest
-from hypothesis import Settings, given, assume, strategy
+from hypothesis import given, assume, Settings, strategy
 from hypothesis.database import ExampleDatabase
 from hypothesis.strategies import just, lists, floats, tuples, integers
 from hypothesis.internal.debug import some_template

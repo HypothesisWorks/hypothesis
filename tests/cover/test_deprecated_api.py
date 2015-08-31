@@ -24,7 +24,7 @@ from collections import namedtuple
 
 import pytest
 import hypothesis.specifiers as s
-from hypothesis import Settings, find, strategy
+from hypothesis import find, Settings, strategy
 from hypothesis.errors import InvalidArgument
 from tests.common.basic import Bitfields
 from hypothesis.internal.compat import text_type, binary_type, \
