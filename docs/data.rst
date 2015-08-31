@@ -28,7 +28,7 @@ you're not sure how many you'll need in advance. For this, we have streaming
 types.
 
 
-.. code-block:: pycon
+.. code-block:: python
 
     >>> from hypothesis import strategy
     >>> from hypothesis.strategies import streaming, integers
@@ -51,7 +51,7 @@ that index and no further.
 You can iterate over it too (warning: iter on a stream given to you
 by Hypothesis in this way will never terminate):
 
-.. code-block:: pycon
+.. code-block:: python
 
     >>> it = iter(x)
     >>> next(it)
@@ -66,7 +66,7 @@ by Hypothesis in this way will never terminate):
 Slicing will also work, and will give you back Streams. If you set an upper
 bound then iter on those streams *will* terminate:
 
-.. code-block:: pycon
+.. code-block:: python
 
     >>> list(x[:5])
     [32, 132, 209, 843, -19]
@@ -82,7 +82,7 @@ bound then iter on those streams *will* terminate:
 
 You can also apply a function to transform a stream:
 
-.. code-block:: pycon
+.. code-block:: python
 
     >>> t = strategy(streaming(int)).example()
     >>> tm = t.map(lambda n: n * 2)
@@ -127,7 +127,7 @@ f(s.example()). i.e. we draw an example from s and then apply f to it.
 
 e.g.:
 
-.. code-block:: pycon
+.. code-block:: python
 
   >>> strategy([int]).map(sorted).example()
   [1, 5, 17, 21, 24, 30, 45, 82, 88, 88, 90, 96, 105]
@@ -142,7 +142,7 @@ Filtering
 filter lets you reject some examples. s.filter(f).example() is some example
 of s such that f(s) is truthy.
 
-.. code-block:: pycon
+.. code-block:: python
 
   >>> strategy(int).filter(lambda x: x > 11).example()
   1873
@@ -152,7 +152,7 @@ of s such that f(s) is truthy.
 It's important to note that filter isn't magic and if your condition is too
 hard to satisfy then this can fail:
 
-.. code-block:: pycon
+.. code-block:: python
 
   >>> strategy(int).filter(lambda x: False).example()
   Traceback (most recent call last):
@@ -169,7 +169,7 @@ and then use filter to remove things that didn't work out. So for example if you
 wanted pairs of integers (x,y) such that x < y you could do the following:
 
 
-.. code-block:: pycon
+.. code-block:: python
 
   >>> strategy((int, int)).map(
   ... lambda x: tuple(sorted(x))).filter(lambda x: x[0] != x[1]).example()
@@ -190,7 +190,7 @@ For example suppose we wanted to generate a list of lists of the same
 length:
 
 
-.. code-block:: pycon
+.. code-block:: python
 
   >>> from hypothesis.strategies import integers, lists
   >>> from hypothesis import find
@@ -237,7 +237,7 @@ The way Hypothesis handles this is with the 'recursive' function in hypothesis.s
 which you pass in a base case and a function that given a strategy for your data type
 returns a new strategy for it. So for example:
 
-.. code-block:: pycon
+.. code-block:: python
 
   >>> import hypothesis.strategies as st
   >>> json = st.recursive(st.floats() | st.booleans() | st.text() | st.none(),
@@ -259,7 +259,7 @@ The size control of this works by limiting the maximum number of values that can
 we wanted to only generate really small JSON we could do this as:
 
 
-.. code-block:: pycon
+.. code-block:: python
 
   >>> small_lists = st.recursive(st.booleans(), st.lists, max_leaves=5)
   >>> small_lists.example()
@@ -304,7 +304,7 @@ except that the result is reproducible and will minimize correctly. The
 decorated function has the initial argument removed from the list, but will
 accept all the others in the expected order. Defaults are preserved.
 
-.. code-block:: pycon
+.. code-block:: python
 
     >>> list_and_index()
     list_and_index()
