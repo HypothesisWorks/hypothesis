@@ -271,6 +271,69 @@ we wanted to only generate really small JSON we could do this as:
   >>> small_lists.example()
   []
 
+~~~~~~~~~~~~~~~~~~~~
+Composite strategies
+~~~~~~~~~~~~~~~~~~~~
+
+The @composite decorator lets you combine other strategies in more or less
+arbitrary ways.
+
+Advance warning: You're going to end up wanting to use this API for a lot of
+things, and it's not that you *shouldn't* do that, but it has certain
+intrinsic limitations which mean that overuse of it can hurt performance and
+example quality.
+
+If it's convenient to do so you should use builds instead. Otherwise feel free
+to use this, and if you end up with bad examples or poor performance then you
+should look here first as the culprit.
+
+The composite decorator works by giving you a function as the first argument
+that you can use to draw examples from other strategies. For example, the
+following gives you a list and an index into it:
+
+.. code-block:: python
+
+    @composite
+    def list_and_index(draw, elements=integers()):
+        xs = draw(lists(elements, min_size=1))
+        i = draw(integers(min_value=0, max_value=len(xs) - 1))
+        return (xs, i)
+
+'draw(s)' is a function that should be thought of as returning s.example(),
+except that the result is reproducible and will minimize correctly. The
+decorated function has the initial argument removed from the list, but will
+accept all the others in the expected order. Defaults are preserved.
+
+.. code-block:: pycon
+
+    >>> list_and_index()
+    list_and_index()
+    >>> list_and_index().example()
+    ([5585, 4073], 1)
+
+    >>> list_and_index(booleans())
+    list_and_index(elements=booleans())
+    >>> list_and_index(booleans()).example()
+    ([False, False, True], 1)
+
+Note that the repr will work exactly like it does for all the built-in
+strategies: It will be a function that you can call to get the strategy in
+question, with values provided only if they do not match the defaults.
+
+You can use assume inside composite functions:
+
+.. code-block:: python
+
+    @composite
+    def distinct_strings_with_common_characters(draw):
+        x = draw(text(), min_size=1)
+        y = draw(text(alphabet=x))
+        assume(x != y)
+        return (x, y)
+
+This works as assume normally would, filtering out any examples for which the
+passed in argument is falsey.
+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Defining entirely new strategies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

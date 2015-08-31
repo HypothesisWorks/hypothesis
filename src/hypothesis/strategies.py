@@ -687,6 +687,61 @@ def permutations(values):
     return lists(tuples(index, index), max_size=n ** 2).map(build_permutation)
 
 
+def composite(f):
+    """Defines a strategy that is built out of potentially arbitrarily many
+    other strategies.
+
+    This is intended to be used as a decorator. Example usage:
+
+    @composite
+    def ordered_integers(draw):
+        x = draw(integers())
+        y = draw(integers(min_value=x))
+        return (x, y)
+
+    See the full documentation for more details about how to use this function.
+
+    """
+
+    from hypothesis.searchstrategy.morphers import MorpherStrategy
+    import inspect
+    from hypothesis.internal.reflection import copy_argspec
+    argspec = inspect.getargspec(f)
+
+    if (
+        argspec.defaults is not None and
+        len(argspec.defaults) == len(argspec.args)
+    ):
+        raise InvalidArgument(
+            'A default value for initial argument will never be used')
+    if len(argspec.args) == 0 and not argspec.varargs:
+        raise InvalidArgument(
+            'Functions wrapped with composite must take at least one '
+            'positional argument.'
+        )
+
+    new_argspec = inspect.ArgSpec(
+        args=argspec.args[1:], varargs=argspec.varargs,
+        keywords=argspec.keywords, defaults=argspec.defaults
+    )
+
+    base_strategy = streaming(MorpherStrategy())
+
+    @defines_strategy
+    @copy_argspec(f.__name__, new_argspec)
+    def accept(*args, **kwargs):
+        def call_with_draw(morphers):
+            index = [0]
+
+            def draw(strategy):
+                i = index[0]
+                index[0] += 1
+                return morphers[i].become(strategy)
+            return f(*((draw,) + args), **kwargs)
+        return base_strategy.map(call_with_draw)
+    return accept
+
+
 # Private API below here
 
 def check_type(typ, arg):
