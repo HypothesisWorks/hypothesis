@@ -691,15 +691,8 @@ def composite(f):
     """Defines a strategy that is built out of potentially arbitrarily many
     other strategies.
 
-    This is intended to be used as a decorator. Example usage:
-
-    @composite
-    def ordered_integers(draw):
-        x = draw(integers())
-        y = draw(integers(min_value=x))
-        return (x, y)
-
-    See the full documentation for more details about how to use this function.
+    This is intended to be used as a decorator. See the full
+    documentation for more details about how to use this function.
 
     """
 
