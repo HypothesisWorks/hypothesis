@@ -28,7 +28,7 @@ and Hypothesis works around a bug or two in older versions.
 
 It lives in the hypothesis.extra.datetime package:
 
-.. code-block:: pycon
+.. code-block:: python
 
   >>> from hypothesis.extra.datetime import datetimes
   >>> datetimes().example()
@@ -39,7 +39,7 @@ It lives in the hypothesis.extra.datetime package:
 As you can see, it produces years from quite a wide range. If you want to
 narrow it down you can ask for a more specific range of years:
 
-.. code-block:: pycon
+.. code-block:: python
 
   >>> datetimes(min_year=2001, max_year=2010).example()
   datetime.datetime(2010, 7, 7, 0, 15, 0, 614034, tzinfo=<DstTzInfo 'Pacif...
@@ -48,7 +48,7 @@ narrow it down you can ask for a more specific range of years:
 
 You can also specify timezones:
 
-.. code-block:: pycon
+.. code-block:: python
 
   >>> import pytz
   >>> pytz.all_timezones[:3]
@@ -62,7 +62,7 @@ You can also specify timezones:
 
 If the set of timezones is empty you will get a naive datetime:
 
-.. code-block:: pycon
+.. code-block:: python
 
   >>> datetimes(timezones=[]).example()
   datetime.datetime(918, 11, 26, 2, 0, 35, 916439)
@@ -70,7 +70,7 @@ If the set of timezones is empty you will get a naive datetime:
 You can also explicitly get a mix of naive and non-naive datetimes if you
 want:
 
-.. code-block:: pycon
+.. code-block:: python
 
     >>> datetimes(allow_naive=True).example()
     datetime.datetime(2433, 3, 20, 0, 0, 44, 460383, tzinfo=<DstTzInfo 'Asia/Hovd' HOVT+7:00:00 STD>)
@@ -95,7 +95,7 @@ strategy for producing text data from any FakeFactory provider.
 So for example the following will parametrize a test by an email address:
 
 
-.. code-block:: pycon
+.. code-block:: python
 
     >>> fake_factory('email').example()
     'tnader@prosacco.info'
@@ -106,7 +106,7 @@ So for example the following will parametrize a test by an email address:
 You can explicitly specify the locale (otherwise it uses any of the available
 locales), either as a single locale or as several:
 
-.. code-block:: pycon
+.. code-block:: python
 
     >>> fake_factory('name', locale='en_GB').example()
     'Antione Gerlach'
@@ -118,7 +118,7 @@ locales), either as a single locale or as several:
 If you want to your own FakeFactory providers you can do that too, passing them
 in as a providers argument:
 
-.. code-block:: pycon
+.. code-block:: python
 
     >>> from faker.providers import BaseProvider
     >>> class KittenProvider(BaseProvider):
