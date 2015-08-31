@@ -70,7 +70,7 @@ class DatabaseMergingState(GenericStateMachine):
 
     def values(self):
         if PY26:
-            base = s.text(alphabet=[chr(i) for i in hrange(128)])
+            base = s.text(alphabet=[chr(i) for i in hrange(1, 128)])
         else:
             base = s.text()
         if self.seen_strings:
