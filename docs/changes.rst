@@ -21,14 +21,19 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
-
 -----------------------------------------------------------------------
-`1.10.7 <https://hypothesis.readthedocs.org/en/v1.10.7/>`_ - upcoming
+`1.11.0 <https://hypothesis.readthedocs.org/en/v1.11.0/>`_ - upcoming
 -----------------------------------------------------------------------
 
 * text() with a non-string alphabet would have used the repr() of the the alphabet
   instead of its contexts. This is obviously silly. It now works with any sequence
   of things convertible to unicode strings.
+* @given will now work on methods whose definitions contains no explicit positional
+  arguments, only varargs (`bug #118 <https://github.com/DRMacIver/hypothesis/issues/118>`_).
+  This may have some knock on effects because it means that @given no longer changes the
+  argspec of functions other than by adding defaults.
+* Introduction of new @composite feature for more natural definition of strategies you'd
+  previously have used flatmap for.
 
 -----------------------------------------------------------------------
 `1.10.6 <https://hypothesis.readthedocs.org/en/v1.10.6/>`_ - 2015-08-26
