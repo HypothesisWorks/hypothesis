@@ -393,6 +393,7 @@ def copy_argspec(name, argspec):
     else:
         parts = list(argspec.args)
     used_names = list(argspec.args)
+    used_names.append(name)
 
     def accept(f):
         fargspec = inspect.getargspec(f)

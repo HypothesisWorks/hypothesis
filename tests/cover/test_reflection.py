@@ -436,6 +436,16 @@ def test_copying_preserves_argspec(f):
     assert len(af.defaults or ()) == len(at.defaults or ())
 
 
+def test_name_does_not_clash_with_function_names():
+    def f():
+        pass
+
+    @copy_argspec('f', inspect.getargspec(f))
+    def g():
+        pass
+    g()
+
+
 def test_copying_sets_name():
     f = copy_argspec(
         u'hello_world', inspect.getargspec(has_two_args))(universal_acceptor)
