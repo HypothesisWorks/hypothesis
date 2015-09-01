@@ -85,3 +85,11 @@ def test_can_use_pure_args():
     def stuff(*args):
         return args[0](st.sampled_from(args[1:]))
     assert find(stuff(1, 2, 3, 4, 5), lambda x: True) == 1
+
+
+def test_composite_of_lists():
+    @st.composite
+    def f(draw):
+        return draw(st.integers()) + draw(st.integers())
+
+    assert find(st.lists(f()), lambda x: len(x) >= 10) == [0] * 10

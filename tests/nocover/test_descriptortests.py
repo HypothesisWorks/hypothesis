@@ -26,8 +26,8 @@ from tests.common.basic import Bitfields, BoringBitfields, \
 from hypothesis.stateful import StateMachineSearchStrategy
 from hypothesis.strategies import just, none, sets, text, basic, lists, \
     binary, builds, floats, one_of, tuples, randoms, booleans, decimals, \
-    integers, fractions, recursive, streaming, frozensets, dictionaries, \
-    sampled_from, complex_numbers, fixed_dictionaries
+    integers, composite, fractions, recursive, streaming, frozensets, \
+    dictionaries, sampled_from, complex_numbers, fixed_dictionaries
 from hypothesis.strategytests import mutate_basic, templates_for, \
     strategy_test_suite
 from hypothesis.internal.compat import hrange, OrderedDict
@@ -230,6 +230,13 @@ with Settings(average_list_length=5.0):
         )
     )
 
+    @composite
+    def tight_integer_list(draw):
+        x = draw(integers())
+        y = draw(integers(min_value=x))
+        return draw(lists(integers(min_value=x, max_value=y)))
+
+    TestComposite = strategy_test_suite(tight_integer_list())
 
 TestStatemachine = strategy_test_suite(StateMachineSearchStrategy())
 
