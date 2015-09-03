@@ -74,7 +74,7 @@ it even if you've changed other things. For example, if we have something like:
 
   @given([int])
   def test_lists_are_short(xs):
-    assert len(xs) < 100
+      assert len(xs) < 100
 
 then in the classic mode of quickcheck simplification, once we've found an
 example which is only 100 elements long and are trying to simplify the elements
