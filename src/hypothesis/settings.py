@@ -68,7 +68,12 @@ def storage_directory(name):
 all_settings = {}
 
 
-databases = {}
+class _DatabaseCache(threading.local):
+
+    def __init__(self):
+        self.dbs = {}
+
+_db_cache = _DatabaseCache()
 
 
 def field_name(setting_name):
@@ -228,15 +233,16 @@ class Settings(object):
         value will be used (even if it was None). If not and the
         database_file setting is not None this will be lazily loaded as
         an SQLite backed ExampleDatabase using that file the first time
-        this property is accessed.
+        this property is accessed on a particular thread.
 
         """
         if self._database is not_set and self.database_file is not None:
             from hypothesis.database import ExampleDatabase
             from hypothesis.database.backend import SQLiteBackend
-            self._database = databases.get(self.database_file) or (
-                ExampleDatabase(backend=SQLiteBackend(self.database_file)))
-            databases[self.database_file] = self._database
+            if self.database_file not in _db_cache.dbs:
+                _db_cache.dbs[self.database_file] = (
+                    ExampleDatabase(backend=SQLiteBackend(self.database_file)))
+            return _db_cache.dbs[self.database_file]
         if self._database is not_set:
             self._database = None
         return self._database
