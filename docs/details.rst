@@ -9,7 +9,7 @@ to get started but will nevertheless make your life easier.
 Making assumptions
 ------------------
 
-Sometimes hypothesis doesn't give you exactly the right sort of data you want - it's
+Sometimes Hypothesis doesn't give you exactly the right sort of data you want - it's
 mostly of the right shape, but some examples won't work and you don't want to care about
 them. You *can* just ignore these by aborting the test early, but this runs the risk of
 accidentally testing a lot less than you think you are. Also it would be nice to spend
