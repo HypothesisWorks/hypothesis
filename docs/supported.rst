@@ -11,19 +11,20 @@ for the details.
 Python versions
 ---------------
 
-Hypothesis has quite wide version support. It is supported and tested on python 2.7
-and python 3.2+. Supporting 3.0 or 3.1 wouldn't be infeasible but I'd need a good
-reason to. Python 2.6 is supported on a "best effort" basis. It is supported in the 1.7.x
+Hypothesis is supported and tested on python 2.7
+and python 3.3+. Python 3.0 through 3.2 are unsupported and definitely don't work.
+It's not infeasible to make them work but would need a very good reason.
+
+Python 2.6 is supported on a "best effort" basis. It is supported in the 1.7.x
 versions of Hypothesis and will most likely continue being supported through all of the 1.x
 versions, however I'm not committing to that.
 
-Hypothesis also supports PyPy (PyPy3 should also work but isn't part of
-the CI at the moment), and should support 32-bit and narrow builds, though
-this is currently only tested on Windows.
+Hypothesis also supports PyPy (PyPy3 does not work because it only runs 3.2 compatible
+code, but if and when there's a 3.3 compatible version it will be supported), and
+should support 32-bit and narrow builds, though this is currently only tested on Windows.
 
-No testing has been performed on Jython or IronPython. It might work but I'd
-be surprised. Let me know if you need these supported. It might be possible
-but I make no promises.
+Hypothesis does not currently work on Jython (it requires sqlite), though could feasibly
+be made to do so. IronPython might work but hasn't been tested.
 
 -----------------
 Operating systems
