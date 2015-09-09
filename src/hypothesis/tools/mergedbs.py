@@ -5,7 +5,7 @@
 # This file is part of Hypothesis (https://github.com/DRMacIver/hypothesis)
 
 # Most of this work is copyright (C) 2013-2015 David R. MacIver
-# (david@drmaciver.com), but it contains contributions by other. See
+# (david@drmaciver.com), but it contains contributions by others. See
 # https://github.com/DRMacIver/hypothesis/blob/master/CONTRIBUTING.rst for a
 # full list of people who may hold copyright, and consult the git log if you
 # need to determine who owns an individual contribution.
