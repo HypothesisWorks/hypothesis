@@ -24,8 +24,8 @@ import os
 import re
 import ast
 import sys
-import types
 import uuid
+import types
 import hashlib
 import inspect
 from functools import wraps
