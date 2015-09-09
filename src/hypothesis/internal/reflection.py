@@ -25,6 +25,7 @@ import re
 import ast
 import sys
 import types
+import uuid
 import hashlib
 import inspect
 from functools import wraps
@@ -347,18 +348,35 @@ def source_exec_as_module(source):
 
     d = eval_directory()
     add_directory_to_path(d)
-    name = u'hypothesis_temporary_module_%s' % (
+    final_name = u'hypothesis_temporary_module_%s' % (
         hashlib.sha1(source.encode(u'utf-8')).hexdigest(),
     )
-    filepath = os.path.join(d, name + u'.py')
-    f = open(filepath, u'w')
+    temporary_name = u'hypothesis_temporary_module_%s_%s' % (
+        hashlib.sha1(source.encode(u'utf-8')).hexdigest(),
+        uuid.uuid4(),
+    )
+    temporary_filepath = os.path.join(d, temporary_name + u'.py')
+    final_filepath = os.path.join(d, final_name + u'.py')
+    f = open(temporary_filepath, u'w')
     f.write(source)
     f.close()
-    assert os.path.exists(filepath)
-    with open(filepath) as r:
+    assert os.path.exists(temporary_filepath)
+
+    try:
+        os.rename(temporary_filepath, final_filepath)
+    except OSError:
+        # The odds of final_filepath being a directory are basically zero, and
+        # it's basically impossible for them to be on different filesystems, so
+        # if this is raised it's because the destination already exists on
+        # Windows. That's fine, it won't be different, so just keep going.
+        assert not os.path.isdir(final_filepath)
+        pass
+
+    assert os.path.exists(final_filepath)
+    with open(final_filepath) as r:
         assert r.read() == source
     importlib_invalidate_caches()
-    result = __import__(name)
+    result = __import__(final_name)
     eval_cache[source] = result
     return result
 
