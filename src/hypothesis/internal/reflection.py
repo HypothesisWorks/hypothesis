@@ -368,11 +368,13 @@ def source_exec_as_module(source):
         # The odds of final_filepath being a directory are basically zero, and
         # it's basically impossible for them to be on different filesystems, so
         # if this is raised it's because the destination already exists on
-        # Windows. That's fine, it won't be different, so just keep going.
+        # Windows. That's fine, it won't be different, so just keep going,
+        # deleting our tempfile.
         assert not os.path.isdir(final_filepath)
-        pass
+        os.remove(temporary_filepath)
 
     assert os.path.exists(final_filepath)
+    assert not os.path.exists(temporary_filepath)
     with open(final_filepath) as r:
         assert r.read() == source
     importlib_invalidate_caches()
