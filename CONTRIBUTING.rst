@@ -70,9 +70,10 @@ people have also contributed work. As well as my thanks, they also have copyrigh
 their individual contributions.
 
 * `Adam Sven Johnson <https://www.github.com/pkqk>`_
-* `Alex Stapleton <https://www.github.com/public>`_ 
-* `Charles O'Farrell <https://www.github.com/charleso>`_ 
+* `Alex Stapleton <https://www.github.com/public>`_
+* `Charles O'Farrell <https://www.github.com/charleso>`_
 * `Christopher Martin <https://www.github.com/chris-martin>`_ (`ch.martin@gmail.com <mailto:ch.martin@gmail.com>`_)
+* `Cory Benfield <https://www.github.com/Lukasa>`_
 * `Florian Bruhin <https://www.github.com/The-Compiler>`_
 * `follower <https://www.github.com/follower>`_
 * `Jonty Wareing <https://www.github.com/Jonty>`_ (`jonty@jonty.co.uk <mailto:jonty@jonty.co.uk>`_)
