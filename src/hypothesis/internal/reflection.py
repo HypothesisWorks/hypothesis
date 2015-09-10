@@ -364,7 +364,7 @@ def source_exec_as_module(source):
 
     try:
         os.rename(temporary_filepath, final_filepath)
-    except OSError:
+    except OSError:  # pragma: no cover
         # The odds of final_filepath being a directory are basically zero, and
         # it's basically impossible for them to be on different filesystems, so
         # if this is raised it's because the destination already exists on
