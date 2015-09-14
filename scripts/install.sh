@@ -96,6 +96,10 @@ case "${TOXENV}" in
         pyenv install -s 3.3.6
         ln -s $PYENVS/3.3.6/bin/python $SNAKEPIT/python3.3
         ;;
+    py35)
+        pyenv install -s 3.5.0
+        ln -s $PYENVS/3.5.0/bin/python $SNAKEPIT/python3.5
+        ;;
     pypy)
         pyenv install -s pypy-2.6.1
         ln -s $PYENVS/pypy-2.6.1/bin/pypy $SNAKEPIT/pypy
