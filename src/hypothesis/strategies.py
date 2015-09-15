@@ -26,8 +26,9 @@ import hypothesis.specifiers as spec
 from hypothesis.errors import InvalidArgument
 from hypothesis.settings import Settings
 from hypothesis.searchstrategy import strategy, SearchStrategy
-from hypothesis.internal.compat import hrange, text_type, binary_type, \
-    integer_types, float_to_decimal, unicode_safe_repr
+from hypothesis.internal.compat import hrange, ArgSpec, text_type, \
+    getargspec, binary_type, integer_types, float_to_decimal, \
+    unicode_safe_repr
 from hypothesis.searchstrategy.reprwrapper import ReprWrapperStrategy
 
 __all__ = [
@@ -48,8 +49,7 @@ __all__ = [
 def defines_strategy(strategy_definition):
     from hypothesis.internal.reflection import proxies, arg_string, \
         convert_positional_arguments
-    import inspect
-    argspec = inspect.getargspec(strategy_definition)
+    argspec = getargspec(strategy_definition)
     defaults = {}
     if argspec.defaults is not None:
         for k in hrange(1, len(argspec.defaults) + 1):
@@ -697,9 +697,8 @@ def composite(f):
     """
 
     from hypothesis.searchstrategy.morphers import MorpherStrategy
-    import inspect
     from hypothesis.internal.reflection import copy_argspec
-    argspec = inspect.getargspec(f)
+    argspec = getargspec(f)
 
     if (
         argspec.defaults is not None and
@@ -713,7 +712,7 @@ def composite(f):
             'positional argument.'
         )
 
-    new_argspec = inspect.ArgSpec(
+    new_argspec = ArgSpec(
         args=argspec.args[1:], varargs=argspec.varargs,
         keywords=argspec.keywords, defaults=argspec.defaults
     )

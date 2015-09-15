@@ -41,7 +41,8 @@ from hypothesis.executors import executor
 from hypothesis.reporting import report, debug_report, verbose_report, \
     current_verbosity
 from hypothesis.deprecation import note_deprecation
-from hypothesis.internal.compat import qualname, unicode_safe_repr
+from hypothesis.internal.compat import qualname, getargspec, \
+    unicode_safe_repr
 from hypothesis.internal.tracker import Tracker
 from hypothesis.internal.reflection import arg_string, copy_argspec, \
     function_digest, fully_qualified_name, convert_positional_arguments, \
@@ -403,7 +404,7 @@ def given(*generator_arguments, **generator_kwargs):
         else:
             random = provided_random or Random()
 
-        original_argspec = inspect.getargspec(test)
+        original_argspec = getargspec(test)
         if generator_arguments and original_argspec.varargs:
             raise InvalidArgument(
                 u'varargs are not supported with positional arguments to '

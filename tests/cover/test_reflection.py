@@ -22,7 +22,7 @@ from copy import deepcopy
 from functools import partial
 
 import pytest
-from hypothesis.internal.compat import PY3, BAD_PY3
+from hypothesis.internal.compat import PY3, ArgSpec, BAD_PY3, getargspec
 from hypothesis.internal.reflection import proxies, arg_string, \
     copy_argspec, unbind_method, function_digest, fully_qualified_name, \
     source_exec_as_module, convert_keyword_arguments, \
@@ -426,9 +426,9 @@ def has_kwargs(**kwargs):
     u'f', [has_one_arg, has_two_args, has_varargs, has_kwargs]
 )
 def test_copying_preserves_argspec(f):
-    af = inspect.getargspec(f)
-    t = copy_argspec(u'foo', inspect.getargspec(f))(universal_acceptor)
-    at = inspect.getargspec(t)
+    af = getargspec(f)
+    t = copy_argspec(u'foo', getargspec(f))(universal_acceptor)
+    at = getargspec(t)
     assert af.args == at.args
     assert af.varargs == at.varargs
     assert af.keywords == at.keywords
@@ -439,7 +439,7 @@ def test_name_does_not_clash_with_function_names():
     def f():
         pass
 
-    @copy_argspec('f', inspect.getargspec(f))
+    @copy_argspec('f', getargspec(f))
     def g():
         pass
     g()
@@ -447,19 +447,19 @@ def test_name_does_not_clash_with_function_names():
 
 def test_copying_sets_name():
     f = copy_argspec(
-        u'hello_world', inspect.getargspec(has_two_args))(universal_acceptor)
+        u'hello_world', getargspec(has_two_args))(universal_acceptor)
     assert f.__name__ == u'hello_world'
 
 
 def test_uses_defaults():
     f = copy_argspec(
-        u'foo', inspect.getargspec(has_a_default))(universal_acceptor)
+        u'foo', getargspec(has_a_default))(universal_acceptor)
     assert f(3, 2) == ((3, 2, 1), {})
 
 
 def test_uses_varargs():
     f = copy_argspec(
-        u'foo', inspect.getargspec(has_varargs))(universal_acceptor)
+        u'foo', getargspec(has_varargs))(universal_acceptor)
     assert f(1, 2) == ((1, 2), {})
 
 
@@ -497,32 +497,32 @@ def test_copy_argspec_works_with_conflicts():
     def accepts_everything(*args, **kwargs):
         pass
 
-    copy_argspec(u'hello', inspect.ArgSpec(
+    copy_argspec(u'hello', ArgSpec(
         args=(u'f',), varargs=None, keywords=None, defaults=None
     ))(accepts_everything)(1)
 
-    copy_argspec(u'hello', inspect.ArgSpec(
+    copy_argspec(u'hello', ArgSpec(
         args=(), varargs=u'f', keywords=None, defaults=None
     ))(accepts_everything)(1)
 
-    copy_argspec(u'hello', inspect.ArgSpec(
+    copy_argspec(u'hello', ArgSpec(
         args=(), varargs=None, keywords=u'f', defaults=None
     ))(accepts_everything)()
 
-    copy_argspec(u'hello', inspect.ArgSpec(
+    copy_argspec(u'hello', ArgSpec(
         args=(u'f', u'f_3'), varargs=u'f_1', keywords=u'f_2', defaults=None
     ))(accepts_everything)(1, 2)
 
 
 def test_copy_argspec_validates_arguments():
     with pytest.raises(ValueError):
-        copy_argspec(u'hello_world', inspect.ArgSpec(
+        copy_argspec(u'hello_world', ArgSpec(
             args=[u'a b'], varargs=None, keywords=None, defaults=None))
 
 
 def test_copy_argspec_validates_function_name():
     with pytest.raises(ValueError):
-        copy_argspec(u'hello world', inspect.ArgSpec(
+        copy_argspec(u'hello world', ArgSpec(
             args=[u'a', u'b'], varargs=None, keywords=None, defaults=None))
 
 

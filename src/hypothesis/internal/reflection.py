@@ -31,7 +31,7 @@ from functools import wraps
 
 from hypothesis.settings import storage_directory
 from hypothesis.internal.compat import hrange, qualname, text_type, \
-    to_unicode, unicode_safe_repr, ARG_NAME_ATTRIBUTE, \
+    getargspec, to_unicode, unicode_safe_repr, ARG_NAME_ATTRIBUTE, \
     importlib_invalidate_caches
 
 
@@ -64,7 +64,7 @@ def function_digest(function):
     except AttributeError:
         pass
     try:
-        hasher.update(repr(inspect.getargspec(function)).encode(u'utf-8'))
+        hasher.update(repr(getargspec(function)).encode(u'utf-8'))
     except TypeError:
         pass
     return hasher.digest()
@@ -77,7 +77,7 @@ def convert_keyword_arguments(function, args, kwargs):
     **kwargs the dictionary will always be empty.
 
     """
-    argspec = inspect.getargspec(function)
+    argspec = getargspec(function)
     new_args = []
     kwargs = dict(kwargs)
 
@@ -127,7 +127,7 @@ def convert_positional_arguments(function, args, kwargs):
     variadic argument.
 
     """
-    argspec = inspect.getargspec(function)
+    argspec = getargspec(function)
     kwargs = dict(kwargs)
     if not argspec.keywords:
         for k in kwargs.keys():
@@ -198,7 +198,7 @@ def extract_lambda_source(f):
     sins, oh lord
 
     """
-    args = inspect.getargspec(f).args
+    args = getargspec(f).args
     arg_strings = []
     # In Python 2 you can have destructuring arguments to functions. This
     # results in an argspec with non-string values. I'm not very interested in
@@ -293,7 +293,7 @@ def get_pretty_function_description(f):
 def arg_string(f, args, kwargs):
     args, kwargs = convert_positional_arguments(f, args, kwargs)
 
-    argspec = inspect.getargspec(f)
+    argspec = getargspec(f)
 
     bits = []
 
@@ -396,7 +396,7 @@ def copy_argspec(name, argspec):
     used_names.append(name)
 
     def accept(f):
-        fargspec = inspect.getargspec(f)
+        fargspec = getargspec(f)
         must_pass_as_kwargs = []
         invocation_parts = []
         for a in argspec.args:
@@ -441,5 +441,5 @@ def copy_argspec(name, argspec):
 def proxies(target):
     def accept(proxy):
         return wraps(target)(
-            copy_argspec(target.__name__, inspect.getargspec(target))(proxy))
+            copy_argspec(target.__name__, getargspec(target))(proxy))
     return accept

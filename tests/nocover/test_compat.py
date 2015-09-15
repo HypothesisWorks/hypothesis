@@ -17,7 +17,8 @@
 from __future__ import division, print_function, absolute_import
 
 import pytest
-from hypothesis.internal.compat import hrange, BAD_PY3, qualname
+from hypothesis.internal.compat import hrange, BAD_PY3, qualname, \
+    HAS_SIGNATURE, signature_argspec
 
 
 def test_small_hrange():
@@ -49,3 +50,35 @@ def test_qualname():
     assert qualname(Foo.bar) == u'Foo.bar'
     assert qualname(Foo().bar) == u'Foo.bar'
     assert qualname(qualname) == u'qualname'
+
+try:
+    from inspect import getargspec
+except ImportError:
+    getargspec = None
+
+
+def a(b, c, d):
+    pass
+
+
+def b(c, d, *ar):
+    pass
+
+
+def c(c, d, *ar, **k):
+    pass
+
+
+def d(a1, a2=1, a3=2, a4=None):
+    pass
+
+if getargspec is not None and HAS_SIGNATURE:
+    @pytest.mark.parametrize('f', [
+        a, b, c, d
+    ])
+    def test_agrees_on_argspec(f):
+        real = getargspec(f)
+        fake = signature_argspec(f)
+        assert tuple(real) == tuple(fake)
+        for f in real._fields:
+            assert getattr(real, f) == getattr(fake, f)

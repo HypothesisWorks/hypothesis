@@ -16,11 +16,10 @@
 
 from __future__ import division, print_function, absolute_import
 
-import inspect
-
 import pytest
 from hypothesis import given
 from hypothesis.strategies import booleans, integers
+from hypothesis.internal.compat import getargspec
 
 
 def has_one_arg(hello):
@@ -54,8 +53,8 @@ basic_test_cases = [
 
 @pytest.mark.parametrize((u'f', u'g'), basic_test_cases)
 def test_argspec_lines_up(f, g):
-    af = inspect.getargspec(f)
-    ag = inspect.getargspec(g(f))
+    af = getargspec(f)
+    ag = getargspec(g(f))
     assert af.args == ag.args
     assert af.keywords == ag.keywords
     assert af.varargs == ag.varargs
@@ -66,7 +65,7 @@ def test_does_not_convert_unknown_kwargs_into_args():
     def greet(hello, **kwargs):
         pass
 
-    assert inspect.getargspec(greet).args == [u'hello']
+    assert getargspec(greet).args == [u'hello']
 
 
 def test_provided_kwargs_are_defaults():

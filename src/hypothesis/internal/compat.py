@@ -23,6 +23,7 @@ import math
 import platform
 import importlib
 from decimal import Context, Decimal, Inexact
+from collections import namedtuple
 
 try:
     from collections import OrderedDict, Counter
@@ -35,7 +36,8 @@ PY3 = sys.version_info[0] == 3
 BAD_PY3 = PY3 and (sys.version_info[1] <= 2)
 PYPY = platform.python_implementation() == u'PyPy'
 PY26 = sys.version_info[:2] == (2, 6)
-
+NO_ARGSPEC = sys.version_info[:2] >= (3, 5)
+HAS_SIGNATURE = sys.version_info[:2] >= (3, 3)
 
 if PY26:
     _special_floats = {
@@ -154,6 +156,51 @@ def qualname(f):
         return f.im_class.__name__ + u'.' + f.__name__
     except AttributeError:
         return f.__name__
+
+FakeArgSpec = namedtuple(
+    'ArgSpec', ('args', 'varargs', 'keywords', 'defaults'))
+
+
+def signature_argspec(f):
+    from inspect import signature, Parameter, _empty
+    try:
+        if NO_ARGSPEC:
+            sig = signature(f, follow_wrapped=False)
+        else:
+            sig = signature(f)
+    except ValueError:
+        raise TypeError('unsupported callable')
+    args = list(
+        k
+        for k, v in sig.parameters.items()
+        if v.kind in (
+            Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD))
+    varargs = None
+    keywords = None
+    for k, v in sig.parameters.items():
+        if v.kind == Parameter.VAR_POSITIONAL:
+            varargs = k
+        elif v.kind == Parameter.VAR_KEYWORD:
+            keywords = k
+    defaults = []
+    for a in reversed(args):
+        default = sig.parameters[a].default
+        if default is _empty:
+            break
+        else:
+            defaults.append(default)
+    if defaults:
+        defaults = tuple(reversed(defaults))
+    else:
+        defaults = None
+    return FakeArgSpec(args, varargs, keywords, defaults)
+
+
+if NO_ARGSPEC:
+    getargspec = signature_argspec
+    ArgSpec = FakeArgSpec
+else:
+    from inspect import getargspec, ArgSpec
 
 
 importlib_invalidate_caches = getattr(
