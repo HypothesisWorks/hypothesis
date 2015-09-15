@@ -24,6 +24,7 @@ from fractions import Fraction
 
 import hypothesis.specifiers as spec
 from hypothesis.errors import InvalidArgument
+from hypothesis.control import assume
 from hypothesis.settings import Settings
 from hypothesis.searchstrategy import strategy, SearchStrategy
 from hypothesis.internal.compat import hrange, ArgSpec, text_type, \
@@ -200,7 +201,7 @@ def floats(min_value=None, max_value=None):
     from hypothesis.searchstrategy.numbers import WrapperFloatStrategy, \
         GaussianFloatStrategy, BoundedFloatStrategy, ExponentialFloatStrategy,\
         JustIntFloats, NastyFloats, FullRangeFloats, \
-        FixedBoundedFloatStrategy, FloatsFromBase
+        FixedBoundedFloatStrategy
     if min_value is None and max_value is None:
         return WrapperFloatStrategy(
             GaussianFloatStrategy() |
@@ -259,8 +260,10 @@ def floats(min_value=None, max_value=None):
             critical_values.append(-0.0)
         if min_value <= 0:
             critical_values.append(0.0)
-        return FloatsFromBase(
-            base=min_value, sign=1,
+        return (
+            floats().map(
+                lambda x: assume(not math.isnan(x)) and min_value + abs(x)
+            )
         ) | sampled_from(critical_values)
     else:
         assert max_value is not None
@@ -269,9 +272,11 @@ def floats(min_value=None, max_value=None):
             critical_values.append(-0.0)
             if not is_negative(max_value):
                 critical_values.append(0.0)
-        return FloatsFromBase(
-            base=max_value, sign=-1
-        ) | sampled_from(critical_values)
+            return (
+                floats().map(
+                    lambda x: assume(not math.isnan(x)) and max_value - abs(x)
+                )
+            ) | sampled_from(critical_values)
 
 
 @defines_strategy

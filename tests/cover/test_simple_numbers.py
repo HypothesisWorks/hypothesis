@@ -247,6 +247,15 @@ def test_bounds_are_respected():
     assert find(floats(max_value=-1.0), lambda x: True) == -1.0
 
 
+@pytest.mark.parametrize(
+    'k', range(10)
+)
+def test_floats_from_zero_have_reasonable_range(k):
+    n = 10 ** k
+    assert find(floats(min_value=0.0), lambda x: x >= n) == float(n)
+    assert find(floats(max_value=0.0), lambda x: x <= -n) == float(-n)
+
+
 class TestFloatsAreFloats(object):
 
     @given(floats())

@@ -642,39 +642,6 @@ class ExponentialFloatStrategy(FloatStrategy):
         return pv.zero_point + value
 
 
-class FloatsFromBase(FloatStrategy):
-
-    def __init__(self, base, sign):
-        super(FloatsFromBase, self).__init__()
-        self.base = base
-        self.sign = sign
-
-    def draw_parameter(self, random):
-        return random.gammavariate(2, 50)
-
-    def draw_template(self, random, pv):
-        return self.base + self.sign * random.expovariate(pv)
-
-    def in_range(self, value):
-        if self.sign > 0:
-            return value >= self.base
-        else:
-            return value <= self.base
-
-    def is_valid_value(self, template, value):
-        if template != value:
-            return False
-        if self.sign > 0:
-            return value >= self.base
-        return value <= self.base
-
-    def from_basic(self, data):
-        result = super(FloatsFromBase, self).from_basic(data)
-        if not self.is_valid_value(result, result):
-            raise BadData(u'Value %f out of range' % (result,))
-        return result
-
-
 class NastyFloats(SampledFromStrategy):
 
     def __init__(self):
