@@ -52,10 +52,6 @@ from hypothesis.searchstrategy.strategies import BadData, strategy
     (n_ary_tree(integers(), integers(), integers()), [1, 2, 3, 4, 5]),
     (floats(1, 2), (0, floats().to_basic(float(u'nan')))),
     (floats(1, 2), floats().to_basic(float(u'nan'))),
-    (floats(1), [0, floats().to_basic(float(u'nan'))]),
-    (floats(1), [0, floats().to_basic(0.0)]),
-    (floats(max_value=1), [0, floats().to_basic(float(u'nan'))]),
-    (floats(max_value=1), [0, floats().to_basic(2.0)]),
 ])
 def test_simple_data_validation(specifier, data):
     converter = strategy(specifier)
