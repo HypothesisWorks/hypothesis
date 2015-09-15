@@ -241,7 +241,7 @@ returns a new strategy for it. So for example:
 
   >>> import hypothesis.strategies as st
   >>> json = st.recursive(st.floats() | st.booleans() | st.text() | st.none(),
-    lambda children: st.lists(children) | st.dictionaries(st.text(), children))
+  ... lambda children: st.lists(children) | st.dictionaries(st.text(), children))
   >>> json.example()
   {'': None, '\U000b3407\U000b3407\U000b3407': {
       '': '"é""é\x11', '\x13': 1.6153068016570349e-282,
