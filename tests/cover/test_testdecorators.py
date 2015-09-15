@@ -60,7 +60,9 @@ def test_int_addition_is_associative(x, y, z):
 
 
 @fails
-@given(floats(), floats(), floats())
+@given(floats(), floats(), floats(), settings=hs.Settings(
+    max_examples=2000,
+))
 def test_float_addition_is_associative(x, y, z):
     assert x + (y + z) == (x + y) + z
 
