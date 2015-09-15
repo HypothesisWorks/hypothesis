@@ -272,11 +272,11 @@ def floats(min_value=None, max_value=None):
             critical_values.append(-0.0)
             if not is_negative(max_value):
                 critical_values.append(0.0)
-            return (
-                floats().map(
-                    lambda x: assume(not math.isnan(x)) and max_value - abs(x)
-                )
-            ) | sampled_from(critical_values)
+        return (
+            floats().map(
+                lambda x: assume(not math.isnan(x)) and max_value - abs(x)
+            )
+        ) | sampled_from(critical_values)
 
 
 @defines_strategy
