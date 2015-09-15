@@ -651,7 +651,7 @@ def recursive(base, extend, max_leaves=100):
     base: A strategy to start from
     extend: A function which takes a strategy and returns a new strategy
     max_leaves: The maximum number of elements to be drawn from base on a given
-        run.
+    run.
 
     This returns a strategy S such that S = extend(base | S). That is, values
     maybe drawn from base, or from any strategy reachable by mixing
