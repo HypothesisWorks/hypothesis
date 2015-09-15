@@ -331,9 +331,6 @@ class FloatStrategy(SearchStrategy):
             assert y < 0
             return x > y
 
-    def in_range(self, value):
-        return True
-
     def to_basic(self, value):
         check_type(float, value)
         return (
@@ -355,24 +352,16 @@ class FloatStrategy(SearchStrategy):
     def simplifiers(self, random, x):
         if x == 0.0:
             return
-        yield self.filter_range(self.simplify_weird_values)
-        yield self.filter_range(self.push_towards_one)
+        yield self.simplify_weird_values
+        yield self.push_towards_one
         try:
             for simplify in self.int_strategy.simplifiers(
                 random, int(math.floor(x))
             ):
-                yield self.filter_range(self.simplify_integral(simplify))
+                yield self.simplify_integral(simplify)
         except (OverflowError, ValueError):
             pass
-        yield self.filter_range(self.basic_simplify)
-
-    def filter_range(self, simplifier):
-        def accept(random, template):
-            for v in simplifier(random, template):
-                if self.in_range(v):
-                    yield v
-        accept.__name__ = simplifier.__name__
-        return accept
+        yield self.basic_simplify
 
     def simplify_weird_values(self, random, x):
         if math.isnan(x):
