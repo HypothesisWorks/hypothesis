@@ -22,6 +22,20 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -----------------------------------------------------------------------
+`1.11.1 <https://hypothesis.readthedocs.org/en/v1.11.1/>`_ - upcoming
+-----------------------------------------------------------------------
+
+Bug fixes:
+
+* When running Hypothesis tests in parallel (e.g. using pytest-xdist) there was a race
+  condition caused by code generation.
+* Example databases are now cached per thread so as to not use sqlite connections from
+  multiple threads. This should make Hypothesis now entirely thread safe.
+* floats() with only min_value or max_value set would have had a very bad distribution.
+* Running on 3.5, Hypothesis would have emitted deprecation warnings because of use of
+  inspect.getargspec
+
+-----------------------------------------------------------------------
 `1.11.0 <https://hypothesis.readthedocs.org/en/v1.11.0/>`_ - 2015-08-31
 -----------------------------------------------------------------------
 
