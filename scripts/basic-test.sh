@@ -56,6 +56,7 @@ if [ "$(python -c 'import sys; print(sys.version_info[:2] <= (2, 6))')" != "True
   pip uninstall -y django fake-factory
 fi
 
+if [ "$(python -c 'import sys; print(sys.version_info[:2] < (3, 5))')" = "True" ] ; then
 if [ "$(python -c 'import platform; print(platform.python_implementation())')" != "PyPy" ]; then
   if [ "$(python -c 'import sys; print(sys.version_info[:2] <= (2, 6))')" != "True" ] ; then
     pushd $HOME
@@ -67,4 +68,5 @@ if [ "$(python -c 'import platform; print(platform.python_implementation())')" !
   fi
   $PYTEST tests/numpy
   pip uninstall -y numpy
+fi
 fi
