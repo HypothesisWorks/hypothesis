@@ -15,25 +15,31 @@ for k, v in sorted(dict(os.environ).items()):
     print("%s=%s" % (k, v))
 '
 
-python -m pytest tests/cover
+if [ "$(python -c 'import sys; print(sys.version_info[:2] >= (3, 5))')" = "True" ] ; then
+  PYTEST="python -m pytest --assert=plain"
+else
+  PYTEST="python -m pytest"
+fi
+
+$PYTEST tests/cover
 
 if [ "$(python -c 'import sys; print(sys.version_info.major == 2')" = "True" ] ; then
-    python -m pytest tests/py2
+    $PYTEST tests/py2
 fi
 
 if [ "$DARWIN" != true ]; then
   for f in tests/nocover/*.py; do
-    python -m pytest $f
+    $PYTEST $f
   done
 fi
 
 pushd hypothesis-extra/hypothesis-pytest
     python setup.py install
-    python -m pytest tests/
+    $PYTEST tests/
 popd
 
 pip install .[datetime]
-python -m pytest tests/datetime/
+$PYTEST tests/datetime/
 pip uninstall -y pytz
 
 if [ "$DARWIN" = true ]; then
@@ -42,7 +48,7 @@ fi
 
 # fake-factory doesn't have a correct universal wheel
 pip install --no-use-wheel .[fakefactory]
-python -m pytest tests/fakefactory/
+$PYTEST tests/fakefactory/
 
 if [ "$(python -c 'import sys; print(sys.version_info[:2] <= (2, 6))')" != "True" ] ; then
   pip install .[django]
@@ -59,6 +65,6 @@ if [ "$(python -c 'import platform; print(platform.python_implementation())')" !
   else
     pip install numpy==1.9.2
   fi
-  python -m pytest tests/numpy
+  $PYTEST tests/numpy
   pip uninstall -y numpy
 fi
