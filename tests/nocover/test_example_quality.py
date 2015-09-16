@@ -421,6 +421,7 @@ def test_small_sum_lists():
         lambda x:
             len(x) >= 100 and sum(t for t in x if float(u'inf') > t >= 0) >= 1,
         settings=Settings(average_list_length=200),
+        timeout_after=60,
     )
     assert 1.0 <= sum(t for t in xs if t >= 0) <= 1.5
 
@@ -493,6 +494,6 @@ def test_constant_lists_of_diverse_length():
 def test_finds_non_reversible_floats():
     t = minimal(
         lists(floats()), lambda xs: sum(xs) != sum(reversed(xs)),
-        timeout_after=20,
+        timeout_after=40,
     )
     assert len(t) <= 10

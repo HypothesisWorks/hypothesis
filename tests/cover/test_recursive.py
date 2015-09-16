@@ -161,7 +161,7 @@ def test_can_flatmap_to_recursive_data(rnd):
 
     tree = find(
         stuff, lambda x: sum(flatten(x)) >= 100,
-        settings=Settings(database=None, max_shrinks=1000, max_examples=1000),
+        settings=Settings(database=None, max_shrinks=2000, max_examples=1000),
         random=rnd
     )
     flat = flatten(tree)
