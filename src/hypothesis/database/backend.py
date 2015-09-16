@@ -58,6 +58,10 @@ class Backend(object):
     def fetch(self, key):
         """yield the values matching this key."""
 
+    @abstractmethod  # pragma: no cover
+    def close(self):
+        """Close database connection whenever such is used."""
+
 
 class SQLiteBackend(Backend):
 
