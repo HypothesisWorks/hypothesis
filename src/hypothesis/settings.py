@@ -278,7 +278,7 @@ search space.
 
 Settings.define_setting(
     u'max_examples',
-    default=200,
+    default=int(os.getenv(u'HYPOTHESIS_MAX_EXAMPLES', 200)),
     description="""
 Once this many satisfying examples have been considered without finding any
 counter-example, falsification will terminate.
