@@ -14,9 +14,8 @@
 
 # END HEADER
 
-from distutils.core import setup
 from setuptools.command.test import test as TestCommand
-from setuptools import find_packages
+from setuptools import find_packages, setup
 import sys
 import os
 
