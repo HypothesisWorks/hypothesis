@@ -245,6 +245,8 @@ def simplify_template_such_that(
                             yield s
                             t = s
                             break
+                        else:
+                            yield t
                     except UnsatisfiedAssumption:
                         pass
                 else:
