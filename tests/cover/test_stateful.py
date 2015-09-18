@@ -38,7 +38,7 @@ class SetStateMachine(GenericStateMachine):
         self.elements = []
 
     def steps(self):
-        strat = tuples(just(False), integers())
+        strat = tuples(just(False), integers(0, 5))
         if self.elements:
             strat |= tuples(just(True), sampled_from(self.elements))
         return strat
