@@ -631,6 +631,7 @@ def builds(target, *args, **kwargs):
 
     """
     from hypothesis.internal.reflection import nicerepr
+
     def splat(value):
         return target(*value[0], **value[1])
     target_name = getattr(target, u'__name__', type(target).__name__)

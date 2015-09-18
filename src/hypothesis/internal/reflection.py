@@ -290,6 +290,7 @@ def get_pretty_function_description(f):
             return u'%r.%s' % (self, name)
     return name
 
+
 def nicerepr(v):
     if inspect.isfunction(v):
         return get_pretty_function_description(v)
