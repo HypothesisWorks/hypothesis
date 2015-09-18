@@ -79,9 +79,9 @@ def minimal(
 
     condition = condition or (lambda x: True)
     with settings:
-        settings = Settings(timeout=timeout_after * 0.95)
+        settings = Settings(timeout=timeout_after)
 
-    @timeout(timeout_after)
+    @timeout(timeout_after * 1.20)
     def run():
         return find(
             definition,
