@@ -72,8 +72,8 @@ def test_can_minimize_large_arrays_easily():
 
 
 def test_can_minimize_float_arrays():
-    x = find(arrays(float, 100), lambda t: t.sum() >= 1.0)
-    assert 1.0 <= x.sum() <= 1.01
+    x = find(arrays(float, 50), lambda t: t.sum() >= 1.0)
+    assert 1.0 <= x.sum() <= 1.1
 
 
 class Foo(object):
