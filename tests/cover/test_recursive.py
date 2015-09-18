@@ -112,8 +112,13 @@ def test_can_use_recursive_data_in_sets(rnd):
 
 def test_can_form_sets_of_recursive_data():
     trees = st.sets(st.recursive(
-        st.booleans(), lambda x: st.lists(x).map(tuple), max_leaves=4))
-    xs = find(trees, lambda x: len(x) >= 10)
+        st.booleans(),
+        lambda x: st.lists(x, min_size=5).map(tuple),
+        max_leaves=10))
+    xs = find(trees, lambda x: len(x) >= 10, settings=Settings(
+        database=None
+    ))
+    print(xs)
     assert len(xs) == 10
     assert False in xs
     assert True in xs
