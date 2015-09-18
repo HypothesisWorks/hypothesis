@@ -32,6 +32,7 @@ from hypothesis.strategies import just, none, text, lists, binary, \
 from hypothesis.utils.show import show
 from hypothesis.utils.size import clamp
 from hypothesis.strategytests import mutate_basic, templates_for
+from hypothesis.internal.debug import timeout
 from hypothesis.internal.compat import PY3, PYPY
 
 AVERAGE_LIST_LENGTH = 2
@@ -56,6 +57,10 @@ class HypothesisSpec(RuleBasedStateMachine):
 
     def teardown(self):
         self.clear_database()
+
+    @timeout(60)
+    def execute_step(self, step):
+        return super(HypothesisSpec, self).execute_step(step)
 
     @rule(target=basic_data, st=strats_with_templates)
     def to_basic(self, st):
