@@ -16,6 +16,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import math
 import time
 import signal
 from random import Random
@@ -51,7 +52,7 @@ try:
                         u'Timed out after %.2fs' % (time.time() - start))
 
                 old_handler = signal.signal(signal.SIGALRM, handler)
-                signal.alarm(seconds)
+                signal.alarm(int(math.ceil(seconds)))
                 try:
                     return f(*args, **kwargs)
                 finally:
