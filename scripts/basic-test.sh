@@ -16,9 +16,9 @@ for k, v in sorted(dict(os.environ).items()):
 '
 
 if [ "$(python -c 'import sys; print(sys.version_info[:2] >= (3, 5))')" = "True" ] ; then
-  PYTEST="python -m pytest --assert=plain -n 2"
+  PYTEST="python -m pytest --assert=plain"
 else
-  PYTEST="python -m pytest -n 2"
+  PYTEST="python -m pytest"
 fi
 
 $PYTEST tests/cover
