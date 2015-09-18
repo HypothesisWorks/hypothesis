@@ -630,6 +630,7 @@ def builds(target, *args, **kwargs):
     call target(i, flag=b).
 
     """
+    from hypothesis.internal.reflection import nicerepr
     def splat(value):
         return target(*value[0], **value[1])
     target_name = getattr(target, u'__name__', type(target).__name__)
@@ -638,11 +639,11 @@ def builds(target, *args, **kwargs):
     )
     return ReprWrapperStrategy(
         tuples(tuples(*args), fixed_dictionaries(kwargs)).map(splat),
-        u'builds(%s, %s)' % (
-            target_name,
+        u'builds(%s)' % (
             u', '.join(
-                list(map(repr, args)) +
-                [u'%s=%r' % (k, v) for k, v in kwargs.items()])))
+                [nicerepr(target)] +
+                list(map(nicerepr, args)) +
+                sorted([u'%s=%r' % (k, v) for k, v in kwargs.items()]))))
 
 
 @defines_strategy

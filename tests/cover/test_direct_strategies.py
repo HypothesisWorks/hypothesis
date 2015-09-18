@@ -23,6 +23,7 @@ import hypothesis.strategies as ds
 from hypothesis import find, given, Settings
 from hypothesis.errors import InvalidArgument
 from tests.common.basic import Bitfields, BoringBitfields
+from hypothesis.internal.reflection import nicerepr
 
 
 def fn_test(*fnkwargs):
@@ -30,7 +31,7 @@ def fn_test(*fnkwargs):
     return pytest.mark.parametrize(
         (u'fn', u'args'), fnkwargs,
         ids=[
-            u'%s(%s)' % (fn.__name__, u', '.join(map(repr, args)))
+            u'%s(%s)' % (fn.__name__, u', '.join(map(nicerepr, args)))
             for fn, args in fnkwargs
         ]
     )
@@ -41,10 +42,10 @@ def fn_ktest(*fnkwargs):
     return pytest.mark.parametrize(
         (u'fn', u'kwargs'), fnkwargs,
         ids=[
-            u'%s(%s)' % (fn.__name__, u', '.join(
+            u'%s(%s)' % (fn.__name__, u', '.join(sorted(
                 u'%s=%r' % (k, v)
                 for k, v in kwargs.items()
-            ),)
+            )),)
             for fn, kwargs in fnkwargs
         ]
     )

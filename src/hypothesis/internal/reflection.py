@@ -290,6 +290,12 @@ def get_pretty_function_description(f):
             return u'%r.%s' % (self, name)
     return name
 
+def nicerepr(v):
+    if inspect.isfunction(v):
+        return get_pretty_function_description(v)
+    else:
+        return unicode_safe_repr(v)
+
 
 def arg_string(f, args, kwargs):
     args, kwargs = convert_positional_arguments(f, args, kwargs)
@@ -300,10 +306,10 @@ def arg_string(f, args, kwargs):
 
     for a in argspec.args:
         if a in kwargs:
-            bits.append(u'%s=%s' % (a, unicode_safe_repr(kwargs.pop(a))))
+            bits.append(u'%s=%s' % (a, nicerepr(kwargs.pop(a))))
     if kwargs:
         for a in sorted(kwargs):
-            bits.append(u'%s=%s' % (a, unicode_safe_repr(kwargs[a])))
+            bits.append(u'%s=%s' % (a, nicerepr(kwargs[a])))
 
     return u', '.join(
         [unicode_safe_repr(x) for x in args] +
