@@ -612,7 +612,7 @@ class UniqueListStrategy(SearchStrategy):
             try:
                 eltemplate = self.elements.draw_template(
                     random, template.parameter)
-            except BadTemplateDraw:
+            except BadTemplateDraw:  # pragma: no cover
                 continue
             elvalue = self.elements.reify(eltemplate)
             k = self.key(elvalue)
