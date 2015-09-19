@@ -299,7 +299,7 @@ is mostly for illustration purposes):
 
     from hypothesis.stateful import GenericStateMachine
     from hypothesis import strategy
-    from hypothesis.specifiers import sampled_from, just
+    from hypothesis.strategies import tuples, sampled_from, just, integers
 
 
     class BrokenSet(GenericStateMachine):
@@ -307,14 +307,13 @@ is mostly for illustration purposes):
             self.data = []
 
         def steps(self):
-            add_strategy = strategy((just("add"), int))
+            add_strategy = tuples(just("add"), integers())
             if not self.data:
                 return add_strategy
             else:
                 return (
                     add_strategy |
-                    strategy((just("delete"), sampled_from(self.data)))
-                )
+                    tuples(just("delete"), sampled_from(self.data)))
 
         def execute_step(self, step):
             action, value = step
