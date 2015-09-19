@@ -22,7 +22,7 @@ from copy import deepcopy
 from functools import partial
 
 import pytest
-from hypothesis.internal.compat import PY3, ArgSpec, BAD_PY3, getargspec
+from hypothesis.internal.compat import PY3, ArgSpec, getargspec
 from hypothesis.internal.reflection import proxies, arg_string, \
     copy_argspec, unbind_method, function_digest, fully_qualified_name, \
     source_exec_as_module, convert_keyword_arguments, \
@@ -532,10 +532,6 @@ class Container(object):
         pass
 
 
-@pytest.mark.skipif(
-    BAD_PY3,
-    reason=u'Python 3.2 and less have a terrible object model.'
-)
 def test_fully_qualified_name():
     assert fully_qualified_name(test_copying_preserves_argspec) == \
         u'tests.cover.test_reflection.test_copying_preserves_argspec'

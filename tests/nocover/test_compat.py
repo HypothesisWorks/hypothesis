@@ -17,8 +17,8 @@
 from __future__ import division, print_function, absolute_import
 
 import pytest
-from hypothesis.internal.compat import hrange, BAD_PY3, qualname, \
-    HAS_SIGNATURE, signature_argspec
+from hypothesis.internal.compat import hrange, qualname, HAS_SIGNATURE, \
+    signature_argspec
 
 
 def test_small_hrange():
@@ -42,10 +42,6 @@ class Foo():
         pass
 
 
-@pytest.mark.skipif(
-    BAD_PY3,
-    reason=u'Python 3.2 and less have a terrible object model.'
-)
 def test_qualname():
     assert qualname(Foo.bar) == u'Foo.bar'
     assert qualname(Foo().bar) == u'Foo.bar'
