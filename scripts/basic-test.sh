@@ -23,7 +23,7 @@ fi
 
 $PYTEST tests/cover
 
-if [ "$(python -c 'import sys; print(sys.version_info.major == 2)')" = "True" ] ; then
+if [ "$(python -c 'import sys; print(sys.version_info[0] == 2)')" = "True" ] ; then
     $PYTEST tests/py2
 fi
 
