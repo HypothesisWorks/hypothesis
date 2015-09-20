@@ -306,7 +306,7 @@ class SearchStrategy(object):
 
         Required properties:
 
-        1. not strictly_simpler(x, y)
+        1. not strictly_simpler(x, x)
         2. not (strictly_simpler(x, y) and strictly_simpler(y, x))
         3. not (strictly_simpler(x, y) and strictly_simpler(y, z)
            and strictly_simpler(z x))
