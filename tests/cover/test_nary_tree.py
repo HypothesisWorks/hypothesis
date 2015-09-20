@@ -55,6 +55,11 @@ def test_deep_trees():
         tree = tree.keyed_children[0][1]
 
 
+def test_simplify_tree_label():
+    xs = smallest_tree(lambda t: isinstance(t, Branch) and t.label >= 10)
+    assert xs == Branch(10, ())
+
+
 def test_tree_minimizes_individual_branch_children():
     assert smallest_tree(
         lambda t: len(getattr(t, u'keyed_children', ())) > 1) == Branch(
