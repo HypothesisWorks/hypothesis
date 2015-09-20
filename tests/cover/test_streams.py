@@ -88,6 +88,12 @@ def test_can_index_into_unindexed():
     assert x[100] == 1
 
 
+def test_can_map():
+    x = Stream([1, 2, 3]).map(lambda i: i * 2)
+    assert isinstance(x, Stream)
+    assert list(x) == [2, 4, 6]
+
+
 def test_can_replace_value():
     x = Stream(loop(11))
     y = x.with_value(1, 2)
