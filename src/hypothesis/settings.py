@@ -24,6 +24,7 @@ this module can be modified.
 from __future__ import division, print_function, absolute_import
 
 import os
+import copy
 import inspect
 import threading
 from collections import namedtuple
@@ -139,6 +140,8 @@ class Settings(SettingsMeta('Settings', (object,), {})):
 
     """
 
+    _profiles = {}
+
     def __getattr__(self, name):
         if name in all_settings:
             d = all_settings[name].default
@@ -198,6 +201,10 @@ class Settings(SettingsMeta('Settings', (object,), {})):
         all_settings[name] = Setting(
             name, description.strip(), default, options)
         setattr(cls, name, SettingsProperty(name))
+        if cls.default:
+            setattr(cls.default, name, default)
+        for profile in cls._profiles.values():
+            setattr(profile, name, default)
 
     def __setattr__(self, name, value):
         if name in all_settings:
@@ -258,6 +265,48 @@ class Settings(SettingsMeta('Settings', (object,), {})):
     def __exit__(self, *args, **kwargs):
         default_context_manager = self.defaults_stack().pop()
         return default_context_manager.__exit__(*args, **kwargs)
+
+    @staticmethod
+    def register_profile(name, settings):
+        """registers a collection of values to be used as a settings profile.
+        These settings can be loaded in by name. Enable different defaults for
+        different settings.
+
+        - settings is a Settings object
+
+        """
+        Settings._profiles[name] = copy.copy(settings)
+
+    @staticmethod
+    def get_profile(name):
+        """Return the profile with the given name.
+
+        - name is a string representing the name of the profile
+         to load
+        A InvalidArgument exception will be thrown if the
+         profile does not exist
+
+        """
+        try:
+            return copy.copy(Settings._profiles[name])
+        except KeyError:
+            raise InvalidArgument(
+                "Profile '{0}' has not been registered".format(
+                    name
+                )
+            )
+
+    @staticmethod
+    def load_profile(name):
+        """Loads in the settings defined in the profile provided If the profile
+        does not exist an InvalidArgument will be thrown.
+
+        Any setting not defined in the profile will be the library
+        defined default for that setting
+
+        """
+        Settings.default = Settings.get_profile(name)
+
 
 Setting = namedtuple(
     u'Setting', (u'name', u'description', u'default', u'options'))
@@ -390,8 +439,6 @@ class Verbosity(object):
             return result
         raise InvalidArgument(u'No such verbosity level %r' % (key,))
 
-Settings.default = Settings()
-
 Verbosity.quiet = Verbosity(u'quiet', 0)
 Verbosity.normal = Verbosity(u'normal', 1)
 Verbosity.verbose = Verbosity(u'verbose', 2)
@@ -414,3 +461,6 @@ Settings.define_setting(
     default=DEFAULT_VERBOSITY,
     description=u'Control the verbosity level of Hypothesis messages',
 )
+
+Settings.register_profile('default', Settings())
+Settings.load_profile('default')

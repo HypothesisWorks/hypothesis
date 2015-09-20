@@ -17,6 +17,7 @@
 from __future__ import division, print_function, absolute_import
 
 import pytest
+import hypothesis
 from hypothesis.errors import InvalidArgument
 from hypothesis.database import ExampleDatabase
 from hypothesis.settings import Settings, Verbosity
@@ -148,8 +149,82 @@ def test_can_assign_database(db):
 
 
 def test_can_assign_default_settings():
-    Settings.default = Settings(max_examples=1100)
-    assert Settings.default.max_examples == 1100
-    with Settings(max_examples=10):
-        assert Settings.default.max_examples == 10
-    assert Settings.default.max_examples == 1100
+    try:
+        Settings.default = Settings(max_examples=1100)
+        assert Settings.default.max_examples == 1100
+        with Settings(max_examples=10):
+            assert Settings.default.max_examples == 10
+        assert Settings.default.max_examples == 1100
+    finally:
+        # Reset settings.default to default when settings
+        # is first loaded
+        Settings.default = Settings(max_examples=200)
+
+
+def test_load_profile():
+    Settings.load_profile('default')
+    assert Settings.default.max_examples == 200
+    assert Settings.default.max_shrinks == 500
+    assert Settings.default.min_satisfying_examples == 5
+
+    Settings.register_profile(
+        'test',
+        Settings(
+            max_examples=10,
+            max_shrinks=5
+        )
+    )
+
+    Settings.load_profile('test')
+
+    assert Settings.default.max_examples == 10
+    assert Settings.default.max_shrinks == 5
+    assert Settings.default.min_satisfying_examples == 5
+
+    Settings.load_profile('default')
+
+    assert Settings.default.max_examples == 200
+    assert Settings.default.max_shrinks == 500
+    assert Settings.default.min_satisfying_examples == 5
+
+
+def test_loading_profile_resets_defaults():
+    assert Settings.default.min_satisfying_examples == 5
+    Settings.default.min_satisfying_examples = 100
+    assert Settings.default.min_satisfying_examples == 100
+    Settings.load_profile('default')
+    assert Settings.default.min_satisfying_examples == 5
+
+
+def test_loading_profile_keeps_expected_behaviour():
+    Settings.register_profile('ci', Settings(max_examples=10000))
+    Settings.load_profile('ci')
+    assert Settings().max_examples == 10000
+    with Settings(max_examples=5):
+        assert Settings().max_examples == 5
+    assert Settings().max_examples == 10000
+
+
+def test_modifying_registered_profile_does_not_change_profile():
+    ci_profile = Settings(max_examples=10000)
+    Settings.register_profile('ci', ci_profile)
+    ci_profile.max_examples = 1
+    Settings.load_profile('ci')
+    assert Settings().max_examples == 10000
+
+
+def test_load_non_existent_profile():
+    with pytest.raises(hypothesis.errors.InvalidArgument):
+        Settings.get_profile('nonsense')
+
+
+def test_define_setting_then_loading_profile():
+    x = Settings()
+    Settings.define_setting(
+        u'fun_times',
+        default=3, description=u'Something something spoon',
+        options=(1, 2, 3, 4),
+    )
+    Settings.register_profile('hi', Settings(fun_times=2))
+    assert x.fun_times == 3
+    assert Settings.get_profile('hi').fun_times == 2
