@@ -41,15 +41,14 @@ def pytest_pyfunc_call(pyfuncitem):
         pyfuncitem.hypothesis_report_information = list(store.results)
 
 
-@pytest.mark.tryfirst
-def pytest_runtest_makereport(item, call, __multicall__):
-    report = __multicall__.execute()
+@pytest.mark.hookwrapper
+def pytest_runtest_makereport(item, call):
+    report = (yield).get_result()
     if hasattr(item, 'hypothesis_report_information'):
         report.sections.append((
             'Hypothesis',
             '\n'.join(item.hypothesis_report_information)
         ))
-    return report
 
 
 def pytest_collection_modifyitems(items):
