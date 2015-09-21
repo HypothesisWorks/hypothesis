@@ -52,7 +52,8 @@ extras = {
     'datetime':  ["pytz"],
     'fakefactory': ["fake-factory==0.5.2"],
     'django': ['pytz', 'django>=1.7'],
-    'numpy': ['numpy>=1.9.0']
+    'numpy': ['numpy>=1.9.0'],
+    'pytest': ['pytest>=2.7.0'],
 }
 
 extras['all'] = sum(extras.values(), [])
@@ -90,6 +91,9 @@ setup(
         "Programming Language :: Python :: Implementation :: PyPy",
         "Topic :: Software Development :: Testing",
     ],
+    entry_points={
+        'pytest11': ['hypothesispytest = hypothesis.extra.pytestplugin'],
+    },
     long_description=open(README).read(),
     tests_require=[
         'pytest', 'flake8'],

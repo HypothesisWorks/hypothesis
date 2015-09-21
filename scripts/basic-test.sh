@@ -27,16 +27,14 @@ if [ "$(python -c 'import sys; print(sys.version_info[0] == 2)')" = "True" ] ; t
     $PYTEST tests/py2
 fi
 
+$PYTEST tests/pytest
+
 if [ "$DARWIN" != true ]; then
   for f in tests/nocover/test_*.py; do
     $PYTEST $f
   done
 fi
 
-pushd hypothesis-extra/hypothesis-pytest
-    python setup.py install
-    $PYTEST tests/
-popd
 
 pip install .[datetime]
 $PYTEST tests/datetime/

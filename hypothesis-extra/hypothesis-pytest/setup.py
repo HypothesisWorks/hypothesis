@@ -15,9 +15,7 @@
 # END HEADER
 
 from distutils.core import setup
-from setuptools.command.test import test as TestCommand
 from setuptools import find_packages
-import sys
 import os
 
 
@@ -30,20 +28,9 @@ REQUIREMENTS = local_file("requirements.txt")
 README = local_file("README.rst")
 
 
-class PyTest(TestCommand):
-    def finalize_options(self):
-        TestCommand.finalize_options(self)
-        self.test_args = []
-        self.test_suite = True
-
-    def run_tests(self):
-        import pytest
-        errno = pytest.main(self.test_args)
-        sys.exit(errno)
-
 setup(
     name='hypothesis-pytest',
-    version='0.18.1',
+    version='0.19.0',
     author='David R. MacIver',
     author_email='david@drmaciver.com',
     packages=find_packages(SOURCE),
@@ -52,12 +39,9 @@ setup(
     license='MPL v2',
     description='Pytest plugin for better integration with hypothesis',
     install_requires=[
-        "hypothesis>=1.11,<1.11.99",
+        "hypothesis>=1.11.2", 'pytest>=2.7.0'
     ],
     long_description=open(README).read(),
-    entry_points={
-        'pytest11': ['hypothesispytest = hypothesispytest'],
-    },
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
@@ -73,6 +57,4 @@ setup(
         "Programming Language :: Python :: Implementation :: CPython",
         "Topic :: Software Development :: Testing",
     ],
-    tests_require=['pytest'],
-    cmdclass={'test': PyTest},
 )

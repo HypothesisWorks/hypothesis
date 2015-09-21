@@ -17,26 +17,17 @@
 from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
-from functools import wraps
-
-import pytest
 from hypothesis import given
+from tests.common.utils import fails
+from hypothesis.strategies import integers
 
 
-def fails(f):
-    @wraps(f)
-    def inverted_test(*arguments, **kwargs):
-        with pytest.raises(AssertionError):
-            f(*arguments, **kwargs)
-    return inverted_test
-
-
-@given(int)
+@given(integers())
 def test_ints_are_ints(x):
     pass
 
 
 @fails
-@given(int)
+@given(integers())
 def test_ints_are_floats(x):
     assert isinstance(x, float)
