@@ -17,7 +17,10 @@
 import sys
 from collections import namedtuple
 
-import pytest
+try:
+    import pytest
+except ImportError:
+    pytest = None
 
 from hypothesis.settings import Settings
 from hypothesis.internal.debug import timeout
@@ -112,5 +115,7 @@ with Settings(average_list_length=10.0):
     ]
 
 
-def parametrize(args, values):
-    return pytest.mark.parametrize(args, values, ids=list(map(show, values)))
+if pytest is not None:
+    def parametrize(args, values):
+        return pytest.mark.parametrize(
+            args, values, ids=list(map(show, values)))

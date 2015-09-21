@@ -20,7 +20,6 @@ import sys
 import contextlib
 from io import StringIO
 
-import pytest
 from hypothesis.reporting import default, with_reporter
 from hypothesis.internal.reflection import proxies
 
@@ -37,11 +36,26 @@ def capture_out():
         sys.stdout = old_out
 
 
+class ExcInfo(object):
+    pass
+
+
+@contextlib.contextmanager
+def raises(exctype):
+    e = ExcInfo()
+    try:
+        yield e
+        assert False, "Expected to raise an exception but didn't"
+    except exctype as err:
+        e.value = err
+        return
+
+
 def fails_with(e):
     def accepts(f):
         @proxies(f)
         def inverted_test(*arguments, **kwargs):
-            with pytest.raises(e):
+            with raises(e):
                 f(*arguments, **kwargs)
         return inverted_test
     return accepts

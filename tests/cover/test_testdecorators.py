@@ -25,12 +25,11 @@ import threading
 from random import Random
 from collections import namedtuple
 
-import pytest
 import hypothesis.settings as hs
 import hypothesis.reporting as reporting
 from hypothesis import given, assume
 from hypothesis.errors import Flaky, Unsatisfiable, InvalidArgument
-from tests.common.utils import fails, fails_with, capture_out
+from tests.common.utils import fails, raises, fails_with, capture_out
 from hypothesis.internal import debug
 from hypothesis.strategies import just, sets, text, lists, binary, \
     builds, floats, one_of, booleans, integers, frozensets, sampled_from
@@ -78,7 +77,7 @@ def test_still_minimizes_on_non_assertion_failures():
         if x >= 10:
             raise ValueError(u'No, %s is just too large. Sorry' % x)
 
-    with pytest.raises(ValueError) as exinfo:
+    with raises(ValueError) as exinfo:
         is_not_too_large()
 
     assert u' 10 ' in exinfo.value.args[0]
@@ -217,7 +216,7 @@ def test_does_not_catch_interrupt_during_falsify():
         if not calls[0]:
             calls[0] = 1
             raise KeyboardInterrupt()
-    with pytest.raises(KeyboardInterrupt):
+    with raises(KeyboardInterrupt):
         flaky_base_exception()
 
 
@@ -230,7 +229,7 @@ def test_contains_the_test_function_name_in_the_exception_string():
         calls[0] += 1
         assume(False)
 
-    with pytest.raises(Unsatisfiable) as e:
+    with raises(Unsatisfiable) as e:
         this_has_a_totally_unique_name()
         print(u'Called %d times' % tuple(calls))
 
@@ -245,7 +244,7 @@ def test_contains_the_test_function_name_in_the_exception_string():
             calls2[0] += 1
             assume(False)
 
-    with pytest.raises(Unsatisfiable) as e:
+    with raises(Unsatisfiable) as e:
         Foo().this_has_a_unique_name_and_lives_on_a_class()
         print(u'Called %d times' % tuple(calls2))
 
@@ -282,7 +281,7 @@ def test_errors_even_if_does_not_error_on_final_call():
             for t in inspect.getouterframes(inspect.currentframe())
         )
 
-    with pytest.raises(Flaky):
+    with raises(Flaky):
         rude()
 
 
@@ -302,7 +301,7 @@ def test_reports_repr_diff_in_flaky_error():
             for t in inspect.getouterframes(inspect.currentframe())
         )
 
-    with pytest.raises(Flaky) as e:
+    with raises(Flaky) as e:
         rude()
     assert u'Call 1:' in e.value.args[0]
 
@@ -333,7 +332,7 @@ def test_prints_on_failure_by_default():
     def test_ints_are_sorted(balthazar, evans):
         assume(evans >= 0)
         assert balthazar <= evans
-    with pytest.raises(AssertionError):
+    with raises(AssertionError):
         with capture_out() as out:
             with reporting.with_reporter(reporting.default):
                 test_ints_are_sorted()
@@ -374,11 +373,13 @@ def test_is_an_endpoint(x):
     assert x == 1.0 or x == 2.0
 
 
-@pytest.mark.parametrize(u't', [1, 10, 100, 1000])
-@fails
-@given(x=integers())
-def test_is_bounded(t, x):
-    assert x < t
+def test_breaks_bounds():
+    @fails
+    @given(x=integers())
+    def test_is_bounded(t, x):
+        assert x < t
+    for t in [1, 10, 100, 1000]:
+        test_is_bounded(t)
 
 
 @given(x=booleans())
@@ -445,7 +446,7 @@ def test_uses_random():
 
 
 def test_does_not_accept_random_if_derandomize():
-    with pytest.raises(InvalidArgument):
+    with raises(InvalidArgument):
         @given(
             integers(),
             settings=hs.Settings(derandomize=True), random=Random()
@@ -468,7 +469,7 @@ def test_can_run_without_database():
     @given(integers(), settings=hs.Settings(database=None))
     def test_blah(x):
         assert False
-    with pytest.raises(AssertionError):
+    with raises(AssertionError):
         test_blah()
 
 
@@ -539,7 +540,7 @@ def test_when_set_to_no_simplifies_only_runs_failing_example_once():
             assert False
 
     with hs.Settings(verbosity=hs.Verbosity.normal):
-        with pytest.raises(AssertionError):
+        with raises(AssertionError):
             with capture_out() as out:
                 foo()
     assert failing == [1]
@@ -575,7 +576,7 @@ def test_can_timeout_during_an_unsuccessful_simplify():
             record.append(xs)
             assert False
 
-    with pytest.raises(AssertionError):
+    with raises(AssertionError):
         first_bad_float_list()
 
 
