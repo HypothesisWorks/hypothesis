@@ -21,6 +21,20 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+--------
+Upcoming
+--------
+
+Bug fixes:
+
+* Settings(database=None) would not be correctly inherited when used as a
+  default setting, so that newly created settings would use the database_file
+  setting and create an SQLite example database.
+* Timeout could sometimes be significantly exceeded if during simplification
+  there were a lot of examples tried that didn't trigger the bug.
+* When loading a heavily simplified example using a basic() strategy from the
+  database this could cause Python to trigger a recursion error.
+
 -----------------------------------------------------------------------
 `1.11.1 <https://hypothesis.readthedocs.org/en/v1.11.1/>`_ - 2015-09-16
 -----------------------------------------------------------------------
