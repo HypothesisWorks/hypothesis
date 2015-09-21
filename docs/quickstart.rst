@@ -124,8 +124,28 @@ well as positional. The following would have worked just as well:
   def test_decode_inverts_encode(s):
       assert decode(encode(s)) == s
 
-Anyway, suppose we had a more interesting bug and forgot to reset the count
-each time.
+Suppose we had a more interesting bug and forgot to reset the count
+each time. Say we missed a line in our ``encode`` method:
+
+.. code:: python
+
+  def encode(input_string):
+    count = 1
+    prev = ''
+    lst = []
+    for character in input_string:
+        if character != prev:
+            if prev:
+                entry = (prev, count)
+                lst.append(entry)
+            # count = 1  # Missing reset operation
+            prev = character
+        else:
+            count += 1
+    else:
+        entry = (character, count)
+        lst.append(entry)
+    return lst
 
 Hypothesis quickly informs us of the following example:
 
