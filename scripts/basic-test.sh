@@ -28,7 +28,7 @@ if [ "$(python -c 'import sys; print(sys.version_info[0] == 2)')" = "True" ] ; t
 fi
 
 if [ "$DARWIN" != true ]; then
-  for f in tests/nocover/*.py; do
+  for f in tests/nocover/test_*.py; do
     $PYTEST $f
   done
 fi
