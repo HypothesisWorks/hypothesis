@@ -25,6 +25,7 @@ from hypothesis import find, given, Settings
 from tests.common.basic import Bitfields, BoringBitfields, \
     simplify_bitfield
 from tests.common.utils import fails
+from hypothesis.database import ExampleDatabase
 from hypothesis.strategies import basic, lists
 from hypothesis.internal.debug import minimal, timeout, some_template
 from hypothesis.internal.compat import integer_types
@@ -113,15 +114,30 @@ def test_boring_failure(x):
     assert x & 1
 
 
-@pytest.mark.parametrize('n', range(10))
-def test_does_not_get_stuck_in_a_loop(n):
+def test_can_load_a_very_deep_example_from_the_db():
     bad_strategy = basic_strategy(
         generate=lambda r, p: 1,
         simplify=lambda r, v: [v]
     )
 
     @timeout(2)
-    @given(bad_strategy)
+    @given(bad_strategy, settings=Settings(database=ExampleDatabase()))
+    def oh_noes(x):
+        assert x != 1
+    with pytest.raises(AssertionError):
+        oh_noes()
+    with pytest.raises(AssertionError):
+        oh_noes()
+
+
+def test_does_not_get_stuck_in_a_loop():
+    bad_strategy = basic_strategy(
+        generate=lambda r, p: 1,
+        simplify=lambda r, v: [v]
+    )
+
+    @timeout(2)
+    @given(bad_strategy, settings=Settings(database=None))
     def oh_noes(x):
         assert x != 1
     with pytest.raises(AssertionError):
