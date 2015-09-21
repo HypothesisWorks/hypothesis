@@ -493,7 +493,10 @@ def test_constant_lists_of_diverse_length():
 
 def test_finds_non_reversible_floats():
     t = minimal(
-        lists(floats()), lambda xs: sum(xs) != sum(reversed(xs)),
+        lists(floats()), lambda xs:
+            not math.isnan(sum(xs)) and sum(xs) != sum(reversed(xs)),
         timeout_after=40,
+        settings=Settings(database=None)
     )
-    assert len(t) <= 10
+    assert len(repr(t)) <= 200
+    print(t)
