@@ -163,7 +163,7 @@ def mess_with_none(n, random):
 
 def strategy_test_suite(
     specifier,
-    max_examples=100, random=None,
+    max_examples=20, random=None,
 ):
     settings = Settings(
         database=None,
