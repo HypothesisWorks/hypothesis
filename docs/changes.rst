@@ -21,9 +21,9 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
---------
-Upcoming
---------
+-----------------------------------------------------------------------
+`1.11.2 <https://hypothesis.readthedocs.org/en/v1.11.2/>`_ - upcoming
+-----------------------------------------------------------------------
 
 Bug fixes:
 
