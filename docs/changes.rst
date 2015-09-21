@@ -35,6 +35,7 @@ Bug fixes:
 * When loading a heavily simplified example using a basic() strategy from the
   database this could cause Python to trigger a recursion error.
 * Settings.default.database = my_db
+* Remove use of deprecated API in pytest plugin so as to not emit warning
 
 Misc:
 
