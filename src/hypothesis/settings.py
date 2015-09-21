@@ -162,6 +162,8 @@ class Settings(object):
                 value = getattr(Settings.default, setting.name)
             setattr(self, setting.name, value)
         self._database = kwargs.pop(u'database', not_set)
+        if self._database is not_set and hasattr(Settings, 'default'):
+            self._database = Settings.default.database
         if kwargs:
             raise InvalidArgument(
                 u'Invalid arguments %s' % (u', '.join(kwargs),))
@@ -208,7 +210,9 @@ class Settings(object):
                         name, value, setting.options
                     )
                 )
-        if (
+        if name == 'database':
+            return object.__setattr__(self, '_database', value)
+        elif (
             name not in all_settings and
             name not in (u'storage', u'_database')
         ):

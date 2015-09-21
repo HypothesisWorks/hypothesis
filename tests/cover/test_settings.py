@@ -18,6 +18,7 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 from hypothesis.errors import InvalidArgument
+from hypothesis.database import ExampleDatabase
 from hypothesis.settings import Settings, Verbosity
 
 TEST_DESCRIPTION = u'This is a setting just for these tests'
@@ -126,3 +127,21 @@ def test_can_set_verbosity():
     Settings(verbosity=Verbosity.quiet)
     Settings(verbosity=Verbosity.normal)
     Settings(verbosity=Verbosity.verbose)
+
+
+@pytest.mark.parametrize('db', [None, ExampleDatabase()])
+def test_inherits_an_empty_database(db):
+    assert Settings.default.database is not None
+    s = Settings(database=db)
+    assert s.database is db
+    with s:
+        t = Settings()
+    assert t.database is db
+
+
+@pytest.mark.parametrize('db', [None, ExampleDatabase()])
+def test_can_assign_database(db):
+    x = Settings()
+    assert x.database is not None
+    x.database = db
+    assert x.database is db
