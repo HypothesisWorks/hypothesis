@@ -31,7 +31,7 @@ def test_bar():
 """
 
 
-def test_mark(testdir):
+def test_can_select_mark(testdir):
     script = testdir.makepyfile(TESTSUITE)
     result = testdir.runpytest(script, '--verbose', '--strict', '-m',
                                'hypothesis')

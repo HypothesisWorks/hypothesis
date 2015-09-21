@@ -53,7 +53,6 @@ setup(
     description='Pytest plugin for better integration with hypothesis',
     install_requires=[
         "hypothesis>=1.11,<1.11.99",
-        "pytest>=2.6.0,<2.7.99",
     ],
     long_description=open(README).read(),
     entry_points={
