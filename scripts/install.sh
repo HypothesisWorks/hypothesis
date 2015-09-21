@@ -97,6 +97,7 @@ case "${TOXENV}" in
         ln -s $PYENVS/3.3.6/bin/python $SNAKEPIT/python3.3
         ;;
     py35)
+    nose)
         pyenv install -s 3.5.0
         ln -s $PYENVS/3.5.0/bin/python $SNAKEPIT/python3.5
         ;;
