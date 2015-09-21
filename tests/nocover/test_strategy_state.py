@@ -58,7 +58,7 @@ class HypothesisSpec(RuleBasedStateMachine):
     def teardown(self):
         self.clear_database()
 
-    @timeout(60)
+    @timeout(60, catchable=True)
     def execute_step(self, step):
         return super(HypothesisSpec, self).execute_step(step)
 

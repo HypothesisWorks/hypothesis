@@ -36,20 +36,27 @@ class Timeout(BaseException):
     pass
 
 
+class CatchableTimeout(Exception):
+    pass
+
 try:
     signal.SIGALRM
     # The tests here have a tendency to run away with themselves a it if
     # something goes wrong, so we use a relatively hard kill timeout.
 
-    def timeout(seconds=1):
+    def timeout(seconds=1, catchable=False):
         def decorate(f):
             @wraps(f)
             def wrapped(*args, **kwargs):
                 start = time.time()
 
                 def handler(signum, frame):
-                    raise Timeout(
-                        u'Timed out after %.2fs' % (time.time() - start))
+                    if catchable:
+                        raise CatchableTimeout(
+                            u'Timed out after %.2fs' % (time.time() - start))
+                    else:
+                        raise Timeout(
+                            u'Timed out after %.2fs' % (time.time() - start))
 
                 old_handler = signal.signal(signal.SIGALRM, handler)
                 signal.alarm(int(math.ceil(seconds)))
