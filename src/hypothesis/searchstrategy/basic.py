@@ -252,6 +252,19 @@ class BasicSearchStrategy(SearchStrategy):
                 Random(template.template_seed), parameter)
         else:
             assert isinstance(template, Simplified)
+            children = []
+            current = template
+            while True:
+                if current in self.reify_cache:
+                    break
+                if isinstance(current, Generated):
+                    break
+                current = current.source
+                children.append(current)
+            while children:
+                c = children.pop()
+                self.reify(c)
+                assert c in self.reify_cache
             result = self.reify(template.source)
             for i, value in enumerate(  # pragma: no branch
                 self.user_simplify(Random(template.seed), result)

@@ -113,7 +113,8 @@ def test_boring_failure(x):
     assert x & 1
 
 
-def test_does_not_get_stuck_in_a_loop():
+@pytest.mark.parametrize('n', range(10))
+def test_does_not_get_stuck_in_a_loop(n):
     bad_strategy = basic_strategy(
         generate=lambda r, p: 1,
         simplify=lambda r, v: [v]
