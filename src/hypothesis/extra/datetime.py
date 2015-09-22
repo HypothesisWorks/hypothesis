@@ -23,6 +23,7 @@ import pytz
 import hypothesis.internal.distributions as dist
 from hypothesis.errors import InvalidArgument
 from hypothesis.control import assume
+from hypothesis.strategies import defines_strategy
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.searchstrategy.strategies import BadData, strategy, \
     check_length, SearchStrategy, check_data_type
@@ -247,6 +248,7 @@ class DatetimeStrategy(SearchStrategy):
         return template
 
 
+@defines_strategy
 def datetimes(allow_naive=None, timezones=None, min_year=None, max_year=None):
     """Return a strategy for generating datetimes.
 
