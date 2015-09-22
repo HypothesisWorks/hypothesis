@@ -20,6 +20,7 @@ import pytest
 import hypothesis.strategies as st
 from hypothesis import find, given, Settings
 from hypothesis.errors import InvalidArgument
+from hypothesis.internal.debug import timeout
 from hypothesis.internal.compat import integer_types
 
 
@@ -151,6 +152,7 @@ def test_can_simplify_hard_recursive_data_into_boolean_alternative(rnd):
 
 
 @given(st.randoms(), settings=Settings(max_examples=10))
+@timeout(60)
 def test_can_flatmap_to_recursive_data(rnd):
     stuff = st.lists(st.integers(), min_size=1).flatmap(
         lambda elts: st.recursive(
