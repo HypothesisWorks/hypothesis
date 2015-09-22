@@ -20,7 +20,6 @@ import math
 import time
 import signal
 from random import Random
-from functools import wraps
 
 from hypothesis import Settings, strategy
 from hypothesis.core import find
@@ -30,6 +29,7 @@ from hypothesis.control import BuildContext
 from hypothesis.database import ExampleDatabase
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.tracker import Tracker
+from hypothesis.internal.reflection import proxies
 
 
 class Timeout(BaseException):
@@ -46,7 +46,7 @@ try:
 
     def timeout(seconds=1, catchable=False):
         def decorate(f):
-            @wraps(f)
+            @proxies(f)
             def wrapped(*args, **kwargs):
                 start = time.time()
 
