@@ -22,7 +22,7 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -----------------------------------------------------------------------
-`1.11.2 <https://hypothesis.readthedocs.org/en/v1.11.2/>`_ - upcoming
+`1.11.2 <https://hypothesis.readthedocs.org/en/v1.11.2/>`_ - 2015-09-23
 -----------------------------------------------------------------------
 
 Bug fixes:
@@ -30,11 +30,12 @@ Bug fixes:
 * Settings(database=my_db) would not be correctly inherited when used as a
   default setting, so that newly created settings would use the database_file
   setting and create an SQLite example database.
+* Settings.default.database = my_db would previously have raised an error and
+  now works.
 * Timeout could sometimes be significantly exceeded if during simplification
   there were a lot of examples tried that didn't trigger the bug.
 * When loading a heavily simplified example using a basic() strategy from the
   database this could cause Python to trigger a recursion error.
-* Settings.default.database = my_db
 * Remove use of deprecated API in pytest plugin so as to not emit warning
 
 Misc:
@@ -42,6 +43,9 @@ Misc:
 * hypothesis-pytest is now part of hypothesis core. This should have no
   externally visible consequences, but you should update your dependencies to
   remove hypothesis-pytest and depend on only Hypothesis.
+* Better repr for hypothesis.extra.datetimes() strategies.
+* Add .close() method to abstract base class for Backend (it was already present
+  in the main implemnetation).
 
 -----------------------------------------------------------------------
 `1.11.1 <https://hypothesis.readthedocs.org/en/v1.11.1/>`_ - 2015-09-16
