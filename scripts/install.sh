@@ -79,39 +79,17 @@ echo 3.4.3 > $HOME/.python-version
 pyenv global 3.4.3
 pyenv local 3.4.3
 
-case "${TOXENV}" in
-    py26|examples2)
-        pyenv install -s 2.6.9
-        ln -s $PYENVS/2.6.9/bin/python $SNAKEPIT/python2.6
-        ;;
-    py27|examples2)
-        pyenv install -s 2.7.9
-        ln -s $PYENVS/2.7.9/bin/python $SNAKEPIT/python2.7
-        ;;
-    py32)
-        pyenv install -s 3.2.6
-        ln -s $PYENVS/3.2.6/bin/python $SNAKEPIT/python3.2
-        ;;
-    py33)
-        pyenv install -s 3.3.6
-        ln -s $PYENVS/3.3.6/bin/python $SNAKEPIT/python3.3
-        ;;
-    py35|nose)
-        pyenv install -s 3.5.0
-        ln -s $PYENVS/3.5.0/bin/python $SNAKEPIT/python3.5
-        ;;
-    pypy)
-        pyenv install -s pypy-2.6.1
-        ln -s $PYENVS/pypy-2.6.1/bin/pypy $SNAKEPIT/pypy
-        ;;
-    pypy3)
-        pyenv install -s pypy3-2.4.0
-        ln -s $PYENVS/pypy3-2.4.0/bin/pypy $SNAKEPIT/pypy3
-        ;;
-    pypy3-nojit)
-        pyenv install -s pypy3-2.4.0
-        ln -s $PYENVS/pypy3-2.4.0/bin/pypy $SNAKEPIT/pypy3
-        ;;
-esac
+pyenv install -s 2.6.9
+ln -s $PYENVS/2.6.9/bin/python $SNAKEPIT/python2.6
+pyenv install -s 2.7.9
+ln -s $PYENVS/2.7.9/bin/python $SNAKEPIT/python2.7
+pyenv install -s 3.2.6
+ln -s $PYENVS/3.2.6/bin/python $SNAKEPIT/python3.2
+pyenv install -s 3.3.6
+ln -s $PYENVS/3.3.6/bin/python $SNAKEPIT/python3.3
+pyenv install -s 3.5.0
+ln -s $PYENVS/3.5.0/bin/python $SNAKEPIT/python3.5
+pyenv install -s pypy-2.6.1
+ln -s $PYENVS/pypy-2.6.1/bin/pypy $SNAKEPIT/pypy
 
 pip install --upgrade tox pip wheel

@@ -21,7 +21,7 @@ else
   PYTEST="python -m pytest"
 fi
 
-$PYTEST tests/cover
+$PYTEST --runpytest=subprocess tests/cover
 
 if [ "$(python -c 'import sys; print(sys.version_info[0] == 2)')" = "True" ] ; then
     $PYTEST tests/py2
