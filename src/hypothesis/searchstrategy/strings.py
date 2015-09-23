@@ -25,10 +25,15 @@ from hypothesis.internal.compat import hrange, hunichr, text_type, \
 from hypothesis.searchstrategy.strategies import check_length, \
     SearchStrategy, check_data_type, MappedSearchStrategy
 
+
 _spaces = [
-    i for i in range(sys.maxunicode)
-    if unicodedata.category(hunichr(i)) in (u'Cc', u'Zs')
-]
+    i for i in [
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+        20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 127, 128, 129, 130,
+        131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144,
+        145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158,
+        159, 160, 5760, 8192, 8193, 8194, 8195, 8196, 8197, 8198, 8199, 8200,
+        8201, 8202, 8239, 8287, 12288] if i <= sys.maxunicode]
 
 
 class OneCharStringStrategy(SearchStrategy):
