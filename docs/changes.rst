@@ -22,6 +22,16 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -----------------------------------------------------------------------
+`1.11.3 <https://hypothesis.readthedocs.org/en/v1.11.3/>`_ - upcoming
+-----------------------------------------------------------------------
+
+* Better argument validation for datetimes() strategy - previously setting
+  max_year < datetime.MIN_YEAR or min_year > datetime.MAX_YEAR would not have
+  raised an InvalidArgument error and instead would have behaved confusingly.
+* Compatibility with being run on pytest < 2.7 (achieved by disabling the
+  plugin).
+
+-----------------------------------------------------------------------
 `1.11.2 <https://hypothesis.readthedocs.org/en/v1.11.2/>`_ - 2015-09-23
 -----------------------------------------------------------------------
 
