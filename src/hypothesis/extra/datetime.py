@@ -22,7 +22,6 @@ from collections import namedtuple
 import pytz
 import hypothesis.internal.distributions as dist
 from hypothesis.errors import InvalidArgument
-from hypothesis.control import assume
 from hypothesis.strategies import defines_strategy
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.searchstrategy.strategies import BadData, strategy, \
@@ -72,14 +71,16 @@ class DatetimeStrategy(SearchStrategy):
         self.timezones = timezones
         self.min_year = min_year or dt.MINYEAR
         self.max_year = max_year or dt.MAXYEAR
-        if self.min_year < dt.MINYEAR:
-            raise InvalidArgument(u'min_year out of range: %d < %d' % (
-                min_year, dt.MINYEAR
-            ))
-        if self.max_year > dt.MAXYEAR:
-            raise InvalidArgument(u'max_year out of range: %d > %d' % (
-                max_year, dt.MAXYEAR
-            ))
+        for a in ['min_year', 'max_year']:
+            year = getattr(self, a)
+            if year < dt.MINYEAR:
+                raise InvalidArgument(u'%s out of range: %d < %d' % (
+                    a, year, dt.MINYEAR
+                ))
+            if year > dt.MAXYEAR:
+                raise InvalidArgument(u'%s out of range: %d > %d' % (
+                    a, year, dt.MAXYEAR
+                ))
 
     def draw_parameter(self, random):
         return self.Parameter(
@@ -163,10 +164,7 @@ class DatetimeStrategy(SearchStrategy):
             microsecond=template[6]
         )
         if tz:
-            try:
-                d = pytz.timezone(tz).localize(d)
-            except OverflowError:
-                assume(False)
+            d = pytz.timezone(tz).localize(d)
         return d
 
     def simplifiers(self, random, template):
@@ -179,7 +177,9 @@ class DatetimeStrategy(SearchStrategy):
             if not value.tzinfo:
                 yield self.templateize(self.timezones[0].localize(value))
             else:
-                for j in hrange(len(self.timezones)):
+                # This loop will never exit normally because it breaks when it
+                # hits the value.
+                for j in hrange(len(self.timezones)):  # pragma: no branch
                     tz = self.timezones[j]
                     if tz.zone == value.tzinfo.zone:
                         break
@@ -284,7 +284,7 @@ def datetime_strategy(cls, settings):
 
 
 @strategy.extend(DatetimeSpec)
-def datetime_specced_strategy(spec, settings):
+def datetime_specced_strategy(spec, settings):  # pragma: no cover
     if not spec.naive_options:
         raise InvalidArgument(
             u'Must allow either naive or non-naive datetimes')

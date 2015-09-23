@@ -22,7 +22,8 @@ from datetime import MAXYEAR, datetime
 import pytz
 import pytest
 import hypothesis.settings as hs
-from hypothesis import given, assume
+from hypothesis import given, assume, Settings
+from hypothesis.errors import InvalidArgument
 from hypothesis.strategytests import strategy_test_suite
 from hypothesis.extra.datetime import datetimes, any_datetime, \
     naive_datetime, timezone_aware_datetime
@@ -158,3 +159,28 @@ def test_can_draw_times_in_the_final_year():
     r = Random(1)
     for _ in hrange(1000):
         last_year.reify(last_year.draw_and_produce(r))
+
+
+def test_validates_year_arguments_in_range():
+    with pytest.raises(InvalidArgument):
+        datetimes(min_year=-10 ** 6)
+    with pytest.raises(InvalidArgument):
+        datetimes(max_year=-10 ** 6)
+    with pytest.raises(InvalidArgument):
+        datetimes(min_year=10 ** 6)
+    with pytest.raises(InvalidArgument):
+        datetimes(max_year=10 ** 6)
+
+
+def test_needs_permission_for_no_timezones():
+    with pytest.raises(InvalidArgument):
+        datetimes(allow_naive=False, timezones=[])
+
+
+def test_bordering_on_a_leap_year():
+    x = minimal(
+        datetimes(min_year=2002, max_year=2005),
+        lambda x: x.month == 2 and x.day == 29,
+        settings=Settings(database=None, max_examples=10 ** 6)
+    )
+    assert x.year == 2004
