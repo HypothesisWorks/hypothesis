@@ -21,16 +21,17 @@ pytest_plugins = str('pytester')
 
 TESTSUITE = """
 from hypothesis import given
+from hypothesis.strategies import lists, integers
 
-@given(int)
+@given(integers())
 def test_this_one_is_ok(x):
     pass
 
-@given([int])
+@given(lists(integers()))
 def test_always_sorted(xs):
     assert sorted(xs) == xs
 
-@given([int])
+@given(lists(integers()))
 def test_never_sorted(xs):
     assert sorted(xs) != xs
 """

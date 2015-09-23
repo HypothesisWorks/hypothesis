@@ -23,8 +23,9 @@ pytest_plugins = str('pytester')
 
 TESTSUITE = """
 from hypothesis import given, Settings, Verbosity
+from hypothesis.strategies import integers
 
-@given(int, settings=Settings(verbosity=Verbosity.verbose))
+@given(integers(), settings=Settings(verbosity=Verbosity.verbose))
 def test_should_be_verbose(x):
     pass
 """

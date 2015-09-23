@@ -21,8 +21,9 @@ pytest_plugins = str('pytester')
 
 TESTSUITE = """
 from hypothesis import given
+from hypothesis.strategies import integers
 
-@given(int)
+@given(integers())
 def test_foo(x):
     pass
 
