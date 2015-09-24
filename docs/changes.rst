@@ -22,7 +22,7 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -----------------------------------------------------------------------
-`1.11.3 <https://hypothesis.readthedocs.org/en/v1.11.3/>`_ - 2015-09-23
+`1.11.3 <https://hypothesis.readthedocs.org/en/v1.11.3/>`_ - upcoming
 -----------------------------------------------------------------------
 
 * Better argument validation for datetimes() strategy - previously setting
