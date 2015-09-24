@@ -60,4 +60,4 @@ test_script:
   - "%CMD_IN_ENV% python -m pytest tests/cover"
   - "%CMD_IN_ENV% python -m pytest tests/datetime"
   - "%CMD_IN_ENV% python -m pytest tests/fakefactory"
-  - "%CMD_IN_ENV% python -m pytest hypothesis-extra/hypothesis-pytest/tests"
+  - "%CMD_IN_ENV% python -m pytest tests/pytest"
