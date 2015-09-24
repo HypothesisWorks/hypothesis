@@ -30,6 +30,11 @@ Infinity = float(u'inf')
 EFFECTIVELY_INFINITE = 2 ** 32
 
 
+def strategy(*args, **kwargs):
+    from hypothesis.internal.strategymethod import strategy as _strategy
+    return _strategy(*args, **kwargs)
+
+
 def infinitish(x):
     assert x >= 0
     if x >= EFFECTIVELY_INFINITE:
