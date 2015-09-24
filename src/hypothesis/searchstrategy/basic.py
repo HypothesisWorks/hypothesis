@@ -25,8 +25,7 @@ import hypothesis.internal.distributions as dist
 from hypothesis.settings import Settings
 from hypothesis.internal.compat import hrange, integer_types
 
-from .strategies import strategy, check_length, SearchStrategy, \
-    check_data_type
+from .strategies import check_length, SearchStrategy, check_data_type
 
 
 class BasicStrategy(object):
@@ -310,17 +309,3 @@ def basic_strategy(
         user_generate=generate, user_parameter=parameter,
         user_simplify=simplify, copy_value=copy,
     )
-
-
-@strategy.extend(BasicStrategy)
-def basic_to_strategy(basic, settings):
-    return basic_strategy(
-        generate=basic.generate,
-        parameter=basic.generate_parameter,
-        simplify=basic.simplify, copy=basic.copy
-    )
-
-
-@strategy.extend_static(BasicStrategy)
-def basic_class_to_strategy(cls, settings):
-    return strategy(cls(settings))

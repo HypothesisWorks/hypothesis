@@ -14,7 +14,6 @@
 #
 # END HEADER
 
-import pkg_resources
 from hypothesis.settings import Settings, note_deprecation
 
 
@@ -22,6 +21,7 @@ loaded = set()
 
 
 def load_entry_points(name=None):
+    import pkg_resources
     for entry_point in pkg_resources.iter_entry_points(
         group=u'hypothesis.extra', name=name
     ):

@@ -22,36 +22,9 @@ from collections import namedtuple
 from hypothesis.errors import BadData, NoExamples, WrongFormat, \
     BadTemplateDraw, UnsatisfiedAssumption
 from hypothesis.control import assume, BuildContext
-from hypothesis.settings import Settings, note_deprecation
 from hypothesis.internal.compat import hrange, integer_types
-from hypothesis.utils.extmethod import ExtMethod
 from hypothesis.internal.chooser import chooser
 from hypothesis.internal.reflection import get_pretty_function_description
-
-
-class StrategyExtMethod(ExtMethod):
-
-    def __call__(self, specifier, settings=None):
-        if isinstance(specifier, SearchStrategy):
-            return specifier
-
-        if settings is None:
-            settings = Settings()
-
-        note_deprecation((
-            u'Calling strategy with non-strategy object %s is deprecated '
-            u'and will be removed in Hypothesis 2.0. Use the functions in '
-            u'hypothesis.strategies instead.') % (
-                repr(specifier),
-        ), settings)
-
-        result = super(StrategyExtMethod, self).__call__(specifier, settings)
-        assert isinstance(result, SearchStrategy)
-        return result
-
-
-strategy = StrategyExtMethod()
-
 
 Infinity = float(u'inf')
 EFFECTIVELY_INFINITE = 2 ** 32

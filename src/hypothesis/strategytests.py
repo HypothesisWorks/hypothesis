@@ -34,7 +34,8 @@ from hypothesis.internal.compat import hrange, text_type, integer_types
 from hypothesis.utils.extmethod import ExtMethod
 from hypothesis.database.backend import SQLiteBackend
 from hypothesis.internal.tracker import Tracker
-from hypothesis.searchstrategy.strategies import strategy, SearchStrategy
+from hypothesis.internal.strategymethod import strategy
+from hypothesis.searchstrategy.strategies import SearchStrategy
 
 TemplatesFor = namedtuple(u'TemplatesFor', (u'base',))
 

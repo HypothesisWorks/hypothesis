@@ -40,8 +40,9 @@ from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.searchstrategy.misc import JustStrategy, \
     SampledFromStrategy
-from hypothesis.searchstrategy.strategies import BadData, strategy, \
-    check_length, SearchStrategy, check_data_type, one_of_strategies
+from hypothesis.internal.strategymethod import strategy
+from hypothesis.searchstrategy.strategies import BadData, check_length, \
+    SearchStrategy, check_data_type, one_of_strategies
 from hypothesis.searchstrategy.collections import TupleStrategy, \
     FixedKeysDictStrategy
 

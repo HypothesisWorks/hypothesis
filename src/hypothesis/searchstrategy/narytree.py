@@ -22,8 +22,9 @@ from hypothesis import Settings
 from hypothesis.strategies import lists, tuples
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.distributions import geometric, uniform_float
-from hypothesis.searchstrategy.strategies import BadData, strategy, \
-    check_length, SearchStrategy, check_data_type
+from hypothesis.internal.strategymethod import strategy
+from hypothesis.searchstrategy.strategies import BadData, check_length, \
+    SearchStrategy, check_data_type
 
 NAryTree = namedtuple(u'NAryTree', (
     u'branch_labels',
@@ -159,11 +160,6 @@ class NAryTreeStrategy(SearchStrategy):
                     (self.branch_key_strategy.from_basic(k),
                      self.from_basic(v))
                     for k, v in data[1]))
-
-
-@strategy.extend(NAryTree)
-def nary_tree_strategy(specifier, settings):
-    return NAryTreeStrategy(specifier, settings)
 
 
 def n_ary_tree(*args, **kwargs):

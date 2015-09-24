@@ -22,10 +22,10 @@ from hypothesis.strategies import just, sets, text, lists, binary, \
     floats, one_of, tuples, randoms, booleans, integers, frozensets, \
     sampled_from, complex_numbers, fixed_dictionaries
 from hypothesis.searchstrategy.narytree import n_ary_tree
-from hypothesis.searchstrategy.strategies import BadData, strategy
+from hypothesis.searchstrategy.strategies import BadData
 
 
-@pytest.mark.parametrize((u'specifier', u'data'), [
+@pytest.mark.parametrize((u'converter', u'data'), [
     (sets(text()), 0j),
     (complex_numbers(), set(u'hi')),
     (lists(sets(booleans())), 0),
@@ -54,7 +54,6 @@ from hypothesis.searchstrategy.strategies import BadData, strategy
     (floats(1, 2), (0, floats().to_basic(float(u'nan')))),
     (floats(1, 2), floats().to_basic(float(u'nan'))),
 ])
-def test_simple_data_validation(specifier, data):
-    converter = strategy(specifier)
+def test_simple_data_validation(converter, data):
     with pytest.raises(BadData):
         converter.from_basic(data)

@@ -18,18 +18,10 @@
 to explore data."""
 
 
-from .strategies import SearchStrategy, strategy
+from .strategies import SearchStrategy
+from hypothesis.internal.strategymethod import strategy
+
 from .basic import BasicStrategy
-
-from . import numbers as s1
-from . import collections as s2
-from . import strings as s3
-from . import misc as s4
-from . import streams as s5
-
-# Placate flake8
-loaded = [s1, s2, s3, s4, s5]
-
 
 __all__ = [
     'strategy',

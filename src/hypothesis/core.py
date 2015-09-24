@@ -29,12 +29,10 @@ from random import Random
 from itertools import islice
 from collections import namedtuple
 
-import hypothesis.strategies as sd
 from hypothesis.extra import load_entry_points
 from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
     Unsatisfiable, BadTemplateDraw, InvalidArgument, \
     UnsatisfiedAssumption, DefinitelyNoSuchExample
-from hypothesis.control import assume  # noqa
 from hypothesis.control import BuildContext
 from hypothesis.settings import Settings, Verbosity, note_deprecation
 from hypothesis.executors import executor
@@ -47,7 +45,6 @@ from hypothesis.internal.reflection import arg_string, impersonate, \
     copy_argspec, function_digest, fully_qualified_name, \
     convert_positional_arguments, get_pretty_function_description
 from hypothesis.internal.examplesource import ParameterSource
-from hypothesis.searchstrategy.strategies import strategy
 
 
 def time_to_call_it_a_day(settings, start_time):
@@ -465,6 +462,9 @@ def given(*generator_arguments, **generator_kwargs):
             test.__name__, argspec
         )
         def wrapped_test(*arguments, **kwargs):
+            import hypothesis.strategies as sd
+            from hypothesis.internal.strategymethod import strategy
+
             selfy = None
             arguments, kwargs = convert_positional_arguments(
                 wrapped_test, arguments, kwargs)
@@ -608,6 +608,7 @@ def find(specifier, condition, settings=None, random=None, storage=None):
         max_shrinks=2000,
     )
 
+    from hypothesis.internal.strategymethod import strategy
     search = strategy(specifier, settings)
 
     if storage is None and settings.database is not None:
@@ -663,6 +664,5 @@ def find(specifier, condition, settings=None, random=None, storage=None):
                 search.template_upper_bound,
             )
         raise NoSuchExample(get_pretty_function_description(condition))
-
 
 load_entry_points()
