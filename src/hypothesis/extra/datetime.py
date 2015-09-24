@@ -141,7 +141,8 @@ class DatetimeStrategy(SearchStrategy):
             try:
                 self.reify(template)
                 return True
-            except (OverflowError, ValueError):
+            # This is covered but hard to hit reliably
+            except (OverflowError, ValueError):  # pragma: no cover
                 return False
 
     def templateize(self, dt):
