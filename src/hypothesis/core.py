@@ -29,7 +29,6 @@ from random import Random
 from itertools import islice
 from collections import namedtuple
 
-from hypothesis.extra import load_entry_points
 from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
     Unsatisfiable, BadTemplateDraw, InvalidArgument, \
     UnsatisfiedAssumption, DefinitelyNoSuchExample
@@ -664,5 +663,3 @@ def find(specifier, condition, settings=None, random=None, storage=None):
                 search.template_upper_bound,
             )
         raise NoSuchExample(get_pretty_function_description(condition))
-
-load_entry_points()
