@@ -19,6 +19,9 @@ from __future__ import division, print_function, absolute_import
 import pytest
 
 PYTEST_VERSION = tuple(map(int, pytest.__version__.split('.')[:3]))
+LOAD_PROFILE_OPTION = '--hypothesis-profile'
+
+PYTEST_VERSION = tuple(map(int, pytest.__version__.split('.')))
 if PYTEST_VERSION >= (2, 7, 0):
     class StoringReporter(object):
 
@@ -30,6 +33,19 @@ if PYTEST_VERSION >= (2, 7, 0):
             if self.config.getoption('capture', 'fd') == 'no':
                 print(msg)
             self.results.append(msg)
+
+    def pytest_addoption(parser):
+        parser.addoption(
+            LOAD_PROFILE_OPTION,
+            action='store',
+            help='Load in a registered hypothesis settings profile'
+        )
+
+    def pytest_configure(config):
+        from hypothesis import settings
+        profile = config.getoption(LOAD_PROFILE_OPTION)
+        if profile:
+            settings.Settings.load_profile(profile)
 
     @pytest.mark.hookwrapper
     def pytest_pyfunc_call(pyfuncitem):
