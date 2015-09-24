@@ -1,6 +1,6 @@
 =============
 Contributing
-============
+=============
 
 First off: It's great that you want to contribute to Hypothesis! Thanks!
 
