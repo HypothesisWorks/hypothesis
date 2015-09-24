@@ -68,12 +68,7 @@ def storage_directory(name):
 all_settings = {}
 
 
-class _DatabaseCache(threading.local):
-
-    def __init__(self):
-        self.dbs = {}
-
-_db_cache = _DatabaseCache()
+_db_cache = {}
 
 
 def field_name(setting_name):
@@ -246,10 +241,10 @@ class Settings(SettingsMeta('Settings', (object,), {})):
         if self._database is not_set and self.database_file is not None:
             from hypothesis.database import ExampleDatabase
             from hypothesis.database.backend import SQLiteBackend
-            if self.database_file not in _db_cache.dbs:
-                _db_cache.dbs[self.database_file] = (
+            if self.database_file not in _db_cache:
+                _db_cache[self.database_file] = (
                     ExampleDatabase(backend=SQLiteBackend(self.database_file)))
-            return _db_cache.dbs[self.database_file]
+            return _db_cache[self.database_file]
         if self._database is not_set:
             self._database = None
         return self._database

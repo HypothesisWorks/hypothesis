@@ -17,6 +17,7 @@
 from __future__ import division, print_function, absolute_import
 
 import sqlite3
+import threading
 from abc import abstractmethod
 from contextlib import contextmanager
 
@@ -68,18 +69,19 @@ class SQLiteBackend(Backend):
     def __init__(self, path=u':memory:'):
         self.path = path
         self.db_created = False
-        self.__connection = None
+        self.current_connection = threading.local()
 
     def connection(self):
-        if self.__connection is None:
-            self.__connection = sqlite3.connect(self.path)
-        return self.__connection
+        if not hasattr(self.current_connection, 'connection'):
+            self.current_connection.connection = sqlite3.connect(self.path)
+        return self.current_connection.connection
 
     def close(self):
-        if self.__connection is not None:
-            c = self.__connection
-            self.__connection = None
-            c.close()
+        if hasattr(self.current_connection, 'connection'):
+            try:
+                self.connection().close()
+            finally:
+                del self.current_connection.connection
 
     def __repr__(self):
         return u'%s(%s)' % (self.__class__.__name__, self.path)
