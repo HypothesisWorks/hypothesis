@@ -30,6 +30,10 @@ class DynamicVariable(object):
     def value(self):
         return getattr(self.data, u'value', self.default)
 
+    @value.setter
+    def value(self, value):
+        setattr(self.data, u'value', value)
+
     @contextmanager
     def with_value(self, value):
         old_value = self.value

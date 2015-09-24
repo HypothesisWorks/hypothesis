@@ -87,20 +87,6 @@ def get_class(obj, typ):
         return typ
 
 
-class DefaultSettings(object):
-
-    def __get__(self, obj, typ=None):
-        if obj is not None:
-            typ = type(obj)
-        return typ.default_variable.value
-
-    def __set__(self, obj, value):
-        raise AttributeError(u'Cannot set default settings')
-
-    def __delete__(self, obj):
-        raise AttributeError(u'Cannot delete default settings')
-
-
 class SettingsProperty(object):
 
     def __init__(self, name):
@@ -132,7 +118,22 @@ class SettingsProperty(object):
         ))
 
 
-class Settings(object):
+class SettingsMeta(type):
+
+    def __init__(self, *args, **kwargs):
+        super(SettingsMeta, self).__init__(*args, **kwargs)
+        self.default_variable = DynamicVariable(None)
+
+    @property
+    def default(self):
+        return self.default_variable.value
+
+    @default.setter
+    def default(self, value):
+        self.default_variable.value = value
+
+
+class Settings(SettingsMeta('Settings', (object,), {})):
 
     """A settings object controls a variety of parameters that are used in
     falsification. These may control both the falsification strategy and the
@@ -156,17 +157,19 @@ class Settings(object):
             self,
             **kwargs
     ):
-        for setting in all_settings.values():
-            value = kwargs.pop(setting.name, not_set)
-            if value == not_set:
-                value = getattr(Settings.default, setting.name)
-            setattr(self, setting.name, value)
         self._database = kwargs.pop(u'database', not_set)
-        if self._database is not_set and hasattr(Settings, 'default'):
-            self._database = Settings.default.database
-        if kwargs:
-            raise InvalidArgument(
-                u'Invalid arguments %s' % (u', '.join(kwargs),))
+        if Settings.default is not None:
+            for setting in all_settings.values():
+                if kwargs.get(setting.name, not_set) is not_set:
+                    kwargs[setting.name] = getattr(
+                        Settings.default, setting.name)
+            if self._database is not_set:
+                self._database = Settings.default.database
+        for name, value in kwargs.items():
+            if name not in all_settings:
+                raise InvalidArgument(
+                    u'Invalid argument %s' % (name,))
+            setattr(self, name, value)
         self.storage = threading.local()
 
     def defaults_stack(self):
@@ -260,11 +263,6 @@ class Settings(object):
     def __exit__(self, *args, **kwargs):
         default_context_manager = self.defaults_stack().pop()
         return default_context_manager.__exit__(*args, **kwargs)
-
-    default = DefaultSettings()
-
-
-Settings.default_variable = DynamicVariable(Settings())
 
 Setting = namedtuple(
     u'Setting', (u'name', u'description', u'default', u'options'))
@@ -396,6 +394,8 @@ class Verbosity(object):
         if isinstance(result, Verbosity):
             return result
         raise InvalidArgument(u'No such verbosity level %r' % (key,))
+
+Settings.default = Settings()
 
 Verbosity.quiet = Verbosity(u'quiet', 0)
 Verbosity.normal = Verbosity(u'normal', 1)
