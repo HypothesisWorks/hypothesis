@@ -111,7 +111,7 @@ For example, it's super useful and higly appreciated if you do any of:
 * Build libraries and tools on top of Hypothesis outside the main repo
 
 Of, if you're OK with the pull request but don't feel quite ready to touch the code, you can always
-help to improve the documentation. Spot a tyop? Fix it up and send me a pull request! 
+help to improve the documentation. Spot a tyop? Fix it up and send me a pull request!
 
 If you need any help with any of these, get in touch and I'll be extremely happy to provide it.
 
@@ -135,6 +135,7 @@ their individual contributions.
 * `kbara <https://www.github.com/kbara>`_
 * `marekventur <https://www.github.com/marekventur>`_
 * `Marius Gedminas <https://www.github.com/mgedmin>`_ (`marius@gedmin.as <mailto:marius@gedmin.as>`_)
+* `Matt Bachmann <https://www.github.com/bachmann1234>`_ (`bachmann.matt@gmail.com <mailto:bachmann.matt@gmail.com>`_)
 * `Nicholas Chammas <https://www.github.com/nchammas>`_
 * `Richard Boulton <https://www.github.com/rboulton>`_ (`richard@tartarus.org <mailto:richard@tartarus.org>`_)
 * `Saul Shanabrook <https://www.github.com/saulshanabrook>`_ (`s.shanabrook@gmail.com <mailto:s.shanabrook@gmail.com>`_)
