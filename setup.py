@@ -50,7 +50,7 @@ class PyTest(TestCommand):
 
 extras = {
     'datetime':  ["pytz"],
-    'fakefactory': ["fake-factory==0.5.2"],
+    'fakefactory': ["fake-factory>=0.5.2,<=0.5.3"],
     'django': ['pytz', 'django>=1.7'],
     'numpy': ['numpy>=1.9.0'],
     'pytest': ['pytest>=2.7.0'],

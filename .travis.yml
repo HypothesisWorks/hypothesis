@@ -34,6 +34,9 @@ env:
         - TOXENV=nose
         - TOXENV=pytest27
         - TOXENV=pytest26
+        - TOXENV=fakefactory052
+        - TOXENV=fakefactory053
+        - TOXENV=pytest26
 
 install:
     - ./scripts/install.sh
@@ -43,6 +46,10 @@ script:
 
 matrix:
     exclude:
+        - os: osx
+          env: TOXENV=fakefactory052
+        - os: osx
+          env: TOXENV=fakefactory053
         - os: osx
           env: TOXENV=pytest26
         - os: osx
