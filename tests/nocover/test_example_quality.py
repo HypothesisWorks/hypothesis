@@ -330,7 +330,7 @@ def test_non_reversible_ints_as_decimals():
         return sum(ts) != sum(reversed(ts))
 
     sigh = minimal(lists(integers()), not_reversible, timeout_after=30)
-    assert len(sigh) <= 10
+    assert len(sigh) <= 20
 
 
 def test_non_reversible_fractions_as_decimals():
@@ -339,7 +339,7 @@ def test_non_reversible_fractions_as_decimals():
         return sum(xs) != sum(reversed(xs))
 
     sigh = minimal(lists(fractions()), not_reversible, timeout_after=20)
-    assert len(sigh) < 10
+    assert len(sigh) <= 20
 
 
 def test_non_reversible_decimals():
@@ -347,7 +347,7 @@ def test_non_reversible_decimals():
         assume(all(x.is_finite() for x in xs))
         return sum(xs) != sum(reversed(xs))
     sigh = minimal(lists(decimals()), not_reversible, timeout_after=30)
-    assert len(sigh) < 10
+    assert len(sigh) <= 20
 
 
 def length_of_longest_ordered_sequence(xs):
