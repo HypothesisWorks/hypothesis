@@ -6,3 +6,6 @@ venv*
 .hypothesis
 docs/_build
 *.egg-info
+_build
+.tox
+.coverage
