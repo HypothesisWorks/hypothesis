@@ -19,7 +19,6 @@ from __future__ import division, print_function, absolute_import
 import hypothesis.internal.distributions as dist
 from hypothesis.types import RandomWithSeed
 from hypothesis.internal.compat import hrange, integer_types
-from hypothesis.internal.chooser import chooser
 from hypothesis.searchstrategy.strategies import BadData, check_type, \
     SearchStrategy, check_data_type, MappedSearchStrategy
 
@@ -149,15 +148,12 @@ class SampledFromStrategy(SearchStrategy):
 
     def draw_parameter(self, random):
         n = len(self.elements)
-        active = list(range(n))
-        random.shuffle(active)
-        n_active = min(random.randint(1, n), random.randint(1, n))
-        active = set(active[:n_active])
-        return chooser(
-            random.getrandbits(8) + 1 if i in active else 0 for i in hrange(n))
+        return [
+            random.randint(0, n - 1) for _ in hrange(n)
+        ]
 
     def draw_template(self, random, pv):
-        return pv.choose(random)
+        return random.choice(pv)
 
     def reify(self, template):
         return self.elements[template]
