@@ -383,13 +383,8 @@ class SearchStrategy(object):
 class LazyParameter(object):
 
     def __init__(self, strategy, random):
-        if inspect.ismodule(random):
-            self.random = random
-        else:
-            self.random = Random(random.getrandbits(128))
-        # There is no sensible reason for this to be a weakref. It is a
-        # workaround for https://bitbucket.org/pypy/pypy/issues/2102
-        self.strategy = weakref.ref(strategy)
+        self.seed = random.getrandbits(128)
+        self.strategy = strategy
         self.evaluated = False
 
     def __repr__(self):
@@ -401,10 +396,8 @@ class LazyParameter(object):
     @property
     def value(self):
         if not self.evaluated:
-            strategy = self.strategy()
-            assert strategy is not None
             self.evaluated = True
-            self.__value = strategy.draw_parameter(self.random)
+            self.__value = self.strategy.draw_parameter(Random(self.seed))
         return self.__value
 
 
