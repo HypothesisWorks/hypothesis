@@ -386,7 +386,7 @@ class LazyParameter(object):
         if inspect.ismodule(random):
             self.random = random
         else:
-            self.random = deepcopy(random)
+            self.random = Random(random.getrandbits(128))
         # There is no sensible reason for this to be a weakref. It is a
         # workaround for https://bitbucket.org/pypy/pypy/issues/2102
         self.strategy = weakref.ref(strategy)
