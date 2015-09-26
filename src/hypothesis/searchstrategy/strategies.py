@@ -16,9 +16,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import inspect
-import weakref
-from copy import deepcopy
 from random import Random
 from collections import namedtuple
 
