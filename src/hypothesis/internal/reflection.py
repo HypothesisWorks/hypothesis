@@ -29,6 +29,7 @@ import types
 import hashlib
 import inspect
 from functools import wraps
+from contextlib import contextmanager
 
 from hypothesis.settings import storage_directory
 from hypothesis.internal.compat import hrange, qualname, text_type, \
@@ -336,12 +337,14 @@ def check_valid_identifier(identifier):
 
 
 def eval_directory():
-    return storage_directory(u'eval_source')
+    return storage_directory('eval_source')
 
 
+@contextmanager
 def add_directory_to_path(d):
-    if d not in sys.path:
-        sys.path.insert(0, d)
+    sys.path.insert(0, d)
+    yield
+    sys.path.remove(d)
 
 
 eval_cache = {}
@@ -354,40 +357,41 @@ def source_exec_as_module(source):
         pass
 
     d = eval_directory()
-    add_directory_to_path(d)
-    final_name = u'hypothesis_temporary_module_%s' % (
-        hashlib.sha1(source.encode(u'utf-8')).hexdigest(),
-    )
-    temporary_name = u'hypothesis_temporary_module_%s_%s' % (
-        hashlib.sha1(source.encode(u'utf-8')).hexdigest(),
-        uuid.uuid4(),
-    )
-    temporary_filepath = os.path.join(d, temporary_name + u'.py')
-    final_filepath = os.path.join(d, final_name + u'.py')
-    f = open(temporary_filepath, u'w')
-    f.write(source)
-    f.close()
-    assert os.path.exists(temporary_filepath)
+    with add_directory_to_path(d):
+        final_name = u'hypothesis_temporary_module_%s' % (
+            hashlib.sha1(source.encode(u'utf-8')).hexdigest(),
+        )
+        temporary_name = u'hypothesis_temporary_module_%s_%s' % (
+            hashlib.sha1(source.encode(u'utf-8')).hexdigest(),
+            uuid.uuid4(),
+        )
+        temporary_filepath = os.path.join(d, temporary_name + u'.py')
+        final_filepath = os.path.join(d, final_name + u'.py')
+        f = open(temporary_filepath, u'w')
+        f.write(source)
+        f.close()
+        assert os.path.exists(temporary_filepath)
 
-    try:
-        os.rename(temporary_filepath, final_filepath)
-    except OSError:  # pragma: no cover
-        # The odds of final_filepath being a directory are basically zero, and
-        # it's basically impossible for them to be on different filesystems, so
-        # if this is raised it's because the destination already exists on
-        # Windows. That's fine, it won't be different, so just keep going,
-        # deleting our tempfile.
-        assert not os.path.isdir(final_filepath)
-        os.remove(temporary_filepath)
+        try:
+            os.rename(temporary_filepath, final_filepath)
+        except OSError:  # pragma: no cover
+            # The odds of final_filepath being a directory are basically zero,
+            # and it's basically impossible for them to be on different
+            # filesystems, so
+            # if this is raised it's because the destination already exists on
+            # Windows. That's fine, it won't be different, so just keep going,
+            # deleting our tempfile.
+            assert not os.path.isdir(final_filepath)
+            os.remove(temporary_filepath)
 
-    assert os.path.exists(final_filepath)
-    assert not os.path.exists(temporary_filepath)
-    with open(final_filepath) as r:
-        assert r.read() == source
-    importlib_invalidate_caches()
-    result = __import__(final_name)
-    eval_cache[source] = result
-    return result
+        assert os.path.exists(final_filepath)
+        assert not os.path.exists(temporary_filepath)
+        with open(final_filepath) as r:
+            assert r.read() == source
+        importlib_invalidate_caches()
+        result = __import__(final_name)
+        eval_cache[source] = result
+        return result
 
 
 COPY_ARGSPEC_SCRIPT = """
