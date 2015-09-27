@@ -22,7 +22,23 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -----------------------------------------------------------------------
-`1.11.3 <https://hypothesis.readthedocs.org/en/v1.11.3/>`_ - upcoming
+`1.11.4 <https://hypothesis.readthedocs.org/en/v1.11.4/>`_ - 2015-09-27
+-----------------------------------------------------------------------
+
+* Hide modifications Hypothesis needs to make to sys.path by undoing them
+  after we've imported the relevant modules. This is a workaround for issues
+  cryptography experienced on windows.
+* Slightly improved performance of drawing from sampled_from on large lists
+  of alternatives.
+* Significantly improved performance of drawing from one_of or strategies
+  using \| (note this includes a lot of strategies internally - floats()
+  and integers() both fall into this category). There turned out to be a
+  massive performance regression introduced in 1.10.0 affecting these which
+  probably would have made tests using Hypothesis significantly slower than
+  they should have been.
+
+-----------------------------------------------------------------------
+`1.11.3 <https://hypothesis.readthedocs.org/en/v1.11.3/>`_ - 2015-09-23
 -----------------------------------------------------------------------
 
 * Better argument validation for datetimes() strategy - previously setting
