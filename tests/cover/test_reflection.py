@@ -24,10 +24,10 @@ from functools import partial
 import pytest
 from hypothesis.internal.compat import PY3, ArgSpec, getargspec
 from hypothesis.internal.reflection import proxies, arg_string, \
-    copy_argspec, unbind_method, function_digest, fully_qualified_name, \
-    source_exec_as_module, convert_keyword_arguments, \
-    convert_positional_arguments, get_pretty_function_description, \
-    eval_directory
+    copy_argspec, unbind_method, eval_directory, function_digest, \
+    fully_qualified_name, source_exec_as_module, \
+    convert_keyword_arguments, convert_positional_arguments, \
+    get_pretty_function_description
 
 
 def do_conversion_test(f, args, kwargs):
