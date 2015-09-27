@@ -227,7 +227,10 @@ def extract_lambda_source(f):
     source = LINE_CONTINUATION.sub(u' ', source)
     source = WHITESPACE.sub(u' ', source)
     source = source.strip()
-
+    lambda_source = re.compile('lambda %s *:' % (', '.join(arg_strings)))
+    search = lambda_source.search(source)
+    assert search
+    source = source[search.span()[0]:]
     try:
         tree = ast.parse(source)
     except SyntaxError:
@@ -243,7 +246,6 @@ def extract_lambda_source(f):
                 continue
         else:
             return if_confused
-
     all_lambdas = extract_all_lambdas(tree)
     aligned_lambdas = [
         l for l in all_lambdas

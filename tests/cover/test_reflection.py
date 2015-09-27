@@ -617,3 +617,23 @@ def test_can_handle_non_unicode_repr_containing_non_ascii():
 def test_does_not_put_eval_directory_on_path():
     source_exec_as_module("hello = 'world'")
     assert eval_directory() not in sys.path
+
+arguments_seen = []
+
+
+def put_argument_in_list(arg):
+    def accept(f):
+        arguments_seen.append(arg)
+        return f
+    return accept
+
+
+@put_argument_in_list(lambda x: 1)
+@put_argument_in_list(lambda x: 2)
+def hi():
+    pass
+
+
+def test_can_extract_lambda_source_in_series_of_decorators():
+    assert get_pretty_function_description(arguments_seen[0]) == 'lambda x: 2'
+    assert get_pretty_function_description(arguments_seen[1]) == 'lambda x: 1'
