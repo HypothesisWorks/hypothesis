@@ -157,7 +157,7 @@ class SearchStrategy(object):
 
     """
 
-    def example(self):
+    def example(self, random=None):
         """Provide an example of the sort of value that this strategy
         generates. This is biased to be slightly simpler than is typical for
         values from this strategy, for clarity purposes.
@@ -168,7 +168,7 @@ class SearchStrategy(object):
         This method is part of the public API.
 
         """
-        random = Random()
+        random = random or Random()
 
         for _ in hrange(100):
             try:
