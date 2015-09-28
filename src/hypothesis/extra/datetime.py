@@ -279,6 +279,31 @@ def datetimes(allow_naive=None, timezones=None, min_year=None, max_year=None):
     )
 
 
+@defines_strategy
+def dates(min_year=None, max_year=None):
+    """Return a strategy for generating dates."""
+    return datetimes(
+        allow_naive=True, timezones=[],
+        min_year=min_year, max_year=max_year,
+    ).map(datetime_to_date)
+
+
+def datetime_to_date(dt):
+    return dt.date()
+
+
+@defines_strategy
+def times(allow_naive=None, timezones=None):
+    """Return a strategy for generating times."""
+    return datetimes(
+        allow_naive=allow_naive, timezones=timezones,
+    ).map(datetime_to_time)
+
+
+def datetime_to_time(dt):
+    return dt.timetz()
+
+
 @strategy.extend_static(dt.datetime)
 def datetime_strategy(cls, settings):
     return datetimes()

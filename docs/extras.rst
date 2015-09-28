@@ -6,7 +6,7 @@ Hypothesis itself does not have any dependencies, but there are some packages th
 need additional things installed in order to work.
 
 You can install these dependencies using the setuptools extra feature as e.g.
-pip install hypothesis[django]. This will check installation of compatible versions.
+``pip install hypothesis[django]``. This will check installation of compatible versions.
 
 You can also just install hypothesis into a project using them, ignore the version
 constraints, and hope for the best.
@@ -20,62 +20,99 @@ you run into a bug with any of these please specify the dependency version.
 hypothesis[datetime]
 --------------------
 
-As might be expected, this provides a strategy which generates instances of
-datetime. It depends on pytz to work.
+As might be expected, this provides strategies for which generating instances
+of objects from the ``datetime`` module: ``datetime``\s, ``date``\s, and
+``time``\s. It depends on ``pytz`` to work.
 
-It should work with just about any version of pytz. pytz has a very stable API
-and Hypothesis works around a bug or two in older versions.
+It should work with just about any version of ``pytz``. ``pytz`` has a very
+stable API and Hypothesis works around a bug or two in older versions.
 
-It lives in the hypothesis.extra.datetime package:
+It lives in the ``hypothesis.extra.datetime`` package.
 
-.. code-block:: pycon
 
-  >>> from hypothesis.extra.datetime import datetimes
-  >>> datetimes().example()
-  datetime.datetime(1705, 1, 20, 0, 32, 0, 973139, tzinfo=<DstTzInfo 'Israel...
-  >>> datetimes().example()
-  datetime.datetime(7274, 6, 9, 23, 0, 31, 75498, tzinfo=<DstTzInfo 'America...
+.. method:: datetimes(allow_naive=None, timezones=None, min_year=None, \
+                      max_year=None)
 
-As you can see, it produces years from quite a wide range. If you want to
-narrow it down you can ask for a more specific range of years:
+    This strategy generates ``datetime`` objects. For example:
 
-.. code-block:: pycon
+    .. code-block:: pycon
 
-  >>> datetimes(min_year=2001, max_year=2010).example()
-  datetime.datetime(2010, 7, 7, 0, 15, 0, 614034, tzinfo=<DstTzInfo 'Pacif...
-  >>> datetimes(min_year=2001, max_year=2010).example()
-  datetime.datetime(2006, 9, 26, 22, 0, 0, 220365, tzinfo=<DstTzInfo 'Asia...
+      >>> from hypothesis.extra.datetime import datetimes
+      >>> datetimes().example()
+      datetime.datetime(1705, 1, 20, 0, 32, 0, 973139, tzinfo=<DstTzInfo 'Israel...
+      >>> datetimes().example()
+      datetime.datetime(7274, 6, 9, 23, 0, 31, 75498, tzinfo=<DstTzInfo 'America...
 
-You can also specify timezones:
+    As you can see, it produces years from quite a wide range. If you want to
+    narrow it down you can ask for a more specific range of years:
 
-.. code-block:: pycon
+    .. code-block:: pycon
 
-  >>> import pytz
-  >>> pytz.all_timezones[:3]
-  ['Africa/Abidjan', 'Africa/Accra', 'Africa/Addis_Ababa']
-  >>> datetimes(timezones=pytz.all_timezones[:3]).example()
-  datetime.datetime(6257, 8, 21, 13, 6, 24, 8751, tzinfo=<DstTzInfo 'Africa/Accra' GMT0:00:00 STD>)
-  >>> datetimes(timezones=pytz.all_timezones[:3]).example()
-  datetime.datetime(7851, 2, 3, 0, 0, 0, 767400, tzinfo=<DstTzInfo 'Africa/Accra' GMT0:00:00 STD>)
-  >>> datetimes(timezones=pytz.all_timezones[:3]).example()
-  datetime.datetime(8262, 6, 22, 16, 0, 0, 154235, tzinfo=<DstTzInfo 'Africa/Abidjan' GMT0:00:00 STD>)
+      >>> datetimes(min_year=2001, max_year=2010).example()
+      datetime.datetime(2010, 7, 7, 0, 15, 0, 614034, tzinfo=<DstTzInfo 'Pacif...
+      >>> datetimes(min_year=2001, max_year=2010).example()
+      datetime.datetime(2006, 9, 26, 22, 0, 0, 220365, tzinfo=<DstTzInfo 'Asia...
 
-If the set of timezones is empty you will get a naive datetime:
+    You can also specify timezones:
 
-.. code-block:: pycon
+    .. code-block:: pycon
 
-  >>> datetimes(timezones=[]).example()
-  datetime.datetime(918, 11, 26, 2, 0, 35, 916439)
+      >>> import pytz
+      >>> pytz.all_timezones[:3]
+      ['Africa/Abidjan', 'Africa/Accra', 'Africa/Addis_Ababa']
+      >>> datetimes(timezones=pytz.all_timezones[:3]).example()
+      datetime.datetime(6257, 8, 21, 13, 6, 24, 8751, tzinfo=<DstTzInfo 'Africa/Accra' GMT0:00:00 STD>)
+      >>> datetimes(timezones=pytz.all_timezones[:3]).example()
+      datetime.datetime(7851, 2, 3, 0, 0, 0, 767400, tzinfo=<DstTzInfo 'Africa/Accra' GMT0:00:00 STD>)
+      >>> datetimes(timezones=pytz.all_timezones[:3]).example()
+      datetime.datetime(8262, 6, 22, 16, 0, 0, 154235, tzinfo=<DstTzInfo 'Africa/Abidjan' GMT0:00:00 STD>)
 
-You can also explicitly get a mix of naive and non-naive datetimes if you
-want:
+    If the set of timezones is empty you will get a naive datetime:
 
-.. code-block:: pycon
+    .. code-block:: pycon
 
-    >>> datetimes(allow_naive=True).example()
-    datetime.datetime(2433, 3, 20, 0, 0, 44, 460383, tzinfo=<DstTzInfo 'Asia/Hovd' HOVT+7:00:00 STD>)
-    >>> datetimes(allow_naive=True).example()
-    datetime.datetime(7003, 1, 22, 0, 0, 52, 401259)
+      >>> datetimes(timezones=[]).example()
+      datetime.datetime(918, 11, 26, 2, 0, 35, 916439)
+
+    You can also explicitly get a mix of naive and non-naive datetimes if you
+    want:
+
+    .. code-block:: pycon
+
+        >>> datetimes(allow_naive=True).example()
+        datetime.datetime(2433, 3, 20, 0, 0, 44, 460383, tzinfo=<DstTzInfo 'Asia/Hovd' HOVT+7:00:00 STD>)
+        >>> datetimes(allow_naive=True).example()
+        datetime.datetime(7003, 1, 22, 0, 0, 52, 401259)
+
+
+.. method:: dates(min_year=None, max_year=None)
+
+    This strategy generates ``date`` objects. For example:
+
+    .. code-block:: pycon
+
+        >>> from hypothesis.extra.datetime import dates
+        >>> dates().example()
+        datetime.date(1687, 3, 23)
+        >>> dates().example()
+        datetime.date(9565, 5, 2)
+
+    Again, you can restrict the range with the ``min_year`` and ``max_year``
+    arguments.
+
+
+.. method:: times()
+
+    This strategy generates ``time`` objects. For example:
+
+    .. code-block:: pycon
+
+        >>> from hypothesis.extra.datetime import times
+        >>> times().example()
+        datetime.time(0, 15, 55, 188712)
+        >>> times().example()
+        datetime.time(9, 0, 47, 959374)
+
 
 -----------------------
 hypothesis[fakefactory]

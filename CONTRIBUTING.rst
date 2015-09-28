@@ -123,6 +123,7 @@ The primary author for most of Hypothesis is David R. MacIver (me). However the 
 people have also contributed work. As well as my thanks, they also have copyright over
 their individual contributions.
 
+* `Adam Johnson <https://github.com/adamchainz>`_
 * `Adam Sven Johnson <https://www.github.com/pkqk>`_
 * `Alex Stapleton <https://www.github.com/public>`_
 * `Charles O'Farrell <https://www.github.com/charleso>`_

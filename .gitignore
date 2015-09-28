@@ -2,3 +2,7 @@
 *.swp
 *.pyc
 venv*
+.cache
+.hypothesis
+docs/_build
+*.egg-info
