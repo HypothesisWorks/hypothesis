@@ -285,6 +285,64 @@ You can also override the default by setting the environment variable
 setting ``HYPOTHESIS_VERBOSITY_LEVEL=verbose`` will run all your tests printing
 intermediate results and errors.
 
+.. _settings_profiles:
+
+~~~~~~~~~~~~~~~~~
+Settings Profiles
+~~~~~~~~~~~~~~~~~
+
+Depending on your environment you may want different default settings.
+For example: during development you may want to lower the number of examples
+to speed up the tests. However, in a CI environment you may want more examples
+so you are more likely to find bugs.
+
+Hypothesis allows you to define different settings profiles. These profiles
+can be loaded at any time.
+
+Loading a profile changes the default settings but will not change the behavior
+of tests that explicitly change the settings.
+
+.. code:: python
+
+    >>> from hypothesis import Settings
+    >>> Settings.register_profile("ci", Settings(max_examples=1000))
+    >>> Settings().max_examples
+    200
+    >>> Settings.load_profile("ci")
+    >>> Settings().max_examples
+    1000
+
+Instead of loading the profile and overriding the defaults you can retrieve profiles for
+specific tests.
+
+.. code:: python
+
+  >>> with Settings.get_profile("ci"):
+  ...     print(Settings().max_examples)
+  ...
+  1000
+
+Optionally, you may define the environment variable to load a profile for you.
+This is the suggested pattern for running your tests on CI.
+The code below should run in a `conftest.py` or any setup/initialization section of your test suite.
+If this variable is not defined the Hypothesis defined defaults will be loaded.
+
+.. code:: python
+
+    >>> from hypothesis import Settings
+    >>> Settings.register_profile("ci", Settings(max_examples=1000))
+    >>> Settings.register_profile("dev", Settings(max_examples=10))
+    >>> Settings.register_profile("debug", Settings(max_examples=10, verbosity=Verbosity.verbose))
+    >>> Settings.load_profile(os.getenv(u'HYPOTHESIS_PROFILE', 'default'))
+
+If you are using the hypothesis pytest plugin. If the profile was registered
+while loading in a conftest file you can load it with the command line
+option ``--hypothesis-profile``
+
+.. code:: bash
+
+    $ py.test tests --hypothesis-profile <profile-name>
+
 ---------------------
 Defining strategies
 ---------------------
