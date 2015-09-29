@@ -33,8 +33,8 @@ from contextlib import contextmanager
 
 from hypothesis.settings import storage_directory
 from hypothesis.internal.compat import hrange, qualname, text_type, \
-    getargspec, to_unicode, unicode_safe_repr, ARG_NAME_ATTRIBUTE, \
-    importlib_invalidate_caches
+    getargspec, to_unicode, isidentifier, unicode_safe_repr, \
+    ARG_NAME_ATTRIBUTE, importlib_invalidate_caches
 
 
 def fully_qualified_name(f):
@@ -325,13 +325,8 @@ def unbind_method(f):
     return getattr(f, u'im_func', getattr(f, u'__func__', f))
 
 
-VALID_PYTHON_IDENTIFIER = re.compile(
-    r"^[a-zA-Z_][a-zA-Z0-9_]*$"
-)
-
-
 def check_valid_identifier(identifier):
-    if not VALID_PYTHON_IDENTIFIER.match(identifier):
+    if not isidentifier(identifier):
         raise ValueError(u'%r is not a valid python identifier' %
                          (identifier,))
 

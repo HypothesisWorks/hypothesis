@@ -18,6 +18,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import re
 import sys
 import math
 import platform
@@ -76,7 +77,17 @@ if PY3:
 
     def unicode_safe_repr(x):
         return repr(x)
+
+    def isidentifier(s):
+        return s.isidentifier()
 else:
+    VALID_PYTHON_IDENTIFIER = re.compile(
+        r"^[a-zA-Z_][a-zA-Z0-9_]*$"
+    )
+
+    def isidentifier(s):
+        return VALID_PYTHON_IDENTIFIER.match(s)
+
     def unicode_safe_repr(x):
         try:
             r = type(x).__repr__(x)
