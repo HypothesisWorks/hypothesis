@@ -16,9 +16,20 @@
 
 from __future__ import division, print_function, absolute_import
 
+import pytest
+from hypothesis import given
+from hypothesis.errors import InvalidArgument
+from hypothesis.strategies import integers
 from hypothesis.internal.reflection import get_pretty_function_description
 
 
 def test_destructuring_lambdas():
     assert get_pretty_function_description(lambda (x, y): 1) == \
         u'lambda (x, y): <unknown>'
+
+
+def test_destructuring_not_allowed():
+    with pytest.raises(InvalidArgument):
+        @given(integers())
+        def foo(a, (b, c)):
+            pass

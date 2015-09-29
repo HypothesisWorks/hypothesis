@@ -432,6 +432,12 @@ def given(*generator_arguments, **generator_kwargs):
         specifiers = list(generator_arguments)
         seen_kwarg = None
         for a in arguments:
+            if isinstance(a, list):
+                raise InvalidArgument((
+                    u'Cannot decorate function %s() because it has '
+                    u'destructuring arguments') % (
+                        test.__name__,
+                ))
             if a in generator_kwargs:
                 seen_kwarg = seen_kwarg or a
                 specifiers.append(generator_kwargs[a])
