@@ -18,7 +18,7 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
-PYTEST_VERSION = tuple(map(int, pytest.__version__.split('.')))
+PYTEST_VERSION = tuple(map(int, pytest.__version__[:3].split('.')))
 if PYTEST_VERSION >= (2, 7, 0):
     class StoringReporter(object):
 
