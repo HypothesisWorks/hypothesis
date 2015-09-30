@@ -21,7 +21,6 @@ import pytest
 PYTEST_VERSION = tuple(map(int, pytest.__version__.split('.')[:3]))
 LOAD_PROFILE_OPTION = '--hypothesis-profile'
 
-PYTEST_VERSION = tuple(map(int, pytest.__version__.split('.')))
 if PYTEST_VERSION >= (2, 7, 0):
     class StoringReporter(object):
 
