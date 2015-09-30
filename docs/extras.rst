@@ -161,7 +161,7 @@ in as a providers argument:
     >>> class KittenProvider(BaseProvider):
     ...     def meows(self):
     ...             return 'meow %d' % (self.random_number(digits=10),)
-    ... 
+    ...
     >>> fake_factory('meows', providers=[KittenProvider]).example()
     'meow 9139348419'
 
@@ -192,5 +192,6 @@ package will remain for compatibility reasons if it does.
 
 hypothesis-pytest is the world's most basic pytest plugin. Install it to get
 slightly better integrated example reporting when using @given and running
-under pytest. That's basically all it does.
+under pytest.
 
+It can also load :ref:`Settings Profiles <settings_profiles>`.
