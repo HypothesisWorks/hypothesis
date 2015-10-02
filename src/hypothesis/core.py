@@ -432,7 +432,7 @@ def given(*generator_arguments, **generator_kwargs):
         specifiers = list(generator_arguments)
         seen_kwarg = None
         for a in arguments:
-            if isinstance(a, list):
+            if isinstance(a, list):  # pragma: no cover
                 raise InvalidArgument((
                     u'Cannot decorate function %s() because it has '
                     u'destructuring arguments') % (
