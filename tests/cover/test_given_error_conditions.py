@@ -51,7 +51,7 @@ def test_raises_unsatisfiable_if_all_false_in_finite_set():
         test_assume_false()
 
 
-def testt_does_not_raise_unsatisfiable_if_some_false_in_finite_set():
+def test_does_not_raise_unsatisfiable_if_some_false_in_finite_set():
     @given(booleans())
     def test_assume_x(x):
         assume(x)

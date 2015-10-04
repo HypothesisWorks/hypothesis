@@ -103,7 +103,7 @@ If Pull Requests put you off
 If you don't feel able to contribute code to Hypothesis that's *100% OK*. There
 are lots of other things you can do to help too!
 
-For example, it's super useful and higly appreciated if you do any of:
+For example, it's super useful and highly appreciated if you do any of:
 
 * Submit bug reports
 * Submit feature requests

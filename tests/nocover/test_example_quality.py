@@ -57,7 +57,7 @@ def test_minimize_list_of_sets_on_large_structure():
     assert len(set(x)) == 1
 
 
-def test_integers_from_minizes_leftwards():
+def test_integers_from_minimizes_leftwards():
     assert minimal(integers(min_value=101)) == 101
 
 

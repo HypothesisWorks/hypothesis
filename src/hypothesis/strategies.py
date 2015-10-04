@@ -335,7 +335,7 @@ def lists(
     elements=None, min_size=None, average_size=None, max_size=None,
     unique_by=None
 ):
-    """Returns a list containining values drawn from elements length in the
+    """Returns a list containing values drawn from elements length in the
     interval [min_size, max_size] (no bounds in that direction if these are
     None). If max_size is 0 then elements may be None and only the empty list
     will be drawn.

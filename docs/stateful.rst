@@ -224,7 +224,7 @@ technical limitations, Hypothesis was unable to find that particular shrink.
 In general it's rare for examples produced to be long, but they won't always be
 minimal.
 
-You can control the deailed behaviour with a Settings object on the TestCase
+You can control the detailed behaviour with a Settings object on the TestCase
 (this is a normal hypothesis Settings object using the defaults at the time
 the TestCase class was first referenced). For example if you wanted to run
 fewer examples with larger programs you could change the settings to:

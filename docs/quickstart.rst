@@ -242,7 +242,7 @@ We could also have done this as a unittest TestCase:
 A detail: This works because Hypothesis ignores any arguments it hasn't been
 told to provide (positional arguments start from the right), so the self
 argument to the test is simply ignored and works as normal. This also means
-that Hypothesis will play nicely with other ways of parametrizing tests. e.g
+that Hypothesis will play nicely with other ways of parameterizing tests. e.g
 it works fine if you use pytest fixtures for some arguments and Hypothesis for
 others.
 

@@ -100,7 +100,7 @@ def test_can_find_standard_complex_numbers():
     find(complex_numbers(), lambda x: x.real != 0) == 1
 
 
-def test_minimial_float_is_zero():
+def test_minimal_float_is_zero():
     assert find(floats(), lambda x: True) == 0.0
 
 
