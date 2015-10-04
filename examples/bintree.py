@@ -386,7 +386,7 @@ class BinaryTreeStrategy(SearchStrategy):
         unlike the behaviour when our top level template is a leaf we use
         full_simplify. This is to prevent a combinatorial explosion: If we
         were to use all the individual simplifiers of the leaves we would
-        potentially have a very large numbeer of simplifiers to consider.
+        potentially have a very large number of simplifiers to consider.
 
         All full_simplify does is run each simplifier (albeit in a slightly
         randomized order), so we still get the same amount of simplification.

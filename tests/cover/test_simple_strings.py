@@ -40,7 +40,7 @@ def test_can_handle_large_codepoints():
     assert s == u'☃'
 
 
-def test_can_find_mixed_ascii_and_non_ascii_stringgs():
+def test_can_find_mixed_ascii_and_non_ascii_strings():
     s = find(
         text(), lambda x: (
             any(t >= u'☃' for t in x) and

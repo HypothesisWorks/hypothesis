@@ -548,7 +548,7 @@ will be turned into an AbnormalExit exception.
 
 There are currently some limitations to this approach:
 
-1. Exceptions which are not pickleable will be turned into abormal exits.
+1. Exceptions which are not pickleable will be turned into abnormal exits.
 2. Tracebacks from exceptions are not properly recreated in the parent process.
 3. Code called in the child process will not be recorded by coverage.
 4. This is only supported on platforms with os.fork. e.g. it will not work on
@@ -587,12 +587,12 @@ example to a condition that is always false it will raise an error:
   >>> find(integers(), lambda x: False)
   Traceback (most recent call last):
   ...
-  hypothesis.errors.NoSuchExample: No examples of conditition lambda x: <unknown>
+  hypothesis.errors.NoSuchExample: No examples of condition lambda x: <unknown>
   >>> from hypothesis.strategies import booleans
   >>> find(booleans(), lambda x: False)
   Traceback (most recent call last):
   ...
-  hypothesis.errors.DefinitelyNoSuchExample: No examples of conditition lambda x: <unknown> (all 2 considered)
+  hypothesis.errors.DefinitelyNoSuchExample: No examples of condition lambda x: <unknown> (all 2 considered)
 
 
 
