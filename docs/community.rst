@@ -24,8 +24,33 @@ recommending it because it's great).
 Code of conduct
 ---------------
 
-Note that everyone in these spaces is expected to abide by a code of conduct, the `Recurse Center social rules <https://www.recurse.com/manual#sub-sec-social-rules>`_.
-This is an inclusive environment for people from a variety of backgrounds and skill levels. Prejudice and aggression are unwelcome and everyone should be treated with respect.
+Hypothesis's community is an inclusive space, and everyone in it is expected to abide by a code of conduct.
 
-I'll do my best to pay attention to peoples' behaviour, but if you see anyone violating these rules and I haven't noticed, please alert me and I'll deal with it. Usually I will simply ask people to modify their behaviour,
-but for particularly severe transgressions, repeat offenders or those unwilling to change their ways I'll ban them from the community.
+At the high level the code of conduct goes like this:
+
+1. Be kind
+2. Be respectful
+3. Be helpful
+
+While it is impossible to enumerate everything that is unkind, disrespectful or unhelpful, here are some specific things that are definitely against the code of conduct:
+
+1. -isms and -phobias (e.g. racism, sexism, transphobia and homophobia) are unkind, disrespectful *and* unhelpful. Just don't.
+2. All software is broken. This is not a moral failing on the part of the authors. Don't give people a hard time for bad code.
+3. It's OK not to know things. Everybody was a beginner once, nobody should be made to feel bad for it.
+4. It's OK not to *want* to know something. If you think someone's question is fundamentally flawed, you should still ask permission before explaining what they should actually be asking.
+5. Note that "I was just joking" is not a valid defence.
+
+What happens when this goes wrong?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For minor infractions, I'll just call people on it and ask them to apologise and not do it again. You should
+feel free to do this too if you're comfortable doing so.
+
+Major infractions and repeat offenders will be banned from the community.
+
+Also, people who have a track record of bad behaviour outside of the Hypothesis community may be banned even
+if they obey all these rules if their presence is making people uncomfortable.
+
+At the current volume level it's not hard for me to pay attention to the whole community, but if you think I've
+missed something please feel free to alert me. You can either message me as DRMacIver on freenode or send a me
+an email at david@drmaciver.com.
