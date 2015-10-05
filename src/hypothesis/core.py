@@ -593,13 +593,12 @@ def given(*generator_arguments, **generator_kwargs):
                     test_is_flaky(test, repr_for_last_exception[0]),
                     print_example=True
                 ))
-
+        for attr in dir(test):
+            if attr[0] != '_' and not hasattr(wrapped_test, attr):
+                setattr(wrapped_test, attr, getattr(test, attr))
         wrapped_test.__name__ = test.__name__
         wrapped_test.__doc__ = test.__doc__
         wrapped_test.is_hypothesis_test = True
-        wrapped_test.hypothesis_explicit_examples = getattr(
-            test, u'hypothesis_explicit_examples', []
-        )
         return wrapped_test
     return run_test_with_generator
 
