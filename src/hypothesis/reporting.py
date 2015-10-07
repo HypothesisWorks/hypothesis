@@ -19,7 +19,7 @@ from __future__ import division, print_function, absolute_import
 import inspect
 
 from hypothesis.settings import Settings, Verbosity
-from hypothesis.internal.compat import text_type
+from hypothesis.internal.compat import text_type, escape_unicode_characters
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
 
@@ -28,7 +28,10 @@ def silent(value):
 
 
 def default(value):
-    print(value)
+    try:
+        print(value)
+    except UnicodeEncodeError:
+        print(escape_unicode_characters(value))
 
 
 reporter = DynamicVariable(default)

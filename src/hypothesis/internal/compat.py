@@ -21,6 +21,7 @@ from __future__ import division, print_function, absolute_import
 import re
 import sys
 import math
+import codecs
 import platform
 import importlib
 from decimal import Context, Decimal, Inexact
@@ -33,6 +34,7 @@ except ImportError:  # pragma: no cover
     from counter import Counter
 
 
+PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
 PYPY = platform.python_implementation() == u'PyPy'
 PY26 = sys.version_info[:2] == (2, 6)
@@ -80,6 +82,9 @@ if PY3:
 
     def isidentifier(s):
         return s.isidentifier()
+
+    def escape_unicode_characters(s):
+        return codecs.encode(s, 'unicode_escape').decode('ascii')
 else:
     VALID_PYTHON_IDENTIFIER = re.compile(
         r"^[a-zA-Z_][a-zA-Z0-9_]*$"
@@ -140,6 +145,9 @@ else:
     integer_types = (int, long)
     hunichr = unichr
     reduce = reduce
+
+    def escape_unicode_characters(s):
+        return codecs.encode(s, 'string_escape')
 
 
 def a_good_encoding():

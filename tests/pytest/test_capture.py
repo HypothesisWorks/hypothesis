@@ -18,6 +18,8 @@ from __future__ import division, print_function, absolute_import, \
     unicode_literals
 
 import pytest
+from hypothesis.internal.compat import PY2, hunichr, \
+    escape_unicode_characters
 
 pytest_plugins = str('pytester')
 
@@ -28,6 +30,7 @@ from hypothesis.strategies import integers
 @given(integers(), settings=Settings(verbosity=Verbosity.verbose))
 def test_should_be_verbose(x):
     pass
+
 """
 
 
@@ -41,4 +44,35 @@ def test_output_without_capture(testdir, capture, expected):
     out = '\n'.join(result.stdout.lines)
     assert 'test_should_be_verbose' in out
     assert ('Trying example' in out) == expected
+    assert result.ret == 0
+
+
+UNICODE_EMITTING = """
+import pytest
+from hypothesis import given, Settings, Verbosity
+from hypothesis.strategies import text
+from hypothesis.internal.compat import PY3
+import sys
+
+def test_emits_unicode():
+    @given(text(), settings=Settings(verbosity=Verbosity.verbose))
+    def test_should_emit_unicode(t):
+        assert all(ord(c) <= 1000 for c in t)
+    with pytest.raises(AssertionError):
+        test_should_emit_unicode()
+"""
+
+
+@pytest.mark.skipif(
+    PY2, reason="Output streams don't have encodings in python 2")
+def test_output_emitting_unicode(testdir, monkeypatch):
+    monkeypatch.setenv('LC_ALL', 'C')
+    monkeypatch.setenv('LANG', 'C')
+    script = testdir.makepyfile(UNICODE_EMITTING)
+    result = getattr(
+        testdir, 'runpytest_subprocess', testdir.runpytest)(
+        script, '--verbose', '--capture=no')
+    out = '\n'.join(result.stdout.lines)
+    assert 'test_emits_unicode' in out
+    assert escape_unicode_characters(hunichr(1001)) in out
     assert result.ret == 0

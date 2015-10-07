@@ -16,12 +16,16 @@
 
 from __future__ import division, print_function, absolute_import
 
+import os
+import sys
+
 import pytest
 from hypothesis import find, given, reporting
 from tests.common.utils import capture_out
 from hypothesis.settings import Settings, Verbosity
 from hypothesis.reporting import debug_report, verbose_report
 from hypothesis.strategies import just, integers
+from hypothesis.internal.compat import PY2
 
 
 def test_can_suppress_output():
@@ -76,3 +80,14 @@ def test_prints_debug_on_no_simplification():
     v = o.getvalue()
     print(v)
     assert u'No simplifiers' in v
+
+
+@pytest.mark.skipif(
+    PY2, reason="Output streams don't have encodings in python 2")
+def test_can_report_when_system_locale_is_ascii(monkeypatch):
+    import io
+    read, write = os.pipe()
+    read = io.open(read, 'r', encoding='ascii')
+    write = io.open(write, 'w', encoding='ascii')
+    monkeypatch.setattr(sys, 'stdout', write)
+    reporting.default(u"☃")

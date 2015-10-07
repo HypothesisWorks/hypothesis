@@ -17,6 +17,7 @@
 from __future__ import division, print_function, absolute_import
 
 import pytest
+from hypothesis.reporting import default as default_reporter
 
 PYTEST_VERSION = tuple(map(int, pytest.__version__.split('.')[:3]))
 LOAD_PROFILE_OPTION = '--hypothesis-profile'
@@ -30,7 +31,7 @@ if PYTEST_VERSION >= (2, 7, 0):
 
         def __call__(self, msg):
             if self.config.getoption('capture', 'fd') == 'no':
-                print(msg)
+                default_reporter(msg)
             self.results.append(msg)
 
     def pytest_addoption(parser):
