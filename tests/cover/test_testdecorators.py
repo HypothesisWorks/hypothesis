@@ -345,16 +345,16 @@ def test_prints_on_failure_by_default():
 
 
 def test_does_not_print_on_success():
-    @given(integers())
-    def test_is_an_int(x):
-        return True
-
     with hs.Settings(verbosity=hs.Verbosity.normal):
+        @given(integers())
+        def test_is_an_int(x):
+            return True
+
         with capture_out() as out:
             test_is_an_int()
     out = out.getvalue()
     lines = [l.strip() for l in out.split(u'\n')]
-    assert all(not l for l in lines)
+    assert all(not l for l in lines), lines
 
 
 @given(sampled_from([1]))

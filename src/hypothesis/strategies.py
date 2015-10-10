@@ -59,17 +59,21 @@ def defines_strategy(strategy_definition):
     @proxies(strategy_definition)
     def accept(*args, **kwargs):
         result = strategy_definition(*args, **kwargs)
-        args, kwargs = convert_positional_arguments(
-            strategy_definition, args, kwargs)
-        kwargs_for_repr = dict(kwargs)
-        for k, v in defaults.items():
-            if k in kwargs_for_repr and kwargs_for_repr[k] is defaults[k]:
-                del kwargs_for_repr[k]
-        representation = u'%s(%s)' % (
-            strategy_definition.__name__,
-            arg_string(strategy_definition, args, kwargs_for_repr)
-        )
-        return ReprWrapperStrategy(result, representation)
+
+        def calc_repr():
+            _args = args
+            _kwargs = kwargs
+            _args, _kwargs = convert_positional_arguments(
+                strategy_definition, _args, _kwargs)
+            kwargs_for_repr = dict(_kwargs)
+            for k, v in defaults.items():
+                if k in kwargs_for_repr and kwargs_for_repr[k] is defaults[k]:
+                    del kwargs_for_repr[k]
+            return u'%s(%s)' % (
+                strategy_definition.__name__,
+                arg_string(strategy_definition, _args, kwargs_for_repr)
+            )
+        return ReprWrapperStrategy(result, calc_repr)
     return accept
 
 
@@ -80,8 +84,11 @@ def just(value):
 
     """
     from hypothesis.searchstrategy.misc import JustStrategy
-    return ReprWrapperStrategy(
-        JustStrategy(value), u'just(%s)' % (unicode_safe_repr(value),))
+
+    def calc_repr():
+        return u'just(%s)' % (unicode_safe_repr(value),)
+
+    return ReprWrapperStrategy(JustStrategy(value), calc_repr)
 
 
 @defines_strategy
@@ -323,11 +330,14 @@ def sampled_from(elements):
         result = JustStrategy(elements[0])
     else:
         result = SampledFromStrategy(elements)
-    return ReprWrapperStrategy(
-        result, u'sampled_from((%s))' % (u', '.join(
-            map(unicode_safe_repr, elements)
-        ))
-    )
+
+    def calc_repr():
+        return u'sampled_from((%s%s))' % (
+            u', '.join(map(unicode_safe_repr, elements)),
+            ',' if len(elements) == 1 else '',
+        )
+
+    return ReprWrapperStrategy(result, calc_repr)
 
 
 @defines_strategy
@@ -651,13 +661,17 @@ def builds(target, *args, **kwargs):
     splat.__name__ = str(
         u'splat(%s)' % (target_name,)
     )
-    return ReprWrapperStrategy(
-        tuples(tuples(*args), fixed_dictionaries(kwargs)).map(splat),
-        u'builds(%s)' % (
+
+    def calc_repr():
+        return u'builds(%s)' % (
             u', '.join(
                 [nicerepr(target)] +
                 list(map(nicerepr, args)) +
-                sorted([u'%s=%r' % (k, v) for k, v in kwargs.items()]))))
+                sorted([u'%s=%r' % (k, v) for k, v in kwargs.items()])))
+
+    return ReprWrapperStrategy(
+        tuples(tuples(*args), fixed_dictionaries(kwargs)).map(splat),
+        calc_repr)
 
 
 @defines_strategy
@@ -800,12 +814,20 @@ def check_valid_sizes(min_size, average_size, max_size):
                         max_size, average_size
                     ))
 
-    if average_size is not None and min_size is not None:
-        if average_size < min_size:
+    if average_size is not None:
+        if min_size is not None:
+            if average_size < min_size:
+                raise InvalidArgument(
+                    u'Cannot have average_size=%r < min_size=%r' % (
+                        average_size, min_size
+                    ))
+        if (
+            (max_size is None or max_size > 0) and
+            average_size is not None and average_size <= 0.0
+        ):
             raise InvalidArgument(
-                u'Cannot have average_size=%r < min_size=%r' % (
-                    average_size, min_size
-                ))
+                'average_size must be > 0 but got %r' % (average_size,)
+            )
 
 
 @strategy.extend(tuple)

@@ -296,6 +296,8 @@ def get_pretty_function_description(f):
 def nicerepr(v):
     if inspect.isfunction(v):
         return get_pretty_function_description(v)
+    elif isinstance(v, type):
+        return v.__name__
     else:
         return unicode_safe_repr(v)
 

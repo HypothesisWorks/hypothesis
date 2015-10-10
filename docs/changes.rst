@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+--------
+Upcoming
+--------
+
+* Significantly improved performance of creating strategies using the functions
+  from the hypothesis.strategies module by deferring the calculation of their
+  repr until it was needed. This is unlikely to have been an performance issue
+  for you unless you were using flatmap, composite or stateful testing, but for
+  some cases it could be quite a significant impact.
+
+
 -----------------------------------------------------------------------
 `1.11.4 <https://hypothesis.readthedocs.org/en/v1.11.4/>`_ - 2015-09-27
 -----------------------------------------------------------------------

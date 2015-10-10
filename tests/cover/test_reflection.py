@@ -591,8 +591,8 @@ class NoRepr(object):
 def test_can_handle_repr_on_type():
     def foo(x):
         pass
-    assert arg_string(foo, [Snowman], {}) == u'x=%r' % (Snowman,)
-    assert arg_string(foo, [NoRepr], {}) == u'x=%r' % (NoRepr,)
+    assert arg_string(foo, [Snowman], {}) == u'x=Snowman'
+    assert arg_string(foo, [NoRepr], {}) == u'x=NoRepr'
 
 
 def test_can_handle_repr_of_none():
