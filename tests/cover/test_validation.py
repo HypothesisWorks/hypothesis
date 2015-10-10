@@ -105,4 +105,11 @@ def test_does_not_error_if_min_size_is_bigger_than_default_size():
     lists(integers(), min_size=50)
     sets(integers(), min_size=50)
     frozensets(integers(), min_size=50)
-    lists(integers(), min_size=50, unique_by=lambda x: x)
+    lists(integers(), min_size=50, unique=True)
+
+
+def test_list_unique_and_unique_by_cannot_both_be_enabled():
+    with pytest.raises(InvalidArgument):
+        @given(lists(unique=True, unique_by=lambda x: x))
+        def boom(*args):
+            pass

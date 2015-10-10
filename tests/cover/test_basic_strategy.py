@@ -182,7 +182,7 @@ def test_can_find_adjacent_one_bits():
 @pytest.mark.parametrize('n', [2 ** i - 1 for i in range(11)])
 def test_can_find_distinct_bitfield_representatives(n):
     find(
-        lists(basic(Bitfields), min_size=n, unique_by=lambda x: x),
+        lists(basic(Bitfields), min_size=n, unique=True),
         lambda x: True,
         settings=Settings(max_shrinks=1)
     )

@@ -127,6 +127,7 @@ their individual contributions.
 * `Adam Sven Johnson <https://www.github.com/pkqk>`_
 * `Alex Stapleton <https://www.github.com/public>`_
 * `Charles O'Farrell <https://www.github.com/charleso>`_
+* `Chris Down  <https://chrisdown.name>`_
 * `Christopher Martin <https://www.github.com/chris-martin>`_ (`ch.martin@gmail.com <mailto:ch.martin@gmail.com>`_)
 * `Cory Benfield <https://www.github.com/Lukasa>`_
 * `Florian Bruhin <https://www.github.com/The-Compiler>`_
