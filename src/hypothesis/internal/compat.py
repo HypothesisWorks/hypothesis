@@ -223,3 +223,59 @@ else:
 
 importlib_invalidate_caches = getattr(
     importlib, u'invalidate_caches', lambda: ())
+
+
+if PY2:
+    CODE_FIELD_ORDER = [
+        'co_argcount',
+        'co_nlocals',
+        'co_stacksize',
+        'co_flags',
+        'co_code',
+        'co_consts',
+        'co_names',
+        'co_varnames',
+        'co_filename',
+        'co_name',
+        'co_firstlineno',
+        'co_lnotab',
+        'co_freevars',
+        'co_cellvars',
+    ]
+else:
+    CODE_FIELD_ORDER = [
+        'co_argcount',
+        'co_kwonlyargcount',
+        'co_nlocals',
+        'co_stacksize',
+        'co_flags',
+        'co_code',
+        'co_consts',
+        'co_names',
+        'co_varnames',
+        'co_filename',
+        'co_name',
+        'co_firstlineno',
+        'co_lnotab',
+        'co_freevars',
+        'co_cellvars',
+    ]
+
+
+def update_code_location(code, newfile, newlineno):
+    """Take a code object and lie shamelessly about where it comes from.
+
+    Why do we want to do this? It's for really shallow reasons involving
+    hiding the hypothesis_temporary_module code from test runners like
+    py.test's verbose mode. This is a vastly disproportionate terrible
+    hack that I've done purely for vanity, and if you're reading this
+    code you're probably here because it's broken something and now
+    you're angry at me. Sorry.
+
+    """
+    unpacked = [
+        getattr(code, name) for name in CODE_FIELD_ORDER
+    ]
+    unpacked[CODE_FIELD_ORDER.index('co_filename')] = newfile
+    unpacked[CODE_FIELD_ORDER.index('co_firstlineno')] = newlineno
+    return type(code)(*unpacked)

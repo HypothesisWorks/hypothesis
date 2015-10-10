@@ -34,7 +34,8 @@ from contextlib import contextmanager
 from hypothesis.settings import storage_directory
 from hypothesis.internal.compat import hrange, qualname, text_type, \
     getargspec, to_unicode, isidentifier, unicode_safe_repr, \
-    ARG_NAME_ATTRIBUTE, importlib_invalidate_caches
+    ARG_NAME_ATTRIBUTE, update_code_location, \
+    importlib_invalidate_caches
 
 
 def fully_qualified_name(f):
@@ -464,8 +465,28 @@ def copy_argspec(name, argspec):
     return accept
 
 
+def impersonate(target):
+    """Decorator to update the attributes of a function so that to external
+    introspectors it will appear to be the target function.
+
+    Note that this updates the function in place, it doesn't return a
+    new one.
+
+    """
+    def accept(f):
+        f.__code__ = update_code_location(
+            f.__code__,
+            target.__code__.co_filename, target.__code__.co_firstlineno
+        )
+        f.__name__ = target.__name__
+        f.__module__ = target.__module__
+        f.__doc__ = target.__doc__
+        return f
+    return accept
+
+
 def proxies(target):
     def accept(proxy):
-        return wraps(target)(
-            copy_argspec(target.__name__, getargspec(target))(proxy))
+        return impersonate(target)(wraps(target)(
+            copy_argspec(target.__name__, getargspec(target))(proxy)))
     return accept

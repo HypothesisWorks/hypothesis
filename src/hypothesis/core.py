@@ -44,9 +44,9 @@ from hypothesis.deprecation import note_deprecation
 from hypothesis.internal.compat import qualname, getargspec, \
     unicode_safe_repr
 from hypothesis.internal.tracker import Tracker
-from hypothesis.internal.reflection import arg_string, copy_argspec, \
-    function_digest, fully_qualified_name, convert_positional_arguments, \
-    get_pretty_function_description
+from hypothesis.internal.reflection import arg_string, impersonate, \
+    copy_argspec, function_digest, fully_qualified_name, \
+    convert_positional_arguments, get_pretty_function_description
 from hypothesis.internal.examplesource import ParameterSource
 from hypothesis.searchstrategy.strategies import strategy
 
@@ -461,6 +461,7 @@ def given(*generator_arguments, **generator_kwargs):
         for k in extra_kwargs:
             unused_kwargs[k] = HypothesisProvided(generator_kwargs[k])
 
+        @impersonate(test)
         @copy_argspec(
             test.__name__, argspec
         )
@@ -596,8 +597,6 @@ def given(*generator_arguments, **generator_kwargs):
         for attr in dir(test):
             if attr[0] != '_' and not hasattr(wrapped_test, attr):
                 setattr(wrapped_test, attr, getattr(test, attr))
-        wrapped_test.__name__ = test.__name__
-        wrapped_test.__doc__ = test.__doc__
         wrapped_test.is_hypothesis_test = True
         return wrapped_test
     return run_test_with_generator
