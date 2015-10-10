@@ -333,7 +333,7 @@ def sampled_from(elements):
 @defines_strategy
 def lists(
     elements=None, min_size=None, average_size=None, max_size=None,
-    unique_by=None
+    unique=False, unique_by=None,
 ):
     """Returns a list containing values drawn from elements length in the
     interval [min_size, max_size] (no bounds in that direction if these are
@@ -344,11 +344,24 @@ def lists(
     of list but it may not be the actual average of sizes you get, due
     to a variety of factors.
 
+    If unique is True (or something that evaluates to True), we compare direct
+    object equality, as if unique_by was `lambda x: x`. This comparison only
+    works for hashable types.
+
     if unique_by is not None it must be a function returning a hashable type
     when given a value drawn from elements. The resulting list will satisfy the
     condition that for i != j, unique_by(result[i]) != unique_by(result[j]).
 
     """
+    if unique:
+        if unique_by is not None:
+            raise InvalidArgument((
+                u'cannot specify both unique and unique_by (you probably only '
+                u'want to set unique_by)'
+            ))
+        else:
+            unique_by = lambda x: x
+
     if unique_by is not None:
         from hypothesis.searchstrategy.collections import UniqueListStrategy
         if max_size == 0:
@@ -429,7 +442,7 @@ def sets(elements=None, min_size=None, average_size=None, max_size=None):
     """
     return lists(
         elements=elements, min_size=min_size, average_size=average_size,
-        max_size=max_size, unique_by=lambda x: x
+        max_size=max_size, unique=True
     ).map(set)
 
 
@@ -439,7 +452,7 @@ def frozensets(elements=None, min_size=None, average_size=None, max_size=None):
     frozensets."""
     return lists(
         elements=elements, min_size=min_size, average_size=average_size,
-        max_size=max_size, unique_by=lambda x: x
+        max_size=max_size, unique=True
     ).map(frozenset)
 
 
