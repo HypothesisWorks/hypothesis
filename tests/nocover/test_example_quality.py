@@ -23,6 +23,7 @@ from decimal import Decimal
 from fractions import Fraction
 
 import pytest
+from flaky import flaky
 from hypothesis import find, assume, Settings
 from tests.common import parametrize, ordered_pair, constant_list
 from hypothesis.strategies import just, sets, text, lists, binary, \
@@ -240,6 +241,7 @@ def test_can_simplify_on_both_sides_of_flatmap():
     ) == [0] * 10
 
 
+@flaky(max_runs=5, min_passes=1)
 def test_flatmap_rectangles():
     lengths = integers(min_value=0, max_value=10)
 
@@ -342,6 +344,7 @@ def test_non_reversible_fractions_as_decimals():
     assert len(sigh) <= 25
 
 
+@flaky(max_runs=5, min_passes=1)
 def test_non_reversible_decimals():
     def not_reversible(xs):
         assume(all(x.is_finite() for x in xs))

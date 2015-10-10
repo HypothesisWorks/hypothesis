@@ -18,6 +18,7 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 import hypothesis.strategies as st
+from flaky import flaky
 from hypothesis import find, given, Settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.debug import timeout
@@ -151,6 +152,7 @@ def test_can_simplify_hard_recursive_data_into_boolean_alternative(rnd):
     assert all(isinstance(v, bool) for v in lvs), repr(lvs)
 
 
+@flaky(max_runs=5, min_passes=1)
 @given(st.randoms(), settings=Settings(max_examples=10))
 @timeout(60)
 def test_can_flatmap_to_recursive_data(rnd):
