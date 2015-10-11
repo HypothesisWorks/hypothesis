@@ -68,3 +68,4 @@ matrix:
           env: TOXENV=coverage
         - os: osx
           env: TOXENV=lint
+    fast_finish: true
