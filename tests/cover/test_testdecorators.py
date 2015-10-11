@@ -27,6 +27,7 @@ from collections import namedtuple
 
 import hypothesis.settings as hs
 import hypothesis.reporting as reporting
+from flaky import flaky
 from hypothesis import given, assume
 from hypothesis.errors import Flaky, Unsatisfiable, InvalidArgument
 from tests.common.utils import fails, raises, fails_with, capture_out
@@ -564,6 +565,7 @@ def test_should_not_count_duplicates_towards_max_examples():
     assert len(seen) == 9
 
 
+@flaky(max_runs=10, min_passes=1)
 def test_can_timeout_during_an_unsuccessful_simplify():
     record = []
 

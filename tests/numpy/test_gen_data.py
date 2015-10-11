@@ -19,6 +19,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 import pytest
 import hypothesis.strategies as st
+from flaky import flaky
 from hypothesis import find, given
 from hypothesis.extra.numpy import arrays, from_dtype
 from hypothesis.strategytests import strategy_test_suite
@@ -71,6 +72,7 @@ def test_can_minimize_large_arrays_easily():
     assert x.sum() == 1
 
 
+@flaky(max_runs=5, min_passes=1)
 def test_can_minimize_float_arrays():
     x = find(arrays(float, 50), lambda t: t.sum() >= 1.0)
     assert 1.0 <= x.sum() <= 1.1
