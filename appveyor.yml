@@ -49,10 +49,10 @@ install:
   # Check that we have the expected version and architecture for Python
   - "python --version"
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
-  - "%CMD_IN_ENV% pip install --upgrade setuptools pip"
-  - "%CMD_IN_ENV% pip install setuptools pytest==2.8.0 flaky"
-  - "%CMD_IN_ENV% pip install .[all]"
-  - "%CMD_IN_ENV% pip install ./hypothesis-extra/hypothesis-pytest/"
+  - "%CMD_IN_ENV% python -m pip install --upgrade setuptools pip"
+  - "%CMD_IN_ENV% python -m pip install setuptools pytest==2.8.0 flaky"
+  - "%CMD_IN_ENV% python -m pip install .[all]"
+  - "%CMD_IN_ENV% python -m pip install ./hypothesis-extra/hypothesis-pytest/"
 
 build: false  # Not a C# project, build stuff at the test step instead.
 
