@@ -82,6 +82,52 @@ body {
     font-weight: bold;
 }
 
+/* social buttons */
+/*social buttons */
+.social-btn-holder{
+  padding:10px;
+  margin-top:5px;
+  margin-bottom:5px;
+}
+.social-btn-holder .btn-social{
+  font-size:12px;
+  font-weight:bold;
+}
+
+.btn-social{
+  color: white;
+  opacity:0.9;
+}
+.btn-social:hover {
+  color: white;
+  opacity:1;
+}
+.btn-facebook {
+background-color: #3b5998;
+}
+.btn-twitter {
+background-color: #00aced;
+}
+.btn-linkedin {
+background-color:#0e76a8;
+}
+.btn-github{
+  background-color:#000000;
+}
+.btn-google {
+  background-color: #c32f10;
+}
+.btn-stackoverflow{
+  background-color: #D38B28;
+}
+
+.btn-hackerrank{
+  background-color: #27AB5B;
+}
+.btn-soundcloud{
+  background-color: #FF7202;
+}
+
 
 /* utility classes */
 .no-margin:{

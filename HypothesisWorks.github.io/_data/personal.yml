@@ -1,0 +1,47 @@
+---
+  name: "Your Name"
+  position: "Your Position"
+  company: "Your Company"
+  location: "Your City, Your State"
+  email: "you@somedomain.com"
+  gravatar: "http://api.adorable.io/avatars/300/abott@adorable.png"
+  bio: |
+    Your Short Bio goes here.
+  #activate the social buttons you like by removing the comment
+  social:
+    google:
+      url: "http://plus.google.com/+You/"
+      text: "+You"
+      btnClass: "btn-google"
+      logo: "fa-google"
+    # facebook:
+    #  url: "http://facebook.com/yourid"
+    #  text: "/yourid"
+    #  btnClass: "btn-facebook"
+    #  logo: "fa-facebook"
+    twitter:
+      url: "http://twitter.com/yourid"
+      text: "/yourid"
+      btnClass: "btn-twitter"
+      logo: "fa-twitter"
+    # linkedin:
+    #   url: "https://www.linkedin.com/in/yourid"
+    #   text: "/yourid"
+    #   btnClass: "btn-linkedin"
+    #   logo: "fa-linkedin"
+    github:
+      url: "http://github.com/yourid"
+      text: "/yourid"
+      btnClass: "btn-github"
+      logo: "fa-github"
+    stackoverflow:
+      url: "http://stackoverflow.com/users/youruserid/yourid"
+      text: "/yourid"
+      btnClass: "btn-stackoverflow"
+      logo: "fa-stack-overflow"
+    # soundcloud:
+    #   url: "http://soundcloud.com/itsrifat"
+    #   text: "/itsrifat"
+    #   btnClass: "btn-soundcloud"
+    #   logo: "fa-soundcloud"
+       
