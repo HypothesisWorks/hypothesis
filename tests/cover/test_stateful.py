@@ -21,6 +21,7 @@ from random import Random
 from collections import namedtuple
 
 import pytest
+
 from hypothesis import assume, Settings, strategy
 from hypothesis.errors import Flaky, BadData, InvalidDefinition
 from tests.common.utils import capture_out

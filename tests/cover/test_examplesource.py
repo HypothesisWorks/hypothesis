@@ -20,6 +20,7 @@ import random
 from itertools import islice
 
 import pytest
+
 from hypothesis.strategies import integers
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.examplesource import ParameterSource

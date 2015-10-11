@@ -20,6 +20,7 @@ import hashlib
 from random import Random
 
 import pytest
+
 import hypothesis.strategies as s
 from hypothesis.utils.size import clamp
 from hypothesis.internal.compat import hrange

@@ -17,6 +17,7 @@
 from __future__ import division, print_function, absolute_import
 
 import pytest
+
 from hypothesis import given
 from hypothesis.strategies import booleans, integers
 from hypothesis.internal.compat import getargspec

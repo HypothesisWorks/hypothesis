@@ -19,6 +19,7 @@ from __future__ import division, print_function, absolute_import
 from unittest import TestCase as VanillaTestCase
 
 from django.db import IntegrityError
+
 from hypothesis import given
 from hypothesis.strategies import integers
 from hypothesis.extra.django import TestCase, TransactionTestCase

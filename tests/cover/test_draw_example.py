@@ -17,6 +17,7 @@
 from __future__ import division, print_function, absolute_import
 
 import pytest
+
 from hypothesis import Settings, strategy
 from tests.common import standard_types
 from hypothesis.strategies import lists

@@ -21,6 +21,7 @@ from random import Random
 from itertools import islice
 
 import pytest
+
 from hypothesis import find, given, strategy
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import text, lists, floats, booleans, \

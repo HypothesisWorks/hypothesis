@@ -33,6 +33,7 @@ import random
 import collections
 
 import pytest
+
 import hypothesis.internal.reflection as reflection
 from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.strategies import just, sets, text, lists, floats, \

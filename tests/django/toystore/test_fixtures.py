@@ -17,6 +17,7 @@
 from __future__ import division, print_function, absolute_import
 
 from django.test import TestCase
+
 from hypothesis.strategies import just, lists
 from tests.django.toystore.models import Store, Company, Customer
 from hypothesis.extra.django.models import models

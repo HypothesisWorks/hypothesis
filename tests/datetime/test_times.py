@@ -20,6 +20,7 @@ from random import Random
 
 import pytz
 import pytest
+
 import hypothesis.settings as hs
 from hypothesis import given, assume
 from hypothesis.strategytests import strategy_test_suite

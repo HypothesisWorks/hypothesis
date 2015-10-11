@@ -17,6 +17,7 @@
 from __future__ import division, print_function, absolute_import
 
 import pytest
+
 from hypothesis.internal.compat import hrange, qualname, HAS_SIGNATURE, \
     signature_argspec
 

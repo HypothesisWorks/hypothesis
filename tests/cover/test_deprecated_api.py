@@ -23,6 +23,7 @@ from fractions import Fraction
 from collections import namedtuple
 
 import pytest
+
 import hypothesis.specifiers as s
 from hypothesis import find, Settings, strategy
 from hypothesis.errors import InvalidArgument

@@ -23,6 +23,7 @@ from decimal import Decimal
 from fractions import Fraction
 
 import pytest
+
 from flaky import flaky
 from hypothesis import find, assume, Settings
 from tests.common import parametrize, ordered_pair, constant_list

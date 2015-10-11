@@ -19,6 +19,7 @@ from __future__ import division, print_function, absolute_import
 import os
 
 import pytest
+
 import hypothesis.reporting as reporting
 from hypothesis import given, assume
 from hypothesis.errors import AbnormalExit

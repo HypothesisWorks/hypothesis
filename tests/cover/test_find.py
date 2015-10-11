@@ -20,6 +20,7 @@ import math
 import time
 
 import pytest
+
 from hypothesis import find, Settings
 from hypothesis.errors import Timeout, NoSuchExample, \
     DefinitelyNoSuchExample

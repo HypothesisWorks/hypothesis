@@ -19,6 +19,7 @@ from __future__ import division, print_function, absolute_import
 from random import Random
 
 import pytest
+
 from hypothesis import find, given, Settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import sets, lists, floats, randoms, booleans, \

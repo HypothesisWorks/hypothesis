@@ -20,6 +20,7 @@ from random import Random
 from collections import namedtuple
 
 import pytest
+
 from hypothesis import find, given, Settings, strategy
 from hypothesis.strategies import sets, text, lists, builds, tuples, \
     booleans, integers, frozensets, dictionaries, fixed_dictionaries

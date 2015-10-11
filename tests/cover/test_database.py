@@ -19,6 +19,7 @@ from __future__ import division, print_function, absolute_import
 import time
 
 import pytest
+
 import hypothesis.settings as hs
 from hypothesis import given, assume, strategy
 from hypothesis.errors import Timeout, Unsatisfiable

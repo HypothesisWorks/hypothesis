@@ -20,6 +20,7 @@ import os
 import sys
 
 import pytest
+
 from hypothesis import find, given, reporting
 from tests.common.utils import capture_out
 from hypothesis.settings import Settings, Verbosity

@@ -17,6 +17,7 @@
 from __future__ import division, print_function, absolute_import
 
 import pytest
+
 import hypothesis.strategies as st
 from flaky import flaky
 from hypothesis import find, given, Settings

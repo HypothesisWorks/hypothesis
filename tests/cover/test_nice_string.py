@@ -24,6 +24,7 @@ import unittest
 from collections import namedtuple
 
 import pytest
+
 import hypothesis.specifiers as specifiers
 from hypothesis.utils.show import show
 

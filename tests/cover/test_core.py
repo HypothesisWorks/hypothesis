@@ -19,6 +19,7 @@ from __future__ import division, print_function, absolute_import
 import time
 
 import pytest
+
 import hypothesis.strategies as s
 from hypothesis import find, given, assume, Settings
 from hypothesis.errors import NoSuchExample, Unsatisfiable

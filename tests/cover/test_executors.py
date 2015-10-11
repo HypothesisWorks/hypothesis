@@ -19,6 +19,7 @@ from __future__ import division, print_function, absolute_import
 from unittest import TestCase
 
 import pytest
+
 from hypothesis import given, example
 from hypothesis.strategies import booleans, integers
 

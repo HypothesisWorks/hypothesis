@@ -17,6 +17,7 @@
 from __future__ import division, print_function, absolute_import
 
 import pytest
+
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import sets, lists, floats, booleans, \

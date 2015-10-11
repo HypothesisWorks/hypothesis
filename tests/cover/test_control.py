@@ -17,6 +17,7 @@
 from __future__ import division, print_function, absolute_import
 
 import pytest
+
 from hypothesis.errors import CleanupFailed, InvalidArgument
 from hypothesis.control import cleanup, BuildContext
 from tests.common.utils import capture_out

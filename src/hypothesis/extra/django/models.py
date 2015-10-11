@@ -17,9 +17,10 @@
 from __future__ import division, print_function, absolute_import
 
 import django.db.models as dm
+from django.db import IntegrityError
+
 import hypothesis.strategies as st
 import hypothesis.extra.fakefactory as ff
-from django.db import IntegrityError
 from hypothesis.errors import InvalidArgument
 from hypothesis.control import assume
 from hypothesis.extra.datetime import datetimes

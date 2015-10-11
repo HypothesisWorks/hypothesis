@@ -17,6 +17,7 @@
 from __future__ import division, print_function, absolute_import
 
 import pytest
+
 import hypothesis
 from hypothesis.errors import InvalidArgument
 from hypothesis.database import ExampleDatabase

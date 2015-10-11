@@ -17,6 +17,7 @@
 from __future__ import division, print_function, absolute_import
 
 import pytest
+
 from hypothesis.reporting import default as default_reporter
 
 PYTEST_VERSION = tuple(map(int, pytest.__version__.split('.')[:3]))

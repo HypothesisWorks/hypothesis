@@ -19,8 +19,9 @@ from __future__ import division, print_function, absolute_import
 from random import Random
 
 import faker
-import hypothesis.internal.distributions as dist
 from faker.factory import AVAILABLE_LOCALES
+
+import hypothesis.internal.distributions as dist
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.internal.reflection import check_valid_identifier
 from hypothesis.internal.distributions import geometric

@@ -22,6 +22,7 @@ import functools
 from collections import namedtuple
 
 import pytest
+
 import hypothesis.specifiers as specifiers
 from hypothesis import given
 from hypothesis.types import RandomWithSeed

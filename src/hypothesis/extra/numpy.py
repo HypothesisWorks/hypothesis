@@ -19,6 +19,7 @@ from __future__ import division, print_function, absolute_import
 import operator
 
 import numpy as np
+
 import hypothesis.strategies as st
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import hrange, reduce, text_type, \

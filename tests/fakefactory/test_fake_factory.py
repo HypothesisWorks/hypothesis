@@ -17,8 +17,9 @@
 from __future__ import division, print_function, absolute_import
 
 import pytest
-from hypothesis import given
 from faker.providers import BaseProvider
+
+from hypothesis import given
 from hypothesis.strategytests import strategy_test_suite
 from hypothesis.internal.debug import minimal
 from hypothesis.searchstrategy import strategy

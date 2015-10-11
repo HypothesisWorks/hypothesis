@@ -20,6 +20,7 @@ import hashlib
 from random import Random
 
 import pytest
+
 from hypothesis import Settings, strategy
 from tests.common import standard_types
 from hypothesis.control import BuildContext

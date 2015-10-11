@@ -20,6 +20,7 @@ import sys
 import math
 
 import pytest
+
 import hypothesis.strategies as st
 from hypothesis import find, given, assume
 

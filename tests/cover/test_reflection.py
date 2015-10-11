@@ -22,6 +22,7 @@ from copy import deepcopy
 from functools import partial
 
 import pytest
+
 from hypothesis.internal.compat import PY3, ArgSpec, getargspec
 from hypothesis.internal.reflection import proxies, arg_string, \
     copy_argspec, unbind_method, eval_directory, function_digest, \

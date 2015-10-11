@@ -62,6 +62,8 @@ $(ISORT_VIRTUALENV): $(PY34)
 
 format: $(PYFORMAT) $(ISORT)
 	$(TOOL_PYTHON) scripts/enforce_header.py
+	# isort will sort packages differently depending on whether they're installed
+	$(ISORT_VIRTUALENV)/bin/python -m pip install django pytz pytest fake-factory numpy
 	env -i PATH=$(PATH) $(ISORT) -p hypothesis -ls -m 2 -w 75 \
 			-a  "from __future__ import absolute_import, print_function, division" \
 			-rc src tests examples
@@ -153,8 +155,6 @@ $(PYFORMAT): $(TOOL_VIRTUALENV)
 
 $(ISORT): $(ISORT_VIRTUALENV)
 	$(ISORT_VIRTUALENV)/bin/python -m pip install isort==4.1.0
-	# isort will sort packages differently depending on whether they're installed
-	# $(ISORT_VIRTUALENV)/bin/python -m pip install django pytz pytest fake-factory numpy
 	ln -sf $(ISORT_VIRTUALENV)/bin/isort $(ISORT)
 
 $(FLAKE8): $(TOOL_VIRTUALENV)

@@ -17,6 +17,7 @@
 from __future__ import division, print_function, absolute_import
 
 import pytest
+
 from hypothesis import given, assume
 from hypothesis.strategies import text, integers
 

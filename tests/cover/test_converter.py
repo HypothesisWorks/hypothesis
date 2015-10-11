@@ -17,6 +17,7 @@
 from __future__ import division, print_function, absolute_import
 
 import pytest
+
 from hypothesis.strategies import just, sets, text, lists, binary, \
     floats, one_of, tuples, randoms, booleans, integers, frozensets, \
     sampled_from, complex_numbers, fixed_dictionaries
