@@ -16,3 +16,5 @@ highlighter: pygments
 
 #Other Global Configuration
 exclude: ['README.md']
+
+excerpt_separator: <!--more-->
