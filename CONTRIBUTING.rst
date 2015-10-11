@@ -52,7 +52,8 @@ Before it's merged your contribution will have to be:
 
 1. Tested (the build will probably fail if it's not, but even if the build passes new work needs test)
 2. Documented
-3. Complying to the code standard (running 'tox -e lint' locally will fix most formatting errors)
+3. Complying to the code standard (running 'make format' locally will fix most formatting errors and 'make lint'
+   will tell you about the rest)
 4. Otherwise passing the build
 
 Note: If you can't figure out how to test your work, I'm happy to help. If *I* can't figure out how to
@@ -62,39 +63,47 @@ test your work, I may pass it anyway.
 The build
 ~~~~~~~~~
 
-The build is mostly based on `tox <https://tox.readthedocs.org/en/latest/>`_, so if you've got
-the relevant pythons installed (I use `pyenv <https://github.com/yyuu/pyenv>`_ to manage installs)
-you can run the tests against them.
+The build is orchestrated by a giant Makefile which handles installation of the relevant pythons.
+Actually running the tests is managed by `tox <https://tox.readthedocs.org/en/latest/>`_, but the Makefile
+will call out to the relevant tox environments so you mostly don't have to know anything about that
+unless you want to make changes to the test config. You also mostly don't need to know anything about make
+except to type 'make' followed by the name of the task you want to run.
 
 All of it will be checked on Travis so you don't *have* to run anything locally, but you might
 find it useful to do so: A full travis run takes about an hour, so running a smaller set of
 tests locally can be helpful.
 
-You can either run a full tox task as 'tox -e environmentname' or you can just run of some of
-the tests using py.test (some of the files will run under nose, but most are very much written
-with the assumption they're running on py.test).
+The makefile should be "fairly" portable, but is currently only known to work on Linux or OSX. It *might* work
+on a BSD or on Windows with cygwin installed, but it probably won't.
 
 Some notable commands:
 
-'tox -e lint' will run some reformatting operations and a linter then will fail the build if there
-is a git diff. A common pattern I use is to commit, then lint, then amend the commit before pushing.
+'make format' will reformat your code according to the Hypothesis coding style. You should use this before each
+commit ideally, but you only really have to use it when you want your code to be ready to merge.
 
-'tox -e coverage' will run a fast subset of the test suite under Python 3.4 and assert that it covered
-100% of the branches (not counting a few files or anything with a no cover annotation on it).
+You can also use 'make check-format', which will run format and some linting and will then error if you have a
+git diff. Note: This will error even if you started with a git diff, so if you've got any uncommitted changes
+this will necessarily report an error.
 
-'tox -e py27' will run all tests for python 2.7 (this will take anywhere between 10 and 30 minutes depending
-on your computer).
+'make check' will run check-format and all of the tests. Warning: This will take a *very* long time. On travis the
+currently takes multiple hours of total build time (it runs in parallel on Travis so you don't have to wait
+quite that long). If you've got a multi-core machine you can run 'make -j 2' (or any higher number if you want
+more) to run 2 jobs in parallel, but to be honest you're probably better off letting travis run this step.
 
-I often invoke py.test explicitly, usually as something like 'PYTHONPATH=src python -m pytest tests/cover/test_testdecorators.py'
+You can also run a number of finer grained make tasks:
 
-There are a number of other tox commands for e.g. running against specific versions of optional dependencies (e.g
-tox -e django17 will run the django tests against django 1.7).
+* check-fast runs a fast but reasonably comprehensive subset of make check. It's still not *that* fast, but it
+  takes a couple of minutes instead of a couple of hours.
+* You can run the tests just for a single version of Python using one of check-py26, check-py27, check-py34,
+  check-py35, check-pypy.
+* check-coverage will run a subset of the tests on python 3.5 and then assert that this gave 100% coverage
+* lint will just run some source code checks.
+* django will just run tests for the django integration
+* pytest will just run tests for the pytest plugin
 
-The full build will be checked by Travis and Appveyor. Sadly, the tests are very slightly flaky, especially in
-the evening (the more of the US who are awake the heavier the load Travis is under, and the flakiness is timing
-dependent). Sometimes you'll see one or two build jobs failing for no obvious reason. If you see that and the
-failures don't look like anything you've touched, ask me to take a look and I'll tell you if I think it's a real
-problem and restart it if not.
+Note: The build requires a lot of different versions of python, so rather than have you install them yourself,
+the makefile will install them itself in a local directory. This means that the first time you run a task you
+may have to wait a while as the build downloads and installs the right version of python for you.
 
 ----------------------------
 If Pull Requests put you off

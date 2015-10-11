@@ -11,61 +11,61 @@ os:
 cache:
     apt: true
     directories:
-        - $HOME/.pyenv
+        - $HOME/.runtimes
         - $HOME/.venv
         - $HOME/.cache/pip
         - $HOME/wheelhouse
 
 env:
-    matrix:
-        - TOXENV=docs
-        - TOXENV=coverage
-        - TOXENV=django17
-        - TOXENV=django18
-        - TOXENV=lint
-        - TOXENV=examples2
-        - TOXENV=examples3
-        - TOXENV=pypy
-        - TOXENV=py26
-        - TOXENV=py35
-        - TOXENV=py27
-        - TOXENV=py33
-        - TOXENV=py34
-        - TOXENV=nose
-        - TOXENV=pytest27
-        - TOXENV=pytest26
-        - TOXENV=fakefactory052
-        - TOXENV=fakefactory053
-        - TOXENV=pytest26
+    global:
+        - BUILD_RUNTIMES=$HOME/.runtimes
 
-install:
-    - ./scripts/install.sh
+    matrix:
+        - TASK=documentation
+        - TASK=check-format
+        - TASK=check-coverage
+        - TASK=check-pypy
+        - TASK=check-py26
+        - TASK=check-py35
+        - TASK=check-py27
+        - TASK=check-py33
+        - TASK=check-py34
+        - TASK=check-nose
+        - TASK=check-pytest27
+        - TASK=check-pytest26
+        - TASK=check-fakefactory052
+        - TASK=check-fakefactory053
+        - TASK=check-pytest26
+        - TASK=check-django17
+        - TASK=check-django18
+        - TASK=check-examples2
+        - TASK=check-examples3
 
 script:
-    - ./scripts/run.sh
+    - make $TASK
 
 matrix:
     exclude:
         - os: osx
-          env: TOXENV=fakefactory052
+          env: TASK=check-fakefactory052
         - os: osx
-          env: TOXENV=fakefactory053
+          env: TASK=check-fakefactory053
         - os: osx
-          env: TOXENV=pytest26
+          env: TASK=check-pytest26
         - os: osx
-          env: TOXENV=pytest27
+          env: TASK=check-pytest27
         - os: osx
-          env: TOXENV=docs
+          env: TASK=documentation
         - os: osx
-          env: TOXENV=django17
+          env: TASK=check-django17
         - os: osx
-          env: TOXENV=django18
+          env: TASK=check-django18
         - os: osx
-          env: TOXENV=examples2
+          env: TASK=check-examples2
         - os: osx
-          env: TOXENV=examples3
+          env: TASK=check-examples3
         - os: osx
-          env: TOXENV=coverage
+          env: TASK=check-coverage
         - os: osx
-          env: TOXENV=lint
+          env: TASK=check-format
     fast_finish: true

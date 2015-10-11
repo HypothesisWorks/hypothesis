@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Special license: Take literally anything you want out of this file. I don't
 # care. Consider it WTFPL licensed if you like.
@@ -19,13 +19,18 @@ set -x
 # Is is unclear if this is actually useful. I was seeing behaviour that suggested
 # concurrent runs of the installer, but I can't seem to find any evidence of this lock
 # ever not being acquired. 
-LOCKFILE="$HOME/.install-lockfile"
+
+BASE=${BUILD_RUNTIMES-$PWD/.runtimes}
+echo $BASE
+mkdir -p $BASE
+
+LOCKFILE="$BASE/.install-lockfile"
 while true; do
   if mkdir $LOCKFILE 2>/dev/null; then
-    echo "Successfully acquired lock"
+    echo "Successfully acquired installer."
     break
   else
-    echo "Failed to acquire lock. Waiting our turn"
+    echo "Failed to acquire lock. Is another installer running? Waiting a bit."
   fi
 
   sleep $[ ( $RANDOM % 10)  + 1 ].$[ ( $RANDOM % 100) ]s
@@ -38,58 +43,63 @@ done
 trap "rm -rf $LOCKFILE" EXIT
 
 
-# Somehow we occasionally get broken installs of pyenv, and pyenv-installer
-# is not good at detecting and cleaning up from those. We use the existence
-# of a pyenv executable as a proxy for whether pyenv is actually installed
-# correctly, but only because that's the only error I've seen so far.
-if [ ! -e "$HOME/.pyenv/bin/pyenv" ] ; then
-  echo "pyenv does not exist"
-  if [ -e "$HOME/.pyenv" ] ; then
-    echo "Looks like a bad pyenv install. Deleting"
-    rm -rf $HOME/.pyenv
-  fi
+PYENV=$BASE/pyenv
+
+
+if [ ! -d "$PYENV/.git" ]; then
+  rm -rf $PYENV
+  git clone https://github.com/yyuu/pyenv.git $BASE/pyenv
+else
+  back=$PWD
+  cd $PYENV
+  git fetch || echo "Update failed to complete. Ignoring"
+  git reset --hard origin/master
+  cd $back
 fi
 
-# Run the pyenv-installer script we've bundled.
-# This is basically vendored from >https://github.com/yyuu/pyenv-installer
-$(dirname $0)/pyenv-installer
+SNAKEPIT=$BASE/snakepit
 
-# Now that pyenv is installed, run the commands it gives us to actually
-# activate it.
-export PATH="$HOME/.pyenv/bin:$PATH"
-eval "$(pyenv init -)"
+install () {
+
+  VERSION="$1"
+  ALIAS="$2"
+  mkdir -p $BASE/versions
+  SOURCE=$BASE/versions/$ALIAS
+
+  if [ ! -e "$SOURCE" ]; then
+    mkdir -p $SNAKEPIT
+    mkdir -p $BASE/versions
+    $BASE/pyenv/plugins/python-build/bin/python-build $VERSION $SOURCE
+  fi
+ rm -f $SNAKEPIT/$ALIAS
+ mkdir -p $SNAKEPIT
+ $SOURCE/bin/python -m pip.__main__ install --upgrade pip wheel virtualenv
+ ln -s $SOURCE/bin/python $SNAKEPIT/$ALIAS
+}
 
 
-# pyenv update makes a lot of requests to github, which is not entirely
-# reliable. As long as we got a working pyenv in the first place (above) we
-# don't want to fail the build if pyenv can't update. Given that .pyenv is
-# cached anyway, the version we have should probably be quite recent.
-pyenv update || echo "Update failed to complete. Ignoring"
-
-SNAKEPIT=$HOME/snakepit
-
-rm -rf $SNAKEPIT
-mkdir $SNAKEPIT
-
-PYENVS=$HOME/.pyenv/versions
-
-pyenv install -s 3.4.3
-ln -s $PYENVS/3.4.3/bin/python $SNAKEPIT/python3.4
-echo 3.4.3 > $HOME/.python-version
-pyenv global 3.4.3
-pyenv local 3.4.3
-
-pyenv install -s 2.6.9
-ln -s $PYENVS/2.6.9/bin/python $SNAKEPIT/python2.6
-pyenv install -s 2.7.9
-ln -s $PYENVS/2.7.9/bin/python $SNAKEPIT/python2.7
-pyenv install -s 3.2.6
-ln -s $PYENVS/3.2.6/bin/python $SNAKEPIT/python3.2
-pyenv install -s 3.3.6
-ln -s $PYENVS/3.3.6/bin/python $SNAKEPIT/python3.3
-pyenv install -s 3.5.0
-ln -s $PYENVS/3.5.0/bin/python $SNAKEPIT/python3.5
-pyenv install -s pypy-2.6.1
-ln -s $PYENVS/pypy-2.6.1/bin/pypy $SNAKEPIT/pypy
-
-pip install --upgrade tox pip wheel
+for var in "$@"; do
+  case "${var}" in
+    2.6)
+      install 2.6.9 python2.6
+      ;;
+    2.7)
+      install 2.7.9 python2.7
+      ;;
+    3.2)
+      install 3.2.6 python3.2
+      ;;
+    3.3)
+      install 3.3.6 python3.3
+      ;;
+    3.4)
+      install 3.4.3 python3.4
+      ;;
+    3.5)
+      install 3.5.0 python3.5
+      ;;
+    pypy)
+      install pypy-2.6.1 pypy
+      ;;
+  esac 
+done

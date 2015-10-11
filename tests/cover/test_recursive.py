@@ -126,6 +126,7 @@ def test_can_form_sets_of_recursive_data():
     assert True in xs
 
 
+@flaky(max_runs=5, min_passes=1)
 @given(st.randoms(), settings=Settings(max_examples=10))
 def test_can_simplify_hard_recursive_data_into_boolean_alternative(rnd):
     """This test forces us to exercise the simplification through redrawing
@@ -153,7 +154,7 @@ def test_can_simplify_hard_recursive_data_into_boolean_alternative(rnd):
 
 
 @flaky(max_runs=5, min_passes=1)
-@given(st.randoms(), settings=Settings(max_examples=10))
+@given(st.randoms(), settings=Settings(max_examples=10, database=None))
 @timeout(60)
 def test_can_flatmap_to_recursive_data(rnd):
     stuff = st.lists(st.integers(), min_size=1).flatmap(

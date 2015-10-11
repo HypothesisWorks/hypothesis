@@ -25,10 +25,9 @@ import threading
 from random import Random
 from collections import namedtuple
 
-import hypothesis.settings as hs
 import hypothesis.reporting as reporting
 from flaky import flaky
-from hypothesis import given, assume
+from hypothesis import given, assume, Settings, Verbosity
 from hypothesis.errors import Flaky, Unsatisfiable, InvalidArgument
 from tests.common.utils import fails, raises, fails_with, capture_out
 from hypothesis.internal import debug
@@ -60,7 +59,7 @@ def test_int_addition_is_associative(x, y, z):
 
 
 @fails
-@given(floats(), floats(), floats(), settings=hs.Settings(
+@given(floats(), floats(), floats(), settings=Settings(
     max_examples=2000,
 ))
 def test_float_addition_is_associative(x, y, z):
@@ -73,7 +72,7 @@ def test_reversing_preserves_integer_addition(xs):
 
 
 def test_still_minimizes_on_non_assertion_failures():
-    @given(integers())
+    @given(integers(), settings=Settings(max_examples=50))
     def is_not_too_large(x):
         if x >= 10:
             raise ValueError(u'No, %s is just too large. Sorry' % x)
@@ -131,7 +130,7 @@ def test_can_be_given_keyword_args(x, name):
 
 
 @fails_with(Unsatisfiable)
-@given(integers(), settings=hs.Settings(timeout=0.1))
+@given(integers(), settings=Settings(timeout=0.1))
 def test_slow_test_times_out(x):
     time.sleep(0.05)
 
@@ -139,7 +138,7 @@ def test_slow_test_times_out(x):
 # Cheap hack to make test functions which fail on their second invocation
 calls = [0, 0, 0, 0]
 
-timeout_settings = hs.Settings(timeout=0.2)
+timeout_settings = Settings(timeout=0.2)
 
 
 # The following tests exist to test that verifiers start their timeout
@@ -225,7 +224,7 @@ def test_contains_the_test_function_name_in_the_exception_string():
 
     calls = [0]
 
-    @given(integers(), settings=hs.Settings(max_iterations=10))
+    @given(integers(), settings=Settings(max_iterations=10))
     def this_has_a_totally_unique_name(x):
         calls[0] += 1
         assume(False)
@@ -240,7 +239,7 @@ def test_contains_the_test_function_name_in_the_exception_string():
 
     class Foo(object):
 
-        @given(integers(), settings=hs.Settings(max_iterations=10))
+        @given(integers(), settings=Settings(max_iterations=10))
         def this_has_a_unique_name_and_lives_on_a_class(self, x):
             calls2[0] += 1
             assume(False)
@@ -329,7 +328,9 @@ def test_can_find_large_sum_frozenset(xs):
 
 
 def test_prints_on_failure_by_default():
-    @given(integers(), integers())
+    @given(integers(), integers(), settings=Settings(
+        max_examples=200, timeout=-1
+    ))
     def test_ints_are_sorted(balthazar, evans):
         assume(evans >= 0)
         assert balthazar <= evans
@@ -345,7 +346,7 @@ def test_prints_on_failure_by_default():
 
 
 def test_does_not_print_on_success():
-    with hs.Settings(verbosity=hs.Verbosity.normal):
+    with Settings(verbosity=Verbosity.normal):
         @given(integers())
         def test_is_an_int(x):
             return True
@@ -389,7 +390,7 @@ def test_can_test_kwargs_only_methods(**kwargs):
 
 
 @fails_with(UnicodeEncodeError)
-@given(text())
+@given(text(), settings=Settings(max_examples=200))
 def test_is_ascii(x):
     x.encode(u'ascii')
 
@@ -450,7 +451,7 @@ def test_does_not_accept_random_if_derandomize():
     with raises(InvalidArgument):
         @given(
             integers(),
-            settings=hs.Settings(derandomize=True), random=Random()
+            settings=Settings(derandomize=True), random=Random()
         )
         def test_blah(x):
             pass
@@ -459,7 +460,7 @@ def test_does_not_accept_random_if_derandomize():
 
 def test_can_derandomize():
     @fails
-    @given(integers(), settings=hs.Settings(derandomize=True))
+    @given(integers(), settings=Settings(derandomize=True))
     def test_blah(x):
         assert x > 0
 
@@ -467,7 +468,7 @@ def test_can_derandomize():
 
 
 def test_can_run_without_database():
-    @given(integers(), settings=hs.Settings(database=None))
+    @given(integers(), settings=Settings(database=None))
     def test_blah(x):
         assert False
     with raises(AssertionError):
@@ -534,13 +535,13 @@ def test_mixed_text(x):
 def test_when_set_to_no_simplifies_only_runs_failing_example_once():
     failing = [0]
 
-    @given(integers(), settings=hs.Settings(max_shrinks=0))
+    @given(integers(), settings=Settings(max_shrinks=0, max_examples=200))
     def foo(x):
         if x > 11:
             failing[0] += 1
             assert False
 
-    with hs.Settings(verbosity=hs.Verbosity.normal):
+    with Settings(verbosity=Verbosity.normal):
         with raises(AssertionError):
             with capture_out() as out:
                 foo()
@@ -548,7 +549,7 @@ def test_when_set_to_no_simplifies_only_runs_failing_example_once():
     assert u'Trying example' in out.getvalue()
 
 
-@given(integers(), settings=hs.Settings(max_examples=1))
+@given(integers(), settings=Settings(max_examples=1))
 def test_should_not_fail_if_max_examples_less_than_min_satisfying(x):
     pass
 
@@ -556,7 +557,7 @@ def test_should_not_fail_if_max_examples_less_than_min_satisfying(x):
 def test_should_not_count_duplicates_towards_max_examples():
     seen = set()
 
-    @given(integers(1, 10), settings=hs.Settings(
+    @given(integers(1, 10), settings=Settings(
         max_examples=9
     ))
     def test_i_see_you(x):
@@ -570,7 +571,7 @@ def test_can_timeout_during_an_unsuccessful_simplify():
     record = []
 
     @debug.timeout(3)
-    @given(lists(floats()), settings=hs.Settings(timeout=1))
+    @given(lists(floats()), settings=Settings(timeout=1))
     def first_bad_float_list(xs):
         if record:
             assert record[0] != xs
