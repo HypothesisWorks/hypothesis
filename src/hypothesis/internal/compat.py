@@ -18,6 +18,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import os
 import re
 import sys
 import math
@@ -40,6 +41,8 @@ PYPY = platform.python_implementation() == u'PyPy'
 PY26 = sys.version_info[:2] == (2, 6)
 NO_ARGSPEC = sys.version_info[:2] >= (3, 5)
 HAS_SIGNATURE = sys.version_info[:2] >= (3, 3)
+
+WINDOWS = platform.system() == 'Windows'
 
 if PY26:
     _special_floats = {

@@ -23,6 +23,7 @@ import pytest
 
 import hypothesis.strategies as st
 from hypothesis import find, given, assume
+from hypothesis.internal.compat import WINDOWS
 
 
 @pytest.mark.parametrize((u'l', u'r'), [
@@ -86,6 +87,10 @@ def test_half_bounded_generates_zero():
     find(st.floats(max_value=1.0), lambda x: x == 0.0)
 
 
+@pytest.mark.xfail(
+    WINDOWS,
+    reason=(
+        'Seems to be triggering a floating point bug on 2.7 + windows + x64'))
 @given(st.floats(max_value=-0.0))
 def test_half_bounded_respects_sign_of_upper_bound(x):
     assert math.copysign(1, x) == -1

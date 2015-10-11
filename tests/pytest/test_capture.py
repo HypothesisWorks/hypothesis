@@ -19,7 +19,7 @@ from __future__ import division, print_function, absolute_import, \
 
 import pytest
 
-from hypothesis.internal.compat import PY2, hunichr, \
+from hypothesis.internal.compat import PY2, hunichr, WINDOWS, \
     escape_unicode_characters
 
 pytest_plugins = str('pytester')
@@ -64,6 +64,10 @@ def test_emits_unicode():
 """
 
 
+@pytest.mark.xfail(
+    WINDOWS,
+    reason=(
+        "Encoding issues in running the subprocess, possibly py.test's fault"))
 @pytest.mark.skipif(
     PY2, reason="Output streams don't have encodings in python 2")
 def test_output_emitting_unicode(testdir, monkeypatch):
