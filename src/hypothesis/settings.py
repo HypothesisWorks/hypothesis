@@ -24,7 +24,6 @@ this module can be modified.
 from __future__ import division, print_function, absolute_import
 
 import os
-import copy
 import inspect
 import threading
 from collections import namedtuple
@@ -287,7 +286,7 @@ class Settings(SettingsMeta('Settings', (object,), {})):
         - settings is a Settings object
 
         """
-        Settings._profiles[name] = copy.copy(settings)
+        Settings._profiles[name] = settings
 
     @staticmethod
     def get_profile(name):
@@ -300,7 +299,7 @@ class Settings(SettingsMeta('Settings', (object,), {})):
 
         """
         try:
-            return copy.copy(Settings._profiles[name])
+            return Settings._profiles[name]
         except KeyError:
             raise InvalidArgument(
                 "Profile '{0}' has not been registered".format(

@@ -55,6 +55,16 @@ def test_picks_up_changes_to_defaults():
     assert s.max_examples == 18
 
 
+def test_picks_up_changes_to_defaults_when_switching_profiles():
+    Settings.register_profile('other_test_settings', Settings())
+    Settings.default.max_examples = 18
+    assert Settings.default.max_examples == 18
+    Settings.load_profile('other_test_settings')
+    assert Settings.default.max_examples == original_default
+    Settings.load_profile('test_settings')
+    assert Settings.default.max_examples == 18
+
+
 def test_does_not_pick_up_changes_after_instantiation():
     s = Settings()
     orig = s.max_examples
@@ -169,28 +179,12 @@ def test_load_profile():
     assert Settings.default.min_satisfying_examples == 5
 
 
-def test_loading_profile_resets_defaults():
-    assert Settings.default.min_satisfying_examples == 5
-    Settings.default.min_satisfying_examples = 100
-    assert Settings.default.min_satisfying_examples == 100
-    Settings.load_profile('default')
-    assert Settings.default.min_satisfying_examples == 5
-
-
 def test_loading_profile_keeps_expected_behaviour():
     Settings.register_profile('ci', Settings(max_examples=10000))
     Settings.load_profile('ci')
     assert Settings().max_examples == 10000
     with Settings(max_examples=5):
         assert Settings().max_examples == 5
-    assert Settings().max_examples == 10000
-
-
-def test_modifying_registered_profile_does_not_change_profile():
-    ci_profile = Settings(max_examples=10000)
-    Settings.register_profile('ci', ci_profile)
-    ci_profile.max_examples = 1
-    Settings.load_profile('ci')
     assert Settings().max_examples == 10000
 
 
