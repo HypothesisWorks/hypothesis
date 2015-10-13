@@ -24,7 +24,6 @@ from collections import namedtuple
 import hypothesis.internal.distributions as dist
 from hypothesis.errors import BadTemplateDraw
 from hypothesis.control import assume
-from hypothesis.settings import Settings
 from hypothesis.utils.show import show
 from hypothesis.utils.size import clamp
 from hypothesis.internal.compat import hrange, OrderedDict, integer_types
@@ -778,10 +777,3 @@ class FixedKeysDictStrategy(MappedSearchStrategy):
 
     def pack(self, value):
         return self.dict_type(zip(self.keys, value))
-
-
-Settings.define_setting(
-    u'average_list_length',
-    default=25.0,
-    description=u'Average length of lists to use'
-)

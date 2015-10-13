@@ -45,14 +45,6 @@ from hypothesis.searchstrategy.strategies import BadData, strategy, \
 from hypothesis.searchstrategy.collections import TupleStrategy, \
     FixedKeysDictStrategy
 
-Settings.define_setting(
-    name=u'stateful_step_count',
-    default=50,
-    description="""
-Number of steps to run a stateful program for before giving up on it breaking.
-"""
-)
-
 
 class TestCaseProperty(object):  # pragma: no cover
 

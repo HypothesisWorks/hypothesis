@@ -200,3 +200,41 @@ def test_integers_range():
 def test_can_flatmap_non_strategies():
     x = strategy(int).flatmap(lambda x: bool)
     assert isinstance(x.example(), bool)
+
+
+def test_can_define_settings():
+    test_description = u'This is a setting just for these tests'
+
+    x = Settings()
+
+    Settings.define_setting(
+        u'a_setting_just_for_these_tests',
+        default=3,
+        description=test_description,
+    )
+
+    assert test_description in Settings.a_setting_just_for_these_tests.__doc__
+
+    assert x.a_setting_just_for_these_tests == 3
+    assert Settings().a_setting_just_for_these_tests == 3
+
+
+def test_cannot_define_a_setting_with_default_not_valid():
+    with pytest.raises(InvalidArgument):
+        Settings.define_setting(
+            u'kittens',
+            default=8, description=u'Kittens are pretty great',
+            options=(1, 2, 3, 4),
+        )
+
+
+def test_define_setting_then_loading_profile():
+    x = Settings()
+    Settings.define_setting(
+        u'fun_times',
+        default=3, description=u'Something something spoon',
+        options=(1, 2, 3, 4),
+    )
+    Settings.register_profile('hi', Settings(fun_times=2))
+    assert x.fun_times == 3
+    assert Settings.get_profile('hi').fun_times == 2

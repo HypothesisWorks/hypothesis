@@ -23,31 +23,18 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.database import ExampleDatabase
 from hypothesis.settings import Settings, Verbosity
 
-TEST_DESCRIPTION = u'This is a setting just for these tests'
-
-Settings.define_setting(
-    u'a_setting_just_for_these_tests',
-    default=3,
-    description=TEST_DESCRIPTION,
-)
-
-
-Settings.define_setting(
-    u'a_setting_with_limited_options',
-    default=3, description=u'Something something spoon',
-    options=(1, 2, 3, 4),
-)
-
 
 def test_has_docstrings():
-    assert TEST_DESCRIPTION in Settings.a_setting_just_for_these_tests.__doc__
+    assert Settings.verbosity.__doc__
+
+
+original_default = Settings.get_profile('default').max_examples
 
 
 def setup_function(fn):
-    try:
-        delattr(Settings.default, u'a_setting_just_for_these_tests')
-    except AttributeError:
-        pass
+    Settings.load_profile('default')
+    Settings.register_profile('test_settings', Settings())
+    Settings.load_profile('test_settings')
 
 
 def test_cannot_set_non_settings():
@@ -58,20 +45,21 @@ def test_cannot_set_non_settings():
 
 def test_settings_uses_defaults():
     s = Settings()
-    assert s.a_setting_just_for_these_tests == 3
+    assert s.max_examples == Settings.default.max_examples
 
 
 def test_picks_up_changes_to_defaults():
-    Settings.default.a_setting_just_for_these_tests = 18
-    assert Settings.default.a_setting_just_for_these_tests == 18
+    Settings.default.max_examples = 18
+    assert Settings.default.max_examples == 18
     s = Settings()
-    assert s.a_setting_just_for_these_tests == 18
+    assert s.max_examples == 18
 
 
 def test_does_not_pick_up_changes_after_instantiation():
     s = Settings()
-    Settings.default.a_setting_just_for_these_tests = 18
-    assert s.a_setting_just_for_these_tests == 3
+    orig = s.max_examples
+    Settings.default.max_examples = 18
+    assert s.max_examples == orig
 
 
 def test_raises_attribute_error():
@@ -84,27 +72,27 @@ def test_respects_none_database():
 
 
 def test_settings_can_be_used_as_context_manager_to_change_defaults():
-    with Settings(a_setting_just_for_these_tests=12):
-        assert Settings.default.a_setting_just_for_these_tests == 12
-    assert Settings.default.a_setting_just_for_these_tests == 3
+    with Settings(max_examples=12):
+        assert Settings.default.max_examples == 12
+    assert Settings.default.max_examples == original_default
 
 
 def test_can_repeatedly_push_the_same_thing():
-    s = Settings(a_setting_just_for_these_tests=12)
-    t = Settings(a_setting_just_for_these_tests=17)
-    assert Settings().a_setting_just_for_these_tests == 3
+    s = Settings(max_examples=12)
+    t = Settings(max_examples=17)
+    assert Settings().max_examples == original_default
     with s:
-        assert Settings().a_setting_just_for_these_tests == 12
+        assert Settings().max_examples == 12
         with t:
-            assert Settings().a_setting_just_for_these_tests == 17
+            assert Settings().max_examples == 17
             with s:
-                assert Settings().a_setting_just_for_these_tests == 12
+                assert Settings().max_examples == 12
                 with t:
-                    assert Settings().a_setting_just_for_these_tests == 17
-                assert Settings().a_setting_just_for_these_tests == 12
-            assert Settings().a_setting_just_for_these_tests == 17
-        assert Settings().a_setting_just_for_these_tests == 12
-    assert Settings().a_setting_just_for_these_tests == 3
+                    assert Settings().max_examples == 17
+                assert Settings().max_examples == 12
+            assert Settings().max_examples == 17
+        assert Settings().max_examples == 12
+    assert Settings().max_examples == original_default
 
 
 def test_cannot_create_settings_with_invalid_options():
@@ -112,23 +100,15 @@ def test_cannot_create_settings_with_invalid_options():
         Settings(a_setting_with_limited_options=u'spoon')
 
 
-def test_can_create_settings_with_valid_options():
-    Settings(a_setting_with_limited_options=1)
-
-
-def test_cannot_define_a_setting_with_default_not_valid():
-    with pytest.raises(InvalidArgument):
-        Settings.define_setting(
-            u'kittens',
-            default=8, description=u'Kittens are pretty great',
-            options=(1, 2, 3, 4),
-        )
-
-
 def test_can_set_verbosity():
     Settings(verbosity=Verbosity.quiet)
     Settings(verbosity=Verbosity.normal)
     Settings(verbosity=Verbosity.verbose)
+
+
+def test_can_not_set_verbosity_to_non_verbosity():
+    with pytest.raises(InvalidArgument):
+        Settings(verbosity='kittens')
 
 
 @pytest.mark.parametrize('db', [None, ExampleDatabase()])
@@ -217,15 +197,3 @@ def test_modifying_registered_profile_does_not_change_profile():
 def test_load_non_existent_profile():
     with pytest.raises(hypothesis.errors.InvalidArgument):
         Settings.get_profile('nonsense')
-
-
-def test_define_setting_then_loading_profile():
-    x = Settings()
-    Settings.define_setting(
-        u'fun_times',
-        default=3, description=u'Something something spoon',
-        options=(1, 2, 3, 4),
-    )
-    Settings.register_profile('hi', Settings(fun_times=2))
-    assert x.fun_times == 3
-    assert Settings.get_profile('hi').fun_times == 2

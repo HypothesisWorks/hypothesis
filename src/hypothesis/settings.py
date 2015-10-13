@@ -140,6 +140,7 @@ class Settings(SettingsMeta('Settings', (object,), {})):
 
     """
 
+    __definitions_are_locked = False
     _profiles = {}
 
     def __getattr__(self, name):
@@ -189,6 +190,13 @@ class Settings(SettingsMeta('Settings', (object,), {})):
           the first time it is accessed on any given Settings object.
 
         """
+        if cls.__definitions_are_locked:
+            from hypothesis.deprecation import note_deprecation
+            note_deprecation(
+                'Defining additional settings has been deprecated and will be '
+                'removed in Hypothesis 2.0. Consider managing your settings '
+                'separately.', cls.default
+            )
         if options is not None:
             options = tuple(options)
             if default not in options:
@@ -205,6 +213,10 @@ class Settings(SettingsMeta('Settings', (object,), {})):
             setattr(cls.default, name, default)
         for profile in cls._profiles.values():
             setattr(profile, name, default)
+
+    @classmethod
+    def lock_further_definitions(cls):
+        cls.__definitions_are_locked = True
 
     def __setattr__(self, name, value):
         if name in all_settings:
@@ -461,6 +473,22 @@ Settings.define_setting(
     default=DEFAULT_VERBOSITY,
     description=u'Control the verbosity level of Hypothesis messages',
 )
+
+Settings.define_setting(
+    name=u'stateful_step_count',
+    default=50,
+    description="""
+Number of steps to run a stateful program for before giving up on it breaking.
+"""
+)
+
+Settings.define_setting(
+    u'average_list_length',
+    default=25.0,
+    description=u'Average length of lists to use'
+)
+
+Settings.lock_further_definitions()
 
 Settings.register_profile('default', Settings())
 Settings.load_profile('default')
