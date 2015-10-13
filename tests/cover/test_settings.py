@@ -16,6 +16,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+import os
+
 import pytest
 
 import hypothesis
@@ -191,3 +193,11 @@ def test_loading_profile_keeps_expected_behaviour():
 def test_load_non_existent_profile():
     with pytest.raises(hypothesis.errors.InvalidArgument):
         Settings.get_profile('nonsense')
+
+
+@pytest.mark.skipif(
+    os.getenv('HYPOTHESIS_PROFILE') not in (None, 'default'),
+    reason='Defaults have been overridden')
+def test_runs_tests_with_defaults_from_conftest():
+    assert Settings.default.strict
+    assert Settings.default.timeout == -1
