@@ -57,7 +57,7 @@ existing ones too.
 -------------------------------------------
 
 Just found out about this excellent QuickCheck for Python implementation and
-ran up a few tests for my `bytesize <https://github.com/mulkieran/bytesize>`
+ran up a few tests for my `bytesize <https://github.com/mulkieran/bytesize>`_
 package last night. Refuted a few hypotheses in the process.
 
 Looking forward to using it with a bunch of other projects as well.
