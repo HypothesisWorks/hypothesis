@@ -69,3 +69,6 @@ matrix:
         - os: osx
           env: TASK=check-format
     fast_finish: true
+
+notifications:
+  email: false
