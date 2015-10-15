@@ -32,15 +32,19 @@ from hypothesis.internal.compat import text_type, binary_type, \
     integer_types
 from hypothesis.searchstrategy.narytree import Leaf, Branch, NAryTree
 
-original_strictness = Settings.default.strict
+original_profile = Settings.default
+
+Settings.register_profile(
+    'nonstrict', Settings(strict=False)
+)
 
 
-def setup_module():
-    Settings.default.strict = False
+def setup_function(fn):
+    Settings.load_profile('nonstrict')
 
 
-def teardown_module():
-    Settings.default.strict = original_strictness
+def teardown_function(fn):
+    Settings.load_profile('default')
 
 
 @pytest.mark.parametrize(u'typ', [
@@ -204,8 +208,10 @@ def test_can_flatmap_non_strategies():
 
 def test_can_define_settings():
     test_description = u'This is a setting just for these tests'
+    assert not Settings.default.strict
 
     x = Settings()
+    assert not x.strict
 
     Settings.define_setting(
         u'a_setting_just_for_these_tests',
@@ -238,3 +244,32 @@ def test_define_setting_then_loading_profile():
     Settings.register_profile('hi', Settings(fun_times=2))
     assert x.fun_times == 3
     assert Settings.get_profile('hi').fun_times == 2
+
+
+def test_picks_up_changes_to_defaults():
+    Settings.default.max_examples = 18
+    assert Settings.default.max_examples == 18
+    s = Settings()
+    assert s.max_examples == 18
+
+
+def test_picks_up_changes_to_defaults_when_switching_profiles():
+    original_default = Settings.default.max_examples
+    Settings.load_profile('nonstrict')
+    Settings.register_profile('test_settings', Settings())
+    Settings.load_profile('test_settings')
+
+    Settings.register_profile('other_test_settings', Settings())
+    Settings.default.max_examples = 18
+    assert Settings.default.max_examples == 18
+    Settings.load_profile('other_test_settings')
+    assert Settings.default.max_examples == original_default
+    Settings.load_profile('test_settings')
+    assert Settings.default.max_examples == 18
+
+
+def test_does_not_pick_up_changes_after_instantiation():
+    s = Settings()
+    orig = s.max_examples
+    Settings.default.max_examples = 18
+    assert s.max_examples == orig

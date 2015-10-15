@@ -139,6 +139,9 @@ class Settings(SettingsMeta('Settings', (object,), {})):
 
     """
 
+    _WHITELISTED_REAL_PROPERTIES = [
+        '_database', '_construction_complete', 'storage'
+    ]
     __definitions_are_locked = False
     _profiles = {}
 
@@ -155,6 +158,7 @@ class Settings(SettingsMeta('Settings', (object,), {})):
             self,
             **kwargs
     ):
+        self._construction_complete = False
         self._database = kwargs.pop(u'database', not_set)
         if Settings.default is not None:
             for setting in all_settings.values():
@@ -169,6 +173,7 @@ class Settings(SettingsMeta('Settings', (object,), {})):
                     u'Invalid argument %s' % (name,))
             setattr(self, name, value)
         self.storage = threading.local()
+        self._construction_complete = True
 
     def defaults_stack(self):
         try:
@@ -218,23 +223,36 @@ class Settings(SettingsMeta('Settings', (object,), {})):
         cls.__definitions_are_locked = True
 
     def __setattr__(self, name, value):
-        if name in all_settings:
+        if name == 'database':
+            return object.__setattr__(self, '_database', value)
+        elif name in Settings._WHITELISTED_REAL_PROPERTIES:
+            return object.__setattr__(self, name, value)
+        elif name in all_settings:
             setting = all_settings[name]
-            if setting.options is not None and value not in setting.options:
+            if (
+                setting.options is not None and
+                value not in setting.options
+            ):
                 raise InvalidArgument(
                     u'Invalid %s, %r. Valid options: %r' % (
                         name, value, setting.options
                     )
                 )
-        if name == 'database':
-            return object.__setattr__(self, '_database', value)
-        elif (
-            name not in all_settings and
-            name not in (u'storage', u'_database')
-        ):
-            raise AttributeError(u'No such setting %s' % (name,))
-        else:
+            if self._construction_complete:
+                from hypothesis.deprecation import note_deprecation
+                note_deprecation(
+                    'Mutability of settings is deprecated and will go away in '
+                    'Hypothesis 2.0',
+                    # If *either* self or the current default are non-strict
+                    # then this should be an error. This is to handle the case
+                    # where defining a new setting while non-strict updates a
+                    # profile which is strict. This should not be an error, but
+                    # using the profile here would cause it to be one.
+                    Settings.default if self.strict else self
+                )
             return object.__setattr__(self, name, value)
+        else:
+            raise AttributeError(u'No such setting %s' % (name,))
 
     def __repr__(self):
         bits = []

@@ -50,30 +50,6 @@ def test_settings_uses_defaults():
     assert s.max_examples == Settings.default.max_examples
 
 
-def test_picks_up_changes_to_defaults():
-    Settings.default.max_examples = 18
-    assert Settings.default.max_examples == 18
-    s = Settings()
-    assert s.max_examples == 18
-
-
-def test_picks_up_changes_to_defaults_when_switching_profiles():
-    Settings.register_profile('other_test_settings', Settings())
-    Settings.default.max_examples = 18
-    assert Settings.default.max_examples == 18
-    Settings.load_profile('other_test_settings')
-    assert Settings.default.max_examples == original_default
-    Settings.load_profile('test_settings')
-    assert Settings.default.max_examples == 18
-
-
-def test_does_not_pick_up_changes_after_instantiation():
-    s = Settings()
-    orig = s.max_examples
-    Settings.default.max_examples = 18
-    assert s.max_examples == orig
-
-
 def test_raises_attribute_error():
     with pytest.raises(AttributeError):
         Settings().kittens
