@@ -35,6 +35,7 @@ from hypothesis.internal.compat import PY3, hrange, reduce, Counter, \
     OrderedDict
 
 
+@flaky(max_runs=5, min_passes=1)
 def test_minimize_list_on_large_structure():
     def test_list_in_range(xs):
         assume(len(xs) >= 30)
