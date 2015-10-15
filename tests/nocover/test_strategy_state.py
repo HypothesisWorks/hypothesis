@@ -33,7 +33,7 @@ from hypothesis.utils.show import show
 from hypothesis.utils.size import clamp
 from hypothesis.strategytests import mutate_basic, templates_for
 from hypothesis.internal.debug import timeout
-from hypothesis.internal.compat import PY3, PYPY
+from hypothesis.internal.compat import PYPY
 
 AVERAGE_LIST_LENGTH = 2
 
@@ -352,22 +352,16 @@ class HypothesisSpec(RuleBasedStateMachine):
 
 MAIN = __name__ == u'__main__'
 
-if MAIN or not (PYPY and PY3):
-    # Currently experiencing plausible jit bugs bugs on pypy3
-    TestHypothesis = HypothesisSpec.TestCase
+TestHypothesis = HypothesisSpec.TestCase
 
-    TestHypothesis.settings.stateful_step_count = 50
-    TestHypothesis.settings.max_shrinks = 500
-    TestHypothesis.settings.timeout = 60
-    TestHypothesis.settings.min_satisfying_examples = 0
-    TestHypothesis.settings.verbosity = max(
-        TestHypothesis.settings.verbosity, Verbosity.verbose
-    )
+TestHypothesis.settings = Settings(
+    TestHypothesis.settings,
+    stateful_step_count=10 if PYPY else 50,
+    max_shrinks=500,
+    timeout=500 if MAIN else 60,
+    min_satisfying_examples=0,
+    verbosity=max(TestHypothesis.settings.verbosity, Verbosity.verbose),
+)
 
 if MAIN:
-    TestHypothesis.settings.timeout = 500
     TestHypothesis().runTest()
-
-
-if PYPY:
-    TestHypothesis.settings.stateful_step_count = 10
