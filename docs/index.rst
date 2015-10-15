@@ -57,6 +57,7 @@ of the things you need to know to begin testing your code with it.
   quickstart
   django
   details
+  settings
   data
   extras
   database
