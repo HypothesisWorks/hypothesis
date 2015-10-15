@@ -162,7 +162,7 @@ def mess_with_none(n, random):
 
 def strategy_test_suite(
     specifier,
-    max_examples=20, random=None,
+    max_examples=10, random=None,
 ):
     settings = Settings(
         database=None,
@@ -209,7 +209,8 @@ def strategy_test_suite(
         def test_will_find_a_failure_from_the_database(self):
             db = ExampleDatabase()
 
-            @given(specifier, settings=Settings(max_examples=10, database=db))
+            @given(specifier, settings=Settings(
+                settings, max_examples=10, database=db))
             def nope(x):
                 raise Rejected()
             try:
@@ -264,6 +265,7 @@ def strategy_test_suite(
             @given(
                 specifier,
                 settings=Settings(
+                    settings,
                     database=db,
                     max_examples=max_examples,
                     min_satisfying_examples=2,
@@ -347,9 +349,9 @@ def strategy_test_suite(
 
         @specifier_test
         def test_full_simplify_completes(self, template, rnd):
-            # Cut off at 1000 for the occasional case where we get
+            # Cut off at 100 for the occasional case where we get
             # really very large templates which have too many simplifies.
-            for x in islice(strat.full_simplify(rnd, template), 1000):
+            for x in islice(strat.full_simplify(rnd, template), 100):
                 pass
 
         @specifier_test
@@ -357,7 +359,7 @@ def strategy_test_suite(
             for s in islice(strat.full_simplify(rnd, template), 100):
                 assert not strat.strictly_simpler(template, s)
 
-        @given(randoms(), settings=Settings(max_examples=1000))
+        @given(randoms(), settings=Settings(settings, max_examples=100))
         def test_can_create_templates(self, random):
             parameter = strat.draw_parameter(random)
             try:
