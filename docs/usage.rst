@@ -25,7 +25,7 @@ then it should be available on pypi.
 * `pyrsistent <https://github.com/tobgu/pyrsistent>`_
 * `pyudev <https://github.com/pyudev/pyudev>`_
 * `Qutebrowser <https://github.com/The-Compiler/qutebrowser>`_
-* `RubyMarshal <https://github.com/d9pouces/RubyMarshal>_`
+* `RubyMarshal <https://github.com/d9pouces/RubyMarshal>`_
 * `Segpy <https://github.com/sixty-north/segpy>`_ 
 * `simoa <https://github.com/andsor/pysimoa>`_
 * `srt <https://github.com/cdown/srt>`_
