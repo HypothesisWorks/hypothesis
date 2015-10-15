@@ -28,12 +28,8 @@ def test_this_one_is_ok(x):
     pass
 
 @given(lists(integers()))
-def test_always_sorted(xs):
-    assert sorted(xs) == xs
-
-@given(lists(integers()))
-def test_never_sorted(xs):
-    assert sorted(xs) != xs
+def test_hi(xs):
+    assert False
 """
 
 
