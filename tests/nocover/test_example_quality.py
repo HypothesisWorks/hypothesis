@@ -420,6 +420,7 @@ def test_decreasing_string_sequence():
         assert abs(len(xs[i + 1]) - len(xs[i])) <= 1
 
 
+@flaky(max_runs=5, min_passes=1)
 def test_small_sum_lists():
     xs = minimal(
         lists(floats()),
