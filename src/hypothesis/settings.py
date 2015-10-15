@@ -166,17 +166,18 @@ class Settings(SettingsMeta('Settings', (object,), {})):
 
     def __init__(
             self,
+            parent=None,
             **kwargs
     ):
         self._construction_complete = False
         self._database = kwargs.pop(u'database', not_set)
-        if Settings.default is not None:
+        defaults = parent or Settings.default
+        if defaults is not None:
             for setting in all_settings.values():
                 if kwargs.get(setting.name, not_set) is not_set:
-                    kwargs[setting.name] = getattr(
-                        Settings.default, setting.name)
+                    kwargs[setting.name] = getattr(defaults, setting.name)
             if self._database is not_set:
-                self._database = Settings.default.database
+                self._database = defaults.database
         for name, value in kwargs.items():
             if name not in all_settings:
                 raise InvalidArgument(

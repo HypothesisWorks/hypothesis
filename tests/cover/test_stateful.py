@@ -161,8 +161,9 @@ bad_machines = (
 )
 
 for m in bad_machines:
-    m.TestCase.settings.max_examples = 1000
-    m.TestCase.settings.max_iterations = 2000
+    m.TestCase.settings = Settings(
+        m.TestCase.settings, max_examples=1000, max_iterations=2000
+    )
 
 
 cheap_bad_machines = list(bad_machines)
@@ -384,7 +385,8 @@ def test_settings_are_independent():
         Foo.define_rule(
             targets=(), function=lambda self: 1, arguments={}
         )
-        Foo.TestCase.settings.max_examples = 1000000
+        Foo.TestCase.settings = Settings(
+            Foo.TestCase.settings, max_examples=1000000)
     assert s.max_examples == orig
 
 
@@ -454,20 +456,23 @@ class FailsEventually(GenericStateMachine):
         self.counter += 1
         assert self.counter < 10
 
-FailsEventually.TestCase.settings.stateful_step_count = 5
+FailsEventually.TestCase.settings = Settings(
+    FailsEventually.TestCase.settings, stateful_step_count=5)
 
 TestDoesNotFail = FailsEventually.TestCase
 
 
 def test_can_explicitly_pass_settings():
     try:
-        FailsEventually.TestCase.settings.stateful_step_count = 15
+        FailsEventually.TestCase.settings = Settings(
+            FailsEventually.TestCase.settings, stateful_step_count=15)
         run_state_machine_as_test(
             FailsEventually, settings=Settings(
                 stateful_step_count=2,
             ))
     finally:
-        FailsEventually.TestCase.settings.stateful_step_count = 5
+        FailsEventually.TestCase.settings = Settings(
+            FailsEventually.TestCase.settings, stateful_step_count=5)
 
 
 def test_saves_failing_example_in_database():
