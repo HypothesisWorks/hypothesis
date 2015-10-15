@@ -117,19 +117,6 @@ def test_can_assign_database(db):
     assert x.database is db
 
 
-def test_can_assign_default_settings():
-    try:
-        Settings.default = Settings(max_examples=1100)
-        assert Settings.default.max_examples == 1100
-        with Settings(max_examples=10):
-            assert Settings.default.max_examples == 10
-        assert Settings.default.max_examples == 1100
-    finally:
-        # Reset settings.default to default when settings
-        # is first loaded
-        Settings.default = Settings(max_examples=200)
-
-
 def test_load_profile():
     Settings.load_profile('default')
     assert Settings.default.max_examples == 200

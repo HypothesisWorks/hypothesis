@@ -19,9 +19,9 @@ from __future__ import division, print_function, absolute_import
 import pytest
 
 from hypothesis import given, Settings, strategy, Verbosity
+from hypothesis.settings import HypothesisDeprecationWarning
 from hypothesis.specifiers import just
 from hypothesis.strategies import booleans
-from hypothesis.deprecation import HypothesisDeprecationWarning
 
 
 def test_strategy_does_not_warn_on_strategies(recwarn):

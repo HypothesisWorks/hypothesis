@@ -36,11 +36,10 @@ from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
     UnsatisfiedAssumption, DefinitelyNoSuchExample
 from hypothesis.control import assume  # noqa
 from hypothesis.control import BuildContext
-from hypothesis.settings import Settings, Verbosity
+from hypothesis.settings import Settings, Verbosity, note_deprecation
 from hypothesis.executors import executor
 from hypothesis.reporting import report, debug_report, verbose_report, \
     current_verbosity
-from hypothesis.deprecation import note_deprecation
 from hypothesis.internal.compat import qualname, getargspec, \
     unicode_safe_repr
 from hypothesis.internal.tracker import Tracker

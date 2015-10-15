@@ -15,8 +15,7 @@
 # END HEADER
 
 import pkg_resources
-from hypothesis.settings import Settings
-from hypothesis.deprecation import note_deprecation
+from hypothesis.settings import Settings, note_deprecation
 
 
 loaded = set()

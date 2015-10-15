@@ -22,8 +22,7 @@ from collections import namedtuple
 from hypothesis.errors import BadData, NoExamples, WrongFormat, \
     BadTemplateDraw, UnsatisfiedAssumption
 from hypothesis.control import assume, BuildContext
-from hypothesis.settings import Settings
-from hypothesis.deprecation import note_deprecation
+from hypothesis.settings import Settings, note_deprecation
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.utils.extmethod import ExtMethod
 from hypothesis.internal.chooser import chooser

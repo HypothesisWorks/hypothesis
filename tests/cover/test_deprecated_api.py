@@ -273,3 +273,11 @@ def test_does_not_pick_up_changes_after_instantiation():
     orig = s.max_examples
     Settings.default.max_examples = 18
     assert s.max_examples == orig
+
+
+def test_can_assign_default_settings():
+    Settings.default = Settings(max_examples=1100)
+    assert Settings.default.max_examples == 1100
+    with Settings(max_examples=10):
+        assert Settings.default.max_examples == 10
+    assert Settings.default.max_examples == 1100

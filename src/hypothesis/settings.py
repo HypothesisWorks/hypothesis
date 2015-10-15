@@ -25,6 +25,7 @@ from __future__ import division, print_function, absolute_import
 
 import os
 import inspect
+import warnings
 import threading
 from collections import namedtuple
 
@@ -125,6 +126,15 @@ class SettingsMeta(type):
 
     @default.setter
     def default(self, value):
+        if self.default_variable.value is not None:
+            note_deprecation(
+                'Assigning the default Settings has been deprecated and will '
+                'be removed in Hypothesis 2.0. Consider using profiles',
+                value
+            )
+        self._assign_default_internal(value)
+
+    def _assign_default_internal(self, value):
         self.default_variable.value = value
 
 
@@ -195,7 +205,6 @@ class Settings(SettingsMeta('Settings', (object,), {})):
 
         """
         if cls.__definitions_are_locked:
-            from hypothesis.deprecation import note_deprecation
             note_deprecation(
                 'Defining additional settings has been deprecated and will be '
                 'removed in Hypothesis 2.0. Consider managing your settings '
@@ -239,16 +248,10 @@ class Settings(SettingsMeta('Settings', (object,), {})):
                     )
                 )
             if self._construction_complete:
-                from hypothesis.deprecation import note_deprecation
                 note_deprecation(
                     'Mutability of settings is deprecated and will go away in '
                     'Hypothesis 2.0',
-                    # If *either* self or the current default are non-strict
-                    # then this should be an error. This is to handle the case
-                    # where defining a new setting while non-strict updates a
-                    # profile which is strict. This should not be an error, but
-                    # using the profile here would cause it to be one.
-                    Settings.default if self.strict else self
+                    self,
                 )
             return object.__setattr__(self, name, value)
         else:
@@ -334,7 +337,7 @@ class Settings(SettingsMeta('Settings', (object,), {})):
         defined default for that setting
 
         """
-        Settings.default = Settings.get_profile(name)
+        Settings._assign_default_internal(Settings.get_profile(name))
 
 
 Setting = namedtuple(
@@ -509,3 +512,26 @@ Settings.lock_further_definitions()
 
 Settings.register_profile('default', Settings())
 Settings.load_profile('default')
+
+
+class HypothesisDeprecationWarning(DeprecationWarning):
+    pass
+
+
+warnings.simplefilter(u'once', HypothesisDeprecationWarning)
+
+
+def note_deprecation(message, settings):
+    # If *either* self or the current default are non-strict
+    # then this should be an error. This is to handle e.g. the case
+    # where defining a new setting while non-strict updates a
+    # profile which is strict. This should not be an error, but
+    # using the profile here would cause it to be one.
+    strict = Settings.default.strict and settings.strict
+    verbosity = settings.verbosity
+    settings = settings or Settings.default
+    warning = HypothesisDeprecationWarning(message)
+    if strict:
+        raise warning
+    elif verbosity > Verbosity.quiet:
+        warnings.warn(warning, stacklevel=3)
