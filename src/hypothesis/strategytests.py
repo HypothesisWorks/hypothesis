@@ -16,7 +16,6 @@
 
 """Support for testing your custom implementations of specifiers."""
 
-
 from __future__ import division, print_function, absolute_import
 
 import hashlib
@@ -168,6 +167,7 @@ def strategy_test_suite(
     settings = Settings(
         database=None,
         max_examples=max_examples,
+        max_iterations=max_examples * 2,
         min_satisfying_examples=2,
         average_list_length=2.0,
     )
