@@ -28,9 +28,6 @@ from hypothesis.extra.datetime import times
 from hypothesis.internal.debug import minimal
 from hypothesis.searchstrategy.strategies import BadData
 
-hs.Settings.default.max_examples = 1000
-
-
 TestStandardDescriptorFeatures1 = strategy_test_suite(times())
 
 
@@ -76,14 +73,14 @@ def test_can_generate_non_utc():
         lambda d: assume(d.tzinfo) and d.tzinfo.zone != u'UTC')
 
 
-@given(times(timezones=[]))
-def test_naive_times_are_naive(dt):
-    assert not dt.tzinfo
+with hs.Settings(max_examples=1000):
+    @given(times(timezones=[]))
+    def test_naive_times_are_naive(dt):
+        assert not dt.tzinfo
 
-
-@given(times(allow_naive=False))
-def test_timezone_aware_times_are_timezone_aware(dt):
-    assert dt.tzinfo
+    @given(times(allow_naive=False))
+    def test_timezone_aware_times_are_timezone_aware(dt):
+        assert dt.tzinfo
 
 
 def test_restricts_to_allowed_set_of_timezones():

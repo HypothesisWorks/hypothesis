@@ -21,15 +21,11 @@ from datetime import MAXYEAR
 
 import pytest
 
-import hypothesis.settings as hs
 from hypothesis.strategytests import strategy_test_suite
 from hypothesis.extra.datetime import dates
 from hypothesis.internal.debug import minimal
 from hypothesis.internal.compat import hrange
 from hypothesis.searchstrategy.strategies import BadData
-
-hs.Settings.default.max_examples = 1000
-
 
 TestStandardDescriptorFeatures1 = strategy_test_suite(dates())
 
