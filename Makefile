@@ -72,7 +72,7 @@ format: $(PYFORMAT) $(ISORT)
 lint: $(FLAKE8)
 	$(FLAKE8) src tests --exclude=compat.py,test_reflection.py,test_imports.py,tests/py2 --ignore=E731,E721
 
-check-format: format lint
+check-format: format
 	git diff --exit-code
 
 check-py26: $(PY26) $(TOX)
