@@ -25,7 +25,7 @@ from hypothesis.searchstrategy.narytree import Leaf, Branch, n_ary_tree
 def smallest_tree(predicate):
     return minimal(
         n_ary_tree(integers(), integers(), integers()), predicate,
-        settings=Settings(database=None),
+        settings=Settings(database=None, max_examples=1000000),
     )
 
 
