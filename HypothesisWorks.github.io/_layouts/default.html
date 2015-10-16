@@ -3,13 +3,10 @@
   {% include head.html %}
 
 <body>
+  {% include header.html %}
+  
+  {{ content }}
 
-  <div class="container">
-    {% include header.html %}
-
-    {{ content }}
-
-  </div>
   {% include footer.html%}
 
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>

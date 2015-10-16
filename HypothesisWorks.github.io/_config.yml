@@ -1,8 +1,8 @@
 # Site settings
-title: Site Title
+title: Rifyll
 email: somename@somedomain.com
-description: "Site Description"
-logo_location: "http://placehold.it/100x100&text=LOGO"
+description: "Just Another Jekyll Theme"
+logo_location: "https://placeholdit.imgix.net/~text?txtsize=30&bg=F8F8F8&txtclr=002E62&txt=LOGO&w=100&h=100"
 
 #baseurl: "" # the subpath of your site, e.g. /blog/
 #url: "" # the base hostname & protocol for your site
@@ -18,3 +18,6 @@ highlighter: pygments
 exclude: ['README.md']
 
 excerpt_separator: <!--more-->
+
+#show the jumbotron header on index page
+show_blog_header: true
