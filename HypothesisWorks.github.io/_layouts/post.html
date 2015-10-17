@@ -7,7 +7,7 @@ layout: default
       <div class="page">
 
         <header class="page-header">
-          <h3 class="page-title"><a href="{{page.url}}">{{ page.title }}</a></h3>
+          <h3 class="page-title"><a href="{{page.url}}">{{ page.title | prepend: site.baseurl }}</a></h3>
           <div class="post-metadata">
             <div> <i class="fa fa-calendar"></i>
               <time>
