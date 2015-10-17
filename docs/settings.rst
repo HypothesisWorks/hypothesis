@@ -25,7 +25,7 @@ Available settings
 
 .. module:: hypothesis
 .. autoclass:: Settings
-    :members: min_satisfying_examples, max_examples, max_iterations, min_satisfying_examples,
+    :members: max_examples, max_iterations, min_satisfying_examples,
         max_shrinks, timeout, strict, database_file, stateful_step_count, average_list_length,
         database
 
