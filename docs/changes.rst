@@ -21,15 +21,32 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
---------
-Upcoming
---------
+-----------------------------------------------------------------------
+`1.12.0 <https://hypothesis.readthedocs.org/en/v1.12.0/>`_ - 2015-10-18
+-----------------------------------------------------------------------
 
 * Significantly improved performance of creating strategies using the functions
   from the hypothesis.strategies module by deferring the calculation of their
   repr until it was needed. This is unlikely to have been an performance issue
   for you unless you were using flatmap, composite or stateful testing, but for
   some cases it could be quite a significant impact.
+* A number of cases where the repr of strategies build from lambdas is improved
+* Add dates() and times() strategies to hypothesis.extra.datetimes
+* Add new 'profiles' mechanism to the settings system
+* Deprecates mutability of Settings, both the Settings.default top level property
+  and individual settings.
+* A Settings object may now be directly initialized from a parent Settings.
+* @given should now give a better error message if you attempt to use it with a
+  function that uses destructuring arguments (it still won't work, but it will
+  error more clearly),
+* A number of spelling corrections in error messages
+* py.test should no longer display the intermediate modules Hypothesis generates
+  when running in verbose mode
+* Hypothesis should now correctly handle printing objects with non-ascii reprs
+  on python 3 when running in a locale that cannot handle ascii printing to
+  stdout.
+* Add a unique=True argument to lists(). This is equivalent to
+  unique_by=lambda x: x, but offers a more convenient syntax.
 
 
 -----------------------------------------------------------------------
