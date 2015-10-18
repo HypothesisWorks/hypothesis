@@ -343,7 +343,7 @@ def sampled_from(elements):
 @defines_strategy
 def lists(
     elements=None, min_size=None, average_size=None, max_size=None,
-    unique=False, unique_by=None,
+    unique_by=None, unique=False,
 ):
     """Returns a list containing values drawn from elements length in the
     interval [min_size, max_size] (no bounds in that direction if these are
