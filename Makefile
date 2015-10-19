@@ -10,6 +10,7 @@ BUILD_RUNTIMES?=$(PWD)/.runtimes
 
 PY26=$(BUILD_RUNTIMES)/snakepit/python2.6
 PY27=$(BUILD_RUNTIMES)/snakepit/python2.7
+PY32=$(BUILD_RUNTIMES)/snakepit/python3.2
 PY33=$(BUILD_RUNTIMES)/snakepit/python3.3
 PY34=$(BUILD_RUNTIMES)/snakepit/python3.4
 PY35=$(BUILD_RUNTIMES)/snakepit/python3.5
@@ -38,6 +39,9 @@ $(PY26):
 
 $(PY27):
 	scripts/install.sh 2.7
+
+$(PY32):
+	scripts/install.sh 3.2
 
 $(PY33):
 	scripts/install.sh 3.3
@@ -80,6 +84,9 @@ check-py26: $(PY26) $(TOX)
 
 check-py27: $(PY27) $(TOX)
 	$(TOX) -e py27-full
+
+check-py32: $(PY32) $(TOX)
+	$(TOX) -e py32-full
 
 check-py33: $(PY33) $(TOX)
 	$(TOX) -e py33-full
@@ -127,7 +134,7 @@ check-examples3: $(TOX) $(PY35)
 check-coverage: $(TOX) $(PY35)
 	$(TOX) -e coverage
 
-check: check-format check-coverage check-py26 check-py27 check-py33 check-py34 check-py35 check-pypy check-django check-pytest
+check: check-format check-coverage check-py26 check-py27 check-py32 check-py33 check-py34 check-py35 check-pypy check-django check-pytest
 
 check-fast: lint $(PY26) $(PY35) $(PYPY) $(TOX)
 	$(TOX) -e pypy-brief
