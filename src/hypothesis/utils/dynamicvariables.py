@@ -16,6 +16,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+from six import u
+
 import threading
 from contextlib import contextmanager
 
@@ -28,11 +30,11 @@ class DynamicVariable(object):
 
     @property
     def value(self):
-        return getattr(self.data, u'value', self.default)
+        return getattr(self.data, u('value'), self.default)
 
     @value.setter
     def value(self, value):
-        setattr(self.data, u'value', value)
+        setattr(self.data, u('value'), value)
 
     @contextmanager
     def with_value(self, value):

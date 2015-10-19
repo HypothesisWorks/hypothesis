@@ -21,6 +21,8 @@ from copy import deepcopy
 from random import Random
 from weakref import WeakKeyDictionary
 
+from six import u
+
 import hypothesis.internal.distributions as dist
 from hypothesis.settings import Settings
 from hypothesis.internal.compat import hrange, integer_types
@@ -77,7 +79,7 @@ class BasicStrategy(object):
         This is the only method you actually have to implement.
 
         """
-        raise NotImplementedError(u'BasicStrategy.generate')
+        raise NotImplementedError(u('BasicStrategy.generate'))
 
     def simplify(self, random, value):
         """Given a random number generator and a value, return a collection of
@@ -136,7 +138,7 @@ class BasicTemplate(object):
 
 
 def add_int_to_hasher(hasher, i):
-    hasher.update(str(i).encode(u'utf-8'))
+    hasher.update(str(i).encode('utf-8'))
 
 
 class Generated(BasicTemplate):
@@ -188,8 +190,8 @@ class BasicSearchStrategy(SearchStrategy):
             return x.__name__ if x else repr(x)
 
         return (
-            u'BasicSearchStrategy(generate=%s, '
-            u'parameter=%s, simplify=%s)'
+            u('BasicSearchStrategy(generate=%s, '
+              'parameter=%s, simplify=%s)')
         ) % (
             name_if(self.user_generate),
             name_if(self.user_parameter),

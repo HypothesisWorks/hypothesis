@@ -18,6 +18,8 @@ from __future__ import division, print_function, absolute_import
 
 import math
 
+from six import u
+
 
 def uniform_float(random, start, end):
     return start + random.random() * (end - start)
@@ -41,7 +43,7 @@ def biased_coin(random, p):
 def non_empty_subset(random, elements, activation_chance=None):
     elements = tuple(elements)
     if not elements:
-        raise ValueError(u'Must have at least one element')
+        raise ValueError(u('Must have at least one element'))
     if len(elements) == 1:
         return list(elements)
     if activation_chance is None:

@@ -16,6 +16,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+from six import u
+
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
@@ -34,7 +36,7 @@ class WrapperStrategy(SearchStrategy):
         self.template_upper_bound = self.wrapped_strategy.template_upper_bound
 
     def __repr__(self):
-        return u'%s(%r)' % (type(self).__name__, self.wrapped_strategy)
+        return u('%s(%r)') % (type(self).__name__, self.wrapped_strategy)
 
     def draw_parameter(self, random):
         return self.wrapped_strategy.draw_parameter(random)

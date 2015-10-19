@@ -1,6 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
-
 # coding=utf-8
 #
 # This file is part of Hypothesis (https://github.com/DRMacIver/hypothesis)
@@ -16,6 +13,11 @@ from __future__ import division, print_function, absolute_import
 # obtain one at http://mozilla.org/MPL/2.0/.
 #
 # END HEADER
+
+from __future__ import division, print_function, absolute_import
+
+
+from six import u
 
 class HypothesisException(Exception):
 
@@ -41,7 +43,7 @@ class UnsatisfiedAssumption(HypothesisException):
             super(UnsatisfiedAssumption, self).__init__(*args, **kwargs)
         else:
             super(UnsatisfiedAssumption, self).__init__(
-                u'Unsatisfied assumption')
+                u('Unsatisfied assumption'))
 
 
 class BadTemplateDraw(HypothesisException):
@@ -65,9 +67,9 @@ class NoSuchExample(HypothesisException):
 
     """
 
-    def __init__(self, condition_string, extra=u''):
+    def __init__(self, condition_string, extra=u('')):
         super(NoSuchExample, self).__init__(
-            u'No examples found of condition %s%s' % (
+            u('No examples found of condition %s%s') % (
                 condition_string, extra)
         )
 
@@ -79,7 +81,7 @@ class DefinitelyNoSuchExample(NoSuchExample):
 
     def __init__(self, condition_string, n_examples):
         super(DefinitelyNoSuchExample, self).__init__(
-            condition_string, u' (all %d considered)' % (
+            condition_string, u(' (all %d considered)') % (
                 n_examples,
             )
         )

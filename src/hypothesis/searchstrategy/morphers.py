@@ -19,6 +19,8 @@ from __future__ import division, print_function, absolute_import
 from copy import copy
 from random import Random
 
+from six import u
+
 from hypothesis.errors import BadTemplateDraw, InvalidArgument
 from hypothesis.control import cleanup
 from hypothesis.internal.compat import integer_types
@@ -52,7 +54,7 @@ class Morpher(object):
     def install(self, strategy):
         if self.current_strategy is not None:
             raise InvalidArgument(
-                u'Cannot install multiple strategies into a morpher')
+                u('Cannot install multiple strategies into a morpher'))
         self.a_strategy = strategy
         self.current_strategy = strategy
         for i, data in enumerate(self.data):
@@ -118,7 +120,7 @@ class Morpher(object):
             ]
 
     def __repr__(self):
-        return u'Morpher(%d, %d, %r)' % (
+        return u('Morpher(%d, %d, %r)') % (
             self.parameter_seed, self.template_seed, self.data)
 
 
@@ -194,7 +196,7 @@ class MorpherStrategy(SearchStrategy):
                 new_template.current_template = simpler
                 yield new_template
         accept.__name__ = str(
-            u'convert_simplifier(..., %s)' % (simplifier.__name__,)
+            u('convert_simplifier(..., %s)') % (simplifier.__name__,)
         )
         return accept
 

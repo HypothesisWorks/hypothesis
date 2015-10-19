@@ -20,6 +20,8 @@ import inspect
 from random import Random
 from itertools import islice
 
+from six import u
+
 from hypothesis.errors import InvalidArgument
 
 
@@ -46,7 +48,7 @@ class RandomWithSeed(Random):
         return self.__copy__()
 
     def __repr__(self):
-        return u'RandomWithSeed(%s)' % (self.seed,)
+        return u('RandomWithSeed(%s)') % (self.seed,)
 
 
 class Stream(object):
@@ -93,7 +95,7 @@ class Stream(object):
             ))
 
         if not isinstance(key, int):
-            raise InvalidArgument(u'Cannot index stream with %s' % (
+            raise InvalidArgument(u('Cannot index stream with %s') % (
                 type(key).__name__,))
         self._thunk_to(key + 1)
         return self.fetched[key]
@@ -118,7 +120,7 @@ class Stream(object):
                 next(it)
         except StopIteration:
             raise IndexError(
-                u'Index %d out of bounds for finite stream of length %d' % (
+                u('Index %d out of bounds for finite stream of length %d') % (
                     i, len(self.fetched)
                 )
             )
@@ -128,10 +130,10 @@ class Stream(object):
 
     def __repr__(self):
         if not self.fetched:
-            return u'Stream(...)'
+            return u('Stream(...)')
 
-        return u'Stream(%s, ...)' % (
-            u', '.join(map(repr, self.fetched))
+        return u('Stream(%s, ...)') % (
+            u(', ').join(map(repr, self.fetched))
         )
 
     def __deepcopy__(self, table):

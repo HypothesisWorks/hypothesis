@@ -15,6 +15,9 @@
 # END HEADER
 
 import pkg_resources
+
+from six import u
+
 from hypothesis.settings import Settings, note_deprecation
 
 
@@ -23,33 +26,33 @@ loaded = set()
 
 def load_entry_points(name=None):
     for entry_point in pkg_resources.iter_entry_points(
-        group=u'hypothesis.extra', name=name
+        group=u('hypothesis.extra'), name=name
     ):
         if entry_point.name in (
-            u'hypothesisdatetime', u'hypothesisdjango',
-            u'hypothesisfakefactory', u'hypothesisnumpy'
+            u('hypothesisdatetime'), u('hypothesisdjango'),
+            u('hypothesisfakefactory'), u('hypothesisnumpy')
         ):
-            base_name = entry_point.name.replace(u'hypothesis', u'')
+            base_name = entry_point.name.replace(u('hypothesis'), u(''))
 
             note_deprecation(
-                u'Ignoring obsolete extra package hypothesis-%s. This '
-                u'functionality is now included in hypothesis core. You '
-                u'should uninstall the extra package.' % (base_name,),
+                u('Ignoring obsolete extra package hypothesis-%s. This '
+                  'functionality is now included in hypothesis core. You '
+                  'should uninstall the extra package.') % (base_name,),
                 Settings.default
             )
             continue
-        elif entry_point.name == u'hypothesispytest':
+        elif entry_point.name == u('hypothesispytest'):
             note_deprecation(
-                u'You have an obsolete version of the hypothesis-pytest '
-                u'plugin installed. Please update to a more recent version.',
+                u('You have an obsolete version of the hypothesis-pytest '
+                  'plugin installed. Please update to a more recent version.'),
                 Settings.default
             )
             continue
         else:
             note_deprecation(
-                u'The extra package mechanism is deprecated and will go away '
-                u"in Hypothesis 2.0. Just write a normal package and don't "
-                u'have it in the Hypothesis namespace.', Settings.default
+                u('The extra package mechanism is deprecated and will go away ')
+                  "in Hypothesis 2.0. Just write a normal package and don't "
+                  'have it in the Hypothesis namespace.'), Settings.default
             )
         package = entry_point.load()  # pragma: no cover
         if package not in loaded:

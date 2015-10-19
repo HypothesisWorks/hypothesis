@@ -32,6 +32,8 @@ from random import Random
 from unittest import TestCase
 from collections import namedtuple
 
+from six import u
+
 from hypothesis.core import find
 from hypothesis.errors import Flaky, NoSuchExample, InvalidDefinition, \
     UnsatisfiedAssumption
@@ -54,10 +56,10 @@ class TestCaseProperty(object):  # pragma: no cover
         return typ._to_test_case()
 
     def __set__(self, obj, value):
-        raise AttributeError(u'Cannot set TestCase')
+        raise AttributeError(u('Cannot set TestCase'))
 
     def __delete__(self, obj):
-        raise AttributeError(u'Cannot delete TestCase')
+        raise AttributeError(u('Cannot delete TestCase'))
 
 
 def find_breaking_runner(state_machine_factory, settings=None):
@@ -80,7 +82,7 @@ def find_breaking_runner(state_machine_factory, settings=None):
     if settings.database is not None:
         storage = settings.database.storage(
             getattr(
-                state_machine_factory, u'__name__',
+                state_machine_factory, u('__name__'),
                 type(state_machine_factory).__name__))
     else:
         storage = None
@@ -109,7 +111,7 @@ def run_state_machine_as_test(state_machine_factory, settings=None):
 
     breaker.run(state_machine_factory(), print_steps=True)
     raise Flaky(
-        u'Run failed initially by succeeded on a second try'
+        u('Run failed initially by succeeded on a second try')
     )
 
 
@@ -135,11 +137,11 @@ class GenericStateMachine(object):
     def steps(self):
         """Return a SearchStrategy instance the defines the available next
         steps."""
-        raise NotImplementedError(u'%r.steps()' % (self,))
+        raise NotImplementedError(u('%r.steps()') % (self,))
 
     def execute_step(self, step):
         """Execute a step that has been previously drawn from self.steps()"""
-        raise NotImplementedError(u'%r.execute_steps()' % (self,))
+        raise NotImplementedError(u('%r.execute_steps()') % (self,))
 
     def print_step(self, step):
         """Print a step to the current reporter.
@@ -147,8 +149,8 @@ class GenericStateMachine(object):
         This is called right before a step is executed.
 
         """
-        self.step_count = getattr(self, u'step_count', 0) + 1
-        report(u'Step #%d: %s' % (self.step_count, repr(step)))
+        self.step_count = getattr(self, u('step_count'), 0) + 1
+        report(u('Step #%d: %s') % (self.step_count, repr(step)))
 
     def teardown(self):
         """Called after a run has finished executing to clean up any necessary
@@ -178,11 +180,11 @@ class GenericStateMachine(object):
 
         base_name = state_machine_class.__name__
         StateMachineTestCase.__name__ = str(
-            base_name + u'.TestCase'
+            base_name + u('.TestCase')
         )
         StateMachineTestCase.__qualname__ = str(
-            getattr(state_machine_class, u'__qualname__', base_name) +
-            u'.TestCase'
+            getattr(state_machine_class, u('__qualname__'), base_name) +
+            u('.TestCase')
         )
         state_machine_class._test_case_cache[state_machine_class] = (
             StateMachineTestCase
@@ -202,7 +204,7 @@ def seeds(starting, n_steps):
 
 
 # Sentinel value used to mark entries as deleted.
-TOMBSTONE = [object(), [u'TOMBSTONE FOR STATEFUL TESTING']]
+TOMBSTONE = [object(), [u('TOMBSTONE FOR STATEFUL TESTING')]]
 
 
 class StateMachineRunner(object):
@@ -253,7 +255,7 @@ class StateMachineRunner(object):
 
     def __repr__(self):
         return (
-            u'StateMachineRunner(%d/%d steps)' % (
+            u('StateMachineRunner(%d/%d steps)') % (
                 len([t for t in self.record if t != TOMBSTONE]),
                 self.n_steps,
             )
@@ -318,7 +320,7 @@ class StateMachineSearchStrategy(SearchStrategy):
         self.program_size = (settings or Settings.default).stateful_step_count
 
     def __repr__(self):
-        return u'StateMachineSearchStrategy()'
+        return u('StateMachineSearchStrategy()')
 
     def reify(self, template):
         return template
@@ -357,11 +359,11 @@ class StateMachineSearchStrategy(SearchStrategy):
         check_data_type(list, data[3])
 
         if data[2] < 0:
-            raise BadData(u'Invalid negative number of steps: %d' % (
+            raise BadData(u('Invalid negative number of steps: %d') % (
                 data[2],
             ))
         if data[2] > Settings.default.stateful_step_count * 1000:
-            raise BadData(u'Implausibly large number of steps: %d' % (
+            raise BadData(u('Implausibly large number of steps: %d') % (
                 data[2],
             ))
 
@@ -414,7 +416,7 @@ class StateMachineSearchStrategy(SearchStrategy):
                     n_steps=template.n_steps,
                     record=new_record,
                 )
-        accept.__name__ = str(u'convert_simplifier(%s, %d)' % (
+        accept.__name__ = str(u('convert_simplifier(%s, %d)') % (
             simplifier.__name__, i
         ))
         return accept
@@ -495,15 +497,15 @@ class StateMachineSearchStrategy(SearchStrategy):
 
 
 Rule = namedtuple(
-    u'Rule',
-    (u'targets', u'function', u'arguments')
+    u('Rule'),
+    (u('targets'), u('function'), u('arguments'))
 
 )
 
-Bundle = namedtuple(u'Bundle', (u'name',))
+Bundle = namedtuple(u('Bundle'), (u('name'),))
 
 
-RULE_MARKER = u'hypothesis_stateful_rule'
+RULE_MARKER = u('hypothesis_stateful_rule')
 
 
 def rule(targets=(), target=None, **kwargs):
@@ -540,7 +542,7 @@ def rule(targets=(), target=None, **kwargs):
     return accept
 
 
-VarReference = namedtuple(u'VarReference', (u'name',))
+VarReference = namedtuple(u('VarReference'), (u('name'),))
 
 
 class SimpleSampledFromStrategy(SampledFromStrategy):
@@ -569,7 +571,7 @@ class RuleBasedStateMachine(GenericStateMachine):
 
     def __init__(self):
         if not self.rules():
-            raise InvalidDefinition(u'Type %s defines no rules' % (
+            raise InvalidDefinition(u('Type %s defines no rules') % (
                 type(self).__name__,
             ))
         self.bundles = {}
@@ -577,13 +579,13 @@ class RuleBasedStateMachine(GenericStateMachine):
         self.names_to_values = {}
 
     def __repr__(self):
-        return u'%s(%s)' % (
+        return u('%s(%s)') % (
             type(self).__name__,
             repr(self.bundles),
         )
 
     def upcoming_name(self):
-        return u'v%d' % (self.name_counter,)
+        return u('v%d') % (self.name_counter,)
 
     def new_name(self):
         result = self.upcoming_name()
@@ -645,7 +647,7 @@ class RuleBasedStateMachine(GenericStateMachine):
                 ), tuple))
         if not strategies:
             raise InvalidDefinition(
-                u'No progress can be made from state %r' % (self,)
+                u('No progress can be made from state %r') % (self,)
             )
         return one_of_strategies(strategies)
 
@@ -657,12 +659,12 @@ class RuleBasedStateMachine(GenericStateMachine):
                 data_repr[k] = v.name
             else:
                 data_repr[k] = repr(v)
-        self.step_count = getattr(self, u'step_count', 0) + 1
-        report(u'Step #%d: %s%s(%s)' % (
+        self.step_count = getattr(self, u('step_count'), 0) + 1
+        report(u('Step #%d: %s%s(%s)') % (
             self.step_count,
-            u'%s = ' % (self.upcoming_name(),) if rule.targets else u'',
+            u('%s = ') % (self.upcoming_name(),) if rule.targets else u(''),
             rule.function.__name__,
-            u', '.join(u'%s=%s' % kv for kv in data_repr.items())
+            u(', ').join(u('%s=%s') % kv for kv in data_repr.items())
         ))
 
     def execute_step(self, step):

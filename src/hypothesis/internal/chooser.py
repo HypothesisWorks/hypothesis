@@ -16,6 +16,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+from six import u
+
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import hrange
 
@@ -26,15 +28,15 @@ class chooser(object):
         weights = list(weights)
         if not weights:
             raise InvalidArgument(
-                u'Must have at least one element to choose from')
+                u('Must have at least one element to choose from'))
         for w in weights:
             if w < 0:
                 raise InvalidArgument(
-                    u'Invalid weight %f < 0' % (w,)
+                    u('Invalid weight %f < 0') % (w,)
                 )
         normalizer = max(weights)
         if normalizer <= 0:
-            raise InvalidArgument(u'No non-zero weights in %r' % (weights,))
+            raise InvalidArgument(u('No non-zero weights in %r') % (weights,))
         for i in hrange(len(weights)):
             weights[i] /= normalizer
         self.weights = tuple(weights)

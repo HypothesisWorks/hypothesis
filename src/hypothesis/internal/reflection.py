@@ -31,6 +31,8 @@ import inspect
 from functools import wraps
 from contextlib import contextmanager
 
+from six import u
+
 from hypothesis.settings import storage_directory
 from hypothesis.internal.compat import hrange, qualname, text_type, \
     getargspec, to_unicode, isidentifier, unicode_safe_repr, \
@@ -41,7 +43,7 @@ from hypothesis.internal.compat import hrange, qualname, text_type, \
 def fully_qualified_name(f):
     """Returns a unique identifier for f pointing to the module it was define
     on, and an containing functions."""
-    return f.__module__ + u'.' + qualname(f)
+    return f.__module__ + u('.') + qualname(f)
 
 
 def function_digest(function):
@@ -54,20 +56,20 @@ def function_digest(function):
     """
     hasher = hashlib.md5()
     try:
-        hasher.update(to_unicode(inspect.getsource(function)).encode(u'utf-8'))
+        hasher.update(to_unicode(inspect.getsource(function)).encode(u('utf-8')))
     # Different errors on different versions of python. What fun.
     except (OSError, IOError, TypeError):
         pass
     try:
-        hasher.update(function.__name__.encode(u'utf-8'))
+        hasher.update(function.__name__.encode(u('utf-8')))
     except AttributeError:
         pass
     try:
-        hasher.update(function.__module__.__name__.encode(u'utf-8'))
+        hasher.update(function.__module__.__name__.encode(u('utf-8')))
     except AttributeError:
         pass
     try:
-        hasher.update(repr(getargspec(function)).encode(u'utf-8'))
+        hasher.update(repr(getargspec(function)).encode(u('utf-8')))
     except TypeError:
         pass
     return hasher.digest()
@@ -105,18 +107,18 @@ def convert_keyword_arguments(function, args, kwargs):
             elif arg_name in defaults:
                 new_args.append(defaults[arg_name])
             else:
-                raise TypeError(u'No value provided for argument %r' % (
+                raise TypeError(u('No value provided for argument %r') % (
                     arg_name
                 ))
 
     if kwargs and not argspec.keywords:
         if len(kwargs) > 1:
-            raise TypeError(u'%s() got unexpected keyword arguments %s' % (
-                function.__name__, u', '.join(map(repr, kwargs))
+            raise TypeError(u('%s() got unexpected keyword arguments %s') % (
+                function.__name__, u(', ').join(map(repr, kwargs))
             ))
         else:
             bad_kwarg = next(iter(kwargs))
-            raise TypeError(u'%s() got an unexpected keyword argument %r' % (
+            raise TypeError(u('%s() got an unexpected keyword argument %r') % (
                 function.__name__, bad_kwarg
             ))
     return tuple(new_args), kwargs
@@ -136,7 +138,7 @@ def convert_positional_arguments(function, args, kwargs):
         for k in kwargs.keys():
             if k not in argspec.args:
                 raise TypeError(
-                    u'%s() got an unexpected keyword argument %r' % (
+                    u('%s() got an unexpected keyword argument %r') % (
                         function.__name__, k
                     ))
     if len(args) < len(argspec.args):
@@ -144,13 +146,13 @@ def convert_positional_arguments(function, args, kwargs):
             len(args), len(argspec.args) - len(argspec.defaults or ())
         ):
             if argspec.args[i] not in kwargs:
-                raise TypeError(u'No value provided for argument %s' % (
+                raise TypeError(u('No value provided for argument %s') % (
                     argspec.args[i],
                 ))
 
     if len(args) > len(argspec.args) and not argspec.varargs:
         raise TypeError(
-            u'%s() takes at most %d positional arguments (%d given)' % (
+            u('%s() takes at most %d positional arguments (%d given)') % (
                 function.__name__, len(argspec.args), len(args)
             )
         )
@@ -158,7 +160,7 @@ def convert_positional_arguments(function, args, kwargs):
     for arg, name in zip(args, argspec.args):
         if name in kwargs:
             raise TypeError(
-                u'%s() got multiple values for keyword argument %r' % (
+                u('%s() got multiple values for keyword argument %r') % (
                     function.__name__, name
                 ))
         else:
@@ -209,13 +211,13 @@ def extract_lambda_source(f):
     bad_lambda = False
     for a in args:
         if isinstance(a, (tuple, list)):  # pragma: no cover
-            arg_strings.append(u'(%s)' % (u', '.join(a),))
+            arg_strings.append(u('(%s)') % (u(', ').join(a),))
             bad_lambda = True
         else:
             assert isinstance(a, str)
             arg_strings.append(a)
 
-    if_confused = u'lambda %s: <unknown>' % (u', '.join(arg_strings),)
+    if_confused = u('lambda %s: <unknown>') % (u(', ').join(arg_strings),)
     if bad_lambda:  # pragma: no cover
         return if_confused
     try:
@@ -224,17 +226,17 @@ def extract_lambda_source(f):
         return if_confused
 
     if not isinstance(source, text_type):  # pragma: no branch
-        source = source.decode(u'utf-8')  # pragma: no cover
-    source = LINE_CONTINUATION.sub(u' ', source)
-    source = WHITESPACE.sub(u' ', source)
+        source = source.decode(u('utf-8'))  # pragma: no cover
+    source = LINE_CONTINUATION.sub(u(' '), source)
+    source = WHITESPACE.sub(u(' '), source)
     source = source.strip()
 
     try:
         tree = ast.parse(source)
     except SyntaxError:
-        for i in hrange(len(source) - 1, len(u'lambda'), -1):
+        for i in hrange(len(source) - 1, len(u('lambda')), -1):
             prefix = source[:i]
-            if u'lambda' not in prefix:
+            if u('lambda') not in prefix:
                 return if_confused
             try:
                 tree = ast.parse(prefix)
@@ -256,8 +258,8 @@ def extract_lambda_source(f):
     assert lambda_ast.lineno == 1
     source = source[lambda_ast.col_offset:].strip()
 
-    source = source[source.index(u'lambda'):]
-    for i in hrange(len(source), len(u'lambda'), -1):  # pragma: no branch
+    source = source[source.index(u('lambda')):]
+    for i in hrange(len(source), len(u('lambda')), -1):  # pragma: no branch
         try:
             parsed = ast.parse(source[:i])
             assert len(parsed.body) == 1
@@ -268,28 +270,28 @@ def extract_lambda_source(f):
             break
         except SyntaxError:
             pass
-    lines = source.split(u'\n')
-    lines = [PROBABLY_A_COMMENT.sub(u'', l) for l in lines]
-    source = u'\n'.join(lines)
+    lines = source.split(u('\n'))
+    lines = [PROBABLY_A_COMMENT.sub(u(''), l) for l in lines]
+    source = u('\n').join(lines)
 
-    source = WHITESPACE.sub(u' ', source)
-    source = SPACE_FOLLOWS_OPEN_BRACKET.sub(u'(', source)
-    source = SPACE_PRECEDES_CLOSE_BRACKET.sub(u')', source)
+    source = WHITESPACE.sub(u(' '), source)
+    source = SPACE_FOLLOWS_OPEN_BRACKET.sub(u('('), source)
+    source = SPACE_PRECEDES_CLOSE_BRACKET.sub(u(')'), source)
     source = source.strip()
     return source
 
 
 def get_pretty_function_description(f):
-    if not hasattr(f, u'__name__'):
+    if not hasattr(f, u('__name__')):
         return repr(f)
     name = f.__name__
-    if name == u'<lambda>':
+    if name == u('<lambda>'):
         result = extract_lambda_source(f)
         return result
     elif isinstance(f, types.MethodType):
         self = f.__self__
         if not (self is None or inspect.isclass(self)):
-            return u'%r.%s' % (self, name)
+            return u('%r.%s') % (self, name)
     return name
 
 
@@ -311,12 +313,12 @@ def arg_string(f, args, kwargs):
 
     for a in argspec.args:
         if a in kwargs:
-            bits.append(u'%s=%s' % (a, nicerepr(kwargs.pop(a))))
+            bits.append(u('%s=%s') % (a, nicerepr(kwargs.pop(a))))
     if kwargs:
         for a in sorted(kwargs):
-            bits.append(u'%s=%s' % (a, nicerepr(kwargs[a])))
+            bits.append(u('%s=%s') % (a, nicerepr(kwargs[a])))
 
-    return u', '.join(
+    return u(', ').join(
         [unicode_safe_repr(x) for x in args] +
         bits
     )
@@ -325,12 +327,12 @@ def arg_string(f, args, kwargs):
 def unbind_method(f):
     """Take something that might be a method or a function and return the
     underlying function."""
-    return getattr(f, u'im_func', getattr(f, u'__func__', f))
+    return getattr(f, u('im_func'), getattr(f, u('__func__'), f))
 
 
 def check_valid_identifier(identifier):
     if not isidentifier(identifier):
-        raise ValueError(u'%r is not a valid python identifier' %
+        raise ValueError(u('%r is not a valid python identifier') %
                          (identifier,))
 
 
@@ -356,16 +358,16 @@ def source_exec_as_module(source):
 
     d = eval_directory()
     with add_directory_to_path(d):
-        final_name = u'hypothesis_temporary_module_%s' % (
-            hashlib.sha1(source.encode(u'utf-8')).hexdigest(),
+        final_name = u('hypothesis_temporary_module_%s') % (
+            hashlib.sha1(source.encode(u('utf-8'))).hexdigest(),
         )
-        temporary_name = u'hypothesis_temporary_module_%s_%s' % (
-            hashlib.sha1(source.encode(u'utf-8')).hexdigest(),
+        temporary_name = u('hypothesis_temporary_module_%s_%s') % (
+            hashlib.sha1(source.encode(u('utf-8'))).hexdigest(),
             uuid.uuid4(),
         )
-        temporary_filepath = os.path.join(d, temporary_name + u'.py')
-        final_filepath = os.path.join(d, final_name + u'.py')
-        f = open(temporary_filepath, u'w')
+        temporary_filepath = os.path.join(d, temporary_name + u('.py'))
+        final_filepath = os.path.join(d, final_name + u('.py'))
+        f = open(temporary_filepath, u('w'))
         f.write(source)
         f.close()
         assert os.path.exists(temporary_filepath)
@@ -399,7 +401,7 @@ def accept(%(funcname)s):
     def %(name)s(%(argspec)s):
         return %(funcname)s(%(invocation)s)
     return %(name)s
-""".strip() + u'\n'
+""".strip() + u('\n')
 
 
 def copy_argspec(name, argspec):
@@ -418,7 +420,7 @@ def copy_argspec(name, argspec):
         for a in argspec.args[:-n_defaults]:
             parts.append(a)
         for a in argspec.args[-n_defaults:]:
-            parts.append(u'%s=not_set' % (a,))
+            parts.append(u('%s=not_set') % (a,))
     else:
         parts = list(argspec.args)
     used_names = list(argspec.args)
@@ -435,18 +437,18 @@ def copy_argspec(name, argspec):
                 invocation_parts.append(a)
         if argspec.varargs:
             used_names.append(argspec.varargs)
-            parts.append(u'*' + argspec.varargs)
-            invocation_parts.append(u'*' + argspec.varargs)
+            parts.append(u('*') + argspec.varargs)
+            invocation_parts.append(u('*') + argspec.varargs)
         for k in must_pass_as_kwargs:
-            invocation_parts.append(u'%(k)s=%(k)s' % {u'k': k})
+            invocation_parts.append(u('%(k)s=%(k)s') % {u('k'): k})
 
         if argspec.keywords:
             used_names.append(argspec.keywords)
-            parts.append(u'**' + argspec.keywords)
-            invocation_parts.append(u'**' + argspec.keywords)
+            parts.append(u('**') + argspec.keywords)
+            invocation_parts.append(u('**') + argspec.keywords)
 
-        candidate_names = [u'f'] + [
-            u'f_%d' % (i,) for i in hrange(1, len(used_names) + 2)
+        candidate_names = [u('f')] + [
+            u('f_%d') % (i,) for i in hrange(1, len(used_names) + 2)
         ]
 
         for funcname in candidate_names:  # pragma: no branch
@@ -455,10 +457,10 @@ def copy_argspec(name, argspec):
 
         base_accept = source_exec_as_module(
             COPY_ARGSPEC_SCRIPT % {
-                u'name': name,
-                u'funcname': funcname,
-                u'argspec': u', '.join(parts),
-                u'invocation': u', '.join(invocation_parts)
+                u('name'): name,
+                u('funcname'): funcname,
+                u('argspec'): u(', ').join(parts),
+                u('invocation'): u(', ').join(invocation_parts)
             }).accept
 
         result = base_accept(f)
