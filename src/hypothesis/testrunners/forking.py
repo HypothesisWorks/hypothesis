@@ -22,6 +22,8 @@ import traceback
 from unittest import TestCase
 from collections import namedtuple
 
+from six import u
+
 from hypothesis.errors import AbnormalExit
 from hypothesis.reporting import with_reporter, current_reporter
 
@@ -29,13 +31,13 @@ try:
     os.fork
 except AttributeError:  # pragma: no cover
     raise ImportError(
-        u'hypothesis.testrunner.forking is only available on '
-        u'platforms with fork.'
+        u('hypothesis.testrunner.forking is only available on ')
+        u('platforms with fork.')
     )
 
 
-Report = namedtuple(u'Report', (u'data',))
-Error = namedtuple(u'Error', (u'exception',))
+Report = namedtuple(u('Report'), (u('data'),))
+Error = namedtuple(u('Error'), (u('exception'),))
 
 
 def report_to(w):  # pragma: no cover
@@ -61,8 +63,8 @@ class ForkingTestCase(TestCase):
 
     def execute_example(self, function):
         r, w = os.pipe()
-        r = os.fdopen(r, u'rb')
-        w = os.fdopen(w, u'wb')
+        r = os.fdopen(r, u('rb'))
+        w = os.fdopen(w, u('wb'))
         pid = os.fork()
         if not pid:  # pragma: no cover
             succeeded = False

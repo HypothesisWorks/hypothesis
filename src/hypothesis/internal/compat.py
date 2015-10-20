@@ -28,6 +28,8 @@ import importlib
 from decimal import Context, Decimal, Inexact
 from collections import namedtuple
 
+from six import u
+
 try:
     from collections import OrderedDict, Counter
 except ImportError:  # pragma: no cover
@@ -37,7 +39,7 @@ except ImportError:  # pragma: no cover
 
 PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
-PYPY = platform.python_implementation() == u'PyPy'
+PYPY = platform.python_implementation() == 'PyPy'
 PY26 = sys.version_info[:2] == (2, 6)
 NO_ARGSPEC = sys.version_info[:2] >= (3, 5)
 HAS_SIGNATURE = sys.version_info[:2] >= (3, 3)
@@ -46,8 +48,8 @@ WINDOWS = platform.system() == 'Windows'
 
 if PY26:
     _special_floats = {
-        float(u'inf'): Decimal(u'Infinity'),
-        float(u'-inf'): Decimal(u'-Infinity'),
+        float('inf'): Decimal('Infinity'),
+        float('-inf'): Decimal('-Infinity'),
     }
 
     def float_to_decimal(f):
@@ -56,7 +58,7 @@ if PY26:
         if f in _special_floats:
             return _special_floats[f]
         elif math.isnan(f):
-            return Decimal(u'NaN')
+            return Decimal('NaN')
         n, d = f.as_integer_ratio()
         numerator, denominator = Decimal(n), Decimal(d)
         ctx = Context(prec=60)
@@ -75,7 +77,7 @@ if PY3:
     text_type = str
     binary_type = bytes
     hrange = range
-    ARG_NAME_ATTRIBUTE = u'arg'
+    ARG_NAME_ATTRIBUTE = 'arg'
     integer_types = (int,)
     hunichr = chr
     from functools import reduce
@@ -121,7 +123,7 @@ else:
                 return xrange(start_or_finish, finish, step)
         except OverflowError:
             if step == 0:
-                raise ValueError(u'step argument may not be zero')
+                raise ValueError(u('step argument may not be zero'))
             if step is None:
                 step = 1
             if finish is not None:
@@ -144,7 +146,7 @@ else:
                         i += step
             return shimrange()
 
-    ARG_NAME_ATTRIBUTE = u'id'
+    ARG_NAME_ATTRIBUTE = u('id')
     integer_types = (int, long)
     hunichr = unichr
     reduce = reduce
@@ -155,8 +157,8 @@ else:
 
 def a_good_encoding():
     result = sys.getdefaultencoding()
-    if result == u'ascii':
-        return u'utf-8'
+    if result == u('ascii'):
+        return u('utf-8')
     else:
         return result
 
@@ -174,7 +176,7 @@ def qualname(f):
     except AttributeError:
         pass
     try:
-        return f.im_class.__name__ + u'.' + f.__name__
+        return f.im_class.__name__ + u('.') + f.__name__
     except AttributeError:
         return f.__name__
 
@@ -225,7 +227,7 @@ else:
 
 
 importlib_invalidate_caches = getattr(
-    importlib, u'invalidate_caches', lambda: ())
+    importlib, u('invalidate_caches'), lambda: ())
 
 
 if PY2:

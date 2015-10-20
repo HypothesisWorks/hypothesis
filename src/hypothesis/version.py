@@ -16,5 +16,10 @@ from __future__ import division, print_function, absolute_import
 #
 # END HEADER
 
+import sys
+
 __version_info__ = (1, 12, 0)
-__version__ = u'.'.join(map(str, __version_info__))
+__version__ = '.'.join(map(str, __version_info__))
+
+if sys.version_info[0] < 3:
+    __version__ = __version__.decode('utf8')

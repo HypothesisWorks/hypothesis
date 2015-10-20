@@ -21,6 +21,8 @@ import time
 import signal
 from random import Random
 
+from six import u
+
 from hypothesis import Settings, strategy
 from hypothesis.core import find
 from hypothesis.errors import NoExamples, BadTemplateDraw, \
@@ -53,10 +55,10 @@ try:
                 def handler(signum, frame):
                     if catchable:
                         raise CatchableTimeout(
-                            u'Timed out after %.2fs' % (time.time() - start))
+                            u('Timed out after %.2fs') % (time.time() - start))
                     else:
                         raise Timeout(
-                            u'Timed out after %.2fs' % (time.time() - start))
+                            u('Timed out after %.2fs') % (time.time() - start))
 
                 old_handler = signal.signal(signal.SIGALRM, handler)
                 signal.alarm(int(math.ceil(seconds)))
@@ -115,12 +117,12 @@ def some_template(spec, random=None):
         except UnsatisfiedAssumption:
             pass
     else:
-        raise NoExamples(u'some_template called on strategy with no examples')
+        raise NoExamples(u('some_template called on strategy with no examples'))
 
 
 def via_database(spec, strat, template):
     db = ExampleDatabase()
-    key = u'via_database'
+    key = u('via_database')
     try:
         s = db.storage(key)
         s.save(template, strat)

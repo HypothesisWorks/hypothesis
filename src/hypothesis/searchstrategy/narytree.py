@@ -18,6 +18,8 @@ from __future__ import division, print_function, absolute_import
 
 from collections import namedtuple
 
+from six import u
+
 from hypothesis import Settings
 from hypothesis.strategies import lists, tuples
 from hypothesis.internal.compat import hrange
@@ -25,27 +27,27 @@ from hypothesis.internal.distributions import geometric, uniform_float
 from hypothesis.searchstrategy.strategies import BadData, strategy, \
     check_length, SearchStrategy, check_data_type
 
-NAryTree = namedtuple(u'NAryTree', (
-    u'branch_labels',
-    u'leaf_values',
-    u'branch_keys',
+NAryTree = namedtuple(u('NAryTree'), (
+    u('branch_labels'),
+    u('leaf_values'),
+    u('branch_keys'),
 ))
 
-Leaf = namedtuple(u'Leaf', (
-    u'value',
+Leaf = namedtuple(u('Leaf'), (
+    u('value'),
 ))
 
-Branch = namedtuple(u'Branch', (
-    u'label',
-    u'keyed_children',
+Branch = namedtuple(u('Branch'), (
+    u('label'),
+    u('keyed_children'),
 ))
 
 
 class NAryTreeStrategy(SearchStrategy):
     Parameter = namedtuple(
-        u'Parameter', (
-            u'leaf_parameter', u'branch_key_parameter',
-            u'branch_label_parameter', u'branch_factor'
+        u('Parameter'), (
+            u('leaf_parameter'), u('branch_key_parameter'),
+            u('branch_label_parameter'), u('branch_factor')
         )
     )
 
@@ -61,7 +63,7 @@ class NAryTreeStrategy(SearchStrategy):
             lists(tuples(self.branch_key_strategy, self)))
 
     def __repr__(self):
-        return u'NAryTreeStrategy(leaves=%r, labels=%r, keys=%r)' % (
+        return u('NAryTreeStrategy(leaves=%r, labels=%r, keys=%r)') % (
             self.leaf_strategy, self.branch_label_strategy,
             self.branch_key_strategy
         )
@@ -144,7 +146,7 @@ class NAryTreeStrategy(SearchStrategy):
         check_data_type(list, data)
         if not (1 <= len(data) <= 2):
             raise BadData(
-                u'Expected list of length 1 or 2 but got %r' % (data,))
+                u('Expected list of length 1 or 2 but got %r') % (data,))
 
         if len(data) == 1:
             return Leaf(self.leaf_strategy.from_basic(data[0]))

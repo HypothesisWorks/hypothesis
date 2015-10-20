@@ -23,6 +23,8 @@ They're still single dispatch but are not defined on the class.
 
 from __future__ import division, print_function, absolute_import
 
+from six import u
+
 from hypothesis.internal.classmap import ClassMap
 
 
@@ -59,6 +61,6 @@ class ExtMethod(object):
                 f = self.mapping[type(dispatch_arg)]
             except KeyError:
                 raise NotImplementedError(
-                    u'No implementation available for %r' % (
+                    u('No implementation available for %r') % (
                         dispatch_arg,))
         return f(dispatch_arg, *args, **kwargs)

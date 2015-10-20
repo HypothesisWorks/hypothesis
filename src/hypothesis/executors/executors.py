@@ -16,6 +16,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+from six import u
+
 from hypothesis.utils.extmethod import ExtMethod
 
 executor = ExtMethod()
@@ -47,12 +49,12 @@ def attr_based_executor(runner):
         pass
 
     if (
-        hasattr(runner, u'setup_example') or
-        hasattr(runner, u'teardown_example')
+        hasattr(runner, u('setup_example')) or
+        hasattr(runner, u('teardown_example'))
     ):
         return setup_teardown_executor(
-            getattr(runner, u'setup_example', None),
-            getattr(runner, u'teardown_example', None),
+            getattr(runner, u('setup_example'), None),
+            getattr(runner, u('teardown_example'), None),
         )
 
     return default_executor

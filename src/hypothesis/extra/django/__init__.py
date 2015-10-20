@@ -17,6 +17,7 @@
 import unittest
 
 import django.test as dt
+from six import u
 
 
 class HypothesisTestCase(object):
@@ -29,7 +30,7 @@ class HypothesisTestCase(object):
 
     def __call__(self, result=None):
         testMethod = getattr(self, self._testMethodName)
-        if getattr(testMethod, u'is_hypothesis_test', False):
+        if getattr(testMethod, u('is_hypothesis_test'), False):
             return unittest.TestCase.__call__(self, result)
         else:
             return dt.SimpleTestCase.__call__(self, result)

@@ -20,6 +20,7 @@ import datetime as dt
 from collections import namedtuple
 
 import pytz
+from six import u
 
 import hypothesis.internal.distributions as dist
 from hypothesis.errors import InvalidArgument
@@ -28,7 +29,7 @@ from hypothesis.internal.compat import hrange, text_type
 from hypothesis.searchstrategy.strategies import BadData, strategy, \
     check_length, SearchStrategy, check_data_type
 
-DatetimeSpec = namedtuple(u'DatetimeSpec', (u'naive_options',))
+DatetimeSpec = namedtuple(u('DatetimeSpec'), (u('naive_options'),))
 
 naive_datetime = DatetimeSpec(set((True,)))
 timezone_aware_datetime = DatetimeSpec(set((False,)))
@@ -56,14 +57,14 @@ def maybe_zero_or(random, p, v):
 class DatetimeStrategy(SearchStrategy):
 
     Parameter = namedtuple(
-        u'Parameter',
+        u('Parameter'),
         (
-            u'p_hour',
-            u'p_minute',
-            u'p_second',
-            u'month',
-            u'naive_chance',
-            u'timezones',
+            u('p_hour'),
+            u('p_minute'),
+            u('p_second'),
+            u('month'),
+            u('naive_chance'),
+            u('timezones'),
         )
     )
 
@@ -75,11 +76,11 @@ class DatetimeStrategy(SearchStrategy):
         for a in ['min_year', 'max_year']:
             year = getattr(self, a)
             if year < dt.MINYEAR:
-                raise InvalidArgument(u'%s out of range: %d < %d' % (
+                raise InvalidArgument(u('%s out of range: %d < %d') % (
                     a, year, dt.MINYEAR
                 ))
             if year > dt.MAXYEAR:
-                raise InvalidArgument(u'%s out of range: %d > %d' % (
+                raise InvalidArgument(u('%s out of range: %d > %d') % (
                     a, year, dt.MAXYEAR
                 ))
 
@@ -244,7 +245,7 @@ class DatetimeStrategy(SearchStrategy):
             check_data_type(text_type, values[-1])
         template = tuple(values)
         if not self.is_valid_template(template):
-            raise BadData(u'Invalid template %r' % (
+            raise BadData(u('Invalid template %r') % (
                 template,
             ))
         return template
@@ -262,8 +263,8 @@ def datetimes(allow_naive=None, timezones=None, min_year=None, max_year=None):
     """
     if timezones is None:
         timezones = list(pytz.all_timezones)
-        timezones.remove(u'UTC')
-        timezones.insert(0, u'UTC')
+        timezones.remove(u('UTC'))
+        timezones.insert(0, u('UTC'))
     timezones = [
         tz if isinstance(tz, dt.tzinfo) else pytz.timezone(tz)
         for tz in timezones
@@ -272,7 +273,7 @@ def datetimes(allow_naive=None, timezones=None, min_year=None, max_year=None):
         allow_naive = not timezones
     if not (timezones or allow_naive):
         raise InvalidArgument(
-            u'Cannot create non-naive datetimes with no timezones allowed'
+            u('Cannot create non-naive datetimes with no timezones allowed')
         )
     return DatetimeStrategy(
         allow_naive=allow_naive, timezones=timezones,
@@ -314,7 +315,7 @@ def datetime_strategy(cls, settings):
 def datetime_specced_strategy(spec, settings):  # pragma: no cover
     if not spec.naive_options:
         raise InvalidArgument(
-            u'Must allow either naive or non-naive datetimes')
+            u('Must allow either naive or non-naive datetimes'))
     return datetimes(
         allow_naive=(True in spec.naive_options),
         timezones=(None if False in spec.naive_options else [])

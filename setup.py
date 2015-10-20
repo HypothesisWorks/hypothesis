@@ -72,6 +72,10 @@ setup(
     license='MPL v2',
     description='A library for property based testing',
     zip_safe=False,
+    install_requires=[
+        'setuptools',
+        'six',
+        ],
     extras_require=extras,
     classifiers=[
         "Development Status :: 5 - Production/Stable",
@@ -84,6 +88,7 @@ setup(
         "Programming Language :: Python :: 2.6",
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.2",
         "Programming Language :: Python :: 3.3",
         "Programming Language :: Python :: 3.4",
         "Programming Language :: Python :: 3.5",

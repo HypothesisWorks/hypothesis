@@ -14,6 +14,8 @@
 #
 # END HEADER
 
+from six import u
+
 """This is the module responsible for handling conversion of data to and from a
 serialized format.
 
@@ -44,7 +46,7 @@ class Format(object):
     """
 
     def __repr__(self):
-        return u'%s()' % (self.__class__.__name__,)
+        return u('%s()') % (self.__class__.__name__,)
 
     @abstractmethod  # pragma: no cover
     def data_type(self):

@@ -21,6 +21,8 @@ import threading
 from abc import abstractmethod
 from contextlib import contextmanager
 
+from six import u
+
 from hypothesis.internal.compat import text_type
 
 
@@ -66,7 +68,7 @@ class Backend(object):
 
 class SQLiteBackend(Backend):
 
-    def __init__(self, path=u':memory:'):
+    def __init__(self, path=u(':memory:')):
         self.path = path
         self.db_created = False
         self.current_connection = threading.local()
@@ -84,7 +86,7 @@ class SQLiteBackend(Backend):
                 del self.current_connection.connection
 
     def __repr__(self):
-        return u'%s(%s)' % (self.__class__.__name__, self.path)
+        return u('%s(%s)') % (self.__class__.__name__, self.path)
 
     def data_type(self):
         return text_type

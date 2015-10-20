@@ -21,6 +21,7 @@ from random import Random
 
 from django.db import transaction
 from django.test.runner import setup_databases
+from six import u
 
 from hypothesis.core import best_satisfying_template
 from hypothesis.errors import UnsatisfiedAssumption
@@ -77,7 +78,7 @@ class Fixture(object):
         )
         try:
             if self.settings.database:
-                storage = self.settings.database.storage(u'django.fixtures')
+                storage = self.settings.database.storage(u('django.fixtures'))
             else:
                 storage = None
 

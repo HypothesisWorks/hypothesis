@@ -18,6 +18,8 @@ from __future__ import division, print_function, absolute_import
 
 import traceback
 
+from six import u
+
 from hypothesis.errors import CleanupFailed, InvalidArgument, \
     UnsatisfiedAssumption
 from hypothesis.reporting import report
@@ -76,5 +78,5 @@ def cleanup(teardown):
     context = _current_build_context.value
     if context is None:
         raise InvalidArgument(
-            u'Cannot register cleanup outside of build context')
+            u('Cannot register cleanup outside of build context'))
     context.tasks.append(teardown)

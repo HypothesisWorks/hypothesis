@@ -21,6 +21,8 @@ from copy import deepcopy
 from random import Random
 from collections import namedtuple
 
+from six import u
+
 import hypothesis.internal.distributions as dist
 from hypothesis.errors import BadTemplateDraw
 from hypothesis.control import assume
@@ -35,7 +37,7 @@ from hypothesis.searchstrategy.strategies import BadData, check_type, \
 def safe_mul(x, y):
     result = x * y
     if result >= EFFECTIVELY_INFINITE:
-        return float(u'inf')
+        return float('inf')
     return result
 
 
@@ -66,10 +68,10 @@ class TupleStrategy(SearchStrategy):
 
     def __repr__(self):
         if len(self.element_strategies) == 1:
-            tuple_string = u'%s,' % (repr(self.element_strategies[0]),)
+            tuple_string = u('%s,') % (repr(self.element_strategies[0]),)
         else:
-            tuple_string = u', '.join(map(repr, self.element_strategies))
-        return u'TupleStrategy((%s), %s)' % (
+            tuple_string = u(', ').join(map(repr, self.element_strategies))
+        return u('TupleStrategy((%s), %s)') % (
             tuple_string, self.tuple_type.__name__
         )
 
@@ -110,7 +112,7 @@ class TupleStrategy(SearchStrategy):
                 replacement[i] = s
                 yield tuple(replacement)
         accept.__name__ = str(
-            u'simplifier_for_index(%d, %s)' % (i, simplifier.__name__)
+            u('simplifier_for_index(%d, %s)') % (i, simplifier.__name__)
         )
         return accept
 
@@ -149,12 +151,12 @@ class ListStrategy(SearchStrategy):
     """
 
     Parameter = namedtuple(
-        u'Parameter', (u'child_parameter', u'average_length')
+        u('Parameter'), (u('child_parameter'), u('average_length'))
     )
 
     def __init__(
         self,
-        strategies, average_length=50.0, min_size=0, max_size=float(u'inf')
+        strategies, average_length=50.0, min_size=0, max_size=float(u('inf'))
     ):
         SearchStrategy.__init__(self)
 
@@ -177,7 +179,7 @@ class ListStrategy(SearchStrategy):
 
     def __repr__(self):
         return (
-            u'ListStrategy(%r, min_size=%r, average_size=%r, max_size=%r)'
+            u('ListStrategy(%r, min_size=%r, average_size=%r, max_size=%r)')
         ) % (
             self.element_strategy, self.min_size, self.average_length,
             self.max_size
@@ -248,7 +250,7 @@ class ListStrategy(SearchStrategy):
                 replacement[i] = s
                 yield tuple(replacement)
         accept.__name__ = str(
-            u'simplifier_for_index(%d, %s)' % (i, simplify.__name__)
+            u('simplifier_for_index(%d, %s)') % (i, simplify.__name__)
         )
         return accept
 
@@ -398,7 +400,7 @@ class ListStrategy(SearchStrategy):
                         copy[i] = deepcopy(simpler)
                     yield tuple(copy)
         accept.__name__ = str(
-            u'shared_simplification(%s)' % (simplify.__name__,)
+            u('shared_simplification(%s)') % (simplify.__name__,)
         )
         return accept
 
@@ -413,11 +415,11 @@ class ListStrategy(SearchStrategy):
         if self.element_strategy is None:
             return ()
         if len(value) < (self.min_size or 0):
-            raise BadData(u'List too short. len(%r)=%d < self.min_size=%d' % (
+            raise BadData(u('List too short. len(%r)=%d < self.min_size=%d') % (
                 value, len(value), self.min_size
             ))
         if len(value) > (self.max_size or len(value)):
-            raise BadData(u'List too long. len(%r)=%d > self.min_size=%d' % (
+            raise BadData(u('List too long. len(%r)=%d > self.min_size=%d') % (
                 value, len(value), self.max_size
             ))
         return tuple(map(self.element_strategy.from_basic, value))
@@ -491,9 +493,9 @@ class UniqueListTemplate(object):
 
     def __repr__(self):
         if self.values is not None:
-            return u'UniqueListTemplate(%d, %r)' % (self.size, self.values)
+            return u('UniqueListTemplate(%d, %r)') % (self.size, self.values)
         else:
-            return u'UniqueListTemplate(%d, ...)' % (self.size,)
+            return u('UniqueListTemplate(%d, ...)') % (self.size,)
 
     def __eq__(self, other):
         if not isinstance(other, UniqueListTemplate):
@@ -539,7 +541,7 @@ class UniqueListStrategy(SearchStrategy):
         self.key = key
 
     Parameter = namedtuple(
-        u'Parameter', (u'parameter_seed', u'parameter')
+        u('Parameter'), (u('parameter_seed'), u('parameter'))
     )
 
     def strictly_simpler(self, x, y):
@@ -568,7 +570,7 @@ class UniqueListStrategy(SearchStrategy):
     def draw_template(self, random, parameter):
         if self.min_size == self.max_size:
             size = self.min_size
-        elif self.max_size < float(u'inf'):
+        elif self.max_size < float(u('inf')):
             lower = math.floor(self.average_size)
             upper = math.ceil(self.average_size)
             mid_of_lower = (lower + self.min_size) / 2
@@ -680,7 +682,7 @@ class UniqueListStrategy(SearchStrategy):
                     template_seed=template.template_seed,
                     values=values
                 )
-        accept.__name__ = str(u'simplify_index(%d)' % (i,))
+        accept.__name__ = str(u('simplify_index(%d)') % (i,))
         return accept
 
     def reduce_size(self, random, template):
@@ -718,7 +720,7 @@ class UniqueListStrategy(SearchStrategy):
         check_data_type(integer_types, data[0])
         check_data_type(integer_types, data[1])
         if data[1] < self.min_size or data[1] > self.max_size:
-            raise BadData(u'Size %d out of range [%d, %r]' % (
+            raise BadData(u('Size %d out of range [%d, %r]') % (
                 data[1], self.min_size, self.max_size))
         if data[0] == 0:
             check_data_type(list, data[2])
@@ -729,7 +731,7 @@ class UniqueListStrategy(SearchStrategy):
             )
         else:
             if data[0] != 1:
-                raise BadData(u'Bad type tag %d' % (data[0],))
+                raise BadData(u('Bad type tag %d') % (data[0],))
             check_length(2, data[2])
             check_data_type(integer_types, data[2][0])
             check_data_type(integer_types, data[2][1])
@@ -772,7 +774,7 @@ class FixedKeysDictStrategy(MappedSearchStrategy):
         )
 
     def __repr__(self):
-        return u'FixedKeysDictStrategy(%r, %r)' % (
+        return u('FixedKeysDictStrategy(%r, %r)') % (
             self.keys, self.mapped_strategy)
 
     def pack(self, value):

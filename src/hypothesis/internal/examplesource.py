@@ -1,6 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
-
 # coding=utf-8
 #
 # This file is part of Hypothesis (https://github.com/DRMacIver/hypothesis)
@@ -16,6 +13,11 @@ from __future__ import division, print_function, absolute_import
 # obtain one at http://mozilla.org/MPL/2.0/.
 #
 # END HEADER
+
+from __future__ import division, print_function, absolute_import
+
+
+from six import u
 
 class ParameterSource(object):
 
@@ -51,9 +53,9 @@ class ParameterSource(object):
 
         """
         if not self.started:
-            raise ValueError(u'No parameters have been generated yet')
+            raise ValueError(u('No parameters have been generated yet'))
         if self.mark_set:
-            raise ValueError(u'This parameter has already been marked')
+            raise ValueError(u('This parameter has already been marked'))
         self.should_switch = True
         self.mark_set = True
 
