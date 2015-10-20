@@ -86,8 +86,7 @@ def minimal(
     )
 
     condition = condition or (lambda x: True)
-    with settings:
-        settings = Settings(timeout=timeout_after)
+    settings = Settings(settings, timeout=timeout_after, database=None)
 
     @timeout(timeout_after * 1.20)
     def run():
