@@ -62,6 +62,26 @@ package last night. Refuted a few hypotheses in the process.
 
 Looking forward to using it with a bunch of other projects as well.
 
+-----------------------------------------------
+`Adam Johnson <https://github.com/adamchainz>`_
+-----------------------------------------------
+
+I have written a small library to serialize ``dict``\s to MariaDB's dynamic
+columns binary format,
+`mariadb-dyncol <https://github.com/adamchainz/mariadb-dyncol>`_. When I first
+developed it, I thought I had tested it really well - there were hundreds of
+test cases, some of them even taken from MariaDB's test suite itself. I was
+ready to release.
+
+Lucky for me, I tried Hypothesis with David at the PyCon UK sprints. Wow! It
+found bug after bug after bug. Even after a first release, I thought of a way
+to make the tests do more validation, which revealed a further round of bugs!
+Most impressively, Hypothesis found a complicated off-by-one error in a
+condition with 4095 versus 4096 bytes of data - something that I would never
+have found.
+
+Long live Hypothesis! (Or at least, property-based testing).
+
 -------------------------------------------
 `Your name goes here <http://example.com>`_
 -------------------------------------------
