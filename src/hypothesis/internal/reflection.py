@@ -41,7 +41,10 @@ from hypothesis.internal.compat import hrange, qualname, text_type, \
 def fully_qualified_name(f):
     """Returns a unique identifier for f pointing to the module it was define
     on, and an containing functions."""
-    return f.__module__ + u'.' + qualname(f)
+    if f.__module__ is not None:
+        return f.__module__ + u'.' + qualname(f)
+    else:
+        return qualname(f)
 
 
 def function_digest(function):

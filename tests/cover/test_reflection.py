@@ -543,6 +543,13 @@ def test_fully_qualified_name():
         u'hypothesis.internal.reflection.fully_qualified_name'
 
 
+def test_qualname_of_function_with_none_module_is_name():
+    def f():
+        pass
+    f.__module__ = None
+    assert fully_qualified_name(f)[-1] == 'f'
+
+
 def test_can_proxy_functions_with_mixed_args_and_varargs():
     def foo(a, *args):
         return (a, args)

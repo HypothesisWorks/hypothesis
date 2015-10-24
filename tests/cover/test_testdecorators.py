@@ -599,3 +599,11 @@ def test_can_map_nameless(x):
     integers(0, 10).flatmap(nameless_const(just(3))))
 def test_can_flatmap_nameless(x):
     assert x == 3
+
+
+def test_can_be_used_with_none_module():
+    def test_is_cool(i):
+        pass
+    test_is_cool.__module__ = None
+    test_is_cool = given(integers())(test_is_cool)
+    test_is_cool()
