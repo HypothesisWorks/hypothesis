@@ -21,7 +21,7 @@ import time
 import signal
 from random import Random
 
-from hypothesis import Settings, strategy
+from hypothesis import Settings
 from hypothesis.core import find
 from hypothesis.errors import NoExamples, BadTemplateDraw, \
     UnsatisfiedAssumption
@@ -102,7 +102,7 @@ def minimal(
 def some_template(spec, random=None):
     if random is None:
         random = Random()
-    strat = strategy(spec)
+    strat = spec
     for _ in hrange(100):
         try:
             element = strat.draw_and_produce(random)

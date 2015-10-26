@@ -21,7 +21,7 @@ import hashlib
 from copy import deepcopy
 from random import Random
 
-from hypothesis import find, given, assume, Settings, strategy, Verbosity
+from hypothesis import find, given, assume, Settings, Verbosity
 from hypothesis.errors import BadData, NoExamples
 from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import rule, Bundle, RuleBasedStateMachine, \
@@ -102,13 +102,13 @@ class HypothesisSpec(RuleBasedStateMachine):
 
     @rule(targets=(strategies, streaming_strategies), strat=strategies)
     def build_stream(self, strat):
-        return strategy(streaming(strat))
+        return streaming(strat)
 
     @rule(
         targets=(strategies, streaming_strategies),
         strat=strategies, i=integers(1, 10))
     def evalled_stream(self, strat, i):
-        return strategy(streaming(strat)).map(lambda x: list(x[:i]) and x)
+        return streaming(strat).map(lambda x: list(x[:i]) and x)
 
     @rule(stream_strat=streaming_strategies, index=integers(0, 50))
     def eval_stream(self, stream_strat, index):
@@ -272,7 +272,7 @@ class HypothesisSpec(RuleBasedStateMachine):
                 assume(not f(x))
         left, right = sorted((left, right))
         assert left <= right
-        return strategy(floats(left, right))
+        return floats(left, right)
 
     @rule(
         target=strategies,
@@ -294,7 +294,7 @@ class HypothesisSpec(RuleBasedStateMachine):
 
     @rule(target=strategies, value=objects)
     def just_strategy(self, value):
-        return strategy(just(value))
+        return just(value)
 
     @rule(target=strategy_tuples, source=strategies)
     def single_tuple(self, source):
@@ -316,7 +316,7 @@ class HypothesisSpec(RuleBasedStateMachine):
     @rule(target=strategies, left=integers(), right=integers())
     def integer_range(self, left, right):
         left, right = sorted((left, right))
-        return strategy(integers(left, right))
+        return integers(left, right)
 
     @rule(strat=strategies)
     def repr_is_good(self, strat):

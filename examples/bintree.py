@@ -43,7 +43,7 @@ from __future__ import division, print_function, absolute_import, \
 import math
 from collections import namedtuple
 
-from hypothesis import find, strategy
+from hypothesis import find
 from hypothesis.strategies import just, lists, integers
 from hypothesis.strategytests import strategy_test_suite
 from hypothesis.searchstrategy import SearchStrategy
@@ -527,10 +527,7 @@ class BinaryTreeStrategy(SearchStrategy):
 # necessary in this case but is generally good practice.
 
 def binary_trees(leaves):
-    # The call to strategy is part of the deprecated strategy building API.
-    # Until Hypothesis 2.0 this will work but will emit a warning (error in
-    # strict mode) when called with a non-strategy argument.
-    return BinaryTreeStrategy(strategy(leaves))
+    return BinaryTreeStrategy(leaves)
 
 # We now want to test our implementation. Hypothesis provides a standard suite
 # of tests you can run to check that your implementation is working correctly.

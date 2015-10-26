@@ -21,7 +21,6 @@ from random import Random
 
 import pytest
 
-from hypothesis import Settings, strategy
 from tests.common import standard_types
 from hypothesis.control import BuildContext
 from hypothesis.strategies import lists, booleans
@@ -38,7 +37,7 @@ def test_round_tripping_via_the_database(spec):
     random = Random(hashlib.md5((
         show(spec) + u':test_round_tripping_via_the_database'
     ).encode(u'utf-8')).digest())
-    strat = strategy(spec)
+    strat = spec
     template = some_template(strat, random)
     strat.from_basic(strat.to_basic(template))
     template_via_db = via_database(spec, strat, template)
@@ -67,7 +66,7 @@ def test_all_minimal_elements_round_trip_via_the_database(spec):
     random = Random(hashlib.md5((
         show(spec) + u':test_all_minimal_elements_round_trip_via_the_database'
     ).encode(u'utf-8')).digest())
-    strat = strategy(spec, Settings(average_list_length=2))
+    strat = spec
     for elt in minimal_elements(strat, random):
         elt_via_db = via_database(spec, strat, elt)
         with BuildContext():
@@ -85,7 +84,7 @@ def minimal_basic():
         random = Random(u'__minimal_templates_as_basic_data')
         __minimal_basic = []
         for typ in standard_types:
-            strat = strategy(typ, Settings(average_list_length=2))
+            strat = typ
             for m in minimal_elements(strat, random):
                 __minimal_basic.append(strat.to_basic(m))
         for i in hrange(10):

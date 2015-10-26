@@ -39,7 +39,6 @@ from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.strategies import just, sets, text, lists, floats, \
     tuples, booleans, integers, sampled_from
 from hypothesis.internal.compat import PY26, hrange
-from hypothesis.searchstrategy.strategies import strategy
 
 pytestmark = pytest.mark.skipif(PY26, reason=u'2.6 lacks erf')
 
@@ -157,7 +156,7 @@ def define_test(specifier, q, predicate, condition=None):
 
         count = 0
         successful_runs = 0
-        s = strategy(specifier)
+        s = specifier
         for _ in hrange(MAX_RUNS):
             pv = s.draw_parameter(random)
             try:

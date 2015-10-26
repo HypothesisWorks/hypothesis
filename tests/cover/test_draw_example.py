@@ -18,7 +18,6 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
-from hypothesis import Settings, strategy
 from tests.common import standard_types
 from hypothesis.strategies import lists
 from hypothesis.utils.show import show
@@ -27,10 +26,10 @@ from hypothesis.utils.show import show
 @pytest.mark.parametrize(
     u'spec', standard_types, ids=list(map(show, standard_types)))
 def test_single_example(spec):
-    strategy(spec, Settings(average_list_length=2)).example()
+    spec.example()
 
 
 @pytest.mark.parametrize(
     u'spec', standard_types, ids=list(map(show, standard_types)))
 def test_list_example(spec):
-    strategy(lists(spec), Settings(average_list_length=2)).example()
+    lists(spec, average_size=2).example()

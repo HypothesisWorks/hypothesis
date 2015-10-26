@@ -22,7 +22,7 @@ from itertools import islice
 
 import pytest
 
-from hypothesis import find, given, strategy
+from hypothesis import find, given
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import text, lists, floats, booleans, \
     integers, streaming
@@ -145,8 +145,8 @@ def test_streams_copy_as_self():
 
 
 def test_check_serialization_preserves_changed_marker():
-    strat = strategy(
-        streaming(floats(min_value=0.0, max_value=2.2250738585072014e-308)))
+    strat = streaming(
+        floats(min_value=0.0, max_value=2.2250738585072014e-308))
     template = strat.draw_template(
         Random(0), strat.draw_parameter(Random(0)))
     strat.reify(template)[0]

@@ -24,10 +24,17 @@ from hypothesis.specifiers import just
 from hypothesis.strategies import booleans
 
 
-def test_strategy_does_not_warn_on_strategies(recwarn):
-    strategy(booleans())
-    with pytest.raises(AssertionError):
-        recwarn.pop(DeprecationWarning)
+def test_strategy_still_warns_on_strategies(recwarn):
+    strategy(booleans(), Settings(strict=False))
+    assert recwarn.pop(DeprecationWarning) is not None
+
+
+def test_given_warns_on_use_of_non_strategies(recwarn):
+    @given(bool, settings=Settings(strict=False))
+    def test(x):
+        pass
+    test()
+    assert recwarn.pop(DeprecationWarning) is not None
 
 
 def test_raises_in_strict_mode():

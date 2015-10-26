@@ -20,7 +20,7 @@ from random import Random
 
 import pytest
 
-from hypothesis import given, assume, Settings, strategy
+from hypothesis import given, assume, Settings
 from hypothesis.database import ExampleDatabase
 from hypothesis.strategies import just, lists, floats, tuples, integers
 from hypothesis.internal.debug import some_template
@@ -28,7 +28,7 @@ from hypothesis.searchstrategy.narytree import Leaf, n_ary_tree
 
 ConstantLists = integers().flatmap(lambda i: lists(just(i)))
 
-OrderedPairs = strategy(integers(1, 200)).flatmap(
+OrderedPairs = integers(1, 200).flatmap(
     lambda e: tuples(integers(0, e - 1), just(e))
 )
 
@@ -44,7 +44,7 @@ with Settings(max_examples=200):
 
 
 def test_flatmap_retrieve_from_db():
-    constant_float_lists = strategy(floats(0, 1)).flatmap(
+    constant_float_lists = floats(0, 1).flatmap(
         lambda x: lists(just(x))
     )
 
@@ -104,7 +104,7 @@ def test_will_find_a_failure_from_the_database():
 
 
 def test_can_still_simplify_if_not_reified():
-    strat = strategy(ConstantLists)
+    strat = ConstantLists
     random = Random(u'test_constant_lists_are_constant')
     template = some_template(strat, random)
     try:

@@ -22,7 +22,7 @@ from collections import namedtuple
 
 import pytest
 
-from hypothesis import assume, Settings, strategy
+from hypothesis import assume, Settings
 from hypothesis.errors import Flaky, BadData, InvalidDefinition
 from tests.common.utils import capture_out
 from hypothesis.database import ExampleDatabase
@@ -59,7 +59,7 @@ class OrderedStateMachine(GenericStateMachine):
         self.counter = 0
 
     def steps(self):
-        return strategy(
+        return (
             integers(self.counter - 1, self.counter + 50)
         )
 

@@ -21,7 +21,7 @@ from collections import namedtuple
 
 import pytest
 
-from hypothesis import find, given, Settings, strategy
+from hypothesis import find, given, Settings
 from hypothesis.strategies import sets, text, lists, builds, tuples, \
     booleans, integers, frozensets, dictionaries, fixed_dictionaries
 from hypothesis.internal.compat import OrderedDict
@@ -157,7 +157,7 @@ def test_deeply_nested_sets():
             return booleans()
         return sets(f(n - 1))
 
-    assert strategy(f(10)).template_upper_bound == float(u'inf')
+    assert f(10).template_upper_bound == float(u'inf')
 
 
 def test_list_simplicity():

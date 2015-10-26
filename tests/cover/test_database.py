@@ -21,7 +21,7 @@ import time
 import pytest
 
 import hypothesis.settings as hs
-from hypothesis import given, assume, strategy
+from hypothesis import given, assume
 from hypothesis.errors import Timeout, Unsatisfiable
 from hypothesis.database import ExampleDatabase
 from hypothesis.strategies import text, integers
@@ -36,13 +36,12 @@ def run_round_trip(specifier, value, format=None, backend=None):
     else:
         backend = SQLiteBackend()
     db = ExampleDatabase(format=format, backend=backend)
-    strat = strategy(specifier)
     try:
         storage = db.storage(u'round trip')
-        storage.save(value, strat)
-        saved = list(storage.fetch(strat))
+        storage.save(value, specifier)
+        saved = list(storage.fetch(specifier))
         assert len(saved) == 1
-        assert strat.to_basic(saved[0]) == strat.to_basic(value)
+        assert specifier.to_basic(saved[0]) == specifier.to_basic(value)
     finally:
         db.close()
 

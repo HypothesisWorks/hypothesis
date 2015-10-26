@@ -21,7 +21,6 @@ from random import Random
 
 import pytest
 
-from hypothesis import Settings, strategy
 from tests.common import standard_types
 from hypothesis.control import BuildContext
 from hypothesis.utils.show import show
@@ -29,12 +28,11 @@ from hypothesis.internal.debug import minimal_elements
 
 
 @pytest.mark.parametrize(
-    u'spec', standard_types, ids=list(map(show, standard_types)))
-def test_all_minimal_elements_reify(spec):
+    'strat', standard_types, ids=list(map(show, standard_types)))
+def test_all_minimal_elements_reify(strat):
     random = Random(hashlib.md5((
-        show(spec) + u':test_all_minimal_elements_round_trip_via_the_database'
+        show(strat) + u':test_all_minimal_elements_round_trip_via_the_database'
     ).encode(u'utf-8')).digest())
-    strat = strategy(spec, Settings(average_list_length=2))
     for elt in minimal_elements(strat, random):
         with BuildContext():
             strat.reify(elt)

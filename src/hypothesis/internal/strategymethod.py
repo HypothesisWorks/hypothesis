@@ -191,14 +191,13 @@ class StrategyExtMethod(ExtMethod):
         if settings is None:
             settings = Settings()
 
+        result = super(StrategyExtMethod, self).__call__(specifier, settings)
         note_deprecation((
-            u'Calling strategy with non-strategy object %s is deprecated '
-            u'and will be removed in Hypothesis 2.0. Use the functions in '
-            u'hypothesis.strategies instead.') % (
-                repr(specifier),
+            'Conversion of %r to strategy is deprecated '
+            'and will be removed in Hypothesis 2.0. Use %r instead.') % (
+                specifier, result
         ), settings)
 
-        result = super(StrategyExtMethod, self).__call__(specifier, settings)
         assert isinstance(result, SearchStrategy)
         return result
 

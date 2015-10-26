@@ -20,7 +20,7 @@ import math
 from random import Random
 from collections import namedtuple
 
-from hypothesis import Settings, strategy
+from hypothesis import Settings
 from tests.common.basic import Bitfields, BoringBitfields, \
     simplify_bitfield
 from hypothesis.stateful import StateMachineSearchStrategy
@@ -73,8 +73,8 @@ with Settings(average_list_length=5.0):
     TestTemplates = strategy_test_suite(templates_for(sets(integers())))
 
     TestEmptyString = strategy_test_suite(text(alphabet=u''))
-    TestSingleString = strategy_test_suite(strategy(
-        text(alphabet=u'a'), Settings(average_list_length=10.0)))
+    TestSingleString = strategy_test_suite(
+        text(alphabet=u'a', average_size=10.0))
     TestManyString = strategy_test_suite(text(alphabet=u'abcdef☃'))
 
     Stuff = namedtuple(u'Stuff', (u'a', u'b'))
@@ -120,7 +120,7 @@ with Settings(average_list_length=5.0):
         lists(lists(integers()), unique_by=lambda x: tuple(sorted(x))))
 
     TestOrderedPairs = strategy_test_suite(
-        strategy(integers(min_value=1, max_value=200)).flatmap(
+        integers(min_value=1, max_value=200).flatmap(
             lambda e: tuples(integers(min_value=0, max_value=e - 1), just(e))
         )
     )
