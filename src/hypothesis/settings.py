@@ -528,6 +528,8 @@ def note_deprecation(message, settings):
     # where defining a new setting while non-strict updates a
     # profile which is strict. This should not be an error, but
     # using the profile here would cause it to be one.
+    if settings is None:
+        settings = Settings.default
     strict = Settings.default.strict and settings.strict
     verbosity = settings.verbosity
     settings = settings or Settings.default
