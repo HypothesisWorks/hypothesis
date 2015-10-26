@@ -191,7 +191,15 @@ class DatetimeStrategy(SearchStrategy):
         return self.min_year <= year <= self.max_year
 
     def simplify_towards_2000(self, random, value):
-        value = self.reify(value)
+        for t in self._simplify_towards_2000(random, value):
+            if self.is_valid_template(t):
+                yield t
+
+    def _simplify_towards_2000(self, random, value):
+        try:
+            value = self.reify(value)
+        except OverflowError:
+            return
         s = set((value,))
         s.add(value.replace(microsecond=0))
         s.add(value.replace(second=0))

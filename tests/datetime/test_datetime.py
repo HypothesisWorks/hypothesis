@@ -17,7 +17,7 @@
 from __future__ import division, print_function, absolute_import
 
 from random import Random
-from datetime import MAXYEAR, datetime
+from datetime import MAXYEAR, MINYEAR, datetime
 
 import pytz
 import pytest
@@ -182,3 +182,12 @@ def test_bordering_on_a_leap_year():
         settings=Settings(database=None, max_examples=10 ** 6)
     )
     assert x.year == 2004
+
+
+def test_overflow_in_simplify():
+    """This is a test that we don't trigger a pytz bug when we're simplifying
+    around MINYEAR where valid dates can produce an overflow error."""
+    minimal(
+        datetimes(max_year=MINYEAR),
+        lambda x: x.tzinfo != pytz.UTC
+    )
