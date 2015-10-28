@@ -24,11 +24,11 @@ import pytest
 
 import hypothesis.settings as hs
 from hypothesis import given, assume, Settings
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import InvalidArgument, UnsatisfiedAssumption
 from hypothesis.strategytests import strategy_test_suite
 from hypothesis.extra.datetime import datetimes, any_datetime, \
     naive_datetime, timezone_aware_datetime
-from hypothesis.internal.debug import minimal
+from hypothesis.internal.debug import minimal, some_template
 from hypothesis.internal.compat import hrange
 from hypothesis.searchstrategy.strategies import BadData
 
@@ -138,25 +138,41 @@ def test_year_bounds_are_respected_in_deserialization():
     basic = s.to_basic(template)
     above = datetimes(min_year=year + 1)
     below = datetimes(max_year=year - 1)
-    with pytest.raises(BadData):
-        above.from_basic(basic)
-    with pytest.raises(BadData):
-        below.from_basic(basic)
+    with pytest.raises(UnsatisfiedAssumption):
+        above.reify(above.from_basic(basic))
+    with pytest.raises(UnsatisfiedAssumption):
+        below.reify(below.from_basic(basic))
 
 
 def test_timezones_are_checked_in_deserialization():
     s = datetimes()
     r = Random(1)
     basic = s.to_basic(s.draw_template(r, s.draw_parameter(r)))
-    with pytest.raises(BadData):
-        datetimes(timezones=[]).from_basic(basic)
+    with pytest.raises(UnsatisfiedAssumption):
+        dts = datetimes(timezones=[])
+        dts.reify(dts.from_basic(basic))
 
 
 def test_can_draw_times_in_the_final_year():
     last_year = datetimes(min_year=MAXYEAR)
     r = Random(1)
+    c = 0
     for _ in hrange(1000):
-        last_year.reify(last_year.draw_and_produce(r))
+        try:
+            last_year.reify(last_year.draw_and_produce(r))
+            c += 1
+        except UnsatisfiedAssumption:
+            pass
+    assert c >= 100
+
+
+def test_validates_timezone_name_from_db():
+    s = datetimes(allow_naive=False)
+    template = some_template(s)
+    basic = s.to_basic(template)
+    basic[-1] = u"Cabbage"
+    with pytest.raises(BadData):
+        s.from_basic(basic)
 
 
 def test_validates_year_arguments_in_range():

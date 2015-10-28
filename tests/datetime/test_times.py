@@ -23,10 +23,10 @@ import pytest
 
 import hypothesis.settings as hs
 from hypothesis import given, assume
+from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.strategytests import strategy_test_suite
 from hypothesis.extra.datetime import times
 from hypothesis.internal.debug import minimal
-from hypothesis.searchstrategy.strategies import BadData
 
 TestStandardDescriptorFeatures1 = strategy_test_suite(times())
 
@@ -93,5 +93,6 @@ def test_timezones_are_checked_in_deserialization():
     s = times()
     r = Random(1)
     basic = s.to_basic(s.draw_template(r, s.draw_parameter(r)))
-    with pytest.raises(BadData):
-        times(timezones=[]).from_basic(basic)
+    with pytest.raises(UnsatisfiedAssumption):
+        t = times(timezones=[])
+        t.reify(t.from_basic(basic))

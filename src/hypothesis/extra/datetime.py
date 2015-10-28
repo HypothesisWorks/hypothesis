@@ -23,6 +23,7 @@ import pytz
 
 import hypothesis.internal.distributions as dist
 from hypothesis.errors import InvalidArgument
+from hypothesis.control import assume
 from hypothesis.strategies import defines_strategy
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.searchstrategy.strategies import BadData, strategy, \
@@ -35,15 +36,30 @@ timezone_aware_datetime = DatetimeSpec(set((False,)))
 any_datetime = DatetimeSpec(set((False, True)))
 
 
-def draw_day_for_month(random, year, month):
-    # Validate that we've not got a bad year or month
-    dt.datetime(year=year, month=month, day=27)
-    for max_day in hrange(31, 27, -1):  # pragma: no branch
-        try:
-            dt.datetime(year=year, month=month, day=max_day)
-            return random.randint(1, max_day)
-        except ValueError:
-            pass
+class DateTimeTemplate(namedtuple('DateTimeTemplate', (
+    'year', 'month', 'day', 'hour', 'minute', 'second', 'microsecond',
+    'tzinfo'
+))):
+
+    def replace(self, **kwargs):
+        data = list(self)
+        for k, v in kwargs.items():
+            data[self._fields.index(k)] = v
+        return DateTimeTemplate(*data)
+
+    def to_datetime(self):
+        d = dt.datetime(**dict(
+            (k, getattr(self, k)) for k in self._fields[:-1]
+        ))
+        if self.tzinfo is not None:
+            d = self.tzinfo.localize(d)
+        return d
+
+    def __trackas__(self):
+        data = list(self)
+        if data[-1] is not None:
+            data[-1] = text_type(data[-1].zone)
+        return data
 
 
 def maybe_zero_or(random, p, v):
@@ -95,111 +111,59 @@ class DatetimeStrategy(SearchStrategy):
         )
 
     def draw_template(self, random, pv):
-        while True:
-            random = random
-            year = random.randint(self.min_year, self.max_year)
-            month = random.choice(pv.month)
-            base = dt.datetime(
-                year=year,
-                month=month,
-                day=draw_day_for_month(random, year, month),
-                hour=maybe_zero_or(random, pv.p_hour, random.randint(0, 23)),
-                minute=maybe_zero_or(
-                    random, pv.p_minute, random.randint(0, 59)),
-                second=maybe_zero_or(
-                    random, pv.p_second, random.randint(0, 59)),
-                microsecond=random.randint(0, 1000000 - 1),
-            )
-            try:
-                if not pv.timezones:
-                    return self.templateize(base)
-
-                timezone = random.choice(pv.timezones)
-
-                if not self.allow_naive:
-                    return self.templateize(timezone.localize(base))
-
-                naive = random.random() <= pv.naive_chance
-                if naive:
-                    return self.templateize(base)
-                else:
-                    return self.templateize(timezone.localize(base))
-            except OverflowError:
-                pass
-
-    def is_valid_template(self, template):
-        if not (self.min_year <= template[0] <= self.max_year):
-            return False
-        tz = template[-1]
-        if tz is None:
-            return self.allow_naive
+        if not pv.timezones:
+            timezone = None
         else:
-            if not any(
-                text_type(z.zone) == tz
-                for z in self.timezones
-            ):
-                return False
-            try:
-                self.reify(template)
-                return True
-            # This is covered but hard to hit reliably
-            except (OverflowError, ValueError):  # pragma: no cover
-                return False
+            timezone = random.choice(pv.timezones)
+            if self.allow_naive and random.random() <= pv.naive_chance:
+                timezone = None
 
-    def templateize(self, dt):
-        return (
-            dt.year,
-            dt.month,
-            dt.day,
-            dt.hour,
-            dt.minute,
-            dt.second,
-            dt.microsecond,
-            text_type(dt.tzinfo.zone) if dt.tzinfo else None,
+        return DateTimeTemplate(
+            year=random.randint(self.min_year, self.max_year),
+            month=random.choice(pv.month),
+            day=random.randint(1, 31),
+            hour=maybe_zero_or(random, pv.p_hour, random.randint(0, 23)),
+            minute=maybe_zero_or(
+                random, pv.p_minute, random.randint(0, 59)),
+            second=maybe_zero_or(
+                random, pv.p_second, random.randint(0, 59)),
+            microsecond=random.randint(0, 1000000 - 1),
+            tzinfo=timezone,
         )
 
     def reify(self, template):
+        assume(self.min_year <= template.year <= self.max_year)
         tz = template[-1]
-        d = dt.datetime(
-            year=template[0], month=template[1], day=template[2],
-            hour=template[3], minute=template[4], second=template[5],
-            microsecond=template[6]
-        )
-        if tz:
-            d = pytz.timezone(tz).localize(d)
-        return d
+        if tz is None:
+            assume(self.allow_naive)
+        else:
+            assume(template.tzinfo in self.timezones)
+        try:
+            return template.to_datetime()
+        except (OverflowError, ValueError):
+            assume(False)
 
     def simplifiers(self, random, template):
         yield self.simplify_timezones
         yield self.simplify_towards_2000
 
-    def simplify_timezones(self, random, value):
-        value = self.reify(value)
+    def simplify_timezones(self, random, template):
         if self.timezones:
-            if not value.tzinfo:
-                yield self.templateize(self.timezones[0].localize(value))
+            if template.tzinfo is None:
+                for t in self.timezones:
+                    yield template.replace(tzinfo=t)
             else:
                 # This loop will never exit normally because it breaks when it
                 # hits the value.
-                for j in hrange(len(self.timezones)):  # pragma: no branch
-                    tz = self.timezones[j]
-                    if tz.zone == value.tzinfo.zone:
+                for tz in self.timezones:  # pragma: no branch
+                    if tz.zone == template.tzinfo.zone:
                         break
-                    yield self.templateize(tz.normalize(value.astimezone(tz)))
+                    yield template.replace(tzinfo=tz)
 
     def year_in_bounds(self, year):
         return self.min_year <= year <= self.max_year
 
     def simplify_towards_2000(self, random, value):
-        for t in self._simplify_towards_2000(random, value):
-            if self.is_valid_template(t):
-                yield t
-
-    def _simplify_towards_2000(self, random, value):
-        try:
-            value = self.reify(value)
-        except OverflowError:
-            return
         s = set((value,))
         s.add(value.replace(microsecond=0))
         s.add(value.replace(second=0))
@@ -211,10 +175,10 @@ class DatetimeStrategy(SearchStrategy):
             s.add(value.replace(year=2000))
         s.remove(value)
         for t in s:
-            yield self.templateize(t)
+            yield t
 
         for h in hrange(value.hour - 1, 0, -1):
-            yield self.templateize(value.replace(hour=h))
+            yield value.replace(hour=h)
 
         year = value.year
         if year == 2000:
@@ -225,37 +189,31 @@ class DatetimeStrategy(SearchStrategy):
         # Note that 2000 was a leap year which is why we didn't need one above.
         mid = (year + 2000) // 2
         if mid != 2000 and mid != year and self.year_in_bounds(mid):
-            try:
-                yield self.templateize(value.replace(year=mid))
-            except ValueError:
-                pass
+            yield value.replace(year=mid)
         direction = -1 if year > 2000 else 1
         years = hrange(year + direction, 2000, direction)
         for year in years:
             if year == mid:
                 continue
-            try:
-                if self.year_in_bounds(year):
-                    yield self.templateize(value.replace(year))
-            except ValueError:
-                pass
+            if self.year_in_bounds(year):
+                yield value.replace(year=year)
 
     def to_basic(self, value):
-        return list(value)
+        return value.__trackas__()
 
     def from_basic(self, values):
         check_data_type(list, values)
+        values = list(values)
         check_length(8, values)
         for d in values[:-1]:
             check_data_type(int, d)
         if values[-1] is not None:
             check_data_type(text_type, values[-1])
-        template = tuple(values)
-        if not self.is_valid_template(template):
-            raise BadData(u'Invalid template %r' % (
-                template,
-            ))
-        return template
+            try:
+                values[-1] = pytz.timezone(values[-1])
+            except pytz.UnknownTimeZoneError as e:
+                raise BadData(*e.args)
+        return DateTimeTemplate(*values)
 
 
 @defines_strategy

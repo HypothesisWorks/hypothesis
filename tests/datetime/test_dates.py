@@ -17,15 +17,14 @@
 from __future__ import division, print_function, absolute_import
 
 from random import Random
-from datetime import MAXYEAR
 
 import pytest
 
+from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.strategytests import strategy_test_suite
 from hypothesis.extra.datetime import dates
 from hypothesis.internal.debug import minimal
 from hypothesis.internal.compat import hrange
-from hypothesis.searchstrategy.strategies import BadData
 
 TestStandardDescriptorFeatures1 = strategy_test_suite(dates())
 
@@ -54,19 +53,17 @@ def test_max_year_is_respected():
 def test_year_bounds_are_respected_in_deserialization():
     s = dates()
     r = Random(1)
-    template = s.draw_template(r, s.draw_parameter(r))
-    year = s.reify(template).year
+    while True:
+        try:
+            template = s.draw_template(r, s.draw_parameter(r))
+            year = s.reify(template).year
+            break
+        except UnsatisfiedAssumption:
+            pass
     basic = s.to_basic(template)
     above = dates(min_year=year + 1)
     below = dates(max_year=year - 1)
-    with pytest.raises(BadData):
-        above.from_basic(basic)
-    with pytest.raises(BadData):
-        below.from_basic(basic)
-
-
-def test_can_draw_times_in_the_final_year():
-    last_year = dates(min_year=MAXYEAR)
-    r = Random(1)
-    for _ in hrange(1000):
-        last_year.reify(last_year.draw_and_produce(r))
+    with pytest.raises(UnsatisfiedAssumption):
+        above.reify(above.from_basic(basic))
+    with pytest.raises(UnsatisfiedAssumption):
+        below.reify(below.from_basic(basic))
