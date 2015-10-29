@@ -25,6 +25,7 @@ from collections import namedtuple
 import pytest
 
 import hypothesis.specifiers as s
+import hypothesis.strategies as st
 from hypothesis import find, Settings, strategy
 from hypothesis.errors import InvalidArgument
 from tests.common.basic import Bitfields
@@ -61,6 +62,21 @@ def test_int_gives_ints():
 
 def test_just_is_just():
     assert strategy(s.just(1)).example() == 1
+
+
+def test_can_extend_strategy():
+    class Foo(object):
+        pass
+
+    @strategy.extend(Foo)
+    def s(foo, settings):
+        return st.booleans()
+
+    @strategy.extend_static(Foo)
+    def t(foo, settings):
+        return st.text()
+    assert isinstance(strategy(Foo()).example(), bool)
+    assert isinstance(strategy(Foo).example(), text_type)
 
 
 def test_tuples_give_tuples():

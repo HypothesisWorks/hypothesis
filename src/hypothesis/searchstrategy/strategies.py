@@ -25,6 +25,7 @@ from hypothesis.control import assume, BuildContext
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.internal.chooser import chooser
 from hypothesis.internal.reflection import get_pretty_function_description
+from hypothesis.internal.strategymethod import strategy as _strategy
 
 Infinity = float(u'inf')
 EFFECTIVELY_INFINITE = 2 ** 32
@@ -32,12 +33,14 @@ EFFECTIVELY_INFINITE = 2 ** 32
 
 def strategy(spec, settings=None):
     from hypothesis.settings import note_deprecation
-    from hypothesis.internal.strategymethod import strategy as _strategy
     note_deprecation(
         'The strategy function is deprecated and will be removed in Hypothesis'
         ' 2.0. Please use the hypothesis.strategies module to construct your '
         'strategies', settings)
     return _strategy(spec, settings)
+
+strategy.extend = _strategy.extend
+strategy.extend_static = _strategy.extend_static
 
 
 def infinitish(x):
