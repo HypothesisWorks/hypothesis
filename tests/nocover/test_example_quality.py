@@ -497,6 +497,7 @@ def test_constant_lists_of_diverse_length():
     assert len(result) == 20
 
 
+@flaky(max_runs=5, min_passes=1)
 def test_finds_non_reversible_floats():
     t = minimal(
         lists(floats()), lambda xs:
