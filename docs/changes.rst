@@ -22,6 +22,25 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -----------------------------------------------------------------------
+`1.13.0 <https://hypothesis.readthedocs.org/en/v1.13.0/>`_ - 2015-10-29
+-----------------------------------------------------------------------
+
+This is quite a small release, but deprecates some public API functions
+and removes some internal API functionality so gets a minor version bump.
+
+* All calls to the 'strategy' function are now deprecated, even ones which
+  pass just a SearchStrategy instance (which is still a no-op).
+* Never documented hypothesis.extra entry_points mechanism has now been removed (
+  it was previously how hypothesis.extra packages were loaded and has been deprecated
+  and unused for some time)
+* Some corner cases that could previously have produced an OverflowError when simplifying
+  failing cases using hypothesis.extra.datetimes (or dates or times) have now been fixed.
+* Hypothesis load time for first import has been significantly reduced - it used to be
+  around 250ms (on my SSD laptop) and now is around 100-150ms. This almost never
+  matters but was slightly annoying when using it in the console.
+* hypothesis.strategies.randoms was previously missing from \_\_all\_\_.
+
+-----------------------------------------------------------------------
 `1.12.0 <https://hypothesis.readthedocs.org/en/v1.12.0/>`_ - 2015-10-18
 -----------------------------------------------------------------------
 
