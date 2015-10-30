@@ -43,7 +43,7 @@ This has several major advantages:
    a problem in practice).
 
 The latter is worth elaborating on: Hypothesis SearchStrategy has methods map and
-flatmap, which lets you do e.g. strategy(int).map(lambda x: Decimal(x) / 100).
+flatmap, which lets you do e.g. integers().map(lambda x: Decimal(x) / 100).
 
 This gives you a new strategy for decimals, which still supports minimization.
 The normal obstacle here is that you can't minimize the result because you'd

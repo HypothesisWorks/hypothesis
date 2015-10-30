@@ -298,7 +298,6 @@ is mostly for illustration purposes):
     import unittest
 
     from hypothesis.stateful import GenericStateMachine
-    from hypothesis import strategy
     from hypothesis.strategies import tuples, sampled_from, just, integers
 
 

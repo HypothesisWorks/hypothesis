@@ -30,9 +30,8 @@ types.
 
 .. code-block:: pycon
 
-    >>> from hypothesis import strategy
     >>> from hypothesis.strategies import streaming, integers
-    >>> x = strategy(streaming(integers())).example()
+    >>> x = streaming(integers()).example()
     >>> x
     Stream(...)
     >>> x[2]
@@ -84,7 +83,7 @@ You can also apply a function to transform a stream:
 
 .. code-block:: pycon
 
-    >>> t = strategy(streaming(int)).example()
+    >>> t = streaming(int).example()
     >>> tm = t.map(lambda n: n * 2)
     >>> tm[0]
     26
@@ -129,7 +128,7 @@ e.g.:
 
 .. code-block:: pycon
 
-  >>> strategy([int]).map(sorted).example()
+  >>> lists(integers()).map(sorted).example()
   [1, 5, 17, 21, 24, 30, 45, 82, 88, 88, 90, 96, 105]
 
 Note that many things that you might use mapping for can also be done with the
@@ -144,9 +143,9 @@ of s such that f(s) is truthy.
 
 .. code-block:: pycon
 
-  >>> strategy(int).filter(lambda x: x > 11).example()
+  >>> integers().filter(lambda x: x > 11).example()
   1873
-  >>> strategy(int).filter(lambda x: x > 11).example()
+  >>> integers().filter(lambda x: x > 11).example()
   73
 
 It's important to note that filter isn't magic and if your condition is too
@@ -154,7 +153,7 @@ hard to satisfy then this can fail:
 
 .. code-block:: pycon
 
-  >>> strategy(int).filter(lambda x: False).example()
+  >>> integers().filter(lambda x: False).example()
   Traceback (most recent call last):
     File "<stdin>", line 1, in <module>
     File "/home/david/projects/hypothesis/src/hypothesis/searchstrategy/strategies.py", line 175, in example
@@ -171,7 +170,7 @@ wanted pairs of integers (x,y) such that x < y you could do the following:
 
 .. code-block:: pycon
 
-  >>> strategy((int, int)).map(
+  >>> tuples(integers(), integers())).map(
   ... lambda x: tuple(sorted(x))).filter(lambda x: x[0] != x[1]).example()
   (42, 1281698)
 
@@ -405,7 +404,7 @@ either a class or an instance:
 
   >>> basic(Bitfields).example()
   70449389301502165026254673882738917538
-  >>> strategy(Bitfields()).example()
+  >>> basic(Bitfields()).example()
   180947746395888412520415493036267606532
 
 You can also skip the class definition if you prefer and just pass functions to
