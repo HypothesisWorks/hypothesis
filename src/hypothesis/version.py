@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 # coding=utf-8
 #
 # This file is part of Hypothesis (https://github.com/DRMacIver/hypothesis)
@@ -16,5 +14,7 @@ from __future__ import division, print_function, absolute_import
 #
 # END HEADER
 
-__version_info__ = (1, 13, 0)
+from __future__ import division, print_function, absolute_import
+
+__version_info__ = (1, 14, 0)
 __version__ = u'.'.join(map(str, __version_info__))
