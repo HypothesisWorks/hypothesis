@@ -5,6 +5,43 @@ Details and advanced features
 This is an account of slightly less common Hypothesis features that you don't need
 to get started but will nevertheless make your life easier.
 
+
+----------------------
+Additional test output
+----------------------
+
+Normally the output of a failing test will look something like:
+
+.. code::
+
+    Falsifying example: test_a_thing(x=1, y="foo")
+
+With the ``repr`` of each keyword argument being printed.
+
+Somtimes this isn't enough, either because you have values with a ``repr`` that
+isn't very descriptive or because you need to see the output of some
+intermediate steps of your test. That's where the ``note`` function comes in:
+
+.. code:: pycon
+
+    >>> from hypothesis import given, note, strategies as st
+    >>> @given(st.lists(st.integers()), st.randoms())
+    ... def test_shuffle_is_noop(ls, r):
+    ...     ls2 = list(ls)
+    ...     r.shuffle(ls2)
+    ...     note("Shuffle: %r" % (ls2))
+    ...     assert ls == ls2
+    ...
+    >>> test_shuffle_is_noop()
+    Falsifying example: test_shuffle_is_noop(ls=[0, 0, 1], r=RandomWithSeed(0))
+    Shuffle: [0, 1, 0]
+    Traceback (most recent call last):
+        ...
+    AssertionError
+
+The note is printed in the final run of the test in order to include any
+additional information you might need in your test.
+
 ------------------
 Making assumptions
 ------------------
