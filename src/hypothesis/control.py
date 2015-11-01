@@ -67,12 +67,12 @@ class BuildContext(object):
         return self
 
     def __exit__(self, exc_type, exc_value, tb):
+        self.assign_variable.__exit__(exc_type, exc_value, tb)
         if self.captured and not self.close_on_capture:
             self.close_on_del = True
         else:
             if self.close() and exc_type is None:
                 raise CleanupFailed()
-        self.assign_variable.__exit__(exc_type, exc_value, tb)
 
     def __del__(self):
         if self.close_on_del:

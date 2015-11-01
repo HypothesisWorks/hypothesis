@@ -19,13 +19,15 @@ from __future__ import division, print_function, absolute_import
 import pytest
 
 from hypothesis.errors import CleanupFailed, InvalidArgument
-from hypothesis.control import cleanup, BuildContext
+from hypothesis.control import note, cleanup, BuildContext, \
+    current_build_context, _current_build_context
 from tests.common.utils import capture_out
 
 
 def test_cannot_cleanup_with_no_context():
     with pytest.raises(InvalidArgument):
         cleanup(lambda: None)
+    assert _current_build_context.value is None
 
 
 def test_cleanup_executes_on_leaving_build_context():
@@ -34,6 +36,7 @@ def test_cleanup_executes_on_leaving_build_context():
         cleanup(lambda: data.append(1))
         assert not data
     assert data == [1]
+    assert _current_build_context.value is None
 
 
 def test_can_nest_build_context():
@@ -45,12 +48,14 @@ def test_can_nest_build_context():
             assert not data
         assert data == [2]
     assert data == [2, 1]
+    assert _current_build_context.value is None
 
 
 def test_does_not_suppress_exceptions():
     with pytest.raises(AssertionError):
         with BuildContext():
             assert False
+    assert _current_build_context.value is None
 
 
 def test_suppresses_exceptions_in_teardown():
@@ -63,6 +68,7 @@ def test_suppresses_exceptions_in_teardown():
                 assert False
 
     assert u'ValueError' in o.getvalue()
+    assert _current_build_context.value is None
 
 
 def test_runs_multiple_cleanup_with_teardown():
@@ -81,6 +87,7 @@ def test_runs_multiple_cleanup_with_teardown():
 
     assert u'ValueError' in o.getvalue()
     assert u'TypeError' in o.getvalue()
+    assert _current_build_context.value is None
 
 
 def test_raises_error_if_cleanup_fails_but_block_does_not():
@@ -89,3 +96,20 @@ def test_raises_error_if_cleanup_fails_but_block_does_not():
             def foo():
                 raise ValueError()
             cleanup(foo)
+    assert _current_build_context.value is None
+
+
+def test_raises_if_note_out_of_context():
+    with pytest.raises(InvalidArgument):
+        note('Hi')
+
+
+def test_raises_if_current_build_context_out_of_context():
+    with pytest.raises(InvalidArgument):
+        current_build_context()
+
+
+def test_does_not_leave_build_context_active_if_captured():
+    with BuildContext(close_on_capture=False) as c:
+        c.mark_captured()
+    assert _current_build_context.value is None
