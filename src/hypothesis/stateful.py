@@ -35,6 +35,7 @@ from collections import namedtuple
 from hypothesis.core import find
 from hypothesis.errors import Flaky, NoSuchExample, InvalidDefinition, \
     UnsatisfiedAssumption
+from hypothesis.control import BuildContext
 from hypothesis.settings import Settings, Verbosity
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.internal.compat import hrange, integer_types
@@ -107,8 +108,8 @@ def run_state_machine_as_test(state_machine_factory, settings=None):
         breaker = find_breaking_runner(state_machine_factory, settings)
     except NoSuchExample:
         return
-
-    breaker.run(state_machine_factory(), print_steps=True)
+    with BuildContext(is_final=True):
+        breaker.run(state_machine_factory(), print_steps=True)
     raise Flaky(
         u'Run failed initially by succeeded on a second try'
     )
