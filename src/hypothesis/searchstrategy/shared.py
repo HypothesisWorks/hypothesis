@@ -26,6 +26,12 @@ class SharedTemplate(object):
         self.base = base
         self.used = False
 
+    def __repr__(self):
+        return 'SharedStrategy(%r, used=%r)' % (self.base, self.used)
+
+    def __copy__(self):
+        return SharedStrategy(self.base)
+
     def __trackas__(self):
         return self.base
 
@@ -71,8 +77,6 @@ class SharedStrategy(SearchStrategy):
 
     def convert_simplifier(self, simplifier):
         def accept(random, template):
-            if not template.used:
-                return
             for b in simplifier(random, template.base):
                 yield SharedTemplate(b)
         accept.__name__ = simplifier.__name__

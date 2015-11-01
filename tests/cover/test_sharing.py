@@ -56,3 +56,20 @@ def test_keys_and_default_are_not_shared():
             st.shared(st.integers())),
         lambda x: x[0] != x[1]
     )
+
+
+def test_can_simplify_shared_lists():
+    xs = find(
+        st.lists(st.shared(st.integers())),
+        lambda x: len(x) >= 10 and x[0] != 0
+    )
+    assert xs == [1] * 10
+
+
+def test_simplify_shared_linked_to_size():
+    xs = find(
+        st.lists(st.shared(st.integers())),
+        lambda t: sum(t) >= 1000
+    )
+    assert sum(xs[:-1]) < 1000
+    assert (xs[0] - 1) * len(xs) < 1000
