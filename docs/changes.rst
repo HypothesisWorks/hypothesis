@@ -21,6 +21,28 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+---------------------------------------------------------------------
+Upcoming
+---------------------------------------------------------------------
+
+New features:
+
+* Add 'note' function which lets you include additional information in the
+  final test run's output.
+* Add 'choices' strategy which gives you a choice function that emulates
+  random.choice.
+* Add 'uuid' strategy that generates UUIDs'
+* Add 'shared' strategy that lets you create a strategy that just generates a
+  single shared value for each test run
+
+Bugs:
+
+* Using strategies of the form streaming(x.flatmap(f)) with find or in stateful
+  testing would have caused InvalidArgument errors when the resulting values
+  were used (because code that expected to only be called within a test context
+  would be invoked).
+
+
 -----------------------------------------------------------------------
 `1.13.0 <https://hypothesis.readthedocs.org/en/1.13.0/>`_ - 2015-10-29
 -----------------------------------------------------------------------
