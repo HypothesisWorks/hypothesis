@@ -823,6 +823,21 @@ def choices():
             key='hypothesis.strategies.chooser.choice_function'
         ),  'chooser()')
 
+
+def uuids():
+    """Returns a strategy that generates UUIDs.
+
+    All returned values from this will be unique, so e.g. if you do
+    lists(uuids()) the resulting list will never contain duplicates.
+
+    """
+    from uuid import UUID
+    return ReprWrapperStrategy(
+        shared(randoms(), key='hypothesis.strategies.uuids.generator').map(
+            lambda r: UUID(int=r.getrandbits(128))
+        ), 'uuids()')
+
+
 # Private API below here
 
 
