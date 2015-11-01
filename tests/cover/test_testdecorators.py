@@ -27,7 +27,7 @@ from collections import namedtuple
 
 import hypothesis.reporting as reporting
 from flaky import flaky
-from hypothesis import given, assume, Settings, Verbosity
+from hypothesis import note, given, assume, Settings, Verbosity
 from hypothesis.errors import Flaky, Unsatisfiable, InvalidArgument
 from tests.common.utils import fails, raises, fails_with, capture_out
 from hypothesis.internal import debug
@@ -607,3 +607,27 @@ def test_can_be_used_with_none_module():
     test_is_cool.__module__ = None
     test_is_cool = given(integers())(test_is_cool)
     test_is_cool()
+
+
+def test_does_not_print_notes_if_all_succeed():
+    @given(integers())
+    def test(i):
+        note('Hi there')
+    with capture_out() as out:
+        with reporting.with_reporter(reporting.default):
+            test()
+        assert not out.getvalue()
+
+
+def test_prints_notes_once_on_failure():
+    @given(lists(integers()), settings=Settings(database=None))
+    def test(xs):
+        note('Hi there')
+        assert sum(xs) > 100
+    with capture_out() as out:
+        with reporting.with_reporter(reporting.default):
+            with raises(AssertionError):
+                test()
+        lines = out.getvalue().strip().splitlines()
+        assert len(lines) == 2
+        assert 'Hi there' in lines

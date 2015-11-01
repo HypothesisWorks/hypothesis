@@ -26,7 +26,7 @@ failing examples it finds.
 from hypothesis.searchstrategy.strategies import strategy
 from hypothesis.settings import Settings, Verbosity
 from hypothesis.version import __version_info__, __version__
-from hypothesis.control import assume
+from hypothesis.control import assume, note
 from hypothesis.core import given, find, example
 
 __all__ = [
@@ -37,6 +37,7 @@ __all__ = [
     'strategy',
     'find',
     'example',
+    'note',
     '__version__',
     '__version_info__',
 ]

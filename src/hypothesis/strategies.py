@@ -765,7 +765,73 @@ def composite(f):
     return accept
 
 
+def shared(base, key=None):
+    """Returns a strategy that draws a single shared value per run, drawn from
+    base. Any two shared instances with the samme key will share the same
+    value, otherwise the identity of this strategy will be used. That is:
+
+    >>> x = shared(s)
+    >>> y = shared(s)
+
+    In the above x and y may draw different (or potentially the same) values.
+    In the following they will always draw the same:
+
+    >>> x = shared(s, key="hi")
+    >>> y = shared(s, key="hi")
+    """
+    from hypothesis.searchstrategy.shared import SharedStrategy
+    return SharedStrategy(base, key)
+
+
+def choices():
+    """Strategy that generates a function that behaves like random.choice.
+
+    Will note choices made for reproducibility.
+
+    """
+    from hypothesis.control import note
+
+    def build_chooser(stream):
+        index = [-1]
+        choice_count = [0]
+
+        def choice(values):
+            if not values:
+                raise IndexError('Cannot choose from empty sequence')
+            k = len(values) - 1
+            if k == 0:
+                chosen = 0
+            else:
+                mask = _right_saturate(k)
+                while True:
+                    index[0] += 1
+                    probe = stream[index[0]] & mask
+                    if probe <= k:
+                        chosen = probe
+                        break
+            choice_count[0] += 1
+            result = values[chosen]
+            note('Choice #%d: %r' % (choice_count[0], result))
+            return result
+        return choice
+    return ReprWrapperStrategy(
+        shared(
+            builds(build_chooser, streaming(integers(min_value=0))),
+            key='hypothesis.strategies.chooser.choice_function'
+        ),  'chooser()')
+
 # Private API below here
+
+
+def _right_saturate(x):
+    x |= (x >> 1)
+    x |= (x >> 2)
+    x |= (x >> 4)
+    x |= (x >> 8)
+    x |= (x >> 16)
+    x |= (x >> 32)
+    return x
+
 
 def check_type(typ, arg):
     if not isinstance(arg, typ):

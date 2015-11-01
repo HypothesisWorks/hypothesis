@@ -29,7 +29,7 @@ def flatten(o):
 
     while stack:
         t = stack.pop()
-        if (not isinstance(t, type)) and hasattr(t, u'__trackas__'):
+        while (not isinstance(t, type)) and hasattr(t, u'__trackas__'):
             t = t.__trackas__()
         if isinstance(t, type):
             t = (u'type', getattr(t, u'__qualname__', t.__name__))

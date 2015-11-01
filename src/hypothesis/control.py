@@ -21,6 +21,7 @@ import traceback
 from hypothesis.errors import CleanupFailed, InvalidArgument, \
     UnsatisfiedAssumption
 from hypothesis.reporting import report
+from hypothesis.internal.compat import text_type
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
 
@@ -40,10 +41,20 @@ def assume(condition):
 _current_build_context = DynamicVariable(None)
 
 
+def current_build_context():
+    context = _current_build_context.value
+    if context is None:
+        raise InvalidArgument(
+            u'No build context registered')
+    return context
+
+
 class BuildContext(object):
 
-    def __init__(self):
+    def __init__(self, is_final=False):
         self.tasks = []
+        self.is_final = is_final
+        self.extras = {}
 
     def __enter__(self):
         self.assign_variable = _current_build_context.with_value(self)
@@ -78,3 +89,19 @@ def cleanup(teardown):
         raise InvalidArgument(
             u'Cannot register cleanup outside of build context')
     context.tasks.append(teardown)
+
+
+def note(value):
+    """Report this value in the final execution.
+
+    Will always call string conversion function of the value even if not
+    printing for consistency of execution
+
+    """
+    value = text_type(value)
+    context = _current_build_context.value
+    if context is None:
+        raise InvalidArgument(
+            u'Cannot make notes outside of build context')
+    if context.is_final:
+        report(value)

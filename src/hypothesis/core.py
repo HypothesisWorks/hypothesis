@@ -346,9 +346,10 @@ def example(*args, **kwargs):
 def reify_and_execute(
     search_strategy, template, test,
     print_example=False, always_print=False, record_repr=None,
+    is_final=False,
 ):
     def run():
-        with BuildContext():
+        with BuildContext(is_final=is_final):
             args, kwargs = search_strategy.reify(template)
             text_version = arg_string(test, args, kwargs)
             if print_example:
@@ -579,7 +580,7 @@ def given(*generator_arguments, **generator_kwargs):
             with settings:
                 test_runner(reify_and_execute(
                     search_strategy, falsifying_template, test,
-                    print_example=True
+                    print_example=True, is_final=True
                 ))
 
                 report(
@@ -590,7 +591,7 @@ def given(*generator_arguments, **generator_kwargs):
                 test_runner(reify_and_execute(
                     search_strategy, falsifying_template,
                     test_is_flaky(test, repr_for_last_exception[0]),
-                    print_example=True
+                    print_example=True, is_final=True
                 ))
         for attr in dir(test):
             if attr[0] != '_' and not hasattr(wrapped_test, attr):
@@ -652,7 +653,7 @@ def find(specifier, condition, settings=None, random=None, storage=None):
             tracker=tracker, max_parameter_tries=2,
             storage=storage,
         )
-        with BuildContext():
+        with BuildContext(is_final=True):
             return search.reify(template)
     except Timeout:
         raise
