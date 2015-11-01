@@ -821,7 +821,7 @@ def choices():
         shared(
             builds(build_chooser, streaming(integers(min_value=0))),
             key='hypothesis.strategies.chooser.choice_function'
-        ),  'chooser()')
+        ), 'chooser()')
 
 
 def uuids():
