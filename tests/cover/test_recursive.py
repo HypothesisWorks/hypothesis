@@ -128,7 +128,7 @@ def test_can_form_sets_of_recursive_data():
 
 
 @flaky(max_runs=5, min_passes=1)
-@given(st.randoms(), settings=Settings(max_examples=10))
+@given(st.randoms(), settings=Settings(max_examples=10, database=None))
 def test_can_simplify_hard_recursive_data_into_boolean_alternative(rnd):
     """This test forces us to exercise the simplification through redrawing
     functionality, thus testing that we can deal with bad templates."""
