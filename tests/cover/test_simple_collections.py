@@ -21,9 +21,11 @@ from collections import namedtuple
 
 import pytest
 
+from flaky import flaky
 from hypothesis import find, given, Settings
 from hypothesis.strategies import sets, text, lists, builds, tuples, \
     booleans, integers, frozensets, dictionaries, fixed_dictionaries
+from hypothesis.internal.debug import minimal
 from hypothesis.internal.compat import OrderedDict
 
 
@@ -250,8 +252,9 @@ def test_cloning_is_a_no_op_on_short_lists():
     assert list(s.simplify_with_example_cloning(Random(), (False,))) == []
 
 
+@flaky(max_runs=5, min_passes=1)
 def test_can_find_unique_lists_of_non_set_order():
-    ls = find(
+    ls = minimal(
         lists(text(), unique=True),
         lambda x: list(set(reversed(x))) != x
     )
