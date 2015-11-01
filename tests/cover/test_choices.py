@@ -17,7 +17,7 @@
 from __future__ import division, print_function, absolute_import
 
 import hypothesis.strategies as st
-from hypothesis import given, Settings
+from hypothesis import find, given, Settings
 from tests.common.utils import raises, capture_out
 from hypothesis.database import ExampleDatabase
 from hypothesis.internal.compat import hrange
@@ -40,7 +40,7 @@ def test_choice_is_shared(choice1, choice2):
 
 def test_stability():
     @given(
-        st.lists(st.text(), unique=True, min_size=20),
+        st.lists(st.text(max_size=1), unique=True, min_size=5),
         st.choices(),
         settings=Settings(database=ExampleDatabase())
     )
@@ -59,3 +59,15 @@ def test_stability():
     out2 = o.getvalue()
     assert out1 == out2
     assert 'Choice #100:' in out1
+
+
+def test_can_use_a_choice_function_after_find():
+    c = find(st.choices(), lambda c: True)
+    ls = [1, 2, 3]
+    assert c(ls) in ls
+
+
+def test_choice_raises_index_error_on_empty():
+    c = find(st.choices(), lambda c: True)
+    with raises(IndexError):
+        c([])

@@ -24,13 +24,40 @@ import pytest
 
 from hypothesis import assume, Settings
 from hypothesis.errors import Flaky, BadData, InvalidDefinition
-from tests.common.utils import capture_out
+from tests.common.utils import raises, capture_out
 from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import rule, Bundle, StateMachineRunner, \
     GenericStateMachine, RuleBasedStateMachine, \
     run_state_machine_as_test, StateMachineSearchStrategy
-from hypothesis.strategies import just, none, lists, tuples, booleans, \
-    integers, sampled_from
+from hypothesis.strategies import just, none, lists, tuples, choices, \
+    booleans, integers, sampled_from
+
+
+class ChoosingStateMachine(GenericStateMachine):
+
+    def __init__(self):
+        super(ChoosingStateMachine, self).__init__()
+        self.pool = []
+
+    def steps(self):
+        result = tuples(just('extend'), lists(integers()))
+        if self.pool:
+            result |= tuples(just('choose'), choices())
+        return result
+
+    def execute_step(self, step):
+        return getattr(self, step[0])(step[1])
+
+    def extend(self, data):
+        self.pool.extend(data)
+
+    def choose(self, choice):
+        assert choice(self.pool) < 100
+
+
+def test_can_choose_within_stateful():
+    with raises(AssertionError):
+        run_state_machine_as_test(ChoosingStateMachine)
 
 
 class SetStateMachine(GenericStateMachine):
@@ -182,7 +209,7 @@ def test_can_serialize_statemachine_execution(machine):
     runner = machine.find_breaking_runner()
     strategy = StateMachineSearchStrategy()
     new_runner = strategy.from_basic(strategy.to_basic(runner))
-    with pytest.raises(AssertionError):
+    with raises(AssertionError):
         new_runner.run(machine())
     r = Random(1)
 
@@ -213,10 +240,10 @@ def test_rejects_invalid_step_sizes_in_data():
     basic = strategy.to_basic(runner)
     assert isinstance(basic[2], int)
     basic[2] = -1
-    with pytest.raises(BadData):
+    with raises(BadData):
         strategy.from_basic(basic)
     basic[2] = 1000000
-    with pytest.raises(BadData):
+    with raises(BadData):
         strategy.from_basic(basic)
 
 
@@ -267,7 +294,7 @@ def test_bad_machines_fail(machine):
     test_class = machine.TestCase
     try:
         with capture_out() as o:
-            with pytest.raises(AssertionError):
+            with raises(AssertionError):
                 test_class().runTest()
     except Exception:
         print(o.getvalue())
@@ -303,7 +330,7 @@ class FlakyStateMachine(RuleBasedStateMachine):
 
 
 def test_flaky_raises_flaky():
-    with pytest.raises(Flaky):
+    with raises(Flaky):
         FlakyStateMachine.TestCase().runTest()
 
 
@@ -311,7 +338,7 @@ def test_empty_machine_is_invalid():
     class EmptyMachine(RuleBasedStateMachine):
         pass
 
-    with pytest.raises(InvalidDefinition):
+    with raises(InvalidDefinition):
         EmptyMachine.TestCase().runTest()
 
 
@@ -322,7 +349,7 @@ def test_machine_with_no_terminals_is_invalid():
         def bye(self, hi):
             pass
 
-    with pytest.raises(InvalidDefinition):
+    with raises(InvalidDefinition):
         NonTerminalMachine.TestCase().runTest()
 
 
@@ -408,7 +435,7 @@ def test_minimizes_errors_in_teardown():
     runner = Foo.find_breaking_runner()
     assert runner.n_steps == 1
 
-    with pytest.raises(AssertionError):
+    with raises(AssertionError):
         runner.run(Foo(), print_steps=True)
 
 
@@ -439,7 +466,7 @@ class RequiresInit(GenericStateMachine):
 
 
 def test_can_use_factory_for_tests():
-    with pytest.raises(ValueError):
+    with raises(ValueError):
         run_state_machine_as_test(lambda: RequiresInit(42))
 
 
@@ -477,14 +504,14 @@ def test_can_explicitly_pass_settings():
 
 def test_saves_failing_example_in_database():
     db = ExampleDatabase()
-    with pytest.raises(AssertionError):
+    with raises(AssertionError):
         run_state_machine_as_test(
             SetStateMachine, Settings(database=db))
     assert len(list(db.backend.keys())) == 1
 
 
 def test_can_run_with_no_db():
-    with pytest.raises(AssertionError):
+    with raises(AssertionError):
         run_state_machine_as_test(
             SetStateMachine, Settings(database=None))
 

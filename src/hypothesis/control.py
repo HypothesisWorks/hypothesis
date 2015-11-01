@@ -51,10 +51,15 @@ def current_build_context():
 
 class BuildContext(object):
 
-    def __init__(self, is_final=False):
+    def __init__(self, is_final=False, close_on_capture=True):
         self.tasks = []
         self.is_final = is_final
-        self.extras = {}
+        self.close_on_capture = close_on_capture
+        self.captured = False
+        self.close_on_del = False
+
+    def mark_captured(self):
+        self.captured = True
 
     def __enter__(self):
         self.assign_variable = _current_build_context.with_value(self)
@@ -62,6 +67,21 @@ class BuildContext(object):
         return self
 
     def __exit__(self, exc_type, exc_value, tb):
+        if self.captured and not self.close_on_capture:
+            self.close_on_del = True
+        else:
+            if self.close() and exc_type is None:
+                raise CleanupFailed()
+        self.assign_variable.__exit__(exc_type, exc_value, tb)
+
+    def __del__(self):
+        if self.close_on_del:
+            self.close()
+
+    def local(self):
+        return _current_build_context.with_value(self)
+
+    def close(self):
         any_failed = False
         for task in self.tasks:
             try:
@@ -69,9 +89,7 @@ class BuildContext(object):
             except:
                 any_failed = True
                 report(traceback.format_exc())
-        self.assign_variable.__exit__(exc_type, exc_value, tb)
-        if exc_type is None and any_failed:
-            raise CleanupFailed()
+        return any_failed
 
 
 def cleanup(teardown):

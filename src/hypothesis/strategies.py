@@ -789,11 +789,13 @@ def choices():
     Will note choices made for reproducibility.
 
     """
-    from hypothesis.control import note
+    from hypothesis.control import note, current_build_context
 
     def build_chooser(stream):
         index = [-1]
         choice_count = [0]
+        context = current_build_context()
+        context.mark_captured()
 
         def choice(values):
             if not values:
@@ -811,7 +813,8 @@ def choices():
                         break
             choice_count[0] += 1
             result = values[chosen]
-            note('Choice #%d: %r' % (choice_count[0], result))
+            with context.local():
+                note('Choice #%d: %r' % (choice_count[0], result))
             return result
         return choice
     return ReprWrapperStrategy(

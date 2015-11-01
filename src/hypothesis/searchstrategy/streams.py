@@ -20,6 +20,7 @@ from copy import deepcopy
 from random import Random
 
 from hypothesis.types import Stream
+from hypothesis.control import current_build_context
 from hypothesis.utils.show import show
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.searchstrategy.strategies import check_length, \
@@ -177,7 +178,13 @@ class StreamStrategy(SearchStrategy):
                     (i, deepcopy(simpler)) for i in indices])
 
     def reify(self, template):
-        return template.stream.map(self.source_strategy.reify)
+        context = current_build_context()
+        context.mark_captured()
+
+        def do_reify(t):
+            with context.local():
+                return self.source_strategy.reify(t)
+        return template.stream.map(do_reify)
 
     def to_basic(self, template):
         assert isinstance(template.parameter_seed, integer_types)

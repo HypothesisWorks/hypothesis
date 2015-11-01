@@ -24,6 +24,7 @@ import pytest
 
 from hypothesis import find, given
 from hypothesis.errors import InvalidArgument
+from hypothesis.control import BuildContext
 from hypothesis.strategies import text, lists, floats, booleans, \
     integers, streaming
 from hypothesis.utils.show import show
@@ -149,7 +150,8 @@ def test_check_serialization_preserves_changed_marker():
         floats(min_value=0.0, max_value=2.2250738585072014e-308))
     template = strat.draw_template(
         Random(0), strat.draw_parameter(Random(0)))
-    strat.reify(template)[0]
+    with BuildContext():
+        strat.reify(template)[0]
     simpler = next(strat.full_simplify(
         Random(0), template
     ))
