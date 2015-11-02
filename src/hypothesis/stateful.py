@@ -498,7 +498,7 @@ class StateMachineSearchStrategy(SearchStrategy):
 
 Rule = namedtuple(
     u'Rule',
-    (u'targets', u'function', u'arguments')
+    (u'targets', u'function', u'arguments', u'precondition')
 
 )
 
@@ -508,7 +508,7 @@ Bundle = namedtuple(u'Bundle', (u'name',))
 RULE_MARKER = u'hypothesis_stateful_rule'
 
 
-def rule(targets=(), target=None, **kwargs):
+def rule(targets=(), target=None, precondition=None, **kwargs):
     """Decorator for RuleBasedStateMachine. Any name present in target or
     targets will define where the end result of this function should go. If
     both are empty then the end result will be discarded.
@@ -535,7 +535,8 @@ def rule(targets=(), target=None, **kwargs):
             setattr(f, RULE_MARKER, [])
         getattr(f, RULE_MARKER).append(
             Rule(
-                targets=tuple(converted_targets), arguments=kwargs, function=f
+                targets=tuple(converted_targets), arguments=kwargs, function=f,
+                precondition=precondition
             )
         )
         return f
@@ -605,13 +606,13 @@ class RuleBasedStateMachine(GenericStateMachine):
         for k, v in inspect.getmembers(cls):
             for r in getattr(v, RULE_MARKER, ()):
                 cls.define_rule(
-                    r.targets, r.function, r.arguments
+                    r.targets, r.function, r.arguments, r.precondition
                 )
         cls._rules_per_class[cls] = cls._base_rules_per_class.pop(cls, [])
         return cls._rules_per_class[cls]
 
     @classmethod
-    def define_rule(cls, targets, function, arguments):
+    def define_rule(cls, targets, function, arguments, precondition):
         converted_arguments = {}
         for k, v in arguments.items():
             if not isinstance(v, Bundle):
@@ -623,7 +624,7 @@ class RuleBasedStateMachine(GenericStateMachine):
             target = cls._base_rules_per_class.setdefault(cls, [])
 
         return target.append(
-            Rule(targets, function, converted_arguments)
+            Rule(targets, function, converted_arguments, precondition)
         )
 
     def steps(self):
@@ -631,6 +632,8 @@ class RuleBasedStateMachine(GenericStateMachine):
         for rule in self.rules():
             converted_arguments = {}
             valid = True
+            if rule.precondition is not None and not rule.precondition(self):
+                continue
             for k, v in rule.arguments.items():
                 if isinstance(v, Bundle):
                     bundle = self.bundle(v.name)
