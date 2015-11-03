@@ -26,6 +26,7 @@ execution to date.
 
 from __future__ import division, print_function, absolute_import
 
+import copy
 import inspect
 import traceback
 from random import Random
@@ -141,7 +142,7 @@ class GenericStateMachine(object):
 
     def execute_step(self, step):
         """Execute a step that has been previously drawn from self.steps()"""
-        raise NotImplementedError(u'%r.execute_steps()' % (self,))
+        raise NotImplementedError(u'%r.execute_step()' % (self,))
 
     def print_step(self, step):
         """Print a step to the current reporter.
@@ -531,19 +532,30 @@ def rule(targets=(), target=None, precondition=None, **kwargs):
         converted_targets.append(t)
 
     def accept(f):
-        if not hasattr(f, RULE_MARKER):
-            setattr(f, RULE_MARKER, [])
-        getattr(f, RULE_MARKER).append(
-            Rule(
-                targets=tuple(converted_targets), arguments=kwargs, function=f,
-                precondition=precondition
-            )
-        )
-        return f
+        rule = Rule(targets=tuple(converted_targets), arguments=kwargs,
+                    function=f, precondition=None)
+        def rule_wrapper(*args, **kwargs):
+            return f(*args, **kwargs)
+        # TODO: copy function metadata onto new function
+        setattr(rule_wrapper, RULE_MARKER, rule)
+        return rule_wrapper
     return accept
 
 
 VarReference = namedtuple(u'VarReference', (u'name',))
+
+
+def precondition(precond):
+    def decorator(f):
+        rule = getattr(f, RULE_MARKER, None)
+        if rule is None:
+            raise Exception("Can only use the `precondition` decorator on functions that are already decorated with `rule`")
+        new_rule = Rule(targets=rule.targets, arguments=rule.arguments, function=rule.function, precondition=precond)
+        def precondition_wrapper(*args, **kwargs):
+            return f(*args, **kwargs)
+        setattr(precondition_wrapper, RULE_MARKER, new_rule)
+        return precondition_wrapper
+    return decorator
 
 
 class SimpleSampledFromStrategy(SampledFromStrategy):
@@ -604,7 +616,8 @@ class RuleBasedStateMachine(GenericStateMachine):
             pass
 
         for k, v in inspect.getmembers(cls):
-            for r in getattr(v, RULE_MARKER, ()):
+            r = getattr(v, RULE_MARKER, None)
+            if r is not None:
                 cls.define_rule(
                     r.targets, r.function, r.arguments, r.precondition
                 )
@@ -612,7 +625,7 @@ class RuleBasedStateMachine(GenericStateMachine):
         return cls._rules_per_class[cls]
 
     @classmethod
-    def define_rule(cls, targets, function, arguments, precondition):
+    def define_rule(cls, targets, function, arguments, precondition=None):
         converted_arguments = {}
         for k, v in arguments.items():
             if not isinstance(v, Bundle):
