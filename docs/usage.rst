@@ -20,6 +20,7 @@ then it should be available on pypi.
 * `fusion-index <https://github.com/fusionapp/fusion-index>`_
 * `hyper-h2 <https://github.com/python-hyper/hyper-h2>`_
 * `mariadb-dyncol <https://github.com/adamchainz/mariadb-dyncol>`_
+* `mercurial <https://www.mercurial-scm.org/>`_
 * `natsort <https://github.com/SethMMorton/natsort>`_
 * `pretext <https://github.com/moreati/b-prefix-all-the-doctests>`_
 * `pyrsistent <https://github.com/tobgu/pyrsistent>`_
