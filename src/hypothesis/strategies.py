@@ -674,8 +674,10 @@ def builds(target, *args, **kwargs):
 @defines_strategy
 def recursive(base, extend, max_leaves=100):
     """
-    base: A strategy to start from
-    extend: A function which takes a strategy and returns a new strategy
+    base: A strategy to start from.
+
+    extend: A function which takes a strategy and returns a new strategy.
+
     max_leaves: The maximum number of elements to be drawn from base on a given
     run.
 
