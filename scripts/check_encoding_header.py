@@ -16,25 +16,21 @@
 
 from __future__ import division, print_function, absolute_import
 
-pytest_plugins = str('pytester')
 
+VALID_STARTS = (
+    "# coding=utf-8",
+    "#!/usr/bin/env python",
+)
 
-TESTSUITE = """
-from hypothesis import given
-from hypothesis.strategies import integers
-
-@given(integers())
-def test_foo(x):
-    pass
-
-def test_bar():
-    pass
-"""
-
-
-def test_can_select_mark(testdir):
-    script = testdir.makepyfile(TESTSUITE)
-    result = testdir.runpytest(script, '--verbose', '--strict', '-m',
-                               'hypothesis')
-    out = '\n'.join(result.stdout.lines)
-    assert '1 passed, 1 deselected' in out
+if __name__ == '__main__':
+    import sys
+    n = max(map(len, VALID_STARTS))
+    bad = False
+    for f in sys.argv[1:]:
+        with open(f, "r", encoding="utf-8") as i:
+            start = i.read(n)
+            if not any(start.startswith(s) for s in VALID_STARTS):
+                print(
+                    "%s has incorrect start %r" % (f, start), file=sys.stderr)
+                bad = True
+    sys.exit(int(bad))

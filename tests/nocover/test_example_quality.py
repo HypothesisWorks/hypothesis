@@ -493,7 +493,6 @@ def test_constant_lists_of_diverse_length():
         lambda x: len(set(map(len, x))) >= 20,
         timeout_after=30,
     )
-
     assert len(result) == 20
 
 

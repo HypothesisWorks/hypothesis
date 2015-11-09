@@ -73,6 +73,7 @@ lint: $(FLAKE8)
 	$(FLAKE8) src tests --exclude=compat.py,test_reflection.py,test_imports.py,tests/py2 --ignore=E731,E721
 
 check-format: format
+	find src tests -name "*.py" | xargs $(TOOL_PYTHON) scripts/check_encoding_header.py
 	git diff --exit-code
 
 check-py26: $(PY26) $(TOX)
