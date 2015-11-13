@@ -27,8 +27,8 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.control import BuildContext
 from hypothesis.strategies import text, lists, floats, booleans, \
     integers, streaming
-from hypothesis.internal.debug import minimal, some_template
-from hypothesis.searchstrategy.streams import Stream, StreamTemplate
+from hypothesis.internal.debug import minimal
+from hypothesis.searchstrategy.streams import Stream
 
 
 @given(lists(booleans()))
@@ -110,28 +110,6 @@ def test_can_minimize():
 
 def test_default_stream_is_empty():
     assert list(Stream()) == []
-
-
-def test_template_equality():
-    t = some_template(streaming(booleans()))
-    t2 = StreamTemplate(t.seed, t.parameter_seed, Stream(t.stream))
-
-    while True:
-        t3 = some_template(streaming(booleans()))
-        if t3.seed != t.seed:
-            break
-    assert t == t2
-    assert t != t3
-    assert t != 1
-
-    v = t.stream[11]
-    t4 = t2.with_value(11, not v)
-    assert t4 != t
-
-    t5 = StreamTemplate(t.seed, t.parameter_seed + 1, Stream(t.stream))
-    assert t2 != t5
-
-    assert len(set((t, t2, t3, t4, t5))) == 4
 
 
 def test_streams_copy_as_self():

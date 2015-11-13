@@ -17,7 +17,6 @@
 from __future__ import division, print_function, absolute_import
 
 import math
-import struct
 from decimal import Decimal
 
 from hypothesis.errors import InvalidArgument
@@ -25,6 +24,8 @@ from hypothesis.control import assume
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import ArgSpec, text_type, getargspec, \
     integer_types, float_to_decimal
+from hypothesis.internal.floats import is_negative, float_to_int, \
+    int_to_float, count_between_floats
 from hypothesis.internal.reflection import proxies
 from hypothesis.searchstrategy.reprwrapper import ReprWrapperStrategy
 
@@ -70,9 +71,7 @@ def convert_value(v):
 
 
 def cacheable(fn):
-    import weakref
-
-    cache = weakref.WeakValueDictionary()
+    cache = {}
 
     @proxies(fn)
     def cached_strategy(*args, **kwargs):
@@ -155,12 +154,11 @@ def integers(min_value=None, max_value=None):
     check_valid_interval(min_value, max_value, 'min_value', 'max_value')
 
     from hypothesis.searchstrategy.numbers import IntegersFromStrategy, \
-        BoundedIntStrategy, RandomGeometricIntStrategy, WideRangeIntStrategy
+        BoundedIntStrategy, WideRangeIntStrategy
 
     if min_value is None:
         if max_value is None:
             return (
-                RandomGeometricIntStrategy() |
                 WideRangeIntStrategy()
             )
         else:
@@ -171,7 +169,20 @@ def integers(min_value=None, max_value=None):
         else:
             if min_value == max_value:
                 return just(min_value)
-            return BoundedIntStrategy(min_value, max_value)
+            elif min_value > max_value:
+                raise InvalidArgument(
+                    u'Cannot have max_value=%r < min_value=%r' % (
+                        max_value, min_value
+                    ))
+            elif min_value >= 0:
+                return BoundedIntStrategy(min_value, max_value)
+            elif max_value <= 0:
+                return BoundedIntStrategy(-max_value, -min_value).map(
+                    lambda t: -t
+                )
+            else:
+                return integers(min_value=0, max_value=max_value) | \
+                    integers(min_value=min_value, max_value=0)
 
 
 @cacheable
@@ -180,34 +191,6 @@ def booleans():
     """Returns a strategy which generates instances of bool."""
     from hypothesis.searchstrategy.misc import BoolStrategy
     return BoolStrategy()
-
-
-def is_negative(x):
-    return math.copysign(1, x) < 0
-
-
-def count_between_floats(x, y):
-    assert x <= y
-    if is_negative(x):
-        if is_negative(y):
-            return float_to_int(x) - float_to_int(y) + 1
-        else:
-            return count_between_floats(x, -0.0) + count_between_floats(0.0, y)
-    else:
-        assert not is_negative(y)
-        return float_to_int(y) - float_to_int(x) + 1
-
-
-def float_to_int(value):
-    return (
-        struct.unpack(b'!Q', struct.pack(b'!d', value))[0]
-    )
-
-
-def int_to_float(value):
-    return (
-        struct.unpack(b'!d', struct.pack(b'!Q', value))[0]
-    )
 
 
 @cacheable
@@ -260,19 +243,17 @@ def floats(
                     allow_infinity
                 ))
 
-    from hypothesis.searchstrategy.numbers import WrapperFloatStrategy, \
-        GaussianFloatStrategy, BoundedFloatStrategy, ExponentialFloatStrategy,\
-        JustIntFloats, NastyFloats, FullRangeFloats, \
+    from hypothesis.searchstrategy.numbers import FloatStrategy, \
         FixedBoundedFloatStrategy
+    base_floats = FloatStrategy(
+        allow_infinity=allow_infinity, allow_nan=allow_nan,
+    )
     if min_value is None and max_value is None:
-        return WrapperFloatStrategy(
-            GaussianFloatStrategy() |
-            BoundedFloatStrategy() |
-            ExponentialFloatStrategy() |
-            JustIntFloats() |
-            NastyFloats(allow_nan, allow_infinity) |
-            FullRangeFloats(allow_nan, allow_infinity)
+        return FloatStrategy(
+            allow_infinity=allow_infinity, allow_nan=allow_nan,
         )
+    if min_value is None and max_value is None:
+        return base_floats
     elif min_value is not None and max_value is not None:
         if min_value == max_value:
             return just(min_value)
@@ -282,16 +263,9 @@ def floats(
                 min_value=min_value, max_value=0
             )
         elif count_between_floats(min_value, max_value) > 1000:
-            critical_values = [
-                min_value, max_value, min_value + (max_value - min_value) / 2]
-            if min_value <= 0 <= max_value:
-                if not is_negative(max_value):
-                    critical_values.append(0.0)
-                if is_negative(min_value):
-                    critical_values.append(-0.0)
             return FixedBoundedFloatStrategy(
                 lower_bound=min_value, upper_bound=max_value
-            ) | sampled_from(critical_values)
+            )
         elif is_negative(max_value):
             assert is_negative(min_value)
             ub_int = float_to_int(max_value)
@@ -312,32 +286,18 @@ def floats(
                 int_to_float
             )
     elif min_value is not None:
-        critical_values = [min_value]
-        if allow_infinity:
-            critical_values.append(float(u'inf'))
-        if is_negative(min_value):
-            critical_values.append(-0.0)
-        if min_value <= 0:
-            critical_values.append(0.0)
         return (
             floats(allow_infinity=allow_infinity, allow_nan=False).map(
                 lambda x: assume(not math.isnan(x)) and min_value + abs(x)
             )
-        ) | sampled_from(critical_values)
+        )
     else:
         assert max_value is not None
-        critical_values = [max_value]
-        if allow_infinity:
-            critical_values.append(float(u'-inf'))
-        if max_value >= 0:
-            critical_values.append(-0.0)
-            if not is_negative(max_value):
-                critical_values.append(0.0)
         return (
             floats(allow_infinity=allow_infinity, allow_nan=False).map(
                 lambda x: assume(not math.isnan(x)) and max_value - abs(x)
             )
-        ) | sampled_from(critical_values)
+        )
 
 
 @cacheable
@@ -413,6 +373,14 @@ def lists(
     condition that for i != j, unique_by(result[i]) != unique_by(result[j]).
 
     """
+    if elements is None or (max_size is not None and max_size <= 0):
+        if max_size is None or max_size > 0:
+            raise InvalidArgument(
+                u'Cannot create non-empty lists without an element type'
+            )
+        else:
+            return builds(list)
+
     if unique:
         if unique_by is not None:
             raise InvalidArgument((
@@ -427,15 +395,8 @@ def lists(
         if max_size == 0:
             return builds(list)
         check_strategy(elements)
-        if min_size is not None and elements.template_upper_bound < min_size:
-            raise InvalidArgument((
-                'Cannot generate unique lists of size %d from %r, which '
-                'contains no more than %d distinct values') % (
-                    min_size, elements, elements.template_upper_bound,
-            ))
         min_size = min_size or 0
         max_size = max_size or float(u'inf')
-        max_size = min(max_size, elements.template_upper_bound)
         if average_size is None:
             if max_size < float(u'inf'):
                 if max_size <= 5:
@@ -458,8 +419,7 @@ def lists(
         return result
 
     check_valid_sizes(min_size, average_size, max_size)
-    from hypothesis.searchstrategy.collections import ListStrategy, \
-        SingleElementListStrategy
+    from hypothesis.searchstrategy.collections import ListStrategy
     if min_size is None:
         min_size = 0
     if average_size is None:
@@ -468,27 +428,11 @@ def lists(
         else:
             average_size = (min_size + max_size) * 0.5
 
-    if elements is None or (max_size is not None and max_size <= 0):
-        if max_size is None or max_size > 0:
-            raise InvalidArgument(
-                'Cannot create non-empty lists without an element type'
-            )
-        else:
-            return ListStrategy(())
-    else:
-        check_strategy(elements)
-        if elements.template_upper_bound == 1:
-            from hypothesis.searchstrategy.numbers import IntegersFromStrategy
-            if max_size is None:
-                length_strat = IntegersFromStrategy(
-                    min_size, average_size=average_size - min_size)
-            else:
-                length_strat = integers(min_size, max_size)
-            return SingleElementListStrategy(elements, length_strat)
-        return ListStrategy(
-            (elements,), average_length=average_size,
-            min_size=min_size, max_size=max_size,
-        )
+    check_strategy(elements)
+    return ListStrategy(
+        (elements,), average_length=average_size,
+        min_size=min_size, max_size=max_size,
+    )
 
 
 @cacheable
@@ -554,18 +498,6 @@ def dictionaries(
     check_strategy(keys)
     check_strategy(values)
 
-    if min_size is not None and min_size > keys.template_upper_bound:
-        raise InvalidArgument((
-            'Cannot generate dictionaries of size %d with keys from %r, '
-            'which contains no more than %d distinct values') % (
-                min_size, keys, keys.template_upper_bound,
-        ))
-
-    if max_size is None:
-        max_size = keys.template_upper_bound
-    else:
-        max_size = min(max_size, keys.template_upper_bound)
-
     return lists(
         tuples(keys, values),
         min_size=min_size, average_size=average_size, max_size=max_size,
@@ -630,10 +562,9 @@ def text(
     min_size, max_size and average_size have the usual interpretations.
 
     """
-    from hypothesis.searchstrategy.strings import OneCharStringStrategy, \
-        StringStrategy
+    from hypothesis.searchstrategy.strings import StringStrategy
     if alphabet is None:
-        char_strategy = OneCharStringStrategy(blacklist_categories=['Cs'])
+        char_strategy = characters(blacklist_categories=('Cs',))
     elif not alphabet:
         if (min_size or 0) > 0:
             raise InvalidArgument(

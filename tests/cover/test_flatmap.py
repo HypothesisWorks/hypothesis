@@ -16,15 +16,12 @@
 
 from __future__ import division, print_function, absolute_import
 
-from random import Random
-
 import pytest
 
 from hypothesis import find, given, assume, settings
 from hypothesis.database import ExampleDatabase
 from hypothesis.strategies import just, text, lists, floats, tuples, \
     booleans, integers, streaming
-from hypothesis.internal.debug import some_template
 from hypothesis.internal.compat import hrange, Counter
 
 ConstantLists = integers().flatmap(lambda i: lists(just(i)))
@@ -70,17 +67,6 @@ def test_flatmap_retrieve_from_db():
         record_and_test_size()
 
     assert track[0] == example
-
-
-def test_can_still_simplify_if_not_reified():
-    strat = ConstantLists
-    random = Random(u'test_constant_lists_are_constant')
-    template = some_template(strat, random)
-    try:
-        while True:
-            template = next(strat.full_simplify(random, template))
-    except StopIteration:
-        pass
 
 
 def test_flatmap_does_not_reuse_strategies():

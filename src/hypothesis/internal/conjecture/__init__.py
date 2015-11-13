@@ -13,24 +13,3 @@
 # obtain one at http://mozilla.org/MPL/2.0/.
 #
 # END HEADER
-
-from __future__ import division, print_function, absolute_import
-
-from hypothesis.types import Stream
-from hypothesis.searchstrategy.strategies import SearchStrategy
-
-
-class StreamStrategy(SearchStrategy):
-
-    def __init__(self, source_strategy):
-        super(StreamStrategy, self).__init__()
-        self.source_strategy = source_strategy
-
-    def __repr__(self):
-        return u'StreamStrategy(%r)' % (self.source_strategy,)
-
-    def do_draw(self, data):
-        def gen():
-            while True:
-                yield data.draw(self.source_strategy)
-        return Stream(gen())

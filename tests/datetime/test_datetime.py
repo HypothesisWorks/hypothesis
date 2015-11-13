@@ -27,9 +27,8 @@ from hypothesis import given, assume, settings
 from hypothesis.errors import InvalidArgument, UnsatisfiedAssumption
 from hypothesis.strategytests import strategy_test_suite
 from hypothesis.extra.datetime import datetimes
-from hypothesis.internal.debug import minimal, some_template
+from hypothesis.internal.debug import minimal
 from hypothesis.internal.compat import hrange
-from hypothesis.searchstrategy.strategies import BadData
 
 TestStandardDescriptorFeatures1 = strategy_test_suite(datetimes())
 TestStandardDescriptorFeatures2 = strategy_test_suite(
@@ -152,15 +151,6 @@ def test_can_draw_times_in_the_final_year():
         except UnsatisfiedAssumption:
             pass
     assert c >= 100
-
-
-def test_validates_timezone_name_from_db():
-    s = datetimes(allow_naive=False)
-    template = some_template(s)
-    basic = s.to_basic(template)
-    basic[-1] = u"Cabbage"
-    with pytest.raises(BadData):
-        s.from_basic(basic)
 
 
 def test_validates_year_arguments_in_range():

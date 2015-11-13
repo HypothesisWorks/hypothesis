@@ -45,7 +45,7 @@ all_settings = {}
 _db_cache = {}
 
 
-class SettingsProperty(object):
+class settingsProperty(object):
 
     def __init__(self, name):
         self.name = name
@@ -78,10 +78,10 @@ class SettingsProperty(object):
 default_variable = DynamicVariable(None)
 
 
-class SettingsMeta(type):
+class settingsMeta(type):
 
     def __init__(self, *args, **kwargs):
-        super(SettingsMeta, self).__init__(*args, **kwargs)
+        super(settingsMeta, self).__init__(*args, **kwargs)
 
     @property
     def default(self):
@@ -97,7 +97,7 @@ class SettingsMeta(type):
         default_variable.value = value
 
 
-class settings(SettingsMeta('settings', (object,), {})):
+class settings(settingsMeta('settings', (object,), {})):
 
     """A settings object controls a variety of parameters that are used in
     falsification. These may control both the falsification strategy and the
@@ -178,7 +178,7 @@ class settings(SettingsMeta('settings', (object,), {})):
         if settings.__definitions_are_locked:
             from hypothesis.errors import InvalidState
             raise InvalidState(
-                'Settings have been locked and may no longer be defined.'
+                'settings have been locked and may no longer be defined.'
             )
         if options is not None:
             options = tuple(options)
@@ -191,7 +191,7 @@ class settings(SettingsMeta('settings', (object,), {})):
 
         all_settings[name] = Setting(
             name, description.strip(), default, options, deprecation)
-        setattr(settings, name, SettingsProperty(name))
+        setattr(settings, name, settingsProperty(name))
 
     @classmethod
     def lock_further_definitions(cls):
@@ -203,7 +203,7 @@ class settings(SettingsMeta('settings', (object,), {})):
         elif name == 'database':
             if self._construction_complete:
                 raise AttributeError(
-                    'Settings objects are immutable and may not be assigned to'
+                    'settings objects are immutable and may not be assigned to'
                     ' after construction.'
                 )
             else:
@@ -211,7 +211,7 @@ class settings(SettingsMeta('settings', (object,), {})):
         elif name in all_settings:
             if self._construction_complete:
                 raise AttributeError(
-                    'Settings objects are immutable and may not be assigned to'
+                    'settings objects are immutable and may not be assigned to'
                     ' after construction.'
                 )
             else:
@@ -353,6 +353,28 @@ will terminate.
 )
 
 settings.define_setting(
+    'max_mutations',
+    default=10,
+    description="""
+Hypothesis will try this many variations on a single example before moving on
+to an entirely fresh start. If you've got hard to satisfy properties raising
+this might help, but you probably shouldn't touch this dial unless you really
+know what you're doing.
+"""
+)
+
+settings.define_setting(
+    'buffer_size',
+    default=8 * 1024,
+    description="""
+The size of the underlying data used to generate examples. If you need to
+generate really large examples you may want to increase this, but it will make
+your tests slower.
+"""
+)
+
+
+settings.define_setting(
     'max_shrinks',
     default=500,
     description="""
@@ -373,6 +395,16 @@ function to stop it. If this value is <= 0 then no timeout will be
 applied.
 """
 )
+
+settings.define_setting(
+    u'shrink_change_timeout',
+    default=10,
+    description="""
+Once this many seconds have passed since the last successful shrink, stop
+trying to find any more.
+"""
+)
+
 
 settings.define_setting(
     'derandomize',

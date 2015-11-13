@@ -30,9 +30,6 @@ def test_can_collectively_minimize(spec):
     """This should generally exercise strategies' strictly_simpler heuristic by
     putting us in a state where example cloning is required to get to the
     answer fast enough."""
-
-    if spec.template_upper_bound < 2:
-        return
     n = 10
 
     def distinct_reprs(x):
