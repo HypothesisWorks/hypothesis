@@ -12,7 +12,7 @@ but (if you will permit me to indulge in a touch of megalomania for a moment), t
 larger purpose of Hypothesis is to drag the world kicking and screaming into a new
 and terrifying age of high quality software.
 
-Software is, as they say, eating the world. Software is also terrible. It's buggy,
+Software is, as they say, eating the world. Software is also `terrible`_. It's buggy,
 insecure and generally poorly thought out. This combination is clearly a recipe for
 disaster.
 
@@ -56,3 +56,5 @@ solid implementation of Quickcheck ever seen in a mainstream language (as long a
 count Scala as mainstream yet), and at the same time managed to
 :doc:`significantly push forward the state of the art<internals>`, so I think there's
 reason to be optimistic.
+
+.. _terrible: https://www.youtube.com/watch?v=csyL9EC0S0c
