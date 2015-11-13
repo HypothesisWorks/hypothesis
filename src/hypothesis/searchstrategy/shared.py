@@ -16,25 +16,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis.control import current_build_context
 from hypothesis.searchstrategy.wrappers import SearchStrategy
-
-
-class SharedTemplate(object):
-
-    def __init__(self, base):
-        self.base = base
-        self.used = False
-
-    def __repr__(self):
-        return 'SharedStrategy(%r, used=%r)' % (self.base, self.used)
-
-    def __copy__(self):
-        return SharedStrategy(self.base)
-
-    def __trackas__(self):
-        return self.base
-
 
 SHARED_STRATEGY_ATTRIBUTE = '_hypothesis_shared_strategies'
 
@@ -51,42 +33,11 @@ class SharedStrategy(SearchStrategy):
         else:
             return 'shared(%r)' % (self.base,)
 
-    def draw_parameter(self, random):
-        return self.base.draw_parameter(random)
-
-    def draw_template(self, random, pv):
-        return SharedTemplate(self.base.draw_template(random, pv))
-
-    def reify(self, value):
-        context = current_build_context()
-        if not hasattr(context, SHARED_STRATEGY_ATTRIBUTE):
-            setattr(context, SHARED_STRATEGY_ATTRIBUTE, {})
-        sharing = getattr(context, SHARED_STRATEGY_ATTRIBUTE)
+    def do_draw(self, data):
+        if not hasattr(data, SHARED_STRATEGY_ATTRIBUTE):
+            setattr(data, SHARED_STRATEGY_ATTRIBUTE, {})
+        sharing = getattr(data, SHARED_STRATEGY_ATTRIBUTE)
         key = self.key or self
-        if key in sharing:
-            value.used = False
-        else:
-            value.used = True
-            sharing[key] = self.base.reify(value.base)
+        if key not in sharing:
+            sharing[key] = self.base.do_draw(data)
         return sharing[key]
-
-    def simplifiers(self, random, template):
-        if template.used:
-            for s in self.base.simplifiers(random, template.base):
-                yield self.convert_simplifier(s)
-
-    def convert_simplifier(self, simplifier):
-        def accept(random, template):
-            for b in simplifier(random, template.base):
-                yield SharedTemplate(b)
-        accept.__name__ = simplifier.__name__
-        return accept
-
-    def strictly_simpler(self, x, y):
-        return self.base.strictly_simpler(x.base, y.base)
-
-    def to_basic(self, template):
-        return self.base.to_basic(template.base)
-
-    def from_basic(self, data):
-        return SharedTemplate(self.base.from_basic(data))

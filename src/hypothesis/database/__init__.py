@@ -14,7 +14,6 @@
 #
 # END HEADER
 
-from hypothesis.searchstrategy.strategies import BadData
 from hypothesis.database.formats import JSONFormat
 from hypothesis.database.backend import SQLiteBackend
 
@@ -41,12 +40,7 @@ class Storage(object):
         self.backend.save(self.key, serialized)
 
     def fetch(self, strategy):
-        for data in self.backend.fetch(self.key):
-            try:
-                yield strategy.from_basic(
-                    self.format.deserialize_data(data))
-            except BadData:
-                continue
+        return ()
 
 
 class ExampleDatabase(object):

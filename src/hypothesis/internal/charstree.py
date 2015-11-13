@@ -28,6 +28,7 @@ import marshal
 from hypothesis.errors import InvalidArgument
 from hypothesis._settings import hypothesis_home_dir
 from hypothesis.internal.compat import hrange, hunichr, OrderedDict
+from hypothesis.internal.conjecture import utils as d
 
 __all__ = (
     'ascii_tree',
@@ -43,6 +44,39 @@ __all__ = (
 
 ASCII_TREE = OrderedDict()
 UNICODE_TREE = OrderedDict()
+
+CATEGORY_ORDER = {
+    'Cc': 0,
+    'Cf': 173,
+    'Cn': 888,
+    'Co': 57344,
+    'Cs': 55296,
+    'Ll': 97,
+    'Lm': 688,
+    'Lo': 170,
+    'Lt': 453,
+    'Lu': 65,
+    'Mc': 2307,
+    'Me': 1160,
+    'Mn': 768,
+    'Nd': 48,
+    'Nl': 5870,
+    'No': 178,
+    'Pc': 95,
+    'Pd': 45,
+    'Pe': 41,
+    'Pf': 187,
+    'Pi': 171,
+    'Po': 33,
+    'Ps': 40,
+    'Sc': 36,
+    'Sk': 94,
+    'Sm': 43,
+    'So': 166,
+    'Zl': 8232,
+    'Zp': 8233,
+    'Zs': 32
+}
 
 
 def ascii_tree():
@@ -70,7 +104,7 @@ def unicode_tree():
 
 def categories(tree):
     """Returns list of all categories in specified tree."""
-    return list(tree)
+    return sorted(tree, key=CATEGORY_ORDER.__getitem__)
 
 
 def category_by_codepoint(tree, codepoint):
@@ -100,15 +134,15 @@ def codepoints_for_category(tree, category):
             yield cp
 
 
-def random_codepoint(tree, category, random):
+def random_codepoint(tree, category, data):
     """Returns random code point for specified category in the tree."""
     base, values = select_values(
-        tree, category, lambda ns: random.choice(list(ns)))
+        tree, category, lambda ns: d.choice(data, list(ns)))
     assert values, 'no values found'
-    value = random.choice(values)
+    value = d.choice(data, values)
     if value[0] == value[1]:
         return base + value[0]
-    return random.randint(base + value[0], base + value[1])
+    return d.integer_range(data, base + value[0], base + value[1])
 
 
 def filter_tree(tree, whitelist_categories=None, blacklist_categories=None,

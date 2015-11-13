@@ -29,16 +29,16 @@ from __future__ import division, print_function, absolute_import
 
 import re
 import math
-import random
 import collections
 
 import pytest
 
 import hypothesis.internal.reflection as reflection
-from hypothesis.errors import UnsatisfiedAssumption
+from hypothesis.settings import Settings
 from hypothesis.strategies import just, sets, text, lists, floats, \
     tuples, booleans, integers, sampled_from
 from hypothesis.internal.compat import PY26, hrange
+from hypothesis.internal.conjecture.engine import TestRunner
 
 pytestmark = pytest.mark.skipif(PY26, reason=u'2.6 lacks erf')
 
@@ -158,20 +158,24 @@ def define_test(specifier, q, predicate, condition=None):
             condition_string = strip_lambda(
                 reflection.get_pretty_function_description(condition))
 
-        count = 0
-        successful_runs = 0
-        s = specifier
-        for _ in hrange(MAX_RUNS):
-            pv = s.draw_parameter(random)
-            try:
-                x = s.reify(s.draw_template(random, pv))
-            except UnsatisfiedAssumption:
-                continue
-            if not _condition(x):
-                continue
-            successful_runs += 1
-            if predicate(x):
-                count += 1
+        count = [0]
+        successful_runs = [0]
+
+        def test_function(data):
+            value = data.draw(specifier)
+            if not _condition(value):
+                data.mark_invalid()
+            successful_runs[0] += 1
+            if predicate(value):
+                count[0] += 1
+        TestRunner(
+            test_function,
+            settings=Settings(
+                max_examples=MAX_RUNS,
+                max_iterations=MAX_RUNS * 10,
+            )).run()
+        successful_runs = successful_runs[0]
+        count = count[0]
         if successful_runs < MIN_RUNS:
             raise ConditionTooHard((
                 u'Unable to find enough examples satisfying predicate %s '
@@ -411,4 +415,9 @@ test_mixes_not_too_often = define_test(
     lists(booleans() | tuples(), average_size=25.0), 0.1,
     lambda x: len(set(map(type, x))) == 1,
     condition=bool,
+)
+
+test_float_lists_have_non_reversible_sum = define_test(
+    lists(floats()), 0.01, lambda x: sum(x) != sum(reversed(x)),
+    condition=lambda x: not math.isnan(sum(x))
 )

@@ -19,16 +19,9 @@ from __future__ import division, print_function, absolute_import
 import math
 import time
 import signal
-from random import Random
 
 from hypothesis import settings as Settings
 from hypothesis.core import find
-from hypothesis.errors import NoExamples, BadTemplateDraw, \
-    UnsatisfiedAssumption
-from hypothesis.control import BuildContext
-from hypothesis.database import ExampleDatabase
-from hypothesis.internal.compat import hrange
-from hypothesis.internal.tracker import Tracker
 from hypothesis.internal.reflection import proxies
 
 
@@ -99,69 +92,3 @@ def minimal(
             random=random,
         )
     return run()
-
-
-def some_template(spec, random=None):
-    if random is None:
-        random = Random()
-    strat = spec
-    for _ in hrange(100):
-        try:
-            element = strat.draw_and_produce(random)
-        except BadTemplateDraw:
-            continue
-        try:
-            with BuildContext():
-                strat.reify(element)
-            return element
-        except UnsatisfiedAssumption:
-            pass
-    else:
-        raise NoExamples(u'some_template called on strategy with no examples')
-
-
-def via_database(spec, strat, template):
-    db = ExampleDatabase()
-    key = u'via_database'
-    try:
-        s = db.storage(key)
-        s.save(template, strat)
-        results = list(s.fetch(strat))
-        assert len(results) == 1
-        return results[0]
-    finally:
-        db.close()
-
-
-def minimal_element(strategy, random):
-    tracker = Tracker()
-    element = some_template(strategy, random)
-    while True:
-        for new_element in strategy.full_simplify(random, element):
-            if tracker.track(new_element) > 1:
-                continue
-            try:
-                with BuildContext():
-                    strategy.reify(new_element)
-                element = new_element
-                break
-            except UnsatisfiedAssumption:
-                pass
-        else:
-            break
-    return element
-
-
-def minimal_elements(strategy, random):
-    found = set()
-    dupe_count = 0
-    for _ in hrange(10):
-        x = minimal_element(strategy, random)
-        if x in found:
-            dupe_count += 1
-            if dupe_count > 1:
-                break
-        else:
-            dupe_count = 0
-            found.add(x)
-    return frozenset(found)

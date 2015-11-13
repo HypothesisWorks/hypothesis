@@ -62,24 +62,6 @@ def test_finds_single_element_strings():
     assert find(text(), bool, random=Random(4)) == u'0'
 
 
-def test_can_safely_mix_simplifiers():
-    from hypothesis.searchstrategy.strings import OneCharStringStrategy
-    from hypothesis.internal.debug import some_template
-
-    s = OneCharStringStrategy()
-    r = Random(1)
-    t1 = some_template(s, r)
-    while True:
-        t2 = some_template(s, r)
-        if t1 != t2:
-            break
-    for u in (t1, t2):
-        for v in (t1, t2):
-            for simplify in s.simplifiers(r, u):
-                for w in simplify(r, v):
-                    assert not s.strictly_simpler(v, w)
-
-
 def test_binary_respects_changes_in_size():
     @given(binary())
     def test_foo(x):

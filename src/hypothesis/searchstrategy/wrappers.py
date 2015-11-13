@@ -31,7 +31,6 @@ class WrapperStrategy(SearchStrategy):
     def __init__(self, strategy):
         SearchStrategy.__init__(self)
         self.wrapped_strategy = strategy
-        self.template_upper_bound = self.wrapped_strategy.template_upper_bound
 
     def __repr__(self):
         return u'%s(%r)' % (type(self).__name__, self.wrapped_strategy)
@@ -39,23 +38,5 @@ class WrapperStrategy(SearchStrategy):
     def validate(self):
         self.wrapped_strategy.validate()
 
-    def draw_parameter(self, random):
-        return self.wrapped_strategy.draw_parameter(random)
-
-    def draw_template(self, random, pv):
-        return self.wrapped_strategy.draw_template(random, pv)
-
-    def reify(self, value):
-        return self.wrapped_strategy.reify(value)
-
-    def simplifiers(self, random, template):
-        return self.wrapped_strategy.simplifiers(random, template)
-
-    def strictly_simpler(self, x, y):
-        return self.wrapped_strategy.strictly_simpler(x, y)
-
-    def to_basic(self, template):
-        return self.wrapped_strategy.to_basic(template)
-
-    def from_basic(self, data):
-        return self.wrapped_strategy.from_basic(data)
+    def do_draw(self, data):
+        return self.wrapped_strategy.do_draw(data)

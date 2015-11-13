@@ -24,7 +24,7 @@ import pytest
 
 from hypothesis import settings as Settings
 from hypothesis import assume
-from hypothesis.errors import Flaky, BadData, InvalidDefinition
+from hypothesis.errors import Flaky, InvalidDefinition
 from tests.common.utils import raises, capture_out
 from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import rule, Bundle, precondition, \
@@ -268,19 +268,6 @@ def test_can_shrink_deserialized_execution_without_running(machine):
             next(simplifier(r, new_runner))
         except StopIteration:
             pass
-
-
-def test_rejects_invalid_step_sizes_in_data():
-    runner = DepthMachine.find_breaking_runner()
-    strategy = StateMachineSearchStrategy()
-    basic = strategy.to_basic(runner)
-    assert isinstance(basic[2], int)
-    basic[2] = -1
-    with raises(BadData):
-        strategy.from_basic(basic)
-    basic[2] = 1000000
-    with raises(BadData):
-        strategy.from_basic(basic)
 
 
 @with_cheap_bad_machines

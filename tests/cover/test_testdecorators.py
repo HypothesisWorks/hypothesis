@@ -512,17 +512,6 @@ def test_should_not_fail_if_max_examples_less_than_min_satisfying(x):
     pass
 
 
-def test_should_not_count_duplicates_towards_max_examples():
-    seen = set()
-
-    @given(integers(1, 10))
-    @settings(max_examples=9)
-    def test_i_see_you(x):
-        seen.add(x)
-    test_i_see_you()
-    assert len(seen) == 9
-
-
 def nameless_const(x):
     def f(u, v):
         return u
