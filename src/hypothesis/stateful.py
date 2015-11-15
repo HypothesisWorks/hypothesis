@@ -26,7 +26,6 @@ execution to date.
 
 from __future__ import division, print_function, absolute_import
 
-import copy
 import inspect
 import traceback
 from random import Random
@@ -536,8 +535,10 @@ def rule(targets=(), target=None, precondition=None, **kwargs):
         parent_rule = getattr(f, RULE_MARKER, None)
         rule = Rule(targets=tuple(converted_targets), arguments=kwargs,
                     function=f, precondition=None, parent_rule=parent_rule)
+
         def rule_wrapper(*args, **kwargs):
             return f(*args, **kwargs)
+
         # TODO: copy function metadata onto new function
         setattr(rule_wrapper, RULE_MARKER, rule)
         return rule_wrapper
@@ -551,12 +552,16 @@ def precondition(precond):
     def decorator(f):
         rule = getattr(f, RULE_MARKER, None)
         if rule is None:
-            raise Exception("Can only use the `precondition` decorator on functions that are already decorated with `rule`")
+            raise Exception(
+                "Can only use the `precondition` decorator on functions that "
+                "are already decorated with `rule`")
         new_rule = Rule(targets=rule.targets, arguments=rule.arguments,
                         function=rule.function, precondition=precond,
                         parent_rule=rule.parent_rule)
+
         def precondition_wrapper(*args, **kwargs):
             return f(*args, **kwargs)
+
         setattr(precondition_wrapper, RULE_MARKER, new_rule)
         return precondition_wrapper
     return decorator
