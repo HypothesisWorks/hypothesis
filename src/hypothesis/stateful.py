@@ -549,12 +549,32 @@ VarReference = namedtuple(u'VarReference', (u'name',))
 
 
 def precondition(precond):
+    """Decorator to apply a precondition for rules in a RuleBasedStateMachine.
+    Specifies a precondition for a rule to be considered as a valid step in the
+    state machine. The given function will be called with the instance of
+    RuleBasedStateMachine and should return True or False. Usually it will need
+    to look at attributes on that instance.
+
+    For example::
+
+        class MyTestMachine(RuleBasedStateMachine):
+            state = 1
+
+            @precondition(lambda self: self.state != 0)
+            @rule(numerator=integers())
+            def divide_with(self, numerator):
+                self.state = numerator / self.state
+
+    This is better than using assume in your rule since more valid rules
+    should be able to be run.
+
+    """
     def decorator(f):
         rule = getattr(f, RULE_MARKER, None)
         if rule is None:
             raise Exception(
-                "Can only use the `precondition` decorator on functions that "
-                "are already decorated with `rule`")
+                'Can only use the `precondition` decorator on functions that '
+                'are already decorated with `rule`')
         new_rule = Rule(targets=rule.targets, arguments=rule.arguments,
                         function=rule.function, precondition=precond,
                         parent_rule=rule.parent_rule)
