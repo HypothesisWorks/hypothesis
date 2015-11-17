@@ -173,10 +173,11 @@ class DepthCharge(object):
 class DepthMachine(RuleBasedStateMachine):
     charges = Bundle(u'charges')
 
-    @rule(targets=(charges,), child=charges)
-    @rule(targets=(charges,), child=none())
-    def charge(self, child):
-        return DepthCharge(child)
+    with Settings(strict=False):
+        @rule(targets=(charges,), child=charges)
+        @rule(targets=(charges,), child=none())
+        def charge(self, child):
+            return DepthCharge(child)
 
     @rule(check=charges)
     def is_not_too_deep(self, check):

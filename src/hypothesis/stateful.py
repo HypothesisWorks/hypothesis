@@ -36,7 +36,7 @@ from hypothesis.core import find
 from hypothesis.errors import Flaky, NoSuchExample, InvalidDefinition, \
     UnsatisfiedAssumption
 from hypothesis.control import BuildContext
-from hypothesis.settings import Settings, Verbosity
+from hypothesis.settings import Settings, Verbosity, note_deprecation
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.internal.reflection import proxies
@@ -536,7 +536,13 @@ def rule(targets=(), target=None, **kwargs):
     def accept(f):
         parent_rule = getattr(f, RULE_MARKER, None)
         if parent_rule is not None:
-            print("there's a parent! deprecate this!!")
+            note_deprecation(
+                'Applying the ``rule`` decorator to a function that is '
+                'already decorated by ``rule`` is deprecated. Please assign '
+                'the result of the ``rule`` function to separate names in '
+                'your class.',
+                Settings.default,
+            )
         precondition = getattr(f, PRECONDITION_MARKER, None)
         rule = Rule(targets=tuple(converted_targets), arguments=kwargs,
                     function=f, precondition=precondition, parent_rule=parent_rule)
