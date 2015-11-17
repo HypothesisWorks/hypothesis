@@ -47,7 +47,7 @@ Rule based state machines
 
 Rule based state machines are the ones you're most likely to want to use.
 They're significantly more user friendly and should be good enough for most
-things you'd want to do. 
+things you'd want to do.
 
 A rule based state machine is a collection of functions (possibly with side
 effects) which may depend on both values that Hypothesis can generate and
@@ -236,6 +236,48 @@ fewer examples with larger programs you could change the settings to:
 
 Which doubles the number of steps each program runs and halves the number of
 runs relative to the example. settings.timeout will also be respected as usual.
+
+-------------
+Preconditions
+-------------
+
+While it's possible to use ``assume`` RuleBasedStateMachine rules, after only a
+few uses in a few rules you can quickly run into a situation where very few
+rules are actually executed successfully. Thus, Hypothesis provides a
+``precondition`` decorator to avoid this problem. The ``precondition``
+decorator is used by using it on a ``rule``-decorated function, and passing a
+function that returns True or False based on the RuleBasedStateMachine
+instance.
+
+.. code:: python
+
+    from hypothesis.stateful import RuleBasedStateMachine, rule
+
+    class NumberModifier(RuleBasedStateMachine):
+
+        num = 0
+
+        @rule()
+        def add_one(self):
+            self.num += 1
+
+        @rule()
+        def sub_one(self):
+            self.num -= 1
+
+        @precondition(lambda self: self.num != 0)
+        @rule()
+        def divide_with_one(self):
+            self.num = 1 / self.num
+
+
+By using ``precondition`` here instead of ``assume``, we make it much more
+likely that Hypothesis will generate a valid sequence of steps instead of
+pointlessly running steps that are skipped because of invalid assumptions.
+
+Note that preconditions can't look at data inside of a bundle; if you need to
+use preconditions, you should store your relevant data on your instances
+instead.
 
 ----------------------
 Generic state machines
