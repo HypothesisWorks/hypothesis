@@ -237,7 +237,6 @@ fewer examples with larger programs you could change the settings to:
 Which doubles the number of steps each program runs and halves the number of
 runs relative to the example. settings.timeout will also be respected as usual.
 
--------------
 Preconditions
 -------------
 
