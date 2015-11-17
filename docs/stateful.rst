@@ -251,7 +251,7 @@ instance.
 
 .. code:: python
 
-    from hypothesis.stateful import RuleBasedStateMachine, rule
+    from hypothesis.stateful import RuleBasedStateMachine, rule, precondition
 
     class NumberModifier(RuleBasedStateMachine):
 
@@ -284,7 +284,7 @@ Generic state machines
 ----------------------
 
 The class GenericStateMachine is the underlying machinery of stateful testing
-in Hypothesis. In execution it looks much like the RuleBasedStateMachine but 
+in Hypothesis. In execution it looks much like the RuleBasedStateMachine but
 it allows the set of steps available to depend in essentially arbitrary
 ways on what has happened so far. For example, if you wanted to
 use Hypothesis to test a game, it could choose each step in the machine based
