@@ -4,7 +4,7 @@ The Hypothesis Example Database
 
 When Hypothesis finds a bug it stores enough information in its database to reproduce it. This
 enables you to have a classic testing workflow of find a bug, fix a bug, and be confident that
-this is actually doing the right thing because Hypothesis will start by retrying to example that
+this is actually doing the right thing because Hypothesis will start by retrying the examples that
 broke things last time.
 
 -----------
