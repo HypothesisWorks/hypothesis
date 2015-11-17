@@ -545,7 +545,8 @@ def rule(targets=(), target=None, **kwargs):
             )
         precondition = getattr(f, PRECONDITION_MARKER, None)
         rule = Rule(targets=tuple(converted_targets), arguments=kwargs,
-                    function=f, precondition=precondition, parent_rule=parent_rule)
+                    function=f, precondition=precondition,
+                    parent_rule=parent_rule)
 
         @proxies(f)
         def rule_wrapper(*args, **kwargs):
