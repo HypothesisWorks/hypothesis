@@ -39,6 +39,7 @@ from hypothesis.control import BuildContext
 from hypothesis.settings import Settings, Verbosity
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.internal.compat import hrange, integer_types
+from hypothesis.internal.reflection import proxies
 from hypothesis.searchstrategy.misc import JustStrategy, \
     SampledFromStrategy
 from hypothesis.internal.strategymethod import strategy
@@ -507,9 +508,10 @@ Bundle = namedtuple(u'Bundle', (u'name',))
 
 
 RULE_MARKER = u'hypothesis_stateful_rule'
+PRECONDITION_MARKER = u'hypothesis_stateful_precondition'
 
 
-def rule(targets=(), target=None, precondition=None, **kwargs):
+def rule(targets=(), target=None, **kwargs):
     """Decorator for RuleBasedStateMachine. Any name present in target or
     targets will define where the end result of this function should go. If
     both are empty then the end result will be discarded.
@@ -533,13 +535,16 @@ def rule(targets=(), target=None, precondition=None, **kwargs):
 
     def accept(f):
         parent_rule = getattr(f, RULE_MARKER, None)
+        if parent_rule is not None:
+            print("there's a parent! deprecate this!!")
+        precondition = getattr(f, PRECONDITION_MARKER, None)
         rule = Rule(targets=tuple(converted_targets), arguments=kwargs,
-                    function=f, precondition=None, parent_rule=parent_rule)
+                    function=f, precondition=precondition, parent_rule=parent_rule)
 
+        @proxies(f)
         def rule_wrapper(*args, **kwargs):
             return f(*args, **kwargs)
 
-        # TODO: copy function metadata onto new function
         setattr(rule_wrapper, RULE_MARKER, rule)
         return rule_wrapper
     return accept
@@ -570,19 +575,18 @@ def precondition(precond):
 
     """
     def decorator(f):
-        rule = getattr(f, RULE_MARKER, None)
-        if rule is None:
-            raise Exception(
-                'Can only use the `precondition` decorator on functions that '
-                'are already decorated with `rule`')
-        new_rule = Rule(targets=rule.targets, arguments=rule.arguments,
-                        function=rule.function, precondition=precond,
-                        parent_rule=rule.parent_rule)
-
+        @proxies(f)
         def precondition_wrapper(*args, **kwargs):
             return f(*args, **kwargs)
 
-        setattr(precondition_wrapper, RULE_MARKER, new_rule)
+        rule = getattr(f, RULE_MARKER, None)
+        if rule is None:
+            setattr(precondition_wrapper, PRECONDITION_MARKER, precond)
+        else:
+            new_rule = Rule(targets=rule.targets, arguments=rule.arguments,
+                            function=rule.function, precondition=precond,
+                            parent_rule=rule.parent_rule)
+            setattr(precondition_wrapper, RULE_MARKER, new_rule)
         return precondition_wrapper
     return decorator
 
