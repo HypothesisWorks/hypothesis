@@ -28,7 +28,8 @@ from tests.common.utils import raises, capture_out
 from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import rule, Bundle, StateMachineRunner, \
     GenericStateMachine, RuleBasedStateMachine, \
-    run_state_machine_as_test, StateMachineSearchStrategy
+    run_state_machine_as_test, StateMachineSearchStrategy, \
+    precondition
 from hypothesis.strategies import just, none, lists, tuples, choices, \
     booleans, integers, sampled_from
 
@@ -173,6 +174,7 @@ class DepthCharge(object):
 class DepthMachine(RuleBasedStateMachine):
     charges = Bundle(u'charges')
 
+    # double-rule is deprecated
     with Settings(strict=False):
         @rule(targets=(charges,), child=charges)
         @rule(targets=(charges,), child=none())
@@ -182,6 +184,25 @@ class DepthMachine(RuleBasedStateMachine):
     @rule(check=charges)
     def is_not_too_deep(self, check):
         assert check.depth < 3
+
+
+class PreconditionMachine(RuleBasedStateMachine):
+    num = 0
+
+    @rule()
+    def add_one(self):
+        self.num += 1
+
+    @rule(num=integers())
+    @precondition(lambda self: self.num != 0)
+    def div_by_precondition_after(self, num):
+        self.num = num / self.num
+
+    @precondition(lambda self: self.num != 0)
+    @rule(num=integers())
+    def div_by_precondition_before(self, num):
+        self.num = num / self.num
+
 
 bad_machines = (
     OrderedStateMachine, SetStateMachine, BalancedTrees,
@@ -385,6 +406,7 @@ with Settings(max_examples=10):
     TestGivenLike = GivenLikeStateMachine.TestCase
     TestDynamicMachine = DynamicMachine.TestCase
     TestIntAdder = IntAdder.TestCase
+    TestPrecondition = PreconditionMachine.TestCase
 
 
 def test_picks_up_settings_at_first_use_of_testcase():
