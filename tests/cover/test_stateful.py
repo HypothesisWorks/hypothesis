@@ -26,10 +26,9 @@ from hypothesis import assume, Settings
 from hypothesis.errors import Flaky, BadData, InvalidDefinition
 from tests.common.utils import raises, capture_out
 from hypothesis.database import ExampleDatabase
-from hypothesis.stateful import rule, Bundle, StateMachineRunner, \
-    GenericStateMachine, RuleBasedStateMachine, \
-    run_state_machine_as_test, StateMachineSearchStrategy, \
-    precondition
+from hypothesis.stateful import rule, Bundle, precondition, \
+    StateMachineRunner, GenericStateMachine, RuleBasedStateMachine, \
+    run_state_machine_as_test, StateMachineSearchStrategy
 from hypothesis.strategies import just, none, lists, tuples, choices, \
     booleans, integers, sampled_from
 
