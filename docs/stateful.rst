@@ -240,13 +240,12 @@ runs relative to the example. settings.timeout will also be respected as usual.
 Preconditions
 -------------
 
-While it's possible to use ``assume`` RuleBasedStateMachine rules, after only a
-few uses in a few rules you can quickly run into a situation where very few
-rules are actually executed successfully. Thus, Hypothesis provides a
+While it's possible to use ``assume`` in RuleBasedStateMachine rules, if you
+use it in only a few rules you can quickly run into a situation where few or
+none of your rules pass their assumptions. Thus, Hypothesis provides a
 ``precondition`` decorator to avoid this problem. The ``precondition``
-decorator is used by using it on a ``rule``-decorated function, and passing a
-function that returns True or False based on the RuleBasedStateMachine
-instance.
+decorator is used on ``rule``-decorated functions, and must be given a function
+that returns True or False based on the RuleBasedStateMachine instance.
 
 .. code:: python
 
@@ -260,23 +259,18 @@ instance.
         def add_one(self):
             self.num += 1
 
-        @rule()
-        def sub_one(self):
-            self.num -= 1
-
         @precondition(lambda self: self.num != 0)
         @rule()
         def divide_with_one(self):
             self.num = 1 / self.num
 
 
-By using ``precondition`` here instead of ``assume``, we make it much more
-likely that Hypothesis will generate a valid sequence of steps instead of
-pointlessly running steps that are skipped because of invalid assumptions.
+By using ``precondition`` here instead of ``assume``, Hypothesis can filter the
+inapplicable rules before running them. This makes it much more likely that a
+useful sequence of steps will be generated.
 
-Note that preconditions can't look at data inside of a bundle; if you need to
-use preconditions, you should store your relevant data on your instances
-instead.
+Note that currently preconditions can't access bundles; if you need to use
+preconditions, you should store relevant data on the instance instead.
 
 ----------------------
 Generic state machines
