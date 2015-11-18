@@ -537,10 +537,9 @@ def rule(targets=(), target=None, **kwargs):
         parent_rule = getattr(f, RULE_MARKER, None)
         if parent_rule is not None:
             note_deprecation(
-                'Applying the ``rule`` decorator to a function that is '
-                'already decorated by ``rule`` is deprecated. Please assign '
-                'the result of the ``rule`` function to separate names in '
-                'your class.',
+                'Applying the rule decorator to a function that is already '
+                'decorated by rule is deprecated. Please assign the result '
+                'of the rule function to separate names in your class.',
                 Settings.default,
             )
         precondition = getattr(f, PRECONDITION_MARKER, None)

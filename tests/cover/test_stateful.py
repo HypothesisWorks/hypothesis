@@ -185,6 +185,15 @@ class DepthMachine(RuleBasedStateMachine):
         assert check.depth < 3
 
 
+class MultipleRulesSameFuncMachine(RuleBasedStateMachine):
+
+    def myfunc(self, data):
+        print(data)
+
+    rule1 = rule(data=just(u"rule1data"))(myfunc)
+    rule2 = rule(data=just(u"rule2data"))(myfunc)
+
+
 class PreconditionMachine(RuleBasedStateMachine):
     num = 0
 
@@ -324,6 +333,15 @@ def test_bad_machines_fail(machine):
     print(v)
     assert u'Step #1' in v
     assert u'Step #50' not in v
+
+
+def test_multiple_rules_same_func():
+    test_class = MultipleRulesSameFuncMachine.TestCase
+    with capture_out() as o:
+        test_class().runTest()
+    output = o.getvalue()
+    assert 'rule1data' in output
+    assert 'rule2data' in output
 
 
 class GivenLikeStateMachine(GenericStateMachine):
