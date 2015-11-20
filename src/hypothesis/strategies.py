@@ -31,7 +31,7 @@ from hypothesis.searchstrategy.reprwrapper import ReprWrapperStrategy
 __all__ = [
     'just', 'one_of',
     'none',
-
+    'choices',
     'booleans', 'integers', 'floats', 'complex_numbers', 'fractions',
     'decimals',
     'text', 'binary',
