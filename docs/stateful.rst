@@ -59,7 +59,8 @@ You define a rule based state machine as follows:
 
   import unittest
   from collections import namedtuple
-
+  
+  from hypothesis import strategies as st
   from hypothesis.stateful import RuleBasedStateMachine, Bundle, rule
 
 
@@ -70,7 +71,7 @@ You define a rule based state machine as follows:
   class BalancedTrees(RuleBasedStateMachine):
       trees = Bundle('BinaryTree')
 
-      @rule(target=trees, x=int)
+      @rule(target=trees, x=st.integers())
       def leaf(self, x):
           return Leaf(x)
 
@@ -138,7 +139,8 @@ So lets balance some trees.
 .. code:: python
 
     from collections import namedtuple
-
+    
+    from hypothesis import strategies as st
     from hypothesis.stateful import RuleBasedStateMachine, Bundle, rule
 
 
@@ -150,7 +152,7 @@ So lets balance some trees.
         trees = Bundle('BinaryTree')
         balanced_trees = Bundle('balanced BinaryTree')
 
-        @rule(target=trees, x=int)
+        @rule(target=trees, x=st.integers())
         def leaf(self, x):
             return Leaf(x)
 
@@ -231,8 +233,7 @@ fewer examples with larger programs you could change the settings to:
 
 .. code:: python
 
-  TestTrees.settings.max_examples = 100
-  TestTrees.settings.stateful_step_count = 100
+  TestTrees.settings = Settings(max_examples=100, stateful_step_count=100)
 
 Which doubles the number of steps each program runs and halves the number of
 runs relative to the example. settings.timeout will also be respected as usual.
