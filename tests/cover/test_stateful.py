@@ -26,8 +26,9 @@ from hypothesis import assume, Settings
 from hypothesis.errors import Flaky, BadData, InvalidDefinition
 from tests.common.utils import raises, capture_out
 from hypothesis.database import ExampleDatabase
-from hypothesis.stateful import rule, Bundle, StateMachineRunner, \
-    GenericStateMachine, RuleBasedStateMachine, \
+from hypothesis.settings import HypothesisDeprecationWarning
+from hypothesis.stateful import rule, Bundle, precondition, \
+    StateMachineRunner, GenericStateMachine, RuleBasedStateMachine, \
     run_state_machine_as_test, StateMachineSearchStrategy
 from hypothesis.strategies import just, none, lists, tuples, choices, \
     booleans, integers, sampled_from
@@ -173,14 +174,48 @@ class DepthCharge(object):
 class DepthMachine(RuleBasedStateMachine):
     charges = Bundle(u'charges')
 
-    @rule(targets=(charges,), child=charges)
-    @rule(targets=(charges,), child=none())
-    def charge(self, child):
-        return DepthCharge(child)
+    # double-rule is deprecated
+    with Settings(strict=False):
+        @rule(targets=(charges,), child=charges)
+        @rule(targets=(charges,), child=none())
+        def charge(self, child):
+            return DepthCharge(child)
 
     @rule(check=charges)
     def is_not_too_deep(self, check):
         assert check.depth < 3
+
+
+class MultipleRulesSameFuncMachine(RuleBasedStateMachine):
+
+    def myfunc(self, data):
+        print(data)
+
+    rule1 = rule(data=just(u"rule1data"))(myfunc)
+    rule2 = rule(data=just(u"rule2data"))(myfunc)
+
+
+class PreconditionMachine(RuleBasedStateMachine):
+    num = 0
+
+    @rule()
+    def add_one(self):
+        self.num += 1
+
+    @rule()
+    def set_to_zero(self):
+        self.num = 0
+
+    @rule(num=integers())
+    @precondition(lambda self: self.num != 0)
+    def div_by_precondition_after(self, num):
+        self.num = num / self.num
+
+    @precondition(lambda self: self.num != 0)
+    @rule(num=integers())
+    def div_by_precondition_before(self, num):
+        self.num = num / self.num
+
 
 bad_machines = (
     OrderedStateMachine, SetStateMachine, BalancedTrees,
@@ -305,6 +340,15 @@ def test_bad_machines_fail(machine):
     assert u'Step #50' not in v
 
 
+def test_multiple_rules_same_func():
+    test_class = MultipleRulesSameFuncMachine.TestCase
+    with capture_out() as o:
+        test_class().runTest()
+    output = o.getvalue()
+    assert 'rule1data' in output
+    assert 'rule2data' in output
+
+
 class GivenLikeStateMachine(GenericStateMachine):
 
     def steps(self):
@@ -384,6 +428,7 @@ with Settings(max_examples=10):
     TestGivenLike = GivenLikeStateMachine.TestCase
     TestDynamicMachine = DynamicMachine.TestCase
     TestIntAdder = IntAdder.TestCase
+    TestPrecondition = PreconditionMachine.TestCase
 
 
 def test_picks_up_settings_at_first_use_of_testcase():
@@ -522,3 +567,15 @@ def test_statemachine_equality():
     assert hash(StateMachineRunner(1, 1, 1)) == hash(
         StateMachineRunner(1, 1, 1))
     assert StateMachineRunner(1, 1, 1) != StateMachineRunner(1, 1, 2)
+
+
+def test_stateful_double_rule_is_deprecated(recwarn):
+    with Settings(strict=False):
+        class DoubleRuleMachine(RuleBasedStateMachine):
+
+            @rule(num=just(1))
+            @rule(num=just(2))
+            def whatevs(self, num):
+                pass
+
+    recwarn.pop(HypothesisDeprecationWarning)

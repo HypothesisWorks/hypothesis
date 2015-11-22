@@ -47,7 +47,7 @@ Rule based state machines
 
 Rule based state machines are the ones you're most likely to want to use.
 They're significantly more user friendly and should be good enough for most
-things you'd want to do. 
+things you'd want to do.
 
 A rule based state machine is a collection of functions (possibly with side
 effects) which may depend on both values that Hypothesis can generate and
@@ -238,12 +238,47 @@ fewer examples with larger programs you could change the settings to:
 Which doubles the number of steps each program runs and halves the number of
 runs relative to the example. settings.timeout will also be respected as usual.
 
+Preconditions
+-------------
+
+While it's possible to use ``assume`` in RuleBasedStateMachine rules, if you
+use it in only a few rules you can quickly run into a situation where few or
+none of your rules pass their assumptions. Thus, Hypothesis provides a
+``precondition`` decorator to avoid this problem. The ``precondition``
+decorator is used on ``rule``-decorated functions, and must be given a function
+that returns True or False based on the RuleBasedStateMachine instance.
+
+.. code:: python
+
+    from hypothesis.stateful import RuleBasedStateMachine, rule, precondition
+
+    class NumberModifier(RuleBasedStateMachine):
+
+        num = 0
+
+        @rule()
+        def add_one(self):
+            self.num += 1
+
+        @precondition(lambda self: self.num != 0)
+        @rule()
+        def divide_with_one(self):
+            self.num = 1 / self.num
+
+
+By using ``precondition`` here instead of ``assume``, Hypothesis can filter the
+inapplicable rules before running them. This makes it much more likely that a
+useful sequence of steps will be generated.
+
+Note that currently preconditions can't access bundles; if you need to use
+preconditions, you should store relevant data on the instance instead.
+
 ----------------------
 Generic state machines
 ----------------------
 
 The class GenericStateMachine is the underlying machinery of stateful testing
-in Hypothesis. In execution it looks much like the RuleBasedStateMachine but 
+in Hypothesis. In execution it looks much like the RuleBasedStateMachine but
 it allows the set of steps available to depend in essentially arbitrary
 ways on what has happened so far. For example, if you wanted to
 use Hypothesis to test a game, it could choose each step in the machine based

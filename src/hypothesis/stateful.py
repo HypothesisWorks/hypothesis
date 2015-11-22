@@ -36,9 +36,10 @@ from hypothesis.core import find
 from hypothesis.errors import Flaky, NoSuchExample, InvalidDefinition, \
     UnsatisfiedAssumption
 from hypothesis.control import BuildContext
-from hypothesis.settings import Settings, Verbosity
+from hypothesis.settings import Settings, Verbosity, note_deprecation
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.internal.compat import hrange, integer_types
+from hypothesis.internal.reflection import proxies
 from hypothesis.searchstrategy.misc import JustStrategy, \
     SampledFromStrategy
 from hypothesis.internal.strategymethod import strategy
@@ -141,7 +142,7 @@ class GenericStateMachine(object):
 
     def execute_step(self, step):
         """Execute a step that has been previously drawn from self.steps()"""
-        raise NotImplementedError(u'%r.execute_steps()' % (self,))
+        raise NotImplementedError(u'%r.execute_step()' % (self,))
 
     def print_step(self, step):
         """Print a step to the current reporter.
@@ -498,7 +499,8 @@ class StateMachineSearchStrategy(SearchStrategy):
 
 Rule = namedtuple(
     u'Rule',
-    (u'targets', u'function', u'arguments')
+    (u'targets', u'function', u'arguments', u'precondition',
+     u'parent_rule')
 
 )
 
@@ -506,6 +508,7 @@ Bundle = namedtuple(u'Bundle', (u'name',))
 
 
 RULE_MARKER = u'hypothesis_stateful_rule'
+PRECONDITION_MARKER = u'hypothesis_stateful_precondition'
 
 
 def rule(targets=(), target=None, **kwargs):
@@ -531,18 +534,67 @@ def rule(targets=(), target=None, **kwargs):
         converted_targets.append(t)
 
     def accept(f):
-        if not hasattr(f, RULE_MARKER):
-            setattr(f, RULE_MARKER, [])
-        getattr(f, RULE_MARKER).append(
-            Rule(
-                targets=tuple(converted_targets), arguments=kwargs, function=f
+        parent_rule = getattr(f, RULE_MARKER, None)
+        if parent_rule is not None:
+            note_deprecation(
+                'Applying the rule decorator to a function that is already '
+                'decorated by rule is deprecated. Please assign the result '
+                'of the rule function to separate names in your class.',
+                Settings.default,
             )
-        )
-        return f
+        precondition = getattr(f, PRECONDITION_MARKER, None)
+        rule = Rule(targets=tuple(converted_targets), arguments=kwargs,
+                    function=f, precondition=precondition,
+                    parent_rule=parent_rule)
+
+        @proxies(f)
+        def rule_wrapper(*args, **kwargs):
+            return f(*args, **kwargs)
+
+        setattr(rule_wrapper, RULE_MARKER, rule)
+        return rule_wrapper
     return accept
 
 
 VarReference = namedtuple(u'VarReference', (u'name',))
+
+
+def precondition(precond):
+    """Decorator to apply a precondition for rules in a RuleBasedStateMachine.
+    Specifies a precondition for a rule to be considered as a valid step in the
+    state machine. The given function will be called with the instance of
+    RuleBasedStateMachine and should return True or False. Usually it will need
+    to look at attributes on that instance.
+
+    For example::
+
+        class MyTestMachine(RuleBasedStateMachine):
+            state = 1
+
+            @precondition(lambda self: self.state != 0)
+            @rule(numerator=integers())
+            def divide_with(self, numerator):
+                self.state = numerator / self.state
+
+    This is better than using assume in your rule since more valid rules
+    should be able to be run.
+
+    """
+    def decorator(f):
+        @proxies(f)
+        def precondition_wrapper(*args, **kwargs):
+            return f(*args, **kwargs)
+
+        rule = getattr(f, RULE_MARKER, None)
+        if rule is None:
+            setattr(precondition_wrapper, PRECONDITION_MARKER, precond)
+        else:
+            new_rule = Rule(targets=rule.targets, arguments=rule.arguments,
+                            function=rule.function, precondition=precond,
+                            parent_rule=rule.parent_rule)
+            setattr(precondition_wrapper, RULE_MARKER, new_rule)
+        return precondition_wrapper
+    return decorator
 
 
 class SimpleSampledFromStrategy(SampledFromStrategy):
@@ -603,15 +655,19 @@ class RuleBasedStateMachine(GenericStateMachine):
             pass
 
         for k, v in inspect.getmembers(cls):
-            for r in getattr(v, RULE_MARKER, ()):
+            r = getattr(v, RULE_MARKER, None)
+            while r is not None:
                 cls.define_rule(
-                    r.targets, r.function, r.arguments
+                    r.targets, r.function, r.arguments, r.precondition,
+                    r.parent_rule
                 )
+                r = r.parent_rule
         cls._rules_per_class[cls] = cls._base_rules_per_class.pop(cls, [])
         return cls._rules_per_class[cls]
 
     @classmethod
-    def define_rule(cls, targets, function, arguments):
+    def define_rule(cls, targets, function, arguments, precondition=None,
+                    parent_rule=None):
         converted_arguments = {}
         for k, v in arguments.items():
             if not isinstance(v, Bundle):
@@ -623,7 +679,10 @@ class RuleBasedStateMachine(GenericStateMachine):
             target = cls._base_rules_per_class.setdefault(cls, [])
 
         return target.append(
-            Rule(targets, function, converted_arguments)
+            Rule(
+                targets, function, converted_arguments, precondition,
+                parent_rule
+            )
         )
 
     def steps(self):
@@ -631,6 +690,8 @@ class RuleBasedStateMachine(GenericStateMachine):
         for rule in self.rules():
             converted_arguments = {}
             valid = True
+            if rule.precondition is not None and not rule.precondition(self):
+                continue
             for k, v in rule.arguments.items():
                 if isinstance(v, Bundle):
                     bundle = self.bundle(v.name)
