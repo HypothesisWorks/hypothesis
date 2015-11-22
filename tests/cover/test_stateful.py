@@ -201,6 +201,10 @@ class PreconditionMachine(RuleBasedStateMachine):
     def add_one(self):
         self.num += 1
 
+    @rule()
+    def set_to_zero(self):
+        self.num = 0
+
     @rule(num=integers())
     @precondition(lambda self: self.num != 0)
     def div_by_precondition_after(self, num):
