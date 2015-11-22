@@ -26,6 +26,7 @@ from hypothesis import assume, Settings
 from hypothesis.errors import Flaky, BadData, InvalidDefinition
 from tests.common.utils import raises, capture_out
 from hypothesis.database import ExampleDatabase
+from hypothesis.settings import HypothesisDeprecationWarning
 from hypothesis.stateful import rule, Bundle, precondition, \
     StateMachineRunner, GenericStateMachine, RuleBasedStateMachine, \
     run_state_machine_as_test, StateMachineSearchStrategy
@@ -566,3 +567,15 @@ def test_statemachine_equality():
     assert hash(StateMachineRunner(1, 1, 1)) == hash(
         StateMachineRunner(1, 1, 1))
     assert StateMachineRunner(1, 1, 1) != StateMachineRunner(1, 1, 2)
+
+
+def test_stateful_double_rule_is_deprecated(recwarn):
+    with Settings(strict=False):
+        class DoubleRuleMachine(RuleBasedStateMachine):
+
+            @rule(num=just(1))
+            @rule(num=just(2))
+            def whatevs(self, num):
+                pass
+
+    recwarn.pop(HypothesisDeprecationWarning)
