@@ -34,7 +34,7 @@ __all__ = [
     'choices',
     'booleans', 'integers', 'floats', 'complex_numbers', 'fractions',
     'decimals',
-    'text', 'binary',
+    'characters', 'text', 'binary',
     'tuples', 'lists', 'sets', 'frozensets',
     'dictionaries', 'fixed_dictionaries',
     'sampled_from',
@@ -532,6 +532,32 @@ def streaming(elements):
 
 
 @defines_strategy
+def characters(whitelist_categories=None, blacklist_categories=None,
+               blacklist_characters=None, min_codepoint=None,
+               max_codepoint=None):
+    """Generates unicode text type (unicode on python 2, str on python 3)
+    characters following specified filtering rules.
+
+    This strategy accepts lists of Unicode categories, characters of which
+    should (`whitelist_categories`) or should not (`blacklist_categories`)
+    be produced.
+
+    Also there could be applied limitation by minimal and maximal produced
+    code point of the characters.
+
+    If you know what exactly characters you don't want to be produced,
+    pass them with `blacklist_characters` argument.
+
+    """
+    from hypothesis.searchstrategy.strings import OneCharStringStrategy
+    return OneCharStringStrategy(whitelist_categories=whitelist_categories,
+                                 blacklist_categories=blacklist_categories,
+                                 blacklist_characters=blacklist_characters,
+                                 min_codepoint=min_codepoint,
+                                 max_codepoint=max_codepoint)
+
+
+@defines_strategy
 def text(
     alphabet=None,
     min_size=None, average_size=None, max_size=None
@@ -548,7 +574,7 @@ def text(
     from hypothesis.searchstrategy.strings import OneCharStringStrategy, \
         StringStrategy
     if alphabet is None:
-        char_strategy = OneCharStringStrategy()
+        char_strategy = OneCharStringStrategy(blacklist_categories=['Cs'])
     elif not alphabet:
         if (min_size or 0) > 0:
             raise InvalidArgument(

@@ -20,61 +20,110 @@ import sys
 import unicodedata
 
 import hypothesis.internal.distributions as dist
-from hypothesis.internal.compat import hrange, hunichr, text_type, \
-    binary_type
+from hypothesis.errors import InvalidArgument
+from hypothesis.internal import charstree
+from hypothesis.internal.compat import hunichr, text_type, binary_type
 from hypothesis.searchstrategy.strategies import check_length, \
     SearchStrategy, check_data_type, MappedSearchStrategy
-
-_spaces = [
-    i for i in [
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-        20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 127, 128, 129, 130,
-        131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144,
-        145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158,
-        159, 160, 5760, 8192, 8193, 8194, 8195, 8196, 8197, 8198, 8199, 8200,
-        8201, 8202, 8239, 8287, 12288] if i <= sys.maxunicode]
 
 
 class OneCharStringStrategy(SearchStrategy):
 
     """A strategy which generates single character strings of text type."""
     specifier = text_type
-    ascii_characters = u''.join(
-        chr(i) for i in hrange(128)
-    )
     zero_point = ord(u'0')
 
+    def __init__(self,
+                 whitelist_categories=None,
+                 blacklist_categories=None,
+                 blacklist_characters=None,
+                 min_codepoint=None,
+                 max_codepoint=None):
+        whitelist_categories = set(whitelist_categories or [])
+        blacklist_categories = set(blacklist_categories or [])
+        blacklist_characters = set(blacklist_characters or [])
+
+        min_codepoint = int(min_codepoint or 0)
+        max_codepoint = int(max_codepoint or sys.maxunicode)
+
+        self.ascii_tree = charstree.filter_tree(
+            charstree.ascii_tree(),
+            whitelist_categories,
+            blacklist_categories,
+            blacklist_characters,
+            min_codepoint,
+            max_codepoint,
+        )
+        self.unicode_tree = charstree.filter_tree(
+            charstree.unicode_tree(),
+            whitelist_categories,
+            blacklist_categories,
+            blacklist_characters,
+            min_codepoint,
+            max_codepoint,
+        )
+        self.spaces_tree = charstree.filter_tree(
+            self.unicode_tree,
+            whitelist_categories=set(['Zs', 'Cc']),
+            blacklist_characters=blacklist_characters,
+            min_codepoint=min_codepoint,
+            max_codepoint=max_codepoint,
+        )
+        self.blacklist_characters = blacklist_characters
+        self.min_codepoint = min_codepoint
+        self.max_codepoint = max_codepoint
+        if not self.unicode_tree:
+            raise InvalidArgument('No characters could be produced.'
+                                  ' Try to reduce white/black categories list'
+                                  ' or min/max allowed code points.')
+
     def draw_parameter(self, random):
+        ascii_categories = charstree.categories(self.ascii_tree)
+        unicode_categories = charstree.categories(self.unicode_tree)
+        spaces_categories = charstree.categories(self.spaces_tree)
+
         alphabet_size = 1 + dist.geometric(random, 0.1)
         alphabet = []
         buckets = 10
         ascii_chance = random.randint(1, buckets)
-        if ascii_chance < buckets:
+
+        if spaces_categories and ascii_chance < buckets:
             space_chance = random.randint(1, buckets - ascii_chance)
         else:
             space_chance = 0
+
         while len(alphabet) < alphabet_size:
             choice = random.randint(1, buckets)
-            if choice <= ascii_chance:
-                codepoint = dist.geometric(random, 1.0 / 127)
-            elif choice <= ascii_chance + space_chance:
-                while True:
-                    i = dist.geometric(random, 2 / len(_spaces))
-                    if i < len(_spaces):
-                        codepoint = _spaces[i]
-                        break
-            else:
-                codepoint = random.randint(0, sys.maxunicode)
 
-            char = hunichr(codepoint)
-            if self.is_good(char):
-                alphabet.append(char)
-        if u'\n' not in alphabet and not random.randint(0, 10):
-            alphabet.append(u'\n')
+            if ascii_categories and choice <= ascii_chance:
+                category = random.choice(ascii_categories)
+                tree = self.ascii_tree
+            elif spaces_categories and choice <= ascii_chance + space_chance:
+                category = random.choice(spaces_categories)
+                tree = self.spaces_tree
+            else:
+                category = random.choice(unicode_categories)
+                tree = self.unicode_tree
+
+            codepoint = charstree.random_codepoint(tree, category, random)
+            alphabet.append(hunichr(codepoint))
+
+        if u'\n' not in alphabet and not random.randint(0, 6):
+            if self.is_good(u'\n'):
+                alphabet.append(u'\n')
+
         return tuple(alphabet)
 
     def is_good(self, char):
-        return unicodedata.category(char) != u'Cs'
+        if char in self.blacklist_characters:
+            return False
+
+        categories = charstree.categories(self.unicode_tree)
+        if unicodedata.category(char) not in categories:
+            return False
+
+        codepoint = ord(char)
+        return self.min_codepoint <= codepoint <= self.max_codepoint
 
     def draw_template(self, random, p):
         return random.choice(p)
@@ -114,16 +163,26 @@ class OneCharStringStrategy(SearchStrategy):
         return accept
 
     def try_ascii(self, random, template):
-        if template < u'0':
-            for i in hrange(ord(template) + 1, self.zero_point + 1):
-                yield hunichr(i)
+        tree = self.ascii_tree
 
-        for i in self.ascii_characters:
-            if i < u'0':
-                continue
-            if i >= template:
-                break
-            yield i
+        if not tree:
+            return
+
+        zero_point = self.zero_point
+        template = ord(template)
+
+        if template < zero_point:
+            min_codepoint, max_codepoint = template, zero_point
+        elif template > zero_point:
+            min_codepoint, max_codepoint = zero_point, template
+        else:
+            return
+
+        subtree = charstree.filter_tree(
+            tree, min_codepoint=min_codepoint, max_codepoint=max_codepoint)
+
+        for codepoint in charstree.codepoints(subtree):
+            yield hunichr(codepoint)
 
     def to_basic(self, template):
         return template
