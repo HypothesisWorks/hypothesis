@@ -22,6 +22,18 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -----------------------------------------------------------------------
+`1.15.0 <https://hypothesis.readthedocs.org/en/1.15.0/>`_ - 2015-11-24
+-----------------------------------------------------------------------
+
+A release with two new features.
+
+* A 'characters' strategy for more flexible generation of text with particular
+  character ranges and types, kindly contrinbuted by `Alexander Shorin <https://github.com/kxepal>`_.
+* Add support for preconditions to the rule based stateful testing. Kindly
+  contributed by `Christopher Armstrong <https://github.com/radix>`_
+
+
+-----------------------------------------------------------------------
 `1.14.0 <https://hypothesis.readthedocs.org/en/1.14.0/>`_ - 2015-11-01
 -----------------------------------------------------------------------
 
