@@ -83,6 +83,15 @@ have found.
 Long live Hypothesis! (Or at least, property-based testing).
 
 -------------------------------------------
+`Josh Bronson <https://github.com/jab>`_
+-------------------------------------------
+
+Adopting Hypothesis improved `bidict <https://github.com/jab/bidict>`_'s
+test coverage and significantly increased our ability to make changes to
+the code with confidence that correct behavior would be preserved.
+Thank you, David, for the great testing tool.
+
+-------------------------------------------
 `Your name goes here <http://example.com>`_
 -------------------------------------------
 
