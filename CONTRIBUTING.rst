@@ -20,11 +20,11 @@ All work in Hypothesis is licensed under the terms of the
 submitting a contribution you are agreeing to licence your work under those
 terms.
 
-Finally, if it is not there already, add your name (and a link to your github
+Finally, if it is not there already, add your name (and a link to your GitHub
 and email address if you want) to the list of contributors found at
 the end of this document, in alphabetical order. It doesn't have to be your
 "real" name (whatever that means), any sort of public identifier
-is fine. In particular a Github account is sufficient.
+is fine. In particular a GitHub account is sufficient.
 
 -----------------------
 The actual contribution
@@ -73,7 +73,7 @@ All of it will be checked on Travis so you don't *have* to run anything locally,
 find it useful to do so: A full travis run takes about an hour, so running a smaller set of
 tests locally can be helpful.
 
-The makefile should be "fairly" portable, but is currently only known to work on Linux or OSX. It *might* work
+The makefile should be "fairly" portable, but is currently only known to work on Linux or OS X. It *might* work
 on a BSD or on Windows with cygwin installed, but it probably won't.
 
 Some notable commands:

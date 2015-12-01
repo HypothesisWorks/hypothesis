@@ -28,7 +28,7 @@ information to the contrary.
 A release with two new features.
 
 * A 'characters' strategy for more flexible generation of text with particular
-  character ranges and types, kindly contrinbuted by `Alexander Shorin <https://github.com/kxepal>`_.
+  character ranges and types, kindly contributed by `Alexander Shorin <https://github.com/kxepal>`_.
 * Add support for preconditions to the rule based stateful testing. Kindly
   contributed by `Christopher Armstrong <https://github.com/radix>`_
 
@@ -153,7 +153,7 @@ Misc:
   remove hypothesis-pytest and depend on only Hypothesis.
 * Better repr for hypothesis.extra.datetimes() strategies.
 * Add .close() method to abstract base class for Backend (it was already present
-  in the main implemnetation).
+  in the main implementation).
 
 -----------------------------------------------------------------------
 `1.11.1 <https://hypothesis.readthedocs.org/en/1.11.1/>`_ - 2015-09-16
@@ -588,7 +588,7 @@ Bugs fixed (most but not all from the result of stateful testing) include:
 Some minor quality improvements:
 
 * Lists of streams, flatmapped strategies and basic strategies should now
-  now have slightly better simplificaiton.
+  now have slightly better simplification.
 
 ---------------------------------------------------------------------
 `1.3.0 <https://hypothesis.readthedocs.org/en/v1.3.0/>`_ - 2015-05-22
@@ -771,7 +771,7 @@ Codename: Point releases go faster
 * Better string generation by parametrizing by a limited alphabet
 * Faster string simplification - previously if simplifying a string with high range unicode characters it would try every unicode character smaller than that. This was pretty pointless. Now it stops after it's a short range (it can still reach smaller ones through recursive calls because of other simplifying operations).
 * Faster list simplification by first trying a binary chop down the middle
-* Simultaneous simplification of identical elements in a list. So if a bug only trickers when you have duplicates but you drew e.g. [-17, -17], this will now simplify to [0, 0].
+* Simultaneous simplification of identical elements in a list. So if a bug only triggers when you have duplicates but you drew e.g. [-17, -17], this will now simplify to [0, 0].
 
 
 -------------------
@@ -788,7 +788,7 @@ out, and filing off some final rough edges from the API.
 * Add an example() method to strategy objects to give an example of the sort of data that the strategy generates.
 * Remove .descriptor attribute of strategies
 * Rename descriptor_test_suite to strategy_test_suite
-* Rename the few remaing uses of descriptor to specifier (descriptor already has a defined meaning in Python)
+* Rename the few remaining uses of descriptor to specifier (descriptor already has a defined meaning in Python)
 
 
 ---------------------------------------------------------
@@ -880,9 +880,9 @@ Codename: TIL narrow Python builds are a thing
 
 This just fixes the one bug.
 
-* Apparently there is such a thing as a "narrow python build" and OSX ships with these by default
+* Apparently there is such a thing as a "narrow python build" and OS X ships with these by default
   for python 2.7. These are builds where you only have two bytes worth of unicode. As a result,
-  generating unicode was completely broken on OSX. Fix this by only generating unicode codepoints
+  generating unicode was completely broken on OS X. Fix this by only generating unicode codepoints
   in the range supported by the system.
 
 
@@ -955,7 +955,7 @@ FLAGSHIP FEATURE: Hypothesis now persists examples for later use. It stores
 data in a local SQLite database and will reuse it for all tests of the same
 type.
 
-LICENSING CHANGE: Hypothesis is now released under the Mozila Public License
+LICENSING CHANGE: Hypothesis is now released under the Mozilla Public License
 2.0. This applies to all versions from 0.4.0 onwards until further notice.
 The previous license remains applicable to all code prior to 0.4.0.
 
@@ -1010,7 +1010,7 @@ Bugs fixed:
 * Add a mechanism for more conveniently defining tests which just sample
   from some collection.
 * Fix for a really subtle bug deep in the internals of the strategy table.
-  In some circumstances if you were to define instance stratagies for both
+  In some circumstances if you were to define instance strategies for both
   a parent class and one or more of its subclasses you would under some
   circumstances get the strategy for the wrong superclass of an instance.
   It is very unlikely anyone has ever encountered this in the wild, but it
@@ -1032,7 +1032,7 @@ Bugs fixed:
 * Fix for a bug where some strategies did not correctly implement
   could_have_produced. It is very unlikely that any of these would have
   been seen in the wild, and the consequences if they had been would have
-  bene minor.
+  been minor.
 * Re-export the @given decorator from the main hypothesis namespace. It's
   still available at the old location too.
 * Minor performance optimisation for simplifying long lists.
@@ -1068,7 +1068,7 @@ Bugs fixed:
 0.2.2 - 2015-01-08
 ------------------
 
-* Fix an embarassing complete failure of the installer caused by my being
+* Fix an embarrassing complete failure of the installer caused by my being
   bad at version control
 
 
