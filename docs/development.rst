@@ -21,7 +21,7 @@ details and `this pull request
 <https://github.com/DRMacIver/hypothesis/pull/154>`_ for an example of how the process goes). This isn't
 "patches welcome", it's "I will help you write a patch".
 
-All enhancement tickets on github are tagged with either `help-wanted <https://github.com/DRMacIver/hypothesis/labels/help-wanted>`_
+All enhancement tickets on GitHub are tagged with either `help-wanted <https://github.com/DRMacIver/hypothesis/labels/help-wanted>`_
 if I think they're viable for someone else to pick up or `for-a-modest-fee <https://github.com/DRMacIver/hypothesis/labels/for-a-modest-fee>`_ if
 I think they are not and that if you want them you should probably talk to me about paid development.
 

@@ -301,7 +301,7 @@ Where steps() and execute_step() are methods you must implement, and teardown
 is a method you can implement if you need to clean something up at the end.
 steps  returns a strategy, which is allowed to depend arbitrarily on the
 current state of the test execution. *Ideally* a good steps implementation
-should be robust against minor changes in the state. steps that changea  lot
+should be robust against minor changes in the state. Steps that change a lot
 between slightly different executions will tend to produce worse quality
 examples because they're hard to simplify.
 
