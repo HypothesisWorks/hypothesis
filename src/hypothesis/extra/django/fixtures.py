@@ -19,6 +19,7 @@ from __future__ import division, print_function, absolute_import
 import weakref
 from random import Random
 
+import django
 from django.db import transaction
 from django.test.runner import setup_databases
 
@@ -90,10 +91,15 @@ class Fixture(object):
                 max_parameter_tries=1
             )
         finally:
-            old_names, mirrors = old_config
+            if django.VERSION[:2] < (1, 9):
+                old_names, _ = old_config
+            else:
+                old_names = old_config
+
             for connection, old_name, destroy in old_names:
                 if destroy:
-                    connection.creation.destroy_test_db(old_name, verbosity)
+                    connection.creation.destroy_test_db(
+                        old_name, verbosity)
 
     def __call__(self):
         with BuildContext():
