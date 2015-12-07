@@ -305,8 +305,9 @@ def nicerepr(v):
         return unicode_safe_repr(v)
 
 
-def arg_string(f, args, kwargs):
-    args, kwargs = convert_positional_arguments(f, args, kwargs)
+def arg_string(f, args, kwargs, reorder=True):
+    if reorder:
+        args, kwargs = convert_positional_arguments(f, args, kwargs)
 
     argspec = getargspec(f)
 

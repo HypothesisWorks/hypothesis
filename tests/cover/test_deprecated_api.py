@@ -200,7 +200,7 @@ def test_float_range_validates():
 
 def test_sampled_from_validates():
     with pytest.raises(InvalidArgument):
-        strategy(s.sampled_from([]))
+        strategy(s.sampled_from([])).example()
 
 
 def test_can_generate_named_tuples():

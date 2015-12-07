@@ -27,24 +27,26 @@ from hypothesis.strategies import characters
 
 def test_bad_category_arguments():
     with pytest.raises(InvalidArgument):
-        characters(whitelist_categories=['foo'], blacklist_categories=['bar'])
+        characters(
+            whitelist_categories=['foo'], blacklist_categories=['bar']
+        ).example()
 
 
 def test_bad_codepoint_arguments():
     with pytest.raises(InvalidArgument):
-        characters(min_codepoint=42, max_codepoint=24)
+        characters(min_codepoint=42, max_codepoint=24).example()
 
 
 def test_exclude_all_available_range():
     with pytest.raises(InvalidArgument):
         characters(min_codepoint=ord('0'), max_codepoint=ord('0'),
-                   blacklist_characters='0')
+                   blacklist_characters='0').example()
 
 
 def test_when_nothing_could_be_produced():
     with pytest.raises(InvalidArgument):
         characters(whitelist_categories=['Cc'],
-                   min_codepoint=ord('0'), max_codepoint=ord('9'))
+                   min_codepoint=ord('0'), max_codepoint=ord('9')).example()
 
 
 def test_characters_of_specific_groups():

@@ -88,7 +88,7 @@ def test_can_clone_same_length_items():
 
 def test_unique_lists_error_on_too_large_average_size():
     with pytest.raises(InvalidArgument):
-        lists(integers(), unique=True, average_size=10, max_size=5)
+        lists(integers(), unique=True, average_size=10, max_size=5).example()
 
 
 @given(randoms())

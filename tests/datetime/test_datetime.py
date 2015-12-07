@@ -177,18 +177,18 @@ def test_validates_timezone_name_from_db():
 
 def test_validates_year_arguments_in_range():
     with pytest.raises(InvalidArgument):
-        datetimes(min_year=-10 ** 6)
+        datetimes(min_year=-10 ** 6).example()
     with pytest.raises(InvalidArgument):
-        datetimes(max_year=-10 ** 6)
+        datetimes(max_year=-10 ** 6).example()
     with pytest.raises(InvalidArgument):
-        datetimes(min_year=10 ** 6)
+        datetimes(min_year=10 ** 6).example()
     with pytest.raises(InvalidArgument):
-        datetimes(max_year=10 ** 6)
+        datetimes(max_year=10 ** 6).example()
 
 
 def test_needs_permission_for_no_timezones():
     with pytest.raises(InvalidArgument):
-        datetimes(allow_naive=False, timezones=[])
+        datetimes(allow_naive=False, timezones=[]).example()
 
 
 def test_bordering_on_a_leap_year():

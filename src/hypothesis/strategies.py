@@ -24,8 +24,8 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.control import assume
 from hypothesis.settings import Settings
 from hypothesis.searchstrategy import SearchStrategy
-from hypothesis.internal.compat import hrange, ArgSpec, text_type, \
-    getargspec, integer_types, float_to_decimal, unicode_safe_repr
+from hypothesis.internal.compat import ArgSpec, text_type, getargspec, \
+    integer_types, float_to_decimal, unicode_safe_repr
 from hypothesis.searchstrategy.reprwrapper import ReprWrapperStrategy
 
 __all__ = [
@@ -45,32 +45,12 @@ __all__ = [
 
 
 def defines_strategy(strategy_definition):
-    from hypothesis.internal.reflection import proxies, arg_string, \
-        convert_positional_arguments
-    argspec = getargspec(strategy_definition)
-    defaults = {}
-    if argspec.defaults is not None:
-        for k in hrange(1, len(argspec.defaults) + 1):
-            defaults[argspec.args[-k]] = argspec.defaults[-k]
+    from hypothesis.internal.reflection import proxies
+    from hypothesis.searchstrategy.deferred import DeferredStrategy
 
     @proxies(strategy_definition)
     def accept(*args, **kwargs):
-        result = strategy_definition(*args, **kwargs)
-
-        def calc_repr():
-            _args = args
-            _kwargs = kwargs
-            _args, _kwargs = convert_positional_arguments(
-                strategy_definition, _args, _kwargs)
-            kwargs_for_repr = dict(_kwargs)
-            for k, v in defaults.items():
-                if k in kwargs_for_repr and kwargs_for_repr[k] is defaults[k]:
-                    del kwargs_for_repr[k]
-            return u'%s(%s)' % (
-                strategy_definition.__name__,
-                arg_string(strategy_definition, _args, kwargs_for_repr)
-            )
-        return ReprWrapperStrategy(result, calc_repr)
+        return DeferredStrategy(strategy_definition, args, kwargs)
     return accept
 
 
@@ -307,6 +287,7 @@ def tuples(*args):
     return TupleStrategy(args, tuple)
 
 
+@defines_strategy
 def sampled_from(elements):
     """Returns a strategy which generates any value present in the iterable
     elements.
@@ -324,17 +305,9 @@ def sampled_from(elements):
             u'sampled_from requires at least one value'
         )
     if len(elements) == 1:
-        result = JustStrategy(elements[0])
+        return JustStrategy(elements[0])
     else:
-        result = SampledFromStrategy(elements)
-
-    def calc_repr():
-        return u'sampled_from((%s%s))' % (
-            u', '.join(map(unicode_safe_repr, elements)),
-            ',' if len(elements) == 1 else '',
-        )
-
-    return ReprWrapperStrategy(result, calc_repr)
+        return SampledFromStrategy(elements)
 
 
 @defines_strategy

@@ -87,40 +87,41 @@ def test_cannot_put_kwargs_in_the_middle():
 
 def test_float_ranges():
     with pytest.raises(InvalidArgument):
-        floats(float(u'nan'), 0)
+        floats(float(u'nan'), 0).example()
     with pytest.raises(InvalidArgument):
-        floats(1, -1)
+        floats(1, -1).example()
 
 
 def test_dictionary_key_size():
     with pytest.raises(InvalidArgument):
-        dictionaries(keys=booleans(), values=integers(), min_size=3)
+        dictionaries(keys=booleans(), values=integers(), min_size=3).example()
 
 
 def test_set_size():
     with pytest.raises(InvalidArgument):
-        sets(elements=booleans(), min_size=3)
+        sets(elements=booleans(), min_size=3).example()
 
 
 def test_does_not_error_if_min_size_is_bigger_than_default_size():
-    lists(integers(), min_size=50)
-    sets(integers(), min_size=50)
-    frozensets(integers(), min_size=50)
-    lists(integers(), min_size=50, unique=True)
+    lists(integers(), min_size=50).example()
+    sets(integers(), min_size=50).example()
+    frozensets(integers(), min_size=50).example()
+    lists(integers(), min_size=50, unique=True).example()
 
 
 def test_list_unique_and_unique_by_cannot_both_be_enabled():
     with pytest.raises(InvalidArgument):
         @given(lists(unique=True, unique_by=lambda x: x))
-        def boom(*args):
+        def boom(t):
             pass
+        boom()
 
 
 def test_an_average_size_must_be_positive():
     with pytest.raises(InvalidArgument):
-        lists(integers(), average_size=0.0)
+        lists(integers(), average_size=0.0).example()
     with pytest.raises(InvalidArgument):
-        lists(integers(), average_size=-1.0)
+        lists(integers(), average_size=-1.0).example()
 
 
 def test_an_average_size_may_be_zero_if_max_size_is():

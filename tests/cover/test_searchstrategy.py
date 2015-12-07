@@ -124,7 +124,7 @@ def test_can_map():
 
 def test_sample_from_empty_errors():
     with pytest.raises(InvalidArgument):
-        sampled_from([])
+        sampled_from([]).example()
 
 
 def test_example_raises_unsatisfiable_when_too_filtered():

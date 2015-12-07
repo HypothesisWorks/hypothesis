@@ -80,7 +80,7 @@ def fn_ktest(*fnkwargs):
 )
 def test_validates_keyword_arguments(fn, kwargs):
     with pytest.raises(InvalidArgument):
-        fn(**kwargs)
+        fn(**kwargs).example()
 
 
 @fn_ktest(
@@ -122,7 +122,7 @@ def test_produces_valid_examples_from_keyword(fn, kwargs):
 )
 def test_validates_args(fn, args):
     with pytest.raises(InvalidArgument):
-        fn(*args)
+        fn(*args).example()
 
 
 @fn_test(
@@ -217,7 +217,7 @@ def test_non_float_decimal():
 def test_validates_min_size_for_sets():
     ds.sets(ds.booleans(), min_size=2)
     with pytest.raises(InvalidArgument):
-        ds.sets(ds.booleans(), min_size=3)
+        ds.sets(ds.booleans(), min_size=3).example()
 
 
 def test_produces_dictionaries_of_at_least_minimum_size():

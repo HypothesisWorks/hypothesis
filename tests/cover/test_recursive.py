@@ -85,7 +85,7 @@ def test_drawing_many_near_boundary():
 
 def test_recursive_call_validates_expand_returns_strategies():
     with pytest.raises(InvalidArgument):
-        st.recursive(st.booleans(), lambda x: 1)
+        st.recursive(st.booleans(), lambda x: 1).example()
 
 
 @given(st.randoms())
