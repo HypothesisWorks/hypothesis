@@ -26,7 +26,7 @@ then it should be available on pypi.
 * `priority <https://github.com/python-hyper/priority>`_
 * `pyrsistent <https://github.com/tobgu/pyrsistent>`_
 * `pyudev <https://github.com/pyudev/pyudev>`_
-* `Qutebrowser <https://github.com/The-Compiler/qutebrowser>`_
+* `qutebrowser <https://github.com/The-Compiler/qutebrowser>`_
 * `RubyMarshal <https://github.com/d9pouces/RubyMarshal>`_
 * `Segpy <https://github.com/sixty-north/segpy>`_ 
 * `simoa <https://github.com/andsor/pysimoa>`_
