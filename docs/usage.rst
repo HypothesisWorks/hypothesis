@@ -23,6 +23,7 @@ then it should be available on pypi.
 * `mercurial <https://www.mercurial-scm.org/>`_
 * `natsort <https://github.com/SethMMorton/natsort>`_
 * `pretext <https://github.com/moreati/b-prefix-all-the-doctests>`_
+* `priority <https://github.com/python-hyper/priority>`_
 * `pyrsistent <https://github.com/tobgu/pyrsistent>`_
 * `pyudev <https://github.com/pyudev/pyudev>`_
 * `Qutebrowser <https://github.com/The-Compiler/qutebrowser>`_
