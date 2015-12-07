@@ -91,6 +91,22 @@ test coverage and significantly increased our ability to make changes to
 the code with confidence that correct behavior would be preserved.
 Thank you, David, for the great testing tool.
 
+--------------------------------------------
+`Cory Benfield <https://github.com/Lukasa>`_
+--------------------------------------------
+
+Hypothesis is the single most powerful tool in my toolbox for working with
+algorithmic code, or any software that produces predictable output from a wide
+range of sources. When using it with
+`Priority <http://python-hyper.org/priority/>`_, Hypothesis consistently found
+errors in my assumptions and extremely subtle bugs that would have taken months
+of real-world use to locate. In some cases, Hypothesis found subtle deviations
+from the correct output of the algorithm that may never have been noticed at
+all.
+
+When it comes to validating the correctness of your tools, nothing comes close
+to the thoroughness and power of Hypothesis.
+
 -------------------------------------------
 `Your name goes here <http://example.com>`_
 -------------------------------------------
