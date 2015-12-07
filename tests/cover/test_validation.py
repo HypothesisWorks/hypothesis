@@ -25,10 +25,11 @@ from hypothesis.strategies import sets, lists, floats, booleans, \
 
 
 def test_errors_when_given_varargs():
+    @given(integers())
+    def has_varargs(*args):
+        pass
     with pytest.raises(InvalidArgument) as e:
-        @given(integers())
-        def has_varargs(*args):
-            pass
+        has_varargs()
     assert u'varargs' in e.value.args[0]
 
 
@@ -39,10 +40,11 @@ def test_varargs_without_positional_arguments_allowed():
 
 
 def test_errors_when_given_varargs_and_kwargs_with_positional_arguments():
+    @given(integers())
+    def has_varargs(*args, **kw):
+        pass
     with pytest.raises(InvalidArgument) as e:
-        @given(integers())
-        def has_varargs(*args, **kw):
-            pass
+        has_varargs()
     assert u'varargs' in e.value.args[0]
 
 
@@ -53,36 +55,45 @@ def test_varargs_and_kwargs_without_positional_arguments_allowed():
 
 
 def test_bare_given_errors():
+    @given()
+    def test():
+        pass
+
     with pytest.raises(InvalidArgument):
-        given()
+        test()
 
 
 def test_errors_on_unwanted_kwargs():
+    @given(hello=int, world=int)
+    def greet(world):
+        pass
     with pytest.raises(InvalidArgument):
-        @given(hello=int, world=int)
-        def greet(world):
-            pass
+        greet()
 
 
 def test_errors_on_too_many_positional_args():
+    @given(integers(), int, int)
+    def foo(x, y):
+        pass
+
     with pytest.raises(InvalidArgument):
-        @given(integers(), int, int)
-        def foo(x, y):
-            pass
+        foo()
 
 
 def test_errors_on_any_varargs():
+    @given(integers())
+    def oops(*args):
+        pass
     with pytest.raises(InvalidArgument):
-        @given(integers())
-        def oops(*args):
-            pass
+        oops()
 
 
 def test_cannot_put_kwargs_in_the_middle():
+    @given(y=int)
+    def foo(x, y, z):
+        pass
     with pytest.raises(InvalidArgument):
-        @given(y=int)
-        def foo(x, y, z):
-            pass
+        foo()
 
 
 def test_float_ranges():
@@ -110,10 +121,10 @@ def test_does_not_error_if_min_size_is_bigger_than_default_size():
 
 
 def test_list_unique_and_unique_by_cannot_both_be_enabled():
+    @given(lists(unique=True, unique_by=lambda x: x))
+    def boom(t):
+        pass
     with pytest.raises(InvalidArgument):
-        @given(lists(unique=True, unique_by=lambda x: x))
-        def boom(t):
-            pass
         boom()
 
 

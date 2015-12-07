@@ -380,15 +380,6 @@ def given(*generator_arguments, **generator_kwargs):
     # if they were keyword specifiers for data to pass to the test.
     provided_random = generator_kwargs.pop(u'random', None)
     settings = generator_kwargs.pop(u'settings', None) or Settings.default
-
-    if (provided_random is not None) and settings.derandomize:
-        raise InvalidArgument(
-            u'Cannot both be derandomized and provide an explicit random')
-
-    if not (generator_arguments or generator_kwargs):
-        raise InvalidArgument(
-            u'given must be called with at least one argument')
-
     if generator_arguments and generator_kwargs:
         note_deprecation(
             u'Mixing positional and keyword arguments in a call to given is '
@@ -396,22 +387,46 @@ def given(*generator_arguments, **generator_kwargs):
         )
 
     def run_test_with_generator(test):
+        original_argspec = getargspec(test)
+
+        def invalid(message):
+            argspec = inspect.ArgSpec(
+                args=original_argspec.args,
+                keywords=original_argspec.keywords,
+                varargs=original_argspec.varargs,
+                defaults=(None,) * len(original_argspec.args)
+            )
+
+            @impersonate(test)
+            @copy_argspec(
+                test.__name__, argspec
+            )
+            def wrapped_test(*arguments, **kwargs):
+                raise InvalidArgument(message)
+            return wrapped_test
+
+        if (provided_random is not None) and settings.derandomize:
+            return invalid(
+                u'Cannot both be derandomized and provide an explicit random')
+
+        if not (generator_arguments or generator_kwargs):
+            return invalid(
+                u'given must be called with at least one argument')
+
         if settings.derandomize:
-            assert provided_random is None
             random = Random(function_digest(test))
         else:
             random = provided_random or Random()
 
-        original_argspec = getargspec(test)
         if generator_arguments and original_argspec.varargs:
-            raise InvalidArgument(
+            return invalid(
                 u'varargs are not supported with positional arguments to '
                 u'@given'
             )
         extra_kwargs = [
             k for k in generator_kwargs if k not in original_argspec.args]
         if extra_kwargs and not original_argspec.keywords:
-            raise InvalidArgument(
+            return invalid(
                 u'%s() got an unexpected keyword argument %r' % (
                     test.__name__,
                     extra_kwargs[0]
@@ -419,7 +434,7 @@ def given(*generator_arguments, **generator_kwargs):
         if (
             len(generator_arguments) > len(original_argspec.args)
         ):
-            raise InvalidArgument((
+            return invalid((
                 u'Too many positional arguments for %s() (got %d but'
                 u' expected at most %d') % (
                     test.__name__, len(generator_arguments),
@@ -429,7 +444,7 @@ def given(*generator_arguments, **generator_kwargs):
         seen_kwarg = None
         for a in arguments:
             if isinstance(a, list):  # pragma: no cover
-                raise InvalidArgument((
+                return invalid((
                     u'Cannot decorate function %s() because it has '
                     u'destructuring arguments') % (
                         test.__name__,
@@ -439,7 +454,7 @@ def given(*generator_arguments, **generator_kwargs):
                 specifiers.append(generator_kwargs[a])
             else:
                 if seen_kwarg is not None:
-                    raise InvalidArgument((
+                    return invalid((
                         u'Argument %s comes after keyword %s which has been '
                         u'specified, but does not itself have a '
                         u'specification') % (
