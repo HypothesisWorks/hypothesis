@@ -51,9 +51,11 @@ pip install --no-use-wheel .[fakefactory]
 $PYTEST tests/fakefactory/
 
 if [ "$(python -c 'import sys; print(sys.version_info[:2] <= (2, 6))')" != "True" ] ; then
+if [ "$(python -c 'import sys; print(sys.version_info[0] == 2 or sys.version_info[:2] >= (3, 4))')" == "True" ] ; then
   pip install .[django]
   python -m tests.django.manage test tests.django
   pip uninstall -y django fake-factory
+fi
 fi
 
 if [ "$(python -c 'import sys; print(sys.version_info[:2] < (3, 5))')" = "True" ] ; then
