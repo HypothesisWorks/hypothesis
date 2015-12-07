@@ -474,6 +474,10 @@ class FullRangeFloats(FloatStrategy):
         (u'negative_probability', u'subnormal_probability')
     )
 
+    def __init__(self, allow_nan=True):
+        super(FullRangeFloats, self).__init__()
+        self.allow_nan = allow_nan
+
     def draw_parameter(self, random):
         return self.Parameter(
             negative_probability=dist.uniform_float(random, 0, 1),
@@ -486,7 +490,11 @@ class FullRangeFloats(FloatStrategy):
             exponent = 0
         else:
             exponent = random.getrandbits(11)
-
+            if not self.allow_nan:
+                def exponent_allowed(x):
+                    return not math.isnan(compose_float(sign, x, 1))
+                while not exponent_allowed(exponent):
+                    exponent = random.getrandbits(11)
         return compose_float(
             sign,
             exponent,
@@ -633,21 +641,26 @@ class ExponentialFloatStrategy(FloatStrategy):
 
 class NastyFloats(SampledFromStrategy):
 
-    def __init__(self):
-        SampledFromStrategy.__init__(
-            self,
-            elements=[
-                0.0,
-                -0.0,
-                sys.float_info.min,
-                -sys.float_info.min,
-                -sys.float_info.max,
-                sys.float_info.max,
+    def __init__(self, allow_nan=True, allow_infinity=True):
+        elements = [
+            0.0,
+            -0.0,
+            sys.float_info.min,
+            -sys.float_info.min,
+            -sys.float_info.max,
+            sys.float_info.max
+        ]
+        if allow_infinity:
+            elements.extend([
                 float(u'inf'),
-                -float(u'inf'),
-                float(u'nan'),
-            ]
-        )
+                -float(u'inf')
+            ])
+        if allow_nan:
+            elements.extend([
+                float(u'nan')
+            ])
+
+        SampledFromStrategy.__init__(self, elements=elements)
 
 
 class ComplexStrategy(MappedSearchStrategy):
