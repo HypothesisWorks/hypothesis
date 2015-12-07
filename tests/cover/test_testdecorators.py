@@ -533,12 +533,13 @@ def test_mixed_text(x):
     assert set(x).issubset(set(u'abcdefg'))
 
 
-def test_when_set_to_no_simplifies_only_runs_failing_example_once():
+def test_when_set_to_no_simplifies_runs_failing_example_twice():
     failing = [0]
 
     @given(integers(), settings=Settings(max_shrinks=0, max_examples=200))
     def foo(x):
         if x > 11:
+            note('Lo')
             failing[0] += 1
             assert False
 
@@ -546,8 +547,9 @@ def test_when_set_to_no_simplifies_only_runs_failing_example_once():
         with raises(AssertionError):
             with capture_out() as out:
                 foo()
-    assert failing == [1]
-    assert u'Trying example' in out.getvalue()
+    assert failing == [2]
+    assert u'Falsifying example' in out.getvalue()
+    assert u'Lo' in out.getvalue()
 
 
 @given(integers(), settings=Settings(max_examples=1))

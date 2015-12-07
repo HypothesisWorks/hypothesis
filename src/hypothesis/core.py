@@ -345,7 +345,7 @@ def example(*args, **kwargs):
 
 def reify_and_execute(
     search_strategy, template, test,
-    print_example=False, always_print=False, record_repr=None,
+    print_example=False, record_repr=None,
     is_final=False,
 ):
     def run():
@@ -356,7 +356,7 @@ def reify_and_execute(
                 report(
                     lambda: u'Falsifying example: %s(%s)' % (
                         test.__name__, text_version,))
-            elif current_verbosity() >= Verbosity.verbose or always_print:
+            elif current_verbosity() >= Verbosity.verbose:
                 report(
                     lambda: u'Trying example: %s(%s)' % (
                         test.__name__, text_version))
@@ -554,15 +554,12 @@ def given(*generator_arguments, **generator_kwargs):
                 try:
                     test_runner(reify_and_execute(
                         search_strategy, xs, test,
-                        always_print=settings.max_shrinks <= 0,
                         record_repr=record_repr,
                     ))
                     return False
                 except UnsatisfiedAssumption as e:
                     raise e
                 except Exception as e:
-                    if settings.max_shrinks <= 0:
-                        raise e
                     last_exception[0] = traceback.format_exc()
                     repr_for_last_exception[0] = record_repr[0]
                     verbose_report(last_exception[0])
