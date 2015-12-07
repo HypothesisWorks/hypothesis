@@ -579,3 +579,22 @@ def test_stateful_double_rule_is_deprecated(recwarn):
                 pass
 
     recwarn.pop(HypothesisDeprecationWarning)
+
+
+def test_can_explicitly_call_functions_when_precondition_not_satisfied():
+    class BadPrecondition(RuleBasedStateMachine):
+
+        def __init__(self):
+            super(BadPrecondition, self).__init__()
+
+        @precondition(lambda self: False)
+        @rule()
+        def test_blah(self):
+            raise ValueError()
+
+        @rule()
+        def test_foo(self):
+            self.test_blah()
+
+    with pytest.raises(ValueError):
+        run_state_machine_as_test(BadPrecondition)
