@@ -16,15 +16,30 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis.internal.compat import hrange, getargspec
+from hypothesis.internal.compat import hrange, getargspec, \
+    unicode_safe_repr
 from hypothesis.internal.reflection import arg_string, \
     convert_keyword_arguments, convert_positional_arguments
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
+class reprmangledtuple(tuple):
+
+    def __repr__(self):
+        try:
+            return super(reprmangledtuple, self).__repr__()
+        except UnicodeEncodeError:  # pragma: no cover
+            if len(self) == 1:
+                return u"(%s,)" % (unicode_safe_repr(self[0]),)
+            else:
+                return u"(%s)" % (u", ".join(
+                    map(unicode_safe_repr, self)
+                ))
+
+
 def tupleize(x):
-    if isinstance(x, list):
-        return tuple(x)
+    if isinstance(x, (tuple, list)):
+        return reprmangledtuple(x)
     else:
         return x
 
