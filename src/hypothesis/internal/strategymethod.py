@@ -17,6 +17,7 @@
 from __future__ import division, print_function, absolute_import
 
 from hypothesis.settings import Settings, note_deprecation
+from hypothesis.internal.compat import quiet_raise
 from hypothesis.utils.extmethod import ExtMethod
 
 
@@ -191,7 +192,15 @@ class StrategyExtMethod(ExtMethod):
         if settings is None:
             settings = Settings()
 
-        result = super(StrategyExtMethod, self).__call__(specifier, settings)
+        try:
+            result = super(StrategyExtMethod, self).__call__(
+                specifier, settings)
+        except NotImplementedError:
+            quiet_raise(NotImplementedError((
+                'Expected a SearchStrategy but got %r of type %s. '
+                'Note: This is a NotImplementedError for legacy reasons and '
+                'will become an InvalidArgumentError in Hypothesis 2.0.'
+            ) % (specifier, type(specifier).__name__)))
         note_deprecation((
             'Conversion of %r to strategy is deprecated '
             'and will be removed in Hypothesis 2.0. Use %r instead.') % (
