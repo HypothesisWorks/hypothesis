@@ -30,7 +30,8 @@ def test_destructuring_lambdas():
 
 
 def test_destructuring_not_allowed():
+    @given(integers())
+    def foo(a, (b, c)):
+        pass
     with pytest.raises(InvalidArgument):
-        @given(integers())
-        def foo(a, (b, c)):
-            pass
+        foo()

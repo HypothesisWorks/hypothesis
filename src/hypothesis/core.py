@@ -390,17 +390,6 @@ def given(*generator_arguments, **generator_kwargs):
         original_argspec = getargspec(test)
 
         def invalid(message):
-            argspec = inspect.ArgSpec(
-                args=original_argspec.args,
-                keywords=original_argspec.keywords,
-                varargs=original_argspec.varargs,
-                defaults=(None,) * len(original_argspec.args)
-            )
-
-            @impersonate(test)
-            @copy_argspec(
-                test.__name__, argspec
-            )
             def wrapped_test(*arguments, **kwargs):
                 raise InvalidArgument(message)
             return wrapped_test
