@@ -36,6 +36,9 @@ class WrapperStrategy(SearchStrategy):
     def __repr__(self):
         return u'%s(%r)' % (type(self).__name__, self.wrapped_strategy)
 
+    def validate(self):
+        self.wrapped_strategy.validate()
+
     def draw_parameter(self, random):
         return self.wrapped_strategy.draw_parameter(random)
 

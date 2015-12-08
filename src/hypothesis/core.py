@@ -538,6 +538,7 @@ def given(*generator_arguments, **generator_kwargs):
             )
 
             search_strategy = strategy(given_specifier, settings)
+            search_strategy.validate()
 
             if settings.database:
                 storage = settings.database.storage(

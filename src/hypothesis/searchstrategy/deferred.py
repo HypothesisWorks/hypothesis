@@ -72,6 +72,9 @@ class DeferredStrategy(SearchStrategy):
             )
         return self.__wrapped_strategy
 
+    def validate(self):
+        self.wrapped_strategy.validate()
+
     @property
     def template_upper_bound(self):
         return self.wrapped_strategy.template_upper_bound

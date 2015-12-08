@@ -47,7 +47,9 @@ def return_args(*args, **kwargs):
 def builds_ignoring_invalid(target, *args, **kwargs):
     def splat(value):
         try:
-            return target(*value[0], **value[1])
+            result = target(*value[0], **value[1])
+            result.validate()
+            return result
         except InvalidArgument:
             assume(False)
     return st.tuples(

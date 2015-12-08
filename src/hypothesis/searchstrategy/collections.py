@@ -59,6 +59,10 @@ class TupleStrategy(SearchStrategy):
             self.template_upper_bound = safe_mul(
                 e.template_upper_bound, self.template_upper_bound)
 
+    def validate(self):
+        for s in self.element_strategies:
+            s.validate()
+
     def reify(self, value):
         return self.newtuple([
             e.reify(v) for e, v in zip(self.element_strategies, value)
@@ -168,6 +172,10 @@ class ListStrategy(SearchStrategy):
         else:
             self.element_strategy = None
             self.template_upper_bound = 1
+
+    def validate(self):
+        if self.element_strategy is not None:
+            self.element_strategy.validate()
 
     def reify(self, value):
         if self.element_strategy is not None:
@@ -537,6 +545,9 @@ class UniqueListStrategy(SearchStrategy):
         self.average_size = average_size
         self.elements = elements
         self.key = key
+
+    def validate(self):
+        self.elements.validate()
 
     Parameter = namedtuple(
         u'Parameter', (u'parameter_seed', u'parameter')

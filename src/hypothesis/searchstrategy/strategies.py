@@ -215,6 +215,14 @@ class SearchStrategy(object):
             raise ValueError(u'Cannot | a SearchStrategy with %r' % (other,))
         return one_of_strategies((self, other))
 
+    def validate(self):
+        """Through an exception if the strategy is not valid.
+
+        This can happen due to lazy construction
+
+        """
+        pass
+
     # HERE BE DRAGONS. All below is non-public API of varying degrees of
     # stability.
 
@@ -413,6 +421,10 @@ class OneOfStrategy(SearchStrategy):
     def __repr__(self):
         return u' | '.join(map(repr, self.element_strategies))
 
+    def validate(self):
+        for e in self.element_strategies:
+            e.validate()
+
     def strictly_simpler(self, x, y):
         lx, vx = x
         ly, vy = y
@@ -528,6 +540,9 @@ class MappedSearchStrategy(SearchStrategy):
                     self.pack)
             )
         return self._cached_repr
+
+    def validate(self):
+        self.mapped_strategy.validate()
 
     def draw_parameter(self, random):
         return self.mapped_strategy.draw_parameter(random)
