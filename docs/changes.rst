@@ -22,6 +22,26 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -----------------------------------------------------------------------
+`1.16.0 <https://hypothesis.readthedocs.org/en/1.16.0/>`_ - 2015-12-08
+-----------------------------------------------------------------------
+
+There are no public API changes in this release but it includes a behaviour
+change that I wasn't comfortable putting in a patch release.
+
+* Functions from hypothesis.strategies will no longer raise InvalidArgument
+  on bad arguments. Instead the same errors will be raised when a test
+  using such a strategy is run. This may improve startup time in some
+  cases, but the main reason for it is so that errors in strategies
+  won't cause errors in loading, and it can interact correctly with things
+  like pytest.mark.skipif.
+* Errors caused by accidentally invoking the legacy API are now much less
+  confusing, although still throw NotImplementedError.
+* hypothesis.extra.django is 1.9 compatible.
+* When tests are run with max_shrinks=0 this will now still rerun the test
+  on failure and will no longer print "Trying example:" before each run.
+  Additionally note() will now work correctly when used with max_shrinks=0.
+
+-----------------------------------------------------------------------
 `1.15.0 <https://hypothesis.readthedocs.org/en/1.15.0/>`_ - 2015-11-24
 -----------------------------------------------------------------------
 
