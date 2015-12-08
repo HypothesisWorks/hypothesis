@@ -631,3 +631,8 @@ def test_prints_notes_once_on_failure():
         lines = out.getvalue().strip().splitlines()
         assert len(lines) == 2
         assert 'Hi there' in lines
+
+
+@given(lists(max_size=0))
+def test_empty_lists(xs):
+    assert xs == []
