@@ -194,6 +194,10 @@ def simplify_template_such_that(
     assert isinstance(random, Random)
 
     yield t
+
+    if settings.max_shrinks <= 0 or not f(t):
+        return
+
     successful_shrinks = 0
 
     changed = True

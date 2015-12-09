@@ -286,6 +286,18 @@ def test_errors_even_if_does_not_error_on_final_call():
         rude()
 
 
+def test_does_not_attempt_to_shrink_flaky_errors():
+    values = []
+
+    @given(integers())
+    def test(x):
+        values.append(x)
+        assert len(values) != 1
+    with raises(Flaky):
+        test()
+    assert len(set(values)) == 1
+
+
 class DifferentReprEachTime(object):
     counter = 0
 
