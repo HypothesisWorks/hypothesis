@@ -29,7 +29,7 @@ from hypothesis.searchstrategy.strategies import SearchStrategy, \
     check_data_type
 
 
-def fake_factory(source, locale=None, locales=None, providers=()):
+def fake_factory(source, locale=None, locales=None, providers=(), *args, **kwargs):
     check_valid_identifier(source)
     if source[0] == u'_':
         raise ValueError(u'Bad source name %s' % (source,))
@@ -62,16 +62,18 @@ def fake_factory(source, locale=None, locales=None, providers=()):
                 raise ValueError(u'Unsupported source %s for locale %s' % (
                     source, l
                 ))
-    return FakeFactoryStrategy(source, providers, locales)
+    return FakeFactoryStrategy(source, providers, locales, *args, **kwargs)
 
 
 class FakeFactoryStrategy(SearchStrategy):
 
-    def __init__(self, source, providers, locales):
+    def __init__(self, source, providers, locales, *args, **kwargs):
         self.source = source
         self.providers = tuple(providers)
         self.locales = tuple(locales)
         self.factories = {}
+        self.args = args
+        self.kwargs = kwargs
 
     def draw_parameter(self, random):
         locales = dist.non_empty_subset(random, self.locales)
@@ -95,7 +97,7 @@ class FakeFactoryStrategy(SearchStrategy):
     def gen_example(self, random, locales):
         factory = self.factory_for(random.choice(locales))
         factory.seed(random.getrandbits(128))
-        return text_type(getattr(factory, self.source)())
+        return text_type(getattr(factory, self.source)(*self.args, **self.kwargs))
 
     def basic_simplify(self, random, template):
         for _ in hrange(10):
