@@ -509,6 +509,15 @@ Settings.define_setting(
     description=u'Average length of lists to use'
 )
 
+Settings.define_setting(
+    u'perform_health_check',
+    default=True,
+    description=u"""
+If set to True, Hypothesis will run a preliminary health check before
+attempting to actually execute your test.
+"""
+)
+
 Settings.lock_further_definitions()
 
 Settings.register_profile('default', Settings())

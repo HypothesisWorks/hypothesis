@@ -162,3 +162,8 @@ class AbnormalExit(HypothesisException):
 
     """Raised when a test running in a child process exits without returning or
     raising an exception."""
+
+
+class FailedHealthCheck(HypothesisException):
+    """Raised when a test fails a preliminary healthcheck that occurs before
+    execution."""

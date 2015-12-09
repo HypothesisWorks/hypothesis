@@ -25,12 +25,13 @@ import inspect
 import binascii
 import functools
 import traceback
+from random import getstate as getglobalrandomstate
 from random import Random
 from itertools import islice
 from collections import namedtuple
 
 from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
-    Unsatisfiable, BadTemplateDraw, InvalidArgument, \
+    Unsatisfiable, BadTemplateDraw, InvalidArgument, FailedHealthCheck, \
     UnsatisfiedAssumption, DefinitelyNoSuchExample
 from hypothesis.control import BuildContext
 from hypothesis.settings import Settings, Verbosity, note_deprecation
@@ -263,7 +264,7 @@ def simplify_template_such_that(
 
 def best_satisfying_template(
     search_strategy, random, condition, settings, storage, tracker=None,
-    max_parameter_tries=None,
+    max_parameter_tries=None, start_time=None,
 ):
     """Find and then minimize a satisfying template.
 
@@ -274,7 +275,8 @@ def best_satisfying_template(
     """
     if tracker is None:
         tracker = Tracker()
-    start_time = time.time()
+    if start_time is None:
+        start_time = time.time()
 
     successful_shrinks = -1
     with settings:
@@ -550,10 +552,51 @@ def given(*generator_arguments, **generator_kwargs):
             else:
                 storage = None
 
+            start = time.time()
+            if settings.perform_health_check:
+                initial_state = getglobalrandomstate()
+                with settings:
+                    count = 0
+                    while count < 10 and time.time() < start + 1:
+                        try:
+                            test_runner(reify_and_execute(
+                                search_strategy,
+                                search_strategy.draw_template(
+                                    random,
+                                    search_strategy.draw_parameter(random)),
+                                lambda *args, **kwargs: None,
+                            ))
+                            count += 1
+                        except (BadTemplateDraw, UnsatisfiedAssumption):
+                            pass
+                runtime = time.time() - start
+                if runtime > 1.0 or count < 10:
+                    raise FailedHealthCheck(
+                        'Data generation is extremely slow: Only produced '
+                        '%d valid examples in %.2f seconds. Try decreasing '
+                        "size of the data you're generating (with e.g."
+                        'average_size or max_leaves parameters), or run this '
+                        'test with the perform_health_check setting set to '
+                        'False.'
+                    )
+                if getglobalrandomstate() != initial_state:
+                    raise FailedHealthCheck(
+                        'Data generation depends on global random module. '
+                        'This makes results impossible to replay, which '
+                        'prevents Hypothesis from working correctly. '
+                        'If you want to use methods from random, use '
+                        'randoms() from hypothesis.strategies to get an '
+                        'instance of Random you can use. You can disable this '
+                        'check by running this test with perform_health_check '
+                        "set to False, but you shouldn't do that."
+                    )
+
             last_exception = [None]
             repr_for_last_exception = [None]
 
             def is_template_example(xs):
+                if settings.perform_health_check:
+                    initial_state = getglobalrandomstate()
                 record_repr = [None]
                 try:
                     test_runner(reify_and_execute(
@@ -568,7 +611,21 @@ def given(*generator_arguments, **generator_kwargs):
                     repr_for_last_exception[0] = record_repr[0]
                     verbose_report(last_exception[0])
                     return True
-
+                finally:
+                    if (
+                        settings.perform_health_check and
+                        getglobalrandomstate() != initial_state
+                    ):
+                        raise FailedHealthCheck(
+                            'Your test used the global random module. '
+                            'This is unlikely to work correctly. You should '
+                            'consider using the randoms() strategy from '
+                            'hypothesis.strategies instead. If for some '
+                            'reason you are sure your behaviour is correct, '
+                            'either restore the initial state at the end of '
+                            'your test or run this test with the '
+                            'perform_health_check setting set to False.'
+                        )
             is_template_example.__name__ = test.__name__
             is_template_example.__qualname__ = qualname(test)
 
@@ -576,7 +633,7 @@ def given(*generator_arguments, **generator_kwargs):
             try:
                 falsifying_template = best_satisfying_template(
                     search_strategy, random, is_template_example,
-                    settings, storage
+                    settings, storage, start_time=start,
                 )
             except NoSuchExample:
                 return
