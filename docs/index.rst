@@ -30,7 +30,7 @@ that your guarantee still holds in that case. If it finds an example where it do
 it takes that example and cuts it down to size, simplifying it until it finds a
 much smaller example that still causes the problem. It then saves that example
 for later, so that once it has found a problem with your code it will not forget
-it in future.
+it in the future.
 
 Writing tests of this form usually consists of deciding on guarantees that
 your code should make - properties that should always hold true,
