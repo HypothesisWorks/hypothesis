@@ -79,7 +79,7 @@ def nary_tree_to_strategy(tree):
         return integers()
     else:
         return tuples(*[
-            nary_tree_to_strategy(v) for v in tree.keyed_children.values()])
+            nary_tree_to_strategy(v) for _, v in tree.keyed_children])
 
 
 dav_strategy = n_ary_tree(just(None), just(None), just(None)).flatmap(
