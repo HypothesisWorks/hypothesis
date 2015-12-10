@@ -581,7 +581,10 @@ def given(*generator_arguments, **generator_kwargs):
 
             start = time.time()
             warned_random = [False]
-            if settings.perform_health_check:
+            perform_health_check = settings.perform_health_check and \
+                Settings.default.perform_health_check
+
+            if perform_health_check:
                 initial_state = getglobalrandomstate()
                 with settings:
                     count = 0
@@ -651,7 +654,7 @@ def given(*generator_arguments, **generator_kwargs):
             repr_for_last_exception = [None]
 
             def is_template_example(xs):
-                if settings.perform_health_check and not warned_random[0]:
+                if perform_health_check and not warned_random[0]:
                     initial_state = getglobalrandomstate()
                 record_repr = [None]
                 try:
@@ -678,7 +681,7 @@ def given(*generator_arguments, **generator_kwargs):
                 finally:
                     if (
                         not warned_random[0] and
-                        settings.perform_health_check and
+                        perform_health_check and
                         getglobalrandomstate() != initial_state
                     ):
                         warned_random[0] = True

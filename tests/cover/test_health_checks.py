@@ -84,6 +84,17 @@ def test_global_random_in_test_fails_a_health_check():
         test()
 
 
+def test_default_health_check_can_weaken_specific():
+    import random
+
+    @given(st.lists(st.integers(), min_size=1))
+    def test(x):
+        random.choice(x)
+
+    with Settings(perform_health_check=False):
+        test()
+
+
 def test_error_in_strategy_produces_health_check_error():
     def boom(x):
         raise ValueError()
