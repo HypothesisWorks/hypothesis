@@ -18,7 +18,8 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
-from hypothesis import given, assume
+from hypothesis import given, assume, Settings
+from hypothesis.errors import FailedHealthCheck
 from hypothesis.strategies import text, integers
 
 
@@ -84,7 +85,8 @@ def test_calls_setup_and_teardown_on_self_unbound():
 
 def test_calls_setup_and_teardown_on_explicit_call():
     x = HasSetupAndTeardown()
-    x.give_me_an_int(1)
+    with Settings(strict=False):
+        x.give_me_an_int(1)
     assert x.setups == 1
     assert x.teardowns == 1
 
@@ -100,6 +102,15 @@ def test_calls_setup_and_teardown_on_failure():
 def test_still_tears_down_on_failed_reify():
     x = HasSetupAndTeardown()
     with pytest.raises(AttributeError):
+        with Settings(perform_health_check=False):
+            x.fail_in_reify()
+    assert x.setups > 0
+    assert x.teardowns == x.setups
+
+
+def test_still_tears_down_on_failed_health_check():
+    x = HasSetupAndTeardown()
+    with pytest.raises(FailedHealthCheck):
         x.fail_in_reify()
     assert x.setups > 0
     assert x.teardowns == x.setups
