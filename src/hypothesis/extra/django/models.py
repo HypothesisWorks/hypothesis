@@ -115,7 +115,7 @@ class ModelStrategy(MappedSearchStrategy):
             strategy=st.fixed_dictionaries(mappings))
 
     def __repr__(self):
-        return u'ModelStrategy(%s)' % (self.model.__name__,)
+        return 'ModelStrategy(%s)' % (self.model.__name__,)
 
     def pack(self, value):
         try:

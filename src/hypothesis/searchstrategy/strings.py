@@ -158,7 +158,7 @@ class OneCharStringStrategy(SearchStrategy):
                         yield c
                 lb = new_lb
         accept.__name__ = str(
-            u'try_shrink(%d, %d)' % (lo, hi)
+            'try_shrink(%d, %d)' % (lo, hi)
         )
         return accept
 

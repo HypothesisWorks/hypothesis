@@ -303,7 +303,7 @@ class FloatStrategy(SearchStrategy):
         self.int_strategy = RandomGeometricIntStrategy()
 
     def __repr__(self):
-        return u'%s()' % (self.__class__.__name__,)
+        return '%s()' % (self.__class__.__name__,)
 
     def strictly_simpler(self, x, y):
         if math.isnan(x):
@@ -398,7 +398,7 @@ class FloatStrategy(SearchStrategy):
             for m in simplify(random, int(math.floor(x))):
                 yield float(m)
         accept.__name__ = str(
-            u'simplify_integral(%s)' % (simplify.__name__,)
+            'simplify_integral(%s)' % (simplify.__name__,)
         )
         return accept
 

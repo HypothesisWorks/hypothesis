@@ -84,7 +84,7 @@ class SQLiteBackend(Backend):
                 del self.current_connection.connection
 
     def __repr__(self):
-        return u'%s(%s)' % (self.__class__.__name__, self.path)
+        return '%s(%s)' % (self.__class__.__name__, self.path)
 
     def data_type(self):
         return text_type

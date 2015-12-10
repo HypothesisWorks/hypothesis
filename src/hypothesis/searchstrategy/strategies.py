@@ -54,10 +54,10 @@ def infinitish(x):
 def check_type(typ, value, e=WrongFormat):
     if not isinstance(value, typ):
         if isinstance(typ, tuple):
-            name = u'any of ' + u', '.join(t.__name__ for t in typ)
+            name = 'any of ' + ', '.join(t.__name__ for t in typ)
         else:
             name = typ.__name__
-        raise e(u'Value %r is not an instance of %s' % (
+        raise e('Value %r is not an instance of %s' % (
             value, name
         ))
 
@@ -232,19 +232,19 @@ class SearchStrategy(object):
         """Produce a random valid parameter for this strategy, using only data
         from the provided random number generator."""
         raise NotImplementedError(  # pragma: no cover
-            u'%s.draw_parameter()' % (self.__class__.__name__))
+            '%s.draw_parameter()' % (self.__class__.__name__))
 
     def draw_template(self, random, parameter_value):
         """Given this Random and this parameter value, produce a random valid
         template for this strategy."""
         raise NotImplementedError(  # pragma: no cover
-            u'%s.draw_template()' % (self.__class__.__name__))
+            '%s.draw_template()' % (self.__class__.__name__))
 
     def reify(self, template):
         """Given a template value, deterministically convert it into a value of
         the desired final type."""
         raise NotImplementedError(  # pragma: no cover
-            u'%s.reify()' % (self.__class__.__name__))
+            '%s.reify()' % (self.__class__.__name__))
 
     def to_basic(self, template):
         """Convert a template value for this strategy into basic data.
@@ -256,7 +256,7 @@ class SearchStrategy(object):
 
         """
         raise NotImplementedError(  # pragma: no cover
-            u'%s.to_basic()' % (self.__class__.__name__))
+            '%s.to_basic()' % (self.__class__.__name__))
 
     def from_basic(self, value):
         """Convert basic data back to a template, raising BadData if the
@@ -269,7 +269,7 @@ class SearchStrategy(object):
 
         """
         raise NotImplementedError(  # pragma: no cover
-            u'%s.from_basic()' % (self.__class__.__name__))
+            '%s.from_basic()' % (self.__class__.__name__))
 
     # Gory implementation details
 
@@ -466,7 +466,7 @@ class OneOfStrategy(SearchStrategy):
             for value in simplifier(random, template[1]):
                 yield (s, value)
         accept.__name__ = str(
-            u'element_simplifier(%d, %s)' % (
+            'element_simplifier(%d, %s)' % (
                 s, simplifier.__name__,
             )
         )
@@ -495,7 +495,7 @@ class OneOfStrategy(SearchStrategy):
                     # reliably.
                     pass
         accept.__name__ = str(
-            u'redraw_simplifier(%d)' % (child,))
+            'redraw_simplifier(%d)' % (child,))
         return accept
 
     def to_basic(self, template):
@@ -554,7 +554,7 @@ class MappedSearchStrategy(SearchStrategy):
         """Take a value produced by the underlying mapped_strategy and turn it
         into a value suitable for outputting from this strategy."""
         raise NotImplementedError(
-            u'%s.pack()' % (self.__class__.__name__))
+            '%s.pack()' % (self.__class__.__name__))
 
     def reify(self, value):
         return self.pack(self.mapped_strategy.reify(value))

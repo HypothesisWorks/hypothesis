@@ -92,7 +92,7 @@ class Stream(object):
             ))
 
         if not isinstance(key, int):
-            raise InvalidArgument(u'Cannot index stream with %s' % (
+            raise InvalidArgument('Cannot index stream with %s' % (
                 type(key).__name__,))
         self._thunk_to(key + 1)
         return self.fetched[key]
