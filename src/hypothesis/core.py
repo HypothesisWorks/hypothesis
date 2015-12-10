@@ -33,7 +33,8 @@ from collections import namedtuple
 
 from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
     Unsatisfiable, BadTemplateDraw, InvalidArgument, FailedHealthCheck, \
-    UnsatisfiedAssumption, DefinitelyNoSuchExample
+    UnsatisfiedAssumption, DefinitelyNoSuchExample, \
+    HypothesisDeprecationWarning
 from hypothesis.control import BuildContext
 from hypothesis.settings import Settings, Verbosity, note_deprecation
 from hypothesis.executors import executor, default_executor
@@ -654,11 +655,19 @@ def given(*generator_arguments, **generator_kwargs):
                     initial_state = getglobalrandomstate()
                 record_repr = [None]
                 try:
-                    test_runner(reify_and_execute(
+                    result = test_runner(reify_and_execute(
                         search_strategy, xs, test,
                         record_repr=record_repr,
                     ))
+                    if result is not None:
+                        note_deprecation((
+                            'Tests run under @given should return None, but '
+                            '%s returned %r instead.'
+                            'In Hypothesis 2.0 this will become an error.'
+                        ) % (test.__name__, result), settings)
                     return False
+                except HypothesisDeprecationWarning:
+                    raise
                 except UnsatisfiedAssumption as e:
                     raise e
                 except Exception as e:

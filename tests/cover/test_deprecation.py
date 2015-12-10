@@ -90,3 +90,12 @@ def test_explicitly_overriding_passed_in_kwargs_is_deprecated():
 
     with pytest.raises(DeprecationWarning):
         a(t=1)
+
+
+def test_returning_non_none_is_deprecated():
+    @given(st.integers())
+    def a(x):
+        return 1
+
+    with pytest.raises(DeprecationWarning):
+        a()
