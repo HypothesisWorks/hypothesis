@@ -630,14 +630,13 @@ def given(*generator_arguments, **generator_kwargs):
                                 )
                 runtime = time.time() - start
                 if runtime > 1.0 or count < 10:
-                    fail_health_check(
+                    fail_health_check((
                         'Data generation is extremely slow: Only produced '
                         '%d valid examples in %.2f seconds. Try decreasing '
                         "size of the data you're generating (with e.g."
                         'average_size or max_leaves parameters), or run this '
                         'test with the perform_health_check setting set to '
-                        'False.'
-                    )
+                        'False.') % (count, runtime))
                 if getglobalrandomstate() != initial_state:
                     warned_random[0] = True
                     fail_health_check(
