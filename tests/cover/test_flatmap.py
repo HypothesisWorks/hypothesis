@@ -78,7 +78,8 @@ def nary_tree_to_strategy(tree):
     if isinstance(tree, Leaf):
         return integers()
     else:
-        return tuples(*map(nary_tree_to_strategy, tree.children))
+        return tuples(*[
+            nary_tree_to_strategy(v) for v in tree.keyed_children.values()])
 
 
 dav_strategy = n_ary_tree(just(None), just(None), just(None)).flatmap(
@@ -96,7 +97,6 @@ def test_will_find_a_failure_from_the_database():
         dav_strategy,
         settings=Settings(max_examples=10, database=db))
     def nope(x):
-        print(x)
         raise Rejected()
     try:
         with pytest.raises(Rejected):
