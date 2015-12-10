@@ -604,7 +604,7 @@ def given(*generator_arguments, **generator_kwargs):
                                     'An exception occurred during data '
                                     'generation in initial health check. '
                                     'This indicates a bug in the strategy. '
-                                    'This could either be a Hypothes bug or '
+                                    'This could either be a Hypothesis bug or '
                                     "an error in a function you've passed to "
                                     'it to construct your data.'
                                 )
@@ -613,8 +613,8 @@ def given(*generator_arguments, **generator_kwargs):
                                     'An exception occurred during data '
                                     'generation in initial health check. '
                                     'This indicates a bug in the strategy. '
-                                    'This could either be a Hypothes bug or '
-                                    "an error in a function you've passed to "
+                                    'This could either be a Hypothesis bug or '
+                                    'an error in a function you\'ve passed to '
                                     'it to construct your data. Additionally, '
                                     'you have a custom executor, which means '
                                     'that this could be your executor failing '
