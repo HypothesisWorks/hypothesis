@@ -587,7 +587,7 @@ def given(*generator_arguments, **generator_kwargs):
 
             if perform_health_check:
                 initial_state = getglobalrandomstate()
-                with settings:
+                with Settings(settings, verbosity=Verbosity.quiet):
                     count = 0
                     while count < 10 and time.time() < start + 1:
                         try:
