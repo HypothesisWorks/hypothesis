@@ -972,10 +972,10 @@ def check_type(typ, arg):
         if isinstance(typ, type):
             typ_string = typ.__name__
         else:
-            typ_string = u'one of %s' % (
-                u', '.join(t.__name__ for t in typ))
+            typ_string = 'one of %s' % (
+                ', '.join(t.__name__ for t in typ))
         raise InvalidArgument(
-            u'Expected %s but got %r' % (typ_string, arg,))
+            'Expected %s but got %r' % (typ_string, arg,))
 
 
 def check_strategy(arg):
