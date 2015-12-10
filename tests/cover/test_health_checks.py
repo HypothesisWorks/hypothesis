@@ -107,7 +107,7 @@ def test_error_in_strategy_with_custom_executor():
             return f()
 
         @given(st.integers().map(boom))
-        def test(x):
+        def test(self, x):
             pass
 
     with raises(FailedHealthCheck) as e:
