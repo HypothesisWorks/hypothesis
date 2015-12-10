@@ -21,7 +21,7 @@ import time
 from pytest import raises
 
 import hypothesis.strategies as st
-from hypothesis import given
+from hypothesis import given, Settings
 from hypothesis.errors import FailedHealthCheck
 
 
@@ -43,6 +43,34 @@ def test_global_random_in_strategy_fails_a_health_check():
 
     with raises(FailedHealthCheck):
         test()
+
+
+def test_warns_if_settings_are_not_strict(recwarn):
+    import random
+
+    with Settings(strict=False):
+        @given(st.lists(st.integers(), min_size=1))
+        def test(x):
+            random.choice(x)
+
+    test()
+    assert recwarn.pop(FailedHealthCheck) is not None
+    with raises(AssertionError):
+        recwarn.pop(FailedHealthCheck)
+
+
+def test_does_not_repeat_random_warnings(recwarn):
+    import random
+
+    with Settings(strict=False):
+        @given(st.lists(st.integers(), min_size=1).map(random.choice))
+        def test(x):
+            pass
+
+    test()
+    assert recwarn.pop(FailedHealthCheck) is not None
+    with raises(AssertionError):
+        recwarn.pop(FailedHealthCheck)
 
 
 def test_global_random_in_test_fails_a_health_check():

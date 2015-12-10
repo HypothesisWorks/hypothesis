@@ -23,6 +23,7 @@ import math
 import time
 import inspect
 import binascii
+import warnings
 import functools
 import traceback
 from random import getstate as getglobalrandomstate
@@ -543,6 +544,12 @@ def given(*generator_arguments, **generator_kwargs):
                     (k, convert_to_specifier(v)) for (k, v) in kwargs.items()))
             )
 
+            def fail_health_check(message):
+                if settings.strict:
+                    raise FailedHealthCheck(message)
+                else:
+                    warnings.warn(FailedHealthCheck(message))
+
             search_strategy = strategy(given_specifier, settings)
             search_strategy.validate()
 
@@ -553,6 +560,7 @@ def given(*generator_arguments, **generator_kwargs):
                 storage = None
 
             start = time.time()
+            warned_random = [False]
             if settings.perform_health_check:
                 initial_state = getglobalrandomstate()
                 with settings:
@@ -572,7 +580,7 @@ def given(*generator_arguments, **generator_kwargs):
                         except Exception:
                             traceback.print_exc()
                             if test_runner is default_executor:
-                                raise FailedHealthCheck(
+                                fail_health_check(
                                     'An exception occurred during data '
                                     'generation in initial health check. '
                                     'This indicates a bug in the strategy. '
@@ -581,7 +589,7 @@ def given(*generator_arguments, **generator_kwargs):
                                     'it to construct your data.'
                                 )
                             else:
-                                raise FailedHealthCheck(
+                                fail_health_check(
                                     'An exception occurred during data '
                                     'generation in initial health check. '
                                     'This indicates a bug in the strategy. '
@@ -598,7 +606,7 @@ def given(*generator_arguments, **generator_kwargs):
                                 )
                 runtime = time.time() - start
                 if runtime > 1.0 or count < 10:
-                    raise FailedHealthCheck(
+                    fail_health_check(
                         'Data generation is extremely slow: Only produced '
                         '%d valid examples in %.2f seconds. Try decreasing '
                         "size of the data you're generating (with e.g."
@@ -607,7 +615,8 @@ def given(*generator_arguments, **generator_kwargs):
                         'False.'
                     )
                 if getglobalrandomstate() != initial_state:
-                    raise FailedHealthCheck(
+                    warned_random[0] = True
+                    fail_health_check(
                         'Data generation depends on global random module. '
                         'This makes results impossible to replay, which '
                         'prevents Hypothesis from working correctly. '
@@ -622,7 +631,7 @@ def given(*generator_arguments, **generator_kwargs):
             repr_for_last_exception = [None]
 
             def is_template_example(xs):
-                if settings.perform_health_check:
+                if settings.perform_health_check and not warned_random[0]:
                     initial_state = getglobalrandomstate()
                 record_repr = [None]
                 try:
@@ -640,10 +649,12 @@ def given(*generator_arguments, **generator_kwargs):
                     return True
                 finally:
                     if (
+                        not warned_random[0] and
                         settings.perform_health_check and
                         getglobalrandomstate() != initial_state
                     ):
-                        raise FailedHealthCheck(
+                        warned_random[0] = True
+                        fail_health_check(
                             'Your test used the global random module. '
                             'This is unlikely to work correctly. You should '
                             'consider using the randoms() strategy from '

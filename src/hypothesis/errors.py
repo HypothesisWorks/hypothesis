@@ -16,6 +16,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
 
 class HypothesisException(Exception):
 
@@ -164,6 +166,13 @@ class AbnormalExit(HypothesisException):
     raising an exception."""
 
 
-class FailedHealthCheck(HypothesisException):
+class FailedHealthCheck(HypothesisException, Warning):
     """Raised when a test fails a preliminary healthcheck that occurs before
     execution."""
+
+
+class HypothesisDeprecationWarning(HypothesisException, DeprecationWarning):
+    pass
+
+
+warnings.simplefilter(u'once', HypothesisDeprecationWarning)

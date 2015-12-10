@@ -29,7 +29,7 @@ import warnings
 import threading
 from collections import namedtuple
 
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import InvalidArgument, HypothesisDeprecationWarning
 from hypothesis.utils.conventions import not_set
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
@@ -522,13 +522,6 @@ Settings.lock_further_definitions()
 
 Settings.register_profile('default', Settings())
 Settings.load_profile('default')
-
-
-class HypothesisDeprecationWarning(DeprecationWarning):
-    pass
-
-
-warnings.simplefilter(u'once', HypothesisDeprecationWarning)
 
 
 def note_deprecation(message, settings):
