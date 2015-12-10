@@ -18,6 +18,7 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
+import hypothesis.strategies as st
 from hypothesis import given, Settings, strategy, Verbosity
 from hypothesis.settings import HypothesisDeprecationWarning
 from hypothesis.specifiers import just
@@ -68,3 +69,24 @@ def test_warnings_are_suppressed_in_quiet_mode(recwarn):
     strategy(bool, settings=Settings(strict=False, verbosity=Verbosity.quiet))
     with pytest.raises(AssertionError):
         recwarn.pop(DeprecationWarning)
+
+
+def test_explicitly_overriding_passed_in_arguments_is_deprecated():
+    @given(st.integers())
+    def a(x):
+        pass
+
+    with pytest.raises(DeprecationWarning):
+        a(1)
+
+    with pytest.raises(DeprecationWarning):
+        a(x=1)
+
+
+def test_explicitly_overriding_passed_in_kwargs_is_deprecated():
+    @given(t=st.integers())
+    def a(**kwargs):
+        pass
+
+    with pytest.raises(DeprecationWarning):
+        a(t=1)

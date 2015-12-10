@@ -39,7 +39,7 @@ from hypothesis.settings import Settings, Verbosity, note_deprecation
 from hypothesis.executors import executor, default_executor
 from hypothesis.reporting import report, debug_report, verbose_report, \
     current_verbosity
-from hypothesis.internal.compat import qualname, getargspec, \
+from hypothesis.internal.compat import hrange, qualname, getargspec, \
     unicode_safe_repr
 from hypothesis.internal.tracker import Tracker
 from hypothesis.internal.reflection import arg_string, impersonate, \
@@ -468,6 +468,10 @@ def given(*generator_arguments, **generator_kwargs):
         for k in extra_kwargs:
             unused_kwargs[k] = HypothesisProvided(generator_kwargs[k])
 
+        hypothesis_owned_arguments = [
+            argspec.args[-1 - i] for i in hrange(len(argspec.defaults))
+        ] + list(unused_kwargs)
+
         @impersonate(test)
         @copy_argspec(
             test.__name__, argspec
@@ -479,6 +483,21 @@ def given(*generator_arguments, **generator_kwargs):
             selfy = None
             arguments, kwargs = convert_positional_arguments(
                 wrapped_test, arguments, kwargs)
+
+            for arg in hypothesis_owned_arguments:
+                try:
+                    value = kwargs[arg]
+                except KeyError:
+                    continue
+                if not isinstance(value, HypothesisProvided):
+                    note_deprecation(
+                        'Passing in explicit values to override Hypothesis '
+                        'provided values is deprecated and will no longer '
+                        'work in Hypothesis 2.0. If you need to do this, '
+                        'extract a common function and call that from a '
+                        'Hypothesis based test.', settings
+                    )
+
             # Anything in unused_kwargs hasn't been injected through
             # argspec.defaults, so we need to add them.
             for k in unused_kwargs:
