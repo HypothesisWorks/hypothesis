@@ -362,7 +362,7 @@ def test_does_not_print_on_success():
     with Settings(verbosity=Verbosity.normal):
         @given(integers())
         def test_is_an_int(x):
-            return True
+            return
 
         with capture_out() as out:
             test_is_an_int()
