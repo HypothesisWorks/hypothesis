@@ -16,6 +16,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import random as globalrandom
 from random import Random
 
 import faker
@@ -94,8 +95,13 @@ class FakeFactoryStrategy(SearchStrategy):
 
     def gen_example(self, random, locales):
         factory = self.factory_for(random.choice(locales))
-        factory.seed(random.getrandbits(128))
-        return text_type(getattr(factory, self.source)())
+        original = globalrandom.getstate()
+        seed = random.getrandbits(128)
+        try:
+            factory.seed(seed)
+            return text_type(getattr(factory, self.source)())
+        finally:
+            globalrandom.setstate(original)
 
     def basic_simplify(self, random, template):
         for _ in hrange(10):
