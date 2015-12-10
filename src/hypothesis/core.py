@@ -35,7 +35,7 @@ from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
     UnsatisfiedAssumption, DefinitelyNoSuchExample
 from hypothesis.control import BuildContext
 from hypothesis.settings import Settings, Verbosity, note_deprecation
-from hypothesis.executors import executor
+from hypothesis.executors import executor, default_executor
 from hypothesis.reporting import report, debug_report, verbose_report, \
     current_verbosity
 from hypothesis.internal.compat import qualname, getargspec, \
@@ -569,6 +569,33 @@ def given(*generator_arguments, **generator_kwargs):
                             count += 1
                         except (BadTemplateDraw, UnsatisfiedAssumption):
                             pass
+                        except Exception:
+                            traceback.print_exc()
+                            if test_runner is default_executor:
+                                raise FailedHealthCheck(
+                                    'An exception occurred during data '
+                                    'generation in initial health check. '
+                                    'This indicates a bug in the strategy. '
+                                    'This could either be a Hypothes bug or '
+                                    "an error in a function you've passed to "
+                                    'it to construct your data.'
+                                )
+                            else:
+                                raise FailedHealthCheck(
+                                    'An exception occurred during data '
+                                    'generation in initial health check. '
+                                    'This indicates a bug in the strategy. '
+                                    'This could either be a Hypothes bug or '
+                                    "an error in a function you've passed to "
+                                    'it to construct your data. Additionally, '
+                                    'you have a custom executor, which means '
+                                    'that this could be your executor failing '
+                                    'to handle a function which returns None. '
+                                    'If that is the case and you are unable '
+                                    'to fix it, you can disable this health '
+                                    'check by setting the '
+                                    'perform_health_check setting to False.'
+                                )
                 runtime = time.time() - start
                 if runtime > 1.0 or count < 10:
                     raise FailedHealthCheck(

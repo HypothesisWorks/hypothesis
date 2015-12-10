@@ -28,8 +28,7 @@ from collections import namedtuple
 import hypothesis.reporting as reporting
 from flaky import flaky
 from hypothesis import note, given, assume, Settings, Verbosity
-from hypothesis.errors import Flaky, Unsatisfiable, InvalidArgument, \
-    FailedHealthCheck
+from hypothesis.errors import Flaky, Unsatisfiable, InvalidArgument
 from tests.common.utils import fails, raises, fails_with, capture_out
 from hypothesis.internal import debug
 from hypothesis.strategies import just, sets, text, lists, binary, \
@@ -651,34 +650,3 @@ def test_prints_notes_once_on_failure():
 @given(lists(max_size=0))
 def test_empty_lists(xs):
     assert xs == []
-
-
-def test_slow_generation_fails_a_health_check():
-    @given(integers().map(lambda x: time.sleep(0.2)))
-    def test(x):
-        pass
-
-    with raises(FailedHealthCheck):
-        test()
-
-
-def test_global_random_in_strategy_fails_a_health_check():
-    import random
-
-    @given(lists(integers(), min_size=1).map(random.choice))
-    def test(x):
-        pass
-
-    with raises(FailedHealthCheck):
-        test()
-
-
-def test_global_random_in_test_fails_a_health_check():
-    import random
-
-    @given(lists(integers(), min_size=1))
-    def test(x):
-        random.choice(x)
-
-    with raises(FailedHealthCheck):
-        test()

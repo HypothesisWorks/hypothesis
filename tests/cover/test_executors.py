@@ -16,6 +16,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import inspect
 from unittest import TestCase
 
 import pytest
@@ -28,7 +29,9 @@ def test_must_use_result_of_test():
     class DoubleRun(object):
 
         def execute_example(self, function):
-            return function()()
+            x = function()
+            if inspect.isfunction(x):
+                return x()
 
         @given(booleans())
         def boom(self, b):
