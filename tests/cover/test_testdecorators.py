@@ -525,7 +525,9 @@ def test_named_tuples_are_of_right_type(litter):
 
 
 @fails_with(AttributeError)
-@given(integers().map(lambda x: x.nope))
+@given(integers().map(lambda x: x.nope), settings=Settings(
+    perform_health_check=False,
+))
 def test_fails_in_reify(x):
     pass
 
