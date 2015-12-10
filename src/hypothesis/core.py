@@ -581,8 +581,9 @@ def given(*generator_arguments, **generator_kwargs):
 
             start = time.time()
             warned_random = [False]
-            perform_health_check = settings.perform_health_check and \
-                Settings.default.perform_health_check
+            perform_health_check = settings.perform_health_check
+            if Settings.default is not None:
+                perform_health_check &= Settings.default.perform_health_check
 
             if perform_health_check:
                 initial_state = getglobalrandomstate()
