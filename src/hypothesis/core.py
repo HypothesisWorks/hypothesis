@@ -605,7 +605,7 @@ def given(*generator_arguments, **generator_kwargs):
                                 search_strategy.draw_template(
                                     random,
                                     search_strategy.draw_parameter(random)),
-                                lambda *args, **kwargs: print(args, kwargs),
+                                lambda *args, **kwargs: None,
                             ))
                             count += 1
                         except BadTemplateDraw:
