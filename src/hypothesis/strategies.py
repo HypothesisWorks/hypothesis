@@ -195,7 +195,7 @@ def floats(
             ExponentialFloatStrategy() |
             JustIntFloats() |
             NastyFloats(allow_nan, allow_infinity) |
-            FullRangeFloats(allow_nan)
+            FullRangeFloats(allow_nan, allow_infinity)
         )
     elif min_value is not None and max_value is not None:
         if max_value < min_value:

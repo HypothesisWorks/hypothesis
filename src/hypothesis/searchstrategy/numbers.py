@@ -474,9 +474,10 @@ class FullRangeFloats(FloatStrategy):
         (u'negative_probability', u'subnormal_probability')
     )
 
-    def __init__(self, allow_nan=True):
+    def __init__(self, allow_nan=True, allow_infinity=True):
         super(FullRangeFloats, self).__init__()
         self.allow_nan = allow_nan
+        self.allow_infinity = allow_infinity
 
     def draw_parameter(self, random):
         return self.Parameter(
@@ -487,19 +488,40 @@ class FullRangeFloats(FloatStrategy):
     def draw_template(self, random, pv):
         sign = int(dist.biased_coin(random, pv.negative_probability))
         if dist.biased_coin(random, pv.subnormal_probability):
-            exponent = 0
+            return compose_float(
+                sign,
+                0,
+                random.getrandbits(52)
+            )
         else:
-            exponent = random.getrandbits(11)
-            if not self.allow_nan:
-                def exponent_allowed(x):
-                    return not math.isnan(compose_float(sign, x, 1))
-                while not exponent_allowed(exponent):
+            if self.allow_infinity and self.allow_nan:
+                return compose_float(
+                    sign,
+                    random.getrandbits(11),
+                    random.getrandbits(52)
+                )
+            if not self.allow_infinity and not self.allow_nan:
+                exponent = random.getrandbits(11)
+                while exponent == 2047:
                     exponent = random.getrandbits(11)
-        return compose_float(
-            sign,
-            exponent,
-            random.getrandbits(52)
-        )
+                return compose_float(
+                    sign,
+                    exponent,
+                    random.getrandbits(52)
+                )
+
+            exponent = random.getrandbits(11)
+            if exponent == 2047:
+                return compose_float(
+                    sign,
+                    exponent,
+                    0 if self.allow_infinity else 1
+                )
+            return compose_float(
+                sign,
+                exponent,
+                random.getrandbits(52)
+            )
 
 
 class FixedBoundedFloatStrategy(FloatStrategy):
