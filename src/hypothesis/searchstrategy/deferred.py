@@ -63,7 +63,7 @@ class DeferredStrategy(SearchStrategy):
         self.__kwargs = dict(
             (k, tupleize(v)) for k, v in kwargs.items()
         )
-        self.__settings = Settings.default
+        self.__settings = Settings.default or Settings()
 
     @property
     def wrapped_strategy(self):
