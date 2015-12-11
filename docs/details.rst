@@ -354,6 +354,35 @@ the following executor runs all its code twice:
 Note: The functions you use in map, etc. will run *inside* the executor. i.e.
 they will not be called until you invoke the function passed to setup\_example.
 
+An executor must be able to handle being passed a function which returns None,
+otherwise it won't be able to run normal test cases. So for example the following
+executor is invalid:
+
+.. code:: python
+
+    from unittest import TestCase
+
+    class TestRunTwice(TestCase):
+        def execute_example(self, f):
+            return f()()
+
+
+and should be rewritten as:
+
+
+.. code:: python
+
+    from unittest import TestCase
+    import inspect
+
+    class TestRunTwice(TestCase):
+        def execute_example(self, f):
+            result = f()
+            if inspect.isfunction(result):
+                result = result()
+            return result
+
+
 Methods of a BasicStrategy however will typically be called whenever. This may
 happen inside your executor or outside. This is why they have a "Warning you
 have no control over the lifecycle of these values" attached.
