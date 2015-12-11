@@ -34,6 +34,7 @@ If you're looking for inspiration for writing your own QuickCheck clone,
 If you want to hear from people who are already using Hypothesis, some of them `have written
 about it <https://hypothesis.readthedocs.org/en/latest/endorsements.html>`_.
 
+If you want to create a downstream package of Hypothesis, please read `these guidelines for packagers <http://hypothesis.readthedocs.org/en/latest/packaging.html>`_
 
 -------------------
 Ongoing Development
