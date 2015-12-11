@@ -415,7 +415,12 @@ Settings.define_setting(
     default=os.getenv(u'HYPOTHESIS_STRICT_MODE') == u'true',
     description="""
 If set to True, anything that would cause Hypothesis to issue a warning will
-instead raise an error.
+instead raise an error. Note that new warnings may be added at any time, so
+running with strict set to True means that new Hypothesis releases may validly
+break your code.
+
+You can enable this setting temporarily by setting the HYPOTHESIS_STRICT_MODE
+environment variable to the string 'true'.
 """
 )
 
