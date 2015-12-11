@@ -565,6 +565,10 @@ def given(*generator_arguments, **generator_kwargs):
             )
 
             def fail_health_check(message):
+                message += (
+                    '\nSee http://hypothesis.readthedocs.org/en/latest/health'
+                    'checks.html for more information about this.'
+                )
                 if settings.strict:
                     raise FailedHealthCheck(message)
                 else:
@@ -589,18 +593,25 @@ def given(*generator_arguments, **generator_kwargs):
                 initial_state = getglobalrandomstate()
                 with Settings(settings, verbosity=Verbosity.quiet):
                     count = 0
-                    while count < 10 and time.time() < start + 1:
+                    bad_draws = 0
+                    filtered_draws = 0
+                    while (
+                        count < 10 and time.time() < start + 1 and
+                        filtered_draws < 50 and bad_draws < 50
+                    ):
                         try:
                             test_runner(reify_and_execute(
                                 search_strategy,
                                 search_strategy.draw_template(
                                     random,
                                     search_strategy.draw_parameter(random)),
-                                lambda *args, **kwargs: None,
+                                lambda *args, **kwargs: print(args, kwargs),
                             ))
                             count += 1
-                        except (BadTemplateDraw, UnsatisfiedAssumption):
-                            pass
+                        except BadTemplateDraw:
+                            bad_draws += 1
+                        except UnsatisfiedAssumption:
+                            filtered_draws += 1
                         except Exception:
                             traceback.print_exc()
                             if test_runner is default_executor:
@@ -623,20 +634,33 @@ def given(*generator_arguments, **generator_kwargs):
                                     'you have a custom executor, which means '
                                     'that this could be your executor failing '
                                     'to handle a function which returns None. '
-                                    'If that is the case and you are unable '
-                                    'to fix it, you can disable this health '
-                                    'check by setting the '
-                                    'perform_health_check setting to False.'
                                 )
+                if filtered_draws >= 50:
+                    fail_health_check((
+                        'It looks like your strategy is filtering out a lot '
+                        'of data. Health check found %d filtered examples but '
+                        'only %d good ones. This will make your tests much '
+                        'slower, and also will probably distort the data '
+                        'generation quite a lot. You should adapt your '
+                        'strategy to filter less.') % (
+                        filtered_draws, count
+                    ))
+                if bad_draws >= 50:
+                    fail_health_check(
+                        'Hypothesis is struggling to generate examples. '
+                        'This is often a sign of a recursive strategy which '
+                        'fans out too broadly. If you\'re using recursive, '
+                        'try to reduce the size of the recursive step or '
+                        'increase the maximum permitted number of leaves.'
+                    )
                 runtime = time.time() - start
                 if runtime > 1.0 or count < 10:
                     fail_health_check((
                         'Data generation is extremely slow: Only produced '
                         '%d valid examples in %.2f seconds. Try decreasing '
                         "size of the data you're generating (with e.g."
-                        'average_size or max_leaves parameters), or run this '
-                        'test with the perform_health_check setting set to '
-                        'False.') % (count, runtime))
+                        'average_size or max_leaves parameters).'
+                    ) % (count, runtime))
                 if getglobalrandomstate() != initial_state:
                     warned_random[0] = True
                     fail_health_check(
@@ -645,9 +669,7 @@ def given(*generator_arguments, **generator_kwargs):
                         'prevents Hypothesis from working correctly. '
                         'If you want to use methods from random, use '
                         'randoms() from hypothesis.strategies to get an '
-                        'instance of Random you can use. You can disable this '
-                        'check by running this test with perform_health_check '
-                        "set to False, but you shouldn't do that."
+                        'instance of Random you can use.'
                     )
 
             last_exception = [None]
@@ -689,11 +711,7 @@ def given(*generator_arguments, **generator_kwargs):
                             'Your test used the global random module. '
                             'This is unlikely to work correctly. You should '
                             'consider using the randoms() strategy from '
-                            'hypothesis.strategies instead. If for some '
-                            'reason you are sure your behaviour is correct, '
-                            'either restore the initial state at the end of '
-                            'your test or run this test with the '
-                            'perform_health_check setting set to False.'
+                            'hypothesis.strategies instead.'
                         )
             is_template_example.__name__ = test.__name__
             is_template_example.__qualname__ = qualname(test)

@@ -124,3 +124,37 @@ def test_error_in_strategy_with_custom_executor():
     with raises(FailedHealthCheck) as e:
         Foo().test()
     assert 'executor' in e.value.args[0]
+
+
+def test_filtering_everything_fails_a_health_check():
+    @given(st.integers().filter(lambda x: False))
+    def test(x):
+        pass
+
+    with raises(FailedHealthCheck) as e:
+        test()
+    assert 'filter' in e.value.args[0]
+
+
+def test_filtering_most_things_fails_a_health_check():
+    @given(st.integers().filter(lambda x: x % 100 == 0))
+    def test(x):
+        pass
+
+    with raises(FailedHealthCheck) as e:
+        test()
+    assert 'filter' in e.value.args[0]
+
+
+def test_broad_recursive_data_will_fail_a_health_check():
+    r = st.recursive(
+        st.integers(), lambda s: st.tuples(*((s,) * 10)),
+        max_leaves=10,
+    )
+
+    @given(st.tuples(r, r, r, r, r, r, r))
+    def test(x):
+        pass
+
+    with raises(FailedHealthCheck):
+        test()

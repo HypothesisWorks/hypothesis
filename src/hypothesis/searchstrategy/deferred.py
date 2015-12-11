@@ -16,6 +16,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+from hypothesis import Settings
 from hypothesis.internal.compat import hrange, getargspec, \
     unicode_safe_repr
 from hypothesis.internal.reflection import arg_string, \
@@ -62,14 +63,16 @@ class DeferredStrategy(SearchStrategy):
         self.__kwargs = dict(
             (k, tupleize(v)) for k, v in kwargs.items()
         )
+        self.__settings = Settings.default
 
     @property
     def wrapped_strategy(self):
         if self.__wrapped_strategy is None:
-            self.__wrapped_strategy = self.__function(
-                *self.__args,
-                **self.__kwargs
-            )
+            with self.__settings:
+                self.__wrapped_strategy = self.__function(
+                    *self.__args,
+                    **self.__kwargs
+                )
         return self.__wrapped_strategy
 
     def validate(self):
