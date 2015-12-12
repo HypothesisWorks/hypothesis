@@ -529,7 +529,7 @@ Settings.register_profile('default', Settings())
 Settings.load_profile('default')
 
 
-def note_deprecation(message, settings):
+def note_deprecation(message, settings=None):
     # If *either* self or the current default are non-strict
     # then this should be an error. This is to handle e.g. the case
     # where defining a new setting while non-strict updates a
