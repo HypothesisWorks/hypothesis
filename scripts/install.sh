@@ -84,7 +84,7 @@ for var in "$@"; do
       install 2.6.9 python2.6
       ;;
     2.7)
-      install 2.7.9 python2.7
+      install 2.7.11 python2.7
       ;;
     3.2)
       install 3.2.6 python3.2
@@ -96,7 +96,7 @@ for var in "$@"; do
       install 3.4.3 python3.4
       ;;
     3.5)
-      install 3.5.0 python3.5
+      install 3.5.1 python3.5
       ;;
     pypy)
       install pypy-2.6.1 pypy
