@@ -19,7 +19,7 @@ from __future__ import division, print_function, absolute_import
 import hypothesis.strategies as st
 from hypothesis import given, Settings
 from hypothesis.errors import HypothesisDeprecationWarning
-from hypothesis.internal.compat import unicode_safe_repr
+from hypothesis.internal.compat import PY2, unicode_safe_repr
 from hypothesis.internal.reflection import arg_string
 
 original_profile = Settings.default
@@ -51,13 +51,15 @@ Frosty = BadRepr(u'☃')
 
 def test_just_frosty(recwarn):
     assert unicode_safe_repr(st.just(Frosty)) == u'just(☃)'
-    recwarn.pop(HypothesisDeprecationWarning)
+    if PY2:
+        recwarn.pop(HypothesisDeprecationWarning)
 
 
 def test_sampling_snowmen(recwarn):
     assert unicode_safe_repr(st.sampled_from((
         Frosty, u'hi'))) == u'sampled_from((☃, %s))' % (repr(u'hi'),)
-    recwarn.pop(HypothesisDeprecationWarning)
+    if PY2:
+        recwarn.pop(HypothesisDeprecationWarning)
 
 
 def varargs(*args, **kwargs):
@@ -66,9 +68,11 @@ def varargs(*args, **kwargs):
 
 def test_arg_strings_are_bad_repr_safe(recwarn):
     assert arg_string(varargs, (Frosty,), {}) == u'☃'
-    recwarn.pop(HypothesisDeprecationWarning)
+    if PY2:
+        recwarn.pop(HypothesisDeprecationWarning)
     assert arg_string(varargs, (), {u'x': Frosty}) == u'x=☃'
-    recwarn.pop(HypothesisDeprecationWarning)
+    if PY2:
+        recwarn.pop(HypothesisDeprecationWarning)
 
 
 @given(st.sampled_from([
