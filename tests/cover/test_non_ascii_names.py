@@ -19,7 +19,6 @@ from __future__ import division, print_function, absolute_import
 import hypothesis.strategies as st
 from hypothesis import given
 
-
 ClassWithNonASCIIName = type("מחלקה", (object,), {})
 
 
