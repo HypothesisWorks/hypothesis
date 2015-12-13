@@ -102,18 +102,17 @@ else:
 
     def unicode_safe_repr(x):
         try:
-            return repr(x)
+            r = repr(x)
         except UnicodeEncodeError:
-            pass
-        r = type(x).__repr__(x)
-        from hypothesis.settings import note_deprecation
-        note_deprecation((
-            'Type %s has a broken repr implementation. Calling __repr__ on it'
-            'returned %r, which cannot be represented as ASCII text. This is '
-            'not permitted in Python 2. Hypothesis is currently working '
-            'around this, but will stop doing so in Hypothesis 2.0. You '
-            'should fix your code.') % (type(x).__name__, r)
-        )
+            r = type(x).__repr__(x)
+            from hypothesis.settings import note_deprecation
+            note_deprecation((
+                'Type %s has a broken repr implementation. Calling __repr__ '
+                'on it returned %r, which cannot be represented as ASCII '
+                'text. This is not permitted in Python 2. Hypothesis is '
+                'currently working around this, but will stop doing so in '
+                'Hypothesis 2.0. You should fix your code.'
+            ) % (type(x).__name__, r))
         if isinstance(r, unicode):
             return r
         else:
