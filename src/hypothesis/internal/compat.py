@@ -89,9 +89,10 @@ if PY3:
     def escape_unicode_characters(s):
         return codecs.encode(s, 'unicode_escape').decode('ascii')
 
-    def quiet_raise(exc):
-        from hypothesis.internal.compat3 import quiet_raise as q
-        q(exc)
+    exec("""
+def quiet_raise(exc):
+    raise exc from None
+""")
 else:
     VALID_PYTHON_IDENTIFIER = re.compile(
         r"^[a-zA-Z_][a-zA-Z0-9_]*$"
