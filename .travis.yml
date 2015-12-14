@@ -74,4 +74,8 @@ matrix:
     fast_finish: true
 
 notifications:
-  email: false
+  email:
+    recipients:
+      - david@drmaciver.com
+    on_success: never
+    on_failure: change
