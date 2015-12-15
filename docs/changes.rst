@@ -22,6 +22,20 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -----------------------------------------------------------------------
+`1.17.0 <https://hypothesis.readthedocs.org/en/1.17.0/>`_ - 2015-12-15
+-----------------------------------------------------------------------
+
+This is actually the same release as 1.16.1, but 1.16.1 has been pulled because
+it contains the following additional change that was not intended to be in a
+patch  release (it's perfectly stable, but is a larger change that should have
+required a minor version bump):
+
+* Hypothesis will now perform a series of "health checks" as part of running
+  your tests. These detect and warn about some common error conditions that
+  people often run into which wouldn't necessarily have caued the test to fail
+  but would cause e.g. degraded performance or confusing results.
+
+-----------------------------------------------------------------------
 `1.16.1 <https://hypothesis.readthedocs.org/en/1.16.1/>`_ - 2015-12-14
 -----------------------------------------------------------------------
 
