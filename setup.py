@@ -14,9 +14,7 @@
 #
 # END HEADER
 
-from setuptools.command.test import test as TestCommand
 from setuptools import find_packages, setup
-import sys
 import os
 
 
@@ -36,17 +34,6 @@ with open(local_file("src/hypothesis/version.py")) as o:
 
 assert __version__ is not None
 
-
-class PyTest(TestCommand):
-    def finalize_options(self):
-        TestCommand.finalize_options(self)
-        self.test_args = ["tests"]
-        self.test_suite = True
-
-    def run_tests(self):
-        import pytest
-        errno = pytest.main(self.test_args)
-        sys.exit(errno)
 
 extras = {
     'datetime':  ["pytz"],
@@ -97,5 +84,4 @@ setup(
     long_description=open(README).read(),
     tests_require=[
         'pytest', 'flake8'],
-    cmdclass={'test': PyTest},
 )
