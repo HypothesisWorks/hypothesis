@@ -241,25 +241,29 @@ def floats(
                 int_to_float
             )
     elif min_value is not None:
-        critical_values = [min_value, float(u'inf')]
+        critical_values = [min_value]
+        if allow_infinity:
+            critical_values.append(float(u'inf'))
         if is_negative(min_value):
             critical_values.append(-0.0)
         if min_value <= 0:
             critical_values.append(0.0)
         return (
-            floats().map(
+            floats(allow_infinity=allow_infinity, allow_nan=False).map(
                 lambda x: assume(not math.isnan(x)) and min_value + abs(x)
             )
         ) | sampled_from(critical_values)
     else:
         assert max_value is not None
-        critical_values = [max_value, float(u'-inf')]
+        critical_values = [max_value]
+        if allow_infinity:
+            critical_values.append(float(u'-inf'))
         if max_value >= 0:
             critical_values.append(-0.0)
             if not is_negative(max_value):
                 critical_values.append(0.0)
         return (
-            floats().map(
+            floats(allow_infinity=allow_infinity, allow_nan=False).map(
                 lambda x: assume(not math.isnan(x)) and max_value - abs(x)
             )
         ) | sampled_from(critical_values)

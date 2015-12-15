@@ -257,6 +257,21 @@ def test_floats_from_zero_have_reasonable_range(k):
     assert find(floats(max_value=0.0), lambda x: x <= -n) == float(-n)
 
 
+def test_one_sided_contains_infinity():
+    find(floats(min_value=1.0), math.isinf)
+    find(floats(max_value=1.0), math.isinf)
+
+
+@given(floats(min_value=0.0, allow_infinity=False))
+def test_no_allow_infinity_upper(x):
+    assert not math.isinf(x)
+
+
+@given(floats(max_value=0.0, allow_infinity=False))
+def test_no_allow_infinity_lower(x):
+    assert not math.isinf(x)
+
+
 class TestFloatsAreFloats(object):
 
     @given(floats())
