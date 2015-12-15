@@ -39,6 +39,8 @@ required a minor version bump):
 `1.16.1 <https://hypothesis.readthedocs.org/en/1.16.1/>`_ - 2015-12-14
 -----------------------------------------------------------------------
 
+Note: This release has been removed.
+
 A small bugfix release that allows bdists for Hypothesis to be built
 under 2.7 - the compat3.py file which had Python 3 syntax wasn't intended
 to be loaded under Python 2, but when building a bdist it was. In particular
