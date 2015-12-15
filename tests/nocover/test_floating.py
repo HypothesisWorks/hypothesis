@@ -156,3 +156,8 @@ def test_floats_are_in_range(x, y, rand):
 @given(NastyFloats())
 def test_can_use_just_nasty(x):
     assert not math.isnan(x)
+
+
+@given(NastyFloats(allow_nan=False))
+def test_nasty_filter_nan(x):
+    assert not math.isnan(x)

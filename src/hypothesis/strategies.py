@@ -161,7 +161,9 @@ def int_to_float(value):
 
 
 @defines_strategy
-def floats(min_value=None, max_value=None):
+def floats(
+    min_value=None, max_value=None, allow_nan=True, allow_infinity=True
+):
     """Returns a strategy which generates floats. If min_value is not None,
     all values will be >= min_value. If max_value is not None, all values will
     be <= max_value.
@@ -192,8 +194,8 @@ def floats(min_value=None, max_value=None):
             BoundedFloatStrategy() |
             ExponentialFloatStrategy() |
             JustIntFloats() |
-            NastyFloats() |
-            FullRangeFloats()
+            NastyFloats(allow_nan, allow_infinity) |
+            FullRangeFloats(allow_nan, allow_infinity)
         )
     elif min_value is not None and max_value is not None:
         if max_value < min_value:
