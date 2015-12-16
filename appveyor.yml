@@ -60,4 +60,5 @@ test_script:
   - "%CMD_IN_ENV% python -m pytest tests/cover"
   - "%CMD_IN_ENV% python -m pytest tests/datetime"
   - "%CMD_IN_ENV% python -m pytest tests/fakefactory"
-  - "%CMD_IN_ENV% python -m pytest tests/pytest"
+  - "%CMD_IN_ENV% python -m pip uninstall flaky -y"
+  - "%CMD_IN_ENV% python -m pytest tests/pytest -p pytester --runpytest subprocess"
