@@ -651,6 +651,43 @@ def randoms():
     return RandomStrategy(integers())
 
 
+class RandomSeeder(object):
+
+    def __init__(self, seed):
+        self.seed = seed
+
+    def __repr__(self):
+        return 'random.seed(%r)' % (self.seed,)
+
+
+@defines_strategy
+def random_module():
+    """If your code depends on the global random module then you need to use
+    this.
+
+    It will explicitly seed the random module at the start of your test
+    so that tests are reproducible. The value it passes you is an opaque
+    object whose only useful feature is that its repr displays the
+    random seed. It is not itself a random number generator. If you want
+    a random number generator you should use the randoms() strategy
+    which will give you one.
+
+    """
+    from hypothesis.control import cleanup
+    import random
+
+    def seed_random(seed):
+        state = random.getstate()
+        random.seed(seed)
+        cleanup(lambda: random.setstate(state))
+        return RandomSeeder(seed)
+
+    return shared(
+        integers().map(seed_random),
+        'hypothesis.strategies.random_module()',
+    )
+
+
 @defines_strategy
 def fractions():
     """Generates instances of fractions.Fraction."""
