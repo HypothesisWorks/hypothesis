@@ -20,6 +20,36 @@ module. The salient functions from it are as follows:
   :members:
 
 ~~~~~~~~~~~~~~~~
+Choices
+~~~~~~~~~~~~~~~~
+
+Sometimes you need an input to be from a known set of items. hypothesis gives you 2 ways to do this, choice() and sample_from().
+
+Examples on how to use them both are below. First up choice:
+
+.. code:: python
+
+    @given(user=st.text(min_size=1), service=st.text(min_size=1), choice=st.choices())
+    def test_tickets(user, service, choice):
+        t=choice(('ST', 'LT', 'TG', 'CT'))
+        # asserts go here.
+
+This means t will randomly be one of the items in the list ('ST', 'LT', 'TG', 'CT'). just like if you were calling random.choice() on the list.
+
+A different, and probably better way to do this, is to use sample_from:
+
+.. code:: python
+
+    @given(
+        user=st.text(min_size=1), service=st.text(min_size=1),
+        t=st.sampled_from(('ST', 'LT', 'TG', 'CT')))
+    def test_tickets(user, service, t):
+        # asserts and test code go here.
+
+Values from sample_from will not be copied and thus you should be careful of using mutable data. Which makes it great for the above use case, but may not always work out.
+
+
+~~~~~~~~~~~~~~~~
 Infinite streams
 ~~~~~~~~~~~~~~~~
 
