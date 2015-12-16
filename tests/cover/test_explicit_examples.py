@@ -20,7 +20,7 @@ from unittest import TestCase
 
 import pytest
 
-from hypothesis import given, example, reporting
+from hypothesis import note, given, example, Settings, reporting
 from hypothesis.errors import InvalidArgument
 from tests.common.utils import capture_out
 from hypothesis.strategies import text, integers
@@ -174,3 +174,35 @@ def test_captures_original_repr_of_example():
                 test_mutation()
     out = out.getvalue()
     assert u'Falsifying example: test_mutation(x=[])' in out
+
+
+def test_examples_are_tried_in_order():
+    @example(x=1)
+    @example(x=2)
+    @given(integers(), settings=Settings(max_examples=0))
+    @example(x=3)
+    def test(x):
+        print(u"x -> %d" % (x,))
+    with capture_out() as out:
+        with reporting.with_reporter(reporting.default):
+            test()
+    ls = out.getvalue().splitlines()
+    assert ls == [u"x -> 1", 'x -> 2', 'x -> 3']
+
+
+def test_prints_note_in_failing_example():
+    @example(x=42)
+    @example(x=43)
+    @given(integers())
+    def test(x):
+        note('x -> %d' % (x,))
+        assert x == 42
+
+    with capture_out() as out:
+        with reporting.with_reporter(reporting.default):
+            with pytest.raises(AssertionError):
+                test()
+    v = out.getvalue()
+    print(v)
+    assert 'x -> 43' in v
+    assert 'x -> 42' not in v

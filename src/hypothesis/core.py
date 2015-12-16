@@ -515,9 +515,9 @@ def given(*generator_arguments, **generator_kwargs):
                 selfy = None
             test_runner = executor(selfy)
 
-            for example in getattr(
+            for example in reversed(getattr(
                 wrapped_test, u'hypothesis_explicit_examples', ()
-            ):
+            )):
                 if example.args:
                     example_kwargs = dict(zip(
                         argspec.args[-len(example.args):], example.args
@@ -535,11 +535,14 @@ def given(*generator_arguments, **generator_kwargs):
                     test.__name__, arg_string(test, arguments, example_kwargs)
                 )
                 try:
-                    test_runner(
-                        lambda: test(*arguments, **example_kwargs)
-                    )
+                    with BuildContext() as b:
+                        test_runner(
+                            lambda: test(*arguments, **example_kwargs)
+                        )
                 except BaseException:
                     report(message_on_failure)
+                    for n in b.notes:
+                        report(n)
                     raise
 
             if not any(
