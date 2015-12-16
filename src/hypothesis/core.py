@@ -669,7 +669,9 @@ def given(*generator_arguments, **generator_kwargs):
                         'prevents Hypothesis from working correctly. '
                         'If you want to use methods from random, use '
                         'randoms() from hypothesis.strategies to get an '
-                        'instance of Random you can use.'
+                        'instance of Random you can use. Alternatively, you '
+                        'can use the random_module() strategy to explicitly '
+                        'seed the random module.'
                     )
 
             last_exception = [None]
@@ -711,7 +713,9 @@ def given(*generator_arguments, **generator_kwargs):
                             'Your test used the global random module. '
                             'This is unlikely to work correctly. You should '
                             'consider using the randoms() strategy from '
-                            'hypothesis.strategies instead.'
+                            'hypothesis.strategies instead. Alternatively, '
+                            'you can use the random_module() strategy to '
+                            'explicitly seed the random module.'
                         )
             is_template_example.__name__ = test.__name__
             is_template_example.__qualname__ = qualname(test)
