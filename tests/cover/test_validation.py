@@ -103,6 +103,18 @@ def test_float_ranges():
         floats(1, -1).example()
 
 
+def test_float_range_and_allow_nan_cannot_both_be_enabled():
+    with pytest.raises(InvalidArgument):
+        floats(min_value=1, allow_nan=True).example()
+    with pytest.raises(InvalidArgument):
+        floats(max_value=1, allow_nan=True).example()
+
+
+def test_float_finite_range_and_allow_infinity_cannot_both_be_enabled():
+    with pytest.raises(InvalidArgument):
+        floats(0, 1, allow_infinity=True).example()
+
+
 def test_dictionary_key_size():
     with pytest.raises(InvalidArgument):
         dictionaries(keys=booleans(), values=integers(), min_size=3).example()

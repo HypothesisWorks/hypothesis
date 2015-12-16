@@ -257,6 +257,10 @@ def test_floats_from_zero_have_reasonable_range(k):
     assert find(floats(max_value=0.0), lambda x: x <= -n) == float(-n)
 
 
+def test_explicit_allow_nan():
+    find(floats(allow_nan=True), math.isnan)
+
+
 def test_one_sided_contains_infinity():
     find(floats(min_value=1.0), math.isinf)
     find(floats(max_value=1.0), math.isinf)
