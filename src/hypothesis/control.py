@@ -57,6 +57,7 @@ class BuildContext(object):
         self.close_on_capture = close_on_capture
         self.captured = False
         self.close_on_del = False
+        self.notes = []
 
     def mark_captured(self):
         self.captured = True
@@ -121,5 +122,6 @@ def note(value):
     if context is None:
         raise InvalidArgument(
             u'Cannot make notes outside of build context')
+    context.notes.append(value)
     if context.is_final:
         report(value)

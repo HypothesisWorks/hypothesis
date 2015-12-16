@@ -22,6 +22,14 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -----------------------------------------------------------------------
+`1.17.1 <https://hypothesis.readthedocs.org/en/1.17.1/>`_ - 2015-12-16
+-----------------------------------------------------------------------
+
+A small bug fix release, which fixes the fact that the 'note' function could
+not be used on tests which used the @example decorator to provide explicit
+examples.
+
+-----------------------------------------------------------------------
 `1.17.0 <https://hypothesis.readthedocs.org/en/1.17.0/>`_ - 2015-12-15
 -----------------------------------------------------------------------
 
