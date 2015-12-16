@@ -131,7 +131,9 @@ check-examples3: $(TOX) $(PY35)
 check-coverage: $(TOX) $(PY35)
 	$(TOX) -e coverage
 
-check: check-format check-coverage check-py26 check-py27 check-py33 check-py34 check-py35 check-pypy check-django check-pytest
+check-noformat: check-coverage check-py26 check-py27 check-py33 check-py34 check-py35 check-pypy check-django check-pytest
+
+check: check-format check-noformat
 
 check-fast: lint $(PY26) $(PY35) $(PYPY) $(TOX)
 	$(TOX) -e pypy-brief
