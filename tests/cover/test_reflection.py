@@ -489,12 +489,6 @@ def test_exec_leaves_sys_path_unchanged():
     assert sys.path == old_path
 
 
-def test_can_get_source_of_functions_from_exec():
-    assert u'foo(x)' in inspect.getsource(
-        source_exec_as_module(DEFINE_FOO_FUNCTION).foo
-    )
-
-
 def test_copy_argspec_works_with_conflicts():
     def accepts_everything(*args, **kwargs):
         pass
