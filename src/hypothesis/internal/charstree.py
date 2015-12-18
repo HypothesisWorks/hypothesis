@@ -27,7 +27,7 @@ import unicodedata
 import marshal
 from hypothesis.errors import InvalidArgument
 from hypothesis.settings import hypothesis_home_dir
-from hypothesis.internal.compat import hrange, hunichr
+from hypothesis.internal.compat import hrange, hunichr, OrderedDict
 
 __all__ = (
     'ascii_tree',
@@ -41,8 +41,8 @@ __all__ = (
 )
 
 
-ASCII_TREE = {}
-UNICODE_TREE = {}
+ASCII_TREE = OrderedDict()
+UNICODE_TREE = OrderedDict()
 
 
 def ascii_tree():
@@ -136,19 +136,19 @@ def filter_tree(tree, whitelist_categories=None, blacklist_categories=None,
 
 def do_filter_tree(tree, categories, blacklist_characters,
                    min_codepoint, max_codepoint):
-    new_tree = {}
+    new_tree = OrderedDict()
     for key, subtree in tree.items():
         if key not in categories:
             continue
 
         subtree = do_filter_tree_by_codepoints(
-            subtree, min_codepoint, max_codepoint, {}, 0)
+            subtree, min_codepoint, max_codepoint, OrderedDict(), 0)
 
         if not subtree:
             continue
 
         subtree = do_filter_tree_by_characters(
-            subtree, sorted(blacklist_characters), {}, 0)
+            subtree, sorted(blacklist_characters), OrderedDict(), 0)
 
         if not subtree:
             continue
@@ -168,7 +168,7 @@ def do_filter_tree_by_codepoints(tree, min_codepoint, max_codepoint,
 
         if isinstance(value, dict):
             subtree = do_filter_tree_by_codepoints(
-                value, min_codepoint, max_codepoint, {}, this_base)
+                value, min_codepoint, max_codepoint, OrderedDict(), this_base)
             if subtree:
                 acc[key] = subtree
 
@@ -204,7 +204,7 @@ def do_filter_tree_by_characters(tree, blacklist_characters, acc, base):
 
         if isinstance(value, dict):
             subtree = do_filter_tree_by_characters(
-                value, characters, {}, this_base)
+                value, characters, OrderedDict(), this_base)
             if subtree:
                 acc[key] = subtree
         else:
@@ -259,7 +259,7 @@ def iter_values(namespace, base=0):
 
 def make_tree():
     def new_tree():
-        tree = {}
+        tree = OrderedDict()
         for codepoint in hrange(0, sys.maxunicode + 1):
             cat = unicodedata.category(hunichr(codepoint))
             target = tree.setdefault(cat, [])
@@ -277,7 +277,7 @@ def make_tree():
                 tree[key] = fold_values(values, factor)
 
     def fold_values(values, factor):
-        group = {}
+        group = OrderedDict()
         by_factor = lambda i: i[0] & factor
         for ns, items in itertools.groupby(values, key=by_factor):
             namespace = group.setdefault(ns, [])
