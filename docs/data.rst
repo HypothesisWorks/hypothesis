@@ -23,7 +23,7 @@ module. The salient functions from it are as follows:
 Choices
 ~~~~~~~~~~~~~~~~
 
-Sometimes you need an input to be from a known set of items. hypothesis gives you 2 ways to do this, choice() and sample_from().
+Sometimes you need an input to be from a known set of items. hypothesis gives you 2 ways to do this, choice() and sampled_from().
 
 Examples on how to use them both are below. First up choice:
 
@@ -38,7 +38,7 @@ Examples on how to use them both are below. First up choice:
 
 This means t will randomly be one of the items in the list ('ST', 'LT', 'TG', 'CT'). just like if you were calling random.choice() on the list.
 
-A different, and probably better way to do this, is to use sample_from:
+A different, and probably better way to do this, is to use sampled_from:
 
 .. code:: python
 
@@ -50,7 +50,7 @@ A different, and probably better way to do this, is to use sample_from:
     def test_tickets(user, service, t):
         # asserts and test code go here.
 
-Values from sample_from will not be copied and thus you should be careful of using mutable data. Which makes it great for the above use case, but may not always work out.
+Values from sampled_from will not be copied and thus you should be careful of using mutable data. Which makes it great for the above use case, but may not always work out.
 
 ~~~~~~~~~~~~~~~~
 Infinite streams
