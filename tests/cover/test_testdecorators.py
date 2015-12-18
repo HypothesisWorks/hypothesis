@@ -469,12 +469,20 @@ def test_does_not_accept_random_if_derandomize():
 
 
 def test_can_derandomize():
+    values = []
+
     @fails
-    @given(integers(), settings=Settings(derandomize=True))
+    @given(integers(), settings=Settings(derandomize=True, database=None))
     def test_blah(x):
+        values.append(x)
         assert x > 0
 
     test_blah()
+    assert values
+    v1 = values
+    values = []
+    test_blah()
+    assert v1 == values
 
 
 def test_can_run_without_database():

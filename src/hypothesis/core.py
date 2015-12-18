@@ -410,11 +410,6 @@ def given(*generator_arguments, **generator_kwargs):
             return invalid(
                 u'given must be called with at least one argument')
 
-        if settings.derandomize:
-            random = Random(function_digest(test))
-        else:
-            random = provided_random or Random()
-
         if generator_arguments and original_argspec.varargs:
             return invalid(
                 u'varargs are not supported with positional arguments to '
@@ -478,6 +473,11 @@ def given(*generator_arguments, **generator_kwargs):
             test.__name__, argspec
         )
         def wrapped_test(*arguments, **kwargs):
+            if settings.derandomize:
+                random = Random(function_digest(test))
+            else:
+                random = provided_random or Random()
+
             import hypothesis.strategies as sd
             from hypothesis.internal.strategymethod import strategy
 
