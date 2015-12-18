@@ -22,10 +22,10 @@ import pytest
 
 from hypothesis import find, given, assume, Settings
 from hypothesis.database import ExampleDatabase
-from hypothesis.strategies import just, lists, floats, tuples, integers, \
-    streaming
+from hypothesis.strategies import just, text, lists, floats, tuples, \
+    booleans, integers, streaming
 from hypothesis.internal.debug import some_template
-from hypothesis.internal.compat import hrange
+from hypothesis.internal.compat import hrange, Counter
 from hypothesis.searchstrategy.narytree import Leaf, n_ary_tree
 
 ConstantLists = integers().flatmap(lambda i: lists(just(i)))
@@ -64,9 +64,7 @@ def test_flatmap_retrieve_from_db():
 
     assert track
     example = track[-1]
-
-    while track:
-        track.pop()
+    track = []
 
     with pytest.raises(AssertionError):
         record_and_test_size()
@@ -134,3 +132,17 @@ def test_streaming_flatmap_past_point_of_read():
     assert s[0] == 1
     for i in hrange(100):
         s[i]
+
+
+def test_mixed_list_flatmap():
+    s = lists(
+        booleans().flatmap(lambda b: booleans() if b else text())
+    )
+
+    def criterion(ls):
+        c = Counter(type(l) for l in ls)
+        return len(c) >= 2 and min(c.values()) >= 3
+
+    result = find(s, criterion)
+    assert len(result) == 6
+    assert set(result) == set([False, u''])

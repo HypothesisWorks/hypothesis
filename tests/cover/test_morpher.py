@@ -18,14 +18,10 @@ from __future__ import division, print_function, absolute_import
 
 from random import Random
 
-import pytest
-
 import hypothesis.strategies as s
 from hypothesis import find, given, example, Settings
-from hypothesis.errors import InvalidArgument
 from hypothesis.control import BuildContext
-from hypothesis.internal.tracker import Tracker
-from hypothesis.searchstrategy.morphers import Morpher, MorpherStrategy
+from hypothesis.searchstrategy.morphers import MorpherStrategy
 
 morphers = MorpherStrategy()
 intlists = s.lists(s.integers())
@@ -33,7 +29,7 @@ intlists = s.lists(s.integers())
 
 def test_can_simplify_through_a_morpher():
     m = find(morphers, lambda x: bool(x.become(intlists)))
-    assert m.clean_slate().become(intlists) == [0]
+    assert m.become(intlists) == [0]
 
 
 @example(Random(187))
@@ -45,7 +41,7 @@ def test_can_simplify_text_through_a_morpher(rnd):
         settings=Settings(database=None)
     )
     with BuildContext():
-        assert m.clean_slate().become(s.text()) == u'0'
+        assert m.become(s.text()) == u'0'
 
 
 def test_can_simplify_lists_of_morphers_of_single_type():
@@ -56,21 +52,21 @@ def test_can_simplify_lists_of_morphers_of_single_type():
     )
 
     with BuildContext():
-        ls = [t.clean_slate().become(s.integers()) for t in ms]
+        ls = [t.become(s.integers()) for t in ms]
     assert sum(ls) == 100
 
 
 def test_can_simplify_through_two_morphers():
     m = find(morphers, lambda x: bool(x.become(morphers).become(intlists)))
     with BuildContext():
-        assert m.clean_slate().become(morphers).become(intlists) == [0]
+        assert m.become(morphers).become(intlists) == [0]
 
 
 def test_a_morpher_retains_its_data_on_reserializing():
     m = find(morphers, lambda x: sum(x.become(intlists)) > 1)
     m2 = morphers.from_basic(morphers.to_basic(m))
     with BuildContext():
-        assert m.clean_slate().become(intlists) == m2.become(intlists)
+        assert m.become(intlists) == m2.become(intlists)
 
 
 def test_can_clone_morphers_into_inactive_morphers():
@@ -78,7 +74,7 @@ def test_can_clone_morphers_into_inactive_morphers():
         s.lists(morphers),
         lambda x: len(x) >= 2 and x[0].become(s.integers()) >= 0)
     with BuildContext():
-        m_as_ints = [x.clean_slate().become(s.integers()) for x in m]
+        m_as_ints = [x.become(s.integers()) for x in m]
     assert m_as_ints == [0, 0]
 
 
@@ -90,24 +86,9 @@ def test_thorough_cloning():
             m.become(s.integers()) > 0 for m in x)
     r = find(s.lists(morphers), check)
     with BuildContext():
-        results = [m.clean_slate().become(s.integers()) for m in r]
+        results = [m.become(s.integers()) for m in r]
     results.sort(key=abs)
     assert results == [0] * 4 + [1]
-
-
-def test_can_simplify_lists_of_morphers_with_mixed_types():
-    m = find(
-        s.lists(morphers, min_size=2),
-        lambda xs: xs[0].become(s.text()) and xs[-1].become(s.integers()))
-    assert len(m) == 2
-    for x in m:
-        x.clear()
-    m_as_ints = [x.become(s.integers()) for x in m]
-    for x in m:
-        x.clear()
-    m_as_text = [x.become(s.text()) for x in m]
-    assert u'0' in m_as_text
-    assert 1 in m_as_ints
 
 
 def test_without_strategies_morphers_synchronize():
@@ -118,32 +99,18 @@ def test_without_strategies_morphers_synchronize():
     assert len(distinct_ints) == 1
 
 
-def test_a_morpher_accumulates_strategies():
-    m = Morpher(1, 1)
-    m.become(s.integers())
-    m.clear()
-    m.become(s.text())
-    m.clear()
-    assert len(m.data) == 2
+def test_mixed_type_list():
 
+    def convert_list(ls):
+        return [
+            v.become(s.booleans())
+            for v in ls[:5]
+        ] + [
+            v.become(s.text())
+            for v in ls[5:10]
+        ]
 
-def test_can_track_morphers():
-    t = Tracker()
-    assert t.track(Morpher(0, 0)) == 1
-    assert t.track(Morpher(0, 0)) == 2
-
-    m1 = Morpher(0, 1)
-    m2 = Morpher(0, 1)
-
-    m1.become(s.lists(s.integers()))
-    m2.become(s.lists(s.integers()))
-
-    assert t.track(m1) == 1
-    assert t.track(m2) == 2
-
-
-def test_cannot_install_into_morpher_twice():
-    m = Morpher(0, 1)
-    m.install(s.integers())
-    with pytest.raises(InvalidArgument):
-        m.install(s.integers())
+    ls = find(
+        s.lists(morphers, min_size=15, max_size=15).map(convert_list),
+        lambda x: True)
+    assert ls[:10] == [False] * 5 + [u''] * 5
