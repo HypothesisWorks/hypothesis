@@ -179,3 +179,15 @@ def test_health_check_runs_should_not_affect_determinism(recwarn):
         t = 0
         test()
         assert v1 == values
+
+
+def test_nesting_without_control_fails_health_check():
+    @given(st.integers())
+    def test_blah(x):
+        @given(st.integers())
+        def test_nest(y):
+            assert y < x
+        with raises(AssertionError):
+            test_nest()
+    with raises(FailedHealthCheck):
+        test_blah()

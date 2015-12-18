@@ -25,7 +25,7 @@ def test_are_unique(ls):
     assert len(set(ls)) == len(ls)
 
 
-@given(st.lists(st.uuids()))
-def test_retains_uniqueness_in_simplify(ls):
-    ts = find(st.lists(st.uuids()), lambda x: len(x) >= 5)
+@given(st.lists(st.uuids()), st.randoms())
+def test_retains_uniqueness_in_simplify(ls, rnd):
+    ts = find(st.lists(st.uuids()), lambda x: len(x) >= 5, random=rnd)
     assert len(ts) == len(set(ts)) == 5

@@ -49,6 +49,11 @@ from hypothesis.internal.reflection import arg_string, impersonate, \
 from hypothesis.internal.examplesource import ParameterSource
 
 
+def new_random():
+    import random
+    return random.Random(random.getrandbits(128))
+
+
 def time_to_call_it_a_day(settings, start_time):
     """Have we exceeded our timeout?"""
     if settings.timeout <= 0:
@@ -194,8 +199,6 @@ def simplify_template_such_that(
     it returned False.
 
     """
-    assert isinstance(random, Random)
-
     yield t
 
     if settings.max_shrinks <= 0 or not f(t):
@@ -476,7 +479,7 @@ def given(*generator_arguments, **generator_kwargs):
             if settings.derandomize:
                 random = Random(function_digest(test))
             else:
-                random = provided_random or Random()
+                random = provided_random or new_random()
 
             import hypothesis.strategies as sd
             from hypothesis.internal.strategymethod import strategy
@@ -778,7 +781,7 @@ def find(specifier, condition, settings=None, random=None, storage=None):
             )
         )
 
-    random = random or Random()
+    random = random or new_random()
     successful_examples = [0]
 
     def template_condition(template):

@@ -113,3 +113,8 @@ def test_respects_alphabet_if_list(xs):
 @given(text(alphabet=u'cdef'))
 def test_respects_alphabet_if_string(xs):
     assert set(xs).issubset(set(u'cdef'))
+
+
+@given(text())
+def test_can_encode_as_utf8(s):
+    s.encode('utf-8')
