@@ -380,6 +380,14 @@ def reify_and_execute(
     return run
 
 
+def configure(seed=None, settings=None):
+    def accept(test):
+        test._hypothesis_internal_use_seed = seed
+        test._hypothesis_internal_use_settings = settings
+        return test
+    return accept
+
+
 def given(*generator_arguments, **generator_kwargs):
     """A decorator for turning a test function that accepts arguments into a
     randomized test.
@@ -388,29 +396,18 @@ def given(*generator_arguments, **generator_kwargs):
     for details of its behaviour.
 
     """
-
-    # Keyword only arguments but actually supported in the full range of
-    # pythons Hypothesis handles. pop so we don't later pick these up as
-    # if they were keyword specifiers for data to pass to the test.
-    provided_random = generator_kwargs.pop(u'random', None)
-    settings = generator_kwargs.pop(u'settings', None) or Settings.default
-    if generator_arguments and generator_kwargs:
-        note_deprecation(
-            u'Mixing positional and keyword arguments in a call to given is '
-            u'deprecated. Use one or the other.', settings
-        )
-
     def run_test_with_generator(test):
+        # Keyword only arguments but actually supported in the full range of
+        # pythons Hypothesis handles. pop so we don't later pick these up as
+        # if they were keyword specifiers for data to pass to the test.
+        _provided_random = generator_kwargs.pop(u'random', None)
+        _settings = generator_kwargs.pop(u'settings', None)
         original_argspec = getargspec(test)
 
         def invalid(message):
             def wrapped_test(*arguments, **kwargs):
                 raise InvalidArgument(message)
             return wrapped_test
-
-        if (provided_random is not None) and settings.derandomize:
-            return invalid(
-                u'Cannot both be derandomized and provide an explicit random')
 
         if not (generator_arguments or generator_kwargs):
             return invalid(
@@ -479,10 +476,35 @@ def given(*generator_arguments, **generator_kwargs):
             test.__name__, argspec
         )
         def wrapped_test(*arguments, **kwargs):
-            if settings.derandomize:
+            if _provided_random is not None:
+                note_deprecation(
+                    'Passing random as an argument to @given is deprecated. '
+                    'use the @configure() API to pass an explicit seed '
+                    'instead.',
+                    _settings or getattr(
+                        test, '_hypothesis_internal_use_settings', None))
+            if _settings is not None:
+                note_deprecation(
+                    'Passing settings as an argument to @given is deprecated. '
+                    'use the @configure() API instead.',
+                    _settings or getattr(
+                        test, '_hypothesis_internal_use_settings', None))
+            if generator_arguments and generator_kwargs:
+                note_deprecation(
+                    'Mixing positional and keyword arguments in a call to '
+                    'given is deprecated. Use one or the other.', getattr(
+                        test, '_hypothesis_internal_use_settings', _settings,
+                    )
+                )
+
+            settings = wrapped_test._hypothesis_internal_use_settings
+            if wrapped_test._hypothesis_internal_use_seed is not None:
+                random = Random(
+                    wrapped_test._hypothesis_internal_use_seed)
+            elif settings.derandomize:
                 random = Random(function_digest(test))
             else:
-                random = provided_random or new_random()
+                random = new_random()
 
             import hypothesis.strategies as sd
             from hypothesis.internal.strategymethod import strategy
@@ -783,6 +805,16 @@ def given(*generator_arguments, **generator_kwargs):
             if attr[0] != '_' and not hasattr(wrapped_test, attr):
                 setattr(wrapped_test, attr, getattr(test, attr))
         wrapped_test.is_hypothesis_test = True
+        if _provided_random is not None:
+            wrapped_test._hypothesis_internal_use_seed = \
+                _provided_random.getrandbits(128)
+        else:
+            wrapped_test._hypothesis_internal_use_seed = getattr(
+                test, '_hypothesis_internal_use_seed', None
+            )
+        wrapped_test._hypothesis_internal_use_settings = _settings or getattr(
+            test, '_hypothesis_internal_use_settings', None
+        ) or Settings.default
         return wrapped_test
     return run_test_with_generator
 

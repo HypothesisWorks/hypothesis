@@ -20,12 +20,11 @@ import time
 import string
 import functools
 import threading
-from random import Random
 from collections import namedtuple
 
 import hypothesis.reporting as reporting
-from hypothesis import note, given, assume, Settings, Verbosity
-from hypothesis.errors import Unsatisfiable, InvalidArgument
+from hypothesis import note, given, assume, Settings, configure, Verbosity
+from hypothesis.errors import Flaky, Unsatisfiable
 from tests.common.utils import fails, raises, fails_with, capture_out
 from hypothesis.strategies import just, sets, text, lists, binary, \
     builds, floats, one_of, booleans, integers, frozensets, sampled_from
@@ -55,7 +54,8 @@ def test_int_addition_is_associative(x, y, z):
 
 
 @fails
-@given(floats(), floats(), floats(), settings=Settings(
+@given(floats(), floats(), floats())
+@configure(settings=Settings(
     max_examples=2000,
 ))
 def test_float_addition_is_associative(x, y, z):
@@ -68,7 +68,8 @@ def test_reversing_preserves_integer_addition(xs):
 
 
 def test_still_minimizes_on_non_assertion_failures():
-    @given(integers(), settings=Settings(max_examples=50))
+    @configure(settings=Settings(max_examples=50))
+    @given(integers())
     def is_not_too_large(x):
         if x >= 10:
             raise ValueError(u'No, %s is just too large. Sorry' % x)
@@ -126,7 +127,8 @@ def test_can_be_given_keyword_args(x, name):
 
 
 @fails_with(Unsatisfiable)
-@given(integers(), settings=Settings(timeout=0.1))
+@configure(settings=Settings(timeout=0.1))
+@given(integers())
 def test_slow_test_times_out(x):
     time.sleep(0.05)
 
@@ -140,7 +142,8 @@ timeout_settings = Settings(timeout=0.2)
 # The following tests exist to test that verifiers start their timeout
 # from when the test first executes, not from when it is defined.
 @fails
-@given(integers(), settings=timeout_settings)
+@given(integers())
+@configure(settings=timeout_settings)
 def test_slow_failing_test_1(x):
     time.sleep(0.05)
     assert not calls[0]
@@ -148,7 +151,8 @@ def test_slow_failing_test_1(x):
 
 
 @fails
-@given(integers(), settings=timeout_settings)
+@configure(settings=timeout_settings)
+@given(integers())
 def test_slow_failing_test_2(x):
     time.sleep(0.05)
     assert not calls[1]
@@ -156,7 +160,8 @@ def test_slow_failing_test_2(x):
 
 
 @fails
-@given(integers(), settings=timeout_settings)
+@given(integers())
+@configure(settings=timeout_settings)
 def test_slow_failing_test_3(x):
     time.sleep(0.05)
     assert not calls[2]
@@ -164,7 +169,8 @@ def test_slow_failing_test_3(x):
 
 
 @fails
-@given(integers(), settings=timeout_settings)
+@configure(settings=timeout_settings)
+@given(integers())
 def test_slow_failing_test_4(x):
     time.sleep(0.05)
     assert not calls[3]
@@ -220,7 +226,8 @@ def test_contains_the_test_function_name_in_the_exception_string():
 
     calls = [0]
 
-    @given(integers(), settings=Settings(max_iterations=10, max_examples=10))
+    @given(integers())
+    @configure(settings=Settings(max_iterations=10, max_examples=10))
     def this_has_a_totally_unique_name(x):
         calls[0] += 1
         assume(False)
@@ -235,8 +242,8 @@ def test_contains_the_test_function_name_in_the_exception_string():
 
     class Foo(object):
 
-        @given(integers(), settings=Settings(
-            max_iterations=10, max_examples=10))
+        @given(integers())
+        @configure(settings=Settings(max_iterations=10, max_examples=10))
         def this_has_a_unique_name_and_lives_on_a_class(self, x):
             calls2[0] += 1
             assume(False)
@@ -292,9 +299,8 @@ def test_can_find_large_sum_frozenset(xs):
 
 
 def test_prints_on_failure_by_default():
-    @given(integers(), integers(), settings=Settings(
-        max_examples=200, timeout=-1
-    ))
+    @given(integers(), integers())
+    @configure(settings=Settings(max_examples=200, timeout=-1))
     def test_ints_are_sorted(balthazar, evans):
         assume(evans >= 0)
         assert balthazar <= evans
@@ -354,7 +360,8 @@ def test_can_test_kwargs_only_methods(**kwargs):
 
 
 @fails_with(UnicodeEncodeError)
-@given(text(), settings=Settings(max_examples=200))
+@given(text())
+@configure(settings=Settings(max_examples=200))
 def test_is_ascii(x):
     x.encode(u'ascii')
 
@@ -387,34 +394,33 @@ def test_has_ascii(x):
     assert any(c in ascii_characters for c in x)
 
 
-def test_uses_random():
-    random = Random()
-    initial = random.getstate()
-    assert random.getstate() == initial
+@fails_with(Flaky)
+@given(integers())
+def test_fails_only_once(x):
+    global first_call
+    if first_call:
+        first_call = False
+        assert False
 
-    @given(integers(), random=random)
+
+def test_uses_provided_seed():
+    import random
+    initial = random.getstate()
+
+    @given(integers())
+    @configure(seed=42)
     def test_foo(x):
         pass
     test_foo()
-    assert random.getstate() != initial
-
-
-def test_does_not_accept_random_if_derandomize():
-    with raises(InvalidArgument):
-        @given(
-            integers(),
-            settings=Settings(derandomize=True), random=Random()
-        )
-        def test_blah(x):
-            pass
-        test_blah()
+    assert random.getstate() == initial
 
 
 def test_can_derandomize():
     values = []
 
     @fails
-    @given(integers(), settings=Settings(derandomize=True, database=None))
+    @given(integers())
+    @configure(settings=Settings(derandomize=True, database=None))
     def test_blah(x):
         values.append(x)
         assert x > 0
@@ -428,7 +434,8 @@ def test_can_derandomize():
 
 
 def test_can_run_without_database():
-    @given(integers(), settings=Settings(database=None))
+    @given(integers())
+    @configure(settings=Settings(database=None))
     def test_blah(x):
         assert False
     with raises(AssertionError):
@@ -472,7 +479,8 @@ def test_named_tuples_are_of_right_type(litter):
 
 
 @fails_with(AttributeError)
-@given(integers().map(lambda x: x.nope), settings=Settings(
+@given(integers().map(lambda x: x.nope))
+@configure(settings=Settings(
     perform_health_check=False,
 ))
 def test_fails_in_reify(x):
@@ -497,7 +505,8 @@ def test_mixed_text(x):
 def test_when_set_to_no_simplifies_runs_failing_example_twice():
     failing = [0]
 
-    @given(integers(), settings=Settings(max_shrinks=0, max_examples=200))
+    @given(integers())
+    @configure(settings=Settings(max_shrinks=0, max_examples=200))
     def foo(x):
         if x > 11:
             note('Lo')
@@ -513,7 +522,8 @@ def test_when_set_to_no_simplifies_runs_failing_example_twice():
     assert u'Lo' in out.getvalue()
 
 
-@given(integers(), settings=Settings(max_examples=1))
+@given(integers())
+@configure(settings=Settings(max_examples=1))
 def test_should_not_fail_if_max_examples_less_than_min_satisfying(x):
     pass
 
@@ -521,9 +531,8 @@ def test_should_not_fail_if_max_examples_less_than_min_satisfying(x):
 def test_should_not_count_duplicates_towards_max_examples():
     seen = set()
 
-    @given(integers(1, 10), settings=Settings(
-        max_examples=9
-    ))
+    @given(integers(1, 10))
+    @configure(settings=Settings(max_examples=9))
     def test_i_see_you(x):
         seen.add(x)
     test_i_see_you()
@@ -566,7 +575,8 @@ def test_does_not_print_notes_if_all_succeed():
 
 
 def test_prints_notes_once_on_failure():
-    @given(lists(integers()), settings=Settings(database=None))
+    @given(lists(integers()))
+    @configure(settings=Settings(database=None))
     def test(xs):
         note('Hi there')
         assert sum(xs) > 100
