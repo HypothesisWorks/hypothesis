@@ -594,6 +594,7 @@ def given(*generator_arguments, **generator_kwargs):
 
             if perform_health_check:
                 initial_state = getglobalrandomstate()
+                health_check_random = Random(random.getrandbits(128))
                 with Settings(settings, verbosity=Verbosity.quiet):
                     count = 0
                     bad_draws = 0
@@ -606,8 +607,10 @@ def given(*generator_arguments, **generator_kwargs):
                             test_runner(reify_and_execute(
                                 search_strategy,
                                 search_strategy.draw_template(
-                                    random,
-                                    search_strategy.draw_parameter(random)),
+                                    health_check_random,
+                                    search_strategy.draw_parameter(
+                                        health_check_random,
+                                    )),
                                 lambda *args, **kwargs: None,
                             ))
                             count += 1

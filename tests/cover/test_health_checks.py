@@ -158,3 +158,24 @@ def test_broad_recursive_data_will_fail_a_health_check():
 
     with raises(FailedHealthCheck):
         test()
+
+
+def test_health_check_runs_should_not_affect_determinism(recwarn):
+    with Settings(
+        strict=False, timeout=0, max_examples=2, derandomize=True,
+        database=None, perform_health_check=True,
+    ):
+        values = []
+        t = 0.25
+
+        @given(st.integers().map(lambda i: [time.sleep(t), i][1]))
+        def test(x):
+            values.append(x)
+
+        test()
+        recwarn.pop(FailedHealthCheck)
+        v1 = values
+        values = []
+        t = 0
+        test()
+        assert v1 == values
