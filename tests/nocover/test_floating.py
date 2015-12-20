@@ -23,22 +23,24 @@ from __future__ import division, print_function, absolute_import
 import sys
 import math
 
-from hypothesis import given, assume, Settings
+from hypothesis import given, assume, Settings, configure
 from hypothesis.errors import Unsatisfiable
 from tests.common.utils import fails, fails_with
-from hypothesis.strategies import lists, floats, randoms
+from hypothesis.strategies import lists, floats, integers
 from hypothesis.searchstrategy.numbers import NastyFloats
 
 TRY_HARDER = Settings(max_examples=1000, max_iterations=2000)
 
 
-@given(floats(), settings=TRY_HARDER)
+@given(floats())
+@configure(settings=TRY_HARDER)
 def test_is_float(x):
     assert isinstance(x, float)
 
 
 @fails
-@given(floats(), settings=TRY_HARDER)
+@given(floats())
+@configure(settings=TRY_HARDER)
 def test_inversion_is_imperfect(x):
     assume(x != 0.0)
     y = 1.0 / x
@@ -50,7 +52,8 @@ def test_largest_range(x):
     assert not math.isinf(x)
 
 
-@given(floats(), settings=TRY_HARDER)
+@given(floats())
+@configure(settings=TRY_HARDER)
 def test_negation_is_self_inverse(x):
     assume(not math.isnan(x))
     y = -x
@@ -64,35 +67,40 @@ def test_is_not_nan(xs):
 
 
 @fails
-@given(floats(), settings=TRY_HARDER)
+@given(floats())
+@configure(settings=TRY_HARDER)
 def test_is_not_positive_infinite(x):
     assume(x > 0)
     assert not math.isinf(x)
 
 
 @fails
-@given(floats(), settings=TRY_HARDER)
+@given(floats())
+@configure(settings=TRY_HARDER)
 def test_is_not_negative_infinite(x):
     assume(x < 0)
     assert not math.isinf(x)
 
 
 @fails
-@given(floats(), settings=TRY_HARDER)
+@given(floats())
+@configure(settings=TRY_HARDER)
 def test_is_int(x):
     assume(not (math.isinf(x) or math.isnan(x)))
     assert x == int(x)
 
 
 @fails
-@given(floats(), settings=TRY_HARDER)
+@given(floats())
+@configure(settings=TRY_HARDER)
 def test_is_not_int(x):
     assume(not (math.isinf(x) or math.isnan(x)))
     assert x != int(x)
 
 
 @fails
-@given(floats(), settings=TRY_HARDER)
+@given(floats())
+@configure(settings=TRY_HARDER)
 def test_is_in_exact_int_range(x):
     assume(not (math.isinf(x) or math.isnan(x)))
     assert x + 1 != x
@@ -109,42 +117,46 @@ else:
 
 
 @fails
-@given(floats(), settings=TRY_HARDER)
+@given(floats())
+@configure(settings=TRY_HARDER)
 def test_can_generate_really_small_positive_floats(x):
     assume(x > 0)
     assert x >= REALLY_SMALL_FLOAT
 
 
 @fails
-@given(floats(), settings=TRY_HARDER)
+@given(floats())
+@configure(settings=TRY_HARDER)
 def test_can_generate_really_small_negative_floats(x):
     assume(x < 0)
     assert x <= -REALLY_SMALL_FLOAT
 
 
 @fails
-@given(floats(), settings=TRY_HARDER)
+@given(floats())
+@configure(settings=TRY_HARDER)
 def test_can_find_floats_that_do_not_round_trip_through_strings(x):
     assert float(str(x)) == x
 
 
 @fails
-@given(floats(), settings=TRY_HARDER)
+@given(floats())
+@configure(settings=TRY_HARDER)
 def test_can_find_floats_that_do_not_round_trip_through_reprs(x):
     assert float(repr(x)) == x
 
 
-@given(floats(), floats(), randoms())
-def test_floats_are_in_range(x, y, rand):
+@given(floats(), floats(), integers())
+def test_floats_are_in_range(x, y, seed):
     assume(not (math.isnan(x) or math.isnan(y)))
     assume(not (math.isinf(x) or math.isinf(y)))
     x, y = sorted((x, y))
     assume(x < y)
 
-    with Settings(max_examples=10):
-        @given(floats(x, y), random=rand)
-        def test_is_in_range(t):
-            assert x <= t <= y
+    @given(floats(x, y))
+    @configure(seed=seed, settings=Settings(max_examples=10))
+    def test_is_in_range(t):
+        assert x <= t <= y
 
     try:
         test_is_in_range()

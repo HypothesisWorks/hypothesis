@@ -17,7 +17,7 @@
 from __future__ import division, print_function, absolute_import
 
 import hypothesis.strategies as st
-from hypothesis import given, Settings
+from hypothesis import given, Settings, configure
 from hypothesis.errors import InvalidArgument
 from hypothesis.control import assume
 from hypothesis.internal.compat import OrderedDict
@@ -109,7 +109,8 @@ strategy_globals['bar'] = bar
 strategy_globals['baz'] = baz
 
 
-@given(Strategies, settings=Settings(
+@given(Strategies)
+@configure(settings=Settings(
     max_examples=2000
 ))
 def test_repr_evals_to_thing_with_same_repr(strategy):

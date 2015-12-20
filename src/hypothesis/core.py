@@ -381,8 +381,7 @@ def reify_and_execute(
 
 
 def configure(seed=None, settings=None):
-    """
-    Provide additional configuration to a function that uses given.
+    """Provide additional configuration to a function that uses given.
 
     seed: Start the test execution from a seeded with this. May be any hashable
           object. No exact meaning for seed is provided other than that

@@ -21,7 +21,7 @@ import hashlib
 from copy import deepcopy
 from random import Random
 
-from hypothesis import find, given, assume, Settings, Verbosity
+from hypothesis import find, given, assume, Settings, configure, Verbosity
 from hypothesis.errors import BadData, NoExamples, FailedHealthCheck
 from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import rule, Bundle, RuleBasedStateMachine, \
@@ -125,7 +125,7 @@ class HypothesisSpec(RuleBasedStateMachine):
             break
         return (strat, temp)
 
-    @rule(strat=strategies, r=randoms(), mshr=integers(0, 100))
+    @rule(strat=strategies, r=integers(), mshr=integers(0, 100))
     def find_constant_failure(self, strat, r, mshr):
         with Settings(
             verbosity=Verbosity.quiet, max_examples=1,
@@ -133,7 +133,8 @@ class HypothesisSpec(RuleBasedStateMachine):
             database=self.database,
             max_shrinks=mshr,
         ):
-            @given(strat, random=r,)
+            @given(strat)
+            @configure(seed=r,)
             def test(x):
                 assert False
 
@@ -143,7 +144,7 @@ class HypothesisSpec(RuleBasedStateMachine):
                 pass
 
     @rule(
-        strat=strategies, r=randoms(), p=floats(0, 1),
+        strat=strategies, r=integers(), p=floats(0, 1),
         mex=integers(1, 10), mshr=integers(1, 100)
     )
     def find_weird_failure(self, strat, r, mex, p, mshr):
@@ -153,7 +154,8 @@ class HypothesisSpec(RuleBasedStateMachine):
             database=self.database,
             max_shrinks=mshr,
         ):
-            @given(strat, random=r,)
+            @given(strat)
+            @configure(seed=r,)
             def test(x):
                 assert Random(
                     hashlib.md5(show(x).encode(u'utf-8')).digest()
