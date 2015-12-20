@@ -20,7 +20,7 @@ from unittest import TestCase
 
 import pytest
 
-from hypothesis import note, given, example, Settings, reporting
+from hypothesis import note, given, example, Settings, configure, reporting
 from hypothesis.errors import InvalidArgument
 from tests.common.utils import capture_out
 from hypothesis.strategies import text, integers
@@ -179,7 +179,8 @@ def test_captures_original_repr_of_example():
 def test_examples_are_tried_in_order():
     @example(x=1)
     @example(x=2)
-    @given(integers(), settings=Settings(max_examples=0))
+    @given(integers())
+    @configure(settings=Settings(max_examples=0))
     @example(x=3)
     def test(x):
         print(u"x -> %d" % (x,))

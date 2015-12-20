@@ -22,7 +22,7 @@ from collections import namedtuple
 import pytest
 
 from flaky import flaky
-from hypothesis import find, given, Settings
+from hypothesis import find, given, Settings, configure
 from hypothesis.strategies import sets, text, lists, builds, tuples, \
     booleans, integers, frozensets, dictionaries, fixed_dictionaries
 from hypothesis.internal.debug import minimal
@@ -182,9 +182,8 @@ def test_multiple_empty_lists_are_independent():
     assert u is not v
 
 
-@given(sets(integers(0, 100), min_size=2, max_size=10), settings=Settings(
-    max_examples=100
-))
+@given(sets(integers(0, 100), min_size=2, max_size=10))
+@configure(settings=Settings(max_examples=100))
 def test_sets_are_size_bounded(xs):
     assert 2 <= len(xs) <= 10
 

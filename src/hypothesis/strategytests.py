@@ -24,7 +24,7 @@ from unittest import TestCase
 from itertools import islice
 from collections import namedtuple
 
-from hypothesis import given, assume
+from hypothesis import given, assume, configure
 from hypothesis.errors import BadData, Unsatisfiable, BadTemplateDraw
 from hypothesis.control import BuildContext
 from hypothesis.database import ExampleDatabase
@@ -174,9 +174,11 @@ def strategy_test_suite(
     )
     random = random or Random()
     strat = strategy(specifier, settings)
-    specifier_test = given(
-        templates_for(specifier), randoms(), settings=settings
-    )
+
+    def specifier_test(test):
+        return given(
+            templates_for(specifier), randoms(),
+        )(configure(settings=settings)(test))
 
     class ValidationSuite(TestCase):
 
@@ -185,7 +187,8 @@ def strategy_test_suite(
                 repr(specifier),
             )
 
-        @given(specifier, settings=settings)
+        @given(specifier)
+        @configure(settings=settings)
         def test_does_not_error(self, value):
             pass
 
@@ -196,13 +199,15 @@ def strategy_test_suite(
             strategy(lists(strat)).example()
 
         def test_will_give_unsatisfiable_if_all_rejected(self):
-            @given(specifier, settings=settings)
+            @given(specifier)
+            @configure(settings=settings)
             def nope(x):
                 assume(False)
             self.assertRaises(Unsatisfiable, nope)
 
         def test_will_find_a_constant_failure(self):
-            @given(specifier, settings=settings)
+            @given(specifier)
+            @configure(settings=settings)
             def nope(x):
                 raise Rejected()
             self.assertRaises(Rejected, nope)
@@ -210,7 +215,8 @@ def strategy_test_suite(
         def test_will_find_a_failure_from_the_database(self):
             db = ExampleDatabase()
 
-            @given(specifier, settings=Settings(
+            @given(specifier)
+            @configure(settings=Settings(
                 settings, max_examples=10, database=db))
             def nope(x):
                 raise Rejected()
@@ -220,17 +226,16 @@ def strategy_test_suite(
             finally:
                 db.close()
 
-        @given(
-            templates_for(specifier), templates_for(specifier),
-            settings=settings
-        )
+        @given(templates_for(specifier), templates_for(specifier))
+        @configure(settings=settings)
         def test_simplicity_is_asymmetric(self, x, y):
             assert not (
                 strat.strictly_simpler(x, y) and
                 strat.strictly_simpler(y, x)
             )
 
-        @given(integers(), settings=settings)
+        @given(integers())
+        @configure(settings=settings)
         def test_templates_generated_from_same_random_are_equal(self, i):
             try:
                 t1 = strat.draw_and_produce(Random(i))
@@ -242,7 +247,8 @@ def strategy_test_suite(
                 assert t1 == t2
                 assert hash(t1) == hash(t2)
 
-        @given(integers(), settings=settings)
+        @given(integers())
+        @configure(settings=settings)
         def test_templates_generated_from_same_random_are_equal_after_reify(
             self, i
         ):
@@ -259,19 +265,20 @@ def strategy_test_suite(
                 assert t1 == t2
                 assert hash(t1) == hash(t2)
 
-        @given(randoms(), settings=settings)
-        def test_will_handle_a_really_weird_failure(self, rnd):
+        @given(integers())
+        @configure(settings=settings)
+        def test_will_handle_a_really_weird_failure(self, seed):
             db = ExampleDatabase()
 
-            @given(
-                specifier,
+            @given(specifier)
+            @configure(
                 settings=Settings(
                     settings,
                     database=db,
                     max_examples=max_examples,
                     min_satisfying_examples=2,
                     average_list_length=2.0,
-                ), random=rnd
+                ), seed=seed
             )
             def nope(x):
                 s = hashlib.sha1(repr(x).encode(u'utf-8')).digest()
@@ -360,7 +367,8 @@ def strategy_test_suite(
             for s in islice(strat.full_simplify(rnd, template), 100):
                 assert not strat.strictly_simpler(template, s)
 
-        @given(randoms(), settings=Settings(settings, max_examples=100))
+        @given(randoms())
+        @configure(settings=Settings(settings, max_examples=100))
         def test_can_create_templates(self, random):
             parameter = strat.draw_parameter(random)
             try:

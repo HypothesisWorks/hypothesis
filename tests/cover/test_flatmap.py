@@ -20,7 +20,7 @@ from random import Random
 
 import pytest
 
-from hypothesis import find, given, assume, Settings
+from hypothesis import find, given, assume, Settings, configure
 from hypothesis.database import ExampleDatabase
 from hypothesis.strategies import just, text, lists, floats, tuples, \
     booleans, integers, streaming
@@ -54,7 +54,8 @@ def test_flatmap_retrieve_from_db():
 
     db = ExampleDatabase()
 
-    @given(constant_float_lists, settings=Settings(database=db))
+    @given(constant_float_lists)
+    @configure(settings=Settings(database=db))
     def record_and_test_size(xs):
         track.append(xs)
         assert sum(xs) < 1
@@ -91,9 +92,8 @@ def test_will_find_a_failure_from_the_database():
     class Rejected(Exception):
         pass
 
-    @given(
-        dav_strategy,
-        settings=Settings(max_examples=10, database=db))
+    @given(dav_strategy)
+    @configure(settings=Settings(max_examples=10, database=db))
     def nope(x):
         raise Rejected()
     try:

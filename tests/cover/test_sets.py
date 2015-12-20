@@ -20,7 +20,7 @@ from random import Random
 
 import pytest
 
-from hypothesis import find, given, Settings
+from hypothesis import find, given, Settings, configure
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import sets, lists, floats, randoms, booleans, \
     integers, frozensets
@@ -99,7 +99,8 @@ def test_templates_reify_to_same_value_before_and_after(rnd):
     assert s.reify(t) == s.reify(t2)
 
 
-@given(randoms(), settings=Settings(max_examples=5))
+@given(randoms())
+@configure(settings=Settings(max_examples=5))
 def test_can_draw_sets_of_hard_to_find_elements(rnd):
     rarebool = floats(0, 1).map(lambda x: x <= 0.01)
     find(

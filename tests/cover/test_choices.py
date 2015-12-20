@@ -17,7 +17,7 @@
 from __future__ import division, print_function, absolute_import
 
 import hypothesis.strategies as st
-from hypothesis import find, given, Settings
+from hypothesis import find, given, Settings, configure
 from tests.common.utils import raises, capture_out
 from hypothesis.database import ExampleDatabase
 from hypothesis.internal.compat import hrange
@@ -42,8 +42,8 @@ def test_stability():
     @given(
         st.lists(st.text(max_size=1), unique=True, min_size=5),
         st.choices(),
-        settings=Settings(database=ExampleDatabase())
     )
+    @configure(settings=Settings(database=ExampleDatabase()))
     def test_choose_and_then_fail(ls, choice):
         for _ in hrange(100):
             choice(ls)

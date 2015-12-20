@@ -21,7 +21,7 @@ import random
 from pytest import raises
 
 import hypothesis.strategies as st
-from hypothesis import find, given, Settings, Verbosity
+from hypothesis import find, given, Settings, configure, Verbosity
 
 
 def test_seeds_off_random():
@@ -34,16 +34,14 @@ def test_seeds_off_random():
 
 
 def test_nesting_with_control_passes_health_check():
-    @given(
-        st.integers(0, 100), st.random_module(),
-        settings=Settings(max_examples=5, database=None))
+    @given(st.integers(0, 100), st.random_module())
+    @configure(settings=Settings(max_examples=5, database=None))
     def test_blah(x, rnd):
-        @given(
-            st.integers(),
+        @given(st.integers())
+        @configure(
             settings=Settings(
                 max_examples=100, max_shrinks=0, database=None,
-                verbosity=Verbosity.quiet,
-            ))
+                verbosity=Verbosity.quiet))
         def test_nest(y):
             assert y < x
         with raises(AssertionError):

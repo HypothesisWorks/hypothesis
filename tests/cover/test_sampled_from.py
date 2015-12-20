@@ -16,10 +16,11 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis import given, Settings
+from hypothesis import given, Settings, configure
 from hypothesis.strategies import sampled_from
 
 
-@given(sampled_from((1, 2)), settings=Settings(min_satisfying_examples=10))
+@given(sampled_from((1, 2)))
+@configure(settings=Settings(min_satisfying_examples=10))
 def test_can_handle_sampling_from_fewer_than_min_satisfying(v):
     pass

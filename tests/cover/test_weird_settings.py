@@ -17,11 +17,12 @@
 from __future__ import division, print_function, absolute_import
 
 from hypothesis import strategies as st
-from hypothesis import given, Settings
+from hypothesis import given, Settings, configure
 
 
 def test_setting_database_to_none_disables_the_database():
-    @given(st.booleans(), settings=Settings(database_file=None))
+    @given(st.booleans())
+    @configure(settings=Settings(database_file=None))
     def test(b):
         pass
     test()

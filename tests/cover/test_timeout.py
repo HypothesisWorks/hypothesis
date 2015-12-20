@@ -21,7 +21,7 @@ import math
 from pytest import raises
 
 from flaky import flaky
-from hypothesis import given, Settings
+from hypothesis import given, Settings, configure
 from hypothesis.internal import debug
 from hypothesis.strategies import lists, floats
 
@@ -31,7 +31,8 @@ def test_can_timeout_during_an_unsuccessful_simplify():
     record = []
 
     @debug.timeout(3)
-    @given(lists(floats()), settings=Settings(timeout=1))
+    @given(lists(floats()))
+    @configure(settings=Settings(timeout=1))
     def first_bad_float_list(xs):
         if record:
             assert record[0] != xs

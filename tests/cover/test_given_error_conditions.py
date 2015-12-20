@@ -20,13 +20,14 @@ import time
 
 import pytest
 
-from hypothesis import given, assume, Settings
+from hypothesis import given, assume, Settings, configure
 from hypothesis.errors import Timeout, Unsatisfiable
 from hypothesis.strategies import booleans, integers
 
 
 def test_raises_timeout_on_slow_test():
-    @given(integers(), settings=Settings(timeout=0.01))
+    @given(integers())
+    @configure(settings=Settings(timeout=0.01))
     def test_is_slow(x):
         time.sleep(0.02)
 
@@ -35,7 +36,8 @@ def test_raises_timeout_on_slow_test():
 
 
 def test_raises_unsatisfiable_if_all_false():
-    @given(integers(), settings=Settings(max_examples=50))
+    @given(integers())
+    @configure(settings=Settings(max_examples=50))
     def test_assume_false(x):
         assume(False)
 

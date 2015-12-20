@@ -19,7 +19,7 @@ from __future__ import division, print_function, absolute_import
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import given, Settings, strategy, Verbosity
+from hypothesis import given, Settings, strategy, configure, Verbosity
 from hypothesis.settings import HypothesisDeprecationWarning
 from hypothesis.specifiers import just
 from hypothesis.strategies import booleans
@@ -31,7 +31,8 @@ def test_strategy_still_warns_on_strategies(recwarn):
 
 
 def test_given_warns_on_use_of_non_strategies(recwarn):
-    @given(bool, settings=Settings(strict=False))
+    @given(bool)
+    @configure(settings=Settings(strict=False))
     def test(x):
         pass
     test()
@@ -51,7 +52,11 @@ def test_strategy_warns_on_non_strategies(recwarn):
 
 
 def test_given_warns_when_mixing_positional_with_keyword(recwarn):
-    given(booleans(), y=booleans(), settings=Settings(strict=False))
+    @given(booleans(), y=booleans())
+    @configure(settings=Settings(strict=False))
+    def test(x, y):
+        pass
+    test()
     assert recwarn.pop(DeprecationWarning) is not None
 
 
