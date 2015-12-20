@@ -381,6 +381,20 @@ def reify_and_execute(
 
 
 def configure(seed=None, settings=None):
+    """
+    Provide additional configuration to a function that uses given.
+
+    seed: Start the test execution from a seeded with this. May be any hashable
+          object. No exact meaning for seed is provided other than that
+          for a fixed seed value Hypothesis will try the same actions (insofar
+          as it can given external sources of non-determinism. e.g. timing and
+          hash randomization).
+          Overrides the derandomize setting if it is present.
+
+    settings: Use this settings object for running @given and make it a default
+          within the body of the test method.
+
+    """
     def accept(test):
         test._hypothesis_internal_use_seed = seed
         test._hypothesis_internal_use_settings = settings
