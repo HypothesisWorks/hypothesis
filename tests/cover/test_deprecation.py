@@ -16,6 +16,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+from random import Random
+
 import pytest
 
 import hypothesis.strategies as st
@@ -101,6 +103,15 @@ def test_returning_non_none_is_deprecated():
     @given(st.integers())
     def a(x):
         return 1
+
+    with pytest.raises(DeprecationWarning):
+        a()
+
+
+def test_passing_random_is_deprecated():
+    @given(st.integers(), random=Random(1))
+    def a(x):
+        pass
 
     with pytest.raises(DeprecationWarning):
         a()

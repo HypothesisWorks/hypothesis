@@ -26,7 +26,7 @@ import pytest
 
 import hypothesis.specifiers as s
 import hypothesis.strategies as st
-from hypothesis import find, Settings, strategy
+from hypothesis import find, given, Settings, strategy
 from hypothesis.errors import InvalidArgument
 from tests.common.basic import Bitfields
 from hypothesis.internal.compat import text_type, binary_type, \
@@ -293,3 +293,15 @@ def test_can_assign_default_settings():
     with Settings(max_examples=10):
         assert Settings.default.max_examples == 10
     assert Settings.default.max_examples == 1100
+
+
+def test_uses_provided_random():
+    r = Random(1)
+    initial = r.getstate()
+
+    @given(st.integers(), random=r)
+    def a(x):
+        pass
+
+    a()
+    assert r.getstate() != initial
