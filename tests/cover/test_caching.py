@@ -16,7 +16,10 @@
 
 from __future__ import division, print_function, absolute_import
 
+import pytest
+
 import hypothesis.strategies as st
+from hypothesis.errors import InvalidArgument
 
 
 def test_no_args():
@@ -42,4 +45,5 @@ def test_does_not_error_on_unhashable_posarg():
 
 
 def test_does_not_error_on_unhashable_kwarg():
-    st.text(alphabet=['a', 'b', 'c'])
+    with pytest.raises(InvalidArgument):
+        st.builds(lambda alphabet: 1, alphabet=['a', 'b', 'c']).validate()
