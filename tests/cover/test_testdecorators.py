@@ -23,7 +23,8 @@ import threading
 from collections import namedtuple
 
 import hypothesis.reporting as reporting
-from hypothesis import note, given, assume, Settings, configure, Verbosity
+from hypothesis import note, seed, given, assume, Settings, configure, \
+    Verbosity
 from hypothesis.errors import Flaky, Unsatisfiable
 from tests.common.utils import fails, raises, fails_with, capture_out
 from hypothesis.strategies import just, sets, text, lists, binary, \
@@ -408,7 +409,7 @@ def test_uses_provided_seed():
     initial = random.getstate()
 
     @given(integers())
-    @configure(seed=42)
+    @seed(42)
     def test_foo(x):
         pass
     test_foo()

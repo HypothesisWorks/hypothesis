@@ -21,7 +21,8 @@ import hashlib
 from copy import deepcopy
 from random import Random
 
-from hypothesis import find, given, assume, Settings, configure, Verbosity
+from hypothesis import find, seed, given, assume, Settings, configure, \
+    Verbosity
 from hypothesis.errors import BadData, NoExamples, FailedHealthCheck
 from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import rule, Bundle, RuleBasedStateMachine, \
@@ -134,7 +135,7 @@ class HypothesisSpec(RuleBasedStateMachine):
             max_shrinks=mshr,
         ):
             @given(strat)
-            @configure(seed=r,)
+            @seed(r)
             def test(x):
                 assert False
 
@@ -155,7 +156,7 @@ class HypothesisSpec(RuleBasedStateMachine):
             max_shrinks=mshr,
         ):
             @given(strat)
-            @configure(seed=r,)
+            @seed(r)
             def test(x):
                 assert Random(
                     hashlib.md5(show(x).encode(u'utf-8')).digest()

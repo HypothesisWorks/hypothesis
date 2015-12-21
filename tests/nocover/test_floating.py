@@ -23,7 +23,7 @@ from __future__ import division, print_function, absolute_import
 import sys
 import math
 
-from hypothesis import given, assume, Settings, configure
+from hypothesis import seed, given, assume, Settings, configure
 from hypothesis.errors import Unsatisfiable
 from tests.common.utils import fails, fails_with
 from hypothesis.strategies import lists, floats, integers
@@ -147,14 +147,15 @@ def test_can_find_floats_that_do_not_round_trip_through_reprs(x):
 
 
 @given(floats(), floats(), integers())
-def test_floats_are_in_range(x, y, seed):
+def test_floats_are_in_range(x, y, s):
     assume(not (math.isnan(x) or math.isnan(y)))
     assume(not (math.isinf(x) or math.isinf(y)))
     x, y = sorted((x, y))
     assume(x < y)
 
     @given(floats(x, y))
-    @configure(seed=seed, settings=Settings(max_examples=10))
+    @seed(s)
+    @configure(Settings(max_examples=10))
     def test_is_in_range(t):
         assert x <= t <= y
 

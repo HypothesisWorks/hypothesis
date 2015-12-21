@@ -24,7 +24,7 @@ from unittest import TestCase
 from itertools import islice
 from collections import namedtuple
 
-from hypothesis import given, assume, configure
+from hypothesis import seed, given, assume, configure
 from hypothesis.errors import BadData, Unsatisfiable, BadTemplateDraw
 from hypothesis.control import BuildContext
 from hypothesis.database import ExampleDatabase
@@ -267,19 +267,20 @@ def strategy_test_suite(
 
         @given(integers())
         @configure(settings=settings)
-        def test_will_handle_a_really_weird_failure(self, seed):
+        def test_will_handle_a_really_weird_failure(self, s):
             db = ExampleDatabase()
 
             @given(specifier)
             @configure(
-                settings=Settings(
+                Settings(
                     settings,
                     database=db,
                     max_examples=max_examples,
                     min_satisfying_examples=2,
                     average_list_length=2.0,
-                ), seed=seed
+                )
             )
+            @seed(s)
             def nope(x):
                 s = hashlib.sha1(repr(x).encode(u'utf-8')).digest()
                 assert Random(s).randint(0, 1) == Random(s).randint(0, 1)
