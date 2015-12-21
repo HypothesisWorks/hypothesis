@@ -317,7 +317,7 @@ def arg_string(f, args, kwargs, reorder=True):
             bits.append(u'%s=%s' % (a, nicerepr(kwargs[a])))
 
     return u', '.join(
-        [unicode_safe_repr(x) for x in args] +
+        [nicerepr(x) for x in args] +
         bits
     )
 
