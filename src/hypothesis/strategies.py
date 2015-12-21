@@ -750,6 +750,7 @@ def decimals():
 
 
 @cacheable
+@defines_strategy
 def builds(target, *args, **kwargs):
     """Generates values by drawing from args and kwargs and passing them to
     target in the appropriate argument position.
@@ -759,25 +760,9 @@ def builds(target, *args, **kwargs):
     call target(i, flag=b).
 
     """
-    from hypothesis.internal.reflection import nicerepr
-
-    def splat(value):
-        return target(*value[0], **value[1])
-    target_name = getattr(target, u'__name__', type(target).__name__)
-    splat.__name__ = str(
-        u'splat(%s)' % (target_name,)
+    return tuples(tuples(*args), fixed_dictionaries(kwargs)).map(
+        lambda value: target(*value[0], **value[1])
     )
-
-    def calc_repr():
-        return u'builds(%s)' % (
-            u', '.join(
-                [nicerepr(target)] +
-                list(map(nicerepr, args)) +
-                sorted([u'%s=%r' % (k, v) for k, v in kwargs.items()])))
-
-    return ReprWrapperStrategy(
-        tuples(tuples(*args), fixed_dictionaries(kwargs)).map(splat),
-        calc_repr)
 
 
 @defines_strategy
