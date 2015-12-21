@@ -26,6 +26,7 @@ from hypothesis.settings import Settings
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import ArgSpec, text_type, getargspec, \
     integer_types, float_to_decimal, unicode_safe_repr
+from hypothesis.internal.reflection import proxies
 from hypothesis.searchstrategy.reprwrapper import ReprWrapperStrategy
 
 __all__ = [
@@ -44,8 +45,32 @@ __all__ = [
 ]
 
 
+def cacheable(fn):
+    import weakref
+
+    cache = weakref.WeakValueDictionary()
+
+    @proxies(fn)
+    def cached_strategy(*args, **kwargs):
+        kwargs_cache_key = set()
+        try:
+            for k, v in kwargs.items():
+                kwargs_cache_key.add((k, v))
+        except TypeError:
+            return fn(*args, **kwargs)
+        cache_key = (tuple(args), frozenset(kwargs_cache_key))
+        try:
+            return cache[cache_key]
+        except TypeError:
+            return fn(*args, **kwargs)
+        except KeyError:
+            result = fn(*args, **kwargs)
+            cache[cache_key] = result
+            return result
+    return cached_strategy
+
+
 def defines_strategy(strategy_definition):
-    from hypothesis.internal.reflection import proxies
     from hypothesis.searchstrategy.deferred import DeferredStrategy
 
     @proxies(strategy_definition)
@@ -88,6 +113,7 @@ def one_of(arg, *args):
     return OneOfStrategy(args)
 
 
+@cacheable
 @defines_strategy
 def integers(min_value=None, max_value=None):
     """Returns a strategy which generates integers (in Python 2 these may be
@@ -125,6 +151,7 @@ def integers(min_value=None, max_value=None):
             return BoundedIntStrategy(min_value, max_value)
 
 
+@cacheable
 @defines_strategy
 def booleans():
     """Returns a strategy which generates instances of bool."""
@@ -294,6 +321,7 @@ def floats(
         ) | sampled_from(critical_values)
 
 
+@cacheable
 @defines_strategy
 def complex_numbers():
     """Returns a strategy that generates complex numbers."""
@@ -303,6 +331,7 @@ def complex_numbers():
     )
 
 
+@cacheable
 @defines_strategy
 def tuples(*args):
     """Return a strategy which generates a tuple of the same length as args by
@@ -341,6 +370,7 @@ def sampled_from(elements):
         return SampledFromStrategy(elements)
 
 
+@cacheable
 @defines_strategy
 def lists(
     elements=None, min_size=None, average_size=None, max_size=None,
@@ -442,6 +472,7 @@ def lists(
         )
 
 
+@cacheable
 @defines_strategy
 def sets(elements=None, min_size=None, average_size=None, max_size=None):
     """This has the same behaviour as lists, but returns sets instead.
@@ -457,6 +488,7 @@ def sets(elements=None, min_size=None, average_size=None, max_size=None):
     ).map(set)
 
 
+@cacheable
 @defines_strategy
 def frozensets(elements=None, min_size=None, average_size=None, max_size=None):
     """This is identical to the sets function but instead returns
@@ -485,6 +517,7 @@ def fixed_dictionaries(mapping):
     return FixedKeysDictStrategy(mapping)
 
 
+@cacheable
 @defines_strategy
 def dictionaries(
     keys, values, dict_class=dict,
@@ -521,6 +554,7 @@ def dictionaries(
     ).map(dict_class)
 
 
+@cacheable
 @defines_strategy
 def streaming(elements):
     """Generates an infinite stream of values where each value is drawn from
@@ -535,6 +569,7 @@ def streaming(elements):
     return StreamStrategy(elements)
 
 
+@cacheable
 @defines_strategy
 def characters(whitelist_categories=None, blacklist_categories=None,
                blacklist_characters=None, min_codepoint=None,
@@ -561,6 +596,7 @@ def characters(whitelist_categories=None, blacklist_categories=None,
                                  max_codepoint=max_codepoint)
 
 
+@cacheable
 @defines_strategy
 def text(
     alphabet=None,
@@ -597,6 +633,7 @@ def text(
     ))
 
 
+@cacheable
 @defines_strategy
 def binary(
     min_size=None, average_size=None, max_size=None
@@ -643,6 +680,7 @@ def basic(
     )
 
 
+@cacheable
 @defines_strategy
 def randoms():
     """Generates instances of Random (actually a Hypothesis specific
@@ -660,6 +698,7 @@ class RandomSeeder(object):
         return 'random.seed(%r)' % (self.seed,)
 
 
+@cacheable
 @defines_strategy
 def random_module():
     """If your code depends on the global random module then you need to use
@@ -688,6 +727,7 @@ def random_module():
     )
 
 
+@cacheable
 @defines_strategy
 def fractions():
     """Generates instances of fractions.Fraction."""
@@ -697,6 +737,7 @@ def fractions():
     )
 
 
+@cacheable
 @defines_strategy
 def decimals():
     """Generates instances of decimals.Decimal."""
@@ -708,6 +749,7 @@ def decimals():
     )
 
 
+@cacheable
 def builds(target, *args, **kwargs):
     """Generates values by drawing from args and kwargs and passing them to
     target in the appropriate argument position.
@@ -787,6 +829,7 @@ def permutations(values):
     return lists(tuples(index, index), max_size=n ** 2).map(build_permutation)
 
 
+@cacheable
 def composite(f):
     """Defines a strategy that is built out of potentially arbitrarily many
     other strategies.
@@ -836,7 +879,7 @@ def composite(f):
 
 def shared(base, key=None):
     """Returns a strategy that draws a single shared value per run, drawn from
-    base. Any two shared instances with the samme key will share the same
+    base. Any two shared instances with the same key will share the same
     value, otherwise the identity of this strategy will be used. That is:
 
     >>> x = shared(s)
@@ -852,6 +895,7 @@ def shared(base, key=None):
     return SharedStrategy(base, key)
 
 
+@cacheable
 def choices():
     """Strategy that generates a function that behaves like random.choice.
 
@@ -893,6 +937,7 @@ def choices():
         ), 'chooser()')
 
 
+@cacheable
 def uuids():
     """Returns a strategy that generates UUIDs.
 
