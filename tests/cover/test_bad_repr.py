@@ -16,10 +16,14 @@
 
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
+import pytest
+
 import hypothesis.strategies as st
 from hypothesis import given, Settings
 from hypothesis.errors import HypothesisDeprecationWarning
-from hypothesis.internal.compat import PY2, unicode_safe_repr
+from hypothesis.internal.compat import PY3, unicode_safe_repr
 from hypothesis.internal.reflection import arg_string
 
 original_profile = Settings.default
@@ -31,10 +35,12 @@ Settings.register_profile(
 
 def setup_function(fn):
     Settings.load_profile('nonstrict')
+    warnings.simplefilter('always', HypothesisDeprecationWarning)
 
 
 def teardown_function(fn):
     Settings.load_profile('default')
+    warnings.simplefilter('once', HypothesisDeprecationWarning)
 
 
 class BadRepr(object):
@@ -49,30 +55,33 @@ class BadRepr(object):
 Frosty = BadRepr(u'☃')
 
 
-def test_just_frosty(recwarn):
-    assert unicode_safe_repr(st.just(Frosty)) == u'just(☃)'
-    if PY2:
-        recwarn.pop(HypothesisDeprecationWarning)
+@pytest.mark.skipif(PY3, reason='Unicode repr is kosher on python 3')
+def test_just_frosty():
+    with pytest.warns(HypothesisDeprecationWarning):
+        assert unicode_safe_repr(st.just(Frosty)) == u'just(☃)'
 
 
-def test_sampling_snowmen(recwarn):
-    assert unicode_safe_repr(st.sampled_from((
-        Frosty, u'hi'))) == u'sampled_from((☃, %s))' % (repr(u'hi'),)
-    if PY2:
-        recwarn.pop(HypothesisDeprecationWarning)
+@pytest.mark.skipif(PY3, reason='Unicode repr is kosher on python 3')
+def test_sampling_snowmen():
+    with pytest.warns(HypothesisDeprecationWarning):
+        assert unicode_safe_repr(st.sampled_from((
+            Frosty, u'hi'))) == u'sampled_from((☃, %s))' % (repr(u'hi'),)
 
 
 def varargs(*args, **kwargs):
     pass
 
 
-def test_arg_strings_are_bad_repr_safe(recwarn):
-    assert arg_string(varargs, (Frosty,), {}) == u'☃'
-    if PY2:
-        recwarn.pop(HypothesisDeprecationWarning)
-    assert arg_string(varargs, (), {u'x': Frosty}) == u'x=☃'
-    if PY2:
-        recwarn.pop(HypothesisDeprecationWarning)
+@pytest.mark.skipif(PY3, reason='Unicode repr is kosher on python 3')
+def test_arg_strings_are_bad_repr_safe():
+    with pytest.warns(HypothesisDeprecationWarning):
+        assert arg_string(varargs, (Frosty,), {}) == u'☃'
+
+
+@pytest.mark.skipif(PY3, reason='Unicode repr is kosher on python 3')
+def test_arg_string_kwargs_are_bad_repr_safe():
+    with pytest.warns(HypothesisDeprecationWarning):
+        assert arg_string(varargs, (), {u'x': Frosty}) == u'x=☃'
 
 
 @given(st.sampled_from([
