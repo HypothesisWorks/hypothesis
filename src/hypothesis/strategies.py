@@ -39,7 +39,7 @@ __all__ = [
     'dictionaries', 'fixed_dictionaries',
     'sampled_from',
     'builds',
-    'randoms',
+    'randoms', 'random_module',
     'streaming', 'basic', 'recursive', 'composite',
 ]
 
