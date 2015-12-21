@@ -22,6 +22,43 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -----------------------------------------------------------------------
+`1.18.0 <https://hypothesis.readthedocs.org/en/1.18.0/>`_ - 2015-12-21
+-----------------------------------------------------------------------
+
+Features:
+
+* Tests and find are now explicitly seeded off the global random module. This
+  means that if you nest one inside the other you will now get a health check
+  error. It also means that you can control global randomization by seeding
+  random.
+* There is a new random_module() strategy which seeds the global random module
+  for you and handles things so that you don't get a health check warning if
+  you use it inside your tests.
+* floats() now accepts two new arguments: allow_nan and allow_infinity. These
+  default to the old behaviour, but when set to False will do what the names
+  suggest.
+
+Bug fixes:
+
+* Fix a bug where tests that used text() on Python 3.4+ would not actually be
+  deterministic even when explicitly seeded or using the derandomize mode,
+  because generation depended on dictionary iteration order which was affected
+  by hash randomization.
+* Fix a bug where with complicated strategies the timing of the initial health
+  check could affect the seeding of the subsequent test, which would also
+  render supposedly deterministic tests non-deterministic in some scenarios.
+* In some circumstances flatmap() could get confused by two structurally
+  similar things it could generate and would produce a flaky test where the
+  first time it produced an error but the second time it produced the other
+  value, which was not an error. The same bug was presumably also possible in
+  composite().
+* flatmap() and composite() initial generation should now be moderately faster.
+  This will be particularly noticeable when you have many values drawn from the
+  same strategy in a single run, e.g. constructs like lists(s.flatmap(f)).
+  Shrinking performance *may* have suffered, but this didn't actually produce
+  an interestingly worse result in any of the standard scenarios tested.
+
+-----------------------------------------------------------------------
 `1.17.1 <https://hypothesis.readthedocs.org/en/1.17.1/>`_ - 2015-12-16
 -----------------------------------------------------------------------
 
