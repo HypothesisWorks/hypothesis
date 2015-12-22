@@ -18,6 +18,7 @@ from __future__ import division, print_function, absolute_import
 
 import time
 
+from flaky import flaky
 from pytest import raises
 
 import hypothesis.strategies as st
@@ -136,6 +137,7 @@ def test_filtering_everything_fails_a_health_check():
     assert 'filter' in e.value.args[0]
 
 
+@flaky(max_runs=3, min_passes=1)
 def test_filtering_most_things_fails_a_health_check():
     @given(st.integers().filter(lambda x: x % 100 == 0))
     def test(x):
