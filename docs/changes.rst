@@ -22,6 +22,21 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -----------------------------------------------------------------------
+`1.18.1 <https://hypothesis.readthedocs.org/en/1.18.0/>`_ - 2015-12-22
+-----------------------------------------------------------------------
+
+Two behind the scenes changes:
+
+* Hypothesis will no longer write generated code to the file system. This
+  will improve performance on some systems (e.g. if you're using
+  `PythonAnywhere <https://www.pythonanywhere.com/>`_ which is running your
+  code from NFS) and prevent some annoying interactions with auto-restarting
+  systems.
+* Hypothesis will cache the creation of some strategies. This can significantly
+  improve performance for code that uses flatmap or composite and thus has to
+  instantiate strategies a lot.
+
+-----------------------------------------------------------------------
 `1.18.0 <https://hypothesis.readthedocs.org/en/1.18.0/>`_ - 2015-12-21
 -----------------------------------------------------------------------
 
