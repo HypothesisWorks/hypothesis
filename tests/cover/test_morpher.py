@@ -19,6 +19,7 @@ from __future__ import division, print_function, absolute_import
 from random import Random
 
 import hypothesis.strategies as s
+from flaky import flaky
 from hypothesis import find, given, example, Settings
 from hypothesis.control import BuildContext
 from hypothesis.searchstrategy.morphers import MorpherStrategy
@@ -69,6 +70,7 @@ def test_a_morpher_retains_its_data_on_reserializing():
         assert m.become(intlists) == m2.become(intlists)
 
 
+@flaky(max_runs=5, min_passes=1)
 def test_can_clone_morphers_into_inactive_morphers():
     m = find(
         s.lists(morphers),
