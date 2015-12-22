@@ -47,3 +47,9 @@ def test_does_not_error_on_unhashable_posarg():
 def test_does_not_error_on_unhashable_kwarg():
     with pytest.raises(InvalidArgument):
         st.builds(lambda alphabet: 1, alphabet=['a', 'b', 'c']).validate()
+
+
+def test_caches_floats_sensitively():
+    assert st.floats(min_value=0.0) is st.floats(min_value=0.0)
+    assert st.floats(min_value=0.0) is not st.floats(min_value=0)
+    assert st.floats(min_value=0.0) is not st.floats(min_value=-0.0)

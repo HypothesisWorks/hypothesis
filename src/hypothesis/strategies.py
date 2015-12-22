@@ -45,6 +45,29 @@ __all__ = [
 ]
 
 
+class FloatKey(object):
+
+    def __init__(self, f):
+        self.value = float_to_int(f)
+
+    def __eq__(self, other):
+        return isinstance(other, FloatKey) and (
+            other.value == self.value
+        )
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __hash__(self):
+        return hash(self.value)
+
+
+def convert_value(v):
+    if isinstance(v, float):
+        return FloatKey(v)
+    return (type(v), v)
+
+
 def cacheable(fn):
     import weakref
 
@@ -55,10 +78,11 @@ def cacheable(fn):
         kwargs_cache_key = set()
         try:
             for k, v in kwargs.items():
-                kwargs_cache_key.add((k, v))
+                kwargs_cache_key.add((k, convert_value(v)))
         except TypeError:
             return fn(*args, **kwargs)
-        cache_key = (tuple(args), frozenset(kwargs_cache_key))
+        cache_key = (
+            tuple(map(convert_value, args)), frozenset(kwargs_cache_key))
         try:
             return cache[cache_key]
         except TypeError:
@@ -187,6 +211,7 @@ def int_to_float(value):
     )
 
 
+@cacheable
 @defines_strategy
 def floats(
     min_value=None, max_value=None, allow_nan=None, allow_infinity=None
