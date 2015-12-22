@@ -174,7 +174,9 @@ class GenericStateMachine(object):
             pass
 
         class StateMachineTestCase(TestCase):
-            settings = Settings()
+            settings = Settings(
+                min_satisfying_examples=1
+            )
 
             def runTest(self):
                 run_state_machine_as_test(state_machine_class)
