@@ -384,6 +384,7 @@ def test_increasing_sequence():
     assert xs == list(range(start, start + k))
 
 
+@flaky(max_runs=5, min_passes=1)
 def test_increasing_string_sequence():
     n = 7
     lb = u'✐'
