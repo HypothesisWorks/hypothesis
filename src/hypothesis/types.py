@@ -80,8 +80,7 @@ class Stream(object):
         while i < len(self.fetched):
             yield self.fetched[i]
             i += 1
-        while True:
-            v = next(self.generator)
+        for v in self.generator:
             self.fetched.append(v)
             yield v
 

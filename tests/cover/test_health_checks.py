@@ -18,10 +18,10 @@ from __future__ import division, print_function, absolute_import
 
 import time
 
-from flaky import flaky
 from pytest import raises
 
 import hypothesis.strategies as st
+from flaky import flaky
 from hypothesis import given, Settings
 from hypothesis.errors import FailedHealthCheck
 
