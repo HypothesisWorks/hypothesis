@@ -598,15 +598,16 @@ def given(*generator_arguments, **generator_kwargs):
             if perform_health_check:
                 initial_state = getglobalrandomstate()
                 health_check_random = Random(random.getrandbits(128))
-                with Settings(settings, verbosity=Verbosity.quiet):
-                    count = 0
-                    bad_draws = 0
-                    filtered_draws = 0
-                    while (
-                        count < 10 and time.time() < start + 1 and
-                        filtered_draws < 50 and bad_draws < 50
-                    ):
-                        try:
+                count = 0
+                bad_draws = 0
+                filtered_draws = 0
+                errors = 0
+                while (
+                    count < 10 and time.time() < start + 1 and
+                    filtered_draws < 50 and bad_draws < 50
+                ):
+                    try:
+                        with Settings(settings, verbosity=Verbosity.quiet):
                             test_runner(reify_and_execute(
                                 search_strategy,
                                 search_strategy.draw_template(
@@ -616,34 +617,36 @@ def given(*generator_arguments, **generator_kwargs):
                                     )),
                                 lambda *args, **kwargs: None,
                             ))
-                            count += 1
-                        except BadTemplateDraw:
-                            bad_draws += 1
-                        except UnsatisfiedAssumption:
-                            filtered_draws += 1
-                        except Exception:
-                            traceback.print_exc()
-                            if test_runner is default_executor:
-                                fail_health_check(
-                                    'An exception occurred during data '
-                                    'generation in initial health check. '
-                                    'This indicates a bug in the strategy. '
-                                    'This could either be a Hypothesis bug or '
-                                    "an error in a function you've passed to "
-                                    'it to construct your data.'
-                                )
-                            else:
-                                fail_health_check(
-                                    'An exception occurred during data '
-                                    'generation in initial health check. '
-                                    'This indicates a bug in the strategy. '
-                                    'This could either be a Hypothesis bug or '
-                                    'an error in a function you\'ve passed to '
-                                    'it to construct your data. Additionally, '
-                                    'you have a custom executor, which means '
-                                    'that this could be your executor failing '
-                                    'to handle a function which returns None. '
-                                )
+                        count += 1
+                    except BadTemplateDraw:
+                        bad_draws += 1
+                    except UnsatisfiedAssumption:
+                        filtered_draws += 1
+                    except Exception:
+                        if errors == 0:
+                            report(traceback.format_exc())
+                        errors += 1
+                        if test_runner is default_executor:
+                            fail_health_check(
+                                'An exception occurred during data '
+                                'generation in initial health check. '
+                                'This indicates a bug in the strategy. '
+                                'This could either be a Hypothesis bug or '
+                                "an error in a function you've passed to "
+                                'it to construct your data.'
+                            )
+                        else:
+                            fail_health_check(
+                                'An exception occurred during data '
+                                'generation in initial health check. '
+                                'This indicates a bug in the strategy. '
+                                'This could either be a Hypothesis bug or '
+                                'an error in a function you\'ve passed to '
+                                'it to construct your data. Additionally, '
+                                'you have a custom executor, which means '
+                                'that this could be your executor failing '
+                                'to handle a function which returns None. '
+                            )
                 if filtered_draws >= 50:
                     fail_health_check((
                         'It looks like your strategy is filtering out a lot '

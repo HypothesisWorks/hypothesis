@@ -20,10 +20,12 @@ import time
 
 from pytest import raises
 
+import hypothesis.reporting as reporting
 import hypothesis.strategies as st
 from flaky import flaky
 from hypothesis import given, Settings
 from hypothesis.errors import FailedHealthCheck
+from tests.common.utils import capture_out
 
 
 def test_slow_generation_fails_a_health_check():
@@ -105,8 +107,11 @@ def test_error_in_strategy_produces_health_check_error():
         pass
 
     with raises(FailedHealthCheck) as e:
-        test()
+        with reporting.with_reporter(reporting.default):
+            with capture_out() as out:
+                test()
     assert 'executor' not in e.value.args[0]
+    assert out.getvalue().count('ValueError') == 2
 
 
 def test_error_in_strategy_with_custom_executor():
