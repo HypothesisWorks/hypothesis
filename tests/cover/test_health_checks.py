@@ -108,9 +108,23 @@ def test_error_in_strategy_produces_health_check_error():
 
     with raises(FailedHealthCheck) as e:
         with reporting.with_reporter(reporting.default):
-            with capture_out() as out:
-                test()
+            test()
     assert 'executor' not in e.value.args[0]
+
+
+def test_error_in_strategy_produces_only_one_traceback():
+    def boom(x):
+        raise ValueError()
+
+    with Settings(strict=False):
+        @given(st.integers().map(boom))
+        def test(x):
+            pass
+
+        with raises(ValueError):
+            with reporting.with_reporter(reporting.default):
+                with capture_out() as out:
+                    test()
     assert out.getvalue().count('ValueError') == 2
 
 
