@@ -148,6 +148,10 @@ def integers(min_value=None, max_value=None):
 
     """
 
+    check_valid_integer(min_value)
+    check_valid_integer(max_value)
+    check_valid_interval(min_value, max_value, u'min_value', u'max_value')
+
     from hypothesis.searchstrategy.numbers import IntegersFromStrategy, \
         BoundedIntStrategy, RandomGeometricIntStrategy, WideRangeIntStrategy
 
@@ -158,20 +162,13 @@ def integers(min_value=None, max_value=None):
                 WideRangeIntStrategy()
             )
         else:
-            check_type(integer_types, max_value)
             return IntegersFromStrategy(0).map(lambda x: max_value - x)
     else:
-        check_type(integer_types, min_value)
         if max_value is None:
             return IntegersFromStrategy(min_value)
         else:
             if min_value == max_value:
                 return just(min_value)
-            elif min_value > max_value:
-                raise InvalidArgument(
-                    u'Cannot have max_value=%r < min_value=%r' % (
-                        max_value, min_value
-                    ))
             return BoundedIntStrategy(min_value, max_value)
 
 
@@ -239,9 +236,9 @@ def floats(
                     allow_nan
                 ))
 
-    for e in (min_value, max_value):
-        if e is not None and math.isnan(e):
-            raise InvalidArgument(u'nan is not a valid end point')
+    check_valid_bound(min_value, u'min_value')
+    check_valid_bound(max_value, u'max_value')
+    check_valid_interval(min_value, max_value, u'min_value', u'max_value')
     if min_value is not None:
         min_value = float(min_value)
     if max_value is not None:
@@ -275,12 +272,7 @@ def floats(
             FullRangeFloats(allow_nan, allow_infinity)
         )
     elif min_value is not None and max_value is not None:
-        if max_value < min_value:
-            raise InvalidArgument(
-                u'Cannot have max_value=%r < min_value=%r' % (
-                    max_value, min_value
-                ))
-        elif min_value == max_value:
+        if min_value == max_value:
             return just(min_value)
         elif math.isinf(max_value - min_value):
             assert min_value < 0 and max_value > 0
@@ -990,7 +982,34 @@ def check_strategy(arg):
     check_type(SearchStrategy, arg)
 
 
+def check_valid_integer(value):
+    """Checks that value is either unspecified, or a valid integer.
+
+    Otherwise raises InvalidArgument.
+
+    """
+    if value is None:
+        return
+    check_type(integer_types, value)
+
+
+def check_valid_bound(value, name):
+    """Checks that value is either unspecified, or a valid interval bound.
+
+    Otherwise raises InvalidArgument.
+
+    """
+    if value is None:
+        return
+    if math.isnan(value):
+        raise InvalidArgument(u'Invalid end point %s %r' % (value, name))
+
+
 def check_valid_size(value, name):
+    """Checks that value is either unspecified, or a valid non-negative size
+    expressed as an integer/float. Otherwise raises InvalidArgument.
+
+    """
     if value is None:
         return
     check_type(integer_types + (float,), value)
@@ -1000,32 +1019,31 @@ def check_valid_size(value, name):
         raise InvalidArgument(u'Invalid size %s %r' % (value, name))
 
 
+def check_valid_interval(lower_bound, upper_bound, lower_name, upper_name):
+    """Checks that lower_bound and upper_bound are either unspecified, or they
+    define a valid interval on the number line.
+
+    Otherwise raises InvalidArgumet.
+
+    """
+    if lower_bound is None or upper_bound is None:
+        return
+    if upper_bound < lower_bound:
+        raise InvalidArgument(
+            u'Cannot have %s=%r < %s=%r' % (
+                upper_name, upper_bound, lower_name, lower_bound
+            ))
+
+
 def check_valid_sizes(min_size, average_size, max_size):
     check_valid_size(min_size, u'min_size')
     check_valid_size(max_size, u'max_size')
     check_valid_size(average_size, u'average_size')
-    if max_size is not None:
-        if min_size is not None:
-            if max_size < min_size:
-                raise InvalidArgument(
-                    u'Cannot have max_size=%r < min_size=%r' % (
-                        max_size, min_size
-                    ))
-
-        if average_size is not None:
-            if max_size < average_size:
-                raise InvalidArgument(
-                    u'Cannot have max_size=%r < average_size=%r' % (
-                        max_size, average_size
-                    ))
+    check_valid_interval(min_size, max_size, u'min_size', u'max_size')
+    check_valid_interval(average_size, max_size, u'average_size', u'max_size')
+    check_valid_interval(min_size, average_size, u'min_size', u'average_size')
 
     if average_size is not None:
-        if min_size is not None:
-            if average_size < min_size:
-                raise InvalidArgument(
-                    u'Cannot have average_size=%r < min_size=%r' % (
-                        average_size, min_size
-                    ))
         if (
             (max_size is None or max_size > 0) and
             average_size is not None and average_size <= 0.0
