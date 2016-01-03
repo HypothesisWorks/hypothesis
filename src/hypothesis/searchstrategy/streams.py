@@ -133,7 +133,7 @@ class StreamStrategy(SearchStrategy):
             for t in simplify(random, stream[i]):
                 yield template.with_value(i, t)
         accept.__name__ = str(
-            u'simplifier_for_index(%s, %d)' % (
+            'simplifier_for_index(%s, %d)' % (
                 simplify.__name__, i
             )
         )

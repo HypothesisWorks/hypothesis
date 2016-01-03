@@ -225,7 +225,7 @@ def simplify_template_such_that(
         any_simplifiers = False
         for simplify in search_strategy.simplifiers(random, t):
             debug_report(u'Applying simplification pass %s' % (
-                simplify.__name__,
+                unicode_safe_repr(simplify.__name__),
             ))
             any_simplifiers = True
             any_shrinks = False

@@ -83,7 +83,7 @@ def find_breaking_runner(state_machine_factory, settings=None):
     if settings.database is not None:
         storage = settings.database.storage(
             getattr(
-                state_machine_factory, u'__name__',
+                state_machine_factory, '__name__',
                 type(state_machine_factory).__name__))
     else:
         storage = None
@@ -183,11 +183,11 @@ class GenericStateMachine(object):
 
         base_name = state_machine_class.__name__
         StateMachineTestCase.__name__ = str(
-            base_name + u'.TestCase'
+            base_name + '.TestCase'
         )
         StateMachineTestCase.__qualname__ = str(
-            getattr(state_machine_class, u'__qualname__', base_name) +
-            u'.TestCase'
+            getattr(state_machine_class, '__qualname__', base_name) +
+            '.TestCase'
         )
         state_machine_class._test_case_cache[state_machine_class] = (
             StateMachineTestCase
@@ -419,9 +419,9 @@ class StateMachineSearchStrategy(SearchStrategy):
                     n_steps=template.n_steps,
                     record=new_record,
                 )
-        accept.__name__ = str(u'convert_simplifier(%s, %d)' % (
+        accept.__name__ = 'convert_simplifier(%s, %d)' % (
             simplifier.__name__, i
-        ))
+        )
         return accept
 
     def random_discards(self, random, template):
@@ -625,7 +625,7 @@ class RuleBasedStateMachine(GenericStateMachine):
 
     def __init__(self):
         if not self.rules():
-            raise InvalidDefinition(u'Type %s defines no rules' % (
+            raise InvalidDefinition('Type %s defines no rules' % (
                 type(self).__name__,
             ))
         self.bundles = {}
@@ -633,7 +633,7 @@ class RuleBasedStateMachine(GenericStateMachine):
         self.names_to_values = {}
 
     def __repr__(self):
-        return u'%s(%s)' % (
+        return '%s(%s)' % (
             type(self).__name__,
             repr(self.bundles),
         )

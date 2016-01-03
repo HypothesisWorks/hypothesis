@@ -49,7 +49,7 @@ def repr_string(value, seen):
 
 @show.extend(object)
 def generic_string(value, seen):
-    if hasattr(value, u'__name__'):
+    if hasattr(value, '__name__'):
         return value.__name__
     try:
         d = value.__dict__

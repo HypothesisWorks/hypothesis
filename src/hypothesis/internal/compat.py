@@ -189,7 +189,7 @@ def qualname(f):
     except AttributeError:
         pass
     try:
-        return f.im_class.__name__ + u'.' + f.__name__
+        return f.im_class.__name__ + '.' + f.__name__
     except AttributeError:
         return f.__name__
 

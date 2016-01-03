@@ -44,7 +44,7 @@ class Format(object):
     """
 
     def __repr__(self):
-        return u'%s()' % (self.__class__.__name__,)
+        return '%s()' % (self.__class__.__name__,)
 
     @abstractmethod  # pragma: no cover
     def data_type(self):

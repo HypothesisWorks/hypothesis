@@ -34,7 +34,7 @@ class WrapperStrategy(SearchStrategy):
         self.template_upper_bound = self.wrapped_strategy.template_upper_bound
 
     def __repr__(self):
-        return u'%s(%r)' % (type(self).__name__, self.wrapped_strategy)
+        return '%s(%r)' % (type(self).__name__, self.wrapped_strategy)
 
     def validate(self):
         self.wrapped_strategy.validate()
