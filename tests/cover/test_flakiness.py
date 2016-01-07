@@ -20,7 +20,7 @@ import inspect
 
 import pytest
 
-from hypothesis import given, assume, Settings, Verbosity
+from hypothesis import given, assume, example, Settings, Verbosity
 from hypothesis.errors import Flaky, Unsatisfiable, UnsatisfiedAssumption
 from hypothesis.strategies import lists, builds, booleans, integers, \
     random_module
@@ -106,6 +106,9 @@ class SatisfyMe(Exception):
     pass
 
 
+@example(
+    [False, False, False, True], [3], None,
+)
 @given(lists(booleans()), lists(integers(1, 3)), random_module())
 def test_failure_sequence_inducing(building, testing, rnd):
     buildit = iter(building)
