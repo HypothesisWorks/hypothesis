@@ -41,9 +41,8 @@ def test_errors_even_if_does_not_error_on_final_call():
 def test_gives_flaky_error_if_assumption_is_flaky():
     seen = set()
 
-    @given(integers(), settings=Settings(
-        verbosity=Verbosity.quiet
-    ))
+    @given(integers())
+    @Settings(verbosity=Verbosity.quiet)
     def oops(s):
         assume(s not in seen)
         seen.add(s)
@@ -119,10 +118,11 @@ def test_failure_sequence_inducing(building, testing, rnd):
             pass
         return x
 
-    @given(integers().map(build), settings=Settings(
+    @given(integers().map(build))
+    @Settings(
         verbosity=Verbosity.quiet, database=None,
         perform_health_check=False,
-    ))
+    )
     def test(x):
         try:
             i = next(testit)

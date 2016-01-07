@@ -24,7 +24,7 @@ from collections import namedtuple
 
 import hypothesis.reporting as reporting
 from hypothesis import note, seed, given, assume, Settings, Verbosity
-from hypothesis.errors import Flaky, Unsatisfiable
+from hypothesis.errors import Unsatisfiable
 from tests.common.utils import fails, raises, fails_with, capture_out
 from hypothesis.strategies import just, sets, text, lists, binary, \
     builds, floats, one_of, booleans, integers, frozensets, sampled_from
@@ -390,15 +390,6 @@ def test_has_ascii(x):
         text_type(u' \t\n')
     )
     assert any(c in ascii_characters for c in x)
-
-
-@fails_with(Flaky)
-@given(integers())
-def test_fails_only_once(x):
-    global first_call
-    if first_call:
-        first_call = False
-        assert False
 
 
 def test_uses_provided_seed():
