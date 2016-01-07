@@ -79,14 +79,16 @@ def minimal(
         definition, condition=None,
         settings=None, timeout_after=10, random=None
 ):
-    settings = settings or Settings(
-        max_examples=5000,
-        max_iterations=10000,
+    settings = Settings(
+        settings,
+        max_examples=50000,
+        max_iterations=100000,
         max_shrinks=5000,
+        database=None,
+        timeout=timeout_after,
     )
 
     condition = condition or (lambda x: True)
-    settings = Settings(settings, timeout=timeout_after, database=None)
 
     @timeout(timeout_after * 1.20)
     def run():
