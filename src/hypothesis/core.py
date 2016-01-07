@@ -201,7 +201,10 @@ def simplify_template_such_that(
     """
     yield t
 
-    if settings.max_shrinks <= 0 or not f(t):
+    try:
+        if settings.max_shrinks <= 0 or not f(t):
+            return
+    except UnsatisfiedAssumption:
         return
 
     successful_shrinks = 0
@@ -732,33 +735,50 @@ def given(*generator_arguments, **generator_kwargs):
             is_template_example.__name__ = test.__name__
             is_template_example.__qualname__ = qualname(test)
 
-            falsifying_template = None
-            try:
-                falsifying_template = best_satisfying_template(
-                    search_strategy, random, is_template_example,
-                    settings, storage, start_time=start,
-                )
-            except NoSuchExample:
-                return
-
-            assert last_exception[0] is not None
-
             with settings:
-                test_runner(reify_and_execute(
-                    search_strategy, falsifying_template, test,
-                    print_example=True, is_final=True
-                ))
+                falsifying_template = None
+                try:
+                    falsifying_template = best_satisfying_template(
+                        search_strategy, random, is_template_example,
+                        settings, storage, start_time=start,
+                    )
+                except NoSuchExample:
+                    return
+
+                assert last_exception[0] is not None
+
+                try:
+                    test_runner(reify_and_execute(
+                        search_strategy, falsifying_template, test,
+                        print_example=True, is_final=True
+                    ))
+                except UnsatisfiedAssumption:
+                    report(traceback.format_exc())
+                    raise Flaky(
+                        'Unreliable assumption: An example which satisfied '
+                        'assumptions on the first run now fails it.'
+                    )
 
                 report(
                     u'Failed to reproduce exception. Expected: \n' +
                     last_exception[0],
                 )
 
-                test_runner(reify_and_execute(
-                    search_strategy, falsifying_template,
-                    test_is_flaky(test, repr_for_last_exception[0]),
-                    print_example=True, is_final=True
-                ))
+                try:
+                    test_runner(reify_and_execute(
+                        search_strategy, falsifying_template,
+                        test_is_flaky(test, repr_for_last_exception[0]),
+                        print_example=True, is_final=True
+                    ))
+                except UnsatisfiedAssumption:
+                    raise Flaky(
+                        'Unreliable test data: Failed to reproduce a failure '
+                        'and then when it came to recreating the example in '
+                        'order to print the test data with a flaky result '
+                        'the example was filtered out (by e.g. a '
+                        'call to filter in your strategy) when we didn\'t '
+                        'expect it to be.'
+                    )
         for attr in dir(test):
             if attr[0] != '_' and not hasattr(wrapped_test, attr):
                 setattr(wrapped_test, attr, getattr(test, attr))

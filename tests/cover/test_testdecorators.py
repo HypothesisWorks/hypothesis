@@ -18,7 +18,6 @@ from __future__ import division, print_function, absolute_import
 
 import time
 import string
-import inspect
 import functools
 import threading
 from random import Random
@@ -26,7 +25,7 @@ from collections import namedtuple
 
 import hypothesis.reporting as reporting
 from hypothesis import note, given, assume, Settings, Verbosity
-from hypothesis.errors import Flaky, Unsatisfiable, InvalidArgument
+from hypothesis.errors import Unsatisfiable, InvalidArgument
 from tests.common.utils import fails, raises, fails_with, capture_out
 from hypothesis.strategies import just, sets, text, lists, binary, \
     builds, floats, one_of, booleans, integers, frozensets, sampled_from
@@ -271,51 +270,6 @@ def test_removing_an_element_from_a_non_unique_list(xs, y):
     assert y not in xs
 
 
-def test_errors_even_if_does_not_error_on_final_call():
-    @given(integers())
-    def rude(x):
-        assert not any(
-            t[3] == u'best_satisfying_template'
-            for t in inspect.getouterframes(inspect.currentframe())
-        )
-
-    with raises(Flaky):
-        rude()
-
-
-def test_does_not_attempt_to_shrink_flaky_errors():
-    values = []
-
-    @given(integers())
-    def test(x):
-        values.append(x)
-        assert len(values) != 1
-    with raises(Flaky):
-        test()
-    assert len(set(values)) == 1
-
-
-class DifferentReprEachTime(object):
-    counter = 0
-
-    def __repr__(self):
-        DifferentReprEachTime.counter += 1
-        return u'DifferentReprEachTime(%d)' % (DifferentReprEachTime.counter,)
-
-
-def test_reports_repr_diff_in_flaky_error():
-    @given(builds(DifferentReprEachTime))
-    def rude(x):
-        assert not any(
-            t[3] == u'best_satisfying_template'
-            for t in inspect.getouterframes(inspect.currentframe())
-        )
-
-    with raises(Flaky) as e:
-        rude()
-    assert u'Call 1:' in e.value.args[0]
-
-
 @given(sets(sampled_from(list(range(10)))))
 def test_can_test_sets_sampled_from(xs):
     assert all(isinstance(x, int) for x in xs)
@@ -431,18 +385,6 @@ def test_has_ascii(x):
         text_type(u' \t\n')
     )
     assert any(c in ascii_characters for c in x)
-
-
-first_call = True
-
-
-@fails_with(Flaky)
-@given(integers())
-def test_fails_only_once(x):
-    global first_call
-    if first_call:
-        first_call = False
-        assert False
 
 
 def test_uses_random():
