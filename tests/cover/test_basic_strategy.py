@@ -42,6 +42,14 @@ def popcount(x):
     return tot
 
 
+def setup_function(fn):
+    Settings.load_profile('nonstrict')
+
+
+def teardown_function(fn):
+    Settings.load_profile('default')
+
+
 @pytest.mark.parametrize(u'i', [0, 1, 3, 10, 21, 65, 127])
 def test_can_simplify_bitfields(i):
     bitfield = basic_strategy(
@@ -109,10 +117,11 @@ def test_cache_is_cleaned_up_on_gc_2():
     assert len(st.reify_cache) == 0, len(st.reify_cache)
 
 
-@fails
-@given(basic(BoringBitfields))
-def test_boring_failure(x):
-    assert x & 1
+with Settings(strict=False):
+    @fails
+    @given(basic(BoringBitfields))
+    def test_boring_failure(x):
+        assert x & 1
 
 
 def test_can_load_a_very_deep_example_from_the_db():

@@ -37,6 +37,12 @@ Settings.register_profile(
     'speedy', Settings(
         timeout=1, max_examples=5,
     ))
+
+
+Settings.register_profile(
+    'nonstrict', Settings(strict=False)
+)
+
 Settings.load_profile(os.getenv('HYPOTHESIS_PROFILE', 'default'))
 
 

@@ -22,7 +22,7 @@ from decimal import Decimal
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.control import assume
-from hypothesis.settings import Settings
+from hypothesis.settings import Settings, note_deprecation
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import ArgSpec, text_type, getargspec, \
     integer_types, float_to_decimal, unicode_safe_repr
@@ -681,6 +681,13 @@ def basic(
     See documentation for more details.
 
     """
+    note_deprecation(
+        'basic() is deprecated as Hypothesis will be moving to a new '
+        'model that cannot support it. There is probably no one-size fits all '
+        'replacement solution here. If you can\'t figure out a good '
+        'solution, please ask.'
+    )
+
     from hypothesis.searchstrategy.basic import basic_strategy, BasicStrategy
     from copy import deepcopy
     if basic is not None:

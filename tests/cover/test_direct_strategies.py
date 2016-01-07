@@ -182,20 +182,23 @@ def test_float_can_find_min_value_inf():
 
 
 def test_can_use_basic_strategies():
-    assert find(ds.basic(Bitfields), lambda x: True) == 0
-    assert find(ds.basic(Bitfields()), lambda x: True) == 0
-    assert find(ds.basic(BoringBitfields), lambda x: True) != 0
+    with Settings(strict=False):
+        assert find(ds.basic(Bitfields), lambda x: True) == 0
+        assert find(ds.basic(Bitfields()), lambda x: True) == 0
+        assert find(ds.basic(BoringBitfields), lambda x: True) != 0
 
 
 def test_can_use_basic_strategies_with_only_kwargs():
-    assert find(
-        ds.basic(generate=BoringBitfields().generate), lambda x: True) != 0
+    with Settings(strict=False):
+        assert find(
+            ds.basic(generate=BoringBitfields().generate), lambda x: True) != 0
 
 
 def test_can_override_simplify_in_basic_strategies():
-    assert find(
-        ds.basic(BoringBitfields, simplify=Bitfields().simplify),
-        lambda x: True) == 0
+    with Settings(strict=False):
+        assert find(
+            ds.basic(BoringBitfields, simplify=Bitfields().simplify),
+            lambda x: True) == 0
 
 
 def test_can_find_none_list():

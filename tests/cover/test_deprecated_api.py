@@ -35,10 +35,6 @@ from hypothesis.searchstrategy.narytree import Leaf, Branch, NAryTree
 
 original_profile = Settings.default
 
-Settings.register_profile(
-    'nonstrict', Settings(strict=False)
-)
-
 
 def setup_function(fn):
     Settings.load_profile('nonstrict')

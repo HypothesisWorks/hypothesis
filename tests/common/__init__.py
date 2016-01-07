@@ -62,7 +62,7 @@ ABC = namedtuple(u'ABC', (u'a', u'b', u'c'))
 def abc(x, y, z):
     return builds(ABC, x, y, z)
 
-with Settings(average_list_length=10.0):
+with Settings(average_list_length=10.0, strict=False):
     standard_types = [
         basic(Bitfields),
         EvalledIntStream,

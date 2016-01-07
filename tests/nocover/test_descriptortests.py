@@ -156,47 +156,6 @@ with Settings(average_list_length=5.0):
     TestIntStreamStreams = strategy_test_suite(
         streaming(streaming(integers())))
 
-    TestBoringBitfieldsClass = strategy_test_suite(basic(BoringBitfields))
-    TestBitfieldsClass = strategy_test_suite(basic(Bitfields))
-    TestBitfieldsInstance = strategy_test_suite(basic(Bitfields()))
-
-    TestBitfields = strategy_test_suite(lists(
-        basic(
-            generate=lambda r, p: r.getrandbits(128),
-            simplify=simplify_bitfield,
-            copy=lambda x: x,
-        )
-    ))
-
-    TestBitfieldsSet = strategy_test_suite(sets(
-        basic(
-            generate=lambda r, p: r.getrandbits(128),
-            simplify=simplify_bitfield,
-            copy=lambda x: x,
-        )
-    ))
-
-    TestBitfield = strategy_test_suite(
-        basic(
-            generate=lambda r, p: r.getrandbits(128),
-            simplify=simplify_bitfield,
-            copy=lambda x: x,
-        )
-    )
-
-    TestBitfieldJustGenerate = strategy_test_suite(
-        basic(
-            generate=lambda r, p: r.getrandbits(128),
-        )
-    )
-
-    TestBitfieldWithParameter = strategy_test_suite(
-        basic(
-            generate_parameter=lambda r: r.getrandbits(128),
-            generate=lambda r, p: r.getrandbits(128) & p,
-        )
-    )
-
     TestRecursiveLowLeaves = strategy_test_suite(
         recursive(
             booleans(),
@@ -237,6 +196,49 @@ with Settings(average_list_length=5.0):
         return draw(lists(integers(min_value=x, max_value=y)))
 
     TestComposite = strategy_test_suite(tight_integer_list())
+
+
+with Settings(average_list_length=5.0, strict=False):
+    TestBoringBitfieldsClass = strategy_test_suite(basic(BoringBitfields))
+    TestBitfieldsClass = strategy_test_suite(basic(Bitfields))
+    TestBitfieldsInstance = strategy_test_suite(basic(Bitfields()))
+
+    TestBitfields = strategy_test_suite(lists(
+        basic(
+            generate=lambda r, p: r.getrandbits(128),
+            simplify=simplify_bitfield,
+            copy=lambda x: x,
+        )
+    ))
+
+    TestBitfieldsSet = strategy_test_suite(sets(
+        basic(
+            generate=lambda r, p: r.getrandbits(128),
+            simplify=simplify_bitfield,
+            copy=lambda x: x,
+        )
+    ))
+
+    TestBitfield = strategy_test_suite(
+        basic(
+            generate=lambda r, p: r.getrandbits(128),
+            simplify=simplify_bitfield,
+            copy=lambda x: x,
+        )
+    )
+
+    TestBitfieldJustGenerate = strategy_test_suite(
+        basic(
+            generate=lambda r, p: r.getrandbits(128),
+        )
+    )
+
+    TestBitfieldWithParameter = strategy_test_suite(
+        basic(
+            generate_parameter=lambda r: r.getrandbits(128),
+            generate=lambda r, p: r.getrandbits(128) & p,
+        )
+    )
 
 TestStatemachine = strategy_test_suite(StateMachineSearchStrategy())
 
