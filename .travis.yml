@@ -29,7 +29,6 @@ env:
         - TASK=check-py26
         - TASK=check-py35
         - TASK=check-py27
-        - TASK=check-py33
         - TASK=check-py34
         - TASK=check-nose
         - TASK=check-pytest27
