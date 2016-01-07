@@ -21,8 +21,7 @@ import hashlib
 from copy import deepcopy
 from random import Random
 
-from hypothesis import find, seed, given, assume, Settings, configure, \
-    Verbosity
+from hypothesis import find, seed, given, assume, Settings, Verbosity
 from hypothesis.errors import BadData, NoExamples, FailedHealthCheck
 from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import rule, Bundle, RuleBasedStateMachine, \

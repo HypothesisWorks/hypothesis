@@ -24,7 +24,7 @@ from unittest import TestCase
 from itertools import islice
 from collections import namedtuple
 
-from hypothesis import seed, given, assume, configure
+from hypothesis import seed, given, assume
 from hypothesis.errors import BadData, Unsatisfiable, BadTemplateDraw
 from hypothesis.control import BuildContext
 from hypothesis.database import ExampleDatabase
@@ -178,7 +178,7 @@ def strategy_test_suite(
     def specifier_test(test):
         return given(
             templates_for(specifier), randoms(),
-        )(configure(settings=settings)(test))
+        )(settings(test))
 
     class ValidationSuite(TestCase):
 
@@ -188,7 +188,7 @@ def strategy_test_suite(
             )
 
         @given(specifier)
-        @configure(settings=settings)
+        @settings
         def test_does_not_error(self, value):
             pass
 
@@ -200,14 +200,14 @@ def strategy_test_suite(
 
         def test_will_give_unsatisfiable_if_all_rejected(self):
             @given(specifier)
-            @configure(settings=settings)
+            @settings
             def nope(x):
                 assume(False)
             self.assertRaises(Unsatisfiable, nope)
 
         def test_will_find_a_constant_failure(self):
             @given(specifier)
-            @configure(settings=settings)
+            @settings
             def nope(x):
                 raise Rejected()
             self.assertRaises(Rejected, nope)
@@ -216,8 +216,7 @@ def strategy_test_suite(
             db = ExampleDatabase()
 
             @given(specifier)
-            @configure(settings=Settings(
-                settings, max_examples=10, database=db))
+            @Settings(settings, max_examples=10, database=db)
             def nope(x):
                 raise Rejected()
             try:
@@ -227,7 +226,7 @@ def strategy_test_suite(
                 db.close()
 
         @given(templates_for(specifier), templates_for(specifier))
-        @configure(settings=settings)
+        @settings
         def test_simplicity_is_asymmetric(self, x, y):
             assert not (
                 strat.strictly_simpler(x, y) and
@@ -235,7 +234,7 @@ def strategy_test_suite(
             )
 
         @given(integers())
-        @configure(settings=settings)
+        @settings
         def test_templates_generated_from_same_random_are_equal(self, i):
             try:
                 t1 = strat.draw_and_produce(Random(i))
@@ -248,7 +247,7 @@ def strategy_test_suite(
                 assert hash(t1) == hash(t2)
 
         @given(integers())
-        @configure(settings=settings)
+        @settings
         def test_templates_generated_from_same_random_are_equal_after_reify(
             self, i
         ):
@@ -266,19 +265,17 @@ def strategy_test_suite(
                 assert hash(t1) == hash(t2)
 
         @given(integers())
-        @configure(settings=settings)
+        @settings
         def test_will_handle_a_really_weird_failure(self, s):
             db = ExampleDatabase()
 
             @given(specifier)
-            @configure(
-                Settings(
-                    settings,
-                    database=db,
-                    max_examples=max_examples,
-                    min_satisfying_examples=2,
-                    average_list_length=2.0,
-                )
+            @Settings(
+                settings,
+                database=db,
+                max_examples=max_examples,
+                min_satisfying_examples=2,
+                average_list_length=2.0,
             )
             @seed(s)
             def nope(x):
@@ -369,7 +366,7 @@ def strategy_test_suite(
                 assert not strat.strictly_simpler(template, s)
 
         @given(randoms())
-        @configure(settings=Settings(settings, max_examples=100))
+        @Settings(settings, max_examples=100)
         def test_can_create_templates(self, random):
             parameter = strat.draw_parameter(random)
             try:

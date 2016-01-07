@@ -5,32 +5,32 @@ Settings
 Hypothesis tries to have good defaults for its behaviour, but sometimes that's
 not enough and you need to tweak it.
 
-The mechanism for doing this is the :class:`~hypothesis.Settings` object. You can set up a @given
-based test to use this using the configure decorator:
+The mechanism for doing this is the :class:`~hypothesis.Settings` object.
+You can set up a @given based test to use this using a Settings decorator:
 
 :func:`@given <hypothesis.core.given>` invocation as follows:
 
 .. code:: python
 
-    from hypothesis import configure, given, Settings
+    from hypothesis import given, Settings
 
     @given(integers())
-    @configure(settings=Settings(max_examples=500))
+    @Settings(max_examples=500)
     def test_this_thoroughly(x):
         pass
 
 This uses a :class:`~hypothesis.Settings` object which causes the test to receive a much larger
 set of examples than normal.
 
-configure may be applied either before or after the given and the results are
+This may be applied either before or after the given and the results are
 the same. The following is exactly equivalent:
 
 
 .. code:: python
 
-    from hypothesis import configure, given, Settings
+    from hypothesis import given, Settings
 
-    @configure(settings=Settings(max_examples=500))
+    @Settings(max_examples=500)
     @given(integers())
     def test_this_thoroughly(x):
         pass

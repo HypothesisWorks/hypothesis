@@ -21,7 +21,7 @@ import math
 import pytest
 
 import hypothesis.strategies as ds
-from hypothesis import find, given, Settings, configure
+from hypothesis import find, given, Settings
 from hypothesis.errors import InvalidArgument
 from tests.common.basic import Bitfields, BoringBitfields
 from hypothesis.internal.reflection import nicerepr
@@ -152,7 +152,7 @@ def test_has_specified_length(xs):
 
 
 @given(ds.integers(max_value=100))
-@configure(settings=Settings(max_examples=100))
+@Settings(max_examples=100)
 def test_has_upper_bound(x):
     assert x <= 100
 
@@ -232,13 +232,13 @@ def test_produces_dictionaries_of_at_least_minimum_size():
 
 
 @given(ds.dictionaries(ds.integers(), ds.integers(), max_size=5))
-@configure(settings=Settings(max_examples=50))
+@Settings(max_examples=50)
 def test_dictionaries_respect_size(d):
     assert len(d) <= 5
 
 
 @given(ds.dictionaries(ds.integers(), ds.integers(), max_size=0))
-@configure(settings=Settings(max_examples=50))
+@Settings(max_examples=50)
 def test_dictionaries_respect_zero_size(d):
     assert len(d) <= 5
 

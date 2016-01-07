@@ -22,7 +22,7 @@ from random import Random
 
 import pytest
 
-from hypothesis import find, given, Settings, configure
+from hypothesis import find, given, Settings
 from tests.common.basic import Bitfields, BoringBitfields, \
     simplify_bitfield
 from tests.common.utils import fails
@@ -132,7 +132,7 @@ def test_can_load_a_very_deep_example_from_the_db():
 
     @timeout(2)
     @given(bad_strategy)
-    @configure(settings=Settings(database=ExampleDatabase()))
+    @Settings(database=ExampleDatabase())
     def oh_noes(x):
         assert x != 1
     with pytest.raises(AssertionError):
@@ -149,7 +149,7 @@ def test_does_not_get_stuck_in_a_loop():
 
     @timeout(2)
     @given(bad_strategy)
-    @configure(settings=Settings(database=None))
+    @Settings(database=None)
     def oh_noes(x):
         assert x != 1
     with pytest.raises(AssertionError):

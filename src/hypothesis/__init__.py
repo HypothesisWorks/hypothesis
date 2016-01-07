@@ -27,7 +27,7 @@ from hypothesis.searchstrategy.strategies import strategy
 from hypothesis.settings import Settings, Verbosity
 from hypothesis.version import __version_info__, __version__
 from hypothesis.control import assume, note
-from hypothesis.core import given, find, example, configure, seed
+from hypothesis.core import given, find, example, seed
 
 __all__ = [
     'Settings',
@@ -35,7 +35,6 @@ __all__ = [
     'assume',
     'seed',
     'given',
-    'configure',
     'strategy',
     'find',
     'example',

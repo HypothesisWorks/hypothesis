@@ -21,7 +21,7 @@ from random import Random
 
 import pytest
 
-from hypothesis import find, given, Settings, configure
+from hypothesis import find, given, Settings
 from hypothesis.strategies import text, binary, tuples
 
 
@@ -94,7 +94,7 @@ def test_binary_respects_changes_in_size():
 
 
 @given(text(min_size=1, max_size=1))
-@configure(settings=Settings(max_examples=2000))
+@Settings(max_examples=2000)
 def test_does_not_generate_surrogates(t):
     assert unicodedata.category(t) != u'Cs'
 

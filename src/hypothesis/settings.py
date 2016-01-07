@@ -193,6 +193,10 @@ class Settings(SettingsMeta('Settings', (object,), {})):
             self.storage.defaults_stack = []
             return self.storage.defaults_stack
 
+    def __call__(self, test):
+        test._hypothesis_internal_use_settings = self
+        return test
+
     @classmethod
     def define_setting(cls, name, description, default, options=None):
         """Add a new setting.

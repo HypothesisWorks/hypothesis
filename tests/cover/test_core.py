@@ -21,7 +21,7 @@ import time
 import pytest
 
 import hypothesis.strategies as s
-from hypothesis import find, given, assume, Settings, configure
+from hypothesis import find, given, assume, Settings
 from hypothesis.errors import NoSuchExample, Unsatisfiable
 from hypothesis.internal.tracker import Tracker
 
@@ -84,7 +84,7 @@ def test_is_not_normally_default():
 
 
 @given(s.booleans())
-@configure(settings=some_normal_settings)
+@some_normal_settings
 def test_settings_are_default_in_given(x):
     assert Settings.default is some_normal_settings
 

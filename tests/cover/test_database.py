@@ -21,7 +21,7 @@ import time
 import pytest
 
 import hypothesis.settings as hs
-from hypothesis import given, assume, configure
+from hypothesis import given, assume
 from hypothesis.errors import Timeout, Unsatisfiable
 from hypothesis.database import ExampleDatabase
 from hypothesis.strategies import text, integers
@@ -140,7 +140,7 @@ def test_can_time_out_when_reading_from_database():
 
     try:
         @given(integers())
-        @configure(settings=hs.Settings(timeout=0.1, database=db))
+        @hs.Settings(timeout=0.1, database=db)
         def test_run_test(x):
             examples.append(x)
             if should_timeout:
@@ -188,7 +188,7 @@ def test_can_handle_more_than_max_examples_values_in_db():
             first[0] = True
 
             @given(integers())
-            @configure(settings=settings)
+            @settings
             def test_seen(x):
                 if x not in seen:
                     if first[0]:
@@ -206,7 +206,7 @@ def test_can_handle_more_than_max_examples_values_in_db():
         seen = []
 
         @given(integers())
-        @configure(settings=hs.Settings(max_examples=1, database=db))
+        @hs.Settings(max_examples=1, database=db)
         def test_seen(x):
             seen.append(x)
         test_seen()
@@ -230,7 +230,7 @@ def test_can_handle_more_than_max_iterations_in_db():
             first[0] = True
 
             @given(integers())
-            @configure(settings=settings)
+            @settings
             def test_seen(x):
                 if x not in seen:
                     if first[0]:
@@ -249,9 +249,7 @@ def test_can_handle_more_than_max_iterations_in_db():
         seen = []
 
         @given(integers())
-        @configure(
-            settings=hs.Settings(max_examples=1, max_iterations=2, database=db)
-        )
+        @hs.Settings(max_examples=1, max_iterations=2, database=db)
         def test_seen(x):
             seen.append(x)
             assume(False)
