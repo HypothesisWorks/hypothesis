@@ -34,22 +34,22 @@ export PATH:=$(BUILD_RUNTIMES)/snakepit:$(TOOLS):$(PATH)
 export LC_ALL=C.UTF-8
 
 $(PY26):
-	scripts/install.sh 2.6
+	scripts/retry.sh scripts/install.sh 2.6
 
 $(PY27):
-	scripts/install.sh 2.7
+	scripts/retry.sh scripts/install.sh 2.7
 
 $(PY33):
-	scripts/install.sh 3.3
+	scripts/retry.sh scripts/install.sh 3.3
 
 $(PY34):
-	scripts/install.sh 3.4
+	scripts/retry.sh scripts/install.sh 3.4
 
 $(PY35):
-	scripts/install.sh 3.5
+	scripts/retry.sh scripts/install.sh 3.5
 
 $(PYPY):
-	scripts/install.sh pypy
+	scripts/retry.sh scripts/install.sh pypy
 
 $(TOOL_VIRTUALENV): $(PY34)
 	$(PY34) -m virtualenv $(TOOL_VIRTUALENV)
