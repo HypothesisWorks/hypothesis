@@ -18,7 +18,7 @@ from __future__ import division, print_function, absolute_import
 
 from collections import namedtuple
 
-from hypothesis import Settings
+from hypothesis import settings
 from hypothesis.strategies import lists, tuples
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.distributions import geometric, uniform_float
@@ -163,4 +163,4 @@ class NAryTreeStrategy(SearchStrategy):
 
 
 def n_ary_tree(*args, **kwargs):
-    return NAryTreeStrategy(NAryTree(*args, **kwargs), Settings.default)
+    return NAryTreeStrategy(NAryTree(*args, **kwargs), settings.default)

@@ -26,22 +26,24 @@ import pytest
 
 import hypothesis.specifiers as s
 import hypothesis.strategies as st
-from hypothesis import find, given, Settings, strategy
-from hypothesis.errors import InvalidArgument
+from hypothesis import find, given, settings, strategy
+from hypothesis.errors import InvalidArgument, HypothesisDeprecationWarning
 from tests.common.basic import Bitfields
 from hypothesis.internal.compat import text_type, binary_type, \
     integer_types
 from hypothesis.searchstrategy.narytree import Leaf, Branch, NAryTree
 
-original_profile = Settings.default
+assert isinstance(settings, type)
+
+original_profile = settings.default
 
 
 def setup_function(fn):
-    Settings.load_profile('nonstrict')
+    settings.load_profile('nonstrict')
 
 
 def teardown_function(fn):
-    Settings.load_profile('default')
+    settings.load_profile('default')
 
 
 @pytest.mark.parametrize(u'typ', [
@@ -220,26 +222,26 @@ def test_can_flatmap_non_strategies():
 
 def test_can_define_settings():
     test_description = u'This is a setting just for these tests'
-    assert not Settings.default.strict
+    assert not settings.default.strict
 
-    x = Settings()
+    x = settings()
     assert not x.strict
 
-    Settings.define_setting(
+    settings.define_setting(
         u'a_setting_just_for_these_tests',
         default=3,
         description=test_description,
     )
 
-    assert test_description in Settings.a_setting_just_for_these_tests.__doc__
+    assert test_description in settings.a_setting_just_for_these_tests.__doc__
 
     assert x.a_setting_just_for_these_tests == 3
-    assert Settings().a_setting_just_for_these_tests == 3
+    assert settings().a_setting_just_for_these_tests == 3
 
 
 def test_cannot_define_a_setting_with_default_not_valid():
     with pytest.raises(InvalidArgument):
-        Settings.define_setting(
+        settings.define_setting(
             u'kittens',
             default=8, description=u'Kittens are pretty great',
             options=(1, 2, 3, 4),
@@ -247,52 +249,52 @@ def test_cannot_define_a_setting_with_default_not_valid():
 
 
 def test_define_setting_then_loading_profile():
-    x = Settings()
-    Settings.define_setting(
+    x = settings()
+    settings.define_setting(
         u'fun_times',
         default=3, description=u'Something something spoon',
         options=(1, 2, 3, 4),
     )
-    Settings.register_profile('hi', Settings(fun_times=2))
+    settings.register_profile('hi', settings(fun_times=2))
     assert x.fun_times == 3
-    assert Settings.get_profile('hi').fun_times == 2
+    assert settings.get_profile('hi').fun_times == 2
 
 
 def test_picks_up_changes_to_defaults():
-    Settings.default.max_examples = 18
-    assert Settings.default.max_examples == 18
-    s = Settings()
+    settings.default.max_examples = 18
+    assert settings.default.max_examples == 18
+    s = settings()
     assert s.max_examples == 18
 
 
 def test_picks_up_changes_to_defaults_when_switching_profiles():
-    original_default = Settings.default.max_examples
-    Settings.load_profile('nonstrict')
-    Settings.register_profile('test_settings', Settings())
-    Settings.load_profile('test_settings')
+    original_default = settings.default.max_examples
+    settings.load_profile('nonstrict')
+    settings.register_profile('test_settings', settings())
+    settings.load_profile('test_settings')
 
-    Settings.register_profile('other_test_settings', Settings())
-    Settings.default.max_examples = 18
-    assert Settings.default.max_examples == 18
-    Settings.load_profile('other_test_settings')
-    assert Settings.default.max_examples == original_default
-    Settings.load_profile('test_settings')
-    assert Settings.default.max_examples == 18
+    settings.register_profile('other_test_settings', settings())
+    settings.default.max_examples = 18
+    assert settings.default.max_examples == 18
+    settings.load_profile('other_test_settings')
+    assert settings.default.max_examples == original_default
+    settings.load_profile('test_settings')
+    assert settings.default.max_examples == 18
 
 
 def test_does_not_pick_up_changes_after_instantiation():
-    s = Settings()
+    s = settings()
     orig = s.max_examples
-    Settings.default.max_examples = 18
+    settings.default.max_examples = 18
     assert s.max_examples == orig
 
 
 def test_can_assign_default_settings():
-    Settings.default = Settings(max_examples=1100)
-    assert Settings.default.max_examples == 1100
-    with Settings(max_examples=10):
-        assert Settings.default.max_examples == 10
-    assert Settings.default.max_examples == 1100
+    settings.default = settings(max_examples=1100)
+    assert settings.default.max_examples == 1100
+    with settings(max_examples=10):
+        assert settings.default.max_examples == 10
+    assert settings.default.max_examples == 1100
 
 
 def test_uses_provided_random():
@@ -305,3 +307,40 @@ def test_uses_provided_random():
 
     a()
     assert r.getstate() != initial
+
+
+def test_can_mix_settings():
+    from hypothesis import Settings
+
+    with Settings(max_examples=1):
+        assert settings.default.max_examples == 1
+
+
+def test_can_import_settings_module(recwarn):
+    sys.modules.pop('hypothesis.settings', None)
+    import hypothesis.settings as s
+    assert hasattr(s, 'Settings')
+    assert hasattr(s, 'set_hypothesis_home_dir')
+    recwarn.pop(HypothesisDeprecationWarning)
+
+
+def test_can_access_moved_methods_from_settings():
+    from hypothesis import settings
+    assert isinstance(settings, type)
+    from hypothesis.configuration import hypothesis_home_dir
+    assert settings.hypothesis_home_dir() == hypothesis_home_dir()
+
+
+def test_settings_default_is_old_settings_default():
+    from hypothesis import settings, Settings
+    assert settings.default is Settings.default
+    with settings():
+        assert settings.default is Settings.default
+
+
+def test_settings_profiles_are_shared_between_new_and_old():
+    from hypothesis import settings, Settings
+    settings.register_profile('geewhiz', settings())
+    Settings.register_profile('goshgolly', settings())
+    settings.load_profile('goshgolly')
+    Settings.load_profile('geewhiz')

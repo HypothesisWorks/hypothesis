@@ -16,7 +16,8 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis.settings import Settings, note_deprecation
+from hypothesis._settings import settings as Settings
+from hypothesis._settings import note_deprecation
 from hypothesis.internal.compat import quiet_raise
 from hypothesis.utils.extmethod import ExtMethod
 

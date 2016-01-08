@@ -23,10 +23,10 @@ import django
 from django.db import transaction
 from django.test.runner import setup_databases
 
+from hypothesis import settings as Settings
 from hypothesis.core import best_satisfying_template
 from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.control import BuildContext
-from hypothesis.settings import Settings
 
 ALL_FIXTURES = []
 

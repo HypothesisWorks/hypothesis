@@ -16,7 +16,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis import given, Settings
+from hypothesis import given, settings
 from hypothesis.strategies import booleans, integers
 from hypothesis.internal.debug import minimal
 from hypothesis.searchstrategy.narytree import Leaf, Branch, n_ary_tree
@@ -25,7 +25,7 @@ from hypothesis.searchstrategy.narytree import Leaf, Branch, n_ary_tree
 def smallest_tree(predicate):
     return minimal(
         n_ary_tree(integers(), integers(), integers()), predicate,
-        settings=Settings(database=None, max_examples=1000000),
+        settings=settings(database=None, max_examples=1000000),
     )
 
 
@@ -69,7 +69,7 @@ def test_tree_minimizes_individual_branch_children():
 
 
 @given(n_ary_tree(booleans(), booleans(), booleans()))
-@Settings(max_examples=100)
+@settings(max_examples=100)
 def test_serializes_arbitrary_trees(tree):
     strat = n_ary_tree(booleans(), booleans(), booleans())
 

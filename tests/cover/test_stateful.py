@@ -22,11 +22,12 @@ from collections import namedtuple
 
 import pytest
 
-from hypothesis import assume, Settings
-from hypothesis.errors import Flaky, BadData, InvalidDefinition
+from hypothesis import settings as Settings
+from hypothesis import assume
+from hypothesis.errors import Flaky, BadData, InvalidDefinition, \
+    HypothesisDeprecationWarning
 from tests.common.utils import raises, capture_out
 from hypothesis.database import ExampleDatabase
-from hypothesis.settings import HypothesisDeprecationWarning
 from hypothesis.stateful import rule, Bundle, precondition, \
     StateMachineRunner, GenericStateMachine, RuleBasedStateMachine, \
     run_state_machine_as_test, StateMachineSearchStrategy

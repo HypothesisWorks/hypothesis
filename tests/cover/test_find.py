@@ -21,7 +21,8 @@ import time
 
 import pytest
 
-from hypothesis import find, Settings
+from hypothesis import settings as Settings
+from hypothesis import find
 from hypothesis.errors import Timeout, NoSuchExample, \
     DefinitelyNoSuchExample
 from hypothesis.strategies import lists, floats, booleans, integers, \

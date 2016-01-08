@@ -21,7 +21,7 @@ import math
 import pytest
 
 import hypothesis.strategies as ds
-from hypothesis import find, given, Settings
+from hypothesis import find, given, settings
 from hypothesis.errors import InvalidArgument
 from tests.common.basic import Bitfields, BoringBitfields
 from hypothesis.internal.reflection import nicerepr
@@ -152,7 +152,7 @@ def test_has_specified_length(xs):
 
 
 @given(ds.integers(max_value=100))
-@Settings(max_examples=100)
+@settings(max_examples=100)
 def test_has_upper_bound(x):
     assert x <= 100
 
@@ -183,20 +183,20 @@ def test_float_can_find_min_value_inf():
 
 
 def test_can_use_basic_strategies():
-    with Settings(strict=False):
+    with settings(strict=False):
         assert find(ds.basic(Bitfields), lambda x: True) == 0
         assert find(ds.basic(Bitfields()), lambda x: True) == 0
         assert find(ds.basic(BoringBitfields), lambda x: True) != 0
 
 
 def test_can_use_basic_strategies_with_only_kwargs():
-    with Settings(strict=False):
+    with settings(strict=False):
         assert find(
             ds.basic(generate=BoringBitfields().generate), lambda x: True) != 0
 
 
 def test_can_override_simplify_in_basic_strategies():
-    with Settings(strict=False):
+    with settings(strict=False):
         assert find(
             ds.basic(BoringBitfields, simplify=Bitfields().simplify),
             lambda x: True) == 0
@@ -232,13 +232,13 @@ def test_produces_dictionaries_of_at_least_minimum_size():
 
 
 @given(ds.dictionaries(ds.integers(), ds.integers(), max_size=5))
-@Settings(max_examples=50)
+@settings(max_examples=50)
 def test_dictionaries_respect_size(d):
     assert len(d) <= 5
 
 
 @given(ds.dictionaries(ds.integers(), ds.integers(), max_size=0))
-@Settings(max_examples=50)
+@settings(max_examples=50)
 def test_dictionaries_respect_zero_size(d):
     assert len(d) <= 5
 

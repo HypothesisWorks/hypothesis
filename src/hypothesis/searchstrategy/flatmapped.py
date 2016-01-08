@@ -16,7 +16,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis.settings import Settings
+from hypothesis._settings import settings
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.internal.strategymethod import strategy
 from hypothesis.searchstrategy.morphers import MorpherStrategy
@@ -34,7 +34,7 @@ class FlatMapStrategy(MappedSearchStrategy):
                 strategy, MorpherStrategy()), tuple))
         self.flatmapped_strategy = strategy
         self.expand = expand
-        self.settings = Settings.default
+        self.settings = settings.default
 
     def __repr__(self):
         if not hasattr(self, u'_cached_repr'):

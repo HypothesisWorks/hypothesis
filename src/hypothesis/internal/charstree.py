@@ -26,7 +26,7 @@ import unicodedata
 
 import marshal
 from hypothesis.errors import InvalidArgument
-from hypothesis.settings import hypothesis_home_dir
+from hypothesis._settings import hypothesis_home_dir
 from hypothesis.internal.compat import hrange, hunichr, OrderedDict
 
 __all__ = (

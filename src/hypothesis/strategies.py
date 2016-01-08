@@ -22,7 +22,7 @@ from decimal import Decimal
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.control import assume
-from hypothesis.settings import Settings, note_deprecation
+from hypothesis._settings import settings, note_deprecation
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import ArgSpec, text_type, getargspec, \
     integer_types, float_to_decimal, unicode_safe_repr
@@ -442,7 +442,7 @@ def lists(
                     average_size = (max_size + min_size) / 2
             else:
                 average_size = max(
-                    Settings.default.average_list_length,
+                    settings.default.average_list_length,
                     min_size * 2
                 )
         check_valid_sizes(min_size, average_size, max_size)
@@ -462,7 +462,7 @@ def lists(
         min_size = 0
     if average_size is None:
         if max_size is None:
-            average_size = Settings.default.average_list_length
+            average_size = settings.default.average_list_length
         else:
             average_size = (min_size + max_size) * 0.5
 

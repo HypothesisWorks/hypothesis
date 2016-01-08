@@ -39,14 +39,14 @@ if PYTEST_VERSION >= (2, 7, 0):
         parser.addoption(
             LOAD_PROFILE_OPTION,
             action='store',
-            help='Load in a registered hypothesis settings profile'
+            help='Load in a registered hypothesis.settings profile'
         )
 
     def pytest_configure(config):
         from hypothesis import settings
         profile = config.getoption(LOAD_PROFILE_OPTION)
         if profile:
-            settings.Settings.load_profile(profile)
+            settings.load_profile(profile)
 
     @pytest.mark.hookwrapper
     def pytest_pyfunc_call(pyfuncitem):

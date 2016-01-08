@@ -25,7 +25,7 @@ from fractions import Fraction
 import pytest
 
 from flaky import flaky
-from hypothesis import find, assume, Settings
+from hypothesis import find, assume, settings
 from tests.common import parametrize, ordered_pair, constant_list
 from hypothesis.strategies import just, sets, text, lists, binary, \
     floats, tuples, booleans, decimals, integers, fractions, frozensets, \
@@ -252,7 +252,7 @@ def test_flatmap_rectangles():
 
     xs = find(lengths.flatmap(
         lambda w: lists(lists_of_length(w))), lambda x: ['a', 'b'] in x,
-        settings=Settings(database=None, max_examples=2000)
+        settings=settings(database=None, max_examples=2000)
     )
     assert xs == [['a', 'b']]
 
@@ -427,7 +427,7 @@ def test_small_sum_lists():
         lists(floats()),
         lambda x:
             len(x) >= 100 and sum(t for t in x if float(u'inf') > t >= 0) >= 1,
-        settings=Settings(average_list_length=200),
+        settings=settings(average_list_length=200),
         timeout_after=60,
     )
     assert 1.0 <= sum(t for t in xs if t >= 0) <= 1.5
@@ -503,7 +503,7 @@ def test_finds_non_reversible_floats():
         lists(floats()), lambda xs:
             not math.isnan(sum(xs)) and sum(xs) != sum(reversed(xs)),
         timeout_after=40,
-        settings=Settings(database=None)
+        settings=settings(database=None)
     )
     assert len(repr(t)) <= 200
     print(t)

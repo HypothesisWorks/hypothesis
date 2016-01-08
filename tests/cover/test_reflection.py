@@ -581,8 +581,8 @@ class BittySnowman(object):
 def test_can_handle_unicode_repr():
     def foo(x):
         pass
-    from hypothesis import Settings
-    with Settings(strict=False):
+    from hypothesis import settings
+    with settings(strict=False):
         assert arg_string(foo, [Snowman()], {}) == u'x=☃'
         assert arg_string(foo, [], {u'x': Snowman()}) == u'x=☃'
 

@@ -21,7 +21,7 @@ from random import Random
 import pytz
 import pytest
 
-import hypothesis.settings as hs
+import hypothesis._settings as hs
 from hypothesis import given, assume
 from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.strategytests import strategy_test_suite
@@ -73,7 +73,7 @@ def test_can_generate_non_utc():
         lambda d: assume(d.tzinfo) and d.tzinfo.zone != u'UTC')
 
 
-with hs.Settings(max_examples=1000):
+with hs.settings(max_examples=1000):
     @given(times(timezones=[]))
     def test_naive_times_are_naive(dt):
         assert not dt.tzinfo

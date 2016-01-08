@@ -4,7 +4,7 @@ include =
     .tox/*/lib/*/site-packages/hypothesis/*.py
     .tox/*/lib/*/site-packages/hypothesis/**/*.py
 omit =
-    **/settings.py
+    **/_settings.py
     **/pytestplugin.py
     **/strategytests.py
     **/internal/debug.py

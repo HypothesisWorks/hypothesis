@@ -23,7 +23,7 @@ from pytest import raises
 import hypothesis.reporting as reporting
 import hypothesis.strategies as st
 from flaky import flaky
-from hypothesis import given, Settings
+from hypothesis import given, settings
 from hypothesis.errors import FailedHealthCheck
 from tests.common.utils import capture_out
 
@@ -51,7 +51,7 @@ def test_global_random_in_strategy_fails_a_health_check():
 def test_warns_if_settings_are_not_strict(recwarn):
     import random
 
-    with Settings(strict=False):
+    with settings(strict=False):
         @given(st.lists(st.integers(), min_size=1))
         def test(x):
             random.choice(x)
@@ -65,7 +65,7 @@ def test_warns_if_settings_are_not_strict(recwarn):
 def test_does_not_repeat_random_warnings(recwarn):
     import random
 
-    with Settings(strict=False):
+    with settings(strict=False):
         @given(st.lists(st.integers(), min_size=1).map(random.choice))
         def test(x):
             pass
@@ -94,7 +94,7 @@ def test_default_health_check_can_weaken_specific():
     def test(x):
         random.choice(x)
 
-    with Settings(perform_health_check=False):
+    with settings(perform_health_check=False):
         test()
 
 
@@ -116,7 +116,7 @@ def test_error_in_strategy_produces_only_one_traceback():
     def boom(x):
         raise ValueError()
 
-    with Settings(strict=False):
+    with settings(strict=False):
         @given(st.integers().map(boom))
         def test(x):
             pass
@@ -182,7 +182,7 @@ def test_broad_recursive_data_will_fail_a_health_check():
 
 
 def test_health_check_runs_should_not_affect_determinism(recwarn):
-    with Settings(
+    with settings(
         strict=False, timeout=0, max_examples=2, derandomize=True,
         database=None, perform_health_check=True,
     ):

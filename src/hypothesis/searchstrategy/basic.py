@@ -22,7 +22,7 @@ from random import Random
 from weakref import WeakKeyDictionary
 
 import hypothesis.internal.distributions as dist
-from hypothesis.settings import Settings
+from hypothesis._settings import settings as Settings
 from hypothesis.internal.compat import hrange, integer_types
 
 from .strategies import check_length, SearchStrategy, check_data_type

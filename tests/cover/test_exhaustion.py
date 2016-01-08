@@ -18,7 +18,7 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
-from hypothesis import given, assume, Settings
+from hypothesis import given, assume, settings
 from hypothesis.errors import Unsatisfiable
 from hypothesis.database import ExampleDatabase
 from hypothesis.strategies import tuples, booleans
@@ -45,7 +45,7 @@ def test_finite_test_does_not_fail_if_example_comes_from_db():
     is_bad = [True]
 
     @given(tuples())
-    @Settings(database=ExampleDatabase())
+    @settings(database=ExampleDatabase())
     def is_not_bad(x):
         assert not is_bad[0]
 

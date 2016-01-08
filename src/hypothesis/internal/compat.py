@@ -106,7 +106,7 @@ else:
             r = repr(x)
         except UnicodeEncodeError:
             r = type(x).__repr__(x)
-            from hypothesis.settings import note_deprecation
+            from hypothesis._settings import note_deprecation
             note_deprecation((
                 'Type %s has a broken repr implementation. Calling __repr__ '
                 'on it returned %r, which cannot be represented as ASCII '

@@ -22,7 +22,7 @@ try:
 except ImportError:
     pytest = None
 
-from hypothesis.settings import Settings
+from hypothesis._settings import settings
 from hypothesis.internal.debug import timeout
 from hypothesis.strategytests import templates_for
 from tests.common.basic import Bitfields
@@ -34,8 +34,6 @@ from hypothesis.internal.compat import hrange
 from hypothesis.searchstrategy.narytree import n_ary_tree
 from hypothesis.utils.show import show
 
-
-settings = Settings(max_examples=100, timeout=4)
 
 __all__ = [u'small_verifier', u'timeout', u'standard_types', u'OrderedPair']
 
@@ -62,7 +60,7 @@ ABC = namedtuple(u'ABC', (u'a', u'b', u'c'))
 def abc(x, y, z):
     return builds(ABC, x, y, z)
 
-with Settings(average_list_length=10.0, strict=False):
+with settings(average_list_length=10.0, strict=False):
     standard_types = [
         basic(Bitfields),
         EvalledIntStream,

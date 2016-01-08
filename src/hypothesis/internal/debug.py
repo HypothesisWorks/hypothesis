@@ -21,7 +21,7 @@ import time
 import signal
 from random import Random
 
-from hypothesis import Settings
+from hypothesis import settings as Settings
 from hypothesis.core import find
 from hypothesis.errors import NoExamples, BadTemplateDraw, \
     UnsatisfiedAssumption

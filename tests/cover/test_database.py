@@ -20,7 +20,7 @@ import time
 
 import pytest
 
-import hypothesis.settings as hs
+import hypothesis._settings as hs
 from hypothesis import given, assume
 from hypothesis.errors import Timeout, Unsatisfiable
 from hypothesis.database import ExampleDatabase
@@ -93,7 +93,7 @@ backend_format_pairs = (
 )
 
 
-settings = hs.Settings(
+settings = hs.settings(
     max_examples=500,
     average_list_length=3.0,
 )
@@ -140,7 +140,7 @@ def test_can_time_out_when_reading_from_database():
 
     try:
         @given(integers())
-        @hs.Settings(timeout=0.1, database=db)
+        @hs.settings(timeout=0.1, database=db)
         def test_run_test(x):
             examples.append(x)
             if should_timeout:
@@ -181,7 +181,7 @@ def test_can_handle_more_than_max_examples_values_in_db():
     db = ExampleDatabase()
 
     try:
-        settings = hs.Settings(database=db, max_examples=10)
+        settings = hs.settings(database=db, max_examples=10)
         seen = []
         first = [True]
         for _ in range(10):
@@ -206,7 +206,7 @@ def test_can_handle_more_than_max_examples_values_in_db():
         seen = []
 
         @given(integers())
-        @hs.Settings(max_examples=1, database=db)
+        @hs.settings(max_examples=1, database=db)
         def test_seen(x):
             seen.append(x)
         test_seen()
@@ -223,7 +223,7 @@ def test_can_handle_more_than_max_iterations_in_db():
     db = ExampleDatabase()
 
     try:
-        settings = hs.Settings(database=db, max_examples=10, max_iterations=10)
+        settings = hs.settings(database=db, max_examples=10, max_iterations=10)
         seen = []
         first = [True]
         for _ in range(10):
@@ -249,7 +249,7 @@ def test_can_handle_more_than_max_iterations_in_db():
         seen = []
 
         @given(integers())
-        @hs.Settings(max_examples=1, max_iterations=2, database=db)
+        @hs.settings(max_examples=1, max_iterations=2, database=db)
         def test_seen(x):
             seen.append(x)
             assume(False)

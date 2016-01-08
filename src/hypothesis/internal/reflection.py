@@ -28,7 +28,7 @@ import inspect
 from types import ModuleType
 from functools import wraps
 
-from hypothesis.settings import storage_directory
+from hypothesis.configuration import storage_directory
 from hypothesis.internal.compat import hrange, qualname, text_type, \
     getargspec, to_unicode, isidentifier, unicode_safe_repr, \
     ARG_NAME_ATTRIBUTE, update_code_location

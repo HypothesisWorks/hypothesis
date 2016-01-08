@@ -23,7 +23,7 @@ import pytest
 
 from hypothesis import find, given, reporting
 from tests.common.utils import capture_out
-from hypothesis.settings import Settings, Verbosity
+from hypothesis._settings import settings, Verbosity
 from hypothesis.reporting import debug_report, verbose_report
 from hypothesis.strategies import just, integers
 from hypothesis.internal.compat import PY2
@@ -54,28 +54,28 @@ def test_prints_output_by_default():
 
 
 def test_does_not_print_debug_in_verbose():
-    with Settings(verbosity=Verbosity.verbose):
+    with settings(verbosity=Verbosity.verbose):
         with capture_out() as o:
             debug_report(u'Hi')
     assert not o.getvalue()
 
 
 def test_does_print_debug_in_debug():
-    with Settings(verbosity=Verbosity.debug):
+    with settings(verbosity=Verbosity.debug):
         with capture_out() as o:
             debug_report(u'Hi')
     assert u'Hi' in o.getvalue()
 
 
 def test_does_print_verbose_in_debug():
-    with Settings(verbosity=Verbosity.debug):
+    with settings(verbosity=Verbosity.debug):
         with capture_out() as o:
             verbose_report(u'Hi')
     assert u'Hi' in o.getvalue()
 
 
 def test_prints_debug_on_no_simplification():
-    with Settings(verbosity=Verbosity.debug):
+    with settings(verbosity=Verbosity.debug):
         with capture_out() as o:
             find(just(u'hi'), bool)
     v = o.getvalue()

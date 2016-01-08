@@ -18,7 +18,7 @@ from __future__ import division, print_function, absolute_import
 
 import inspect
 
-from hypothesis.settings import Settings, Verbosity
+from hypothesis._settings import settings, Verbosity
 from hypothesis.internal.compat import text_type, escape_unicode_characters
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
@@ -46,7 +46,7 @@ def with_reporter(new_reporter):
 
 
 def current_verbosity():
-    return Settings.default.verbosity
+    return settings.default.verbosity
 
 
 def to_text(textish):

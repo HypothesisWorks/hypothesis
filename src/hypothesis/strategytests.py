@@ -24,11 +24,11 @@ from unittest import TestCase
 from itertools import islice
 from collections import namedtuple
 
+from hypothesis import settings as Settings
 from hypothesis import seed, given, assume
 from hypothesis.errors import BadData, Unsatisfiable, BadTemplateDraw
 from hypothesis.control import BuildContext
 from hypothesis.database import ExampleDatabase
-from hypothesis.settings import Settings
 from hypothesis.strategies import lists, randoms, integers
 from hypothesis.internal.compat import hrange, text_type, integer_types
 from hypothesis.utils.extmethod import ExtMethod

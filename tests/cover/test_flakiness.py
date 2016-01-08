@@ -20,7 +20,7 @@ import inspect
 
 import pytest
 
-from hypothesis import given, assume, example, Settings, Verbosity
+from hypothesis import given, assume, example, settings, Verbosity
 from hypothesis.errors import Flaky, Unsatisfiable, UnsatisfiedAssumption
 from hypothesis.strategies import lists, builds, booleans, integers, \
     random_module
@@ -42,7 +42,7 @@ def test_gives_flaky_error_if_assumption_is_flaky():
     seen = set()
 
     @given(integers())
-    @Settings(verbosity=Verbosity.quiet)
+    @settings(verbosity=Verbosity.quiet)
     def oops(s):
         assume(s not in seen)
         seen.add(s)
@@ -122,7 +122,7 @@ def test_failure_sequence_inducing(building, testing, rnd):
         return x
 
     @given(integers().map(build))
-    @Settings(
+    @settings(
         verbosity=Verbosity.quiet, database=None,
         perform_health_check=False,
     )

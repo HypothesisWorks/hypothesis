@@ -16,11 +16,12 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis import given
-from tests.common import settings as small_settings
+from hypothesis import given, settings
 from hypothesis.strategies import text, lists, tuples
 from hypothesis.internal.compat import PY26, hrange
 from hypothesis.database.backend import SQLiteBackend
+
+small_settings = settings(max_examples=100, timeout=4)
 
 if PY26:
     # Workaround for bug with embedded null characters in a text string under

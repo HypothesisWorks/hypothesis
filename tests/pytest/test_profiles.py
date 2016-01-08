@@ -21,17 +21,17 @@ from hypothesis.extra.pytestplugin import LOAD_PROFILE_OPTION
 pytest_plugins = str('pytester')
 
 CONFTEST = """
-from hypothesis.settings import Settings
-Settings.register_profile("test", Settings(max_examples=1))
+from hypothesis._settings import settings
+settings.register_profile("test", settings(max_examples=1))
 """
 
 TESTSUITE = """
 from hypothesis import given
 from hypothesis.strategies import integers
-from hypothesis.settings import Settings
+from hypothesis._settings import settings
 
 def test_this_one_is_ok():
-    assert Settings().max_examples == 1
+    assert settings().max_examples == 1
 """
 
 

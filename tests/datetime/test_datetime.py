@@ -22,8 +22,8 @@ from datetime import MAXYEAR, MINYEAR, datetime
 import pytz
 import pytest
 
-import hypothesis.settings as hs
-from hypothesis import given, assume, Settings
+import hypothesis._settings as hs
+from hypothesis import given, assume, settings
 from hypothesis.errors import InvalidArgument, UnsatisfiedAssumption
 from hypothesis.strategytests import strategy_test_suite
 from hypothesis.extra.datetime import datetimes, any_datetime, \
@@ -95,7 +95,7 @@ def test_can_generate_non_utc():
         lambda d: assume(d.tzinfo) and d.tzinfo.zone != u'UTC')
 
 
-with hs.Settings(max_examples=1000):
+with hs.settings(max_examples=1000):
     @given(datetimes(timezones=[]))
     def test_naive_datetimes_are_naive(dt):
         assert not dt.tzinfo
@@ -112,7 +112,7 @@ def test_restricts_to_allowed_set_of_timezones():
 
 
 def test_legacy_api():
-    with hs.Settings(strict=False):
+    with hs.settings(strict=False):
         x = minimal(datetime)
         assert x.tzinfo == pytz.UTC
         assert x.year == 2000
@@ -195,7 +195,7 @@ def test_bordering_on_a_leap_year():
     x = minimal(
         datetimes(min_year=2002, max_year=2005),
         lambda x: x.month == 2 and x.day == 29,
-        settings=Settings(database=None, max_examples=10 ** 7)
+        settings=settings(database=None, max_examples=10 ** 7)
     )
     assert x.year == 2004
 

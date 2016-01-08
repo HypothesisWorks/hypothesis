@@ -21,11 +21,11 @@ import random
 from pytest import raises
 
 import hypothesis.strategies as st
-from hypothesis import find, given, Settings, Verbosity
+from hypothesis import find, given, settings, Verbosity
 
 
 def test_seeds_off_random():
-    s = Settings(max_shrinks=0, database=None)
+    s = settings(max_shrinks=0, database=None)
     r = random.getstate()
     x = find(st.integers(), lambda x: True, settings=s)
     random.setstate(r)
@@ -35,10 +35,10 @@ def test_seeds_off_random():
 
 def test_nesting_with_control_passes_health_check():
     @given(st.integers(0, 100), st.random_module())
-    @Settings(max_examples=5, database=None)
+    @settings(max_examples=5, database=None)
     def test_blah(x, rnd):
         @given(st.integers())
-        @Settings(
+        @settings(
             max_examples=100, max_shrinks=0, database=None,
             verbosity=Verbosity.quiet)
         def test_nest(y):

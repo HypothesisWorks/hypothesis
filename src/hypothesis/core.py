@@ -36,7 +36,8 @@ from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
     UnsatisfiedAssumption, DefinitelyNoSuchExample, \
     HypothesisDeprecationWarning
 from hypothesis.control import BuildContext
-from hypothesis.settings import Settings, Verbosity, note_deprecation
+from hypothesis._settings import settings as Settings
+from hypothesis._settings import Verbosity, note_deprecation
 from hypothesis.executors import executor, default_executor
 from hypothesis.reporting import report, debug_report, verbose_report, \
     current_verbosity

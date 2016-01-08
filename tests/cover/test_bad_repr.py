@@ -21,25 +21,25 @@ import warnings
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import given, Settings
+from hypothesis import given, settings
 from hypothesis.errors import HypothesisDeprecationWarning
 from hypothesis.internal.compat import PY3, unicode_safe_repr
 from hypothesis.internal.reflection import arg_string
 
-original_profile = Settings.default
+original_profile = settings.default
 
-Settings.register_profile(
-    'nonstrict', Settings(strict=False)
+settings.register_profile(
+    'nonstrict', settings(strict=False)
 )
 
 
 def setup_function(fn):
-    Settings.load_profile('nonstrict')
+    settings.load_profile('nonstrict')
     warnings.simplefilter('always', HypothesisDeprecationWarning)
 
 
 def teardown_function(fn):
-    Settings.load_profile('default')
+    settings.load_profile('default')
     warnings.simplefilter('once', HypothesisDeprecationWarning)
 
 

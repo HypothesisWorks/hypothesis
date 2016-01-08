@@ -20,7 +20,7 @@ from contextlib import contextmanager
 
 from hypothesis import find, given
 from tests.common.utils import fails, capture_out
-from hypothesis.settings import Settings, Verbosity
+from hypothesis._settings import settings, Verbosity
 from hypothesis.reporting import default as default_reporter
 from hypothesis.reporting import with_reporter
 from hypothesis.strategies import basic, lists, tuples, booleans, integers
@@ -31,7 +31,7 @@ from hypothesis.searchstrategy import BasicStrategy
 def capture_verbosity(level):
     with capture_out() as o:
         with with_reporter(default_reporter):
-            with Settings(verbosity=level):
+            with settings(verbosity=level):
                 yield o
 
 
@@ -57,7 +57,7 @@ def test_prints_intermediate_in_success():
 
 def test_reports_differently_for_single_shrink():
     with capture_verbosity(Verbosity.verbose) as o:
-        with Settings(database=None, strict=False):
+        with settings(database=None, strict=False):
             @fails
             @given(basic(SillyStrategy))
             def test_foo(x):
@@ -89,7 +89,7 @@ def test_does_not_log_in_quiet_mode():
 
 def test_includes_progress_in_verbose_mode():
     with capture_verbosity(Verbosity.verbose) as o:
-        with Settings(verbosity=Verbosity.verbose):
+        with settings(verbosity=Verbosity.verbose):
             find(lists(integers()), lambda x: sum(x) >= 1000000)
 
     out = o.getvalue()
@@ -101,7 +101,7 @@ def test_includes_progress_in_verbose_mode():
 def test_prints_initial_attempts_on_find():
 
     with capture_verbosity(Verbosity.verbose) as o:
-        with Settings(verbosity=Verbosity.verbose):
+        with settings(verbosity=Verbosity.verbose):
             seen = []
 
             def not_first(x):

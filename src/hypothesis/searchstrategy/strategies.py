@@ -32,7 +32,7 @@ EFFECTIVELY_INFINITE = 2 ** 32
 
 
 def strategy(spec, settings=None):
-    from hypothesis.settings import note_deprecation
+    from hypothesis._settings import note_deprecation
     note_deprecation(
         'The strategy function is deprecated and will be removed in Hypothesis'
         ' 2.0. Please use the hypothesis.strategies module to construct your '

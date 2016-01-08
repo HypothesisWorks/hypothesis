@@ -19,7 +19,7 @@ from __future__ import division, print_function, absolute_import
 from collections import namedtuple
 
 import hypothesis.strategies as s
-from hypothesis import Settings
+from hypothesis import settings
 from hypothesis.stateful import GenericStateMachine
 from hypothesis.tools.mergedbs import merge_dbs
 from hypothesis.internal.compat import PY26, hrange
@@ -138,5 +138,5 @@ class DatabaseMergingState(GenericStateMachine):
 
 
 TestMerging = DatabaseMergingState.TestCase
-TestMerging.settings = Settings(
+TestMerging.settings = settings(
     TestMerging.settings, timeout=60)

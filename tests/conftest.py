@@ -23,27 +23,28 @@ from tempfile import mkdtemp
 
 import pytest
 
-from hypothesis import Settings
-from hypothesis.settings import set_hypothesis_home_dir
+from hypothesis._settings import settings, set_hypothesis_home_dir
 
 warnings.filterwarnings(u'error', category=UnicodeWarning)
 
 set_hypothesis_home_dir(mkdtemp())
 
-Settings.default.timeout = -1
-Settings.default.strict = True
+assert isinstance(settings, type)
 
-Settings.register_profile(
-    'speedy', Settings(
+settings.default.timeout = -1
+settings.default.strict = True
+
+settings.register_profile(
+    'speedy', settings(
         timeout=1, max_examples=5,
     ))
 
 
-Settings.register_profile(
-    'nonstrict', Settings(strict=False)
+settings.register_profile(
+    'nonstrict', settings(strict=False)
 )
 
-Settings.load_profile(os.getenv('HYPOTHESIS_PROFILE', 'default'))
+settings.load_profile(os.getenv('HYPOTHESIS_PROFILE', 'default'))
 
 
 @pytest.fixture(scope=u'function', autouse=True)

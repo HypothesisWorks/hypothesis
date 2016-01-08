@@ -25,10 +25,10 @@ from hypothesis.internal.compat import PY2, hunichr, WINDOWS, \
 pytest_plugins = str('pytester')
 
 TESTSUITE = """
-from hypothesis import given, Settings, Verbosity
+from hypothesis import given, settings, Verbosity
 from hypothesis.strategies import integers
 
-@given(integers(), settings=Settings(verbosity=Verbosity.verbose))
+@given(integers(), settings=settings(verbosity=Verbosity.verbose))
 def test_should_be_verbose(x):
     pass
 
@@ -50,13 +50,13 @@ def test_output_without_capture(testdir, capture, expected):
 
 UNICODE_EMITTING = """
 import pytest
-from hypothesis import given, Settings, Verbosity
+from hypothesis import given, settings, Verbosity
 from hypothesis.strategies import text
 from hypothesis.internal.compat import PY3
 import sys
 
 def test_emits_unicode():
-    @given(text(), settings=Settings(verbosity=Verbosity.verbose))
+    @given(text(), settings=settings(verbosity=Verbosity.verbose))
     def test_should_emit_unicode(t):
         assert all(ord(c) <= 1000 for c in t)
     with pytest.raises(AssertionError):

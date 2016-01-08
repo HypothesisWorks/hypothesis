@@ -21,20 +21,20 @@ from random import Random
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import given, Settings, strategy, Verbosity
-from hypothesis.settings import HypothesisDeprecationWarning
+from hypothesis import given, settings, strategy, Verbosity
+from hypothesis._settings import HypothesisDeprecationWarning
 from hypothesis.specifiers import just
 from hypothesis.strategies import booleans
 
 
 def test_strategy_still_warns_on_strategies(recwarn):
-    strategy(booleans(), Settings(strict=False))
+    strategy(booleans(), settings(strict=False))
     assert recwarn.pop(DeprecationWarning) is not None
 
 
 def test_given_warns_on_use_of_non_strategies(recwarn):
     @given(bool)
-    @Settings(strict=False)
+    @settings(strict=False)
     def test(x):
         pass
     test()
@@ -43,19 +43,19 @@ def test_given_warns_on_use_of_non_strategies(recwarn):
 
 def test_raises_in_strict_mode():
     with pytest.raises(HypothesisDeprecationWarning):
-        strategy(just(u'test_raises_in_strict_mode'), Settings(strict=True))
+        strategy(just(u'test_raises_in_strict_mode'), settings(strict=True))
 
 
 def test_strategy_warns_on_non_strategies(recwarn):
     strategy(
         just(u'test_strategy_warns_on_non_strategies'),
-        Settings(strict=False))
+        settings(strict=False))
     assert recwarn.pop(DeprecationWarning) is not None
 
 
 def test_given_warns_when_mixing_positional_with_keyword(recwarn):
     @given(booleans(), y=booleans())
-    @Settings(strict=False)
+    @settings(strict=False)
     def test(x, y):
         pass
     test()
@@ -73,7 +73,7 @@ def test_given_does_not_warn_when_using_strategies_directly(recwarn):
 
 
 def test_warnings_are_suppressed_in_quiet_mode(recwarn):
-    strategy(bool, settings=Settings(strict=False, verbosity=Verbosity.quiet))
+    strategy(bool, settings=settings(strict=False, verbosity=Verbosity.quiet))
     with pytest.raises(AssertionError):
         recwarn.pop(DeprecationWarning)
 
@@ -115,3 +115,10 @@ def test_passing_random_is_deprecated():
 
     with pytest.raises(DeprecationWarning):
         a()
+
+
+def test_upper_case_settings_is_deprecated():
+    from hypothesis import Settings
+
+    with pytest.raises(HypothesisDeprecationWarning):
+        Settings()

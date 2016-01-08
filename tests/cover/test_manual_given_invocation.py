@@ -18,7 +18,7 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
-from hypothesis import given, Settings
+from hypothesis import given, settings
 from hypothesis.strategies import booleans, integers
 from hypothesis.internal.compat import getargspec
 
@@ -70,7 +70,7 @@ def test_does_not_convert_unknown_kwargs_into_args():
 
 
 def test_provided_kwargs_are_defaults():
-    @given(hello=booleans(), world=booleans(), settings=Settings(
+    @given(hello=booleans(), world=booleans(), settings=settings(
         strict=False
     ))
     def greet(hello, **kwargs):

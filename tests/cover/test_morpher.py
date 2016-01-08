@@ -20,7 +20,7 @@ from random import Random
 
 import hypothesis.strategies as s
 from flaky import flaky
-from hypothesis import find, given, example, Settings
+from hypothesis import find, given, example, settings
 from hypothesis.control import BuildContext
 from hypothesis.searchstrategy.morphers import MorpherStrategy
 
@@ -36,11 +36,11 @@ def test_can_simplify_through_a_morpher():
 @example(Random(187))
 @example(Random(0))
 @given(s.randoms())
-@Settings(max_examples=10)
+@settings(max_examples=10)
 def test_can_simplify_text_through_a_morpher(rnd):
     m = find(
         morphers, lambda x: bool(x.become(s.text())), random=rnd,
-        settings=Settings(database=None)
+        settings=settings(database=None)
     )
     with BuildContext():
         assert m.become(s.text()) == u'0'
@@ -50,7 +50,7 @@ def test_can_simplify_lists_of_morphers_of_single_type():
     ms = find(
         s.lists(morphers),
         lambda x: sum(t.become(s.integers()) for t in x) >= 100,
-        settings=Settings(database=None)
+        settings=settings(database=None)
     )
 
     with BuildContext():

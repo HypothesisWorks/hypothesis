@@ -23,13 +23,13 @@ from __future__ import division, print_function, absolute_import
 import sys
 import math
 
-from hypothesis import seed, given, assume, Settings
+from hypothesis import seed, given, assume, settings
 from hypothesis.errors import Unsatisfiable
 from tests.common.utils import fails, fails_with
 from hypothesis.strategies import lists, floats, integers
 from hypothesis.searchstrategy.numbers import NastyFloats
 
-TRY_HARDER = Settings(max_examples=1000, max_iterations=2000)
+TRY_HARDER = settings(max_examples=1000, max_iterations=2000)
 
 
 @given(floats())
@@ -155,7 +155,7 @@ def test_floats_are_in_range(x, y, s):
 
     @given(floats(x, y))
     @seed(s)
-    @Settings(max_examples=10)
+    @settings(max_examples=10)
     def test_is_in_range(t):
         assert x <= t <= y
 

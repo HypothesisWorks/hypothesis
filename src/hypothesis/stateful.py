@@ -36,7 +36,8 @@ from hypothesis.core import find
 from hypothesis.errors import Flaky, NoSuchExample, InvalidDefinition, \
     UnsatisfiedAssumption
 from hypothesis.control import BuildContext
-from hypothesis.settings import Settings, Verbosity, note_deprecation
+from hypothesis._settings import settings as Settings
+from hypothesis._settings import Verbosity, note_deprecation
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.internal.reflection import proxies

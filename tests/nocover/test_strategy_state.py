@@ -21,7 +21,7 @@ import hashlib
 from copy import deepcopy
 from random import Random
 
-from hypothesis import find, seed, given, assume, Settings, Verbosity
+from hypothesis import find, seed, given, assume, settings, Verbosity
 from hypothesis.errors import BadData, NoExamples, FailedHealthCheck
 from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import rule, Bundle, RuleBasedStateMachine, \
@@ -127,7 +127,7 @@ class HypothesisSpec(RuleBasedStateMachine):
 
     @rule(strat=strategies, r=integers(), mshr=integers(0, 100))
     def find_constant_failure(self, strat, r, mshr):
-        with Settings(
+        with settings(
             verbosity=Verbosity.quiet, max_examples=1,
             min_satisfying_examples=0,
             database=self.database,
@@ -148,7 +148,7 @@ class HypothesisSpec(RuleBasedStateMachine):
         mex=integers(1, 10), mshr=integers(1, 100)
     )
     def find_weird_failure(self, strat, r, mex, p, mshr):
-        with Settings(
+        with settings(
             verbosity=Verbosity.quiet, max_examples=mex,
             min_satisfying_examples=0,
             database=self.database,
@@ -338,7 +338,7 @@ class HypothesisSpec(RuleBasedStateMachine):
         tempstrat = templates_for(strat)
         n = min(10, strat.template_upper_bound)
         found = []
-        with Settings(verbosity=Verbosity.quiet, timeout=2.0):
+        with settings(verbosity=Verbosity.quiet, timeout=2.0):
             for i in range(n):
                 try:
                     x = find(
@@ -356,7 +356,7 @@ MAIN = __name__ == u'__main__'
 
 TestHypothesis = HypothesisSpec.TestCase
 
-TestHypothesis.settings = Settings(
+TestHypothesis.settings = settings(
     TestHypothesis.settings,
     stateful_step_count=10 if PYPY else 50,
     max_shrinks=500,

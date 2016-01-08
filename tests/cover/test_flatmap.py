@@ -20,7 +20,7 @@ from random import Random
 
 import pytest
 
-from hypothesis import find, given, assume, Settings
+from hypothesis import find, given, assume, settings
 from hypothesis.database import ExampleDatabase
 from hypothesis.strategies import just, text, lists, floats, tuples, \
     booleans, integers, streaming
@@ -34,7 +34,7 @@ OrderedPairs = integers(1, 200).flatmap(
     lambda e: tuples(integers(0, e - 1), just(e))
 )
 
-with Settings(max_examples=200):
+with settings(max_examples=200):
     @given(ConstantLists)
     def test_constant_lists_are_constant(x):
         assume(len(x) >= 3)
@@ -55,7 +55,7 @@ def test_flatmap_retrieve_from_db():
     db = ExampleDatabase()
 
     @given(constant_float_lists)
-    @Settings(database=db)
+    @settings(database=db)
     def record_and_test_size(xs):
         track.append(xs)
         assert sum(xs) < 1
@@ -93,7 +93,7 @@ def test_will_find_a_failure_from_the_database():
         pass
 
     @given(dav_strategy)
-    @Settings(max_examples=10, database=db)
+    @settings(max_examples=10, database=db)
     def nope(x):
         raise Rejected()
     try:

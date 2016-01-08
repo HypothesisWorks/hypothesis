@@ -20,7 +20,7 @@ import math
 from random import Random
 from collections import namedtuple
 
-from hypothesis import Settings
+from hypothesis import settings
 from tests.common.basic import Bitfields, BoringBitfields, \
     simplify_bitfield
 from hypothesis.stateful import StateMachineSearchStrategy
@@ -34,7 +34,7 @@ from hypothesis.internal.compat import hrange, OrderedDict
 from hypothesis.searchstrategy.morphers import MorpherStrategy
 from hypothesis.searchstrategy.narytree import n_ary_tree
 
-with Settings(average_list_length=5.0):
+with settings(average_list_length=5.0):
     TestIntegerRange = strategy_test_suite(integers(min_value=0, max_value=5))
     TestGiantIntegerRange = strategy_test_suite(
         integers(min_value=(-(2 ** 129)), max_value=(2 ** 129))
@@ -198,7 +198,7 @@ with Settings(average_list_length=5.0):
     TestComposite = strategy_test_suite(tight_integer_list())
 
 
-with Settings(average_list_length=5.0, strict=False):
+with settings(average_list_length=5.0, strict=False):
     TestBoringBitfieldsClass = strategy_test_suite(basic(BoringBitfields))
     TestBitfieldsClass = strategy_test_suite(basic(Bitfields))
     TestBitfieldsInstance = strategy_test_suite(basic(Bitfields()))

@@ -22,7 +22,7 @@ from random import Random
 
 import pytest
 
-from hypothesis import find, given, Settings
+from hypothesis import find, given, settings
 from tests.common.basic import Bitfields, BoringBitfields, \
     simplify_bitfield
 from tests.common.utils import fails
@@ -43,11 +43,11 @@ def popcount(x):
 
 
 def setup_function(fn):
-    Settings.load_profile('nonstrict')
+    settings.load_profile('nonstrict')
 
 
 def teardown_function(fn):
-    Settings.load_profile('default')
+    settings.load_profile('default')
 
 
 @pytest.mark.parametrize(u'i', [0, 1, 3, 10, 21, 65, 127])
@@ -117,7 +117,7 @@ def test_cache_is_cleaned_up_on_gc_2():
     assert len(st.reify_cache) == 0, len(st.reify_cache)
 
 
-with Settings(strict=False):
+with settings(strict=False):
     @fails
     @given(basic(BoringBitfields))
     def test_boring_failure(x):
@@ -132,7 +132,7 @@ def test_can_load_a_very_deep_example_from_the_db():
 
     @timeout(2)
     @given(bad_strategy)
-    @Settings(database=ExampleDatabase())
+    @settings(database=ExampleDatabase())
     def oh_noes(x):
         assert x != 1
     with pytest.raises(AssertionError):
@@ -149,7 +149,7 @@ def test_does_not_get_stuck_in_a_loop():
 
     @timeout(2)
     @given(bad_strategy)
-    @Settings(database=None)
+    @settings(database=None)
     def oh_noes(x):
         assert x != 1
     with pytest.raises(AssertionError):
@@ -196,7 +196,7 @@ def test_can_find_distinct_bitfield_representatives(n):
     find(
         lists(basic(Bitfields), min_size=n, unique=True),
         lambda x: True,
-        settings=Settings(max_shrinks=1)
+        settings=settings(max_shrinks=1)
     )
 
 

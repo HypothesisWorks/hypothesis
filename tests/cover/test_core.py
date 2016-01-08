@@ -21,7 +21,7 @@ import time
 import pytest
 
 import hypothesis.strategies as s
-from hypothesis import find, given, assume, Settings
+from hypothesis import find, given, assume, settings
 from hypothesis.errors import NoSuchExample, Unsatisfiable
 from hypothesis.internal.tracker import Tracker
 
@@ -38,7 +38,7 @@ def test_stops_after_max_examples_if_satisfying():
     with pytest.raises(NoSuchExample):
         find(
             s.integers(0, 10000),
-            track, settings=Settings(max_examples=max_examples))
+            track, settings=settings(max_examples=max_examples))
 
     assert len(tracker) == max_examples
 
@@ -56,7 +56,7 @@ def test_stops_after_max_iterations_if_not_satisfying():
     with pytest.raises(Unsatisfiable):
         find(
             s.integers(0, 10000),
-            track, settings=Settings(
+            track, settings=settings(
                 max_examples=max_examples, max_iterations=max_iterations))
 
     # May be less because of duplication
@@ -70,26 +70,26 @@ def test_can_time_out_in_simplify():
     start = time.time()
     find(
         s.lists(s.booleans()), slow_always_true,
-        settings=Settings(timeout=0.1, database=None)
+        settings=settings(timeout=0.1, database=None)
     )
     finish = time.time()
     run_time = finish - start
     assert run_time <= 0.3
 
-some_normal_settings = Settings()
+some_normal_settings = settings()
 
 
 def test_is_not_normally_default():
-    assert Settings.default is not some_normal_settings
+    assert settings.default is not some_normal_settings
 
 
 @given(s.booleans())
 @some_normal_settings
 def test_settings_are_default_in_given(x):
-    assert Settings.default is some_normal_settings
+    assert settings.default is some_normal_settings
 
 
 def test_settings_are_default_in_find():
     find(
-        s.booleans(), lambda x: Settings.default is some_normal_settings,
+        s.booleans(), lambda x: settings.default is some_normal_settings,
         settings=some_normal_settings)

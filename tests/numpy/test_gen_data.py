@@ -21,7 +21,7 @@ import pytest
 
 import hypothesis.strategies as st
 from flaky import flaky
-from hypothesis import find, given, Settings
+from hypothesis import find, given, settings
 from hypothesis.extra.numpy import arrays, from_dtype
 from hypothesis.strategytests import strategy_test_suite
 from hypothesis.internal.compat import text_type, binary_type
@@ -77,7 +77,7 @@ def test_can_minimize_large_arrays_easily():
 def test_can_minimize_float_arrays():
     x = find(
         arrays(float, 50), lambda t: t.sum() >= 1.0,
-        settings=Settings(database=None))
+        settings=settings(database=None))
     assert 1.0 <= x.sum() <= 1.1
 
 

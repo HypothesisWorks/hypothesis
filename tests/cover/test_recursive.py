@@ -20,7 +20,7 @@ import pytest
 
 import hypothesis.strategies as st
 from flaky import flaky
-from hypothesis import find, given, Settings
+from hypothesis import find, given, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.debug import timeout
 from hypothesis.internal.compat import integer_types
@@ -109,7 +109,7 @@ def test_can_use_recursive_data_in_sets(rnd):
             return result
     x = find(
         nested_sets, lambda x: len(flatten(x)) == 2, random=rnd,
-        settings=Settings(database=None))
+        settings=settings(database=None))
     assert x == frozenset((False, True))
 
 
@@ -118,7 +118,7 @@ def test_can_form_sets_of_recursive_data():
         st.booleans(),
         lambda x: st.lists(x, min_size=5).map(tuple),
         max_leaves=10))
-    xs = find(trees, lambda x: len(x) >= 10, settings=Settings(
+    xs = find(trees, lambda x: len(x) >= 10, settings=settings(
         database=None
     ))
     print(xs)
@@ -129,7 +129,7 @@ def test_can_form_sets_of_recursive_data():
 
 @flaky(max_runs=5, min_passes=1)
 @given(st.randoms())
-@Settings(max_examples=10, database=None)
+@settings(max_examples=10, database=None)
 def test_can_simplify_hard_recursive_data_into_boolean_alternative(rnd):
     """This test forces us to exercise the simplification through redrawing
     functionality, thus testing that we can deal with bad templates."""
@@ -149,7 +149,7 @@ def test_can_simplify_hard_recursive_data_into_boolean_alternative(rnd):
         hard(st.integers()) |
         hard(st.booleans()),
         lambda x: len(leaves(x)) >= 3,
-        random=rnd, settings=Settings(database=None, max_examples=5000))
+        random=rnd, settings=settings(database=None, max_examples=5000))
     lvs = leaves(r)
     assert lvs == [False] * 3
     assert all(isinstance(v, bool) for v in lvs), repr(lvs)
@@ -157,7 +157,7 @@ def test_can_simplify_hard_recursive_data_into_boolean_alternative(rnd):
 
 @flaky(max_runs=5, min_passes=1)
 @given(st.randoms())
-@Settings(max_examples=10, database=None)
+@settings(max_examples=10, database=None)
 @timeout(60)
 def test_can_flatmap_to_recursive_data(rnd):
     stuff = st.lists(st.integers(), min_size=1).flatmap(
@@ -174,7 +174,7 @@ def test_can_flatmap_to_recursive_data(rnd):
 
     tree = find(
         stuff, lambda x: sum(flatten(x)) >= 100,
-        settings=Settings(database=None, max_shrinks=2000, max_examples=1000),
+        settings=settings(database=None, max_shrinks=2000, max_examples=1000),
         random=rnd
     )
     flat = flatten(tree)
