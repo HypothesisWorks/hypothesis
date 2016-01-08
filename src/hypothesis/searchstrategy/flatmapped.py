@@ -16,6 +16,9 @@
 
 from __future__ import division, print_function, absolute_import
 
+import functools
+
+from hypothesis.strategies import none
 from hypothesis.settings import Settings
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.internal.strategymethod import strategy
@@ -46,3 +49,28 @@ class FlatMapStrategy(MappedSearchStrategy):
     def pack(self, source_and_morpher):
         source, morpher = source_and_morpher
         return morpher.become(strategy(self.expand(source)))
+
+
+
+
+fail = none().filter(lambda _: False)
+
+
+def _FromGeneratorPump(initiator, prefix=(None,)):
+  it = initiator()
+  for p in prefix:
+    try:
+      last = it.send(p)
+    except StopIteration:
+      return fail
+  if isinstance(last, st.SearchStrategy):
+    return last.flatmap(lambda x: _FromGeneratorPump(initiator, prefix+(x,)))
+  else:
+    return st.just(last)
+
+def FromGenerator(fn):
+  @functools.wraps(fn)
+  def Replacement(*args):
+    return _FromGeneratorPump(functools.partial(fn, *args))
+  return Replacement
+
