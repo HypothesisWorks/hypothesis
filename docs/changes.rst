@@ -31,8 +31,10 @@ Codename: IT COMES
 This release heralds the beginning of a new and terrible age of Hypothesis 2.0.
 
 It's primary purpose is some final deprecations prior to said release. The goal
-is that if your code emits no warnings under this release then it will run
-unchanged under Hypothesis 2.0.
+is that if your code emits no warnings under this release then it will probably run
+unchanged under Hypothesis 2.0 (there are some caveats to this: 2.0 will drop
+support for some Python versions, and if you're using internal APIs then as usual
+that may break without warning).
 
 It does have two new features:
 
