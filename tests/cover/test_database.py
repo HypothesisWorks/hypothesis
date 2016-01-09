@@ -95,7 +95,6 @@ backend_format_pairs = (
 
 settings = hs.settings(
     max_examples=500,
-    average_list_length=3.0,
 )
 
 

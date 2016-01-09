@@ -34,168 +34,176 @@ from hypothesis.internal.compat import hrange, OrderedDict
 from hypothesis.searchstrategy.morphers import MorpherStrategy
 from hypothesis.searchstrategy.narytree import n_ary_tree
 
-with settings(average_list_length=5.0):
-    TestIntegerRange = strategy_test_suite(integers(min_value=0, max_value=5))
-    TestGiantIntegerRange = strategy_test_suite(
-        integers(min_value=(-(2 ** 129)), max_value=(2 ** 129))
+TestIntegerRange = strategy_test_suite(integers(min_value=0, max_value=5))
+TestGiantIntegerRange = strategy_test_suite(
+    integers(min_value=(-(2 ** 129)), max_value=(2 ** 129))
+)
+TestFloatRange = strategy_test_suite(floats(min_value=0.5, max_value=10))
+TestSampled10 = strategy_test_suite(sampled_from(elements=list(range(10))))
+TestSampled1 = strategy_test_suite(sampled_from(elements=(1,)))
+TestSampled2 = strategy_test_suite(sampled_from(elements=(1, 2)))
+
+TestIntegersFrom = strategy_test_suite(integers(min_value=13))
+TestIntegersFrom = strategy_test_suite(integers(min_value=1 << 1024))
+
+TestOneOf = strategy_test_suite(one_of(
+    integers(), integers(), booleans()))
+
+TestOneOfSameType = strategy_test_suite(
+    one_of(
+        integers(min_value=1, max_value=10),
+        integers(min_value=8, max_value=15),
     )
-    TestFloatRange = strategy_test_suite(floats(min_value=0.5, max_value=10))
-    TestSampled10 = strategy_test_suite(sampled_from(elements=list(range(10))))
-    TestSampled1 = strategy_test_suite(sampled_from(elements=(1,)))
-    TestSampled2 = strategy_test_suite(sampled_from(elements=(1, 2)))
+)
 
-    TestIntegersFrom = strategy_test_suite(integers(min_value=13))
-    TestIntegersFrom = strategy_test_suite(integers(min_value=1 << 1024))
+TestRandom = strategy_test_suite(randoms())
+TestInts = strategy_test_suite(integers())
+TestBoolLists = strategy_test_suite(lists(booleans(), average_size=5.0))
+TestDictionaries = strategy_test_suite(
+    dictionaries(keys=tuples(integers(), integers()), values=booleans()))
+TestOrderedDictionaries = strategy_test_suite(
+    dictionaries(
+        keys=integers(), values=integers(), dict_class=OrderedDict))
+TestString = strategy_test_suite(text())
+BinaryString = strategy_test_suite(binary())
+TestIntBool = strategy_test_suite(tuples(integers(), booleans()))
+TestFloats = strategy_test_suite(floats())
+TestComplex = strategy_test_suite(complex_numbers())
+TestJust = strategy_test_suite(just(u'hi'))
+TestTemplates = strategy_test_suite(templates_for(sets(integers())))
 
-    TestOneOf = strategy_test_suite(one_of(
-        integers(), integers(), booleans()))
+TestEmptyString = strategy_test_suite(text(alphabet=u''))
+TestSingleString = strategy_test_suite(
+    text(alphabet=u'a', average_size=10.0))
+TestManyString = strategy_test_suite(text(alphabet=u'abcdef☃'))
 
-    TestOneOfSameType = strategy_test_suite(
-        one_of(
-            integers(min_value=1, max_value=10),
-            integers(min_value=8, max_value=15),
-        )
+Stuff = namedtuple(u'Stuff', (u'a', u'b'))
+TestNamedTuple = strategy_test_suite(
+    builds(Stuff, integers(), integers()))
+
+TestMixedSets = strategy_test_suite(sets(
+    one_of(integers(), booleans(), floats())))
+TestFrozenSets = strategy_test_suite(frozensets(booleans()))
+
+TestNestedSets = strategy_test_suite(
+    frozensets(frozensets(integers(), max_size=2)))
+
+TestMisc1 = strategy_test_suite(fixed_dictionaries(
+    {(2, -374): frozensets(none())}))
+TestMisc2 = strategy_test_suite(fixed_dictionaries(
+    {b'': frozensets(integers())}))
+TestMisc3 = strategy_test_suite(tuples(sets(none() | text())))
+
+TestEmptyTuple = strategy_test_suite(tuples())
+TestEmptyList = strategy_test_suite(lists(max_size=0))
+TestEmptySet = strategy_test_suite(sets(max_size=0))
+TestEmptyFrozenSet = strategy_test_suite(frozensets(max_size=0))
+TestEmptyDict = strategy_test_suite(fixed_dictionaries({}))
+
+TestDecimal = strategy_test_suite(decimals())
+TestFraction = strategy_test_suite(fractions())
+
+TestNonEmptyLists = strategy_test_suite(
+    lists(integers(), average_size=5.0).filter(bool)
+)
+
+TestNoneLists = strategy_test_suite(lists(none(), average_size=5.0))
+
+TestConstantLists = strategy_test_suite(
+    integers().flatmap(lambda i: lists(just(i), average_size=5.0))
+)
+
+TestListsWithUniqueness = strategy_test_suite(
+    lists(
+        lists(integers(), average_size=5.0),
+        average_size=5.0,
+        unique_by=lambda x: tuple(sorted(x)))
+)
+
+TestOrderedPairs = strategy_test_suite(
+    integers(min_value=1, max_value=200).flatmap(
+        lambda e: tuples(integers(min_value=0, max_value=e - 1), just(e))
     )
-    TestRandom = strategy_test_suite(randoms())
-    TestInts = strategy_test_suite(integers())
-    TestBoolLists = strategy_test_suite(lists(booleans()))
-    TestDictionaries = strategy_test_suite(
-        dictionaries(keys=tuples(integers(), integers()), values=booleans()))
-    TestOrderedDictionaries = strategy_test_suite(
-        dictionaries(
-            keys=integers(), values=integers(), dict_class=OrderedDict))
-    TestString = strategy_test_suite(text())
-    BinaryString = strategy_test_suite(binary())
-    TestIntBool = strategy_test_suite(tuples(integers(), booleans()))
-    TestFloats = strategy_test_suite(floats())
-    TestComplex = strategy_test_suite(complex_numbers())
-    TestJust = strategy_test_suite(just(u'hi'))
-    TestTemplates = strategy_test_suite(templates_for(sets(integers())))
+)
 
-    TestEmptyString = strategy_test_suite(text(alphabet=u''))
-    TestSingleString = strategy_test_suite(
-        text(alphabet=u'a', average_size=10.0))
-    TestManyString = strategy_test_suite(text(alphabet=u'abcdef☃'))
+TestMappedSampling = strategy_test_suite(
+    lists(integers(), min_size=1, average_size=5.0).flatmap(sampled_from)
+)
 
-    Stuff = namedtuple(u'Stuff', (u'a', u'b'))
-    TestNamedTuple = strategy_test_suite(
-        builds(Stuff, integers(), integers()))
+TestDiverseFlatmap = strategy_test_suite(
+    sampled_from((
+        lists(integers(), average_size=5.0),
+        lists(text(), average_size=5.0), tuples(text(), text()),
+        booleans(), lists(complex_numbers())
+    )).flatmap(lambda x: x)
+)
 
-    TestMixedSets = strategy_test_suite(sets(
-        one_of(integers(), booleans(), floats())))
-    TestFrozenSets = strategy_test_suite(frozensets(booleans()))
 
-    TestNestedSets = strategy_test_suite(
-        frozensets(frozensets(integers(), max_size=2)))
+def integers_from(x):
+    return integers(min_value=x)
 
-    TestMisc1 = strategy_test_suite(fixed_dictionaries(
-        {(2, -374): frozensets(none())}))
-    TestMisc2 = strategy_test_suite(fixed_dictionaries(
-        {b'': frozensets(integers())}))
-    TestMisc3 = strategy_test_suite(tuples(sets(none() | text())))
+TestManyFlatmaps = strategy_test_suite(
+    integers()
+    .flatmap(integers_from)
+    .flatmap(integers_from)
+    .flatmap(integers_from)
+    .flatmap(integers_from)
+)
 
-    TestEmptyTuple = strategy_test_suite(tuples())
-    TestEmptyList = strategy_test_suite(lists(max_size=0))
-    TestEmptySet = strategy_test_suite(sets(max_size=0))
-    TestEmptyFrozenSet = strategy_test_suite(frozensets(max_size=0))
-    TestEmptyDict = strategy_test_suite(fixed_dictionaries({}))
+TestBareMorphers = strategy_test_suite(MorpherStrategy())
+TestMasqueradingMorphers = strategy_test_suite(
+    MorpherStrategy().map(lambda m: m.become(
+        lists(integers(), average_size=5.0))))
 
-    TestDecimal = strategy_test_suite(decimals())
-    TestFraction = strategy_test_suite(fractions())
+TestIntStreams = strategy_test_suite(streaming(integers()))
+TestStreamLists = strategy_test_suite(streaming(integers()))
+TestIntStreamStreams = strategy_test_suite(
+    streaming(streaming(integers())))
 
-    TestNonEmptyLists = strategy_test_suite(
-        lists(integers()).filter(bool)
+TestRecursiveLowLeaves = strategy_test_suite(
+    recursive(
+        booleans(),
+        lambda x: tuples(x, x),
+        max_leaves=3,
     )
+)
 
-    TestNoneLists = strategy_test_suite(lists(none()))
-
-    TestConstantLists = strategy_test_suite(
-        integers().flatmap(lambda i: lists(just(i)))
+TestRecursiveHighLeaves = strategy_test_suite(
+    recursive(
+        booleans(),
+        lambda x: lists(x, min_size=2, max_size=10),
+        max_leaves=200,
     )
+)
 
-    TestListsWithUniqueness = strategy_test_suite(
-        lists(lists(integers()), unique_by=lambda x: tuple(sorted(x))))
+TestJSON = strategy_test_suite(
+    recursive(
+        floats().filter(lambda f: not math.isnan(f) or math.isinf(f)) |
+        text() | booleans() | none(),
+        lambda js:
+            lists(js, average_size=2) |
+            dictionaries(text(), js, average_size=2),
+        max_leaves=10))
 
-    TestOrderedPairs = strategy_test_suite(
-        integers(min_value=1, max_value=200).flatmap(
-            lambda e: tuples(integers(min_value=0, max_value=e - 1), just(e))
-        )
+TestWayTooClever = strategy_test_suite(
+    recursive(
+        frozensets(integers(), min_size=1),
+        lambda x: frozensets(x, min_size=2, max_size=4)).flatmap(
+        sampled_from
     )
-
-    TestMappedSampling = strategy_test_suite(
-        lists(integers(), min_size=1).flatmap(sampled_from)
-    )
-
-    TestDiverseFlatmap = strategy_test_suite(
-        sampled_from((
-            lists(integers()), lists(text()), tuples(text(), text()),
-            booleans(), lists(complex_numbers())
-        )).flatmap(lambda x: x)
-    )
-
-    def integers_from(x):
-        return integers(min_value=x)
-
-    TestManyFlatmaps = strategy_test_suite(
-        integers()
-        .flatmap(integers_from)
-        .flatmap(integers_from)
-        .flatmap(integers_from)
-        .flatmap(integers_from)
-    )
-
-    TestBareMorphers = strategy_test_suite(MorpherStrategy())
-    TestMasqueradingMorphers = strategy_test_suite(
-        MorpherStrategy().map(lambda m: m.become(lists(integers()))))
-
-    TestIntStreams = strategy_test_suite(streaming(integers()))
-    TestStreamLists = strategy_test_suite(streaming(integers()))
-    TestIntStreamStreams = strategy_test_suite(
-        streaming(streaming(integers())))
-
-    TestRecursiveLowLeaves = strategy_test_suite(
-        recursive(
-            booleans(),
-            lambda x: tuples(x, x),
-            max_leaves=3,
-        )
-    )
-
-    TestRecursiveHighLeaves = strategy_test_suite(
-        recursive(
-            booleans(),
-            lambda x: lists(x, min_size=2, max_size=10),
-            max_leaves=200,
-        )
-    )
-
-    TestJSON = strategy_test_suite(
-        recursive(
-            floats().filter(lambda f: not math.isnan(f) or math.isinf(f)) |
-            text() | booleans() | none(),
-            lambda js:
-                lists(js, average_size=2) |
-                dictionaries(text(), js, average_size=2),
-            max_leaves=10))
-
-    TestWayTooClever = strategy_test_suite(
-        recursive(
-            frozensets(integers(), min_size=1),
-            lambda x: frozensets(x, min_size=2, max_size=4)).flatmap(
-            sampled_from
-        )
-    )
-
-    @composite
-    def tight_integer_list(draw):
-        x = draw(integers())
-        y = draw(integers(min_value=x))
-        return draw(lists(integers(min_value=x, max_value=y)))
-
-    TestComposite = strategy_test_suite(tight_integer_list())
+)
 
 
-with settings(average_list_length=5.0, strict=False):
+@composite
+def tight_integer_list(draw):
+    x = draw(integers())
+    y = draw(integers(min_value=x))
+    return draw(lists(integers(min_value=x, max_value=y)))
+
+TestComposite = strategy_test_suite(tight_integer_list())
+
+
+with settings(strict=False):
     TestBoringBitfieldsClass = strategy_test_suite(basic(BoringBitfields))
     TestBitfieldsClass = strategy_test_suite(basic(Bitfields))
     TestBitfieldsInstance = strategy_test_suite(basic(Bitfields()))
@@ -205,7 +213,8 @@ with settings(average_list_length=5.0, strict=False):
             generate=lambda r, p: r.getrandbits(128),
             simplify=simplify_bitfield,
             copy=lambda x: x,
-        )
+        ),
+        average_size=5.0,
     ))
 
     TestBitfieldsSet = strategy_test_suite(sets(

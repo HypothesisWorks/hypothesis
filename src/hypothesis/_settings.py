@@ -94,7 +94,7 @@ class SettingsMeta(type):
     def default(self, value):
         if default_variable.value is not None:
             note_deprecation(
-                'Assigning the default settings has been deprecated and will '
+                'Assigning the default settings has been deprecation and will '
                 'be removed in Hypothesis 2.0. Consider using profiles',
                 value
             )
@@ -137,6 +137,7 @@ class settings(SettingsMeta('settings', (object,), {})):
     ):
         self._construction_complete = False
         self._database = kwargs.pop(u'database', not_set)
+        explicit_kwargs = list(kwargs)
         defaults = parent or settings.default
         if defaults is not None:
             for setting in all_settings.values():
@@ -151,6 +152,10 @@ class settings(SettingsMeta('settings', (object,), {})):
             setattr(self, name, value)
         self.storage = threading.local()
         self._construction_complete = True
+        for k in explicit_kwargs:
+            deprecation = all_settings[k].deprecation
+            if deprecation:
+                note_deprecation(deprecation, self)
 
     def defaults_stack(self):
         try:
@@ -164,7 +169,9 @@ class settings(SettingsMeta('settings', (object,), {})):
         return test
 
     @classmethod
-    def define_setting(cls, name, description, default, options=None):
+    def define_setting(
+        cls, name, description, default, options=None, deprecation=None,
+    ):
         """Add a new setting.
 
         - name is the name of the property that will be used to access the
@@ -177,9 +184,9 @@ class settings(SettingsMeta('settings', (object,), {})):
         """
         if settings.__definitions_are_locked:
             note_deprecation(
-                'Defining additional settings has been deprecated and will be '
-                'removed in Hypothesis 2.0. Consider managing your settings '
-                'separately.', settings.default
+                'Defining additional settings has been deprecation and will '
+                'be removed in Hypothesis 2.0. Consider managing your '
+                'settings separately.', settings.default
             )
         if options is not None:
             options = tuple(options)
@@ -191,7 +198,7 @@ class settings(SettingsMeta('settings', (object,), {})):
                 )
 
         all_settings[name] = Setting(
-            name, description.strip(), default, options)
+            name, description.strip(), default, options, deprecation)
         setattr(settings, name, SettingsProperty(name))
         if settings.default:
             setattr(settings.default, name, default)
@@ -220,8 +227,8 @@ class settings(SettingsMeta('settings', (object,), {})):
                 )
             if self._construction_complete:
                 note_deprecation(
-                    'Mutability of settings is deprecated and will go away in '
-                    'Hypothesis 2.0',
+                    'Mutability of settings is deprecation and will go away '
+                    'in Hypothesis 2.0',
                     self,
                 )
             return object.__setattr__(self, name, value)
@@ -312,7 +319,8 @@ class settings(SettingsMeta('settings', (object,), {})):
 
 
 Setting = namedtuple(
-    u'Setting', (u'name', u'description', u'default', u'options'))
+    u'Setting', (
+        u'name', u'description', u'default', u'options', 'deprecation'))
 
 
 settings.define_setting(
@@ -481,7 +489,10 @@ Number of steps to run a stateful program for before giving up on it breaking.
 settings.define_setting(
     u'average_list_length',
     default=25.0,
-    description=u'Average length of lists to use'
+    description=u'Average length of lists to use',
+    deprecation=(
+        'average_list_length has been deprecated. Please specify '
+        'average_size explicitly for strategies that need it.')
 )
 
 settings.define_setting(
@@ -499,7 +510,7 @@ class Settings(settings):
     def __init__(self, *args, **kwargs):
         super(Settings, self).__init__(*args, **kwargs)
         note_deprecation(
-            'Use of Settings is deprecated. The new name is settings. The '
+            'Use of Settings is deprecation. The new name is settings. The '
             'behaviour is otherwise unchanged.', self
         )
 

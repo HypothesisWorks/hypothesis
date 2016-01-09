@@ -170,7 +170,6 @@ def strategy_test_suite(
         max_examples=max_examples,
         max_iterations=max_examples * 2,
         min_satisfying_examples=2,
-        average_list_length=2.0,
     )
     random = random or Random()
     strat = strategy(specifier, settings)
@@ -275,7 +274,6 @@ def strategy_test_suite(
                 database=db,
                 max_examples=max_examples,
                 min_satisfying_examples=2,
-                average_list_length=2.0,
             )
             @seed(s)
             def nope(x):

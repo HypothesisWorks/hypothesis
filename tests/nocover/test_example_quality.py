@@ -424,10 +424,9 @@ def test_decreasing_string_sequence():
 @flaky(max_runs=5, min_passes=1)
 def test_small_sum_lists():
     xs = minimal(
-        lists(floats()),
+        lists(floats(), average_size=200),
         lambda x:
             len(x) >= 100 and sum(t for t in x if float(u'inf') > t >= 0) >= 1,
-        settings=settings(average_list_length=200),
         timeout_after=60,
     )
     assert 1.0 <= sum(t for t in xs if t >= 0) <= 1.5

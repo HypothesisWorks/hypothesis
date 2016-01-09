@@ -48,7 +48,7 @@ ordered_pair = integers().flatmap(
 
 def constant_list(strat):
     return strat.flatmap(
-        lambda v: lists(just(v)),
+        lambda v: lists(just(v), average_size=10),
     )
 
 
@@ -60,7 +60,7 @@ ABC = namedtuple(u'ABC', (u'a', u'b', u'c'))
 def abc(x, y, z):
     return builds(ABC, x, y, z)
 
-with settings(average_list_length=10.0, strict=False):
+with settings(strict=False):
     standard_types = [
         basic(Bitfields),
         EvalledIntStream,
@@ -94,7 +94,7 @@ with settings(average_list_length=10.0, strict=False):
         complex_numbers(),
         fractions(),
         decimals(),
-        lists(lists(booleans())),
+        lists(lists(booleans(), average_size=10), average_size=10),
         lists(lists(booleans(), average_size=100)),
         lists(floats(0.0, 0.0), average_size=1.0),
         ordered_pair, constant_list(integers()),

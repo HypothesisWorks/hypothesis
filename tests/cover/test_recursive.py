@@ -92,7 +92,7 @@ def test_recursive_call_validates_expand_returns_strategies():
 def test_can_use_recursive_data_in_sets(rnd):
     nested_sets = st.recursive(
         st.booleans(),
-        lambda js: st.frozensets(js),
+        lambda js: st.frozensets(js, average_size=2.0),
         max_leaves=10
     )
     nested_sets.example()

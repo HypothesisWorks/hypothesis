@@ -19,7 +19,6 @@ from __future__ import division, print_function, absolute_import
 from contextlib import contextmanager
 
 from hypothesis.errors import BadTemplateDraw
-from hypothesis._settings import settings
 from hypothesis.searchstrategy.wrappers import WrapperStrategy
 from hypothesis.searchstrategy.strategies import OneOfStrategy
 
@@ -61,14 +60,13 @@ class RecursiveStrategy(WrapperStrategy):
         self.base = TemplateLimitedStrategy(base)
         self.extend = extend
 
-        with settings(average_list_length=2):
-            strategies = [self.base, self.extend(self.base)]
-            while 2 ** len(strategies) <= max_leaves:
-                strategies.append(
-                    extend(OneOfStrategy(tuple(strategies))))
-            super(RecursiveStrategy, self).__init__(
-                OneOfStrategy(tuple(strategies))
-            )
+        strategies = [self.base, self.extend(self.base)]
+        while 2 ** len(strategies) <= max_leaves:
+            strategies.append(
+                extend(OneOfStrategy(tuple(strategies))))
+        super(RecursiveStrategy, self).__init__(
+            OneOfStrategy(tuple(strategies))
+        )
 
     def draw_template(self, random, pv):
         try:
