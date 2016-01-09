@@ -21,6 +21,56 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+
+-------------------
+1.19.0 - 2016-01-09
+-------------------
+
+Codename: IT COMES
+
+This release heralds the beginning of a new and terrible age of Hypothesis 2.0.
+
+It's primary purpose is some final deprecations prior to said release. The goal
+is that if your code emits no warnings under this release then it will run
+unchanged under Hypothesis 2.0.
+
+It does have two new features:
+
+* New @seed() decorator which allows you to manually seed a test. This may be
+  harmlessly combined with and overrides the derandomize setting.
+* settings objects may now be used as a decorator to fix those settings to a
+  particular @given test.
+
+API changes (old usage still works but is deprecated):
+
+* Settings has been renamed to settings (lower casing) in order to make the
+  decorator usage more natural.
+* Functions for the storage directory that were in hypothesis.settings are now
+  in a new hypothesis.configuration module.
+
+Additional deprecations:
+
+* the average_list_length setting has been deprecated in favour of being
+  explicit.
+* the basic() strategy has been deprecated as it is impossible to support
+  it under a Conjecture based model, which will hopefully be implemented at
+  some point in the 2.x series.
+* the n_ary_tree strategy (which was never actually part of the public API)
+  has been deprecated.
+* Passing settings or random as keyword arguments to given is deprecated (use
+  the new functionality instead)
+
+
+Bug fixes:
+
+* No longer emit PendingDeprecationWarning for __iter__ and StopIteration in
+  streaming() values.
+* When running in health check mode with non strict, don't print quite so
+  many errors for an exception in reify.
+* When an assumption made in a test or a filter is flaky, tests will now
+  raise Flaky instead of UnsatisfiedAssumption.
+
+
 -----------------------------------------------------------------------
 `1.18.1 <https://hypothesis.readthedocs.org/en/1.18.0/>`_ - 2015-12-22
 -----------------------------------------------------------------------
