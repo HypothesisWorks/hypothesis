@@ -37,17 +37,17 @@ from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
     HypothesisDeprecationWarning
 from hypothesis.control import BuildContext
 from hypothesis._settings import settings as Settings
-from hypothesis._settings import Verbosity, note_deprecation
+from hypothesis._settings import Verbosity
 from hypothesis.executors import executor, default_executor
 from hypothesis.reporting import report, debug_report, verbose_report, \
     current_verbosity
-from hypothesis.internal.compat import hrange, qualname, getargspec, \
-    unicode_safe_repr
+from hypothesis.internal.compat import qualname, getargspec
 from hypothesis.internal.tracker import Tracker
 from hypothesis.internal.reflection import arg_string, impersonate, \
     copy_argspec, function_digest, fully_qualified_name, \
     convert_positional_arguments, get_pretty_function_description
 from hypothesis.internal.examplesource import ParameterSource
+from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
 def new_random():
@@ -139,11 +139,11 @@ def find_satisfying_template(
                 random, parameter
             )
         except BadTemplateDraw:
-            debug_report(u'Failed attempt to draw a template')
+            debug_report('Failed attempt to draw a template')
             parameter_source.mark_bad()
             continue
         if tracker.track(example) > 1:
-            debug_report(u'Skipping duplicate example')
+            debug_report('Skipping duplicate example')
             parameter_source.mark_bad()
             continue
         try:
@@ -166,17 +166,17 @@ def find_satisfying_template(
     elif satisfying_examples < min_satisfying_examples:
         if timed_out:
             raise Timeout((
-                u'Ran out of time before finding a satisfying example for '
-                u'%s. Only found %d examples (%d satisfying assumptions) in ' +
-                u'%.2fs.'
+                'Ran out of time before finding a satisfying example for '
+                '%s. Only found %d examples (%d satisfying assumptions) in ' +
+                '%.2fs.'
             ) % (
                 get_pretty_function_description(condition),
                 len(tracker), satisfying_examples, run_time
             ))
         else:
             raise Unsatisfiable((
-                u'Unable to satisfy assumptions of hypothesis %s. ' +
-                u'Only %d out of %d examples considered satisfied assumptions'
+                'Unable to satisfy assumptions of hypothesis %s. ' +
+                'Only %d out of %d examples considered satisfied assumptions'
             ) % (
                 get_pretty_function_description(condition),
                 satisfying_examples, len(tracker)))
@@ -220,20 +220,20 @@ def simplify_template_such_that(
         changed = False
         warmup += 1
         if warmup < max_warmup:
-            debug_report(u'Running warmup simplification round %d' % (
+            debug_report('Running warmup simplification round %d' % (
                 warmup
             ))
         elif warmup == max_warmup:
-            debug_report(u'Warmup is done. Moving on to fully simplifying')
+            debug_report('Warmup is done. Moving on to fully simplifying')
 
         any_simplifiers = False
         for simplify in search_strategy.simplifiers(random, t):
-            debug_report(u'Applying simplification pass %s' % (
+            debug_report('Applying simplification pass %s' % (
                 simplify.__name__,
             ))
             any_simplifiers = True
             any_shrinks = False
-            while True:
+            while successful_shrinks < settings.max_shrinks:
                 simpler = simplify(random, t)
                 if warmup < max_warmup:
                     simpler = islice(simpler, warmup)
@@ -243,8 +243,8 @@ def simplify_template_such_that(
                         return
                     if tracker.track(s) > 1:
                         debug_report(
-                            u'Skipping simplifying to duplicate %s' % (
-                                unicode_safe_repr(s),
+                            'Skipping simplifying to duplicate %s' % (
+                                repr(s),
                             ))
                         continue
                     try:
@@ -261,12 +261,10 @@ def simplify_template_such_that(
                 else:
                     break
             if not any_shrinks:
-                debug_report(u'No shrinks possible')
-            if successful_shrinks >= settings.max_shrinks:
-                break
+                debug_report('No shrinks possible')
         if not any_simplifiers:
-            debug_report(u'No simplifiers for template %s' % (
-                unicode_safe_repr(t),
+            debug_report('No simplifiers for template %s' % (
+                repr(t),
             ))
             break
 
@@ -302,12 +300,12 @@ def best_satisfying_template(
         if storage is not None:
             storage.save(satisfying_example, search_strategy)
         if not successful_shrinks:
-            verbose_report(u'Could not shrink example')
+            verbose_report('Could not shrink example')
         elif successful_shrinks == 1:
-            verbose_report(u'Successfully shrunk example once')
+            verbose_report('Successfully shrunk example once')
         else:
             verbose_report(
-                u'Successfully shrunk example %d times' % (
+                'Successfully shrunk example %d times' % (
                     successful_shrinks,))
         return satisfying_example
 
@@ -319,23 +317,21 @@ def test_is_flaky(test, expected_repr):
         if text_repr == expected_repr:
             raise Flaky(
                 (
-                    u'Hypothesis %s(%s) produces unreliable results: Falsified'
-                    u' on the first call but did not on a subsequent one'
+                    'Hypothesis %s(%s) produces unreliable results: Falsified'
+                    ' on the first call but did not on a subsequent one'
                 ) % (test.__name__, text_repr,))
         else:
             raise Flaky(
                 (
-                    u'Hypothesis %s produces unreliable results: Falsified'
-                    u' on the first call but did not on a subsequent one.'
-                    u' This is possibly due to unreliable values, which may '
-                    u'be a bug in the strategy.\nCall 1: %s\nCall 2: %s\n'
+                    'Hypothesis %s produces unreliable results: Falsified'
+                    ' on the first call but did not on a subsequent one.'
+                    ' This is possibly due to unreliable values, which may '
+                    'be a bug in the strategy.\nCall 1: %s\nCall 2: %s\n'
                 ) % (test.__name__, expected_repr, text_repr,))
     return test_or_flaky
 
 
-HypothesisProvided = namedtuple(u'HypothesisProvided', (u'value,'))
-
-Example = namedtuple(u'Example', (u'args', u'kwargs'))
+Example = namedtuple('Example', ('args', 'kwargs'))
 
 
 def example(*args, **kwargs):
@@ -343,15 +339,15 @@ def example(*args, **kwargs):
     test."""
     if args and kwargs:
         raise InvalidArgument(
-            u'Cannot mix positional and keyword arguments for examples'
+            'Cannot mix positional and keyword arguments for examples'
         )
     if not (args or kwargs):
         raise InvalidArgument(
-            u'An example must provide at least one argument'
+            'An example must provide at least one argument'
         )
 
     def accept(test):
-        if not hasattr(test, u'hypothesis_explicit_examples'):
+        if not hasattr(test, 'hypothesis_explicit_examples'):
             test.hypothesis_explicit_examples = []
         test.hypothesis_explicit_examples.append(Example(tuple(args), kwargs))
         return test
@@ -369,11 +365,11 @@ def reify_and_execute(
             text_version = arg_string(test, args, kwargs)
             if print_example:
                 report(
-                    lambda: u'Falsifying example: %s(%s)' % (
+                    lambda: 'Falsifying example: %s(%s)' % (
                         test.__name__, text_version,))
             elif current_verbosity() >= Verbosity.verbose:
                 report(
-                    lambda: u'Trying example: %s(%s)' % (
+                    lambda: 'Trying example: %s(%s)' % (
                         test.__name__, text_version))
             if record_repr is not None:
                 record_repr[0] = text_version
@@ -406,11 +402,6 @@ def given(*generator_arguments, **generator_kwargs):
 
     """
     def run_test_with_generator(test):
-        # Keyword only arguments but actually supported in the full range of
-        # pythons Hypothesis handles. pop so we don't later pick these up as
-        # if they were keyword specifiers for data to pass to the test.
-        _provided_random = generator_kwargs.pop(u'random', None)
-        _settings = generator_kwargs.pop(u'settings', None)
         original_argspec = getargspec(test)
 
         def invalid(message):
@@ -420,91 +411,67 @@ def given(*generator_arguments, **generator_kwargs):
 
         if not (generator_arguments or generator_kwargs):
             return invalid(
-                u'given must be called with at least one argument')
+                'given must be called with at least one argument')
 
-        if generator_arguments and original_argspec.varargs:
+        if (
+            generator_arguments and (
+                original_argspec.varargs or original_argspec.keywords)
+        ):
             return invalid(
-                u'varargs are not supported with positional arguments to '
-                u'@given'
+                'varargs or keywords are not supported with positional '
+                'arguments to @given'
+            )
+
+        if (
+            len(generator_arguments) > len(original_argspec.args)
+        ):
+            return invalid((
+                'Too many positional arguments for %s() (got %d but'
+                ' expected at most %d') % (
+                    test.__name__, len(generator_arguments),
+                    len(original_argspec.args)))
+
+        if generator_arguments and generator_kwargs:
+            return invalid(
+                'cannot mix positional and keyword arguments to @given'
             )
         extra_kwargs = [
             k for k in generator_kwargs if k not in original_argspec.args]
         if extra_kwargs and not original_argspec.keywords:
             return invalid(
-                u'%s() got an unexpected keyword argument %r' % (
+                '%s() got an unexpected keyword argument %r' % (
                     test.__name__,
                     extra_kwargs[0]
                 ))
-        if (
-            len(generator_arguments) > len(original_argspec.args)
-        ):
-            return invalid((
-                u'Too many positional arguments for %s() (got %d but'
-                u' expected at most %d') % (
-                    test.__name__, len(generator_arguments),
-                    len(original_argspec.args)))
         arguments = original_argspec.args
-        specifiers = list(generator_arguments)
-        seen_kwarg = None
         for a in arguments:
             if isinstance(a, list):  # pragma: no cover
                 return invalid((
-                    u'Cannot decorate function %s() because it has '
-                    u'destructuring arguments') % (
+                    'Cannot decorate function %s() because it has '
+                    'destructuring arguments') % (
                         test.__name__,
                 ))
-            if a in generator_kwargs:
-                seen_kwarg = seen_kwarg or a
-                specifiers.append(generator_kwargs[a])
-            else:
-                if seen_kwarg is not None:
-                    return invalid((
-                        u'Argument %s comes after keyword %s which has been '
-                        u'specified, but does not itself have a '
-                        u'specification') % (
-                        a, seen_kwarg
-                    ))
+        if original_argspec.defaults:
+            return invalid(
+                'Cannot apply @given to a function with defaults.'
+            )
+        for name, strategy in zip(
+            arguments[-len(generator_arguments):], generator_arguments
+        ):
+            generator_kwargs[name] = strategy
 
         argspec = inspect.ArgSpec(
-            args=arguments,
+            args=[a for a in arguments if a not in generator_kwargs],
             keywords=original_argspec.keywords,
             varargs=original_argspec.varargs,
-            defaults=tuple(map(HypothesisProvided, specifiers))
+            defaults=None
         )
-
-        unused_kwargs = {}
-        for k in extra_kwargs:
-            unused_kwargs[k] = HypothesisProvided(generator_kwargs[k])
-
-        hypothesis_owned_arguments = [
-            argspec.args[-1 - i] for i in hrange(len(argspec.defaults))
-        ] + list(unused_kwargs)
 
         @impersonate(test)
         @copy_argspec(
             test.__name__, argspec
         )
         def wrapped_test(*arguments, **kwargs):
-            if _provided_random is not None:
-                note_deprecation(
-                    'Passing random as an argument to @given is deprecated. '
-                    'use the @seed() API to pass an explicit seed instead.',
-                    _settings or getattr(
-                        test, '_hypothesis_internal_use_settings', None))
-            if _settings is not None:
-                note_deprecation(
-                    'Passing settings as an argument to @given is deprecated. '
-                    'use Settings as a decorator directly instead.',
-                    _settings or getattr(
-                        test, '_hypothesis_internal_use_settings', None))
-            if generator_arguments and generator_kwargs:
-                note_deprecation(
-                    'Mixing positional and keyword arguments in a call to '
-                    'given is deprecated. Use one or the other.', getattr(
-                        test, '_hypothesis_internal_use_settings', _settings,
-                    )
-                )
-
             settings = wrapped_test._hypothesis_internal_use_settings
             if wrapped_test._hypothesis_internal_use_seed is not None:
                 random = Random(
@@ -515,31 +482,11 @@ def given(*generator_arguments, **generator_kwargs):
                 random = new_random()
 
             import hypothesis.strategies as sd
-            from hypothesis.internal.strategymethod import strategy
 
             selfy = None
             arguments, kwargs = convert_positional_arguments(
                 wrapped_test, arguments, kwargs)
 
-            for arg in hypothesis_owned_arguments:
-                try:
-                    value = kwargs[arg]
-                except KeyError:
-                    continue
-                if not isinstance(value, HypothesisProvided):
-                    note_deprecation(
-                        'Passing in explicit values to override Hypothesis '
-                        'provided values is deprecated and will no longer '
-                        'work in Hypothesis 2.0. If you need to do this, '
-                        'extract a common function and call that from a '
-                        'Hypothesis based test.', settings
-                    )
-
-            # Anything in unused_kwargs hasn't been injected through
-            # argspec.defaults, so we need to add them.
-            for k in unused_kwargs:
-                if k not in kwargs:
-                    kwargs[k] = unused_kwargs[k]
             # If the test function is a method of some kind, the bound object
             # will be the first named argument if there are any, otherwise the
             # first vararg (if any).
@@ -547,27 +494,23 @@ def given(*generator_arguments, **generator_kwargs):
                 selfy = kwargs.get(argspec.args[0])
             elif arguments:
                 selfy = arguments[0]
-            if isinstance(selfy, HypothesisProvided):
-                selfy = None
             test_runner = executor(selfy)
 
             for example in reversed(getattr(
-                wrapped_test, u'hypothesis_explicit_examples', ()
+                wrapped_test, 'hypothesis_explicit_examples', ()
             )):
                 if example.args:
                     example_kwargs = dict(zip(
-                        argspec.args[-len(example.args):], example.args
+                        original_argspec.args[-len(example.args):],
+                        example.args
                     ))
                 else:
-                    example_kwargs = dict(example.kwargs)
-
-                for k, v in kwargs.items():
-                    if not isinstance(v, HypothesisProvided):
-                        example_kwargs[k] = v
+                    example_kwargs = example.kwargs
+                example_kwargs.update(kwargs)
                 # Note: Test may mutate arguments and we can't rerun explicit
                 # examples, so we have to calculate the failure message at this
                 # point rather than than later.
-                message_on_failure = u'Falsifying example: %s(%s)' % (
+                message_on_failure = 'Falsifying example: %s(%s)' % (
                     test.__name__, arg_string(test, arguments, example_kwargs)
                 )
                 try:
@@ -581,26 +524,13 @@ def given(*generator_arguments, **generator_kwargs):
                         report(n)
                     raise
 
-            if not any(
-                isinstance(x, HypothesisProvided)
-                for xs in (arguments, kwargs.values())
-                for x in xs
-            ):
-                # All arguments have been satisfied without needing to invoke
-                # hypothesis
-                test_runner(lambda: test(*arguments, **kwargs))
-                return
-
-            def convert_to_specifier(v):
-                if isinstance(v, HypothesisProvided):
-                    return strategy(v.value, settings)
-                else:
-                    return sd.just(v)
+            arguments = tuple(arguments)
 
             given_specifier = sd.tuples(
-                sd.tuples(*map(convert_to_specifier, arguments)),
-                sd.fixed_dictionaries(dict(
-                    (k, convert_to_specifier(v)) for (k, v) in kwargs.items()))
+                sd.just(arguments),
+                sd.fixed_dictionaries(generator_kwargs).map(
+                    lambda args: dict(args, **kwargs)
+                )
             )
 
             def fail_health_check(message):
@@ -613,7 +543,7 @@ def given(*generator_arguments, **generator_kwargs):
                 else:
                     warnings.warn(FailedHealthCheck(message))
 
-            search_strategy = strategy(given_specifier, settings)
+            search_strategy = given_specifier
             search_strategy.validate()
 
             if settings.database:
@@ -665,7 +595,7 @@ def given(*generator_arguments, **generator_kwargs):
                                 'generation in initial health check. '
                                 'This indicates a bug in the strategy. '
                                 'This could either be a Hypothesis bug or '
-                                "an error in a function you've passed to "
+                                "an error in a function yo've passed to "
                                 'it to construct your data.'
                             )
                         else:
@@ -703,7 +633,7 @@ def given(*generator_arguments, **generator_kwargs):
                     fail_health_check((
                         'Data generation is extremely slow: Only produced '
                         '%d valid examples in %.2f seconds. Try decreasing '
-                        "size of the data you're generating (with e.g."
+                        "size of the data yo're generating (with e.g."
                         'average_size or max_leaves parameters).'
                     ) % (count, runtime))
                 if getglobalrandomstate() != initial_state:
@@ -731,18 +661,18 @@ def given(*generator_arguments, **generator_kwargs):
                         search_strategy, xs, test,
                         record_repr=record_repr,
                     ))
-                    if result is not None:
-                        note_deprecation((
+                    if result is not None and settings.perform_health_check:
+                        raise FailedHealthCheck((
                             'Tests run under @given should return None, but '
                             '%s returned %r instead.'
-                            'In Hypothesis 2.0 this will become an error.'
                         ) % (test.__name__, result), settings)
                     return False
-                except HypothesisDeprecationWarning:
+                except (
+                    HypothesisDeprecationWarning, FailedHealthCheck,
+                    UnsatisfiedAssumption
+                ):
                     raise
-                except UnsatisfiedAssumption as e:
-                    raise e
-                except Exception as e:
+                except Exception:
                     last_exception[0] = traceback.format_exc()
                     repr_for_last_exception[0] = record_repr[0]
                     verbose_report(last_exception[0])
@@ -790,7 +720,7 @@ def given(*generator_arguments, **generator_kwargs):
                     )
 
                 report(
-                    u'Failed to reproduce exception. Expected: \n' +
+                    'Failed to reproduce exception. Expected: \n' +
                     last_exception[0],
                 )
 
@@ -813,14 +743,10 @@ def given(*generator_arguments, **generator_kwargs):
             if attr[0] != '_' and not hasattr(wrapped_test, attr):
                 setattr(wrapped_test, attr, getattr(test, attr))
         wrapped_test.is_hypothesis_test = True
-        if _provided_random is not None:
-            wrapped_test._hypothesis_internal_use_seed = \
-                _provided_random.getrandbits(128)
-        else:
-            wrapped_test._hypothesis_internal_use_seed = getattr(
-                test, '_hypothesis_internal_use_seed', None
-            )
-        wrapped_test._hypothesis_internal_use_settings = _settings or getattr(
+        wrapped_test._hypothesis_internal_use_seed = getattr(
+            test, '_hypothesis_internal_use_seed', None
+        )
+        wrapped_test._hypothesis_internal_use_settings = getattr(
             test, '_hypothesis_internal_use_settings', None
         ) or Settings.default
         return wrapped_test
@@ -834,13 +760,18 @@ def find(specifier, condition, settings=None, random=None, storage=None):
         max_shrinks=2000,
     )
 
-    from hypothesis.internal.strategymethod import strategy
-    search = strategy(specifier, settings)
+    if not isinstance(specifier, SearchStrategy):
+        raise InvalidArgument(
+            'Expected SearchStrategy but got %r of type %s' % (
+                specifier, type(specifier).__name__
+            ))
+
+    search = specifier
 
     if storage is None and settings.database is not None:
         storage = settings.database.storage(
-            u'find(%s)' % (
-                binascii.hexlify(function_digest(condition)).decode(u'ascii'),
+            'find(%s)' % (
+                binascii.hexlify(function_digest(condition)).decode('ascii'),
             )
         )
 
@@ -856,16 +787,16 @@ def find(specifier, condition, settings=None, random=None, storage=None):
             successful_examples[0] += 1
 
         if not successful_examples[0]:
-            verbose_report(lambda: u'Trying example %s' % (
+            verbose_report(lambda: 'Trying example %s' % (
                 repr(result),
             ))
         elif success:
             if successful_examples[0] == 1:
-                verbose_report(lambda: u'Found satisfying example %s' % (
+                verbose_report(lambda: 'Found satisfying example %s' % (
                     repr(result),
                 ))
             else:
-                verbose_report(lambda: u'Shrunk example to %s' % (
+                verbose_report(lambda: 'Shrunk example to %s' % (
                     repr(result),
                 ))
         return success

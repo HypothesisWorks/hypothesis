@@ -37,7 +37,7 @@ except ImportError:  # pragma: no cover
 
 PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
-PYPY = platform.python_implementation() == u'PyPy'
+PYPY = platform.python_implementation() == 'PyPy'
 PY26 = sys.version_info[:2] == (2, 6)
 NO_ARGSPEC = sys.version_info[:2] >= (3, 5)
 HAS_SIGNATURE = sys.version_info[:2] >= (3, 3)
@@ -72,10 +72,16 @@ else:
 
 
 if PY3:
+    def str_to_bytes(s):
+        return s.encode(a_good_encoding())
+
+    def int_to_text(i):
+        return str(i)
+
     text_type = str
     binary_type = bytes
     hrange = range
-    ARG_NAME_ATTRIBUTE = u'arg'
+    ARG_NAME_ATTRIBUTE = 'arg'
     integer_types = (int,)
     hunichr = chr
     from functools import reduce
@@ -94,6 +100,12 @@ def quiet_raise(exc):
     raise exc from None
 """)
 else:
+    def str_to_bytes(s):
+        return s
+
+    def int_to_text(i):
+        return str(i).decode('ascii')
+
     VALID_PYTHON_IDENTIFIER = re.compile(
         r"^[a-zA-Z_][a-zA-Z0-9_]*$"
     )
@@ -102,22 +114,9 @@ else:
         return VALID_PYTHON_IDENTIFIER.match(s)
 
     def unicode_safe_repr(x):
-        try:
-            r = repr(x)
-        except UnicodeEncodeError:
-            r = type(x).__repr__(x)
-            from hypothesis._settings import note_deprecation
-            note_deprecation((
-                'Type %s has a broken repr implementation. Calling __repr__ '
-                'on it returned %r, which cannot be represented as ASCII '
-                'text. This is not permitted in Python 2. Hypothesis is '
-                'currently working around this, but will stop doing so in '
-                'Hypothesis 2.0. You should fix your code.'
-            ) % (type(x).__name__, r))
-        if isinstance(r, unicode):
-            return r
-        else:
-            return r.decode(a_good_encoding())
+        r = repr(x)
+        assert isinstance(r, str)
+        return r.decode(a_good_encoding())
 
     text_type = unicode
     binary_type = str
@@ -156,7 +155,7 @@ else:
                         i += step
             return shimrange()
 
-    ARG_NAME_ATTRIBUTE = u'id'
+    ARG_NAME_ATTRIBUTE = 'id'
     integer_types = (int, long)
     hunichr = unichr
     reduce = reduce
@@ -169,11 +168,7 @@ else:
 
 
 def a_good_encoding():
-    result = sys.getdefaultencoding()
-    if result == u'ascii':
-        return u'utf-8'
-    else:
-        return result
+    return 'utf-8'
 
 
 def to_unicode(x):
@@ -189,7 +184,7 @@ def qualname(f):
     except AttributeError:
         pass
     try:
-        return f.im_class.__name__ + u'.' + f.__name__
+        return f.im_class.__name__ + '.' + f.__name__
     except AttributeError:
         return f.__name__
 
@@ -240,7 +235,7 @@ else:
 
 
 importlib_invalidate_caches = getattr(
-    importlib, u'invalidate_caches', lambda: ())
+    importlib, 'invalidate_caches', lambda: ())
 
 
 if PY2:

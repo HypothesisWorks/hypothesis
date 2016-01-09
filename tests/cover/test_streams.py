@@ -27,7 +27,6 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.control import BuildContext
 from hypothesis.strategies import text, lists, floats, booleans, \
     integers, streaming
-from hypothesis.utils.show import show
 from hypothesis.internal.debug import minimal, some_template
 from hypothesis.searchstrategy.streams import Stream, StreamTemplate
 
@@ -58,7 +57,7 @@ def test_can_stream_infinite():
 @given(streaming(text()))
 def test_fetched_repr_is_in_stream_repr(s):
     assert repr(s) == u'Stream(...)'
-    assert show(next(iter(s))) in show(s)
+    assert repr(next(iter(s))) in repr(s)
 
 
 def test_cannot_thunk_past_end_of_list():

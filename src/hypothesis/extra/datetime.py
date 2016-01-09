@@ -26,15 +26,8 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.control import assume
 from hypothesis.strategies import defines_strategy
 from hypothesis.internal.compat import hrange, text_type
-from hypothesis.internal.strategymethod import strategy
 from hypothesis.searchstrategy.strategies import BadData, check_length, \
     SearchStrategy, check_data_type
-
-DatetimeSpec = namedtuple(u'DatetimeSpec', (u'naive_options',))
-
-naive_datetime = DatetimeSpec(set((True,)))
-timezone_aware_datetime = DatetimeSpec(set((False,)))
-any_datetime = DatetimeSpec(set((False, True)))
 
 
 class DateTimeTemplate(namedtuple('DateTimeTemplate', (
@@ -270,19 +263,3 @@ def times(allow_naive=None, timezones=None):
 
 def datetime_to_time(dt):
     return dt.timetz()
-
-
-@strategy.extend_static(dt.datetime)
-def datetime_strategy(cls, settings):
-    return datetimes()
-
-
-@strategy.extend(DatetimeSpec)
-def datetime_specced_strategy(spec, settings):  # pragma: no cover
-    if not spec.naive_options:
-        raise InvalidArgument(
-            u'Must allow either naive or non-naive datetimes')
-    return datetimes(
-        allow_naive=(True in spec.naive_options),
-        timezones=(None if False in spec.naive_options else [])
-    )

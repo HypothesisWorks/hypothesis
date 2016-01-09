@@ -23,15 +23,14 @@ import pytest
 
 from tests.common import standard_types
 from hypothesis.control import BuildContext
-from hypothesis.utils.show import show
 from hypothesis.internal.debug import minimal_elements
 
 
 @pytest.mark.parametrize(
-    u'spec', standard_types, ids=list(map(show, standard_types)))
+    u'spec', standard_types, ids=list(map(repr, standard_types)))
 def test_all_minimal_elements_reify(spec):
     random = Random(hashlib.md5((
-        show(spec) + u':test_all_minimal_elements_round_trip_via_the_database'
+        repr(spec) + u':test_all_minimal_elements_round_trip_via_the_database'
     ).encode(u'utf-8')).digest())
     strat = spec
     for elt in minimal_elements(strat, random):

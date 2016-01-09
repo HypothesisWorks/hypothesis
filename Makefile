@@ -131,6 +131,9 @@ check-examples3: $(TOX) $(PY35)
 check-coverage: $(TOX) $(PY35)
 	$(TOX) -e coverage
 
+check-unicode: $(TOX) $(PY27)
+	$(TOX) -e unicode
+
 check-noformat: check-coverage check-py26 check-py27 check-py33 check-py34 check-py35 check-pypy check-django check-pytest
 
 check: check-format check-noformat

@@ -25,8 +25,8 @@ env:
         - TASK=lint
         - TASK=check-format
         - TASK=check-coverage
+        - TASK=check-unicode
         - TASK=check-pypy
-        - TASK=check-py26
         - TASK=check-py35
         - TASK=check-py27
         - TASK=check-py34
@@ -38,14 +38,14 @@ env:
         - TASK=check-pytest26
         - TASK=check-django17
         - TASK=check-django18
-        - TASK=check-examples2
-        - TASK=check-examples3
 
 script:
     - make $TASK
 
 matrix:
     exclude:
+        - os: osx
+          env: TASK=check-unicode
         - os: osx
           env: TASK=check-fakefactory052
         - os: osx

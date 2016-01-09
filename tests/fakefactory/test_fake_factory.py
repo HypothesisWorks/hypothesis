@@ -22,7 +22,6 @@ from faker.providers import BaseProvider
 from hypothesis import given
 from hypothesis.strategytests import strategy_test_suite
 from hypothesis.internal.debug import minimal
-from hypothesis.searchstrategy import strategy
 from hypothesis.extra.fakefactory import fake_factory
 
 
@@ -88,11 +87,6 @@ def test_fake_factory_errors_if_unsupported_method():
 def test_fake_factory_errors_if_private_ish_method():
     with pytest.raises(ValueError):
         fake_factory(u'_Generator__config')
-
-
-def test_can_get_specification_for_fake_factory():
-    ff = fake_factory(u'email')
-    strategy(ff)
 
 
 TestFakeEmail = strategy_test_suite(

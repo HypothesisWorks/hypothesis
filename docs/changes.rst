@@ -21,6 +21,38 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+------------------
+2.0.0 - 2016-01-10
+------------------
+
+Codename: A new beginning
+
+This release cleans up all of the legacy that accrued in the course of
+Hypothesis 1.0. These are mostly things that were emitting deprecation warnings
+in 1.19.0, but there were a few additional changes.
+
+In particular:
+
+* non-strategy values will no longer be converted to strategies when used in
+  given or find.
+* FailedHealthCheck is now an error and not a warning.
+* Handling of non-ascii reprs in user types have been simplified by using raw
+  strings in more places in Python 2.
+* given no longer allows mixing positional and keyword arguments.
+* given no longer works with functions with defaults.
+* given no longer turns provided arguments into defaults - they will not appear
+  in the argspec at all.
+* the basic() strategy no longer exists.
+* the n_ary_tree strategy no longer exists.
+* the average_list_length setting no longer exists.
+* @rule can no longer be applied to the same method twice.
+
+This also includes two non-deprecation changes:
+
+* given's keyword arguments no longer have to be the rightmost arguments and
+  can appear anywhere in the method signature.
+* The max_shrinks setting would sometimes not have been respected.
+
 
 -------------------
 1.19.0 - 2016-01-09

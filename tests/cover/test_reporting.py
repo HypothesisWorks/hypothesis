@@ -24,7 +24,7 @@ import pytest
 from hypothesis import find, given, reporting
 from tests.common.utils import capture_out
 from hypothesis._settings import settings, Verbosity
-from hypothesis.reporting import debug_report, verbose_report
+from hypothesis.reporting import report, debug_report, verbose_report
 from hypothesis.strategies import just, integers
 from hypothesis.internal.compat import PY2
 
@@ -39,6 +39,13 @@ def test_can_suppress_output():
             with pytest.raises(AssertionError):
                 test_int()
     assert u'Falsifying example' not in o.getvalue()
+
+
+def test_can_print_bytes():
+    with capture_out() as o:
+        with reporting.with_reporter(reporting.default):
+            report(b'hi')
+    assert o.getvalue() == u'hi\n'
 
 
 def test_prints_output_by_default():

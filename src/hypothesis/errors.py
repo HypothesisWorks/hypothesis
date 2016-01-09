@@ -34,7 +34,7 @@ class UnsatisfiedAssumption(HypothesisException):
 
     """An internal error raised by assume.
 
-    If you're seeing this error something has gone wrong.
+    If yo're seeing this error something has gone wrong.
 
     """
 
@@ -43,7 +43,7 @@ class UnsatisfiedAssumption(HypothesisException):
             super(UnsatisfiedAssumption, self).__init__(*args, **kwargs)
         else:
             super(UnsatisfiedAssumption, self).__init__(
-                u'Unsatisfied assumption')
+                'Unsatisfied assumption')
 
 
 class BadTemplateDraw(HypothesisException):
@@ -67,9 +67,9 @@ class NoSuchExample(HypothesisException):
 
     """
 
-    def __init__(self, condition_string, extra=u''):
+    def __init__(self, condition_string, extra=''):
         super(NoSuchExample, self).__init__(
-            u'No examples found of condition %s%s' % (
+            'No examples found of condition %s%s' % (
                 condition_string, extra)
         )
 
@@ -81,7 +81,7 @@ class DefinitelyNoSuchExample(NoSuchExample):
 
     def __init__(self, condition_string, n_examples):
         super(DefinitelyNoSuchExample, self).__init__(
-            condition_string, u' (all %d considered)' % (
+            condition_string, ' (all %d considered)' % (
                 n_examples,
             )
         )
@@ -154,6 +154,11 @@ class InvalidArgument(HypothesisException, TypeError):
     some manner incorrect."""
 
 
+class InvalidState(HypothesisException):
+
+    """The system is not in a state where you were allowed to do that."""
+
+
 class InvalidDefinition(HypothesisException, TypeError):
 
     """Used to indicate that a class definition was not well put together and
@@ -175,4 +180,4 @@ class HypothesisDeprecationWarning(HypothesisException, DeprecationWarning):
     pass
 
 
-warnings.simplefilter(u'once', HypothesisDeprecationWarning)
+warnings.simplefilter('once', HypothesisDeprecationWarning)

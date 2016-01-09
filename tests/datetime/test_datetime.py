@@ -17,7 +17,7 @@
 from __future__ import division, print_function, absolute_import
 
 from random import Random
-from datetime import MAXYEAR, MINYEAR, datetime
+from datetime import MAXYEAR, MINYEAR
 
 import pytz
 import pytest
@@ -26,8 +26,7 @@ import hypothesis._settings as hs
 from hypothesis import given, assume, settings
 from hypothesis.errors import InvalidArgument, UnsatisfiedAssumption
 from hypothesis.strategytests import strategy_test_suite
-from hypothesis.extra.datetime import datetimes, any_datetime, \
-    naive_datetime, timezone_aware_datetime
+from hypothesis.extra.datetime import datetimes
 from hypothesis.internal.debug import minimal, some_template
 from hypothesis.internal.compat import hrange
 from hypothesis.searchstrategy.strategies import BadData
@@ -109,17 +108,6 @@ def test_restricts_to_allowed_set_of_timezones():
     timezones = list(map(pytz.timezone, list(pytz.all_timezones)[:3]))
     x = minimal(datetimes(timezones=timezones))
     assert any(tz.zone == x.tzinfo.zone for tz in timezones)
-
-
-def test_legacy_api():
-    with hs.settings(strict=False):
-        x = minimal(datetime)
-        assert x.tzinfo == pytz.UTC
-        assert x.year == 2000
-
-        assert minimal(naive_datetime).tzinfo is None
-        assert minimal(timezone_aware_datetime) == x
-        assert minimal(any_datetime) == x
 
 
 def test_min_year_is_respected():

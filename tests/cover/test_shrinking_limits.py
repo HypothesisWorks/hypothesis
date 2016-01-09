@@ -13,3 +13,22 @@
 # obtain one at http://mozilla.org/MPL/2.0/.
 #
 # END HEADER
+
+from __future__ import division, print_function, absolute_import
+
+import hypothesis.strategies as st
+from hypothesis import find, settings
+
+
+def test_max_shrinks():
+    seen = set()
+
+    def tracktrue(s):
+        seen.add(s)
+        return True
+
+    find(
+        st.binary(min_size=100, max_size=100), tracktrue,
+        settings=settings(max_shrinks=1)
+    )
+    assert len(seen) == 2

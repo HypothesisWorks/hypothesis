@@ -18,7 +18,6 @@ from __future__ import division, print_function, absolute_import
 
 from hypothesis._settings import settings
 from hypothesis.internal.reflection import get_pretty_function_description
-from hypothesis.internal.strategymethod import strategy
 from hypothesis.searchstrategy.morphers import MorpherStrategy
 from hypothesis.searchstrategy.strategies import MappedSearchStrategy
 from hypothesis.searchstrategy.collections import TupleStrategy
@@ -45,4 +44,4 @@ class FlatMapStrategy(MappedSearchStrategy):
 
     def pack(self, source_and_morpher):
         source, morpher = source_and_morpher
-        return morpher.become(strategy(self.expand(source)))
+        return morpher.become(self.expand(source))

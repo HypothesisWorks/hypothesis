@@ -25,22 +25,9 @@ from hypothesis.control import assume, BuildContext
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.internal.chooser import chooser
 from hypothesis.internal.reflection import get_pretty_function_description
-from hypothesis.internal.strategymethod import strategy as _strategy
 
-Infinity = float(u'inf')
+Infinity = float('inf')
 EFFECTIVELY_INFINITE = 2 ** 32
-
-
-def strategy(spec, settings=None):
-    from hypothesis._settings import note_deprecation
-    note_deprecation(
-        'The strategy function is deprecated and will be removed in Hypothesis'
-        ' 2.0. Please use the hypothesis.strategies module to construct your '
-        'strategies', settings)
-    return _strategy(spec, settings)
-
-strategy.extend = _strategy.extend
-strategy.extend_static = _strategy.extend_static
 
 
 def infinitish(x):
@@ -54,10 +41,10 @@ def infinitish(x):
 def check_type(typ, value, e=WrongFormat):
     if not isinstance(value, typ):
         if isinstance(typ, tuple):
-            name = u'any of ' + u', '.join(t.__name__ for t in typ)
+            name = 'any of ' + ', '.join(t.__name__ for t in typ)
         else:
             name = typ.__name__
-        raise e(u'Value %r is not an instance of %s' % (
+        raise e('Value %r is not an instance of %s' % (
             value, name
         ))
 
@@ -70,9 +57,9 @@ def check_length(l, value, e=BadData):
     try:
         actual = len(value)
     except TypeError:
-        raise e(u'Expected type with length but got %r' % (value,))
+        raise e('Expected type with length but got %r' % (value,))
     if actual != l:
-        raise e(u'Expected %d elements but got %d from %r' % (
+        raise e('Expected %d elements but got %d from %r' % (
             l, actual, value
         ))
 
@@ -81,7 +68,7 @@ def one_of_strategies(xs):
     """Helper function for unioning multiple strategies."""
     xs = tuple(xs)
     if not xs:
-        raise ValueError(u'Cannot join an empty list of strategies')
+        raise ValueError('Cannot join an empty list of strategies')
     if len(xs) == 1:
         return xs[0]
     return OneOfStrategy(xs)
@@ -163,7 +150,7 @@ class SearchStrategy(object):
             except (BadTemplateDraw, UnsatisfiedAssumption):
                 pass
         raise NoExamples(
-            u'Could not find any valid examples in 100 tries'
+            'Could not find any valid examples in 100 tries'
         )
 
     def map(self, pack):
@@ -212,7 +199,7 @@ class SearchStrategy(object):
 
         """
         if not isinstance(other, SearchStrategy):
-            raise ValueError(u'Cannot | a SearchStrategy with %r' % (other,))
+            raise ValueError('Cannot | a SearchStrategy with %r' % (other,))
         return one_of_strategies((self, other))
 
     def validate(self):
@@ -232,19 +219,19 @@ class SearchStrategy(object):
         """Produce a random valid parameter for this strategy, using only data
         from the provided random number generator."""
         raise NotImplementedError(  # pragma: no cover
-            u'%s.draw_parameter()' % (self.__class__.__name__))
+            '%s.draw_parameter()' % (self.__class__.__name__))
 
     def draw_template(self, random, parameter_value):
         """Given this Random and this parameter value, produce a random valid
         template for this strategy."""
         raise NotImplementedError(  # pragma: no cover
-            u'%s.draw_template()' % (self.__class__.__name__))
+            '%s.draw_template()' % (self.__class__.__name__))
 
     def reify(self, template):
         """Given a template value, deterministically convert it into a value of
         the desired final type."""
         raise NotImplementedError(  # pragma: no cover
-            u'%s.reify()' % (self.__class__.__name__))
+            '%s.reify()' % (self.__class__.__name__))
 
     def to_basic(self, template):
         """Convert a template value for this strategy into basic data.
@@ -256,7 +243,7 @@ class SearchStrategy(object):
 
         """
         raise NotImplementedError(  # pragma: no cover
-            u'%s.to_basic()' % (self.__class__.__name__))
+            '%s.to_basic()' % (self.__class__.__name__))
 
     def from_basic(self, value):
         """Convert basic data back to a template, raising BadData if the
@@ -269,13 +256,13 @@ class SearchStrategy(object):
 
         """
         raise NotImplementedError(  # pragma: no cover
-            u'%s.from_basic()' % (self.__class__.__name__))
+            '%s.from_basic()' % (self.__class__.__name__))
 
     # Gory implementation details
 
     #: Provide an upper bound on the number of available templates.
     #: The intended interpretation is that template_upper_bound means "if
-    #: you've only found this many templates don't worry about it". It is also
+    #: yo've only found this many templates don't worry about it". It is also
     #: used internally in a few places for certain optimisations.
     #: Generally speaking once this reaches numbers >= 2 ** 32 or so you might
     #: as well just return float('inf').
@@ -321,7 +308,7 @@ class SearchStrategy(object):
         General tips for a good simplify function:
 
             1. The generator shouldn't yield too many values. A few hundred is
-               fine, but if you're generating millions of simplifications you
+               fine, but if yo're generating millions of simplifications you
                may wish to reconsider your life choices and evaluate which ones
                actually matter to you.
             2. Cycles in simplify are fine, but the simplify graph should be
@@ -379,9 +366,9 @@ class LazyParameter(object):
 
     def __repr__(self):
         if not self.evaluated:
-            return u'LazyParameter(...)'
+            return 'LazyParameter(...)'
         else:
-            return u'LazyParameter(%r)' % (self.__value,)
+            return 'LazyParameter(%r)' % (self.__value,)
 
     @property
     def value(self):
@@ -403,7 +390,7 @@ class OneOfStrategy(SearchStrategy):
     """
 
     Parameter = namedtuple(
-        u'Parameter', (u'chooser', u'child_parameters')
+        'Parameter', ('chooser', 'child_parameters')
     )
 
     def __init__(self,
@@ -411,7 +398,7 @@ class OneOfStrategy(SearchStrategy):
         SearchStrategy.__init__(self)
         strategies = tuple(strategies)
         if len(strategies) <= 1:
-            raise ValueError(u'Need at least 2 strategies to choose amongst')
+            raise ValueError('Need at least 2 strategies to choose amongst')
         self.element_strategies = list(strategies)
         self.template_upper_bound = 0
         for e in self.element_strategies:
@@ -419,7 +406,7 @@ class OneOfStrategy(SearchStrategy):
         self.template_upper_bound = infinitish(self.template_upper_bound)
 
     def __repr__(self):
-        return u' | '.join(map(repr, self.element_strategies))
+        return ' | '.join(map(repr, self.element_strategies))
 
     def validate(self):
         for e in self.element_strategies:
@@ -466,7 +453,7 @@ class OneOfStrategy(SearchStrategy):
             for value in simplifier(random, template[1]):
                 yield (s, value)
         accept.__name__ = str(
-            u'element_simplifier(%d, %s)' % (
+            'element_simplifier(%d, %s)' % (
                 s, simplifier.__name__,
             )
         )
@@ -495,7 +482,7 @@ class OneOfStrategy(SearchStrategy):
                     # reliably.
                     pass
         accept.__name__ = str(
-            u'redraw_simplifier(%d)' % (child,))
+            'redraw_simplifier(%d)' % (child,))
         return accept
 
     def to_basic(self, template):
@@ -508,10 +495,10 @@ class OneOfStrategy(SearchStrategy):
         i, value = data
         check_data_type(integer_types, i)
         if i < 0:
-            raise BadData(u'Index out of range: %d < 0' % (i,))
+            raise BadData('Index out of range: %d < 0' % (i,))
         elif i >= len(self.element_strategies):
             raise BadData(
-                u'Index out of range: %d >= %d' % (
+                'Index out of range: %d >= %d' % (
                     i, len(self.element_strategies)))
 
         return (i, self.element_strategies[i].from_basic(value))
@@ -534,8 +521,8 @@ class MappedSearchStrategy(SearchStrategy):
             self.pack = pack
 
     def __repr__(self):
-        if not hasattr(self, u'_cached_repr'):
-            self._cached_repr = u'%r.map(%s)' % (
+        if not hasattr(self, '_cached_repr'):
+            self._cached_repr = '%r.map(%s)' % (
                 self.mapped_strategy, get_pretty_function_description(
                     self.pack)
             )
@@ -554,7 +541,7 @@ class MappedSearchStrategy(SearchStrategy):
         """Take a value produced by the underlying mapped_strategy and turn it
         into a value suitable for outputting from this strategy."""
         raise NotImplementedError(
-            u'%s.pack()' % (self.__class__.__name__))
+            '%s.pack()' % (self.__class__.__name__))
 
     def reify(self, value):
         return self.pack(self.mapped_strategy.reify(value))
@@ -580,8 +567,8 @@ class FilteredStrategy(MappedSearchStrategy):
         self.filtered_strategy = strategy
 
     def __repr__(self):
-        if not hasattr(self, u'_cached_repr'):
-            self._cached_repr = u'%r.filter(%s)' % (
+        if not hasattr(self, '_cached_repr'):
+            self._cached_repr = '%r.filter(%s)' % (
                 self.filtered_strategy, get_pretty_function_description(
                     self.condition)
             )

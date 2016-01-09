@@ -69,7 +69,7 @@ class JustStrategy(SearchStrategy):
         self.value = value
 
     def __repr__(self):
-        return u'JustStrategy(value=%r)' % (self.value,)
+        return 'JustStrategy(value=%r)' % (self.value,)
 
     def draw_parameter(self, random):
         return None

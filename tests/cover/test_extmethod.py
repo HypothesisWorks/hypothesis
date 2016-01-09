@@ -18,7 +18,7 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
-from hypothesis.utils.extmethod import ExtMethod
+from hypothesis.internal.extmethod import ExtMethod
 
 
 def test_will_use_tightest_class():

@@ -23,8 +23,7 @@ failing examples it finds.
 """
 
 
-from hypothesis.searchstrategy.strategies import strategy
-from hypothesis._settings import settings, Verbosity, Settings
+from hypothesis._settings import settings, Verbosity
 from hypothesis.version import __version_info__, __version__
 from hypothesis.control import assume, note
 from hypothesis.core import given, find, example, seed
@@ -32,12 +31,10 @@ from hypothesis.core import given, find, example, seed
 
 __all__ = [
     'settings',
-    'Settings',
     'Verbosity',
     'assume',
     'seed',
     'given',
-    'strategy',
     'find',
     'example',
     'note',

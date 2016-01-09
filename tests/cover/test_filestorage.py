@@ -18,7 +18,7 @@ from __future__ import division, print_function, absolute_import
 
 import os
 
-import hypothesis._settings as fs
+import hypothesis.configuration as fs
 
 previous_home_dir = None
 

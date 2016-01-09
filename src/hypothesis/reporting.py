@@ -19,7 +19,7 @@ from __future__ import division, print_function, absolute_import
 import inspect
 
 from hypothesis._settings import settings, Verbosity
-from hypothesis.internal.compat import text_type, escape_unicode_characters
+from hypothesis.internal.compat import escape_unicode_characters
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
 
@@ -52,7 +52,9 @@ def current_verbosity():
 def to_text(textish):
     if inspect.isfunction(textish):
         textish = textish()
-    return text_type(textish)
+    if isinstance(textish, bytes):
+        textish = textish.decode('utf-8')
+    return textish
 
 
 def verbose_report(text):

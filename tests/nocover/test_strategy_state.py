@@ -29,7 +29,6 @@ from hypothesis.stateful import rule, Bundle, RuleBasedStateMachine, \
 from hypothesis.strategies import just, none, text, lists, binary, \
     floats, tuples, randoms, booleans, decimals, integers, fractions, \
     streaming, float_to_int, int_to_float, sampled_from, complex_numbers
-from hypothesis.utils.show import show
 from hypothesis.utils.size import clamp
 from hypothesis.strategytests import mutate_basic, templates_for
 from hypothesis.internal.debug import timeout
@@ -158,7 +157,7 @@ class HypothesisSpec(RuleBasedStateMachine):
             @seed(r)
             def test(x):
                 assert Random(
-                    hashlib.md5(show(x).encode(u'utf-8')).digest()
+                    hashlib.md5(repr(x).encode(u'utf-8')).digest()
                 ).random() <= p
 
             try:
@@ -190,7 +189,7 @@ class HypothesisSpec(RuleBasedStateMachine):
     def check_serialization(self, st):
         strat, template = st
         as_basic = strat.to_basic(template)
-        assert show(strat.reify(template)) == show(strat.reify(
+        assert repr(strat.reify(template)) == repr(strat.reify(
             strat.from_basic(as_basic)))
         assert as_basic == strat.to_basic(strat.from_basic(as_basic))
 
@@ -218,7 +217,7 @@ class HypothesisSpec(RuleBasedStateMachine):
     def filtered_strategy(s, source, level, mixer):
         def is_good(x):
             return bool(Random(
-                hashlib.md5((mixer + show(x)).encode(u'utf-8')).digest()
+                hashlib.md5((mixer + repr(x)).encode(u'utf-8')).digest()
             ).randint(0, level))
         return source.filter(is_good)
 
@@ -237,7 +236,7 @@ class HypothesisSpec(RuleBasedStateMachine):
         cache = {}
 
         def do_map(value):
-            rep = show(value)
+            rep = repr(value)
             try:
                 return deepcopy(cache[rep])
             except KeyError:
@@ -284,7 +283,7 @@ class HypothesisSpec(RuleBasedStateMachine):
         assume(result1 is not result2)
 
         def do_map(value):
-            rep = show(value)
+            rep = repr(value)
             random = Random(
                 hashlib.md5((mixer + rep).encode(u'utf-8')).digest()
             )

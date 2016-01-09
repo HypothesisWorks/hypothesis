@@ -31,7 +31,7 @@ class OneCharStringStrategy(SearchStrategy):
 
     """A strategy which generates single character strings of text type."""
     specifier = text_type
-    zero_point = ord(u'0')
+    zero_point = ord('0')
 
     def __init__(self,
                  whitelist_categories=None,
@@ -158,7 +158,7 @@ class OneCharStringStrategy(SearchStrategy):
                         yield c
                 lb = new_lb
         accept.__name__ = str(
-            u'try_shrink(%d, %d)' % (lo, hi)
+            'try_shrink(%d, %d)' % (lo, hi)
         )
         return accept
 
@@ -204,7 +204,7 @@ class StringStrategy(MappedSearchStrategy):
         )
 
     def __repr__(self):
-        return u'StringStrategy()'
+        return 'StringStrategy()'
 
     def pack(self, ls):
         return u''.join(ls)
@@ -216,7 +216,7 @@ class BinaryStringStrategy(MappedSearchStrategy):
     lists of bytes."""
 
     def __repr__(self):
-        return u'BinaryStringStrategy()'
+        return 'BinaryStringStrategy()'
 
     def pack(self, x):
         assert isinstance(x, list), repr(x)

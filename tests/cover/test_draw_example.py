@@ -20,16 +20,15 @@ import pytest
 
 from tests.common import standard_types
 from hypothesis.strategies import lists
-from hypothesis.utils.show import show
 
 
 @pytest.mark.parametrize(
-    u'spec', standard_types, ids=list(map(show, standard_types)))
+    u'spec', standard_types, ids=list(map(repr, standard_types)))
 def test_single_example(spec):
     spec.example()
 
 
 @pytest.mark.parametrize(
-    u'spec', standard_types, ids=list(map(show, standard_types)))
+    u'spec', standard_types, ids=list(map(repr, standard_types)))
 def test_list_example(spec):
     lists(spec, average_size=2).example()

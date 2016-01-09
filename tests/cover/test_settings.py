@@ -111,9 +111,7 @@ def test_inherits_an_empty_database(db):
 
 @pytest.mark.parametrize('db', [None, ExampleDatabase()])
 def test_can_assign_database(db):
-    x = settings()
-    assert x.database is not None
-    x.database = db
+    x = settings(database=db)
     assert x.database is db
 
 

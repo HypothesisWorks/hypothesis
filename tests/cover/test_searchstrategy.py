@@ -23,7 +23,6 @@ from collections import namedtuple
 
 import pytest
 
-import hypothesis.specifiers as specifiers
 from hypothesis import given
 from hypothesis.types import RandomWithSeed
 from hypothesis.errors import NoExamples, InvalidArgument
@@ -157,7 +156,7 @@ def test_can_map_nameless():
 
 
 def test_can_flatmap_nameless():
-    f = nameless_const(specifiers.just(3))
+    f = nameless_const(just(3))
     assert repr(f) in repr(integers().flatmap(f))
 
 

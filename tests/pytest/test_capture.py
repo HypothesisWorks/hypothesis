@@ -28,7 +28,8 @@ TESTSUITE = """
 from hypothesis import given, settings, Verbosity
 from hypothesis.strategies import integers
 
-@given(integers(), settings=settings(verbosity=Verbosity.verbose))
+@settings(verbosity=Verbosity.verbose)
+@given(integers())
 def test_should_be_verbose(x):
     pass
 
@@ -55,8 +56,9 @@ from hypothesis.strategies import text
 from hypothesis.internal.compat import PY3
 import sys
 
+@settings(verbosity=Verbosity.verbose)
 def test_emits_unicode():
-    @given(text(), settings=settings(verbosity=Verbosity.verbose))
+    @given(text())
     def test_should_emit_unicode(t):
         assert all(ord(c) <= 1000 for c in t)
     with pytest.raises(AssertionError):

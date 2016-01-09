@@ -19,12 +19,7 @@ to explore data."""
 
 
 from .strategies import SearchStrategy
-from hypothesis.internal.strategymethod import strategy
-
-from .basic import BasicStrategy
 
 __all__ = [
-    'strategy',
     'SearchStrategy',
-    'BasicStrategy',
 ]

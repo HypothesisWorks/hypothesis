@@ -472,20 +472,3 @@ use BasicStrategy. These caveats should be read in the light of the fact that
 the full Hypothesis SearchStrategy interface is really very powerful, and the
 ones using BasicStrategy are merely a bit better than the normal quickcheck
 interface.
-
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Using the SearchStrategy API directly
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If you're really super enthused about this search strategies thing and you want
-to learn all the gory details of how it works under the hood, you can use the
-full blown raw SearchStrategy interface to experience the full power of
-Hypothesis.
-
-This is only semi-public API, meaning that it may break between minor versions
-but will not break in patch versions, but it should be considered relatively
-stable and most minor versions won't break it.
-
-.. autoclass:: SearchStrategy
-  :members:

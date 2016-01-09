@@ -30,15 +30,12 @@ import threading
 from collections import namedtuple
 
 from hypothesis.errors import InvalidArgument, HypothesisDeprecationWarning
-from hypothesis.configuration import storage_directory, \
-    hypothesis_home_dir, set_hypothesis_home_dir
+from hypothesis.configuration import hypothesis_home_dir
 from hypothesis.utils.conventions import not_set
-from hypothesis.internal.reflection import proxies
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
 __all__ = [
-    'hypothesis_home_dir', 'set_hypothesis_home_dir', 'settings',
-    'storage_directory', 'Settings',
+    'settings',
 ]
 
 
@@ -73,9 +70,9 @@ class SettingsProperty(object):
 
     @property
     def __doc__(self):
-        return u'\n'.join((
+        return '\n'.join((
             all_settings[self.name].description,
-            u'default value: %r' % (getattr(settings.default, self.name),)
+            'default value: %r' % (getattr(settings.default, self.name),)
         ))
 
 default_variable = DynamicVariable(None)
@@ -93,11 +90,7 @@ class SettingsMeta(type):
     @default.setter
     def default(self, value):
         if default_variable.value is not None:
-            note_deprecation(
-                'Assigning the default settings has been deprecated and will '
-                'be removed in Hypothesis 2.0. Consider using profiles',
-                value
-            )
+            raise AttributeError('Cannot assign settings.default')
         self._assign_default_internal(value)
 
     def _assign_default_internal(self, value):
@@ -128,7 +121,7 @@ class settings(SettingsMeta('settings', (object,), {})):
                 d = d()
             return d
         else:
-            raise AttributeError(u'settings has no attribute %s' % (name,))
+            raise AttributeError('settings has no attribute %s' % (name,))
 
     def __init__(
             self,
@@ -136,7 +129,7 @@ class settings(SettingsMeta('settings', (object,), {})):
             **kwargs
     ):
         self._construction_complete = False
-        self._database = kwargs.pop(u'database', not_set)
+        self._database = kwargs.pop('database', not_set)
         explicit_kwargs = list(kwargs)
         defaults = parent or settings.default
         if defaults is not None:
@@ -148,7 +141,7 @@ class settings(SettingsMeta('settings', (object,), {})):
         for name, value in kwargs.items():
             if name not in all_settings:
                 raise InvalidArgument(
-                    u'Invalid argument %s' % (name,))
+                    'Invalid argument %s' % (name,))
             setattr(self, name, value)
         self.storage = threading.local()
         self._construction_complete = True
@@ -183,16 +176,15 @@ class settings(SettingsMeta('settings', (object,), {})):
 
         """
         if settings.__definitions_are_locked:
-            note_deprecation(
-                'Defining additional settings has been deprecated and will '
-                'be removed in Hypothesis 2.0. Consider managing your '
-                'settings separately.', settings.default
+            from hypothesis.errors import InvalidState
+            raise InvalidState(
+                'Settings have been locked and may no longer be defined.'
             )
         if options is not None:
             options = tuple(options)
             if default not in options:
                 raise InvalidArgument(
-                    u'Default value %r is not in options %r' % (
+                    'Default value %r is not in options %r' % (
                         default, options
                     )
                 )
@@ -200,48 +192,50 @@ class settings(SettingsMeta('settings', (object,), {})):
         all_settings[name] = Setting(
             name, description.strip(), default, options, deprecation)
         setattr(settings, name, SettingsProperty(name))
-        if settings.default:
-            setattr(settings.default, name, default)
-        for profile in settings._profiles.values():
-            setattr(profile, name, default)
 
     @classmethod
     def lock_further_definitions(cls):
         settings.__definitions_are_locked = True
 
     def __setattr__(self, name, value):
-        if name == 'database':
-            return object.__setattr__(self, '_database', value)
-        elif name in settings._WHITELISTED_REAL_PROPERTIES:
+        if name in settings._WHITELISTED_REAL_PROPERTIES:
             return object.__setattr__(self, name, value)
-        elif name in all_settings:
-            setting = all_settings[name]
-            if (
-                setting.options is not None and
-                value not in setting.options
-            ):
-                raise InvalidArgument(
-                    u'Invalid %s, %r. Valid options: %r' % (
-                        name, value, setting.options
-                    )
-                )
+        elif name == 'database':
             if self._construction_complete:
-                note_deprecation(
-                    'Mutability of settings is deprecated and will go away '
-                    'in Hypothesis 2.0',
-                    self,
+                raise AttributeError(
+                    'Settings objects are immutable and may not be assigned to'
+                    ' after construction.'
                 )
-            return object.__setattr__(self, name, value)
+            else:
+                return object.__setattr__(self, '_database', value)
+        elif name in all_settings:
+            if self._construction_complete:
+                raise AttributeError(
+                    'Settings objects are immutable and may not be assigned to'
+                    ' after construction.'
+                )
+            else:
+                setting = all_settings[name]
+                if (
+                    setting.options is not None and
+                    value not in setting.options
+                ):
+                    raise InvalidArgument(
+                        'Invalid %s, %r. Valid options: %r' % (
+                            name, value, setting.options
+                        )
+                    )
+                return object.__setattr__(self, name, value)
         else:
-            raise AttributeError(u'No such setting %s' % (name,))
+            raise AttributeError('No such setting %s' % (name,))
 
     def __repr__(self):
         bits = []
         for name in all_settings:
             value = getattr(self, name)
-            bits.append(u'%s=%r' % (name, value))
+            bits.append('%s=%r' % (name, value))
         bits.sort()
-        return u'settings(%s)' % u', '.join(bits)
+        return 'settings(%s)' % ', '.join(bits)
 
     @property
     def database(self):
@@ -255,16 +249,22 @@ class settings(SettingsMeta('settings', (object,), {})):
         this property is accessed on a particular thread.
 
         """
-        if self._database is not_set and self.database_file is not None:
-            from hypothesis.database import ExampleDatabase
-            from hypothesis.database.backend import SQLiteBackend
-            if self.database_file not in _db_cache:
-                _db_cache[self.database_file] = (
-                    ExampleDatabase(backend=SQLiteBackend(self.database_file)))
-            return _db_cache[self.database_file]
-        if self._database is not_set:
-            self._database = None
-        return self._database
+        try:
+            if self._database is not_set and self.database_file is not None:
+                from hypothesis.database import ExampleDatabase
+                from hypothesis.database.backend import SQLiteBackend
+                if self.database_file not in _db_cache:
+                    _db_cache[self.database_file] = (
+                        ExampleDatabase(
+                            backend=SQLiteBackend(self.database_file)))
+                return _db_cache[self.database_file]
+            if self._database is not_set:
+                self._database = None
+            return self._database
+        except AttributeError:
+            import traceback
+            traceback.print_exc()
+            assert False
 
     def __enter__(self):
         default_context_manager = default_variable.with_value(self)
@@ -319,12 +319,12 @@ class settings(SettingsMeta('settings', (object,), {})):
 
 
 Setting = namedtuple(
-    u'Setting', (
-        u'name', u'description', u'default', u'options', 'deprecation'))
+    'Setting', (
+        'name', 'description', 'default', 'options', 'deprecation'))
 
 
 settings.define_setting(
-    u'min_satisfying_examples',
+    'min_satisfying_examples',
     default=5,
     description="""
 Raise Unsatisfiable for any tests which do not produce at least this many
@@ -334,7 +334,7 @@ search space.
 )
 
 settings.define_setting(
-    u'max_examples',
+    'max_examples',
     default=200,
     description="""
 Once this many satisfying examples have been considered without finding any
@@ -343,7 +343,7 @@ counter-example, falsification will terminate.
 )
 
 settings.define_setting(
-    u'max_iterations',
+    'max_iterations',
     default=1000,
     description="""
 Once this many iterations of the example loop have run, including ones which
@@ -353,7 +353,7 @@ will terminate.
 )
 
 settings.define_setting(
-    u'max_shrinks',
+    'max_shrinks',
     default=500,
     description="""
 Once this many successful shrinks have been performed, Hypothesis will assume
@@ -363,7 +363,7 @@ shrink the example.
 )
 
 settings.define_setting(
-    u'timeout',
+    'timeout',
     default=60,
     description="""
 Once this many seconds have passed, falsify will terminate even
@@ -375,7 +375,7 @@ applied.
 )
 
 settings.define_setting(
-    u'derandomize',
+    'derandomize',
     default=False,
     description="""
 If this is True then hypothesis will run in deterministic mode
@@ -389,8 +389,8 @@ find novel breakages.
 )
 
 settings.define_setting(
-    u'strict',
-    default=os.getenv(u'HYPOTHESIS_STRICT_MODE') == u'true',
+    'strict',
+    default=os.getenv('HYPOTHESIS_STRICT_MODE') == 'true',
     description="""
 If set to True, anything that would cause Hypothesis to issue a warning will
 instead raise an error. Note that new warnings may be added at any time, so
@@ -403,10 +403,10 @@ environment variable to the string 'true'.
 )
 
 settings.define_setting(
-    u'database_file',
+    'database_file',
     default=lambda: (
-        os.getenv(u'HYPOTHESIS_DATABASE_FILE') or
-        os.path.join(hypothesis_home_dir(), u'examples.db')
+        os.getenv('HYPOTHESIS_DATABASE_FILE') or
+        os.path.join(hypothesis_home_dir(), 'examples.db')
     ),
     description="""
     database: An instance of hypothesis.database.ExampleDatabase that will be
@@ -419,7 +419,7 @@ in which case no storage will be used.
 class Verbosity(object):
 
     def __repr__(self):
-        return u'Verbosity.%s' % (self.name,)
+        return 'Verbosity.%s' % (self.name,)
 
     def __init__(self, name, level):
         self.name = name
@@ -453,18 +453,18 @@ class Verbosity(object):
         result = getattr(cls, key, None)
         if isinstance(result, Verbosity):
             return result
-        raise InvalidArgument(u'No such verbosity level %r' % (key,))
+        raise InvalidArgument('No such verbosity level %r' % (key,))
 
-Verbosity.quiet = Verbosity(u'quiet', 0)
-Verbosity.normal = Verbosity(u'normal', 1)
-Verbosity.verbose = Verbosity(u'verbose', 2)
-Verbosity.debug = Verbosity(u'debug', 3)
+Verbosity.quiet = Verbosity('quiet', 0)
+Verbosity.normal = Verbosity('normal', 1)
+Verbosity.verbose = Verbosity('verbose', 2)
+Verbosity.debug = Verbosity('debug', 3)
 Verbosity.all = [
     Verbosity.quiet, Verbosity.normal, Verbosity.verbose, Verbosity.debug
 ]
 
 
-ENVIRONMENT_VERBOSITY_OVERRIDE = os.getenv(u'HYPOTHESIS_VERBOSITY_LEVEL')
+ENVIRONMENT_VERBOSITY_OVERRIDE = os.getenv('HYPOTHESIS_VERBOSITY_LEVEL')
 
 if ENVIRONMENT_VERBOSITY_OVERRIDE:
     DEFAULT_VERBOSITY = Verbosity.by_name(ENVIRONMENT_VERBOSITY_OVERRIDE)
@@ -472,14 +472,14 @@ else:
     DEFAULT_VERBOSITY = Verbosity.normal
 
 settings.define_setting(
-    u'verbosity',
+    'verbosity',
     options=Verbosity.all,
     default=DEFAULT_VERBOSITY,
-    description=u'Control the verbosity level of Hypothesis messages',
+    description='Control the verbosity level of Hypothesis messages',
 )
 
 settings.define_setting(
-    name=u'stateful_step_count',
+    name='stateful_step_count',
     default=50,
     description="""
 Number of steps to run a stateful program for before giving up on it breaking.
@@ -487,54 +487,13 @@ Number of steps to run a stateful program for before giving up on it breaking.
 )
 
 settings.define_setting(
-    u'average_list_length',
-    default=25.0,
-    description=u'Average length of lists to use',
-    deprecation=(
-        'average_list_length has been deprecated. Please specify '
-        'average_size explicitly for strategies that need it.')
-)
-
-settings.define_setting(
-    u'perform_health_check',
+    'perform_health_check',
     default=True,
     description=u"""
 If set to True, Hypothesis will run a preliminary health check before
 attempting to actually execute your test.
 """
 )
-
-
-class Settings(settings):
-
-    def __init__(self, *args, **kwargs):
-        super(Settings, self).__init__(*args, **kwargs)
-        note_deprecation(
-            'Use of Settings is deprecated. The new name is settings. The '
-            'behaviour is otherwise unchanged.', self
-        )
-
-settings.Settings = Settings
-
-
-def install_configuration_proxy_method(name):
-    base = globals()[name]
-
-    @staticmethod
-    @proxies(base)
-    def proxy(*args, **kwargs):
-        note_deprecation(
-            '%s has moved from hypothesis.settings to hypothesis.configuration'
-            '.'
-        )
-        return base(*args, **kwargs)
-    setattr(settings, name, proxy)
-
-install_configuration_proxy_method('hypothesis_home_dir')
-install_configuration_proxy_method('set_hypothesis_home_dir')
-install_configuration_proxy_method('storage_directory')
-
-
 settings.lock_further_definitions()
 
 settings.register_profile('default', settings())

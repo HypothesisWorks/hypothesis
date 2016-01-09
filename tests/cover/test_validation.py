@@ -18,8 +18,9 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
-from hypothesis import given
+from hypothesis import find, given, settings
 from hypothesis.errors import InvalidArgument
+from tests.common.utils import fails_with
 from hypothesis.strategies import sets, lists, floats, booleans, \
     integers, frozensets, dictionaries
 
@@ -88,12 +89,11 @@ def test_errors_on_any_varargs():
         oops()
 
 
-def test_cannot_put_kwargs_in_the_middle():
-    @given(y=int)
+def test_can_put_arguments_in_the_middle():
+    @given(y=integers())
     def foo(x, y, z):
         pass
-    with pytest.raises(InvalidArgument):
-        foo()
+    foo(1, 2)
 
 
 def test_float_ranges():
@@ -149,3 +149,44 @@ def test_an_average_size_must_be_positive():
 
 def test_an_average_size_may_be_zero_if_max_size_is():
     lists(integers(), average_size=0.0, max_size=0)
+
+
+@fails_with(InvalidArgument)
+@given(x=integers())
+def test_stuff_keyword(x=1):
+    pass
+
+
+@fails_with(InvalidArgument)
+@given(integers())
+def test_stuff_positional(x=1):
+    pass
+
+
+@fails_with(InvalidArgument)
+@given(integers(), integers())
+def test_too_many_positional(x):
+    pass
+
+
+def test_given_warns_on_use_of_non_strategies():
+    @given(bool)
+    @settings(strict=False)
+    def test(x):
+        pass
+    with pytest.raises(InvalidArgument):
+        test()
+
+
+def test_given_warns_when_mixing_positional_with_keyword():
+    @given(booleans(), y=booleans())
+    @settings(strict=False)
+    def test(x, y):
+        pass
+    with pytest.raises(InvalidArgument):
+        test()
+
+
+def test_cannot_find_non_strategies():
+    with pytest.raises(InvalidArgument):
+        find(bool, bool)

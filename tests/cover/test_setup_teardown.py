@@ -83,14 +83,6 @@ def test_calls_setup_and_teardown_on_self_unbound():
     assert x.teardowns == x.setups
 
 
-def test_calls_setup_and_teardown_on_explicit_call():
-    x = HasSetupAndTeardown()
-    with settings(strict=False):
-        x.give_me_an_int(1)
-    assert x.setups == 1
-    assert x.teardowns == 1
-
-
 def test_calls_setup_and_teardown_on_failure():
     x = HasSetupAndTeardown()
     with pytest.raises(AssertionError):

@@ -25,20 +25,17 @@ except ImportError:
 from hypothesis._settings import settings
 from hypothesis.internal.debug import timeout
 from hypothesis.strategytests import templates_for
-from tests.common.basic import Bitfields
 from hypothesis.strategies import integers, floats, just, one_of, \
-    sampled_from, streaming, basic, lists, booleans, dictionaries, tuples, \
+    sampled_from, streaming, lists, booleans, dictionaries, tuples, \
     frozensets, complex_numbers, sets, text, binary, decimals, fractions, \
     none, randoms, builds, fixed_dictionaries, recursive
 from hypothesis.internal.compat import hrange
-from hypothesis.searchstrategy.narytree import n_ary_tree
-from hypothesis.utils.show import show
 
 
-__all__ = [u'small_verifier', u'timeout', u'standard_types', u'OrderedPair']
+__all__ = ['small_verifier', 'timeout', 'standard_types', 'OrderedPair']
 
 
-OrderedPair = namedtuple(u'OrderedPair', (u'left', u'right'))
+OrderedPair = namedtuple('OrderedPair', ('left', 'right'))
 
 
 ordered_pair = integers().flatmap(
@@ -54,7 +51,7 @@ def constant_list(strat):
 
 EvalledIntStream = streaming(integers()).map(lambda x: list(x[:3]) and x)
 
-ABC = namedtuple(u'ABC', (u'a', u'b', u'c'))
+ABC = namedtuple('ABC', ('a', 'b', 'c'))
 
 
 def abc(x, y, z):
@@ -62,22 +59,19 @@ def abc(x, y, z):
 
 with settings(strict=False):
     standard_types = [
-        basic(Bitfields),
         EvalledIntStream,
         lists(max_size=0), tuples(), sets(max_size=0), frozensets(max_size=0),
         fixed_dictionaries({}),
-        n_ary_tree(booleans(), booleans(), booleans()),
-        n_ary_tree(integers(), integers(), integers()),
         abc(booleans(), booleans(), booleans()),
         abc(booleans(), booleans(), integers()),
         templates_for(one_of(*map(just, hrange(10)))),
-        fixed_dictionaries({u'a': integers(), u'b': booleans()}),
+        fixed_dictionaries({'a': integers(), 'b': booleans()}),
         dictionaries(booleans(), integers()),
         dictionaries(text(), booleans()),
         one_of(integers(), tuples(booleans())),
         sampled_from(range(10)),
-        one_of(just(u'a'), just(u'b'), just(u'c')),
-        sampled_from((u'a', u'b', u'c')),
+        one_of(just('a'), just('b'), just('c')),
+        sampled_from(('a', 'b', 'c')),
         integers(),
         integers(min_value=3),
         integers(min_value=(-2 ** 32), max_value=(2 ** 64)),
@@ -116,4 +110,4 @@ with settings(strict=False):
 if pytest is not None:
     def parametrize(args, values):
         return pytest.mark.parametrize(
-            args, values, ids=list(map(show, values)))
+            args, values, ids=list(map(repr, values)))

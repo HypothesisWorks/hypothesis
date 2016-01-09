@@ -20,19 +20,15 @@ import math
 from random import Random
 from collections import namedtuple
 
-from hypothesis import settings
-from tests.common.basic import Bitfields, BoringBitfields, \
-    simplify_bitfield
 from hypothesis.stateful import StateMachineSearchStrategy
-from hypothesis.strategies import just, none, sets, text, basic, lists, \
-    binary, builds, floats, one_of, tuples, randoms, booleans, decimals, \
+from hypothesis.strategies import just, none, sets, text, lists, binary, \
+    builds, floats, one_of, tuples, randoms, booleans, decimals, \
     integers, composite, fractions, recursive, streaming, frozensets, \
     dictionaries, sampled_from, complex_numbers, fixed_dictionaries
 from hypothesis.strategytests import mutate_basic, templates_for, \
     strategy_test_suite
 from hypothesis.internal.compat import hrange, OrderedDict
 from hypothesis.searchstrategy.morphers import MorpherStrategy
-from hypothesis.searchstrategy.narytree import n_ary_tree
 
 TestIntegerRange = strategy_test_suite(integers(min_value=0, max_value=5))
 TestGiantIntegerRange = strategy_test_suite(
@@ -202,52 +198,6 @@ def tight_integer_list(draw):
 
 TestComposite = strategy_test_suite(tight_integer_list())
 
-
-with settings(strict=False):
-    TestBoringBitfieldsClass = strategy_test_suite(basic(BoringBitfields))
-    TestBitfieldsClass = strategy_test_suite(basic(Bitfields))
-    TestBitfieldsInstance = strategy_test_suite(basic(Bitfields()))
-
-    TestBitfields = strategy_test_suite(lists(
-        basic(
-            generate=lambda r, p: r.getrandbits(128),
-            simplify=simplify_bitfield,
-            copy=lambda x: x,
-        ),
-        average_size=5.0,
-    ))
-
-    TestBitfieldsSet = strategy_test_suite(sets(
-        basic(
-            generate=lambda r, p: r.getrandbits(128),
-            simplify=simplify_bitfield,
-            copy=lambda x: x,
-        )
-    ))
-
-    TestBitfield = strategy_test_suite(
-        basic(
-            generate=lambda r, p: r.getrandbits(128),
-            simplify=simplify_bitfield,
-            copy=lambda x: x,
-        )
-    )
-
-    TestBitfieldJustGenerate = strategy_test_suite(
-        basic(
-            generate=lambda r, p: r.getrandbits(128),
-        )
-    )
-
-    TestBitfieldWithParameter = strategy_test_suite(
-        basic(
-            generate_parameter=lambda r: r.getrandbits(128),
-            generate=lambda r, p: r.getrandbits(128) & p,
-        )
-    )
-
-    TestTrees = strategy_test_suite(
-        n_ary_tree(integers(), integers(), integers()))
 
 TestStatemachine = strategy_test_suite(StateMachineSearchStrategy())
 

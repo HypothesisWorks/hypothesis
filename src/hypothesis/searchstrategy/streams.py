@@ -21,7 +21,6 @@ from random import Random
 
 from hypothesis.types import Stream
 from hypothesis.control import current_build_context
-from hypothesis.utils.show import show
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.searchstrategy.strategies import check_length, \
     SearchStrategy, check_data_type
@@ -39,9 +38,9 @@ class StreamTemplate(object):
             self.stream = Stream(generator)
 
     def __repr__(self):
-        return u'StreamTemplate(%r, %r, (%s))' % (
+        return 'StreamTemplate(%r, %r, (%s))' % (
             self.seed, self.parameter_seed,
-            u', '.join(map(show, self.stream[:self.changed]))
+            ', '.join(map(repr, self.stream[:self.changed]))
         )
 
     def __eq__(self, other):

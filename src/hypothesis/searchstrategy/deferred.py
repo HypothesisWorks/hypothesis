@@ -17,30 +17,15 @@
 from __future__ import division, print_function, absolute_import
 
 from hypothesis import settings
-from hypothesis.internal.compat import hrange, getargspec, \
-    unicode_safe_repr
+from hypothesis.internal.compat import hrange, getargspec
 from hypothesis.internal.reflection import arg_string, \
     convert_keyword_arguments, convert_positional_arguments
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
-class reprmangledtuple(tuple):
-
-    def __repr__(self):
-        try:
-            return super(reprmangledtuple, self).__repr__()
-        except UnicodeEncodeError:  # pragma: no cover
-            if len(self) == 1:
-                return u"(%s,)" % (unicode_safe_repr(self[0]),)
-            else:
-                return u"(%s)" % (u", ".join(
-                    map(unicode_safe_repr, self)
-                ))
-
-
 def tupleize(x):
     if isinstance(x, (tuple, list)):
-        return reprmangledtuple(x)
+        return tuple(x)
     else:
         return x
 
@@ -101,7 +86,7 @@ class DeferredStrategy(SearchStrategy):
             for k, v in defaults.items():
                 if k in kwargs_for_repr and kwargs_for_repr[k] is defaults[k]:
                     del kwargs_for_repr[k]
-            self.__representation = u'%s(%s)' % (
+            self.__representation = '%s(%s)' % (
                 self.__function.__name__,
                 arg_string(
                     self.__function, _args, kwargs_for_repr, reorder=False),

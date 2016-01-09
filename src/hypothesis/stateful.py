@@ -37,13 +37,12 @@ from hypothesis.errors import Flaky, NoSuchExample, InvalidDefinition, \
     UnsatisfiedAssumption
 from hypothesis.control import BuildContext
 from hypothesis._settings import settings as Settings
-from hypothesis._settings import Verbosity, note_deprecation
+from hypothesis._settings import Verbosity
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.internal.reflection import proxies
 from hypothesis.searchstrategy.misc import JustStrategy, \
     SampledFromStrategy
-from hypothesis.internal.strategymethod import strategy
 from hypothesis.searchstrategy.strategies import BadData, check_length, \
     SearchStrategy, check_data_type, one_of_strategies
 from hypothesis.searchstrategy.collections import TupleStrategy, \
@@ -539,10 +538,8 @@ def rule(targets=(), target=None, **kwargs):
     def accept(f):
         parent_rule = getattr(f, RULE_MARKER, None)
         if parent_rule is not None:
-            note_deprecation(
-                'Applying the rule decorator to a function that is already '
-                'decorated by rule is deprecated. Please assign the result '
-                'of the rule function to separate names in your class.',
+            raise InvalidDefinition(
+                'A function cannot be used for two distinct rules. ',
                 Settings.default,
             )
         precondition = getattr(f, PRECONDITION_MARKER, None)
@@ -673,8 +670,6 @@ class RuleBasedStateMachine(GenericStateMachine):
                     parent_rule=None):
         converted_arguments = {}
         for k, v in arguments.items():
-            if not isinstance(v, Bundle):
-                v = strategy(v)
             converted_arguments[k] = v
         if cls in cls._rules_per_class:
             target = cls._rules_per_class[cls]

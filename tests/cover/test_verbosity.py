@@ -23,8 +23,7 @@ from tests.common.utils import fails, capture_out
 from hypothesis._settings import settings, Verbosity
 from hypothesis.reporting import default as default_reporter
 from hypothesis.reporting import with_reporter
-from hypothesis.strategies import basic, lists, tuples, booleans, integers
-from hypothesis.searchstrategy import BasicStrategy
+from hypothesis.strategies import lists, tuples, booleans, integers
 
 
 @contextmanager
@@ -35,16 +34,6 @@ def capture_verbosity(level):
                 yield o
 
 
-class SillyStrategy(BasicStrategy):
-
-    def generate(self, random, parameter_value):
-        return True
-
-    def simplify(self, random, value):
-        if value:
-            yield False
-
-
 def test_prints_intermediate_in_success():
     with capture_verbosity(Verbosity.verbose) as o:
         @given(booleans())
@@ -53,17 +42,6 @@ def test_prints_intermediate_in_success():
         test_works()
     lines = o.getvalue().splitlines()
     assert len([l for l in lines if u'example' in l]) == 2
-
-
-def test_reports_differently_for_single_shrink():
-    with capture_verbosity(Verbosity.verbose) as o:
-        with settings(database=None, strict=False):
-            @fails
-            @given(basic(SillyStrategy))
-            def test_foo(x):
-                assert False
-            test_foo()
-    assert u'shrunk example once' in o.getvalue()
 
 
 def test_reports_no_shrinks():

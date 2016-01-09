@@ -212,3 +212,21 @@ def test_nesting_without_control_fails_health_check():
             test_nest()
     with raises(FailedHealthCheck):
         test_blah()
+
+
+def test_returning_non_none_is_forbidden():
+    @given(st.integers())
+    def a(x):
+        return 1
+
+    with raises(FailedHealthCheck):
+        a()
+
+
+def test_returning_non_none_does_not_fail_if_health_check_disabled():
+    @given(st.integers())
+    @settings(perform_health_check=False)
+    def a(x):
+        return 1
+
+    a()

@@ -24,7 +24,6 @@ import pytest
 from tests.common import standard_types
 from hypothesis.control import BuildContext
 from hypothesis.strategies import lists, booleans
-from hypothesis.utils.show import show
 from hypothesis.internal.debug import via_database, some_template, \
     minimal_elements
 from hypothesis.internal.compat import hrange
@@ -32,45 +31,45 @@ from hypothesis.searchstrategy.strategies import BadData
 
 
 @pytest.mark.parametrize(
-    u'spec', standard_types, ids=list(map(show, standard_types)))
+    u'spec', standard_types, ids=list(map(repr, standard_types)))
 def test_round_tripping_via_the_database(spec):
     random = Random(hashlib.md5((
-        show(spec) + u':test_round_tripping_via_the_database'
+        repr(spec) + u':test_round_tripping_via_the_database'
     ).encode(u'utf-8')).digest())
     strat = spec
     template = some_template(strat, random)
     strat.from_basic(strat.to_basic(template))
     template_via_db = via_database(spec, strat, template)
     with BuildContext():
-        assert show(strat.reify(template)) == show(
+        assert repr(strat.reify(template)) == repr(
             strat.reify(template_via_db))
 
 
 @pytest.mark.parametrize(
-    u'spec', standard_types, ids=list(map(show, standard_types)))
+    u'spec', standard_types, ids=list(map(repr, standard_types)))
 def test_round_tripping_lists_via_the_database(spec):
     random = Random(hashlib.md5((
-        show(spec) + u':test_round_tripping_via_the_database'
+        repr(spec) + u':test_round_tripping_via_the_database'
     ).encode(u'utf-8')).digest())
     strat = lists(spec)
     template = some_template(strat, random)
     template_via_db = via_database(spec, strat, template)
     with BuildContext():
-        assert show(strat.reify(template)) == show(
+        assert repr(strat.reify(template)) == repr(
             strat.reify(template_via_db))
 
 
 @pytest.mark.parametrize(
-    u'spec', standard_types, ids=list(map(show, standard_types)))
+    u'spec', standard_types, ids=list(map(repr, standard_types)))
 def test_all_minimal_elements_round_trip_via_the_database(spec):
     random = Random(hashlib.md5((
-        show(spec) + u':test_all_minimal_elements_round_trip_via_the_database'
+        repr(spec) + u':test_all_minimal_elements_round_trip_via_the_database'
     ).encode(u'utf-8')).digest())
     strat = spec
     for elt in minimal_elements(strat, random):
         elt_via_db = via_database(spec, strat, elt)
         with BuildContext():
-            assert show(strat.reify(elt)) == show(strat.reify(elt_via_db))
+            assert repr(strat.reify(elt)) == repr(strat.reify(elt_via_db))
         elt_via_db_2 = via_database(spec, strat, elt_via_db)
         assert elt_via_db == elt_via_db_2
 
@@ -95,7 +94,7 @@ def minimal_basic():
 
 
 @pytest.mark.parametrize(
-    u'strat', standard_types, ids=list(map(show, standard_types)))
+    u'strat', standard_types, ids=list(map(repr, standard_types)))
 def test_only_raises_bad_data_on_minimal(strat):
     for m in minimal_basic():
         try:

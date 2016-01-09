@@ -21,7 +21,6 @@ import traceback
 from hypothesis.errors import CleanupFailed, InvalidArgument, \
     UnsatisfiedAssumption
 from hypothesis.reporting import report
-from hypothesis.internal.compat import text_type
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
 
@@ -117,11 +116,10 @@ def note(value):
     printing for consistency of execution
 
     """
-    value = text_type(value)
     context = _current_build_context.value
     if context is None:
         raise InvalidArgument(
-            u'Cannot make notes outside of build context')
+            'Cannot make notes outside of build context')
     context.notes.append(value)
     if context.is_final:
         report(value)

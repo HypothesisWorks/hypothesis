@@ -24,8 +24,7 @@ import pytest
 
 from hypothesis import settings as Settings
 from hypothesis import assume
-from hypothesis.errors import Flaky, BadData, InvalidDefinition, \
-    HypothesisDeprecationWarning
+from hypothesis.errors import Flaky, BadData, InvalidDefinition
 from tests.common.utils import raises, capture_out
 from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import rule, Bundle, precondition, \
@@ -175,12 +174,13 @@ class DepthCharge(object):
 class DepthMachine(RuleBasedStateMachine):
     charges = Bundle(u'charges')
 
-    # double-rule is deprecated
-    with Settings(strict=False):
-        @rule(targets=(charges,), child=charges)
-        @rule(targets=(charges,), child=none())
-        def charge(self, child):
-            return DepthCharge(child)
+    @rule(targets=(charges,), child=charges)
+    def charge(self, child):
+        return DepthCharge(child)
+
+    @rule(targets=(charges,))
+    def none_charge(self):
+        return DepthCharge(None)
 
     @rule(check=charges)
     def is_not_too_deep(self, check):
@@ -570,16 +570,14 @@ def test_statemachine_equality():
     assert StateMachineRunner(1, 1, 1) != StateMachineRunner(1, 1, 2)
 
 
-def test_stateful_double_rule_is_deprecated(recwarn):
-    with Settings(strict=False):
+def test_stateful_double_rule_is_forbidden(recwarn):
+    with pytest.raises(InvalidDefinition):
         class DoubleRuleMachine(RuleBasedStateMachine):
 
             @rule(num=just(1))
             @rule(num=just(2))
             def whatevs(self, num):
                 pass
-
-    recwarn.pop(HypothesisDeprecationWarning)
 
 
 def test_can_explicitly_call_functions_when_precondition_not_satisfied():

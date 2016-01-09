@@ -32,11 +32,14 @@ class ReprWrapperStrategy(WrapperStrategy):
 
     def __init__(self, strategy, representation):
         super(ReprWrapperStrategy, self).__init__(strategy)
+        if not inspect.isfunction(representation):
+            assert isinstance(representation, str)
         self.representation = representation
 
     def __repr__(self):
         if inspect.isfunction(self.representation):
             self.representation = self.representation()
+        assert isinstance(self.representation, str)
         return self.representation
 
     def draw_parameter(self, random):

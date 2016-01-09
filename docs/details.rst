@@ -253,12 +253,16 @@ For example all of the following are valid uses:
   def c(x, y):
     pass
 
-  @given(x=integers(), y=integers())
-  def d(x, **kwargs):
+  @given(x=integers())
+  def d(x, y):
     pass
 
   @given(x=integers(), y=integers())
-  def e(x, *args, **kwargs):
+  def e(x, **kwargs):
+    pass
+
+  @given(x=integers(), y=integers())
+  def f(x, *args, **kwargs):
     pass
 
 
@@ -272,46 +276,37 @@ The following are not:
 .. code:: python
 
   @given(integers(), integers(), integers())
-  def f(x, y):
+  def g(x, y):
       pass
 
   @given(integers())
-  def g(x, *args):
+  def h(x, *args):
       pass
 
-  @given(x=integers())
-  def h(x, y):
+  @given(integers(), x=integers())
+  def i(x, y):
       pass
 
   @given()
-  def i(x, y):
+  def j(x, y):
       pass
 
 
 The rules for determining what are valid uses of given are as follows:
 
-1. Arguments passed as keyword arguments must cover the right hand side
-   of the argument list. That is, if you provide an argument as a keyword
-   you must also provide everything to the right of it.
-2. Positional arguments fill up from the right, starting from the first
-   argument not covered by a keyword argument. (Note: Mixing keyword and
-   positional arguments is supported but deprecated as its semantics are
-   highly confusing and difficult to support. You'll get a warning if you
-   do).
-3. If the function has variable keywords, additional arguments will be
-   added corresponding to any keyword arguments passed. These will be to
-   the right of the normal argument list in an arbitrary order.
-4. If the function has varargs, positional arguments to :func:`@given <hypothesis.core.given>` are not
-   supported. Keyword arguments may be passed, however.
+1. You may pass any keyword argument to given.
+2. Positional arguments to given are equivalent to the rightmost named
+   arguments for the test function.
+3. positional arguments may not be used if the underlying test function has
+   varargs or arbitrary keywords.
+4. Functions tested with given may not have any defaults.
 
-If you don't have kwargs then the function returned by :func:`@given <hypothesis.core.given>` will have
-the same argspec (i.e. same arguments, keyword arguments, etc) as the
-original but with different defaults.
+The reason for the "rightmost named arguments" behaviour is so that
+using :func:`@given <hypothesis.core.given>` with instance methods works: self
+will be passed to the function as normal and not be parametrized over.
 
-The reason for the "filling up from the right" behaviour is so that
-using :func:`@given <hypothesis.core.given>` with instance methods works: self will be passed to the
-function as normal and not be parametrized over.
-
+The function returned by given has all the arguments that the original test did
+, minus the ones that are being filled in by given.
 
 -------------------------
 Custom function execution

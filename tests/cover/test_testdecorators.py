@@ -17,7 +17,6 @@
 from __future__ import division, print_function, absolute_import
 
 import time
-import string
 import functools
 import threading
 from collections import namedtuple
@@ -28,7 +27,6 @@ from hypothesis.errors import Unsatisfiable
 from tests.common.utils import fails, raises, fails_with, capture_out
 from hypothesis.strategies import just, sets, text, lists, binary, \
     builds, floats, one_of, booleans, integers, frozensets, sampled_from
-from hypothesis.internal.compat import text_type
 
 
 @given(integers(), integers())
@@ -70,12 +68,12 @@ def test_still_minimizes_on_non_assertion_failures():
     @given(integers())
     def is_not_too_large(x):
         if x >= 10:
-            raise ValueError(u'No, %s is just too large. Sorry' % x)
+            raise ValueError('No, %s is just too large. Sorry' % x)
 
     with raises(ValueError) as exinfo:
         is_not_too_large()
 
-    assert u' 10 ' in exinfo.value.args[0]
+    assert ' 10 ' in exinfo.value.args[0]
 
 
 @given(integers())
@@ -98,12 +96,12 @@ class TestCases(object):
 
     @given(x=integers())
     def test_abs_non_negative_varargs_kwargs(self, *args, **kw):
-        assert abs(kw[u'x']) >= 0
+        assert abs(kw['x']) >= 0
         assert isinstance(self, TestCases)
 
     @given(x=integers())
     def test_abs_non_negative_varargs_kwargs_only(*args, **kw):
-        assert abs(kw[u'x']) >= 0
+        assert abs(kw['x']) >= 0
         assert isinstance(args[0], TestCases)
 
     @fails
@@ -232,7 +230,7 @@ def test_contains_the_test_function_name_in_the_exception_string():
 
     with raises(Unsatisfiable) as e:
         this_has_a_totally_unique_name()
-        print(u'Called %d times' % tuple(calls))
+        print('Called %d times' % tuple(calls))
 
     assert this_has_a_totally_unique_name.__name__ in e.value.args[0]
 
@@ -248,7 +246,7 @@ def test_contains_the_test_function_name_in_the_exception_string():
 
     with raises(Unsatisfiable) as e:
         Foo().this_has_a_unique_name_and_lives_on_a_class()
-        print(u'Called %d times' % tuple(calls2))
+        print('Called %d times' % tuple(calls2))
 
     assert (
         Foo.this_has_a_unique_name_and_lives_on_a_class.__name__
@@ -354,21 +352,21 @@ def test_breaks_bounds():
 
 @given(x=booleans())
 def test_can_test_kwargs_only_methods(**kwargs):
-    assert isinstance(kwargs[u'x'], bool)
+    assert isinstance(kwargs['x'], bool)
 
 
 @fails_with(UnicodeEncodeError)
 @given(text())
 @settings(max_examples=200)
 def test_is_ascii(x):
-    x.encode(u'ascii')
+    x.encode('ascii')
 
 
 @fails
 @given(text())
 def test_is_not_ascii(x):
     try:
-        x.encode(u'ascii')
+        x.encode('ascii')
         assert False
     except UnicodeEncodeError:
         pass
@@ -386,8 +384,7 @@ def test_has_ascii(x):
     if not x:
         return
     ascii_characters = (
-        text_type(u'0123456789') + text_type(string.ascii_letters) +
-        text_type(u' \t\n')
+        u'0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ \t\n'
     )
     assert any(c in ascii_characters for c in x)
 
@@ -459,7 +456,7 @@ def test_can_call_an_argument_f(f):
     pass
 
 
-Litter = namedtuple(u'Litter', (u'kitten1', u'kitten2'))
+Litter = namedtuple('Litter', ('kitten1', 'kitten2'))
 
 
 @given(builds(Litter, integers(), integers()))
@@ -573,7 +570,7 @@ def test_prints_notes_once_on_failure():
                 test()
         lines = out.getvalue().strip().splitlines()
         assert len(lines) == 2
-        assert 'Hi there' in lines
+        assert u'Hi there' in lines
 
 
 @given(lists(max_size=0))

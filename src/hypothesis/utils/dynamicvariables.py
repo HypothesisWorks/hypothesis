@@ -28,11 +28,11 @@ class DynamicVariable(object):
 
     @property
     def value(self):
-        return getattr(self.data, u'value', self.default)
+        return getattr(self.data, 'value', self.default)
 
     @value.setter
     def value(self, value):
-        setattr(self.data, u'value', value)
+        setattr(self.data, 'value', value)
 
     @contextmanager
     def with_value(self, value):
