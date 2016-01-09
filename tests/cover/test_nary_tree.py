@@ -22,6 +22,14 @@ from hypothesis.internal.debug import minimal
 from hypothesis.searchstrategy.narytree import Leaf, Branch, n_ary_tree
 
 
+def setup_function(fn):
+    settings.load_profile('nonstrict')
+
+
+def teardown_function(fn):
+    settings.load_profile('default')
+
+
 def smallest_tree(predicate):
     return minimal(
         n_ary_tree(integers(), integers(), integers()), predicate,
@@ -68,9 +76,10 @@ def test_tree_minimizes_individual_branch_children():
     )
 
 
-@given(n_ary_tree(booleans(), booleans(), booleans()))
-@settings(max_examples=100)
-def test_serializes_arbitrary_trees(tree):
-    strat = n_ary_tree(booleans(), booleans(), booleans())
+with settings.get_profile('nonstrict'):
+    @given(n_ary_tree(booleans(), booleans(), booleans()))
+    @settings(max_examples=100)
+    def test_serializes_arbitrary_trees(tree):
+        strat = n_ary_tree(booleans(), booleans(), booleans())
 
-    assert strat.from_basic(strat.to_basic(tree)) == tree
+        assert strat.from_basic(strat.to_basic(tree)) == tree

@@ -81,9 +81,6 @@ with settings(average_list_length=5.0):
     TestNamedTuple = strategy_test_suite(
         builds(Stuff, integers(), integers()))
 
-    TestTrees = strategy_test_suite(
-        n_ary_tree(integers(), integers(), integers()))
-
     TestMixedSets = strategy_test_suite(sets(
         one_of(integers(), booleans(), floats())))
     TestFrozenSets = strategy_test_suite(frozensets(booleans()))
@@ -239,6 +236,9 @@ with settings(average_list_length=5.0, strict=False):
             generate=lambda r, p: r.getrandbits(128) & p,
         )
     )
+
+    TestTrees = strategy_test_suite(
+        n_ary_tree(integers(), integers(), integers()))
 
 TestStatemachine = strategy_test_suite(StateMachineSearchStrategy())
 

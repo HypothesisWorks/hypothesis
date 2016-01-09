@@ -21,7 +21,6 @@ import pytest
 from hypothesis.strategies import just, sets, text, lists, binary, \
     floats, one_of, tuples, randoms, booleans, integers, frozensets, \
     sampled_from, complex_numbers, fixed_dictionaries
-from hypothesis.searchstrategy.narytree import n_ary_tree
 from hypothesis.searchstrategy.strategies import BadData
 
 
@@ -49,8 +48,6 @@ from hypothesis.searchstrategy.strategies import BadData
     (lists(one_of(frozensets(floats()), frozensets(floats()))), [[8, 0], []]),
     (floats(), 252010555201342071294067021251680995120),
     (tuples(integers(), integers()), 10),
-    (n_ary_tree(integers(), integers(), integers()), []),
-    (n_ary_tree(integers(), integers(), integers()), [1, 2, 3, 4, 5]),
     (floats(1, 2), (0, floats().to_basic(float(u'nan')))),
     (floats(1, 2), floats().to_basic(float(u'nan'))),
 ])

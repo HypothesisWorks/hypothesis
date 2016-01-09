@@ -26,7 +26,6 @@ from hypothesis.strategies import just, text, lists, floats, tuples, \
     booleans, integers, streaming
 from hypothesis.internal.debug import some_template
 from hypothesis.internal.compat import hrange, Counter
-from hypothesis.searchstrategy.narytree import Leaf, n_ary_tree
 
 ConstantLists = integers().flatmap(lambda i: lists(just(i)))
 
@@ -71,36 +70,6 @@ def test_flatmap_retrieve_from_db():
         record_and_test_size()
 
     assert track[0] == example
-
-
-def nary_tree_to_strategy(tree):
-    if isinstance(tree, Leaf):
-        return integers()
-    else:
-        return tuples(*[
-            nary_tree_to_strategy(v) for _, v in tree.keyed_children])
-
-
-dav_strategy = n_ary_tree(just(None), just(None), just(None)).flatmap(
-    nary_tree_to_strategy
-)
-
-
-def test_will_find_a_failure_from_the_database():
-    db = ExampleDatabase()
-
-    class Rejected(Exception):
-        pass
-
-    @given(dav_strategy)
-    @settings(max_examples=10, database=db)
-    def nope(x):
-        raise Rejected()
-    try:
-        with pytest.raises(Rejected):
-            nope()  # pragma: no branch
-    finally:
-        db.close()
 
 
 def test_can_still_simplify_if_not_reified():

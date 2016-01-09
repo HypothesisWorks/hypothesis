@@ -19,7 +19,8 @@ from __future__ import division, print_function, absolute_import
 from collections import namedtuple
 
 from hypothesis import settings
-from hypothesis.strategies import lists, tuples
+from hypothesis._settings import note_deprecation
+from hypothesis.strategies import lists, tuples, defines_strategy
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.distributions import geometric, uniform_float
 from hypothesis.internal.strategymethod import strategy
@@ -51,6 +52,11 @@ class NAryTreeStrategy(SearchStrategy):
     )
 
     def __init__(self, specifier, settings):
+        note_deprecation(
+            'The n_ary_tree is deprecated and will go away in Hypothesis 2.0. '
+            'You should switch to using recursive() from hypothesis.strategies'
+            '.', settings
+        )
         self.specifier = specifier
         self.leaf_strategy = strategy(specifier.leaf_values, settings)
         self.branch_key_strategy = strategy(
@@ -162,5 +168,6 @@ class NAryTreeStrategy(SearchStrategy):
                     for k, v in data[1]))
 
 
+@defines_strategy
 def n_ary_tree(*args, **kwargs):
     return NAryTreeStrategy(NAryTree(*args, **kwargs), settings.default)
