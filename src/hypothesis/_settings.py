@@ -94,7 +94,7 @@ class SettingsMeta(type):
     def default(self, value):
         if default_variable.value is not None:
             note_deprecation(
-                'Assigning the default settings has been deprecation and will '
+                'Assigning the default settings has been deprecated and will '
                 'be removed in Hypothesis 2.0. Consider using profiles',
                 value
             )
@@ -184,7 +184,7 @@ class settings(SettingsMeta('settings', (object,), {})):
         """
         if settings.__definitions_are_locked:
             note_deprecation(
-                'Defining additional settings has been deprecation and will '
+                'Defining additional settings has been deprecated and will '
                 'be removed in Hypothesis 2.0. Consider managing your '
                 'settings separately.', settings.default
             )
@@ -227,7 +227,7 @@ class settings(SettingsMeta('settings', (object,), {})):
                 )
             if self._construction_complete:
                 note_deprecation(
-                    'Mutability of settings is deprecation and will go away '
+                    'Mutability of settings is deprecated and will go away '
                     'in Hypothesis 2.0',
                     self,
                 )
@@ -510,7 +510,7 @@ class Settings(settings):
     def __init__(self, *args, **kwargs):
         super(Settings, self).__init__(*args, **kwargs)
         note_deprecation(
-            'Use of Settings is deprecation. The new name is settings. The '
+            'Use of Settings is deprecated. The new name is settings. The '
             'behaviour is otherwise unchanged.', self
         )
 
