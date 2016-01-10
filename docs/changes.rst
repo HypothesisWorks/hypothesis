@@ -44,7 +44,9 @@ In particular:
   in the argspec at all.
 * the basic() strategy no longer exists.
 * the n_ary_tree strategy no longer exists.
-* the average_list_length setting no longer exists.
+* the average_list_length setting no longer exists. Note: If you're using
+  using recursive() this will cause you a significant slow down. You should
+  pass explicit average_size parameters to collections in recursive calls.
 * @rule can no longer be applied to the same method twice.
 * Python 2.6 and 3.3 are no longer officially supported, although in practice
   they still work fine.
