@@ -194,4 +194,4 @@ hypothesis-pytest is the world's most basic pytest plugin. Install it to get
 slightly better integrated example reporting when using @given and running
 under pytest.
 
-It can also load :ref:`Settings Profiles <settings_profiles>`.
+It can also load :ref:`settings Profiles <settings_profiles>`.

@@ -226,14 +226,14 @@ technical limitations, Hypothesis was unable to find that particular shrink.
 In general it's rare for examples produced to be long, but they won't always be
 minimal.
 
-You can control the detailed behaviour with a Settings object on the TestCase
-(this is a normal hypothesis Settings object using the defaults at the time
+You can control the detailed behaviour with a settings object on the TestCase
+(this is a normal hypothesis settings object using the defaults at the time
 the TestCase class was first referenced). For example if you wanted to run
 fewer examples with larger programs you could change the settings to:
 
 .. code:: python
 
-  TestTrees.settings = Settings(max_examples=100, stateful_step_count=100)
+  TestTrees.settings = settings(max_examples=100, stateful_step_count=100)
 
 Which doubles the number of steps each program runs and halves the number of
 runs relative to the example. settings.timeout will also be respected as usual.

@@ -94,7 +94,7 @@ First we need to define a strategy for Node:
 
 .. code:: python
 
-  from hypothesis import Settings, strategy
+  from hypothesis import settings, strategy
   import hypothesis.strategies as s
 
   NodeStrategy = s.builds(
@@ -200,7 +200,7 @@ Hypothesis, and how the hypothesis-datetime extra package works.
 
 .. code:: python
 
-    from hypothesis import given, Settings
+    from hypothesis import given, settings
     from hypothesis.extra.datetime import datetimes
     from hypothesis.strategies import sampled_from
     import pytz
@@ -210,7 +210,7 @@ Hypothesis, and how the hypothesis-datetime extra package works.
 
     # There are a lot of fiddly edge cases in dates, so we run a larger number of
     # examples just to be sure
-    with Settings(max_examples=1000):
+    with settings(max_examples=1000):
         @given(
             datetimes(),  # datetimes generated are non-naive by default
             sampled_from(ALL_TIMEZONES), sampled_from(ALL_TIMEZONES),
@@ -387,7 +387,7 @@ then use the result and go on to do other things are definitely also possible.
 .. code:: python
 
     import unittest
-    from hypothesis import given, assume, Settings
+    from hypothesis import given, assume, settings
     from collections import namedtuple
     import requests
     import os
@@ -399,8 +399,8 @@ then use the result and go on to do other things are definitely also possible.
     # These tests will be quite slow because we have to talk to an external
     # service. Also we'll put in a sleep between calls so as to not hammer it.
     # As a result we reduce the number of test cases and turn off the timeout.
-    Settings.default.max_examples = 100
-    Settings.default.timeout = -1
+    settings.default.max_examples = 100
+    settings.default.timeout = -1
 
     Goal = namedtuple("Goal", ("slug",))
 

@@ -24,7 +24,7 @@ File locations
 The default (and currently only) storage format is as rather weirdly unidiomatic JSON saved
 in an sqlite3 database. The standard location for that is .hypothesis/examples.db in your current
 working directory. You can override this, either by setting either the database\_file property on
-a Settings object (you probably want to specify it on Settings.default) or by setting the
+a settings object (you probably want to specify it on settings.default) or by setting the
 HYPOTHESIS\_DATABASE\_FILE environment variable.
 
 Note: There are other files in .hypothesis but everything other than the examples.db will be

@@ -1,25 +1,25 @@
 ========
-Settings
+settings
 ========
 
 Hypothesis tries to have good defaults for its behaviour, but sometimes that's
 not enough and you need to tweak it.
 
-The mechanism for doing this is the :class:`~hypothesis.Settings` object.
-You can set up a @given based test to use this using a Settings decorator:
+The mechanism for doing this is the :class:`~hypothesis.settings` object.
+You can set up a @given based test to use this using a settings decorator:
 
 :func:`@given <hypothesis.core.given>` invocation as follows:
 
 .. code:: python
 
-    from hypothesis import given, Settings
+    from hypothesis import given, settings
 
     @given(integers())
-    @Settings(max_examples=500)
+    @settings(max_examples=500)
     def test_this_thoroughly(x):
         pass
 
-This uses a :class:`~hypothesis.Settings` object which causes the test to receive a much larger
+This uses a :class:`~hypothesis.settings` object which causes the test to receive a much larger
 set of examples than normal.
 
 This may be applied either before or after the given and the results are
@@ -28,9 +28,9 @@ the same. The following is exactly equivalent:
 
 .. code:: python
 
-    from hypothesis import given, Settings
+    from hypothesis import given, settings
 
-    @Settings(max_examples=500)
+    @settings(max_examples=500)
     @given(integers())
     def test_this_thoroughly(x):
         pass
@@ -59,9 +59,9 @@ of verbose output are, well, verbose, but they should convey the idea).
 
 .. code:: python
 
-    >>> from hypothesis import find, Settings, Verbosity
+    >>> from hypothesis import find, settings, Verbosity
     >>> from hypothesis.strategies import lists, booleans
-    >>> find(lists(booleans()), any, settings=Settings(verbosity=Verbosity.verbose))
+    >>> find(lists(booleans()), any, settings=settings(verbosity=Verbosity.verbose))
     Found satisfying example [True, True, ...
     Shrunk example to [False, False, False, True, ...
     Shrunk example to [False, False, True, False, False, ...
@@ -73,7 +73,7 @@ of verbose output are, well, verbose, but they should convey the idea).
 
     >>> from hypothesis import given
     >>> from hypothesis.strategies import integers()
-    >>> Settings.default.verbosity = Verbosity.verbose
+    >>> settings.default.verbosity = Verbosity.verbose
     >>> @given(integers())
     ... def test_foo(x):
     ...     assert x > 0
@@ -108,20 +108,20 @@ setting ``HYPOTHESIS_VERBOSITY_LEVEL=verbose`` will run all your tests printing
 intermediate results and errors.
 
 -------------------------
-Building Settings objects
+Building settings objects
 -------------------------
 
-Settings can be created by calling Settings with any of the available settings
+settings can be created by calling settings with any of the available settings
 values. Any absent ones will be set to defaults:
 
 .. code:: pycon
 
-    >>> from hypothesis import Settings
-    >>> Settings()
-    Settings(average_list_length=25.0, database_file='/home/david/projects/hypothesis/.hypothesis/examples.db', derandomize=False, max_examples=200, max_iterations=1000, max_shrinks=500, min_satisfying_examples=5, stateful_step_count=50, strict=False, timeout=60, verbosity=Verbosity.normal)
-    >>> Settings().max_examples
+    >>> from hypothesis import settings
+    >>> settings()
+    settings(average_list_length=25.0, database_file='/home/david/projects/hypothesis/.hypothesis/examples.db', derandomize=False, max_examples=200, max_iterations=1000, max_shrinks=500, min_satisfying_examples=5, stateful_step_count=50, strict=False, timeout=60, verbosity=Verbosity.normal)
+    >>> settings().max_examples
     200
-    >>> Settings(max_examples=10).max_examples
+    >>> settings(max_examples=10).max_examples
     10
 
 
@@ -129,8 +129,8 @@ You can also copy settings off other settings:
 
 .. code:: pycon
 
-    >>> s = Settings(max_examples=10)
-    >>> t = Settings(s, max_iterations=20)
+    >>> s = settings(max_examples=10)
+    >>> t = settings(s, max_iterations=20)
     >>> s.max_examples
     10
     >>> t.max_iterations
@@ -147,9 +147,9 @@ Default settings
 ----------------
 
 At any given point in your program there is a current default settings,
-available as Settings.default. As well as being a Settings object in its own
-right, all newly created Settings objects which are not explicitly based off
-another Settings are based off the default, so will inherit any values that are
+available as settings.default. As well as being a settings object in its own
+right, all newly created settings objects which are not explicitly based off
+another settings are based off the default, so will inherit any values that are
 not explicitly set from it.
 
 You can change the defaults by using profiles (see next section), but you can
@@ -158,13 +158,13 @@ also override them locally by using a settings object as a :ref:`context manager
 
 .. code:: python
 
-  >>> with Settings(max_examples=150):
-  ...     print(Settings.default.max_examples)
-  ...     print(Settings().max_examples)
+  >>> with settings(max_examples=150):
+  ...     print(settings.default.max_examples)
+  ...     print(settings().max_examples)
   ...
   150
   150
-  >>> Settings().max_examples
+  >>> settings().max_examples
   200
 
 Note that after the block exits the default is returned to normal.
@@ -173,14 +173,14 @@ You can use this by nesting test definitions inside the context:
 
 .. code:: python
 
-    from hypothesis import given, Settings
+    from hypothesis import given, settings
 
-    with Settings(max_examples=500):
+    with settings(max_examples=500):
         @given(integers())
         def test_this_thoroughly(x):
             pass
 
-All Settings objects created or tests defined inside the block will inherit their
+All settings objects created or tests defined inside the block will inherit their
 defaults from the settings object used as the context. You can still override them
 with custom defined settings of course.
 
@@ -191,7 +191,7 @@ manager only affects the definition, not the execution of the function.
 .. _settings_profiles:
 
 ~~~~~~~~~~~~~~~~~
-Settings Profiles
+settings Profiles
 ~~~~~~~~~~~~~~~~~
 
 Depending on your environment you may want different default settings.
@@ -207,12 +207,12 @@ of tests that explicitly change the settings.
 
 .. code:: python
 
-    >>> from hypothesis import Settings
-    >>> Settings.register_profile("ci", Settings(max_examples=1000))
-    >>> Settings().max_examples
+    >>> from hypothesis import settings
+    >>> settings.register_profile("ci", settings(max_examples=1000))
+    >>> settings().max_examples
     200
-    >>> Settings.load_profile("ci")
-    >>> Settings().max_examples
+    >>> settings.load_profile("ci")
+    >>> settings().max_examples
     1000
 
 Instead of loading the profile and overriding the defaults you can retrieve profiles for
@@ -220,8 +220,8 @@ specific tests.
 
 .. code:: python
 
-  >>> with Settings.get_profile("ci"):
-  ...     print(Settings().max_examples)
+  >>> with settings.get_profile("ci"):
+  ...     print(settings().max_examples)
   ...
   1000
 
@@ -232,11 +232,11 @@ If this variable is not defined the Hypothesis defined defaults will be loaded.
 
 .. code:: python
 
-    >>> from hypothesis import Settings
-    >>> Settings.register_profile("ci", Settings(max_examples=1000))
-    >>> Settings.register_profile("dev", Settings(max_examples=10))
-    >>> Settings.register_profile("debug", Settings(max_examples=10, verbosity=Verbosity.verbose))
-    >>> Settings.load_profile(os.getenv(u'HYPOTHESIS_PROFILE', 'default'))
+    >>> from hypothesis import settings
+    >>> settings.register_profile("ci", settings(max_examples=1000))
+    >>> settings.register_profile("dev", settings(max_examples=10))
+    >>> settings.register_profile("debug", settings(max_examples=10, verbosity=Verbosity.verbose))
+    >>> settings.load_profile(os.getenv(u'HYPOTHESIS_PROFILE', 'default'))
 
 If you are using the hypothesis pytest plugin and your profiles are registered
 by your conftest you can load one with the command line option ``--hypothesis-profile``.
