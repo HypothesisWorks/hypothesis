@@ -46,6 +46,8 @@ In particular:
 * the n_ary_tree strategy no longer exists.
 * the average_list_length setting no longer exists.
 * @rule can no longer be applied to the same method twice.
+* Python 2.6 and 3.3 are no longer officially supported, although in practice
+  they still work fine.
 
 This also includes two non-deprecation changes:
 
