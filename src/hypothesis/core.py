@@ -595,7 +595,7 @@ def given(*generator_arguments, **generator_kwargs):
                                 'generation in initial health check. '
                                 'This indicates a bug in the strategy. '
                                 'This could either be a Hypothesis bug or '
-                                "an error in a function yo've passed to "
+                                "an error in a function you've passed to "
                                 'it to construct your data.'
                             )
                         else:
@@ -633,7 +633,7 @@ def given(*generator_arguments, **generator_kwargs):
                     fail_health_check((
                         'Data generation is extremely slow: Only produced '
                         '%d valid examples in %.2f seconds. Try decreasing '
-                        "size of the data yo're generating (with e.g."
+                        "size of the data you're generating (with e.g. "
                         'average_size or max_leaves parameters).'
                     ) % (count, runtime))
                 if getglobalrandomstate() != initial_state:
