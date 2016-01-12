@@ -183,7 +183,7 @@ TestJSON = strategy_test_suite(
 
 TestWayTooClever = strategy_test_suite(
     recursive(
-        frozensets(integers(), min_size=1),
+        frozensets(integers(), min_size=1, average_size=2.0),
         lambda x: frozensets(x, min_size=2, max_size=4)).flatmap(
         sampled_from
     )
