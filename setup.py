@@ -82,6 +82,4 @@ setup(
         'pytest11': ['hypothesispytest = hypothesis.extra.pytestplugin'],
     },
     long_description=open(README).read(),
-    tests_require=[
-        'pytest', 'flake8'],
 )
