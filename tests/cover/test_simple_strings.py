@@ -100,9 +100,11 @@ def test_does_not_generate_surrogates(t):
 
 
 def test_does_not_simplify_into_surrogates():
-    f = find(text(), lambda x: x >= u'\udfff')
+    f = find(text(average_size=25.0), lambda x: x >= u'\udfff')
     assert f == u'\ue000'
-    f = find(text(), lambda x: len([t for t in x if t >= u'\udfff']) >= 10)
+    f = find(
+        text(average_size=25.0),
+        lambda x: len([t for t in x if t >= u'\udfff']) >= 10)
     assert f == u'\ue000' * 10
 
 

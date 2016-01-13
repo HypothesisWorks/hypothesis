@@ -20,28 +20,33 @@ from random import Random
 
 import pytest
 
-from hypothesis import find, given, settings
+from hypothesis import find, given, assume, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import sets, lists, floats, randoms, booleans, \
     integers, frozensets
 
 
-def test_template_equality():
+@given(integers())
+@settings(max_examples=1)
+def test_template_equality(seed):
     s = sets(integers())
-    t = s.draw_and_produce(Random(1))
+    t = s.draw_and_produce(Random(seed))
     assert t != 1
 
-    t2 = s.draw_and_produce(Random(1))
+    t2 = s.draw_and_produce(Random(seed))
     assert t is not t2
     assert t == t2
     s.reify(t2)
     assert t == t2
     assert hash(t) == hash(t2)
 
-    t3 = s.draw_and_produce(Random(1))
+    t3 = s.draw_and_produce(Random(seed))
     s.reify(t3)
-    for ts in s.full_simplify(Random(1), t3):
+    simplified = False
+    for ts in s.full_simplify(Random(seed), t3):
+        simplified = True
         assert t3 != ts
+    assume(simplified)
 
 
 def test_simplifying_unreified_template_does_not_error():
@@ -50,15 +55,16 @@ def test_simplifying_unreified_template_does_not_error():
     list(s.full_simplify(Random(1), t))
 
 
-def test_reified_templates_are_simpler():
+@given(integers())
+@settings(max_examples=1)
+def test_reified_templates_are_simpler(seed):
     s = sets(integers())
-    t1 = s.draw_and_produce(Random(1))
-    t2 = s.draw_and_produce(Random(1))
+    t1 = s.draw_and_produce(Random(seed))
+    t2 = s.draw_and_produce(Random(seed))
 
     assert t1 == t2
     assert not s.strictly_simpler(t1, t2)
-
-    s.reify(t1)
+    assume(s.reify(t1))
     assert s.strictly_simpler(t1, t2)
     assert not s.strictly_simpler(t2, t1)
 

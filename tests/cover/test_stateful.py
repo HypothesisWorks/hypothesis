@@ -353,7 +353,7 @@ def test_multiple_rules_same_func():
 class GivenLikeStateMachine(GenericStateMachine):
 
     def steps(self):
-        return lists(booleans())
+        return lists(booleans(), average_size=25.0)
 
     def execute_step(self, step):
         assume(any(step))

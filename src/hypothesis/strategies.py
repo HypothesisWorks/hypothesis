@@ -1026,4 +1026,4 @@ def check_valid_sizes(min_size, average_size, max_size):
                 ))
 
 
-_AVERAGE_LIST_LENGTH = 25.0
+_AVERAGE_LIST_LENGTH = 5.0
