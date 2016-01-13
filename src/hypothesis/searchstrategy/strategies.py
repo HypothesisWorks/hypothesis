@@ -308,7 +308,7 @@ class SearchStrategy(object):
         General tips for a good simplify function:
 
             1. The generator shouldn't yield too many values. A few hundred is
-               fine, but if yo're generating millions of simplifications you
+               fine, but if you're generating millions of simplifications you
                may wish to reconsider your life choices and evaluate which ones
                actually matter to you.
             2. Cycles in simplify are fine, but the simplify graph should be
