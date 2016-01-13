@@ -34,7 +34,7 @@ class UnsatisfiedAssumption(HypothesisException):
 
     """An internal error raised by assume.
 
-    If yo're seeing this error something has gone wrong.
+    If you're seeing this error something has gone wrong.
 
     """
 
