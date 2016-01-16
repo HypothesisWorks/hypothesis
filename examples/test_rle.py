@@ -1,8 +1,23 @@
-"""
-This example demonstrates testing a run length encoding scheme. That is, we
+# coding=utf-8
+#
+# This file is part of Hypothesis (https://github.com/DRMacIver/hypothesis)
+#
+# Most of this work is copyright (C) 2013-2015 David R. MacIver
+# (david@drmaciver.com), but it contains contributions by others. See
+# https://github.com/DRMacIver/hypothesis/blob/master/CONTRIBUTING.rst for a
+# full list of people who may hold copyright, and consult the git log if you
+# need to determine who owns an individual contribution.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file, You can
+# obtain one at http://mozilla.org/MPL/2.0/.
+#
+# END HEADER
+
+"""This example demonstrates testing a run length encoding scheme. That is, we
 take a sequence and represent it by a shorter sequence where each 'run' of
-consecutive equal elements is represented as a single element plus a count.
-So e.g.
+consecutive equal elements is represented as a single element plus a count. So
+e.g.
 
 [1, 1, 1, 1, 2, 1] is represented as [[1, 4], [2, 1], [1, 1]]
 
@@ -11,6 +26,7 @@ a fruitful source of testing with Hypothesis.
 
 It also has an example of testing invariants in resposne to changes in the
 underlying data.
+
 """
 
 from __future__ import division, print_function, absolute_import
@@ -42,8 +58,8 @@ def run_length_encode(seq):
 
 
 def run_length_decode(seq):
-    """Take a previously encoded sequence and reconstruct the original from it.
-    """
+    """Take a previously encoded sequence and reconstruct the original from
+    it."""
     result = []
     for s, i in seq:
         for _ in range(i):
@@ -59,7 +75,11 @@ Lists = st.lists(st.integers(0, 10))
 @given(Lists)
 def test_decodes_to_starting_sequence(ls):
     """If we encode a sequence and then decode the result, we should get the
-    original sequence back. Otherwise we've done something very wrong."""
+    original sequence back.
+
+    Otherwise we've done something very wrong.
+
+    """
     assert run_length_decode(run_length_encode(ls)) == ls
 
 
@@ -67,9 +87,11 @@ def test_decodes_to_starting_sequence(ls):
 def test_duplicating_an_element_does_not_increase_length(ls, i):
     """The previous test could be passed by simply returning the input sequence
     so we need something that tests the compression property of our encoding.
-    In this test we deliberately introduce or extend a run and assert that this
-    does not increase the length of our encoding, because they should be part
-    of the same run in the final result.
+
+    In this test we deliberately introduce or extend a run and assert
+    that this does not increase the length of our encoding, because they
+    should be part of the same run in the final result.
+
     """
     # We use assume to get a valid index into the list. We could also have used
     # e.g. flatmap, but this is relatively straightforward and will tend to
