@@ -66,8 +66,8 @@ format: $(PYFORMAT) $(ISORT)
 	$(ISORT_VIRTUALENV)/bin/python -m pip install django pytz pytest fake-factory numpy
 	env -i PATH=$(PATH) $(ISORT) -p hypothesis -ls -m 2 -w 75 \
 			-a  "from __future__ import absolute_import, print_function, division" \
-			-rc src tests
-	find src tests -name '*.py' | xargs $(PYFORMAT) -i
+			-rc src tests examples
+	find src tests examples -name '*.py' | xargs $(PYFORMAT) -i
 
 lint: $(FLAKE8)
 	$(FLAKE8) src tests --exclude=compat.py,test_reflection.py,test_imports.py,tests/py2 --ignore=E731,E721
@@ -121,6 +121,12 @@ check-django19: $(TOX) $(PY35)
 	$(TOX) -e django19
 
 check-django: check-django17 check-django18 check-django19
+
+check-examples2: $(TOX) $(PY27)
+	$(TOX) -e examples2
+
+check-examples3: $(TOX) $(PY35)
+	$(TOX) -e examples3
 
 check-coverage: $(TOX) $(PY35)
 	$(TOX) -e coverage
