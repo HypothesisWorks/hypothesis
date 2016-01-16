@@ -1,16 +1,45 @@
-from hypothesis import given
+# coding=utf-8
+#
+# This file is part of Hypothesis (https://github.com/DRMacIver/hypothesis)
+#
+# Most of this work is copyright (C) 2013-2015 David R. MacIver
+# (david@drmaciver.com), but it contains contributions by others. See
+# https://github.com/DRMacIver/hypothesis/blob/master/CONTRIBUTING.rst for a
+# full list of people who may hold copyright, and consult the git log if you
+# need to determine who owns an individual contribution.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file, You can
+# obtain one at http://mozilla.org/MPL/2.0/.
+#
+# END HEADER
+
+"""This file demonstrates testing a binary search.
+
+It's a useful example because the result of the binary search is so clearly
+determined by the invariants it must satisfy, so we can simply test for those
+invariants.
+
+It also demonstrates the useful testing technique of testing how the answer
+should change (or not) in response to movements in the underlying data.
+
+"""
+
+from __future__ import division, print_function, absolute_import
+
 import hypothesis.strategies as st
+from hypothesis import given
 
 
 def binary_search(ls, v):
-    """
-    Take a list ls and a value v such that ls is sorted and v is comparable
+    """Take a list ls and a value v such that ls is sorted and v is comparable
     with the elements of ls.
 
     Return an index i such that 0 <= i <= len(v) with the properties:
 
     1. ls.insert(i, v) is sorted
     2. ls.insert(j, v) is not sorted for j < i
+
     """
     # Without this check we will get an index error on the next line when the
     # list is empty.
