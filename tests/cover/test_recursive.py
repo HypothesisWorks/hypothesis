@@ -89,13 +89,14 @@ def test_recursive_call_validates_expand_returns_strategies():
 
 
 @given(st.randoms())
+@settings(max_examples=5, max_shrinks=0)
 def test_can_use_recursive_data_in_sets(rnd):
     nested_sets = st.recursive(
         st.booleans(),
         lambda js: st.frozensets(js, average_size=2.0),
         max_leaves=10
     )
-    nested_sets.example()
+    nested_sets.example(rnd)
 
     def flatten(x):
         if isinstance(x, bool):
@@ -107,9 +108,10 @@ def test_can_use_recursive_data_in_sets(rnd):
                 if len(result) == 2:
                     break
             return result
+    assert rnd is not None
     x = find(
         nested_sets, lambda x: len(flatten(x)) == 2, random=rnd,
-        settings=settings(database=None))
+        settings=settings(database=None, max_shrinks=1000, max_examples=1000))
     assert x == frozenset((False, True))
 
 
@@ -127,9 +129,8 @@ def test_can_form_sets_of_recursive_data():
     assert True in xs
 
 
-@flaky(max_runs=5, min_passes=1)
 @given(st.randoms())
-@settings(max_examples=10, database=None)
+@settings(max_examples=10, database=None, max_shrinks=0)
 def test_can_simplify_hard_recursive_data_into_boolean_alternative(rnd):
     """This test forces us to exercise the simplification through redrawing
     functionality, thus testing that we can deal with bad templates."""
@@ -149,7 +150,8 @@ def test_can_simplify_hard_recursive_data_into_boolean_alternative(rnd):
         hard(st.integers()) |
         hard(st.booleans()),
         lambda x: len(leaves(x)) >= 3,
-        random=rnd, settings=settings(database=None, max_examples=5000))
+        random=rnd, settings=settings(
+            database=None, max_examples=5000, max_shrinks=1000))
     lvs = leaves(r)
     assert lvs == [False] * 3
     assert all(isinstance(v, bool) for v in lvs), repr(lvs)
