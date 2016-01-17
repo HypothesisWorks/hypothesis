@@ -233,6 +233,7 @@ class TestRunner(object):
         change_counter = -1
         while self.changed > change_counter:
             change_counter = self.changed
+
             i = 0
             while i < len(self.last_data.intervals):
                 u, v = self.last_data.intervals[i]
@@ -241,49 +242,30 @@ class TestRunner(object):
                     self.last_data.buffer[v:]
                 ):
                     i += 1
-        change_counter = -1
-        while self.changed > change_counter:
-            change_counter = self.changed
+            if self.changed > change_counter:
+                continue
             i = 0
             while i < len(self.last_data.intervals):
                 u, v = self.last_data.intervals[i]
-                self.incorporate_new_buffer(
-                    self.last_data.buffer[:u] +
-                    bytes(v - u) +
-                    self.last_data.buffer[v:]
-                )
-                i += 1
-
-        from hypothesis.internal.conjecture.minimizer import minimize
-        i = 0
-        while i < len(self.last_data.intervals):
-            u, v = self.last_data.intervals[-1 - i]
-            self.incorporate_new_buffer(
-                self.last_data.buffer[:u] +
-                bytes(v - u) +
-                self.last_data.buffer[v:]
+                for l in range(v - u):
+                    if self.incorporate_new_buffer(
+                        self.last_data.buffer[:u] +
+                        bytes(l) +
+                        self.last_data.buffer[v:]
+                    ) or self.incorporate_new_buffer(
+                        self.last_data.buffer[:u] +
+                        self.rand_bytes(l) +
+                        self.last_data.buffer[v:]
+                    ):
+                        break
+                    else:
+                        i += 1
+            if self.changed > change_counter:
+                continue
+            from hypothesis.internal.conjecture.minimizer import minimize
+            minimize(
+                self.last_data.buffer, self.incorporate_new_buffer, self.random
             )
-            i += 1
-
-        minimize(
-            self.last_data.buffer, self.incorporate_new_buffer, self.random
-        )
-
-        change_counter = -1
-        while self.changed > change_counter:
-            change_counter = self.changed
-            i = 0
-            while i < len(self.last_data.intervals):
-                u, v = self.last_data.intervals[-1 - i]
-                buf = self.last_data.buffer
-                minimize(
-                    buf[u:v],
-                    lambda b: self.incorporate_new_buffer(
-                        buf[:u] + b + buf[v:]
-                    ),
-                    self.random
-                )
-                i += 1
 
     def mutate_data_to_new_buffer(self):
         n = min(len(self.last_data.buffer), self.last_data.index)
