@@ -557,7 +557,7 @@ def given(*generator_arguments, **generator_kwargs):
     return run_test_with_generator
 
 
-def find(specifier, condition, settings=None, random=None, storage=None):
+def find(specifier, condition, settings=None, random=None):
     settings = settings or Settings(
         max_examples=2000,
         min_satisfying_examples=0,
@@ -572,12 +572,6 @@ def find(specifier, condition, settings=None, random=None, storage=None):
 
     search = specifier
 
-    if storage is None and settings.database is not None:
-        storage = settings.database.storage(
-            'find(%s)' % (
-                binascii.hexlify(function_digest(condition)).decode('ascii'),
-            )
-        )
 
     random = random or new_random()
     successful_examples = [0]
