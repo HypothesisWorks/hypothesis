@@ -66,11 +66,6 @@ def test_raises_when_no_example():
         find(integers(), lambda x: False, settings=settings)
 
 
-def test_raises_more_specifically_when_exhausted():
-    with pytest.raises(DefinitelyNoSuchExample):
-        find(booleans(), lambda x: False)
-
-
 def test_condition_is_name():
     settings = Settings(
         max_examples=20,
