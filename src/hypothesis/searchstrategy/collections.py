@@ -102,17 +102,19 @@ class ListStrategy(SearchStrategy):
     def do_draw(self, data):
         stopping_value = min(int(255 / self.average_length), 128)
         result = []
-        while len(result) < self.max_size:
+        while True:
             data.start_example()
             probe = d.byte(data)
+            value = data.draw(self.element_strategy)
+            data.stop_example()
             if probe <= stopping_value:
-                data.stop_example()
                 if len(result) < self.min_size:
                     continue
                 else:
                     break
-            result.append(data.draw(self.element_strategy))
-            data.stop_example()
+            result.append(value)
+        if self.max_size < float('inf'):
+            result = result[:self.max_size]
         return result
 
     def __repr__(self):
