@@ -40,7 +40,7 @@ from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.internal.compat import getargspec
 from hypothesis.internal.reflection import arg_string, impersonate, \
     copy_argspec, function_digest, convert_positional_arguments, \
-    get_pretty_function_description
+    get_pretty_function_description, fully_qualified_name
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
@@ -435,42 +435,67 @@ def given(*generator_arguments, **generator_kwargs):
                             'explicitly seed the random module.')
 
             from hypothesis.internal.conjecture.engine import TestRunner
-            from hypothesis.internal.conjecture.data import TestData, Status
-            start_time = time.time()
-            runner = TestRunner(
-                evaluate_test_data,
-                settings=settings, random=random
-            )
-            runner.run()
-            run_time = time.time() - start_time
-            timed_out = (
-                settings.timeout > 0 and
-                run_time >= settings.timeout
-            )
-            if runner.last_data.status != Status.INTERESTING:
-                if runner.valid_examples < min(
-                    settings.min_satisfying_examples,
-                    settings.max_examples,
-                ):
-                    if timed_out:
-                        raise Timeout((
-                            'Ran out of time before finding a satisfying '
-                            'example for '
-                            '%s. Only found %d examples in ' +
-                            '%.2fs.'
-                        ) % (
-                            get_pretty_function_description(test),
-                            runner.valid_examples, run_time
-                        ))
-                    else:
-                        raise Unsatisfiable((
-                            'Unable to satisfy assumptions of hypothesis '
-                            '%s. Only %d examples considered '
-                            'satisfied assumptions'
-                        ) % (
-                            get_pretty_function_description(test),
-                            runner.valid_examples,))
-                return
+            from hypothesis.internal.conjecture.data import TestData, Status, \
+                StopTest
+
+            falsifying_example = None
+            database_key = fully_qualified_name(test).encode('utf-8')
+            if settings.database is not None:
+                for existing in settings.database.fetch(database_key):
+                    data = TestData.for_buffer(existing)
+                    try:
+                        evaluate_test_data(data)
+                    except StopTest as e:
+                        if e.data is not data:
+                            raise
+                    if data.status < Status.VALID:
+                        settings.database.delete(database_key, existing)
+                    if data.status == Status.INTERESTING:
+                        falsifying_example = existing
+                        break
+
+            if falsifying_example is None:
+                start_time = time.time()
+                runner = TestRunner(
+                    evaluate_test_data,
+                    settings=settings, random=random
+                )
+                runner.run()
+                run_time = time.time() - start_time
+                timed_out = (
+                    settings.timeout > 0 and
+                    run_time >= settings.timeout
+                )
+                if runner.last_data.status == Status.INTERESTING:
+                    falsifying_example = runner.last_data.buffer
+                    if settings.database is not None:
+                        settings.database.save(
+                            database_key, falsifying_example
+                        )
+                else:
+                    if runner.valid_examples < min(
+                        settings.min_satisfying_examples,
+                        settings.max_examples,
+                    ):
+                        if timed_out:
+                            raise Timeout((
+                                'Ran out of time before finding a satisfying '
+                                'example for '
+                                '%s. Only found %d examples in ' +
+                                '%.2fs.'
+                            ) % (
+                                get_pretty_function_description(test),
+                                runner.valid_examples, run_time
+                            ))
+                        else:
+                            raise Unsatisfiable((
+                                'Unable to satisfy assumptions of hypothesis '
+                                '%s. Only %d examples considered '
+                                'satisfied assumptions'
+                            ) % (
+                                get_pretty_function_description(test),
+                                runner.valid_examples,))
+                    return
 
             assert last_exception[0] is not None
 
@@ -478,7 +503,7 @@ def given(*generator_arguments, **generator_kwargs):
                 with settings:
                     test_runner(reify_and_execute(
                         search_strategy, TestData.for_buffer(
-                            runner.last_data.buffer
+                            falsifying_example
                         ), test,
                         print_example=True, is_final=True
                     ))
@@ -497,7 +522,7 @@ def given(*generator_arguments, **generator_kwargs):
             try:
                 test_runner(reify_and_execute(
                     search_strategy, TestData.for_buffer(
-                        runner.last_data.buffer
+                        falsifying_example
                     ),
                     test_is_flaky(test, repr_for_last_exception[0]),
                     print_example=True, is_final=True
@@ -513,7 +538,7 @@ def given(*generator_arguments, **generator_kwargs):
                 )
             test_runner(reify_and_execute(
                 search_strategy, TestData.for_buffer(
-                    runner.last_data.buffer
+                    falsifying_example
                 ),
                 test_is_flaky(test, repr_for_last_exception[0]),
                 print_example=True, is_final=True

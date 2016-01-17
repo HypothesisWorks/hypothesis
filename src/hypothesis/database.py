@@ -14,36 +14,32 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
-
 import sqlite3
 import threading
 from abc import abstractmethod
 from contextlib import contextmanager
+import base64
+import binascii
 
-from hypothesis.internal.compat import text_type
+
+class EDMeta(type):
+    def __call__(self, *args, **kwargs):
+        if self is ExampleDatabase:
+            self = SQLiteExampleDatabase
+        return super(EDMeta, self).__call__(*args, **kwargs)
 
 
-class Backend(object):
-
+class ExampleDatabase(EDMeta('ExampleDatabase', (object,), {})):
     """Interface class for storage systems.
 
-    Simple text key -> value mapping. values are of the type returned by
-    data_type() but keys are always unicode text (str in python 3, unicode in
-    python 2).
+    Simple binary key -> value mapping.
+
+    Keys and values are binary data.
 
     Every (key, value) pair appears at most once. Saving a duplicate will just
     silently do nothing.
 
     """
-
-    @abstractmethod  # pragma: no cover
-    def data_type(self):
-        """Returns the type of data that is suitable for values in this DB."""
-
-    @abstractmethod  # pragma: no cover
-    def save(self, key, value):
-        """Save a single value matching this key."""
 
     def delete(self, key, value):
         """Remove this value from this key.
@@ -58,13 +54,14 @@ class Backend(object):
     @abstractmethod  # pragma: no cover
     def fetch(self, key):
         """yield the values matching this key."""
+        raise NotImplementedError("%s.fetch" % (type(self).__name__))
 
     @abstractmethod  # pragma: no cover
     def close(self):
         """Close database connection whenever such is used."""
 
 
-class SQLiteBackend(Backend):
+class SQLiteExampleDatabase(ExampleDatabase):
 
     def __init__(self, path=u':memory:'):
         self.path = path
@@ -85,9 +82,6 @@ class SQLiteBackend(Backend):
 
     def __repr__(self):
         return u'%s(%s)' % (self.__class__.__name__, self.path)
-
-    def data_type(self):
-        return text_type
 
     @contextmanager
     def cursor(self):
@@ -111,7 +105,7 @@ class SQLiteBackend(Backend):
                 cursor.execute("""
                     insert into hypothesis_data_mapping(key, value)
                     values(?, ?)
-                """, (key, value))
+                """, (base64.b64encode(key), base64.b64encode(value)))
             except sqlite3.IntegrityError:
                 pass
 
@@ -121,7 +115,7 @@ class SQLiteBackend(Backend):
             cursor.execute("""
                 delete from hypothesis_data_mapping
                 where key = ? and value = ?
-            """, (key, value))
+            """,  (base64.b64encode(key), base64.b64encode(value)))
 
     def fetch(self, key):
         self.create_db_if_needed()
@@ -129,8 +123,12 @@ class SQLiteBackend(Backend):
             cursor.execute("""
                 select value from hypothesis_data_mapping
                 where key = ?
-            """, (key,))
-            return [value for (value,) in cursor]
+            """, (base64.b64encode(key),))
+            for (value,) in cursor:
+                try:
+                    yield base64.b64decode(value)
+                except binascii.Error:
+                    pass
 
     def keys(self):
         """Iterate over all keys in the database."""
@@ -140,7 +138,10 @@ class SQLiteBackend(Backend):
                 select distinct key from hypothesis_data_mapping
             """)
             for (key,) in cursor:
-                yield key
+                try:
+                    yield base64.b64decode(key)
+                except binascii.Error:
+                    pass
 
     def create_db_if_needed(self):
         if self.db_created:
