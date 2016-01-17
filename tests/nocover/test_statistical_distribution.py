@@ -76,6 +76,7 @@ class Result(object):
         desired_probability,
         predicate,
         condition_string,
+        specifier,
     ):
         self.success_count = success_count
         self.total_runs = total_runs
@@ -85,18 +86,21 @@ class Result(object):
         self.p = cumulative_binomial_probability(
             total_runs, self.desired_probability, success_count,
         )
+        self.specifier = specifier
         self.failed = False
 
     def description(self):
         condition_string = (
-            u' | ' + self.condition_string if self.condition_string else u'')
+            ' | ' + self.condition_string if self.condition_string else u'')
         return (
-            u'P(%s%s) >= %g: p = %g. Occurred in %d / %d = %g of runs. '
+            'P(%s%s) >= %g given %r: p = %g.'
+            ' Occurred in %d / %d = %g of runs. '
         ) % (
             strip_lambda(
                 reflection.get_pretty_function_description(self.predicate)),
             condition_string,
             self.desired_probability,
+            self.specifier,
             self.p,
             self.success_count, self.total_runs,
             float(self.success_count) / self.total_runs
@@ -182,6 +186,7 @@ def define_test(specifier, q, predicate, condition=None):
             q,
             predicate,
             condition_string,
+            specifier,
         )
 
         p = cumulative_binomial_probability(successful_runs, q, count)
