@@ -150,19 +150,6 @@ class FloatStrategy(SearchStrategy):
     def __repr__(self):
         return '%s()' % (self.__class__.__name__,)
 
-
-STANDARD_NAN = float('nan')
-
-
-class WrapperFloatStrategy(FloatStrategy):
-
-    def __init__(self, sub_strategy):
-        super(WrapperFloatStrategy, self).__init__()
-        self.sub_strategy = sub_strategy
-
-    def __repr__(self):
-        return 'WrapperFloatStrategy(%r)' % (self.sub_strategy,)
-
     def permitted(self, f):
         if not self.allow_infinity and math.isinf(f):
             return False
@@ -177,29 +164,11 @@ class WrapperFloatStrategy(FloatStrategy):
                 i = random.randint(1, 10)
                 if i <= 4:
                     f = random.choice(NASTY_FLOATS)
+                    if self.permitted(f):
+                        return struct.pack(b'!d', f)
                 else:
                     return bytes(random.randint(0, 255) for _ in range(8))
-                if self.permitted(f):
-                    return struct.pack(b'!d', f)
         return struct.unpack(b'!d', data.draw_bytes(8, draw_float_bytes))[0]
-
-
-def compose_float(sign, exponent, fraction):
-    as_long = (sign << 63) | (exponent << 52) | fraction
-    return struct.unpack(b'!d', struct.pack(b'!Q', as_long))[0]
-
-
-class FullRangeFloats(FloatStrategy):
-
-    Parameter = namedtuple(
-        'Parameter',
-        ('negative_probability', 'subnormal_probability')
-    )
-
-    def __init__(self, allow_nan=True, allow_infinity=True):
-        super(FullRangeFloats, self).__init__()
-        self.allow_nan = allow_nan
-        self.allow_infinity = allow_infinity
 
 
 class FixedBoundedFloatStrategy(SearchStrategy):
@@ -225,49 +194,22 @@ class FixedBoundedFloatStrategy(SearchStrategy):
             self.lower_bound, self.upper_bound,
         )
 
-
-class BoundedFloatStrategy(FloatStrategy):
-
-    """A float strategy such that every conditional distribution is bounded but
-    the endpoints may be arbitrary."""
-
-    Parameter = namedtuple(
-        'Parameter',
-        ('left', 'length', 'spread'),
-    )
-
-    def __init__(self):
-        super(BoundedFloatStrategy, self).__init__()
-        self.inner_strategy = FixedBoundedFloatStrategy(0, 1)
-
-    def draw_parameter(self, random):
-        return self.Parameter(
-            left=random.normalvariate(0, 1),
-            length=random.expovariate(1),
-            spread=self.inner_strategy.draw_parameter(random),
-        )
-
-    def draw_template(self, random, pv):
-        return pv.left + self.inner_strategy.draw_template(
-            random, pv.spread
-        ) * pv.length
-
-
-class GaussianFloatStrategy(FloatStrategy):
-
-    """A float strategy such that every conditional distribution is drawn from
-    a gaussian."""
-
-    def draw_parameter(self, random):
-        size = 1000.0
-        return (
-            random.normalvariate(0, size),
-            random.expovariate(1.0 / size)
-        )
-
-    def draw_template(self, random, param):
-        mean, sd = param
-        return random.normalvariate(mean, sd)
+    def do_draw(self, data):
+        def draw_float_bytes(random, n):
+            assert n == 8
+            i = random.randint(1, 10)
+            if i == 0:
+                f = self.lower_bound
+            elif i == 1:
+                f = self.upper_bound
+            else:
+                f = random.random() * (
+                    self.upper_bound - self.lower_bound
+                ) + self.lower_bound
+            return struct.pack(b'!d', f)
+        f = struct.unpack(b'!d', data.draw_bytes(8, draw_float_bytes))[0]
+        assume(self.lower_bound <= f <= self.upper_bound)
+        return f
 
 
 class ExponentialFloatStrategy(FloatStrategy):
