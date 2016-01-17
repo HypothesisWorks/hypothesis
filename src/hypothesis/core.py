@@ -269,6 +269,8 @@ def given(*generator_arguments, **generator_kwargs):
                     for n in b.notes:
                         report(n)
                     raise
+            if settings.max_examples <= 0:
+                return
 
             arguments = tuple(arguments)
 
