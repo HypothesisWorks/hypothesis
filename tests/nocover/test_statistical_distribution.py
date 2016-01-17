@@ -396,7 +396,8 @@ test_mixing_is_sometimes_distorted = define_test(
 )
 
 test_mixes_2_reasonably_often = define_test(
-    lists(booleans() | tuples()), 0.15, lambda x: len(set(map(type, x))) > 1,
+    lists(booleans() | tuples(), average_size=25.0), 0.15,
+    lambda x: len(set(map(type, x))) > 1,
     condition=bool,
 )
 
@@ -407,6 +408,7 @@ test_partial_mixes_3_reasonably_often = define_test(
 )
 
 test_mixes_not_too_often = define_test(
-    lists(booleans() | tuples()), 0.1, lambda x: len(set(map(type, x))) == 1,
+    lists(booleans() | tuples(), average_size=25.0), 0.1,
+    lambda x: len(set(map(type, x))) == 1,
     condition=bool,
 )
