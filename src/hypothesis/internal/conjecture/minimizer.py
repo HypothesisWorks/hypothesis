@@ -75,6 +75,13 @@ class Minimizer(object):
                             self.current[:i] + b + self.current[i + 1:]
                         )
                     i += 1
+            for c in range(256):
+                if self.current.count(c) > 1:
+                    for d in range(c):
+                        if self.incorporate(bytes(
+                            d if t == c else t for t in self.current
+                        )):
+                            break
             i = 1
             while i < len(self.current):
                 if self.current[i] == 0 and self.current[i - 1] > 0:

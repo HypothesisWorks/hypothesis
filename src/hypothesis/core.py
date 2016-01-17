@@ -31,14 +31,12 @@ from collections import namedtuple
 
 from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
     Unsatisfiable, InvalidArgument, FailedHealthCheck, \
-    UnsatisfiedAssumption, \
-    HypothesisDeprecationWarning
+    UnsatisfiedAssumption, HypothesisDeprecationWarning
 from hypothesis.control import BuildContext
 from hypothesis._settings import settings as Settings
 from hypothesis._settings import Verbosity
 from hypothesis.executors import executor
-from hypothesis.reporting import report, verbose_report, \
-    current_verbosity
+from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.internal.compat import getargspec
 from hypothesis.internal.reflection import arg_string, impersonate, \
     copy_argspec, function_digest, convert_positional_arguments, \
