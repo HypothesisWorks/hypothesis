@@ -524,3 +524,10 @@ def test_duplicate_containment(s):
         lambda s: s[0].count(s[1]) > 1)
     assert ls == [0, 0]
     assert i == 0
+
+
+def test_unique_lists_of_single_characters():
+    x = minimal(
+        lists(text(max_size=1), unique=True, min_size=5)
+    )
+    assert x == ['', '0', '1', '2', '3']
