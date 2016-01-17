@@ -31,7 +31,6 @@ from hypothesis.control import BuildContext
 from hypothesis.database import ExampleDatabase
 from hypothesis.strategies import lists, randoms, integers
 from hypothesis.internal.compat import hrange, text_type, integer_types
-from hypothesis.database.backend import SQLiteBackend
 from hypothesis.internal.tracker import Tracker
 from hypothesis.internal.extmethod import ExtMethod
 from hypothesis.searchstrategy.strategies import SearchStrategy
@@ -313,9 +312,7 @@ def strategy_test_suite(
 
         @specifier_test
         def test_can_round_trip_through_the_database(self, template, rnd):
-            empty_db = ExampleDatabase(
-                backend=SQLiteBackend(':memory:'),
-            )
+            empty_db = ExampleDatabase(':memory:')
             try:
                 storage = empty_db.storage('round trip')
                 storage.save(template, strat)
