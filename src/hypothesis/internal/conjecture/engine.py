@@ -89,7 +89,7 @@ class TestRunner(object):
             raise RunIsComplete()
         self.examples_considered += 1
         if (
-            buffer[:self.last_data.index] ==
+            buffer[:self.last_data.index] >=
             self.last_data.buffer[:self.last_data.index]
         ):
             return False
