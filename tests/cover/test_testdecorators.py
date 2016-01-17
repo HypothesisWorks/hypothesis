@@ -539,6 +539,7 @@ def test_can_be_used_with_none_module():
 
 def test_does_not_print_notes_if_all_succeed():
     @given(integers())
+    @settings(verbosity=Verbosity.normal)
     def test(i):
         note('Hi there')
     with capture_out() as out:
@@ -549,7 +550,7 @@ def test_does_not_print_notes_if_all_succeed():
 
 def test_prints_notes_once_on_failure():
     @given(lists(integers()))
-    @settings(database=None)
+    @settings(database=None, verbosity=Verbosity.normal)
     def test(xs):
         note('Hi there')
         assert sum(xs) > 100
