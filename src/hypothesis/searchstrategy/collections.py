@@ -16,7 +16,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-from random import Random
 from collections import namedtuple
 
 import hypothesis.internal.conjecture.utils as d
@@ -101,7 +100,7 @@ class ListStrategy(SearchStrategy):
             self.element_strategy.validate()
 
     def do_draw(self, data):
-        stopping_value = int(255 / self.average_length)
+        stopping_value = min(int(255 / self.average_length), 128)
         result = []
         while len(result) < self.max_size:
             data.start_example()
@@ -147,50 +146,29 @@ class UniqueListStrategy(SearchStrategy):
         'Parameter', ('parameter_seed', 'parameter')
     )
 
-    def strictly_simpler(self, x, y):
-        if x.size < y.size:
-            return True
-        if y.size < x.size:
-            return False
-        if x.values is None:
-            return False
-        if y.values is None:
-            return True
-        for u, v in zip(x.values, y.values):
-            if self.elements.strictly_simpler(u, v):
-                return True
-            if self.elements.strictly_simpler(v, u):
-                return False
-        return False
-
-    def draw_parameter(self, random):
-        parameter_seed = random.getrandbits(64)
-
-        return self.Parameter(
-            parameter_seed,
-            self.elements.draw_parameter(Random(parameter_seed)))
-
     def do_draw(self, data):
         seen = set()
-        stopping_value = d.byte(data)
+        stopping_value = min(int(255 / self.average_size), 128)
         result = []
+        duplicates = 0
         while len(result) < self.max_size:
             data.start_example()
-            probe = d.byte(data)
+            if len(result) >= self.min_size:
+                probe = d.byte(data)
+            else:
+                probe = 256
             if probe <= stopping_value:
-                if len(result) < self.min_size:
-                    data.draw(self.element_strategy)
-                    data.stop_example()
-                    continue
-                else:
-                    data.stop_example()
-                    break
+                data.stop_example()
+                break
             value = data.draw(self.element_strategy)
             data.stop_example()
             k = self.key(value)
             if k in seen:
+                duplicates += 1
+                assume(duplicates <= len(result))
                 continue
             seen.add(k)
+            result.append(value)
         assume(len(result) >= self.min_size)
         return result
 

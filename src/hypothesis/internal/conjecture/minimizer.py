@@ -124,6 +124,24 @@ class Minimizer(object):
                                     break
                     j += 1
                 i += 1
+            i = 0
+            while i < len(self.current):
+                j = i + 1
+                counter = 0
+                while j < len(self.current) and counter < 10:
+                    if self.current[i] > self.current[j]:
+                        counter += 1
+                        swapped = (
+                            self.current[:i] + bytes([self.current[j]]) +
+                            self.current[i + 1:j] +
+                            bytes([self.current[i]]) +
+                            self.current[j + 1:]
+                        )
+                        assert len(swapped) == len(self.current)
+                        assert swapped < self.current
+                        self.incorporate(swapped)
+                    j += 1
+                i += 1
 
 
 def minimize(initial, condition, random=None):

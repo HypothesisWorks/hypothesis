@@ -98,14 +98,13 @@ class SearchStrategy(object):
         This method is part of the public API.
 
         """
-        from hypothesis.core import find
-        from hypothesis.settings import Settings
+        from hypothesis import find, settings
         try:
             return find(
                 self,
                 lambda x: True,
                 random=random,
-                settings=Settings(
+                settings=settings(
                     max_shrinks=0,
                     max_iterations=1000,
                 )

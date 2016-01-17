@@ -45,6 +45,7 @@ def test_stability():
     )
     @settings(database=ExampleDatabase())
     def test_choose_and_then_fail(ls, choice):
+        print('Hi?')
         for _ in hrange(100):
             choice(ls)
         assert False
