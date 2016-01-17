@@ -25,11 +25,11 @@ from fractions import Fraction
 import pytest
 
 from flaky import flaky
-from hypothesis import find, assume, settings
+from hypothesis import find, given, assume, settings
 from tests.common import parametrize, ordered_pair, constant_list
 from hypothesis.strategies import just, sets, text, lists, binary, \
     floats, tuples, booleans, decimals, integers, fractions, frozensets, \
-    dictionaries, sampled_from
+    dictionaries, sampled_from, random_module
 from hypothesis.internal.debug import minimal
 from hypothesis.internal.compat import PY3, hrange, reduce, Counter, \
     OrderedDict
@@ -514,3 +514,13 @@ def test_containment(n):
         timeout_after=60
     )
     assert iv == ([n], n)
+
+
+@given(random_module())
+@settings(max_examples=10)
+def test_duplicate_containment(s):
+    ls, i = minimal(
+        tuples(lists(integers()), integers()),
+        lambda s: s[0].count(s[1]) > 1)
+    assert ls == [0, 0]
+    assert i == 0
