@@ -17,10 +17,8 @@
 from __future__ import division, print_function, absolute_import
 
 import hypothesis.strategies as st
-from hypothesis import find, given, settings
-from tests.common.utils import raises, capture_out
-from hypothesis.database import ExampleDatabase
-from hypothesis.internal.compat import hrange
+from hypothesis import find, given
+from tests.common.utils import raises
 
 
 def test_exhaustion():
@@ -36,30 +34,6 @@ def test_exhaustion():
 @given(st.choices(), st.choices())
 def test_choice_is_shared(choice1, choice2):
     assert choice1 is choice2
-
-
-def test_stability():
-    @given(
-        st.lists(st.text(max_size=1), unique=True, min_size=5),
-        st.choices(),
-    )
-    @settings(database=ExampleDatabase())
-    def test_choose_and_then_fail(ls, choice):
-        print('Hi?')
-        for _ in hrange(100):
-            choice(ls)
-        assert False
-
-    with capture_out() as o:
-        with raises(AssertionError):
-            test_choose_and_then_fail()
-    out1 = o.getvalue()
-    with capture_out() as o:
-        with raises(AssertionError):
-            test_choose_and_then_fail()
-    out2 = o.getvalue()
-    assert out1 == out2
-    assert 'Choice #100:' in out1
 
 
 def test_can_use_a_choice_function_after_find():
