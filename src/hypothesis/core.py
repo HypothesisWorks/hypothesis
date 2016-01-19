@@ -419,7 +419,8 @@ def given(*generator_arguments, **generator_kwargs):
                         ) % (test.__name__, result), settings)
                     return False
                 except UnsatisfiedAssumption:
-                    data.mark_invalid()
+                    if not data.frozen:
+                        data.mark_invalid()
                 except (
                     HypothesisDeprecationWarning, FailedHealthCheck,
                 ):
@@ -612,7 +613,7 @@ def find(specifier, condition, settings=None, random=None):
                         repr(result),
                     ))
                 last_data[0] = data
-        if success:
+        if success and not data.frozen:
             data.mark_interesting()
     from hypothesis.internal.conjecture.engine import TestRunner
     from hypothesis.internal.conjecture.data import TestData, Status

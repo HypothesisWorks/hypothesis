@@ -240,75 +240,6 @@ with_cheap_bad_machines = pytest.mark.parametrize(
 )
 
 
-@with_cheap_bad_machines
-def test_can_serialize_statemachine_execution(machine):
-    runner = machine.find_breaking_runner()
-    strategy = StateMachineSearchStrategy()
-    new_runner = strategy.from_basic(strategy.to_basic(runner))
-    with raises(AssertionError):
-        new_runner.run(machine())
-    r = Random(1)
-
-    for simplifier in strategy.simplifiers(r, new_runner):
-        try:
-            next(simplifier(r, new_runner))
-        except StopIteration:
-            pass
-
-
-@with_cheap_bad_machines
-def test_can_shrink_deserialized_execution_without_running(machine):
-    runner = machine.find_breaking_runner()
-    strategy = StateMachineSearchStrategy()
-    new_runner = strategy.from_basic(strategy.to_basic(runner))
-    r = Random(1)
-
-    for simplifier in strategy.simplifiers(r, new_runner):
-        try:
-            next(simplifier(r, new_runner))
-        except StopIteration:
-            pass
-
-
-@with_cheap_bad_machines
-def test_can_full_simplify_breaking_example(machine):
-    runner = machine.find_breaking_runner()
-    strategy = StateMachineSearchStrategy()
-    r = Random(1)
-    for _ in strategy.full_simplify(r, runner):
-        pass
-
-
-def test_can_truncate_template_record():
-    class Breakable(GenericStateMachine):
-        counter_start = 0
-
-        def __init__(self):
-            self.counter = type(self).counter_start
-
-        def steps(self):
-            return integers()
-
-        def execute_step(self, step):
-            self.counter += 1
-            if self.counter > 10:
-                assert step < 0
-
-    runner = Breakable.find_breaking_runner()
-    strat = StateMachineSearchStrategy()
-    r = Random(1)
-    simplifiers = list(strat.simplifiers(r, runner))
-    assert simplifiers
-    assert any(u'convert_simplifier' in s.__name__ for s in simplifiers)
-    while runner.record:
-        runner.record.pop()
-
-    assert not runner.record
-    for s in simplifiers:
-        for t in s(r, runner):
-            pass
-
-
 @pytest.mark.parametrize(
     u'machine',
     bad_machines, ids=[t.__name__ for t in bad_machines]
@@ -466,22 +397,11 @@ def test_minimizes_errors_in_teardown():
             assert not self.counter
 
     runner = Foo.find_breaking_runner()
-    assert runner.n_steps == 1
 
+    f = Foo()
     with raises(AssertionError):
-        runner.run(Foo(), print_steps=True)
-
-
-def test_can_produce_minimal_outcomes_from_unreliable_strategies():
-    runner = UnreliableStrategyState.find_breaking_runner()
-    n = UnreliableStrategyState.n
-
-    assert runner.n_steps == n
-    assert len(runner.record) >= n
-    for strat, data in runner.record[:n]:
-        template = strat.from_basic(data[-1])
-        value = strat.reify(template)
-        assert value in ([], 0)
+        runner.run(f, print_steps=True)
+    assert f.counter == 1
 
 
 class RequiresInit(GenericStateMachine):
@@ -540,21 +460,13 @@ def test_saves_failing_example_in_database():
     with raises(AssertionError):
         run_state_machine_as_test(
             SetStateMachine, Settings(database=db))
-    assert len(list(db.backend.keys())) == 1
+    assert len(list(db.keys())) == 1
 
 
 def test_can_run_with_no_db():
     with raises(AssertionError):
         run_state_machine_as_test(
             SetStateMachine, Settings(database=None))
-
-
-def test_statemachine_equality():
-    assert StateMachineRunner(1, 1, 1) != 1
-    assert StateMachineRunner(1, 1, 1) == StateMachineRunner(1, 1, 1)
-    assert hash(StateMachineRunner(1, 1, 1)) == hash(
-        StateMachineRunner(1, 1, 1))
-    assert StateMachineRunner(1, 1, 1) != StateMachineRunner(1, 1, 2)
 
 
 def test_stateful_double_rule_is_forbidden(recwarn):
