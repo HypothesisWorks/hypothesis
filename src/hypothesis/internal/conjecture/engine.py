@@ -231,6 +231,8 @@ class TestRunner(object):
             return
 
         change_counter = -1
+        discarding_works = True
+
         while self.changed > change_counter:
             change_counter = self.changed
 
@@ -242,6 +244,19 @@ class TestRunner(object):
                     self.last_data.buffer[v:]
                 ):
                     i += 1
+            if self.changed > change_counter:
+                continue
+
+            if discarding_works:
+                for _ in range(100):
+                    if self.incorporate_new_buffer(bytes(
+                        b for b in self.last_data.buffer
+                        if self.random.randint(0, 2)
+                    )):
+                        break
+                else:
+                    discarding_works = False
+
             if self.changed > change_counter:
                 continue
             i = 0
