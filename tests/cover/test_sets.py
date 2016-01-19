@@ -20,8 +20,8 @@ import pytest
 
 from hypothesis import find, given, settings
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import sets, lists, floats, randoms, \
-    integers, frozensets
+from hypothesis.strategies import sets, lists, floats, randoms, integers, \
+    frozensets
 
 
 def test_can_clone_same_length_items():

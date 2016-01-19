@@ -16,11 +16,12 @@
 
 from __future__ import division, print_function, absolute_import
 
-import pytest
 from random import Random
 
+import pytest
+
 import hypothesis.strategies as st
-from hypothesis import find, given, settings, example
+from hypothesis import find, given, example, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.debug import timeout
 from hypothesis.internal.compat import integer_types

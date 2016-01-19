@@ -14,15 +14,18 @@
 #
 # END HEADER
 
+from __future__ import division, print_function, absolute_import
+
+import base64
 import sqlite3
+import binascii
 import threading
 from abc import abstractmethod
 from contextlib import contextmanager
-import base64
-import binascii
 
 
 class EDMeta(type):
+
     def __call__(self, *args, **kwargs):
         if self is ExampleDatabase:
             self = SQLiteExampleDatabase
@@ -54,7 +57,7 @@ class ExampleDatabase(EDMeta('ExampleDatabase', (object,), {})):
     @abstractmethod  # pragma: no cover
     def fetch(self, key):
         """yield the values matching this key."""
-        raise NotImplementedError("%s.fetch" % (type(self).__name__))
+        raise NotImplementedError('%s.fetch' % (type(self).__name__))
 
     @abstractmethod  # pragma: no cover
     def close(self):

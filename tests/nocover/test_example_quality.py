@@ -19,18 +19,18 @@ from __future__ import division, print_function, absolute_import
 import sys
 import math
 import operator
+from random import Random
 from decimal import Decimal
 from fractions import Fraction
-from random import Random
 
 import pytest
 
 from flaky import flaky
-from hypothesis import find, given, assume, settings, example
+from hypothesis import find, given, assume, example, settings
 from tests.common import parametrize, ordered_pair, constant_list
 from hypothesis.strategies import just, sets, text, lists, binary, \
-    floats, tuples, booleans, decimals, integers, fractions, frozensets, \
-    dictionaries, sampled_from, random_module, randoms, recursive
+    floats, tuples, randoms, booleans, decimals, integers, fractions, \
+    recursive, frozensets, dictionaries, sampled_from, random_module
 from hypothesis.internal.debug import minimal
 from hypothesis.internal.compat import PY3, hrange, reduce, Counter, \
     OrderedDict, integer_types

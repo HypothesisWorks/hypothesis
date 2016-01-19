@@ -21,17 +21,13 @@ from __future__ import division, print_function, absolute_import
 import hashlib
 from random import Random
 from unittest import TestCase
-from itertools import islice
-from collections import namedtuple
 
 from hypothesis import settings as Settings
 from hypothesis import seed, given, assume
-from hypothesis.errors import BadData, Unsatisfiable, BadTemplateDraw
-from hypothesis.control import BuildContext
+from hypothesis.errors import Unsatisfiable
 from hypothesis.database import ExampleDatabase
-from hypothesis.strategies import lists, randoms, integers
-from hypothesis.internal.compat import hrange, text_type, integer_types
-from hypothesis.internal.tracker import Tracker
+from hypothesis.strategies import lists, integers
+from hypothesis.internal.compat import hrange
 
 
 class Rejected(Exception):
