@@ -17,10 +17,10 @@
 from __future__ import division, print_function, absolute_import
 
 import pytest
+from random import Random
 
 import hypothesis.strategies as st
-from flaky import flaky
-from hypothesis import find, given, settings
+from hypothesis import find, given, settings, example
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.debug import timeout
 from hypothesis.internal.compat import integer_types
@@ -129,35 +129,6 @@ def test_can_form_sets_of_recursive_data():
     assert True in xs
 
 
-@given(st.randoms())
-@settings(max_examples=10, database=None, max_shrinks=0)
-def test_can_simplify_hard_recursive_data_into_boolean_alternative(rnd):
-    """This test forces us to exercise the simplification through redrawing
-    functionality, thus testing that we can deal with bad templates."""
-    def leaves(ls):
-        if isinstance(ls, (bool,) + integer_types):
-            return [ls]
-        else:
-            return sum(map(leaves, ls), [])
-
-    def hard(base):
-        return st.recursive(
-            base, lambda x: st.lists(x, max_size=5), max_leaves=20)
-    r = find(
-        hard(st.booleans()) |
-        hard(st.booleans()) |
-        hard(st.booleans()) |
-        hard(st.integers()) |
-        hard(st.booleans()),
-        lambda x: len(leaves(x)) >= 3,
-        random=rnd, settings=settings(
-            database=None, max_examples=5000, max_shrinks=1000))
-    lvs = leaves(r)
-    assert lvs == [False] * 3
-    assert all(isinstance(v, bool) for v in lvs), repr(lvs)
-
-
-@flaky(max_runs=5, min_passes=1)
 @given(st.randoms())
 @settings(max_examples=10, database=None)
 @timeout(60)
