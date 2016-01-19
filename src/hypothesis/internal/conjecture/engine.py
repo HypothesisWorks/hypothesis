@@ -92,8 +92,9 @@ class TestRunner(object):
             raise RunIsComplete()
         self.examples_considered += 1
         if (
-            buffer[:self.last_data.index] >=
-            self.last_data.buffer[:self.last_data.index]
+            len(buffer) >= len(self.last_data.buffer) and (
+                buffer[:self.last_data.index] >=
+                self.last_data.buffer[:self.last_data.index])
         ):
             return False
         data = TestData.for_buffer(buffer[:self.last_data.index])
@@ -105,6 +106,7 @@ class TestRunner(object):
                 list(data.buffer[:data.index]), data.status,
                 data.output.decode('utf-8'),
             ))
+            debug_report('intervals: %r' % (data.intervals,))
         if self.consider_new_test_data(data):
             if self.last_data.status == Status.INTERESTING:
                 self.shrinks += 1
