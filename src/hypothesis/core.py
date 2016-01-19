@@ -572,18 +572,18 @@ def find(specifier, condition, settings=None, random=None):
 
     search = specifier
 
-
     random = random or new_random()
     successful_examples = [0]
     last_data = [None]
 
     def template_condition(data):
-        try:
-            result = data.draw(search)
-            data.note(result)
-            success = condition(result)
-        except UnsatisfiedAssumption:
-            data.mark_invalid()
+        with BuildContext():
+            try:
+                result = data.draw(search)
+                data.note(result)
+                success = condition(result)
+            except UnsatisfiedAssumption:
+                data.mark_invalid()
 
         if success:
             successful_examples[0] += 1
@@ -611,5 +611,7 @@ def find(specifier, condition, settings=None, random=None):
     runner = TestRunner(template_condition, settings=settings, random=random)
     runner.run()
     if runner.last_data.status == Status.INTERESTING:
-        return TestData.for_buffer(runner.last_data.buffer).draw(search)
+        with BuildContext():
+            return TestData.for_buffer(
+                runner.last_data.buffer, expand=True).draw(search)
     raise NoSuchExample(get_pretty_function_description(condition))
