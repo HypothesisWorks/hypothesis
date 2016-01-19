@@ -16,23 +16,18 @@
 
 from __future__ import division, print_function, absolute_import
 
-import math
 import random
 import functools
 from collections import namedtuple
 
 import pytest
 
-from hypothesis import given
 from hypothesis.types import RandomWithSeed
 from hypothesis.errors import NoExamples, InvalidArgument
 from hypothesis.strategies import just, tuples, randoms, booleans, \
     integers, sampled_from
-from hypothesis.internal.compat import hrange, text_type
-from hypothesis.searchstrategy.numbers import SearchStrategy, \
-    BoundedIntStrategy, RandomGeometricIntStrategy
-from hypothesis.searchstrategy.strategies import OneOfStrategy, \
-    one_of_strategies
+from hypothesis.internal.compat import text_type
+from hypothesis.searchstrategy.strategies import one_of_strategies
 
 
 def test_or_errors_when_given_non_strategy():
@@ -46,40 +41,7 @@ def test_joining_zero_strategies_fails():
         one_of_strategies(())
 
 
-def test_directly_joining_one_strategy_also_fails():
-    with pytest.raises(ValueError):
-        OneOfStrategy([RandomGeometricIntStrategy()])
-
 SomeNamedTuple = namedtuple(u'SomeNamedTuple', (u'a', u'b'))
-
-
-def test_strategy_for_integer_range_produces_only_integers_in_that_range():
-    just_one_integer = integers(1, 1)
-    for _ in hrange(100):
-        pv = just_one_integer.draw_parameter(random)
-        t = just_one_integer.draw_template(random, pv)
-        x = just_one_integer.reify(t)
-        assert x == 1
-    some_integers = integers(1, 10)
-    for _ in hrange(100):
-        pv = some_integers.draw_parameter(random)
-        x = some_integers.draw_template(random, pv)
-        assert 1 <= x <= 10
-
-
-def test_strategy_for_integer_range_can_produce_end_points():
-    some_integers = integers(1, 10)
-    found = set()
-    for _ in hrange(1000):  # pragma: no branch
-        pv = some_integers.draw_parameter(random)
-        x = some_integers.draw_template(random, pv)
-        found.add(x)
-        if 1 in found and 10 in found:
-            break
-    else:
-        assert False  # pragma: no cover
-    assert 1 in found
-    assert 10 in found
 
 
 def last(xs):
@@ -87,11 +49,6 @@ def last(xs):
     for x in xs:
         t = x
     return t
-
-
-def test_rejects_invalid_ranges():
-    with pytest.raises(ValueError):
-        BoundedIntStrategy(10, 9)
 
 
 def test_random_repr_has_seed():
@@ -131,19 +88,6 @@ def test_example_raises_unsatisfiable_when_too_filtered():
         integers().filter(lambda x: False).example()
 
 
-def test_large_enough_integer_ranges_are_infinite():
-    assert math.isinf(
-        integers(1, 2 ** 64).template_upper_bound)
-
-
-def test_one_of_strategy_goes_infinite():
-    x = integers(0, 2 ** 32 - 2)
-    assert not math.isinf(x.template_upper_bound)
-    for _ in hrange(10):
-        x |= x
-    assert math.isinf(x.template_upper_bound)
-
-
 def nameless_const(x):
     def f(u, v):
         return u
@@ -158,33 +102,6 @@ def test_can_map_nameless():
 def test_can_flatmap_nameless():
     f = nameless_const(just(3))
     assert repr(f) in repr(integers().flatmap(f))
-
-
-def test_basic_simplify_is_usable():
-    class FooStrategy(SearchStrategy):
-        template_upper_bound = 1
-
-        def draw_parameter(self, random):
-            return None
-
-        def draw_template(self, random, p):
-            return None
-
-        def reify(self, template):
-            return 42
-
-        def to_basic(self, template):
-            return None
-
-        def from_basic(self, data):
-            return None
-
-    @given(FooStrategy())
-    def test_foo(x):
-        raise ValueError()
-
-    with pytest.raises(ValueError):
-        test_foo()
 
 
 def test_can_draw_from_random():
