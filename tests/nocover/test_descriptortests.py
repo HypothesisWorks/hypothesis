@@ -28,7 +28,6 @@ from hypothesis.strategies import just, none, sets, text, lists, binary, \
 from hypothesis.strategytests import mutate_basic, templates_for, \
     strategy_test_suite
 from hypothesis.internal.compat import hrange, OrderedDict
-from hypothesis.searchstrategy.morphers import MorpherStrategy
 
 TestIntegerRange = strategy_test_suite(integers(min_value=0, max_value=5))
 TestGiantIntegerRange = strategy_test_suite(
@@ -145,11 +144,6 @@ TestManyFlatmaps = strategy_test_suite(
     .flatmap(integers_from)
     .flatmap(integers_from)
 )
-
-TestBareMorphers = strategy_test_suite(MorpherStrategy())
-TestMasqueradingMorphers = strategy_test_suite(
-    MorpherStrategy().map(lambda m: m.become(
-        lists(integers(), average_size=5.0))))
 
 TestIntStreams = strategy_test_suite(streaming(integers()))
 TestStreamLists = strategy_test_suite(streaming(integers()))
