@@ -22,7 +22,7 @@ from copy import deepcopy
 from random import Random
 
 from hypothesis import find, seed, given, assume, settings, Verbosity
-from hypothesis.errors import BadData, NoExamples, FailedHealthCheck
+from hypothesis.errors import NoExamples, FailedHealthCheck
 from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import rule, Bundle, RuleBasedStateMachine, \
     StateMachineSearchStrategy
@@ -30,7 +30,7 @@ from hypothesis.strategies import just, none, text, lists, binary, \
     floats, tuples, randoms, booleans, decimals, integers, fractions, \
     streaming, float_to_int, int_to_float, sampled_from, complex_numbers
 from hypothesis.utils.size import clamp
-from hypothesis.strategytests import mutate_basic, templates_for
+from hypothesis.strategytests import templates_for
 from hypothesis.internal.debug import timeout
 from hypothesis.internal.compat import PYPY
 
@@ -50,32 +50,12 @@ class HypothesisSpec(RuleBasedStateMachine):
     basic_data = Bundle(u'basic')
     varied_floats = Bundle(u'varied_floats')
 
-    strats_with_parameters = Bundle(u'strats_with_parameters')
-    strats_with_templates = Bundle(u'strats_with_templates')
-    strats_with_2_templates = Bundle(u'strats_with_2_templates')
-
     def teardown(self):
         self.clear_database()
 
     @timeout(60, catchable=True)
     def execute_step(self, step):
         return super(HypothesisSpec, self).execute_step(step)
-
-    @rule(target=basic_data, st=strats_with_templates)
-    def to_basic(self, st):
-        return st[0].to_basic(st[1])
-
-    @rule(data=basic_data, strat=strategies)
-    def from_basic(self, data, strat):
-        try:
-            template = strat.from_basic(data)
-        except BadData:
-            return
-        strat.reify(template)
-
-    @rule(target=basic_data, data=basic_data, r=randoms())
-    def mess_with_basic(self, data, r):
-        return mutate_basic(data, r)
 
     @rule()
     def clear_database(self):
@@ -87,17 +67,6 @@ class HypothesisSpec(RuleBasedStateMachine):
     def set_database(self):
         self.teardown()
         self.database = ExampleDatabase()
-
-    @rule(st=strats_with_templates)
-    def reify(self, st):
-        strat, temp = st
-        strat.reify(temp)
-
-    @rule(target=strats_with_templates, st=strats_with_templates)
-    def via_basic(self, st):
-        strat, temp = st
-        temp = strat.from_basic(strat.to_basic(temp))
-        return (strat, temp)
 
     @rule(targets=(strategies, streaming_strategies), strat=strategies)
     def build_stream(self, strat):
@@ -116,13 +85,6 @@ class HypothesisSpec(RuleBasedStateMachine):
             list(stream[:index])
         except NoExamples:
             pass
-
-    @rule(target=strats_with_templates, st=strats_with_templates, r=randoms())
-    def simplify(self, st, r):
-        strat, temp = st
-        for temp in strat.full_simplify(r, temp):
-            break
-        return (strat, temp)
 
     @rule(strat=strategies, r=integers(), mshr=integers(0, 100))
     def find_constant_failure(self, strat, r, mshr):
@@ -164,34 +126,6 @@ class HypothesisSpec(RuleBasedStateMachine):
                 test()
             except (AssertionError, FailedHealthCheck):
                 pass
-
-    @rule(target=strats_with_parameters, strat=strategies, r=randoms())
-    def draw_parameter(self, strat, r):
-        return (strat, strat.draw_parameter(r))
-
-    @rule(target=strats_with_templates, sp=strats_with_parameters, r=randoms())
-    def draw_template(self, sp, r):
-        strat, param = sp
-        return (strat, strat.draw_template(r, param))
-
-    @rule(
-        target=strats_with_2_templates,
-        sp=strats_with_parameters, r=randoms())
-    def draw_templates(self, sp, r):
-        strat, param = sp
-        return (
-            strat,
-            strat.draw_template(r, param),
-            strat.draw_template(r, param),
-        )
-
-    @rule(st=strats_with_templates)
-    def check_serialization(self, st):
-        strat, template = st
-        as_basic = strat.to_basic(template)
-        assert repr(strat.reify(template)) == repr(strat.reify(
-            strat.from_basic(as_basic)))
-        assert as_basic == strat.to_basic(strat.from_basic(as_basic))
 
     @rule(target=strategies, spec=sampled_from((
         integers(), booleans(), floats(), complex_numbers(),
