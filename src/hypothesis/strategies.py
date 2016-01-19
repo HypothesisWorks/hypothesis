@@ -747,7 +747,6 @@ def composite(f):
 
     """
 
-    from hypothesis.searchstrategy.morphers import MorpherStrategy
     from hypothesis.internal.reflection import copy_argspec
     argspec = getargspec(f)
 
@@ -768,20 +767,13 @@ def composite(f):
         keywords=argspec.keywords, defaults=argspec.defaults
     )
 
-    base_strategy = streaming(MorpherStrategy())
-
     @defines_strategy
     @copy_argspec(f.__name__, new_argspec)
     def accept(*args, **kwargs):
-        def call_with_draw(morphers):
-            index = [0]
-
-            def draw(strategy):
-                i = index[0]
-                index[0] += 1
-                return morphers[i].become(strategy)
-            return f(*((draw,) + args), **kwargs)
-        return base_strategy.map(call_with_draw)
+        class CompositeStrategy(SearchStrategy):
+            def do_draw(self, data):
+                return f(data.draw, *args, **kwargs)
+        return CompositeStrategy()
     return accept
 
 
