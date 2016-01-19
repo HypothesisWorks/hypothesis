@@ -22,7 +22,6 @@ from pytest import raises
 
 import hypothesis.reporting as reporting
 import hypothesis.strategies as st
-from flaky import flaky
 from hypothesis import given, settings
 from hypothesis.errors import FailedHealthCheck
 from tests.common.utils import capture_out
@@ -138,6 +137,7 @@ def test_error_in_strategy_with_custom_executor():
             return f()
 
         @given(st.integers().map(boom))
+        @settings(database=None)
         def test(self, x):
             pass
 
@@ -148,6 +148,7 @@ def test_error_in_strategy_with_custom_executor():
 
 def test_filtering_everything_fails_a_health_check():
     @given(st.integers().filter(lambda x: False))
+    @settings(database=None)
     def test(x):
         pass
 
@@ -156,9 +157,9 @@ def test_filtering_everything_fails_a_health_check():
     assert 'filter' in e.value.args[0]
 
 
-@flaky(max_runs=3, min_passes=1)
 def test_filtering_most_things_fails_a_health_check():
     @given(st.integers().filter(lambda x: x % 100 == 0))
+    @settings(database=None)
     def test(x):
         pass
 
@@ -170,15 +171,16 @@ def test_filtering_most_things_fails_a_health_check():
 def test_broad_recursive_data_will_fail_a_health_check():
     r = st.recursive(
         st.integers(), lambda s: st.tuples(*((s,) * 10)),
-        max_leaves=10,
     )
 
     @given(st.tuples(r, r, r, r, r, r, r))
+    @settings(database=None)
     def test(x):
         pass
 
-    with raises(FailedHealthCheck):
+    with raises(FailedHealthCheck) as e:
         test()
+    assert 'allowable size' in e.value.args[0]
 
 
 def test_health_check_runs_should_not_affect_determinism(recwarn):
@@ -190,6 +192,7 @@ def test_health_check_runs_should_not_affect_determinism(recwarn):
         t = 0.25
 
         @given(st.integers().map(lambda i: [time.sleep(t), i][1]))
+        @settings(database=None)
         def test(x):
             values.append(x)
 

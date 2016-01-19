@@ -18,29 +18,28 @@ from __future__ import division, print_function, absolute_import
 
 from contextlib import contextmanager
 
-from hypothesis.errors import BadTemplateDraw
+from hypothesis.control import assume
 from hypothesis.searchstrategy.wrappers import WrapperStrategy
 from hypothesis.searchstrategy.strategies import OneOfStrategy
 
 
-class TemplateLimitReached(BaseException):
+class LimitReached(BaseException):
     pass
 
 
-class TemplateLimitedStrategy(WrapperStrategy):
+class LimitedStrategy(WrapperStrategy):
 
     def __init__(self, strategy):
-        super(TemplateLimitedStrategy, self).__init__(strategy)
+        super(LimitedStrategy, self).__init__(strategy)
         self.marker = 0
         self.currently_capped = False
 
-    def draw_template(self, random, parameter_value):
+    def do_draw(self, data):
         if self.currently_capped:
             if self.marker <= 0:
-                raise TemplateLimitReached()
+                raise LimitReached()
             self.marker -= 1
-        return super(TemplateLimitedStrategy, self).draw_template(
-            random, parameter_value)
+        return super(LimitedStrategy, self).do_draw(data)
 
     @contextmanager
     def capped(self, max_templates):
@@ -57,7 +56,7 @@ class RecursiveStrategy(WrapperStrategy):
 
     def __init__(self, base, extend, max_leaves):
         self.max_leaves = max_leaves
-        self.base = TemplateLimitedStrategy(base)
+        self.base = LimitedStrategy(base)
         self.extend = extend
 
         strategies = [self.base, self.extend(self.base)]
@@ -68,11 +67,14 @@ class RecursiveStrategy(WrapperStrategy):
             OneOfStrategy(tuple(strategies))
         )
 
-    def draw_template(self, random, pv):
-        try:
-            with self.base.capped(self.max_leaves):
-                return super(RecursiveStrategy, self).draw_template(
-                    random, pv
-                )
-        except TemplateLimitReached:
-            raise BadTemplateDraw()
+    def do_draw(self, data):
+        while True:
+            start = data.index
+            try:
+                data.start_example()
+                return super(RecursiveStrategy, self).do_draw(data)
+            except LimitReached:
+                assume(start < data.index)
+            finally:
+                if not data.frozen:
+                    data.stop_example()

@@ -20,6 +20,7 @@ import hypothesis.internal.conjecture.utils as cu
 from hypothesis.errors import NoExamples, NoSuchExample
 from hypothesis.control import assume
 from hypothesis.internal.reflection import get_pretty_function_description
+from hypothesis.internal.compat import hrange
 
 
 def one_of_strategies(xs):
@@ -261,7 +262,7 @@ class FilteredStrategy(SearchStrategy):
         return self._cached_repr
 
     def do_draw(self, data):
-        while True:
+        for _ in hrange(3):
             start_index = data.index
             value = data.draw(self.filtered_strategy)
             if self.condition(value):
@@ -271,3 +272,4 @@ class FilteredStrategy(SearchStrategy):
                 # As long as we consume data, we'll eventually pass or raise.
                 # But if we don't this could be an infinite loop.
                 assume(data.index > start_index)
+        assume(False)
