@@ -21,18 +21,19 @@ import math
 import operator
 from decimal import Decimal
 from fractions import Fraction
+from random import Random
 
 import pytest
 
 from flaky import flaky
-from hypothesis import find, given, assume, settings
+from hypothesis import find, given, assume, settings, example
 from tests.common import parametrize, ordered_pair, constant_list
 from hypothesis.strategies import just, sets, text, lists, binary, \
     floats, tuples, booleans, decimals, integers, fractions, frozensets, \
-    dictionaries, sampled_from, random_module
+    dictionaries, sampled_from, random_module, randoms, recursive
 from hypothesis.internal.debug import minimal
 from hypothesis.internal.compat import PY3, hrange, reduce, Counter, \
-    OrderedDict
+    OrderedDict, integer_types
 
 
 @flaky(max_runs=5, min_passes=1)
@@ -45,7 +46,7 @@ def test_minimize_list_on_large_structure():
         ]) >= 60
 
     assert minimal(
-        lists(integers()), test_list_in_range,
+        lists(integers(), min_size=30), test_list_in_range,
         timeout_after=60,
     ) == [10] * 60
 
@@ -530,3 +531,32 @@ def test_unique_lists_of_single_characters():
         lists(text(max_size=1), unique=True, min_size=5)
     )
     assert x == ['', '0', '1', '2', '3']
+
+
+@given(randoms())
+@settings(max_examples=10, database=None, max_shrinks=0)
+@example(rnd=Random(340282366920938463462798146679426884207))
+def test_can_simplify_hard_recursive_data_into_boolean_alternative(rnd):
+    """This test forces us to exercise the simplification through redrawing
+    functionality, thus testing that we can deal with bad templates."""
+    def leaves(ls):
+        if isinstance(ls, (bool,) + integer_types):
+            return [ls]
+        else:
+            return sum(map(leaves, ls), [])
+
+    def hard(base):
+        return recursive(
+            base, lambda x: lists(x, max_size=5), max_leaves=20)
+    r = find(
+        hard(booleans()) |
+        hard(booleans()) |
+        hard(booleans()) |
+        hard(integers()) |
+        hard(booleans()),
+        lambda x: len(leaves(x)) >= 3,
+        random=rnd, settings=settings(
+            database=None, max_examples=5000, max_shrinks=1000))
+    lvs = leaves(r)
+    assert lvs == [False] * 3
+    assert all(isinstance(v, bool) for v in lvs), repr(lvs)
