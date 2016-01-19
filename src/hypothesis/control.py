@@ -24,6 +24,10 @@ from hypothesis.reporting import report
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
 
+def reject():
+    raise UnsatisfiedAssumption()
+
+
 def assume(condition):
     """Assert a precondition for this test.
 
