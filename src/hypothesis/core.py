@@ -38,8 +38,8 @@ from hypothesis.executors import executor, default_executor
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.internal.compat import getargspec
 from hypothesis.internal.reflection import arg_string, impersonate, \
-    copy_argspec, function_digest, convert_positional_arguments, \
-    get_pretty_function_description, fully_qualified_name
+    copy_argspec, function_digest, fully_qualified_name, \
+    convert_positional_arguments, get_pretty_function_description
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
 

@@ -23,8 +23,8 @@ import pytest
 
 from hypothesis import find, given
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import text, lists, booleans, \
-    integers, streaming
+from hypothesis.strategies import text, lists, booleans, integers, \
+    streaming
 from hypothesis.internal.debug import minimal
 from hypothesis.searchstrategy.streams import Stream
 

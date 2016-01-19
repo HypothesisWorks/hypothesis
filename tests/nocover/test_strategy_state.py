@@ -26,8 +26,8 @@ from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import rule, Bundle, RuleBasedStateMachine, \
     StateMachineSearchStrategy
 from hypothesis.strategies import just, none, text, lists, binary, \
-    floats, tuples, booleans, decimals, integers, fractions, \
-    streaming, float_to_int, int_to_float, sampled_from, complex_numbers
+    floats, tuples, booleans, decimals, integers, fractions, streaming, \
+    float_to_int, int_to_float, sampled_from, complex_numbers
 from hypothesis.utils.size import clamp
 from hypothesis.internal.debug import timeout
 from hypothesis.internal.compat import PYPY

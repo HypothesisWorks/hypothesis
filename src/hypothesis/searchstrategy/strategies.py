@@ -19,8 +19,8 @@ from __future__ import division, print_function, absolute_import
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis.errors import NoExamples, NoSuchExample
 from hypothesis.control import assume
-from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.internal.compat import hrange
+from hypothesis.internal.reflection import get_pretty_function_description
 
 
 def one_of_strategies(xs):

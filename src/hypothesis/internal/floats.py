@@ -21,7 +21,12 @@ import struct
 
 
 def sign(x):
-    return math.copysign(1, x)
+    try:
+        return math.copysign(1.0, x)
+    except TypeError:
+        raise TypeError('Expected float but got %r of type %s' % (
+            x, type(x).__name__
+        ))
 
 
 def is_negative(x):

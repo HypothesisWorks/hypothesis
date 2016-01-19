@@ -165,9 +165,18 @@ class TestRunner(object):
             buf[i] ^= (1 << k)
             return bytes(buf)
 
+        def draw_zero(data, n, distribution):
+            return bytes(n)
+
+        def draw_constant(data, n, distribution):
+            return bytes([
+                self.random.randint(0, 255)
+            ] * n)
+
         options = [
-            draw_new, draw_existing, draw_smaller, draw_larger,
-            reuse_existing, flip_bit,
+            draw_new,
+            draw_existing, draw_smaller, draw_larger,
+            reuse_existing, flip_bit, draw_zero, draw_constant,
         ]
 
         bits = [
