@@ -100,9 +100,11 @@ class TestData(object):
 
     def draw(self, strategy):
         self.start_example()
-        result = strategy.do_draw(self)
-        self.stop_example()
-        return result
+        try:
+            return strategy.do_draw(self)
+        finally:
+            if not self.frozen:
+                self.stop_example()
 
     def start_example(self):
         self.__assert_not_frozen('start_example')

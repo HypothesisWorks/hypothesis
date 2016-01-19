@@ -21,7 +21,6 @@ from __future__ import division, print_function, absolute_import
 
 import time
 import inspect
-import binascii
 import warnings
 import functools
 import traceback
@@ -35,7 +34,7 @@ from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
 from hypothesis.control import BuildContext
 from hypothesis._settings import settings as Settings
 from hypothesis._settings import Verbosity
-from hypothesis.executors import executor
+from hypothesis.executors import executor, default_executor
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.internal.compat import getargspec
 from hypothesis.internal.reflection import arg_string, impersonate, \
@@ -299,96 +298,111 @@ def given(*generator_arguments, **generator_kwargs):
             if Settings.default is not None:
                 perform_health_check &= Settings.default.perform_health_check
 
-#           if perform_health_check:
-#               initial_state = getglobalrandomstate()
-#               health_check_random = Random(random.getrandbits(128))
-#               count = 0
-#               bad_draws = 0
-#               filtered_draws = 0
-#               errors = 0
-#               while (
-#                   count < 10 and time.time() < start + 1 and
-#                   filtered_draws < 50 and bad_draws < 50
-#               ):
-#                   try:
-#                       with Settings(settings, verbosity=Verbosity.quiet):
-#                           test_runner(reify_and_execute(
-#                               search_strategy,
-#                               search_strategy.draw_template(
-#                                   health_check_random,
-#                                   search_strategy.draw_parameter(
-#                                       health_check_random,
-#                                   )),
-#                               lambda *args, **kwargs: None,
-#                           ))
-#                       count += 1
-#                   except BadTemplateDraw:
-#                       bad_draws += 1
-#                   except UnsatisfiedAssumption:
-#                       filtered_draws += 1
-#                   except Exception:
-#                       if errors == 0:
-#                           report(traceback.format_exc())
-#                       errors += 1
-#                       if test_runner is default_executor:
-#                           fail_health_check(
-#                               'An exception occurred during data '
-#                               'generation in initial health check. '
-#                               'This indicates a bug in the strategy. '
-#                               'This could either be a Hypothesis bug or '
-#                               "an error in a function yo've passed to "
-#                               'it to construct your data.'
-#                           )
-#                       else:
-#                           fail_health_check(
-#                               'An exception occurred during data '
-#                               'generation in initial health check. '
-#                               'This indicates a bug in the strategy. '
-#                               'This could either be a Hypothesis bug or '
-#                               'an error in a function you\'ve passed to '
-#                               'it to construct your data. Additionally, '
-#                               'you have a custom executor, which means '
-#                               'that this could be your executor failing '
-#                               'to handle a function which returns None. '
-#                           )
-#               if filtered_draws >= 50:
-#                   fail_health_check((
-#                       'It looks like your strategy is filtering out a lot '
-#                       'of data. Health check found %d filtered examples but '
-#                       'only %d good ones. This will make your tests much '
-#                       'slower, and also will probably distort the data '
-#                       'generation quite a lot. You should adapt your '
-#                       'strategy to filter less.') % (
-#                       filtered_draws, count
-#                   ))
-#               if bad_draws >= 50:
-#                   fail_health_check(
-#                       'Hypothesis is struggling to generate examples. '
-#                       'This is often a sign of a recursive strategy which '
-#                       'fans out too broadly. If you\'re using recursive, '
-#                       'try to reduce the size of the recursive step or '
-#                       'increase the maximum permitted number of leaves.'
-#                   )
-#               runtime = time.time() - start
-#               if runtime > 1.0 or count < 10:
-#                   fail_health_check((
-#                       'Data generation is extremely slow: Only produced '
-#                       '%d valid examples in %.2f seconds. Try decreasing '
-#                       "size of the data yo're generating (with e.g."
-#                       'average_size or max_leaves parameters).'
-#                   ) % (count, runtime))
-#               if getglobalrandomstate() != initial_state:
-#                   warned_random[0] = True
-#                   fail_health_check(
-#                       'Data generation depends on global random module. '
-#                       'This makes results impossible to replay, which '
-#                       'prevents Hypothesis from working correctly. '
-#                       'If you want to use methods from random, use '
-#                       'randoms() from hypothesis.strategies to get an '
-#                       'instance of Random you can use. Alternatively, you '
-#                       'can use the random_module() strategy to explicitly '
-#                       'seed the random module.'
-#                   )
+            from hypothesis.internal.conjecture.data import TestData, Status, \
+                StopTest
+
+            if perform_health_check:
+                initial_state = getglobalrandomstate()
+                health_check_random = Random(random.getrandbits(128))
+                count = 0
+                overruns = 0
+                filtered_draws = 0
+                errors = 0
+                start = time.time()
+                while (
+                    count < 10 and time.time() < start + 1 and
+                    filtered_draws < 50 and overruns < 50
+                ):
+                    try:
+                        data = TestData(
+                            max_length=settings.buffer_size,
+                            draw_bytes=lambda data, n, distribution:
+                            distribution(health_check_random, n)
+                        )
+                        with Settings(settings, verbosity=Verbosity.quiet):
+                            test_runner(reify_and_execute(
+                                search_strategy,
+                                data,
+                                lambda *args, **kwargs: None,
+                            ))
+                        count += 1
+                    except UnsatisfiedAssumption:
+                        filtered_draws += 1
+                    except StopTest:
+                        if data.status == Status.INVALID:
+                            filtered_draws += 1
+                        else:
+                            assert data.status == Status.OVERRUN
+                            overruns += 1
+                    except Exception:
+                        if errors == 0:
+                            report(traceback.format_exc())
+                        errors += 1
+                        if test_runner is default_executor:
+                            fail_health_check(
+                                'An exception occurred during data '
+                                'generation in initial health check. '
+                                'This indicates a bug in the strategy. '
+                                'This could either be a Hypothesis bug or '
+                                "an error in a function yo've passed to "
+                                'it to construct your data.'
+                            )
+                        else:
+                            fail_health_check(
+                                'An exception occurred during data '
+                                'generation in initial health check. '
+                                'This indicates a bug in the strategy. '
+                                'This could either be a Hypothesis bug or '
+                                'an error in a function you\'ve passed to '
+                                'it to construct your data. Additionally, '
+                                'you have a custom executor, which means '
+                                'that this could be your executor failing '
+                                'to handle a function which returns None. '
+                            )
+                print("count=%d, filtered_draws=%d, overruns=%d" % (
+                    count, filtered_draws, overruns,
+                ))
+                if filtered_draws >= 50:
+                    fail_health_check((
+                        'It looks like your strategy is filtering out a lot '
+                        'of data. Health check found %d filtered examples but '
+                        'only %d good ones. This will make your tests much '
+                        'slower, and also will probably distort the data '
+                        'generation quite a lot. You should adapt your '
+                        'strategy to filter less. This can also be caused by '
+                        'a low max_leaves parameter in recursive() calls') % (
+                        filtered_draws, count
+                    ))
+                if overruns >= 50:
+                    fail_health_check((
+                        'Examples routinely exceeded the max allowable size. '
+                        '(%d examples overran while generating %d valid ones)'
+                        '. Generating examples this large will usually lead to'
+                        ' bad results. You should try setting average_size or '
+                        'max_size parameters on your collections and turning '
+                        'max_leaves down on recursive() calls.') % (
+                        overruns, count
+                    ))
+                runtime = time.time() - start
+                if runtime > 1.0 or count < 10:
+                    fail_health_check((
+                        'Data generation is extremely slow: Only produced '
+                        '%d valid examples in %.2f seconds. Try decreasing '
+                        "size of the data yo're generating (with e.g."
+                        'average_size or max_leaves parameters).'
+                    ) % (count, runtime))
+                if getglobalrandomstate() != initial_state:
+                    warned_random[0] = True
+                    fail_health_check(
+                        'Data generation depends on global random module. '
+                        'This makes results impossible to replay, which '
+                        'prevents Hypothesis from working correctly. '
+                        'If you want to use methods from random, use '
+                        'randoms() from hypothesis.strategies to get an '
+                        'instance of Random you can use. Alternatively, you '
+                        'can use the random_module() strategy to explicitly '
+                        'seed the random module.'
+                    )
             last_exception = [None]
             repr_for_last_exception = [None]
 
@@ -435,8 +449,6 @@ def given(*generator_arguments, **generator_kwargs):
                             'explicitly seed the random module.')
 
             from hypothesis.internal.conjecture.engine import TestRunner
-            from hypothesis.internal.conjecture.data import TestData, Status, \
-                StopTest
 
             falsifying_example = None
             database_key = fully_qualified_name(test).encode('utf-8')
