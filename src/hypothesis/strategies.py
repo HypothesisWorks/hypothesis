@@ -286,18 +286,35 @@ def floats(
                 int_to_float
             )
     elif min_value is not None:
-        return (
-            floats(allow_infinity=allow_infinity, allow_nan=False).map(
-                lambda x: assume(not math.isnan(x)) and min_value + abs(x)
+        if min_value < 0:
+            result = floats(
+                min_value=0.0
+            ) | floats(min_value=min_value, max_value=0.0)
+        else:
+            result = (
+                floats(allow_infinity=allow_infinity, allow_nan=False).map(
+                    lambda x: assume(not math.isnan(x)) and min_value + abs(x)
+                )
             )
-        )
+        if min_value == 0 and not is_negative(min_value):
+            result = result.filter(lambda x: math.copysign(1.0, x) == 1)
+        return result
     else:
         assert max_value is not None
-        return (
-            floats(allow_infinity=allow_infinity, allow_nan=False).map(
-                lambda x: assume(not math.isnan(x)) and max_value - abs(x)
+        if max_value > 0:
+            result = floats(
+                min_value=0.0,
+                max_value=max_value,
+            ) | floats(max_value=0.0)
+        else:
+            result = (
+                floats(allow_infinity=allow_infinity, allow_nan=False).map(
+                    lambda x: assume(not math.isnan(x)) and max_value - abs(x)
+                )
             )
-        )
+        if max_value == 0 and is_negative(max_value):
+            result = result.filter(is_negative)
+        return result
 
 
 @cacheable
@@ -771,6 +788,7 @@ def composite(f):
     @copy_argspec(f.__name__, new_argspec)
     def accept(*args, **kwargs):
         class CompositeStrategy(SearchStrategy):
+
             def do_draw(self, data):
                 return f(data.draw, *args, **kwargs)
         return CompositeStrategy()

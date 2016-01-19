@@ -16,7 +16,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import sys
 import math
 import struct
 from collections import namedtuple
@@ -24,7 +23,6 @@ from collections import namedtuple
 import hypothesis.internal.conjecture.utils as d
 from hypothesis.control import assume
 from hypothesis.internal.floats import sign
-from hypothesis.searchstrategy.misc import SampledFromStrategy
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
     MappedSearchStrategy
 
@@ -168,7 +166,13 @@ class FloatStrategy(SearchStrategy):
                         return struct.pack(b'!d', f)
                 else:
                     return bytes(random.randint(0, 255) for _ in range(8))
-        return struct.unpack(b'!d', data.draw_bytes(8, draw_float_bytes))[0]
+        result = struct.unpack(b'!d', data.draw_bytes(8, draw_float_bytes))[0]
+        assume(self.permitted(result))
+        return result
+
+
+def float_order_key(k):
+    return (sign(k), k)
 
 
 class FixedBoundedFloatStrategy(SearchStrategy):
@@ -188,6 +192,13 @@ class FixedBoundedFloatStrategy(SearchStrategy):
         SearchStrategy.__init__(self)
         self.lower_bound = float(lower_bound)
         self.upper_bound = float(upper_bound)
+        lb = float_order_key(self.lower_bound)
+        ub = float_order_key(self.upper_bound)
+
+        self.zeroes = [
+            z for z in (-0.0, 0.0)
+            if lb <= float_order_key(z) <= ub
+        ]
 
     def __repr__(self):
         return 'FixedBoundedFloatStrategy(%s, %s)' % (
@@ -197,11 +208,13 @@ class FixedBoundedFloatStrategy(SearchStrategy):
     def do_draw(self, data):
         def draw_float_bytes(random, n):
             assert n == 8
-            i = random.randint(1, 10)
+            i = random.randint(0, 9)
             if i == 0:
                 f = self.lower_bound
             elif i == 1:
                 f = self.upper_bound
+            elif i == 2 and self.zeroes:
+                f = random.choice(self.zeroes)
             else:
                 f = random.random() * (
                     self.upper_bound - self.lower_bound
@@ -209,68 +222,8 @@ class FixedBoundedFloatStrategy(SearchStrategy):
             return struct.pack(b'!d', f)
         f = struct.unpack(b'!d', data.draw_bytes(8, draw_float_bytes))[0]
         assume(self.lower_bound <= f <= self.upper_bound)
-        return f
-
-
-class ExponentialFloatStrategy(FloatStrategy):
-
-    """
-    A float strategy such that every conditional distribution is of the form
-    aX + b where a = +/- 1 and X is an exponentially distributed random
-    variable.
-    """
-
-    Parameter = namedtuple(
-        'Parameter',
-        ('lambd', 'zero_point', 'negative'),
-    )
-
-    def do_draw(self, data):
-        def distribution(random, n):
-            assert n == 8
-            i = random.randint(0, 10)
-            if i == 0:
-                f = self.lower_bound
-            elif i == 1:
-                f = self.upper_bound
-            else:
-                upper = self.upper_bound
-                lower = self.lower_bound
-                if lower < 0 < upper:
-                    if random.randint(0, 1):
-                        lower = 0.0
-                    else:
-                        upper = -0.0
-                f = lower + (upper - lower) * random.random()
-            return struct.pack(b'!d', f)
-        f = struct.unpack(b'!d', data.draw_bytes(8, distribution))[0]
-        assume(self.lower_bound <= f <= self.upper_bound)
         assume(sign(self.lower_bound) <= sign(f) <= sign(self.upper_bound))
         return f
-
-
-class NastyFloats(SampledFromStrategy):
-
-    def __init__(self, allow_nan=True, allow_infinity=True):
-        elements = [
-            0.0,
-            -0.0,
-            sys.float_info.min,
-            -sys.float_info.min,
-            -sys.float_info.max,
-            sys.float_info.max
-        ]
-        if allow_infinity:
-            elements.extend([
-                float('inf'),
-                -float('inf')
-            ])
-        if allow_nan:
-            elements.extend([
-                float('nan')
-            ])
-
-        SampledFromStrategy.__init__(self, elements=elements)
 
 
 class ComplexStrategy(MappedSearchStrategy):
