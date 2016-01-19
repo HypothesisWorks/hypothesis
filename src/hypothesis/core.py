@@ -359,9 +359,6 @@ def given(*generator_arguments, **generator_kwargs):
                                 'that this could be your executor failing '
                                 'to handle a function which returns None. '
                             )
-                print("count=%d, filtered_draws=%d, overruns=%d" % (
-                    count, filtered_draws, overruns,
-                ))
                 if filtered_draws >= 50:
                     fail_health_check((
                         'It looks like your strategy is filtering out a lot '
