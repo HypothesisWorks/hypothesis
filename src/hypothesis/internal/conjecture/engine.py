@@ -54,11 +54,14 @@ class TestRunner(object):
         self.last_data.freeze()
 
     def test_function(self, data):
+        self.iterations += 1
         try:
             self._test_function(data)
         except StopTest as e:
             if e.data is not data:
                 raise e
+        if data.status >= Status.VALID:
+            self.valid_examples += 1
 
     def consider_new_test_data(self, data):
         # Transition rules:
@@ -102,8 +105,6 @@ class TestRunner(object):
                 list(data.buffer[:data.index]), data.status,
                 data.output.decode('utf-8'),
             ))
-        if data.status >= Status.VALID:
-            self.valid_examples += 1
         if self.consider_new_test_data(data):
             if self.last_data.status == Status.INTERESTING:
                 self.shrinks += 1
@@ -207,9 +208,6 @@ class TestRunner(object):
                 )
                 self.test_function(data)
                 data.freeze()
-                self.iterations += 1
-                if data.status >= Status.VALID:
-                    self.valid_examples += 1
                 if data.status >= self.last_data.status:
                     self.last_data = data
                     if data.status > self.last_data.status:
