@@ -623,4 +623,12 @@ def find(specifier, condition, settings=None, random=None):
         with BuildContext():
             return TestData.for_buffer(
                 runner.last_data.buffer, expand=True).draw(search)
+    if runner.valid_examples <= settings.min_satisfying_examples:
+        raise Unsatisfiable((
+            'Unable to satisfy assumptions of '
+            '%s. Only %d examples considered satisfied assumptions'
+        ) % (
+            get_pretty_function_description(condition),
+            runner.valid_examples,))
+
     raise NoSuchExample(get_pretty_function_description(condition))
