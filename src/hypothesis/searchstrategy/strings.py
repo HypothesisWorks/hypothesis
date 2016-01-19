@@ -20,12 +20,13 @@ import sys
 import unicodedata
 
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal import charstree
 from hypothesis.internal.compat import hrange, hunichr, text_type, \
     binary_type
-from hypothesis.internal.conjecture import utils as d
-from hypothesis.searchstrategy.strategies import SearchStrategy, \
+from hypothesis.searchstrategy.strategies import \
     MappedSearchStrategy
+from hypothesis.searchstrategy.fixed import FixedStrategy
+from hypothesis.control import assume
+
 
 CHR_ORDER = [
     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
@@ -47,8 +48,33 @@ CHR_ORDER = [
     '\x1e', '\x1f',
 ]
 
+REVERSE_CHR_ORDER = [0] * len(CHR_ORDER)
+for i, c in enumerate(CHR_ORDER):
+    REVERSE_CHR_ORDER[ord(c)] = i
+assert sorted(REVERSE_CHR_ORDER) == list(range(127))
 
-class OneCharStringStrategy(SearchStrategy):
+
+unicode_categories = set([
+    'Cc', 'Cf', 'Cn', 'Co', 'Cs', 'Ll', 'Lm', 'Lo', 'Lt', 'Lu', 'Mc', 'Me',
+    'Mn', 'Nd', 'Nl', 'No', 'Pc', 'Pd', 'Pe', 'Pf', 'Pi', 'Po', 'Ps', 'Sc',
+    'Sk', 'Sm', 'So', 'Zl', 'Zp', 'Zs'
+])
+
+
+def int_to_chr(i):
+    if i < 127:
+        return CHR_ORDER[i]
+    return hunichr(i)
+
+
+def chr_to_int(c):
+    i = ord(c)
+    if i < 127:
+        return REVERSE_CHR_ORDER[i]
+    return i
+
+
+class OneCharStringStrategy(FixedStrategy):
 
     """A strategy which generates single character strings of text type."""
     specifier = text_type
@@ -60,53 +86,69 @@ class OneCharStringStrategy(SearchStrategy):
                  blacklist_characters=None,
                  min_codepoint=None,
                  max_codepoint=None):
+        FixedStrategy.__init__(self, 3)
         if whitelist_categories is not None:
             whitelist_categories = set(whitelist_categories)
-        blacklist_categories = set(blacklist_categories or [])
-        blacklist_characters = set(blacklist_characters or [])
+        else:
+            whitelist_categories = set(unicode_categories)
+        self.whitelist_categories = whitelist_categories
+        if blacklist_categories:
+            self.whitelist_categories -= set(blacklist_categories)
 
-        min_codepoint = int(min_codepoint or 0)
-        max_codepoint = int(max_codepoint or sys.maxunicode)
+        self.min_codepoint = int(min_codepoint or 0)
+        self.max_codepoint = int(max_codepoint or sys.maxunicode)
+        self.blacklist_characters = set(blacklist_characters or ())
+        self.count = 0
 
-        intervals = []
-        for i in hrange(min_codepoint, max_codepoint + 1):
-            c = hunichr(i)
-            if c in blacklist_categories:
+        intervals_by_category = {}
+        for i in hrange(0, max(128, self.max_codepoint + 1)):
+            c = int_to_chr(i)
+            if ord(c) < self.min_codepoint or ord(c) > self.max_codepoint:
+                continue
+            if c in self.blacklist_characters:
                 continue
             cat = unicodedata.category(c)
-            if (
-                whitelist_categories is not None and
-                cat not in whitelist_categories
-            ):
+            if cat not in self.whitelist_categories:
                 continue
-            if cat in blacklist_categories:
-                continue
+            self.count += 1
+            intervals = intervals_by_category.setdefault(cat, [])
             if not intervals or i > intervals[-1][-1] + 1:
                 intervals.append([i, i])
             else:
                 assert i == intervals[-1][-1] + 1
                 intervals[-1][-1] += 1
-        if not intervals:
+
+        self.intervals_by_category = sorted(intervals_by_category.values())
+
+        if not intervals_by_category:
             raise InvalidArgument('Empty set of allowed characters')
-        self.intervals = intervals
 
-    def do_draw(self, data):
-        interval = d.choice(data, self.intervals)
-        i = d.integer_range(data, *interval)
-        if i < 127:
-            return CHR_ORDER[i]
-        return hunichr(i)
+    def from_bytes(self, b):
+        i = int.from_bytes(b, 'big')
+        assume(i <= sys.maxunicode)
+        return int_to_chr(i)
 
-    def is_good(self, char):
+    def to_bytes(self, c):
+        i = chr_to_int(c)
+        return i.to_bytes(3, 'big')
+
+    def is_acceptable(self, char):
+        i = ord(char)
+        if i < self.min_codepoint:
+            return False
+        if i > self.max_codepoint:
+            return False
         if char in self.blacklist_characters:
             return False
-
-        categories = charstree.categories(self.unicode_tree)
-        if unicodedata.category(char) not in categories:
+        if unicodedata.category(char) not in self.whitelist_categories:
             return False
+        return True
 
-        codepoint = ord(char)
-        return self.min_codepoint <= codepoint <= self.max_codepoint
+    def draw_value(self, random):
+        cat = random.choice(self.intervals_by_category)
+        interval = random.choice(cat)
+        i = random.randint(*interval)
+        return int_to_chr(i)
 
 
 class StringStrategy(MappedSearchStrategy):

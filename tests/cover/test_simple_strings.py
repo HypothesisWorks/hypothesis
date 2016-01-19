@@ -21,19 +21,20 @@ from random import Random
 
 import pytest
 
+from hypothesis.searchstrategy.strings import CHR_ORDER
 from hypothesis import find, given, settings
 from hypothesis.strategies import text, binary, tuples
 
 
 def test_can_minimize_up_to_zero():
-    s = find(text(), lambda x: len([t for t in x if t <= u'0']) >= 10)
-    assert s == u'0' * 10
+    s = find(text(), lambda x: any(lambda t: t <= u'0' for t in x))
+    assert s == u'0'
 
 
 def test_minimizes_towards_ascii_zero():
+    first = [c for c in CHR_ORDER if ord(c) < ord('0')][0]
     s = find(text(), lambda x: any(t < u'0' for t in x))
-    assert len(s) == 1
-    assert ord(s) == ord(u'0') - 1
+    assert s == first
 
 
 def test_can_handle_large_codepoints():
