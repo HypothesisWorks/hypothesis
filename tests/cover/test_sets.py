@@ -16,72 +16,12 @@
 
 from __future__ import division, print_function, absolute_import
 
-from random import Random
-
 import pytest
 
-from hypothesis import find, given, assume, settings
+from hypothesis import find, given, settings
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import sets, lists, floats, randoms, booleans, \
+from hypothesis.strategies import sets, lists, floats, randoms, \
     integers, frozensets
-
-
-@given(integers())
-@settings(max_examples=1)
-def test_template_equality(seed):
-    s = sets(integers())
-    t = s.draw_and_produce(Random(seed))
-    assert t != 1
-
-    t2 = s.draw_and_produce(Random(seed))
-    assert t is not t2
-    assert t == t2
-    s.reify(t2)
-    assert t == t2
-    assert hash(t) == hash(t2)
-
-    t3 = s.draw_and_produce(Random(seed))
-    s.reify(t3)
-    simplified = False
-    for ts in s.full_simplify(Random(seed), t3):
-        simplified = True
-        assert t3 != ts
-    assume(simplified)
-
-
-def test_simplifying_unreified_template_does_not_error():
-    s = sets(integers())
-    t = s.draw_and_produce(Random(1))
-    list(s.full_simplify(Random(1), t))
-
-
-@given(integers())
-@settings(max_examples=1)
-def test_reified_templates_are_simpler(seed):
-    s = sets(integers())
-    t1 = s.draw_and_produce(Random(seed))
-    t2 = s.draw_and_produce(Random(seed))
-
-    assert t1 == t2
-    assert not s.strictly_simpler(t1, t2)
-    assume(s.reify(t1))
-    assert s.strictly_simpler(t1, t2)
-    assert not s.strictly_simpler(t2, t1)
-
-
-def test_simplify_does_not_error_on_unreified_data():
-    s = sets(integers())
-    for i in range(100):
-        t1 = s.draw_and_produce(Random(i))
-        t2 = s.draw_and_produce(Random(i))
-        if t1.size > 1:
-            break
-
-    s.reify(t1)
-    simplifiers = list(s.simplifiers(Random(1), t1))
-    assert len(simplifiers) > 2
-    for s in simplifiers:
-        assert list(s(Random(1), t2)) == []
 
 
 def test_can_clone_same_length_items():
@@ -95,14 +35,6 @@ def test_can_clone_same_length_items():
 def test_unique_lists_error_on_too_large_average_size():
     with pytest.raises(InvalidArgument):
         lists(integers(), unique=True, average_size=10, max_size=5).example()
-
-
-@given(randoms())
-def test_templates_reify_to_same_value_before_and_after(rnd):
-    s = sets(booleans())
-    t = s.draw_and_produce(rnd)
-    t2 = s.from_basic(s.to_basic(t))
-    assert s.reify(t) == s.reify(t2)
 
 
 @given(randoms())

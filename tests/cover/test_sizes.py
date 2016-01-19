@@ -16,35 +16,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-import hashlib
-from random import Random
-
-import pytest
-
-import hypothesis.strategies as s
 from hypothesis.utils.size import clamp
-from hypothesis.internal.compat import hrange
-
-finite = [
-    s.booleans(), s.integers(-10, 10),
-    s.integers(0, 10) | s.integers(0, 1),
-    s.tuples(s.booleans(), s.booleans()),
-]
-
-
-@pytest.mark.parametrize(u'strat', finite, ids=list(map(repr, finite)))
-def test_covers_entire_finite_space(strat):
-    assert strat.template_upper_bound <= 100
-
-    random = Random(hashlib.md5(
-        (repr(strat) + u':test_covers_entire_finite_space').encode(u'utf-8')
-    ).digest())
-
-    s = set()
-    for _ in hrange(2000):
-        s.add(strat.draw_and_produce(random))
-
-    assert len(s) == strat.template_upper_bound
 
 
 def test_clamp():

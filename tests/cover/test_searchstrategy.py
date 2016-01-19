@@ -16,7 +16,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import random
 import functools
 from collections import namedtuple
 
@@ -102,7 +101,3 @@ def test_can_map_nameless():
 def test_can_flatmap_nameless():
     f = nameless_const(just(3))
     assert repr(f) in repr(integers().flatmap(f))
-
-
-def test_can_draw_from_random():
-    integers().draw_and_produce(random)
