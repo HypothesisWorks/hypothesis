@@ -162,20 +162,6 @@ def test_deeply_nested_sets():
     assert f(10).template_upper_bound == float(u'inf')
 
 
-def test_list_simplicity():
-    # Testing internal details because this is too damn hard to hit reliably
-    s = lists(booleans())
-
-    assert not s.strictly_simpler((), ())
-    assert s.strictly_simpler((), (False,))
-    assert not s.strictly_simpler((True,), ())
-    assert s.strictly_simpler((True,), (False, True))
-    assert s.strictly_simpler((False,), (True,))
-    assert not s.strictly_simpler((True,), (False,))
-    assert s.strictly_simpler((False, False,), (False, True))
-    assert not s.strictly_simpler((False, True), (False, True))
-
-
 def test_multiple_empty_lists_are_independent():
     x = find(lists(lists(max_size=0)), lambda t: len(t) >= 2)
     u, v = x
