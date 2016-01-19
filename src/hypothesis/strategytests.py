@@ -32,125 +32,10 @@ from hypothesis.database import ExampleDatabase
 from hypothesis.strategies import lists, randoms, integers
 from hypothesis.internal.compat import hrange, text_type, integer_types
 from hypothesis.internal.tracker import Tracker
-from hypothesis.internal.extmethod import ExtMethod
-from hypothesis.searchstrategy.strategies import SearchStrategy
-
-TemplatesFor = namedtuple('TemplatesFor', ('base',))
-
-
-class TemplatesStrategy(SearchStrategy):
-
-    def __init__(self, base_strategy):
-        super(TemplatesStrategy, self).__init__()
-        self.base_strategy = base_strategy
-
-    def __repr__(self):
-        return 'templates_for(%r)' % (self.base_strategy,)
-
-    def draw_parameter(self, random):
-        return self.base_strategy.draw_parameter(random)
-
-    def strictly_simpler(self, x, y):
-        return self.base_strategy.strictly_simpler(x, y)
-
-    def draw_template(self, random, pv):
-        return self.base_strategy.draw_template(random, pv)
-
-    def reify(self, template):
-        return template
-
-    def to_basic(self, template):
-        return self.base_strategy.to_basic(template)
-
-    def from_basic(self, data):
-        return self.base_strategy.from_basic(data)
-
-    def simplifiers(self, random, template):
-        return self.base_strategy.simplifiers(random, template)
-
-
-def templates_for(strat):
-    return TemplatesStrategy(strat)
 
 
 class Rejected(Exception):
     pass
-
-
-mess_with_basic_data = ExtMethod()
-
-
-def mutate_basic(basic, random):
-    if not random.randint(0, 2):
-        if isinstance(basic, text_type):
-            return list(basic)
-        elif isinstance(basic, integer_types):
-            try:
-                return float(basic)
-            except OverflowError:
-                return -basic
-        else:
-            return text_type(repr(basic))
-    return mess_with_basic_data(basic, random)
-
-
-@mess_with_basic_data.extend(object)
-def test_mess_with_anything(o, random):
-    return o
-
-
-def mess_with_int(i, random):  # pragma: no cover
-    s = random.randint(0, 4)
-    if s == 0:
-        return -i
-    elif s == 1:
-        return i + random.randint(-1, 1)
-    elif s == 3:
-        return i * 2
-    elif s == 4:
-        b = (2 ** random.randint(31, 129)) + random.randint(-10 ** 5, 10 ** 5)
-        if random.randint(0, 1):
-            b = -b
-        return b
-
-for t in integer_types:
-    mess_with_basic_data.extend(t)(mess_with_int)
-
-
-@mess_with_basic_data.extend(text_type)
-def mess_with_text(text, random):  # pragma: no cover
-    if random.randint(0, 1):
-        return text.encode('utf-8')
-    else:
-        return text
-
-
-@mess_with_basic_data.extend(list)
-def mess_with_list(ls, random):  # pragma: no cover
-    ls = list(ls)
-    if not ls:
-        if random.randint(0, 1):
-            ls.append(random.randint(-2 ** 128, 2 ** 128))
-        return ls
-    i = random.randint(0, len(ls))
-    if i < len(ls):
-        ls[i] = mutate_basic(ls[i], random)
-    t = random.randint(0, 5)
-    if t == 0:
-        while ls and random.randint(0, 1):
-            ls.pop()
-    elif t == 1:
-        j = random.randint(0, len(ls) - 1)
-        ls.append(ls[j])
-    elif t == 2:
-        random.shuffle(ls)
-    return ls
-
-
-@mess_with_basic_data.extend(type(None))
-def mess_with_none(n, random):
-    if not random.randint(0, 5):
-        return float('nan')
 
 
 def strategy_test_suite(
@@ -165,11 +50,6 @@ def strategy_test_suite(
     )
     random = random or Random()
     strat = specifier
-
-    def specifier_test(test):
-        return given(
-            templates_for(specifier), randoms(),
-        )(settings(test))
 
     class ValidationSuite(TestCase):
 
@@ -216,45 +96,6 @@ def strategy_test_suite(
             finally:
                 db.close()
 
-        @given(templates_for(specifier), templates_for(specifier))
-        @settings
-        def test_simplicity_is_asymmetric(self, x, y):
-            assert not (
-                strat.strictly_simpler(x, y) and
-                strat.strictly_simpler(y, x)
-            )
-
-        @given(integers())
-        @settings
-        def test_templates_generated_from_same_random_are_equal(self, i):
-            try:
-                t1 = strat.draw_and_produce(Random(i))
-                t2 = strat.draw_and_produce(Random(i))
-            except BadTemplateDraw:
-                assume(False)
-
-            if t1 is not t2:
-                assert t1 == t2
-                assert hash(t1) == hash(t2)
-
-        @given(integers())
-        @settings
-        def test_templates_generated_from_same_random_are_equal_after_reify(
-            self, i
-        ):
-            try:
-                t1 = strat.draw_and_produce(Random(i))
-                t2 = strat.draw_and_produce(Random(i))
-            except BadTemplateDraw:
-                assume(False)
-            if t1 is not t2:
-                with BuildContext():
-                    strat.reify(t1)
-                with BuildContext():
-                    strat.reify(t2)
-                assert t1 == t2
-                assert hash(t1) == hash(t2)
-
         @given(integers())
         @settings
         def test_will_handle_a_really_weird_failure(self, s):
@@ -286,80 +127,5 @@ def strategy_test_suite(
                     pass
             finally:
                 db.close()
-
-        @specifier_test
-        def test_is_basic(self, value, rnd):
-            def is_basic(v):
-                if v is None or isinstance(v, text_type):
-                    return True
-                if isinstance(v, integer_types):
-                    return not (abs(v) >> 64)
-                if isinstance(v, list):
-                    return all(is_basic(w) for w in v)
-                return False
-            supposedly_basic = strat.to_basic(value)
-            self.assertTrue(is_basic(supposedly_basic), repr(supposedly_basic))
-
-        @specifier_test
-        def test_only_raises_bad_data_in_from_basic(self, value, rnd):
-            basic = strat.to_basic(value)
-
-            messed_basic = mutate_basic(basic, rnd)
-            try:
-                strat.from_basic(messed_basic)
-            except BadData:
-                pass
-
-        @specifier_test
-        def test_can_round_trip_through_the_database(self, template, rnd):
-            empty_db = ExampleDatabase(':memory:')
-            try:
-                storage = empty_db.storage('round trip')
-                storage.save(template, strat)
-                values = list(storage.fetch(strat))
-                assert len(values) == 1
-                assert strat.to_basic(template) == strat.to_basic(values[0])
-            finally:
-                empty_db.close()
-
-        @specifier_test
-        def test_template_is_hashable(self, template, rnd):
-            hash(template)
-            # It can be easy to forget to convert a list...
-            hash(strat.from_basic(strat.to_basic(template)))
-
-        @specifier_test
-        def test_can_minimize_to_empty(self, template, rnd):
-            simplest = template
-            tracker = Tracker()
-            while True:
-                for t in strat.full_simplify(rnd, simplest):
-                    if tracker.track(t) == 1:
-                        simplest = t
-                        break
-                else:
-                    break
-            assert list(strat.full_simplify(rnd, simplest)) == []
-
-        @specifier_test
-        def test_full_simplify_completes(self, template, rnd):
-            # Cut off at 100 for the occasional case where we get
-            # really very large templates which have too many simplifies.
-            for x in islice(strat.full_simplify(rnd, template), 100):
-                pass
-
-        @specifier_test
-        def test_does_not_increase_complexity(self, template, rnd):
-            for s in islice(strat.full_simplify(rnd, template), 100):
-                assert not strat.strictly_simpler(template, s)
-
-        @given(randoms())
-        @Settings(settings, max_examples=100)
-        def test_can_create_templates(self, random):
-            parameter = strat.draw_parameter(random)
-            try:
-                strat.draw_template(random, parameter)
-            except BadTemplateDraw:
-                assume(False)
 
     return ValidationSuite

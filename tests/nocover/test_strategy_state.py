@@ -18,19 +18,17 @@ from __future__ import division, print_function, absolute_import
 
 import math
 import hashlib
-from copy import deepcopy
 from random import Random
 
-from hypothesis import find, seed, given, assume, settings, Verbosity
+from hypothesis import seed, given, assume, settings, Verbosity
 from hypothesis.errors import NoExamples, FailedHealthCheck
 from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import rule, Bundle, RuleBasedStateMachine, \
     StateMachineSearchStrategy
 from hypothesis.strategies import just, none, text, lists, binary, \
-    floats, tuples, randoms, booleans, decimals, integers, fractions, \
+    floats, tuples, booleans, decimals, integers, fractions, \
     streaming, float_to_int, int_to_float, sampled_from, complex_numbers
 from hypothesis.utils.size import clamp
-from hypothesis.strategytests import templates_for
 from hypothesis.internal.debug import timeout
 from hypothesis.internal.compat import PYPY
 
@@ -163,26 +161,6 @@ class HypothesisSpec(RuleBasedStateMachine):
     def or_strategy(self, l, r):
         return l | r
 
-    @rule(
-        target=strategies,
-        source=strategies, result=strategies, mixer=text())
-    def mapped_strategy(self, source, result, mixer):
-        cache = {}
-
-        def do_map(value):
-            rep = repr(value)
-            try:
-                return deepcopy(cache[rep])
-            except KeyError:
-                pass
-            random = Random(
-                hashlib.md5((mixer + rep).encode(u'utf-8')).digest()
-            )
-            outcome_template = result.draw_and_produce(random)
-            cache[rep] = result.reify(outcome_template)
-            return deepcopy(cache[rep])
-        return source.map(do_map)
-
     @rule(target=varied_floats, source=floats())
     def float(self, source):
         return source
@@ -256,34 +234,6 @@ class HypothesisSpec(RuleBasedStateMachine):
     @rule(strat=strategies)
     def repr_is_good(self, strat):
         assert u' at 0x' not in repr(strat)
-
-    @rule(strat=strategies)
-    def template_upper_bound_is_valid(self, strat):
-        ub = strat.template_upper_bound
-        assert ub >= 0
-        if isinstance(ub, float):
-            assert math.isinf(ub)
-        else:
-            assert isinstance(ub, int)
-
-    @rule(strat=strategies, r=randoms())
-    def can_find_as_many_templates_as_size(self, strat, r):
-        tempstrat = templates_for(strat)
-        n = min(10, strat.template_upper_bound)
-        found = []
-        with settings(verbosity=Verbosity.quiet, timeout=2.0):
-            for i in range(n):
-                try:
-                    x = find(
-                        tempstrat, lambda t: t not in found,
-                        random=r,
-                    )
-                except:
-                    print(u'Exception at %d/%d. template_upper_bound=%r' % (
-                        i, n, strat.template_upper_bound
-                    ))
-                    raise
-                found.append(x)
 
 MAIN = __name__ == u'__main__'
 

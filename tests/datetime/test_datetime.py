@@ -16,15 +16,14 @@
 
 from __future__ import division, print_function, absolute_import
 
-from random import Random
-from datetime import MAXYEAR, MINYEAR
+from datetime import MINYEAR
 
 import pytz
 import pytest
 
 import hypothesis._settings as hs
 from hypothesis import given, assume, settings
-from hypothesis.errors import InvalidArgument, UnsatisfiedAssumption
+from hypothesis.errors import InvalidArgument
 from hypothesis.strategytests import strategy_test_suite
 from hypothesis.extra.datetime import datetimes
 from hypothesis.internal.debug import minimal
@@ -115,42 +114,6 @@ def test_min_year_is_respected():
 
 def test_max_year_is_respected():
     assert minimal(datetimes(max_year=1998)).year == 1998
-
-
-def test_year_bounds_are_respected_in_deserialization():
-    s = datetimes()
-    r = Random(1)
-    template = s.draw_template(r, s.draw_parameter(r))
-    year = s.reify(template).year
-    basic = s.to_basic(template)
-    above = datetimes(min_year=year + 1)
-    below = datetimes(max_year=year - 1)
-    with pytest.raises(UnsatisfiedAssumption):
-        above.reify(above.from_basic(basic))
-    with pytest.raises(UnsatisfiedAssumption):
-        below.reify(below.from_basic(basic))
-
-
-def test_timezones_are_checked_in_deserialization():
-    s = datetimes()
-    r = Random(1)
-    basic = s.to_basic(s.draw_template(r, s.draw_parameter(r)))
-    with pytest.raises(UnsatisfiedAssumption):
-        dts = datetimes(timezones=[])
-        dts.reify(dts.from_basic(basic))
-
-
-def test_can_draw_times_in_the_final_year():
-    last_year = datetimes(min_year=MAXYEAR)
-    r = Random(1)
-    c = 0
-    for _ in hrange(1000):
-        try:
-            last_year.reify(last_year.draw_and_produce(r))
-            c += 1
-        except UnsatisfiedAssumption:
-            pass
-    assert c >= 100
 
 
 def test_validates_year_arguments_in_range():
