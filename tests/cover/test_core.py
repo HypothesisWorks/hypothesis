@@ -23,14 +23,13 @@ import pytest
 import hypothesis.strategies as s
 from hypothesis import find, given, assume, settings
 from hypothesis.errors import NoSuchExample, Unsatisfiable
-from hypothesis.internal.tracker import Tracker
 
 
 def test_stops_after_max_examples_if_satisfying():
-    tracker = Tracker()
+    tracker = []
 
     def track(x):
-        tracker.track(x)
+        tracker.append(x)
         return False
 
     max_examples = 100
@@ -44,10 +43,10 @@ def test_stops_after_max_examples_if_satisfying():
 
 
 def test_stops_after_max_iterations_if_not_satisfying():
-    tracker = Tracker()
+    tracker = set()
 
     def track(x):
-        tracker.track(x)
+        tracker.add(x)
         assume(False)
 
     max_examples = 100
