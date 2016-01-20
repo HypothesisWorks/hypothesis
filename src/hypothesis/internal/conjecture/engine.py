@@ -58,7 +58,7 @@ class TestRunner(object):
         try:
             self._test_function(data)
         except StopTest as e:
-            if e.data is not data:
+            if e.uuid != data.uuid:
                 raise e
         if data.status >= Status.VALID:
             self.valid_examples += 1

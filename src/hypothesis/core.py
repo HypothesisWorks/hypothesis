@@ -455,7 +455,7 @@ def given(*generator_arguments, **generator_kwargs):
                     try:
                         evaluate_test_data(data)
                     except StopTest as e:
-                        if e.data is not data:
+                        if e.uuid != data.uuid:
                             raise
                     if data.status < Status.VALID:
                         settings.database.delete(database_key, existing)
