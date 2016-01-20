@@ -18,7 +18,7 @@ from __future__ import division, print_function, absolute_import
 
 from contextlib import contextmanager
 
-from hypothesis.control import assume
+from hypothesis.control import reject
 from hypothesis.searchstrategy.wrappers import WrapperStrategy
 from hypothesis.searchstrategy.strategies import OneOfStrategy
 
@@ -68,13 +68,7 @@ class RecursiveStrategy(WrapperStrategy):
         )
 
     def do_draw(self, data):
-        while True:
-            start = data.index
-            try:
-                data.start_example()
-                return super(RecursiveStrategy, self).do_draw(data)
-            except LimitReached:
-                assume(start < data.index)
-            finally:
-                if not data.frozen:
-                    data.stop_example()
+        try:
+            return super(RecursiveStrategy, self).do_draw(data)
+        except LimitReached:
+            reject()

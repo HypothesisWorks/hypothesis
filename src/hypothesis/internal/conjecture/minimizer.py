@@ -97,7 +97,7 @@ class Minimizer(object):
             while i < len(self.current):
                 j = i + 1
                 counter = 0
-                while j < len(self.current) and counter < 32:
+                while j < len(self.current) and counter < 10:
                     if self.current[i] == self.current[j]:
                         counter += 1
                         for c in range(self.current[i]):
