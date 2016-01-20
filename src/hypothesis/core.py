@@ -261,6 +261,7 @@ def given(*generator_arguments, **generator_kwargs):
                 try:
                     with BuildContext() as b:
                         test_runner(
+                            None,
                             lambda data: test(*arguments, **example_kwargs)
                         )
                 except BaseException:
