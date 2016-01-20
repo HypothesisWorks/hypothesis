@@ -271,6 +271,8 @@ class TestRunner(object):
             i = 0
             while i < len(self.last_data.intervals):
                 u, v = self.last_data.intervals[i]
+                if u + 2 >= v:
+                    break
                 for l in range(v - u):
                     if self.incorporate_new_buffer(
                         self.last_data.buffer[:u] +
