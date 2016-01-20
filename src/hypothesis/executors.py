@@ -62,13 +62,16 @@ def default_new_style_executor(data, function):
     return function(data)
 
 
+class TestRunner(object):
+    def hypothesis_execute_example_with_data(data, function):
+        return function(data)
+
+
 def new_style_executor(runner):
     if runner is None:
         return default_new_style_executor
-    try:
+    if isinstance(runner, TestRunner):
         return runner.hypothesis_execute_example_with_data
-    except AttributeError:
-        pass
 
     old_school = executor(runner)
     if old_school is default_executor:

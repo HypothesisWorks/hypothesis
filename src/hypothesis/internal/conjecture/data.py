@@ -20,6 +20,7 @@ from enum import IntEnum
 
 from hypothesis.errors import Frozen
 from hypothesis.internal.compat import text_type, binary_type
+from uuid import uuid4
 
 
 def uniform(random, n):
@@ -37,9 +38,9 @@ class Status(IntEnum):
 
 class StopTest(BaseException):
 
-    def __init__(self, data):
-        super(StopTest, self).__init__()
-        self.data = data
+    def __init__(self, uuid):
+        super(StopTest, self).__init__(uuid)
+        self.uuid = uuid
 
 
 class TestData(object):
@@ -78,6 +79,7 @@ class TestData(object):
         self.frozen = False
         self.intervals = []
         self.interval_stack = []
+        self.uuid = uuid4().bytes
 
     def __assert_not_frozen(self, name):
         if self.frozen:
@@ -135,7 +137,7 @@ class TestData(object):
         if self.index + n > self.max_length:
             self.status = Status.OVERRUN
             self.freeze()
-            raise StopTest(self)
+            raise StopTest(self.uuid)
         self.block_starts.setdefault(n, []).append(initial)
         result = self._draw_bytes(self, n, distribution)
         assert len(result) == n
@@ -148,13 +150,13 @@ class TestData(object):
         self.__assert_not_frozen('mark_interesting')
         if self.status == Status.VALID:
             self.status = Status.INTERESTING
-        raise StopTest(self)
+        raise StopTest(self.uuid)
 
     def mark_invalid(self):
         self.__assert_not_frozen('mark_invalid')
         if self.status != Status.OVERRUN:
             self.status = Status.INVALID
-        raise StopTest(self)
+        raise StopTest(self.uuid)
 
     @property
     def rejected(self):
