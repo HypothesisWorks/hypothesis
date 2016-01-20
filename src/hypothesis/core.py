@@ -34,7 +34,7 @@ from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
 from hypothesis.control import BuildContext
 from hypothesis._settings import settings as Settings
 from hypothesis._settings import Verbosity
-from hypothesis.executors import executor, default_executor
+from hypothesis.executors import new_style_executor, default_new_style_executor
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.internal.compat import getargspec
 from hypothesis.internal.reflection import arg_string, impersonate, \
@@ -100,11 +100,11 @@ def example(*args, **kwargs):
 
 
 def reify_and_execute(
-    search_strategy, data, test,
+    search_strategy, test,
     print_example=False, record_repr=None,
     is_final=False,
 ):
-    def run():
+    def run(data):
         with BuildContext(is_final=is_final):
             args, kwargs = data.draw(search_strategy)
             text_version = arg_string(test, args, kwargs)
@@ -239,7 +239,7 @@ def given(*generator_arguments, **generator_kwargs):
                 selfy = kwargs.get(argspec.args[0])
             elif arguments:
                 selfy = arguments[0]
-            test_runner = executor(selfy)
+            test_runner = new_style_executor(selfy)
 
             for example in reversed(getattr(
                 wrapped_test, 'hypothesis_explicit_examples', ()
@@ -261,7 +261,7 @@ def given(*generator_arguments, **generator_kwargs):
                 try:
                     with BuildContext() as b:
                         test_runner(
-                            lambda: test(*arguments, **example_kwargs)
+                            lambda data: test(*arguments, **example_kwargs)
                         )
                 except BaseException:
                     report(message_on_failure)
@@ -320,9 +320,8 @@ def given(*generator_arguments, **generator_kwargs):
                             distribution(health_check_random, n)
                         )
                         with Settings(settings, verbosity=Verbosity.quiet):
-                            test_runner(reify_and_execute(
+                            test_runner(data, reify_and_execute(
                                 search_strategy,
-                                data,
                                 lambda *args, **kwargs: None,
                             ))
                         count += 1
@@ -338,7 +337,7 @@ def given(*generator_arguments, **generator_kwargs):
                         if errors == 0:
                             report(traceback.format_exc())
                         errors += 1
-                        if test_runner is default_executor:
+                        if test_runner is default_new_style_executor:
                             fail_health_check(
                                 'An exception occurred during data '
                                 'generation in initial health check. '
@@ -408,8 +407,8 @@ def given(*generator_arguments, **generator_kwargs):
                     initial_state = getglobalrandomstate()
                 record_repr = [None]
                 try:
-                    result = test_runner(reify_and_execute(
-                        search_strategy, data, test,
+                    result = test_runner(data, reify_and_execute(
+                        search_strategy, test,
                         record_repr=record_repr,
                     ))
                     if result is not None and settings.perform_health_check:
@@ -511,12 +510,12 @@ def given(*generator_arguments, **generator_kwargs):
 
             try:
                 with settings:
-                    test_runner(reify_and_execute(
-                        search_strategy, TestData.for_buffer(
-                            falsifying_example
-                        ), test,
-                        print_example=True, is_final=True
-                    ))
+                    test_runner(
+                        TestData.for_buffer(falsifying_example),
+                        reify_and_execute(
+                            search_strategy, test,
+                            print_example=True, is_final=True
+                        ))
             except UnsatisfiedAssumption:
                 report(traceback.format_exc())
                 raise Flaky(
@@ -530,13 +529,13 @@ def given(*generator_arguments, **generator_kwargs):
             )
 
             try:
-                test_runner(reify_and_execute(
-                    search_strategy, TestData.for_buffer(
-                        falsifying_example
-                    ),
-                    test_is_flaky(test, repr_for_last_exception[0]),
-                    print_example=True, is_final=True
-                ))
+                test_runner(
+                    TestData.for_buffer(falsifying_example),
+                    reify_and_execute(
+                        search_strategy,
+                        test_is_flaky(test, repr_for_last_exception[0]),
+                        print_example=True, is_final=True
+                    ))
             except UnsatisfiedAssumption:
                 raise Flaky(
                     'Unreliable test data: Failed to reproduce a failure '
@@ -546,13 +545,13 @@ def given(*generator_arguments, **generator_kwargs):
                     'call to filter in your strategy) when we didn\'t '
                     'expect it to be.'
                 )
-            test_runner(reify_and_execute(
-                search_strategy, TestData.for_buffer(
-                    falsifying_example
-                ),
-                test_is_flaky(test, repr_for_last_exception[0]),
-                print_example=True, is_final=True
-            ))
+            test_runner(
+                TestData.for_buffer(falsifying_example),
+                reify_and_execute(
+                    search_strategy,
+                    test_is_flaky(test, repr_for_last_exception[0]),
+                    print_example=True, is_final=True
+                ))
         for attr in dir(test):
             if attr[0] != '_' and not hasattr(wrapped_test, attr):
                 setattr(wrapped_test, attr, getattr(test, attr))

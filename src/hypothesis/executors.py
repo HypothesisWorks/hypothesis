@@ -56,3 +56,24 @@ def attr_based_executor(runner):
         )
 
     return default_executor
+
+
+def default_new_style_executor(data, function):
+    return function(data)
+
+
+def new_style_executor(runner):
+    if runner is None:
+        return default_new_style_executor
+    try:
+        return runner.hypothesis_execute_example_with_data
+    except AttributeError:
+        pass
+
+    old_school = executor(runner)
+    if old_school is default_executor:
+        return default_new_style_executor
+    else:
+        return lambda data, function: old_school(
+            lambda: function(data)
+        )
