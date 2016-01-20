@@ -16,10 +16,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis.internal.extmethod import ExtMethod
-
-executor = ExtMethod()
-
 
 def default_executor(function):
     return function()
@@ -39,8 +35,7 @@ def setup_teardown_executor(setup, teardown):
     return execute
 
 
-@executor.extend(object)
-def attr_based_executor(runner):
+def executor(runner):
     try:
         return runner.execute_example
     except AttributeError:
