@@ -42,8 +42,8 @@ testing), and am open to and actively seeking out other suggestions and ideas.
 
 The plan is to treat the social problem of people not using these ideas as a bug to
 which there is a technical solution: Does property-based testing not match your workflow?
-That's a bug, lets fix it by figuring out how to integrate Hypothesis into it.
-Too hard to generate custom data for your application? That's a bug. Lets fix it by
+That's a bug, let's fix it by figuring out how to integrate Hypothesis into it.
+Too hard to generate custom data for your application? That's a bug. Let's fix it by
 figuring out how to make it easier, or how to take something you're already using to
 specify your data and derive a generator from that automatically. Find the explanations
 of these advanced ideas hopelessly obtuse and hard to follow? That's a bug. Let's provide
