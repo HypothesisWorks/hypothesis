@@ -232,11 +232,6 @@ def test_lists_forced_near_top(n):
     ) == [0] * (n + 2)
 
 
-def test_cloning_is_a_no_op_on_short_lists():
-    s = lists(booleans()).wrapped_strategy
-    assert list(s.simplify_with_example_cloning(Random(), (False,))) == []
-
-
 @flaky(max_runs=5, min_passes=1)
 def test_can_find_unique_lists_of_non_set_order():
     ls = minimal(
