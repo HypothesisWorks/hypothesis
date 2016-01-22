@@ -34,7 +34,8 @@ from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
 from hypothesis.control import BuildContext
 from hypothesis._settings import settings as Settings
 from hypothesis._settings import Verbosity
-from hypothesis.executors import new_style_executor, default_new_style_executor
+from hypothesis.executors import new_style_executor, \
+    default_new_style_executor
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.internal.compat import getargspec
 from hypothesis.internal.reflection import arg_string, impersonate, \
@@ -618,18 +619,29 @@ def find(specifier, condition, settings=None, random=None):
     from hypothesis.internal.conjecture.engine import TestRunner
     from hypothesis.internal.conjecture.data import TestData, Status
 
+    start = time.time()
     runner = TestRunner(template_condition, settings=settings, random=random)
     runner.run()
+    run_time = time.time() - start
     if runner.last_data.status == Status.INTERESTING:
         with BuildContext():
             return TestData.for_buffer(
                 runner.last_data.buffer, expand=True).draw(search)
     if runner.valid_examples <= settings.min_satisfying_examples:
-        raise Unsatisfiable((
-            'Unable to satisfy assumptions of '
-            '%s. Only %d examples considered satisfied assumptions'
-        ) % (
-            get_pretty_function_description(condition),
-            runner.valid_examples,))
+        if settings.timeout > 0 and run_time > settings.timeout:
+            raise Timeout((
+                'Ran out of time before finding enough valid examples for'
+                '%s. Only %d valid examples found in %.2f seconds.'
+            ) % (
+                get_pretty_function_description(condition),
+                runner.valid_examples, run_time))
+
+        else:
+            raise Unsatisfiable((
+                'Unable to satisfy assumptions of '
+                '%s. Only %d examples considered satisfied assumptions'
+            ) % (
+                get_pretty_function_description(condition),
+                runner.valid_examples,))
 
     raise NoSuchExample(get_pretty_function_description(condition))

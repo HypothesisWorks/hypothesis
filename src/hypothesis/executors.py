@@ -58,6 +58,7 @@ def default_new_style_executor(data, function):
 
 
 class TestRunner(object):
+
     def hypothesis_execute_example_with_data(data, function):
         return function(data)
 

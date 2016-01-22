@@ -20,16 +20,15 @@ import os
 import pickle
 import inspect
 import traceback
+from random import Random
 from unittest import TestCase
 from collections import namedtuple
 
 from hypothesis.errors import AbnormalExit
-from hypothesis.reporting import with_reporter, current_reporter
-from hypothesis.internal.conjecture.data import TestData, uniform
-from hypothesis.internal.reflection import proxies
 from hypothesis.executors import TestRunner
-from random import Random
-
+from hypothesis.reporting import with_reporter, current_reporter
+from hypothesis.internal.reflection import proxies
+from hypothesis.internal.conjecture.data import uniform, TestData
 
 try:
     os.fork
@@ -54,6 +53,7 @@ def method_proxy(base):
 
 
 class StaticDistribution(object):
+
     def __init__(self, buffer):
         self.buffer = buffer
 
@@ -81,6 +81,7 @@ def is_picklable(distribution):
 
 
 class RemoteData(TestData):
+
     def __init__(self, child_reader, child_writer):
         # Note: Deliberately not calling parent init.
         # I'm a terrible person, but if you're reading this file you already

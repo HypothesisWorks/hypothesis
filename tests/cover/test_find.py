@@ -23,8 +23,7 @@ import pytest
 
 from hypothesis import settings as Settings
 from hypothesis import find
-from hypothesis.errors import Timeout, NoSuchExample, \
-    DefinitelyNoSuchExample
+from hypothesis.errors import Timeout, NoSuchExample
 from hypothesis.strategies import lists, floats, booleans, integers, \
     streaming, dictionaries
 
@@ -52,9 +51,9 @@ def test_can_find_nans():
 
 
 def test_find_streaming_int():
-    n = 100
-    r = find(streaming(integers()), lambda x: all(t >= 1 for t in x[:n]))
-    assert list(r[:n]) == [1] * n
+    n = 50
+    r = find(streaming(integers()), lambda x: any(t >= 1 for t in list(x[:n])))
+    assert list(r[:n]) == [0] * (n - 1) + [1]
 
 
 def test_raises_when_no_example():
@@ -71,7 +70,7 @@ def test_condition_is_name():
         max_examples=20,
         min_satisfying_examples=0,
     )
-    with pytest.raises(DefinitelyNoSuchExample) as e:
+    with pytest.raises(NoSuchExample) as e:
         find(booleans(), lambda x: False, settings=settings)
     assert 'lambda x:' in e.value.args[0]
 

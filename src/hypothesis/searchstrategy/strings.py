@@ -20,13 +20,11 @@ import sys
 import unicodedata
 
 from hypothesis.errors import InvalidArgument
+from hypothesis.control import assume
 from hypothesis.internal.compat import hrange, hunichr, text_type, \
     binary_type
-from hypothesis.searchstrategy.strategies import \
-    MappedSearchStrategy
 from hypothesis.searchstrategy.fixed import FixedStrategy
-from hypothesis.control import assume
-
+from hypothesis.searchstrategy.strategies import MappedSearchStrategy
 
 CHR_ORDER = [
     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
