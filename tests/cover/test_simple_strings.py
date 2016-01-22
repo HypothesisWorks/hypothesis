@@ -21,9 +21,9 @@ from random import Random
 
 import pytest
 
-from hypothesis.searchstrategy.strings import CHR_ORDER
 from hypothesis import find, given, settings
 from hypothesis.strategies import text, binary, tuples
+from hypothesis.searchstrategy.strings import CHR_ORDER
 
 
 def test_can_minimize_up_to_zero():

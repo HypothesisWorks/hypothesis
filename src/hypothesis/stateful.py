@@ -32,9 +32,10 @@ from random import Random
 from unittest import TestCase
 from collections import namedtuple
 
+import hypothesis.internal.conjecture.utils as cu
 from hypothesis.core import find
 from hypothesis.errors import Flaky, NoSuchExample, InvalidDefinition, \
-    UnsatisfiedAssumption, HypothesisException
+    HypothesisException, UnsatisfiedAssumption
 from hypothesis.control import BuildContext
 from hypothesis._settings import settings as Settings
 from hypothesis._settings import Verbosity
@@ -47,7 +48,6 @@ from hypothesis.searchstrategy.strategies import SearchStrategy, \
     one_of_strategies
 from hypothesis.searchstrategy.collections import TupleStrategy, \
     FixedKeysDictStrategy
-import hypothesis.internal.conjecture.utils as cu
 
 
 class TestCaseProperty(object):  # pragma: no cover

@@ -17,10 +17,10 @@
 from __future__ import division, print_function, absolute_import
 
 from enum import IntEnum
+from uuid import uuid4
 
 from hypothesis.errors import Frozen
 from hypothesis.internal.compat import text_type, binary_type
-from uuid import uuid4
 
 
 def uniform(random, n):
