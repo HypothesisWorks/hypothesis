@@ -17,7 +17,7 @@
 from __future__ import division, print_function, absolute_import
 
 import hypothesis.internal.conjecture.utils as cu
-from hypothesis.errors import NoExamples, NoSuchExample
+from hypothesis.errors import NoExamples, NoSuchExample, Unsatisfiable
 from hypothesis.control import assume
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.reflection import get_pretty_function_description
@@ -110,7 +110,7 @@ class SearchStrategy(object):
                     max_iterations=1000,
                 )
             )
-        except NoSuchExample:
+        except (NoSuchExample, Unsatisfiable):
             raise NoExamples(
                 u'Could not find any valid examples in 100 tries'
             )
