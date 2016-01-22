@@ -390,6 +390,8 @@ def lists(
     condition that for i != j, unique_by(result[i]) != unique_by(result[j]).
 
     """
+    check_valid_sizes(min_size, average_size, max_size)
+
     if elements is None or (max_size is not None and max_size <= 0):
         if max_size is None or max_size > 0:
             raise InvalidArgument(
