@@ -197,12 +197,6 @@ def test_non_float_decimal():
     find(ds.decimals(), lambda d: ds.float_to_decimal(float(d)) != d)
 
 
-def test_validates_min_size_for_sets():
-    ds.sets(ds.booleans(), min_size=2)
-    with pytest.raises(InvalidArgument):
-        ds.sets(ds.booleans(), min_size=3).example()
-
-
 def test_produces_dictionaries_of_at_least_minimum_size():
     t = find(
         ds.dictionaries(ds.booleans(), ds.integers(), min_size=2),
