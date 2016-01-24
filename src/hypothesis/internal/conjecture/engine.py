@@ -106,7 +106,6 @@ class TestRunner(object):
                 list(data.buffer[:data.index]), data.status,
                 data.output.decode('utf-8'),
             ))
-            debug_report('intervals: %r' % (data.intervals,))
         if self.consider_new_test_data(data):
             if self.last_data.status == Status.INTERESTING:
                 self.shrinks += 1
