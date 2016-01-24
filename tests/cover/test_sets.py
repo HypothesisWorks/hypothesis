@@ -24,14 +24,6 @@ from hypothesis.strategies import sets, lists, floats, randoms, integers, \
     frozensets
 
 
-def test_can_clone_same_length_items():
-    ls = find(
-        lists(frozensets(integers(), min_size=10, max_size=10)),
-        lambda x: len(x) >= 20
-    )
-    assert len(set(ls)) == 1
-
-
 def test_unique_lists_error_on_too_large_average_size():
     with pytest.raises(InvalidArgument):
         lists(integers(), unique=True, average_size=10, max_size=5).example()
