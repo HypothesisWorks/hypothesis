@@ -122,7 +122,7 @@ def test_streams_copy_as_self():
 
 def test_lists_of_streams():
     x = find(
-        lists(streaming(integers()), min_size=10),
+        lists(streaming(integers()).map(lambda x: (x[3],) and x), min_size=10),
         lambda x: all(t[3] for t in x))
     assert [list(t[:4]) for t in x] == [[0] * 3 + [1]] * 10
 
