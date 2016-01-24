@@ -560,3 +560,16 @@ def test_can_simplify_hard_recursive_data_into_boolean_alternative(rnd):
     lvs = leaves(r)
     assert lvs == [False] * 3
     assert all(isinstance(v, bool) for v in lvs), repr(lvs)
+
+
+@pytest.mark.xfail(
+    "This used to be possible but Conjecture currently lacks an approach to"
+    "shrinks that require cloning structured intervals. It should be possible "
+    "to do but hasn't been implemented yet."
+)
+def test_can_clone_same_length_items():
+    ls = find(
+        lists(frozensets(integers(), min_size=10, max_size=10)),
+        lambda x: len(x) >= 20
+    )
+    assert len(set(ls)) == 1
