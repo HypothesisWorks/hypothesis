@@ -76,6 +76,7 @@ class WideRangeIntStrategy(IntStrategy):
 
     def do_draw(self, data):
         size = 16
+        sign_mask = 2 ** (size * 8 - 1)
 
         def distribution(random, n):
             assert n == size
@@ -88,11 +89,14 @@ class WideRangeIntStrategy(IntStrategy):
             else:
                 r = 0
             if random.randint(0, 1):
-                r = -r
-            return r.to_bytes(n, 'big', signed=True)
-        negative = data.draw_bytes(1)[0] & 1
+                r |= sign_mask
+            else:
+                r &= (~sign_mask)
+            return r.to_bytes(n, 'big', signed=False)
         byt = data.draw_bytes(size, distribution=distribution)
         r = int.from_bytes(byt, 'big', signed=False)
+        negative = r & sign_mask
+        r &= (~sign_mask)
         if negative:
             r = -r
         return r
