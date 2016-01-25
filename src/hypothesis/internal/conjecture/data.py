@@ -73,6 +73,7 @@ class TestData(object):
         self._draw_bytes = draw_bytes
 
         self.block_starts = {}
+        self.blocks = []
         self.buffer = bytearray()
         self.output = bytearray()
         self.status = Status.VALID
@@ -139,6 +140,7 @@ class TestData(object):
             self.freeze()
             raise StopTest(self.uuid)
         self.block_starts.setdefault(n, []).append(initial)
+        self.blocks.append((initial, initial + n))
         result = self._draw_bytes(self, n, distribution)
         assert len(result) == n
         assert self.index == initial

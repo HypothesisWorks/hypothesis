@@ -267,27 +267,32 @@ class TestRunner(object):
 
             if self.changed > change_counter:
                 continue
+            from hypothesis.internal.conjecture.minimizer import minimize
             i = 0
-            while i < len(self.last_data.intervals):
-                u, v = self.last_data.intervals[i]
-                if u + 2 >= v:
-                    break
-                for l in range(v - u):
+            while i < len(self.last_data.blocks):
+                u, v = self.last_data.blocks[i]
+                buf = self.last_data.buffer
+                block = buf[u:v]
+                n = v - u
+                all_blocks = sorted([
+                    buf[a:a + n]
+                    for a in self.last_data.block_starts[n]
+                ])
+                better_blocks = all_blocks[:all_blocks.index(block)]
+                for b in better_blocks:
                     if self.incorporate_new_buffer(
-                        self.last_data.buffer[:u] +
-                        bytes(l) +
-                        self.last_data.buffer[v:]
-                    ) or self.incorporate_new_buffer(
-                        self.last_data.buffer[:u] +
-                        self.rand_bytes(l) +
-                        self.last_data.buffer[v:]
+                        buf[:u] + b + buf[v:]
                     ):
                         break
-                    else:
-                        i += 1
+                minimize(
+                    block,
+                    lambda b: self.incorporate_new_buffer(
+                        buf[:u] + b + buf[v:]
+                    ), self.random
+                )
+                i += 1
             if self.changed > change_counter:
                 continue
-            from hypothesis.internal.conjecture.minimizer import minimize
             minimize(
                 self.last_data.buffer, self.incorporate_new_buffer, self.random
             )
