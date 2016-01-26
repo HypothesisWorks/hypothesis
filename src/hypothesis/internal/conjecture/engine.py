@@ -124,8 +124,8 @@ class TestRunner(object):
             except RunIsComplete:
                 pass
             debug_report(
-                'Run complete after %d valid examples and %d shrinks' % (
-                    self.valid_examples, self.shrinks,
+                'Run complete after %d examples (%d valid) and %d shrinks' % (
+                    self.iterations, self.valid_examples, self.shrinks,
                 ))
 
     def _new_mutator(self):
@@ -252,8 +252,25 @@ class TestRunner(object):
                     self.last_data.buffer[v:]
                 ):
                     i += 1
-            if self.changed > change_counter:
-                continue
+
+            for k in [8, 4, 2, 1, 0]:
+                i = 0
+                while i + k < len(self.last_data.blocks):
+                    u = self.last_data.blocks[i][0]
+                    v = self.last_data.blocks[i + k][1]
+                    if not self.incorporate_new_buffer(
+                        self.last_data.buffer[:u] +
+                        self.last_data.buffer[v:]
+                    ):
+                        i += 1
+
+            i = 0
+            while i <= len(self.last_data.buffer):
+                if not self.incorporate_new_buffer(
+                    self.last_data.buffer[:i] +
+                    self.last_data.buffer[i+1:]
+                ):
+                    i += 1
 
             if discarding_works:
                 for _ in range(100):
@@ -265,8 +282,6 @@ class TestRunner(object):
                 else:
                     discarding_works = False
 
-            if self.changed > change_counter:
-                continue
             from hypothesis.internal.conjecture.minimizer import minimize
             i = 0
             while i < len(self.last_data.blocks):
