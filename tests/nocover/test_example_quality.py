@@ -36,18 +36,16 @@ from hypothesis.internal.compat import PY3, hrange, reduce, Counter, \
     OrderedDict, integer_types
 
 
-@flaky(max_runs=5, min_passes=1)
 def test_minimize_list_on_large_structure():
     def test_list_in_range(xs):
-        assume(len(xs) >= 30)
         return len([
             x for x in xs
             if x >= 10
         ]) >= 60
 
     assert minimal(
-        lists(integers(), min_size=30), test_list_in_range,
-        timeout_after=60,
+        lists(integers(), min_size=60), test_list_in_range,
+        timeout_after=30,
     ) == [10] * 60
 
 
