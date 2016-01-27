@@ -312,10 +312,9 @@ class TestRunner(object):
                             buf[:u] + b + buf[v:]
                         ):
                             break
-                    block = self.last_data.buffer[u:v]
                     if shrink:
                         minimize(
-                            block,
+                            self.last_data.buffer[u:v],
                             lambda b: self.incorporate_new_buffer(
                                 buf[:u] + b + buf[v:]
                             ), self.random
