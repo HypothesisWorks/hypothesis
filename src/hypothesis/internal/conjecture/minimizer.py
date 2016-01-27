@@ -49,10 +49,8 @@ class Minimizer(object):
         return False
 
     def run(self):
-        n = len(self.current)
-        for i in range(n, 0, -1):
-            if self.incorporate(self.current[i:]):
-                break
+        if not any(self.current):
+            return
         change_counter = -1
         while self.current and change_counter < self.changes:
             change_counter = self.changes

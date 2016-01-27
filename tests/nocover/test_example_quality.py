@@ -44,7 +44,7 @@ def test_minimize_list_on_large_structure():
         ]) >= 60
 
     assert minimal(
-        lists(integers(), min_size=60), test_list_in_range,
+        lists(integers(), min_size=60, average_size=120), test_list_in_range,
         timeout_after=30,
     ) == [10] * 60
 
@@ -55,7 +55,7 @@ def test_minimize_list_of_sets_on_large_structure():
 
     x = minimal(
         lists(frozensets(integers()), min_size=50), test_list_in_range,
-        timeout_after=40,
+        timeout_after=20,
     )
     assert len(x) == 50
     assert len(set(x)) == 1
