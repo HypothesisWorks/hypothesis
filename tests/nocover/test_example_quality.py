@@ -212,8 +212,9 @@ def test_minimal_mixed_list_propagates_leftwards():
 
 def test_tuples_do_not_block_cloning():
     assert minimal(
-        lists(tuples(booleans() | tuples(integers()))),
-        lambda x: len(x) >= 50 and any(isinstance(t[0], bool) for t in x)
+        lists(tuples(booleans() | tuples(integers())), min_size=50),
+        lambda x: any(isinstance(t[0], bool) for t in x),
+        timeout_after=60,
     ) == [(False,)] * 50
 
 
