@@ -253,17 +253,6 @@ class TestRunner(object):
                 ):
                     i += 1
 
-            for k in [8, 4, 2, 1, 0]:
-                i = 0
-                while i + k < len(self.last_data.blocks):
-                    u = self.last_data.blocks[i][0]
-                    v = self.last_data.blocks[i + k][1]
-                    if not self.incorporate_new_buffer(
-                        self.last_data.buffer[:u] +
-                        self.last_data.buffer[v:]
-                    ):
-                        i += 1
-
             i = 0
             while i <= len(self.last_data.buffer):
                 if not self.incorporate_new_buffer(
@@ -281,6 +270,24 @@ class TestRunner(object):
                         break
                 else:
                     discarding_works = False
+
+            i = 0
+            while i < len(self.last_data.blocks):
+                u, v = self.last_data.blocks[i]
+                self.incorporate_new_buffer(
+                    self.last_data.buffer[:u] + bytes(v - u) +
+                    self.last_data.buffer[v:]
+                )
+                i += 1
+
+            for c in range(max(self.last_data.buffer)):
+                if self.incorporate_new_buffer(bytes(
+                    min(c, b) for b in self.last_data.buffer
+                )):
+                    break
+
+            if self.changed > change_counter:
+                continue
 
             from hypothesis.internal.conjecture.minimizer import minimize
             i = 0
