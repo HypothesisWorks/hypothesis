@@ -57,8 +57,8 @@ def test_minimize_list_of_sets_on_large_structure():
         lists(frozensets(integers()), min_size=50), test_list_in_range,
         timeout_after=20,
     )
-    assert len(x) == 50
-    assert len(set(x)) == 1
+
+    assert x == [frozenset([0])] * 50
 
 
 def test_integers_from_minimizes_leftwards():
@@ -87,13 +87,13 @@ def test_minimal_fractions_4():
 
 def test_minimize_list_of_floats_on_large_structure():
     def test_list_in_range(xs):
-        assume(len(xs) >= 50)
         return len([
             x for x in xs
             if x >= 3
         ]) >= 30
 
-    result = minimal(lists(floats()), test_list_in_range)
+    result = minimal(
+        lists(floats(), min_size=50), test_list_in_range, timeout_after=20)
     result.sort()
     assert result == [0.0] * 20 + [3.0] * 30
 
@@ -168,24 +168,20 @@ def test_minimal_unsorted_strings(string):
         lambda xs: assume(len(xs) >= 5) and sorted(xs) != xs
     )
     assert len(result) == 5
-    for example in result:
-        if len(example) > 1:
-            for i in hrange(len(example)):
-                assert example[:i] in result
+    for ex in result:
+        if len(ex) > 1:
+            for i in hrange(len(ex)):
+                assert ex[:i] in result
 
 
 def test_finds_list_with_plenty_duplicates():
     def is_good(xs):
-        xs = list(filter(None, xs))
-        assume(xs)
         return max(Counter(xs).values()) >= 3
 
     result = minimal(
-        lists(text()), is_good
+        lists(text(min_size=1), average_size=50, min_size=1), is_good
     )
-    assert len(result) == 3
-    assert len(set(result)) == 1
-    assert len(result[0]) == 1
+    assert result == [u'0'] * 3
 
 
 def test_minimal_mixed_list_propagates_leftwards():
@@ -515,12 +511,10 @@ def test_containment(n):
     assert iv == ([n], n)
 
 
-@given(random_module())
-@settings(max_examples=10)
-def test_duplicate_containment(s):
+def test_duplicate_containment():
     ls, i = minimal(
         tuples(lists(integers()), integers()),
-        lambda s: s[0].count(s[1]) > 1)
+        lambda s: s[0].count(s[1]) > 1, timeout_after=100)
     assert ls == [0, 0]
     assert i == 0
 
