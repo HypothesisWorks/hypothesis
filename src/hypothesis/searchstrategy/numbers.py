@@ -131,11 +131,9 @@ NASTY_FLOATS = [
     0.0, 0.5, 1.0 / 3, 10e6, 10e-6, 1.175494351e-38, 2.2250738585072014e-308,
     1.7976931348623157e+308, 3.402823466e+38, 9007199254740992, 1 - 10e-6,
     2 + 10e-6, 1.192092896e-07, 2.2204460492503131e-016,
-    float('inf'), float('nan'),
-]
+
+] + [float('inf'), float('nan')] * 5
 NASTY_FLOATS.extend([-x for x in NASTY_FLOATS])
-assert len(NASTY_FLOATS) == 32
-INFINITY = float('inf')
 
 
 class FloatStrategy(SearchStrategy):
