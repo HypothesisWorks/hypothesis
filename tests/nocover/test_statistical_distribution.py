@@ -33,8 +33,9 @@ import collections
 
 import pytest
 
+from hypothesis.errors import UnsatisfiedAssumption
 import hypothesis.internal.reflection as reflection
-from hypothesis.settings import Settings
+from hypothesis import settings as Settings
 from hypothesis.strategies import just, sets, text, lists, floats, \
     tuples, booleans, integers, sampled_from
 from hypothesis.internal.compat import PY26, hrange
@@ -162,7 +163,10 @@ def define_test(specifier, q, predicate, condition=None):
         successful_runs = [0]
 
         def test_function(data):
-            value = data.draw(specifier)
+            try:
+                value = data.draw(specifier)
+            except UnsatisfiedAssumption:
+                data.mark_invalid()
             if not _condition(value):
                 data.mark_invalid()
             successful_runs[0] += 1
