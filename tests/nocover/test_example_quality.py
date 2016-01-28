@@ -25,12 +25,11 @@ from fractions import Fraction
 
 import pytest
 
-from flaky import flaky
 from hypothesis import find, given, assume, example, settings
 from tests.common import parametrize, ordered_pair, constant_list
 from hypothesis.strategies import just, sets, text, lists, binary, \
     floats, tuples, randoms, booleans, decimals, integers, fractions, \
-    recursive, frozensets, dictionaries, sampled_from, random_module
+    recursive, frozensets, dictionaries, sampled_from
 from hypothesis.internal.debug import minimal
 from hypothesis.internal.compat import PY3, hrange, reduce, Counter, \
     OrderedDict, integer_types
@@ -78,11 +77,12 @@ def test_minimal_fractions_3():
         lists(fractions()), lambda s: len(s) >= 20) == [Fraction(0)] * 20
 
 
-@pytest.mark.xfail
 def test_minimal_fractions_4():
-    assert minimal(
-        lists(fractions()), lambda s: len(s) >= 20 and all(t >= 1 for t in s)
-    ) == [Fraction(1)] * 20
+    x = minimal(
+        lists(fractions(), min_size=20),
+        lambda s: len([t for t in s if t >= 1]) >= 20
+    )
+    assert x == [Fraction(1)] * 20
 
 
 def test_minimize_list_of_floats_on_large_structure():
@@ -93,7 +93,8 @@ def test_minimize_list_of_floats_on_large_structure():
         ]) >= 30
 
     result = minimal(
-        lists(floats(), min_size=50), test_list_in_range, timeout_after=30)
+        lists(floats(), min_size=50, average_size=100),
+        test_list_in_range, timeout_after=20)
     result.sort()
     assert result == [0.0] * 20 + [3.0] * 30
 
@@ -201,7 +202,7 @@ def test_minimal_mixed_list_propagates_leftwards():
         return True
 
     assert minimal(
-        lists(booleans() | tuples(integers())),
+        lists(booleans() | tuples(integers()), min_size=50),
         long_list_with_enough_bools
     ) == [False] * 50
 
@@ -242,7 +243,6 @@ def test_can_simplify_on_both_sides_of_flatmap():
     ) == [0] * 10
 
 
-@flaky(max_runs=5, min_passes=1)
 def test_flatmap_rectangles():
     lengths = integers(min_value=0, max_value=10)
 
@@ -339,7 +339,6 @@ def test_non_reversible_fractions_as_decimals():
     assert len(sigh) <= 25
 
 
-@flaky(max_runs=5, min_passes=1)
 def test_non_reversible_decimals():
     def not_reversible(xs):
         assume(all(x.is_finite() for x in xs))
@@ -377,14 +376,11 @@ def test_increasing_integer_sequence():
     assert xs == list(range(start, start + k))
 
 
-@flaky(max_runs=5, min_passes=1)
 def test_increasing_string_sequence():
     n = 7
     lb = u'✐'
     xs = minimal(
-        lists(text()), lambda t: (
-            n <= len(t) and
-            all(t) and
+        lists(text(min_size=1), min_size=n, average_size=50), lambda t: (
             t[0] >= lb and
             t[-1] >= lb and
             length_of_longest_ordered_sequence(t) >= n
@@ -400,7 +396,7 @@ def test_decreasing_string_sequence():
     n = 7
     lb = u'✐'
     xs = minimal(
-        lists(text()), lambda t: (
+        lists(text(min_size=1), min_size=n, average_size=50), lambda t: (
             n <= len(t) and
             all(t) and
             t[0] >= lb and
@@ -414,12 +410,11 @@ def test_decreasing_string_sequence():
         assert abs(len(xs[i + 1]) - len(xs[i])) <= 1
 
 
-@flaky(max_runs=5, min_passes=1)
 def test_small_sum_lists():
     xs = minimal(
-        lists(floats(), average_size=200),
+        lists(floats(), min_size=100, average_size=200),
         lambda x:
-            len(x) >= 100 and sum(t for t in x if float(u'inf') > t >= 0) >= 1,
+            sum(t for t in x if float(u'inf') > t >= 0) >= 1,
         timeout_after=60,
     )
     assert 1.0 <= sum(t for t in xs if t >= 0) <= 1.5
@@ -489,7 +484,6 @@ def test_constant_lists_of_diverse_length():
     assert len(result) == 20
 
 
-@flaky(max_runs=5, min_passes=1)
 def test_finds_non_reversible_floats():
     t = minimal(
         lists(floats()), lambda xs:
@@ -523,7 +517,7 @@ def test_unique_lists_of_single_characters():
     x = minimal(
         lists(text(max_size=1), unique=True, min_size=5)
     )
-    assert x == ['', '0', '1', '2', '3']
+    assert sorted(x) == ['', '0', '1', '2', '3']
 
 
 @given(randoms())
@@ -547,7 +541,9 @@ def test_can_simplify_hard_recursive_data_into_boolean_alternative(rnd):
         hard(booleans()) |
         hard(integers()) |
         hard(booleans()),
-        lambda x: len(leaves(x)) >= 3,
+        lambda x:
+            len(leaves(x)) >= 3 and
+            any(isinstance(t, bool) for t in leaves(x)),
         random=rnd, settings=settings(
             database=None, max_examples=5000, max_shrinks=1000))
     lvs = leaves(r)
