@@ -166,10 +166,24 @@ class FloatStrategy(SearchStrategy):
                 i = random.randint(1, 10)
                 if i <= 4:
                     f = random.choice(NASTY_FLOATS)
-                    if self.permitted(f):
-                        return struct.pack(b'!d', f)
-                else:
+                elif i == 5:
                     return bytes(random.randint(0, 255) for _ in range(8))
+                elif i == 6:
+                    f = random.random() * (
+                        random.randint(0, 1) * 2 - 1
+                    )
+                elif i == 7:
+                    f = random.random() * (
+                        random.randint(0, 1) * 2 - 1
+                    )
+                elif i == 8:
+                    f = float(random.randint(-2 ** 63, 2 ** 63))
+                else:
+                    f = random.gauss(
+                        random.randint(-2 ** 63, 2 ** 63), 1
+                    )
+                if self.permitted(f):
+                    return struct.pack(b'!d', f)
         result = struct.unpack(b'!d', data.draw_bytes(8, draw_float_bytes))[0]
         assume(self.permitted(result))
         return result
@@ -199,10 +213,12 @@ class FixedBoundedFloatStrategy(SearchStrategy):
         lb = float_order_key(self.lower_bound)
         ub = float_order_key(self.upper_bound)
 
-        self.zeroes = [
+        self.critical = [
             z for z in (-0.0, 0.0)
             if lb <= float_order_key(z) <= ub
         ]
+        self.critical.append(self.lower_bound)
+        self.critical.append(self.upper_bound)
 
     def __repr__(self):
         return 'FixedBoundedFloatStrategy(%s, %s)' % (
@@ -212,13 +228,9 @@ class FixedBoundedFloatStrategy(SearchStrategy):
     def do_draw(self, data):
         def draw_float_bytes(random, n):
             assert n == 8
-            i = random.randint(0, 9)
-            if i == 0:
-                f = self.lower_bound
-            elif i == 1:
-                f = self.upper_bound
-            elif i == 2 and self.zeroes:
-                f = random.choice(self.zeroes)
+            i = random.randint(0, 20)
+            if i <= 2:
+                f = random.choice(self.critical)
             else:
                 f = random.random() * (
                     self.upper_bound - self.lower_bound
