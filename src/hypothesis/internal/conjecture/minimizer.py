@@ -35,13 +35,13 @@ class Minimizer(object):
         self.duplicates = 0
 
     def incorporate(self, buffer):
+        assert len(buffer) == len(self.current)
+        assert buffer <= self.current
         self.considerations += 1
         if buffer in self.seen:
             self.duplicates += 1
             return False
         self.seen.add(buffer)
-        assert len(buffer) < len(self.current) or \
-            (len(buffer) == len(self.current) and buffer < self.current)
         if self.condition(buffer):
             self.current = buffer
             self.changes += 1
@@ -51,95 +51,34 @@ class Minimizer(object):
     def run(self):
         if not any(self.current):
             return
+        if self.incorporate(bytes(len(self.current))):
+            return
+        for c in range(max(self.current)):
+            if self.incorporate(
+                bytes(min(b, c) for b in self.current)
+            ):
+                break
+
         change_counter = -1
         while self.current and change_counter < self.changes:
             change_counter = self.changes
-            i = 0
-            while i < len(self.current):
-                if not self.incorporate(
-                    self.current[:i] + self.current[i + 1:]
-                ):
-                    i += 1
-            if change_counter < self.changes:
-                continue
-            if not any(self.current):
-                break
             for c in range(256):
-                b = bytes([c])
                 i = 0
                 while i < len(self.current):
                     if self.current[i] > c:
-                        self.incorporate(
-                            self.current[:i] + b + self.current[i + 1:]
-                        )
-                    i += 1
-            for c in range(256):
-                if self.current.count(c) > 1:
-                    for d in range(c):
-                        if self.incorporate(bytes(
-                            d if t == c else t for t in self.current
-                        )):
-                            break
-            i = 1
-            while i < len(self.current):
-                if self.current[i] == 0 and self.current[i - 1] > 0:
-                    self.incorporate(
-                        self.current[:i - 1] + bytes([
-                            self.current[i - 1] - 1, 255
-                        ]) + self.current[i + 1:]
-                    )
-                i += 1
-            if change_counter < self.changes:
-                continue
-            i = 0
-            while i < len(self.current):
-                j = i + 1
-                counter = 0
-                while j < len(self.current) and counter < 10:
-                    if self.current[i] == self.current[j]:
-                        counter += 1
-                        for c in range(self.current[i]):
-                            b = bytes([c])
-                            r = self.current[:i] + b + self.current[i + 1:j] +\
-                                b + self.current[j + 1:]
-                            assert len(r) == len(self.current)
-                            assert r < self.current
-                            if self.incorporate(r):
-                                break
+                        if not self.incorporate(
+                            self.current[:i] + bytes([c]) +
+                            self.current[i + 1:]
+                        ):
                             if (
-                                i + 1 < j and j + 1 < len(self.current) and (
-                                    self.current[i + 1] < 255 or
-                                    self.current[j + 1] < 255)
+                                i + 1 < len(self.current) and
+                                self.current[i + 1] == 0
                             ):
-                                replace = self.current[:i] + \
-                                    bytes([self.current[i] - 1, 255]) + \
-                                    self.current[i + 2:j] + \
-                                    bytes([self.current[j] - 1, 255]) + \
-                                    self.current[j + 2:]
-                                assert len(replace) == len(self.current)
-                                assert replace < self.current
-                                if self.incorporate(replace):
-                                    break
-                    j += 1
-                i += 1
-            i = 0
-            while i < len(self.current):
-                j = i + 1
-                counter = 0
-                while j < len(self.current) and counter < 10:
-                    if self.current[i] > self.current[j]:
-                        counter += 1
-                        swapped = (
-                            self.current[:i] + bytes([self.current[j]]) +
-                            self.current[i + 1:j] +
-                            bytes([self.current[i]]) +
-                            self.current[j + 1:]
-                        )
-                        assert len(swapped) == len(self.current)
-                        assert swapped < self.current
-                        self.incorporate(swapped)
-                    j += 1
-                i += 1
+                                self.incorporate(
+                                    self.current[:i] + bytes([c, 255]) +
+                                    self.current[i + 2:]
+                                )
+                    i += 1
 
 
 def minimize(initial, condition, random=None):

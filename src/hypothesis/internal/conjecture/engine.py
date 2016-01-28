@@ -21,8 +21,8 @@ from random import Random
 
 from hypothesis import settings as Settings
 from hypothesis.reporting import debug_report
-from hypothesis.internal.conjecture.data import Status, StopTest, TestData
 from hypothesis.internal.compat import Counter
+from hypothesis.internal.conjecture.data import Status, StopTest, TestData
 
 
 class RunIsComplete(Exception):
@@ -254,14 +254,6 @@ class TestRunner(object):
                 ):
                     i += 1
 
-            i = 0
-            while i <= len(self.last_data.buffer):
-                if not self.incorporate_new_buffer(
-                    self.last_data.buffer[:i] +
-                    self.last_data.buffer[i+1:]
-                ):
-                    i += 1
-
             if discarding_works:
                 for _ in range(100):
                     if self.incorporate_new_buffer(bytes(
@@ -272,79 +264,78 @@ class TestRunner(object):
                 else:
                     discarding_works = False
 
+            from hypothesis.internal.conjecture.minimizer import minimize
             i = 0
             while i < len(self.last_data.blocks):
                 u, v = self.last_data.blocks[i]
-                block = self.last_data.buffer[u:v]
-                for c in range(max(block)):
+                buf = self.last_data.buffer
+                block = buf[u:v]
+                n = v - u
+                all_blocks = sorted(set([bytes(n)] + [
+                    buf[a:a + n]
+                    for a in self.last_data.block_starts[n]
+                ]))
+                better_blocks = all_blocks[:all_blocks.index(block)]
+                for b in better_blocks:
                     if self.incorporate_new_buffer(
-                        self.last_data.buffer[:u] +
-                        bytes(min(c, b) for b in block) +
-                        self.last_data.buffer[v:]
+                        buf[:u] + b + buf[v:]
                     ):
                         break
                 i += 1
 
-            for c in range(max(self.last_data.buffer)):
-                if self.incorporate_new_buffer(bytes(
-                    min(c, b) for b in self.last_data.buffer
-                )):
-                    break
+            block_counter = -1
+            while block_counter < self.changed:
+                block_counter = self.changed
+                blocks = [
+                    k for k, v in
+                    Counter(
+                        self.last_data.buffer[u:v]
+                        for u, v in self.last_data.blocks).items()
+                    if v > 1
+                ]
+                for block in blocks:
+                    parts = self.last_data.buffer.split(block)
+                    assert self.last_data.buffer == block.join(parts)
+                    if len(parts) <= 1:
+                        continue
+                    minimize(
+                        block,
+                        lambda b: self.incorporate_new_buffer(
+                            b.join(parts)),
+                        self.random
+                    )
 
-            if self.changed > change_counter:
-                continue
+            i = 0
+            while i < len(self.last_data.blocks):
+                u, v = self.last_data.blocks[i]
+                minimize(
+                    self.last_data.buffer[u:v],
+                    lambda b: self.incorporate_new_buffer(
+                        self.last_data.buffer[:u] + b +
+                        self.last_data.buffer[v:],
+                    ), self.random
+                )
+                i += 1
 
-            from hypothesis.internal.conjecture.minimizer import minimize
-            for shrink in [True, False]:
-                i = 0
-                while i < len(self.last_data.blocks):
-                    u, v = self.last_data.blocks[i]
-                    buf = self.last_data.buffer
-                    block = buf[u:v]
-                    n = v - u
-                    all_blocks = sorted([
-                        buf[a:a + n]
-                        for a in self.last_data.block_starts[n]
-                    ])
-                    better_blocks = all_blocks[:all_blocks.index(block)]
-                    for b in better_blocks:
+            i = 0
+            alternatives = None
+            while i < len(self.last_data.intervals):
+                if alternatives is None:
+                    alternatives = sorted(set(
+                        self.last_data.buffer[u:v]
+                        for u, v in self.last_data.intervals), key=len)
+                u, v = self.last_data.intervals[i]
+                for a in alternatives:
+                    if len(a) < v - u:
                         if self.incorporate_new_buffer(
-                            buf[:u] + b + buf[v:]
+                            self.last_data.buffer[:u] + a +
+                            self.last_data.buffer[v:]
                         ):
+                            alternatives = None
                             break
-                    if shrink:
-                        minimize(
-                            self.last_data.buffer[u:v],
-                            lambda b: self.incorporate_new_buffer(
-                                buf[:u] + b + buf[v:]
-                            ), self.random
-                        )
-                    i += 1
-
-                block_counter = -1
-                while block_counter < self.changed:
-                    block_counter = self.changed
-                    blocks = [
-                        k for k, v in
-                        Counter(
-                            self.last_data.buffer[u:v]
-                            for u, v in self.last_data.blocks).items()
-                        if v > 1
-                    ]
-                    for block in blocks:
-                        parts = self.last_data.buffer.split(block)
-                        assert self.last_data.buffer == block.join(parts)
-                        if len(parts) <= 1:
-                            continue
-                        minimize(
-                            block,
-                            lambda b: self.incorporate_new_buffer(
-                                b.join(parts)),
-                            self.random
-                        )
-            minimize(
-                self.last_data.buffer, self.incorporate_new_buffer, self.random
-            )
+                    else:
+                        break
+                i += 1
 
     def mutate_data_to_new_buffer(self):
         n = min(len(self.last_data.buffer), self.last_data.index)
@@ -442,3 +433,7 @@ def _draw_successor(rnd, xs):
             c = rnd.randint(0, 255)
         r.append(c)
     return bytes(r)
+
+
+def in_order(x, y):
+    return x + y <= y + x
