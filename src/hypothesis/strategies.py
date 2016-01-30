@@ -37,11 +37,13 @@ __all__ = [
     'characters', 'text', 'binary',
     'tuples', 'lists', 'sets', 'frozensets',
     'dictionaries', 'fixed_dictionaries',
-    'sampled_from',
+    'sampled_from', 'permutations',
     'builds',
     'randoms', 'random_module',
     'streaming', 'recursive', 'composite',
 ]
+
+_strategies = set()
 
 
 class FloatKey(object):
@@ -95,6 +97,7 @@ def cacheable(fn):
 
 def defines_strategy(strategy_definition):
     from hypothesis.searchstrategy.deferred import DeferredStrategy
+    _strategies.add(strategy_definition.__name__)
 
     @proxies(strategy_definition)
     def accept(*args, **kwargs):
@@ -1027,3 +1030,4 @@ def check_valid_sizes(min_size, average_size, max_size):
 
 
 _AVERAGE_LIST_LENGTH = 5.0
+assert _strategies.issubset(set(__all__)), _strategies - set(__all__)
