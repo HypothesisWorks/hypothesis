@@ -53,8 +53,10 @@ def test_flatmap_retrieve_from_db():
     @given(constant_float_lists)
     @settings(database=db)
     def record_and_test_size(xs):
-        track.append(xs)
-        assert sum(xs) < 1
+        if sum(xs) < 1:
+            track.append(xs)
+        else:
+            assert False
 
     with pytest.raises(AssertionError):
         record_and_test_size()
