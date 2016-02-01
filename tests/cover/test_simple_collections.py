@@ -69,7 +69,9 @@ def test_minimizes_list_of_lists():
 
 
 def test_minimize_long_list():
-    assert find(lists(booleans()), lambda x: len(x) >= 70) == [False] * 70
+    assert find(
+        lists(booleans(), average_size=100), lambda x: len(x) >= 70
+    ) == [False] * 70
 
 
 def test_minimize_list_of_longish_lists():
@@ -151,15 +153,6 @@ def test_minimize_dicts_with_incompatible_keys():
         fixed_dictionaries({1: booleans(), u'hi': lists(booleans())}),
         lambda x: True
     ) == {1: False, u'hi': []}
-
-
-def test_deeply_nested_sets():
-    def f(n):
-        if n <= 0:
-            return booleans()
-        return sets(f(n - 1))
-
-    assert f(10).template_upper_bound == float(u'inf')
 
 
 def test_multiple_empty_lists_are_independent():

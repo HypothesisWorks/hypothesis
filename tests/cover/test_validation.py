@@ -115,16 +115,6 @@ def test_float_finite_range_and_allow_infinity_cannot_both_be_enabled():
         floats(0, 1, allow_infinity=True).example()
 
 
-def test_dictionary_key_size():
-    with pytest.raises(InvalidArgument):
-        dictionaries(keys=booleans(), values=integers(), min_size=3).example()
-
-
-def test_set_size():
-    with pytest.raises(InvalidArgument):
-        sets(elements=booleans(), min_size=3).example()
-
-
 def test_does_not_error_if_min_size_is_bigger_than_default_size():
     lists(integers(), min_size=50).example()
     sets(integers(), min_size=50).example()

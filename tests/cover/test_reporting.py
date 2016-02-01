@@ -21,11 +21,11 @@ import sys
 
 import pytest
 
-from hypothesis import find, given, reporting
+from hypothesis import given, reporting
 from tests.common.utils import capture_out
 from hypothesis._settings import settings, Verbosity
 from hypothesis.reporting import report, debug_report, verbose_report
-from hypothesis.strategies import just, integers
+from hypothesis.strategies import integers
 from hypothesis.internal.compat import PY2
 
 
@@ -79,15 +79,6 @@ def test_does_print_verbose_in_debug():
         with capture_out() as o:
             verbose_report(u'Hi')
     assert u'Hi' in o.getvalue()
-
-
-def test_prints_debug_on_no_simplification():
-    with settings(verbosity=Verbosity.debug):
-        with capture_out() as o:
-            find(just(u'hi'), bool)
-    v = o.getvalue()
-    print(v)
-    assert u'No simplifiers' in v
 
 
 @pytest.mark.skipif(
