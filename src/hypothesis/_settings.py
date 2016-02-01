@@ -85,6 +85,14 @@ class settingsMeta(type):
 
     @property
     def default(self):
+        v = default_variable.value
+        if v is not None:
+            return v
+        if hasattr(settings, '_current_profile'):
+            default_variable.value = settings.load_profile(
+                settings._current_profile
+            )
+            assert default_variable.value is not None
         return default_variable.value
 
     @default.setter
@@ -313,6 +321,7 @@ class settings(settingsMeta('settings', (object,), {})):
         defined default for that setting
 
         """
+        settings._current_profile = name
         settings._assign_default_internal(settings.get_profile(name))
 
 
