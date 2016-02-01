@@ -117,3 +117,12 @@ def geometric(data, p):
 
 def boolean(data):
     return bool(n_byte_unsigned(data, 1) & 1)
+
+
+def biased_coin(data, p):
+    def distribution(random, n):
+        assert n == 1
+        return bytes([int(random.random() <= p)])
+    return bool(
+        data.draw_bytes(1, distribution)[0] & 1
+    )

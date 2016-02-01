@@ -23,6 +23,7 @@ from hypothesis.control import assume
 from hypothesis.internal.compat import OrderedDict
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
     one_of_strategies, MappedSearchStrategy
+import hypothesis.internal.conjecture.utils as cu
 
 
 class TupleStrategy(SearchStrategy):
@@ -100,14 +101,14 @@ class ListStrategy(SearchStrategy):
             self.element_strategy.validate()
 
     def do_draw(self, data):
-        stopping_value = min(int(255 / self.average_length), 128)
+        stopping_value = 1 - 1.0 / self.average_length
         result = []
         while True:
             data.start_example()
-            probe = d.byte(data)
+            more = cu.biased_coin(data, stopping_value)
             value = data.draw(self.element_strategy)
             data.stop_example()
-            if probe <= stopping_value:
+            if not more:
                 if len(result) < self.min_size:
                     continue
                 else:
@@ -150,16 +151,16 @@ class UniqueListStrategy(SearchStrategy):
 
     def do_draw(self, data):
         seen = set()
-        stopping_value = min(int(255 / self.average_size), 128)
+        stopping_value = 1 - 1.0 / self.average_size
         result = []
         duplicates = 0
         while len(result) < self.max_size:
             data.start_example()
             if len(result) >= self.min_size:
-                probe = d.byte(data)
+                more = cu.biased_coin(data, stopping_value)
             else:
-                probe = 256
-            if probe <= stopping_value:
+                more = True
+            if not more:
                 data.stop_example()
                 break
             value = data.draw(self.element_strategy)
