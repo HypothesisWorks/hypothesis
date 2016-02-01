@@ -16,8 +16,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import inspect
-
 import pytest
 
 from hypothesis import given, assume, example, settings, Verbosity
@@ -27,12 +25,30 @@ from hypothesis.strategies import lists, builds, booleans, integers, \
 
 
 def test_errors_even_if_does_not_error_on_final_call():
+    first = [True]
+
+    @given(builds(DifferentReprEachTime))
+    def rude(x):
+        if first[0]:
+            first[0] = False
+            assert False
+
+    with pytest.raises(Flaky) as e:
+        rude()
+    assert u'Call 1:' in e.value.args[0]
+
+
+class Nope(Exception):
+    pass
+
+
+def test_fails_only_once_is_flaky():
+    first_call = [True]
+
     @given(integers())
     def rude(x):
-        assert not any(
-            t[3] == u'best_satisfying_template'
-            for t in inspect.getouterframes(inspect.currentframe())
-        )
+        if first_call[0]:
+            given(integers())
 
     with pytest.raises(Flaky):
         rude()
@@ -73,12 +89,13 @@ class DifferentReprEachTime(object):
 
 
 def test_reports_repr_diff_in_flaky_error():
+    first = [True]
+
     @given(builds(DifferentReprEachTime))
     def rude(x):
-        assert not any(
-            t[3] == u'best_satisfying_template'
-            for t in inspect.getouterframes(inspect.currentframe())
-        )
+        if first[0]:
+            first[0] = False
+            assert False
 
     with pytest.raises(Flaky) as e:
         rude()

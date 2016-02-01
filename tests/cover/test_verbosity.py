@@ -23,7 +23,7 @@ from tests.common.utils import fails, capture_out
 from hypothesis._settings import settings, Verbosity
 from hypothesis.reporting import default as default_reporter
 from hypothesis.reporting import with_reporter
-from hypothesis.strategies import lists, tuples, booleans, integers
+from hypothesis.strategies import lists, booleans, integers
 
 
 @contextmanager
@@ -42,16 +42,6 @@ def test_prints_intermediate_in_success():
         test_works()
     lines = o.getvalue().splitlines()
     assert len([l for l in lines if u'example' in l]) == 2
-
-
-def test_reports_no_shrinks():
-    with capture_verbosity(Verbosity.verbose) as o:
-        @fails
-        @given(tuples())
-        def test_foo(x):
-            assert False
-        test_foo()
-    assert u'Could not shrink example' in o.getvalue()
 
 
 def test_does_not_log_in_quiet_mode():

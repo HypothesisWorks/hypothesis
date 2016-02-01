@@ -105,7 +105,7 @@ class TestRunner(object):
             debug_report('%d bytes %r -> %r, %s' % (
                 data.index,
                 list(data.buffer[:data.index]), data.status,
-                data.output.decode('utf-8'),
+                data.output,
             ))
         if self.consider_new_test_data(data):
             if self.last_data.status == Status.INTERESTING:

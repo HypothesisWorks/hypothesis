@@ -20,7 +20,7 @@ from enum import IntEnum
 from uuid import uuid4
 
 from hypothesis.errors import Frozen
-from hypothesis.internal.compat import text_type, binary_type
+from hypothesis.internal.compat import text_type, unicode_safe_repr
 
 
 def uniform(random, n):
@@ -75,7 +75,7 @@ class TestData(object):
         self.block_starts = {}
         self.blocks = []
         self.buffer = bytearray()
-        self.output = bytearray()
+        self.output = u''
         self.status = Status.VALID
         self.frozen = False
         self.intervals = []
@@ -94,12 +94,9 @@ class TestData(object):
 
     def note(self, value):
         self.__assert_not_frozen('note')
-        if not isinstance(value, (text_type, binary_type)):
-            value = repr(value)
-        if isinstance(value, text_type):
-            value = value.encode('utf-8')
-        assert isinstance(value, binary_type)
-        self.output.extend(value)
+        if not isinstance(value, text_type):
+            value = unicode_safe_repr(value)
+        self.output += value
 
     def draw(self, strategy):
         self.start_example()
