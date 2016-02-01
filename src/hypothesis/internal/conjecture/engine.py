@@ -177,8 +177,9 @@ class TestRunner(object):
 
         options = [
             draw_new,
+            reuse_existing, reuse_existing,
             draw_existing, draw_smaller, draw_larger,
-            reuse_existing, flip_bit, draw_zero, draw_constant,
+            flip_bit, draw_zero, draw_constant,
         ]
 
         bits = [

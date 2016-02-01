@@ -117,6 +117,7 @@ class OneCharStringStrategy(FixedStrategy):
                 intervals[-1][-1] += 1
 
         self.intervals_by_category = sorted(intervals_by_category.values())
+        self.allow_newlines = self.is_acceptable(u'\n')
 
         if not intervals_by_category:
             raise InvalidArgument('Empty set of allowed characters')
@@ -143,6 +144,8 @@ class OneCharStringStrategy(FixedStrategy):
         return True
 
     def draw_value(self, random):
+        if self.allow_newlines and random.randint(1, 10) == 10:
+            return u'\n'
         cat = random.choice(self.intervals_by_category)
         interval = random.choice(cat)
         i = random.randint(*interval)
