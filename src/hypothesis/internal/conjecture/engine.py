@@ -32,7 +32,8 @@ class RunIsComplete(Exception):
 class TestRunner(object):
 
     def __init__(
-        self, test_function, settings, random=None
+        self, test_function, settings, random=None,
+        database_key=None,
     ):
         self._test_function = test_function
         self.settings = settings or Settings()
@@ -44,6 +45,7 @@ class TestRunner(object):
         self.valid_examples = 0
         self.start_time = time.time()
         self.random = random or Random()
+        self.database_key = database_key
 
     def new_buffer(self):
         self.last_data = TestData(
@@ -128,6 +130,14 @@ class TestRunner(object):
                 'Run complete after %d examples (%d valid) and %d shrinks' % (
                     self.iterations, self.valid_examples, self.shrinks,
                 ))
+            if (
+                self.settings.database is not None and
+                self.database_key is not None and
+                self.last_data.status == Status.INTERESTING
+            ):
+                self.settings.database.save(
+                    self.database_key, self.last_data.buffer
+                )
 
     def _new_mutator(self):
         def draw_new(data, n, distribution):
@@ -198,6 +208,26 @@ class TestRunner(object):
         self.new_buffer()
         mutations = 0
         start_time = time.time()
+
+        if (
+            self.settings.database is not None and
+            self.database_key is not None
+        ):
+            corpus = sorted(
+                self.settings.database.fetch(self.database_key),
+                key=lambda d: (len(d), d)
+            )
+            for existing in corpus:
+                data = TestData.for_buffer(existing)
+                self.test_function(data)
+                if data.status < Status.VALID:
+                    self.settings.database.delete(
+                        self.database_key, existing)
+                data.freeze()
+                if data.status == Status.INTERESTING:
+                    self.last_data = data
+                    break
+
         mutator = self._new_mutator()
         while self.last_data.status != Status.INTERESTING:
             if self.valid_examples >= self.settings.max_examples:
