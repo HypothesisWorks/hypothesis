@@ -143,7 +143,8 @@ def test_can_find_integrish():
 
 def test_list_of_fractional_float():
     assert set(find(
-        lists(floats()), lambda x: len([t for t in x if t >= 1.5]) >= 10
+        lists(floats(), average_size=50),
+        lambda x: len([t for t in x if t >= 1.5]) >= 10
     )) in (
         set((1.5,)),
         set((1.5, 2.0)),
