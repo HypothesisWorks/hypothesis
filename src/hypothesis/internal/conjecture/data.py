@@ -120,6 +120,7 @@ class TestData(object):
 
     def freeze(self):
         if self.frozen:
+            assert isinstance(self.buffer, bytes)
             return
         self.frozen = True
         # Intervals are sorted as longest first, then by interval start.
