@@ -451,62 +451,48 @@ def given(*generator_arguments, **generator_kwargs):
 
             falsifying_example = None
             database_key = fully_qualified_name(test).encode('utf-8')
-            if settings.database is not None:
-                for existing in settings.database.fetch(database_key):
-                    data = TestData.for_buffer(existing)
-                    try:
-                        evaluate_test_data(data)
-                    except StopTest as e:
-                        if e.uuid != data.uuid:
-                            raise
-                    if data.status < Status.VALID:
-                        settings.database.delete(database_key, existing)
-                    if data.status == Status.INTERESTING:
-                        falsifying_example = existing
-                        break
-
-            if falsifying_example is None:
-                start_time = time.time()
-                runner = TestRunner(
-                    evaluate_test_data,
-                    settings=settings, random=random
-                )
-                runner.run()
-                run_time = time.time() - start_time
-                timed_out = (
-                    settings.timeout > 0 and
-                    run_time >= settings.timeout
-                )
-                if runner.last_data.status == Status.INTERESTING:
-                    falsifying_example = runner.last_data.buffer
-                    if settings.database is not None:
-                        settings.database.save(
-                            database_key, falsifying_example
-                        )
-                else:
-                    if runner.valid_examples < min(
-                        settings.min_satisfying_examples,
-                        settings.max_examples,
-                    ):
-                        if timed_out:
-                            raise Timeout((
-                                'Ran out of time before finding a satisfying '
-                                'example for '
-                                '%s. Only found %d examples in ' +
-                                '%.2fs.'
-                            ) % (
-                                get_pretty_function_description(test),
-                                runner.valid_examples, run_time
-                            ))
-                        else:
-                            raise Unsatisfiable((
-                                'Unable to satisfy assumptions of hypothesis '
-                                '%s. Only %d examples considered '
-                                'satisfied assumptions'
-                            ) % (
-                                get_pretty_function_description(test),
-                                runner.valid_examples,))
-                    return
+            start_time = time.time()
+            runner = TestRunner(
+                evaluate_test_data,
+                settings=settings, random=random,
+                database_key=database_key,
+            )
+            runner.run()
+            run_time = time.time() - start_time
+            timed_out = (
+                settings.timeout > 0 and
+                run_time >= settings.timeout
+            )
+            if runner.last_data.status == Status.INTERESTING:
+                falsifying_example = runner.last_data.buffer
+                if settings.database is not None:
+                    settings.database.save(
+                        database_key, falsifying_example
+                    )
+            else:
+                if runner.valid_examples < min(
+                    settings.min_satisfying_examples,
+                    settings.max_examples,
+                ):
+                    if timed_out:
+                        raise Timeout((
+                            'Ran out of time before finding a satisfying '
+                            'example for '
+                            '%s. Only found %d examples in ' +
+                            '%.2fs.'
+                        ) % (
+                            get_pretty_function_description(test),
+                            runner.valid_examples, run_time
+                        ))
+                    else:
+                        raise Unsatisfiable((
+                            'Unable to satisfy assumptions of hypothesis '
+                            '%s. Only %d examples considered '
+                            'satisfied assumptions'
+                        ) % (
+                            get_pretty_function_description(test),
+                            runner.valid_examples,))
+                return
 
             assert last_exception[0] is not None
 
@@ -568,12 +554,15 @@ def given(*generator_arguments, **generator_kwargs):
     return run_test_with_generator
 
 
-def find(specifier, condition, settings=None, random=None):
+def find(specifier, condition, settings=None, random=None, database_key=None):
     settings = settings or Settings(
         max_examples=2000,
         min_satisfying_examples=0,
         max_shrinks=2000,
     )
+
+    if database_key is None and settings.database is not None:
+        database_key = function_digest(condition)
 
     if not isinstance(specifier, SearchStrategy):
         raise InvalidArgument(
@@ -620,7 +609,10 @@ def find(specifier, condition, settings=None, random=None):
     from hypothesis.internal.conjecture.data import TestData, Status
 
     start = time.time()
-    runner = TestRunner(template_condition, settings=settings, random=random)
+    runner = TestRunner(
+        template_condition, settings=settings, random=random,
+        database_key=database_key,
+    )
     runner.run()
     run_time = time.time() - start
     if runner.last_data.status == Status.INTERESTING:
