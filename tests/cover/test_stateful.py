@@ -17,7 +17,6 @@
 from __future__ import division, print_function, absolute_import
 
 import inspect
-from random import Random
 from collections import namedtuple
 
 import pytest
@@ -28,8 +27,8 @@ from hypothesis.errors import Flaky, InvalidDefinition
 from tests.common.utils import raises, capture_out
 from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import rule, Bundle, precondition, \
-    StateMachineRunner, GenericStateMachine, RuleBasedStateMachine, \
-    run_state_machine_as_test, StateMachineSearchStrategy
+    GenericStateMachine, RuleBasedStateMachine, \
+    run_state_machine_as_test
 from hypothesis.strategies import just, none, lists, tuples, choices, \
     booleans, integers, sampled_from
 
@@ -111,24 +110,6 @@ class GoodSet(GenericStateMachine):
         else:
             self.stuff.add(value)
         assert delete == (value not in self.stuff)
-
-
-class UnreliableStrategyState(GenericStateMachine):
-    n = 8
-
-    def __init__(self):
-        self.random = Random()
-        self.counter = 0
-
-    def steps(self):
-        if self.random.randint(0, 1):
-            return lists(booleans())
-        else:
-            return integers()
-
-    def execute_step(self, step):
-        self.counter += 1
-        assert self.counter < self.n
 
 
 Leaf = namedtuple(u'Leaf', (u'label',))
@@ -220,7 +201,7 @@ class PreconditionMachine(RuleBasedStateMachine):
 
 bad_machines = (
     OrderedStateMachine, SetStateMachine, BalancedTrees,
-    UnreliableStrategyState, DepthMachine,
+    DepthMachine,
 )
 
 for m in bad_machines:
@@ -231,7 +212,6 @@ for m in bad_machines:
 
 cheap_bad_machines = list(bad_machines)
 cheap_bad_machines.remove(BalancedTrees)
-cheap_bad_machines.remove(UnreliableStrategyState)
 
 
 with_cheap_bad_machines = pytest.mark.parametrize(

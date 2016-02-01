@@ -53,7 +53,7 @@ def test_can_find_nans():
 def test_find_streaming_int():
     n = 50
     r = find(streaming(integers()), lambda x: any(t >= 1 for t in list(x[:n])))
-    assert list(r[:n]) == [0] * (n - 1) + [1]
+    assert sorted(r[:n]) == [0] * (n - 1) + [1]
 
 
 def test_raises_when_no_example():
