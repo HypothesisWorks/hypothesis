@@ -205,7 +205,7 @@ class TestRunner(object):
         return draw_mutated
 
     def _run(self):
-        self.new_buffer()
+        self.last_data = None
         mutations = 0
         start_time = time.time()
 
@@ -228,6 +228,8 @@ class TestRunner(object):
                     self.last_data = data
                     break
 
+        if self.last_data is None:
+            self.new_buffer()
         mutator = self._new_mutator()
         while self.last_data.status != Status.INTERESTING:
             if self.valid_examples >= self.settings.max_examples:
