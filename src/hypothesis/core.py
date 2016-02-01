@@ -109,6 +109,7 @@ def reify_and_execute(
         with BuildContext(is_final=is_final):
             args, kwargs = data.draw(search_strategy)
             text_version = arg_string(test, args, kwargs)
+            data.note(text_version)
             if print_example:
                 report(
                     lambda: 'Falsifying example: %s(%s)' % (
