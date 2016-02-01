@@ -623,7 +623,7 @@ def find(specifier, condition, settings=None, random=None, database_key=None):
     if runner.valid_examples <= settings.min_satisfying_examples:
         if settings.timeout > 0 and run_time > settings.timeout:
             raise Timeout((
-                'Ran out of time before finding enough valid examples for'
+                'Ran out of time before finding enough valid examples for '
                 '%s. Only %d valid examples found in %.2f seconds.'
             ) % (
                 get_pretty_function_description(condition),
