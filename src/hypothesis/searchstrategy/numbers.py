@@ -171,9 +171,7 @@ class FloatStrategy(SearchStrategy):
                         random.randint(0, 1) * 2 - 1
                     )
                 elif i == 7:
-                    f = random.random() * (
-                        random.randint(0, 1) * 2 - 1
-                    )
+                    f = random.gauss(0, 1)
                 elif i == 8:
                     f = float(random.randint(-2 ** 63, 2 ** 63))
                 else:
