@@ -387,7 +387,7 @@ test_mixes_2_reasonably_often = define_test(
 )
 
 test_partial_mixes_3_reasonably_often = define_test(
-    lists(booleans() | tuples() | just(u'hi'), average_size=25.0), 0.15,
+    lists(booleans() | tuples() | just(u'hi'), average_size=25.0), 0.10,
     lambda x: 1 < len(set(map(type, x))) < 3,
     condition=bool,
 )
