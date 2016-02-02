@@ -17,7 +17,6 @@
 from __future__ import division, print_function, absolute_import
 
 import math
-from random import Random
 from collections import namedtuple
 
 from hypothesis.stateful import StateMachineSearchStrategy
@@ -25,9 +24,8 @@ from hypothesis.strategies import just, none, sets, text, lists, binary, \
     builds, floats, one_of, tuples, randoms, booleans, decimals, \
     integers, composite, fractions, recursive, streaming, frozensets, \
     dictionaries, sampled_from, complex_numbers, fixed_dictionaries
-from hypothesis.strategytests import mutate_basic, templates_for, \
-    strategy_test_suite
-from hypothesis.internal.compat import hrange, OrderedDict
+from hypothesis.strategytests import strategy_test_suite
+from hypothesis.internal.compat import OrderedDict
 
 TestIntegerRange = strategy_test_suite(integers(min_value=0, max_value=5))
 TestGiantIntegerRange = strategy_test_suite(
@@ -65,7 +63,6 @@ TestIntBool = strategy_test_suite(tuples(integers(), booleans()))
 TestFloats = strategy_test_suite(floats())
 TestComplex = strategy_test_suite(complex_numbers())
 TestJust = strategy_test_suite(just(u'hi'))
-TestTemplates = strategy_test_suite(templates_for(sets(integers())))
 
 TestEmptyString = strategy_test_suite(text(alphabet=u''))
 TestSingleString = strategy_test_suite(
@@ -200,13 +197,3 @@ def test_repr_has_specifier_in_it():
     suite = TestComplex(
         u'test_can_round_trip_through_the_database')
     assert repr(suite) == u'strategy_test_suite(%r)' % (complex_numbers(),)
-
-
-def test_can_mutate_non_basic():
-    mutate_basic(1.0, Random(0))
-
-
-def test_can_mutate_large_int():
-    r = Random(0)
-    for _ in hrange(20):
-        mutate_basic(1 << 1024, r)
