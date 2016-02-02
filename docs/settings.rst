@@ -57,7 +57,7 @@ up the verbosity setting. This works with both :func:`~hypothesis.core.find` and
 (The following examples are somewhat manually truncated because the results
 of verbose output are, well, verbose, but they should convey the idea).
 
-.. code:: python
+.. code:: pycon
 
     >>> from hypothesis import find, settings, Verbosity
     >>> from hypothesis.strategies import lists, booleans
@@ -156,7 +156,7 @@ You can change the defaults by using profiles (see next section), but you can
 also override them locally by using a settings object as a :ref:`context manager <python:context-managers>`
 
 
-.. code:: python
+.. code:: pycon
 
   >>> with settings(max_examples=150):
   ...     print(settings.default.max_examples)
@@ -205,7 +205,7 @@ can be loaded at any time.
 Loading a profile changes the default settings but will not change the behavior
 of tests that explicitly change the settings.
 
-.. code:: python
+.. code:: pycon
 
     >>> from hypothesis import settings
     >>> settings.register_profile("ci", settings(max_examples=1000))
@@ -218,7 +218,7 @@ of tests that explicitly change the settings.
 Instead of loading the profile and overriding the defaults you can retrieve profiles for
 specific tests.
 
-.. code:: python
+.. code:: pycon
 
   >>> with settings.get_profile("ci"):
   ...     print(settings().max_examples)
@@ -230,7 +230,7 @@ This is the suggested pattern for running your tests on CI.
 The code below should run in a `conftest.py` or any setup/initialization section of your test suite.
 If this variable is not defined the Hypothesis defined defaults will be loaded.
 
-.. code:: python
+.. code:: pycon
 
     >>> from hypothesis import settings
     >>> settings.register_profile("ci", settings(max_examples=1000))
