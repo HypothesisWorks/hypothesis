@@ -16,11 +16,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-from random import Random
-
-import pytest
-
-from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.strategytests import strategy_test_suite
 from hypothesis.extra.datetime import dates
 from hypothesis.internal.debug import minimal
