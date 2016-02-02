@@ -79,18 +79,19 @@ of verbose output are, well, verbose, but they should convey the idea).
     >>> test_foo()
     Trying example: test_foo(x=-565872324465712963891750807252490657219)
     Traceback (most recent call last):
-      ...
+        ...
+        File "<stdin>", line 3, in test_foo
     AssertionError
     Trying example: test_foo(x=565872324465712963891750807252490657219)
     Trying example: test_foo(x=0)
     Traceback (most recent call last):
-    ...
+        ...
+        File "<stdin>", line 3, in test_foo
     AssertionError
     Falsifying example: test_foo(x=0)
     Traceback (most recent call last):
-    ...
+        ...
     AssertionError
-
 
 The four levels are quiet, normal, verbose and debug. normal is the default,
 while in quiet Hypothesis will not print anything out, even the final
