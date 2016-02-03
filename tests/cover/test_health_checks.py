@@ -22,7 +22,7 @@ from pytest import raises
 
 import hypothesis.reporting as reporting
 import hypothesis.strategies as st
-from hypothesis import given, settings
+from hypothesis import given, settings, Verbosity
 from hypothesis.errors import FailedHealthCheck
 from tests.common.utils import capture_out
 
@@ -115,7 +115,7 @@ def test_error_in_strategy_produces_only_one_traceback():
     def boom(x):
         raise ValueError()
 
-    with settings(strict=False):
+    with settings(strict=False, verbosity=Verbosity.normal):
         @given(st.integers().map(boom))
         def test(x):
             pass
@@ -168,13 +168,11 @@ def test_filtering_most_things_fails_a_health_check():
     assert 'filter' in e.value.args[0]
 
 
-def test_broad_recursive_data_will_fail_a_health_check():
-    r = st.recursive(
-        st.integers(), lambda s: st.tuples(*((s,) * 10)),
-    )
-
-    @given(st.tuples(r, r, r, r, r, r, r))
-    @settings(database=None)
+def test_large_data_will_fail_a_health_check():
+    @given(st.lists(
+           st.lists(st.text(average_size=100), average_size=100),
+           average_size=100))
+    @settings(database=None, buffer_size=1000)
     def test(x):
         pass
 

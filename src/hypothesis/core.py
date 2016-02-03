@@ -314,7 +314,7 @@ def given(*generator_arguments, **generator_kwargs):
                 start = time.time()
                 while (
                     count < 10 and time.time() < start + 1 and
-                    filtered_draws < 50 and overruns < 50
+                    filtered_draws < 50 and overruns < 20
                 ):
                     try:
                         data = TestData(
@@ -372,7 +372,7 @@ def given(*generator_arguments, **generator_kwargs):
                         'a low max_leaves parameter in recursive() calls') % (
                         filtered_draws, count
                     ))
-                if overruns >= 50:
+                if overruns >= 20:
                     fail_health_check((
                         'Examples routinely exceeded the max allowable size. '
                         '(%d examples overran while generating %d valid ones)'
