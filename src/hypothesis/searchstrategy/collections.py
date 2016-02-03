@@ -101,7 +101,13 @@ class ListStrategy(SearchStrategy):
             self.element_strategy.validate()
 
     def do_draw(self, data):
-        stopping_value = 1 - 1.0 / self.average_length
+        if self.max_size == self.min_size:
+            return [
+                data.draw(self.element_strategy)
+                for _ in range(self.min_size)
+            ]
+
+        stopping_value = 1 - 1.0 / (1 + self.average_length)
         result = []
         while True:
             data.start_example()
@@ -151,8 +157,17 @@ class UniqueListStrategy(SearchStrategy):
 
     def do_draw(self, data):
         seen = set()
-        stopping_value = 1 - 1.0 / self.average_size
         result = []
+        if self.max_size == self.min_size:
+            while len(result) < self.max_size:
+                v = data.draw(self.element_strategy)
+                k = self.key(v)
+                if k not in seen:
+                    result.append(v)
+                    seen.add(k)
+            return result
+
+        stopping_value = 1 - 1.0 / (1 + self.average_size)
         duplicates = 0
         while len(result) < self.max_size:
             data.start_example()
