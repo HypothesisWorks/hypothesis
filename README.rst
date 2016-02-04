@@ -2,6 +2,9 @@
 Hypothesis
 ==========
 
+.. image:: https://travis-ci.org/DRMacIver/hypothesis.svg?branch=master
+    :target: https://travis-ci.org/DRMacIver/hypothesis
+
 Hypothesis is a library for testing your Python code against a much larger range
 of examples than you would ever want to write by hand. It's based on the Haskell
 library, Quickcheck, and is designed to integrate seamlessly into your existing
