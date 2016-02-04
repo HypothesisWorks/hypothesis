@@ -33,9 +33,9 @@ import collections
 
 import pytest
 
-from hypothesis.errors import UnsatisfiedAssumption
 import hypothesis.internal.reflection as reflection
 from hypothesis import settings as Settings
+from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.strategies import just, sets, text, lists, floats, \
     tuples, booleans, integers, sampled_from
 from hypothesis.internal.compat import PY26, hrange

@@ -118,7 +118,7 @@ class SQLiteExampleDatabase(ExampleDatabase):
             cursor.execute("""
                 delete from hypothesis_data_mapping
                 where key = ? and value = ?
-            """,  (base64.b64encode(key), base64.b64encode(value)))
+            """, (base64.b64encode(key), base64.b64encode(value)))
 
     def fetch(self, key):
         self.create_db_if_needed()

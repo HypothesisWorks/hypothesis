@@ -16,9 +16,10 @@
 
 from __future__ import division, print_function, absolute_import
 
+import time
+
 from pytest import raises
 
-import time
 from hypothesis import given, settings
 from hypothesis.internal import debug
 from hypothesis.strategies import lists, integers

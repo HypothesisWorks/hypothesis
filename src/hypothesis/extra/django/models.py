@@ -22,7 +22,7 @@ from django.db import IntegrityError
 import hypothesis.strategies as st
 import hypothesis.extra.fakefactory as ff
 from hypothesis.errors import InvalidArgument
-from hypothesis.control import assume
+from hypothesis.control import reject
 from hypothesis.extra.datetime import datetimes
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
     MappedSearchStrategy
@@ -122,4 +122,4 @@ class ModelStrategy(MappedSearchStrategy):
             result, _ = self.model.objects.get_or_create(**value)
             return result
         except IntegrityError:
-            assume(False)
+            reject()

@@ -16,7 +16,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-
 import pytz
 
 import hypothesis._settings as hs

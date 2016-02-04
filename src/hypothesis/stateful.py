@@ -35,12 +35,12 @@ from collections import namedtuple
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis.core import find
 from hypothesis.errors import Flaky, NoSuchExample, InvalidDefinition, \
-    HypothesisException, UnsatisfiedAssumption
+    HypothesisException
 from hypothesis.control import BuildContext
 from hypothesis._settings import settings as Settings
 from hypothesis._settings import Verbosity
 from hypothesis.reporting import report, verbose_report, current_verbosity
-from hypothesis.internal.compat import hrange, integer_types
+from hypothesis.internal.compat import hrange
 from hypothesis.internal.reflection import proxies
 from hypothesis.searchstrategy.misc import JustStrategy, \
     SampledFromStrategy
@@ -241,13 +241,12 @@ class StateMachineRunner(object):
         if print_steps is None:
             print_steps = current_verbosity() >= Verbosity.debug
 
-        stopping_value = int(min(128, 511 / self.n_steps))
+        stopping_value = 1 - 1.0 / (1 + self.n_steps)
         try:
             for _ in hrange(self.n_steps):
                 try:
                     self.data.start_example()
-                    probe = cu.byte(self.data)
-                    if probe <= stopping_value:
+                    if not cu.biased_coin(self.data, stopping_value):
                         break
 
                     value = self.data.draw(state_machine.steps())

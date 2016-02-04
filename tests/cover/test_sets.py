@@ -20,8 +20,7 @@ import pytest
 
 from hypothesis import find, given, settings
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import sets, lists, floats, randoms, integers, \
-    frozensets
+from hypothesis.strategies import sets, lists, floats, randoms, integers
 
 
 def test_unique_lists_error_on_too_large_average_size():

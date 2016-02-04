@@ -22,7 +22,7 @@ from hypothesis import find, given, settings
 from hypothesis.errors import InvalidArgument
 from tests.common.utils import fails_with
 from hypothesis.strategies import sets, lists, floats, booleans, \
-    integers, frozensets, dictionaries
+    integers, frozensets
 
 
 def test_errors_when_given_varargs():
