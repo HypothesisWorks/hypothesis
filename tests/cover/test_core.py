@@ -21,7 +21,7 @@ import time
 import pytest
 
 import hypothesis.strategies as s
-from hypothesis import find, given, assume, settings
+from hypothesis import find, given, reject, settings
 from hypothesis.errors import NoSuchExample, Unsatisfiable
 
 
@@ -47,7 +47,7 @@ def test_stops_after_max_iterations_if_not_satisfying():
 
     def track(x):
         tracker.add(x)
-        assume(False)
+        reject()
 
     max_examples = 100
     max_iterations = 200

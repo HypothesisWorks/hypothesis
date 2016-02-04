@@ -18,7 +18,7 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
-from hypothesis import given, assume, example, settings, Verbosity
+from hypothesis import given, assume, reject, example, settings, Verbosity
 from hypothesis.errors import Flaky, Unsatisfiable, UnsatisfiedAssumption
 from hypothesis.strategies import lists, builds, booleans, integers, \
     random_module
@@ -48,7 +48,8 @@ def test_fails_only_once_is_flaky():
     @given(integers())
     def rude(x):
         if first_call[0]:
-            given(integers())
+            first_call[0] = False
+            raise Nope()
 
     with pytest.raises(Flaky):
         rude()
@@ -102,23 +103,6 @@ def test_reports_repr_diff_in_flaky_error():
     assert u'Call 1:' in e.value.args[0]
 
 
-class Nope(Exception):
-    pass
-
-
-def test_fails_only_once_is_flaky():
-    first_call = [True]
-
-    @given(integers())
-    def test(x):
-        if first_call[0]:
-            first_call[0] = False
-            assert False
-
-    with pytest.raises(Flaky):
-        test()
-
-
 class SatisfyMe(Exception):
     pass
 
@@ -151,7 +135,7 @@ def test_failure_sequence_inducing(building, testing, rnd):
         if i == 1:
             return
         elif i == 2:
-            assume(False)
+            reject()
         else:
             raise Nope()
 

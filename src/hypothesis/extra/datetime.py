@@ -20,10 +20,10 @@ import datetime as dt
 
 import pytz
 
+import hypothesis.internal.conjecture.utils as cu
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import defines_strategy
 from hypothesis.searchstrategy.strategies import SearchStrategy
-import hypothesis.internal.conjecture.utils as cu
 
 
 class DatetimeStrategy(SearchStrategy):

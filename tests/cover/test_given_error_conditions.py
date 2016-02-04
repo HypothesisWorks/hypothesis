@@ -20,7 +20,7 @@ import time
 
 import pytest
 
-from hypothesis import given, assume, settings
+from hypothesis import given, assume, reject, settings
 from hypothesis.errors import Timeout, Unsatisfiable
 from hypothesis.strategies import booleans, integers
 
@@ -39,7 +39,7 @@ def test_raises_unsatisfiable_if_all_false():
     @given(integers())
     @settings(max_examples=50)
     def test_assume_false(x):
-        assume(False)
+        reject()
 
     with pytest.raises(Unsatisfiable):
         test_assume_false()
@@ -48,7 +48,7 @@ def test_raises_unsatisfiable_if_all_false():
 def test_raises_unsatisfiable_if_all_false_in_finite_set():
     @given(booleans())
     def test_assume_false(x):
-        assume(False)
+        reject()
 
     with pytest.raises(Unsatisfiable):
         test_assume_false()

@@ -22,7 +22,8 @@ import threading
 from collections import namedtuple
 
 import hypothesis.reporting as reporting
-from hypothesis import note, seed, given, assume, settings, Verbosity
+from hypothesis import note, seed, given, assume, reject, settings, \
+    Verbosity
 from hypothesis.errors import Unsatisfiable
 from tests.common.utils import fails, raises, fails_with, capture_out
 from hypothesis.strategies import just, sets, text, lists, binary, \
@@ -226,7 +227,7 @@ def test_contains_the_test_function_name_in_the_exception_string():
     @settings(max_iterations=10, max_examples=10)
     def this_has_a_totally_unique_name(x):
         calls[0] += 1
-        assume(False)
+        reject()
 
     with raises(Unsatisfiable) as e:
         this_has_a_totally_unique_name()
@@ -242,7 +243,7 @@ def test_contains_the_test_function_name_in_the_exception_string():
         @settings(max_iterations=10, max_examples=10)
         def this_has_a_unique_name_and_lives_on_a_class(self, x):
             calls2[0] += 1
-            assume(False)
+            reject()
 
     with raises(Unsatisfiable) as e:
         Foo().this_has_a_unique_name_and_lives_on_a_class()

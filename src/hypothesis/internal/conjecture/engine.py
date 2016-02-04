@@ -281,6 +281,8 @@ class TestRunner(object):
             i = 0
             while i < len(self.last_data.intervals):
                 u, v = self.last_data.intervals[i]
+                if v == u + 1:
+                    break
                 if not self.incorporate_new_buffer(
                     self.last_data.buffer[:u] +
                     self.last_data.buffer[v:]

@@ -23,7 +23,7 @@ from random import Random
 from unittest import TestCase
 
 from hypothesis import settings as Settings
-from hypothesis import seed, given, assume
+from hypothesis import seed, given, reject
 from hypothesis.errors import Unsatisfiable
 from hypothesis.database import ExampleDatabase
 from hypothesis.strategies import lists, integers
@@ -69,7 +69,7 @@ def strategy_test_suite(
             @given(specifier)
             @settings
             def nope(x):
-                assume(False)
+                reject()
             self.assertRaises(Unsatisfiable, nope)
 
         def test_will_find_a_constant_failure(self):

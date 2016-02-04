@@ -40,7 +40,7 @@ def test_prints_intermediate_in_success():
         def test_works(x):
             pass
         test_works()
-    assert "Trying example" in o.getvalue()
+    assert 'Trying example' in o.getvalue()
 
 
 def test_does_not_log_in_quiet_mode():

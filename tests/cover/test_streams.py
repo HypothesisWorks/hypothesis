@@ -93,13 +93,6 @@ def test_can_map():
     assert list(x) == [2, 4, 6]
 
 
-def test_can_replace_value():
-    x = Stream(loop(11))
-    y = x.with_value(1, 2)
-    assert list(x[:3]) == [11] * 3
-    assert list(y[:3]) == [11, 2, 11]
-
-
 def test_can_minimize():
     x = minimal(streaming(integers()), lambda x: x[10] >= 1)
     ts = list(x[:11])

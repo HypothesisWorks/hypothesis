@@ -19,7 +19,7 @@ from __future__ import division, print_function, absolute_import
 import hypothesis.strategies as st
 from hypothesis import given, settings
 from hypothesis.errors import InvalidArgument
-from hypothesis.control import assume
+from hypothesis.control import reject
 from hypothesis.internal.compat import OrderedDict
 
 
@@ -51,7 +51,7 @@ def builds_ignoring_invalid(target, *args, **kwargs):
             result.validate()
             return result
         except InvalidArgument:
-            assume(False)
+            reject()
     return st.tuples(
         st.tuples(*args), st.fixed_dictionaries(kwargs)).map(splat)
 

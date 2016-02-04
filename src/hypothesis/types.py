@@ -97,19 +97,6 @@ class Stream(object):
         self._thunk_to(key + 1)
         return self.fetched[key]
 
-    def with_value(self, i, value):
-        s = Stream(self)
-        s._thunk_to(i + 1)
-        s.fetched[i] = value
-        return s
-
-    def with_values(self, updates):
-        s = Stream(self)
-        for i, value in updates:
-            s._thunk_to(i + 1)
-            s.fetched[i] = value
-        return s
-
     def _thunk_to(self, i):
         it = iter(self)
         try:

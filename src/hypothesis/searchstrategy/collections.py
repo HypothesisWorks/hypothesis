@@ -18,12 +18,11 @@ from __future__ import division, print_function, absolute_import
 
 from collections import namedtuple
 
-import hypothesis.internal.conjecture.utils as d
+import hypothesis.internal.conjecture.utils as cu
 from hypothesis.control import assume
 from hypothesis.internal.compat import OrderedDict
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
     one_of_strategies, MappedSearchStrategy
-import hypothesis.internal.conjecture.utils as cu
 
 
 class TupleStrategy(SearchStrategy):
