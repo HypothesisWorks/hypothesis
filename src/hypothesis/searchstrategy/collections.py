@@ -90,14 +90,10 @@ class ListStrategy(SearchStrategy):
         strategies = tuple(strategies)
         self.min_size = min_size or 0
         self.max_size = max_size or float('inf')
-        if strategies:
-            self.element_strategy = one_of_strategies(strategies)
-        else:
-            self.element_strategy = None
+        self.element_strategy = one_of_strategies(strategies)
 
     def validate(self):
-        if self.element_strategy is not None:
-            self.element_strategy.validate()
+        self.element_strategy.validate()
 
     def do_draw(self, data):
         if self.max_size == self.min_size:

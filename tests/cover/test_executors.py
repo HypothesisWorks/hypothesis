@@ -23,6 +23,7 @@ import pytest
 
 from hypothesis import given, example
 from hypothesis.strategies import booleans, integers
+from hypothesis.executors import TestRunner
 
 
 def test_must_use_result_of_test():
@@ -87,3 +88,9 @@ def test_no_boom():
 
 def test_no_boom_on_example():
     Valueless().test_no_boom_on_example()
+
+
+class TestNormal(TestRunner, TestCase):
+    @given(booleans())
+    def test_stuff(self, b):
+        pass

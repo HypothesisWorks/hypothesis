@@ -35,10 +35,10 @@ class LimitedStrategy(WrapperStrategy):
         self.currently_capped = False
 
     def do_draw(self, data):
-        if self.currently_capped:
-            if self.marker <= 0:
-                raise LimitReached()
-            self.marker -= 1
+        assert self.currently_capped
+        if self.marker <= 0:
+            raise LimitReached()
+        self.marker -= 1
         return super(LimitedStrategy, self).do_draw(data)
 
     @contextmanager

@@ -23,6 +23,7 @@ from hypothesis import settings as Settings
 from hypothesis.reporting import debug_report
 from hypothesis.internal.compat import Counter
 from hypothesis.internal.conjecture.data import Status, StopTest, TestData
+from hypothesis.internal.conjecture.minimizer import minimize
 
 
 class RunIsComplete(Exception):
@@ -243,7 +244,9 @@ class TestRunner(object):
         while self.last_data.status != Status.INTERESTING:
             if self.valid_examples >= self.settings.max_examples:
                 return
-            if self.iterations >= self.settings.max_iterations:
+            if self.iterations >= max(
+                self.settings.max_iterations, self.settings.max_examples
+            ):
                 return
             if (
                 self.settings.timeout > 0 and
@@ -307,8 +310,6 @@ class TestRunner(object):
                         break
                 else:
                     discarding_works = False
-
-            from hypothesis.internal.conjecture.minimizer import minimize
             i = 0
             while i < len(self.last_data.blocks):
                 u, v = self.last_data.blocks[i]
@@ -325,6 +326,12 @@ class TestRunner(object):
                         buf[:u] + b + buf[v:]
                     ):
                         break
+                i += 1
+            while i < len(self.last_data.buffer):
+                buf = self.last_data.buffer
+                self.incorporate_new_buffer(
+                    buf[:i] + buf[i + 1:]
+                )
                 i += 1
 
             block_counter = -1

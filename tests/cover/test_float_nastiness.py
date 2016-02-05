@@ -22,7 +22,7 @@ import math
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import find, given, assume
+from hypothesis import find, given, assume, settings
 from hypothesis.internal.compat import WINDOWS
 
 
@@ -41,7 +41,9 @@ def test_floats_are_in_range(l, r):
 def test_can_generate_both_zeros():
     find(
         st.floats(),
-        lambda x: assume(x >= 0) and math.copysign(1, x) < 0)
+        lambda x: assume(x >= 0) and math.copysign(1, x) < 0,
+        settings=settings(max_examples=10000)
+    )
 
 
 @pytest.mark.parametrize((u'l', u'r'), [

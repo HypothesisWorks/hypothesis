@@ -823,36 +823,32 @@ def choices():
 
     """
     from hypothesis.control import note, current_build_context
+    from hypothesis.internal.conjecture.utils import choice
 
-    def build_chooser(stream):
-        index = [-1]
-        choice_count = [0]
-        context = current_build_context()
-        context.mark_captured()
+    class Chooser(object):
+        def __init__(self, build_context, data):
+            self.build_context = build_context
+            self.data = data
+            self.choice_count = 0
 
-        def choice(values):
+        def __call__(self, values):
             if not values:
                 raise IndexError('Cannot choose from empty sequence')
-            k = len(values) - 1
-            if k == 0:
-                chosen = 0
-            else:
-                mask = _right_saturate(k)
-                while True:
-                    index[0] += 1
-                    probe = stream[index[0]] & mask
-                    if probe <= k:
-                        chosen = probe
-                        break
-            choice_count[0] += 1
-            result = values[chosen]
-            with context.local():
-                note('Choice #%d: %r' % (choice_count[0], result))
+            result = choice(self.data, values)
+            with self.build_context.local():
+                note('Choice #%d: %r' % (self.choice_count, result))
             return result
-        return choice
+
+        def __repr__(self):
+            return "choice"
+
+    class ChoiceStrategy(SearchStrategy):
+        def do_draw(self, data):
+            return Chooser(current_build_context(), data)
+
     return ReprWrapperStrategy(
         shared(
-            builds(build_chooser, streaming(integers(min_value=0))),
+            ChoiceStrategy(),
             key='hypothesis.strategies.chooser.choice_function'
         ), 'chooser()')
 
