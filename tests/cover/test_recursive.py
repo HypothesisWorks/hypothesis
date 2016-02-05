@@ -28,11 +28,19 @@ from hypothesis.internal.compat import integer_types
 
 
 def test_can_generate_with_large_branching():
+    def flatten(x):
+        if isinstance(x, list):
+            return sum(map(flatten, x), [])
+        else:
+            return [x]
+
     xs = find(
-        st.recursive(st.integers(), lambda x: st.lists(x, average_size=100)),
-        lambda x: isinstance(x, list) and len(x) >= 50
+        st.recursive(
+            st.integers(), lambda x: st.lists(x, average_size=50),
+            max_leaves=100),
+        lambda x: isinstance(x, list) and len(flatten(x)) >= 50
     )
-    assert xs == [0] * 50
+    assert flatten(xs) == [0] * 50
 
 
 def test_can_generate_some_depth_with_large_branching():
@@ -118,6 +126,7 @@ def test_can_use_recursive_data_in_sets(rnd):
     assert x in (
         frozenset((False, True)),
         frozenset((False, frozenset((True,)))),
+        frozenset({frozenset({False, True})})
     )
 
 
@@ -160,3 +169,16 @@ def test_can_flatmap_to_recursive_data(rnd):
     )
     flat = flatten(tree)
     assert (sum(flat) == 1000) or (len(set(flat)) == 1)
+
+
+@given(
+    st.recursive(
+        st.integers(), lambda x: st.lists(x, average_size=20),
+        max_leaves=10))
+def test_respects_leaf_limit(xs):
+    def flatten(x):
+        if isinstance(x, list):
+            return sum(map(flatten, x), [])
+        else:
+            return [x]
+    assert len(flatten(xs)) <= 10
