@@ -18,8 +18,10 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
+from random import Random
+
 import hypothesis.strategies as st
-from hypothesis import find, given, settings
+from hypothesis import find, given, settings, example
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.debug import timeout
 from hypothesis.internal.compat import integer_types
@@ -88,7 +90,9 @@ def test_recursive_call_validates_expand_returns_strategies():
 
 
 @given(st.randoms())
-@settings(max_examples=5, max_shrinks=0)
+@settings(max_examples=50, max_shrinks=0)
+@example(Random(-1363972488426139))
+@example(Random(-4))
 def test_can_use_recursive_data_in_sets(rnd):
     nested_sets = st.recursive(
         st.booleans(),
@@ -111,7 +115,10 @@ def test_can_use_recursive_data_in_sets(rnd):
     x = find(
         nested_sets, lambda x: len(flatten(x)) == 2, random=rnd,
         settings=settings(database=None, max_shrinks=1000, max_examples=1000))
-    assert x == frozenset((False, True))
+    assert x in (
+        frozenset((False, True)),
+        frozenset((False, frozenset((True,)))),
+    )
 
 
 def test_can_form_sets_of_recursive_data():
