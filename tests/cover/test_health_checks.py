@@ -158,7 +158,7 @@ def test_filtering_everything_fails_a_health_check():
 
 
 def test_filtering_most_things_fails_a_health_check():
-    @given(st.integers().filter(lambda x: x % 100 == 0))
+    @given(st.integers().filter(lambda x: x % 500 == 0))
     @settings(database=None)
     def test(x):
         pass

@@ -23,7 +23,6 @@ import pytest
 
 from hypothesis import find, given
 from hypothesis.strategies import lists, floats, integers, complex_numbers
-from hypothesis.searchstrategy.numbers import is_integral
 
 
 def test_minimize_negative_int():
@@ -36,7 +35,12 @@ def test_positive_negative_int():
     assert find(integers(), lambda x: x > 1) == 2
 
 
-boundaries = pytest.mark.parametrize(u'boundary', [0, 1, 11, 23, 64, 10000])
+boundaries = pytest.mark.parametrize(u'boundary', sorted(
+    [2 ** i for i in range(10)] +
+    [2 ** i - 1 for i in range(10)] +
+    [2 ** i + 1 for i in range(10)] +
+    [10 ** i for i in range(6)]
+))
 
 
 @boundaries
@@ -125,6 +129,13 @@ def test_minimize_nan():
 def test_minimize_very_large_float():
     t = sys.float_info.max / 2
     assert t <= find(floats(), lambda x: x >= t) < float(u'inf')
+
+
+def is_integral(value):
+    try:
+        return int(value) == value
+    except (OverflowError, ValueError):
+        return False
 
 
 def test_can_find_float_far_from_integral():

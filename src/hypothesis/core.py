@@ -49,13 +49,6 @@ def new_random():
     return random.Random(random.getrandbits(128))
 
 
-def time_to_call_it_a_day(settings, start_time):
-    """Have we exceeded our timeout?"""
-    if settings.timeout <= 0:
-        return False
-    return time.time() >= start_time + settings.timeout
-
-
 def test_is_flaky(test, expected_repr):
     @functools.wraps(test)
     def test_or_flaky(*args, **kwargs):

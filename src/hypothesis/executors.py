@@ -17,8 +17,8 @@
 from __future__ import division, print_function, absolute_import
 
 
-def default_executor(function):
-    return function()
+def default_executor(function):  # pragma: nocover
+    raise NotImplementedError()  # We don't actually use this any more
 
 
 def setup_teardown_executor(setup, teardown):
@@ -59,7 +59,7 @@ def default_new_style_executor(data, function):
 
 class TestRunner(object):
 
-    def hypothesis_execute_example_with_data(data, function):
+    def hypothesis_execute_example_with_data(self, data, function):
         return function(data)
 
 

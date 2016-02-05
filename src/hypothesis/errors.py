@@ -74,18 +74,10 @@ class NoSuchExample(HypothesisException):
         )
 
 
-class DefinitelyNoSuchExample(NoSuchExample):
-
-    """We have considered the entire example space available and there are no
-    examples in it."""
-
-    def __init__(self, condition_string, n_examples):
-        super(DefinitelyNoSuchExample, self).__init__(
-            condition_string, ' (all %d considered)' % (
-                n_examples,
-            )
-        )
-        self.n_examples = n_examples
+class DefinitelyNoSuchExample(NoSuchExample):  # pragma: no cover
+    """Hypothesis used to be able to detect exhaustive coverage of a search
+    space and no longer can. This exception remains for compatibility reasons
+    for now but can never actually be thrown."""
 
 
 class NoExamples(HypothesisException):

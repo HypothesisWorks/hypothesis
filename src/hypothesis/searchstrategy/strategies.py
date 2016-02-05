@@ -18,7 +18,7 @@ from __future__ import division, print_function, absolute_import
 
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis.errors import NoExamples, NoSuchExample, Unsatisfiable
-from hypothesis.control import assume, reject
+from hypothesis.control import assume
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.reflection import get_pretty_function_description
 
@@ -194,8 +194,6 @@ class OneOfStrategy(SearchStrategy):
                  strategies):
         SearchStrategy.__init__(self)
         strategies = tuple(strategies)
-        if len(strategies) <= 1:
-            raise ValueError('Need at least 2 strategies to choose amongst')
         self.element_strategies = list(strategies)
 
     def do_draw(self, data):
@@ -272,4 +270,4 @@ class FilteredStrategy(SearchStrategy):
                 # As long as we consume data, we'll eventually pass or raise.
                 # But if we don't this could be an infinite loop.
                 assume(data.index > start_index)
-        reject()
+        data.mark_invalid()

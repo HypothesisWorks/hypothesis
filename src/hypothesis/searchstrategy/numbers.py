@@ -51,24 +51,6 @@ class IntegersFromStrategy(SearchStrategy):
         return self.lower_bound + d.geometric(data, 1.0 / self.average_size)
 
 
-class RandomGeometricIntStrategy(IntStrategy):
-
-    """A strategy that produces integers whose magnitudes are a geometric
-    distribution and whose sign is randomized with some probability.
-
-    It will tend to be biased towards mostly negative or mostly
-    positive, and the size of the integers tends to be biased towards
-    the small.
-
-    """
-
-    def __repr__(self):
-        return 'RandomGeometricIntStrategy()'
-
-    def do_draw(self, data):
-        return d.n_byte_signed(data, d.integer_range(data, 0, 8))
-
-
 class WideRangeIntStrategy(IntStrategy):
 
     def __repr__(self):
@@ -111,8 +93,6 @@ class BoundedIntStrategy(SearchStrategy):
         SearchStrategy.__init__(self)
         self.start = start
         self.end = end
-        if start > end:
-            raise ValueError(u'Invalid range [%d, %d]' % (start, end))
 
     def __repr__(self):
         return 'BoundedIntStrategy(%d, %d)' % (self.start, self.end)
@@ -120,12 +100,6 @@ class BoundedIntStrategy(SearchStrategy):
     def do_draw(self, data):
         return d.integer_range(data, self.start, self.end)
 
-
-def is_integral(value):
-    try:
-        return int(value) == value
-    except (OverflowError, ValueError):
-        return False
 
 NASTY_FLOATS = [
     0.0, 0.5, 1.0 / 3, 10e6, 10e-6, 1.175494351e-38, 2.2250738585072014e-308,
