@@ -25,11 +25,11 @@ from fractions import Fraction
 
 import pytest
 
-from hypothesis import find, given, assume, example, settings
+from hypothesis import find, given, assume, example, settings, Verbosity
 from tests.common import parametrize, ordered_pair, constant_list
 from hypothesis.strategies import just, sets, text, lists, binary, \
     floats, tuples, randoms, booleans, decimals, integers, fractions, \
-    recursive, frozensets, dictionaries, sampled_from
+    recursive, frozensets, dictionaries, sampled_from, random_module
 from hypothesis.internal.debug import minimal
 from hypothesis.internal.compat import PY3, hrange, reduce, Counter, \
     OrderedDict, integer_types
@@ -557,3 +557,13 @@ def test_can_clone_same_length_items():
         lambda x: len(x) >= 20
     )
     assert len(set(ls)) == 1
+
+
+@given(random_module(), integers(min_value=0))
+@example(None, 62677)
+@settings(max_examples=100, max_shrinks=0)
+def test_minimize_down_to(rnd, i):
+    j = find(
+        integers(), lambda x: x >= i,
+        settings=settings(max_examples=1000, database=None, max_shrinks=1000))
+    assert i == j
