@@ -120,7 +120,10 @@ class TestRunner(object):
             self.changed += 1
             return True
         else:
-            if self.last_data.status == Status.INTERESTING:
+            if (
+                self.last_data.status == Status.INTERESTING and
+                data.status >= Status.VALID
+            ):
                 self.failed_shrinks += 1
                 if self.failed_shrinks >= 10 * self.settings.max_shrinks:
                     raise RunIsComplete()
