@@ -157,7 +157,3 @@ class TestData(object):
         if self.status != Status.OVERRUN:
             self.status = Status.INVALID
         raise StopTest(self.uuid)
-
-    @property
-    def rejected(self):
-        return self.status == Status.INVALID or self.status == Status.OVERRUN
