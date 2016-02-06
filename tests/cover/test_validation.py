@@ -123,11 +123,13 @@ def test_does_not_error_if_min_size_is_bigger_than_default_size():
 
 
 def test_list_unique_and_unique_by_cannot_both_be_enabled():
-    @given(lists(unique=True, unique_by=lambda x: x))
+    @given(lists(integers(), unique=True, unique_by=lambda x: x))
     def boom(t):
         pass
-    with pytest.raises(InvalidArgument):
+    with pytest.raises(InvalidArgument) as e:
         boom()
+    assert 'unique ' in e.value.args[0]
+    assert 'unique_by' in e.value.args[0]
 
 
 def test_an_average_size_must_be_positive():
@@ -139,6 +141,11 @@ def test_an_average_size_must_be_positive():
 
 def test_an_average_size_may_be_zero_if_max_size_is():
     lists(integers(), average_size=0.0, max_size=0)
+
+
+def test_min_before_max():
+    with pytest.raises(InvalidArgument):
+        integers(min_value=1, max_value=0).validate()
 
 
 @fails_with(InvalidArgument)

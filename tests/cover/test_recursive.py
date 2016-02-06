@@ -16,9 +16,11 @@
 
 from __future__ import division, print_function, absolute_import
 
+import pytest
 
 import hypothesis.strategies as st
-from hypothesis import given, find
+from hypothesis import find, given
+from hypothesis.errors import InvalidArgument
 
 
 @given(
@@ -41,3 +43,8 @@ def test_can_find_nested():
     )
 
     assert x == ((False, False), False)
+
+
+def test_recursive_call_validates_expand_returns_strategies():
+    with pytest.raises(InvalidArgument):
+        st.recursive(st.booleans(), lambda x: 1).example()

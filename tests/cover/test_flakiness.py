@@ -21,7 +21,7 @@ import pytest
 from hypothesis import given, assume, reject, example, settings, Verbosity
 from hypothesis.errors import Flaky, Unsatisfiable, UnsatisfiedAssumption
 from hypothesis.strategies import lists, builds, booleans, integers, \
-    random_module
+    composite, random_module
 
 
 def test_errors_even_if_does_not_error_on_final_call():
@@ -107,10 +107,22 @@ class SatisfyMe(Exception):
     pass
 
 
-@example(
-    [False, False, False, True], [3], None,
-)
-@given(lists(booleans()), lists(integers(1, 3)), random_module())
+@composite
+def single_bool_lists(draw):
+    n = draw(integers(0, 20))
+    result = [False] * (n + 1)
+    result[n] = True
+    return result
+
+
+@example([True, False, False, False], [3], None,)
+@example([False, True, False, False], [3], None,)
+@example([False, False, True, False], [3], None,)
+@example([False, False, False, True], [3], None,)
+@settings(max_examples=0)
+@given(
+    lists(booleans(), average_size=20) | single_bool_lists(),
+    lists(integers(1, 3), average_size=20), random_module())
 def test_failure_sequence_inducing(building, testing, rnd):
     buildit = iter(building)
     testit = iter(testing)
@@ -125,7 +137,7 @@ def test_failure_sequence_inducing(building, testing, rnd):
     @given(integers().map(build))
     @settings(
         verbosity=Verbosity.quiet, database=None,
-        perform_health_check=False,
+        perform_health_check=False, max_shrinks=0
     )
     def test(x):
         try:

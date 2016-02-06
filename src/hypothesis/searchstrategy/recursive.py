@@ -19,8 +19,9 @@ from __future__ import division, print_function, absolute_import
 from contextlib import contextmanager
 
 from hypothesis.searchstrategy.wrappers import WrapperStrategy
-from hypothesis.searchstrategy.strategies import OneOfStrategy, SearchStrategy
 from hypothesis.internal.conjecture.utils import choice
+from hypothesis.searchstrategy.strategies import OneOfStrategy, \
+    SearchStrategy
 
 
 class LimitReached(BaseException):
@@ -67,9 +68,11 @@ class RecursiveStrategy(SearchStrategy):
 
     def do_draw(self, data):
         while True:
+            data.start_example()
             s = choice(data, self.strategies)
             try:
                 with self.base.capped(self.max_leaves):
-                    return data.draw(s)
+                    return s.do_draw(data)
             except LimitReached:
                 pass
+            data.stop_example()
