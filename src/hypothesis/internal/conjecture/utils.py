@@ -23,25 +23,6 @@ def n_byte_unsigned(data, n):
     return int.from_bytes(data.draw_bytes(n), 'big')
 
 
-def n_bit_unsigned(data, n):
-    bn = int(math.ceil(n / 8))
-    return n_byte_unsigned(data, bn) & ((1 << n) - 1)
-
-
-def byte(data):
-    return n_byte_unsigned(data, 1)
-
-
-def n_byte_signed(data, n):
-    if n == 0:
-        return 0
-    result = int.from_bytes(data.draw_bytes(n), 'big')
-    mask = 1 << (n * 8 - 1)
-    if result & mask:
-        result = -(result ^ mask)
-    return result
-
-
 def saturate(n):
     bits = n.bit_length()
     k = 1
@@ -99,20 +80,24 @@ def choice(data, values):
     return values[integer_range(data, 0, len(values) - 1)]
 
 
-def fractional_float(data):
-    i = n_byte_unsigned(data, 4)
-    x = i / (2 ** 32 - 1)
-    if 0 < x < 1:
-        return x
-    data.mark_invalid()
-
-
 def geometric(data, p):
-    probe = 1.0 - fractional_float(data)
-    if p >= 1.0:
-        return 0
     denom = math.log1p(-p)
-    return int(math.log(probe) / denom)
+    n_bytes = 8
+
+    def distribution(random, n):
+        assert n == n_bytes
+        for _ in range(100):
+            try:
+                return int(
+                    math.log1p(-random.random()) / denom
+                ).to_bytes(n_bytes, 'big')
+            # This is basically impossible to hit but is required for
+            # correctness
+            except OverflowError:  # pragma: no cover
+                pass
+        # We got a one in a million chance 100 times in a row. Something is up.
+        assert False  # pragma: no cover
+    return int.from_bytes(data.draw_bytes(n_bytes, distribution), 'big')
 
 
 def boolean(data):
