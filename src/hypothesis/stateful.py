@@ -28,7 +28,6 @@ from __future__ import division, print_function, absolute_import
 
 import inspect
 import traceback
-from random import Random
 from unittest import TestCase
 from collections import namedtuple
 
@@ -40,12 +39,10 @@ from hypothesis.control import BuildContext
 from hypothesis._settings import settings as Settings
 from hypothesis._settings import Verbosity
 from hypothesis.reporting import report, verbose_report, current_verbosity
+from hypothesis.strategies import just, one_of, sampled_from
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.reflection import proxies
-from hypothesis.searchstrategy.misc import JustStrategy, \
-    SampledFromStrategy
-from hypothesis.searchstrategy.strategies import SearchStrategy, \
-    one_of_strategies
+from hypothesis.searchstrategy.strategies import SearchStrategy
 from hypothesis.searchstrategy.collections import TupleStrategy, \
     FixedKeysDictStrategy
 
@@ -190,19 +187,6 @@ class GenericStateMachine(object):
 GenericStateMachine.find_breaking_runner = classmethod(find_breaking_runner)
 
 
-def seeds(starting, n_steps):
-    random = Random(starting)
-
-    result = []
-    for _ in hrange(n_steps):
-        result.append(random.getrandbits(64))
-    return result
-
-
-# Sentinel value used to mark entries as deleted.
-TOMBSTONE = [object(), [u'TOMBSTONE FOR STATEFUL TESTING']]
-
-
 class StateMachineRunner(object):
 
     """A StateMachineRunner is a description of how to run a state machine.
@@ -215,28 +199,6 @@ class StateMachineRunner(object):
         self.data = data
         self.n_steps = n_steps
 
-    def __eq__(self, other):
-        return isinstance(other, StateMachineRunner) and (
-            self.parameter_seed == other.parameter_seed and
-            self.template_seed == other.template_seed and
-            self.n_steps == other.n_steps
-        )
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __hash__(self):
-        return hash((
-            self.parameter_seed,
-            self.template_seed,
-            self.n_steps,
-        ))
-
-    def __repr__(self):
-        return (
-            u'StateMachineRunner()'
-        )
-
     def run(self, state_machine, print_steps=None):
         if print_steps is None:
             print_steps = current_verbosity() >= Verbosity.debug
@@ -244,19 +206,17 @@ class StateMachineRunner(object):
         stopping_value = 1 - 1.0 / (1 + self.n_steps)
         try:
             for _ in hrange(self.n_steps):
-                try:
-                    self.data.start_example()
-                    if not cu.biased_coin(self.data, stopping_value):
-                        break
+                self.data.start_example()
+                if not cu.biased_coin(self.data, stopping_value):
+                    self.data.stop_example()
+                    break
 
-                    value = self.data.draw(state_machine.steps())
+                value = self.data.draw(state_machine.steps())
 
-                    if print_steps:
-                        state_machine.print_step(value)
-                    state_machine.execute_step(value)
-                finally:
-                    if not self.data.frozen:
-                        self.data.stop_example()
+                if print_steps:
+                    state_machine.print_step(value)
+                state_machine.execute_step(value)
+                self.data.stop_example()
         finally:
             state_machine.teardown()
 
@@ -265,9 +225,6 @@ class StateMachineSearchStrategy(SearchStrategy):
 
     def __init__(self, settings=None):
         self.program_size = (settings or Settings.default).stateful_step_count
-
-    def __repr__(self):
-        return u'StateMachineSearchStrategy()'
 
     def do_draw(self, data):
         return StateMachineRunner(data, self.program_size)
@@ -371,15 +328,6 @@ def precondition(precond):
     return decorator
 
 
-class SimpleSampledFromStrategy(SampledFromStrategy):
-
-    def draw_parameter(self, random):
-        return None
-
-    def draw_template(self, random, parameter_value):
-        return random.randint(0, len(self.elements) - 1)
-
-
 class RuleBasedStateMachine(GenericStateMachine):
 
     """A RuleBasedStateMachine gives you a more structured way to define state
@@ -471,18 +419,18 @@ class RuleBasedStateMachine(GenericStateMachine):
                         valid = False
                         break
                     else:
-                        v = SimpleSampledFromStrategy(bundle)
+                        v = sampled_from(bundle)
                 converted_arguments[k] = v
             if valid:
                 strategies.append(TupleStrategy((
-                    JustStrategy(rule),
+                    just(rule),
                     FixedKeysDictStrategy(converted_arguments)
                 ), tuple))
         if not strategies:
             raise InvalidDefinition(
                 u'No progress can be made from state %r' % (self,)
             )
-        return one_of_strategies(strategies)
+        return one_of(*strategies)
 
     def print_step(self, step):
         rule, data = step
