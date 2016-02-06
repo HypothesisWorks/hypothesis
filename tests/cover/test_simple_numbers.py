@@ -79,8 +79,8 @@ def test_find_small_number_in_large_range():
 
 def test_find_small_sum_float_list():
     xs = find(
-        lists(floats()),
-        lambda x: len(x) >= 10 and sum(x) >= 1.0
+        lists(floats(), min_size=10),
+        lambda x: sum(x) >= 1.0
     )
     assert sum(xs) <= 2.0
 
