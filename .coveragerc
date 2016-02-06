@@ -10,6 +10,7 @@ omit =
     **/internal/debug.py
     **/compat*.py
     **/extra/__init__.py
+    **/testrunners/forking.py
 
 [report]
 exclude_lines =
