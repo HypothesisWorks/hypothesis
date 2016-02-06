@@ -113,6 +113,13 @@ class TestRunner(object):
             ))
         if self.consider_new_test_data(data):
             if self.last_data.status == Status.INTERESTING:
+                if (
+                    self.settings.database is not None and
+                    self.database_key is not None
+                ):
+                    self.settings.database.save(
+                        self.database_key, self.last_data.buffer
+                    )
                 self.shrinks += 1
                 self.last_data = data
                 if self.shrinks >= self.settings.max_shrinks:
@@ -140,14 +147,6 @@ class TestRunner(object):
                 'Run complete after %d examples (%d valid) and %d shrinks' % (
                     self.iterations, self.valid_examples, self.shrinks,
                 ))
-            if (
-                self.settings.database is not None and
-                self.database_key is not None and
-                self.last_data.status == Status.INTERESTING
-            ):
-                self.settings.database.save(
-                    self.database_key, self.last_data.buffer
-                )
 
     def _new_mutator(self):
         def draw_new(data, n, distribution):
@@ -228,17 +227,37 @@ class TestRunner(object):
                 key=lambda d: (len(d), d)
             )
             for existing in corpus:
+                if self.valid_examples >= self.settings.max_examples:
+                    return
+                if self.iterations >= max(
+                    self.settings.max_iterations, self.settings.max_examples
+                ):
+                    return
                 data = TestData.for_buffer(existing)
                 self.test_function(data)
+                data.freeze()
+                self.last_data = data
                 if data.status < Status.VALID:
                     self.settings.database.delete(
                         self.database_key, existing)
-                data.freeze()
-                if data.status == Status.INTERESTING:
+                elif data.status == Status.VALID:
+                    # Incremental garbage collection! we store a lot of
+                    # examples in the DB as we shrink: Those that stay
+                    # interesting get kept, those that become invalid get
+                    # dropped, but those that are merely valid gradually go
+                    # away over time.
+                    if self.random.randint(0, 2) == 0:
+                        self.settings.database.delete(
+                            self.database_key, existing)
+                else:
+                    assert data.status == Status.INTERESTING
                     self.last_data = data
                     break
 
-        if self.last_data is None:
+        if (
+            self.last_data is None or
+            self.last_data.status < Status.INTERESTING
+        ):
             self.new_buffer()
         mutator = self._new_mutator()
         while self.last_data.status != Status.INTERESTING:
