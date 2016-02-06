@@ -19,10 +19,6 @@ from __future__ import division, print_function, absolute_import
 import math
 
 
-def uniform_float(random, start, end):
-    return start + random.random() * (end - start)
-
-
 def geometric(random, p):
     """Generate a geometric integer in the range [0, infinity) with expected
     value.

@@ -16,6 +16,9 @@
 
 from __future__ import division, print_function, absolute_import
 
+from random import Random
+
+
 """
 This module implements a lexicographic minimizer for blocks of bytes.
 
@@ -32,9 +35,6 @@ to do better in practice:
 2. No individual byte in the solution may be lowered while holding the others
    fixed.
 """
-
-
-from random import Random
 
 
 class Minimizer(object):

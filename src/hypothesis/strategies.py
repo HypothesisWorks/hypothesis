@@ -167,13 +167,9 @@ def integers(min_value=None, max_value=None):
         if max_value is None:
             return IntegersFromStrategy(min_value)
         else:
+            assert min_value <= max_value
             if min_value == max_value:
                 return just(min_value)
-            elif min_value > max_value:
-                raise InvalidArgument(
-                    u'Cannot have max_value=%r < min_value=%r' % (
-                        max_value, min_value
-                    ))
             elif min_value >= 0:
                 return BoundedIntStrategy(min_value, max_value)
             elif max_value <= 0:
@@ -245,15 +241,10 @@ def floats(
 
     from hypothesis.searchstrategy.numbers import FloatStrategy, \
         FixedBoundedFloatStrategy
-    base_floats = FloatStrategy(
-        allow_infinity=allow_infinity, allow_nan=allow_nan,
-    )
     if min_value is None and max_value is None:
         return FloatStrategy(
             allow_infinity=allow_infinity, allow_nan=allow_nan,
         )
-    if min_value is None and max_value is None:
-        return base_floats
     elif min_value is not None and max_value is not None:
         if min_value == max_value:
             return just(min_value)
@@ -391,7 +382,6 @@ def lists(
 
     """
     check_valid_sizes(min_size, average_size, max_size)
-
     if elements is None or (max_size is not None and max_size <= 0):
         if max_size is None or max_size > 0:
             raise InvalidArgument(
@@ -411,8 +401,6 @@ def lists(
 
     if unique_by is not None:
         from hypothesis.searchstrategy.collections import UniqueListStrategy
-        if max_size == 0:
-            return builds(list)
         check_strategy(elements)
         min_size = min_size or 0
         max_size = max_size or float(u'inf')
@@ -826,6 +814,7 @@ def choices():
     from hypothesis.internal.conjecture.utils import choice
 
     class Chooser(object):
+
         def __init__(self, build_context, data):
             self.build_context = build_context
             self.data = data
@@ -840,9 +829,10 @@ def choices():
             return result
 
         def __repr__(self):
-            return "choice"
+            return 'choice'
 
     class ChoiceStrategy(SearchStrategy):
+
         def do_draw(self, data):
             return Chooser(current_build_context(), data)
 
@@ -869,16 +859,6 @@ def uuids():
 
 
 # Private API below here
-
-
-def _right_saturate(x):
-    x |= (x >> 1)
-    x |= (x >> 2)
-    x |= (x >> 4)
-    x |= (x >> 8)
-    x |= (x >> 16)
-    x |= (x >> 32)
-    return x
 
 
 def check_type(typ, arg):

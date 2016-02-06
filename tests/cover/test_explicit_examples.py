@@ -207,3 +207,13 @@ def test_prints_note_in_failing_example():
     print(v)
     assert 'x -> 43' in v
     assert 'x -> 42' not in v
+
+
+def test_must_agree_with_number_of_arguments():
+    @example(1, 2)
+    @given(integers())
+    def test(a):
+        pass
+
+    with pytest.raises(InvalidArgument):
+        test()

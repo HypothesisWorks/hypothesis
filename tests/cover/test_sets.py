@@ -35,3 +35,17 @@ def test_can_draw_sets_of_hard_to_find_elements(rnd):
     find(
         sets(rarebool, min_size=2), lambda x: True,
         random=rnd, settings=settings(database=None))
+
+
+def test_sets_of_small_average_size():
+    assert len(sets(integers(), average_size=1.0).example()) <= 10
+
+
+@given(sets(max_size=0))
+def test_empty_sets(x):
+    assert x == set()
+
+
+@given(sets(integers(), max_size=2))
+def test_bounded_size_sets(x):
+    assert len(x) <= 2

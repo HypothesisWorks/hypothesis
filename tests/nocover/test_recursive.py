@@ -16,13 +16,10 @@
 
 from __future__ import division, print_function, absolute_import
 
-import pytest
-
 from random import Random
 
 import hypothesis.strategies as st
-from hypothesis import find, given, settings, example
-from hypothesis.errors import InvalidArgument
+from hypothesis import find, given, example, settings
 from hypothesis.internal.debug import timeout
 from hypothesis.internal.compat import integer_types
 
@@ -92,11 +89,6 @@ def test_drawing_many_near_boundary():
     assert len(ls) == 5
 
 
-def test_recursive_call_validates_expand_returns_strategies():
-    with pytest.raises(InvalidArgument):
-        st.recursive(st.booleans(), lambda x: 1).example()
-
-
 @given(st.randoms())
 @settings(max_examples=50, max_shrinks=0)
 @example(Random(-1363972488426139))
@@ -141,8 +133,6 @@ def test_can_form_sets_of_recursive_data(rnd):
         database=None, timeout=10, max_shrinks=1000, max_examples=1000
     ))
     assert len(xs) == 10
-    assert False in xs
-    assert True in xs
 
 
 @given(st.randoms())

@@ -240,6 +240,11 @@ def given(*generator_arguments, **generator_kwargs):
                 wrapped_test, 'hypothesis_explicit_examples', ()
             )):
                 if example.args:
+                    if len(example.args) > len(original_argspec.args):
+                        raise InvalidArgument(
+                            'example has too many arguments for test. '
+                            'Expected at most %d but got %d' % (
+                                len(original_argspec.args), len(example.args)))
                     example_kwargs = dict(zip(
                         original_argspec.args[-len(example.args):],
                         example.args
@@ -291,8 +296,7 @@ def given(*generator_arguments, **generator_kwargs):
 
             warned_random = [False]
             perform_health_check = settings.perform_health_check
-            if Settings.default is not None:
-                perform_health_check &= Settings.default.perform_health_check
+            perform_health_check &= Settings.default.perform_health_check
 
             from hypothesis.internal.conjecture.data import TestData, Status, \
                 StopTest
@@ -414,18 +418,17 @@ def given(*generator_arguments, **generator_kwargs):
                         ) % (test.__name__, result), settings)
                     return False
                 except UnsatisfiedAssumption:
-                    if not data.frozen:
-                        data.mark_invalid()
+                    data.mark_invalid()
                 except (
                     HypothesisDeprecationWarning, FailedHealthCheck,
+                    StopTest,
                 ):
                     raise
                 except Exception:
                     last_exception[0] = traceback.format_exc()
                     repr_for_last_exception[0] = record_repr[0]
                     verbose_report(last_exception[0])
-                    if not data.frozen:
-                        data.mark_interesting()
+                    data.mark_interesting()
                 finally:
                     if (
                         not warned_random[0] and
@@ -527,13 +530,6 @@ def given(*generator_arguments, **generator_kwargs):
                     'call to filter in your strategy) when we didn\'t '
                     'expect it to be.'
                 )
-            test_runner(
-                TestData.for_buffer(falsifying_example),
-                reify_and_execute(
-                    search_strategy,
-                    test_is_flaky(test, repr_for_last_exception[0]),
-                    print_example=True, is_final=True
-                ))
         for attr in dir(test):
             if attr[0] != '_' and not hasattr(wrapped_test, attr):
                 setattr(wrapped_test, attr, getattr(test, attr))

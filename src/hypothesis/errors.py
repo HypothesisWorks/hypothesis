@@ -76,8 +76,12 @@ class NoSuchExample(HypothesisException):
 
 class DefinitelyNoSuchExample(NoSuchExample):  # pragma: no cover
     """Hypothesis used to be able to detect exhaustive coverage of a search
-    space and no longer can. This exception remains for compatibility reasons
-    for now but can never actually be thrown."""
+    space and no longer can.
+
+    This exception remains for compatibility reasons for now but can
+    never actually be thrown.
+
+    """
 
 
 class NoExamples(HypothesisException):
