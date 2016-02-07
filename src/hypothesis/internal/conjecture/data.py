@@ -24,8 +24,6 @@ from hypothesis.internal.compat import text_type, unicode_safe_repr
 
 
 def uniform(random, n):
-    if n == 0:
-        return b''
     return random.getrandbits(n * 8).to_bytes(n, 'big')
 
 
@@ -131,6 +129,8 @@ class TestData(object):
         del self._draw_bytes
 
     def draw_bytes(self, n, distribution=uniform):
+        if n == 0:
+            return b''
         self.__assert_not_frozen('draw_bytes')
         initial = self.index
         if self.index + n > self.max_length:
@@ -148,12 +148,12 @@ class TestData(object):
 
     def mark_interesting(self):
         self.__assert_not_frozen('mark_interesting')
-        if self.status == Status.VALID:
-            self.status = Status.INTERESTING
+        self.status = Status.INTERESTING
+        self.freeze()
         raise StopTest(self.uuid)
 
     def mark_invalid(self):
         self.__assert_not_frozen('mark_invalid')
-        if self.status != Status.OVERRUN:
-            self.status = Status.INVALID
+        self.status = Status.INVALID
+        self.freeze()
         raise StopTest(self.uuid)
