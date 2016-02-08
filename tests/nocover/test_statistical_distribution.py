@@ -296,7 +296,7 @@ test_can_produce_nan = define_test(
 )
 
 test_can_produce_long_lists_of_negative_integers = define_test(
-    lists(integers()), 0.03, lambda x: all(t <= 0 for t in x),
+    lists(integers()), 0.01, lambda x: all(t <= 0 for t in x),
     condition=lambda x: len(x) >= 20
 )
 
@@ -316,7 +316,7 @@ test_can_produce_floats_in_middle = define_test(
 )
 
 test_can_produce_long_lists = define_test(
-    lists(integers(), average_size=25.0), 0.3, long_list
+    lists(integers(), average_size=25.0), 0.2, long_list
 )
 
 test_can_produce_short_lists = define_test(
@@ -351,7 +351,7 @@ test_sampled_from_often_distorted = define_test(
 
 
 test_non_empty_subset_of_two_is_usually_large = define_test(
-    sets(sampled_from((1, 2))), 0.15,
+    sets(sampled_from((1, 2))), 0.1,
     lambda t: len(t) == 2
 )
 
