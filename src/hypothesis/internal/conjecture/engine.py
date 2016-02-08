@@ -66,7 +66,11 @@ class TestRunner(object):
             data.freeze()
         except StopTest as e:
             if e.uuid != data.uuid:
+                self.save_buffer(data.buffer)
                 raise e
+        except:
+            self.save_buffer(data.buffer)
+            raise
         if data.status >= Status.VALID:
             self.valid_examples += 1
 
@@ -91,15 +95,18 @@ class TestRunner(object):
             return True
         return True
 
-    def note_for_corpus(self, data):
+    def save_buffer(self, buffer):
         if (
             self.settings.database is not None and
-            self.database_key is not None and
-            data.status == Status.INTERESTING
+            self.database_key is not None
         ):
             self.settings.database.save(
-                self.database_key, data.buffer
+                self.database_key, buffer
             )
+
+    def note_for_corpus(self, data):
+        if data.status == Status.INTERESTING:
+            self.save_buffer(data.buffer)
 
     def incorporate_new_buffer(self, buffer):
         assert self.last_data.status == Status.INTERESTING
