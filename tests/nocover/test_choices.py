@@ -25,7 +25,7 @@ from hypothesis.internal.compat import hrange
 
 def test_stability():
     @given(
-        st.lists(st.text(max_size=1), unique=True, min_size=5),
+        st.lists(st.text(min_size=1, max_size=1), unique=True, min_size=5),
         st.choices(),
     )
     @settings(

@@ -825,6 +825,7 @@ def choices():
                 raise IndexError('Cannot choose from empty sequence')
             result = choice(self.data, values)
             with self.build_context.local():
+                self.choice_count += 1
                 note('Choice #%d: %r' % (self.choice_count, result))
             return result
 
