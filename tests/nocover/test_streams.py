@@ -18,15 +18,9 @@ from __future__ import division, print_function, absolute_import
 
 from itertools import islice
 
-from hypothesis import given, assume
+from hypothesis import given
 from hypothesis.strategies import integers, streaming
 from hypothesis.internal.compat import integer_types
-
-
-@given(streaming(integers()))
-def test_can_adaptively_assume_about_streams(xs):
-    for i in islice(xs, 200):
-        assume(i >= 0)
 
 
 @given(streaming(integers()))
