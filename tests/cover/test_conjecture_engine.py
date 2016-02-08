@@ -20,9 +20,9 @@ import time
 from random import Random
 
 from hypothesis import settings
-from hypothesis.internal.conjecture.engine import TestRunner
-from hypothesis.internal.conjecture.data import Status, TestData
 from hypothesis.database import ExampleDatabase
+from hypothesis.internal.conjecture.data import Status, TestData
+from hypothesis.internal.conjecture.engine import TestRunner
 
 MAX_SHRINKS = 2000
 
@@ -196,7 +196,7 @@ def test_stops_after_max_iterations_when_generating():
     value = b'rubber baby buggy bumpers'
     max_iterations = 100
 
-    db = ExampleDatabase(":memory:")
+    db = ExampleDatabase(':memory:')
     db.save(key, value)
 
     seen = []
@@ -218,7 +218,7 @@ def test_stops_after_max_iterations_when_reading():
     key = b'key'
     max_iterations = 1
 
-    db = ExampleDatabase(":memory:")
+    db = ExampleDatabase(':memory:')
     for i in range(10):
         db.save(key, bytes([i]))
 
@@ -239,7 +239,7 @@ def test_stops_after_max_iterations_when_reading():
 def test_stops_after_max_examples_when_reading():
     key = b'key'
 
-    db = ExampleDatabase(":memory:")
+    db = ExampleDatabase(':memory:')
     for i in range(10):
         db.save(key, bytes([i]))
 
@@ -332,7 +332,7 @@ def test_max_shrinks_can_disable_shrinking():
 def test_saves_data_while_shrinking():
     key = b'hi there'
     n = 5
-    db = ExampleDatabase(":memory:")
+    db = ExampleDatabase(':memory:')
     assert list(db.fetch(key)) == []
     seen = set()
 
@@ -392,7 +392,7 @@ def test_no_read_no_shrink():
 def test_garbage_collects_the_database():
     key = b'hi there'
     n = 500
-    db = ExampleDatabase(":memory:")
+    db = ExampleDatabase(':memory:')
     assert list(db.fetch(key)) == []
     seen = set()
     go = True
