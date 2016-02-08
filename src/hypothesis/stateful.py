@@ -83,6 +83,7 @@ def find_breaking_runner(state_machine_factory, settings=None):
         search_strategy,
         is_breaking_run,
         settings=settings,
+        database_key=state_machine_factory.__name__.encode('utf-8')
     )
 
 
