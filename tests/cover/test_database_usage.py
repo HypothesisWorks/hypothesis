@@ -14,16 +14,17 @@
 #
 # END HEADER
 
-from hypothesis.database import SQLiteExampleDatabase
+from __future__ import division, print_function, absolute_import
 
-from hypothesis import find, settings, assume
 import hypothesis.strategies as st
+from hypothesis import find, assume, settings
 from hypothesis.errors import NoSuchExample, Unsatisfiable
+from hypothesis.database import SQLiteExampleDatabase
 
 
 def test_saves_incremental_steps_in_database():
     key = b"a database key"
-    database = SQLiteExampleDatabase(":memory:")
+    database = SQLiteExampleDatabase(':memory:')
     find(
         st.binary(min_size=10), lambda x: any(x),
         settings=settings(database=database), database_key=key
@@ -33,7 +34,7 @@ def test_saves_incremental_steps_in_database():
 
 def test_clears_out_database_as_things_get_boring():
     key = b"a database key"
-    database = SQLiteExampleDatabase(":memory:")
+    database = SQLiteExampleDatabase(':memory:')
     do_we_care = True
 
     def stuff():
@@ -61,7 +62,7 @@ def test_clears_out_database_as_things_get_boring():
 
 def test_trashes_all_invalid_examples():
     key = b"a database key"
-    database = SQLiteExampleDatabase(":memory:")
+    database = SQLiteExampleDatabase(':memory:')
     finicky = False
 
     def stuff():
@@ -84,7 +85,7 @@ def test_trashes_all_invalid_examples():
 
 def test_respects_max_examples_in_database_usage():
     key = b"a database key"
-    database = SQLiteExampleDatabase(":memory:")
+    database = SQLiteExampleDatabase(':memory:')
     do_we_care = True
     counter = [0]
 

@@ -64,7 +64,7 @@ class ExampleDatabase(EDMeta('ExampleDatabase', (object,), {})):
         """Close database connection whenever such is used."""
 
     def save(self, key, value):
-        """save this value under this key"""
+        """save this value under this key."""
         raise NotImplementedError('%s.save' % (type(self).__name__))
 
 

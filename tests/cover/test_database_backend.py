@@ -19,9 +19,9 @@ from __future__ import division, print_function, absolute_import
 import base64
 
 from hypothesis import given, settings
-from hypothesis.strategies import lists, tuples, binary
-from hypothesis.internal.compat import PY26, hrange
 from hypothesis.database import SQLiteExampleDatabase
+from hypothesis.strategies import lists, binary, tuples
+from hypothesis.internal.compat import PY26, hrange
 
 small_settings = settings(max_examples=100, timeout=4)
 

@@ -15,12 +15,13 @@
 # END HEADER
 
 from __future__ import division, print_function, absolute_import
-import pytest
-from hypothesis.internal.conjecture.data import TestData, StopTest, Status
 
-from hypothesis.errors import Frozen
-from hypothesis import given
+import pytest
+
 from hypothesis import strategies as st
+from hypothesis import given
+from hypothesis.errors import Frozen
+from hypothesis.internal.conjecture.data import Status, StopTest, TestData
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
@@ -98,6 +99,7 @@ def test_can_mark_invalid():
 
 
 class BoomStrategy(SearchStrategy):
+
     def do_draw(self, data):
         data.draw_bytes(1)
         raise ValueError()
@@ -112,6 +114,7 @@ def test_closes_interval_on_error_in_strategy():
 
 
 class BigStrategy(SearchStrategy):
+
     def do_draw(self, data):
         data.draw_bytes(10 ** 6)
 

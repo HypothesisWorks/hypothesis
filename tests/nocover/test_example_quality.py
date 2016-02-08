@@ -25,7 +25,7 @@ from fractions import Fraction
 
 import pytest
 
-from hypothesis import find, given, assume, example, settings, Verbosity
+from hypothesis import find, given, assume, example, settings
 from tests.common import parametrize, ordered_pair, constant_list
 from hypothesis.strategies import just, sets, text, lists, binary, \
     floats, tuples, randoms, booleans, decimals, integers, fractions, \
