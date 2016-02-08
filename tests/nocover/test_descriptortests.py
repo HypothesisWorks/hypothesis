@@ -19,7 +19,6 @@ from __future__ import division, print_function, absolute_import
 import math
 from collections import namedtuple
 
-from hypothesis.stateful import StateMachineSearchStrategy
 from hypothesis.strategies import just, none, sets, text, lists, binary, \
     builds, floats, one_of, tuples, randoms, booleans, decimals, \
     integers, composite, fractions, recursive, streaming, frozensets, \
@@ -190,10 +189,7 @@ def tight_integer_list(draw):
 TestComposite = strategy_test_suite(tight_integer_list())
 
 
-TestStatemachine = strategy_test_suite(StateMachineSearchStrategy())
-
-
 def test_repr_has_specifier_in_it():
     suite = TestComplex(
-        u'test_can_round_trip_through_the_database')
+        u'test_will_find_a_constant_failure')
     assert repr(suite) == u'strategy_test_suite(%r)' % (complex_numbers(),)

@@ -23,8 +23,7 @@ from random import Random
 from hypothesis import seed, given, assume, settings, Verbosity
 from hypothesis.errors import NoExamples, FailedHealthCheck
 from hypothesis.database import ExampleDatabase
-from hypothesis.stateful import rule, Bundle, RuleBasedStateMachine, \
-    StateMachineSearchStrategy
+from hypothesis.stateful import rule, Bundle, RuleBasedStateMachine
 from hypothesis.strategies import just, none, text, lists, binary, \
     floats, tuples, booleans, decimals, integers, fractions, streaming, \
     float_to_int, int_to_float, sampled_from, complex_numbers
@@ -128,7 +127,7 @@ class HypothesisSpec(RuleBasedStateMachine):
     @rule(target=strategies, spec=sampled_from((
         integers(), booleans(), floats(), complex_numbers(),
         fractions(), decimals(), text(), binary(), none(),
-        StateMachineSearchStrategy(), tuples(),
+        tuples(),
     )))
     def strategy(self, spec):
         return spec
@@ -246,6 +245,8 @@ TestHypothesis.settings = settings(
     timeout=500 if MAIN else 60,
     min_satisfying_examples=0,
     verbosity=max(TestHypothesis.settings.verbosity, Verbosity.verbose),
+    max_examples=10000 if MAIN else 200,
+    strict=True
 )
 
 if MAIN:

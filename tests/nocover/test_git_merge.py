@@ -22,15 +22,16 @@ import hypothesis.strategies as s
 from hypothesis import settings
 from hypothesis.stateful import GenericStateMachine
 from hypothesis.tools.mergedbs import merge_dbs
-from hypothesis.internal.compat import PY26, hrange
-from hypothesis.database.backend import SQLiteBackend
+from hypothesis.database import SQLiteExampleDatabase
+import base64
+
 
 FORK_NOW = u'fork'
 Insert = namedtuple(u'Insert', (u'key', u'value', u'target'))
 Delete = namedtuple(u'Delete', (u'key', u'value', u'target'))
 
 
-class TestingBackend(SQLiteBackend):
+class TestingBackend(SQLiteExampleDatabase):
 
     def __init__(self):
         super(TestingBackend, self).__init__()
@@ -56,7 +57,7 @@ class TestingBackend(SQLiteBackend):
                 from hypothesis_data_mapping
             """)
             for r in cursor:
-                self.mirror.add(tuple(r))
+                self.mirror.add(tuple(map(base64.b64decode, r)))
 
 
 class DatabaseMergingState(GenericStateMachine):
@@ -70,10 +71,7 @@ class DatabaseMergingState(GenericStateMachine):
         self.seen_strings = set()
 
     def values(self):
-        if PY26:
-            base = s.text(alphabet=[chr(i) for i in hrange(1, 128)])
-        else:
-            base = s.text()
+        base = s.binary()
         if self.seen_strings:
             return s.sampled_from(sorted(self.seen_strings)) | base
         else:
