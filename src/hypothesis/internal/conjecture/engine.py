@@ -394,8 +394,6 @@ class TestRunner(object):
                             alternatives = None
                             break
                 i += 1
-        minimize(
-            self.last_data.buffer, self.incorporate_new_buffer, self.random)
 
 
 def _draw_predecessor(rnd, xs):
