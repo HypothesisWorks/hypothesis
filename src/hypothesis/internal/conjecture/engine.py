@@ -17,7 +17,7 @@
 from __future__ import division, print_function, absolute_import
 
 import time
-from random import Random
+from random import Random, getrandbits
 
 from hypothesis import settings as Settings
 from hypothesis.reporting import debug_report
@@ -33,7 +33,7 @@ class RunIsComplete(Exception):
 class TestRunner(object):
 
     def __init__(
-        self, test_function, settings, random=None,
+        self, test_function, settings=None, random=None,
         database_key=None,
     ):
         self._test_function = test_function
@@ -46,7 +46,7 @@ class TestRunner(object):
         self.iterations = 0
         self.valid_examples = 0
         self.start_time = time.time()
-        self.random = random or Random()
+        self.random = random or Random(getrandbits(128))
         self.database_key = database_key
 
     def new_buffer(self):
@@ -57,11 +57,13 @@ class TestRunner(object):
         )
         self.test_function(self.last_data)
         self.last_data.freeze()
+        self.note_for_corpus(self.last_data)
 
     def test_function(self, data):
         self.iterations += 1
         try:
             self._test_function(data)
+            data.freeze()
         except StopTest as e:
             if e.uuid != data.uuid:
                 raise e
@@ -89,7 +91,18 @@ class TestRunner(object):
             return True
         return True
 
+    def note_for_corpus(self, data):
+        if (
+            self.settings.database is not None and
+            self.database_key is not None and
+            data.status == Status.INTERESTING
+        ):
+            self.settings.database.save(
+                self.database_key, data.buffer
+            )
+
     def incorporate_new_buffer(self, buffer):
+        assert self.last_data.status == Status.INTERESTING
         if (
             self.settings.timeout > 0 and
             time.time() >= self.start_time + self.settings.timeout
@@ -105,6 +118,7 @@ class TestRunner(object):
         data = TestData.for_buffer(buffer[:self.last_data.index])
         self.test_function(data)
         data.freeze()
+        self.note_for_corpus(data)
         if data.status >= self.last_data.status:
             debug_report('%d bytes %r -> %r, %s' % (
                 data.index,
@@ -112,26 +126,15 @@ class TestRunner(object):
                 data.output,
             ))
         if self.consider_new_test_data(data):
-            if self.last_data.status == Status.INTERESTING:
-                if (
-                    self.settings.database is not None and
-                    self.database_key is not None
-                ):
-                    self.settings.database.save(
-                        self.database_key, self.last_data.buffer
-                    )
-                self.shrinks += 1
-                self.last_data = data
-                if self.shrinks >= self.settings.max_shrinks:
-                    raise RunIsComplete()
+            self.shrinks += 1
+            self.last_data = data
+            if self.shrinks >= self.settings.max_shrinks:
+                raise RunIsComplete()
             self.last_data = data
             self.changed += 1
             return True
         else:
-            if (
-                self.last_data.status == Status.INTERESTING and
-                data.status >= Status.VALID
-            ):
+            if data.status >= Status.VALID:
                 self.failed_shrinks += 1
                 if self.failed_shrinks >= 10 * self.settings.max_shrinks:
                     raise RunIsComplete()
@@ -283,9 +286,11 @@ class TestRunner(object):
                 )
                 self.test_function(data)
                 data.freeze()
-                if data.status >= self.last_data.status:
+                self.note_for_corpus(data)
+                prev_data = self.last_data
+                if self.consider_new_test_data(data):
                     self.last_data = data
-                    if data.status > self.last_data.status:
+                    if data.status > prev_data.status:
                         mutations = 0
                 else:
                     mutator = self._new_mutator()
@@ -304,31 +309,17 @@ class TestRunner(object):
             return
 
         change_counter = -1
-        discarding_works = True
 
         while self.changed > change_counter:
             change_counter = self.changed
-
             i = 0
             while i < len(self.last_data.intervals):
                 u, v = self.last_data.intervals[i]
-                if v == u + 1:
-                    break
                 if not self.incorporate_new_buffer(
                     self.last_data.buffer[:u] +
                     self.last_data.buffer[v:]
                 ):
                     i += 1
-
-            if discarding_works:
-                for _ in range(100):
-                    if self.incorporate_new_buffer(bytes(
-                        b for b in self.last_data.buffer
-                        if self.random.randint(0, 2)
-                    )):
-                        break
-                else:
-                    discarding_works = False
             i = 0
             while i < len(self.last_data.blocks):
                 u, v = self.last_data.blocks[i]
@@ -346,12 +337,6 @@ class TestRunner(object):
                     ):
                         break
                 i += 1
-            while i < len(self.last_data.buffer):
-                buf = self.last_data.buffer
-                self.incorporate_new_buffer(
-                    buf[:i] + buf[i + 1:]
-                )
-                i += 1
 
             block_counter = -1
             while block_counter < self.changed:
@@ -366,8 +351,6 @@ class TestRunner(object):
                 for block in blocks:
                     parts = self.last_data.buffer.split(block)
                     assert self.last_data.buffer == block.join(parts)
-                    if len(parts) <= 1:
-                        continue
                     minimize(
                         block,
                         lambda b: self.incorporate_new_buffer(
@@ -403,78 +386,9 @@ class TestRunner(object):
                         ):
                             alternatives = None
                             break
-                    else:
-                        break
                 i += 1
-
-    def mutate_data_to_new_buffer(self):
-        n = min(len(self.last_data.buffer), self.last_data.index)
-        if not n:
-            return b''
-        if n == 1:
-            return self.rand_bytes(1)
-
-        if self.last_data.status == Status.OVERRUN:
-            result = bytearray(self.last_data.buffer)
-            for i, c in enumerate(self.last_data.buffer):
-                t = self.random.randint(0, 2)
-                if t == 0:
-                    result[i] = 0
-                elif t == 1:
-                    result[i] = self.random.randint(0, c)
-                else:
-                    result[i] = c
-            return bytes(result)
-
-        probe = self.random.randint(0, 255)
-        if probe <= 100 or len(self.last_data.intervals) <= 1:
-            c = self.random.randint(0, 2)
-            i = self.random.randint(0, self.last_data.index - 1)
-            result = bytearray(self.last_data.buffer)
-            if c == 0:
-                result[i] ^= (1 << self.random.randint(0, 7))
-            elif c == 1:
-                result[i] = 0
-            else:
-                result[i] = 255
-            return bytes(result)
-        else:
-            int1 = None
-            int2 = None
-            while int1 == int2:
-                i = self.random.randint(0, len(self.last_data.intervals) - 2)
-                int1 = self.last_data.intervals[i]
-                int2 = self.last_data.intervals[
-                    self.random.randint(
-                        i + 1, len(self.last_data.intervals) - 1)]
-            return self.last_data.buffer[:int1[0]] + \
-                self.last_data.buffer[int2[0]:int2[1]] + \
-                self.last_data.buffer[int1[1]:]
-
-    def rand_bytes(self, n):
-        if n == 0:
-            return b''
-        return self.random.getrandbits(n * 8).to_bytes(n, 'big')
-
-
-def find_interesting_buffer(test_function, settings=None):
-    runner = TestRunner(test_function, settings)
-    runner.run()
-    if runner.last_data.status == Status.INTERESTING:
-        return runner.last_data.buffer
-
-
-def _byte_shrinks(n):
-    if n == 0:
-        return []
-    if n == 1:
-        return [0]
-    parts = {0, n - 1}
-    for i in range(8):
-        mask = 1 << i
-        if n & mask:
-            parts.add(n ^ mask)
-    return sorted(parts)
+        minimize(
+            self.last_data.buffer, self.incorporate_new_buffer, self.random)
 
 
 def _draw_predecessor(rnd, xs):
@@ -503,7 +417,3 @@ def _draw_successor(rnd, xs):
             c = rnd.randint(0, 255)
         r.append(c)
     return bytes(r)
-
-
-def in_order(x, y):
-    return x + y <= y + x
