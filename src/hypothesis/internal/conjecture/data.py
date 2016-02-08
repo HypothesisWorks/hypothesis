@@ -137,9 +137,9 @@ class TestData(object):
             self.status = Status.OVERRUN
             self.freeze()
             raise StopTest(self.uuid)
+        result = self._draw_bytes(self, n, distribution)
         self.block_starts.setdefault(n, []).append(initial)
         self.blocks.append((initial, initial + n))
-        result = self._draw_bytes(self, n, distribution)
         assert len(result) == n
         assert self.index == initial
         self.buffer.extend(result)
