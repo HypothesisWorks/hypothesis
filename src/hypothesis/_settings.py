@@ -259,10 +259,10 @@ class settings(settingsMeta('settings', (object,), {})):
         """
         try:
             if self._database is not_set and self.database_file is not None:
-                from hypothesis.database import SQLiteExampleDatabase
+                from hypothesis.database import ExampleDatabase
                 if self.database_file not in _db_cache:
                     _db_cache[self.database_file] = (
-                        SQLiteExampleDatabase(self.database_file))
+                        ExampleDatabase(self.database_file))
                 return _db_cache[self.database_file]
             if self._database is not_set:
                 self._database = None

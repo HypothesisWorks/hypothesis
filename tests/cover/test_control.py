@@ -107,9 +107,3 @@ def test_raises_if_note_out_of_context():
 def test_raises_if_current_build_context_out_of_context():
     with pytest.raises(InvalidArgument):
         current_build_context()
-
-
-def test_does_not_leave_build_context_active_if_captured():
-    with BuildContext(close_on_capture=False) as c:
-        c.mark_captured()
-    assert _current_build_context.value is None

@@ -16,19 +16,37 @@
 
 from __future__ import division, print_function, absolute_import
 
+import os
+import re
 import base64
+import hashlib
 import sqlite3
 import binascii
 import threading
-from abc import abstractmethod
 from contextlib import contextmanager
+
+SQLITE_PATH = re.compile(r"\.\(db|sqlite|sqlite3\)$")
+
+
+def _db_for_path(path=None):
+    if path in (None, ':memory:'):
+        return InMemoryExampleDatabase()
+    path = str(path)
+    if os.path.isdir(path):
+        return DirectoryBasedExampleDatabase(path)
+    if os.path.exists(path):
+        return SQLiteExampleDatabase(path)
+    if SQLITE_PATH.search(path):
+        return SQLiteExampleDatabase(path)
+    else:
+        return DirectoryBasedExampleDatabase(path)
 
 
 class EDMeta(type):
 
     def __call__(self, *args, **kwargs):
         if self is ExampleDatabase:
-            self = SQLiteExampleDatabase
+            return _db_for_path(*args, **kwargs)
         return super(EDMeta, self).__call__(*args, **kwargs)
 
 
@@ -53,19 +71,49 @@ class ExampleDatabase(EDMeta('ExampleDatabase', (object,), {})):
         be ignored on each run
 
         """
+        raise NotImplementedError('%s.delete' % (type(self).__name__))
 
-    @abstractmethod  # pragma: no cover
     def fetch(self, key):
         """yield the values matching this key."""
         raise NotImplementedError('%s.fetch' % (type(self).__name__))
 
-    @abstractmethod  # pragma: no cover
-    def close(self):
-        """Close database connection whenever such is used."""
-
     def save(self, key, value):
         """save this value under this key."""
         raise NotImplementedError('%s.save' % (type(self).__name__))
+
+    def keys(self):
+        raise NotImplementedError('%s.keys' % (type(self).__name__))
+
+    def close(self):
+        """Close database connection whenever such is used."""
+        raise NotImplementedError('%s.close' % (type(self).__name__))
+
+
+class InMemoryExampleDatabase(ExampleDatabase):
+
+    def __init__(self):
+        self.data = {}
+
+    def __repr__(self):
+        return 'InMemoryExampleDatabase(%r)' % (self.data,)
+
+    def fetch(self, key):
+        for v in self.data.get(key, ()):
+            yield v
+
+    def save(self, key, value):
+        self.data.setdefault(key, set()).add(value)
+
+    def delete(self, key, value):
+        self.data.get(key, set()).discard(value)
+
+    def keys(self):
+        for k, v in self.data.items():
+            if v:
+                yield k
+
+    def close(self):
+        pass
 
 
 class SQLiteExampleDatabase(ExampleDatabase):
@@ -162,3 +210,91 @@ class SQLiteExampleDatabase(ExampleDatabase):
                 )
             """)
         self.db_created = True
+
+
+def mkdirp(path):
+    try:
+        os.makedirs(path)
+    except OSError:
+        pass
+    return path
+
+
+def _hash(key):
+    return hashlib.sha1(key).hexdigest()[:16]
+
+
+class DirectoryBasedExampleDatabase(ExampleDatabase):
+
+    def __init__(self, path):
+        self.path = path
+        self.keypaths = {}
+
+    def __repr__(self):
+        return 'DirectoryBasedExampleDatabase(%r)' % (self.path,)
+
+    def create_db_if_needed(self):
+        mkdirp(self.path)
+
+    def close(self):
+        pass
+
+    def keys(self):
+        self.create_db_if_needed()
+        for d in os.listdir(self.path):
+            files = os.listdir(os.path.join(self.path, d))
+            if len(files) > 1 and 'name' in files:
+                namefile = os.path.join(self.path, d, 'name')
+                with open(namefile, 'rb') as i:
+                    result = i.read()
+                if _hash(result) == d:
+                    yield result
+
+    def _key_path(self, key):
+        try:
+            return self.keypaths[key]
+        except KeyError:
+            pass
+        directory = os.path.join(self.path, _hash(key))
+        mkdirp(directory)
+        namefile = os.path.join(directory, 'name')
+        if os.path.exists(namefile):
+            with open(namefile, 'rb') as r:
+                ex = r.read()
+            if ex != key:
+                os.unlink(namefile)
+        if not os.path.exists(namefile):
+            tmpname = os.path.join(
+                directory, str(binascii.hexlify(os.urandom(16))))
+            with open(tmpname, 'wb') as w:
+                w.write(key)
+            try:
+                os.rename(tmpname, namefile)
+            except OSError:  # pragma: no cover
+                os.unlink(tmpname)
+        assert os.path.exists(namefile)
+        self.keypaths[key] = directory
+        return directory
+
+    def _value_path(self, key, value):
+        return os.path.join(
+            self._key_path(key),
+            hashlib.sha1(value).hexdigest()[:16]
+        )
+
+    def fetch(self, key):
+        kp = self._key_path(key)
+        for path in os.listdir(kp):
+            if path != 'name':
+                with open(os.path.join(kp, path), 'rb') as i:
+                    yield i.read()
+
+    def save(self, key, value):
+        with open(self._value_path(key, value), 'wb') as o:
+            o.write(value)
+
+    def delete(self, key, value):
+        try:
+            os.unlink(self._value_path(key, value))
+        except OSError:
+            pass
