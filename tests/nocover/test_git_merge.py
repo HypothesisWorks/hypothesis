@@ -16,15 +16,14 @@
 
 from __future__ import division, print_function, absolute_import
 
+import base64
 from collections import namedtuple
 
 import hypothesis.strategies as s
 from hypothesis import settings
+from hypothesis.database import SQLiteExampleDatabase
 from hypothesis.stateful import GenericStateMachine
 from hypothesis.tools.mergedbs import merge_dbs
-from hypothesis.database import SQLiteExampleDatabase
-import base64
-
 
 FORK_NOW = u'fork'
 Insert = namedtuple(u'Insert', (u'key', u'value', u'target'))

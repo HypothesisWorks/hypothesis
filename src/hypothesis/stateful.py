@@ -31,7 +31,6 @@ import traceback
 from unittest import TestCase
 from collections import namedtuple
 
-from hypothesis.internal.conjecture.data import StopTest
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis.core import find
 from hypothesis.errors import Flaky, NoSuchExample, InvalidDefinition, \
@@ -43,6 +42,7 @@ from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.strategies import just, one_of, sampled_from
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.reflection import proxies
+from hypothesis.internal.conjecture.data import StopTest
 from hypothesis.searchstrategy.strategies import SearchStrategy
 from hypothesis.searchstrategy.collections import TupleStrategy, \
     FixedKeysDictStrategy
@@ -108,7 +108,7 @@ def run_state_machine_as_test(state_machine_factory, settings=None):
         raise Flaky(
             u'Run failed initially but succeeded on a second try'
         )
-    assert False, "Unreachable"  # pragma: nocover
+    assert False, 'Unreachable'  # pragma: no cover
 
 
 class GenericStateMachine(object):

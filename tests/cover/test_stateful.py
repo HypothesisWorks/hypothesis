@@ -29,8 +29,8 @@ from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import rule, Bundle, precondition, \
     GenericStateMachine, RuleBasedStateMachine, \
     run_state_machine_as_test
-from hypothesis.strategies import just, none, lists, tuples, \
-    booleans, integers, sampled_from
+from hypothesis.strategies import just, none, lists, tuples, booleans, \
+    integers, sampled_from
 
 
 class SetStateMachine(GenericStateMachine):
@@ -236,6 +236,7 @@ def test_can_get_test_case_off_machine_instance():
 
 
 class FlakyStateMachine(GenericStateMachine):
+
     def steps(self):
         return just(())
 
