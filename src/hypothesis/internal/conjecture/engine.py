@@ -386,11 +386,12 @@ class TestRunner(object):
                         for u, v in self.last_data.intervals), key=len)
                 u, v = self.last_data.intervals[i]
                 for a in alternatives:
-                    if len(a) < v - u:
-                        if self.incorporate_new_buffer(
-                            self.last_data.buffer[:u] + a +
-                            self.last_data.buffer[v:]
-                        ):
+                    buf = self.last_data.buffer
+                    if (
+                        len(a) < v - u or
+                        (len(a) == (v - u) and a < buf[u:v])
+                    ):
+                        if self.incorporate_new_buffer(buf[:u] + a + buf[v:]):
                             alternatives = None
                             break
                 i += 1
