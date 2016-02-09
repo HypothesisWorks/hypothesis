@@ -16,5 +16,5 @@
 
 from __future__ import division, print_function, absolute_import
 
-__version_info__ = (2, 0, 0)
+__version_info__ = (3, 0, 0, "alpha1")
 __version__ = '.'.join(map(str, __version_info__))
