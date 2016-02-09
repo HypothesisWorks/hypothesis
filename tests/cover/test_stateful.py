@@ -235,10 +235,11 @@ def test_can_get_test_case_off_machine_instance():
     assert GoodSet().TestCase is not None
 
 
-class FlakyStateMachine(RuleBasedStateMachine):
+class FlakyStateMachine(GenericStateMachine):
+    def steps(self):
+        return just(())
 
-    @rule()
-    def boom(self):
+    def execute_step(self, step):
         assert not any(
             t[3] == u'find_breaking_runner'
             for t in inspect.getouterframes(inspect.currentframe())
@@ -248,6 +249,23 @@ class FlakyStateMachine(RuleBasedStateMachine):
 def test_flaky_raises_flaky():
     with raises(Flaky):
         FlakyStateMachine.TestCase().runTest()
+
+
+class FlakyRatchettingMachine(GenericStateMachine):
+    ratchet = 0
+
+    def steps(self):
+        FlakyRatchettingMachine.ratchet += 1
+        n = FlakyRatchettingMachine.ratchet
+        return lists(integers(), min_size=n, max_size=n)
+
+    def execute_step(self, step):
+        assert False
+
+
+def test_ratchetting_raises_flaky():
+    with raises(Flaky):
+        FlakyRatchettingMachine.TestCase().runTest()
 
 
 def test_empty_machine_is_invalid():
