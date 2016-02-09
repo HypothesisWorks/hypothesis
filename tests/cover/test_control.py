@@ -107,3 +107,8 @@ def test_raises_if_note_out_of_context():
 def test_raises_if_current_build_context_out_of_context():
     with pytest.raises(InvalidArgument):
         current_build_context()
+
+
+def test_current_build_context_is_current():
+    with BuildContext() as a:
+        assert current_build_context() is a
