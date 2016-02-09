@@ -31,6 +31,7 @@ import traceback
 from unittest import TestCase
 from collections import namedtuple
 
+from hypothesis.internal.conjecture.data import StopTest
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis.core import find
 from hypothesis.errors import Flaky, NoSuchExample, InvalidDefinition, \
@@ -100,11 +101,14 @@ def run_state_machine_as_test(state_machine_factory, settings=None):
         breaker = find_breaking_runner(state_machine_factory, settings)
     except NoSuchExample:
         return
-    with BuildContext(is_final=True):
-        breaker.run(state_machine_factory(), print_steps=True)
-    raise Flaky(
-        u'Run failed initially by succeeded on a second try'
-    )
+    try:
+        with BuildContext(is_final=True):
+            breaker.run(state_machine_factory(), print_steps=True)
+    except StopTest:
+        raise Flaky(
+            u'Run failed initially but succeeded on a second try'
+        )
+    assert False, "Unreachable"  # pragma: nocover
 
 
 class GenericStateMachine(object):
