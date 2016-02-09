@@ -16,10 +16,12 @@
 
 from __future__ import division, print_function, absolute_import
 
+import os
 import base64
 
 from hypothesis import given, settings
-from hypothesis.database import SQLiteExampleDatabase
+from hypothesis.database import ExampleDatabase, SQLiteExampleDatabase, \
+    InMemoryExampleDatabase, DirectoryBasedExampleDatabase
 from hypothesis.strategies import lists, binary, tuples
 from hypothesis.internal.compat import PY26, hrange
 
@@ -107,3 +109,45 @@ def test_ignores_badly_stored_keys():
             values(?, ?)
         """, (u'badgers', base64.b64encode(b'kittens')))
     assert list(backend.keys()) == []
+
+
+def test_default_database_is_in_memory():
+    assert isinstance(ExampleDatabase(), InMemoryExampleDatabase)
+
+
+def test_default_on_disk_database_is_dir(tmpdir):
+    assert isinstance(
+        ExampleDatabase(tmpdir.join('foo')), DirectoryBasedExampleDatabase)
+
+
+def test_selects_sqlite_database_if_name_matches(tmpdir):
+    assert isinstance(
+        ExampleDatabase(tmpdir.join('foo.db')), SQLiteExampleDatabase)
+    assert isinstance(
+        ExampleDatabase(tmpdir.join('foo.sqlite')), SQLiteExampleDatabase)
+    assert isinstance(
+        ExampleDatabase(tmpdir.join('foo.sqlite3')), SQLiteExampleDatabase)
+
+
+def test_selects_directory_based_if_already_directory(tmpdir):
+    path = str(tmpdir.join('hi.sqlite3'))
+    DirectoryBasedExampleDatabase(path).save(b"foo", b"bar")
+    assert isinstance(ExampleDatabase(path), DirectoryBasedExampleDatabase)
+
+
+def test_selects_sqlite_if_already_sqlite(tmpdir):
+    path = str(tmpdir.join('hi'))
+    SQLiteExampleDatabase(path).save(b"foo", b"bar")
+    assert isinstance(ExampleDatabase(path), SQLiteExampleDatabase)
+
+
+def test_ignores_mangled_names(tmpdir):
+    path = str(tmpdir.join('hi'))
+    db = DirectoryBasedExampleDatabase(path)
+    db.save(b'foo', b'bar')
+    with open(os.path.join(path, os.listdir(path)[0], 'name'), 'wb') as wb:
+        wb.write(b"nope")
+    assert list(db.keys()) == []
+    db2 = DirectoryBasedExampleDatabase(path)
+    db2.save(b'foo', b'baz')
+    assert list(db2.keys()) == [b'foo']
