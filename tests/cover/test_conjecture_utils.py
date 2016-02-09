@@ -16,8 +16,8 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis.internal.conjecture.utils import integer_range
 from hypothesis.internal.conjecture.data import TestData
+from hypothesis.internal.conjecture.utils import integer_range
 
 
 def test_does_not_draw_data_for_empty_range():

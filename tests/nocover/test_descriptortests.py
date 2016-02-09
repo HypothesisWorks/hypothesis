@@ -21,8 +21,8 @@ from collections import namedtuple
 
 from hypothesis.strategies import just, none, sets, text, lists, binary, \
     builds, floats, one_of, tuples, randoms, booleans, decimals, \
-    integers, composite, fractions, recursive, frozensets, \
-    dictionaries, sampled_from, complex_numbers, fixed_dictionaries
+    integers, composite, fractions, recursive, frozensets, dictionaries, \
+    sampled_from, complex_numbers, fixed_dictionaries
 from hypothesis.strategytests import strategy_test_suite
 from hypothesis.internal.compat import OrderedDict
 
