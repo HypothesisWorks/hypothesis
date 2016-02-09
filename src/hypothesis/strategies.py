@@ -32,7 +32,6 @@ from hypothesis.searchstrategy.reprwrapper import ReprWrapperStrategy
 __all__ = [
     'just', 'one_of',
     'none',
-    'choices',
     'booleans', 'integers', 'floats', 'complex_numbers', 'fractions',
     'decimals',
     'characters', 'text', 'binary',
@@ -41,7 +40,7 @@ __all__ = [
     'sampled_from', 'permutations',
     'builds',
     'randoms', 'random_module',
-    'streaming', 'recursive', 'composite',
+    'recursive', 'composite',
 ]
 
 _strategies = set()
@@ -514,21 +513,6 @@ def dictionaries(
 
 @cacheable
 @defines_strategy
-def streaming(elements):
-    """Generates an infinite stream of values where each value is drawn from
-    elements.
-
-    The result is iterable (the iterator will never terminate) and
-    indexable.
-
-    """
-    check_strategy(elements)
-    from hypothesis.searchstrategy.streams import StreamStrategy
-    return StreamStrategy(elements)
-
-
-@cacheable
-@defines_strategy
 def characters(whitelist_categories=None, blacklist_categories=None,
                blacklist_characters=None, min_codepoint=None,
                max_codepoint=None):
@@ -801,47 +785,6 @@ def shared(base, key=None):
     """
     from hypothesis.searchstrategy.shared import SharedStrategy
     return SharedStrategy(base, key)
-
-
-@cacheable
-def choices():
-    """Strategy that generates a function that behaves like random.choice.
-
-    Will note choices made for reproducibility.
-
-    """
-    from hypothesis.control import note, current_build_context
-    from hypothesis.internal.conjecture.utils import choice
-
-    class Chooser(object):
-
-        def __init__(self, build_context, data):
-            self.build_context = build_context
-            self.data = data
-            self.choice_count = 0
-
-        def __call__(self, values):
-            if not values:
-                raise IndexError('Cannot choose from empty sequence')
-            result = choice(self.data, values)
-            with self.build_context.local():
-                self.choice_count += 1
-                note('Choice #%d: %r' % (self.choice_count, result))
-            return result
-
-        def __repr__(self):
-            return 'choice'
-
-    class ChoiceStrategy(SearchStrategy):
-
-        def do_draw(self, data):
-            return Chooser(current_build_context(), data)
-
-    return ReprWrapperStrategy(
-        shared(
-            ChoiceStrategy(),
-            key='hypothesis.strategies.chooser.choice_function'
-        ), 'chooser()')
 
 
 @cacheable

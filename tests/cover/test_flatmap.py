@@ -21,8 +21,8 @@ import pytest
 from hypothesis import find, given, assume, settings
 from hypothesis.database import ExampleDatabase
 from hypothesis.strategies import just, text, lists, floats, tuples, \
-    booleans, integers, streaming
-from hypothesis.internal.compat import hrange, Counter
+    booleans, integers
+from hypothesis.internal.compat import Counter
 
 ConstantLists = integers().flatmap(lambda i: lists(just(i)))
 
@@ -79,15 +79,6 @@ def test_flatmap_has_original_strategy_repr():
     ints = integers()
     ints_up = ints.flatmap(lambda n: integers(min_value=n))
     assert repr(ints) in repr(ints_up)
-
-
-def test_streaming_flatmap_past_point_of_read():
-    s = find(
-        streaming(integers().flatmap(lambda n: integers(min_value=n))),
-        lambda x: x[0])
-    assert s[0] == 1
-    for i in hrange(100):
-        s[i]
 
 
 def test_mixed_list_flatmap():
