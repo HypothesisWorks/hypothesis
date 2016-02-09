@@ -29,35 +29,8 @@ from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import rule, Bundle, precondition, \
     GenericStateMachine, RuleBasedStateMachine, \
     run_state_machine_as_test
-from hypothesis.strategies import just, none, lists, tuples, choices, \
+from hypothesis.strategies import just, none, lists, tuples, \
     booleans, integers, sampled_from
-
-
-class ChoosingStateMachine(GenericStateMachine):
-
-    def __init__(self):
-        super(ChoosingStateMachine, self).__init__()
-        self.pool = []
-
-    def steps(self):
-        result = tuples(just('extend'), lists(integers()))
-        if self.pool:
-            result |= tuples(just('choose'), choices())
-        return result
-
-    def execute_step(self, step):
-        return getattr(self, step[0])(step[1])
-
-    def extend(self, data):
-        self.pool.extend(data)
-
-    def choose(self, choice):
-        assert choice(self.pool) < 100
-
-
-def test_can_choose_within_stateful():
-    with raises(AssertionError):
-        run_state_machine_as_test(ChoosingStateMachine)
 
 
 class SetStateMachine(GenericStateMachine):
