@@ -71,9 +71,6 @@ class BuildContext(object):
         if self.close() and exc_type is None:
             raise CleanupFailed()
 
-    def local(self):
-        return _current_build_context.with_value(self)
-
     def close(self):
         any_failed = False
         for task in self.tasks:
