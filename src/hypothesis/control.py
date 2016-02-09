@@ -58,12 +58,8 @@ class BuildContext(object):
         self.tasks = []
         self.is_final = is_final
         self.close_on_capture = close_on_capture
-        self.captured = False
         self.close_on_del = False
         self.notes = []
-
-    def mark_captured(self):
-        self.captured = True
 
     def __enter__(self):
         self.assign_variable = _current_build_context.with_value(self)
@@ -72,15 +68,8 @@ class BuildContext(object):
 
     def __exit__(self, exc_type, exc_value, tb):
         self.assign_variable.__exit__(exc_type, exc_value, tb)
-        if self.captured and not self.close_on_capture:
-            self.close_on_del = True
-        else:
-            if self.close() and exc_type is None:
-                raise CleanupFailed()
-
-    def __del__(self):
-        if self.close_on_del:
-            self.close()
+        if self.close() and exc_type is None:
+            raise CleanupFailed()
 
     def local(self):
         return _current_build_context.with_value(self)
