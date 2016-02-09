@@ -21,7 +21,6 @@ from __future__ import division, print_function, absolute_import
 
 import time
 import inspect
-import warnings
 import functools
 import traceback
 from random import getstate as getglobalrandomstate
@@ -286,15 +285,11 @@ def given(*generator_arguments, **generator_kwargs):
                     '\nSee http://hypothesis.readthedocs.org/en/latest/health'
                     'checks.html for more information about this.'
                 )
-                if settings.strict:
-                    raise FailedHealthCheck(message)
-                else:
-                    warnings.warn(FailedHealthCheck(message))
+                raise FailedHealthCheck(message)
 
             search_strategy = given_specifier
             search_strategy.validate()
 
-            warned_random = [False]
             perform_health_check = settings.perform_health_check
             perform_health_check &= Settings.default.perform_health_check
 
@@ -307,7 +302,6 @@ def given(*generator_arguments, **generator_kwargs):
                 count = 0
                 overruns = 0
                 filtered_draws = 0
-                errors = 0
                 start = time.time()
                 while (
                     count < 10 and time.time() < start + 1 and
@@ -334,9 +328,7 @@ def given(*generator_arguments, **generator_kwargs):
                             assert data.status == Status.OVERRUN
                             overruns += 1
                     except Exception:
-                        if errors == 0:
-                            report(traceback.format_exc())
-                        errors += 1
+                        report(traceback.format_exc())
                         if test_runner is default_new_style_executor:
                             fail_health_check(
                                 'An exception occurred during data '
@@ -388,7 +380,6 @@ def given(*generator_arguments, **generator_kwargs):
                         'average_size or max_leaves parameters).'
                     ) % (count, runtime))
                 if getglobalrandomstate() != initial_state:
-                    warned_random[0] = True
                     fail_health_check(
                         'Data generation depends on global random module. '
                         'This makes results impossible to replay, which '
@@ -403,7 +394,7 @@ def given(*generator_arguments, **generator_kwargs):
             repr_for_last_exception = [None]
 
             def evaluate_test_data(data):
-                if perform_health_check and not warned_random[0]:
+                if perform_health_check:
                     initial_state = getglobalrandomstate()
                 record_repr = [None]
                 try:
@@ -431,11 +422,9 @@ def given(*generator_arguments, **generator_kwargs):
                     data.mark_interesting()
                 finally:
                     if (
-                        not warned_random[0] and
                         perform_health_check and
                         getglobalrandomstate() != initial_state
                     ):
-                        warned_random[0] = True
                         fail_health_check(
                             'Your test used the global random module. '
                             'This is unlikely to work correctly. You should '
