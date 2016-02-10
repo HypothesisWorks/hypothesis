@@ -16,63 +16,18 @@
 
 from __future__ import division, print_function, absolute_import
 
-import sys
-import unicodedata
+from bisect import bisect_left
 
 from hypothesis.errors import InvalidArgument
-from hypothesis.control import assume
-from hypothesis.internal.compat import hrange, hunichr, text_type, \
-    binary_type
-from hypothesis.searchstrategy.fixed import FixedStrategy
-from hypothesis.searchstrategy.strategies import MappedSearchStrategy
-
-CHR_ORDER = [
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-    'A', 'a', 'B', 'b', 'C', 'c', 'D', 'd', 'E', 'e', 'F', 'f', 'G', 'g',
-    'H', 'h', 'I', 'i', 'J', 'j', 'K', 'k', 'L', 'l', 'M', 'm', 'N', 'n',
-    'O', 'o', 'P', 'p', 'Q', 'q', 'R', 'r', 'S', 's', 'T', 't', 'U', 'u',
-    'V', 'v', 'W', 'w', 'X', 'x', 'Y', 'y', 'Z', 'z',
-    ' ',
-    '_', '-', '=', '~',
-    '"', "'",
-    ':', ';', ',', '.', '?', '!',
-    '(', ')', '{', '}', '[', ']', '<', '>',
-    '*', '+', '/', '&', '|', '%',
-    '#', '$', '@', '\\', '^', '`',
-    '\t', '\n', '\r',
-    '\x00', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', '\x07', '\x08',
-    '\x0b', '\x0c', '\x0e', '\x0f', '\x10', '\x11', '\x12', '\x13', '\x14',
-    '\x15', '\x16', '\x17', '\x18', '\x19', '\x1a', '\x1b', '\x1c', '\x1d',
-    '\x1e', '\x1f',
-]
-
-REVERSE_CHR_ORDER = [0] * len(CHR_ORDER)
-for i, c in enumerate(CHR_ORDER):
-    REVERSE_CHR_ORDER[ord(c)] = i
-assert sorted(REVERSE_CHR_ORDER) == list(range(127))
+from hypothesis.internal import charmap
+from hypothesis.internal.compat import hunichr, text_type, binary_type
+from hypothesis.internal.intervalsets import IntervalSet
+from hypothesis.internal.conjecture.utils import integer_range
+from hypothesis.searchstrategy.strategies import SearchStrategy, \
+    MappedSearchStrategy
 
 
-unicode_categories = set([
-    'Cc', 'Cf', 'Cn', 'Co', 'Cs', 'Ll', 'Lm', 'Lo', 'Lt', 'Lu', 'Mc', 'Me',
-    'Mn', 'Nd', 'Nl', 'No', 'Pc', 'Pd', 'Pe', 'Pf', 'Pi', 'Po', 'Ps', 'Sc',
-    'Sk', 'Sm', 'So', 'Zl', 'Zp', 'Zs'
-])
-
-
-def int_to_chr(i):
-    if i < 127:
-        return CHR_ORDER[i]
-    return hunichr(i)
-
-
-def chr_to_int(c):
-    i = ord(c)
-    if i < 127:
-        return REVERSE_CHR_ORDER[i]
-    return i
-
-
-class OneCharStringStrategy(FixedStrategy):
+class OneCharStringStrategy(SearchStrategy):
 
     """A strategy which generates single character strings of text type."""
     specifier = text_type
@@ -84,72 +39,43 @@ class OneCharStringStrategy(FixedStrategy):
                  blacklist_characters=None,
                  min_codepoint=None,
                  max_codepoint=None):
-        FixedStrategy.__init__(self, 3)
-        if whitelist_categories is not None:
-            whitelist_categories = set(whitelist_categories)
+        intervals = charmap.query(
+            include_categories=whitelist_categories,
+            exclude_categories=blacklist_categories,
+            min_codepoint=min_codepoint,
+            max_codepoint=max_codepoint,
+        )
+        if not intervals:
+            raise InvalidArgument(
+                'No valid characters in set'
+            )
+        self.intervals = IntervalSet(intervals)
+        if blacklist_characters:
+            self.blacklist_characters = set(
+                b for b in blacklist_characters if ord(b) in self.intervals
+            )
+            if len(self.blacklist_characters) == len(self.intervals):
+                raise InvalidArgument(
+                    'No valid characters in set'
+                )
         else:
-            whitelist_categories = set(unicode_categories)
-        self.whitelist_categories = whitelist_categories
-        if blacklist_categories:
-            self.whitelist_categories -= set(blacklist_categories)
+            self.blacklist_characters = set()
+        self.zero_point = self.intervals.index_above(ord('0'))
 
-        self.min_codepoint = int(min_codepoint or 0)
-        self.max_codepoint = int(max_codepoint or sys.maxunicode)
-        self.blacklist_characters = set(blacklist_characters or ())
-        self.count = 0
+    def do_draw(self, data):
+        def d(random):
+            i = random.randint(0, len(self.intervals.offsets) - 1)
+            u, v = self.intervals.intervals[i]
+            return self.intervals.offsets[i] + random.randint(0, v - u + 1)
 
-        intervals_by_category = {}
-        for i in hrange(0, max(128, self.max_codepoint + 1)):
-            c = int_to_chr(i)
-            if ord(c) < self.min_codepoint or ord(c) > self.max_codepoint:
-                continue
-            if c in self.blacklist_characters:
-                continue
-            cat = unicodedata.category(c)
-            if cat not in self.whitelist_categories:
-                continue
-            self.count += 1
-            intervals = intervals_by_category.setdefault(cat, [])
-            if not intervals or i > intervals[-1][-1] + 1:
-                intervals.append([i, i])
-            else:
-                assert i == intervals[-1][-1] + 1
-                intervals[-1][-1] += 1
-
-        self.intervals_by_category = sorted(intervals_by_category.values())
-        self.allow_newlines = self.is_acceptable(u'\n')
-
-        if not intervals_by_category:
-            raise InvalidArgument('Empty set of allowed characters')
-
-    def from_bytes(self, b):
-        i = int.from_bytes(b, 'big')
-        assume(i <= sys.maxunicode)
-        return int_to_chr(i)
-
-    def to_bytes(self, c):
-        i = chr_to_int(c)
-        return i.to_bytes(3, 'big')
-
-    def is_acceptable(self, char):
-        i = ord(char)
-        if i < self.min_codepoint:
-            return False
-        if i > self.max_codepoint:
-            return False
-        if char in self.blacklist_characters:
-            return False
-        if unicodedata.category(char) not in self.whitelist_categories:
-            return False
-        return True
-
-    def draw_value(self, random):
-        if self.allow_newlines and random.randint(1, 10) == 10:
-            return u'\n'
-        cat = random.choice(self.intervals_by_category)
-        interval = random.choice(cat)
-        i = random.randint(*interval)
-        return int_to_chr(i)
+        while True:
+            i = integer_range(
+                data, 0, len(self.intervals) - 1,
+                center=self.zero_point, distribution=d
+            )
+            c = hunichr(self.intervals[i])
+            if c not in self.blacklist_characters:
+                return c
 
 
 class StringStrategy(MappedSearchStrategy):

@@ -375,10 +375,11 @@ def given(*generator_arguments, **generator_kwargs):
                 if runtime > 1.0 or count < 10:
                     fail_health_check((
                         'Data generation is extremely slow: Only produced '
-                        '%d valid examples in %.2f seconds. Try decreasing '
-                        "size of the data yo're generating (with e.g."
+                        '%d valid examples in %.2f seconds (%d invalid ones '
+                        'and %d exceeded maximum size). Try decreasing '
+                        "size of the data you're generating (with e.g."
                         'average_size or max_leaves parameters).'
-                    ) % (count, runtime))
+                    ) % (count, runtime, filtered_draws, overruns))
                 if getglobalrandomstate() != initial_state:
                     fail_health_check(
                         'Data generation depends on global random module. '
@@ -490,7 +491,7 @@ def given(*generator_arguments, **generator_kwargs):
                             search_strategy, test,
                             print_example=True, is_final=True
                         ))
-            except UnsatisfiedAssumption:
+            except (UnsatisfiedAssumption, StopTest):
                 report(traceback.format_exc())
                 raise Flaky(
                     'Unreliable assumption: An example which satisfied '
@@ -502,6 +503,15 @@ def given(*generator_arguments, **generator_kwargs):
                 last_exception[0],
             )
 
+            filter_message = (
+                'Unreliable test data: Failed to reproduce a failure '
+                'and then when it came to recreating the example in '
+                'order to print the test data with a flaky result '
+                'the example was filtered out (by e.g. a '
+                'call to filter in your strategy) when we didn\'t '
+                'expect it to be.'
+            )
+
             try:
                 test_runner(
                     TestData.for_buffer(falsifying_example),
@@ -510,15 +520,8 @@ def given(*generator_arguments, **generator_kwargs):
                         test_is_flaky(test, repr_for_last_exception[0]),
                         print_example=True, is_final=True
                     ))
-            except UnsatisfiedAssumption:
-                raise Flaky(
-                    'Unreliable test data: Failed to reproduce a failure '
-                    'and then when it came to recreating the example in '
-                    'order to print the test data with a flaky result '
-                    'the example was filtered out (by e.g. a '
-                    'call to filter in your strategy) when we didn\'t '
-                    'expect it to be.'
-                )
+            except (UnsatisfiedAssumption, StopTest):
+                raise Flaky(filter_message)
         for attr in dir(test):
             if attr[0] != '_' and not hasattr(wrapped_test, attr):
                 setattr(wrapped_test, attr, getattr(test, attr))

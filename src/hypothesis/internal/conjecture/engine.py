@@ -41,7 +41,6 @@ class TestRunner(object):
         self.last_data = None
         self.changed = 0
         self.shrinks = 0
-        self.failed_shrinks = 0
         self.examples_considered = 0
         self.iterations = 0
         self.valid_examples = 0
@@ -140,11 +139,6 @@ class TestRunner(object):
             self.last_data = data
             self.changed += 1
             return True
-        else:
-            if data.status >= Status.VALID:
-                self.failed_shrinks += 1
-                if self.failed_shrinks >= 10 * self.settings.max_shrinks:
-                    raise RunIsComplete()
         return False
 
     def run(self):
@@ -303,6 +297,13 @@ class TestRunner(object):
                     mutator = self._new_mutator()
 
             mutations += 1
+
+        data = self.last_data
+        debug_report('%d bytes %r -> %r, %s' % (
+            data.index,
+            list(data.buffer[:data.index]), data.status,
+            data.output,
+        ))
 
         if self.settings.max_shrinks <= 0:
             return

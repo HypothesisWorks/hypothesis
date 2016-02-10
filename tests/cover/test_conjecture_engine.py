@@ -391,7 +391,7 @@ def test_no_read_no_shrink():
 
 def test_garbage_collects_the_database():
     key = b'hi there'
-    n = 500
+    n = 200
     db = ExampleDatabase(':memory:')
     assert list(db.fetch(key)) == []
     seen = set()
