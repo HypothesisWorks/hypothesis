@@ -16,8 +16,11 @@
 
 from __future__ import division, print_function, absolute_import
 
+import math
+
 import hypothesis.internal.conjecture.utils as cu
-from hypothesis.errors import NoExamples, NoSuchExample, Unsatisfiable
+from hypothesis.errors import NoExamples, NoSuchExample, Unsatisfiable, \
+    UnsatisfiedAssumption
 from hypothesis.control import assume
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.reflection import get_pretty_function_description
@@ -190,14 +193,26 @@ class OneOfStrategy(SearchStrategy):
 
     """
 
-    def __init__(self,
-                 strategies):
+    def __init__(self, strategies, bias=None):
         SearchStrategy.__init__(self)
         strategies = tuple(strategies)
         self.element_strategies = list(strategies)
+        self.bias = bias
+        if bias is not None:
+            assert 0 < bias < 1
 
     def do_draw(self, data):
-        i = cu.integer_range(data, 0, len(self.element_strategies) - 1)
+        n = len(self.element_strategies)
+        if self.bias is None:
+            i = cu.integer_range(data, 0, n - 1)
+        else:
+            denom = math.log1p(-self.bias)
+            i = cu.integer_range_with_distribution(
+                data, 0, n - 1,
+                lambda r: min(
+                    int(math.log(r.random()) / denom),
+                    n - 1))
+
         return data.draw(self.element_strategies[i])
 
     def __repr__(self):
@@ -241,7 +256,13 @@ class MappedSearchStrategy(SearchStrategy):
             '%s.pack()' % (self.__class__.__name__))
 
     def do_draw(self, data):
-        return self.pack(self.mapped_strategy.do_draw(data))
+        while True:
+            i = data.index
+            try:
+                return self.pack(self.mapped_strategy.do_draw(data))
+            except UnsatisfiedAssumption:
+                if data.index == i:
+                    raise
 
 
 class FilteredStrategy(SearchStrategy):

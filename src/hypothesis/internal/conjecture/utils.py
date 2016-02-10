@@ -32,48 +32,65 @@ def saturate(n):
     return n
 
 
-def integer_range(data, lower, upper):
+def integer_range(data, lower, upper, center=None, distribution=None):
     assert lower <= upper
     if lower == upper:
         return lower
+
+    if center is None:
+        center = lower
+    center = min(max(center, lower), upper)
+    if distribution is None:
+        if lower < center < upper:
+            def distribution(random):
+                if random.randint(0, 1):
+                    return random.randint(center, upper)
+                else:
+                    return random.randint(lower, center)
+        else:
+            distribution = lambda random: random.randint(lower, upper)
+
     gap = upper - lower
     bits = gap.bit_length()
     nbytes = bits // 8 + int(bits % 8 != 0)
     mask = saturate(gap)
-    while True:
-        probe = n_byte_unsigned(data, nbytes) & mask
-        if probe <= gap:
-            return lower + probe
+
+    def byte_distribution(random, n):
+        assert n == nbytes
+        v = distribution(random)
+        if v >= center:
+            probe = v - center
+        else:
+            probe = upper - v
+        return probe.to_bytes(nbytes, 'big')
+    probe = int.from_bytes(
+        data.draw_bytes(nbytes, byte_distribution), 'big') & mask
+    if probe <= gap:
+        if center == upper:
+            result = upper - probe
+        elif center == lower:
+            result = lower + probe
+        else:
+            if center + probe <= upper:
+                result = center + probe
+            else:
+                result = upper - probe
+        assert lower <= result <= upper
+        return result
+    else:
+        data.mark_invalid()
+
+
+def integer_range_with_distribution(data, lower, upper, nums):
+    return integer_range(
+        data, lower, upper, distribution=nums
+    )
 
 
 def centered_integer_range(data, lower, upper, center):
-    """Return an integer n such that lower <= n <= upper, but such that when
-    shrinking it shrinks in the direction of center. It is not required that
-    lower <= enter <= upper."""
-
-    assert lower <= upper
-    if lower == upper:
-        return lower
-
-    gap = upper - lower
-    bits = gap.bit_length()
-    nbytes = bits // 8 + int(bits % 8 != 0)
-    mask = saturate(gap)
-
-    while True:
-        probe = n_byte_unsigned(data, nbytes) & mask
-        if probe <= gap:
-            if center >= upper:
-                result = upper - probe
-            elif center <= lower:
-                result = lower + probe
-            else:
-                if center + probe <= upper:
-                    result = center + probe
-                else:
-                    result = upper - probe
-            assert lower <= result <= upper
-            return result
+    return integer_range(
+        data, lower, upper, center=center
+    )
 
 
 def choice(data, values):

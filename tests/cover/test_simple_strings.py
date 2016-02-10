@@ -23,7 +23,6 @@ import pytest
 
 from hypothesis import find, given, settings
 from hypothesis.strategies import text, binary, tuples
-from hypothesis.searchstrategy.strings import CHR_ORDER
 
 
 def test_can_minimize_up_to_zero():
@@ -32,9 +31,8 @@ def test_can_minimize_up_to_zero():
 
 
 def test_minimizes_towards_ascii_zero():
-    first = [c for c in CHR_ORDER if ord(c) < ord('0')][0]
     s = find(text(), lambda x: any(t < u'0' for t in x))
-    assert s == first
+    assert s == chr(ord(u'0') - 1)
 
 
 def test_can_handle_large_codepoints():

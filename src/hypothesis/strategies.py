@@ -530,6 +530,16 @@ def characters(whitelist_categories=None, blacklist_categories=None,
     pass them with `blacklist_characters` argument.
 
     """
+    if (
+        min_codepoint is not None and max_codepoint is not None and
+        min_codepoint > max_codepoint
+    ):
+        raise InvalidArgument(
+            "Cannot have min_codepoint=%d > max_codepoint=%d " % (
+                min_codepoint, max_codepoint
+            )
+        )
+
     from hypothesis.searchstrategy.strings import OneCharStringStrategy
     return OneCharStringStrategy(whitelist_categories=whitelist_categories,
                                  blacklist_categories=blacklist_categories,

@@ -16,10 +16,12 @@
 
 from __future__ import division, print_function, absolute_import
 
+import math
 from contextlib import contextmanager
 
 from hypothesis.searchstrategy.wrappers import WrapperStrategy
-from hypothesis.internal.conjecture.utils import choice
+from hypothesis.internal.conjecture.utils import \
+    integer_range_with_distribution
 from hypothesis.searchstrategy.strategies import OneOfStrategy, \
     SearchStrategy
 
@@ -63,16 +65,16 @@ class RecursiveStrategy(SearchStrategy):
         strategies = [self.base, self.extend(self.base)]
         while 2 ** len(strategies) <= max_leaves:
             strategies.append(
-                extend(OneOfStrategy(tuple(strategies))))
-        self.strategies = strategies
+                extend(OneOfStrategy(tuple(strategies), bias=0.5)))
+        self.strategy = OneOfStrategy(strategies, bias=0.5)
 
     def do_draw(self, data):
+        def capped_geometric(random):
+            denom = math.log1p(-0.5)
+            return int(math.log(random.random()) / denom)
         while True:
-            data.start_example()
-            s = choice(data, self.strategies)
             try:
                 with self.base.capped(self.max_leaves):
-                    return s.do_draw(data)
+                    return data.draw(self.strategy)
             except LimitReached:
                 pass
-            data.stop_example()

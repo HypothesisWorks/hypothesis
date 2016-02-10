@@ -63,6 +63,25 @@ class Minimizer(object):
             return True
         return False
 
+    def _shrink_index(self, i, c):
+        assert 0 <= i < self.size
+        if self.current[i] <= c:
+            return False
+        if self.incorporate(
+            self.current[:i] + bytes([c]) +
+            self.current[i + 1:]
+        ):
+            return True
+        if i == self.size - 1:
+            return False
+        return self.incorporate(
+            self.current[:i] + bytes([c, 255]) +
+            self.current[i + 2:]
+        ) or self.incorporate(
+            self.current[:i] + bytes([c]) +
+            bytes([255] * (self.size - i - 1))
+        )
+
     def run(self):
         if not any(self.current):
             return
@@ -74,62 +93,45 @@ class Minimizer(object):
             ):
                 break
 
-        for i in range(self.size, 0, - 1):
-            if self.incorporate(
-                bytes(i) + self.current[i:]
-            ):
-                break
-
         change_counter = -1
         while self.current and change_counter < self.changes:
             change_counter = self.changes
-            for _ in range(10):
-                self.incorporate(
-                    _draw_predecessor(self.random, self.current)
-                )
-            while True:
-                i = int.from_bytes(self.current, 'big')
-                i >>= 1
-                if not self.incorporate(
-                    i.to_bytes(self.size, 'big')
-                ):
-                    break
-            for c in range(256):
-                i = 0
-                while i < self.size:
-                    if self.current[i] > c:
-                        if not self.incorporate(
-                            self.current[:i] + bytes([c]) +
-                            self.current[i + 1:]
-                        ):
-                            if (
-                                i + 1 < self.size
-                            ):
-                                self.incorporate(
-                                    self.current[:i] + bytes([c, 255]) +
-                                    self.current[i + 2:]
-                                ) or self.incorporate(
-                                    self.current[:i] + bytes([c]) +
-                                    bytes([255] * (self.size - i - 1))
-                                )
-                    i += 1
+            for i in range(self.size):
+                t = self.current[i]
+                if t > 0:
+                    ss = small_shrinks[self.current[i]]
+                    for c in ss:
+                        if self._shrink_index(i, c):
+                            for c in range(self.current[i]):
+                                if c in ss:
+                                    continue
+                                if self._shrink_index(i, c):
+                                    break
+                            break
+
+
+# Table of useful small shrinks to apply to a number.
+# The idea is that we use these first to see if shrinking is likely to work.
+# If it is, we try a full shrink. In the best case scenario this speeds us
+# up by a factor of about 25. It will occasonally cause us to miss
+# shrinks that we could have succeeded with, but oh well. It doesn't fail any
+# of our guarantees because we do try to shrink to -1 among other things.
+small_shrinks = [
+    set(range(b)) for b in range(10)
+]
+
+for b in range(10, 256):
+    result = set()
+    result.add(0)
+    result.add(b - 1)
+    for i in range(8):
+        result.add(b ^ (1 << i))
+    result.discard(b)
+    assert len(result) <= 10
+    small_shrinks.append(sorted(result))
 
 
 def minimize(initial, condition, random=None):
     m = Minimizer(initial, condition, random)
     m.run()
     return m.current
-
-
-def _draw_predecessor(rnd, xs):
-    r = bytearray()
-    any_strict = False
-    for x in xs:
-        if not any_strict:
-            c = rnd.randint(0, x)
-            if c < x:
-                any_strict = True
-        else:
-            c = rnd.randint(0, 255)
-        r.append(c)
-    return bytes(r)

@@ -25,10 +25,15 @@ import pytest
 
 from hypothesis import settings
 from hypothesis.configuration import set_hypothesis_home_dir
+from hypothesis.internal.charmap import charmap, charmap_file
 
 warnings.filterwarnings(u'error', category=UnicodeWarning)
 
 set_hypothesis_home_dir(mkdtemp())
+
+charmap()
+assert os.path.exists(charmap_file())
+
 
 assert isinstance(settings, type)
 
