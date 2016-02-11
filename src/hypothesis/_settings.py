@@ -445,7 +445,7 @@ settings.define_setting(
     'database_file',
     default=lambda: (
         os.getenv('HYPOTHESIS_DATABASE_FILE') or
-        os.path.join(hypothesis_home_dir(), 'examples.db')
+        os.path.join(hypothesis_home_dir(), 'examples')
     ),
     description="""
     database: An instance of hypothesis.database.ExampleDatabase that will be
