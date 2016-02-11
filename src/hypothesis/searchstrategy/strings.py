@@ -62,11 +62,12 @@ class OneCharStringStrategy(SearchStrategy):
             self.blacklist_characters = set()
         self.zero_point = self.intervals.index_above(ord('0'))
         self.special = []
-        n = ord('\n')
-        try:
-            self.special.append(n)
-        except ValueError:
-            pass
+        if '\n' not in self.blacklist_characters:
+            n = ord('\n')
+            try:
+                self.special.append(self.intervals.index(n))
+            except ValueError:
+                pass
 
     def do_draw(self, data):
         denom = math.log1p(-0.5)
