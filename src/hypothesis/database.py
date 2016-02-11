@@ -53,39 +53,35 @@ class EDMeta(type):
 class ExampleDatabase(EDMeta('ExampleDatabase', (object,), {})):
     """Interface class for storage systems.
 
-    Simple binary key -> value mapping.
+    A key -> multiple distinct values mapping.
 
     Keys and values are binary data.
 
-    Every (key, value) pair appears at most once. Saving a duplicate will just
-    silently do nothing.
-
     """
+
+    def save(self, key, value):
+        """save this value under this key.
+
+        If this value is already present for this key, silently do
+        nothing
+
+        """
+        raise NotImplementedError('%s.save' % (type(self).__name__))
 
     def delete(self, key, value):
         """Remove this value from this key.
 
-        This method is optional but should fail silently if not
-        supported. Note that if you do not support it you may see
-        performance degradation over time as a number of values have to
-        be ignored on each run
+        If this value is not present, silently do nothing.
 
         """
         raise NotImplementedError('%s.delete' % (type(self).__name__))
 
     def fetch(self, key):
-        """yield the values matching this key."""
+        """Return all values matching this key."""
         raise NotImplementedError('%s.fetch' % (type(self).__name__))
 
-    def save(self, key, value):
-        """save this value under this key."""
-        raise NotImplementedError('%s.save' % (type(self).__name__))
-
-    def keys(self):
-        raise NotImplementedError('%s.keys' % (type(self).__name__))
-
     def close(self):
-        """Close database connection whenever such is used."""
+        """Clear up any resources associated with this database."""
         raise NotImplementedError('%s.close' % (type(self).__name__))
 
 
@@ -106,11 +102,6 @@ class InMemoryExampleDatabase(ExampleDatabase):
 
     def delete(self, key, value):
         self.data.get(key, set()).discard(value)
-
-    def keys(self):
-        for k, v in self.data.items():
-            if v:
-                yield k
 
     def close(self):
         pass
@@ -185,19 +176,6 @@ class SQLiteExampleDatabase(ExampleDatabase):
                 except binascii.Error:
                     pass
 
-    def keys(self):
-        """Iterate over all keys in the database."""
-        self.create_db_if_needed()
-        with self.cursor() as cursor:
-            cursor.execute("""
-                select distinct key from hypothesis_data_mapping
-            """)
-            for (key,) in cursor:
-                try:
-                    yield base64.b64decode(key)
-                except binascii.Error:
-                    pass
-
     def create_db_if_needed(self):
         if self.db_created:
             return
@@ -233,22 +211,8 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
     def __repr__(self):
         return 'DirectoryBasedExampleDatabase(%r)' % (self.path,)
 
-    def create_db_if_needed(self):
-        mkdirp(self.path)
-
     def close(self):
         pass
-
-    def keys(self):
-        self.create_db_if_needed()
-        for d in os.listdir(self.path):
-            files = os.listdir(os.path.join(self.path, d))
-            if len(files) > 1 and 'name' in files:
-                namefile = os.path.join(self.path, d, 'name')
-                with open(namefile, 'rb') as i:
-                    result = i.read()
-                if _hash(result) == d:
-                    yield result
 
     def _key_path(self, key):
         try:
@@ -257,22 +221,6 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
             pass
         directory = os.path.join(self.path, _hash(key))
         mkdirp(directory)
-        namefile = os.path.join(directory, 'name')
-        if os.path.exists(namefile):
-            with open(namefile, 'rb') as r:
-                ex = r.read()
-            if ex != key:
-                os.unlink(namefile)
-        if not os.path.exists(namefile):
-            tmpname = os.path.join(
-                directory, str(binascii.hexlify(os.urandom(16))))
-            with open(tmpname, 'wb') as w:
-                w.write(key)
-            try:
-                os.rename(tmpname, namefile)
-            except OSError:  # pragma: no cover
-                os.unlink(tmpname)
-        assert os.path.exists(namefile)
         self.keypaths[key] = directory
         return directory
 
@@ -285,13 +233,20 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
     def fetch(self, key):
         kp = self._key_path(key)
         for path in os.listdir(kp):
-            if path != 'name':
-                with open(os.path.join(kp, path), 'rb') as i:
-                    yield i.read()
+            with open(os.path.join(kp, path), 'rb') as i:
+                yield i.read()
 
     def save(self, key, value):
-        with open(self._value_path(key, value), 'wb') as o:
-            o.write(value)
+        path = self._value_path(key, value)
+        if not os.path.exists(path):
+            tmpname = path + '.' + str(binascii.hexlify(os.urandom(16)))
+            with open(tmpname, 'wb') as o:
+                o.write(value)
+            try:
+                os.rename(tmpname, path)
+            except OSError:  # pragma: no cover
+                os.unlink(tmpname)
+            assert not os.path.exists(tmpname)
 
     def delete(self, key, value):
         try:
