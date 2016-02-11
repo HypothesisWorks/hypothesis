@@ -437,3 +437,17 @@ def test_variable_replacement():
                 data.mark_invalid()
         data.mark_interesting()
     assert x == x[:x.index(0) + 1] * 5
+
+
+@given(st.randoms(), st.random_module())
+def test_maliciously_bad_generator(rnd, seed):
+    rnd = Random()
+
+    @run_to_buffer
+    def x(data):
+        for _ in range(rnd.randint(0, 100)):
+            data.draw_bytes(rnd.randint(0, 10))
+        if rnd.randint(0, 1):
+            data.mark_invalid()
+        else:
+            data.mark_interesting()

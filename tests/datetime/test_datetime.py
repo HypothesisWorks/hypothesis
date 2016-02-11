@@ -29,7 +29,8 @@ from hypothesis.extra.datetime import datetimes
 from hypothesis.internal.debug import minimal
 from hypothesis.internal.compat import hrange
 
-TestStandardDescriptorFeatures1 = strategy_test_suite(datetimes())
+TestStandardDescriptorFeatures1 = strategy_test_suite(
+    datetimes(), max_examples=5000)
 TestStandardDescriptorFeatures2 = strategy_test_suite(
     datetimes(allow_naive=False))
 TestStandardDescriptorFeatures3 = strategy_test_suite(
