@@ -115,12 +115,7 @@ class TestRunner(object):
         ):
             raise RunIsComplete()
         self.examples_considered += 1
-        if (
-            len(buffer) >= len(self.last_data.buffer) and (
-                buffer[:self.last_data.index] >=
-                self.last_data.buffer[:self.last_data.index])
-        ):
-            return False
+        assert sort_key(buffer) <= sort_key(self.last_data.buffer)
         data = TestData.for_buffer(buffer[:self.last_data.index])
         self.test_function(data)
         data.freeze()
@@ -424,3 +419,7 @@ def _draw_successor(rnd, xs):
             c = rnd.randint(0, 255)
         r.append(c)
     return bytes(r)
+
+
+def sort_key(buffer):
+    return (len(buffer), buffer)

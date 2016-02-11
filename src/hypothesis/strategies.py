@@ -535,7 +535,7 @@ def characters(whitelist_categories=None, blacklist_categories=None,
         min_codepoint > max_codepoint
     ):
         raise InvalidArgument(
-            "Cannot have min_codepoint=%d > max_codepoint=%d " % (
+            'Cannot have min_codepoint=%d > max_codepoint=%d ' % (
                 min_codepoint, max_codepoint
             )
         )
