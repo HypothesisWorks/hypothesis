@@ -22,12 +22,9 @@ from random import Random
 import faker
 from faker.factory import AVAILABLE_LOCALES
 
-import hypothesis.internal.distributions as dist
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.internal.reflection import check_valid_identifier
-from hypothesis.internal.distributions import geometric
-from hypothesis.searchstrategy.strategies import SearchStrategy, \
-    check_data_type
+from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
 def fake_factory(source, locale=None, locales=None, providers=()):
@@ -74,13 +71,20 @@ class FakeFactoryStrategy(SearchStrategy):
         self.locales = tuple(locales)
         self.factories = {}
 
-    def draw_parameter(self, random):
-        locales = dist.non_empty_subset(random, self.locales)
-        n = 1 + geometric(random, 0.1)
-        return [
-            self.gen_example(random, locales)
-            for _ in hrange(n)
-        ]
+    def do_draw(self, data):
+        seed = data.draw_bytes(5)
+        shrinks = 255 - seed[-1]
+        random = Random(seed)
+        example = self.gen_example(random)
+        for _ in range(shrinks):
+            replacement = self.gen_example(random)
+            if (
+                len(replacement) < len(example) or (
+                    len(replacement) == len(example) and replacement < example
+                )
+            ):
+                example = replacement
+        return example
 
     def factory_for(self, locale):
         try:
@@ -93,8 +97,8 @@ class FakeFactoryStrategy(SearchStrategy):
             factory.add_provider(p)
         return factory
 
-    def gen_example(self, random, locales):
-        factory = self.factory_for(random.choice(locales))
+    def gen_example(self, random):
+        factory = self.factory_for(random.choice(self.locales))
         original = globalrandom.getstate()
         seed = random.getrandbits(128)
         try:
@@ -102,26 +106,3 @@ class FakeFactoryStrategy(SearchStrategy):
             return text_type(getattr(factory, self.source)())
         finally:
             globalrandom.setstate(original)
-
-    def basic_simplify(self, random, template):
-        for _ in hrange(10):
-            y = self.gen_example(
-                Random(template.encode(u'utf-8')), self.locales)
-            if self.strictly_simpler(y, template):
-                yield y
-
-    def strictly_simpler(self, x, y):
-        return (len(x), x) < (len(y), y)
-
-    def draw_template(self, random, pv):
-        return random.choice(pv)
-
-    def reify(self, template):
-        return template
-
-    def to_basic(self, value):
-        return value
-
-    def from_basic(self, value):
-        check_data_type(text_type, value)
-        return value
