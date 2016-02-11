@@ -16,8 +16,9 @@
 
 from __future__ import division, print_function, absolute_import
 
-import os
 import base64
+
+import pytest
 
 from hypothesis import given, settings
 from hypothesis.database import ExampleDatabase, SQLiteExampleDatabase, \
@@ -81,14 +82,6 @@ def test_can_delete_keys():
     assert list(backend.fetch(b'foo')) == [b'baz']
 
 
-def test_can_fetch_all_keys():
-    backend = SQLiteExampleDatabase(':memory:')
-    backend.save(b'foo', b'bar')
-    backend.save(b'foo', b'baz')
-    backend.save(b'boib', b'baz')
-    assert len(list(backend.keys())) == 2
-
-
 def test_ignores_badly_stored_values():
     backend = SQLiteExampleDatabase(':memory:')
     backend.create_db_if_needed()
@@ -98,17 +91,6 @@ def test_ignores_badly_stored_values():
             values(?, ?)
         """, (base64.b64encode(b'foo'), u'kittens'))
     assert list(backend.fetch(b'foo')) == []
-
-
-def test_ignores_badly_stored_keys():
-    backend = SQLiteExampleDatabase(':memory:')
-    backend.create_db_if_needed()
-    with backend.cursor() as cursor:
-        cursor.execute("""
-            insert into hypothesis_data_mapping(key, value)
-            values(?, ?)
-        """, (u'badgers', base64.b64encode(b'kittens')))
-    assert list(backend.keys()) == []
 
 
 def test_default_database_is_in_memory():
@@ -141,13 +123,55 @@ def test_selects_sqlite_if_already_sqlite(tmpdir):
     assert isinstance(ExampleDatabase(path), SQLiteExampleDatabase)
 
 
-def test_ignores_mangled_names(tmpdir):
-    path = str(tmpdir.join('hi'))
-    db = DirectoryBasedExampleDatabase(path)
-    db.save(b'foo', b'bar')
-    with open(os.path.join(path, os.listdir(path)[0], 'name'), 'wb') as wb:
-        wb.write(b"nope")
-    assert list(db.keys()) == []
+def test_does_not_error_when_fetching_when_not_exist(tmpdir):
+    db = DirectoryBasedExampleDatabase(tmpdir.join('examples'))
+    db.fetch(b'foo')
+
+
+@pytest.fixture(scope='function', params=['memory', 'sql', 'directory'])
+def exampledatabase(request, tmpdir):
+    if request.param == 'memory':
+        return ExampleDatabase()
+    if request.param == 'sql':
+        return SQLiteExampleDatabase(str(tmpdir.join('example.db')))
+    if request.param == 'directory':
+        return DirectoryBasedExampleDatabase(str(tmpdir.join('examples')))
+    assert False
+
+
+def test_can_delete_a_key_that_is_not_present(exampledatabase):
+    exampledatabase.delete(b'foo', b'bar')
+
+
+def test_can_fetch_a_key_that_is_not_present(exampledatabase):
+    assert list(exampledatabase.fetch(b'foo')) == []
+
+
+def test_saving_a_key_twice_fetches_it_once(exampledatabase):
+    exampledatabase.save(b'foo', b'bar')
+    exampledatabase.save(b'foo', b'bar')
+    assert list(exampledatabase.fetch(b'foo')) == [b'bar']
+
+
+def test_can_close_a_database_without_touching_it(exampledatabase):
+    exampledatabase.close()
+
+
+def test_can_close_a_database_after_saving(exampledatabase):
+    exampledatabase.save(b'foo', b'bar')
+
+
+def test_class_name_is_in_repr(exampledatabase):
+    assert type(exampledatabase).__name__ in repr(exampledatabase)
+    exampledatabase.close()
+
+
+def test_two_directory_databases_can_interact(tmpdir):
+    path = str(tmpdir)
+    db1 = DirectoryBasedExampleDatabase(path)
     db2 = DirectoryBasedExampleDatabase(path)
+    db1.save(b'foo', b'bar')
+    assert list(db2.fetch(b'foo')) == [b'bar']
+    db2.save(b'foo', b'bar')
     db2.save(b'foo', b'baz')
-    assert list(db2.keys()) == [b'foo']
+    assert sorted(db1.fetch(b'foo')) == [b'bar', b'baz']

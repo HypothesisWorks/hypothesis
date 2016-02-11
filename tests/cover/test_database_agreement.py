@@ -16,6 +16,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import os
 import shutil
 import tempfile
 
@@ -30,10 +31,12 @@ class DatabaseComparison(RuleBasedStateMachine):
     def __init__(self):
         super(DatabaseComparison, self).__init__()
         self.tempd = tempfile.mkdtemp()
+        exampledir = os.path.join(self.tempd, 'examples')
+
         self.dbs = [
-            DirectoryBasedExampleDatabase(self.tempd),
+            DirectoryBasedExampleDatabase(exampledir),
             InMemoryExampleDatabase(), SQLiteExampleDatabase(':memory:'),
-            DirectoryBasedExampleDatabase(self.tempd),
+            DirectoryBasedExampleDatabase(exampledir),
         ]
 
     keys = Bundle('keys')
@@ -56,15 +59,6 @@ class DatabaseComparison(RuleBasedStateMachine):
     def delete(self, k, v):
         for db in self.dbs:
             db.delete(k, v)
-
-    @rule()
-    def keys_agree(self):
-        last = None
-        for db in self.dbs:
-            keys = set(db.keys())
-            if last is not None:
-                assert last == keys
-            last = keys
 
     @rule(k=keys)
     def values_agree(self, k):
