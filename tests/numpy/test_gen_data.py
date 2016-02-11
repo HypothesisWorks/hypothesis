@@ -68,8 +68,8 @@ def test_generates_and_minimizes():
     assert (x == np.zeros(shape=(2, 2), dtype=float)).all()
 
 
-def test_can_minimize_large_arrays_easily():
-    x = find(arrays(u'uint32', 1000), lambda t: t.any())
+def test_can_minimize_large_arrays():
+    x = find(arrays(u'uint32', 500), lambda t: t.any())
     assert x.sum() == 1
 
 
