@@ -115,6 +115,7 @@ class TestRunner(object):
         ):
             raise RunIsComplete()
         self.examples_considered += 1
+        buffer = buffer[:self.last_data.index]
         assert sort_key(buffer) <= sort_key(self.last_data.buffer)
         data = TestData.for_buffer(buffer[:self.last_data.index])
         self.test_function(data)
