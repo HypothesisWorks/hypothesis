@@ -16,7 +16,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-from bisect import bisect_left
+import math
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal import charmap
@@ -61,12 +61,27 @@ class OneCharStringStrategy(SearchStrategy):
         else:
             self.blacklist_characters = set()
         self.zero_point = self.intervals.index_above(ord('0'))
+        self.special = []
+        n = ord('\n')
+        try:
+            self.special.append(n)
+        except ValueError:
+            pass
 
     def do_draw(self, data):
+        denom = math.log1p(-0.5)
+
         def d(random):
-            i = random.randint(0, len(self.intervals.offsets) - 1)
-            u, v = self.intervals.intervals[i]
-            return self.intervals.offsets[i] + random.randint(0, v - u + 1)
+            if self.special and random.randint(0, 10) == 0:
+                return random.choice(self.special)
+            if random.randint(0, 1):
+                i = random.randint(0, len(self.intervals.offsets) - 1)
+                u, v = self.intervals.intervals[i]
+                return self.intervals.offsets[i] + random.randint(0, v - u + 1)
+            else:
+                return min(
+                    len(self.intervals) - 1,
+                    int(math.log(random.random()) / denom))
 
         while True:
             i = integer_range(

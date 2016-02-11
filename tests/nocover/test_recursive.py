@@ -122,9 +122,7 @@ def test_can_use_recursive_data_in_sets(rnd):
     )
 
 
-@given(st.random_module())
-@settings(max_examples=10, max_shrinks=0)
-def test_can_form_sets_of_recursive_data(rnd):
+def test_can_form_sets_of_recursive_data():
     trees = st.sets(st.recursive(
         st.booleans(),
         lambda x: st.lists(x, min_size=5).map(tuple),

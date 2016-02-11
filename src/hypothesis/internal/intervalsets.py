@@ -64,6 +64,16 @@ class IntervalSet(object):
     def __repr__(self):
         return 'IntervalSet(%r)' % (self.intervals,)
 
+    def index(self, value):
+        for offset, (u, v) in zip(self.offsets, self.intervals):
+            if u == value:
+                return offset
+            elif u > value:
+                raise ValueError('%d is not in list' % (value,))
+            if value <= v:
+                return offset + (value - u)
+        raise ValueError('%d is not in list' % (value,))
+
     def index_above(self, value):
         for offset, (u, v) in zip(self.offsets, self.intervals):
             if u >= value:

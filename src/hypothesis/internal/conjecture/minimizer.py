@@ -16,8 +16,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-from random import Random
-
 
 """
 This module implements a lexicographic minimizer for blocks of bytes.
@@ -43,7 +41,7 @@ class Minimizer(object):
         self.current = initial
         self.size = len(self.current)
         self.condition = condition
-        self.random = random or Random()
+        self.random = random
         self.changes = 0
         self.seen = set()
         self.considerations = 0
