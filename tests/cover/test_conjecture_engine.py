@@ -19,7 +19,8 @@ from __future__ import division, print_function, absolute_import
 import time
 from random import Random
 
-from hypothesis import settings
+from hypothesis import strategies as st
+from hypothesis import given, settings
 from hypothesis.database import ExampleDatabase
 from hypothesis.internal.conjecture.data import Status, TestData
 from hypothesis.internal.conjecture.engine import TestRunner
@@ -270,7 +271,9 @@ def test_stops_after_max_examples_when_generating():
     assert len(seen) == 1
 
 
-def test_interleaving_engines():
+@given(st.random_module())
+@settings(max_shrinks=0, timeout=3)
+def test_interleaving_engines(rnd):
     @run_to_buffer
     def x(data):
         rnd = Random(data.draw_bytes(8))
