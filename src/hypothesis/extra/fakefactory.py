@@ -76,7 +76,7 @@ class FakeFactoryStrategy(SearchStrategy):
         shrinks = 255 - seed[-1]
         random = Random(seed)
         example = self.gen_example(random)
-        for _ in range(shrinks):
+        for _ in hrange(shrinks):
             replacement = self.gen_example(random)
             if (
                 len(replacement) < len(example) or (
