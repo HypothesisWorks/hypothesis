@@ -16,12 +16,9 @@
 
 from __future__ import division, print_function, absolute_import
 
-import math
 from contextlib import contextmanager
 
 from hypothesis.searchstrategy.wrappers import WrapperStrategy
-from hypothesis.internal.conjecture.utils import \
-    integer_range_with_distribution
 from hypothesis.searchstrategy.strategies import OneOfStrategy, \
     SearchStrategy
 
@@ -66,7 +63,7 @@ class RecursiveStrategy(SearchStrategy):
         while 2 ** len(strategies) <= max_leaves:
             strategies.append(
                 extend(OneOfStrategy(tuple(strategies), bias=0.5)))
-        self.strategy = OneOfStrategy(strategies, bias=0.5)
+        self.strategy = OneOfStrategy(strategies)
 
     def do_draw(self, data):
         while True:
