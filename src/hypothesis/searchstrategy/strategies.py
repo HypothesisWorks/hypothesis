@@ -21,7 +21,7 @@ import math
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis.errors import NoExamples, NoSuchExample, Unsatisfiable, \
     UnsatisfiedAssumption
-from hypothesis.control import assume
+from hypothesis.control import assume, reject
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.reflection import get_pretty_function_description
 
@@ -256,13 +256,14 @@ class MappedSearchStrategy(SearchStrategy):
             '%s.pack()' % (self.__class__.__name__))
 
     def do_draw(self, data):
-        while True:
+        for _ in range(3):
             i = data.index
             try:
                 return self.pack(self.mapped_strategy.do_draw(data))
             except UnsatisfiedAssumption:
                 if data.index == i:
                     raise
+        reject()
 
 
 class FilteredStrategy(SearchStrategy):

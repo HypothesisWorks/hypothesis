@@ -69,9 +69,6 @@ class RecursiveStrategy(SearchStrategy):
         self.strategy = OneOfStrategy(strategies, bias=0.5)
 
     def do_draw(self, data):
-        def capped_geometric(random):
-            denom = math.log1p(-0.5)
-            return int(math.log(random.random()) / denom)
         while True:
             try:
                 with self.base.capped(self.max_leaves):

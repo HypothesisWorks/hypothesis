@@ -16,6 +16,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+import pytest
+
 import hypothesis.strategies as st
 from hypothesis import given
 from hypothesis.internal.intervalsets import IntervalSet
@@ -49,3 +51,23 @@ def test_intervals_are_equivalent_to_their_lists(intervals):
         assert ls[i] == intervals[i]
     for i in range(1, len(ls) - 1):
         assert ls[-i] == intervals[-i]
+
+
+def test_validates_index():
+    with pytest.raises(IndexError):
+        IntervalSet([])[1]
+
+    with pytest.raises(IndexError):
+        IntervalSet([[1, 10]])[11]
+
+    with pytest.raises(IndexError):
+        IntervalSet([[1, 10]])[-11]
+
+
+def test_index_above_is_index_if_present():
+    assert IntervalSet([[1, 10]]).index_above(1) == 0
+    assert IntervalSet([[1, 10]]).index_above(2) == 1
+
+
+def test_index_above_is_length_if_higher():
+    assert IntervalSet([[1, 10]]).index_above(100) == 10

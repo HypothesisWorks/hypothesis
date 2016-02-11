@@ -24,6 +24,8 @@ import hypothesis.reporting as reporting
 import hypothesis.strategies as st
 from hypothesis import given, settings
 from hypothesis.errors import FailedHealthCheck
+from hypothesis.control import assume
+from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
 def test_slow_generation_fails_a_health_check():
@@ -112,9 +114,17 @@ def test_filtering_everything_fails_a_health_check():
     assert 'filter' in e.value.args[0]
 
 
+class fails_regularly(SearchStrategy):
+
+    def do_draw(self, data):
+        b = int.from_bytes(data.draw_bytes(2), 'big')
+        assume(b == 3)
+        print('ohai')
+
+
 @settings(max_shrinks=0)
 def test_filtering_most_things_fails_a_health_check():
-    @given(st.integers().filter(lambda x: x % 100 == 11))
+    @given(fails_regularly())
     @settings(database=None)
     def test(x):
         pass
