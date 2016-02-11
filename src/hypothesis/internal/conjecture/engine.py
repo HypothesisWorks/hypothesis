@@ -100,7 +100,7 @@ class TestRunner(object):
             self.database_key is not None
         ):
             self.settings.database.save(
-                self.database_key, buffer
+                self.database_key, bytes(buffer)
             )
 
     def note_for_corpus(self, data):
@@ -116,8 +116,10 @@ class TestRunner(object):
             raise RunIsComplete()
         self.examples_considered += 1
         buffer = buffer[:self.last_data.index]
+        if sort_key(buffer) >= sort_key(self.last_data.buffer):
+            return False
         assert sort_key(buffer) <= sort_key(self.last_data.buffer)
-        data = TestData.for_buffer(buffer[:self.last_data.index])
+        data = TestData.for_buffer(buffer)
         self.test_function(data)
         data.freeze()
         self.note_for_corpus(data)
