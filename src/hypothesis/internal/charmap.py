@@ -87,8 +87,8 @@ def _union_interval_lists(x, y):
     while intervals:
         u, v = intervals.pop()
         a, b = result[-1]
-        if u <= b:
-            result[-1] = (u, b)
+        if u <= b + 1:
+            result[-1] = (a, v)
         else:
             result.append((u, v))
     return tuple(result)
@@ -155,7 +155,3 @@ def query(
     result = tuple(result)
     limited_category_index_cache[qkey] = result
     return result
-
-
-if __name__ == '__main__':
-    write_charmap()

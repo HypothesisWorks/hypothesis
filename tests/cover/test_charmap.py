@@ -66,6 +66,20 @@ def test_query_matches_categories(exclude, include):
             assert cat not in exclude
 
 
+@given(
+    st.sets(st.sampled_from(cm.categories())),
+    st.sets(st.sampled_from(cm.categories())) | st.none(),
+    st.integers(0, sys.maxunicode), st.integers(0, sys.maxunicode),
+)
+def test_query_matches_categories_codepoints(exclude, include, m1, m2):
+    m1, m2 = sorted((m1, m2))
+    values = cm.query(exclude, include, min_codepoint=m1, max_codepoint=m2)
+    assert_valid_range_list(values)
+    for u, v in values:
+        assert m1 <= u
+        assert v <= m2
+
+
 @given(st.sampled_from(cm.categories()), st.integers(0, sys.maxunicode))
 def test_exclude_only_excludes_from_that_category(cat, i):
     c = hunichr(i)
@@ -91,3 +105,15 @@ def test_recreate_charmap():
     y = cm.charmap()
     assert x is not y
     assert x == y
+
+
+def test_union_empty():
+    assert cm._union_interval_lists([], [[1, 2]]) == [[1, 2]]
+    assert cm._union_interval_lists([[1, 2]], []) == [[1, 2]]
+
+
+def test_successive_union():
+    x = []
+    for v in cm.charmap().values():
+        x = cm._union_interval_lists(x, v)
+    assert x == ((0, sys.maxunicode),)
