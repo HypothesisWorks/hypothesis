@@ -23,6 +23,7 @@ import unicodedata
 
 import marshal
 from hypothesis.configuration import storage_directory
+from hypothesis.internal.compat import hunichr
 
 
 def charmap_file():
@@ -41,7 +42,7 @@ def charmap():
         if not os.path.exists(f):
             _charmap = {}
             for i in range(0, sys.maxunicode + 1):
-                cat = unicodedata.category(chr(i))
+                cat = unicodedata.category(hunichr(i))
                 rs = _charmap.setdefault(cat, [])
                 if rs and rs[-1][-1] == i - 1:
                     rs[-1][-1] += 1
@@ -53,9 +54,9 @@ def charmap():
                 (k, tuple((map(tuple, v))))
                 for k, v in _charmap.items())
             with gzip.GzipFile(f, 'wb', mtime=1) as o:
-                marshal.dump(data, o)
+                o.write(marshal.dumps(data))
         with gzip.open(f, 'rb') as i:
-            _charmap = dict(marshal.load(i))
+            _charmap = dict(marshal.loads(i.read()))
     assert _charmap is not None
     return _charmap
 
