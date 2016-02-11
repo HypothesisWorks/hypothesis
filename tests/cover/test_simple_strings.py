@@ -22,7 +22,7 @@ from random import Random
 import pytest
 
 from hypothesis import find, given, settings
-from hypothesis.strategies import text, binary, tuples
+from hypothesis.strategies import text, binary, tuples, characters
 
 
 def test_can_minimize_up_to_zero():
@@ -102,3 +102,13 @@ def test_respects_alphabet_if_string(xs):
 @given(text())
 def test_can_encode_as_utf8(s):
     s.encode('utf-8')
+
+
+@given(text(characters(blacklist_characters=u'\n')))
+def test_can_blacklist_newlines(s):
+    assert u'\n' not in s
+
+
+@given(text(characters(blacklist_categories=('Cc', 'Cs'))))
+def test_can_exclude_newlines_by_category(s):
+    assert u'\n' not in s
