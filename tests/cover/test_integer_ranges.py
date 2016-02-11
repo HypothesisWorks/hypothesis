@@ -17,7 +17,7 @@
 from __future__ import division, print_function, absolute_import
 
 import hypothesis.strategies as st
-from hypothesis import find, given, settings, Verbosity
+from hypothesis import find, given, settings
 from hypothesis.internal.conjecture.data import TestData
 from hypothesis.internal.conjecture.utils import integer_range
 from hypothesis.searchstrategy.strategies import SearchStrategy
