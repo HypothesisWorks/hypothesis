@@ -122,7 +122,7 @@ else:
         if isinstance(data, bytes):
             data = bytearray(data)
         i = 0
-        for b in reversed(data):
+        for b in data:
             i <<= 8
             i |= b
         return i
@@ -134,6 +134,7 @@ else:
         while i and j >= 0:
             result[j] = i & 255
             i >>= 8
+            j -= 1
         if i:
             raise OverflowError('int too big to convert')
         return bytes(result)
