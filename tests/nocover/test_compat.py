@@ -83,6 +83,6 @@ if getargspec is not None and HAS_SIGNATURE:
             assert getattr(real, f) == getattr(fake, f)
 
 
-@given(st.bytes())
+@given(st.binary())
 def test_convert_back(bs):
     assert int_to_bytes(int_from_bytes(bs), len(bs)) == bs
