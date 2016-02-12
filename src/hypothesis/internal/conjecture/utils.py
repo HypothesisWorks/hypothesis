@@ -37,7 +37,7 @@ def saturate(n):
 def integer_range(data, lower, upper, center=None, distribution=None):
     assert lower <= upper
     if lower == upper:
-        return lower
+        return int(lower)
 
     if center is None:
         center = lower
@@ -77,7 +77,7 @@ def integer_range(data, lower, upper, center=None, distribution=None):
             else:
                 result = upper - probe
         assert lower <= result <= upper
-        return result
+        return int(result)
     else:
         data.mark_invalid()
 

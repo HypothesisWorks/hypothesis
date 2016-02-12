@@ -50,7 +50,8 @@ class IntegersFromStrategy(SearchStrategy):
         return 'IntegersFromStrategy(%d)' % (self.lower_bound,)
 
     def do_draw(self, data):
-        return self.lower_bound + d.geometric(data, 1.0 / self.average_size)
+        return int(
+            self.lower_bound + d.geometric(data, 1.0 / self.average_size))
 
 
 class WideRangeIntStrategy(IntStrategy):
@@ -83,7 +84,7 @@ class WideRangeIntStrategy(IntStrategy):
         r &= (~sign_mask)
         if negative:
             r = -r
-        return r
+        return int(r)
 
 
 class BoundedIntStrategy(SearchStrategy):
