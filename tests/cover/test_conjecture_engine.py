@@ -138,7 +138,7 @@ def test_terminates_shrinks():
     shrinks = [-1]
 
     def tf(data):
-        x = data.draw_bytes(1024 * 8)
+        x = hbytes(data.draw_bytes(1024 * 8))
         for i in range(256):
             if x.count(i) <= 1:
                 return
@@ -286,7 +286,7 @@ def test_stops_after_max_examples_when_generating():
 def test_interleaving_engines(rnd):
     @run_to_buffer
     def x(data):
-        rnd = Random(data.draw_bytes(8))
+        rnd = Random(hbytes(data.draw_bytes(8)))
 
         def g(d2):
             while True:
@@ -334,7 +334,7 @@ def test_max_shrinks_can_disable_shrinking():
     seen = set()
 
     def f(data):
-        seen.add(bytes(data.draw_bytes(32)))
+        seen.add(hbytes(data.draw_bytes(32)))
         data.mark_interesting()
 
     runner = TestRunner(f, settings=settings(database=None, max_shrinks=0,))
@@ -352,7 +352,7 @@ def test_saves_data_while_shrinking():
     def f(data):
         x = data.draw_bytes(512)
         if sum(x) >= 5000 and len(seen) < n:
-            seen.add(bytes(x))
+            seen.add(hbytes(x))
         if hbytes(x) in seen:
             data.mark_interesting()
     runner = TestRunner(
@@ -372,7 +372,7 @@ def test_can_discard():
     def x(data):
         seen = set()
         while len(seen) < n:
-            seen.add(data.draw_bytes(1))
+            seen.add(hbytes(data.draw_bytes(1)))
         data.mark_interesting()
     assert len(x) == n
 
@@ -411,7 +411,7 @@ def test_garbage_collects_the_database():
     go = True
 
     def f(data):
-        x = data.draw_bytes(512)
+        x = hbytes(data.draw_bytes(512))
         if not go:
             return
         if sum(x) >= 5000 and len(seen) < n:
