@@ -137,7 +137,7 @@ else:
             j -= 1
         if i:
             raise OverflowError('int too big to convert')
-        return bytes(result)
+        return hbytes(result)
 
     def bytes_from_list(ls):
         return bytes(bytearray(ls))
