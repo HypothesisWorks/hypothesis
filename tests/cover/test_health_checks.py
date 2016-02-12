@@ -26,6 +26,7 @@ from hypothesis import given, settings
 from hypothesis.errors import FailedHealthCheck
 from hypothesis.control import assume
 from hypothesis.searchstrategy.strategies import SearchStrategy
+from hypothesis.internal.compat import int_from_bytes
 
 
 def test_slow_generation_fails_a_health_check():
@@ -117,7 +118,7 @@ def test_filtering_everything_fails_a_health_check():
 class fails_regularly(SearchStrategy):
 
     def do_draw(self, data):
-        b = int.from_bytes(data.draw_bytes(2), 'big')
+        b = int_from_bytes(data.draw_bytes(2))
         assume(b == 3)
         print('ohai')
 
