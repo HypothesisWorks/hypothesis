@@ -25,8 +25,8 @@ import hypothesis.strategies as st
 from hypothesis import given, settings
 from hypothesis.errors import FailedHealthCheck
 from hypothesis.control import assume
-from hypothesis.searchstrategy.strategies import SearchStrategy
 from hypothesis.internal.compat import int_from_bytes
+from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
 def test_slow_generation_fails_a_health_check():
