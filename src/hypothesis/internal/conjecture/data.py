@@ -21,7 +21,7 @@ from uuid import uuid4
 
 from hypothesis.errors import Frozen
 from hypothesis.internal.compat import hbytes, text_type, int_to_bytes, \
-    unicode_safe_repr
+    unicode_safe_repr, reasonable_byte_type
 
 
 def uniform(random, n):
@@ -130,7 +130,7 @@ class TestData(object):
         assert self.index == initial
         self.buffer.extend(result)
         self.intervals.append((initial, self.index))
-        return hbytes(result)
+        return reasonable_byte_type(result)
 
     def mark_interesting(self):
         self.__assert_not_frozen('mark_interesting')
