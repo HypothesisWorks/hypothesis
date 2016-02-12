@@ -173,7 +173,7 @@ class SQLiteExampleDatabase(ExampleDatabase):
             for (value,) in cursor:
                 try:
                     yield base64.b64decode(value)
-                except binascii.Error:
+                except (binascii.Error, TypeError):
                     pass
 
     def create_db_if_needed(self):
