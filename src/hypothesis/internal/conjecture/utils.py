@@ -106,7 +106,8 @@ def geometric(data, p):
         assert n == n_bytes
         for _ in range(100):
             try:
-                return int_to_bytes(math.log1p(-random.random()) / denom, n)
+                return int_to_bytes(int(
+                    math.log1p(-random.random()) / denom, n))
             # This is basically impossible to hit but is required for
             # correctness
             except OverflowError:  # pragma: no cover
