@@ -107,7 +107,7 @@ def geometric(data, p):
         for _ in range(100):
             try:
                 return int_to_bytes(int(
-                    math.log1p(-random.random()) / denom, n))
+                    math.log1p(-random.random()) / denom), n)
             # This is basically impossible to hit but is required for
             # correctness
             except OverflowError:  # pragma: no cover
