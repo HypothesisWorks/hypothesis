@@ -20,13 +20,14 @@ import pytest
 
 from hypothesis import find, given
 from hypothesis.searchstrategy.fixed import FixedStrategy
+from hypothesis.internal.compat import int_to_bytes
 
 
 class Blocks(FixedStrategy):
 
     def draw_value(self, random):
-        return random.getrandbits(self.block_size * 8).to_bytes(
-            self.block_size, 'big')
+        return int_to_bytes(
+            random.getrandbits(self.block_size * 8), self.block_size)
 
     def to_bytes(self, value):
         return value
