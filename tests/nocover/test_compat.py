@@ -18,9 +18,10 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
-from hypothesis.internal.compat import hrange, qualname, HAS_SIGNATURE, \
-    signature_argspec, int_to_bytes, int_from_bytes
-from hypothesis import given, strategies as st
+from hypothesis import strategies as st
+from hypothesis import given
+from hypothesis.internal.compat import hrange, qualname, int_to_bytes, \
+    HAS_SIGNATURE, int_from_bytes, signature_argspec
 
 
 def test_small_hrange():

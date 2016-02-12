@@ -124,7 +124,7 @@ else:
             result[j] = i & 255
             i >>= 8
         if i:
-            raise OverflowError("int too big to convert")
+            raise OverflowError('int too big to convert')
         return bytes(result)
 
     def bytes_from_list(ls):

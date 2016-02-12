@@ -22,11 +22,11 @@ from collections import namedtuple
 
 import hypothesis.internal.conjecture.utils as d
 from hypothesis.control import assume
+from hypothesis.internal.compat import int_to_bytes, int_from_bytes, \
+    bytes_from_list
 from hypothesis.internal.floats import sign
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
     MappedSearchStrategy
-from hypothesis.internal.compat import int_to_bytes, int_from_bytes, \
-    bytes_from_list
 
 
 class IntStrategy(SearchStrategy):

@@ -20,7 +20,7 @@ from __future__ import division, print_function, absolute_import
 """
 This module implements a lexicographic minimizer for blocks of bytearray.
 
-That is, given a block of bytearray of size n, and a predicate that accepts such
+That is, given a block of bytes of size n, and a predicate that accepts such
 blocks, it tries to find a lexicographically minimal block of that size
 that satisifies the predicate, starting from that initial starting point.
 
