@@ -20,7 +20,7 @@ from unittest import TestCase as VanillaTestCase
 
 from django.db import IntegrityError
 
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis.strategies import integers
 from hypothesis.extra.django import TestCase, TransactionTestCase
 from tests.django.toystore.models import Company
@@ -57,6 +57,7 @@ class TestWorkflow(VanillaTestCase):
         class LocalTest(TestCase):
 
             @given(integers().map(break_the_db))
+            @settings(perform_health_check=False)
             def test_does_not_break_other_things(self, unused):
                 pass
 
