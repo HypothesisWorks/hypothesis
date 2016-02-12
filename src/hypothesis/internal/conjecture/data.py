@@ -20,8 +20,8 @@ from enum import IntEnum
 from uuid import uuid4
 
 from hypothesis.errors import Frozen
-from hypothesis.internal.compat import text_type, unicode_safe_repr, \
-    int_to_bytes
+from hypothesis.internal.compat import text_type, int_to_bytes, \
+    unicode_safe_repr
 
 
 def uniform(random, n):
