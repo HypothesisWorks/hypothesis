@@ -38,7 +38,7 @@ def test_charmap_has_right_categories():
     for cat, intervals in cm.charmap().items():
         for u, v in intervals:
             for i in range(u, v + 1):
-                real = unicodedata.category(chr(i))
+                real = unicodedata.category(hunichr(i))
                 assert real == cat, \
                     '%d is %s but reported in %s' % (i, real, cat)
 
@@ -60,7 +60,7 @@ def test_query_matches_categories(exclude, include):
     assert_valid_range_list(values)
     for u, v in values:
         for i in (u, v, (u + v) // 2):
-            cat = unicodedata.category(chr(i))
+            cat = unicodedata.category(hunichr(i))
             if include is not None:
                 assert cat in include
             assert cat not in exclude
