@@ -18,7 +18,7 @@ from __future__ import division, print_function, absolute_import
 
 import math
 
-from hypothesis.internal.compat import int_to_bytes, int_from_bytes
+from hypothesis.internal.compat import int_to_bytes, int_from_bytes, hbytes
 
 
 def n_byte_unsigned(data, n):
@@ -124,7 +124,7 @@ def boolean(data):
 def biased_coin(data, p):
     def distribution(random, n):
         assert n == 1
-        return bytes([int(random.random() <= p)])
+        return hbytes([int(random.random() <= p)])
     return bool(
         data.draw_bytes(1, distribution)[0] & 1
     )
