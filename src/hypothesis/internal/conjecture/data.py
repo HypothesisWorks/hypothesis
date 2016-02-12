@@ -20,7 +20,7 @@ from enum import IntEnum
 from uuid import uuid4
 
 from hypothesis.errors import Frozen
-from hypothesis.internal.compat import text_type, int_to_bytes, \
+from hypothesis.internal.compat import hbytes, text_type, int_to_bytes, \
     unicode_safe_repr
 
 
@@ -104,19 +104,19 @@ class TestData(object):
 
     def freeze(self):
         if self.frozen:
-            assert isinstance(self.buffer, bytes)
+            assert isinstance(self.buffer, hbytes)
             return
         self.frozen = True
         # Intervals are sorted as longest first, then by interval start.
         self.intervals.sort(
             key=lambda se: (se[0] - se[1], se[0])
         )
-        self.buffer = bytes(self.buffer)
+        self.buffer = hbytes(self.buffer)
         del self._draw_bytes
 
     def draw_bytes(self, n, distribution=uniform):
         if n == 0:
-            return b''
+            return hbytes(b'')
         self.__assert_not_frozen('draw_bytes')
         initial = self.index
         if self.index + n > self.max_length:
@@ -130,7 +130,7 @@ class TestData(object):
         assert self.index == initial
         self.buffer.extend(result)
         self.intervals.append((initial, self.index))
-        return result
+        return hbytes(result)
 
     def mark_interesting(self):
         self.__assert_not_frozen('mark_interesting')
