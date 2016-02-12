@@ -21,7 +21,8 @@ from random import Random, getrandbits
 
 from hypothesis import settings as Settings
 from hypothesis.reporting import debug_report
-from hypothesis.internal.compat import Counter
+from hypothesis.internal.compat import hbytes, Counter, bytes_from_list, \
+    to_bytes_sequence
 from hypothesis.internal.conjecture.data import Status, StopTest, TestData
 from hypothesis.internal.conjecture.minimizer import minimize
 
@@ -100,7 +101,7 @@ class TestRunner(object):
             self.database_key is not None
         ):
             self.settings.database.save(
-                self.database_key, bytes(buffer)
+                self.database_key, hbytes(buffer)
             )
 
     def note_for_corpus(self, data):
@@ -186,13 +187,13 @@ class TestRunner(object):
             i = self.random.randint(0, n - 1)
             k = self.random.randint(0, 7)
             buf[i] ^= (1 << k)
-            return bytes(buf)
+            return hbytes(buf)
 
         def draw_zero(data, n, distribution):
-            return bytes(n)
+            return b'\0' * n
 
         def draw_constant(data, n, distribution):
-            return bytes([
+            return bytes_from_list([
                 self.random.randint(0, 255)
             ] * n)
 
@@ -399,7 +400,7 @@ class TestRunner(object):
 def _draw_predecessor(rnd, xs):
     r = bytearray()
     any_strict = False
-    for x in xs:
+    for x in to_bytes_sequence(xs):
         if not any_strict:
             c = rnd.randint(0, x)
             if c < x:
@@ -407,13 +408,13 @@ def _draw_predecessor(rnd, xs):
         else:
             c = rnd.randint(0, 255)
         r.append(c)
-    return bytes(r)
+    return hbytes(r)
 
 
 def _draw_successor(rnd, xs):
     r = bytearray()
     any_strict = False
-    for x in xs:
+    for x in to_bytes_sequence(xs):
         if not any_strict:
             c = rnd.randint(x, 255)
             if c > x:
@@ -421,7 +422,7 @@ def _draw_successor(rnd, xs):
         else:
             c = rnd.randint(0, 255)
         r.append(c)
-    return bytes(r)
+    return hbytes(r)
 
 
 def sort_key(buffer):

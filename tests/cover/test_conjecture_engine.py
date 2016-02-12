@@ -22,6 +22,7 @@ from random import Random
 from hypothesis import strategies as st
 from hypothesis import given, settings
 from hypothesis.database import ExampleDatabase
+from hypothesis.internal.compat import hbytes, bytes_from_list
 from hypothesis.internal.conjecture.data import Status, TestData
 from hypothesis.internal.conjecture.engine import TestRunner
 
@@ -36,7 +37,16 @@ def run_to_buffer(f):
     ))
     runner.run()
     assert runner.last_data.status == Status.INTERESTING
-    return runner.last_data.buffer
+    return hbytes(runner.last_data.buffer)
+
+
+def test_can_index_results():
+    @run_to_buffer
+    def f(data):
+        data.draw_bytes(5)
+        data.mark_interesting()
+    assert f.index(0) == 0
+    assert f.count(0) == 5
 
 
 def test_non_cloneable_intervals():
@@ -45,7 +55,7 @@ def test_non_cloneable_intervals():
         data.draw_bytes(10)
         data.draw_bytes(9)
         data.mark_interesting()
-    assert x == bytes(19)
+    assert x == hbytes(19)
 
 
 def test_duplicate_buffers():
@@ -57,7 +67,7 @@ def test_duplicate_buffers():
         s = data.draw_bytes(10)
         if s == t:
             data.mark_interesting()
-    assert x == bytes([0] * 9 + [1]) * 2
+    assert x == bytes_from_list([0] * 9 + [1]) * 2
 
 
 def test_clone_into_variable_draws():
@@ -91,11 +101,11 @@ def test_deletable_draws():
             x = data.draw_bytes(2)
             if x[0] == 255:
                 data.mark_interesting()
-    assert x == bytes([255, 0])
+    assert x == hbytes([255, 0])
 
 
 def zero_dist(random, n):
-    return bytes(n)
+    return hbytes(n)
 
 
 def test_distribution_may_be_ignored():
@@ -104,7 +114,7 @@ def test_distribution_may_be_ignored():
         t = data.draw_bytes(5, zero_dist)
         if all(t) and 255 in t:
             data.mark_interesting()
-    assert x == bytes([1] * 4 + [255])
+    assert x == hbytes([1] * 4 + [255])
 
 
 def test_can_load_data_from_a_corpus():
@@ -189,7 +199,7 @@ def test_draw_to_overrun():
         data.draw_bytes(128 * d)
         if d >= 2:
             data.mark_interesting()
-    assert x == bytes([10]) + bytes(128 * 2)
+    assert x == hbytes([10]) + hbytes(128 * 2)
 
 
 def test_stops_after_max_iterations_when_generating():
@@ -221,7 +231,7 @@ def test_stops_after_max_iterations_when_reading():
 
     db = ExampleDatabase(':memory:')
     for i in range(10):
-        db.save(key, bytes([i]))
+        db.save(key, hbytes([i]))
 
     seen = []
 
@@ -242,7 +252,7 @@ def test_stops_after_max_examples_when_reading():
 
     db = ExampleDatabase(':memory:')
     for i in range(10):
-        db.save(key, bytes([i]))
+        db.save(key, hbytes([i]))
 
     seen = []
 
@@ -324,7 +334,7 @@ def test_max_shrinks_can_disable_shrinking():
     seen = set()
 
     def f(data):
-        seen.add(data.draw_bytes(32))
+        seen.add(bytes(data.draw_bytes(32)))
         data.mark_interesting()
 
     runner = TestRunner(f, settings=settings(database=None, max_shrinks=0,))
@@ -342,8 +352,8 @@ def test_saves_data_while_shrinking():
     def f(data):
         x = data.draw_bytes(512)
         if sum(x) >= 5000 and len(seen) < n:
-            seen.add(x)
-        if x in seen:
+            seen.add(bytes(x))
+        if hbytes(x) in seen:
             data.mark_interesting()
     runner = TestRunner(
         f, settings=settings(database=db), database_key=key)
@@ -378,7 +388,7 @@ def test_erratic_draws():
             data.mark_interesting()
         else:
             n[0] += 1
-    assert x == bytes(255)
+    assert x == hbytes(255)
 
 
 def test_no_read_no_shrink():
