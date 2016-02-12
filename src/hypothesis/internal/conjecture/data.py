@@ -20,11 +20,12 @@ from enum import IntEnum
 from uuid import uuid4
 
 from hypothesis.errors import Frozen
-from hypothesis.internal.compat import text_type, unicode_safe_repr
+from hypothesis.internal.compat import text_type, unicode_safe_repr, \
+    int_to_bytes
 
 
 def uniform(random, n):
-    return random.getrandbits(n * 8).to_bytes(n, 'big')
+    return int_to_bytes(random.getrandbits(n * 8), n)
 
 
 class Status(IntEnum):

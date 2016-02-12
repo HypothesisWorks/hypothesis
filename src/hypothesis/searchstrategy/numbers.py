@@ -25,6 +25,8 @@ from hypothesis.control import assume
 from hypothesis.internal.floats import sign
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
     MappedSearchStrategy
+from hypothesis.internal.compat import int_to_bytes, int_from_bytes, \
+    bytes_from_list
 
 
 class IntStrategy(SearchStrategy):
@@ -74,9 +76,9 @@ class WideRangeIntStrategy(IntStrategy):
                 r |= sign_mask
             else:
                 r &= (~sign_mask)
-            return r.to_bytes(n, 'big', signed=False)
+            return int_to_bytes(r, n)
         byt = data.draw_bytes(size, distribution=distribution)
-        r = int.from_bytes(byt, 'big', signed=False)
+        r = int_from_bytes(byt)
         negative = r & sign_mask
         r &= (~sign_mask)
         if negative:
@@ -139,7 +141,8 @@ class FloatStrategy(SearchStrategy):
                 if i <= 4:
                     f = random.choice(NASTY_FLOATS)
                 elif i == 5:
-                    return bytes(random.randint(0, 255) for _ in range(8))
+                    return bytes_from_list(
+                        random.randint(0, 255) for _ in range(8))
                 elif i == 6:
                     f = random.random() * (
                         random.randint(0, 1) * 2 - 1

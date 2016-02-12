@@ -99,7 +99,37 @@ if PY3:
 def quiet_raise(exc):
     raise exc from None
 """)
+
+    def int_from_bytes(data):
+        return int.from_bytes(data, 'big')
+
+    def int_to_bytes(i, size):
+        return i.to_bytes(size, 'big')
+
+    def bytes_from_list(ls):
+        return bytes(ls)
 else:
+    def int_from_bytes(data):
+        i = 0
+        for b in reversed(data):
+            i <<= 8
+            i |= ord(b)
+        return i
+
+    def int_to_bytes(i, size):
+        assert i >= 0
+        result = bytearray(size)
+        j = size - 1
+        while i and j >= 0:
+            result[j] = i & 255
+            i >>= 8
+        if i:
+            raise OverflowError("int too big to convert")
+        return bytes(result)
+
+    def bytes_from_list(ls):
+        return bytes(bytearray(ls))
+
     def str_to_bytes(s):
         return s
 

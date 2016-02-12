@@ -19,7 +19,8 @@ from __future__ import division, print_function, absolute_import
 import pytest
 
 from hypothesis.internal.compat import hrange, qualname, HAS_SIGNATURE, \
-    signature_argspec
+    signature_argspec, int_to_bytes, int_from_bytes
+from hypothesis import given, strategies as st
 
 
 def test_small_hrange():
@@ -79,3 +80,8 @@ if getargspec is not None and HAS_SIGNATURE:
         assert tuple(real) == tuple(fake)
         for f in real._fields:
             assert getattr(real, f) == getattr(fake, f)
+
+
+@given(st.bytes())
+def test_convert_back(bs):
+    assert int_to_bytes(int_from_bytes(bs), len(bs)) == bs
