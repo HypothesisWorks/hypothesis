@@ -125,7 +125,7 @@ else:
         for b in data:
             i <<= 8
             i |= b
-        return i
+        return int(i)
 
     def int_to_bytes(i, size):
         assert i >= 0
