@@ -17,10 +17,11 @@
 from __future__ import division, print_function, absolute_import
 
 import math
+from hypothesis.internal.compat import int_from_bytes, int_to_bytes
 
 
 def n_byte_unsigned(data, n):
-    return int.from_bytes(data.draw_bytes(n), 'big')
+    return int_from_bytes(data.draw_bytes(n))
 
 
 def saturate(n):
@@ -62,9 +63,8 @@ def integer_range(data, lower, upper, center=None, distribution=None):
             probe = v - center
         else:
             probe = upper - v
-        return probe.to_bytes(nbytes, 'big')
-    probe = int.from_bytes(
-        data.draw_bytes(nbytes, byte_distribution), 'big') & mask
+        return int_to_bytes(probe, n)
+    probe = int_from_bytes(data.draw_bytes(nbytes, byte_distribution)) & mask
     if probe <= gap:
         if center == upper:
             result = upper - probe
@@ -105,16 +105,14 @@ def geometric(data, p):
         assert n == n_bytes
         for _ in range(100):
             try:
-                return int(
-                    math.log1p(-random.random()) / denom
-                ).to_bytes(n_bytes, 'big')
+                return int_to_bytes(math.log1p(-random.random()) / denom, n)
             # This is basically impossible to hit but is required for
             # correctness
             except OverflowError:  # pragma: no cover
                 pass
         # We got a one in a million chance 100 times in a row. Something is up.
         assert False  # pragma: no cover
-    return int.from_bytes(data.draw_bytes(n_bytes, distribution), 'big')
+    return int_from_bytes(data.draw_bytes(n_bytes, distribution))
 
 
 def boolean(data):

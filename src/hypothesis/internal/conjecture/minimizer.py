@@ -18,9 +18,9 @@ from __future__ import division, print_function, absolute_import
 
 
 """
-This module implements a lexicographic minimizer for blocks of bytes.
+This module implements a lexicographic minimizer for blocks of bytearray.
 
-That is, given a block of bytes of size n, and a predicate that accepts such
+That is, given a block of bytearray of size n, and a predicate that accepts such
 blocks, it tries to find a lexicographically minimal block of that size
 that satisifies the predicate, starting from that initial starting point.
 
@@ -48,6 +48,7 @@ class Minimizer(object):
         self.duplicates = 0
 
     def incorporate(self, buffer):
+        buffer = bytes(buffer)
         assert len(buffer) == self.size
         assert buffer <= self.current
         self.considerations += 1
@@ -56,7 +57,7 @@ class Minimizer(object):
             return False
         self.seen.add(buffer)
         if self.condition(buffer):
-            self.current = buffer
+            self.current = bytearray(buffer)
             self.changes += 1
             return True
         return False
@@ -66,28 +67,28 @@ class Minimizer(object):
         if self.current[i] <= c:
             return False
         if self.incorporate(
-            self.current[:i] + bytes([c]) +
+            self.current[:i] + bytearray([c]) +
             self.current[i + 1:]
         ):
             return True
         if i == self.size - 1:
             return False
         return self.incorporate(
-            self.current[:i] + bytes([c, 255]) +
+            self.current[:i] + bytearray([c, 255]) +
             self.current[i + 2:]
         ) or self.incorporate(
-            self.current[:i] + bytes([c]) +
-            bytes([255] * (self.size - i - 1))
+            self.current[:i] + bytearray([c]) +
+            bytearray([255] * (self.size - i - 1))
         )
 
     def run(self):
         if not any(self.current):
             return
-        if self.incorporate(bytes(self.size)):
+        if self.incorporate(bytearray(self.size)):
             return
         for c in range(max(self.current)):
             if self.incorporate(
-                bytes(min(b, c) for b in self.current)
+                bytearray(min(b, c) for b in self.current)
             ):
                 break
 
