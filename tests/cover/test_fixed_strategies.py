@@ -19,8 +19,8 @@ from __future__ import division, print_function, absolute_import
 import pytest
 
 from hypothesis import find, given
-from hypothesis.searchstrategy.fixed import FixedStrategy
 from hypothesis.internal.compat import int_to_bytes
+from hypothesis.searchstrategy.fixed import FixedStrategy
 
 
 class Blocks(FixedStrategy):
@@ -42,7 +42,7 @@ def test_blocks_are_of_fixed_size(x):
 
 
 def test_blocks_shrink_bytewise():
-    assert find(Blocks(5), lambda x: True) == bytes(5)
+    assert find(Blocks(5), lambda x: True) == b'\0' * 5
 
 
 class BadBlocks(Blocks):
