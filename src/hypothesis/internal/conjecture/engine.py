@@ -108,6 +108,10 @@ class TestRunner(object):
         if data.status == Status.INTERESTING:
             self.save_buffer(data.buffer)
 
+    def debug(self, message):
+        with self.settings:
+            debug_report(message)
+
     def incorporate_new_buffer(self, buffer):
         assert self.last_data.status == Status.INTERESTING
         if (
@@ -125,7 +129,7 @@ class TestRunner(object):
         data.freeze()
         self.note_for_corpus(data)
         if data.status >= self.last_data.status:
-            debug_report('%d bytes %r -> %r, %s' % (
+            self.debug('%d bytes %r -> %r, %s' % (
                 data.index,
                 list(data.buffer[:data.index]), data.status,
                 data.output,
@@ -146,7 +150,7 @@ class TestRunner(object):
                 self._run()
             except RunIsComplete:
                 pass
-            debug_report(
+            self.debug(
                 'Run complete after %d examples (%d valid) and %d shrinks' % (
                     self.iterations, self.valid_examples, self.shrinks,
                 ))
@@ -298,7 +302,7 @@ class TestRunner(object):
             mutations += 1
 
         data = self.last_data
-        debug_report('%d bytes %r -> %r, %s' % (
+        self.debug('%d bytes %r -> %r, %s' % (
             data.index,
             list(data.buffer[:data.index]), data.status,
             data.output,
