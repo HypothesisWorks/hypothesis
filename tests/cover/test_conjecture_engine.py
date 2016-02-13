@@ -300,8 +300,6 @@ def test_interleaving_engines(rnd):
         runner.run()
         if runner.last_data.status == Status.INTERESTING:
             data.mark_interesting()
-    assert 9 <= len(x) <= 8 + 255
-    set(sorted(x[8:])) == {1, 255}
     assert x[8:].count(255) == 1
 
 
