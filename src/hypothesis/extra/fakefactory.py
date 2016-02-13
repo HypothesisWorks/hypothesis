@@ -74,7 +74,7 @@ class FakeFactoryStrategy(SearchStrategy):
     def do_draw(self, data):
         seed = data.draw_bytes(5)
         shrinks = 255 - seed[-1]
-        random = Random(seed)
+        random = Random(bytes(seed))
         example = self.gen_example(random)
         for _ in hrange(shrinks):
             replacement = self.gen_example(random)
