@@ -22,7 +22,7 @@ from random import Random, getrandbits
 from hypothesis import settings as Settings
 from hypothesis.reporting import debug_report
 from hypothesis.internal.compat import hbytes, hrange, Counter, \
-    bytes_from_list, to_bytes_sequence
+    text_type, bytes_from_list, to_bytes_sequence, unicode_safe_repr
 from hypothesis.internal.conjecture.data import Status, StopTest, TestData
 from hypothesis.internal.conjecture.minimizer import minimize
 
@@ -112,6 +112,14 @@ class TestRunner(object):
         with self.settings:
             debug_report(message)
 
+    def debug_data(self, data):
+        self.debug(u'%d bytes %s -> %s, %s' % (
+            data.index,
+            unicode_safe_repr(list(data.buffer[:data.index])),
+            unicode_safe_repr(data.status),
+            data.output,
+        ))
+
     def incorporate_new_buffer(self, buffer):
         assert self.last_data.status == Status.INTERESTING
         if (
@@ -129,11 +137,7 @@ class TestRunner(object):
         data.freeze()
         self.note_for_corpus(data)
         if data.status >= self.last_data.status:
-            self.debug('%d bytes %r -> %r, %s' % (
-                data.index,
-                list(data.buffer[:data.index]), data.status,
-                data.output,
-            ))
+            self.debug_data(data)
         if self.consider_new_test_data(data):
             self.shrinks += 1
             self.last_data = data
@@ -151,7 +155,7 @@ class TestRunner(object):
             except RunIsComplete:
                 pass
             self.debug(
-                'Run complete after %d examples (%d valid) and %d shrinks' % (
+                u'Run complete after %d examples (%d valid) and %d shrinks' % (
                     self.iterations, self.valid_examples, self.shrinks,
                 ))
 
@@ -302,11 +306,9 @@ class TestRunner(object):
             mutations += 1
 
         data = self.last_data
-        self.debug('%d bytes %r -> %r, %s' % (
-            data.index,
-            list(data.buffer[:data.index]), data.status,
-            data.output,
-        ))
+        assert isinstance(data.output, text_type)
+
+        self.debug_data(data)
 
         if self.settings.max_shrinks <= 0:
             return

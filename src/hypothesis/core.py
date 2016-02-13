@@ -36,7 +36,7 @@ from hypothesis._settings import Verbosity
 from hypothesis.executors import new_style_executor, \
     default_new_style_executor
 from hypothesis.reporting import report, verbose_report, current_verbosity
-from hypothesis.internal.compat import getargspec
+from hypothesis.internal.compat import getargspec, str_to_bytes
 from hypothesis.internal.reflection import arg_string, impersonate, \
     copy_argspec, function_digest, fully_qualified_name, \
     convert_positional_arguments, get_pretty_function_description
@@ -437,7 +437,7 @@ def given(*generator_arguments, **generator_kwargs):
             from hypothesis.internal.conjecture.engine import TestRunner
 
             falsifying_example = None
-            database_key = fully_qualified_name(test).encode('utf-8')
+            database_key = str_to_bytes(fully_qualified_name(test))
             start_time = time.time()
             runner = TestRunner(
                 evaluate_test_data,

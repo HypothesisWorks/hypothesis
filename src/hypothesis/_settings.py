@@ -404,16 +404,6 @@ applied.
 )
 
 settings.define_setting(
-    u'shrink_change_timeout',
-    default=10,
-    description="""
-Once this many seconds have passed since the last successful shrink, stop
-trying to find any more.
-"""
-)
-
-
-settings.define_setting(
     'derandomize',
     default=False,
     description="""
