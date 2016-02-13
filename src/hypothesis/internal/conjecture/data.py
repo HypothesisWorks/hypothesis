@@ -55,13 +55,14 @@ class TestData(object):
     def __init__(self, max_length, draw_bytes):
         self.max_length = max_length
         self._draw_bytes = draw_bytes
-
+        self.level = 0
         self.block_starts = {}
         self.blocks = []
         self.buffer = bytearray()
         self.output = u''
         self.status = Status.VALID
         self.frozen = False
+        self.intervals_by_level = []
         self.intervals = []
         self.interval_stack = []
         self.uuid = uuid4().bytes
@@ -93,12 +94,17 @@ class TestData(object):
     def start_example(self):
         self.__assert_not_frozen('start_example')
         self.interval_stack.append(self.index)
+        self.level += 1
 
     def stop_example(self):
         self.__assert_not_frozen('stop_example')
+        self.level -= 1
+        while self.level >= len(self.intervals_by_level):
+            self.intervals_by_level.append([])
         k = self.interval_stack.pop()
         if k != self.index:
             t = (k, self.index)
+            self.intervals_by_level[self.level].append(t)
             if not self.intervals or self.intervals[-1] != t:
                 self.intervals.append(t)
 
@@ -108,7 +114,12 @@ class TestData(object):
             return
         self.frozen = True
         # Intervals are sorted as longest first, then by interval start.
-        self.intervals.sort(
+        for l in self.intervals_by_level:
+            for i in range(len(l) - 1):
+                if l[i][1] == l[i + 1][0]:
+                    self.intervals.append((l[i][0], l[i + 1][1]))
+        self.intervals = sorted(
+            set(self.intervals),
             key=lambda se: (se[0] - se[1], se[0])
         )
         self.buffer = hbytes(self.buffer)

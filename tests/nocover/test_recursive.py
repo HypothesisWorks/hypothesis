@@ -75,7 +75,9 @@ def test_can_find_quite_broad_lists():
 
     broad = find(
         st.recursive(st.booleans(), lambda x: st.lists(x, max_size=10)),
-        lambda x: breadth(x) >= 20)
+        lambda x: breadth(x) >= 20,
+        settings=settings(max_examples=10000)
+    )
     assert breadth(broad) == 20
 
 
@@ -85,7 +87,9 @@ def test_drawing_many_near_boundary():
             st.booleans(),
             lambda x: st.lists(x, min_size=8, max_size=10).map(tuple),
             max_leaves=9)),
-        lambda x: len(set(x)) >= 5)
+        lambda x: len(set(x)) >= 5,
+        settings=settings(max_examples=10000, database=None, max_shrinks=2000)
+    )
     assert len(ls) == 5
 
 
