@@ -158,7 +158,8 @@ class FloatStrategy(SearchStrategy):
                     )
                 if self.permitted(f):
                     return struct.pack(b'!d', f)
-        result = struct.unpack(b'!d', data.draw_bytes(8, draw_float_bytes))[0]
+        result = struct.unpack(b'!d', bytes(
+            data.draw_bytes(8, draw_float_bytes)))[0]
         assume(self.permitted(result))
         return result
 
@@ -210,7 +211,8 @@ class FixedBoundedFloatStrategy(SearchStrategy):
                     self.upper_bound - self.lower_bound
                 ) + self.lower_bound
             return struct.pack(b'!d', f)
-        f = struct.unpack(b'!d', data.draw_bytes(8, draw_float_bytes))[0]
+        f = struct.unpack(b'!d', bytes(
+            data.draw_bytes(8, draw_float_bytes)))[0]
         assume(self.lower_bound <= f <= self.upper_bound)
         assume(sign(self.lower_bound) <= sign(f) <= sign(self.upper_bound))
         return f
