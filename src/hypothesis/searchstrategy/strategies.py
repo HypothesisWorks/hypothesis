@@ -201,18 +201,20 @@ class OneOfStrategy(SearchStrategy):
         self.bias = bias
         if bias is not None:
             assert 0 < bias < 1
+            self.weights = [bias ** i for i in range(len(strategies))]
 
     def do_draw(self, data):
         n = len(self.element_strategies)
         if self.bias is None:
             i = cu.integer_range(data, 0, n - 1)
         else:
-            denom = math.log1p(-self.bias)
+            def biased_i(random):
+                while True:
+                    i = random.randint(0, n - 1)
+                    if random.random() <= self.weights[i]:
+                        return i
             i = cu.integer_range_with_distribution(
-                data, 0, n - 1,
-                lambda r: min(
-                    int(math.log(r.random()) / denom),
-                    n - 1))
+                data, 0, n - 1, biased_i)
 
         return data.draw(self.element_strategies[i])
 
