@@ -16,7 +16,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis.internal.compat import hbytes
+from hypothesis.internal.compat import hbytes, hrange
 
 
 """
@@ -89,7 +89,7 @@ class Minimizer(object):
             return
         if self.incorporate(hbytes(self.size)):
             return
-        for c in range(max(self.current)):
+        for c in hrange(max(self.current)):
             if self.incorporate(
                 hbytes(min(b, c) for b in self.current)
             ):
@@ -98,13 +98,13 @@ class Minimizer(object):
         change_counter = -1
         while self.current and change_counter < self.changes:
             change_counter = self.changes
-            for i in range(self.size):
+            for i in hrange(self.size):
                 t = self.current[i]
                 if t > 0:
                     ss = small_shrinks[self.current[i]]
                     for c in ss:
                         if self._shrink_index(i, c):
-                            for c in range(self.current[i]):
+                            for c in hrange(self.current[i]):
                                 if c in ss:
                                     continue
                                 if self._shrink_index(i, c):
@@ -119,14 +119,14 @@ class Minimizer(object):
 # shrinks that we could have succeeded with, but oh well. It doesn't fail any
 # of our guarantees because we do try to shrink to -1 among other things.
 small_shrinks = [
-    set(range(b)) for b in range(10)
+    set(range(b)) for b in hrange(10)
 ]
 
-for b in range(10, 256):
+for b in hrange(10, 256):
     result = set()
     result.add(0)
     result.add(b - 1)
-    for i in range(8):
+    for i in hrange(8):
         result.add(b ^ (1 << i))
     result.discard(b)
     assert len(result) <= 10
