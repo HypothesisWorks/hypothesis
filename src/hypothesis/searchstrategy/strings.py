@@ -70,12 +70,12 @@ class OneCharStringStrategy(SearchStrategy):
                 pass
 
     def do_draw(self, data):
-        denom = math.log1p(-0.5)
+        denom = math.log1p(-1 / 127)
 
         def d(random):
             if self.special and random.randint(0, 10) == 0:
                 return random.choice(self.special)
-            if random.randint(0, 1):
+            if len(self.intervals) <= 256 or random.randint(0, 1):
                 i = random.randint(0, len(self.intervals.offsets) - 1)
                 u, v = self.intervals.intervals[i]
                 return self.intervals.offsets[i] + random.randint(0, v - u + 1)

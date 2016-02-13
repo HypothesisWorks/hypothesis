@@ -112,3 +112,8 @@ def test_can_blacklist_newlines(s):
 @given(text(characters(blacklist_categories=('Cc', 'Cs'))))
 def test_can_exclude_newlines_by_category(s):
     assert u'\n' not in s
+
+
+@given(text(characters(max_codepoint=127)))
+def test_can_restrict_to_ascii_only(s):
+    s.encode('ascii')
