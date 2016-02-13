@@ -16,8 +16,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import math
-
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis.errors import NoExamples, NoSuchExample, Unsatisfiable, \
     UnsatisfiedAssumption
