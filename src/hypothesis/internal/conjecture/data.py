@@ -38,7 +38,7 @@ class Status(IntEnum):
 class StopTest(BaseException):
 
     def __init__(self, uuid):
-        super(StopTest, self).__init__(uuid)
+        super(StopTest, self).__init__(repr(uuid))
         self.uuid = uuid
 
 
