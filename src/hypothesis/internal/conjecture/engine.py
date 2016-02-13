@@ -21,8 +21,8 @@ from random import Random, getrandbits
 
 from hypothesis import settings as Settings
 from hypothesis.reporting import debug_report
-from hypothesis.internal.compat import hbytes, Counter, bytes_from_list, \
-    to_bytes_sequence
+from hypothesis.internal.compat import hbytes, hrange, Counter, \
+    bytes_from_list, to_bytes_sequence
 from hypothesis.internal.conjecture.data import Status, StopTest, TestData
 from hypothesis.internal.conjecture.minimizer import minimize
 
@@ -205,7 +205,7 @@ class TestRunner(object):
         ]
 
         bits = [
-            self.random.choice(options) for _ in range(3)
+            self.random.choice(options) for _ in hrange(3)
         ]
 
         def draw_mutated(data, n, distribution):
