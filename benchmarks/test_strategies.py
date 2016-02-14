@@ -18,7 +18,7 @@ from __future__ import division, print_function, absolute_import
 
 import os
 import hypothesis.strategies as st
-from hypothesis import find, settings
+from hypothesis import find, settings, given
 
 settings.register_profile('benchmarking', settings(
     database=None,
@@ -42,7 +42,10 @@ strategies = [
     st.text(),
     st.binary(),
     st.floats(),
-    st.integers().flatmap(lambda x: st.lists(st.integers(max_value=x)))
+    st.integers().flatmap(lambda x: st.lists(st.integers(max_value=x))),
+    st.integers().filter(lambda x: x % 3 == 1),
+    st.tuples(st.integers(), st.integers(), st.integers(), st.integers()),
+    st.text() | st.integers()
 ]
 
 strategies.extend(list(map(st.lists, strategies)))
@@ -56,15 +59,47 @@ seeds = [
     8648395390016624135
 ]
 
+counter = 0
+ids = []
+for strat in strategies:
+    for seed in seeds:
+        counter += 1
+        ids.append('example%d-%r-%d' % (counter, strat, seed))
 
 bench = pytest.mark.parametrize(
     ('strategy', 'seed'), [
         (strat, seed) for strat in strategies for seed in seeds
     ],
-    ids=[
-        '%r-%d' % (strat, seed) for strat in strategies for seed in seeds
-    ]
+    ids=ids
 )
+
+
+@bench
+def test_empty_given(benchmark, strategy, seed):
+
+    @benchmark
+    def run():
+        random.seed(seed)
+
+        @given(strategy)
+        def test(s):
+            pass
+        test()
+
+
+@bench
+def test_failing_given(benchmark, strategy, seed):
+
+    @benchmark
+    def run():
+        random.seed(seed)
+
+        @given(strategy)
+        def test(s):
+            raise ValueError()
+
+        with pytest.raises(ValueError):
+            test()
 
 
 @bench
