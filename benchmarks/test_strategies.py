@@ -37,6 +37,14 @@ def teardown_module():
     settings.load_profile(os.getenv('HYPOTHESIS_PROFILE', 'default'))
 
 
+@st.composite
+def sorted_three(draw):
+    x = draw(st.integers())
+    y = draw(st.integers(min_value=x))
+    z = draw(st.integers(min_value=y))
+    return (x, y, z)
+
+
 strategies = [
     st.integers(),
     st.text(),
@@ -45,7 +53,8 @@ strategies = [
     st.integers().flatmap(lambda x: st.lists(st.integers(max_value=x))),
     st.integers().filter(lambda x: x % 3 == 1),
     st.tuples(st.integers(), st.integers(), st.integers(), st.integers()),
-    st.text() | st.integers()
+    st.text() | st.integers(),
+    sorted_three(),
 ]
 
 strategies.extend(list(map(st.lists, strategies)))
