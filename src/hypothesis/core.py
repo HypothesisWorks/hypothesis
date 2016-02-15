@@ -338,7 +338,21 @@ def given(*generator_arguments, **generator_kwargs):
                                 'that this could be your executor failing '
                                 'to handle a function which returns None. '
                             )
-                if filtered_draws >= 50:
+                if overruns >= 20 or (
+                    not count and overruns > 0
+                ):
+                    fail_health_check((
+                        'Examples routinely exceeded the max allowable size. '
+                        '(%d examples overran while generating %d valid ones)'
+                        '. Generating examples this large will usually lead to'
+                        ' bad results. You should try setting average_size or '
+                        'max_size parameters on your collections and turning '
+                        'max_leaves down on recursive() calls.') % (
+                        overruns, count
+                    ))
+                if filtered_draws >= 50 or (
+                    not count and filtered_draws > 0
+                ):
                     fail_health_check((
                         'It looks like your strategy is filtering out a lot '
                         'of data. Health check found %d filtered examples but '
@@ -348,16 +362,6 @@ def given(*generator_arguments, **generator_kwargs):
                         'strategy to filter less. This can also be caused by '
                         'a low max_leaves parameter in recursive() calls') % (
                         filtered_draws, count
-                    ))
-                if overruns >= 20:
-                    fail_health_check((
-                        'Examples routinely exceeded the max allowable size. '
-                        '(%d examples overran while generating %d valid ones)'
-                        '. Generating examples this large will usually lead to'
-                        ' bad results. You should try setting average_size or '
-                        'max_size parameters on your collections and turning '
-                        'max_leaves down on recursive() calls.') % (
-                        overruns, count
                     ))
                 runtime = time.time() - start
                 if runtime > 1.0 or count < 10:
