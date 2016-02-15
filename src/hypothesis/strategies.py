@@ -41,6 +41,7 @@ __all__ = [
     'builds',
     'randoms', 'random_module',
     'recursive', 'composite',
+    'shared',
 ]
 
 _strategies = set()
@@ -811,6 +812,67 @@ def uuids():
             lambda r: UUID(int=r.getrandbits(128))
         ), 'uuids()')
 
+
+@cacheable
+def data():
+    """This isn't really a normal strategy, but instead gives you an object
+    which can be used to draw data interactively from other strategies.
+
+    It can only be used within @given, not find. This is because the lifetime
+    of the object cannot outlast the test body.
+
+    See the rest of the documentation for more complete information.
+
+    """
+    from hypothesis.control import note
+
+    class DataObject(object):
+
+        def __init__(self, data):
+            self.count = 0
+            self.data = data
+
+        def __repr__(self):
+            return 'data(...)'
+
+        def draw(self, strategy):
+            result = self.data.draw(strategy)
+            self.count += 1
+            note('Draw %d: %r' % (self.count, result))
+            return result
+
+    class DataStrategy(SearchStrategy):
+
+        def do_draw(self, data):
+            if getattr(data, 'hypothesis_is_used_for_find', False):
+                raise InvalidArgument(
+                    'Cannot use arbitrary data from within find.'
+                )
+            if not hasattr(data, 'hypothesis_shared_data_strategy'):
+                data.hypothesis_shared_data_strategy = DataObject(data)
+            return data.hypothesis_shared_data_strategy
+
+        def __repr__(self):
+            return 'data()'
+
+        def map(self, f):
+            self.__not_a_first_class_strategy('map')
+
+        def filter(self, f):
+            self.__not_a_first_class_strategy('filter')
+
+        def flatmap(self, f):
+            self.__not_a_first_class_strategy('flatmap')
+
+        def example(self):
+            self.__not_a_first_class_strategy('example')
+
+        def __not_a_first_class_strategy(self, name):
+            raise InvalidArgument((
+                'Cannot call %s on a DataStrategy. You should probably be '
+                "using @composite for whatever it is you're trying to do."
+            ) % (name,))
+    return DataStrategy()
 
 # Private API below here
 
