@@ -554,6 +554,7 @@ def find(specifier, condition, settings=None, random=None, database_key=None):
     def template_condition(data):
         with BuildContext():
             try:
+                data.hypothesis_is_used_for_find = True
                 result = data.draw(search)
                 data.note(result)
                 success = condition(result)

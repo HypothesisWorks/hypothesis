@@ -239,3 +239,33 @@ You can use assume inside composite functions:
 
 This works as assume normally would, filtering out any examples for which the
 passed in argument is falsey.
+
+
+------------------------------
+Drawing interactively in tests
+------------------------------
+
+There is also the ``data()`` strategy, which gives you a means of using
+strategies interactively. Rather than having to specify everything up front in
+``@given`` you can draw from strategies in the body of your test:
+
+.. code-block:: python
+
+    @given(data())
+    def test_draw_sequentially(data):
+        x = data.draw(integers())
+        y = data.draw(integers(min_value=x))
+        assert x < y
+
+If the test fails, each draw will be printed with the falsifying example. e.g.
+the above is wrong (it has a boundary condition error), so will print:
+
+
+::
+
+    Falsifying example: test_draw_sequentially(data=data(...))
+    Draw 1: 0
+    Draw 2: 0
+
+
+As you can see, data drawn this way is simplified as usual.
