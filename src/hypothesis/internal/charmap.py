@@ -19,9 +19,9 @@ from __future__ import division, print_function, absolute_import
 import os
 import sys
 import gzip
+import pickle
 import unicodedata
 
-import pickle
 from hypothesis.configuration import storage_directory
 from hypothesis.internal.compat import hunichr
 
