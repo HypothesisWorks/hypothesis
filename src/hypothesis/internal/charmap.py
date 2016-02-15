@@ -21,7 +21,7 @@ import sys
 import gzip
 import unicodedata
 
-import marshal
+import pickle
 from hypothesis.configuration import storage_directory
 from hypothesis.internal.compat import hunichr
 
@@ -29,7 +29,7 @@ from hypothesis.internal.compat import hunichr
 def charmap_file():
     return os.path.join(
         storage_directory('unicodedata', unicodedata.unidata_version),
-        'charmap.marshal.gz'
+        'charmap.pickle.gz'
     )
 
 _charmap = None
@@ -54,9 +54,9 @@ def charmap():
                 (k, tuple((map(tuple, v))))
                 for k, v in _charmap.items())
             with gzip.GzipFile(f, 'wb', mtime=1) as o:
-                o.write(marshal.dumps(data))
+                o.write(pickle.dumps(data, pickle.HIGHEST_PROTOCOL))
         with gzip.open(f, 'rb') as i:
-            _charmap = dict(marshal.loads(i.read()))
+            _charmap = dict(pickle.loads(i.read()))
     assert _charmap is not None
     return _charmap
 
