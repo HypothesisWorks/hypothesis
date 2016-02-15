@@ -20,11 +20,11 @@ import os
 import sys
 import zlib
 import bisect
+import pickle
 import functools
 import itertools
 import unicodedata
 
-import marshal
 from hypothesis.errors import InvalidArgument
 from hypothesis._settings import hypothesis_home_dir
 from hypothesis.internal.compat import hrange, hunichr, OrderedDict
@@ -298,13 +298,13 @@ def cache_file_path():
                         os.path.basename(__file__) + '.cache')
 
 
-def dump_tree(tree):  # pragma: no cover
-    dump = marshal.dumps(tree, version=2)
+def dump_tree(tree):
+    dump = pickle.dumps(tree, pickle.HIGHEST_PROTOCOL)
     with open(cache_file_path(), 'wb') as f:
         f.write(zlib.compress(dump))
 
 
-def load_tree():  # pragma: no cover
+def load_tree():
     with open(cache_file_path(), 'rb') as f:
         dump = zlib.decompress(f.read())
-    return marshal.loads(dump)
+    return pickle.loads(dump)
