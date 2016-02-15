@@ -56,6 +56,7 @@ class TestData(object):
     def __init__(self, max_length, draw_bytes):
         self.max_length = max_length
         self._draw_bytes = draw_bytes
+        self.overdraw = 0
         self.level = 0
         self.block_starts = {}
         self.blocks = []
@@ -134,6 +135,7 @@ class TestData(object):
         self.__assert_not_frozen('draw_bytes')
         initial = self.index
         if self.index + n > self.max_length:
+            self.overdraw = self.index + n - self.max_length
             self.status = Status.OVERRUN
             self.freeze()
             raise StopTest(self.testcounter)

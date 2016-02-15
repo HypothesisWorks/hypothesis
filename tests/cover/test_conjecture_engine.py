@@ -22,7 +22,8 @@ from random import Random
 from hypothesis import strategies as st
 from hypothesis import given, settings
 from hypothesis.database import ExampleDatabase
-from hypothesis.internal.compat import hbytes, bytes_from_list
+from hypothesis.internal.compat import hbytes, int_from_bytes, \
+    bytes_from_list
 from hypothesis.internal.conjecture.data import Status, TestData
 from hypothesis.internal.conjecture.engine import TestRunner
 
@@ -198,6 +199,21 @@ def test_draw_to_overrun():
         if d >= 2:
             data.mark_interesting()
     assert x == hbytes([10]) + hbytes(128 * 2)
+
+
+def test_can_navigate_to_a_valid_example():
+    def f(data):
+        i = int_from_bytes(data.draw_bytes(2))
+        data.draw_bytes(i)
+        data.mark_interesting()
+    runner = TestRunner(f, settings=settings(
+        max_examples=5000, max_iterations=10000,
+        buffer_size=2,
+        database=None,
+    ))
+    runner.run()
+    assert runner.last_data.status == Status.INTERESTING
+    return hbytes(runner.last_data.buffer)
 
 
 def test_stops_after_max_iterations_when_generating():

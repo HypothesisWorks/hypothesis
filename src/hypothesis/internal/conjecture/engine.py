@@ -87,7 +87,7 @@ class TestRunner(object):
         if data.status == Status.INVALID:
             return data.index >= self.last_data.index
         if data.status == Status.OVERRUN:
-            return data.index <= self.last_data.index
+            return data.overdraw <= self.last_data.overdraw
         if data.status == Status.INTERESTING:
             assert len(data.buffer) <= len(self.last_data.buffer)
             if len(data.buffer) == len(self.last_data.buffer):
