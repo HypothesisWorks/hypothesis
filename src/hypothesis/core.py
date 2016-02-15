@@ -397,10 +397,14 @@ def given(*generator_arguments, **generator_kwargs):
                     )
             last_exception = [None]
             repr_for_last_exception = [None]
+            performed_random_check = [False]
 
             def evaluate_test_data(data):
-                if perform_health_check:
+                if perform_health_check and not performed_random_check[0]:
                     initial_state = getglobalrandomstate()
+                    performed_random_check[0] = True
+                else:
+                    initial_state = None
                 try:
                     result = test_runner(data, reify_and_execute(
                         search_strategy, test,
@@ -424,7 +428,7 @@ def given(*generator_arguments, **generator_kwargs):
                     data.mark_interesting()
                 finally:
                     if (
-                        perform_health_check and
+                        initial_state is not None and
                         getglobalrandomstate() != initial_state
                     ):
                         fail_health_check(
