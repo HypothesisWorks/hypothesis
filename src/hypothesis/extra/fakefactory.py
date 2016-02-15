@@ -22,7 +22,7 @@ from random import Random
 import faker
 from faker.factory import AVAILABLE_LOCALES
 
-from hypothesis.internal.compat import hrange, text_type
+from hypothesis.internal.compat import text_type
 from hypothesis.internal.reflection import check_valid_identifier
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
