@@ -65,7 +65,7 @@ class TestRunner(object):
             self._test_function(data)
             data.freeze()
         except StopTest as e:
-            if e.uuid != data.uuid:
+            if e.testcounter != data.testcounter:
                 self.save_buffer(data.buffer)
                 raise e
         except:
