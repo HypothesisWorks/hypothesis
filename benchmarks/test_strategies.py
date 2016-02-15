@@ -71,9 +71,9 @@ seeds = [
 counter = 0
 ids = []
 for strat in strategies:
-    for seed in seeds:
+    for seed in range(1, 1 + len(seeds)):
         counter += 1
-        ids.append('example%d-%r-%d' % (counter, strat, seed))
+        ids.append('example%d-%r-seed%d' % (counter, strat, seed))
 
 bench = pytest.mark.parametrize(
     ('strategy', 'seed'), [
