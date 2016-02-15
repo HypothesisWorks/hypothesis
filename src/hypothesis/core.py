@@ -52,20 +52,11 @@ def test_is_flaky(test, expected_repr):
     @functools.wraps(test)
     def test_or_flaky(*args, **kwargs):
         text_repr = arg_string(test, args, kwargs)
-        if text_repr == expected_repr:
-            raise Flaky(
-                (
-                    'Hypothesis %s(%s) produces unreliable results: Falsified'
-                    ' on the first call but did not on a subsequent one'
-                ) % (test.__name__, text_repr,))
-        else:
-            raise Flaky(
-                (
-                    'Hypothesis %s produces unreliable results: Falsified'
-                    ' on the first call but did not on a subsequent one.'
-                    ' This is possibly due to unreliable values, which may '
-                    'be a bug in the strategy.\nCall 1: %s\nCall 2: %s\n'
-                ) % (test.__name__, expected_repr, text_repr,))
+        raise Flaky(
+            (
+                'Hypothesis %s(%s) produces unreliable results: Falsified'
+                ' on the first call but did not on a subsequent one'
+            ) % (test.__name__, text_repr,))
     return test_or_flaky
 
 
@@ -100,22 +91,15 @@ def reify_and_execute(
     def run(data):
         with BuildContext(is_final=is_final):
             args, kwargs = data.draw(search_strategy)
-            store = []
 
-            def tv():
-                if not store:
-                    store.append(arg_string(test, args, kwargs))
-                return store[0]
             if print_example:
                 report(
                     lambda: 'Falsifying example: %s(%s)' % (
-                        test.__name__, tv(),))
+                        test.__name__, arg_string(test, args, kwargs)))
             elif current_verbosity() >= Verbosity.verbose:
                 report(
                     lambda: 'Trying example: %s(%s)' % (
-                        test.__name__, tv()))
-            if current_verbosity() >= Verbosity.debug:
-                data.note(tv())
+                        test.__name__, arg_string(test, args, kwargs)))
             return test(*args, **kwargs)
     return run
 

@@ -138,21 +138,19 @@ def test_terminates_shrinks():
     shrinks = [-1]
 
     def tf(data):
-        x = hbytes(data.draw_bytes(1024 * 8))
-        for i in range(256):
-            if x.count(i) <= 1:
-                return
-        shrinks[0] += 1
-        data.mark_interesting()
+        x = hbytes(data.draw_bytes(100))
+        if sum(x) >= 500:
+            shrinks[0] += 1
+            data.mark_interesting()
     runner = TestRunner(tf, settings=settings(
-        max_examples=5000, max_iterations=10000, max_shrinks=500,
+        max_examples=5000, max_iterations=10000, max_shrinks=10,
         database=None,
     ))
     runner.run()
     assert runner.last_data.status == Status.INTERESTING
     # There's an extra non-shrinking check step to abort in the presence of
     # flakiness
-    assert shrinks[0] == 501
+    assert shrinks[0] == 11
 
 
 def test_detects_flakiness():
