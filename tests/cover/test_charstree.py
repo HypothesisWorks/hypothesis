@@ -37,6 +37,12 @@ def test_unicode_tree():
     assert isinstance(tree, dict)
 
 
+def test_unicode_tree_cache():
+    tree = charstree.make_tree()
+    charstree.dump_tree(tree)
+    assert tree == charstree.load_tree()
+
+
 def test_ascii_tree_categories():
     tree = charstree.ascii_tree()
     expected = list(set([unicodedata.category(hunichr(i))
