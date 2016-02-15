@@ -190,16 +190,8 @@ Composite strategies
 ~~~~~~~~~~~~~~~~~~~~
 
 The @composite decorator lets you combine other strategies in more or less
-arbitrary ways.
-
-Advance warning: You're going to end up wanting to use this API for a lot of
-things, and it's not that you *shouldn't* do that, but it has certain
-intrinsic limitations which mean that overuse of it can hurt performance and
-example quality.
-
-If it's convenient to do so you should use builds instead. Otherwise feel free
-to use this, and if you end up with bad examples or poor performance then you
-should look here first as the culprit.
+arbitrary ways. It's probably the main thing you'll want to use for
+complicated custom strategies.
 
 The composite decorator works by giving you a function as the first argument
 that you can use to draw examples from other strategies. For example, the
