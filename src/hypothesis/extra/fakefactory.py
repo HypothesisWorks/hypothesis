@@ -72,19 +72,9 @@ class FakeFactoryStrategy(SearchStrategy):
         self.factories = {}
 
     def do_draw(self, data):
-        seed = data.draw_bytes(5)
-        shrinks = 255 - seed[-1]
+        seed = data.draw_bytes(4)
         random = Random(bytes(seed))
-        example = self.gen_example(random)
-        for _ in hrange(shrinks):
-            replacement = self.gen_example(random)
-            if (
-                len(replacement) < len(example) or (
-                    len(replacement) == len(example) and replacement < example
-                )
-            ):
-                example = replacement
-        return example
+        return self.gen_example(random)
 
     def factory_for(self, locale):
         try:
