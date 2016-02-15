@@ -115,17 +115,24 @@ def quiet_raise(exc):
     def zero_byte_sequence(n):
         return bytes(n)
 else:
+    import struct
+
     def zero_byte_sequence(n):
         return b'\0' * n
 
     def int_from_bytes(data):
-        if isinstance(data, bytes):
-            data = bytearray(data)
+        assert isinstance(data, bytearray)
+        result = 0
         i = 0
-        for b in data:
-            i <<= 8
-            i |= b
-        return int(i)
+        while i + 4 <= len(data):
+            result <<= 32
+            result |= struct.unpack('>I', data[i:i+4])[0]
+            i += 4
+        while i < len(data):
+            result <<= 8
+            result |= data[i]
+            i += 1
+        return int(result)
 
     def int_to_bytes(i, size):
         assert i >= 0
