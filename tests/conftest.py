@@ -20,6 +20,10 @@ import gc
 
 import pytest
 
+from tests.common.setup import run
+
+run()
+
 
 @pytest.fixture(scope=u'function', autouse=True)
 def some_fixture():
