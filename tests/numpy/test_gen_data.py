@@ -97,6 +97,6 @@ def test_can_create_arrays_of_composite_types():
 def test_can_create_arrays_of_tuples():
     arr = find(
         arrays(object, 10, st.tuples(st.integers(), st.integers())),
-        lambda x: all(t[0] < t[1] for t in x))
+        lambda x: all(t[0] != t[1] for t in x))
     for a in arr:
-        assert a in ((0, 1), (-1, 0))
+        assert a in ((1, 0), (0, 1))
