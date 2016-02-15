@@ -17,7 +17,6 @@
 from __future__ import division, print_function, absolute_import
 
 from enum import IntEnum
-from uuid import uuid4
 
 from hypothesis.errors import Frozen
 from hypothesis.internal.compat import hbytes, text_type, int_to_bytes, \
@@ -37,9 +36,11 @@ class Status(IntEnum):
 
 class StopTest(BaseException):
 
-    def __init__(self, uuid):
-        super(StopTest, self).__init__(repr(uuid))
-        self.uuid = uuid
+    def __init__(self, testcounter):
+        super(StopTest, self).__init__(repr(testcounter))
+        self.testcounter = testcounter
+
+global_test_counter = 0
 
 
 class TestData(object):
@@ -65,7 +66,9 @@ class TestData(object):
         self.intervals_by_level = []
         self.intervals = []
         self.interval_stack = []
-        self.uuid = uuid4().bytes
+        global global_test_counter
+        self.testcounter = global_test_counter
+        global_test_counter += 1
 
     def __assert_not_frozen(self, name):
         if self.frozen:
@@ -133,7 +136,7 @@ class TestData(object):
         if self.index + n > self.max_length:
             self.status = Status.OVERRUN
             self.freeze()
-            raise StopTest(self.uuid)
+            raise StopTest(self.testcounter)
         result = self._draw_bytes(self, n, distribution)
         self.block_starts.setdefault(n, []).append(initial)
         self.blocks.append((initial, initial + n))
@@ -147,10 +150,10 @@ class TestData(object):
         self.__assert_not_frozen('mark_interesting')
         self.status = Status.INTERESTING
         self.freeze()
-        raise StopTest(self.uuid)
+        raise StopTest(self.testcounter)
 
     def mark_invalid(self):
         self.__assert_not_frozen('mark_invalid')
         self.status = Status.INVALID
         self.freeze()
-        raise StopTest(self.uuid)
+        raise StopTest(self.testcounter)
