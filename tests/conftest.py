@@ -17,41 +17,7 @@
 from __future__ import division, print_function, absolute_import
 
 import gc
-import os
-import warnings
-from tempfile import mkdtemp
-
 import pytest
-
-from hypothesis import settings
-from hypothesis.configuration import set_hypothesis_home_dir
-from hypothesis.internal.charmap import charmap, charmap_file
-
-warnings.filterwarnings(u'error', category=UnicodeWarning)
-
-set_hypothesis_home_dir(mkdtemp())
-
-charmap()
-assert os.path.exists(charmap_file())
-
-
-assert isinstance(settings, type)
-
-settings.register_profile(
-    'default', settings(timeout=-1, strict=True)
-)
-
-settings.register_profile(
-    'speedy', settings(
-        timeout=1, max_examples=5,
-    ))
-
-
-settings.register_profile(
-    'nonstrict', settings(strict=False)
-)
-
-settings.load_profile(os.getenv('HYPOTHESIS_PROFILE', 'default'))
 
 
 @pytest.fixture(scope=u'function', autouse=True)
