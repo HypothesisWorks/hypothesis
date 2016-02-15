@@ -94,24 +94,28 @@ def example(*args, **kwargs):
 
 def reify_and_execute(
     search_strategy, test,
-    print_example=False, record_repr=None,
+    print_example=False,
     is_final=False,
 ):
     def run(data):
         with BuildContext(is_final=is_final):
             args, kwargs = data.draw(search_strategy)
-            text_version = arg_string(test, args, kwargs)
-            data.note(text_version)
+            store = []
+
+            def tv():
+                if not store:
+                    store.append(arg_string(test, args, kwargs))
+                return store[0]
             if print_example:
                 report(
                     lambda: 'Falsifying example: %s(%s)' % (
-                        test.__name__, text_version,))
+                        test.__name__, tv(),))
             elif current_verbosity() >= Verbosity.verbose:
                 report(
                     lambda: 'Trying example: %s(%s)' % (
-                        test.__name__, text_version))
-            if record_repr is not None:
-                record_repr[0] = text_version
+                        test.__name__, tv()))
+            if current_verbosity() >= Verbosity.debug:
+                data.note(tv())
             return test(*args, **kwargs)
     return run
 
@@ -397,11 +401,9 @@ def given(*generator_arguments, **generator_kwargs):
             def evaluate_test_data(data):
                 if perform_health_check:
                     initial_state = getglobalrandomstate()
-                record_repr = [None]
                 try:
                     result = test_runner(data, reify_and_execute(
                         search_strategy, test,
-                        record_repr=record_repr,
                     ))
                     if result is not None and settings.perform_health_check:
                         raise FailedHealthCheck((
@@ -418,7 +420,6 @@ def given(*generator_arguments, **generator_kwargs):
                     raise
                 except Exception:
                     last_exception[0] = traceback.format_exc()
-                    repr_for_last_exception[0] = record_repr[0]
                     verbose_report(last_exception[0])
                     data.mark_interesting()
                 finally:
