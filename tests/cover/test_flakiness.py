@@ -20,22 +20,8 @@ import pytest
 
 from hypothesis import given, assume, reject, example, settings, Verbosity
 from hypothesis.errors import Flaky, Unsatisfiable, UnsatisfiedAssumption
-from hypothesis.strategies import lists, builds, booleans, integers, \
-    composite, random_module
-
-
-def test_errors_even_if_does_not_error_on_final_call():
-    first = [True]
-
-    @given(builds(DifferentReprEachTime))
-    def rude(x):
-        if first[0]:
-            first[0] = False
-            assert False
-
-    with pytest.raises(Flaky) as e:
-        rude()
-    assert u'Call 1:' in e.value.args[0]
+from hypothesis.strategies import lists, booleans, integers, composite, \
+    random_module
 
 
 class Nope(Exception):
@@ -79,28 +65,6 @@ def test_does_not_attempt_to_shrink_flaky_errors():
     with pytest.raises(Flaky):
         test()
     assert len(set(values)) == 1
-
-
-class DifferentReprEachTime(object):
-    counter = 0
-
-    def __repr__(self):
-        DifferentReprEachTime.counter += 1
-        return u'DifferentReprEachTime(%d)' % (DifferentReprEachTime.counter,)
-
-
-def test_reports_repr_diff_in_flaky_error():
-    first = [True]
-
-    @given(builds(DifferentReprEachTime))
-    def rude(x):
-        if first[0]:
-            first[0] = False
-            assert False
-
-    with pytest.raises(Flaky) as e:
-        rude()
-    assert u'Call 1:' in e.value.args[0]
 
 
 class SatisfyMe(Exception):
