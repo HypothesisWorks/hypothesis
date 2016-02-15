@@ -241,9 +241,9 @@ This works as assume normally would, filtering out any examples for which the
 passed in argument is falsey.
 
 
-------------------------------
+==============================
 Drawing interactively in tests
-------------------------------
+==============================
 
 There is also the ``data()`` strategy, which gives you a means of using
 strategies interactively. Rather than having to specify everything up front in
