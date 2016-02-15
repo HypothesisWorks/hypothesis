@@ -132,7 +132,7 @@ def test_can_form_sets_of_recursive_data():
         lambda x: st.lists(x, min_size=5).map(tuple),
         max_leaves=20))
     xs = find(trees, lambda x: len(x) >= 10, settings=settings(
-        database=None, timeout=10, max_shrinks=1000, max_examples=1000
+        database=None, timeout=20, max_shrinks=1000, max_examples=1000
     ))
     assert len(xs) == 10
 
