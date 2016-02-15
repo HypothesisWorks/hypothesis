@@ -24,7 +24,7 @@ class HypothesisTestCase(object):
     def setup_example(self):
         self._pre_setup()
 
-    def teardown_example(self, example):
+    def teardown_example(self):
         self._post_teardown()
 
     def __call__(self, result=None):
