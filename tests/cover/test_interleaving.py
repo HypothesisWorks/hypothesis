@@ -25,7 +25,7 @@ from hypothesis import find, note, given, settings
 def test_can_eval_stream_inside_find(stream, rnd):
     x = find(
         st.lists(st.integers(min_value=0), min_size=10),
-        lambda t: t > list(stream[:len(t)]),
+        lambda t: any(t > s for (t, s) in zip(t, stream)),
         settings=settings(database=None, max_shrinks=2000, max_examples=2000)
     )
     note('x: %r' % (x,))
