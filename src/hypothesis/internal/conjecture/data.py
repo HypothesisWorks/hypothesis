@@ -91,8 +91,8 @@ class TestData(object):
     def draw(self, strategy):
         if self.is_find and not strategy.supports_find:
             raise InvalidArgument((
-                "Cannot use strategy %r within a call to find (presumably "
-                "because it would be invalid after the call had ended)."
+                'Cannot use strategy %r within a call to find (presumably '
+                'because it would be invalid after the call had ended).'
             ) % (strategy,))
         self.start_example()
         try:
