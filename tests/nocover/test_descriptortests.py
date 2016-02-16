@@ -21,8 +21,8 @@ from collections import namedtuple
 
 from hypothesis.strategies import just, none, sets, text, lists, binary, \
     builds, floats, one_of, tuples, randoms, booleans, decimals, \
-    integers, composite, fractions, recursive, frozensets, dictionaries, \
-    sampled_from, complex_numbers, fixed_dictionaries
+    integers, composite, fractions, recursive, streaming, frozensets, \
+    dictionaries, sampled_from, complex_numbers, fixed_dictionaries
 from hypothesis.strategytests import strategy_test_suite
 from hypothesis.internal.compat import OrderedDict
 
@@ -140,6 +140,11 @@ TestManyFlatmaps = strategy_test_suite(
     .flatmap(integers_from)
     .flatmap(integers_from)
 )
+
+TestIntStreams = strategy_test_suite(streaming(integers()))
+TestStreamLists = strategy_test_suite(streaming(integers()))
+TestIntStreamStreams = strategy_test_suite(
+    streaming(streaming(integers())))
 
 TestRecursiveLowLeaves = strategy_test_suite(
     recursive(

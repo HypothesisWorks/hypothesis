@@ -25,7 +25,7 @@ from hypothesis.errors import NoExamples, FailedHealthCheck
 from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import rule, Bundle, RuleBasedStateMachine
 from hypothesis.strategies import just, none, text, lists, binary, \
-    floats, tuples, booleans, decimals, integers, fractions, \
+    floats, tuples, booleans, decimals, integers, fractions, streaming, \
     float_to_int, int_to_float, sampled_from, complex_numbers
 from hypothesis.utils.size import clamp
 from hypothesis.internal.debug import timeout
@@ -43,6 +43,7 @@ class HypothesisSpec(RuleBasedStateMachine):
     strategies = Bundle(u'strategy')
     strategy_tuples = Bundle(u'tuples')
     objects = Bundle(u'objects')
+    streaming_strategies = Bundle(u'streams')
     basic_data = Bundle(u'basic')
     varied_floats = Bundle(u'varied_floats')
 
@@ -63,6 +64,24 @@ class HypothesisSpec(RuleBasedStateMachine):
     def set_database(self):
         self.teardown()
         self.database = ExampleDatabase()
+
+    @rule(targets=(strategies, streaming_strategies), strat=strategies)
+    def build_stream(self, strat):
+        return streaming(strat)
+
+    @rule(
+        targets=(strategies, streaming_strategies),
+        strat=strategies, i=integers(1, 10))
+    def evalled_stream(self, strat, i):
+        return streaming(strat).map(lambda x: list(x[:i]) and x)
+
+    @rule(stream_strat=streaming_strategies, index=integers(0, 50))
+    def eval_stream(self, stream_strat, index):
+        try:
+            stream = stream_strat.example()
+            list(stream[:index])
+        except NoExamples:
+            pass
 
     @rule(strat=strategies, r=integers(), mshr=integers(0, 100))
     def find_constant_failure(self, strat, r, mshr):

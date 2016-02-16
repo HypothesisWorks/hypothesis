@@ -140,6 +140,11 @@ def test_tuples_raise_error_on_bad_kwargs():
         ds.tuples(stuff=u'things')
 
 
+def test_streaming_streams():
+    for v in ds.streaming(ds.integers(max_value=1000)).example()[:10]:
+        assert v <= 1000
+
+
 @given(ds.lists(ds.booleans(), min_size=10, max_size=10))
 def test_has_specified_length(xs):
     assert len(xs) == 10

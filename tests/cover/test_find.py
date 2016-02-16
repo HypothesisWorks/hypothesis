@@ -25,7 +25,7 @@ from hypothesis import settings as Settings
 from hypothesis import find
 from hypothesis.errors import Timeout, NoSuchExample
 from hypothesis.strategies import lists, floats, booleans, integers, \
-    dictionaries
+    streaming, dictionaries
 
 
 def test_can_find_an_int():
@@ -48,6 +48,12 @@ def test_can_find_nans():
         assert math.isnan(x[0])
     else:
         assert 2 <= len(x) <= 3
+
+
+def test_find_streaming_int():
+    n = 50
+    r = find(streaming(integers()), lambda x: any(t >= 1 for t in list(x[:n])))
+    assert sorted(r[:n]) == [0] * (n - 1) + [1]
 
 
 def test_raises_when_no_example():

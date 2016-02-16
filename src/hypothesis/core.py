@@ -593,7 +593,8 @@ def find(specifier, condition, settings=None, random=None, database_key=None):
     run_time = time.time() - start
     if runner.last_data.status == Status.INTERESTING:
         with BuildContext():
-            return TestData.for_buffer(runner.last_data.buffer).draw(search)
+            return TestData.for_buffer(
+                runner.last_data.buffer, expand=True).draw(search)
     if runner.valid_examples <= settings.min_satisfying_examples:
         if settings.timeout > 0 and run_time > settings.timeout:
             raise Timeout((

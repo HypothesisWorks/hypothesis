@@ -46,12 +46,27 @@ global_test_counter = 0
 class TestData(object):
 
     @classmethod
-    def for_buffer(self, buffer):
-        return TestData(
-            max_length=len(buffer),
-            draw_bytes=lambda data, n, distribution:
-            buffer[data.index:data.index + n]
-        )
+    def for_buffer(self, buffer, expand=False):
+        if expand:
+            from random import Random
+            rnd = Random(buffer)
+
+            def db(data, n, distribution):
+                if data.index + n <= len(buffer):
+                    return buffer[data.index:data.index + n]
+                else:
+                    return distribution(rnd, n)
+
+            return TestData(
+                max_length=2 ** 64,
+                draw_bytes=db
+            )
+        else:
+            return TestData(
+                max_length=len(buffer),
+                draw_bytes=lambda data, n, distribution:
+                buffer[data.index:data.index + n]
+            )
 
     def __init__(self, max_length, draw_bytes):
         self.max_length = max_length
