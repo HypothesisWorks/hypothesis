@@ -5,7 +5,7 @@ Hypothesis for Django users
 ===========================
 
 Hypothesis offers a number of features specific for Django testing, available
-in the :mod:`hypothesis-django` extra package.
+in the :mod:`hypothesis[django]` :doc:`extra </extras>`.
 
 Using it is quite straightforward: All you need to do is subclass
 :class:`hypothesis.extra.django.TestCase` or
