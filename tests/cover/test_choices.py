@@ -18,7 +18,8 @@ from __future__ import division, print_function, absolute_import
 
 import hypothesis.strategies as st
 from hypothesis import find, given
-from tests.common.utils import raises
+import pytest
+from hypothesis.errors import InvalidArgument
 
 
 def test_exhaustion():
@@ -36,13 +37,15 @@ def test_choice_is_shared(choice1, choice2):
     assert choice1 is choice2
 
 
-def test_can_use_a_choice_function_after_find():
-    c = find(st.choices(), lambda c: True)
-    ls = [1, 2, 3]
-    assert c(ls) in ls
+def test_cannot_use_choices_within_find():
+    with pytest.raises(InvalidArgument):
+        find(st.choices(), lambda c: True)
 
 
-def test_choice_raises_index_error_on_empty():
-    c = find(st.choices(), lambda c: True)
-    with raises(IndexError):
-        c([])
+def test_fails_to_draw_from_empty_sequence():
+    @given(st.choices())
+    def test(choice):
+        choice([])
+
+    with pytest.raises(IndexError):
+        test()

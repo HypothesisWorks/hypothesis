@@ -66,16 +66,6 @@ def test_draw_past_end_sets_overflow():
     assert x.status == Status.OVERRUN
 
 
-def test_can_draw_indefinitely_if_expand():
-    x = TestData.for_buffer(b'', expand=True)
-    x.draw_bytes(100)
-
-
-def test_draws_initial_data_if_expand():
-    x = TestData.for_buffer(b'foo', expand=True)
-    assert x.draw_bytes(3) == b'foo'
-
-
 def test_notes_repr():
     x = TestData.for_buffer(b'')
     x.note(b'hi')

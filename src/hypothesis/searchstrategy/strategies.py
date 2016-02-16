@@ -89,6 +89,8 @@ class SearchStrategy(object):
 
     """
 
+    supports_find = True
+
     def example(self, random=None):
         """Provide an example of the sort of value that this strategy
         generates. This is biased to be slightly simpler than is typical for

@@ -16,16 +16,13 @@
 
 from __future__ import division, print_function, absolute_import
 
-from copy import copy, deepcopy
 from itertools import islice
 
 import pytest
 
 from hypothesis import find, given
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import text, lists, booleans, integers, \
-    streaming
-from hypothesis.internal.debug import minimal
+from hypothesis.strategies import text, lists, booleans, streaming
 from hypothesis.searchstrategy.streams import Stream
 
 
@@ -93,43 +90,10 @@ def test_can_map():
     assert list(x) == [2, 4, 6]
 
 
-def test_can_minimize():
-    x = minimal(streaming(integers()), lambda x: x[10] >= 1)
-    ts = list(x[:11])
-    assert ts == [0] * 10 + [1]
+def test_streaming_errors_in_find():
+    with pytest.raises(InvalidArgument):
+        find(streaming(booleans()), lambda x: True)
 
 
 def test_default_stream_is_empty():
     assert list(Stream()) == []
-
-
-def test_streams_copy_as_self():
-    x = streaming(booleans()).example()
-    assert copy(x) is x
-    assert deepcopy(x) is x
-
-    y = x.map(lambda x: not x)
-    assert copy(y) is y
-    assert deepcopy(y) is y
-
-
-def test_lists_of_streams():
-    x = find(
-        lists(streaming(integers()).map(lambda x: (x[3],) and x), min_size=10),
-        lambda x: all(t[3] for t in x))
-    assert [list(t[:4]) for t in x] == [[0] * 3 + [1]] * 10
-
-
-def test_streams_with_distinct_values():
-    x = find(streaming(integers()), lambda x: len(set(x[:10])) >= 10)
-    elts = sorted(set(x[:10]))
-    assert len(elts) == 10
-    assert elts == list(range(min(elts), max(elts) + 1))
-
-
-def test_decreasing_streams():
-    n = 10
-    x = find(
-        streaming(integers()), lambda x: all(
-            x[i] >= n - i for i in range(n + 1)))
-    assert list(x[:(n + 1)]) == list(range(n, -1, -1))

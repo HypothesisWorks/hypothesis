@@ -845,6 +845,7 @@ def choices():
             return 'choice'
 
     class ChoiceStrategy(SearchStrategy):
+        supports_find = False
 
         def do_draw(self, data):
             return Chooser(current_build_context(), data)
@@ -853,7 +854,7 @@ def choices():
         shared(
             ChoiceStrategy(),
             key='hypothesis.strategies.chooser.choice_function'
-        ), 'chooser()')
+        ), 'choices()')
 
 
 @cacheable
@@ -900,12 +901,9 @@ def data():
             return result
 
     class DataStrategy(SearchStrategy):
+        supports_find = False
 
         def do_draw(self, data):
-            if getattr(data, 'hypothesis_is_used_for_find', False):
-                raise InvalidArgument(
-                    'Cannot use arbitrary data from within find.'
-                )
             if not hasattr(data, 'hypothesis_shared_data_strategy'):
                 data.hypothesis_shared_data_strategy = DataObject(data)
             return data.hypothesis_shared_data_strategy

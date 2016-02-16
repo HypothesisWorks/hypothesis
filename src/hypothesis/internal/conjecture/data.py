@@ -18,7 +18,7 @@ from __future__ import division, print_function, absolute_import
 
 from enum import IntEnum
 
-from hypothesis.errors import Frozen
+from hypothesis.errors import Frozen, InvalidArgument
 from hypothesis.internal.compat import hbytes, text_type, int_to_bytes, \
     unicode_safe_repr, reasonable_byte_type
 
@@ -46,30 +46,16 @@ global_test_counter = 0
 class TestData(object):
 
     @classmethod
-    def for_buffer(self, buffer, expand=False):
-        if expand:
-            from random import Random
-            rnd = Random(buffer)
-
-            def db(data, n, distribution):
-                if data.index + n <= len(buffer):
-                    return buffer[data.index:data.index + n]
-                else:
-                    return distribution(rnd, n)
-
-            return TestData(
-                max_length=2 ** 64,
-                draw_bytes=db
-            )
-        else:
-            return TestData(
-                max_length=len(buffer),
-                draw_bytes=lambda data, n, distribution:
-                buffer[data.index:data.index + n]
-            )
+    def for_buffer(self, buffer):
+        return TestData(
+            max_length=len(buffer),
+            draw_bytes=lambda data, n, distribution:
+            buffer[data.index:data.index + n]
+        )
 
     def __init__(self, max_length, draw_bytes):
         self.max_length = max_length
+        self.is_find = False
         self._draw_bytes = draw_bytes
         self.overdraw = 0
         self.level = 0
@@ -103,6 +89,11 @@ class TestData(object):
         self.output += value
 
     def draw(self, strategy):
+        if self.is_find and not strategy.supports_find:
+            raise InvalidArgument((
+                "Cannot use strategy %r within a call to find (presumably "
+                "because it would be invalid after the call had ended)."
+            ) % (strategy,))
         self.start_example()
         try:
             return strategy.do_draw(self)

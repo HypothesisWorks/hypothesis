@@ -32,6 +32,10 @@ class WrapperStrategy(SearchStrategy):
         SearchStrategy.__init__(self)
         self.wrapped_strategy = strategy
 
+    @property
+    def supports_find(self):
+        return self.wrapped_strategy.supports_find
+
     def __repr__(self):
         return u'%s(%r)' % (type(self).__name__, self.wrapped_strategy)
 

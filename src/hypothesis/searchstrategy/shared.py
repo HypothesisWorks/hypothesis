@@ -27,6 +27,10 @@ class SharedStrategy(SearchStrategy):
         self.key = key
         self.base = base
 
+    @property
+    def supports_find(self):
+        return self.base.supports_find
+
     def __repr__(self):
         if self.key is not None:
             return 'shared(%r, key=%r)' % (self.base, self.key)

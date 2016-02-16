@@ -22,6 +22,8 @@ from hypothesis.searchstrategy.strategies import SearchStrategy
 
 class StreamStrategy(SearchStrategy):
 
+    supports_find = False
+
     def __init__(self, source_strategy):
         super(StreamStrategy, self).__init__()
         self.source_strategy = source_strategy

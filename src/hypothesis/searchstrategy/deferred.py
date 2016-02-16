@@ -51,6 +51,10 @@ class DeferredStrategy(SearchStrategy):
         self.__settings = settings.default or settings()
 
     @property
+    def supports_find(self):
+        return self.wrapped_strategy.supports_find
+
+    @property
     def wrapped_strategy(self):
         if self.__wrapped_strategy is None:
             with self.__settings:
@@ -93,4 +97,4 @@ class DeferredStrategy(SearchStrategy):
         return self.__representation
 
     def do_draw(self, data):
-        return self.wrapped_strategy.do_draw(data)
+        return data.draw(self.wrapped_strategy)
