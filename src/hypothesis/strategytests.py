@@ -59,11 +59,12 @@ def strategy_test_suite(
         def test_does_not_error(self, value):
             pass
 
-        def test_can_give_example(self):
-            strat.example()
+        if strat.supports_find:
+            def test_can_give_example(self):
+                strat.example()
 
-        def test_can_give_list_of_examples(self):
-            lists(strat).example()
+            def test_can_give_list_of_examples(self):
+                lists(strat).example()
 
         def test_will_give_unsatisfiable_if_all_rejected(self):
             @given(specifier)
