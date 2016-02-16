@@ -97,3 +97,7 @@ def test_streaming_errors_in_find():
 
 def test_default_stream_is_empty():
     assert list(Stream()) == []
+
+
+def test_can_slice_streams():
+    assert list(Stream([1, 2, 3][:2])) == [1, 2]
