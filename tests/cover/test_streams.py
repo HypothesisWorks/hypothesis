@@ -100,4 +100,4 @@ def test_default_stream_is_empty():
 
 
 def test_can_slice_streams():
-    assert list(Stream([1, 2, 3][:2])) == [1, 2]
+    assert list(Stream([1, 2, 3])[:2]) == [1, 2]
