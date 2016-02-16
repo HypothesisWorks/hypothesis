@@ -29,16 +29,17 @@ from __future__ import division, print_function, absolute_import
 
 import re
 import math
-import random
 import collections
 
 import pytest
 
 import hypothesis.internal.reflection as reflection
+from hypothesis import settings as Settings
 from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.strategies import just, sets, text, lists, floats, \
     tuples, booleans, integers, sampled_from
 from hypothesis.internal.compat import PY26, hrange
+from hypothesis.internal.conjecture.engine import TestRunner
 
 pytestmark = pytest.mark.skipif(PY26, reason=u'2.6 lacks erf')
 
@@ -158,20 +159,27 @@ def define_test(specifier, q, predicate, condition=None):
             condition_string = strip_lambda(
                 reflection.get_pretty_function_description(condition))
 
-        count = 0
-        successful_runs = 0
-        s = specifier
-        for _ in hrange(MAX_RUNS):
-            pv = s.draw_parameter(random)
+        count = [0]
+        successful_runs = [0]
+
+        def test_function(data):
             try:
-                x = s.reify(s.draw_template(random, pv))
+                value = data.draw(specifier)
             except UnsatisfiedAssumption:
-                continue
-            if not _condition(x):
-                continue
-            successful_runs += 1
-            if predicate(x):
-                count += 1
+                data.mark_invalid()
+            if not _condition(value):
+                data.mark_invalid()
+            successful_runs[0] += 1
+            if predicate(value):
+                count[0] += 1
+        TestRunner(
+            test_function,
+            settings=Settings(
+                max_examples=MAX_RUNS,
+                max_iterations=MAX_RUNS * 10,
+            )).run()
+        successful_runs = successful_runs[0]
+        count = count[0]
         if successful_runs < MIN_RUNS:
             raise ConditionTooHard((
                 u'Unable to find enough examples satisfying predicate %s '
@@ -261,13 +269,12 @@ test_can_produce_multi_line_strings = define_test(
     text(average_size=25.0), 0.1, lambda x: u'\n' in x
 )
 
-test_can_produce_long_ascii_strings = define_test(
+test_can_produce_ascii_strings = define_test(
     text(), 0.1, lambda x: all(ord(c) <= 127 for c in x),
-    condition=lambda x: len(x) >= 10
 )
 
 test_can_produce_long_strings_with_no_ascii = define_test(
-    text(), 0.05, lambda x: all(ord(c) > 127 for c in x),
+    text(), 0.02, lambda x: all(ord(c) > 127 for c in x),
     condition=lambda x: len(x) >= 10
 )
 
@@ -277,24 +284,19 @@ test_can_produce_short_strings_with_some_non_ascii = define_test(
 )
 
 test_can_produce_positive_infinity = define_test(
-    floats(), 0.02, lambda x: x == float(u'inf')
+    floats(), 0.01, lambda x: x == float(u'inf')
 )
 
 test_can_produce_negative_infinity = define_test(
-    floats(), 0.02, lambda x: x == float(u'-inf')
+    floats(), 0.01, lambda x: x == float(u'-inf')
 )
 
 test_can_produce_nan = define_test(
     floats(), 0.02, math.isnan
 )
 
-test_can_produce_long_lists_of_positive_integers = define_test(
-    lists(integers()), 0.03, lambda x: all(t >= 0 for t in x),
-    condition=long_list
-)
-
 test_can_produce_long_lists_of_negative_integers = define_test(
-    lists(integers()), 0.03, lambda x: all(t <= 0 for t in x),
+    lists(integers()), 0.01, lambda x: all(t <= 0 for t in x),
     condition=lambda x: len(x) >= 20
 )
 
@@ -314,28 +316,16 @@ test_can_produce_floats_in_middle = define_test(
 )
 
 test_can_produce_long_lists = define_test(
-    lists(integers(), average_size=25.0), 0.3, long_list
+    lists(integers(), average_size=25.0), 0.2, long_list
 )
 
 test_can_produce_short_lists = define_test(
     lists(integers()), 0.2, lambda x: len(x) <= 10
 )
 
-test_can_produce_lists_bunched_near_left = define_test(
-    lists(floats(0, 1)), 0.03,
-    lambda ts: all(t < 0.2 for t in ts),
-    condition=long_list,
-)
-
-test_can_produce_lists_bunched_near_right = define_test(
-    lists(floats(0, 1)), 0.03,
-    lambda ts: all(t > 0.8 for t in ts),
-    condition=long_list,
-)
-
 test_can_produce_the_same_int_twice = define_test(
     tuples(lists(integers(), average_size=25.0), integers()), 0.01,
-    lambda t: len([x for x in t[0] if x == t[1]]) > 1
+    lambda t: t[0].count(t[1]) > 1
 )
 
 
@@ -361,18 +351,13 @@ test_sampled_from_often_distorted = define_test(
 
 
 test_non_empty_subset_of_two_is_usually_large = define_test(
-    sets(sampled_from((1, 2))), 0.15,
+    sets(sampled_from((1, 2))), 0.1,
     lambda t: len(t) == 2
 )
 
 test_subset_of_ten_is_sometimes_empty = define_test(
     sets(integers(1, 10)), 0.05, lambda t: len(t) == 0
 )
-
-test_subset_of_ten_with_large_average_is_usually_full = define_test(
-    sets(integers(1, 10), average_size=9.5), 0.6, lambda t: len(t) == 10
-)
-
 
 test_mostly_sensible_floats = define_test(
     floats(), 0.5,
@@ -391,7 +376,7 @@ test_ints_can_occasionally_be_really_large = define_test(
 )
 
 test_mixing_is_sometimes_distorted = define_test(
-    lists(booleans() | tuples(), average_size=25.0), 0.25, distorted,
+    lists(booleans() | tuples(), average_size=25.0), 0.05, distorted,
     condition=lambda x: len(set(map(type, x))) == 2,
 )
 
@@ -402,7 +387,7 @@ test_mixes_2_reasonably_often = define_test(
 )
 
 test_partial_mixes_3_reasonably_often = define_test(
-    lists(booleans() | tuples() | just(u'hi'), average_size=25.0), 0.15,
+    lists(booleans() | tuples() | just(u'hi'), average_size=25.0), 0.10,
     lambda x: 1 < len(set(map(type, x))) < 3,
     condition=bool,
 )
@@ -411,4 +396,9 @@ test_mixes_not_too_often = define_test(
     lists(booleans() | tuples(), average_size=25.0), 0.1,
     lambda x: len(set(map(type, x))) == 1,
     condition=bool,
+)
+
+test_float_lists_have_non_reversible_sum = define_test(
+    lists(floats(), min_size=2), 0.01, lambda x: sum(x) != sum(reversed(x)),
+    condition=lambda x: not math.isnan(sum(x))
 )

@@ -16,27 +16,26 @@
 
 from __future__ import division, print_function, absolute_import
 
-import math
+import time
 
 from pytest import raises
 
-from flaky import flaky
 from hypothesis import given, settings
 from hypothesis.internal import debug
-from hypothesis.strategies import lists, floats
+from hypothesis.strategies import lists, integers
 
 
-@flaky(max_runs=10, min_passes=1)
 def test_can_timeout_during_an_unsuccessful_simplify():
     record = []
 
     @debug.timeout(3)
-    @given(lists(floats()))
-    @settings(timeout=1)
+    @given(lists(integers(), min_size=10))
+    @settings(timeout=1, database=None)
     def first_bad_float_list(xs):
         if record:
+            time.sleep(0.1)
             assert record[0] != xs
-        elif len(xs) >= 10 and any(math.isinf(x) for x in xs):
+        elif sum(xs) >= 10 ** 6:
             record.append(xs)
             assert False
 

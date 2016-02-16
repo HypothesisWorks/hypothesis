@@ -16,10 +16,15 @@
 
 from __future__ import division, print_function, absolute_import
 
+import base64
+
+import pytest
+
 from hypothesis import given, settings
-from hypothesis.strategies import text, lists, tuples
+from hypothesis.database import ExampleDatabase, SQLiteExampleDatabase, \
+    InMemoryExampleDatabase, DirectoryBasedExampleDatabase
+from hypothesis.strategies import lists, binary, tuples
 from hypothesis.internal.compat import PY26, hrange
-from hypothesis.database.backend import SQLiteBackend
 
 small_settings = settings(max_examples=100, timeout=4)
 
@@ -31,10 +36,10 @@ else:
     alphabet = None
 
 
-@given(lists(tuples(text(alphabet=alphabet), text(alphabet=alphabet))))
+@given(lists(tuples(binary(), binary())))
 @small_settings
 def test_backend_returns_what_you_put_in(xs):
-    backend = SQLiteBackend(u':memory:')
+    backend = SQLiteExampleDatabase(':memory:')
     mapping = {}
     for key, value in xs:
         mapping.setdefault(key, set()).add(value)
@@ -47,7 +52,7 @@ def test_backend_returns_what_you_put_in(xs):
 
 
 def test_does_not_commit_in_error_state():
-    backend = SQLiteBackend(u':memory:')
+    backend = SQLiteExampleDatabase(':memory:')
     backend.create_db_if_needed()
     try:
         with backend.cursor() as cursor:
@@ -59,27 +64,114 @@ def test_does_not_commit_in_error_state():
     except ValueError:
         pass
 
-    assert backend.fetch(u'a') == []
+    assert list(backend.fetch(b'a')) == []
 
 
 def test_can_double_close():
-    backend = SQLiteBackend(u':memory:')
+    backend = SQLiteExampleDatabase(':memory:')
     backend.create_db_if_needed()
     backend.close()
     backend.close()
 
 
 def test_can_delete_keys():
-    backend = SQLiteBackend(u':memory:')
-    backend.save(u'foo', u'bar')
-    backend.save(u'foo', u'baz')
-    backend.delete(u'foo', u'bar')
-    assert list(backend.fetch(u'foo')) == [u'baz']
+    backend = SQLiteExampleDatabase(':memory:')
+    backend.save(b'foo', b'bar')
+    backend.save(b'foo', b'baz')
+    backend.delete(b'foo', b'bar')
+    assert list(backend.fetch(b'foo')) == [b'baz']
 
 
-def test_can_fetch_all_keys():
-    backend = SQLiteBackend(u':memory:')
-    backend.save(u'foo', u'bar')
-    backend.save(u'foo', u'baz')
-    backend.save(u'boib', u'baz')
-    assert len(list(backend.keys())) == 2
+def test_ignores_badly_stored_values():
+    backend = SQLiteExampleDatabase(':memory:')
+    backend.create_db_if_needed()
+    with backend.cursor() as cursor:
+        cursor.execute("""
+            insert into hypothesis_data_mapping(key, value)
+            values(?, ?)
+        """, (base64.b64encode(b'foo'), u'kittens'))
+    assert list(backend.fetch(b'foo')) == []
+
+
+def test_default_database_is_in_memory():
+    assert isinstance(ExampleDatabase(), InMemoryExampleDatabase)
+
+
+def test_default_on_disk_database_is_dir(tmpdir):
+    assert isinstance(
+        ExampleDatabase(tmpdir.join('foo')), DirectoryBasedExampleDatabase)
+
+
+def test_selects_sqlite_database_if_name_matches(tmpdir):
+    assert isinstance(
+        ExampleDatabase(tmpdir.join('foo.db')), SQLiteExampleDatabase)
+    assert isinstance(
+        ExampleDatabase(tmpdir.join('foo.sqlite')), SQLiteExampleDatabase)
+    assert isinstance(
+        ExampleDatabase(tmpdir.join('foo.sqlite3')), SQLiteExampleDatabase)
+
+
+def test_selects_directory_based_if_already_directory(tmpdir):
+    path = str(tmpdir.join('hi.sqlite3'))
+    DirectoryBasedExampleDatabase(path).save(b"foo", b"bar")
+    assert isinstance(ExampleDatabase(path), DirectoryBasedExampleDatabase)
+
+
+def test_selects_sqlite_if_already_sqlite(tmpdir):
+    path = str(tmpdir.join('hi'))
+    SQLiteExampleDatabase(path).save(b"foo", b"bar")
+    assert isinstance(ExampleDatabase(path), SQLiteExampleDatabase)
+
+
+def test_does_not_error_when_fetching_when_not_exist(tmpdir):
+    db = DirectoryBasedExampleDatabase(tmpdir.join('examples'))
+    db.fetch(b'foo')
+
+
+@pytest.fixture(scope='function', params=['memory', 'sql', 'directory'])
+def exampledatabase(request, tmpdir):
+    if request.param == 'memory':
+        return ExampleDatabase()
+    if request.param == 'sql':
+        return SQLiteExampleDatabase(str(tmpdir.join('example.db')))
+    if request.param == 'directory':
+        return DirectoryBasedExampleDatabase(str(tmpdir.join('examples')))
+    assert False
+
+
+def test_can_delete_a_key_that_is_not_present(exampledatabase):
+    exampledatabase.delete(b'foo', b'bar')
+
+
+def test_can_fetch_a_key_that_is_not_present(exampledatabase):
+    assert list(exampledatabase.fetch(b'foo')) == []
+
+
+def test_saving_a_key_twice_fetches_it_once(exampledatabase):
+    exampledatabase.save(b'foo', b'bar')
+    exampledatabase.save(b'foo', b'bar')
+    assert list(exampledatabase.fetch(b'foo')) == [b'bar']
+
+
+def test_can_close_a_database_without_touching_it(exampledatabase):
+    exampledatabase.close()
+
+
+def test_can_close_a_database_after_saving(exampledatabase):
+    exampledatabase.save(b'foo', b'bar')
+
+
+def test_class_name_is_in_repr(exampledatabase):
+    assert type(exampledatabase).__name__ in repr(exampledatabase)
+    exampledatabase.close()
+
+
+def test_two_directory_databases_can_interact(tmpdir):
+    path = str(tmpdir)
+    db1 = DirectoryBasedExampleDatabase(path)
+    db2 = DirectoryBasedExampleDatabase(path)
+    db1.save(b'foo', b'bar')
+    assert list(db2.fetch(b'foo')) == [b'bar']
+    db2.save(b'foo', b'bar')
+    db2.save(b'foo', b'baz')
+    assert sorted(db1.fetch(b'foo')) == [b'bar', b'baz']

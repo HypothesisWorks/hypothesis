@@ -68,8 +68,8 @@ def test_generates_and_minimizes():
     assert (x == np.zeros(shape=(2, 2), dtype=float)).all()
 
 
-def test_can_minimize_large_arrays_easily():
-    x = find(arrays(u'uint32', 1000), lambda t: t.any())
+def test_can_minimize_large_arrays():
+    x = find(arrays(u'uint32', 500), lambda t: t.any())
     assert x.sum() == 1
 
 
@@ -97,6 +97,6 @@ def test_can_create_arrays_of_composite_types():
 def test_can_create_arrays_of_tuples():
     arr = find(
         arrays(object, 10, st.tuples(st.integers(), st.integers())),
-        lambda x: all(t[0] < t[1] for t in x))
+        lambda x: all(t[0] != t[1] for t in x))
     for a in arr:
-        assert a in ((0, 1), (-1, 0))
+        assert a in ((1, 0), (0, 1))

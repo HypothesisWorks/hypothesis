@@ -16,23 +16,26 @@
 
 from __future__ import division, print_function, absolute_import
 
-import inspect
-
 import pytest
 
-from hypothesis import given, assume, example, settings, Verbosity
+from hypothesis import given, assume, reject, example, settings, Verbosity
 from hypothesis.errors import Flaky, Unsatisfiable, UnsatisfiedAssumption
-from hypothesis.strategies import lists, builds, booleans, integers, \
+from hypothesis.strategies import lists, booleans, integers, composite, \
     random_module
 
 
-def test_errors_even_if_does_not_error_on_final_call():
+class Nope(Exception):
+    pass
+
+
+def test_fails_only_once_is_flaky():
+    first_call = [True]
+
     @given(integers())
     def rude(x):
-        assert not any(
-            t[3] == u'best_satisfying_template'
-            for t in inspect.getouterframes(inspect.currentframe())
-        )
+        if first_call[0]:
+            first_call[0] = False
+            raise Nope()
 
     with pytest.raises(Flaky):
         rude()
@@ -64,52 +67,26 @@ def test_does_not_attempt_to_shrink_flaky_errors():
     assert len(set(values)) == 1
 
 
-class DifferentReprEachTime(object):
-    counter = 0
-
-    def __repr__(self):
-        DifferentReprEachTime.counter += 1
-        return u'DifferentReprEachTime(%d)' % (DifferentReprEachTime.counter,)
-
-
-def test_reports_repr_diff_in_flaky_error():
-    @given(builds(DifferentReprEachTime))
-    def rude(x):
-        assert not any(
-            t[3] == u'best_satisfying_template'
-            for t in inspect.getouterframes(inspect.currentframe())
-        )
-
-    with pytest.raises(Flaky) as e:
-        rude()
-    assert u'Call 1:' in e.value.args[0]
-
-
-class Nope(Exception):
-    pass
-
-
-def test_fails_only_once_is_flaky():
-    first_call = [True]
-
-    @given(integers())
-    def test(x):
-        if first_call[0]:
-            first_call[0] = False
-            assert False
-
-    with pytest.raises(Flaky):
-        test()
-
-
 class SatisfyMe(Exception):
     pass
 
 
-@example(
-    [False, False, False, True], [3], None,
-)
-@given(lists(booleans()), lists(integers(1, 3)), random_module())
+@composite
+def single_bool_lists(draw):
+    n = draw(integers(0, 20))
+    result = [False] * (n + 1)
+    result[n] = True
+    return result
+
+
+@example([True, False, False, False], [3], None,)
+@example([False, True, False, False], [3], None,)
+@example([False, False, True, False], [3], None,)
+@example([False, False, False, True], [3], None,)
+@settings(max_examples=0)
+@given(
+    lists(booleans(), average_size=20) | single_bool_lists(),
+    lists(integers(1, 3), average_size=20), random_module())
 def test_failure_sequence_inducing(building, testing, rnd):
     buildit = iter(building)
     testit = iter(testing)
@@ -124,7 +101,7 @@ def test_failure_sequence_inducing(building, testing, rnd):
     @given(integers().map(build))
     @settings(
         verbosity=Verbosity.quiet, database=None,
-        perform_health_check=False,
+        perform_health_check=False, max_shrinks=0
     )
     def test(x):
         try:
@@ -134,7 +111,7 @@ def test_failure_sequence_inducing(building, testing, rnd):
         if i == 1:
             return
         elif i == 2:
-            assume(False)
+            reject()
         else:
             raise Nope()
 

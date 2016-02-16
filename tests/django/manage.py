@@ -19,7 +19,10 @@ from __future__ import division, print_function, absolute_import
 import os
 import sys
 
+from tests.common.setup import run
+
 if __name__ == u'__main__':
+    run()
     os.environ.setdefault(
         u'DJANGO_SETTINGS_MODULE', u'tests.django.toys.settings')
 

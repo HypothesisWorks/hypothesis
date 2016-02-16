@@ -22,10 +22,8 @@ from django.db import IntegrityError
 import hypothesis.strategies as st
 import hypothesis.extra.fakefactory as ff
 from hypothesis.errors import InvalidArgument
-from hypothesis.control import assume
 from hypothesis.extra.datetime import datetimes
-from hypothesis.searchstrategy.strategies import SearchStrategy, \
-    MappedSearchStrategy
+from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
 class ModelNotSupported(Exception):
@@ -107,19 +105,21 @@ def models(model, **extra):
     return ModelStrategy(model, result)
 
 
-class ModelStrategy(MappedSearchStrategy):
+class ModelStrategy(SearchStrategy):
 
     def __init__(self, model, mappings):
+        super(ModelStrategy, self).__init__()
         self.model = model
-        super(ModelStrategy, self).__init__(
-            strategy=st.fixed_dictionaries(mappings))
+        self.arg_strategy = st.fixed_dictionaries(mappings)
 
     def __repr__(self):
         return u'ModelStrategy(%s)' % (self.model.__name__,)
 
-    def pack(self, value):
+    def do_draw(self, data):
         try:
-            result, _ = self.model.objects.get_or_create(**value)
+            result, _ = self.model.objects.get_or_create(
+                **self.arg_strategy.do_draw(data)
+            )
             return result
         except IntegrityError:
-            assume(False)
+            data.mark_invalid()

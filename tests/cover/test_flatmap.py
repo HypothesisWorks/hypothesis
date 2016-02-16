@@ -16,16 +16,13 @@
 
 from __future__ import division, print_function, absolute_import
 
-from random import Random
-
 import pytest
 
 from hypothesis import find, given, assume, settings
 from hypothesis.database import ExampleDatabase
 from hypothesis.strategies import just, text, lists, floats, tuples, \
-    booleans, integers, streaming
-from hypothesis.internal.debug import some_template
-from hypothesis.internal.compat import hrange, Counter
+    booleans, integers
+from hypothesis.internal.compat import Counter
 
 ConstantLists = integers().flatmap(lambda i: lists(just(i)))
 
@@ -56,8 +53,9 @@ def test_flatmap_retrieve_from_db():
     @given(constant_float_lists)
     @settings(database=db)
     def record_and_test_size(xs):
-        track.append(xs)
-        assert sum(xs) < 1
+        if sum(xs) >= 1:
+            track.append(xs)
+            assert False
 
     with pytest.raises(AssertionError):
         record_and_test_size()
@@ -72,17 +70,6 @@ def test_flatmap_retrieve_from_db():
     assert track[0] == example
 
 
-def test_can_still_simplify_if_not_reified():
-    strat = ConstantLists
-    random = Random(u'test_constant_lists_are_constant')
-    template = some_template(strat, random)
-    try:
-        while True:
-            template = next(strat.full_simplify(random, template))
-    except StopIteration:
-        pass
-
-
 def test_flatmap_does_not_reuse_strategies():
     s = lists(max_size=0).flatmap(just)
     assert s.example() is not s.example()
@@ -92,15 +79,6 @@ def test_flatmap_has_original_strategy_repr():
     ints = integers()
     ints_up = ints.flatmap(lambda n: integers(min_value=n))
     assert repr(ints) in repr(ints_up)
-
-
-def test_streaming_flatmap_past_point_of_read():
-    s = find(
-        streaming(integers().flatmap(lambda n: integers(min_value=n))),
-        lambda x: x[0])
-    assert s[0] == 1
-    for i in hrange(100):
-        s[i]
 
 
 def test_mixed_list_flatmap():

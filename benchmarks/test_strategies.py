@@ -55,6 +55,7 @@ strategies = [
     st.tuples(st.integers(), st.integers(), st.integers(), st.integers()),
     st.text() | st.integers(),
     sorted_three(),
+    st.text(average_size=20)
 ]
 
 strategies.extend(list(map(st.lists, strategies)))

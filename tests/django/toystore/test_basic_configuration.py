@@ -20,9 +20,10 @@ from unittest import TestCase as VanillaTestCase
 
 from django.db import IntegrityError
 
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis.strategies import integers
 from hypothesis.extra.django import TestCase, TransactionTestCase
+from hypothesis.internal.compat import PYPY
 from tests.django.toystore.models import Company
 
 
@@ -43,8 +44,12 @@ class TestConstraintsWithTransactions(SomeStuff, TestCase):
     pass
 
 
-class TestConstraintsWithoutTransactions(SomeStuff, TransactionTestCase):
-    pass
+if not PYPY:
+    # xfail
+    # This is excessively slow in general, but particularly on pypy. We just
+    # disable it altogether there as it's a niche case.
+    class TestConstraintsWithoutTransactions(SomeStuff, TransactionTestCase):
+        pass
 
 
 class TestWorkflow(VanillaTestCase):
@@ -57,6 +62,7 @@ class TestWorkflow(VanillaTestCase):
         class LocalTest(TestCase):
 
             @given(integers().map(break_the_db))
+            @settings(perform_health_check=False)
             def test_does_not_break_other_things(self, unused):
                 pass
 

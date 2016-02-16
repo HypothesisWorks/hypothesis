@@ -22,7 +22,7 @@ from hypothesis import find, given, settings
 from hypothesis.errors import InvalidArgument
 from tests.common.utils import fails_with
 from hypothesis.strategies import sets, lists, floats, booleans, \
-    integers, frozensets, dictionaries
+    integers, frozensets
 
 
 def test_errors_when_given_varargs():
@@ -115,16 +115,6 @@ def test_float_finite_range_and_allow_infinity_cannot_both_be_enabled():
         floats(0, 1, allow_infinity=True).example()
 
 
-def test_dictionary_key_size():
-    with pytest.raises(InvalidArgument):
-        dictionaries(keys=booleans(), values=integers(), min_size=3).example()
-
-
-def test_set_size():
-    with pytest.raises(InvalidArgument):
-        sets(elements=booleans(), min_size=3).example()
-
-
 def test_does_not_error_if_min_size_is_bigger_than_default_size():
     lists(integers(), min_size=50).example()
     sets(integers(), min_size=50).example()
@@ -133,11 +123,13 @@ def test_does_not_error_if_min_size_is_bigger_than_default_size():
 
 
 def test_list_unique_and_unique_by_cannot_both_be_enabled():
-    @given(lists(unique=True, unique_by=lambda x: x))
+    @given(lists(integers(), unique=True, unique_by=lambda x: x))
     def boom(t):
         pass
-    with pytest.raises(InvalidArgument):
+    with pytest.raises(InvalidArgument) as e:
         boom()
+    assert 'unique ' in e.value.args[0]
+    assert 'unique_by' in e.value.args[0]
 
 
 def test_an_average_size_must_be_positive():
@@ -149,6 +141,11 @@ def test_an_average_size_must_be_positive():
 
 def test_an_average_size_may_be_zero_if_max_size_is():
     lists(integers(), average_size=0.0, max_size=0)
+
+
+def test_min_before_max():
+    with pytest.raises(InvalidArgument):
+        integers(min_value=1, max_value=0).validate()
 
 
 @fails_with(InvalidArgument)

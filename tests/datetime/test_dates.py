@@ -16,11 +16,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-from random import Random
-
-import pytest
-
-from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.strategytests import strategy_test_suite
 from hypothesis.extra.datetime import dates
 from hypothesis.internal.debug import minimal
@@ -48,22 +43,3 @@ def test_min_year_is_respected():
 
 def test_max_year_is_respected():
     assert minimal(dates(max_year=1998)).year == 1998
-
-
-def test_year_bounds_are_respected_in_deserialization():
-    s = dates()
-    r = Random(1)
-    while True:
-        try:
-            template = s.draw_template(r, s.draw_parameter(r))
-            year = s.reify(template).year
-            break
-        except UnsatisfiedAssumption:
-            pass
-    basic = s.to_basic(template)
-    above = dates(min_year=year + 1)
-    below = dates(max_year=year - 1)
-    with pytest.raises(UnsatisfiedAssumption):
-        above.reify(above.from_basic(basic))
-    with pytest.raises(UnsatisfiedAssumption):
-        below.reify(below.from_basic(basic))

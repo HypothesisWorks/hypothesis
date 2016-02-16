@@ -17,7 +17,6 @@
 from __future__ import division, print_function, absolute_import
 
 import math
-import struct
 from decimal import Decimal
 
 from hypothesis.errors import InvalidArgument
@@ -25,13 +24,14 @@ from hypothesis.control import assume
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import ArgSpec, text_type, getargspec, \
     integer_types, float_to_decimal
+from hypothesis.internal.floats import is_negative, float_to_int, \
+    int_to_float, count_between_floats
 from hypothesis.internal.reflection import proxies
 from hypothesis.searchstrategy.reprwrapper import ReprWrapperStrategy
 
 __all__ = [
     'just', 'one_of',
     'none',
-    'choices',
     'booleans', 'integers', 'floats', 'complex_numbers', 'fractions',
     'decimals',
     'characters', 'text', 'binary',
@@ -40,7 +40,8 @@ __all__ = [
     'sampled_from', 'permutations',
     'builds',
     'randoms', 'random_module',
-    'streaming', 'recursive', 'composite',
+    'recursive', 'composite',
+    'shared',
 ]
 
 _strategies = set()
@@ -70,9 +71,7 @@ def convert_value(v):
 
 
 def cacheable(fn):
-    import weakref
-
-    cache = weakref.WeakValueDictionary()
+    cache = {}
 
     @proxies(fn)
     def cached_strategy(*args, **kwargs):
@@ -155,12 +154,11 @@ def integers(min_value=None, max_value=None):
     check_valid_interval(min_value, max_value, 'min_value', 'max_value')
 
     from hypothesis.searchstrategy.numbers import IntegersFromStrategy, \
-        BoundedIntStrategy, RandomGeometricIntStrategy, WideRangeIntStrategy
+        BoundedIntStrategy, WideRangeIntStrategy
 
     if min_value is None:
         if max_value is None:
             return (
-                RandomGeometricIntStrategy() |
                 WideRangeIntStrategy()
             )
         else:
@@ -169,9 +167,18 @@ def integers(min_value=None, max_value=None):
         if max_value is None:
             return IntegersFromStrategy(min_value)
         else:
+            assert min_value <= max_value
             if min_value == max_value:
                 return just(min_value)
-            return BoundedIntStrategy(min_value, max_value)
+            elif min_value >= 0:
+                return BoundedIntStrategy(min_value, max_value)
+            elif max_value <= 0:
+                return BoundedIntStrategy(-max_value, -min_value).map(
+                    lambda t: -t
+                )
+            else:
+                return integers(min_value=0, max_value=max_value) | \
+                    integers(min_value=min_value, max_value=0)
 
 
 @cacheable
@@ -180,34 +187,6 @@ def booleans():
     """Returns a strategy which generates instances of bool."""
     from hypothesis.searchstrategy.misc import BoolStrategy
     return BoolStrategy()
-
-
-def is_negative(x):
-    return math.copysign(1, x) < 0
-
-
-def count_between_floats(x, y):
-    assert x <= y
-    if is_negative(x):
-        if is_negative(y):
-            return float_to_int(x) - float_to_int(y) + 1
-        else:
-            return count_between_floats(x, -0.0) + count_between_floats(0.0, y)
-    else:
-        assert not is_negative(y)
-        return float_to_int(y) - float_to_int(x) + 1
-
-
-def float_to_int(value):
-    return (
-        struct.unpack(b'!Q', struct.pack(b'!d', value))[0]
-    )
-
-
-def int_to_float(value):
-    return (
-        struct.unpack(b'!d', struct.pack(b'!Q', value))[0]
-    )
 
 
 @cacheable
@@ -260,18 +239,11 @@ def floats(
                     allow_infinity
                 ))
 
-    from hypothesis.searchstrategy.numbers import WrapperFloatStrategy, \
-        GaussianFloatStrategy, BoundedFloatStrategy, ExponentialFloatStrategy,\
-        JustIntFloats, NastyFloats, FullRangeFloats, \
+    from hypothesis.searchstrategy.numbers import FloatStrategy, \
         FixedBoundedFloatStrategy
     if min_value is None and max_value is None:
-        return WrapperFloatStrategy(
-            GaussianFloatStrategy() |
-            BoundedFloatStrategy() |
-            ExponentialFloatStrategy() |
-            JustIntFloats() |
-            NastyFloats(allow_nan, allow_infinity) |
-            FullRangeFloats(allow_nan, allow_infinity)
+        return FloatStrategy(
+            allow_infinity=allow_infinity, allow_nan=allow_nan,
         )
     elif min_value is not None and max_value is not None:
         if min_value == max_value:
@@ -282,16 +254,9 @@ def floats(
                 min_value=min_value, max_value=0
             )
         elif count_between_floats(min_value, max_value) > 1000:
-            critical_values = [
-                min_value, max_value, min_value + (max_value - min_value) / 2]
-            if min_value <= 0 <= max_value:
-                if not is_negative(max_value):
-                    critical_values.append(0.0)
-                if is_negative(min_value):
-                    critical_values.append(-0.0)
             return FixedBoundedFloatStrategy(
                 lower_bound=min_value, upper_bound=max_value
-            ) | sampled_from(critical_values)
+            )
         elif is_negative(max_value):
             assert is_negative(min_value)
             ub_int = float_to_int(max_value)
@@ -312,32 +277,35 @@ def floats(
                 int_to_float
             )
     elif min_value is not None:
-        critical_values = [min_value]
-        if allow_infinity:
-            critical_values.append(float(u'inf'))
-        if is_negative(min_value):
-            critical_values.append(-0.0)
-        if min_value <= 0:
-            critical_values.append(0.0)
-        return (
-            floats(allow_infinity=allow_infinity, allow_nan=False).map(
-                lambda x: assume(not math.isnan(x)) and min_value + abs(x)
+        if min_value < 0:
+            result = floats(
+                min_value=0.0
+            ) | floats(min_value=min_value, max_value=0.0)
+        else:
+            result = (
+                floats(allow_infinity=allow_infinity, allow_nan=False).map(
+                    lambda x: assume(not math.isnan(x)) and min_value + abs(x)
+                )
             )
-        ) | sampled_from(critical_values)
+        if min_value == 0 and not is_negative(min_value):
+            result = result.filter(lambda x: math.copysign(1.0, x) == 1)
+        return result
     else:
         assert max_value is not None
-        critical_values = [max_value]
-        if allow_infinity:
-            critical_values.append(float(u'-inf'))
-        if max_value >= 0:
-            critical_values.append(-0.0)
-            if not is_negative(max_value):
-                critical_values.append(0.0)
-        return (
-            floats(allow_infinity=allow_infinity, allow_nan=False).map(
-                lambda x: assume(not math.isnan(x)) and max_value - abs(x)
+        if max_value > 0:
+            result = floats(
+                min_value=0.0,
+                max_value=max_value,
+            ) | floats(max_value=0.0)
+        else:
+            result = (
+                floats(allow_infinity=allow_infinity, allow_nan=False).map(
+                    lambda x: assume(not math.isnan(x)) and max_value - abs(x)
+                )
             )
-        ) | sampled_from(critical_values)
+        if max_value == 0 and is_negative(max_value):
+            result = result.filter(is_negative)
+        return result
 
 
 @cacheable
@@ -413,6 +381,15 @@ def lists(
     condition that for i != j, unique_by(result[i]) != unique_by(result[j]).
 
     """
+    check_valid_sizes(min_size, average_size, max_size)
+    if elements is None or (max_size is not None and max_size <= 0):
+        if max_size is None or max_size > 0:
+            raise InvalidArgument(
+                u'Cannot create non-empty lists without an element type'
+            )
+        else:
+            return builds(list)
+
     if unique:
         if unique_by is not None:
             raise InvalidArgument((
@@ -424,18 +401,9 @@ def lists(
 
     if unique_by is not None:
         from hypothesis.searchstrategy.collections import UniqueListStrategy
-        if max_size == 0:
-            return builds(list)
         check_strategy(elements)
-        if min_size is not None and elements.template_upper_bound < min_size:
-            raise InvalidArgument((
-                'Cannot generate unique lists of size %d from %r, which '
-                'contains no more than %d distinct values') % (
-                    min_size, elements, elements.template_upper_bound,
-            ))
         min_size = min_size or 0
         max_size = max_size or float(u'inf')
-        max_size = min(max_size, elements.template_upper_bound)
         if average_size is None:
             if max_size < float(u'inf'):
                 if max_size <= 5:
@@ -458,8 +426,7 @@ def lists(
         return result
 
     check_valid_sizes(min_size, average_size, max_size)
-    from hypothesis.searchstrategy.collections import ListStrategy, \
-        SingleElementListStrategy
+    from hypothesis.searchstrategy.collections import ListStrategy
     if min_size is None:
         min_size = 0
     if average_size is None:
@@ -468,27 +435,11 @@ def lists(
         else:
             average_size = (min_size + max_size) * 0.5
 
-    if elements is None or (max_size is not None and max_size <= 0):
-        if max_size is None or max_size > 0:
-            raise InvalidArgument(
-                'Cannot create non-empty lists without an element type'
-            )
-        else:
-            return ListStrategy(())
-    else:
-        check_strategy(elements)
-        if elements.template_upper_bound == 1:
-            from hypothesis.searchstrategy.numbers import IntegersFromStrategy
-            if max_size is None:
-                length_strat = IntegersFromStrategy(
-                    min_size, average_size=average_size - min_size)
-            else:
-                length_strat = integers(min_size, max_size)
-            return SingleElementListStrategy(elements, length_strat)
-        return ListStrategy(
-            (elements,), average_length=average_size,
-            min_size=min_size, max_size=max_size,
-        )
+    check_strategy(elements)
+    return ListStrategy(
+        (elements,), average_length=average_size,
+        min_size=min_size, max_size=max_size,
+    )
 
 
 @cacheable
@@ -554,38 +505,11 @@ def dictionaries(
     check_strategy(keys)
     check_strategy(values)
 
-    if min_size is not None and min_size > keys.template_upper_bound:
-        raise InvalidArgument((
-            'Cannot generate dictionaries of size %d with keys from %r, '
-            'which contains no more than %d distinct values') % (
-                min_size, keys, keys.template_upper_bound,
-        ))
-
-    if max_size is None:
-        max_size = keys.template_upper_bound
-    else:
-        max_size = min(max_size, keys.template_upper_bound)
-
     return lists(
         tuples(keys, values),
         min_size=min_size, average_size=average_size, max_size=max_size,
         unique_by=lambda x: x[0]
     ).map(dict_class)
-
-
-@cacheable
-@defines_strategy
-def streaming(elements):
-    """Generates an infinite stream of values where each value is drawn from
-    elements.
-
-    The result is iterable (the iterator will never terminate) and
-    indexable.
-
-    """
-    check_strategy(elements)
-    from hypothesis.searchstrategy.streams import StreamStrategy
-    return StreamStrategy(elements)
 
 
 @cacheable
@@ -607,6 +531,16 @@ def characters(whitelist_categories=None, blacklist_categories=None,
     pass them with `blacklist_characters` argument.
 
     """
+    if (
+        min_codepoint is not None and max_codepoint is not None and
+        min_codepoint > max_codepoint
+    ):
+        raise InvalidArgument(
+            'Cannot have min_codepoint=%d > max_codepoint=%d ' % (
+                min_codepoint, max_codepoint
+            )
+        )
+
     from hypothesis.searchstrategy.strings import OneCharStringStrategy
     return OneCharStringStrategy(whitelist_categories=whitelist_categories,
                                  blacklist_categories=blacklist_categories,
@@ -630,10 +564,9 @@ def text(
     min_size, max_size and average_size have the usual interpretations.
 
     """
-    from hypothesis.searchstrategy.strings import OneCharStringStrategy, \
-        StringStrategy
+    from hypothesis.searchstrategy.strings import StringStrategy
     if alphabet is None:
-        char_strategy = OneCharStringStrategy(blacklist_categories=['Cs'])
+        char_strategy = characters(blacklist_categories=('Cs',))
     elif not alphabet:
         if (min_size or 0) > 0:
             raise InvalidArgument(
@@ -816,7 +749,6 @@ def composite(f):
 
     """
 
-    from hypothesis.searchstrategy.morphers import MorpherStrategy
     from hypothesis.internal.reflection import copy_argspec
     argspec = getargspec(f)
 
@@ -837,20 +769,14 @@ def composite(f):
         keywords=argspec.keywords, defaults=argspec.defaults
     )
 
-    base_strategy = streaming(MorpherStrategy())
-
     @defines_strategy
     @copy_argspec(f.__name__, new_argspec)
     def accept(*args, **kwargs):
-        def call_with_draw(morphers):
-            index = [0]
+        class CompositeStrategy(SearchStrategy):
 
-            def draw(strategy):
-                i = index[0]
-                index[0] += 1
-                return morphers[i].become(strategy)
-            return f(*((draw,) + args), **kwargs)
-        return base_strategy.map(call_with_draw)
+            def do_draw(self, data):
+                return f(data.draw, *args, **kwargs)
+        return CompositeStrategy()
     return accept
 
 
@@ -873,48 +799,6 @@ def shared(base, key=None):
 
 
 @cacheable
-def choices():
-    """Strategy that generates a function that behaves like random.choice.
-
-    Will note choices made for reproducibility.
-
-    """
-    from hypothesis.control import note, current_build_context
-
-    def build_chooser(stream):
-        index = [-1]
-        choice_count = [0]
-        context = current_build_context()
-        context.mark_captured()
-
-        def choice(values):
-            if not values:
-                raise IndexError('Cannot choose from empty sequence')
-            k = len(values) - 1
-            if k == 0:
-                chosen = 0
-            else:
-                mask = _right_saturate(k)
-                while True:
-                    index[0] += 1
-                    probe = stream[index[0]] & mask
-                    if probe <= k:
-                        chosen = probe
-                        break
-            choice_count[0] += 1
-            result = values[chosen]
-            with context.local():
-                note('Choice #%d: %r' % (choice_count[0], result))
-            return result
-        return choice
-    return ReprWrapperStrategy(
-        shared(
-            builds(build_chooser, streaming(integers(min_value=0))),
-            key='hypothesis.strategies.chooser.choice_function'
-        ), 'chooser()')
-
-
-@cacheable
 def uuids():
     """Returns a strategy that generates UUIDs.
 
@@ -929,17 +813,68 @@ def uuids():
         ), 'uuids()')
 
 
+@cacheable
+def data():
+    """This isn't really a normal strategy, but instead gives you an object
+    which can be used to draw data interactively from other strategies.
+
+    It can only be used within @given, not find. This is because the lifetime
+    of the object cannot outlast the test body.
+
+    See the rest of the documentation for more complete information.
+
+    """
+    from hypothesis.control import note
+
+    class DataObject(object):
+
+        def __init__(self, data):
+            self.count = 0
+            self.data = data
+
+        def __repr__(self):
+            return 'data(...)'
+
+        def draw(self, strategy):
+            result = self.data.draw(strategy)
+            self.count += 1
+            note('Draw %d: %r' % (self.count, result))
+            return result
+
+    class DataStrategy(SearchStrategy):
+
+        def do_draw(self, data):
+            if getattr(data, 'hypothesis_is_used_for_find', False):
+                raise InvalidArgument(
+                    'Cannot use arbitrary data from within find.'
+                )
+            if not hasattr(data, 'hypothesis_shared_data_strategy'):
+                data.hypothesis_shared_data_strategy = DataObject(data)
+            return data.hypothesis_shared_data_strategy
+
+        def __repr__(self):
+            return 'data()'
+
+        def map(self, f):
+            self.__not_a_first_class_strategy('map')
+
+        def filter(self, f):
+            self.__not_a_first_class_strategy('filter')
+
+        def flatmap(self, f):
+            self.__not_a_first_class_strategy('flatmap')
+
+        def example(self):
+            self.__not_a_first_class_strategy('example')
+
+        def __not_a_first_class_strategy(self, name):
+            raise InvalidArgument((
+                'Cannot call %s on a DataStrategy. You should probably be '
+                "using @composite for whatever it is you're trying to do."
+            ) % (name,))
+    return DataStrategy()
+
 # Private API below here
-
-
-def _right_saturate(x):
-    x |= (x >> 1)
-    x |= (x >> 2)
-    x |= (x >> 4)
-    x |= (x >> 8)
-    x |= (x >> 16)
-    x |= (x >> 32)
-    return x
 
 
 def check_type(typ, arg):

@@ -22,10 +22,11 @@ from pytest import raises
 
 import hypothesis.reporting as reporting
 import hypothesis.strategies as st
-from flaky import flaky
 from hypothesis import given, settings
 from hypothesis.errors import FailedHealthCheck
-from tests.common.utils import capture_out
+from hypothesis.control import assume
+from hypothesis.internal.compat import int_from_bytes
+from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
 def test_slow_generation_fails_a_health_check():
@@ -46,34 +47,6 @@ def test_global_random_in_strategy_fails_a_health_check():
 
     with raises(FailedHealthCheck):
         test()
-
-
-def test_warns_if_settings_are_not_strict(recwarn):
-    import random
-
-    with settings(strict=False):
-        @given(st.lists(st.integers(), min_size=1))
-        def test(x):
-            random.choice(x)
-
-    test()
-    assert recwarn.pop(FailedHealthCheck) is not None
-    with raises(AssertionError):
-        recwarn.pop(FailedHealthCheck)
-
-
-def test_does_not_repeat_random_warnings(recwarn):
-    import random
-
-    with settings(strict=False):
-        @given(st.lists(st.integers(), min_size=1).map(random.choice))
-        def test(x):
-            pass
-
-    test()
-    assert recwarn.pop(FailedHealthCheck) is not None
-    with raises(AssertionError):
-        recwarn.pop(FailedHealthCheck)
 
 
 def test_global_random_in_test_fails_a_health_check():
@@ -112,22 +85,6 @@ def test_error_in_strategy_produces_health_check_error():
     assert 'executor' not in e.value.args[0]
 
 
-def test_error_in_strategy_produces_only_one_traceback():
-    def boom(x):
-        raise ValueError()
-
-    with settings(strict=False):
-        @given(st.integers().map(boom))
-        def test(x):
-            pass
-
-        with raises(ValueError):
-            with reporting.with_reporter(reporting.default):
-                with capture_out() as out:
-                    test()
-    assert out.getvalue().count('ValueError') == 2
-
-
 def test_error_in_strategy_with_custom_executor():
     def boom(x):
         raise ValueError()
@@ -138,6 +95,7 @@ def test_error_in_strategy_with_custom_executor():
             return f()
 
         @given(st.integers().map(boom))
+        @settings(database=None)
         def test(self, x):
             pass
 
@@ -148,6 +106,7 @@ def test_error_in_strategy_with_custom_executor():
 
 def test_filtering_everything_fails_a_health_check():
     @given(st.integers().filter(lambda x: False))
+    @settings(database=None)
     def test(x):
         pass
 
@@ -156,9 +115,18 @@ def test_filtering_everything_fails_a_health_check():
     assert 'filter' in e.value.args[0]
 
 
-@flaky(max_runs=3, min_passes=1)
+class fails_regularly(SearchStrategy):
+
+    def do_draw(self, data):
+        b = int_from_bytes(data.draw_bytes(2))
+        assume(b == 3)
+        print('ohai')
+
+
+@settings(max_shrinks=0)
 def test_filtering_most_things_fails_a_health_check():
-    @given(st.integers().filter(lambda x: x % 100 == 0))
+    @given(fails_regularly())
+    @settings(database=None)
     def test(x):
         pass
 
@@ -167,39 +135,17 @@ def test_filtering_most_things_fails_a_health_check():
     assert 'filter' in e.value.args[0]
 
 
-def test_broad_recursive_data_will_fail_a_health_check():
-    r = st.recursive(
-        st.integers(), lambda s: st.tuples(*((s,) * 10)),
-        max_leaves=10,
-    )
-
-    @given(st.tuples(r, r, r, r, r, r, r))
+def test_large_data_will_fail_a_health_check():
+    @given(st.lists(
+           st.lists(st.text(average_size=100), average_size=100),
+           average_size=100))
+    @settings(database=None, buffer_size=1000)
     def test(x):
         pass
 
-    with raises(FailedHealthCheck):
+    with raises(FailedHealthCheck) as e:
         test()
-
-
-def test_health_check_runs_should_not_affect_determinism(recwarn):
-    with settings(
-        strict=False, timeout=0, max_examples=2, derandomize=True,
-        database=None, perform_health_check=True,
-    ):
-        values = []
-        t = 0.25
-
-        @given(st.integers().map(lambda i: [time.sleep(t), i][1]))
-        def test(x):
-            values.append(x)
-
-        test()
-        recwarn.pop(FailedHealthCheck)
-        v1 = values
-        values = []
-        t = 0
-        test()
-        assert v1 == values
+    assert 'allowable size' in e.value.args[0]
 
 
 def test_nesting_without_control_fails_health_check():

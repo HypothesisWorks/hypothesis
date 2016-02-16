@@ -65,7 +65,6 @@ of the things you need to know to begin testing your code with it.
   stateful
   supported
   examples
-  internals
   community
   manifesto
   endorsements

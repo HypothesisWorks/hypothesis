@@ -26,3 +26,10 @@ from hypothesis import given
 def test_deterministic_examples_are_deterministic(seed):
     assert st.lists(st.integers()).example(Random(seed)) == \
         st.lists(st.integers()).example(Random(seed))
+
+
+def test_does_not_always_give_the_same_example():
+    s = st.integers()
+    assert len(set(
+        s.example() for _ in range(100)
+    )) >= 10

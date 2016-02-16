@@ -19,34 +19,27 @@
 
 from __future__ import division, print_function, absolute_import
 
-import math
 import time
 import inspect
-import binascii
-import warnings
 import functools
 import traceback
 from random import getstate as getglobalrandomstate
 from random import Random
-from itertools import islice
 from collections import namedtuple
 
 from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
-    Unsatisfiable, BadTemplateDraw, InvalidArgument, FailedHealthCheck, \
-    UnsatisfiedAssumption, DefinitelyNoSuchExample, \
-    HypothesisDeprecationWarning
+    Unsatisfiable, InvalidArgument, FailedHealthCheck, \
+    UnsatisfiedAssumption, HypothesisDeprecationWarning
 from hypothesis.control import BuildContext
 from hypothesis._settings import settings as Settings
 from hypothesis._settings import Verbosity
-from hypothesis.executors import executor, default_executor
-from hypothesis.reporting import report, debug_report, verbose_report, \
-    current_verbosity
-from hypothesis.internal.compat import qualname, getargspec
-from hypothesis.internal.tracker import Tracker
+from hypothesis.executors import new_style_executor, \
+    default_new_style_executor
+from hypothesis.reporting import report, verbose_report, current_verbosity
+from hypothesis.internal.compat import getargspec, str_to_bytes
 from hypothesis.internal.reflection import arg_string, impersonate, \
     copy_argspec, function_digest, fully_qualified_name, \
     convert_positional_arguments, get_pretty_function_description
-from hypothesis.internal.examplesource import ParameterSource
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
@@ -55,279 +48,15 @@ def new_random():
     return random.Random(random.getrandbits(128))
 
 
-def time_to_call_it_a_day(settings, start_time):
-    """Have we exceeded our timeout?"""
-    if settings.timeout <= 0:
-        return False
-    return time.time() >= start_time + settings.timeout
-
-
-def find_satisfying_template(
-    search_strategy, random, condition, tracker, settings, storage=None,
-    max_parameter_tries=None,
-):
-    """Attempt to find a template for search_strategy such that condition is
-    truthy.
-
-    Exceptions other than UnsatisfiedAssumption will be immediately propagated.
-    UnsatisfiedAssumption will indicate that similar examples should be avoided
-    in future.
-
-    Returns such a template as soon as it is found, otherwise stops after
-    settings.max_examples examples have been considered or settings.timeout
-    seconds have passed (if settings.timeout > 0).
-
-    May raise a variety of exceptions depending on exact circumstances, but
-    these will all subclass either Unsatisfiable (to indicate not enough
-    examples were found which did not raise UnsatisfiedAssumption to consider
-    this a valid test) or NoSuchExample (to indicate that this probably means
-    that condition is true with very high probability).
-
-    """
-    satisfying_examples = 0
-    examples_considered = 0
-    timed_out = False
-    max_iterations = max(settings.max_iterations, settings.max_examples)
-    max_examples = min(max_iterations, settings.max_examples)
-    min_satisfying_examples = min(
-        settings.min_satisfying_examples,
-        max_examples,
-    )
-    start_time = time.time()
-
-    if storage:
-        for example in storage.fetch(search_strategy):
-            if examples_considered >= max_iterations:
-                break
-            examples_considered += 1
-            if time_to_call_it_a_day(settings, start_time):
-                break
-            tracker.track(example)
-            try:
-                if condition(example):
-                    return example
-                satisfying_examples += 1
-            except UnsatisfiedAssumption:
-                pass
-            if satisfying_examples >= max_examples:
-                break
-
-    parameter_source = ParameterSource(
-        random=random, strategy=search_strategy,
-        max_tries=max_parameter_tries,
-    )
-
-    assert search_strategy.template_upper_bound >= 0
-    if isinstance(search_strategy.template_upper_bound, float):
-        assert math.isinf(search_strategy.template_upper_bound)
-    else:
-        assert isinstance(search_strategy.template_upper_bound, int)
-
-    for parameter in parameter_source:  # pragma: no branch
-        if len(tracker) >= search_strategy.template_upper_bound:
-            break
-        if examples_considered >= max_iterations:
-            break
-        if satisfying_examples >= max_examples:
-            break
-        if time_to_call_it_a_day(settings, start_time):
-            break
-        examples_considered += 1
-
-        try:
-            example = search_strategy.draw_template(
-                random, parameter
-            )
-        except BadTemplateDraw:
-            debug_report('Failed attempt to draw a template')
-            parameter_source.mark_bad()
-            continue
-        if tracker.track(example) > 1:
-            debug_report('Skipping duplicate example')
-            parameter_source.mark_bad()
-            continue
-        try:
-            if condition(example):
-                return example
-        except UnsatisfiedAssumption:
-            parameter_source.mark_bad()
-            continue
-        satisfying_examples += 1
-    run_time = time.time() - start_time
-    timed_out = settings.timeout >= 0 and run_time >= settings.timeout
-    if (
-        satisfying_examples and
-        len(tracker) >= search_strategy.template_upper_bound
-    ):
-        raise DefinitelyNoSuchExample(
-            get_pretty_function_description(condition),
-            satisfying_examples,
-        )
-    elif satisfying_examples < min_satisfying_examples:
-        if timed_out:
-            raise Timeout((
-                'Ran out of time before finding a satisfying example for '
-                '%s. Only found %d examples (%d satisfying assumptions) in ' +
-                '%.2fs.'
-            ) % (
-                get_pretty_function_description(condition),
-                len(tracker), satisfying_examples, run_time
-            ))
-        else:
-            raise Unsatisfiable((
-                'Unable to satisfy assumptions of hypothesis %s. ' +
-                'Only %d out of %d examples considered satisfied assumptions'
-            ) % (
-                get_pretty_function_description(condition),
-                satisfying_examples, len(tracker)))
-    else:
-        raise NoSuchExample(get_pretty_function_description(condition))
-
-
-def simplify_template_such_that(
-    search_strategy, random, t, f, tracker, settings, start_time
-):
-    """Perform a greedy search to produce a "simplest" version of a template
-    that satisfies some predicate.
-
-    Care is taken to avoid cycles in simplify.
-
-    f should produce the same result deterministically. This function may
-    raise an error given f such that f(t) returns False sometimes and True
-    some other times.
-
-    If f throws UnsatisfiedAssumption this will be treated the same as if
-    it returned False.
-
-    """
-    yield t
-
-    try:
-        if settings.max_shrinks <= 0 or not f(t):
-            return
-    except UnsatisfiedAssumption:
-        return
-
-    successful_shrinks = 0
-
-    changed = True
-    max_warmup = 5
-    warmup = 0
-    while (
-        (changed or warmup < max_warmup) and
-        successful_shrinks < settings.max_shrinks
-    ):
-        changed = False
-        warmup += 1
-        if warmup < max_warmup:
-            debug_report('Running warmup simplification round %d' % (
-                warmup
-            ))
-        elif warmup == max_warmup:
-            debug_report('Warmup is done. Moving on to fully simplifying')
-
-        any_simplifiers = False
-        for simplify in search_strategy.simplifiers(random, t):
-            debug_report('Applying simplification pass %s' % (
-                simplify.__name__,
-            ))
-            any_simplifiers = True
-            any_shrinks = False
-            while successful_shrinks < settings.max_shrinks:
-                simpler = simplify(random, t)
-                if warmup < max_warmup:
-                    simpler = islice(simpler, warmup)
-                for s in simpler:
-                    any_shrinks = True
-                    if time_to_call_it_a_day(settings, start_time):
-                        return
-                    if tracker.track(s) > 1:
-                        debug_report(
-                            'Skipping simplifying to duplicate %s' % (
-                                repr(s),
-                            ))
-                        continue
-                    try:
-                        if f(s):
-                            successful_shrinks += 1
-                            changed = True
-                            yield s
-                            t = s
-                            break
-                        else:
-                            yield t
-                    except UnsatisfiedAssumption:
-                        pass
-                else:
-                    break
-            if not any_shrinks:
-                debug_report('No shrinks possible')
-        if not any_simplifiers:
-            debug_report('No simplifiers for template %s' % (
-                repr(t),
-            ))
-            break
-
-
-def best_satisfying_template(
-    search_strategy, random, condition, settings, storage, tracker=None,
-    max_parameter_tries=None, start_time=None,
-):
-    """Find and then minimize a satisfying template.
-
-    First look in storage if it is not None, then attempt to generate
-    one. May throw all the exceptions of find_satisfying_template. Once
-    an example has been found it will be further minimized.
-
-    """
-    if tracker is None:
-        tracker = Tracker()
-    if start_time is None:
-        start_time = time.time()
-
-    successful_shrinks = -1
-    with settings:
-        satisfying_example = find_satisfying_template(
-            search_strategy, random, condition, tracker, settings, storage,
-            max_parameter_tries=max_parameter_tries,
-        )
-        for simpler in simplify_template_such_that(
-            search_strategy, random, satisfying_example, condition, tracker,
-            settings, start_time,
-        ):
-            successful_shrinks += 1
-            satisfying_example = simpler
-        if storage is not None:
-            storage.save(satisfying_example, search_strategy)
-        if not successful_shrinks:
-            verbose_report('Could not shrink example')
-        elif successful_shrinks == 1:
-            verbose_report('Successfully shrunk example once')
-        else:
-            verbose_report(
-                'Successfully shrunk example %d times' % (
-                    successful_shrinks,))
-        return satisfying_example
-
-
 def test_is_flaky(test, expected_repr):
     @functools.wraps(test)
     def test_or_flaky(*args, **kwargs):
         text_repr = arg_string(test, args, kwargs)
-        if text_repr == expected_repr:
-            raise Flaky(
-                (
-                    'Hypothesis %s(%s) produces unreliable results: Falsified'
-                    ' on the first call but did not on a subsequent one'
-                ) % (test.__name__, text_repr,))
-        else:
-            raise Flaky(
-                (
-                    'Hypothesis %s produces unreliable results: Falsified'
-                    ' on the first call but did not on a subsequent one.'
-                    ' This is possibly due to unreliable values, which may '
-                    'be a bug in the strategy.\nCall 1: %s\nCall 2: %s\n'
-                ) % (test.__name__, expected_repr, text_repr,))
+        raise Flaky(
+            (
+                'Hypothesis %s(%s) produces unreliable results: Falsified'
+                ' on the first call but did not on a subsequent one'
+            ) % (test.__name__, text_repr,))
     return test_or_flaky
 
 
@@ -355,24 +84,22 @@ def example(*args, **kwargs):
 
 
 def reify_and_execute(
-    search_strategy, template, test,
-    print_example=False, record_repr=None,
+    search_strategy, test,
+    print_example=False,
     is_final=False,
 ):
-    def run():
+    def run(data):
         with BuildContext(is_final=is_final):
-            args, kwargs = search_strategy.reify(template)
-            text_version = arg_string(test, args, kwargs)
+            args, kwargs = data.draw(search_strategy)
+
             if print_example:
                 report(
                     lambda: 'Falsifying example: %s(%s)' % (
-                        test.__name__, text_version,))
+                        test.__name__, arg_string(test, args, kwargs)))
             elif current_verbosity() >= Verbosity.verbose:
                 report(
                     lambda: 'Trying example: %s(%s)' % (
-                        test.__name__, text_version))
-            if record_repr is not None:
-                record_repr[0] = text_version
+                        test.__name__, arg_string(test, args, kwargs)))
             return test(*args, **kwargs)
     return run
 
@@ -494,12 +221,17 @@ def given(*generator_arguments, **generator_kwargs):
                 selfy = kwargs.get(argspec.args[0])
             elif arguments:
                 selfy = arguments[0]
-            test_runner = executor(selfy)
+            test_runner = new_style_executor(selfy)
 
             for example in reversed(getattr(
                 wrapped_test, 'hypothesis_explicit_examples', ()
             )):
                 if example.args:
+                    if len(example.args) > len(original_argspec.args):
+                        raise InvalidArgument(
+                            'example has too many arguments for test. '
+                            'Expected at most %d but got %d' % (
+                                len(original_argspec.args), len(example.args)))
                     example_kwargs = dict(zip(
                         original_argspec.args[-len(example.args):],
                         example.args
@@ -516,13 +248,16 @@ def given(*generator_arguments, **generator_kwargs):
                 try:
                     with BuildContext() as b:
                         test_runner(
-                            lambda: test(*arguments, **example_kwargs)
+                            None,
+                            lambda data: test(*arguments, **example_kwargs)
                         )
                 except BaseException:
                     report(message_on_failure)
                     for n in b.notes:
                         report(n)
                     raise
+            if settings.max_examples <= 0:
+                return
 
             arguments = tuple(arguments)
 
@@ -538,64 +273,57 @@ def given(*generator_arguments, **generator_kwargs):
                     '\nSee http://hypothesis.readthedocs.org/en/latest/health'
                     'checks.html for more information about this.'
                 )
-                if settings.strict:
-                    raise FailedHealthCheck(message)
-                else:
-                    warnings.warn(FailedHealthCheck(message))
+                raise FailedHealthCheck(message)
 
             search_strategy = given_specifier
             search_strategy.validate()
 
-            if settings.database:
-                storage = settings.database.storage(
-                    fully_qualified_name(test))
-            else:
-                storage = None
-
-            start = time.time()
-            warned_random = [False]
             perform_health_check = settings.perform_health_check
-            if Settings.default is not None:
-                perform_health_check &= Settings.default.perform_health_check
+            perform_health_check &= Settings.default.perform_health_check
+
+            from hypothesis.internal.conjecture.data import TestData, Status, \
+                StopTest
 
             if perform_health_check:
                 initial_state = getglobalrandomstate()
                 health_check_random = Random(random.getrandbits(128))
                 count = 0
-                bad_draws = 0
+                overruns = 0
                 filtered_draws = 0
-                errors = 0
+                start = time.time()
                 while (
                     count < 10 and time.time() < start + 1 and
-                    filtered_draws < 50 and bad_draws < 50
+                    filtered_draws < 50 and overruns < 20
                 ):
                     try:
+                        data = TestData(
+                            max_length=settings.buffer_size,
+                            draw_bytes=lambda data, n, distribution:
+                            distribution(health_check_random, n)
+                        )
                         with Settings(settings, verbosity=Verbosity.quiet):
-                            test_runner(reify_and_execute(
+                            test_runner(data, reify_and_execute(
                                 search_strategy,
-                                search_strategy.draw_template(
-                                    health_check_random,
-                                    search_strategy.draw_parameter(
-                                        health_check_random,
-                                    )),
                                 lambda *args, **kwargs: None,
                             ))
                         count += 1
-                    except BadTemplateDraw:
-                        bad_draws += 1
                     except UnsatisfiedAssumption:
                         filtered_draws += 1
+                    except StopTest:
+                        if data.status == Status.INVALID:
+                            filtered_draws += 1
+                        else:
+                            assert data.status == Status.OVERRUN
+                            overruns += 1
                     except Exception:
-                        if errors == 0:
-                            report(traceback.format_exc())
-                        errors += 1
-                        if test_runner is default_executor:
+                        report(traceback.format_exc())
+                        if test_runner is default_new_style_executor:
                             fail_health_check(
                                 'An exception occurred during data '
                                 'generation in initial health check. '
                                 'This indicates a bug in the strategy. '
                                 'This could either be a Hypothesis bug or '
-                                "an error in a function you've passed to "
+                                "an error in a function yo've passed to "
                                 'it to construct your data.'
                             )
                         else:
@@ -610,34 +338,41 @@ def given(*generator_arguments, **generator_kwargs):
                                 'that this could be your executor failing '
                                 'to handle a function which returns None. '
                             )
-                if filtered_draws >= 50:
+                if overruns >= 20 or (
+                    not count and overruns > 0
+                ):
+                    fail_health_check((
+                        'Examples routinely exceeded the max allowable size. '
+                        '(%d examples overran while generating %d valid ones)'
+                        '. Generating examples this large will usually lead to'
+                        ' bad results. You should try setting average_size or '
+                        'max_size parameters on your collections and turning '
+                        'max_leaves down on recursive() calls.') % (
+                        overruns, count
+                    ))
+                if filtered_draws >= 50 or (
+                    not count and filtered_draws > 0
+                ):
                     fail_health_check((
                         'It looks like your strategy is filtering out a lot '
                         'of data. Health check found %d filtered examples but '
                         'only %d good ones. This will make your tests much '
                         'slower, and also will probably distort the data '
                         'generation quite a lot. You should adapt your '
-                        'strategy to filter less.') % (
+                        'strategy to filter less. This can also be caused by '
+                        'a low max_leaves parameter in recursive() calls') % (
                         filtered_draws, count
                     ))
-                if bad_draws >= 50:
-                    fail_health_check(
-                        'Hypothesis is struggling to generate examples. '
-                        'This is often a sign of a recursive strategy which '
-                        'fans out too broadly. If you\'re using recursive, '
-                        'try to reduce the size of the recursive step or '
-                        'increase the maximum permitted number of leaves.'
-                    )
                 runtime = time.time() - start
                 if runtime > 1.0 or count < 10:
                     fail_health_check((
                         'Data generation is extremely slow: Only produced '
-                        '%d valid examples in %.2f seconds. Try decreasing '
-                        "size of the data you're generating (with e.g. "
+                        '%d valid examples in %.2f seconds (%d invalid ones '
+                        'and %d exceeded maximum size). Try decreasing '
+                        "size of the data you're generating (with e.g."
                         'average_size or max_leaves parameters).'
-                    ) % (count, runtime))
+                    ) % (count, runtime, filtered_draws, overruns))
                 if getglobalrandomstate() != initial_state:
-                    warned_random[0] = True
                     fail_health_check(
                         'Data generation depends on global random module. '
                         'This makes results impossible to replay, which '
@@ -648,18 +383,19 @@ def given(*generator_arguments, **generator_kwargs):
                         'can use the random_module() strategy to explicitly '
                         'seed the random module.'
                     )
-
             last_exception = [None]
             repr_for_last_exception = [None]
+            performed_random_check = [False]
 
-            def is_template_example(xs):
-                if perform_health_check and not warned_random[0]:
+            def evaluate_test_data(data):
+                if perform_health_check and not performed_random_check[0]:
                     initial_state = getglobalrandomstate()
-                record_repr = [None]
+                    performed_random_check[0] = True
+                else:
+                    initial_state = None
                 try:
-                    result = test_runner(reify_and_execute(
-                        search_strategy, xs, test,
-                        record_repr=record_repr,
+                    result = test_runner(data, reify_and_execute(
+                        search_strategy, test,
                     ))
                     if result is not None and settings.perform_health_check:
                         raise FailedHealthCheck((
@@ -667,78 +403,118 @@ def given(*generator_arguments, **generator_kwargs):
                             '%s returned %r instead.'
                         ) % (test.__name__, result), settings)
                     return False
+                except UnsatisfiedAssumption:
+                    data.mark_invalid()
                 except (
                     HypothesisDeprecationWarning, FailedHealthCheck,
-                    UnsatisfiedAssumption
+                    StopTest,
                 ):
                     raise
                 except Exception:
                     last_exception[0] = traceback.format_exc()
-                    repr_for_last_exception[0] = record_repr[0]
                     verbose_report(last_exception[0])
-                    return True
+                    data.mark_interesting()
                 finally:
                     if (
-                        not warned_random[0] and
-                        perform_health_check and
+                        initial_state is not None and
                         getglobalrandomstate() != initial_state
                     ):
-                        warned_random[0] = True
                         fail_health_check(
                             'Your test used the global random module. '
                             'This is unlikely to work correctly. You should '
                             'consider using the randoms() strategy from '
                             'hypothesis.strategies instead. Alternatively, '
                             'you can use the random_module() strategy to '
-                            'explicitly seed the random module.'
-                        )
-            is_template_example.__name__ = test.__name__
-            is_template_example.__qualname__ = qualname(test)
+                            'explicitly seed the random module.')
 
-            with settings:
-                falsifying_template = None
-                try:
-                    falsifying_template = best_satisfying_template(
-                        search_strategy, random, is_template_example,
-                        settings, storage, start_time=start,
+            from hypothesis.internal.conjecture.engine import TestRunner
+
+            falsifying_example = None
+            database_key = str_to_bytes(fully_qualified_name(test))
+            start_time = time.time()
+            runner = TestRunner(
+                evaluate_test_data,
+                settings=settings, random=random,
+                database_key=database_key,
+            )
+            runner.run()
+            run_time = time.time() - start_time
+            timed_out = (
+                settings.timeout > 0 and
+                run_time >= settings.timeout
+            )
+            if runner.last_data.status == Status.INTERESTING:
+                falsifying_example = runner.last_data.buffer
+                if settings.database is not None:
+                    settings.database.save(
+                        database_key, falsifying_example
                     )
-                except NoSuchExample:
-                    return
+            else:
+                if runner.valid_examples < min(
+                    settings.min_satisfying_examples,
+                    settings.max_examples,
+                ):
+                    if timed_out:
+                        raise Timeout((
+                            'Ran out of time before finding a satisfying '
+                            'example for '
+                            '%s. Only found %d examples in ' +
+                            '%.2fs.'
+                        ) % (
+                            get_pretty_function_description(test),
+                            runner.valid_examples, run_time
+                        ))
+                    else:
+                        raise Unsatisfiable((
+                            'Unable to satisfy assumptions of hypothesis '
+                            '%s. Only %d examples considered '
+                            'satisfied assumptions'
+                        ) % (
+                            get_pretty_function_description(test),
+                            runner.valid_examples,))
+                return
 
-                assert last_exception[0] is not None
+            assert last_exception[0] is not None
 
-                try:
-                    test_runner(reify_and_execute(
-                        search_strategy, falsifying_template, test,
-                        print_example=True, is_final=True
-                    ))
-                except UnsatisfiedAssumption:
-                    report(traceback.format_exc())
-                    raise Flaky(
-                        'Unreliable assumption: An example which satisfied '
-                        'assumptions on the first run now fails it.'
-                    )
-
-                report(
-                    'Failed to reproduce exception. Expected: \n' +
-                    last_exception[0],
+            try:
+                with settings:
+                    test_runner(
+                        TestData.for_buffer(falsifying_example),
+                        reify_and_execute(
+                            search_strategy, test,
+                            print_example=True, is_final=True
+                        ))
+            except (UnsatisfiedAssumption, StopTest):
+                report(traceback.format_exc())
+                raise Flaky(
+                    'Unreliable assumption: An example which satisfied '
+                    'assumptions on the first run now fails it.'
                 )
 
-                try:
-                    test_runner(reify_and_execute(
-                        search_strategy, falsifying_template,
+            report(
+                'Failed to reproduce exception. Expected: \n' +
+                last_exception[0],
+            )
+
+            filter_message = (
+                'Unreliable test data: Failed to reproduce a failure '
+                'and then when it came to recreating the example in '
+                'order to print the test data with a flaky result '
+                'the example was filtered out (by e.g. a '
+                'call to filter in your strategy) when we didn\'t '
+                'expect it to be.'
+            )
+
+            try:
+                test_runner(
+                    TestData.for_buffer(falsifying_example),
+                    reify_and_execute(
+                        search_strategy,
                         test_is_flaky(test, repr_for_last_exception[0]),
                         print_example=True, is_final=True
                     ))
-                except UnsatisfiedAssumption:
-                    raise Flaky(
-                        'Unreliable test data: Failed to reproduce a failure '
-                        'and then when it came to recreating the example in '
-                        'order to print the test data with a flaky result '
-                        'the example was filtered out (by e.g. a '
-                        'call to filter in your strategy) when we didn\'t '
-                        'expect it to be.'
-                    )
+            except (UnsatisfiedAssumption, StopTest):
+                raise Flaky(filter_message)
         for attr in dir(test):
             if attr[0] != '_' and not hasattr(wrapped_test, attr):
                 setattr(wrapped_test, attr, getattr(test, attr))
@@ -753,12 +529,15 @@ def given(*generator_arguments, **generator_kwargs):
     return run_test_with_generator
 
 
-def find(specifier, condition, settings=None, random=None, storage=None):
+def find(specifier, condition, settings=None, random=None, database_key=None):
     settings = settings or Settings(
         max_examples=2000,
         min_satisfying_examples=0,
         max_shrinks=2000,
     )
+
+    if database_key is None and settings.database is not None:
+        database_key = function_digest(condition)
 
     if not isinstance(specifier, SearchStrategy):
         raise InvalidArgument(
@@ -768,56 +547,68 @@ def find(specifier, condition, settings=None, random=None, storage=None):
 
     search = specifier
 
-    if storage is None and settings.database is not None:
-        storage = settings.database.storage(
-            'find(%s)' % (
-                binascii.hexlify(function_digest(condition)).decode('ascii'),
-            )
-        )
-
     random = random or new_random()
     successful_examples = [0]
+    last_data = [None]
 
-    def template_condition(template):
+    def template_condition(data):
         with BuildContext():
-            result = search.reify(template)
-            success = condition(result)
+            try:
+                data.hypothesis_is_used_for_find = True
+                result = data.draw(search)
+                data.note(result)
+                success = condition(result)
+            except UnsatisfiedAssumption:
+                data.mark_invalid()
 
         if success:
             successful_examples[0] += 1
 
-        if not successful_examples[0]:
-            verbose_report(lambda: 'Trying example %s' % (
-                repr(result),
-            ))
-        elif success:
-            if successful_examples[0] == 1:
-                verbose_report(lambda: 'Found satisfying example %s' % (
+        if settings.verbosity == Verbosity.verbose:
+            if not successful_examples[0]:
+                report(lambda: u'Trying example %s' % (
                     repr(result),
                 ))
-            else:
-                verbose_report(lambda: 'Shrunk example to %s' % (
-                    repr(result),
-                ))
-        return success
+            elif success:
+                if successful_examples[0] == 1:
+                    report(lambda: u'Found satisfying example %s' % (
+                        repr(result),
+                    ))
+                else:
+                    report(lambda: u'Shrunk example to %s' % (
+                        repr(result),
+                    ))
+                last_data[0] = data
+        if success and not data.frozen:
+            data.mark_interesting()
+    from hypothesis.internal.conjecture.engine import TestRunner
+    from hypothesis.internal.conjecture.data import TestData, Status
 
-    template_condition.__name__ = condition.__name__
-    tracker = Tracker()
-
-    try:
-        template = best_satisfying_template(
-            search, random, template_condition, settings,
-            tracker=tracker, max_parameter_tries=2,
-            storage=storage,
-        )
-        with BuildContext(is_final=True, close_on_capture=False):
-            return search.reify(template)
-    except Timeout:
-        raise
-    except NoSuchExample:
-        if search.template_upper_bound <= len(tracker):
-            raise DefinitelyNoSuchExample(
+    start = time.time()
+    runner = TestRunner(
+        template_condition, settings=settings, random=random,
+        database_key=database_key,
+    )
+    runner.run()
+    run_time = time.time() - start
+    if runner.last_data.status == Status.INTERESTING:
+        with BuildContext():
+            return TestData.for_buffer(runner.last_data.buffer).draw(search)
+    if runner.valid_examples <= settings.min_satisfying_examples:
+        if settings.timeout > 0 and run_time > settings.timeout:
+            raise Timeout((
+                'Ran out of time before finding enough valid examples for '
+                '%s. Only %d valid examples found in %.2f seconds.'
+            ) % (
                 get_pretty_function_description(condition),
-                search.template_upper_bound,
-            )
-        raise NoSuchExample(get_pretty_function_description(condition))
+                runner.valid_examples, run_time))
+
+        else:
+            raise Unsatisfiable((
+                'Unable to satisfy assumptions of '
+                '%s. Only %d examples considered satisfied assumptions'
+            ) % (
+                get_pretty_function_description(condition),
+                runner.valid_examples,))
+
+    raise NoSuchExample(get_pretty_function_description(condition))

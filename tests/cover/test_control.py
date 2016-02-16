@@ -109,7 +109,6 @@ def test_raises_if_current_build_context_out_of_context():
         current_build_context()
 
 
-def test_does_not_leave_build_context_active_if_captured():
-    with BuildContext(close_on_capture=False) as c:
-        c.mark_captured()
-    assert _current_build_context.value is None
+def test_current_build_context_is_current():
+    with BuildContext() as a:
+        assert current_build_context() is a

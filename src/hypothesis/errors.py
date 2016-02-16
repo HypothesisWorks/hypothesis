@@ -38,13 +38,6 @@ class UnsatisfiedAssumption(HypothesisException):
 
     """
 
-    def __init__(self, *args, **kwargs):
-        if args or kwargs:
-            super(UnsatisfiedAssumption, self).__init__(*args, **kwargs)
-        else:
-            super(UnsatisfiedAssumption, self).__init__(
-                'Unsatisfied assumption')
-
 
 class BadTemplateDraw(HypothesisException):
 
@@ -74,18 +67,14 @@ class NoSuchExample(HypothesisException):
         )
 
 
-class DefinitelyNoSuchExample(NoSuchExample):
+class DefinitelyNoSuchExample(NoSuchExample):  # pragma: no cover
+    """Hypothesis used to be able to detect exhaustive coverage of a search
+    space and no longer can.
 
-    """We have considered the entire example space available and there are no
-    examples in it."""
+    This exception remains for compatibility reasons for now but can
+    never actually be thrown.
 
-    def __init__(self, condition_string, n_examples):
-        super(DefinitelyNoSuchExample, self).__init__(
-            condition_string, ' (all %d considered)' % (
-                n_examples,
-            )
-        )
-        self.n_examples = n_examples
+    """
 
 
 class NoExamples(HypothesisException):
@@ -181,3 +170,9 @@ class HypothesisDeprecationWarning(HypothesisException, DeprecationWarning):
 
 
 warnings.simplefilter('once', HypothesisDeprecationWarning)
+
+
+class Frozen(HypothesisException):
+
+    """Raised when a mutation method has been called on a TestData object after
+    freeze() has been called."""

@@ -23,11 +23,10 @@ from __future__ import division, print_function, absolute_import
 import sys
 import math
 
-from hypothesis import seed, given, assume, settings
+from hypothesis import seed, given, assume, reject, settings
 from hypothesis.errors import Unsatisfiable
-from tests.common.utils import fails, fails_with
+from tests.common.utils import fails
 from hypothesis.strategies import lists, floats, integers
-from hypothesis.searchstrategy.numbers import NastyFloats
 
 TRY_HARDER = settings(max_examples=1000, max_iterations=2000)
 
@@ -162,15 +161,4 @@ def test_floats_are_in_range(x, y, s):
     try:
         test_is_in_range()
     except Unsatisfiable:
-        assume(False)
-
-
-@fails_with(AssertionError)
-@given(NastyFloats())
-def test_can_use_just_nasty(x):
-    assert not math.isnan(x)
-
-
-@given(NastyFloats(allow_nan=False))
-def test_nasty_filter_nan(x):
-    assert not math.isnan(x)
+        reject()

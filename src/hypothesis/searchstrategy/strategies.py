@@ -16,52 +16,12 @@
 
 from __future__ import division, print_function, absolute_import
 
-from random import Random
-from collections import namedtuple
-
-from hypothesis.errors import BadData, NoExamples, WrongFormat, \
-    BadTemplateDraw, UnsatisfiedAssumption
-from hypothesis.control import assume, BuildContext
-from hypothesis.internal.compat import hrange, integer_types
-from hypothesis.internal.chooser import chooser
+import hypothesis.internal.conjecture.utils as cu
+from hypothesis.errors import NoExamples, NoSuchExample, Unsatisfiable, \
+    UnsatisfiedAssumption
+from hypothesis.control import assume, reject
+from hypothesis.internal.compat import hrange
 from hypothesis.internal.reflection import get_pretty_function_description
-
-Infinity = float('inf')
-EFFECTIVELY_INFINITE = 2 ** 32
-
-
-def infinitish(x):
-    assert x >= 0
-    if x >= EFFECTIVELY_INFINITE:
-        return Infinity
-    else:
-        return int(x)
-
-
-def check_type(typ, value, e=WrongFormat):
-    if not isinstance(value, typ):
-        if isinstance(typ, tuple):
-            name = 'any of ' + ', '.join(t.__name__ for t in typ)
-        else:
-            name = typ.__name__
-        raise e('Value %r is not an instance of %s' % (
-            value, name
-        ))
-
-
-def check_data_type(typ, value):
-    check_type(typ, value, BadData)
-
-
-def check_length(l, value, e=BadData):
-    try:
-        actual = len(value)
-    except TypeError:
-        raise e('Expected type with length but got %r' % (value,))
-    if actual != l:
-        raise e('Expected %d elements but got %d from %r' % (
-            l, actual, value
-        ))
 
 
 def one_of_strategies(xs):
@@ -140,18 +100,22 @@ class SearchStrategy(object):
         This method is part of the public API.
 
         """
-        random = random or Random()
-
-        for _ in hrange(100):
-            try:
-                template = self.draw_and_produce(random)
-                with BuildContext():
-                    return self.reify(template)
-            except (BadTemplateDraw, UnsatisfiedAssumption):
-                pass
-        raise NoExamples(
-            'Could not find any valid examples in 100 tries'
-        )
+        from hypothesis import find, settings
+        try:
+            return find(
+                self,
+                lambda x: True,
+                random=random,
+                settings=settings(
+                    max_shrinks=0,
+                    max_iterations=1000,
+                    database=None
+                )
+            )
+        except (NoSuchExample, Unsatisfiable):
+            raise NoExamples(
+                u'Could not find any valid examples in 100 tries'
+            )
 
     def map(self, pack):
         """Returns a new strategy that generates values by generating a value
@@ -210,172 +174,11 @@ class SearchStrategy(object):
         """
         pass
 
-    # HERE BE DRAGONS. All below is non-public API of varying degrees of
-    # stability.
-
-    # Methods to be overridden by subclasses
-
-    def draw_parameter(self, random):
-        """Produce a random valid parameter for this strategy, using only data
-        from the provided random number generator."""
-        raise NotImplementedError(  # pragma: no cover
-            '%s.draw_parameter()' % (self.__class__.__name__))
-
-    def draw_template(self, random, parameter_value):
-        """Given this Random and this parameter value, produce a random valid
-        template for this strategy."""
-        raise NotImplementedError(  # pragma: no cover
-            '%s.draw_template()' % (self.__class__.__name__))
-
-    def reify(self, template):
-        """Given a template value, deterministically convert it into a value of
-        the desired final type."""
-        raise NotImplementedError(  # pragma: no cover
-            '%s.reify()' % (self.__class__.__name__))
-
-    def to_basic(self, template):
-        """Convert a template value for this strategy into basic data.
-
-        Basic data is any of:
-
-            1. A bool, None, an int that fits into 64 bits, or a unicode string
-            2. A list of basic data
-
-        """
-        raise NotImplementedError(  # pragma: no cover
-            '%s.to_basic()' % (self.__class__.__name__))
-
-    def from_basic(self, value):
-        """Convert basic data back to a template, raising BadData if the
-        provided data cannot be converted into a valid template for this
-        strategy.
-
-        It is not required that from_basic(to_basic(template)) == template. It
-        is however required that to_basic(from_basic(data)) == data (if this
-        does not raise an exception).
-
-        """
-        raise NotImplementedError(  # pragma: no cover
-            '%s.from_basic()' % (self.__class__.__name__))
-
-    # Gory implementation details
-
-    #: Provide an upper bound on the number of available templates.
-    #: The intended interpretation is that template_upper_bound means "if
-    #: yo've only found this many templates don't worry about it". It is also
-    #: used internally in a few places for certain optimisations.
-    #: Generally speaking once this reaches numbers >= 2 ** 32 or so you might
-    #: as well just return float('inf').
-    #: Note that there may be more distinct templates than there are
-    #: representable values, because some templates may not reify and some may
-    #: lead to the same value.
-    template_upper_bound = Infinity
+    def do_draw(self, data):
+        raise NotImplementedError('%s.do_draw' % (type(self).__name__,))
 
     def __init__(self):
         pass
-
-    def draw_and_produce(self, random):
-        return self.draw_template(random, self.draw_parameter(random))
-
-    def strictly_simpler(self, x, y):
-        """
-        Is the left hand argument *strictly* simpler than the right hand side.
-
-        Required properties:
-
-        1. not strictly_simpler(x, x)
-        2. not (strictly_simpler(x, y) and strictly_simpler(y, x))
-        3. not (strictly_simpler(x, y) and strictly_simpler(y, z)
-           and strictly_simpler(z x))
-
-        This is used for hinting in certain cases. The default implementation
-        of it always returns False and this is perfectly acceptable to leave
-        as is.
-        """
-        return False
-
-    def simplifiers(self, random, template):
-        """Yield a sequence of functions which each take a Random object and a
-        single template and produce a generator over "simpler" versions of that
-        template.
-
-        The only other required invariant that each simplifier must satisfy is
-        it should not be the case that strictly_simpler(x, y) for any y in
-        simplify(random, x). That is, it's OK if the simplify doesn't produce
-        a strictly simpler value but it must not produce a strictly more
-        complex one.
-
-        General tips for a good simplify function:
-
-            1. The generator shouldn't yield too many values. A few hundred is
-               fine, but if you're generating millions of simplifications you
-               may wish to reconsider your life choices and evaluate which ones
-               actually matter to you.
-            2. Cycles in simplify are fine, but the simplify graph should be
-               bounded in the sense that there should be no infinite acyclic
-               paths where a1 simplifies to a2 simplifies to ...
-            3. Try major simplifications first to see if you get lucky. Yield
-               a minimal element, throw out half of your data, etc. Providing
-               shortcuts in the graph will speed up the simplification process
-               a lot.
-
-        The template argument is provided to allow picking simplifiers that are
-        likely to be useful. It should be considered only a hint, and each
-        simplifier must be valid (in the sense of not erroring. It doesn't have
-        to do anything useful) for all templates valid for this strategy.
-
-        By default this just yields the basic_simplify function (which in turn
-        by default does not do anything useful). If you override this function
-        and also override basic_simplify you should make sure to yield it, or
-        it will not be called.
-
-        """
-        yield self.basic_simplify
-
-    def full_simplify(self, random, template):
-        """A convenience method.
-
-        Run each simplifier over this template and yield the results in
-        turn.
-
-        The order in which simplifiers are run is lightly randomized from the
-        order in which simplifiers provides them, in order to avoid certain
-        pathological cases.
-
-        """
-        for simplifier in self.simplifiers(random, template):
-            for value in simplifier(random, template):
-                yield value
-
-    def basic_simplify(self, random, template):
-        """A convenience method for subclasses that do not have complex
-        simplification requirements to override.
-
-        See simplifiers for details.
-
-        """
-        return iter(())
-
-
-class LazyParameter(object):
-
-    def __init__(self, strategy, random):
-        self.seed = random.getrandbits(128)
-        self.strategy = strategy
-        self.evaluated = False
-
-    def __repr__(self):
-        if not self.evaluated:
-            return 'LazyParameter(...)'
-        else:
-            return 'LazyParameter(%r)' % (self.__value,)
-
-    @property
-    def value(self):
-        if not self.evaluated:
-            self.evaluated = True
-            self.__value = self.strategy.draw_parameter(Random(self.seed))
-        return self.__value
 
 
 class OneOfStrategy(SearchStrategy):
@@ -389,21 +192,29 @@ class OneOfStrategy(SearchStrategy):
 
     """
 
-    Parameter = namedtuple(
-        'Parameter', ('chooser', 'child_parameters')
-    )
-
-    def __init__(self,
-                 strategies):
+    def __init__(self, strategies, bias=None):
         SearchStrategy.__init__(self)
         strategies = tuple(strategies)
-        if len(strategies) <= 1:
-            raise ValueError('Need at least 2 strategies to choose amongst')
         self.element_strategies = list(strategies)
-        self.template_upper_bound = 0
-        for e in self.element_strategies:
-            self.template_upper_bound += e.template_upper_bound
-        self.template_upper_bound = infinitish(self.template_upper_bound)
+        self.bias = bias
+        if bias is not None:
+            assert 0 < bias < 1
+            self.weights = [bias ** i for i in range(len(strategies))]
+
+    def do_draw(self, data):
+        n = len(self.element_strategies)
+        if self.bias is None:
+            i = cu.integer_range(data, 0, n - 1)
+        else:
+            def biased_i(random):
+                while True:
+                    i = random.randint(0, n - 1)
+                    if random.random() <= self.weights[i]:
+                        return i
+            i = cu.integer_range_with_distribution(
+                data, 0, n - 1, biased_i)
+
+        return data.draw(self.element_strategies[i])
 
     def __repr__(self):
         return ' | '.join(map(repr, self.element_strategies))
@@ -411,97 +222,6 @@ class OneOfStrategy(SearchStrategy):
     def validate(self):
         for e in self.element_strategies:
             e.validate()
-
-    def strictly_simpler(self, x, y):
-        lx, vx = x
-        ly, vy = y
-        if lx < ly:
-            return True
-        if lx > ly:
-            return False
-        return self.element_strategies[lx].strictly_simpler(vx, vy)
-
-    def reify(self, value):
-        s, x = value
-        return self.element_strategies[s].reify(x)
-
-    def draw_parameter(self, random):
-        n = len(self.element_strategies)
-        active = list(range(n))
-        random.shuffle(active)
-        n_active = min(random.randint(1, n), random.randint(1, n))
-        active = set(active[:n_active])
-        return self.Parameter(
-            chooser=chooser(
-                random.getrandbits(8) + 1 if i in active else 0
-                for i in hrange(n)),
-            child_parameters=[
-                LazyParameter(s, random) for s in self.element_strategies]
-        )
-
-    def draw_template(self, random, pv):
-        child = pv.chooser.choose(random)
-        return (
-            child,
-            self.element_strategies[child].draw_template(
-                random, pv.child_parameters[child].value))
-
-    def element_simplifier(self, s, simplifier):
-        def accept(random, template):
-            if template[0] != s:
-                return
-            for value in simplifier(random, template[1]):
-                yield (s, value)
-        accept.__name__ = str(
-            'element_simplifier(%d, %s)' % (
-                s, simplifier.__name__,
-            )
-        )
-        return accept
-
-    def simplifiers(self, random, template):
-        i, value = template
-        for j in hrange(i):
-            yield self.redraw_simplifier(j)
-
-        for simplify in self.element_strategies[i].simplifiers(random, value):
-            yield self.element_simplifier(i, simplify)
-
-    def redraw_simplifier(self, child):
-        def accept(random, template):
-            i, value = template
-            if child >= i:
-                return
-            for _ in hrange(20):
-                try:
-                    redraw = self.element_strategies[child].draw_and_produce(
-                        random)
-                    yield child, redraw
-                except BadTemplateDraw:  # pragma: no cover
-                    # This is covered by tests but is quite hard to hit
-                    # reliably.
-                    pass
-        accept.__name__ = str(
-            'redraw_simplifier(%d)' % (child,))
-        return accept
-
-    def to_basic(self, template):
-        i, value = template
-        return [i, self.element_strategies[i].to_basic(value)]
-
-    def from_basic(self, data):
-        check_data_type(list, data)
-        check_length(2, data)
-        i, value = data
-        check_data_type(integer_types, i)
-        if i < 0:
-            raise BadData('Index out of range: %d < 0' % (i,))
-        elif i >= len(self.element_strategies):
-            raise BadData(
-                'Index out of range: %d >= %d' % (
-                    i, len(self.element_strategies)))
-
-        return (i, self.element_strategies[i].from_basic(value))
 
 
 class MappedSearchStrategy(SearchStrategy):
@@ -516,7 +236,6 @@ class MappedSearchStrategy(SearchStrategy):
     def __init__(self, strategy, pack=None):
         SearchStrategy.__init__(self)
         self.mapped_strategy = strategy
-        self.template_upper_bound = self.mapped_strategy.template_upper_bound
         if pack is not None:
             self.pack = pack
 
@@ -531,38 +250,27 @@ class MappedSearchStrategy(SearchStrategy):
     def validate(self):
         self.mapped_strategy.validate()
 
-    def draw_parameter(self, random):
-        return self.mapped_strategy.draw_parameter(random)
-
-    def draw_template(self, random, pv):
-        return self.mapped_strategy.draw_template(random, pv)
-
     def pack(self, x):
         """Take a value produced by the underlying mapped_strategy and turn it
         into a value suitable for outputting from this strategy."""
         raise NotImplementedError(
             '%s.pack()' % (self.__class__.__name__))
 
-    def reify(self, value):
-        return self.pack(self.mapped_strategy.reify(value))
-
-    def simplifiers(self, random, template):
-        return self.mapped_strategy.simplifiers(random, template)
-
-    def strictly_simpler(self, x, y):
-        return self.mapped_strategy.strictly_simpler(x, y)
-
-    def to_basic(self, template):
-        return self.mapped_strategy.to_basic(template)
-
-    def from_basic(self, data):
-        return self.mapped_strategy.from_basic(data)
+    def do_draw(self, data):
+        for _ in range(3):
+            i = data.index
+            try:
+                return self.pack(self.mapped_strategy.do_draw(data))
+            except UnsatisfiedAssumption:
+                if data.index == i:
+                    raise
+        reject()
 
 
-class FilteredStrategy(MappedSearchStrategy):
+class FilteredStrategy(SearchStrategy):
 
     def __init__(self, strategy, condition):
-        super(FilteredStrategy, self).__init__(strategy=strategy)
+        super(FilteredStrategy, self).__init__()
         self.condition = condition
         self.filtered_strategy = strategy
 
@@ -574,6 +282,15 @@ class FilteredStrategy(MappedSearchStrategy):
             )
         return self._cached_repr
 
-    def pack(self, value):
-        assume(self.condition(value))
-        return value
+    def do_draw(self, data):
+        for _ in hrange(3):
+            start_index = data.index
+            value = data.draw(self.filtered_strategy)
+            if self.condition(value):
+                return value
+            else:
+                # This is to guard against the case where we consume no data.
+                # As long as we consume data, we'll eventually pass or raise.
+                # But if we don't this could be an infinite loop.
+                assume(data.index > start_index)
+        data.mark_invalid()

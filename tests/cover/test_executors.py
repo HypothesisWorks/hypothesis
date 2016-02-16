@@ -22,6 +22,7 @@ from unittest import TestCase
 import pytest
 
 from hypothesis import given, example
+from hypothesis.executors import TestRunner
 from hypothesis.strategies import booleans, integers
 
 
@@ -87,3 +88,10 @@ def test_no_boom():
 
 def test_no_boom_on_example():
     Valueless().test_no_boom_on_example()
+
+
+class TestNormal(TestRunner, TestCase):
+
+    @given(booleans())
+    def test_stuff(self, b):
+        pass

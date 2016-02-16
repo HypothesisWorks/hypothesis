@@ -54,7 +54,7 @@ Grand ambitions, I know, and I expect ultimately the reality will be somewhat le
 grand, but so far in about three months of development, Hypothesis has become the most
 solid implementation of Quickcheck ever seen in a mainstream language (as long as we don't
 count Scala as mainstream yet), and at the same time managed to
-:doc:`significantly push forward the state of the art<internals>`, so I think there's
+significantly push forward the state of the art, so I think there's
 reason to be optimistic.
 
 .. _terrible: https://www.youtube.com/watch?v=csyL9EC0S0c

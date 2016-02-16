@@ -99,7 +99,59 @@ if PY3:
 def quiet_raise(exc):
     raise exc from None
 """)
+
+    def int_from_bytes(data):
+        return int.from_bytes(data, 'big')
+
+    def int_to_bytes(i, size):
+        return i.to_bytes(size, 'big')
+
+    def bytes_from_list(ls):
+        return bytes(ls)
+
+    def to_bytes_sequence(ls):
+        return bytes(ls)
+
+    def zero_byte_sequence(n):
+        return bytes(n)
 else:
+    import struct
+
+    def zero_byte_sequence(n):
+        return b'\0' * n
+
+    def int_from_bytes(data):
+        assert isinstance(data, bytearray)
+        result = 0
+        i = 0
+        while i + 4 <= len(data):
+            result <<= 32
+            result |= struct.unpack('>I', data[i:i + 4])[0]
+            i += 4
+        while i < len(data):
+            result <<= 8
+            result |= data[i]
+            i += 1
+        return int(result)
+
+    def int_to_bytes(i, size):
+        assert i >= 0
+        result = bytearray(size)
+        j = size - 1
+        while i and j >= 0:
+            result[j] = i & 255
+            i >>= 8
+            j -= 1
+        if i:
+            raise OverflowError('int too big to convert')
+        return hbytes(result)
+
+    def bytes_from_list(ls):
+        return bytes(bytearray(ls))
+
+    def to_bytes_sequence(ls):
+        return bytearray(ls)
+
     def str_to_bytes(s):
         return s
 
@@ -292,3 +344,76 @@ def update_code_location(code, newfile, newlineno):
     unpacked[CODE_FIELD_ORDER.index('co_filename')] = newfile
     unpacked[CODE_FIELD_ORDER.index('co_firstlineno')] = newlineno
     return type(code)(*unpacked)
+
+
+class compatbytes(bytearray):
+    __name__ = 'bytes'
+
+    def __init__(self, *args, **kwargs):
+        bytearray.__init__(self, *args, **kwargs)
+        self.__hash = None
+
+    def __str__(self):
+        return bytearray.__str__(self)
+
+    def __repr__(self):
+        return 'compatbytes(b%r)' % (str(self),)
+
+    def __hash__(self):
+        if self.__hash is None:
+            self.__hash = hash(str(self))
+        return self.__hash
+
+    def count(self, value):
+        c = 0
+        for w in self:
+            if w == value:
+                c += 1
+        return c
+
+    def index(self, value):
+        for i, v in enumerate(self):
+            if v == value:
+                return i
+        raise ValueError('Value %r not in sequence %r' % (value, self))
+
+    def __add__(self, value):
+        return compatbytes(bytearray.__add__(self, value))
+
+    def __radd__(self, value):
+        return compatbytes(bytearray.__radd__(self, value))
+
+    def __mul__(self, value):
+        return compatbytes(bytearray.__mul__(self, value))
+
+    def __rmul__(self, value):
+        return compatbytes(bytearray.__rmul__(self, value))
+
+    def __getitem__(self, *args, **kwargs):
+        r = bytearray.__getitem__(self, *args, **kwargs)
+        if isinstance(r, bytearray):
+            return compatbytes(r)
+        else:
+            return r
+
+    __setitem__ = None
+
+    def join(self, parts):
+        result = bytearray()
+        first = True
+        for p in parts:
+            if not first:
+                result.extend(self)
+            first = False
+            result.extend(p)
+        return compatbytes(result)
+
+    def __contains__(self, value):
+        return any(v == value for v in self)
+
+if PY2:
+    hbytes = compatbytes
+    reasonable_byte_type = bytearray
+else:
+    hbytes = bytes
+    reasonable_byte_type = bytes

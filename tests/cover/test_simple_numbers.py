@@ -18,15 +18,11 @@ from __future__ import division, print_function, absolute_import
 
 import sys
 import math
-from random import Random
 
 import pytest
 
-from hypothesis import find, given, assume
+from hypothesis import find, given
 from hypothesis.strategies import lists, floats, integers, complex_numbers
-from hypothesis.searchstrategy.numbers import is_integral, \
-    FixedBoundedFloatStrategy
-from hypothesis.searchstrategy.strategies import BadData
 
 
 def test_minimize_negative_int():
@@ -39,7 +35,12 @@ def test_positive_negative_int():
     assert find(integers(), lambda x: x > 1) == 2
 
 
-boundaries = pytest.mark.parametrize(u'boundary', [0, 1, 11, 23, 64, 10000])
+boundaries = pytest.mark.parametrize(u'boundary', sorted(
+    [2 ** i for i in range(10)] +
+    [2 ** i - 1 for i in range(10)] +
+    [2 ** i + 1 for i in range(10)] +
+    [10 ** i for i in range(6)]
+))
 
 
 @boundaries
@@ -78,8 +79,8 @@ def test_find_small_number_in_large_range():
 
 def test_find_small_sum_float_list():
     xs = find(
-        lists(floats()),
-        lambda x: len(x) >= 10 and sum(x) >= 1.0
+        lists(floats(), min_size=10),
+        lambda x: sum(x) >= 1.0
     )
     assert sum(xs) <= 2.0
 
@@ -130,6 +131,13 @@ def test_minimize_very_large_float():
     assert t <= find(floats(), lambda x: x >= t) < float(u'inf')
 
 
+def is_integral(value):
+    try:
+        return int(value) == value
+    except (OverflowError, ValueError):
+        return False
+
+
 def test_can_find_float_far_from_integral():
     find(floats(), lambda x: not (
         math.isnan(x) or
@@ -146,7 +154,8 @@ def test_can_find_integrish():
 
 def test_list_of_fractional_float():
     assert set(find(
-        lists(floats()), lambda x: len([t for t in x if t >= 1.5]) >= 10
+        lists(floats(), average_size=50),
+        lambda x: len([t for t in x if t >= 1.5]) >= 10
     )) in (
         set((1.5,)),
         set((1.5, 2.0)),
@@ -164,54 +173,6 @@ def test_minimizes_lists_of_negative_ints_up_to_boundary():
     assert result == [-1] * 10
 
 
-def test_out_of_range_integers_are_bad():
-    with pytest.raises(BadData):
-        integers(0, 1).from_basic(-1)
-
-    with pytest.raises(BadData):
-        integers(min_value=11).from_basic(9)
-
-
-def test_out_of_range_floats_are_bad():
-    with pytest.raises(BadData):
-        floats(11, 12).from_basic(floats(0, 1).to_basic((0, 0.0)))
-
-    with pytest.raises(BadData):
-        FixedBoundedFloatStrategy(11, 12).from_basic(
-            floats().to_basic(float(u'nan'))
-        )
-
-
-def test_float_simplicity():
-    s = floats().strictly_simpler
-
-    def order(x, y):
-        x = float(x)
-        y = float(y)
-        assert s(x, y)
-        assert not s(y, x)
-
-    order(sys.float_info.max, u'-inf')
-    order(1.0, 0.5)
-    order(1.0, 2.0)
-    order(2, -1)
-    order(-1.5, float(u'inf'))
-    order(-1.2, -1.3)
-    order(u'inf', u'nan')
-    order(u'inf', u'-inf')
-    order(u'0.25', u'0.5')
-    order(0.5, -1)
-    order(1.5, u'-inf')
-
-
-def test_floats_can_simplify_extreme_values():
-    s = floats()
-    r = Random(1)
-    for simplify in s.simplifiers(r, 3.14159):
-        for v in (float(u'nan'), float(u'inf'), float(u'-inf')):
-            list(simplify(r, v))
-
-
 @pytest.mark.parametrize((u'left', u'right'), [
     (0.0, 5e-324),
     (-5e-324, 0.0),
@@ -225,32 +186,12 @@ def test_floats_in_constrained_range(left, right):
     test_in_range()
 
 
-def test_floats_of_small_range_are_bounded():
-    assert floats(0, 5e-324).template_upper_bound == 2
-    assert floats(-5e-324, 5e-324).template_upper_bound == 4
-
-
-@given(floats(), floats())
-def test_bounds_are_valid(left, right):
-    for x in (left, right):
-        assume(not (math.isinf(x) or math.isnan(x)))
-    assume(left <= right)
-    ub = floats(left, right).template_upper_bound
-    assert ub >= 0
-    if isinstance(ub, float):
-        assert math.isinf(ub)
-    else:
-        assert isinstance(ub, int)
-
-
 def test_bounds_are_respected():
     assert find(floats(min_value=1.0), lambda x: True) == 1.0
     assert find(floats(max_value=-1.0), lambda x: True) == -1.0
 
 
-@pytest.mark.parametrize(
-    'k', range(10)
-)
+@pytest.mark.parametrize('k', range(10))
 def test_floats_from_zero_have_reasonable_range(k):
     n = 10 ** k
     assert find(floats(min_value=0.0), lambda x: x >= n) == float(n)

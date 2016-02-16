@@ -22,7 +22,8 @@ import threading
 from collections import namedtuple
 
 import hypothesis.reporting as reporting
-from hypothesis import note, seed, given, assume, settings, Verbosity
+from hypothesis import note, seed, given, assume, reject, settings, \
+    Verbosity
 from hypothesis.errors import Unsatisfiable
 from tests.common.utils import fails, raises, fails_with, capture_out
 from hypothesis.strategies import just, sets, text, lists, binary, \
@@ -226,7 +227,7 @@ def test_contains_the_test_function_name_in_the_exception_string():
     @settings(max_iterations=10, max_examples=10)
     def this_has_a_totally_unique_name(x):
         calls[0] += 1
-        assume(False)
+        reject()
 
     with raises(Unsatisfiable) as e:
         this_has_a_totally_unique_name()
@@ -242,7 +243,7 @@ def test_contains_the_test_function_name_in_the_exception_string():
         @settings(max_iterations=10, max_examples=10)
         def this_has_a_unique_name_and_lives_on_a_class(self, x):
             calls2[0] += 1
-            assume(False)
+            reject()
 
     with raises(Unsatisfiable) as e:
         Foo().this_has_a_unique_name_and_lives_on_a_class()
@@ -512,17 +513,6 @@ def test_should_not_fail_if_max_examples_less_than_min_satisfying(x):
     pass
 
 
-def test_should_not_count_duplicates_towards_max_examples():
-    seen = set()
-
-    @given(integers(1, 10))
-    @settings(max_examples=9)
-    def test_i_see_you(x):
-        seen.add(x)
-    test_i_see_you()
-    assert len(seen) == 9
-
-
 def nameless_const(x):
     def f(u, v):
         return u
@@ -550,6 +540,7 @@ def test_can_be_used_with_none_module():
 
 def test_does_not_print_notes_if_all_succeed():
     @given(integers())
+    @settings(verbosity=Verbosity.normal)
     def test(i):
         note('Hi there')
     with capture_out() as out:
@@ -560,7 +551,7 @@ def test_does_not_print_notes_if_all_succeed():
 
 def test_prints_notes_once_on_failure():
     @given(lists(integers()))
-    @settings(database=None)
+    @settings(database=None, verbosity=Verbosity.normal)
     def test(xs):
         note('Hi there')
         assert sum(xs) > 100

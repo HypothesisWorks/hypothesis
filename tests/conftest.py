@@ -17,36 +17,12 @@
 from __future__ import division, print_function, absolute_import
 
 import gc
-import os
-import warnings
-from tempfile import mkdtemp
 
 import pytest
 
-from hypothesis import settings
-from hypothesis.configuration import set_hypothesis_home_dir
+from tests.common.setup import run
 
-warnings.filterwarnings(u'error', category=UnicodeWarning)
-
-set_hypothesis_home_dir(mkdtemp())
-
-assert isinstance(settings, type)
-
-settings.register_profile(
-    'default', settings(timeout=-1, strict=True)
-)
-
-settings.register_profile(
-    'speedy', settings(
-        timeout=1, max_examples=5,
-    ))
-
-
-settings.register_profile(
-    'nonstrict', settings(strict=False)
-)
-
-settings.load_profile(os.getenv('HYPOTHESIS_PROFILE', 'default'))
+run()
 
 
 @pytest.fixture(scope=u'function', autouse=True)

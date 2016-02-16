@@ -17,48 +17,20 @@
 from __future__ import division, print_function, absolute_import
 
 import inspect
-from random import Random
 from collections import namedtuple
 
 import pytest
 
 from hypothesis import settings as Settings
 from hypothesis import assume
-from hypothesis.errors import Flaky, BadData, InvalidDefinition
+from hypothesis.errors import Flaky, InvalidDefinition
 from tests.common.utils import raises, capture_out
 from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import rule, Bundle, precondition, \
-    StateMachineRunner, GenericStateMachine, RuleBasedStateMachine, \
-    run_state_machine_as_test, StateMachineSearchStrategy
-from hypothesis.strategies import just, none, lists, tuples, choices, \
-    booleans, integers, sampled_from
-
-
-class ChoosingStateMachine(GenericStateMachine):
-
-    def __init__(self):
-        super(ChoosingStateMachine, self).__init__()
-        self.pool = []
-
-    def steps(self):
-        result = tuples(just('extend'), lists(integers()))
-        if self.pool:
-            result |= tuples(just('choose'), choices())
-        return result
-
-    def execute_step(self, step):
-        return getattr(self, step[0])(step[1])
-
-    def extend(self, data):
-        self.pool.extend(data)
-
-    def choose(self, choice):
-        assert choice(self.pool) < 100
-
-
-def test_can_choose_within_stateful():
-    with raises(AssertionError):
-        run_state_machine_as_test(ChoosingStateMachine)
+    GenericStateMachine, RuleBasedStateMachine, \
+    run_state_machine_as_test
+from hypothesis.strategies import just, none, lists, tuples, booleans, \
+    integers, sampled_from
 
 
 class SetStateMachine(GenericStateMachine):
@@ -111,24 +83,6 @@ class GoodSet(GenericStateMachine):
         else:
             self.stuff.add(value)
         assert delete == (value not in self.stuff)
-
-
-class UnreliableStrategyState(GenericStateMachine):
-    n = 8
-
-    def __init__(self):
-        self.random = Random()
-        self.counter = 0
-
-    def steps(self):
-        if self.random.randint(0, 1):
-            return lists(booleans())
-        else:
-            return integers()
-
-    def execute_step(self, step):
-        self.counter += 1
-        assert self.counter < self.n
 
 
 Leaf = namedtuple(u'Leaf', (u'label',))
@@ -220,7 +174,7 @@ class PreconditionMachine(RuleBasedStateMachine):
 
 bad_machines = (
     OrderedStateMachine, SetStateMachine, BalancedTrees,
-    UnreliableStrategyState, DepthMachine,
+    DepthMachine,
 )
 
 for m in bad_machines:
@@ -231,95 +185,12 @@ for m in bad_machines:
 
 cheap_bad_machines = list(bad_machines)
 cheap_bad_machines.remove(BalancedTrees)
-cheap_bad_machines.remove(UnreliableStrategyState)
 
 
 with_cheap_bad_machines = pytest.mark.parametrize(
     u'machine',
     cheap_bad_machines, ids=[t.__name__ for t in cheap_bad_machines]
 )
-
-
-@with_cheap_bad_machines
-def test_can_serialize_statemachine_execution(machine):
-    runner = machine.find_breaking_runner()
-    strategy = StateMachineSearchStrategy()
-    new_runner = strategy.from_basic(strategy.to_basic(runner))
-    with raises(AssertionError):
-        new_runner.run(machine())
-    r = Random(1)
-
-    for simplifier in strategy.simplifiers(r, new_runner):
-        try:
-            next(simplifier(r, new_runner))
-        except StopIteration:
-            pass
-
-
-@with_cheap_bad_machines
-def test_can_shrink_deserialized_execution_without_running(machine):
-    runner = machine.find_breaking_runner()
-    strategy = StateMachineSearchStrategy()
-    new_runner = strategy.from_basic(strategy.to_basic(runner))
-    r = Random(1)
-
-    for simplifier in strategy.simplifiers(r, new_runner):
-        try:
-            next(simplifier(r, new_runner))
-        except StopIteration:
-            pass
-
-
-def test_rejects_invalid_step_sizes_in_data():
-    runner = DepthMachine.find_breaking_runner()
-    strategy = StateMachineSearchStrategy()
-    basic = strategy.to_basic(runner)
-    assert isinstance(basic[2], int)
-    basic[2] = -1
-    with raises(BadData):
-        strategy.from_basic(basic)
-    basic[2] = 1000000
-    with raises(BadData):
-        strategy.from_basic(basic)
-
-
-@with_cheap_bad_machines
-def test_can_full_simplify_breaking_example(machine):
-    runner = machine.find_breaking_runner()
-    strategy = StateMachineSearchStrategy()
-    r = Random(1)
-    for _ in strategy.full_simplify(r, runner):
-        pass
-
-
-def test_can_truncate_template_record():
-    class Breakable(GenericStateMachine):
-        counter_start = 0
-
-        def __init__(self):
-            self.counter = type(self).counter_start
-
-        def steps(self):
-            return integers()
-
-        def execute_step(self, step):
-            self.counter += 1
-            if self.counter > 10:
-                assert step < 0
-
-    runner = Breakable.find_breaking_runner()
-    strat = StateMachineSearchStrategy()
-    r = Random(1)
-    simplifiers = list(strat.simplifiers(r, runner))
-    assert simplifiers
-    assert any(u'convert_simplifier' in s.__name__ for s in simplifiers)
-    while runner.record:
-        runner.record.pop()
-
-    assert not runner.record
-    for s in simplifiers:
-        for t in s(r, runner):
-            pass
 
 
 @pytest.mark.parametrize(
@@ -364,10 +235,12 @@ def test_can_get_test_case_off_machine_instance():
     assert GoodSet().TestCase is not None
 
 
-class FlakyStateMachine(RuleBasedStateMachine):
+class FlakyStateMachine(GenericStateMachine):
 
-    @rule()
-    def boom(self):
+    def steps(self):
+        return just(())
+
+    def execute_step(self, step):
         assert not any(
             t[3] == u'find_breaking_runner'
             for t in inspect.getouterframes(inspect.currentframe())
@@ -377,6 +250,23 @@ class FlakyStateMachine(RuleBasedStateMachine):
 def test_flaky_raises_flaky():
     with raises(Flaky):
         FlakyStateMachine.TestCase().runTest()
+
+
+class FlakyRatchettingMachine(GenericStateMachine):
+    ratchet = 0
+
+    def steps(self):
+        FlakyRatchettingMachine.ratchet += 1
+        n = FlakyRatchettingMachine.ratchet
+        return lists(integers(), min_size=n, max_size=n)
+
+    def execute_step(self, step):
+        assert False
+
+
+def test_ratchetting_raises_flaky():
+    with raises(Flaky):
+        FlakyRatchettingMachine.TestCase().runTest()
 
 
 def test_empty_machine_is_invalid():
@@ -479,22 +369,11 @@ def test_minimizes_errors_in_teardown():
             assert not self.counter
 
     runner = Foo.find_breaking_runner()
-    assert runner.n_steps == 1
 
+    f = Foo()
     with raises(AssertionError):
-        runner.run(Foo(), print_steps=True)
-
-
-def test_can_produce_minimal_outcomes_from_unreliable_strategies():
-    runner = UnreliableStrategyState.find_breaking_runner()
-    n = UnreliableStrategyState.n
-
-    assert runner.n_steps == n
-    assert len(runner.record) >= n
-    for strat, data in runner.record[:n]:
-        template = strat.from_basic(data[-1])
-        value = strat.reify(template)
-        assert value in ([], 0)
+        runner.run(f, print_steps=True)
+    assert f.counter == 1
 
 
 class RequiresInit(GenericStateMachine):
@@ -553,21 +432,13 @@ def test_saves_failing_example_in_database():
     with raises(AssertionError):
         run_state_machine_as_test(
             SetStateMachine, Settings(database=db))
-    assert len(list(db.backend.keys())) == 1
+    assert len(list(db.data.keys())) == 1
 
 
 def test_can_run_with_no_db():
     with raises(AssertionError):
         run_state_machine_as_test(
             SetStateMachine, Settings(database=None))
-
-
-def test_statemachine_equality():
-    assert StateMachineRunner(1, 1, 1) != 1
-    assert StateMachineRunner(1, 1, 1) == StateMachineRunner(1, 1, 1)
-    assert hash(StateMachineRunner(1, 1, 1)) == hash(
-        StateMachineRunner(1, 1, 1))
-    assert StateMachineRunner(1, 1, 1) != StateMachineRunner(1, 1, 2)
 
 
 def test_stateful_double_rule_is_forbidden(recwarn):

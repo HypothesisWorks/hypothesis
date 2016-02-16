@@ -19,124 +19,6 @@ module. The salient functions from it are as follows:
 .. automodule:: hypothesis.strategies
   :members:
 
-~~~~~~~~~~~~~~~~
-Choices
-~~~~~~~~~~~~~~~~
-
-Sometimes you need an input to be from a known set of items. hypothesis gives you 2 ways to do this, choice() and sampled_from().
-
-Examples on how to use them both are below. First up choice:
-
-.. code:: python
-
-    from hypothesis import given, strategies as st
-    
-    @given(user=st.text(min_size=1), service=st.text(min_size=1), choice=st.choices())
-    def test_tickets(user, service, choice):
-        t=choice(('ST', 'LT', 'TG', 'CT'))
-        # asserts go here.
-
-This means t will randomly be one of the items in the list ('ST', 'LT', 'TG', 'CT'). just like if you were calling random.choice() on the list.
-
-A different, and probably better way to do this, is to use sampled_from:
-
-.. code:: python
-
-    from hypothesis import given, strategies as st
-    
-    @given(
-        user=st.text(min_size=1), service=st.text(min_size=1),
-        t=st.sampled_from(('ST', 'LT', 'TG', 'CT')))
-    def test_tickets(user, service, t):
-        # asserts and test code go here.
-
-Values from sampled_from will not be copied and thus you should be careful of using mutable data. Which makes it great for the above use case, but may not always work out.
-
-~~~~~~~~~~~~~~~~
-Infinite streams
-~~~~~~~~~~~~~~~~
-
-Sometimes you need examples of a particular type to keep your test going but
-you're not sure how many you'll need in advance. For this, we have streaming
-types.
-
-
-.. code-block:: pycon
-
-    >>> from hypothesis.strategies import streaming, integers
-    >>> x = streaming(integers()).example()
-    >>> x
-    Stream(...)
-    >>> x[2]
-    209
-    >>> x
-    Stream(32, 132, 209, ...)
-    >>> x[10]
-    130
-    >>> x
-    Stream(32, 132, 209, 843, -19, 58, 141, -1046, 37, 243, 130, ...)
-
-Think of a Stream as an infinite list where we've only evaluated as much as
-we need to. As per above, you can index into it and the stream will be evaluated up to
-that index and no further.
-
-You can iterate over it too (warning: iter on a stream given to you
-by Hypothesis in this way will never terminate):
-
-.. code-block:: pycon
-
-    >>> it = iter(x)
-    >>> next(it)
-    32
-    >>> next(it)
-    132
-    >>> next(it)
-    209
-    >>> next(it)
-    843
-
-Slicing will also work, and will give you back Streams. If you set an upper
-bound then iter on those streams *will* terminate:
-
-.. code-block:: pycon
-
-    >>> list(x[:5])
-    [32, 132, 209, 843, -19]
-    >>> y = x[1::2]
-    >>> y
-    Stream(...)
-    >>> y[0]
-    132
-    >>> y[1]
-    843
-    >>> y
-    Stream(132, 843, ...)
-
-You can also apply a function to transform a stream:
-
-.. code-block:: pycon
-
-    >>> t = streaming(int).example()
-    >>> tm = t.map(lambda n: n * 2)
-    >>> tm[0]
-    26
-    >>> t[0]
-    13
-    >>> tm
-    Stream(26, ...)
-    >>> t
-    Stream(13, ...)
-
-map creates a new stream where each element of the stream is the function
-applied to the corresponding element of the original stream. Evaluating the
-new stream will force evaluating the original stream up to that index.
-
-(Warning: This isn't the map builtin. In Python 3 the builtin map should do
-more or less the right thing, but in Python 2 it will never terminate and
-will just eat up all your memory as it tries to build an infinitely long list)
-
-These are the only operations a Stream supports. There are a few more internal
-ones, but you shouldn't rely on them.
 
 ~~~~~~~~~~~~~~~~~~~
 Adapting strategies
@@ -308,16 +190,8 @@ Composite strategies
 ~~~~~~~~~~~~~~~~~~~~
 
 The @composite decorator lets you combine other strategies in more or less
-arbitrary ways.
-
-Advance warning: You're going to end up wanting to use this API for a lot of
-things, and it's not that you *shouldn't* do that, but it has certain
-intrinsic limitations which mean that overuse of it can hurt performance and
-example quality.
-
-If it's convenient to do so you should use builds instead. Otherwise feel free
-to use this, and if you end up with bad examples or poor performance then you
-should look here first as the culprit.
+arbitrary ways. It's probably the main thing you'll want to use for
+complicated custom strategies.
 
 The composite decorator works by giving you a function as the first argument
 that you can use to draw examples from other strategies. For example, the
@@ -365,3 +239,33 @@ You can use assume inside composite functions:
 
 This works as assume normally would, filtering out any examples for which the
 passed in argument is falsey.
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Drawing interactively in tests
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There is also the ``data()`` strategy, which gives you a means of using
+strategies interactively. Rather than having to specify everything up front in
+``@given`` you can draw from strategies in the body of your test:
+
+.. code-block:: python
+
+    @given(data())
+    def test_draw_sequentially(data):
+        x = data.draw(integers())
+        y = data.draw(integers(min_value=x))
+        assert x < y
+
+If the test fails, each draw will be printed with the falsifying example. e.g.
+the above is wrong (it has a boundary condition error), so will print:
+
+
+::
+
+    Falsifying example: test_draw_sequentially(data=data(...))
+    Draw 1: 0
+    Draw 2: 0
+
+
+As you can see, data drawn this way is simplified as usual.

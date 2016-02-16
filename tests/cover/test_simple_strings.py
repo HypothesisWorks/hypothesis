@@ -22,18 +22,17 @@ from random import Random
 import pytest
 
 from hypothesis import find, given, settings
-from hypothesis.strategies import text, binary, tuples
+from hypothesis.strategies import text, binary, tuples, characters
 
 
 def test_can_minimize_up_to_zero():
-    s = find(text(), lambda x: len([t for t in x if t <= u'0']) >= 10)
-    assert s == u'0' * 10
+    s = find(text(), lambda x: any(lambda t: t <= u'0' for t in x))
+    assert s == u'0'
 
 
 def test_minimizes_towards_ascii_zero():
     s = find(text(), lambda x: any(t < u'0' for t in x))
-    assert len(s) == 1
-    assert ord(s) == ord(u'0') - 1
+    assert s == chr(ord(u'0') - 1)
 
 
 def test_can_handle_large_codepoints():
@@ -60,24 +59,6 @@ def test_will_find_ascii_examples_given_the_chance():
 
 def test_finds_single_element_strings():
     assert find(text(), bool, random=Random(4)) == u'0'
-
-
-def test_can_safely_mix_simplifiers():
-    from hypothesis.searchstrategy.strings import OneCharStringStrategy
-    from hypothesis.internal.debug import some_template
-
-    s = OneCharStringStrategy()
-    r = Random(1)
-    t1 = some_template(s, r)
-    while True:
-        t2 = some_template(s, r)
-        if t1 != t2:
-            break
-    for u in (t1, t2):
-        for v in (t1, t2):
-            for simplify in s.simplifiers(r, u):
-                for w in simplify(r, v):
-                    assert not s.strictly_simpler(v, w)
 
 
 def test_binary_respects_changes_in_size():
@@ -121,3 +102,18 @@ def test_respects_alphabet_if_string(xs):
 @given(text())
 def test_can_encode_as_utf8(s):
     s.encode('utf-8')
+
+
+@given(text(characters(blacklist_characters=u'\n')))
+def test_can_blacklist_newlines(s):
+    assert u'\n' not in s
+
+
+@given(text(characters(blacklist_categories=('Cc', 'Cs'))))
+def test_can_exclude_newlines_by_category(s):
+    assert u'\n' not in s
+
+
+@given(text(characters(max_codepoint=127)))
+def test_can_restrict_to_ascii_only(s):
+    s.encode('ascii')

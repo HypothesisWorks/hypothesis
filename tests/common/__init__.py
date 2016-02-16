@@ -24,12 +24,10 @@ except ImportError:
 
 from hypothesis._settings import settings
 from hypothesis.internal.debug import timeout
-from hypothesis.strategytests import templates_for
 from hypothesis.strategies import integers, floats, just, one_of, \
-    sampled_from, streaming, lists, booleans, dictionaries, tuples, \
+    sampled_from, lists, booleans, dictionaries, tuples, \
     frozensets, complex_numbers, sets, text, binary, decimals, fractions, \
     none, randoms, builds, fixed_dictionaries, recursive
-from hypothesis.internal.compat import hrange
 
 
 __all__ = ['small_verifier', 'timeout', 'standard_types', 'OrderedPair']
@@ -49,8 +47,6 @@ def constant_list(strat):
     )
 
 
-EvalledIntStream = streaming(integers()).map(lambda x: list(x[:3]) and x)
-
 ABC = namedtuple('ABC', ('a', 'b', 'c'))
 
 
@@ -59,12 +55,10 @@ def abc(x, y, z):
 
 with settings(strict=False):
     standard_types = [
-        EvalledIntStream,
         lists(max_size=0), tuples(), sets(max_size=0), frozensets(max_size=0),
         fixed_dictionaries({}),
         abc(booleans(), booleans(), booleans()),
         abc(booleans(), booleans(), integers()),
-        templates_for(one_of(*map(just, hrange(10)))),
         fixed_dictionaries({'a': integers(), 'b': booleans()}),
         dictionaries(booleans(), integers()),
         dictionaries(text(), booleans()),
@@ -92,13 +86,9 @@ with settings(strict=False):
         lists(lists(booleans(), average_size=100)),
         lists(floats(0.0, 0.0), average_size=1.0),
         ordered_pair, constant_list(integers()),
-        streaming(integers()).map(lambda x: list(x[:2]) and x),
         integers().filter(lambda x: abs(x) > 100),
         floats(min_value=-sys.float_info.max, max_value=sys.float_info.max),
         none(), randoms(),
-        tuples().flatmap(lambda x: EvalledIntStream),
-        templates_for(integers(min_value=0, max_value=0).flatmap(
-            lambda x: integers(min_value=0, max_value=0))),
         booleans().flatmap(lambda x: booleans() if x else complex_numbers()),
         recursive(
             base=booleans(), extend=lambda x: lists(x, max_size=3),

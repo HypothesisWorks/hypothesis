@@ -69,7 +69,9 @@ def test_minimizes_list_of_lists():
 
 
 def test_minimize_long_list():
-    assert find(lists(booleans()), lambda x: len(x) >= 70) == [False] * 70
+    assert find(
+        lists(booleans(), average_size=100), lambda x: len(x) >= 70
+    ) == [False] * 70
 
 
 def test_minimize_list_of_longish_lists():
@@ -153,29 +155,6 @@ def test_minimize_dicts_with_incompatible_keys():
     ) == {1: False, u'hi': []}
 
 
-def test_deeply_nested_sets():
-    def f(n):
-        if n <= 0:
-            return booleans()
-        return sets(f(n - 1))
-
-    assert f(10).template_upper_bound == float(u'inf')
-
-
-def test_list_simplicity():
-    # Testing internal details because this is too damn hard to hit reliably
-    s = lists(booleans())
-
-    assert not s.strictly_simpler((), ())
-    assert s.strictly_simpler((), (False,))
-    assert not s.strictly_simpler((True,), ())
-    assert s.strictly_simpler((True,), (False, True))
-    assert s.strictly_simpler((False,), (True,))
-    assert not s.strictly_simpler((True,), (False,))
-    assert s.strictly_simpler((False, False,), (False, True))
-    assert not s.strictly_simpler((False, True), (False, True))
-
-
 def test_multiple_empty_lists_are_independent():
     x = find(lists(lists(max_size=0)), lambda t: len(t) >= 2)
     u, v = x
@@ -244,11 +223,6 @@ def test_lists_forced_near_top(n):
         lists(integers(), min_size=n, max_size=n + 2),
         lambda t: len(t) == n + 2
     ) == [0] * (n + 2)
-
-
-def test_cloning_is_a_no_op_on_short_lists():
-    s = lists(booleans()).wrapped_strategy
-    assert list(s.simplify_with_example_cloning(Random(), (False,))) == []
 
 
 @flaky(max_runs=5, min_passes=1)
