@@ -18,6 +18,8 @@ from __future__ import division, print_function, absolute_import
 
 import os
 
+__hypothesis_home_directory_default = os.path.join(os.getcwd(), '.hypothesis')
+
 __hypothesis_home_directory = None
 
 
@@ -39,10 +41,8 @@ def hypothesis_home_dir():
         __hypothesis_home_directory = os.getenv(
             'HYPOTHESIS_STORAGE_DIRECTORY')
     if not __hypothesis_home_directory:
-        __hypothesis_home_directory = os.path.join(
-            os.getcwd(), '.hypothesis'
-        )
-    mkdir_p(__hypothesis_home_directory)
+        __hypothesis_home_directory = __hypothesis_home_directory_default
+        mkdir_p(__hypothesis_home_directory)
     return __hypothesis_home_directory
 
 
