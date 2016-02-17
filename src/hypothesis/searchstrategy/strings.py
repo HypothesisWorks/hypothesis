@@ -131,4 +131,4 @@ class FixedSizeBytes(SearchStrategy):
         self.size = size
 
     def do_draw(self, data):
-        return data.draw_bytes(self.size)
+        return binary_type(data.draw_bytes(self.size))
