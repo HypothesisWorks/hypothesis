@@ -57,11 +57,18 @@ New features:
 * New "exploded" database format which allows you to more easily check the example
   database into a source repository while supporting merging.
 * Better management of how examples are saved in the database.
+* Health checks will now raise as errors when they fail. It was too easy to have
+  the warnings be swallowed entirely.
 
 New limitations:
 
 * choices and streaming strategies may no longer be used with find(). Neither may
   data() (this is the change that necessitated a major version bump).
+
+Feature removal:
+
+* The ForkingTestCase executor has gone away. It may return in some more working
+  form at a later date.
 
 Performance improvements:
 
