@@ -40,7 +40,6 @@ from hypothesis._settings import settings as Settings
 from hypothesis._settings import Verbosity
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.strategies import just, one_of, sampled_from
-from hypothesis.internal.compat import hrange
 from hypothesis.internal.reflection import proxies
 from hypothesis.internal.conjecture.data import StopTest
 from hypothesis.searchstrategy.strategies import SearchStrategy
@@ -208,19 +207,23 @@ class StateMachineRunner(object):
         if print_steps is None:
             print_steps = current_verbosity() >= Verbosity.debug
 
-        stopping_value = 1 - 1.0 / (1 + self.n_steps)
+        stopping_value = 1 - 1.0 / (1 + self.n_steps * 0.5)
         try:
-            for _ in hrange(self.n_steps):
+            steps = 0
+            while True:
+                if steps == self.n_steps:
+                    stopping_value = 0
                 self.data.start_example()
                 if not cu.biased_coin(self.data, stopping_value):
                     self.data.stop_example()
                     break
 
                 value = self.data.draw(state_machine.steps())
-
-                if print_steps:
-                    state_machine.print_step(value)
-                state_machine.execute_step(value)
+                steps += 1
+                if steps <= self.n_steps:
+                    if print_steps:
+                        state_machine.print_step(value)
+                    state_machine.execute_step(value)
                 self.data.stop_example()
         finally:
             state_machine.teardown()
