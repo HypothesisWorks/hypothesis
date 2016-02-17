@@ -123,3 +123,12 @@ class BinaryStringStrategy(MappedSearchStrategy):
         assert isinstance(x, list), repr(x)
         ba = bytearray(x)
         return binary_type(ba)
+
+
+class FixedSizeBytes(SearchStrategy):
+
+    def __init__(self, size):
+        self.size = size
+
+    def do_draw(self, data):
+        return data.draw_bytes(self.size)

@@ -613,7 +613,11 @@ def binary(
     min_size, average_size and max_size have the usual interpretations.
 
     """
-    from hypothesis.searchstrategy.strings import BinaryStringStrategy
+    from hypothesis.searchstrategy.strings import BinaryStringStrategy, \
+        FixedSizeBytes
+    check_valid_sizes(min_size, average_size, max_size)
+    if min_size == max_size is not None:
+        return FixedSizeBytes(min_size)
     return BinaryStringStrategy(
         lists(
             integers(min_value=0, max_value=255),

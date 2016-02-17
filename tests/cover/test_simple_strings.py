@@ -117,3 +117,9 @@ def test_can_exclude_newlines_by_category(s):
 @given(text(characters(max_codepoint=127)))
 def test_can_restrict_to_ascii_only(s):
     s.encode('ascii')
+
+
+def test_fixed_size_bytes_just_draw_bytes():
+    from hypothesis.internal.conjecture.data import TestData
+    x = TestData.for_buffer(b'foo')
+    assert x.draw(binary(min_size=3, max_size=3)) == b'foo'
