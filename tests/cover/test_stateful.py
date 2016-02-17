@@ -24,13 +24,14 @@ import pytest
 from hypothesis import settings as Settings
 from hypothesis import assume
 from hypothesis.errors import Flaky, InvalidDefinition
+from hypothesis.control import current_build_context
 from tests.common.utils import raises, capture_out
 from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import rule, Bundle, precondition, \
     GenericStateMachine, RuleBasedStateMachine, \
     run_state_machine_as_test
-from hypothesis.strategies import just, none, lists, tuples, booleans, \
-    integers, sampled_from
+from hypothesis.strategies import just, none, lists, binary, tuples, \
+    booleans, integers, sampled_from
 
 
 class SetStateMachine(GenericStateMachine):
@@ -233,6 +234,26 @@ class GivenLikeStateMachine(GenericStateMachine):
 def test_can_get_test_case_off_machine_instance():
     assert GoodSet().TestCase is GoodSet().TestCase
     assert GoodSet().TestCase is not None
+
+
+class FlakyDrawLessMachine(GenericStateMachine):
+
+    def steps(self):
+        cb = current_build_context()
+        if cb.is_final:
+            return binary(min_size=1, max_size=1)
+        else:
+            return binary(min_size=1024, max_size=1024)
+
+    def execute_step(self, step):
+        cb = current_build_context()
+        if not cb.is_final:
+            assert 0 not in bytearray(step)
+
+
+def test_flaky_draw_less_raises_flaky():
+    with raises(Flaky):
+        FlakyDrawLessMachine.TestCase().runTest()
 
 
 class FlakyStateMachine(GenericStateMachine):

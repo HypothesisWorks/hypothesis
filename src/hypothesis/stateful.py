@@ -105,10 +105,10 @@ def run_state_machine_as_test(state_machine_factory, settings=None):
         with BuildContext(is_final=True):
             breaker.run(state_machine_factory(), print_steps=True)
     except StopTest:
-        raise Flaky(
-            u'Run failed initially but succeeded on a second try'
-        )
-    assert False, 'Unreachable'  # pragma: no cover
+        pass
+    raise Flaky(
+        u'Run failed initially but succeeded on a second try'
+    )
 
 
 class GenericStateMachine(object):
