@@ -22,6 +22,61 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 ------------------
+3.0.0 - 2016-02-17
+------------------
+
+Codename: This really should have been 2.1.
+
+Externally this looks like a very small release. It has one small breaking change
+that probably doesn't affect anyone at all (some behaviour that never really worked
+correctly is now outright forbidden) but necessitated a major version bump and one
+visible new feature.
+
+Internally this is a complete rewrite. Almost nothing other than the public API is
+the same.
+
+New features:
+
+* Addition of data() strategy which allows you to draw arbitrary data interactively
+  within the test.
+* New "exploded" database format which allows you to more easily check the example
+  database into a source repository while supporting merging.
+* Better management of how examples are saved in the database.
+
+New limitations:
+
+* choices and streaming strategies may no longer be used with find(). Neither may
+  data() (this is the change that necessitated a major version bump).
+
+Performance improvements:
+
+* A new model which allows flatmap, composite strategies and stateful testing to
+  perform *much* better. They should also be more reliable.
+* Filtering may in some circumstances have improved significantly. This will
+  help especially in cases where you have lots of values with individual filters
+  on them, such as lists(x.filter(...)).
+* Modest performance improvements to the general test runner by avoiding expensive
+  operations
+
+In general your tests should have got faster. If they've instead got significantly
+slower, I'm interested in hearing about it.
+
+Data distribution:
+
+The data distribution should have changed significantly. This may uncover bugs the
+previous version missed. It may also miss bugs the previous version could have
+uncovered. Hypothesis is now producing less strongly correlated data than it used
+to, but the correlations are extended over more of the structure.
+
+Shrinking:
+
+Shrinking quality should have improved. In particular Hypothesis can now perform
+simultaneous shrinking of separate examples within a single test (previously it
+was only able to do this for elements of a single collection). In some cases
+performance will have improved, in some cases it will have got worse but generally
+shouldn't have by much.
+
+------------------
 2.0.0 - 2016-01-10
 ------------------
 
