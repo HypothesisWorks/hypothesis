@@ -420,7 +420,7 @@ class RuleBasedStateMachine(GenericStateMachine):
             valid = True
             if rule.precondition is not None and not rule.precondition(self):
                 continue
-            for k, v in rule.arguments.items():
+            for k, v in sorted(rule.arguments.items()):
                 if isinstance(v, Bundle):
                     bundle = self.bundle(v.name)
                     if not bundle:
