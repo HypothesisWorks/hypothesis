@@ -22,6 +22,21 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 ------------------
+3.0.1 - 2016-02-18
+------------------
+
+* Fix a case where it was possible to trigger an "Unreachable" assertion when
+  running certain flaky stateful tests.
+* Improve shrinking of large stateful tests by eliminating a case where it was
+  hard to delete early steps.
+* Improve efficiency of drawing binary(min_size=n, max_size=n0 significantly by
+  provide a custom implementation for fixed size blocks that can bypass a lot
+  of machinery.
+* Set default home directory based on the current working directory at the
+  point Hypothesis is imported, not whenever the function first happens to be
+  called.
+
+------------------
 3.0.0 - 2016-02-17
 ------------------
 
