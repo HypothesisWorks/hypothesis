@@ -18,9 +18,9 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 import pytest
+from flaky import flaky
 
 import hypothesis.strategies as st
-from flaky import flaky
 from hypothesis import find, given, settings
 from hypothesis.extra.numpy import arrays, from_dtype
 from hypothesis.strategytests import strategy_test_suite
