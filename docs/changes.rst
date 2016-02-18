@@ -29,7 +29,7 @@ information to the contrary.
   running certain flaky stateful tests.
 * Improve shrinking of large stateful tests by eliminating a case where it was
   hard to delete early steps.
-* Improve efficiency of drawing binary(min_size=n, max_size=n0 significantly by
+* Improve efficiency of drawing binary(min_size=n, max_size=n) significantly by
   provide a custom implementation for fixed size blocks that can bypass a lot
   of machinery.
 * Set default home directory based on the current working directory at the
