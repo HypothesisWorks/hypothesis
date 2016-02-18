@@ -21,6 +21,19 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+
+------------------
+3.0.2 - 2016-02-18
+------------------
+
+* Under certain circumstances, strategies involving text() buried inside some
+  other strategy (e.g. text().filter(...) or recursive(text(), ...)) would cause
+  a test to fail its health checks the first time it ran. This was caused by having
+  to compute some related data and cache it to disk. On travis or anywhere else
+  where the .hypothesis directory was recreated this would have caused the tests
+  to fail their health check on every run. This is now fixed for all the known cases,
+  although there could be others lurking.
+
 ------------------
 3.0.1 - 2016-02-18
 ------------------
