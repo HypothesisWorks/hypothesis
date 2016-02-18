@@ -18,6 +18,8 @@ from __future__ import division, print_function, absolute_import
 
 from random import Random
 
+from flaky import flaky
+
 import hypothesis.strategies as st
 from hypothesis import find, given, example, settings
 from hypothesis.internal.debug import timeout
@@ -126,6 +128,7 @@ def test_can_use_recursive_data_in_sets(rnd):
     )
 
 
+@flaky(max_runs=2, min_passes=1)
 def test_can_form_sets_of_recursive_data():
     trees = st.sets(st.recursive(
         st.booleans(),
