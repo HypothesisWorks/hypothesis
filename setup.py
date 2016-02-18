@@ -43,7 +43,7 @@ extras = {
     'pytest': ['pytest>=2.7.0'],
 }
 
-extras['all'] = sum(extras.values(), [])
+extras['all'] = sorted(sum(extras.values(), []))
 extras['django'].extend(extras['fakefactory'])
 extras[":python_version == '2.6'"] = [
     'importlib', 'ordereddict', 'Counter', 'enum34']
