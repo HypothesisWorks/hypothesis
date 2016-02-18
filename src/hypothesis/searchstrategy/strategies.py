@@ -284,6 +284,9 @@ class FilteredStrategy(SearchStrategy):
             )
         return self._cached_repr
 
+    def validate(self):
+        self.filtered_strategy.validate()
+
     def do_draw(self, data):
         for _ in hrange(3):
             start_index = data.index

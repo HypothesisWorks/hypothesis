@@ -65,6 +65,10 @@ class RecursiveStrategy(SearchStrategy):
                 extend(OneOfStrategy(tuple(strategies), bias=0.8)))
         self.strategy = OneOfStrategy(strategies)
 
+    def validate(self):
+        self.base.validate()
+        self.extend(self.base).validate()
+
     def do_draw(self, data):
         while True:
             try:

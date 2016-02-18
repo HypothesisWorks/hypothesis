@@ -22,7 +22,7 @@ from hypothesis import find, given, settings
 from hypothesis.errors import InvalidArgument
 from tests.common.utils import fails_with
 from hypothesis.strategies import sets, lists, floats, booleans, \
-    integers, frozensets
+    integers, recursive, frozensets
 
 
 def test_errors_when_given_varargs():
@@ -146,6 +146,27 @@ def test_an_average_size_may_be_zero_if_max_size_is():
 def test_min_before_max():
     with pytest.raises(InvalidArgument):
         integers(min_value=1, max_value=0).validate()
+
+
+def test_filter_validates():
+    with pytest.raises(InvalidArgument):
+        integers(min_value=1, max_value=0).filter(bool).validate()
+
+
+def test_recursion_validates_base_case():
+    with pytest.raises(InvalidArgument):
+        recursive(
+            integers(min_value=1, max_value=0),
+            lists,
+        ).validate()
+
+
+def test_recursion_validates_recursive_step():
+    with pytest.raises(InvalidArgument):
+        recursive(
+            integers(),
+            lambda x: lists(x, min_size=3, max_size=1),
+        ).validate()
 
 
 @fails_with(InvalidArgument)
