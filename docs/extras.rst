@@ -101,7 +101,7 @@ It lives in the ``hypothesis.extra.datetime`` package.
     arguments.
 
 
-.. method:: times()
+.. method:: times(allow_naive=None, timezones=None)
 
     This strategy generates ``time`` objects. For example:
 
@@ -109,9 +109,11 @@ It lives in the ``hypothesis.extra.datetime`` package.
 
         >>> from hypothesis.extra.datetime import times
         >>> times().example()
-        datetime.time(0, 15, 55, 188712)
+        datetime.time(0, 15, 55, 188712, tzinfo=<DstTzInfo 'US/Hawaii' LMT-1 day, 13:29:00 STD>)
         >>> times().example()
-        datetime.time(9, 0, 47, 959374)
+        datetime.time(9, 0, 47, 959374, tzinfo=<DstTzInfo 'Pacific/Bougainville' BST+11:00:00 STD>)
+
+    The ``allow_naive`` and ``timezones`` arguments act the same as the datetimes strategy.
 
 
 -----------------------
