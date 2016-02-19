@@ -17,8 +17,6 @@ If any of these scenarios are detected, Hypothesis will emit a warning about the
 The general goal of these health checks is to warn you about things that you are doing that might
 appear to work but will either cause Hypothesis to not work correctly or to perform badly.
 
-These health checks are affected by two settings:
-
-* If the strict setting is set to True, these will be exceptions instead of warnings.
-* If the perform_health_check setting is set to False, these health checks will be skipped entirely. This is not
-  recommended.
+These health checks are affected by the perform_health_check settings. If the
+perform_health_check setting is set to False, these health checks will be skipped entirely. This is
+not recommended.

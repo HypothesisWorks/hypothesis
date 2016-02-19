@@ -43,7 +43,7 @@ Available settings
 .. autoclass:: settings
     :members: max_examples, max_iterations, min_satisfying_examples,
         max_shrinks, timeout, strict, database_file, stateful_step_count, 
-        database
+        database, perform_health_check
 
 .. _verbose-output:
 
