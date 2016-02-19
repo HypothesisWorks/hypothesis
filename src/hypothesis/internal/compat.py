@@ -66,9 +66,14 @@ if PY26:
             ctx.prec *= 2
             result = ctx.divide(numerator, denominator)
         return result
+
+    def int_bit_length(n):
+        return len(bin(n)) - (2 + (n <= 0))
 else:
     def float_to_decimal(f):
         return Decimal(f)
+
+    int_bit_length = int.bit_length
 
 
 if PY3:
