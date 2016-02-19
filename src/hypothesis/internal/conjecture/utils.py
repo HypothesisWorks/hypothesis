@@ -18,7 +18,9 @@ from __future__ import division, print_function, absolute_import
 
 import math
 
-from hypothesis.internal.compat import hbytes, int_to_bytes, int_from_bytes
+from hypothesis.internal.compat import (
+    hbytes, int_to_bytes, int_from_bytes, int_bit_length
+)
 
 
 def n_byte_unsigned(data, n):
@@ -26,7 +28,7 @@ def n_byte_unsigned(data, n):
 
 
 def saturate(n):
-    bits = n.bit_length()
+    bits = int_bit_length(n)
     k = 1
     while k < bits:
         n |= (n >> k)
@@ -53,7 +55,7 @@ def integer_range(data, lower, upper, center=None, distribution=None):
             distribution = lambda random: random.randint(lower, upper)
 
     gap = upper - lower
-    bits = gap.bit_length()
+    bits = int_bit_length(gap)
     nbytes = bits // 8 + int(bits % 8 != 0)
     mask = saturate(gap)
 
