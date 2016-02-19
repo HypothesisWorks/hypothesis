@@ -18,7 +18,9 @@ from __future__ import division, print_function, absolute_import
 
 import math
 
-from hypothesis.internal.compat import hbytes, int_to_bytes, int_from_bytes, int_bit_length
+from hypothesis.internal.compat import (
+    hbytes, int_to_bytes, int_from_bytes, int_bit_length
+)
 
 
 def n_byte_unsigned(data, n):
