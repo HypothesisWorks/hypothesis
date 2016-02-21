@@ -993,7 +993,7 @@ def check_valid_interval(lower_bound, upper_bound, lower_name, upper_name):
     """Checks that lower_bound and upper_bound are either unspecified, or they
     define a valid interval on the number line.
 
-    Otherwise raises InvalidArgumet.
+    Otherwise raises InvalidArgument.
 
     """
     if lower_bound is None or upper_bound is None:
