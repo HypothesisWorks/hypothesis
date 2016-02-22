@@ -287,6 +287,23 @@ def given(*generator_arguments, **generator_kwargs):
             if perform_health_check:
                 initial_state = getglobalrandomstate()
                 health_check_random = Random(random.getrandbits(128))
+                # We "pre warm" the health check with one draw to give it some
+                # time to calculate any cached data. This prevents the case
+                # where the first draw of the health check takes ages because
+                # of loading unicode data the first time.
+                data = TestData(
+                    max_length=settings.buffer_size,
+                    draw_bytes=lambda data, n, distribution:
+                    distribution(health_check_random, n)
+                )
+                with Settings(settings, verbosity=Verbosity.quiet):
+                    try:
+                        test_runner(data, reify_and_execute(
+                            search_strategy,
+                            lambda *args, **kwargs: None,
+                        ))
+                    except BaseException:
+                        pass
                 count = 0
                 overruns = 0
                 filtered_draws = 0
