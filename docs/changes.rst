@@ -21,6 +21,14 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+------------------
+3.0.3 - 2016-02-23
+------------------
+
+* Fix version parsing of py.test to work with py.test release candidates
+* More general handling of the health check problem where things could fail because
+  of a cache miss - now one "free" example is generated before the start of the
+  health check run.
 
 ------------------
 3.0.2 - 2016-02-18
