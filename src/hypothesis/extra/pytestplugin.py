@@ -26,7 +26,7 @@ PYTEST_VERSION = tuple(
     map(
         int,
         re.sub('-.+', '', pytest.__version__).split('.')
-    )[:3])
+    ))[:3]
 
 LOAD_PROFILE_OPTION = '--hypothesis-profile'
 
