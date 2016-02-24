@@ -275,7 +275,7 @@ election given the types that Hypothesis knows about.
 
 The trick here turns out to be twofold:
 
-1. We can generate a type that is *much larger* than an election, extract an election out of that, and rely on minimization to throw away all the extraneous detail.
+1. We can generate a type that is *much larger* than an election, extract an election out of that, and rely on minimisation to throw away all the extraneous detail.
 2. We can use assume and rely on Hypothesis's adaptive exploration to focus on the examples that turn out to generate interesting elections
 
 Without further ado, here is the code:
@@ -376,7 +376,7 @@ probably quite far down the line.
 
 But you can do a lot yourself without any explicit support! Here's a script
 I wrote to throw random data against the API for an entirely fictitious service
-called Waspfinder (this is only lightly obfuscated and you can easily figure
+called *Waspfinder* (this is only lightly obfuscated and you can easily figure
 out who I'm actually talking about, but I don't want you to run this code and
 hammer their API without their permission).
 
@@ -434,7 +434,7 @@ then use the result and go on to do other things are definitely also possible.
         @given(GoalData)
         def test_create_goal_dry_run(self, data):
             # We want slug to be unique for each run so that multiple test runs
-            # don't interfere with eachother. If for some reason some slugs trigger
+            # don't interfere with each other. If for some reason some slugs trigger
             # an error and others don't we'll get a Flaky error, but that's OK.
             slug = hex(random.getrandbits(32))[2:]
 

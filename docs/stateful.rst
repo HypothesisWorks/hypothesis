@@ -209,7 +209,7 @@ and then run, telling you your test has passed! Our balancing algorithm worked.
 
 Now lets break it to make sure the test is still valid:
 
-Changing the split to mid = max(len(leaves) // 3, 1) this should no longer
+Changing the split to ``mid = max(len(leaves) // 3, 1)`` this should no longer
 balance, which gives us the following counter-example:
 
 .. code:: python
@@ -297,7 +297,7 @@ It essentially executes the following loop:
   finally:
     machine.teardown()
 
-Where steps() and execute_step() are methods you must implement, and teardown
+Where steps() and execute_step() are methods you must implement, and `teardown`
 is a method you can implement if you need to clean something up at the end.
 steps  returns a strategy, which is allowed to depend arbitrarily on the
 current state of the test execution. *Ideally* a good steps implementation
@@ -308,7 +308,7 @@ examples because they're hard to simplify.
 The steps method *may* depend on external state, but it's not advisable and
 may produce flaky tests.
 
-If any of execute_step or teardown produces an error, Hypothesis will try to
+If any of execute_step or `teardown` produces an error, Hypothesis will try to
 find a minimal sequence of values steps such that the following throws an
 exception:
 
@@ -397,11 +397,11 @@ finds out that this only deleted one of the copies of the element.
 More fine grained control
 -------------------------
 
-If you want to bypass the TestCase infrastructure you can invoke these
-manually. The stateful module exposes the function run_state_machine_as_test,
-which takes an arbitrary function returning a GenericStateMachine and an
-optional settings parameter and does the same as the class based runTest
+If you want to bypass the `TestCase` infrastructure you can invoke these
+manually. The stateful module exposes the function `run_state_machine_as_test`,
+which takes an arbitrary function returning a `GenericStateMachine` and an
+optional settings parameter and does the same as the class based `runTest`
 provided.
 
 In particular this may be useful if you wish to pass parameters to a custom
-__init__ in your subclass.
+`__init__` in your subclass.

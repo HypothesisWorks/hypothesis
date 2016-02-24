@@ -39,7 +39,7 @@ might be:
 
 * Your code shouldn't throw an exception, or should only throw a particular type of exception (this works particularly well if you have a lot of internal assertions).
 * If you delete an object, it is no longer visible.
-* If you serialize and then deserialize a value, then you get the same value back.
+* If you serialise and then deserialise a value, then you get the same value back.
 
 Now you know the basics of what Hypothesis does, the rest of this
 documentation will take you through how and why. It's divided into a

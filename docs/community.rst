@@ -8,13 +8,13 @@ who can answer your questions and help you out. Please do join us.
 The two major places for community discussion are:
 
 * `The mailing list <https://groups.google.com/forum/#!forum/hypothesis-users>`_.
-* An IRC channel: #hypothesis on freenode.
+* An IRC channel: #hypothesis on Freenode.
 
 Feel free to use these to ask for help, provide feedback, or discuss anything remotely
 Hypothesis related at all.
 
 The IRC channel is the more active of the two. If you don't know how to use
-IRC, don't worry about it. Just `click here to sign up to IRCCloud and log in <https://www.irccloud.com/invite?hostname=irc.freenode.net&channel=%23hypothesis>`_
+IRC, don't worry about it. Just `click here to sign up to IRCCloud and log in <https://www.irccloud.com/invite?hostname=irc.Freenode.net&channel=%23hypothesis>`_
 (don't worry, it's free).
 
 (IRCCloud is made by friends of mine, but that's not why I'm recommending it. I'm
@@ -52,5 +52,5 @@ Also, people who have a track record of bad behaviour outside of the Hypothesis 
 if they obey all these rules if their presence is making people uncomfortable.
 
 At the current volume level it's not hard for me to pay attention to the whole community, but if you think I've
-missed something please feel free to alert me. You can either message me as DRMacIver on freenode or send a me
+missed something please feel free to alert me. You can either message me as DRMacIver on Freenode or send a me
 an email at david@drmaciver.com.

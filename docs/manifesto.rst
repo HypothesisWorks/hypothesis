@@ -37,7 +37,7 @@ invent new ones.
 
 Quickcheck is the start, but I also plan to integrate ideas from fuzz testing (a
 planned future feature is to use coverage information to drive example selection, and
-the example saving database is already inspired by the workflows people use for fuzz
+the example saving database is already inspired by the work flows people use for fuzz
 testing), and am open to and actively seeking out other suggestions and ideas.
 
 The plan is to treat the social problem of people not using these ideas as a bug to

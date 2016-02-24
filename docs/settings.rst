@@ -114,7 +114,7 @@ values. Any absent ones will be set to defaults:
 
     >>> from hypothesis import settings
     >>> settings()
-    settings(average_list_length=25.0, database_file='/home/david/projects/hypothesis/.hypothesis/examples.db', derandomize=False, max_examples=200, max_iterations=1000, max_shrinks=500, min_satisfying_examples=5, stateful_step_count=50, strict=False, timeout=60, verbosity=Verbosity.normal)
+    settings(average_list_length=25.0, database_file='/home/david/projects/hypothesis/.hypothesis/examples.db', derandomise=False, max_examples=200, max_iterations=1000, max_shrinks=500, min_satisfying_examples=5, stateful_step_count=50, strict=False, timeout=60, verbosity=Verbosity.normal)
     >>> settings().max_examples
     200
     >>> settings(max_examples=10).max_examples
@@ -198,7 +198,7 @@ so you are more likely to find bugs.
 Hypothesis allows you to define different settings profiles. These profiles
 can be loaded at any time.
 
-Loading a profile changes the default settings but will not change the behavior
+Loading a profile changes the default settings but will not change the behaviour
 of tests that explicitly change the settings.
 
 .. code:: pycon
@@ -223,7 +223,7 @@ specific tests.
 
 Optionally, you may define the environment variable to load a profile for you.
 This is the suggested pattern for running your tests on CI.
-The code below should run in a `conftest.py` or any setup/initialization section of your test suite.
+The code below should run in a `conftest.py` or any setup/initialisation section of your test suite.
 If this variable is not defined the Hypothesis defined defaults will be loaded.
 
 .. code:: pycon
@@ -235,7 +235,7 @@ If this variable is not defined the Hypothesis defined defaults will be loaded.
     >>> settings.load_profile(os.getenv(u'HYPOTHESIS_PROFILE', 'default'))
 
 If you are using the hypothesis pytest plugin and your profiles are registered
-by your conftest you can load one with the command line option ``--hypothesis-profile``.
+by your `conftest.py` you can load one with the command line option ``--hypothesis-profile``.
 
 .. code:: bash
 

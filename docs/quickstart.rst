@@ -72,7 +72,7 @@ other ways you could have run it later).
 The text function returns what Hypothesis calls a search strategy. An object
 with methods that describe how to generate and simplify certain kinds of
 values. The @given decorator then takes our test function and turns it into a
-parametrized one which, when called, will run the test function over a wide
+parameterised one which, when called, will run the test function over a wide
 range of matching data from that strategy.
 
 Anyway, this test immediately finds a bug in the code:
@@ -242,7 +242,7 @@ We could also have done this as a unittest TestCase:
 A detail: This works because Hypothesis ignores any arguments it hasn't been
 told to provide (positional arguments start from the right), so the self
 argument to the test is simply ignored and works as normal. This also means
-that Hypothesis will play nicely with other ways of parameterizing tests. e.g
+that Hypothesis will play nicely with other ways of parameterising tests. e.g
 it works fine if you use pytest fixtures for some arguments and Hypothesis for
 others.
 
