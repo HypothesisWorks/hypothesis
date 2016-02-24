@@ -53,7 +53,7 @@ It lives in the ``hypothesis.extra.datetime`` package.
       >>> datetimes(min_year=2001, max_year=2010).example()
       datetime.datetime(2006, 9, 26, 22, 0, 0, 220365, tzinfo=<DstTzInfo 'Asia...
 
-    You can also specify timezones:
+    You can also specify ``timezones``:
 
     .. code-block:: pycon
 
@@ -67,14 +67,14 @@ It lives in the ``hypothesis.extra.datetime`` package.
       >>> datetimes(timezones=pytz.all_timezones[:3]).example()
       datetime.datetime(8262, 6, 22, 16, 0, 0, 154235, tzinfo=<DstTzInfo 'Africa/Abidjan' GMT0:00:00 STD>)
 
-    If the set of timezones is empty you will get a naive datetime:
+    If the set of ``timezones`` is empty you will get a naive datetime:
 
     .. code-block:: pycon
 
       >>> datetimes(timezones=[]).example()
       datetime.datetime(918, 11, 26, 2, 0, 35, 916439)
 
-    You can also explicitly get a mix of naive and non-naive datetimes if you
+    You can also explicitly get a mix of naive and non-naive `datetimes` if you
     want:
 
     .. code-block:: pycon
@@ -113,7 +113,7 @@ It lives in the ``hypothesis.extra.datetime`` package.
         >>> times().example()
         datetime.time(9, 0, 47, 959374, tzinfo=<DstTzInfo 'Pacific/Bougainville' BST+11:00:00 STD>)
 
-    The ``allow_naive`` and ``timezones`` arguments act the same as the datetimes strategy.
+    The ``allow_naive`` and ``timezones`` arguments act the same as the `datetimes` strategy.
 
 
 -----------------------
@@ -121,17 +121,17 @@ hypothesis[fakefactory]
 -----------------------
 
 `Fake-factory <https://pypi.python.org/pypi/fake-factory>`_ is another Python
-library for data generation. hypothesis.extra.fakefactory is a package which
-lets you use fake-factory generators to parametrize tests.
+library for data generation. `hypothesis.extra.fakefactory` is a package which
+lets you use fake-factory generators to parameterise tests.
 
 The fake-factory API is extremely unstable, even between patch releases, and
 Hypothesis's support for it is unlikely to work with anything except the exact
 version it has been tested against.
 
-hypothesis.extra.fakefactory defines a function fake_factory which returns a
+`hypothesis.extra.fakefactory` defines a function fake_factory which returns a
 strategy for producing text data from any FakeFactory provider.
 
-So for example the following will parametrize a test by an email address:
+So for example the following will parameterise a test by an email address:
 
 
 .. code-block:: pycon
@@ -154,7 +154,7 @@ locales), either as a single locale or as several:
     >>> fake_factory('name', locales=['en_GB', 'cs_CZ']).example()
     'Harm Sanford'
 
-If you want to your own FakeFactory providers you can do that too, passing them
+If you want to your own `FakeFactory` providers you can do that too, passing them
 in as a providers argument:
 
 .. code-block:: pycon

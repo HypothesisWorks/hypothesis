@@ -66,7 +66,7 @@ Looking forward to using it with a bunch of other projects as well.
 `Adam Johnson <https://github.com/adamchainz>`_
 -----------------------------------------------
 
-I have written a small library to serialize ``dict``\s to MariaDB's dynamic
+I have written a small library to serialise ``dict``\s to MariaDB's dynamic
 columns binary format,
 `mariadb-dyncol <https://github.com/adamchainz/mariadb-dyncol>`_. When I first
 developed it, I thought I had tested it really well - there were hundreds of
@@ -88,7 +88,7 @@ Long live Hypothesis! (Or at least, property-based testing).
 
 Adopting Hypothesis improved `bidict <https://github.com/jab/bidict>`_'s
 test coverage and significantly increased our ability to make changes to
-the code with confidence that correct behavior would be preserved.
+the code with confidence that correct behaviour would be preserved.
 Thank you, David, for the great testing tool.
 
 --------------------------------------------

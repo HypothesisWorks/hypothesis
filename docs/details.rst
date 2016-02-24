@@ -142,9 +142,9 @@ Suppose we had the following:
   def test_sum_is_positive(xs):
     assert sum(xs) > 0
 
-Unsurprisingly this fails and gives the falsifying example [].
+Unsurprisingly this fails and gives the falsifying example ``[]``.
 
-Adding ``assume(xs)`` to this removes the trivial empty example and gives us [0].
+Adding ``assume(xs)`` to this removes the trivial empty example and gives us ``[0]``.
 
 Adding ``assume(all(x > 0 for x in xs))`` and it passes: A sum of a list of
 positive integers is positive.
@@ -153,7 +153,7 @@ The reason that this should be surprising is not that it doesn't find a
 counter-example, but that it finds enough examples at all.
 
 In order to make sure something interesting is happening, suppose we wanted to
-try this for long lists. e.g. suppose we added an assume(len(xs) > 10) to it.
+try this for long lists. e.g. suppose we added an ``assume(len(xs) > 10)`` to it.
 This should basically never find an example: A naive strategy would find fewer
 than one in a thousand examples, because if each element of the list is
 negative with probability half, you'd have to have ten of these go the right
@@ -196,7 +196,7 @@ function is called a :class:`~hypothesis.SearchStrategy`.
 These are created using the functions
 exposed in the :mod:`hypothesis.strategies` module.
 
-Many of these strategies expose a variety of arguments you can use to customize
+Many of these strategies expose a variety of arguments you can use to customise
 generation. For example for integers you can specify ``min`` and ``max`` values of
 integers you want:
 
@@ -234,7 +234,7 @@ The gory details of given parameters
 
 The :func:`@given <hypothesis.core.given>` decorator may be used
 to specify what arguments of a function should
-be parametrized over. You can use either positional or keyword arguments or a mixture
+be parameterised over. You can use either positional or keyword arguments or a mixture
 of the two.
 
 For example all of the following are valid uses:
@@ -303,7 +303,7 @@ The rules for determining what are valid uses of given are as follows:
 
 The reason for the "rightmost named arguments" behaviour is so that
 using :func:`@given <hypothesis.core.given>` with instance methods works: self
-will be passed to the function as normal and not be parametrized over.
+will be passed to the function as normal and not be parameterised over.
 
 The function returned by given has all the arguments that the original test did
 , minus the ones that are being filled in by given.
@@ -380,7 +380,7 @@ and should be rewritten as:
 
 Methods of a BasicStrategy however will typically be called whenever. This may
 happen inside your executor or outside. This is why they have a "Warning you
-have no control over the lifecycle of these values" attached.
+have no control over the life cycle of these values" attached.
 
 -------------------------------
 Using Hypothesis to find values

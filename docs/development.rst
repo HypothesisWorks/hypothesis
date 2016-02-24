@@ -11,7 +11,7 @@ I am the primary author of Hypothesis.
 2. Fixing bugs and other code health issues
 3. Improving documentation
 4. General release management work
-5. Planning the general roadmap of the project
+5. Planning the general road map of the project
 6. Doing sponsored development on tasks that are too large or in depth for other people to take on
 
 So all new features must either be sponsored or implemented by someone else. That being said, I take a fairly active

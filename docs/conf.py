@@ -34,6 +34,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
     'sphinx.ext.intersphinx',
+    'sphinxcontrib.spelling',
 ]
 
 templates_path = ['_templates']
@@ -95,3 +96,7 @@ texinfo_documents = [
      author, 'Hypothesis', 'One line description of project.',
      'Miscellaneous'),
 ]
+
+
+spelling_lang = 'en_GB'
+spelling_show_suggestions = True

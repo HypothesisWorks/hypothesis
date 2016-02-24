@@ -8,6 +8,11 @@ os:
     - osx
     - linux
 
+addons:
+  apt:
+    packages:
+      - enchant
+
 cache:
     apt: true
     directories:

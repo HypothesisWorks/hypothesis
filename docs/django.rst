@@ -14,7 +14,7 @@ and you can use :func:`@given <hypothesis.core.given>` as normal,
 and the transactions will be per example
 rather than per test function as they would be if you used @given with a normal
 django test suite (this is important because your test function will be called
-multiple times and you don't want them to interfere with eachother). Test cases
+multiple times and you don't want them to interfere with each other). Test cases
 on these classes that do not use
 :func:`@given <hypothesis.core.given>` will be run as normal.
 
@@ -25,7 +25,7 @@ Because Hypothesis runs this in a loop the performance problems it normally has
 are significantly exacerbated and your tests will be really slow.
 
 In addition to the above, Hypothesis has some limited support for automatically
-deriving strategies for your model types, which you can then customize further.
+deriving strategies for your model types, which you can then customise further.
 
 .. warning::
     Hypothesis creates saved models. This will run inside your testing

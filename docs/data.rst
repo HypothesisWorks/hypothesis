@@ -131,7 +131,7 @@ map creates a new stream where each element of the stream is the function
 applied to the corresponding element of the original stream. Evaluating the
 new stream will force evaluating the original stream up to that index.
 
-(Warning: This isn't the map builtin. In Python 3 the builtin map should do
+(Warning: This isn't the map built-in. In Python 3 the built-in map should do
 more or less the right thing, but in Python 2 it will never terminate and
 will just eat up all your memory as it tries to build an infinitely long list)
 
@@ -216,7 +216,7 @@ into a strategy, then draws an example from *that* strategy.
 
 It may not be obvious why you want this at first, but it turns out to be
 quite useful because it lets you generate different types of data with
-relationships to eachother.
+relationships to each other.
 
 For example suppose we wanted to generate a list of lists of the same
 length:
@@ -324,7 +324,7 @@ following gives you a list and an index into it:
         return (xs, i)
 
 'draw(s)' is a function that should be thought of as returning s.example(),
-except that the result is reproducible and will minimize correctly. The
+except that the result is reproducible and will minimise correctly. The
 decorated function has the initial argument removed from the list, but will
 accept all the others in the expected order. Defaults are preserved.
 

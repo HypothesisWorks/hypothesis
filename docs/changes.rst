@@ -37,7 +37,7 @@ information to the contrary.
 * Under certain circumstances, strategies involving text() buried inside some
   other strategy (e.g. text().filter(...) or recursive(text(), ...)) would cause
   a test to fail its health checks the first time it ran. This was caused by having
-  to compute some related data and cache it to disk. On travis or anywhere else
+  to compute some related data and cache it to disk. On Travis or anywhere else
   where the .hypothesis directory was recreated this would have caused the tests
   to fail their health check on every run. This is now fixed for all the known cases,
   although there could be others lurking.
@@ -134,7 +134,7 @@ In particular:
 * non-strategy values will no longer be converted to strategies when used in
   given or find.
 * FailedHealthCheck is now an error and not a warning.
-* Handling of non-ascii reprs in user types have been simplified by using raw
+* Handling of non-ASCII reprs in user types have been simplified by using raw
   strings in more places in Python 2.
 * given no longer allows mixing positional and keyword arguments.
 * given no longer works with functions with defaults.
@@ -173,7 +173,7 @@ that may break without warning).
 It does have two new features:
 
 * New @seed() decorator which allows you to manually seed a test. This may be
-  harmlessly combined with and overrides the derandomize setting.
+  harmlessly combined with and overrides the derandomise setting.
 * settings objects may now be used as a decorator to fix those settings to a
   particular @given test.
 
@@ -230,7 +230,7 @@ Features:
 
 * Tests and find are now explicitly seeded off the global random module. This
   means that if you nest one inside the other you will now get a health check
-  error. It also means that you can control global randomization by seeding
+  error. It also means that you can control global randomisation by seeding
   random.
 * There is a new random_module() strategy which seeds the global random module
   for you and handles things so that you don't get a health check warning if
@@ -242,9 +242,9 @@ Features:
 Bug fixes:
 
 * Fix a bug where tests that used text() on Python 3.4+ would not actually be
-  deterministic even when explicitly seeded or using the derandomize mode,
+  deterministic even when explicitly seeded or using the derandomise mode,
   because generation depended on dictionary iteration order which was affected
-  by hash randomization.
+  by hash randomisation.
 * Fix a bug where with complicated strategies the timing of the initial health
   check could affect the seeding of the subsequent test, which would also
   render supposedly deterministic tests non-deterministic in some scenarios.
@@ -278,7 +278,7 @@ required a minor version bump):
 
 * Hypothesis will now perform a series of "health checks" as part of running
   your tests. These detect and warn about some common error conditions that
-  people often run into which wouldn't necessarily have caued the test to fail
+  people often run into which wouldn't necessarily have caused the test to fail
   but would cause e.g. degraded performance or confusing results.
 
 -----------------------------------------------------------------------
@@ -380,15 +380,15 @@ and removes some internal API functionality so gets a minor version bump.
 * Add new 'profiles' mechanism to the settings system
 * Deprecates mutability of Settings, both the Settings.default top level property
   and individual settings.
-* A Settings object may now be directly initialized from a parent Settings.
+* A Settings object may now be directly initialised from a parent Settings.
 * @given should now give a better error message if you attempt to use it with a
   function that uses destructuring arguments (it still won't work, but it will
   error more clearly),
 * A number of spelling corrections in error messages
 * py.test should no longer display the intermediate modules Hypothesis generates
   when running in verbose mode
-* Hypothesis should now correctly handle printing objects with non-ascii reprs
-  on python 3 when running in a locale that cannot handle ascii printing to
+* Hypothesis should now correctly handle printing objects with non-ASCII reprs
+  on python 3 when running in a locale that cannot handle ASCII printing to
   stdout.
 * Add a unique=True argument to lists(). This is equivalent to
   unique_by=lambda x: x, but offers a more convenient syntax.
@@ -608,7 +608,7 @@ Another small bugfix release:
 * When using ForkingTestCase you would usually not get the falsifying example
   printed if the process exited abnormally (e.g. due to os._exit).
 * Improvements to the distribution of characters when using text() with a
-  default alphabet. In particular produces a better distribution of ascii and
+  default alphabet. In particular produces a better distribution of ASCII and
   whitespace in the alphabet.
 
 ---------------------------------------------------------------------
@@ -616,7 +616,7 @@ Another small bugfix release:
 ---------------------------------------------------------------------
 
 This is a small release that contains a workaround for people who have
-bad reprs returning non ascii text on Python 2.7. This is not a bug fix
+bad reprs returning non ASCII text on Python 2.7. This is not a bug fix
 for Hypothesis per se because that's not a thing that is actually supposed
 to work, but Hypothesis leans more heavily on repr than is typical so it's
 worth having a workaround for.
@@ -666,7 +666,7 @@ This is purely a bug fix release:
   this probably would never have affected you.
 * If you use flatmap in a way that the strategy on the right hand side depends
   sensitively on the left hand side you may have occasionally seen Flaky errors
-  caused by producing unreliable examples when minimizing a bug. This use case
+  caused by producing unreliable examples when minimising a bug. This use case
   may still be somewhat fraught to be honest. This code is due a major rearchitecture
   for 1.8, but in the meantime this release fixes the only source of this error that
   I'm aware of.
@@ -745,16 +745,16 @@ some weird behaviours.
 * The Hypothesis database is now keyed off the name of the test instead of the
   type of data. This makes much more sense now with the new strategies API and
   is generally more robust. This means you will lose old examples on upgrade.
-* The database will now not delete values which fail to deserialize correctly,
+* The database will now not delete values which fail to deserialise correctly,
   just skip them. This is to handle cases where multiple incompatible strategies
   share the same key.
 * find now also saves and loads values from the database, keyed off a hash of the
   function you're finding from.
-* Stateful tests now serialize and load values from the database. They should have
+* Stateful tests now serialise and load values from the database. They should have
   before, really. This was a bug.
 * Passing a different verbosity level into a test would not have worked entirely
   correctly, leaving off some messages. This is now fixed.
-* Fix a bug where derandomized tests with unicode characters in the function
+* Fix a bug where derandomised tests with unicode characters in the function
   body would error on Python 2.7.
 
 
@@ -830,7 +830,7 @@ Breakage of semi-public SearchStrategy API:
   decrease it. Enforcing this invariant lead to finding some bugs where
   simplifying of integers, floats and sets was suboptimal.
 * Integers in basic data are now required to fit into 64 bits. As a result
-  python integer types are now serialized as strings, and some types have
+  python integer types are now serialised as strings, and some types have
   stopped using quite so needlessly large random seeds.
 
 Hypothesis Stateful testing was then turned upon Hypothesis itself, which lead
@@ -838,9 +838,9 @@ to an amazing number of minor bugs being found in Hypothesis itself.
 
 Bugs fixed (most but not all from the result of stateful testing) include:
 
-* Serialization of streaming examples was flaky in a way that you would
-  probably never notice: If you generate a template, simplify it, serialize
-  it, deserialize it, serialize it again and then deserialize it you would
+* Serialisation of streaming examples was flaky in a way that you would
+  probably never notice: If you generate a template, simplify it, serialise
+  it, deserialise it, serialise it again and then deserialise it you would
   get the original stream instead of the simplified one.
 * If you reduced max_examples below the number of examples already saved in
   the database, you would have got a ValueError. Additionally, if you had
@@ -927,7 +927,7 @@ Codename: Finders keepers.
 
 A bunch of new features and improvements.
 
-* Provide a mechanism for customizing how your tests are executed.
+* Provide a mechanism for customising how your tests are executed.
 * Provide a test runner that forks before running each example. This allows
   better support for testing native code which might trigger a segfault or a C
   level assertion failure.
@@ -963,7 +963,7 @@ block the Django integration release but did not actually affect anything anyone
 previously have been using. It also contained a minor quality fix for floats that
 I'd happened to have finished in time.
 
-* Fix some internal bugs with object lifecycle management that were impossible to
+* Fix some internal bugs with object life cycle management that were impossible to
   hit with the previously released versions but broke hypothesis-django.
 * Bias floating point numbers somewhat less aggressively towards very small numbers
 
@@ -974,10 +974,10 @@ I'd happened to have finished in time.
 
 Codename: No-one mention the M word.
 
-* Unicode strings are more strongly biased towards ascii characters. Previously they
+* Unicode strings are more strongly biased towards ASCII characters. Previously they
   would generate all over the space. This is mostly so that people who try to
   shape their unicode strings with assume() have less of a bad time.
-* A number of fixes to data deserialization code that could theoretically have
+* A number of fixes to data deserialisation code that could theoretically have
   caused mysterious bugs when using an old version of a Hypothesis example
   database with a newer version. To the best of my knowledge a change that could
   have triggered this bug has never actually been seen in the wild. Certainly
@@ -1040,7 +1040,7 @@ same city at the same time.
 
 The one tiny bugfix:
 
-* Under pypy, databases would fail to close correctly when garbage collected, leading to a memory leak and a confusing error message if you were repeatedly creating databases and not closing them. It is very unlikely you were doing this and the chances of you ever having noticed this bug are very low.
+* Under PyPy, databases would fail to close correctly when garbage collected, leading to a memory leak and a confusing error message if you were repeatedly creating databases and not closing them. It is very unlikely you were doing this and the chances of you ever having noticed this bug are very low.
 
 ------------------
 0.7.2 - 2015-03-22
@@ -1059,7 +1059,7 @@ Codename: Hygienic macros or bust
 
 Codename: Point releases go faster
 
-* Better string generation by parametrizing by a limited alphabet
+* Better string generation by parameterising by a limited alphabet
 * Faster string simplification - previously if simplifying a string with high range unicode characters it would try every unicode character smaller than that. This was pretty pointless. Now it stops after it's a short range (it can still reach smaller ones through recursive calls because of other simplifying operations).
 * Faster list simplification by first trying a binary chop down the middle
 * Simultaneous simplification of identical elements in a list. So if a bug only triggers when you have duplicates but you drew e.g. [-17, -17], this will now simplify to [0, 0].
@@ -1108,7 +1108,7 @@ In particular:
 
 Bug fixes:
 
-* Fix for a bug where calling falsify on a lambda with a non-ascii character
+* Fix for a bug where calling falsify on a lambda with a non-ASCII character
   in its body would error.
 
 Hypothesis Extra:
@@ -1124,9 +1124,9 @@ Codename: Read all about it.
 
 Core hypothesis:
 
-* Add support back in for pypy and python 3.2
+* Add support back in for PyPy and python 3.2
 * @given functions can now be invoked with some arguments explicitly provided. If all arguments that hypothesis would have provided are passed in then no falsification is run.
-* Related to the above, this means that you can now use pytest fixtures and mark.parametrize with Hypothesis without either interfering with the other.
+* Related to the above, this means that you can now use pytest fixtures and mark.parameterise with Hypothesis without either interfering with the other.
 * Breaking change: @given no longer works for functions with varargs (varkwargs are fine). This might be added back in at a later date.
 * Windows is now fully supported. A limited version (just the tests with none of the extras) of the test suite is run on windows with each commit so it is now a first class citizen of the Hypothesis world.
 * Fix a bug for fuzzy equality of equal complex numbers with different reprs (this can happen when one coordinate is zero). This shouldn't affect users - that feature isn't used anywhere public facing.
@@ -1206,9 +1206,9 @@ Enhancements:
 
 * Has a cool release name
 * text_type (str in python 3, unicode in python 2) example generation now
-  actually produces interesting unicode instead of boring ascii strings.
+  actually produces interesting unicode instead of boring ASCII strings.
 * floating point numbers are generated over a much wider range, with particular
-  attention paid to generating nasty numbers - nan, infinity, large and small
+  attention paid to generating nasty numbers - NaN, infinity, large and small
   values, etc.
 * examples can be generated using pieces of examples previously saved in the
   database. This allows interesting behaviour that has previously been discovered
@@ -1227,7 +1227,7 @@ Bug fixes:
 * If you had strategies that could produce NaN (which float previously couldn't but
   e.g. a Just(float('nan')) could) then this would have sent hypothesis into an infinite
   loop that would have only been terminated when it hit the timeout.
-* Given elements that can take a long time to minimize, minimization of floats or tuples
+* Given elements that can take a long time to minimise, minimisation of floats or tuples
   could be quadratic or worse in the that value. You should now see much better performance
   for simplification, albeit at some cost in quality.
 
@@ -1247,7 +1247,7 @@ data in a local SQLite database and will reuse it for all tests of the same
 type.
 
 LICENSING CHANGE: Hypothesis is now released under the Mozilla Public License
-2.0. This applies to all versions from 0.4.0 onwards until further notice.
+2.0. This applies to all versions from 0.4.0 on wards until further notice.
 The previous license remains applicable to all code prior to 0.4.0.
 
 Enhancements:
@@ -1294,8 +1294,8 @@ Bugs fixed:
   example which breaks it but on the final invocation of the test it does
   not raise an error. This will typically happen with too much recursion
   errors but could conceivably happen in other circumstances too.
-* Provide a "derandomized" mode. This allows you to run hypothesis with
-  zero real randomization, making your build nice and deterministic. The
+* Provide a "derandomised" mode. This allows you to run hypothesis with
+  zero real randomisation, making your build nice and deterministic. The
   tests run with a seed calculated from the function they're testing so you
   should still get a good distribution of test cases.
 * Add a mechanism for more conveniently defining tests which just sample
@@ -1347,10 +1347,10 @@ Bugs fixed:
   floats in a specific range.
 * Significantly more robust. A very large number of small bug fixes, none
   of which anyone is likely to have ever noticed.
-* Deprecation of support for pypy and python 3 prior to 3.3. 3.3 and 3.4.
+* Deprecation of support for PyPy and python 3 prior to 3.3. 3.3 and 3.4.
   Supported versions are 2.7.x, 3.3.x, 3.4.x. I expect all of these to
   remain officially supported for a very long time. I would not be
-  surprised to add pypy support back in later but I'm not going to do so
+  surprised to add PyPy support back in later but I'm not going to do so
   until I know someone cares about it. In the meantime it will probably
   still work.
 
@@ -1405,7 +1405,7 @@ Bugs fixed:
 0.1.2 - 2013-03-24
 ------------------
 
-* Bugfix: Stateful testing was not minimizing correctly and could
+* Bugfix: Stateful testing was not minimising correctly and could
   throw exceptions.
 * Better support for recursive strategies.
 * Support for named tuples.

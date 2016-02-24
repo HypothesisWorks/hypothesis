@@ -37,7 +37,7 @@ Python versions
 
 Hypothesis is designed to work with a range of Python versions. Currently supported are:
 
-* pypy-2.6.1 (earlier versions of pypy *may* work)
+* PyPy-2.6.1 (earlier versions of PyPy *may* work)
 * CPython 2.7.x
 * CPython 3.4.x
 * CPython 3.5.x

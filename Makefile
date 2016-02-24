@@ -151,7 +151,7 @@ $(TOX): $(PY35) tox.ini $(TOOLS)
 	ln -sf $(TOOL_VIRTUALENV)/bin/tox $(TOX)
 
 $(SPHINX_BUILD): $(TOOL_VIRTUALENV)
-	$(TOOL_PYTHON) -m pip install sphinx
+	$(TOOL_PYTHON) -m pip install sphinx sphinxcontrib-spelling pyenchant
 	ln -sf $(TOOL_VIRTUALENV)/bin/sphinx-build $(SPHINX_BUILD)
 
 $(SPHINX_AUTOBUILD): $(TOOL_VIRTUALENV)
@@ -181,4 +181,5 @@ clean:
 	find src tests -name "__pycache__" -delete
 
 documentation: $(SPHINX_BUILD) docs/*.rst
+	$(SPHINX_BUILD) -W -b spelling -d docs/_build/doctrees docs docs/_build/spelling
 	$(SPHINX_BUILD) -W -b html -d docs/_build/doctrees docs docs/_build/html
