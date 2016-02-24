@@ -41,6 +41,7 @@ PYPY = platform.python_implementation() == 'PyPy'
 PY26 = sys.version_info[:2] == (2, 6)
 NO_ARGSPEC = sys.version_info[:2] >= (3, 5)
 HAS_SIGNATURE = sys.version_info[:2] >= (3, 3)
+CAN_UNPACK_BYTE_ARRAY = sys.version_info[:3] >= (2, 7, 4)
 
 WINDOWS = platform.system() == 'Windows'
 
@@ -122,11 +123,15 @@ else:
 
     def int_from_bytes(data):
         assert isinstance(data, bytearray)
+        if CAN_UNPACK_BYTE_ARRAY:
+            unpackable_data = data
+        else:
+            unpackable_data = bytes(data)
         result = 0
         i = 0
         while i + 4 <= len(data):
             result <<= 32
-            result |= struct.unpack('>I', data[i:i + 4])[0]
+            result |= struct.unpack('>I', unpackable_data[i:i + 4])[0]
             i += 4
         while i < len(data):
             result <<= 8

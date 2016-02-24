@@ -29,6 +29,7 @@ env:
         - TASK=check-pypy
         - TASK=check-py35
         - TASK=check-py27
+        - TASK=check-py273
         - TASK=check-py34
         - TASK=check-nose
         - TASK=check-pytest27
@@ -44,6 +45,8 @@ script:
 
 matrix:
     exclude:
+        - os: osx
+          env: TASK=check-py273
         - os: osx
           env: TASK=check-unicode
         - os: osx

@@ -10,6 +10,7 @@ BUILD_RUNTIMES?=$(PWD)/.runtimes
 
 PY26=$(BUILD_RUNTIMES)/snakepit/python2.6
 PY27=$(BUILD_RUNTIMES)/snakepit/python2.7
+PY273=$(BUILD_RUNTIMES)/snakepit/python2.7.3
 PY33=$(BUILD_RUNTIMES)/snakepit/python3.3
 PY34=$(BUILD_RUNTIMES)/snakepit/python3.4
 PY35=$(BUILD_RUNTIMES)/snakepit/python3.5
@@ -38,6 +39,9 @@ $(PY26):
 
 $(PY27):
 	scripts/retry.sh scripts/install.sh 2.7
+
+$(PY273):
+	scripts/retry.sh scripts/install.sh 2.7.3
 
 $(PY33):
 	scripts/retry.sh scripts/install.sh 3.3
@@ -81,6 +85,9 @@ check-py26: $(PY26) $(TOX)
 
 check-py27: $(PY27) $(TOX)
 	$(TOX) -e py27-full
+
+check-py273: $(PY273) $(TOX)
+	$(TOX) -e oldpy27
 
 check-py33: $(PY33) $(TOX)
 	$(TOX) -e py33-full
