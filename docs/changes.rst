@@ -22,6 +22,14 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 ------------------
+3.0.4 - 2016-02-24
+------------------
+
+* Fix a bug where Hypothesis would error when running on Python 2.7.3 or
+  earlier because it was trying to pass a bytearray object to struct.unpack (
+  which is only supported since 2.7.4).
+
+------------------
 3.0.3 - 2016-02-23
 ------------------
 
