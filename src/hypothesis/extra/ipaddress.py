@@ -19,13 +19,22 @@ from __future__ import division, print_function, absolute_import
 import ipaddress
 
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import builds, integers, defines_strategy
+from hypothesis.strategies import (
+    builds,
+    integers,
+    just,
+    tuples,
+    defines_strategy,
+    check_valid_interval,
+)
 
 __all__ = [
     'ip_address',
-    'ipv4_address',
-    'ipv6_address',
+    'IPv4Address',
+    'IPv6Address',
     'ip_network',
+    'IPv4Network',
+    'IPv6Network',
 ]
 
 
@@ -33,6 +42,7 @@ def check_valid_ip_version(version):
     """Checks that a version is valid (either 4 or 6).
 
     Otherwise raises ValueError.
+
     """
     if version in [4, 6]:
         return
@@ -86,7 +96,7 @@ def get_bounds_of_network(network_str):
     integers."""
     network = ipaddress.ip_network(network_str)
     lower = int(network.network_address)
-    upper = int(network.network_address) network.num_addresses - 1
+    upper = int(network.network_address) + network.num_addresses - 1
     return (lower, upper)
 
 
@@ -116,8 +126,7 @@ def ip_address(min_address=None, max_address=None, network=None, version=None):
     check_valid_ip_address(max_address, version=version)
     check_valid_ip_network(network, version=version)
 
-    # Coerce the bounds to integers, and check that these bounds actually
-    # make sense -- that is, they actually contain some IP addresses.
+    # Coerce the bounds to integers
     if min_address:
         min_value = int(IPAddress(min_address))
     else:
@@ -151,7 +160,7 @@ def ip_address(min_address=None, max_address=None, network=None, version=None):
 
 
 @defines_strategy
-def ipv4_address(min_address=None, max_address=None, network=None):
+def IPv4Address(min_address=None, max_address=None, network=None):
     """Return a strategy which generates IPv4 addresses as strings.
 
     - If min_address is not None, all addresses will be >= min_address.
@@ -166,7 +175,7 @@ def ipv4_address(min_address=None, max_address=None, network=None):
 
 
 @defines_strategy
-def ipv6_address(min_address=None, max_address=None, network=None):
+def IPv6Address(min_address=None, max_address=None, network=None):
     """Return a strategy which generates IPv6 addresses as strings.
 
     - If min_address is not None, all addresses will be >= min_address.
@@ -180,31 +189,97 @@ def ipv6_address(min_address=None, max_address=None, network=None):
                       version=6)
 
 
+def check_valid_netmask_length(value, version):
+    """Checks that a netmask length is unspecified, or an appropriate
+    length for the given version of IP address.
+
+    Otherwise raises InvalidArgument.
+
+    """
+    check_valid_ip_version(version)
+    if value is None:
+        return
+
+    if version == 4:
+        max_length = ipaddress.IPV4LENGTH
+    else:
+        max_length = ipaddress.IPV6LENGTH
+
+    if not (0 <= int(value) <= max_length):
+        raise InvalidArgument('Expected netmask length in [%d, %d], got %r' %
+                              (0, max_length, value))
+
+
 @defines_strategy
-def ip_network(version):
+def ip_network(min_netmask=None, max_netmask=None, version=None):
     """Return a strategy which generates IP networks as strings.
+
+    - If min_netmask is not None, all networks will have netmask >= min_netmask
+    - If max_netmask is not None, all networks will have netmask <= max_netmask
     - Version must be one of 4 or 6.
 
     """
-    # Choose appropriate types and validation functions depending
-    # on the IP address version
     check_valid_ip_version(version)
+    check_valid_netmask_length(min_netmask, version=version)
+    check_valid_netmask_length(max_netmask, version=version)
+    check_valid_interval(min_netmask, max_netmask,
+                         'min_netmask', 'max_netmask')
 
+    # Choose appropriate default lengths based on the IP version
     if version == 4:
-        max_netmask_len = ipaddress.IPV4LENGTH
+        max_possible_length = ipaddress.IPV4LENGTH
         IPNetwork = ipaddress.IPv4Network
 
     elif version == 6:
-        max_netmask_len = ipaddress.IPV6LENGTH
+        max_possible_length = ipaddress.IPV6LENGTH
         IPNetwork = ipaddress.IPv6Network
 
-    max_length = 2 ** max_netmask_len - 1
+    # If the user supplied bounds on the netmask length, use them here
+    if min_netmask:
+        min_netmask = int(min_netmask)
+    else:
+        min_netmask = 0
 
+    if max_netmask:
+        max_netmask = int(max_netmask)
+    else:
+        max_netmask = max_possible_length
+
+    # IPNetwork takes an argument consisting of a tuple, where the first
+    # argument is an IP address, and the second is the netmask.  We pass
+    # the strict=False argument so that non-zero host bits in the IP address
+    # are automatically zeroed.
     return builds(
         IPNetwork,
-        '%s/%s' % (
-            integers(min_value=0, max_value=max_length),
-            integers(min_value=0, max_value=max_netmask_len)
+        tuples(
+            ip_address(version=version),
+            integers(min_value=min_netmask, max_value=max_netmask)
         ),
-        strict=False
+        strict=just(False)
     ).map(str)
+
+
+@defines_strategy
+def IPv4Network(min_netmask=None, max_netmask=None):
+    """Returns a strategy which generates IPv4 networks as strings.
+
+    - If min_netmask is not None, all networks will have netmask >= min_netmask
+    - If max_netmask is not None, all networks will have netmask <= max_netmask
+
+    """
+    return ip_network(min_netmask=min_netmask,
+                      max_netmask=max_netmask,
+                      version=4)
+
+
+@defines_strategy
+def IPv6Network(min_netmask=None, max_netmask=None):
+    """Returns a strategy which generates IPv6 networks as strings.
+
+    - If min_netmask is not None, all networks will have netmask >= min_netmask
+    - If max_netmask is not None, all networks will have netmask <= max_netmask
+
+    """
+    return ip_network(min_netmask=min_netmask,
+                      max_netmask=max_netmask,
+                      version=6)
