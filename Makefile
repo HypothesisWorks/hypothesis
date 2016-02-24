@@ -152,10 +152,11 @@ check-fast: lint $(PY26) $(PY35) $(PYPY) $(TOX)
 	$(TOX) -e py35-prettyquick
 
 $(TOX): $(PY35) tox.ini $(TOOLS)
-	$(TOOL_INSTALL) tox
 	rm -f $(TOX)
+	$(TOOL_INSTALL) tox
 	rm -rf .tox
 	ln -sf $(TOOL_VIRTUALENV)/bin/tox $(TOX)
+	touch $(TOOL_VIRTUALENV)/bin/tox $(TOX)
 
 $(SPHINX_BUILD): $(TOOL_VIRTUALENV)
 	$(TOOL_PYTHON) -m pip install sphinx
