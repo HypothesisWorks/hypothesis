@@ -11,9 +11,18 @@ Hypothesis is both extremely practical and also advances the state of the art of
 unit testing by some way. It's easy to use, stable, and extremely powerful. If
 you're not using Hypothesis to test your project then you're missing out.
 
-Hypothesis works with most widely used versions of Python. It officially supports
-CPython 2.7, 3.4 and 3.5, as well as PyPy. Most other versions of Python are known
-not to work.
+------------------
+Versions supported
+------------------
+
+Hypothesis officially supports CPython 2.7, 3.4 and 3.5, as well as PyPy. Other
+versions are not supported. Patches for such versions are accepted as long as
+they don't impose a maintenance burden. However, keep in mind that this does
+not automatically mean that future releases of Hypothesis will continue to work
+on those versions.
+
+See `Issue #286 <https://github.com/DRMacIver/hypothesis/issues/286>`_ for more
+information.
 
 -----------------
 Links of interest
