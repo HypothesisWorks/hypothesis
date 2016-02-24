@@ -22,7 +22,7 @@ from hypothesis.strategies import just, lists
 from hypothesis.extra.django import TestCase, TransactionTestCase
 from tests.django.toystore.models import Store, Company, Customer, \
     ManyInts, SelfLoop, Customish, CustomishField, CouldBeCharming, \
-    MandatoryComputed
+    MandatoryComputed, CustomishDefault
 from hypothesis.extra.django.models import models, \
     add_default_field_mapping, DEFAULT_VALUE
 
@@ -86,6 +86,14 @@ class TestGetsBasicModels(TestCase):
     @given(models(MandatoryComputed, company=DEFAULT_VALUE))
     def test_mandatory_computed_field_default(self, x):
         assert x.company.name == x.name + u'_company'
+
+    @given(models(CustomishDefault))
+    def test_customish_default_generated(self, x):
+        assert x.customish == u'a'
+
+    @given(models(CustomishDefault, customish=DEFAULT_VALUE))
+    def test_customish_default_not_generated(self, x):
+        assert x.customish == u'b'
 
 
 class TestsNeedingRollback(TransactionTestCase):

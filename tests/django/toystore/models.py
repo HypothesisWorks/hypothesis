@@ -81,6 +81,10 @@ class ManyInts(models.Model):
     p2 = models.PositiveSmallIntegerField()
 
 
+class CustomishDefault(models.Model):
+    customish = CustomishField(default=u'b')
+
+
 class MandatoryComputed(models.Model):
     name = models.CharField(max_length=100, unique=True)
     company = models.ForeignKey(Company, null=False)

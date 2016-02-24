@@ -99,9 +99,9 @@ def models(model, **extra):
                 u', '.join(missed),
                 model.__name__,
             )))
-    for k, v in extra.items():
-        if v is not DEFAULT_VALUE:
-            result[k] = v
+    result.update(extra)
+    # Remove DEFAULT_VALUEs so we don't try to generate anything for those.
+    result = {k: v for k, v in result.items() if v is not DEFAULT_VALUE}
     return ModelStrategy(model, result)
 
 
