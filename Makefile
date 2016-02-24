@@ -181,5 +181,5 @@ clean:
 	find src tests -name "__pycache__" -delete
 
 documentation: $(SPHINX_BUILD) docs/*.rst
-	$(SPHINX_BUILD) -W -b spelling -d docs/_build/doctrees docs docs/_build/spelling
+	HYPOTHESIS_STORAGE_DIRECTORY="/dev/null" $(SPHINX_BUILD) -W -b spelling -d docs/_build/doctrees docs docs/_build/spelling
 	$(SPHINX_BUILD) -W -b html -d docs/_build/doctrees docs docs/_build/html
