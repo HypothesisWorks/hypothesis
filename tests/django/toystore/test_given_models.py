@@ -22,9 +22,9 @@ from hypothesis.strategies import just, lists
 from hypothesis.extra.django import TestCase, TransactionTestCase
 from tests.django.toystore.models import Store, Company, Customer, \
     ManyInts, SelfLoop, Customish, CustomishField, CouldBeCharming, \
-    MandatoryComputed, CustomishDefault
-from hypothesis.extra.django.models import models, \
-    add_default_field_mapping, DEFAULT_VALUE
+    CustomishDefault, MandatoryComputed
+from hypothesis.extra.django.models import models, DEFAULT_VALUE, \
+    add_default_field_mapping
 
 add_default_field_mapping(CustomishField, just(u'a'))
 
