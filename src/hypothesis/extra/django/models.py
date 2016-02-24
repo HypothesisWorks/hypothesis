@@ -72,6 +72,9 @@ def add_default_field_mapping(field_type, strategy):
     field_mappings()[field_type] = strategy
 
 
+DEFAULT_VALUE = object()
+
+
 def models(model, **extra):
     result = {}
     mappings = field_mappings()
@@ -97,11 +100,8 @@ def models(model, **extra):
                 model.__name__,
             )))
     for k, v in extra.items():
-        if isinstance(v, SearchStrategy):
+        if v is not DEFAULT_VALUE:
             result[k] = v
-        else:
-            result[k] = st.just(v)
-    result.update(extra)
     return ModelStrategy(model, result)
 
 

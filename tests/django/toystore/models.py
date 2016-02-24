@@ -79,3 +79,15 @@ class ManyInts(models.Model):
 
     p1 = models.PositiveIntegerField()
     p2 = models.PositiveSmallIntegerField()
+
+
+class MandatoryComputed(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    company = models.ForeignKey(Company, null=False)
+
+    def __init__(self, **kw):
+        if u'company' in kw:
+            raise RuntimeError()
+        cname = kw[u'name'] + u'_company'
+        kw[u'company'] = Company.objects.create(name=cname)
+        super(MandatoryComputed, self).__init__(**kw)

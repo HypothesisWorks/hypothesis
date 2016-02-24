@@ -21,9 +21,10 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import just, lists
 from hypothesis.extra.django import TestCase, TransactionTestCase
 from tests.django.toystore.models import Store, Company, Customer, \
-    ManyInts, SelfLoop, Customish, CustomishField, CouldBeCharming
+    ManyInts, SelfLoop, Customish, CustomishField, CouldBeCharming, \
+    MandatoryComputed
 from hypothesis.extra.django.models import models, \
-    add_default_field_mapping
+    add_default_field_mapping, DEFAULT_VALUE
 
 add_default_field_mapping(CustomishField, just(u'a'))
 
@@ -74,6 +75,17 @@ class TestGetsBasicModels(TestCase):
 
     def test_mandatory_fields_are_mandatory(self):
         self.assertRaises(InvalidArgument, models, Store)
+
+    def test_mandatory_computed_fields_are_mandatory(self):
+        self.assertRaises(InvalidArgument, models, MandatoryComputed)
+
+    def test_mandatory_computed_fields_may_not_be_provided(self):
+        mc = models(MandatoryComputed, company=models(Company))
+        self.assertRaises(RuntimeError, mc.example)
+
+    @given(models(MandatoryComputed, company=DEFAULT_VALUE))
+    def test_mandatory_computed_field_default(self, x):
+        assert x.company.name == x.name + u'_company'
 
 
 class TestsNeedingRollback(TransactionTestCase):
