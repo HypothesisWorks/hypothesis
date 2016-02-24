@@ -14,32 +14,27 @@
 #
 # END HEADER
 
-"""Hypothesis is a library for writing unit tests which are parametrized by
-some source of data.
+from __future__ import division, print_function, absolute_import
 
-It verifies your code against a wide range of input and minimizes any
-failing examples it finds.
-
-"""
+import hypothesis.strategies as st
+from hypothesis import given, Phase, example, settings
 
 
-from hypothesis._settings import settings, Verbosity, Phase
-from hypothesis.version import __version_info__, __version__
-from hypothesis.control import assume, note, reject
-from hypothesis.core import given, find, example, seed
+@example(11)
+@settings(phases=(Phase.explicit,))
+@given(st.integers())
+def test_only_runs_explicit_examples(i):
+    assert i == 11
 
 
-__all__ = [
-    'settings',
-    'Verbosity',
-    'Phase',
-    'assume',
-    'reject',
-    'seed',
-    'given',
-    'find',
-    'example',
-    'note',
-    '__version__',
-    '__version_info__',
-]
+@example(u"hello world")
+@settings(phases=(Phase.reuse, Phase.generate, Phase.shrink))
+@given(st.booleans())
+def test_does_not_use_explicit_examples(i):
+    assert isinstance(i, bool)
+
+
+@settings(phases=(Phase.reuse, Phase.shrink))
+@given(st.booleans())
+def test_this_would_fail_if_you_ran_it(b):
+    assert False

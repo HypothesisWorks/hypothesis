@@ -27,6 +27,7 @@ import os
 import inspect
 import warnings
 import threading
+from enum import unique, IntEnum
 from collections import namedtuple
 
 from hypothesis.errors import InvalidArgument, HypothesisDeprecationWarning
@@ -144,6 +145,9 @@ class settings(settingsMeta('settings', (object,), {})):
             for setting in all_settings.values():
                 if kwargs.get(setting.name, not_set) is not_set:
                     kwargs[setting.name] = getattr(defaults, setting.name)
+                elif setting.validator:
+                    kwargs[setting.name] = setting.validator(
+                        kwargs[setting.name])
             if self._database is not_set:
                 self._database = defaults.database
         for name, value in kwargs.items():
@@ -172,6 +176,7 @@ class settings(settingsMeta('settings', (object,), {})):
     @classmethod
     def define_setting(
         cls, name, description, default, options=None, deprecation=None,
+        validator=None,
     ):
         """Add a new setting.
 
@@ -198,7 +203,8 @@ class settings(settingsMeta('settings', (object,), {})):
                 )
 
         all_settings[name] = Setting(
-            name, description.strip(), default, options, deprecation)
+            name, description.strip(), default, options, deprecation, validator
+        )
         setattr(settings, name, settingsProperty(name))
 
     @classmethod
@@ -327,7 +333,8 @@ class settings(settingsMeta('settings', (object,), {})):
 
 Setting = namedtuple(
     'Setting', (
-        'name', 'description', 'default', 'options', 'deprecation'))
+        'name', 'description', 'default', 'options', 'deprecation', 'validator'
+    ))
 
 
 settings.define_setting(
@@ -445,6 +452,14 @@ in which case no storage will be used.
 )
 
 
+@unique
+class Phase(IntEnum):
+    explicit = 0
+    reuse = 1
+    generate = 2
+    shrink = 3
+
+
 class Verbosity(object):
 
     def __repr__(self):
@@ -505,6 +520,24 @@ settings.define_setting(
     options=Verbosity.all,
     default=DEFAULT_VERBOSITY,
     description='Control the verbosity level of Hypothesis messages',
+)
+
+
+def _validate_phases(phases):
+    if phases is None:
+        return tuple(Phase)
+    phases = tuple(phases)
+    for a in phases:
+        if not isinstance(a, Phase):
+            raise InvalidArgument('%r is not a valid phase' % (a,))
+    return phases
+
+
+settings.define_setting(
+    'phases',
+    default=tuple(Phase),
+    description='Control which phases should be run',
+    validator=_validate_phases,
 )
 
 settings.define_setting(

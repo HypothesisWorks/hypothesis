@@ -32,7 +32,7 @@ from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
     UnsatisfiedAssumption, HypothesisDeprecationWarning
 from hypothesis.control import BuildContext
 from hypothesis._settings import settings as Settings
-from hypothesis._settings import Verbosity
+from hypothesis._settings import Phase, Verbosity
 from hypothesis.executors import new_style_executor, \
     default_new_style_executor
 from hypothesis.reporting import report, verbose_report, current_verbosity
@@ -238,6 +238,8 @@ def given(*generator_arguments, **generator_kwargs):
                     ))
                 else:
                     example_kwargs = example.kwargs
+                if Phase.explicit not in settings.phases:
+                    continue
                 example_kwargs.update(kwargs)
                 # Note: Test may mutate arguments and we can't rerun explicit
                 # examples, so we have to calculate the failure message at this
@@ -283,6 +285,11 @@ def given(*generator_arguments, **generator_kwargs):
 
             from hypothesis.internal.conjecture.data import TestData, Status, \
                 StopTest
+            if not (
+                Phase.reuse in settings.phases or
+                Phase.generate in settings.phases
+            ):
+                return
 
             if perform_health_check:
                 initial_state = getglobalrandomstate()
@@ -460,6 +467,8 @@ def given(*generator_arguments, **generator_kwargs):
                 settings.timeout > 0 and
                 run_time >= settings.timeout
             )
+            if runner.last_data is None:
+                return
             if runner.last_data.status == Status.INTERESTING:
                 falsifying_example = runner.last_data.buffer
                 if settings.database is not None:

@@ -20,6 +20,7 @@ import time
 from random import Random, getrandbits
 
 from hypothesis import settings as Settings
+from hypothesis import Phase
 from hypothesis.reporting import debug_report
 from hypothesis.internal.compat import hbytes, hrange, Counter, \
     text_type, bytes_from_list, to_bytes_sequence, unicode_safe_repr
@@ -98,7 +99,8 @@ class TestRunner(object):
     def save_buffer(self, buffer):
         if (
             self.settings.database is not None and
-            self.database_key is not None
+            self.database_key is not None and
+            Phase.reuse in self.settings.phases
         ):
             self.settings.database.save(
                 self.database_key, hbytes(buffer)
@@ -265,52 +267,59 @@ class TestRunner(object):
                     self.last_data = data
                     break
 
-        if (
-            self.last_data is None or
-            self.last_data.status < Status.INTERESTING
-        ):
-            self.new_buffer()
-        mutator = self._new_mutator()
-        while self.last_data.status != Status.INTERESTING:
-            if self.valid_examples >= self.settings.max_examples:
-                return
-            if self.iterations >= max(
-                self.settings.max_iterations, self.settings.max_examples
-            ):
-                return
+        if Phase.generate in self.settings.phases:
             if (
-                self.settings.timeout > 0 and
-                time.time() >= start_time + self.settings.timeout
+                self.last_data is None or
+                self.last_data.status < Status.INTERESTING
             ):
-                return
-            if mutations >= self.settings.max_mutations:
-                mutations = 0
                 self.new_buffer()
-                mutator = self._new_mutator()
-            else:
-                data = TestData(
-                    draw_bytes=mutator,
-                    max_length=self.settings.buffer_size
-                )
-                self.test_function(data)
-                data.freeze()
-                self.note_for_corpus(data)
-                prev_data = self.last_data
-                if self.consider_new_test_data(data):
-                    self.last_data = data
-                    if data.status > prev_data.status:
-                        mutations = 0
-                else:
-                    mutator = self._new_mutator()
 
-            mutations += 1
+            mutator = self._new_mutator()
+            while self.last_data.status != Status.INTERESTING:
+                if self.valid_examples >= self.settings.max_examples:
+                    return
+                if self.iterations >= max(
+                    self.settings.max_iterations, self.settings.max_examples
+                ):
+                    return
+                if (
+                    self.settings.timeout > 0 and
+                    time.time() >= start_time + self.settings.timeout
+                ):
+                    return
+                if mutations >= self.settings.max_mutations:
+                    mutations = 0
+                    self.new_buffer()
+                    mutator = self._new_mutator()
+                else:
+                    data = TestData(
+                        draw_bytes=mutator,
+                        max_length=self.settings.buffer_size
+                    )
+                    self.test_function(data)
+                    data.freeze()
+                    self.note_for_corpus(data)
+                    prev_data = self.last_data
+                    if self.consider_new_test_data(data):
+                        self.last_data = data
+                        if data.status > prev_data.status:
+                            mutations = 0
+                    else:
+                        mutator = self._new_mutator()
+
+                mutations += 1
 
         data = self.last_data
+        if data is None:
+            return
         assert isinstance(data.output, text_type)
 
         self.debug_data(data)
 
         if self.settings.max_shrinks <= 0:
+            return
+
+        if Phase.shrink not in self.settings.phases:
             return
 
         if not self.last_data.buffer:
@@ -355,11 +364,11 @@ class TestRunner(object):
             while block_counter < self.changed:
                 block_counter = self.changed
                 blocks = [
-                    k for k, v in
+                    k for k, count in
                     Counter(
                         self.last_data.buffer[u:v]
                         for u, v in self.last_data.blocks).items()
-                    if v > 1
+                    if count > 1
                 ]
                 for block in blocks:
                     parts = self.last_data.buffer.split(block)

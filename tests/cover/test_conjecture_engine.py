@@ -20,7 +20,7 @@ import time
 from random import Random
 
 from hypothesis import strategies as st
-from hypothesis import given, settings
+from hypothesis import given, Phase, settings
 from hypothesis.database import ExampleDatabase
 from hypothesis.internal.compat import hbytes, int_from_bytes, \
     bytes_from_list
@@ -350,6 +350,20 @@ def test_max_shrinks_can_disable_shrinking():
         data.mark_interesting()
 
     runner = TestRunner(f, settings=settings(database=None, max_shrinks=0,))
+    runner.run()
+    assert len(seen) == 1
+
+
+def test_phases_can_disable_shrinking():
+    seen = set()
+
+    def f(data):
+        seen.add(hbytes(data.draw_bytes(32)))
+        data.mark_interesting()
+
+    runner = TestRunner(f, settings=settings(
+        database=None, phases=(Phase.reuse, Phase.generate),
+    ))
     runner.run()
     assert len(seen) == 1
 
