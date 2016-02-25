@@ -299,9 +299,9 @@ def test_can_find_large_sum_frozenset(xs):
 def test_prints_on_failure_by_default():
     @given(integers(), integers())
     @settings(max_examples=200, timeout=-1)
-    def test_ints_are_sorted(balthazar, evans):
-        assume(evans >= 0)
-        assert balthazar <= evans
+    def test_ints_are_sorted(cat, dog):
+        assume(dog >= 0)
+        assert cat <= dog
     with raises(AssertionError):
         with capture_out() as out:
             with reporting.with_reporter(reporting.default):
@@ -309,7 +309,7 @@ def test_prints_on_failure_by_default():
     out = out.getvalue()
     lines = [l.strip() for l in out.split('\n')]
     assert (
-        'Falsifying example: test_ints_are_sorted(balthazar=1, evans=0)'
+        'Falsifying example: test_ints_are_sorted(cat=1, dog=0)'
         in lines)
 
 
