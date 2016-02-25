@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-# most interesting tests of this nature are exected in nocover, but we have
+# most interesting tests of this nature are expected in nocover, but we have
 # a few here to make sure we have coverage of the strategytests module itself.
 
 
