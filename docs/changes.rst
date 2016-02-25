@@ -22,6 +22,12 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 ------------------
+3.0.5 - 2016-02-25
+------------------
+
+* Fix a bug where Hypothesis would now error on py.test development versions.
+
+------------------
 3.0.4 - 2016-02-24
 ------------------
 
