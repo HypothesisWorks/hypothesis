@@ -506,7 +506,7 @@ required a minor version bump):
 
 * Hypothesis will now perform a series of "health checks" as part of running
   your tests. These detect and warn about some common error conditions that
-  people often run into which wouldn't necessarily have caued the test to fail
+  people often run into which wouldn't necessarily have caused the test to fail
   but would cause e.g. degraded performance or confusing results.
 
 -----------------------------------------------------------------------
