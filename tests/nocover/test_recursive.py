@@ -133,8 +133,8 @@ def test_can_form_sets_of_recursive_data():
 @timeout(60)
 def test_can_flatmap_to_recursive_data(rnd):
     stuff = st.lists(st.integers(), min_size=1).flatmap(
-        lambda elts: st.recursive(
-            st.sampled_from(elts), lambda x: st.lists(x, average_size=25),
+        lambda elements: st.recursive(
+            st.sampled_from(elements), lambda x: st.lists(x, average_size=25),
             max_leaves=25
         ))
 
