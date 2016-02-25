@@ -522,7 +522,7 @@ def test_stateful_double_rule_is_forbidden(recwarn):
 
             @rule(num=just(1))
             @rule(num=just(2))
-            def whatevs(self, num):
+            def whatever(self, num):
                 pass
 
 
