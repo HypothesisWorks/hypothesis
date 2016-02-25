@@ -45,7 +45,7 @@ def setup_function(fn):
 def test_cannot_set_non_settings():
     s = settings()
     with pytest.raises(AttributeError):
-        s.databas_file = u'some_file'
+        s.database_file_ = u'some_file'
 
 
 def test_settings_uses_defaults():
