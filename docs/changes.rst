@@ -1554,7 +1554,7 @@ Bugs fixed:
   been minor.
 * Re-export the @given decorator from the main hypothesis namespace. It's
   still available at the old location too.
-* Minor performance optimisation for simplifying long lists.
+* Minor performance optimization for simplifying long lists.
 
 
 ------------------
