@@ -30,36 +30,36 @@ from hypothesis.internal.debug import minimal
 from hypothesis.internal.compat import OrderedDict
 
 
-@pytest.mark.parametrize((u'col', u'strat'), [
+@pytest.mark.parametrize((u'col', u'strategy'), [
     ((), tuples()),
     ([], lists(max_size=0)),
     (set(), sets(max_size=0)),
     (frozenset(), frozensets(max_size=0)),
     ({}, fixed_dictionaries({})),
 ])
-def test_find_empty_collection_gives_empty(col, strat):
-    assert find(strat, lambda x: True) == col
+def test_find_empty_collection_gives_empty(col, strategy):
+    assert find(strategy, lambda x: True) == col
 
 
-@pytest.mark.parametrize((u'coltype', u'strat'), [
+@pytest.mark.parametrize((u'coltype', u'strategy'), [
     (list, lists),
     (set, sets),
     (frozenset, frozensets),
 ])
-def test_find_non_empty_collection_gives_single_zero(coltype, strat):
+def test_find_non_empty_collection_gives_single_zero(coltype, strategy):
     assert find(
-        strat(integers()), bool
+        strategy(integers()), bool
     ) == coltype((0,))
 
 
-@pytest.mark.parametrize((u'coltype', u'strat'), [
+@pytest.mark.parametrize((u'coltype', u'strategy'), [
     (list, lists),
     (set, sets),
     (frozenset, frozensets),
 ])
-def test_minimizes_to_empty(coltype, strat):
+def test_minimizes_to_empty(coltype, strategy):
     assert find(
-        strat(integers()), lambda x: True
+        strategy(integers()), lambda x: True
     ) == coltype()
 
 

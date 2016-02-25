@@ -46,7 +46,7 @@ def strategy_test_suite(
         min_satisfying_examples=2,
     )
     random = random or Random()
-    strat = specifier
+    strategy = specifier
 
     class ValidationSuite(TestCase):
 
@@ -60,12 +60,12 @@ def strategy_test_suite(
         def test_does_not_error(self, value):
             pass
 
-        if strat.supports_find:
+        if strategy.supports_find:
             def test_can_give_example(self):
-                strat.example()
+                strategy.example()
 
             def test_can_give_list_of_examples(self):
-                lists(strat).example()
+                lists(strategy).example()
 
         def test_will_give_unsatisfiable_if_all_rejected(self):
             @given(specifier)

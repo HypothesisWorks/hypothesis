@@ -77,15 +77,15 @@ class HypothesisSpec(RuleBasedStateMachine):
         self.teardown()
         self.database = ExampleDatabase()
 
-    @rule(strat=strategies, r=integers(), max_shrink=integers(0, 100))
-    def find_constant_failure(self, strat, r, max_shrink):
+    @rule(strategy=strategies, r=integers(), max_shrink=integers(0, 100))
+    def find_constant_failure(self, strategy, r, max_shrink):
         with settings(
             verbosity=Verbosity.quiet, max_examples=1,
             min_satisfying_examples=0,
             database=self.database,
             max_shrinks=max_shrink,
         ):
-            @given(strat)
+            @given(strategy)
             @seed(r)
             def test(x):
                 assert False
@@ -96,17 +96,17 @@ class HypothesisSpec(RuleBasedStateMachine):
                 pass
 
     @rule(
-        strat=strategies, r=integers(), p=floats(0, 1),
+        strategy=strategies, r=integers(), p=floats(0, 1),
         max_example=integers(1, 10), max_shrink=integers(1, 100)
     )
-    def find_weird_failure(self, strat, r, max_example, p, max_shrink):
+    def find_weird_failure(self, strategy, r, max_example, p, max_shrink):
         with settings(
             verbosity=Verbosity.quiet, max_examples=max_example,
             min_satisfying_examples=0,
             database=self.database,
             max_shrinks=max_shrink,
         ):
-            @given(strat)
+            @given(strategy)
             @seed(r)
             def test(x):
                 assert Random(
@@ -210,10 +210,10 @@ class HypothesisSpec(RuleBasedStateMachine):
     def cat_tuples(self, l, r):
         return l + r
 
-    @rule(target=objects, strat=strategies)
-    def get_example(self, strat):
+    @rule(target=objects, strategy=strategies)
+    def get_example(self, strategy):
         try:
-            strat.example()
+            strategy.example()
         except NoExamples:
             # Because of filtering some strategies we look for don't actually
             # have any examples.
@@ -224,9 +224,9 @@ class HypothesisSpec(RuleBasedStateMachine):
         left, right = sorted((left, right))
         return integers(left, right)
 
-    @rule(strat=strategies)
-    def repr_is_good(self, strat):
-        assert u' at 0x' not in repr(strat)
+    @rule(strategy=strategies)
+    def repr_is_good(self, strategy):
+        assert u' at 0x' not in repr(strategy)
 
 
 MAIN = __name__ == u'__main__'
