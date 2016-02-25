@@ -895,9 +895,9 @@ This is purely a bug fix release:
 * If you use flatmap in a way that the strategy on the right hand side depends
   sensitively on the left hand side you may have occasionally seen Flaky errors
   caused by producing unreliable examples when minimizing a bug. This use case
-  may still be somewhat fraught to be honest. This code is due a major rearchitecture
-  for 1.8, but in the meantime this release fixes the only source of this error that
-  I'm aware of.
+  may still be somewhat fraught to be honest. This code is scheduled to be
+  rearchitected for 1.8, but in the meantime this release fixes the only source
+  of this error of which I'm aware.
 
 ---------------------------------------------------------------------
 `1.7.1 <https://hypothesis.readthedocs.io/en/1.7.1/>`_ - 2015-06-29
