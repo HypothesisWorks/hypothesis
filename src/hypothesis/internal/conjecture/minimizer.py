@@ -25,7 +25,7 @@ This module implements a lexicographic minimizer for blocks of bytearray.
 
 That is, given a block of bytes of size n, and a predicate that accepts such
 blocks, it tries to find a lexicographically minimal block of that size
-that satisifies the predicate, starting from that initial starting point.
+that satisfies the predicate, starting from that initial starting point.
 
 Assuming it is allowed to run to completion (which due to the way we use it it
 actually often isn't) it makes the following guarantees, but it usually tries
