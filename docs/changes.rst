@@ -379,7 +379,7 @@ In particular:
 
 This also includes two non-deprecation changes:
 
-* given's keyword arguments no longer have to be the rightmost arguments and
+* given()'s keyword arguments no longer have to be the rightmost arguments and
   can appear anywhere in the method signature.
 * The max_shrinks setting would sometimes not have been respected.
 
