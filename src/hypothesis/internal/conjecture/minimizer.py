@@ -108,7 +108,7 @@ class Minimizer(object):
 # Table of useful small shrinks to apply to a number.
 # The idea is that we use these first to see if shrinking is likely to work.
 # If it is, we try a full shrink. In the best case scenario this speeds us
-# up by a factor of about 25. It will occasonally cause us to miss
+# up by a factor of about 25. It will occasionally cause us to miss
 # shrinks that we could have succeeded with, but oh well. It doesn't fail any
 # of our guarantees because we do try to shrink to -1 among other things.
 small_shrinks = [
