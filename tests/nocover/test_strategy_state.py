@@ -77,13 +77,13 @@ class HypothesisSpec(RuleBasedStateMachine):
         self.teardown()
         self.database = ExampleDatabase()
 
-    @rule(strat=strategies, r=integers(), mshr=integers(0, 100))
-    def find_constant_failure(self, strat, r, mshr):
+    @rule(strat=strategies, r=integers(), max_shrink=integers(0, 100))
+    def find_constant_failure(self, strat, r, max_shrink):
         with settings(
             verbosity=Verbosity.quiet, max_examples=1,
             min_satisfying_examples=0,
             database=self.database,
-            max_shrinks=mshr,
+            max_shrinks=max_shrink,
         ):
             @given(strat)
             @seed(r)
@@ -97,14 +97,14 @@ class HypothesisSpec(RuleBasedStateMachine):
 
     @rule(
         strat=strategies, r=integers(), p=floats(0, 1),
-        mex=integers(1, 10), mshr=integers(1, 100)
+        max_example=integers(1, 10), max_shrink=integers(1, 100)
     )
-    def find_weird_failure(self, strat, r, mex, p, mshr):
+    def find_weird_failure(self, strat, r, max_example, p, max_shrink):
         with settings(
-            verbosity=Verbosity.quiet, max_examples=mex,
+            verbosity=Verbosity.quiet, max_examples=max_example,
             min_satisfying_examples=0,
             database=self.database,
-            max_shrinks=mshr,
+            max_shrinks=max_shrink,
         ):
             @given(strat)
             @seed(r)
