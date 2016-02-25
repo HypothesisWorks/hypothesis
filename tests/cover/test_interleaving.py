@@ -30,5 +30,5 @@ def test_can_eval_stream_inside_find(stream, rnd):
         settings=settings(database=None, max_shrinks=2000, max_examples=2000)
     )
     note('x: %r' % (x,))
-    note('Evalled: %r' % (stream,))
+    note('Evaluated: %r' % (stream,))
     assert len([1 for i, v in enumerate(x) if stream[i] < v]) == 1
