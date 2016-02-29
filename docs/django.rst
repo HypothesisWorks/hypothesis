@@ -148,7 +148,7 @@ Using default field values
 
 Hypothesis ignores field defaults and always tries to generate values, even if
 it doesn't know how to. You can tell it to use the default value for a field
-instead of generating one by passing ``fieldname=DEFAULT_VALUE`` to
+instead of generating one by passing ``fieldname=default_value`` to
 ``models()``:
 
 .. code:: python
@@ -157,7 +157,7 @@ instead of generating one by passing ``fieldname=DEFAULT_VALUE`` to
     >>> models(DefaultCustomish).example()
     hypothesis.errors.InvalidArgument: Missing arguments for mandatory field
         customish for model DefaultCustomish
-    >>> from hypothesis.extra.django.models import DEFAULT_VALUE
-    >>> x = models(DefaultCustomish, customish=DEFAULT_VALUE).example()
+    >>> from hypothesis.extra.django.models import default_value
+    >>> x = models(DefaultCustomish, customish=default_value).example()
     >>> x.customish
     'b'

@@ -23,6 +23,7 @@ import hypothesis.strategies as st
 import hypothesis.extra.fakefactory as ff
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.datetime import datetimes
+from hypothesis.utils.conventions import UniqueIdentifier
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
@@ -72,7 +73,7 @@ def add_default_field_mapping(field_type, strategy):
     field_mappings()[field_type] = strategy
 
 
-DEFAULT_VALUE = object()
+default_value = UniqueIdentifier(u'default_value')
 
 
 def models(model, **extra):
@@ -100,8 +101,8 @@ def models(model, **extra):
                 model.__name__,
             )))
     result.update(extra)
-    # Remove DEFAULT_VALUEs so we don't try to generate anything for those.
-    result = {k: v for k, v in result.items() if v is not DEFAULT_VALUE}
+    # Remove default_values so we don't try to generate anything for those.
+    result = {k: v for k, v in result.items() if v is not default_value}
     return ModelStrategy(model, result)
 
 
