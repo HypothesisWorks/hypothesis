@@ -143,6 +143,7 @@ their individual contributions.
 * `Derek Gustafson <https://www.github.com/degustaf>`_
 * `Florian Bruhin <https://www.github.com/The-Compiler>`_
 * `follower <https://www.github.com/follower>`_
+* `Jeremy Thurgood <https://github.com/jerith>`_
 * `Jonty Wareing <https://www.github.com/Jonty>`_ (`jonty@jonty.co.uk <mailto:jonty@jonty.co.uk>`_)
 * `kbara <https://www.github.com/kbara>`_
 * `Lee Begg <https://www.github.com/llnz2>`_

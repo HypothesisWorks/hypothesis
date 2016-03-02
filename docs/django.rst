@@ -141,3 +141,23 @@ and then throw it away, instead returning the company we started for. This
 works because the models that Hypothesis generates are saved in the database,
 so we're essentially running the inner strategy purely for the side effect of
 creating those children in the database.
+
+
+Using default field values
+==========================
+
+Hypothesis ignores field defaults and always tries to generate values, even if
+it doesn't know how to. You can tell it to use the default value for a field
+instead of generating one by passing ``fieldname=default_value`` to
+``models()``:
+
+.. code:: python
+
+    >>> from toystore.models import DefaultCustomish
+    >>> models(DefaultCustomish).example()
+    hypothesis.errors.InvalidArgument: Missing arguments for mandatory field
+        customish for model DefaultCustomish
+    >>> from hypothesis.extra.django.models import default_value
+    >>> x = models(DefaultCustomish, customish=default_value).example()
+    >>> x.customish
+    'b'
