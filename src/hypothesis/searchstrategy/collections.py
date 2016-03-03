@@ -107,13 +107,14 @@ class ListStrategy(SearchStrategy):
         while True:
             data.start_example()
             more = cu.biased_coin(data, stopping_value)
-            value = data.draw(self.element_strategy)
-            data.stop_example()
             if not more:
+                data.stop_example()
                 if len(result) < self.min_size:
                     continue
                 else:
                     break
+            value = data.draw(self.element_strategy)
+            data.stop_example()
             result.append(value)
         if self.max_size < float('inf'):
             result = result[:self.max_size]

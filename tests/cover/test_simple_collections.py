@@ -244,3 +244,11 @@ def test_can_find_sets_unique_by_incomplete_data():
     assert sorted(list(map(max, ls))) == list(range(10))
     for v in ls:
         assert 0 in v
+
+
+def test_can_draw_empty_list_from_unsatisfiable_strategy():
+    assert lists(integers().filter(lambda s: False)).example() == []
+
+
+def test_can_draw_empty_set_from_unsatisfiable_strategy():
+    assert sets(integers().filter(lambda s: False)).example() == set()
