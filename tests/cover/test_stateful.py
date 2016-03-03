@@ -173,9 +173,26 @@ class PreconditionMachine(RuleBasedStateMachine):
         self.num = num / self.num
 
 
+class RoseTreeStateMachine(RuleBasedStateMachine):
+    nodes = Bundle('nodes')
+
+    @rule(target=nodes, source=lists(nodes))
+    def bunch(self, source):
+        return source
+
+    @rule(source=nodes)
+    def shallow(self, source):
+        def d(ls):
+            if not ls:
+                return 0
+            else:
+                return 1 + max(map(d, ls))
+        assert d(source) <= 5
+
+
 bad_machines = (
     OrderedStateMachine, SetStateMachine, BalancedTrees,
-    DepthMachine,
+    DepthMachine, RoseTreeStateMachine,
 )
 
 for m in bad_machines:

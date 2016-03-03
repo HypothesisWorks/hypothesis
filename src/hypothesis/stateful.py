@@ -35,13 +35,14 @@ import hypothesis.internal.conjecture.utils as cu
 from hypothesis.core import find
 from hypothesis.errors import Flaky, NoSuchExample, InvalidDefinition, \
     HypothesisException
-from hypothesis.control import BuildContext
+from hypothesis.control import assume, BuildContext
 from hypothesis._settings import settings as Settings
 from hypothesis._settings import Verbosity
 from hypothesis.reporting import report, verbose_report, current_verbosity
-from hypothesis.strategies import just, one_of, sampled_from
+from hypothesis.strategies import just, one_of, runner, sampled_from
 from hypothesis.internal.reflection import proxies
 from hypothesis.internal.conjecture.data import StopTest
+from hypothesis.internal.conjecture.utils import choice
 from hypothesis.searchstrategy.strategies import SearchStrategy
 from hypothesis.searchstrategy.collections import TupleStrategy, \
     FixedKeysDictStrategy
@@ -246,8 +247,20 @@ Rule = namedtuple(
 
 )
 
-Bundle = namedtuple(u'Bundle', (u'name',))
+self_strategy = runner()
 
+
+class Bundle(SearchStrategy):
+
+    def __init__(self, name):
+        self.name = name
+
+    def do_draw(self, data):
+        machine = data.draw(self_strategy)
+        bundle = machine.bundle(self.name)
+        assume(bundle)
+        reference = choice(data, bundle)
+        return machine.names_to_values[reference.name]
 
 RULE_MARKER = u'hypothesis_stateful_rule'
 PRECONDITION_MARKER = u'hypothesis_stateful_precondition'
