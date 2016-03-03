@@ -120,6 +120,18 @@ def seed(seed):
     return accept
 
 
+class WithRunner(SearchStrategy):
+
+    def __init__(self, base, runner):
+        assert runner is not None
+        self.base = base
+        self.runner = runner
+
+    def do_draw(self, data):
+        data.hypothesis_runner = self.runner
+        return self.base.do_draw(data)
+
+
 def given(*generator_arguments, **generator_kwargs):
     """A decorator for turning a test function that accepts arguments into a
     randomized test.
@@ -278,6 +290,9 @@ def given(*generator_arguments, **generator_kwargs):
                 raise FailedHealthCheck(message)
 
             search_strategy = given_specifier
+            if selfy is not None:
+                search_strategy = WithRunner(search_strategy, selfy)
+
             search_strategy.validate()
 
             perform_health_check = settings.perform_health_check
@@ -339,6 +354,8 @@ def given(*generator_arguments, **generator_kwargs):
                         else:
                             assert data.status == Status.OVERRUN
                             overruns += 1
+                    except InvalidArgument:
+                        raise
                     except Exception:
                         report(traceback.format_exc())
                         if test_runner is default_new_style_executor:

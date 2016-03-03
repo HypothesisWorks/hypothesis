@@ -206,6 +206,7 @@ class StateMachineRunner(object):
     def run(self, state_machine, print_steps=None):
         if print_steps is None:
             print_steps = current_verbosity() >= Verbosity.debug
+        self.data.hypothesis_runner = state_machine
 
         stopping_value = 1 - 1.0 / (1 + self.n_steps * 0.5)
         try:

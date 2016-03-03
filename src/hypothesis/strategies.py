@@ -26,6 +26,7 @@ from hypothesis.internal.compat import ArgSpec, text_type, getargspec, \
     integer_types, float_to_decimal
 from hypothesis.internal.floats import is_negative, float_to_int, \
     int_to_float, count_between_floats
+from hypothesis.utils.conventions import not_set
 from hypothesis.internal.reflection import proxies
 from hypothesis.searchstrategy.reprwrapper import ReprWrapperStrategy
 
@@ -42,7 +43,7 @@ __all__ = [
     'builds',
     'randoms', 'random_module',
     'recursive', 'composite',
-    'shared',
+    'shared', 'runner',
     'recursive', 'composite',
 ]
 
@@ -874,6 +875,33 @@ def uuids():
         shared(randoms(), key='hypothesis.strategies.uuids.generator').map(
             lambda r: UUID(int=r.getrandbits(128))
         ), 'uuids()')
+
+
+@defines_strategy
+def runner(default=not_set):
+    """A strategy for getting "the current test runner", whatever that may be.
+    The exact meaning depends on the entry point, but it will usually be the
+    associated 'self' value for it.
+
+    If there is no current test runner and a default is provided, return
+    that default. If no default is provided, raises InvalidArgument.
+
+    """
+    class RunnerStrategy(SearchStrategy):
+
+        def do_draw(self, data):
+            runner = getattr(data, 'hypothesis_runner', not_set)
+            if runner is not_set:
+                if default is not_set:
+                    raise InvalidArgument(
+                        'Cannot use runner() strategy with no '
+                        'associated runner or explicit default.'
+                    )
+                else:
+                    return default
+            else:
+                return runner
+    return RunnerStrategy()
 
 
 @cacheable
