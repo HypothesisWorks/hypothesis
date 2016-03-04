@@ -22,7 +22,7 @@ from pytest import raises
 
 import hypothesis.reporting as reporting
 import hypothesis.strategies as st
-from hypothesis import given, settings
+from hypothesis import given, settings, HealthCheck
 from hypothesis.errors import FailedHealthCheck
 from hypothesis.control import assume
 from hypothesis.internal.compat import int_from_bytes
@@ -174,3 +174,22 @@ def test_returning_non_none_does_not_fail_if_health_check_disabled():
         return 1
 
     a()
+
+
+@given(st.integers())
+@settings(suppress_health_check=[HealthCheck.random_module])
+def test_can_suppress_a_single_health_check(i):
+    import random
+    random.seed(i)
+
+
+def test_suppressing_health_check_does_not_suppress_others():
+    import random
+
+    @given(st.integers().filter(lambda x: random.randint(0, 1) and False))
+    @settings(suppress_health_check=[HealthCheck.random_module])
+    def test(i):
+        pass
+
+    with raises(FailedHealthCheck):
+        test()

@@ -27,7 +27,7 @@ import os
 import inspect
 import warnings
 import threading
-from enum import unique, IntEnum
+from enum import Enum, unique, IntEnum
 from collections import namedtuple
 
 from hypothesis.errors import InvalidArgument, HypothesisDeprecationWarning
@@ -460,6 +460,16 @@ class Phase(IntEnum):
     shrink = 3
 
 
+@unique
+class HealthCheck(Enum):
+    exception_in_generation = 0
+    data_too_large = 1
+    filter_too_much = 2
+    too_slow = 3
+    random_module = 4
+    return_value = 5
+
+
 class Verbosity(object):
 
     def __repr__(self):
@@ -556,6 +566,14 @@ If set to True, Hypothesis will run a preliminary health check before
 attempting to actually execute your test.
 """
 )
+
+settings.define_setting(
+    'suppress_health_check',
+    default=[],
+    description="""A list of health checks to disable"""
+)
+
+
 settings.lock_further_definitions()
 
 settings.register_profile('default', settings())

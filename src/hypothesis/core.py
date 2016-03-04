@@ -32,7 +32,7 @@ from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
     UnsatisfiedAssumption, HypothesisDeprecationWarning
 from hypothesis.control import BuildContext
 from hypothesis._settings import settings as Settings
-from hypothesis._settings import Phase, Verbosity
+from hypothesis._settings import Phase, Verbosity, HealthCheck
 from hypothesis.executors import new_style_executor, \
     default_new_style_executor
 from hypothesis.reporting import report, verbose_report, current_verbosity
@@ -282,11 +282,17 @@ def given(*generator_arguments, **generator_kwargs):
                 )
             )
 
-            def fail_health_check(message):
+            def fail_health_check(message, label):
+                if label in settings.suppress_health_check:
+                    return
                 message += (
                     '\nSee http://hypothesis.readthedocs.org/en/latest/health'
                     'checks.html for more information about this.'
                 )
+                message += (
+                    'If you want to disable just this health check, add %s'
+                    'to the suppress_health_check settings for this test.'
+                ) % (label,)
                 raise FailedHealthCheck(message)
 
             search_strategy = given_specifier
@@ -365,7 +371,8 @@ def given(*generator_arguments, **generator_kwargs):
                                 'This indicates a bug in the strategy. '
                                 'This could either be a Hypothesis bug or '
                                 "an error in a function yo've passed to "
-                                'it to construct your data.'
+                                'it to construct your data.',
+                                HealthCheck.exception_in_generation,
                             )
                         else:
                             fail_health_check(
@@ -377,7 +384,8 @@ def given(*generator_arguments, **generator_kwargs):
                                 'it to construct your data. Additionally, '
                                 'you have a custom executor, which means '
                                 'that this could be your executor failing '
-                                'to handle a function which returns None. '
+                                'to handle a function which returns None. ',
+                                HealthCheck.exception_in_generation,
                             )
                 if overruns >= 20 or (
                     not count and overruns > 0
@@ -390,7 +398,7 @@ def given(*generator_arguments, **generator_kwargs):
                         'max_size parameters on your collections and turning '
                         'max_leaves down on recursive() calls.') % (
                         overruns, count
-                    ))
+                    ), HealthCheck.data_too_large)
                 if filtered_draws >= 50 or (
                     not count and filtered_draws > 0
                 ):
@@ -403,7 +411,7 @@ def given(*generator_arguments, **generator_kwargs):
                         'strategy to filter less. This can also be caused by '
                         'a low max_leaves parameter in recursive() calls') % (
                         filtered_draws, count
-                    ))
+                    ), HealthCheck.filter_too_much)
                 runtime = time.time() - start
                 if runtime > 1.0 or count < 10:
                     fail_health_check((
@@ -412,7 +420,9 @@ def given(*generator_arguments, **generator_kwargs):
                         'and %d exceeded maximum size). Try decreasing '
                         "size of the data you're generating (with e.g."
                         'average_size or max_leaves parameters).'
-                    ) % (count, runtime, filtered_draws, overruns))
+                    ) % (count, runtime, filtered_draws, overruns),
+                        HealthCheck.too_slow,
+                    )
                 if getglobalrandomstate() != initial_state:
                     fail_health_check(
                         'Data generation depends on global random module. '
@@ -422,7 +432,7 @@ def given(*generator_arguments, **generator_kwargs):
                         'randoms() from hypothesis.strategies to get an '
                         'instance of Random you can use. Alternatively, you '
                         'can use the random_module() strategy to explicitly '
-                        'seed the random module.'
+                        'seed the random module.', HealthCheck.random_module,
                     )
             last_exception = [None]
             repr_for_last_exception = [None]
@@ -439,10 +449,10 @@ def given(*generator_arguments, **generator_kwargs):
                         search_strategy, test,
                     ))
                     if result is not None and settings.perform_health_check:
-                        raise FailedHealthCheck((
+                        fail_health_check((
                             'Tests run under @given should return None, but '
                             '%s returned %r instead.'
-                        ) % (test.__name__, result), settings)
+                        ) % (test.__name__, result), HealthCheck.return_value)
                     return False
                 except UnsatisfiedAssumption:
                     data.mark_invalid()
@@ -466,7 +476,9 @@ def given(*generator_arguments, **generator_kwargs):
                             'consider using the randoms() strategy from '
                             'hypothesis.strategies instead. Alternatively, '
                             'you can use the random_module() strategy to '
-                            'explicitly seed the random module.')
+                            'explicitly seed the random module.',
+                            HealthCheck.random_module,
+                        )
 
             from hypothesis.internal.conjecture.engine import TestRunner
 
