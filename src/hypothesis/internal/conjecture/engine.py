@@ -341,12 +341,37 @@ class TestRunner(object):
 
         while self.changed > change_counter:
             change_counter = self.changed
+            failed_deletes = 0
+            while self.last_data.intervals and failed_deletes < 10:
+                if self.random.randint(0, 1):
+                    u, v = self.random.choice(self.last_data.intervals)
+                else:
+                    n = len(self.last_data.buffer) - 1
+                    u, v = sorted((
+                        self.random.choice(self.last_data.intervals)
+                    ))
+                if (
+                    v < len(self.last_data.buffer)
+                ) and self.incorporate_new_buffer(
+                    self.last_data.buffer[:u] +
+                    self.last_data.buffer[v:]
+                ):
+                    failed_deletes = 0
+                else:
+                    failed_deletes += 1
             i = 0
             while i < len(self.last_data.intervals):
                 u, v = self.last_data.intervals[i]
                 if not self.incorporate_new_buffer(
                     self.last_data.buffer[:u] +
                     self.last_data.buffer[v:]
+                ):
+                    i += 1
+            i = 0
+            while i + 1 < len(self.last_data.buffer):
+                if not self.incorporate_new_buffer(
+                    self.last_data.buffer[:i] +
+                    self.last_data.buffer[i + 1:]
                 ):
                     i += 1
             i = 0
