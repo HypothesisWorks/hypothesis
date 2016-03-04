@@ -49,6 +49,7 @@ class TestRunner(object):
         self.start_time = time.time()
         self.random = random or Random(getrandbits(128))
         self.database_key = database_key
+        self.seen = set()
 
     def new_buffer(self):
         self.last_data = TestData(
@@ -81,6 +82,7 @@ class TestRunner(object):
         #   2. Any transition which increases the status is valid
         #   3. If the previous status was interesting, only shrinking
         #      transitions are allowed.
+        self.seen.add(hbytes(data.buffer))
         if data.buffer == self.last_data.buffer:
             return False
         if self.last_data.status < data.status:
@@ -125,6 +127,8 @@ class TestRunner(object):
         ))
 
     def incorporate_new_buffer(self, buffer):
+        if buffer in self.seen:
+            return False
         assert self.last_data.status == Status.INTERESTING
         if (
             self.settings.timeout > 0 and

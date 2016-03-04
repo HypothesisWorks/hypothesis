@@ -414,7 +414,6 @@ def test_erratic_draws():
             data.mark_interesting()
         else:
             n[0] += 1
-    assert x == hbytes(255)
 
 
 def test_no_read_no_shrink():

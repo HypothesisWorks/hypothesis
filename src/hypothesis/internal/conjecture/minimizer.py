@@ -45,19 +45,11 @@ class Minimizer(object):
         self.condition = condition
         self.random = random
         self.changes = 0
-        self.seen = set()
-        self.considerations = 0
-        self.duplicates = 0
 
     def incorporate(self, buffer):
         assert isinstance(buffer, hbytes)
         assert len(buffer) == self.size
         assert buffer <= self.current
-        self.considerations += 1
-        if buffer in self.seen:
-            self.duplicates += 1
-            return False
-        self.seen.add(buffer)
         if self.condition(buffer):
             self.current = buffer
             self.changes += 1
