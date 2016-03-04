@@ -403,12 +403,18 @@ class TestRunner(object):
                     if count > 1
                 ]
                 for block in blocks:
-                    parts = self.last_data.buffer.split(block)
-                    assert self.last_data.buffer == block.join(parts)
+                    parts = [
+                        self.last_data.buffer[r:s]
+                        for r, s in self.last_data.blocks
+                    ]
+
+                    def replace(b):
+                        return b''.join(
+                            b if c == block else c for c in parts
+                        )
                     minimize(
                         block,
-                        lambda b: self.incorporate_new_buffer(
-                            b.join(parts)),
+                        lambda b: self.incorporate_new_buffer(replace(b)),
                         self.random
                     )
 
