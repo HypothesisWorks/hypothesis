@@ -73,6 +73,11 @@ class TestRunner(object):
         except:
             self.save_buffer(data.buffer)
             raise
+        if (
+            data.status == Status.INTERESTING and
+            data.buffer != self.last_data.buffer
+        ):
+            self.debug_data(data)
         if data.status >= Status.VALID:
             self.valid_examples += 1
 
@@ -144,8 +149,6 @@ class TestRunner(object):
         self.test_function(data)
         data.freeze()
         self.note_for_corpus(data)
-        if data.status >= self.last_data.status:
-            self.debug_data(data)
         if self.consider_new_test_data(data):
             self.shrinks += 1
             self.last_data = data
@@ -319,8 +322,6 @@ class TestRunner(object):
         if data is None:
             return
         assert isinstance(data.output, text_type)
-
-        self.debug_data(data)
 
         if self.settings.max_shrinks <= 0:
             return
