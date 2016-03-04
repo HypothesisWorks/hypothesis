@@ -81,6 +81,8 @@ class TestRunner(object):
         #   2. Any transition which increases the status is valid
         #   3. If the previous status was interesting, only shrinking
         #      transitions are allowed.
+        if data.buffer == self.last_data.buffer:
+            return False
         if self.last_data.status < data.status:
             return True
         if self.last_data.status > data.status:
