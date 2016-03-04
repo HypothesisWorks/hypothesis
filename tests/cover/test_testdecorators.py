@@ -133,7 +133,7 @@ def test_slow_test_times_out(x):
 # Cheap hack to make test functions which fail on their second invocation
 calls = [0, 0, 0, 0]
 
-timeout_settings = settings(timeout=0.2)
+timeout_settings = settings(timeout=0.2, min_satisfying_examples=2)
 
 
 # The following tests exist to test that verifiers start their timeout
