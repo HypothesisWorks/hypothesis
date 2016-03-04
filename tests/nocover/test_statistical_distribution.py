@@ -296,7 +296,7 @@ test_can_produce_nan = define_test(
 )
 
 test_can_produce_long_lists_of_negative_integers = define_test(
-    lists(integers()), 0.01, lambda x: all(t <= 0 for t in x),
+    lists(integers()), 0.005, lambda x: all(t <= 0 for t in x),
     condition=lambda x: len(x) >= 20
 )
 
