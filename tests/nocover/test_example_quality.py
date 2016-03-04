@@ -180,7 +180,8 @@ def test_finds_list_with_plenty_duplicates():
         return max(Counter(xs).values()) >= 3
 
     result = minimal(
-        lists(text(min_size=1), average_size=50, min_size=1), is_good
+        lists(text(min_size=1), average_size=50, min_size=1), is_good,
+        timeout_after=20,
     )
     assert result == [u'0'] * 3
 
