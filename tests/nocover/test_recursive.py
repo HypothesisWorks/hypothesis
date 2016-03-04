@@ -52,7 +52,7 @@ def test_can_generate_some_depth_with_large_branching():
         st.recursive(st.integers(), lambda x: st.lists(x, average_size=100)),
         lambda x: depth(x) > 1
     )
-    assert xs == [0]
+    assert xs in ([0], [[]])
 
 
 def test_can_find_quite_deep_lists():
