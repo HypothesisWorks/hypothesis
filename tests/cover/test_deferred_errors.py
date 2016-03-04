@@ -31,7 +31,7 @@ def test_does_not_error_on_initial_calculation():
 
 
 def test_errors_each_time():
-    s = st.sampled_from([])
+    s = st.integers(max_value=1, min_value=3)
     with pytest.raises(InvalidArgument):
         s.example()
     with pytest.raises(InvalidArgument):
@@ -39,7 +39,7 @@ def test_errors_each_time():
 
 
 def test_errors_on_test_invocation():
-    @given(st.sampled_from([]))
+    @given(st.integers(max_value=1, min_value=3))
     def test(x):
         pass
     with pytest.raises(InvalidArgument):

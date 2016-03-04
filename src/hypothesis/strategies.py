@@ -31,6 +31,7 @@ from hypothesis.internal.reflection import proxies
 from hypothesis.searchstrategy.reprwrapper import ReprWrapperStrategy
 
 __all__ = [
+    'nothing',
     'just', 'one_of',
     'none',
     'choices', 'streaming',
@@ -107,6 +108,34 @@ def defines_strategy(strategy_definition):
     return accept
 
 
+class Nothing(SearchStrategy):
+    is_empty = True
+
+    def do_draw(self, data):
+        data.mark_invalid()
+
+    def __repr__(self):
+        return 'nothing()'
+
+    def map(self, f):
+        return self
+
+    def filter(self, f):
+        return self
+
+    def flatmap(self, f):
+        return self
+
+NOTHING = Nothing()
+
+
+@cacheable
+def nothing():
+    """This strategy never successfully draws a value and will always reject on
+    an attempt to draw."""
+    return NOTHING
+
+
 def just(value):
     """Return a strategy which only generates value.
 
@@ -127,17 +156,29 @@ def none():
     return just(None)
 
 
-def one_of(arg, *args):
+def one_of(*args):
     """Return a strategy which generates values from any of the argument
-    strategies."""
+    strategies.
 
-    if not args:
-        check_strategy(arg)
-        return arg
-    from hypothesis.searchstrategy.strategies import OneOfStrategy
-    args = (arg,) + args
+    This may be called with one iterable argument instead of multiple strategy
+    arguments. In which case one_of(x) and one_of(\*x) are equivalent.
+
+    """
+    if len(args) == 1 and not isinstance(args[0], SearchStrategy):
+        try:
+            args = tuple(args[0])
+        except TypeError:
+            pass
+
     for arg in args:
         check_strategy(arg)
+    args = [a for a in args if not a.is_empty]
+
+    if not args:
+        return nothing()
+    if len(args) == 1:
+        return args[0]
+    from hypothesis.searchstrategy.strategies import OneOfStrategy
     return OneOfStrategy(args)
 
 
@@ -333,6 +374,10 @@ def tuples(*args):
     """
     for arg in args:
         check_strategy(arg)
+
+    for arg in args:
+        if arg.is_empty:
+            return nothing()
     from hypothesis.searchstrategy.collections import TupleStrategy
     return TupleStrategy(args, tuple)
 
@@ -351,9 +396,7 @@ def sampled_from(elements):
         JustStrategy
     elements = tuple(iter(elements))
     if not elements:
-        raise InvalidArgument(
-            'sampled_from requires at least one value'
-        )
+        return nothing()
     if len(elements) == 1:
         return JustStrategy(elements[0])
     else:
@@ -392,7 +435,14 @@ def lists(
             )
         else:
             return builds(list)
-
+    check_strategy(elements)
+    if elements.is_empty:
+        if (min_size or 0) > 0:
+            raise InvalidArgument((
+                'Cannot create non-empty lists with elements drawn from '
+                'strategy %r because it has no values.') % (elements,))
+        else:
+            return builds(list)
     if unique:
         if unique_by is not None:
             raise InvalidArgument((
@@ -486,7 +536,10 @@ def fixed_dictionaries(mapping):
     from hypothesis.searchstrategy.collections import FixedKeysDictStrategy
     check_type(dict, mapping)
     for v in mapping.values():
-        check_type(SearchStrategy, v)
+        check_strategy(v)
+    for v in mapping.values():
+        if v.is_empty:
+            return nothing()
     return FixedKeysDictStrategy(mapping)
 
 

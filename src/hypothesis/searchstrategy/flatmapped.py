@@ -16,7 +16,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis._settings import settings
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
@@ -29,7 +28,7 @@ class FlatMapStrategy(SearchStrategy):
         super(FlatMapStrategy, self).__init__()
         self.flatmapped_strategy = strategy
         self.expand = expand
-        self.settings = settings.default
+        self.is_empty = strategy.is_empty
 
     def __repr__(self):
         if not hasattr(self, u'_cached_repr'):

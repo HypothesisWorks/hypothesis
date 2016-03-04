@@ -29,9 +29,8 @@ def one_of_strategies(xs):
     xs = tuple(xs)
     if not xs:
         raise ValueError('Cannot join an empty list of strategies')
-    if len(xs) == 1:
-        return xs[0]
-    return OneOfStrategy(xs)
+    from hypothesis.strategies import one_of
+    return one_of(xs)
 
 
 class SearchStrategy(object):
@@ -90,6 +89,7 @@ class SearchStrategy(object):
     """
 
     supports_find = True
+    is_empty = False
 
     def example(self, random=None):
         """Provide an example of the sort of value that this strategy
@@ -166,6 +166,8 @@ class SearchStrategy(object):
         """
         if not isinstance(other, SearchStrategy):
             raise ValueError('Cannot | a SearchStrategy with %r' % (other,))
+        if other.is_empty:
+            return self
         return one_of_strategies((self, other))
 
     def validate(self):
@@ -240,6 +242,7 @@ class MappedSearchStrategy(SearchStrategy):
         self.mapped_strategy = strategy
         if pack is not None:
             self.pack = pack
+        self.is_empty = strategy.is_empty
 
     def __repr__(self):
         if not hasattr(self, '_cached_repr'):
@@ -275,6 +278,7 @@ class FilteredStrategy(SearchStrategy):
         super(FilteredStrategy, self).__init__()
         self.condition = condition
         self.filtered_strategy = strategy
+        self.is_empty = strategy.is_empty
 
     def __repr__(self):
         if not hasattr(self, '_cached_repr'):

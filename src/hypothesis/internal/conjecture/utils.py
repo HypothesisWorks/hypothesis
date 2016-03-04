@@ -95,6 +95,8 @@ def centered_integer_range(data, lower, upper, center):
 
 
 def choice(data, values):
+    if not values:
+        data.mark_invalid()
     return values[integer_range(data, 0, len(values) - 1)]
 
 

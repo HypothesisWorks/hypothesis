@@ -35,7 +35,7 @@ import hypothesis.internal.conjecture.utils as cu
 from hypothesis.core import find
 from hypothesis.errors import Flaky, NoSuchExample, InvalidDefinition, \
     HypothesisException
-from hypothesis.control import assume, BuildContext
+from hypothesis.control import BuildContext
 from hypothesis._settings import settings as Settings
 from hypothesis._settings import Verbosity
 from hypothesis.reporting import report, verbose_report, current_verbosity
@@ -258,7 +258,6 @@ class Bundle(SearchStrategy):
     def do_draw(self, data):
         machine = data.draw(self_strategy)
         bundle = machine.bundle(self.name)
-        assume(bundle)
         reference = choice(data, bundle)
         return machine.names_to_values[reference.name]
 

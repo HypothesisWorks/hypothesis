@@ -55,6 +55,10 @@ class DeferredStrategy(SearchStrategy):
         return self.wrapped_strategy.supports_find
 
     @property
+    def is_empty(self):
+        return self.wrapped_strategy.is_empty
+
+    @property
     def wrapped_strategy(self):
         if self.__wrapped_strategy is None:
             with self.__settings:

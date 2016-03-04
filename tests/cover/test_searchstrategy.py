@@ -22,9 +22,8 @@ from collections import namedtuple
 import pytest
 
 from hypothesis.types import RandomWithSeed
-from hypothesis.errors import NoExamples, InvalidArgument
-from hypothesis.strategies import just, tuples, randoms, booleans, \
-    integers, sampled_from
+from hypothesis.errors import NoExamples
+from hypothesis.strategies import just, tuples, randoms, booleans, integers
 from hypothesis.internal.compat import text_type
 from hypothesis.searchstrategy.strategies import one_of_strategies
 
@@ -75,11 +74,6 @@ def test_just_strategy_uses_repr():
 def test_can_map():
     s = integers().map(pack=lambda t: u'foo')
     assert s.example() == u'foo'
-
-
-def test_sample_from_empty_errors():
-    with pytest.raises(InvalidArgument):
-        sampled_from([]).example()
 
 
 def test_example_raises_unsatisfiable_when_too_filtered():
