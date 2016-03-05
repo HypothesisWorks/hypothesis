@@ -436,6 +436,7 @@ else:
     def to_str(s):
         return s
 
+
 def cast_unicode(s, encoding=None):
     if isinstance(s, bytes):
         return s.decode(encoding or a_good_encoding(), 'replace')

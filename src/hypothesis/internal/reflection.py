@@ -30,9 +30,9 @@ from functools import wraps
 
 from hypothesis.configuration import storage_directory
 from hypothesis.vendor.pretty import pretty
-from hypothesis.internal.compat import hrange, qualname, getargspec, \
-    to_unicode, isidentifier, str_to_bytes, ARG_NAME_ATTRIBUTE, \
-    update_code_location, to_str
+from hypothesis.internal.compat import hrange, to_str, qualname, \
+    getargspec, to_unicode, isidentifier, str_to_bytes, \
+    ARG_NAME_ATTRIBUTE, update_code_location
 
 
 def fully_qualified_name(f):
