@@ -426,6 +426,16 @@ else:
     string_types = (str,)
 
 
+if PY2:
+    def to_str(s):
+        if isinstance(s, unicode):
+            return s.encode(a_good_encoding())
+        assert isinstance(s, str)
+        return s
+else:
+    def to_str(s):
+        return s
+
 def cast_unicode(s, encoding=None):
     if isinstance(s, bytes):
         return s.decode(encoding or a_good_encoding(), 'replace')

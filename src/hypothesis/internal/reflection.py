@@ -32,7 +32,7 @@ from hypothesis.configuration import storage_directory
 from hypothesis.vendor.pretty import pretty
 from hypothesis.internal.compat import hrange, qualname, getargspec, \
     to_unicode, isidentifier, str_to_bytes, ARG_NAME_ATTRIBUTE, \
-    update_code_location
+    update_code_location, to_str
 
 
 def fully_qualified_name(f):
@@ -297,7 +297,7 @@ def nicerepr(v):
     elif isinstance(v, type):
         return v.__name__
     else:
-        return pretty(v)
+        return to_str(pretty(v))
 
 
 def arg_string(f, args, kwargs, reorder=True):
