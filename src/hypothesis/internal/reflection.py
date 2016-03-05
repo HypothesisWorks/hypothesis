@@ -29,6 +29,7 @@ from types import ModuleType
 from functools import wraps
 
 from hypothesis.configuration import storage_directory
+from hypothesis.vendor.pretty import pretty
 from hypothesis.internal.compat import hrange, qualname, getargspec, \
     to_unicode, isidentifier, str_to_bytes, ARG_NAME_ATTRIBUTE, \
     update_code_location
@@ -296,7 +297,7 @@ def nicerepr(v):
     elif isinstance(v, type):
         return v.__name__
     else:
-        return repr(v)
+        return pretty(v)
 
 
 def arg_string(f, args, kwargs, reorder=True):

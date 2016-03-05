@@ -37,8 +37,8 @@ from hypothesis.executors import new_style_executor, \
     default_new_style_executor
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.internal.compat import getargspec, str_to_bytes
-from hypothesis.internal.reflection import arg_string, impersonate, \
-    copy_argspec, function_digest, fully_qualified_name, \
+from hypothesis.internal.reflection import nicerepr, arg_string, \
+    impersonate, copy_argspec, function_digest, fully_qualified_name, \
     convert_positional_arguments, get_pretty_function_description
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
@@ -622,16 +622,16 @@ def find(specifier, condition, settings=None, random=None, database_key=None):
         if settings.verbosity == Verbosity.verbose:
             if not successful_examples[0]:
                 report(lambda: u'Trying example %s' % (
-                    repr(result),
+                    nicerepr(result),
                 ))
             elif success:
                 if successful_examples[0] == 1:
                     report(lambda: u'Found satisfying example %s' % (
-                        repr(result),
+                        nicerepr(result),
                     ))
                 else:
                     report(lambda: u'Shrunk example to %s' % (
-                        repr(result),
+                        nicerepr(result),
                     ))
                 last_data[0] = data
         if success and not data.frozen:

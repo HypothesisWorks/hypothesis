@@ -40,7 +40,7 @@ from hypothesis._settings import settings as Settings
 from hypothesis._settings import Verbosity
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.strategies import just, one_of, runner, sampled_from
-from hypothesis.internal.reflection import proxies
+from hypothesis.internal.reflection import proxies, nicerepr
 from hypothesis.internal.conjecture.data import StopTest
 from hypothesis.internal.conjecture.utils import choice
 from hypothesis.searchstrategy.strategies import SearchStrategy
@@ -146,7 +146,7 @@ class GenericStateMachine(object):
 
         """
         self.step_count = getattr(self, u'step_count', 0) + 1
-        report(u'Step #%d: %s' % (self.step_count, repr(step)))
+        report(u'Step #%d: %s' % (self.step_count, nicerepr(step)))
 
     def teardown(self):
         """Called after a run has finished executing to clean up any necessary
@@ -376,7 +376,7 @@ class RuleBasedStateMachine(GenericStateMachine):
     def __repr__(self):
         return u'%s(%s)' % (
             type(self).__name__,
-            repr(self.bundles),
+            nicerepr(self.bundles),
         )
 
     def upcoming_name(self):
@@ -460,7 +460,7 @@ class RuleBasedStateMachine(GenericStateMachine):
             if isinstance(v, VarReference):
                 data_repr[k] = v.name
             else:
-                data_repr[k] = repr(v)
+                data_repr[k] = nicerepr(v)
         self.step_count = getattr(self, u'step_count', 0) + 1
         report(u'Step #%d: %s%s(%s)' % (
             self.step_count,
