@@ -40,6 +40,7 @@ from hypothesis._settings import settings as Settings
 from hypothesis._settings import Verbosity
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.strategies import just, one_of, runner, sampled_from
+from hypothesis.vendor.pretty import CUnicodeIO, RepresentationPrinter
 from hypothesis.internal.reflection import proxies, nicerepr
 from hypothesis.internal.conjecture.data import StopTest
 from hypothesis.internal.conjecture.utils import choice
@@ -244,7 +245,6 @@ Rule = namedtuple(
     u'Rule',
     (u'targets', u'function', u'arguments', u'precondition',
      u'parent_rule')
-
 )
 
 self_strategy = runner()
@@ -372,6 +372,14 @@ class RuleBasedStateMachine(GenericStateMachine):
         self.bundles = {}
         self.name_counter = 1
         self.names_to_values = {}
+        self.stream = CUnicodeIO()
+        self.printer = RepresentationPrinter(self.stream)
+
+    def pretty(self, value):
+        self.stream.truncate(0)
+        self.printer.pretty(value)
+        self.printer.flush()
+        return self.stream.getvalue()
 
     def __repr__(self):
         return u'%s(%s)' % (
@@ -460,7 +468,7 @@ class RuleBasedStateMachine(GenericStateMachine):
             if isinstance(v, VarReference):
                 data_repr[k] = v.name
             else:
-                data_repr[k] = nicerepr(v)
+                data_repr[k] = self.pretty(v)
         self.step_count = getattr(self, u'step_count', 0) + 1
         report(u'Step #%d: %s%s(%s)' % (
             self.step_count,
@@ -479,5 +487,8 @@ class RuleBasedStateMachine(GenericStateMachine):
         if rule.targets:
             name = self.new_name()
             self.names_to_values[name] = result
+            self.printer.singleton_pprinters.setdefault(
+                id(result), lambda obj, p, cycle: p.text(name),
+            )
             for target in rule.targets:
                 self.bundle(target).append(VarReference(name))
