@@ -412,7 +412,7 @@ class TestRunner(object):
 
                     def replace(b):
                         return b''.join(
-                            b if c == block else c for c in parts
+                            bytes(b if c == block else c) for c in parts
                         )
                     minimize(
                         block,
