@@ -639,11 +639,19 @@ def _dict_pprinter_factory(start, end, basetype=None):
             p.text(': ')
             p.pretty(obj[key])
         p.end_group(1, end)
+    inner.__name__ = '_dict_pprinter_factory(%r, %r, %r)' % (
+        start, end, basetype
+    )
     return inner
 
 
 def _super_pprint(obj, p, cycle):
     """The pprint for the super type."""
+    try:
+        obj.__thisclass__
+    except AttributeError:
+        _repr_pprint(obj, p, cycle)
+        return
     p.begin_group(8, '<super: ')
     p.pretty(obj.__thisclass__)
     p.text(',')
@@ -683,7 +691,8 @@ def _type_pprint(obj, p, cycle):
     # and others may set it to None.
 
     # Checks for a __repr__ override in the metaclass
-    if type(obj).__repr__ is not type.__repr__:
+    # != rather than is not because pypy compatibility
+    if type(obj).__repr__ != type.__repr__:
         _repr_pprint(obj, p, cycle)
         return
 
@@ -770,8 +779,9 @@ _type_pprinters = {
 }
 
 try:
-    _type_pprinters[types.DictProxyType] = _dict_pprinter_factory(
-        '<dictproxy {', '}>')
+    if types.DictProxyType != dict:
+        _type_pprinters[types.DictProxyType] = _dict_pprinter_factory(
+            '<dictproxy {', '}>')
     _type_pprinters[types.ClassType] = _type_pprint
     _type_pprinters[types.SliceType] = _repr_pprint
 except AttributeError:  # Python 3
@@ -859,6 +869,11 @@ for_type_by_name('collections', 'defaultdict', _defaultdict_pprint)
 for_type_by_name('collections', 'OrderedDict', _ordereddict_pprint)
 for_type_by_name('collections', 'deque', _deque_pprint)
 for_type_by_name('collections', 'Counter', _counter_pprint)
+
+for_type_by_name('_collections', 'defaultdict', _defaultdict_pprint)
+for_type_by_name('_collections', 'OrderedDict', _ordereddict_pprint)
+for_type_by_name('_collections', 'deque', _deque_pprint)
+for_type_by_name('_collections', 'Counter', _counter_pprint)
 
 if __name__ == '__main__':
     from random import randrange

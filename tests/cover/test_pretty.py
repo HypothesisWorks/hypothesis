@@ -177,6 +177,16 @@ class BadRepr(object):
         return 1 / 0
 
 
+def test_list():
+    assert pretty.pretty([]) == '[]'
+    assert pretty.pretty([1]) == '[1]'
+
+
+def test_dict():
+    assert pretty.pretty({}) == '{}'
+    assert pretty.pretty({1: 1}) == '{1: 1}'
+
+
 def test_indentation():
     """Test correct indentation in groups."""
     count = 40
@@ -282,13 +292,21 @@ class SB(SA):
     pass
 
 
-def test_super_repr():
-    output = pretty.pretty(super(SA))
-    assert_in('SA', output)
+try:
+    super(SA).__thisclass__
 
-    sb = SB()
-    output = pretty.pretty(super(SA, sb))
-    assert_in('SA', output)
+    def test_super_repr():
+        output = pretty.pretty(super(SA))
+        assert_in('SA', output)
+
+        sb = SB()
+        output = pretty.pretty(super(SA, sb))
+        assert_in('SA', output)
+except AttributeError:
+    def test_super_repr():
+        pretty.pretty(super(SA))
+        sb = SB()
+        pretty.pretty(super(SA, sb))
 
 
 def test_long_list():
