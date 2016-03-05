@@ -85,7 +85,7 @@ from hypothesis.internal.compat import PY3, cast_unicode, string_types, \
     get_stream_enc
 
 __all__ = ['pretty', 'pprint', 'PrettyPrinter', 'RepresentationPrinter',
-           'for_type', 'for_type_by_name']
+           'for_type_by_name']
 
 
 MAX_SEQ_LENGTH = 1000
@@ -106,7 +106,7 @@ def _safe_getattr(obj, attr, default=None):
 
 if PY3:
     CUnicodeIO = StringIO
-else:
+else:  # pragma: no cover
     class CUnicodeIO(StringIO):
         """StringIO that casts str to unicode on Python 2."""
 
@@ -174,6 +174,7 @@ class PrettyPrinter(_PrettyPrinterBase):
     def __init__(
         self, output, max_width=79, newline='\n', max_seq_length=MAX_SEQ_LENGTH
     ):
+        self.broken = False
         self.output = output
         self.max_width = max_width
         self.newline = newline
@@ -302,7 +303,7 @@ def _get_mro(obj_class):
     """ Get a reasonable method resolution order of a class and its superclasses
     for both old-style and new-style classes.
     """
-    if not hasattr(obj_class, '__mro__'):
+    if not hasattr(obj_class, '__mro__'):  # pragma: no cover
         # Old-style class. Mix in object to make a fake new-style class.
         try:
             obj_class = type(obj_class.__name__, (obj_class, object), {})
@@ -412,8 +413,8 @@ class RepresentationPrinter(PrettyPrinter):
 
 class Printable(object):
 
-    def output(self, stream, output_width):
-        return output_width
+    def output(self, stream, output_width):  # pragma: no cover
+        raise NotImplementedError()
 
 
 class Text(Printable):
@@ -649,7 +650,7 @@ def _super_pprint(obj, p, cycle):
     """The pprint for the super type."""
     try:
         obj.__thisclass__
-    except AttributeError:
+    except AttributeError:  # pragma: no cover
         _repr_pprint(obj, p, cycle)
         return
     p.begin_group(8, '<super: ')
@@ -664,7 +665,7 @@ def _re_pattern_pprint(obj, p, cycle):
     """The pprint function for regular expression patterns."""
     p.text('re.compile(')
     pattern = repr(obj.pattern)
-    if pattern[:1] in 'uU':
+    if pattern[:1] in 'uU':  # pragma: no cover
         pattern = pattern[1:]
         prefix = 'ur'
     else:
@@ -699,11 +700,11 @@ def _type_pprint(obj, p, cycle):
     mod = _safe_getattr(obj, '__module__', None)
     try:
         name = obj.__qualname__
-        if not isinstance(name, string_types):
+        if not isinstance(name, string_types):  # pragma: no cover
             # This can happen if the type implements __qualname__ as a property
             # or other descriptor in Python 2.
             raise Exception('Try __name__')
-    except Exception:
+    except Exception:  # pragma: no cover
         name = obj.__name__
         if not isinstance(name, string_types):
             name = '<unknown type>'
@@ -751,7 +752,7 @@ def _exception_pprint(obj, p, cycle):
 #: the exception base
 try:
     _exception_base = BaseException
-except NameError:
+except NameError:  # pragma: no cover
     _exception_base = Exception
 
 
@@ -778,7 +779,7 @@ _type_pprinters = {
     _exception_base: _exception_pprint
 }
 
-try:
+try:  # pragma: no cover
     if types.DictProxyType != dict:
         _type_pprinters[types.DictProxyType] = _dict_pprinter_factory(
             '<dictproxy {', '}>')
@@ -787,7 +788,7 @@ try:
 except AttributeError:  # Python 3
     _type_pprinters[slice] = _repr_pprint
 
-try:
+try:  # pragma: no cover
     _type_pprinters[xrange] = _repr_pprint
     _type_pprinters[long] = _repr_pprint
     _type_pprinters[unicode] = _repr_pprint
@@ -800,25 +801,12 @@ _deferred_type_pprinters = {
 }
 
 
-def for_type(typ, func):
-    """Add a pretty printer for a given type."""
-    oldfunc = _type_pprinters.get(typ, None)
-    if func is not None:
-        # To support easy restoration of old pprinters, we need to ignore
-        # Nones.
-        _type_pprinters[typ] = func
-    return oldfunc
-
-
 def for_type_by_name(type_module, type_name, func):
     """Add a pretty printer for a type specified by the module and name of a
     type rather than the type object itself."""
     key = (type_module, type_name)
     oldfunc = _deferred_type_pprinters.get(key, None)
-    if func is not None:
-        # To support easy restoration of old pprinters, we need to ignore
-        # Nones.
-        _deferred_type_pprinters[key] = func
+    _deferred_type_pprinters[key] = func
     return oldfunc
 
 
@@ -874,20 +862,3 @@ for_type_by_name('_collections', 'defaultdict', _defaultdict_pprint)
 for_type_by_name('_collections', 'OrderedDict', _ordereddict_pprint)
 for_type_by_name('_collections', 'deque', _deque_pprint)
 for_type_by_name('_collections', 'Counter', _counter_pprint)
-
-if __name__ == '__main__':
-    from random import randrange
-
-    class Foo(object):
-
-        def __init__(self):
-            self.foo = 1
-            self.bar = re.compile(r'\s+')
-            self.blub = dict.fromkeys(range(30), randrange(1, 40))
-            self.hehe = 23424.234234
-            self.list = ['blub', 'blah', self]
-
-        def get_foo(self):
-            print('foo')
-
-    pprint(Foo(), verbose=True)

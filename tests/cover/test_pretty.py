@@ -16,15 +16,6 @@
 
 # coding: utf-8
 
-from __future__ import division, print_function, absolute_import
-
-from collections import deque, Counter, defaultdict, OrderedDict
-
-import pytest
-
-from hypothesis.vendor import pretty
-from hypothesis.internal.compat import PY3, a_good_encoding
-
 """
 This file originates in the IPython project and is made use of under the
 following licensing terms:
@@ -65,6 +56,16 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
+from __future__ import division, print_function, absolute_import
+
+from collections import deque, Counter, defaultdict, OrderedDict
+
+import pytest
+
+from hypothesis.vendor import pretty
+from hypothesis.internal.compat import PY3, a_good_encoding
+from tests.common.utils import capture_out
+import re
 
 py2_only = pytest.mark.skipif(PY3, reason='This test only runs on python 2')
 
@@ -187,6 +188,39 @@ def test_dict():
     assert pretty.pretty({1: 1}) == '{1: 1}'
 
 
+def test_tuple():
+    assert pretty.pretty(()) == '()'
+    assert pretty.pretty((1,)) == '(1,)'
+    assert pretty.pretty((1, 2)) == '(1, 2)'
+
+
+class ReprDict(dict):
+    def __repr__(self):
+        return "hi"
+
+
+def test_dict_with_custom_repr():
+    assert pretty.pretty(ReprDict()) == "hi"
+
+
+class ReprList(list):
+    def __repr__(self):
+        return "bye"
+
+
+class ReprSet(set):
+    def __repr__(self):
+        return "cat"
+
+
+def test_set_with_custom_repr():
+    assert pretty.pretty(ReprSet()) == "cat"
+
+
+def test_list_with_custom_repr():
+    assert pretty.pretty(ReprList()) == "bye"
+
+
 def test_indentation():
     """Test correct indentation in groups."""
     count = 40
@@ -226,6 +260,20 @@ def test_sets():
     for obj, expected_output in zip(objects, expected):
         got_output = pretty.pretty(obj)
         yield assert_equal, got_output, expected_output
+
+
+def test_unsortable_set():
+    xs = set([1, 2, 3, "foo", "bar", "baz", object()])
+    p = pretty.pretty(xs)
+    for x in xs:
+        assert pretty.pretty(x) in p
+
+
+def test_unsortable_dict():
+    xs = dict((k, 1) for k in [1, 2, 3, "foo", "bar", "baz", object()])
+    p = pretty.pretty(xs)
+    for x in xs:
+        assert pretty.pretty(x) in p
 
 
 @skip_without('xxlimited')
@@ -559,3 +607,132 @@ def test_collections_counter():
     ]
     for obj, expected in cases:
         assert_equal(pretty.pretty(obj), expected)
+
+
+def test_cyclic_list():
+    x = []
+    x.append(x)
+    assert pretty.pretty(x) == '[[...]]'
+
+
+def test_cyclic_dequeue():
+    x = deque()
+    x.append(x)
+    assert pretty.pretty(x) == 'deque([deque(...)])' 
+
+class HashItAnyway(object):
+    def __init__(self, value):
+        self.value = value
+
+    def __hash__(self):
+        return 0
+
+    def __eq__(self, other):
+        return isinstance(other, HashItAnyway) and self.value == other.value
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def _repr_pretty_(self, pretty, cycle):
+        pretty.pretty(self.value)
+
+
+def test_cyclic_counter():
+    c = Counter()
+    k = HashItAnyway(c)
+    c[k] = 1
+    assert pretty.pretty(c) == 'Counter({Counter(...): 1})'
+
+
+def test_cyclic_dict():
+    x = {}
+    k = HashItAnyway(x)
+    x[k] = x
+    assert pretty.pretty(x) == '{{...}: {...}}'
+
+
+def test_cyclic_set():
+    x = set()
+    x.add(HashItAnyway(x))
+    assert pretty.pretty(x) == '{{...}}'
+
+
+def test_pprint():
+    t = {"hi": 1}
+    with capture_out() as o:
+        pretty.pprint(t)
+    assert o.getvalue().strip() == pretty.pretty(t)
+
+
+class BigList(list):
+    def _repr_pretty_(self, printer, cycle):
+        if cycle:
+            return "[...]"
+        else:
+            with printer.group(open='[', close=']'):
+                with printer.indent(5):
+                    for v in self:
+                        printer.pretty(v)
+                        printer.breakable(',')
+
+
+def test_print_with_indent():
+    pretty.pretty(BigList([1, 2, 3]))
+
+
+class MyException(Exception):
+    pass
+
+
+def test_exception():
+    assert pretty.pretty(ValueError("hi")) == "ValueError('hi')"
+    assert pretty.pretty(ValueError("hi", "there")) == \
+        "ValueError('hi', 'there')"
+    assert "test_pretty." in pretty.pretty(MyException())
+
+
+def test_re_evals():
+    for r in [
+        re.compile(r'hi'), re.compile(r'b\nc', re.MULTILINE),
+        re.compile(br'hi', 0),
+    ]:
+        assert repr(eval(pretty.pretty(r), globals())) == repr(r)
+
+
+class CustomStuff(object):
+    def __init__(self):
+        self.hi = 1
+        self.bye = "fish"
+        self.spoon = self
+
+    @property
+    def oops(self):
+        raise AttributeError("Nope")
+
+    def squirrels(self):
+        pass
+
+
+def test_custom():
+    assert 'bye' not in pretty.pretty(CustomStuff())
+    assert 'bye=' in pretty.pretty(CustomStuff(), verbose=True)
+    assert 'squirrels' not in pretty.pretty(CustomStuff(), verbose=True)
+
+
+def test_print_builtin_function():
+    assert pretty.pretty(abs) == '<function abs>'
+
+
+def test_breakable_at_group_boundary():
+    # I confess I'm not really sure what this is testing, because I don't
+    # understand the breaking logic well enough. It's to hit 100% coverage,
+    # but I don't know enough about the right behaviour here to do a better
+    # test.
+    v1 = "00000000000000000000"
+    printer = pretty.RepresentationPrinter(pretty.CUnicodeIO())
+    printer.pretty(v1)
+    printer.pretty(v1)
+    printer.breakable('')
+    printer.begin_group(open='', indent=80)
+    printer.flush()
+    printer.breakable('')
