@@ -20,6 +20,7 @@ from datetime import MINYEAR
 
 import pytz
 import pytest
+from flaky import flaky
 
 import hypothesis._settings as hs
 from hypothesis import given, assume, settings
@@ -132,6 +133,7 @@ def test_needs_permission_for_no_timezones():
         datetimes(allow_naive=False, timezones=[]).example()
 
 
+@flaky(max_runs=2, min_passes=1)
 def test_bordering_on_a_leap_year():
     x = minimal(
         datetimes(min_year=2002, max_year=2005),
