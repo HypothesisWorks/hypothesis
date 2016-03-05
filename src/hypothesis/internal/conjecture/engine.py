@@ -74,8 +74,10 @@ class TestRunner(object):
             self.save_buffer(data.buffer)
             raise
         if (
-            data.status == Status.INTERESTING and
-            data.buffer != self.last_data.buffer
+            data.status == Status.INTERESTING and (
+                self.last_data is None or
+                data.buffer != self.last_data.buffer
+            )
         ):
             self.debug_data(data)
         if data.status >= Status.VALID:
