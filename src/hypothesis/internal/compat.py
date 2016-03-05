@@ -419,6 +419,18 @@ class compatbytes(bytearray):
 if PY2:
     hbytes = compatbytes
     reasonable_byte_type = bytearray
+    string_types = (str, unicode)
 else:
     hbytes = bytes
     reasonable_byte_type = bytes
+    string_types = (str,)
+
+
+def cast_unicode(s, encoding=None):
+    if isinstance(s, bytes):
+        return s.decode(encoding or a_good_encoding(), 'replace')
+    return s
+
+
+def get_stream_enc(stream, default=None):
+    return getattr(stream, 'encoding', None) or default
