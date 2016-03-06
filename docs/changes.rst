@@ -22,6 +22,33 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 ------------------
+3.1.0 - 2016-03-06
+------------------
+
+* Add a 'nothing' strategy that never successfully generates values.
+* sampled_from() and one_of() can both now be called with an empty argument
+  list, in which case they also never generate any values.
+* one_of may now be called with a single argument that is a collection of strategies
+  as well as as varargs.
+* Add a 'runner' strategy which returns the instance of the current test object
+  if there is one.
+* 'Bundle' for RuleBasedStateMachine is now a normal(ish) strategy and can be used
+  as such.
+* Tests using RuleBasedStateMachine should now shrink significantly better.
+* Hypothesis now uses a pretty-printing library internally, compatible with IPython's
+  pretty printing protocol (actually using the same code). This may improve the quality
+  of output in some cases.
+* As a 'phases' setting that allows more fine grained control over which parts of the
+  process Hypothesis runs
+* Add a suppress_health_check setting which allows you to turn off specific health checks
+  in a fine grained manner.
+* Fix a bug where lists of non fixed size would always draw one more element than they
+  included. This mostly didn't matter, but if would cause problems with empty strategies
+  or ones with side effects.
+* Add a mechanism to the Django model generator to allow you to explicitly request the
+  default value (thanks to Jeremy Thurgood for this one).
+
+------------------
 3.0.5 - 2016-02-25
 ------------------
 
