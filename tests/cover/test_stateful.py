@@ -190,9 +190,30 @@ class RoseTreeStateMachine(RuleBasedStateMachine):
         assert d(source) <= 5
 
 
+class NotTheLastMachine(RuleBasedStateMachine):
+    stuff = Bundle('stuff')
+
+    def __init__(self):
+        super(NotTheLastMachine, self).__init__()
+        self.last = None
+        self.seen = set()
+
+    @rule(target=stuff)
+    def hi(self):
+        result = object()
+        self.last = result
+        return result
+
+    @rule(v=stuff)
+    def bye(self, v):
+        if v in self.seen:
+            return
+        self.seen.add(v)
+        assert v == self.last
+
 bad_machines = (
     OrderedStateMachine, SetStateMachine, BalancedTrees,
-    DepthMachine, RoseTreeStateMachine,
+    DepthMachine, RoseTreeStateMachine, NotTheLastMachine,
 )
 
 for m in bad_machines:
