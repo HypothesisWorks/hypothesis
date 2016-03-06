@@ -39,7 +39,7 @@ from hypothesis.control import BuildContext
 from hypothesis._settings import settings as Settings
 from hypothesis._settings import Verbosity
 from hypothesis.reporting import report, verbose_report, current_verbosity
-from hypothesis.strategies import just, one_of, runner, sampled_from
+from hypothesis.strategies import just, one_of, runner
 from hypothesis.vendor.pretty import CUnicodeIO, RepresentationPrinter
 from hypothesis.internal.reflection import proxies, nicerepr
 from hypothesis.internal.conjecture.data import StopTest
@@ -257,7 +257,11 @@ class Bundle(SearchStrategy):
 
     def do_draw(self, data):
         machine = data.draw(self_strategy)
-        bundle = machine.bundle(self.name)
+        bundle = list(machine.bundle(self.name))
+        # We do this so that we're choosing starting from the end of the list.
+        # This means that if we delete a rule that produces a value earlier
+        # than the one we select, we continue selecting the same value.
+        bundle.reverse()
         reference = choice(data, bundle)
         return machine.names_to_values[reference.name]
 
@@ -448,8 +452,6 @@ class RuleBasedStateMachine(GenericStateMachine):
                     if not bundle:
                         valid = False
                         break
-                    else:
-                        v = sampled_from(bundle)
                 converted_arguments[k] = v
             if valid:
                 strategies.append(TupleStrategy((
