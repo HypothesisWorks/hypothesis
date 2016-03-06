@@ -468,10 +468,7 @@ class RuleBasedStateMachine(GenericStateMachine):
         rule, data = step
         data_repr = {}
         for k, v in data.items():
-            if isinstance(v, VarReference):
-                data_repr[k] = v.name
-            else:
-                data_repr[k] = self.__pretty(v)
+            data_repr[k] = self.__pretty(v)
         self.step_count = getattr(self, u'step_count', 0) + 1
         report(u'Step #%d: %s%s(%s)' % (
             self.step_count,
@@ -483,9 +480,6 @@ class RuleBasedStateMachine(GenericStateMachine):
     def execute_step(self, step):
         rule, data = step
         data = dict(data)
-        for k, v in data.items():
-            if isinstance(v, VarReference):
-                data[k] = self.names_to_values[v.name]
         result = rule.function(self, **data)
         if rule.targets:
             name = self.new_name()
