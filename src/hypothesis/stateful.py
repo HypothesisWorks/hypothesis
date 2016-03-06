@@ -39,11 +39,12 @@ from hypothesis.control import BuildContext
 from hypothesis._settings import settings as Settings
 from hypothesis._settings import Verbosity
 from hypothesis.reporting import report, verbose_report, current_verbosity
-from hypothesis.strategies import just, one_of, runner
+from hypothesis.strategies import just, lists, builds, one_of, runner, \
+    integers
 from hypothesis.vendor.pretty import CUnicodeIO, RepresentationPrinter
 from hypothesis.internal.reflection import proxies, nicerepr
 from hypothesis.internal.conjecture.data import StopTest
-from hypothesis.internal.conjecture.utils import choice
+from hypothesis.internal.conjecture.utils import integer_range
 from hypothesis.searchstrategy.strategies import SearchStrategy
 from hypothesis.searchstrategy.collections import TupleStrategy, \
     FixedKeysDictStrategy
@@ -257,12 +258,11 @@ class Bundle(SearchStrategy):
 
     def do_draw(self, data):
         machine = data.draw(self_strategy)
-        bundle = list(machine.bundle(self.name))
-        # We do this so that we're choosing starting from the end of the list.
-        # This means that if we delete a rule that produces a value earlier
-        # than the one we select, we continue selecting the same value.
-        bundle.reverse()
-        reference = choice(data, bundle)
+        bundle = machine.bundle(self.name)
+        if not bundle:
+            data.mark_invalid()
+        reference = bundle.pop()
+        bundle.insert(integer_range(data, 0, len(bundle)), reference)
         return machine.names_to_values[reference.name]
 
 RULE_MARKER = u'hypothesis_stateful_rule'
@@ -351,6 +351,9 @@ def precondition(precond):
             setattr(precondition_wrapper, RULE_MARKER, new_rule)
         return precondition_wrapper
     return decorator
+
+
+ShuffleBundle = namedtuple('ShuffleBundle', ('bundle', 'swaps'))
 
 
 class RuleBasedStateMachine(GenericStateMachine):
@@ -465,9 +468,19 @@ class RuleBasedStateMachine(GenericStateMachine):
             raise InvalidDefinition(
                 u'No progress can be made from state %r' % (self,)
             )
-        return one_of(*strategies)
+
+        for name, bundle in self.bundles.items():
+            if len(bundle) > 1:
+                strategies.append(
+                    builds(
+                        ShuffleBundle, just(name),
+                        lists(integers(0, len(bundle) - 1))))
+
+        return one_of(strategies)
 
     def print_step(self, step):
+        if isinstance(step, ShuffleBundle):
+            return
         rule, data = step
         data_repr = {}
         for k, v in data.items():
@@ -481,6 +494,11 @@ class RuleBasedStateMachine(GenericStateMachine):
         ))
 
     def execute_step(self, step):
+        if isinstance(step, ShuffleBundle):
+            bundle = self.bundle(step.bundle)
+            for i in step.swaps:
+                bundle.insert(i, bundle.pop())
+            return
         rule, data = step
         data = dict(data)
         result = rule.function(self, **data)
