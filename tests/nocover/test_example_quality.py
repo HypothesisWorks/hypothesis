@@ -24,6 +24,7 @@ from decimal import Decimal
 from fractions import Fraction
 
 import pytest
+from flaky import flaky
 
 from hypothesis import find, given, assume, example, settings
 from tests.common import parametrize, ordered_pair, constant_list
@@ -34,7 +35,10 @@ from hypothesis.internal.debug import minimal
 from hypothesis.internal.compat import PY3, hrange, reduce, Counter, \
     OrderedDict, integer_types
 
+slightly_flaky = flaky(min_passes=1, max_runs=2)
 
+
+@slightly_flaky
 def test_minimize_list_on_large_structure():
     def test_list_in_range(xs):
         return len([
@@ -48,6 +52,7 @@ def test_minimize_list_on_large_structure():
     ) == [10] * 60
 
 
+@slightly_flaky
 def test_minimize_list_of_sets_on_large_structure():
     def test_list_in_range(xs):
         return len(list(filter(None, xs))) >= 50
