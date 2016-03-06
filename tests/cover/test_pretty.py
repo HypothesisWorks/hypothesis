@@ -58,14 +58,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from __future__ import division, print_function, absolute_import
 
+import re
 from collections import deque, Counter, defaultdict, OrderedDict
 
 import pytest
 
 from hypothesis.vendor import pretty
-from hypothesis.internal.compat import PY3, a_good_encoding
 from tests.common.utils import capture_out
-import re
+from hypothesis.internal.compat import PY3, a_good_encoding
 
 py2_only = pytest.mark.skipif(PY3, reason='This test only runs on python 2')
 
@@ -195,30 +195,33 @@ def test_tuple():
 
 
 class ReprDict(dict):
+
     def __repr__(self):
-        return "hi"
+        return 'hi'
 
 
 def test_dict_with_custom_repr():
-    assert pretty.pretty(ReprDict()) == "hi"
+    assert pretty.pretty(ReprDict()) == 'hi'
 
 
 class ReprList(list):
+
     def __repr__(self):
-        return "bye"
+        return 'bye'
 
 
 class ReprSet(set):
+
     def __repr__(self):
-        return "cat"
+        return 'cat'
 
 
 def test_set_with_custom_repr():
-    assert pretty.pretty(ReprSet()) == "cat"
+    assert pretty.pretty(ReprSet()) == 'cat'
 
 
 def test_list_with_custom_repr():
-    assert pretty.pretty(ReprList()) == "bye"
+    assert pretty.pretty(ReprList()) == 'bye'
 
 
 def test_indentation():
@@ -263,14 +266,14 @@ def test_sets():
 
 
 def test_unsortable_set():
-    xs = set([1, 2, 3, "foo", "bar", "baz", object()])
+    xs = set([1, 2, 3, 'foo', 'bar', 'baz', object()])
     p = pretty.pretty(xs)
     for x in xs:
         assert pretty.pretty(x) in p
 
 
 def test_unsortable_dict():
-    xs = dict((k, 1) for k in [1, 2, 3, "foo", "bar", "baz", object()])
+    xs = dict((k, 1) for k in [1, 2, 3, 'foo', 'bar', 'baz', object()])
     p = pretty.pretty(xs)
     for x in xs:
         assert pretty.pretty(x) in p
@@ -618,9 +621,11 @@ def test_cyclic_list():
 def test_cyclic_dequeue():
     x = deque()
     x.append(x)
-    assert pretty.pretty(x) == 'deque([deque(...)])' 
+    assert pretty.pretty(x) == 'deque([deque(...)])'
+
 
 class HashItAnyway(object):
+
     def __init__(self, value):
         self.value = value
 
@@ -658,16 +663,17 @@ def test_cyclic_set():
 
 
 def test_pprint():
-    t = {"hi": 1}
+    t = {'hi': 1}
     with capture_out() as o:
         pretty.pprint(t)
     assert o.getvalue().strip() == pretty.pretty(t)
 
 
 class BigList(list):
+
     def _repr_pretty_(self, printer, cycle):
         if cycle:
-            return "[...]"
+            return '[...]'
         else:
             with printer.group(open='[', close=']'):
                 with printer.indent(5):
@@ -685,29 +691,30 @@ class MyException(Exception):
 
 
 def test_exception():
-    assert pretty.pretty(ValueError("hi")) == "ValueError('hi')"
-    assert pretty.pretty(ValueError("hi", "there")) == \
+    assert pretty.pretty(ValueError('hi')) == "ValueError('hi')"
+    assert pretty.pretty(ValueError('hi', 'there')) == \
         "ValueError('hi', 'there')"
-    assert "test_pretty." in pretty.pretty(MyException())
+    assert 'test_pretty.' in pretty.pretty(MyException())
 
 
 def test_re_evals():
     for r in [
         re.compile(r'hi'), re.compile(r'b\nc', re.MULTILINE),
-        re.compile(br'hi', 0),
+        re.compile(br'hi', 0), re.compile(u'foo', re.MULTILINE | re.UNICODE),
     ]:
         assert repr(eval(pretty.pretty(r), globals())) == repr(r)
 
 
 class CustomStuff(object):
+
     def __init__(self):
         self.hi = 1
-        self.bye = "fish"
+        self.bye = 'fish'
         self.spoon = self
 
     @property
     def oops(self):
-        raise AttributeError("Nope")
+        raise AttributeError('Nope')
 
     def squirrels(self):
         pass
@@ -723,16 +730,23 @@ def test_print_builtin_function():
     assert pretty.pretty(abs) == '<function abs>'
 
 
+def test_pretty_function():
+    assert '.' in pretty.pretty(test_pretty_function)
+
+
+def test_empty_printer():
+    printer = pretty.RepresentationPrinter(
+        pretty.CUnicodeIO(),
+        singleton_pprinters={},
+        type_pprinters={
+            int: pretty._repr_pprint,
+            list: pretty._repr_pprint,
+        },
+        deferred_pprinters={},
+    )
+    printer.pretty([1, 2, 3])
+    assert printer.output.getvalue() == u'[1, 2, 3]'
+
+
 def test_breakable_at_group_boundary():
-    # I confess I'm not really sure what this is testing, because I don't
-    # understand the breaking logic well enough. It's to hit 100% coverage,
-    # but I don't know enough about the right behaviour here to do a better
-    # test.
-    v1 = "00000000000000000000"
-    printer = pretty.RepresentationPrinter(pretty.CUnicodeIO())
-    printer.pretty(v1)
-    printer.pretty(v1)
-    printer.breakable('')
-    printer.begin_group(open='', indent=80)
-    printer.flush()
-    printer.breakable('')
+    assert '\n' in pretty.pretty([[], '000000'], max_width=5)

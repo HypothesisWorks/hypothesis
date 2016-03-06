@@ -18,9 +18,10 @@ from __future__ import division, print_function, absolute_import
 
 import sys
 import contextlib
-from io import StringIO
+from io import BytesIO, StringIO
 
 from hypothesis.reporting import default, with_reporter
+from hypothesis.internal.compat import PY2
 from hypothesis.internal.reflection import proxies
 
 
@@ -28,7 +29,7 @@ from hypothesis.internal.reflection import proxies
 def capture_out():
     old_out = sys.stdout
     try:
-        new_out = StringIO()
+        new_out = BytesIO() if PY2 else StringIO()
         sys.stdout = new_out
         with with_reporter(default):
             yield new_out
