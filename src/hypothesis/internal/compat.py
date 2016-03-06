@@ -96,6 +96,9 @@ if PY3:
     def escape_unicode_characters(s):
         return codecs.encode(s, 'unicode_escape').decode('ascii')
 
+    def print_unicode(x):
+        print(x)
+
     exec("""
 def quiet_raise(exc):
     raise exc from None
@@ -219,6 +222,11 @@ else:
 
     def escape_unicode_characters(s):
         return codecs.encode(s, 'string_escape')
+
+    def print_unicode(x):
+        if isinstance(x, unicode):
+            x = x.encode(a_good_encoding())
+        print(x)
 
     def quiet_raise(exc):
         raise exc

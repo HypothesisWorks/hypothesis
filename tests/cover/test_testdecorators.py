@@ -306,9 +306,9 @@ def test_prints_on_failure_by_default():
             with reporting.with_reporter(reporting.default):
                 test_ints_are_sorted()
     out = out.getvalue()
-    lines = [l.strip() for l in out.split(u'\n')]
+    lines = [l.strip() for l in out.split('\n')]
     assert (
-        u'Falsifying example: test_ints_are_sorted(balthazar=1, evans=0)'
+        'Falsifying example: test_ints_are_sorted(balthazar=1, evans=0)'
         in lines)
 
 
@@ -503,8 +503,8 @@ def test_when_set_to_no_simplifies_runs_failing_example_twice():
             with capture_out() as out:
                 foo()
     assert failing == [2]
-    assert u'Falsifying example' in out.getvalue()
-    assert u'Lo' in out.getvalue()
+    assert 'Falsifying example' in out.getvalue()
+    assert 'Lo' in out.getvalue()
 
 
 @given(integers())
@@ -561,7 +561,7 @@ def test_prints_notes_once_on_failure():
                 test()
         lines = out.getvalue().strip().splitlines()
         assert len(lines) == 2
-        assert u'Hi there' in lines
+        assert 'Hi there' in lines
 
 
 @given(lists(max_size=0))
