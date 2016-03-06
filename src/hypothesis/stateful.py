@@ -382,6 +382,9 @@ class RuleBasedStateMachine(GenericStateMachine):
     def __pretty(self, value):
         self.__stream.seek(0)
         self.__stream.truncate(0)
+        self.__printer.output_width = 0
+        self.__printer.buffer_width = 0
+        self.__printer.buffer.clear()
         self.__printer.pretty(value)
         self.__printer.flush()
         return self.__stream.getvalue()
