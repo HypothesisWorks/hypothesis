@@ -197,7 +197,7 @@ class NotTheLastMachine(RuleBasedStateMachine):
     def __init__(self):
         super(NotTheLastMachine, self).__init__()
         self.last = None
-        self.seen = set()
+        self.bye_called = False
 
     @rule(target=stuff)
     def hi(self):
@@ -205,12 +205,11 @@ class NotTheLastMachine(RuleBasedStateMachine):
         self.last = result
         return result
 
+    @precondition(lambda self: not self.bye_called)
     @rule(v=stuff)
     def bye(self, v):
-        if v in self.seen:
-            return
-        self.seen.add(v)
         assert v == self.last
+        self.bye_called = True
 
 bad_machines = (
     OrderedStateMachine, SetStateMachine, BalancedTrees,
