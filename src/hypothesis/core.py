@@ -287,7 +287,7 @@ def given(*generator_arguments, **generator_kwargs):
                     return
                 message += (
                     '\nSee http://hypothesis.readthedocs.org/en/latest/health'
-                    'checks.html for more information about this.'
+                    'checks.html for more information about this. '
                 )
                 message += (
                     'If you want to disable just this health check, add %s'
