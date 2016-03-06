@@ -32,6 +32,7 @@ from hypothesis.stateful import rule, Bundle, precondition, \
     run_state_machine_as_test
 from hypothesis.strategies import just, none, lists, binary, tuples, \
     booleans, integers, sampled_from
+from hypothesis.internal.compat import print_unicode
 
 
 class SetStateMachine(GenericStateMachine):
@@ -145,7 +146,7 @@ class DepthMachine(RuleBasedStateMachine):
 class MultipleRulesSameFuncMachine(RuleBasedStateMachine):
 
     def myfunc(self, data):
-        print(data)
+        print_unicode(data)
 
     rule1 = rule(data=just(u"rule1data"))(myfunc)
     rule2 = rule(data=just(u"rule2data"))(myfunc)
@@ -243,10 +244,10 @@ def test_bad_machines_fail(machine):
             with raises(AssertionError):
                 test_class().runTest()
     except Exception:
-        print(o.getvalue())
+        print_unicode(o.getvalue())
         raise
     v = o.getvalue()
-    print(v)
+    print_unicode(v)
     assert u'Step #1' in v
     assert u'Step #50' not in v
 

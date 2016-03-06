@@ -24,7 +24,7 @@ from hypothesis import note, given, example, settings, reporting
 from hypothesis.errors import InvalidArgument
 from tests.common.utils import capture_out
 from hypothesis.strategies import text, integers
-from hypothesis.internal.compat import integer_types
+from hypothesis.internal.compat import integer_types, print_unicode
 
 
 class TestInstanceMethods(TestCase):
@@ -183,7 +183,7 @@ def test_examples_are_tried_in_order():
     @settings(max_examples=0)
     @example(x=3)
     def test(x):
-        print(u"x -> %d" % (x,))
+        print_unicode(u"x -> %d" % (x,))
     with capture_out() as out:
         with reporting.with_reporter(reporting.default):
             test()
@@ -204,7 +204,7 @@ def test_prints_note_in_failing_example():
             with pytest.raises(AssertionError):
                 test()
     v = out.getvalue()
-    print(v)
+    print_unicode(v)
     assert 'x -> 43' in v
     assert 'x -> 42' not in v
 
