@@ -387,14 +387,13 @@ then use the result and go on to do other things are definitely also possible.
 .. code:: python
 
     import unittest
-    from hypothesis import given, assume, settings
+    from hypothesis import given, assume, settings, strategies as st
     from collections import namedtuple
     import requests
     import os
     import random
     import time
     import math
-    from hypothesis.strategies import one_of, sampled_from, lists
 
     # These tests will be quite slow because we have to talk to an external
     # service. Also we'll put in a sleep between calls so as to not hammer it.
@@ -411,19 +410,19 @@ then use the result and go on to do other things are definitely also possible.
     assert waspfinder_token is not None
     assert waspfinder_user is not None
 
-    GoalData = {
-        'title': str,
-        'goal_type': sampled_from(lists
+    GoalData = st.fixed_dictionaries({
+        'title': st.text(),
+        'goal_type': st.sampled_from([
             "hustler", "biker", "gainer", "fatloser", "inboxer",
-            "drinker", "custom")),
-        'goaldate': one_of((None, float)),
-        'goalval': one_of((None, float)),
-        'rate': one_of((None, float)),
-        'initval': float,
-        'panic': float,
-        'secret': bool,
-        'datapublic': bool,
-    }
+            "drinker", "custom"]),
+        'goaldate': st.one_of(st.none(), st.floats()),
+        'goalval': st.one_of(st.none(), st.floats()),
+        'rate': st.one_of(st.none(), st.floats()),
+        'initval': st.floats(),
+        'panic': st.floats(),
+        'secret': st.booleans(),
+        'datapublic': st.booleans(),
+    })
 
 
     needs2 = ['goaldate', 'goalval', 'rate']
