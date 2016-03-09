@@ -45,7 +45,6 @@ __all__ = [
     'randoms', 'random_module',
     'recursive', 'composite',
     'shared', 'runner',
-    'recursive', 'composite',
 ]
 
 _strategies = set()
