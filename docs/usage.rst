@@ -33,5 +33,6 @@ then it should be available on pypi.
 * `simoa <https://github.com/andsor/pysimoa>`_
 * `srt <https://github.com/cdown/srt>`_
 * `tchannel <https://github.com/uber/tchannel-python>`_
+* `vdirsyncer <https://github.com/untitaker/vdirsyncer>`_
 * `wcag-contrast-ratio <https://github.com/gsnedders/wcag-contrast-ratio>`_
 * `yturl <https://github.com/cdown/yturl>`_
