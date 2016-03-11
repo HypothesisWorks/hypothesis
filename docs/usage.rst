@@ -11,7 +11,7 @@ then it should be available on pypi.
 * `bidict <https://github.com/jab/bidict>`_
 * `binaryornot <https://github.com/audreyr/binaryornot>`_
 * `brotlipy <https://github.com/python-hyper/brotlipy>`_
-* `chardet <https://pypi.python.org/pypi/chardetn>`_
+* `chardet <https://pypi.python.org/pypi/chardet>`_
 * `cmph-cffi <https://github.com/URXtech/cmph-cffi>`_
 * `cryptography <https://github.com/pyca/cryptography>`_
 * `fastnumbers <https://github.com/SethMMorton/fastnumbers>`_
@@ -20,6 +20,7 @@ then it should be available on pypi.
 * `funsize <https://github.com/mozilla/funsize>`_
 * `fusion-index <https://github.com/fusionapp/fusion-index>`_
 * `hyper-h2 <https://github.com/python-hyper/hyper-h2>`_
+* `justbases <https://github.com/mulkieran/justbases>`_
 * `mariadb-dyncol <https://github.com/adamchainz/mariadb-dyncol>`_
 * `mercurial <https://www.mercurial-scm.org/>`_
 * `natsort <https://github.com/SethMMorton/natsort>`_
