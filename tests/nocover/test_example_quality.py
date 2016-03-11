@@ -180,6 +180,7 @@ def test_minimal_unsorted_strings(string):
                 assert ex[:i] in result
 
 
+@slightly_flaky
 def test_finds_list_with_plenty_duplicates():
     def is_good(xs):
         return max(Counter(xs).values()) >= 3
