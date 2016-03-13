@@ -34,7 +34,7 @@ def type_to_strat(x): # type: (type) -> SearchStrategy
    Given a type, return a strategy which yields a value of that type. Types maybe complex: Union, NamedTuple, etc.
    For more information, see https://docs.python.org/3/library/typing.html
    Usage:
-   >>> type_to_strat(Union[int,str]).exmample()
+   >> type_to_strat(Union[int,str]).exmample()
    . . . 3
    '''
    if x in primitives:
@@ -84,10 +84,10 @@ def func_strat(f):
     '''
     Given an annotated function, return a strategy which yields a dictionary mapping from the argument names to the appropriate type.
     Usage:
-    >>> def mod_list_example(m: int, xs: List[int]) -> List[int]:
-    >>>    return list(map(lambda x: x % m, xs))
-    >>> mod_list_example(**func_strat(mod_list_example).example())
-    >>> mod_list_example(**func_strat(mod_list_example).example())
+    >> def mod_list_example(m: int, xs: List[int]) -> List[int]:
+    >>    return list(map(lambda x: x % m, xs))
+    >> mod_list_example(**func_strat(mod_list_example).example())
+    >> mod_list_example(**func_strat(mod_list_example).example())
     '''
     argtypes = OrderedDict(f.__annotations__)
     if 'return' in  argtypes:
