@@ -40,8 +40,8 @@
       btnClass: "btn-stackoverflow"
       logo: "fa-stack-overflow"
     # soundcloud:
-    #   url: "http://soundcloud.com/itsrifat"
-    #   text: "/itsrifat"
+    #   url: "http://soundcloud.com/yourid"
+    #   text: "/yourid"
     #   btnClass: "btn-soundcloud"
     #   logo: "fa-soundcloud"
        
