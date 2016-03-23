@@ -21,6 +21,7 @@ then it should be available on pypi.
 * `fusion-index <https://github.com/fusionapp/fusion-index>`_
 * `hyper-h2 <https://github.com/python-hyper/hyper-h2>`_
 * `justbases <https://github.com/mulkieran/justbases>`_
+* `justbytes <https://github.com/mulkieran/justbytes>`_
 * `mariadb-dyncol <https://github.com/adamchainz/mariadb-dyncol>`_
 * `mercurial <https://www.mercurial-scm.org/>`_
 * `natsort <https://github.com/SethMMorton/natsort>`_
