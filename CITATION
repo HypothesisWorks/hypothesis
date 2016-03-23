@@ -14,3 +14,6 @@ BibTeX:
   year =             {2016},
   howpublished = {\href{https://github.com/DRMacIver/hypothesis}{\texttt{https://github.com/DRMacIver/hypothesis}}},
 }
+
+If you are unsure about which version of hypothesis you are using run: `pip show
+hypothesis`.
