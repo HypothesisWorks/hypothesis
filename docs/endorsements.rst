@@ -107,6 +107,12 @@ all.
 When it comes to validating the correctness of your tools, nothing comes close
 to the thoroughness and power of Hypothesis.
 
+--------------------------------------------------------
+`Amanda Visconti <https://www.AmandaVisconti.com>`_
+--------------------------------------------------------
+
+I'm a digital humanities professor and research web developer; I study annotation UX by designing and coding experiments based on AnnotatorJS (e.g. the [InfiniteUlysses.com](InfiniteUlysses.com) participatory digital edition, which adds social curation features like Reddit voting to literary reading and discussion). I use Hypothesis primarily to improve technical documentation, code, and tutorials for humanities researchers and students—I wrote a guest post about this use case for the Hypothes.is blog: ["Better tech via annotation: using Hypothesis to improve your technical documentation, code, and tutorials"](https://hypothes.is/blog/better-tech-via-annotation/). I"m a big fan of Hypothesis' open-source code and issues queue (especially the "new Contributor Friendly" label) and [their public "principles" statement(https://hypothes.is/principles/).
+
 -------------------------------------------
 `Your name goes here <http://example.com>`_
 -------------------------------------------
