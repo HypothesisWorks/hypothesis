@@ -4,7 +4,7 @@ x.y) from this installation
 Text:
 
 [Hypothesis]  Hypothesis x.y, 2016
-David R. MacIver, https://hypothesis.readthedocs.org/
+David R. MacIver, https://github.com/DRMacIver/hypothesis
 
 BibTeX:
 
@@ -12,5 +12,5 @@ BibTeX:
   title =            {{H}ypothesis x.y},
   author =     {David R. MacIver},
   year =             {2016},
-  howpublished =     {\href{https://hypothesis.readthedocs.org/}{\texttt{https://hypothesis.readthedocs.org/}}},
+  howpublished = {\href{https://github.com/DRMacIver/hypothesis}{\texttt{https://github.com/DRMacIver/hypothesis}}},
 }
