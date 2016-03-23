@@ -1,0 +1,16 @@
+Please use one of the following samples to cite the hypothesis version (change
+x.y) from this installation
+
+Text:
+
+[Hypothesis]  Hypothesis x.y, 2016
+David R. MacIver, https://hypothesis.readthedocs.org/
+
+BibTeX:
+
+@misc{Hypothesisx.y,
+  title =            {{H}ypothesis 3.1},
+  author =     {David R. MacIver},
+  year =             {2016},
+  howpublished =     {\href{https://hypothesis.readthedocs.org/}{\texttt{https://hypothesis.readthedocs.org/}}},
+}
