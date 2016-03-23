@@ -9,7 +9,7 @@ David R. MacIver, https://hypothesis.readthedocs.org/
 BibTeX:
 
 @misc{Hypothesisx.y,
-  title =            {{H}ypothesis 3.1},
+  title =            {{H}ypothesis x.y},
   author =     {David R. MacIver},
   year =             {2016},
   howpublished =     {\href{https://hypothesis.readthedocs.org/}{\texttt{https://hypothesis.readthedocs.org/}}},
