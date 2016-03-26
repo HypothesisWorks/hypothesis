@@ -370,7 +370,7 @@ def given(*generator_arguments, **generator_kwargs):
                                 'generation in initial health check. '
                                 'This indicates a bug in the strategy. '
                                 'This could either be a Hypothesis bug or '
-                                "an error in a function yo've passed to "
+                                "an error in a function you've passed to "
                                 'it to construct your data.',
                                 HealthCheck.exception_in_generation,
                             )
