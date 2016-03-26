@@ -290,7 +290,7 @@ def given(*generator_arguments, **generator_kwargs):
                     'checks.html for more information about this. '
                 )
                 message += (
-                    'If you want to disable just this health check, add %s'
+                    'If you want to disable just this health check, add %s '
                     'to the suppress_health_check settings for this test.'
                 ) % (label,)
                 raise FailedHealthCheck(message)
