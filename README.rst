@@ -2,27 +2,39 @@
 Hypothesis
 ==========
 
-Hypothesis is a library for testing your Python code against a much larger range
-of examples than you would ever want to write by hand. It's based on the Haskell
-library, Quickcheck, and is designed to integrate seamlessly into your existing
-Python unit testing work flow.
+Hypothesis is an advanced testing library for Python. It lets you write tests which
+are parametrized by a source of examples, and then generates simple and comprehensible
+examples that make your tests fail. This lets you find more bugs in your code with less
+work.
 
-Hypothesis is both extremely practical and also advances the state of the art of
-unit testing by some way. It's easy to use, stable, and extremely powerful. If
+e.g.
+
+.. code-block:: python
+
+  @given(st.lists(
+    st.floats(allow_nan=False, allow_infinity=False), min_size=1))
+  def test_mean(xs):
+      assert min(xs) <= mean(xs) <= max(xs)
+
+.. code-block::
+
+  Falsifying example: test_mean(
+    xs=[1.7976321109618856e+308, 6.102390043022755e+303]
+  )
+
+Hypothesis is extremely practical and advances the state of the art of
+unit testing by some way. It's easy to use, stable, and powerful. If
 you're not using Hypothesis to test your project then you're missing out.
 
-------------------
-Versions supported
-------------------
+---------------------
+Supporting Hypothesis
+---------------------
 
-Hypothesis officially supports CPython 2.7, 3.4 and 3.5, as well as PyPy. Other
-versions are not supported. Patches for such versions are accepted as long as
-they don't impose a maintenance burden. However, keep in mind that this does
-not automatically mean that future releases of Hypothesis will continue to work
-on those versions.
+If you'd like to help support Hypothesis development, there are three main ways:
 
-See `Issue #286 <https://github.com/DRMacIver/hypothesis/issues/286>`_ for more
-information.
+1. `Hire my services <http://www.drmaciver.com/consulting-and-training/>`_ to help you out, either with custom development or training.
+2. `Support me on salt <https://salt.bountysource.com/teams/drmaciver-hypothesis>`_ to try to help me build up a salary for pure work on Hypothesis.
+3.  Or if you just want to say thanks, you can `buy me books from this wishlist <http://www.amazon.co.uk/registry/wishlist/SSZ403J9X2T0>`_.
 
 -----------------
 Links of interest
@@ -43,11 +55,3 @@ If you want to hear from people who are already using Hypothesis, some of them `
 about it <https://hypothesis.readthedocs.org/en/latest/endorsements.html>`_.
 
 If you want to create a downstream package of Hypothesis, please read `these guidelines for packagers <http://hypothesis.readthedocs.org/en/latest/packaging.html>`_
-
--------------------
-Ongoing Development
--------------------
-
-Development on Hypothesis is a mix of community provided and sponsored. If you wish to contribute,
-either financially or through code, `you can read more about the process in the documentation 
-<http://hypothesis.readthedocs.org/en/latest/development.html>`_.
