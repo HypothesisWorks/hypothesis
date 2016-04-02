@@ -197,3 +197,56 @@ slightly better integrated example reporting when using @given and running
 under pytest.
 
 It can also load :ref:`settings Profiles <settings_profiles>`.
+
+------------------
+hypothesis[numpy]
+------------------
+
+hypothesis.extra.numpy adds support for testing 
+`NumPy <http://www.numpy.org/>`_-based implementations with Hypothesis by 
+providing an ``arrays`` function.
+
+It lives in the ``hypothesis.extra.numpy`` package.
+
+.. method:: arrays(dtype, shape, elements=None)
+
+    Arrays of specified `dtype` and `shape` are generated for example 
+    like this:
+
+    .. code-block:: pycon
+
+      >>> import numpy as np
+      >>> arrays(np.int8, (2, 3)).example()
+      array([[-8,  6,  3],
+             [-6,  4,  6]], dtype=int8)
+
+
+    However, to obtain more fine grained control over the elements, use
+    the `elements` keyword (see also :doc:`What you can generate and how <data>`):
+
+    .. code-block:: pycon
+
+      >>> import numpy as np
+      >>> from hypothesis.strategies import floats
+      >>> arrays(np.float, 3, elements=floats(min_value=0, max_value=1)).example()
+      array([ 0.88974794,  0.77387938,  0.1977879 ])
+
+    By combining different strategies, the shape of the array can be modified as well:
+
+    .. code-block:: pycon
+
+      >>> import numpy as np
+      >>> from hypothesis.strategies import integers, floats
+      >>>
+      >>> def rnd_len_arrays(dtype, min_len=0, max_len=3, elements=None):
+      ...     lengths = integers(min_value=min_len, max_value=max_len)
+      ...     return lengths.flatmap(lambda n: arrays(dtype, n, elements=elements))
+      ... 
+      >>> 
+      >>> rla = rnd_len_arrays(np.int8)
+      >>> rla.example()
+      array([], dtype=int8)
+      >>> rla.example()
+      array([-2], dtype=int8)
+      >>> rla.example()
+      array([ 7, -6, -2], dtype=int8)
