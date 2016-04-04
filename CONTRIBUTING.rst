@@ -34,9 +34,9 @@ OK, so you want to make a contribution and have sorted out the legalese. What no
 
 First off: If you're planning on implementing a new feature, talk to me first! I'll probably
 tell you to go for it, but I might have some feedback on aspects of it or tell you how it fits
-into the broader scheme of things. Remember: A feature is for 1.x, not just for Christmas. Once
+into the broader scheme of things. Remember: A feature is for 3.x, not just for Christmas. Once
 a feature is in, it can only be evolved in backwards compatible ways until I bump the "I can break
-your code" number and release Hypothesis 2.0. This means I spend a lot of time thinking about
+your code" number and release Hypothesis 4.0. This means I spend a lot of time thinking about
 getting features right. It may sometimes also mean I reject your feature, or feel you need to
 rethink it, so it's best to have that conversation early.
 
@@ -140,6 +140,7 @@ their individual contributions.
 * `Chris Down  <https://chrisdown.name>`_
 * `Christopher Martin <https://www.github.com/chris-martin>`_ (`ch.martin@gmail.com <mailto:ch.martin@gmail.com>`_)
 * `Cory Benfield <https://www.github.com/Lukasa>`_
+* `Cristi Cobzarenco <https://github.com/cristicbz>`_ (`cristi@reinfer.io <mailto:cristi@reinfer.io>`_)
 * `David Bonner <https://github.com/rascalking>`_ (`dbonner@gmail.com <mailto:dbonner@gmail.com>`_)
 * `Derek Gustafson <https://www.github.com/degustaf>`_
 * `Florian Bruhin <https://www.github.com/The-Compiler>`_
