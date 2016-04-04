@@ -104,7 +104,7 @@ class ListStrategy(SearchStrategy):
 
         stopping_value = 1 - 1.0 / (1 + self.average_length)
         result = []
-        while True:
+        while len(result) < self.max_size:
             data.start_example()
             more = cu.biased_coin(data, stopping_value)
             if not more:
@@ -116,8 +116,6 @@ class ListStrategy(SearchStrategy):
             value = data.draw(self.element_strategy)
             data.stop_example()
             result.append(value)
-        if self.max_size < float('inf'):
-            result = result[:self.max_size]
         return result
 
     def __repr__(self):
