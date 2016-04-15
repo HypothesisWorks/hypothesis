@@ -12,7 +12,7 @@ markdown: kramdown
 kramdown:
   input: GFM
 
-permalink: /:title/
+permalink: /articles/:title/
 
 highlighter: rouge
 

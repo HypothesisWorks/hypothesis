@@ -8,9 +8,9 @@ mainmenu:
     url: "/training/"
     text: "Training"
     icon_class: "fa-graduation-cap"
-  blog:
-    url: "/blog/"
-    text: "Blog"
+  articles:
+    url: "/articles/"
+    text: "Articles"
     icon_class: "fa-book"
   contact:
     url: "mailto:hello@hypothesis.works"
