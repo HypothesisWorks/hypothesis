@@ -33,12 +33,13 @@ So at this point you’ll have something like this:
 ```python
 from hypothesis import given, reject
 
+
 @given(some(), strategies())
 def test_some_stuff(x, y):
     try:
-       my_function(x, y)
+        my_function(x, y)
     except (Ignorable, Exceptions):
-       reject()
+        reject()
 ```
 
 (reject simply filters out the example – you’re trying to find a large number of examples that don’t raise any of those exceptions).
