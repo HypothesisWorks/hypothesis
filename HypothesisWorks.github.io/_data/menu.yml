@@ -4,7 +4,3 @@ mainmenu:
     url: "/"
     text: "Home"
     icon_class: "fa-home"
-  aboutme:
-    url: "/about/"
-    text: "About Me"
-    icon_class: "fa-info-circle"
