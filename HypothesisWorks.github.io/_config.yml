@@ -12,6 +12,8 @@ markdown: kramdown
 kramdown:
   input: GFM
 
+permalink: /:title/
+
 highlighter: rouge
 
 #Other Global Configuration
