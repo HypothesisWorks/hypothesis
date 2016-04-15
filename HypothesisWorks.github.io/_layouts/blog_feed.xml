@@ -2,6 +2,18 @@
 layout: null
 ---
 <?xml version="1.0" encoding="UTF-8"?>
+
+{% if page.tag %}
+
+{% assign posts = site.tags[page.tag] %}
+
+{% else %}
+
+{% assign posts = site.posts %}
+
+{% endif %}
+
+
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>{{ site.title | xml_escape }}</title>
@@ -10,7 +22,7 @@ layout: null
     <atom:link href="{{ "/feed.xml" | prepend: site.baseurl | prepend: site.url }}" rel="self" type="application/rss+xml" />
     <pubDate>{{ site.time | date_to_rfc822 }}</pubDate>
     <lastBuildDate>{{ site.time | date_to_rfc822 }}</lastBuildDate>
-    {% for post in site.posts limit:10 %}
+    {% for post in posts limit:10 %}
       <item>
         <title>{{ post.title | xml_escape }}</title>
         <description>{{ post.excerpt | xml_escape }}</description>

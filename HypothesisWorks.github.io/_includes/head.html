@@ -12,4 +12,8 @@
   <link media="all" rel="stylesheet" href="{{ "/assets/css/site.css" | prepend: site.baseurl }}">
   <link media="all" rel="stylesheet" href="{{ "/assets/css/jekyll-github.css" | prepend: site.baseurl }}">
 
+  {% if page.has_feed %}
+    <link href="{{page.url}}feed/" type="application/atom+xml" rel="alternate" title="Atom feed" />
+  {% endif %}
+
 </head>

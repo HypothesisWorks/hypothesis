@@ -50,4 +50,24 @@ It breaks new ground in both power and usability.
 Hypothesis currently has <a href="https://github.com/DRMacIver/hypothesis/">a fully featured open source Python implementation</a> and <a href=https://github.com/DRMacIver/hypothesis4j">a proof of concept Java implementation</a> that we are looking for someone to partner with to turn into a finished project. Plans for C and C++ support are also in the works.
 </p>
 
+<h2>How does it work?</h2>
+
+<p>
+Hypothesis automates the most time consuming and error prone part of the testing process: Defining concrete examples.
+</p>
+
+<p>
+A developer using Hypothesis writes a test as normal, but where they would previously have provided a concrete value
+they instead provide a description of the kinds of values that this test should work for. So, for example:
+</p>
+
+{% highlight python %}
+from hypothesis import given
+from hypothesis.strategies import text
+
+@given(text())
+def test_decode_inverts_encode(s):
+    assert decode(encode(s)) == s
+{% endhighlight %}
+
 </div>
