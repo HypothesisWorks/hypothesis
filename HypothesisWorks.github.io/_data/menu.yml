@@ -1,6 +1,6 @@
 
 mainmenu:
-  home:
-    url: "/"
-    text: "Home"
-    icon_class: "fa-home"
+  blog:
+    url: "/blog/"
+    text: "Blog"
+    icon_class: "fa-book"
