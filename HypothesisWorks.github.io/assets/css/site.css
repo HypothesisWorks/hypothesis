@@ -32,8 +32,12 @@ body {
   height: 51px;/* because the navbar has a height of 50px and 1px border bottom*/
 }
 
-p {
+
+body{
   font-size: 18px;
+}
+
+p {
   margin: 0.5em auto 0.5em auto;
 }
 
