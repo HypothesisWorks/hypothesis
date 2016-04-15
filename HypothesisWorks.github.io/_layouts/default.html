@@ -4,6 +4,11 @@
 
 <body>
   {% include header.html %}
+
+  {% if site.show_blog_header %}
+    {% include blog_header.html %}
+  {% endif %}
+
   
   {{ content }}
 

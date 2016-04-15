@@ -1,5 +1,9 @@
 
 mainmenu:
+  training:
+    url: "/training/"
+    text: "Training"
+    icon_class: "fa-graduation-cap"
   blog:
     url: "/blog/"
     text: "Blog"
