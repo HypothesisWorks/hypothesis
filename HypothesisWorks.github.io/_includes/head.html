@@ -1,0 +1,14 @@
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description"
+    content="{{page.title}} {{page.excerpt | strip_html}} {{ site.description }}">
+  <title>{% if page.title %} {{ page.title }} - {{ site.title }} {% else %} {{ site.title }} {% endif %}</title>
+
+  <!-- stylesheets -->
+  <link media="all" href="http://netdna.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet">
+  <link media="all" href="http://netdna.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+  <link media="all" rel="stylesheet" href="{{ "/assets/css/site.css" | prepend: site.baseurl }}">
+
+</head>

@@ -1,0 +1,23 @@
+# Site settings
+title: Rifyll
+email: somename@somedomain.com
+description: "Just Another Jekyll Theme"
+logo_location: "https://placeholdit.imgix.net/~text?txtsize=30&bg=F8F8F8&txtclr=002E62&txt=LOGO&w=100&h=100"
+
+#baseurl: "" # the subpath of your site, e.g. /blog/
+#url: "" # the base hostname & protocol for your site
+
+# Build settings
+markdown: kramdown
+kramdown:
+  input: GFM
+
+highlighter: pygments
+
+#Other Global Configuration
+exclude: ['README.md']
+
+excerpt_separator: <!--more-->
+
+#show the jumbotron header on index page
+show_blog_header: true
