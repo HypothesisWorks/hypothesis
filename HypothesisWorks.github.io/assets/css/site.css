@@ -7,8 +7,6 @@ body {
   padding-top:50px;
 }
 
-
-
 .page-header{
   margin: 10px 0;
   text-align:center;
@@ -32,6 +30,23 @@ body {
 }
 .navbar .navbar-brand img {
   height: 51px;/* because the navbar has a height of 50px and 1px border bottom*/
+}
+
+p {
+  font-size: 18px;
+}
+
+h4 {
+  font-size: 20px;
+}
+
+h3 {
+  font-size: 25px;
+}
+
+
+h2 {
+  font-size: 30px;
 }
 
 .navbar-right li{
@@ -163,4 +178,23 @@ a{
 }
 .blog-header{
   background-color: #f8f8f8
+}
+
+#landing blockquote {
+  width: 100%;
+  display: block;
+  background: #f9f9f9;
+  border: none;
+  margin: 1em 0 1em 0;
+  font-size: 20px;
+  padding: 1em;
+}
+
+blockquote p {
+  display: inline;
+}
+
+#landing h2, #landing h1 {
+  text-align: center;
+  margin: 0.5em auto 1em auto;
 }
