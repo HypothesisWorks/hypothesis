@@ -48,3 +48,7 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 sftp-config.json
+
+# Vim files
+
+*.sw*
