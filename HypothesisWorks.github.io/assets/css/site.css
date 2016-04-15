@@ -34,6 +34,11 @@ body {
 
 p {
   font-size: 18px;
+  margin: 0.5em auto 0.5em auto;
+}
+
+h4, h3{
+  margin: 1em auto 0.5em auto;
 }
 
 h4 {
@@ -167,7 +172,7 @@ background-color:#0e76a8;
     color: #002e62;
 }
 a{
- color: #002e62;
+ color: #0069df;
 }
 #main-menu a{
   color:#002e62;
@@ -194,7 +199,8 @@ blockquote p {
   display: inline;
 }
 
-#landing h2, #landing h1 {
+#landing h2 {
+  font-size: 40px;
   text-align: center;
   margin: 0.5em auto 1em auto;
 }

@@ -1,5 +1,9 @@
 
 mainmenu:
+  products:
+    url: "/products/"
+    text: "Products"
+    icon_class: "fa-usd"
   training:
     url: "/training/"
     text: "Training"
@@ -8,3 +12,7 @@ mainmenu:
     url: "/blog/"
     text: "Blog"
     icon_class: "fa-book"
+  contact:
+    url: "mailto:hello@hypothesis.works"
+    text: "Contact"
+    icon_class: fa-envelope
