@@ -6,7 +6,7 @@ title: Anatomy of a Hypothesis Based Test
 published: true
 ---
 
-What happens when you run a test using Hypothesis? This post will help you understand.
+What happens when you run a test using Hypothesis? This article will help you understand.
 
 <!--more-->
 
