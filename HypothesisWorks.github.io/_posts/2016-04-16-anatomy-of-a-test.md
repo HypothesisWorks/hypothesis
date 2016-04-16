@@ -115,8 +115,8 @@ Trying example: test_floats_are_commutative(x=0.0, y=-inf)
 Falsifying example: test_floats_are_commutative(x=0.0, y=nan)
 ```
 
-Notice how the first failing example we got was ```-10.0, nan```, but Hypothesis was able
-to turn that into ```0.0, nan```? That's the shrinking at work. For a simple case like this it
+Notice how the first failing example we got was `-10.0, nan`but Hypothesis was able
+to turn that into `0.0, nan`That's the shrinking at work. For a simple case like this it
 doesn't matter so much, but as your examples get complicated it's essential for making
 Hypothesis's output easy to understand.
 
@@ -171,11 +171,13 @@ def test_floats_are_commutative(x, y):
     assert x + y == y + x
 ```
 
+```
 Falsifying example: test_floats_are_commutative(x=0.0, y=nan)
+```
 
 If you run this in verbose mode it will print out
-```Falsifying example: test_floats_are_commutative(x=0.0, y=nan)``` immediately and
-not try to do any shrinks. Values you pass in via ```@example``` will not be shrunk.
+`Falsifying example: test_floats_are_commutative(x=0.0, y=nan)` immediately and
+not try to do any shrinks. Values you pass in via `example` will not be shrunk.
 This is partly a technical limitation but it can often be useful as well.
 
 Explicitly provided examples are run before any generated examples.
@@ -184,7 +186,7 @@ So, to recap and elaborate, when you use a test written using Hypothesis:
 
 1. Your test runner sees the decorated test as if it were a perfectly normal test function
    and invokes it.
-2. Hypothesis calls your test function with each explicitly provided ```@example```. If one
+2. Hypothesis calls your test function with each explicitly provided `@example`. If one
    of these fails it stops immediately and bubbles up the exception for the test runner to handle.
 3. Hypothesis reads examples out of its database of previously failing examples. If any of them
    fail, it stops there and proceeds to the shrinking step with that example. Otherwise it continues
