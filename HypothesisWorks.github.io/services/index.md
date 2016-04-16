@@ -24,6 +24,10 @@ Hypothesis is designed to be easy to port to new languages, but we will rarely s
 unless someone pays for the development. So if there's a language you want use Hypothesis in and you
 currently can't, hire us to fix that!
 
+As well as making Hypothesis available in a new language, we usually learn new things about the design
+space when doing this which tends to produce improvements that get rolled back into other languages and
+makes the next port that much easier.
+
 We currently have [a prototype Java port](https://github.com/DRMacIver/hypothesis4j) and are actively
 considering a port to C (which would in turn simplify the port to many other languages).
 
