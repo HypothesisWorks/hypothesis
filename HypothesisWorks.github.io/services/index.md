@@ -17,7 +17,8 @@ space when doing this which tends to produce improvements that get rolled back i
 makes the next port that much easier.
 
 We currently have [a prototype Java port](https://github.com/DRMacIver/hypothesis4j) and are actively
-considering a port to C (which would in turn simplify the port to many other languages).
+considering a port to C (which would in turn simplify the port to many other languages), but most
+languages should be feasible so if you'd like a port to a different one, just ask us.
 
 ## Improve Hypothesis performance for your use case
 
