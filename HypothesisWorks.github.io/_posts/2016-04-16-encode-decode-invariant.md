@@ -15,7 +15,11 @@ value and encodes it as another value, and another that is supposed to reverse t
 This is ripe for testing with Hypothesis because it has a natural completely defined
 specification: Encoding and then decoding should be exactly the same as doing nothing.
 
-Lets look at a concrete example. The following code is a lightly reformatted version of
+Lets look at a concrete example.
+
+<!--more-->
+
+The following code is a lightly reformatted version of
 an implementation of [Run Length Encoding](https://en.wikipedia.org/wiki/Run-length_encoding)
 taken [from Rosetta Code](http://rosettacode.org/wiki/Run-length_encoding).
 
