@@ -1,7 +1,7 @@
 ---
 layout: post
 tags: writing-good-software principles
-date: 2016-04-16 15:30
+date: 2016-04-16 12:00
 title: The Purpose of Hypothesis
 published: true
 ---
