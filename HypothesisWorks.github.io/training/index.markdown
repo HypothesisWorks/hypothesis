@@ -13,7 +13,12 @@ date: 2015-04-15 12:00
 
 ## Why should my company do Hypothesis training?
 
-If you're not using Hypothesis yet, we recommend not starting with training!
+Hypothesis **makes your testing less labour intensive and more thorough**. You'll find
+bugs you never even suspected were there in less time than your previous testing would 
+have taken you.
+
+But you don't need training to use Hypothesis! If you're not using Hypothesis already,
+why not just try it out?
 
 Hypothesis has [extensive documentation](https://hypothesis.readthedocs.org/en/latest/)
 and we have good introductory articles for people getting started with it [here on this
@@ -27,9 +32,6 @@ Now that you *are* using Hypothesis, ask your developers two questions:
 
 The answers to both will be a resounding yes.
 
-Hypothesis has made your testing less labour intensive and more thorough. You've found 
-bugs you never even suspected were there in less time than your previous testing would 
-have taken you.
 
 But if you want to take your usage of Hypothesis to the next level and find
 even more bugs with even less work, that's where our training can help.
