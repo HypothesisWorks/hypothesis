@@ -217,3 +217,10 @@ blockquote p {
   text-align: center;
   margin: 0px auto 25px auto;
 }
+
+form#tinyletter {
+  display: block;
+  width: 100%;
+  margin: 0;
+  text-align: right;
+}
