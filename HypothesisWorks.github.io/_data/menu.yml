@@ -1,9 +1,5 @@
 
 mainmenu:
-  products:
-    url: "/funding/"
-    text: "Funding"
-    icon_class: "fa-usd"
   training:
     url: "/training/"
     text: "Training"
