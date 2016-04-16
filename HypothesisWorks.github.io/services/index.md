@@ -20,9 +20,6 @@ a particular piece of software that you really need to be well tested, you can h
 
 ## Ports of Hypothesis to new languages
 
-The Python version of Hypothesis is currently the only implementation ready to use. If you're a Python
-programmer, that's great. If you're not, you're a bit out of luck.
-
 We are very interested in porting Hypothesis to new languages, and we'd like people to fund their development.
 
 We currently have [a prototype Java port](https://github.com/DRMacIver/hypothesis4j) and are actively considering
