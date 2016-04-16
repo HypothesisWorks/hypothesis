@@ -112,7 +112,6 @@ AssertionError: assert (0.0 + nan) == (nan + 0.0)
 Trying example: test_floats_are_commutative(x=0.0, y=0.0)
 Trying example: test_floats_are_commutative(x=0.0, y=inf)
 Trying example: test_floats_are_commutative(x=0.0, y=-inf)
-Successfully shrunk example 5 times
 Falsifying example: test_floats_are_commutative(x=0.0, y=nan)
 ```
 
@@ -131,7 +130,6 @@ AssertionError: assert (nan + 0.0) == (0.0 + nan)
 Trying example: test_floats_are_commutative(x=0.0, y=0.0)
 Trying example: test_floats_are_commutative(x=inf, y=0.0)
 Trying example: test_floats_are_commutative(x=-inf, y=0.0)
-Successfully shrunk example 3 times
 Falsifying example: test_floats_are_commutative(x=nan, y=0.0)
 ```
 
