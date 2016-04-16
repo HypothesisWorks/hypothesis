@@ -4,7 +4,7 @@ layout: page
 date: 2015-04-15 12:00
 ---
 
-We are available to contract for a number of Hypothesis related support. 
+We are available to contract for a number of Hypothesis related services.
 
 ## Ports of Hypothesis to new languages
 
