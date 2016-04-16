@@ -18,6 +18,8 @@ has become nearly unthinkable.
 But, on a large scale, the true purpose of Hypothesis is to drag the world kicking and screaming
 into a new and terrifying age of high quality software.
 
+<!--more-->
+
 Software is everywhere. We have built a civilization on it, and it's only getting more prevalent
 as more services move online and embedded and "internet of things" devices become cheaper and
 more common.
