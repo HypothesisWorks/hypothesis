@@ -13,7 +13,7 @@ date: 2015-04-15 12:00
 
 ## Why should my company do Hypothesis training?
 
-If you're not using Hypothesis yet, you shouldn't!
+If you're not using Hypothesis yet, you shouldn't start with training!
 
 Hypothesis has [extensive documentation](https://hypothesis.readthedocs.org/en/latest/)
 and we have good introductory articles for people getting started with it [here on this
