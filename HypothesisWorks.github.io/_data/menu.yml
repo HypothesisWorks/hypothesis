@@ -1,5 +1,9 @@
 
 mainmenu:
+  services:
+    url: "/services/"
+    text: "Services"
+    icon_class: fa-briefcase
   training:
     url: "/training/"
     text: "Training"
