@@ -133,7 +133,11 @@ Falsifying example: test_decode_inverts_encode(s='110')
 ```
 
 Not resetting the count did indeed produce unintended data that doesn't translate back
-to the original thing.
+to the original thing. Hypothesis has given us the shortest example that could trigger
+it - two identical characters followed by one different one. It's not *quite* the
+simplest example according to Hypothesis's preferred ordering - that would be '001' -
+but it's still simple enough to be quite legible, which helps to rapidly diagnose
+the problem when you see it in real code.
 
 Encode/decode loops like this are *very* common, because you will frequently want to
 serialize your domain objects to other representations - into forms, into APIs, into
