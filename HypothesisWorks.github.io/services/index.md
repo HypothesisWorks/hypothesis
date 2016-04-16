@@ -20,6 +20,10 @@ We currently have [a prototype Java port](https://github.com/DRMacIver/hypothesi
 considering a port to C (which would in turn simplify the port to many other languages), but most
 languages should be feasible so if you'd like a port to a different one, just ask us.
 
+This one comes with the added bonus that it will make you very popular! We get a lot of questions about
+Hypothesis ports from people who can't fund them, and anyone who funds the development of a version of
+Hypothesis will get mentioned prominently in the README and documentation.
+
 ## Improve Hypothesis performance for your use case
 
 Hypothesis performance is currently pretty good, and for most usage the bottleneck is your test code
