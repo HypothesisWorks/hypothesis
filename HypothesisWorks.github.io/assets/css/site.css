@@ -211,3 +211,9 @@ blockquote p {
   text-align: center;
   margin: 40px auto 15px auto;
 }
+
+#landing h1 {
+  font-size: 50px;
+  text-align: center;
+  margin: 0px auto 25px auto;
+}
