@@ -1,0 +1,195 @@
+---
+layout: post
+tags: alternatives
+date: 2016-04-16 15:00
+title: QuickCheck in Every Language
+published: true
+---
+
+<p>
+There are a lot of ports of <a href="https://en.wikipedia.org/wiki/QuickCheck">QuickCheck</a>,
+the original property based testing library, to a variety of different languages.
+</p>
+
+<p>
+Some of them are good. Some of them are <em>very</em> good. Some of them are OK. Many are not.
+</p>
+
+<p>
+We thought it would be worth keeping track of which are which, so we've put together a list.
+</p>
+
+<p>In order to make it onto this list, an implementation has to meet the following criteria:</p>
+
+<ol>
+	<li>Must support random generation of data to a test function. e.g. testing systems based on
+      <a href="https://hackage.haskell.org/package/smallcheck">smallcheck</a> while interesting and related
+      don't fit on this list.
+  </li>
+	<li>It must be fairly straightforward to generate your own custom types.</li>
+	<li>It must support shrinking of falsifying examples.</li>
+	<li>It must be under active development, in the sense that bugs in it will get fixed.</li>
+	<li>Must be under an OSI approved license.</li>
+</ol>
+<p>
+In this we've tried to to collect a list of what we think the best ones are for any given language.
+We haven't used all of these, but we've used some and read and talked to people about the others.
+</p>
+
+<h2>Uncontested Winners by Language</h2>
+
+<p>For many languages there is a clear winner that you should just use. Here are the ones we've
+found and what we think of them.</p>
+
+
+<table class="table">
+
+<thead>
+<tr>
+<th>Language</th>
+<th>Library</th>
+<th>Our rating</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>C</td>
+<td><a href="https://github.com/silentbicycle/theft">theft</a></td>
+<td>Good but does not come with a library of data generators.</td>
+</tr>
+<tr>
+<td>C++</td>
+<td><a href="https://github.com/grogers0/CppQuickCheck">CppQuickCheck</a></td>
+<td>Unsure</td>
+</tr>
+<tr>
+<td>Clojure</td>
+<td><a href="https://github.com/clojure/test.check">test.check</a></td>
+<td>Very good</td>
+</tr>
+<tr>
+<td>Coq</td>
+<td><a href=https://github.com/QuickChick/QuickChick>QuickChick</a></td>
+<td>Unsure</td>
+</tr>
+<tr>
+<td>F#</td>
+<td><a href="https://github.com/fscheck/FsCheck">FsCheck</a></td>
+<td>Very Good</td>
+</tr>
+<tr>
+<td>Haskell</td>
+<td><a href="https://hackage.haskell.org/package/QuickCheck">Quickcheck</a></td>
+<td>Very good but <em>remarkably</em> poorly documented.</td>
+</tr>
+<tr>
+<td>Java</td>
+<td><a href="https://github.com/NCR-CoDE/QuickTheories">QuickTheories</a></td>
+<td>Unsure. Extremely new but looks promising.</td>
+</tr>
+<tr>
+<td>JavaScript</td>
+<td><a href="https://github.com/jsverify/jsverify">jsverify</a></td>
+<td>Good</td>
+</tr>
+<tr>
+<td>PHP</td>
+<td><a href="https://github.com/giorgiosironi/eris">Eris</a></td>
+<td>Unsure. Looks promising.</td>
+</tr>
+<tr>
+<td>Python</td>
+<td><a href="http://hypothesis.readthedocs.org/en/latest/">Hypothesis</a></td>
+<td>We may be a bit biased on this one.</td>
+</tr>
+<tr>
+<td>Ruby</td>
+<td><a href="https://github.com/abargnesi/rantly">Rantly</a></td>
+<td>Unsure.</td>
+</tr>
+<tr>
+<td>Rust</td>
+<td><a href="https://github.com/BurntSushi/quickcheck">Quickcheck</a></td>
+<td>Unsure. Looks promising.</td>
+</tr>
+<tr>
+<td>Scala</td>
+<td><a href="https://www.scalacheck.org/">ScalaCheck</a></td>
+<td>Very Good</td>
+</tr>
+<tr>
+<td>Swift</td>
+<td><a href="https://github.com/typelift/SwiftCheck">Swiftcheck</a></td>
+<td>Unsure</td>
+</tr>
+</tbody>
+</table>
+
+<p>Where when we've said "Unsure" we really just mean that we think it looks good but
+we haven't put in the depth of in time to be sure, not that we have doubts.</p>
+
+<h2>Special case: Erlang</h2>
+
+<p>
+  Erlang is a special case because they have <a href="http://www.quviq.com/">QuviQ's QuickCheck</a>.
+  Their QuickCheck implementation is by all accounts <em>extremely</em> good, but it is also proprietary
+  and fairly expensive. Nevertheless, if you find yourselves in the right language, circumstance and
+  financial situation to use it, we would strongly recommend doing so.
+</p>
+
+<p>
+  In particular, QuviQ's QuickCheck is really the only implementation in this article we think is
+  simply better than Hypothesis. We suspect Hypothesis to be significantly more user friendly, especially if the
+  users in question are less than familiar with Erlang, but there are many things QuviQ can do that
+  Hypothesis can't and relatively few in the other direction.
+</p>
+
+<p>
+  If you're using Erlang but <em>not</em> able to pay for QuickCheck, apparently the one to use is
+  <a href="https://github.com/manopapad/proper">PropEr</a>. If you're also unable to use GPLed software
+  there's <a href=https://github.com/krestenkrab/triq>triq</a>. We know very little about either.
+</p>
+
+<h2>Special case: Go</h2>
+
+<p>
+  Go has <a href="https://golang.org/pkg/testing/quick/">testing/quick</a> in its standard library. It
+  does not even come close to clearing the bar of being an adequate implementation of property based
+  testing, but in particular fails to implement example shrinking.
+</p>
+
+<h2>Special case: OCaml</h2>
+
+<p>
+  OCaml seems to be suffering from a problem of being close enough to Haskell that people try to do a
+  straight port of Quickcheck but far enough from Haskell that this doesn't work. The result is that
+  there is <a href="https://github.com/alanfalloon/ocaml-quickcheck">a "mechanical port" of Quickcheck
+  which is completely abandoned</a> and <a href="https://github.com/camlunity/ocaml-quickcheck">a fork
+  of it that uses more idiomatic OCaml</a>. We are insufficiently familiar with OCaml or its community
+  to know if either is used or whether there is another one that is.
+</p>
+
+<h2>What does this have to do with Hypothesis?</h2>
+
+<p>
+  In some sense these are all "competitors" to Hypothesis, but we're perfectly happy not to compete.
+</p>
+
+<p>
+  In the case of Erlang, we wouldn't even try. In the case of Scala, F#, or Clojure, we might at some
+  point work with them to try to bring the best parts of Hypothesis to their existing implementation,
+  but we don't consider them a priority - they're well served by what they have right now, and there 
+  are many languages that are not.
+</p>
+
+<p>
+  For the rest though? We're glad they exist! We care about testing about about high quality software,
+  and they're doing their part to make it possible.
+</p>
+
+<p>
+  But we feel they're being badly served by their underlying model, and that they feel quite unnatural
+  to use in the context of a more conventional test setting. We think Hypothesis is the way forward,
+  and we'll be doing our best <a href="/services/#ports-of-hypothesis-to-new-languages">to make it
+  possible for everyone to use it in their language of choice</a>.
+</p>
