@@ -150,6 +150,8 @@ Other examples of this:
   in which he discovers an eccentricity of formats for dates.
 * Mercurial bugs [4927](https://bz.mercurial-scm.org/show_bug.cgi?id=4927) and [5031](https://bz.mercurial-scm.org/show_bug.cgi?id=5031)
   were found by applying this sort of testing to their internal UTF8b encoding functions.
-* This [issue in qutebrowser's Javascript escaping](https://github.com/The-Compiler/qutebrowser/commit/24a71e5c2ebbffd9021694f32fa9ec51d0046d5a)
-  was found with [this test](https://github.com/The-Compiler/qutebrowser/blob/24a71e5c2ebbffd9021694f32fa9ec51d0046d5a/tests/unit/browser/test_webelem.py#L652).
-  This issue was particularly obscure and was only found because Hypothesis's text strategy became better at finding edge cases.
+* [This test](https://github.com/The-Compiler/qutebrowser/blob/24a71e5c2ebbffd9021694f32fa9ec51d0046d5a/tests/unit/browser/test_webelem.py#L652).
+  Has caught three bugs in Qutebrowser's JavaScript escaping ([1](https://github.com/The-Compiler/qutebrowser/commit/73e9fd11188ce4dddd7626e39d691e0df649e87c),
+  [2](https://github.com/The-Compiler/qutebrowser/commit/93d27cbb5f49085dd5a7f5e05f2cc45cc84f94a4),
+  [3](https://github.com/The-Compiler/qutebrowser/commit/24a71e5c2ebbffd9021694f32fa9ec51d0046d5a)), which could have caused data loss if a user had run
+  into them.
