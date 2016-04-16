@@ -46,7 +46,7 @@ Falsifying example: test_floats_are_commutative(x=0.0, y=nan)
 ```
 
 The test fails, because [nan](https://en.wikipedia.org/wiki/NaN) is a valid floating
-point number which is not equal to itself, and adding anything to nan yield nan.
+point number which is not equal to itself, and adding anything to nan yields nan.
 
 When we ran this, Hypothesis invoked our test function with a number of randomly chosen
 values for the arguments until it found one that failed. It then attempted to *shrink*
