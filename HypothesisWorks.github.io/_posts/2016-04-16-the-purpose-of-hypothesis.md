@@ -1,7 +1,7 @@
 ---
 layout: post
 tags: writing-good-software, principles
-date: 2016-04-15 15:00
+date: 2016-04-16 15:30
 title: The Purpose of Hypothesis
 published: true
 ---
@@ -53,5 +53,5 @@ will use them. Where they do not, we will invent them.
 
 If people aren't using advanced testing tools, that's a bug. We should find it and fix it.
 
-Fortunately, we have this thing called Hypothesis. It's very good at finding bugs. But this
+Fortunately, we have this tool called Hypothesis. It's very good at finding bugs. But this
 one it can also fix.
