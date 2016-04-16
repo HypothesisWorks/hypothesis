@@ -117,7 +117,7 @@ Falsifying example: test_floats_are_commutative(x=0.0, y=nan)
 ```
 
 Notice how the first failing example we got was ```-10.0, nan```, but Hypothesis was able
-to turn that into 0.0, nan? That's the shrinking at work. For a simple case like this it
+to turn that into ```0.0, nan```? That's the shrinking at work. For a simple case like this it
 doesn't matter so much, but as your examples get complicated it's essential for making
 Hypothesis's output easy to understand.
 
