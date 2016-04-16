@@ -1,5 +1,9 @@
 
 mainmenu:
+  home:
+    url: "/"
+    text: "Home"
+    icon_class: fa-home
   services:
     url: "/services/"
     text: "Services"
