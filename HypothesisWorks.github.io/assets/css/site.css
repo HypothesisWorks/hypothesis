@@ -221,6 +221,7 @@ blockquote p {
 form#tinyletter {
   display: block;
   width: 100%;
-  margin: 0;
+  margin: 1.5em 0 0;
+  padding-right: 1em;
   text-align: right;
 }
