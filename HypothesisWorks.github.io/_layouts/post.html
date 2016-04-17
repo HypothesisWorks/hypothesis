@@ -15,9 +15,10 @@ layout: default
               </time>
             </div>
             <div> <i class="fa fa-tag"></i>
-                {% for tag in page.tags %}
-                  <span class="label label-tag"><a href=/articles/{{tag}}/>{{tag}}</a></span>
-                {% endfor %}
+              {% assign sorted_tags = page.tags |  sort %}
+              {% for tag in sorted_tags %}
+                <span class="label label-tag"><a href=/articles/{{tag}}/>{{tag}}</a></span>
+              {% endfor %}
             </div>
           </div>
 

@@ -22,3 +22,6 @@ excerpt_separator: <!--more-->
 
 #show the jumbotron header on index page
 show_blog_header: true
+
+tag_descriptions:
+  python: "Articles specific to the Python implementation of Hypothesis"

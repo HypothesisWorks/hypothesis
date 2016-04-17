@@ -16,6 +16,11 @@ has_feed: true
 <div class="container">
   <div class="row">
     <div class="col-xs-12 col-sm-12 col-md-offset-1 col-md-10 col-lg-offset-2 col-lg-8">
+    {{content}}
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-xs-12 col-sm-12 col-md-offset-1 col-md-10 col-lg-offset-2 col-lg-8">
       {% for post in posts %}
         <div class="blog-short">
           <h3><a href="{{post.url | prepend: site.baseurl}}">{{post.title}}</a></h3>
@@ -30,7 +35,8 @@ has_feed: true
   		    <div class="margin10">
             <small>
               <i class="fa fa-tag"></i>
-              {% for tag in post.tags %}
+              {% assign sorted_tags = post.tags |  sort %}
+              {% for tag in sorted_tags %}
                 <span class="label label-tag"><a href="/articles/{{tag}}/">{{tag}}</a></span>
               {% endfor %}
             </small>
