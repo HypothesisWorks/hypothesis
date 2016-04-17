@@ -1,6 +1,6 @@
 ---
 layout: post
-tags: intro python
+tags: intro python technical
 date: 2016-04-15 13:00
 title: Getting started with Hypothesis
 published: true

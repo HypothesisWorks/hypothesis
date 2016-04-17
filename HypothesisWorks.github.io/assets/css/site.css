@@ -230,3 +230,7 @@ form#tinyletter {
 input#tlemail {
   width: 200px;
 }
+
+div.article-listing div.panel-heading {
+  text-align: center;
+}

@@ -1,6 +1,6 @@
 ---
 layout: post
-tags: python details
+tags: python details technical
 date: 2016-04-16 06:00
 title: Anatomy of a Hypothesis Based Test
 published: true

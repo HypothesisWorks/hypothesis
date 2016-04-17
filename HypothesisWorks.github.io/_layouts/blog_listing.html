@@ -13,12 +13,20 @@ has_feed: true
 
 {% endif %}
 
-<div class="container">
-  <div class="row">
-    <div class="col-xs-12 col-sm-12 col-md-offset-1 col-md-10 col-lg-offset-2 col-lg-8">
-    {{content}}
+<div class="container article-listing">
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      {% if page.tag %}
+        <span class="label label-tag">{{page.tag}}</span>
+      {% else %}
+        All our articles
+      {% endif %}
+    </div>
+    <div class="panel-body">
+        {{content}}
     </div>
   </div>
+
   <div class="row">
     <div class="col-xs-12 col-sm-12 col-md-offset-1 col-md-10 col-lg-offset-2 col-lg-8">
       {% for post in posts %}

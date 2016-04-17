@@ -1,6 +1,6 @@
 ---
 layout: post
-tags: writing-good-software
+tags: writing-good-software non-technical
 date: 2016-04-15 15:00
 title: The Economics of Software Correctness
 published: true
