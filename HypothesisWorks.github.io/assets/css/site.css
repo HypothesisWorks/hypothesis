@@ -231,6 +231,11 @@ input#tlemail {
   width: 200px;
 }
 
+div.article-listing div.panel {
+  width: 95%;
+  margin: 0 auto 10px auto ;
+}
+
 div.article-listing div.panel-heading {
   text-align: center;
 }
