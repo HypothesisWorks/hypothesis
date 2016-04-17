@@ -29,7 +29,6 @@ layout: null
     {% else %}
       <atom:link href="http://hypothesis.works/articles/feed/" rel="self" type="application/rss+xml" />
     {% endif %}
-    <atom:link href="{{ page.url | prepend: site.url }}" rel="self" type="application/rss+xml" />
     <pubDate>{{ site.time | date_to_rfc822 }}</pubDate>
     <lastBuildDate>{{ site.time | date_to_rfc822 }}</lastBuildDate>
     {% for post in posts limit:10 %}
