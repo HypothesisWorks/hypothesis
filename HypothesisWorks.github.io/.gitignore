@@ -57,3 +57,5 @@ sftp-config.json
 .hypothesis
 __pycache__
 *.pyc
+
+.jekyll-metadata
