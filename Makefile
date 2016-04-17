@@ -159,7 +159,7 @@ $(TOX): $(PY35) tox.ini $(TOOLS)
 	touch $(TOOL_VIRTUALENV)/bin/tox $(TOX)
 
 $(SPHINX_BUILD): $(TOOL_VIRTUALENV)
-	$(TOOL_PYTHON) -m pip install sphinx
+	$(TOOL_PYTHON) -m pip install sphinx sphinx-rtd-theme
 	ln -sf $(TOOL_VIRTUALENV)/bin/sphinx-build $(SPHINX_BUILD)
 
 $(SPHINX_AUTOBUILD): $(TOOL_VIRTUALENV)
