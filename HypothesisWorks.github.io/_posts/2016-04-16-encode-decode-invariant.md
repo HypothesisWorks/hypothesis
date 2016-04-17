@@ -7,7 +7,7 @@ published: true
 ---
 
 One of the simplest types of invariant to find once you move past
-[just fuzzing your code]({% post_url 2016-04-15-getting-started-with-hypothesis.md %}) is asserting that two
+[just fuzzing your code]({% post_url 2016-04-15-getting-started-with-hypothesis %}) is asserting that two
 different operations should produce the same result, and one of the simplest instances of
 *that* is looking for encode/decode pairs. That is, you have some function that takes a
 value and encodes it as another value, and another that is supposed to reverse the process.
