@@ -78,4 +78,4 @@ This approach will make your code more robust even if you don’t find any bugs 
 Once you think you've got the hang of this, a good next step is to start looking for [Encode/Decode pairs](/articles/encode-decode-invariant/) in
 your code, as they're a fairly easy property to test and another rich source of bugs.
 
-And, of course, if you’re still having trouble getting started with property-based testing, the other easy way is to persuade your company [to hire us for a training course](/training/)>. Drop us an email at [training@hypothesis.works](mailto:training@hypothesis.works])
+And, of course, if you’re still having trouble getting started with property-based testing, the other easy way is to persuade your company [to hire us for a training course](/training/). Drop us an email at [training@hypothesis.works](mailto:training@hypothesis.works])
