@@ -16,7 +16,11 @@ layout: null
 
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>{{ site.title | xml_escape }}</title>
+    {% if page.tag %}
+      <title>{{ site.title | xml_escape }} articles tagged "{{page.tag}}"</title>
+    {% else %}
+      <title>{{ site.title | xml_escape }} articles</title>
+    {% endif %}
     <description>{{ site.description | xml_escape }}</description>
     <link>{{ site.url }}{{ site.baseurl }}/</link>
     <updated>{{ site.time | date_to_xmlschema }}</updated>
