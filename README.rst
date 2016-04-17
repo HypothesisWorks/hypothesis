@@ -30,8 +30,10 @@ you're not using Hypothesis to test your project then you're missing out.
 Links of interest
 -----------------
 
-To learn more about how to use Hypothesis, extensive documentation and
-examples of usage are `available at readthedocs <https://hypothesis.readthedocs.org/en/master/>`_.
+The main Hypothesis site is at `hypothesis.works <http://hypothesis.works>`_, and contains a lot
+of good introductory and explanatory material.
+
+Extensive documentation and examples of usage are `available at readthedocs <https://hypothesis.readthedocs.org/en/master/>`_.
 
 If you want to talk to people about using Hypothesis, `we have both an IRC channel
 and a mailing list <https://hypothesis.readthedocs.org/en/latest/community.html>`_.
