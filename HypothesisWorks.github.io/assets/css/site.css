@@ -60,6 +60,7 @@ h2 {
 
 .navbar-right li{
   font-size: 20px;
+  text-align: center;
 }
 @media (max-width: 992px) {
   #main-menu li{
