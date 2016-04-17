@@ -239,3 +239,7 @@ div.article-listing div.panel {
 div.article-listing div.panel-heading {
   text-align: center;
 }
+
+div.panel div.rss-plug{
+  text-align: right;
+}

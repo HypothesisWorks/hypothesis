@@ -27,6 +27,17 @@ has_feed: true
       <div class="panel-body">
           {{content}}
       </div>
+      <div class="panel-footer rss-plug">
+        <a href="{{page.url}}feed/">
+        {% if page.tag %}
+          Subscribe to articles tagged &ldquo;{{page.tag}}&rdquo; via RSS
+        {% else %}
+          Subscribe to all articles from us via RSS
+        {% endif %}
+
+        <i class="fa fa-rss" aria-hidden="true"></i>
+        </a>
+      </div>
     </div>
 
       {% for post in posts %}
