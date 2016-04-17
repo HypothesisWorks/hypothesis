@@ -43,7 +43,7 @@ As well as performance improvements, we're available for hire for any other spec
 Hypothesis.
 
 There are a large number of directions that Hypothesis can go in and only so much time in the day. If there's
-a particular feature you need us to bump something up our priority list, you can hire us to implemement it.
+a particular feature you need us to bump something up our priority list, you can hire us to implement it.
 
 ## Custom testing projects
 
