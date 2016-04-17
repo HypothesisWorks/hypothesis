@@ -3,7 +3,7 @@ layout: blog_listing
 date: 2015-04-15 15:00
 ---
 
-We write a lot, about Hypothesis and about software and testing in general.
+We write a lot, about Hypothesis in particular but also about software and testing in general.
 Here you can find all of that.
 
 If you wanted something specific, you can also browse broken down by tag.
