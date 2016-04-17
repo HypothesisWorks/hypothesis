@@ -75,7 +75,7 @@ Even when it’s hard to reason about formal properties of your code, it’s usu
 
 This approach will make your code more robust even if you don’t find any bugs in it during testing (and you’ll probably find bugs in it during testing), and it gives you a nice easy route into property based testing by letting you focus on only one half of the problem at a time.
 
-Once you think you've got the hang of this, a good next step is to start looking for [Encode/Decode pairs]({% post_url 2016-04-16-encode-decode-invariant %}) in
+Once you think you've got the hang of this, a good next step is to start looking for [Encode/Decode pairs]({{site.url}}{% post_url 2016-04-16-encode-decode-invariant %}) in
 your code, as they're a fairly easy property to test and another rich source of bugs.
 
 And, of course, if you’re still having trouble getting started with property-based testing, the other easy way is to persuade your company [to hire us for a training course](/training/). Drop us an email at [training@hypothesis.works](mailto:training@hypothesis.works])
