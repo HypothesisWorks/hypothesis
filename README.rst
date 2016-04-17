@@ -26,16 +26,6 @@ Hypothesis is extremely practical and advances the state of the art of
 unit testing by some way. It's easy to use, stable, and powerful. If
 you're not using Hypothesis to test your project then you're missing out.
 
----------------------
-Supporting Hypothesis
----------------------
-
-If you'd like to help support Hypothesis development, there are three main ways:
-
-1. `Hire my services <http://www.drmaciver.com/consulting-and-training/>`_ to help you out, either with custom development or training.
-2. `Support me on salt <https://salt.bountysource.com/teams/drmaciver-hypothesis>`_ to try to help me build up a salary for pure work on Hypothesis.
-3.  Or if you just want to say thanks, you can `buy me books from this wishlist <http://www.amazon.co.uk/registry/wishlist/SSZ403J9X2T0>`_.
-
 -----------------
 Links of interest
 -----------------
@@ -49,7 +39,7 @@ and a mailing list <https://hypothesis.readthedocs.org/en/latest/community.html>
 If you want to receive occasional updates about Hypothesis, including useful tips and tricks, there's a
 `TinyLetter mailing list to sign up for them <http://tinyletter.com/DRMacIver/>`_.
 
-If you want to contribute to Hypothesis, `instructions are here <https://github.com/DRMacIver/hypothesis/blob/master/CONTRIBUTING.rst>`_.
+If you want to contribute to Hypothesis, `instructions are here <https://github.com/Hypothesis/hypothesis-python/blob/master/CONTRIBUTING.rst>`_.
 
 If you want to hear from people who are already using Hypothesis, some of them `have written
 about it <https://hypothesis.readthedocs.org/en/latest/endorsements.html>`_.
