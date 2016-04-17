@@ -6,13 +6,14 @@ title: Getting started with Hypothesis
 published: true
 ---
 
+Property based testing will speed up your testing process and improve your software quality,
+but when first starting out people often struggle to figure out exactly how to use it.
 
-People starting with property-based testing often struggle to figure out what exactly it is they should test.
 Until you're used to thinking in property based tests, it's not always obvious what the invariants of your
-code actually *are*, and people get stuck trying to come up with interesting ones.
+code actually *are*, and people get stuck trying to come up with interesting ones to test.
 
 Fortunately, there's a simple property which every piece of software should satisfy, and which can be
-remarkably powerful as a way to uncover deep bugs in your software.
+remarkably powerful as a way to uncover surprisingly deep bugs in your software.
 
 <!--more-->
 
@@ -29,7 +30,7 @@ It consists of two steps:
 
 This will possibly require you to figure out how to generate your domain objects. Hypothesis
 [has a pretty extensive library of tools for generating custom types](http://hypothesis.readthedocs.org/en/release/data.html),
-but if you can try to start somewhere where the types you need aren’t *too* complicated to generate.
+but if you can, try to start somewhere where the types you need aren’t *too* complicated to generate.
 
 Chances are actually pretty good that you’ll find something wrong this way if you pick a
 sufficiently interesting entry point. For example, there’s a long track record of people trying to
