@@ -225,3 +225,7 @@ form#tinyletter {
   padding-right: 1em;
   text-align: right;
 }
+
+input#tlemail {
+  width: 200px;
+}
