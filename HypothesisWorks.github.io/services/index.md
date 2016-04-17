@@ -16,7 +16,7 @@ As well as making Hypothesis available in a new language, we usually learn new t
 space when doing this which tends to produce improvements that get rolled back into other languages and
 makes the next port that much easier.
 
-We currently have [a prototype Java port](https://github.com/DRMacIver/hypothesis4j) and are actively
+We currently have [a prototype Java port](https://github.com/HypothesisWorks/hypothesis-java) and are actively
 considering a port to C (which would in turn simplify the port to many other languages), but most
 languages should be feasible so if you'd like a port to a different one, just ask us.
 
