@@ -18,11 +18,12 @@ layout: null
   <channel>
     {% if page.tag %}
       <title>{{ site.title | xml_escape }} articles tagged "{{page.tag}}"</title>
+      <link>{{ site.url }}/articles/{{page.tag}}/</link>
     {% else %}
       <title>{{ site.title | xml_escape }} articles</title>
+      <link>{{ site.url }}/articles/</link>
     {% endif %}
     <description>{{ site.description | xml_escape }}</description>
-    <link>{{ site.url }}{{ site.baseurl }}/</link>
 
     {% if page.tag %}
       <atom:link href="http://hypothesis.works/articles/{{page.tag}}/feed/" rel="self" type="application/rss+xml" />
