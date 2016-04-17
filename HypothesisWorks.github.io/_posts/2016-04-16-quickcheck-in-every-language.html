@@ -160,6 +160,13 @@ we haven't put in the depth of in time to be sure, not that we have doubts.</p>
   testing, but in particular fails to implement example shrinking.
 </p>
 
+<p>
+  We believe that Go's lack of generics make it extremely difficult to do an idiomatic QuickCheck or
+  Hypothesis port to it, but think that the plan that we have currently outlined for the future
+  C implementation of Hypothesis would also work fairly well in Go, and something similar to testing/quick's
+  reflection based interface could then be made to work on top of it.
+</p>
+
 <h2>Special case: OCaml</h2>
 
 <p>
