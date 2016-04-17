@@ -32,8 +32,7 @@ Now that you *are* using Hypothesis, ask your developers two questions:
 
 The answers to both will be a resounding yes.
 
-
-But if you want to take your usage of Hypothesis to the next level and find
+If you want to take your usage of Hypothesis to the next level and find
 even more bugs with even less work, that's where our training can help.
 
 The exact nature of the workshop depends on what you need. To find out our options, read on,
