@@ -4,7 +4,7 @@ email: hello@hypothesis.works
 description: "Test faster, fix more"
 
 #baseurl: "" # the subpath of your site, e.g. /blog/
-#url: "" # the base hostname & protocol for your site
+url: http://hypothesis.works
 
 # Build settings
 markdown: kramdown
