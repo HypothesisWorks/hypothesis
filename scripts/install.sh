@@ -12,9 +12,6 @@ set -x
 # OS X seems to have some weird Localse problems on Travis. This attempts to set
 # the Locale to known good ones during install
 
-export LC_ALL=en_US.UTF-8
-export LANG=en_US.UTF-8
-
 env | grep UTF
 
 # This is to guard against multiple builds in parallel. The various installers will tend
