@@ -52,7 +52,7 @@ def test_minimize_list_on_large_structure():
     ) == [10] * 60
 
 
-@slightly_flaky
+@flaky(min_passes=1, max_runs=3)
 def test_minimize_list_of_sets_on_large_structure():
     def test_list_in_range(xs):
         return len(list(filter(None, xs))) >= 50
