@@ -1,6 +1,6 @@
 ---
 layout: post
-tags: python intro technical
+tags: python intro technical properties
 date: 2016-04-16 06:00
 title: The Encode/Decode invariant
 published: true
