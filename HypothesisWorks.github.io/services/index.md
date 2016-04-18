@@ -9,7 +9,7 @@ We are available to contract for a number of Hypothesis related services.
 ## Ports of Hypothesis to new languages
 
 Hypothesis is designed to be easy to port to new languages, but we will rarely start on new ports
-unless someone pays for the development. So if there's a language you want use Hypothesis in and you
+unless someone pays for the development. So if there's a language you want to use Hypothesis in and you
 currently can't, hire us to fix that!
 
 As well as making Hypothesis available in a new language, we usually learn new things about the design
