@@ -107,6 +107,17 @@ all.
 When it comes to validating the correctness of your tools, nothing comes close
 to the thoroughness and power of Hypothesis.
 
+------------------------------------------
+`Jon Moore <https://github.com/jonmoore>`_
+------------------------------------------
+
+One extremely satisfied user here. Hypothesis is a really solid implementation 
+of property-based testing, adapted well to Python, and with good features
+such as failure-case shrinkers. I first used it on a project where we needed 
+to verify that a vendor's Python and non-Python implementations of an algorithm
+matched, and it found about a dozen cases that previous example-based testing
+and code inspections had not. Since then I've been evangelizing for it at our firm.
+
 -------------------------------------------
 `Your name goes here <http://example.com>`_
 -------------------------------------------
