@@ -29,7 +29,7 @@ We have the following operations:
 
 We'll use the following implementation of these:
 
-```python
+```
 def heapnew():
     return []
 
@@ -92,7 +92,7 @@ Falsifying example: test_pop_in_sorted_order(ls=[0, 1, 0])
 
 So we replace heappop with a correct implementation which rebalances the heap:
 
-```python
+```
 def heappop(heap):
     if len(heap) == 0:
         raise ValueError("Empty heap")
@@ -124,7 +124,7 @@ This is where the rule based state machines come in. Instead of just letting Hyp
 us data which we feed into a fixed structure of test, we let Hypothesis choose which operations
 to perform on our data structure:
 
-```python
+```
 from hypothesis.stateful import rule, precondition, RuleBasedStateMachine
 
 class HeapMachine(RuleBasedStateMachine):
@@ -156,13 +156,13 @@ an empty heap, so the pop rule may only fire when there is data to be popped.
 We can run this by getting a standard unit test TestCase object out of it to be picked up by unittest
 or py.test as normal:
 
-```python
+```
 TestHeaps = HeapMachine.TestCase
 ```
 
 With our original broken heappop we find the same bug as before:
 
-```python
+```
 E       AssertionError: assert 0 == 1
 
 binheap.py:90: AssertionError
@@ -185,7 +185,7 @@ heaps and returns a new heap containing the values in either of the original two
 
 As before, we'll start with a broken implementation:
 
-```python
+```
 
 ```
 
@@ -198,7 +198,7 @@ Bundles allow rules to return as well as accept values. A bundle is a strategy w
 a rule has previously provided to it. Using them is as follows:
 
 
-```python
+```
 class HeapMachine(RuleBasedStateMachine):
     Heaps = Bundle('heaps')
 
@@ -254,7 +254,7 @@ We create a small heap, merge it with itself, and rapidly discover that it has b
 
 We can fix this by fixing our heapmerge to be correct:
 
-```python
+```
 def heapmerge(x, y):
     result = list(heap1)
     for v in heap2:
@@ -264,7 +264,7 @@ def heapmerge(x, y):
 
 But that's boring. Lets introduce a more *interestingly* broken implementation instead:
 
-```python
+```
 def heapmerge(x, y):
     result = []
     i = 0
@@ -310,7 +310,7 @@ Through a careful set of heap creation and merging, Hypothesis manages to find a
 of merges that produce an unbalanced heap. Every heap prior to v7 is balanced, but v7 looks
 like this:
 
-```pycon
+```
 >>> v7
 [-1, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0]
 ```
