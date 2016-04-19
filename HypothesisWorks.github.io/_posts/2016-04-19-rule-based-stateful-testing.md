@@ -315,7 +315,7 @@ like this:
 [-1, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0]
 ```
 
-Which doesn't satisfy the heap properrty because of that -1 far down in the list.
+Which doesn't satisfy the heap property because of that -1 far down in the list.
 
 I don't know about you, but I would never have come up with that example. There's probably
 a simpler one given a different set of operations - e.g. one thing that would probably improve
