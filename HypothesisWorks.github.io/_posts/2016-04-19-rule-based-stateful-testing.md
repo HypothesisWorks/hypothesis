@@ -10,7 +10,7 @@ Hypothesis's standard testing mechanisms are very good for testing things that c
 considered direct functions of data. But supposed you have some complex stateful
 system or object that you want to test. How can you do that?
 
-In this post we'll see how to use Hypothesis's *rule based state mahines* to define
+In this article we'll see how to use Hypothesis's *rule based state mahines* to define
 tests that generate not just simple data, but entire programs using some stateful
 object. These will give the same level of boost to testing the behaviour of the
 object as you get to testing the data it accepts.
