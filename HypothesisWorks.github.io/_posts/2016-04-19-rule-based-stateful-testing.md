@@ -124,7 +124,7 @@ This is where the rule based state machines come in. Instead of just letting Hyp
 us data which we feed into a fixed structure of test, we let Hypothesis choose which operations
 to perform on our data structure:
 
-```
+```python
 from hypothesis.stateful import rule, precondition, RuleBasedStateMachine
 
 class HeapMachine(RuleBasedStateMachine):
@@ -156,7 +156,7 @@ an empty heap, so the pop rule may only fire when there is data to be popped.
 We can run this by getting a standard unit test TestCase object out of it to be picked up by unittest
 or py.test as normal:
 
-```
+```python
 TestHeaps = HeapMachine.TestCase
 ```
 
@@ -185,8 +185,10 @@ heaps and returns a new heap containing the values in either of the original two
 
 As before, we'll start with a broken implementation:
 
-```
-
+```python
+def heapmerge(x, y):
+    x, y = sorted((x, y))
+    return x + y
 ```
 
 We can't just write a strategy for heaps, because each heap would be a fresh object and thus it would not
@@ -198,7 +200,7 @@ Bundles allow rules to return as well as accept values. A bundle is a strategy w
 a rule has previously provided to it. Using them is as follows:
 
 
-```
+```python
 class HeapMachine(RuleBasedStateMachine):
     Heaps = Bundle('heaps')
 
