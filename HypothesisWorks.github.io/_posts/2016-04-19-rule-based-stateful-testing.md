@@ -35,7 +35,7 @@ def heapnew():
 
 
 def heapempty(heap):
-  return not heap
+    return not heap
 
 
 def heappush(heap, value):
