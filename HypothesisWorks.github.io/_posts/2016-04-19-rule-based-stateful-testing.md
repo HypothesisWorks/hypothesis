@@ -29,7 +29,7 @@ We have the following operations:
 
 We'll use the following implementation of these:
 
-```
+```python
 def heapnew():
     return []
 
@@ -61,7 +61,7 @@ so it may leave the heap in an invalid state)
 We could test this readily enough using @given with something like the following:
 
 
-```
+```python
 from hypothesis.strategies import integers, lists
 from hypothesis import given
 
@@ -92,7 +92,7 @@ Falsifying example: test_pop_in_sorted_order(ls=[0, 1, 0])
 
 So we replace heappop with a correct implementation which rebalances the heap:
 
-```
+```python
 def heappop(heap):
     if len(heap) == 0:
         raise ValueError("Empty heap")
@@ -254,7 +254,7 @@ We create a small heap, merge it with itself, and rapidly discover that it has b
 
 We can fix this by fixing our heapmerge to be correct:
 
-```
+```python
 def heapmerge(x, y):
     result = list(heap1)
     for v in heap2:
@@ -264,7 +264,7 @@ def heapmerge(x, y):
 
 But that's boring. Lets introduce a more *interestingly* broken implementation instead:
 
-```
+```python
 def heapmerge(x, y):
     result = []
     i = 0
