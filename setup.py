@@ -16,6 +16,7 @@
 
 from setuptools import find_packages, setup
 import os
+import sys
 
 
 def local_file(name):
@@ -51,6 +52,10 @@ extras[":python_version == '2.6'"] = [
 extras[":python_version == '2.7'"] = ['enum34']
 extras[":python_version == '3.3'"] = ['enum34']
 
+install_requires = []
+
+if sys.version_info[0] < 3:
+    install_requires.append('enum34')
 
 setup(
     name='hypothesis',
@@ -64,6 +69,7 @@ setup(
     description='A library for property based testing',
     zip_safe=False,
     extras_require=extras,
+    install_requires=install_requires,
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
