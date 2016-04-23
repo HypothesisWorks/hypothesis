@@ -1,6 +1,6 @@
 ---
 title: Training
-layout: page
+layout: page 
 date: 2015-04-15 12:00
 ---
 
