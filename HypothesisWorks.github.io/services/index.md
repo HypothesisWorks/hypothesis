@@ -20,7 +20,7 @@ This one comes with the added bonus that it will make you very popular! We get a
 
 ## Performance tweaks
 
-Hypothesis performance is currently pretty good, and for most use cases the bottleneck will be your test code rather than Hypothesis. There are, however,  pathological cases where it tends to slow down. This is particularly true if you are generating very complex data.
+Hypothesis performance is currently pretty good, and for most use cases the bottleneck will be your test code rather than Hypothesis. There are, however, pathological cases where it tends to slow down. This is particularly true if you are generating very complex data.
 
 If you find yourself in this situation, we can help! We'll first try to help you analyze exactly *why* your tests are slow and see if we can help you modify them to be faster. If the problem does turn out to be something we should fix on the Hypothesis end, we can do that too.
 
