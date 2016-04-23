@@ -1,26 +1,17 @@
 ---
-layout: default
-date: 2015-04-15 12:00
+title: Most testing is ineffective
+layout: page
+date: 2015-04-23 22:03
 ---
 
-<div class=container id=landing>
-
-<h1>Most testing is ineffective</h1>
-
-<p>
 Normal "automated" software testing is surprisingly manual. Every scenario the computer runs, a developer had to
 write by hand. Hypothesis can fix this.
-</p>
 
-<p>
 Hypothesis is a new generation of tools for automating your testing process. It combines human understanding of
 your problem domain with machine intelligence to improve the quality of your testing process while spending
-<em>less</em> time writing tests.
-</p>
+*less* time writing tests.
 
-<p>
 Don't believe us? Here's what some of our users have to say:
-</p>
 
 <blockquote class="blockquote-reverse pull">
 When it comes to validating the correctness of your tools, nothing comes close to the thoroughness and power of Hypothesis.
@@ -36,54 +27,33 @@ Hypothesis has been brilliant for expanding the coverage of our test cases, and 
 
 <blockquote class="blockquote-reverse pull">
 Hypothesis has located real defects in our code which went undetected by traditional test cases, simply because Hypothesis is more relentlessly devious about test case generation than us mere humans!
- <footer><a href="https://hypothesis.readthedocs.org/en/latest/endorsements.html#id2">Rob Smallshire</a>, <a href=http://sixty-north.com/>Sixty North</a></footer></cite>
+ <footer><a href="https://hypothesis.readthedocs.org/en/latest/endorsements.html#id2">Rob Smallshire</a>, <a href="http://sixty-north.com/">Sixty North</a></footer></cite>
 </blockquote>
 
-<h2>What is Hypothesis?</h2>
+## What is Hypothesis?
 
-<p>
-Hypothesis is a modern implementation of <a href="https://en.wikipedia.org/wiki/QuickCheck">property based testing</a>, designed from the ground up for mainstream languages.
-</p>
+Hypothesis is a modern implementation of [property based testing](https://en.wikipedia.org/wiki/QuickCheck), designed from the ground up for mainstream languages.
 
-<p>
 Hypothesis runs your tests against a much wider range of scenarios than a human tester could, finding edge cases
 in your code that you would otherwise have missed. It then turns them into simple and easy to understand failures
 that save you time and money compared to fixing them if they slipped through the cracks and a user had run into
 them instead.
-</p>
 
-<p>
-Hypothesis currently has <a href="https://github.com/HypothesisWorks/hypothesis-python/">a fully featured open source Python implementation</a> and <a href="https://github.com/HypothesisWorks/hypothesis-java">a proof of concept Java implementation</a> that we are looking for customers to partner with to turn into a finished project.
+Hypothesis currently has [a fully featured open source Python implementation](https://github.com/HypothesisWorks/hypothesis-python/) and [a proof of concept Java implementation](https://github.com/HypothesisWorks/hypothesis-java) that we are looking for customers to partner with to turn into a finished project.
 Plans for C and C++ support are also in the works.
-</p>
 
-<h2>How do I use it?</h2>
+## How do I use it?
 
-<p>
 Hypothesis integrates into your normal testing workflow. Getting started is as simple as installing a library and
 writing some code using it - no new services to run, no new test runners to learn.
-</p>
 
-<p>
 Right now only the Python version of Hypothesis is production ready. To get started with it, check out
-<a href="https://hypothesis.readthedocs.org/en/latest/">the documentation</a> or read some of the
-<a href="/articles/intro/">introductory articles here on this site</a>.
-</p>
+[the documentation](https://hypothesis.readthedocs.org/en/latest/) or read some of the
+[introductory articles here on this site](/articles/intro/).
 
-<p>
 Once you've got started, or if you have a large number of people who want to get started all at once,
-you may wish to engage <a href="/training">our training services</a>.
-</p>
+you may wish to engage [our training services](/training).
 
-<p>
-  If you still want to know more, sign up to our newsletter to get an email every 1-2 weeks about the
-  latest and greatest Hypothesis developments and how to test your software better.
-</p>
-<form id=tinyletter action="https://tinyletter.com/DRMacIver"
-  method="post" target="popupwindow" onsubmit="window.open('https://tinyletter.com/DRMacIver', 'popupwindow', 'scrollbars=yes,width=800,height=600');return true">
+If you still want to know more, sign up to our newsletter to get an email every 1-2 weeks about the latest and greatest Hypothesis developments and how to test your software better.
 
-  <input type="email" name="email" id="tlemail" placeholder="Your email address" />
-  <input type="hidden" value="1" name="embed" /><input type="submit" value="Subscribe" />
-</form>
-
-</div>
+<form id="tinyletter" action="https://tinyletter.com/DRMacIver" method="post" target="popupwindow" onsubmit="window.open('https://tinyletter.com/DRMacIver', 'popupwindow', 'scrollbars=yes,width=800,height=600'); return true;"><input type="email" name="email" id="tlemail" placeholder="Your email address"/><input type="hidden" value="1" name="embed" /><input type="submit" value="Subscribe"/></form>
