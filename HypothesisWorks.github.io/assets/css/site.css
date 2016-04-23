@@ -193,7 +193,7 @@ a{
   background-color: #f8f8f8
 }
 
-#landing blockquote {
+blockquote {
   width: 100%;
   display: block;
   background: #f9f9f9;
@@ -203,17 +203,13 @@ a{
   padding: 1em;
 }
 
-blockquote p {
-  display: inline;
-}
-
-#landing h2 {
+h2 {
   font-size: 40px;
   text-align: center;
   margin: 40px auto 15px auto;
 }
 
-#landing h1 {
+h1 {
   font-size: 50px;
   text-align: center;
   margin: 0px auto 25px auto;
