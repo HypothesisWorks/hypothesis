@@ -35,7 +35,7 @@ from hypothesis.internal.debug import minimal
 from hypothesis.internal.compat import PY3, hrange, reduce, Counter, \
     OrderedDict, integer_types
 
-slightly_flaky = flaky(min_passes=1, max_runs=2)
+slightly_flaky = flaky(min_passes=1, max_runs=3)
 
 
 @slightly_flaky
@@ -52,7 +52,7 @@ def test_minimize_list_on_large_structure():
     ) == [10] * 60
 
 
-@flaky(min_passes=1, max_runs=3)
+@flaky(min_passes=1, max_runs=4)
 def test_minimize_list_of_sets_on_large_structure():
     def test_list_in_range(xs):
         return len(list(filter(None, xs))) >= 50
