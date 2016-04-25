@@ -4,7 +4,7 @@ layout: page
 date: 2015-04-23 21:08
 ---
 
-We provide a range of contracting services in the areas of both development and training to to help you make the most out of Hypothesis. There are possibilities for both remote work and on-site engagements.
+We provide a range of contracting services in the areas of both development and training to help you make the most out of Hypothesis. There are possibilities for both remote work and on-site engagements.
 
 For remote engagements, we can accommodate distributed teams by offering training sessions over video conferencing solutions. We can also provide a second set of eyes for pair and team programming efforts, or participate in selective code reviews to ensure you and your team are using Hypothesis optimally.
 
