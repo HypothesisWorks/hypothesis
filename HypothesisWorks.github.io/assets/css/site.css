@@ -193,7 +193,7 @@ a{
   background-color: #f8f8f8
 }
 
-blockquote {
+blockquote.testimonial {
   width: 100%;
   display: block;
   background: #f9f9f9;
@@ -201,6 +201,20 @@ blockquote {
   margin: 1em 0 1em 0;
   font-size: 20px;
   padding: 1em;
+  text-align: left;
+}
+
+blockquote.testimonial footer{
+  margin-top: 10px;
+}
+
+blockquote.testimonial p {
+  margin-top: 0;
+}
+
+
+blockquote.testimonial footer{
+  text-align: right;
 }
 
 h2 {
