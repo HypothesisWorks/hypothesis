@@ -242,7 +242,7 @@ input#tlemail {
 }
 
 div.article-listing div.panel {
-  width: 95%;
+  width: 90%;
   margin: 0 auto 10px auto ;
 }
 
@@ -252,4 +252,8 @@ div.article-listing div.panel-heading {
 
 div.panel div.rss-plug{
   text-align: right;
+}
+
+div.container {
+  max-width: 50em;
 }
