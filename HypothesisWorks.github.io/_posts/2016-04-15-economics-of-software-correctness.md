@@ -8,7 +8,7 @@ published: true
 
 You have probably never written a significant piece of correct software.
 
-That's not a value judgement. It's certainly not a criticism of your competence. I can say with almost complete confidence that every non-trivial piece of software I have written contains at least one bug. You <em>might</em> have written small libraries that are essentially bug free, but the chances of you having written whole programs which are are tantamount to zero.
+That's not a value judgement. It's certainly not a criticism of your competence. I can say with almost complete confidence that every non-trivial piece of software I have written contains at least one bug. You *might* have written small libraries that are essentially bug free, but the chance that you have written a non-trivial bug free program is tantamount to zero.
 
 I don't even mean this in some pedantic academic sense. I'm talking about behaviour where if someone spotted it and pointed it out to you you would probably admit that it's a bug. It might even be a bug that you cared about.
 
