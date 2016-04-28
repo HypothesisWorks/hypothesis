@@ -63,6 +63,6 @@ Making it cheaper to find bugs though... that's a good one, because it increases
 
 And so this is the lever we get to pull to change the world: If you want better software, make or find tools that reduce the effort of finding bugs.
 
-Obviously I think <a href="https://hypothesis.readthedocs.org/">Hypothesis</a> is an example of this, but it's neither the only one nor the only one you need. Better monitoring is another. Code review processes. Static analysis. Improved communication. There are many more.
+Obviously I think Hypothesis is an example of this, but it's neither the only one nor the only one you need. Better monitoring is another. Code review processes. Static analysis. Improved communication. There are many more.
 
-But one thing that <em>won't</em> improve your ability to find bugs is feeling bad about yourself and trying really hard to write correct software then feeling guilty when you fail. This seems to be the current standard, and it's deeply counter-productive. You can't fix systemic issues with individual action, and the only way to ship better software is to change the economics to make it viable to do so.
+But one thing that *won't* improve your ability to find bugs is feeling bad about yourself and trying really hard to write correct software then feeling guilty when you fail. This seems to be the current standard, and it's deeply counter-productive. You can't fix systemic issues with individual action, and the only way to ship better software is to change the economics to make it viable to do so.
