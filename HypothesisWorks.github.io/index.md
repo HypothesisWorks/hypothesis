@@ -13,6 +13,15 @@ your problem domain with machine intelligence to improve the quality of your tes
 
 Don't believe us? Here's what some of our users have to say:
 
+<blockquote class="testimonial blockquote-reverse pull">
+<p>
+At Lyst we've used it in a wide variety of situations, from testing APIs to machine learning algorithms and in all
+cases it's given us a great deal more confidence in that code.
+</p>
+<footer><a href="/testimonials/#alex-stapleton">Alex Stapleton</a>, Lead Backend Engineer at <a href="https://www.lyst.com/">Lyst</a></footer></cite>
+</blockquote>
+
+
 <blockquote class="blockquote-reverse pull testimonial">
 When it comes to validating the correctness of your tools, nothing comes close to the thoroughness and power of Hypothesis.
 
@@ -22,7 +31,7 @@ When it comes to validating the correctness of your tools, nothing comes close t
 
 <blockquote class="blockquote-reverse pull testimonial">
 Hypothesis has been brilliant for expanding the coverage of our test cases, and also for making them much easier to read and understand, so we’re sure we’re testing the things we want in the way we want.
- <footer><a href="/testimonials/#kristian-glass">Kristian Glass</a>, <a href="https://www.laterpay.net/">LaterPay</a></footer></cite>
+ <footer><a href="/testimonials/#kristian-glass">Kristian Glass</a>, Director of Technology at <a href="https://www.laterpay.net/">LaterPay</a></footer></cite>
 </blockquote>
 
 <blockquote class="blockquote-reverse pull testimonial">
