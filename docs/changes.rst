@@ -509,7 +509,7 @@ Bug fixes:
   instead of its contexts. This is obviously silly. It now works with any sequence
   of things convertible to unicode strings.
 * @given will now work on methods whose definitions contains no explicit positional
-  arguments, only varargs (`bug #118 <https://github.com/DRMacIver/hypothesis/issues/118>`_).
+  arguments, only varargs (`bug #118 <https://github.com/HypothesisWorks/hypothesis-python/issues/118>`_).
   This may have some knock on effects because it means that @given no longer changes the
   argspec of functions other than by adding defaults.
 * Introduction of new @composite feature for more natural definition of strategies you'd

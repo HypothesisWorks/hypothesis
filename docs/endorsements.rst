@@ -4,7 +4,7 @@ Who is using Hypothesis?
 
 This is a page for listing people who are using Hypothesis and how excited they
 are about that. If that's you and your name is not on the list, `this file is in
-Git <https://github.com/DRMacIver/hypothesis/blob/master/docs/endorsements.rst>`_
+Git <https://github.com/HypothesisWorks/hypothesis-python/blob/master/docs/endorsements.rst>`_
 and I'd love it if you sent me a pull request to fix that.
 
 
