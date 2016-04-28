@@ -18,7 +18,7 @@ Why is this?
 
 Well, lets start with why it's not: It's not because we don't know how to write correct software. We've known how to write software that is more or less correct (or at least vastly closer to correct than the norm) for a while now. If you <a href="http://www.fastcompany.com/28121/they-write-right-stuff">look at the NASA development process</a> they're pretty much doing it.
 
-Also, if you look at the NASA development process you will pretty much conclude that we can't do that. It's orders of magnitude more work than we ever put into software development. It's process heavy, laborious, and does not adapt well to changing requirements or tight deadlines.
+Also, if you look at the NASA development process you will probably conclude that we can't do that. It's orders of magnitude more work than we ever put into software development. It's process heavy, laborious, and does not adapt well to changing requirements or tight deadlines.
 
 The problem is not that we don't know how to write correct software. The problem is that correct software is too expensive.
 
