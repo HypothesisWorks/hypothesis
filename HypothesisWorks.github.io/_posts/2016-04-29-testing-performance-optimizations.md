@@ -63,7 +63,7 @@ def merge_sorted_lists(x, y):
 
 ```
 
-We want a reference implementation to test it again, so lets also implement [bubble sort](
+We want a reference implementation to test it against, so lets also implement [bubble sort](
 https://en.wikipedia.org/wiki/Bubble_sort):
 
 ```python
@@ -103,7 +103,7 @@ Falsifying example: test_bubble_sorting_is_same_as_merge_sorting(ls=[0, 0])
 ```
 
 What's happened is that we messed up our implementation of merge\_sorted\_lists, because we forgot
-to nclude the elements left over in the other list once we've reached the end of one of them. As a
+to include the elements left over in the other list once we've reached the end of one of them. As a
 result we ended up losing elements from the list, a problem that our simpler implementation lacks.
 We can fix this as follows and then the test passes:
 
