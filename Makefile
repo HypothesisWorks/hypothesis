@@ -32,7 +32,7 @@ TOOL_PIP=$(TOOL_VIRTUALENV)/bin/pip
 TOOL_INSTALL=$(TOOL_PIP) install --upgrade
 
 export PATH:=$(BUILD_RUNTIMES)/snakepit:$(TOOLS):$(PATH)
-export LC_ALL=en_GB.UTF-8
+export LC_ALL=en_US.UTF-8
 
 $(PY26):
 	scripts/retry.sh scripts/install.sh 2.6
