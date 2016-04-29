@@ -20,6 +20,8 @@ import os
 import sys
 import gzip
 import pickle
+import shutil
+import tempfile
 import unicodedata
 
 from hypothesis.configuration import storage_directory
@@ -53,8 +55,13 @@ def charmap():
             data = sorted(
                 (k, tuple((map(tuple, v))))
                 for k, v in _charmap.items())
-            with gzip.GzipFile(f, 'wb', mtime=1) as o:
+
+            # Write the Unicode table atomically
+            _, tmpfile = tempfile.mkstemp()
+            with gzip.GzipFile(tmpfile, 'wb', mtime=1) as o:
                 o.write(pickle.dumps(data, pickle.HIGHEST_PROTOCOL))
+            shutil.move(tmpfile, f)
+
         with gzip.open(f, 'rb') as i:
             _charmap = dict(pickle.loads(i.read()))
     assert _charmap is not None
