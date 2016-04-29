@@ -574,3 +574,19 @@ def test_minimize_down_to(rnd, i):
         integers(), lambda x: x >= i,
         settings=settings(max_examples=1000, database=None, max_shrinks=1000))
     assert i == j
+
+
+@flaky(max_runs=2, min_passes=1)
+def test_can_find_quite_deep_lists():
+    def depth(x):
+        if x and isinstance(x, list):
+            return 1 + max(map(depth, x))
+        else:
+            return 1
+
+    deep = find(
+        recursive(booleans(), lambda x: lists(x, max_size=3)),
+        lambda x: depth(x) >= 5)
+    assert deep == [[[[False]]]]
+
+

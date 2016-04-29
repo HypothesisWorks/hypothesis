@@ -128,3 +128,11 @@ def biased_coin(data, p):
     return bool(
         data.draw_bytes(1, distribution)[0] & 1
     )
+
+def write(data, string):
+    def distribution(random, n):
+        assert n == len(string)
+        return string
+    x = data.draw_bytes(len(string), distribution)
+    if x != string:
+        data.mark_invalid()

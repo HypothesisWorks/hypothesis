@@ -116,6 +116,8 @@ class ListStrategy(SearchStrategy):
             value = data.draw(self.element_strategy)
             data.stop_example()
             result.append(value)
+        else:
+            cu.write(data, b'\0')
         return result
 
     def __repr__(self):

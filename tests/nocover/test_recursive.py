@@ -55,19 +55,6 @@ def test_can_generate_some_depth_with_large_branching():
     assert xs in ([0], [[]])
 
 
-def test_can_find_quite_deep_lists():
-    def depth(x):
-        if x and isinstance(x, list):
-            return 1 + max(map(depth, x))
-        else:
-            return 1
-
-    deep = find(
-        st.recursive(st.booleans(), lambda x: st.lists(x, max_size=3)),
-        lambda x: depth(x) >= 5)
-    assert deep == [[[[False]]]]
-
-
 def test_can_find_quite_broad_lists():
     def breadth(x):
         if isinstance(x, list):
