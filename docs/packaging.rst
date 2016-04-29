@@ -21,7 +21,7 @@ some information you might find useful.
 Release tarballs
 ----------------
 
-These are available from `the GitHub releases page <https://github.com/DRMacIver/hypothesis/releases>`_. The
+These are available from `the GitHub releases page <https://github.com/HypothesisWorks/hypothesis-python/releases>`_. The
 tarballs on pypi are intended for installation from a Python tool such as pip or easy_install and should not
 be considered complete releases. Requests to include additional files in them will not be granted. Their absence
 is not a bug.
