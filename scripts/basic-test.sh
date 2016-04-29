@@ -15,11 +15,7 @@ for k, v in sorted(dict(os.environ).items()):
     print("%s=%s" % (k, v))
 '
 
-if [ "$(python -c 'import sys; print(sys.version_info[:2] >= (3, 5))')" = "True" ] ; then
-  PYTEST="python -m pytest --assert=plain"
-else
-  PYTEST="python -m pytest"
-fi
+PYTEST="python -m pytest"
 
 $PYTEST tests/cover
 
