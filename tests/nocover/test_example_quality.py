@@ -56,14 +56,14 @@ def test_minimize_list_on_large_structure():
 @flaky(min_passes=1, max_runs=4)
 def test_minimize_list_of_sets_on_large_structure():
     def test_list_in_range(xs):
-        return len(list(filter(None, xs))) >= 50
+        return len(list(filter(None, xs))) >= 30
 
     x = minimal(
-        lists(frozensets(integers()), min_size=50), test_list_in_range,
+        lists(frozensets(integers()), min_size=30), test_list_in_range,
         timeout_after=20,
     )
 
-    assert x == [frozenset([0])] * 50
+    assert x == [frozenset([0])] * 30
 
 
 def test_integers_from_minimizes_leftwards():
