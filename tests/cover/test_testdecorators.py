@@ -454,7 +454,8 @@ def test_can_run_with_database_in_thread():
 
 @given(integers())
 def test_can_call_an_argument_f(f):
-    # See issue https://github.com/HypothesisWorks/hypothesis-python/issues/38 for details
+    # See issue https://github.com/HypothesisWorks/hypothesis-python/issues/38
+    # for details
     pass
 
 
