@@ -40,7 +40,7 @@ from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.strategies import just, sets, text, lists, floats, \
     tuples, booleans, integers, sampled_from
 from hypothesis.internal.compat import PY26, hrange
-from hypothesis.internal.conjecture.engine import TestRunner
+from hypothesis.internal.conjecture.engine import TestRunner as ConTestRunner
 
 pytestmark = pytest.mark.skipif(PY26, reason=u'2.6 lacks erf')
 
@@ -153,7 +153,8 @@ class ConditionTooHard(Exception):
 def define_test(specifier, q, predicate, condition=None):
     def run_test():
         if condition is None:
-            _condition = lambda x: True
+            def _condition(x):
+                return True
             condition_string = u''
         else:
             _condition = condition
@@ -173,7 +174,7 @@ def define_test(specifier, q, predicate, condition=None):
             successful_runs[0] += 1
             if predicate(value):
                 count[0] += 1
-        TestRunner(
+        ConTestRunner(
             test_function,
             settings=Settings(
                 max_examples=MAX_RUNS,

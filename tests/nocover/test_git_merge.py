@@ -31,19 +31,19 @@ Insert = namedtuple(u'Insert', (u'key', u'value', u'target'))
 Delete = namedtuple(u'Delete', (u'key', u'value', u'target'))
 
 
-class TestingBackend(SQLiteExampleDatabase):
+class BackendForTesting(SQLiteExampleDatabase):
 
     def __init__(self):
-        super(TestingBackend, self).__init__()
+        super(BackendForTesting, self).__init__()
         self.create_db_if_needed()
         self.mirror = set()
 
     def save(self, key, value):
-        super(TestingBackend, self).save(key, value)
+        super(BackendForTesting, self).save(key, value)
         self.mirror.add((key, value))
 
     def delete(self, key, value):
-        super(TestingBackend, self).delete(key, value)
+        super(BackendForTesting, self).delete(key, value)
         try:
             self.mirror.remove((key, value))
         except KeyError:
@@ -65,9 +65,9 @@ class DatabaseMergingState(GenericStateMachine):
     def __init__(self):
         super(DatabaseMergingState, self).__init__()
         self.forked = False
-        self.original = TestingBackend()
-        self.left = TestingBackend()
-        self.right = TestingBackend()
+        self.original = BackendForTesting()
+        self.left = BackendForTesting()
+        self.right = BackendForTesting()
         self.seen_strings = set()
 
     def values(self):
