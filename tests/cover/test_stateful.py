@@ -32,7 +32,7 @@ from hypothesis.stateful import rule, Bundle, precondition, \
     GenericStateMachine, RuleBasedStateMachine, \
     run_state_machine_as_test
 from hypothesis.strategies import just, none, lists, binary, tuples, \
-    booleans, integers, sampled_from
+    choices, booleans, integers, sampled_from
 from hypothesis.internal.compat import print_unicode
 
 
@@ -374,7 +374,18 @@ IntAdder.define_rule(
     }
 )
 
+
+class ChoosingMachine(GenericStateMachine):
+
+    def steps(self):
+        return choices()
+
+    def execute_step(self, choices):
+        choices([1, 2, 3])
+
+
 with Settings(max_examples=10):
+    TestChoosingMachine = ChoosingMachine.TestCase
     TestGoodSets = GoodSet.TestCase
     TestGivenLike = GivenLikeStateMachine.TestCase
     TestDynamicMachine = DynamicMachine.TestCase

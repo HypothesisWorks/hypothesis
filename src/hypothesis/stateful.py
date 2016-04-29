@@ -205,6 +205,7 @@ class StateMachineRunner(object):
 
     def __init__(self, data, n_steps):
         self.data = data
+        self.data.is_find = False
         self.n_steps = n_steps
 
     def run(self, state_machine, print_steps=None):
