@@ -589,5 +589,3 @@ def test_can_find_quite_deep_lists():
         recursive(booleans(), lambda x: lists(x, max_size=3)),
         lambda x: depth(x) >= 5)
     assert deep == [[[[False]]]]
-
-
