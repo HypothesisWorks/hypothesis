@@ -80,6 +80,11 @@ found and what we think of them.</p>
 <td>Very Good</td>
 </tr>
 <tr>
+<td>Go</td>
+<td><a href="https://github.com/leanovate/gopter">gopter</a></td>
+<td>Unsure but looks promising.</td>
+</tr>
+<tr>
 <td>Haskell</td>
 <td><a href="https://hackage.haskell.org/package/QuickCheck">Quickcheck</a></td>
 <td>Very good but <em>remarkably</em> poorly documented.</td>
@@ -150,21 +155,6 @@ we haven't put in the depth of in time to be sure, not that we have doubts.</p>
   If you're using Erlang but <em>not</em> able to pay for QuickCheck, apparently the one to use is
   <a href="https://github.com/manopapad/proper">PropEr</a>. If you're also unable to use GPLed software
   there's <a href=https://github.com/krestenkrab/triq>triq</a>. We know very little about either.
-</p>
-
-<h2>Special case: Go</h2>
-
-<p>
-  Go has <a href="https://golang.org/pkg/testing/quick/">testing/quick</a> in its standard library. It
-  does not even come close to clearing the bar of being an adequate implementation of property based
-  testing, but in particular fails to implement example shrinking.
-</p>
-
-<p>
-  We believe that Go's lack of generics make it extremely difficult to do an idiomatic QuickCheck or
-  Hypothesis port to it, but think that the plan that we have currently outlined for the future
-  C implementation of Hypothesis would also work fairly well in Go, and something similar to testing/quick's
-  reflection based interface could then be made to work on top of it.
 </p>
 
 <h2>Special case: OCaml</h2>
