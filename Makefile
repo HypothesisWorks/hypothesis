@@ -25,6 +25,7 @@ ISORT=$(TOOLS)/isort
 FLAKE8=$(TOOLS)/flake8
 PYFORMAT=$(TOOLS)/pyformat
 
+BROKEN_VIRTUALENV=$(BUILD_RUNTIMES)/virtualenvs/broken
 TOOL_VIRTUALENV=$(BUILD_RUNTIMES)/virtualenvs/tools
 ISORT_VIRTUALENV=$(BUILD_RUNTIMES)/virtualenvs/isort
 TOOL_PYTHON=$(TOOL_VIRTUALENV)/bin/python
@@ -109,6 +110,10 @@ check-pytest27: $(TOX) $(PY35)
 
 check-pytest26: $(TOX) $(PY35)
 	$(TOX) -e pytest26
+
+check-ancient-pip: $(PY273)
+	scripts/check-ancient-pip.sh $(PY273)
+	
 
 check-pytest: check-pytest26 check-pytest27
 

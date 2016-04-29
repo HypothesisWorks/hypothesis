@@ -26,6 +26,7 @@ env:
         - TASK=check-format
         - TASK=check-coverage
         - TASK=check-unicode
+        - TASK=check-ancient-pip
         - TASK=check-pypy
         - TASK=check-py35
         - TASK=check-py27
@@ -49,6 +50,8 @@ matrix:
           env: TASK=check-py273
         - os: osx
           env: TASK=check-unicode
+        - os: osx
+          env: TASK=check-ancient-pip
         - os: osx
           env: TASK=check-fakefactory052
         - os: osx
