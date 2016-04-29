@@ -257,3 +257,7 @@ div.panel div.rss-plug{
 div.container {
   max-width: 50em;
 }
+
+div.highlighter-rouge {
+    padding: 1em 2em 0.5em 2em;
+}
