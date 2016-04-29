@@ -19,12 +19,12 @@ from __future__ import division, print_function, absolute_import
 
 import os
 import re
-import base64
-import hashlib
 import sqlite3
 import binascii
 import threading
 from contextlib import contextmanager
+
+from hypothesis.internal.compat import sha1, b64decode, b64encode
 
 SQLITE_PATH = re.compile(r"\.\(db|sqlite|sqlite3\)$")
 
@@ -152,7 +152,7 @@ class SQLiteExampleDatabase(ExampleDatabase):
                 cursor.execute("""
                     insert into hypothesis_data_mapping(key, value)
                     values(?, ?)
-                """, (base64.b64encode(key), base64.b64encode(value)))
+                """, (b64encode(key), b64encode(value)))
             except sqlite3.IntegrityError:
                 pass
 
@@ -162,7 +162,7 @@ class SQLiteExampleDatabase(ExampleDatabase):
             cursor.execute("""
                 delete from hypothesis_data_mapping
                 where key = ? and value = ?
-            """, (base64.b64encode(key), base64.b64encode(value)))
+            """, (b64encode(key), b64encode(value)))
 
     def fetch(self, key):
         self.create_db_if_needed()
@@ -170,10 +170,10 @@ class SQLiteExampleDatabase(ExampleDatabase):
             cursor.execute("""
                 select value from hypothesis_data_mapping
                 where key = ?
-            """, (base64.b64encode(key),))
+            """, (b64encode(key),))
             for (value,) in cursor:
                 try:
-                    yield base64.b64decode(value)
+                    yield b64decode(value)
                 except (binascii.Error, TypeError):
                     pass
 
@@ -200,7 +200,7 @@ def mkdirp(path):
 
 
 def _hash(key):
-    return hashlib.sha1(key).hexdigest()[:16]
+    return sha1(key).hexdigest()[:16]
 
 
 class DirectoryBasedExampleDatabase(ExampleDatabase):
@@ -228,7 +228,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
     def _value_path(self, key, value):
         return os.path.join(
             self._key_path(key),
-            hashlib.sha1(value).hexdigest()[:16]
+            sha1(value).hexdigest()[:16]
         )
 
     def fetch(self, key):

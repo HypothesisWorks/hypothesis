@@ -47,8 +47,6 @@ extras = {
 
 extras['all'] = sorted(sum(extras.values(), []))
 extras['django'].extend(extras['fakefactory'])
-extras[":python_version == '2.6'"] = [
-    'importlib', 'ordereddict', 'Counter', 'enum34']
 
 extras[":python_version == '2.7'"] = ['enum34']
 extras[":python_version == '3.3'"] = ['enum34']

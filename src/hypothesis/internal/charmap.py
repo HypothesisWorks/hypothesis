@@ -19,13 +19,12 @@ from __future__ import division, print_function, absolute_import
 
 import os
 import sys
-import gzip
 import pickle
 import tempfile
 import unicodedata
 
 from hypothesis.configuration import storage_directory
-from hypothesis.internal.compat import hunichr
+from hypothesis.internal.compat import hunichr, GzipFile
 
 
 def charmap_file():
@@ -59,11 +58,11 @@ def charmap():
             # Write the Unicode table atomically
             fd, tmpfile = tempfile.mkstemp()
             os.close(fd)
-            with gzip.GzipFile(tmpfile, 'wb', mtime=1) as o:
+            with GzipFile(tmpfile, 'wb', mtime=1) as o:
                 o.write(pickle.dumps(data, pickle.HIGHEST_PROTOCOL))
             os.rename(tmpfile, f)
 
-        with gzip.open(f, 'rb') as i:
+        with GzipFile(f, 'rb') as i:
             _charmap = dict(pickle.loads(i.read()))
     assert _charmap is not None
     return _charmap

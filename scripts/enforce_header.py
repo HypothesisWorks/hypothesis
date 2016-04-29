@@ -14,7 +14,7 @@ def all_python_files():
     files = [
         l.split()[-1]
         for l in lines
-        if l
+        if l and 'hypothesislegacysupport' not in l
     ]
     return [
         f for f in files

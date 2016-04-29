@@ -856,8 +856,10 @@ def _counter_pprint(obj, p, cycle):
 
 for_type_by_name('collections', 'defaultdict', _defaultdict_pprint)
 for_type_by_name('collections', 'OrderedDict', _ordereddict_pprint)
+for_type_by_name('ordereddict', 'OrderedDict', _ordereddict_pprint)
 for_type_by_name('collections', 'deque', _deque_pprint)
 for_type_by_name('collections', 'Counter', _counter_pprint)
+for_type_by_name('counter', 'Counter', _counter_pprint)
 
 for_type_by_name('_collections', 'defaultdict', _defaultdict_pprint)
 for_type_by_name('_collections', 'OrderedDict', _ordereddict_pprint)

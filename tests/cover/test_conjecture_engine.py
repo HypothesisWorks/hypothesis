@@ -91,7 +91,7 @@ def test_clone_into_variable_draws():
             data.mark_invalid()
         if large >= 10:
             data.mark_interesting()
-    assert set(x) == {0, 1}
+    assert set(x) == set((0, 1))
     assert x.count(1) == 10
     assert len(x) == 30 + (20 * 2) + (10 * 3)
 

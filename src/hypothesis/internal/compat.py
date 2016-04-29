@@ -47,6 +47,26 @@ CAN_UNPACK_BYTE_ARRAY = sys.version_info[:3] >= (2, 7, 4)
 WINDOWS = platform.system() == 'Windows'
 
 if PY26:
+    from hypothesis import __version__ as thisversion
+    try:
+        from hypothesislegacysupport import __version__ as thatversion
+    except ImportError:
+        raise ImportError(
+            'Hypothesis is not supported on Python 2.6 without the '
+            'hypothesislegacysupport installed. Check that you have a '
+            'license to use it and then install it in order to continue.'
+        )
+    if thisversion != thatversion:
+        raise ImportError((
+            'hypothesis and hypothesislegacysupport must have exactly the '
+            'same version, but you have hypothesis==%s installed and '
+            'hypothesislegacysupport==%s installed. Please replace one '
+            'with a version compatible with the other.'
+        ) % (thisversion, thatversion))
+
+    from hypothesislegacysupport import GzipFile, bit_length, sha1, \
+        b64encode, b64decode
+
     _special_floats = {
         float(u'inf'): Decimal(u'Infinity'),
         float(u'-inf'): Decimal(u'-Infinity'),
@@ -69,6 +89,13 @@ if PY26:
             result = ctx.divide(numerator, denominator)
         return result
 else:
+    from gzip import GzipFile
+    from hashlib import sha1
+    from base64 import b64encode, b64decode
+
+    def bit_length(n):
+        return n.bit_length()
+
     def float_to_decimal(f):
         return Decimal(f)
 

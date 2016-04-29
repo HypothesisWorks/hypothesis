@@ -60,13 +60,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 from __future__ import division, print_function, absolute_import
 
 import re
-from collections import deque, Counter, defaultdict, OrderedDict
+from collections import deque, defaultdict
 
 import pytest
 
 from hypothesis.vendor import pretty
 from tests.common.utils import capture_out
-from hypothesis.internal.compat import PY3, a_good_encoding
+from hypothesis.internal.compat import PY3, Counter, OrderedDict, \
+    a_good_encoding
 
 py2_only = pytest.mark.skipif(PY3, reason='This test only runs on python 2')
 
@@ -383,7 +384,7 @@ def test_long_tuple():
 
 
 def test_long_dict():
-    d = {n: n for n in range(10000)}
+    d = dict((n, n) for n in range(10000))
     p = pretty.pretty(d)
     last2 = p.rsplit('\n', 2)[-2:]
     assert_equal(last2, [' 999: 999,', ' ...}'])
