@@ -40,7 +40,8 @@ from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.strategies import just, sets, text, lists, floats, \
     tuples, booleans, integers, sampled_from
 from hypothesis.internal.compat import PY26, hrange
-from hypothesis.internal.conjecture.engine import TestRunner as ConTestRunner
+from hypothesis.internal.conjecture.engine import \
+    TestRunner as ConTestRunner
 
 pytestmark = pytest.mark.skipif(PY26, reason=u'2.6 lacks erf')
 
