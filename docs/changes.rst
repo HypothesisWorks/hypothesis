@@ -21,6 +21,24 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+
+------------------
+3.1.1 - 2016-04-29
+------------------
+
+Minor bug fix release.
+
+* Fix concurrency issue when running tests that use text() from multiple
+  processes at once (Bug #302, thanks to Alex Chan)
+* Improve performance of code using lists with max_size (thanks to
+  Cristi Cobzarenco)
+* Fix install on Python 2 with ancient versions of pip so that it installs the
+  enum34 backport (thanks to Donald Stufft for telling me how to do this).
+* Remove duplicated __all__ exports from hypothesis.strategies (thanks to
+  Piët Delport)
+* Update headers to point to new repository location.
+
+
 ------------------
 3.1.0 - 2016-03-06
 ------------------
