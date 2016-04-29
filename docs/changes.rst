@@ -29,14 +29,16 @@ information to the contrary.
 Minor bug fix release.
 
 * Fix concurrency issue when running tests that use text() from multiple
-  processes at once (Bug #302, thanks to Alex Chan)
+  processes at once (Bug #302, thanks to Alex Chan).
 * Improve performance of code using lists with max_size (thanks to
-  Cristi Cobzarenco)
+  Cristi Cobzarenco).
 * Fix install on Python 2 with ancient versions of pip so that it installs the
   enum34 backport (thanks to Donald Stufft for telling me how to do this).
 * Remove duplicated __all__ exports from hypothesis.strategies (thanks to
-  Piët Delport)
+  Piët Delport).
 * Update headers to point to new repository location.
+* Allow use of strategies that can't be used in find() (e.g. choices) in
+  stateful testing.
 
 
 ------------------
