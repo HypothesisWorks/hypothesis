@@ -27,4 +27,4 @@ __all__ = [
 ]
 
 if sys.version_info[:2] != (2, 6):
-    raise ImportError('hypothesislegacysupport is ony for use on Python 2.6')
+    raise ImportError('hypothesislegacysupport is only for use on Python 2.6')
