@@ -21,7 +21,6 @@ import os
 import sys
 import gzip
 import pickle
-import shutil
 import tempfile
 import unicodedata
 
@@ -58,10 +57,11 @@ def charmap():
                 for k, v in _charmap.items())
 
             # Write the Unicode table atomically
-            _, tmpfile = tempfile.mkstemp()
+            fd, tmpfile = tempfile.mkstemp()
+            os.close(fd)
             with gzip.GzipFile(tmpfile, 'wb', mtime=1) as o:
                 o.write(pickle.dumps(data, pickle.HIGHEST_PROTOCOL))
-            shutil.move(tmpfile, f)
+            os.rename(tmpfile, f)
 
         with gzip.open(f, 'rb') as i:
             _charmap = dict(pickle.loads(i.read()))
