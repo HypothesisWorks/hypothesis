@@ -112,7 +112,7 @@ def test_can_use_recursive_data_in_sets(rnd):
     assert x in (
         frozenset((False, True)),
         frozenset((False, frozenset((True,)))),
-        frozenset((frozenset((False, True))))
+        frozenset((frozenset((False, True)),))
     )
 
 
