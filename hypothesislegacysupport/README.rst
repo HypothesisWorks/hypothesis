@@ -1,7 +1,7 @@
 Hypothesis Python 2.6 Support
 =============================
 
-This is a module for adding Python 2.6 support to Hypothesis. It doens't
+This is a module for adding Python 2.6 support to Hypothesis. It doesn't
 add any additional functionality beyond that.
 
 Note that unlike the main Hypothesis code it is licensed under the
