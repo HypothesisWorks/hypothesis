@@ -23,6 +23,16 @@ information to the contrary.
 
 
 ------------------
+3.1.2 - 2016-04-30
+------------------
+
+Single bug fix release:
+
+* Anything which used a text() or characters() strategy was broken on Windows
+  and I hadn't updated appveyor to use the new repository location so I didn't
+  notice. This is now fixed and windows support should work correctly.
+
+------------------
 3.1.1 - 2016-04-29
 ------------------
 
