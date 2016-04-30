@@ -120,7 +120,6 @@ class TestCases(object):
 @fails
 @given(x=integers(min_value=0, max_value=3), name=text())
 def test_can_be_given_keyword_args(x, name):
-    print(x)
     assume(x > 0)
     assert len(name) < x
 
