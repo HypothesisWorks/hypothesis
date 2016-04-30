@@ -83,6 +83,7 @@ def test_minimal_fractions_3():
         lists(fractions()), lambda s: len(s) >= 20) == [Fraction(0)] * 20
 
 
+@slightly_flaky
 def test_minimal_fractions_4():
     x = minimal(
         lists(fractions(), min_size=20),
