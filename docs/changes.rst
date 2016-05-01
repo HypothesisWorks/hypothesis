@@ -21,6 +21,15 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+------------------
+3.1.3 - 2016-05-01
+------------------
+
+Single bug fix release
+
+* Another charmap problem. In 3.1.2 text/characters would break on systems
+  which had /tmp/ mounted on a different partition than the Hypothesis storage
+  directory (usually in home). This fixes that.
 
 ------------------
 3.1.2 - 2016-04-30
