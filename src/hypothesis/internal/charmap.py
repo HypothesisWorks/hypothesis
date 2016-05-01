@@ -23,7 +23,7 @@ import pickle
 import tempfile
 import unicodedata
 
-from hypothesis.configuration import storage_directory, tmpdir
+from hypothesis.configuration import tmpdir, storage_directory
 from hypothesis.internal.compat import hunichr, GzipFile
 
 

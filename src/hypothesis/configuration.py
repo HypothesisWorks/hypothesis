@@ -54,4 +54,4 @@ def storage_directory(*names):
 
 
 def tmpdir():
-    return storage_directory("tmp")
+    return storage_directory('tmp')
