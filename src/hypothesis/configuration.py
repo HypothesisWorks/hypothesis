@@ -51,3 +51,7 @@ def storage_directory(*names):
     path = os.path.join(hypothesis_home_dir(), *names)
     mkdir_p(path)
     return path
+
+
+def tmpdir():
+    return storage_directory("tmp")

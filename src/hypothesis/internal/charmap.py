@@ -23,7 +23,7 @@ import pickle
 import tempfile
 import unicodedata
 
-from hypothesis.configuration import storage_directory
+from hypothesis.configuration import storage_directory, tmpdir
 from hypothesis.internal.compat import hunichr, GzipFile
 
 
@@ -56,7 +56,7 @@ def charmap():
                 for k, v in _charmap.items())
 
             # Write the Unicode table atomically
-            fd, tmpfile = tempfile.mkstemp()
+            fd, tmpfile = tempfile.mkstemp(dir=tmpdir())
             os.close(fd)
             with GzipFile(tmpfile, 'wb', mtime=1) as o:
                 o.write(pickle.dumps(data, pickle.HIGHEST_PROTOCOL))
