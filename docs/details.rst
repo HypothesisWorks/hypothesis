@@ -418,7 +418,7 @@ example to a condition that is always false it will raise an error:
   >>> find(booleans(), lambda x: False)
   Traceback (most recent call last):
   ...
-  hypothesis.errors.DefinitelyNoSuchExample: No examples of condition lambda x: <unknown> (all 2 considered)
+  hypothesis.errors.NoSuchExample: No examples of condition lambda x: <unknown>
 
 
 
