@@ -19,6 +19,6 @@ But that was the *original* version of Haskell QuickCheck. It's not even true fo
 
 The *only* requirement that property based testing has on the side effects your tests may perform is that if your test has *global* side effects then it must be able to roll them back at the end.
 
-If that sounds familiar, it's because it's *exactly the same requirement every other test has*. Tests that have global side effects are not repeatable and may interfere with other tests, so they must keep their side effects to themselves.
+If that sounds familiar, it's because it's *exactly the same requirement every other test has*. Tests that have global side effects are not repeatable and may interfere with other tests, so they must keep their side effects to themselves by rolling them back at the end of the test.
 
 Property based testing is just normal testing, run multiple times, with a source of data to fill in some of the blanks. There is no special requirement on it beyond that, and the myth that there is causes great harm and keeps many people from adopting more powerful testing tools.
