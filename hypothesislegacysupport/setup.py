@@ -37,7 +37,7 @@ setup(
     author_email='david@drmaciver.com',
     packages=find_packages(SOURCE),
     package_dir={'': SOURCE},
-    url='https://github.com/DRMacIver/hypothesis',
+    url='https://github.com/HypothesisWorks/hypothesis-python',
     license='AGPL',
     install_requires=install_requires,
     extras_require={

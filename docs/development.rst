@@ -16,13 +16,13 @@ I am the primary author of Hypothesis.
 
 So all new features must either be sponsored or implemented by someone else. That being said, I take a fairly active
 role in shepherding pull requests and helping people write a new feature (see `the
-contributing guidelines <https://github.com/DRMacIver/hypothesis/blob/master/CONTRIBUTING.rst>`_ for
+contributing guidelines <https://github.com/HypothesisWorks/hypothesis-python/blob/master/CONTRIBUTING.rst>`_ for
 details and `this pull request
-<https://github.com/DRMacIver/hypothesis/pull/154>`_ for an example of how the process goes). This isn't
+<https://github.com/HypothesisWorks/hypothesis-python/pull/154>`_ for an example of how the process goes). This isn't
 "patches welcome", it's "I will help you write a patch".
 
-All enhancement tickets on GitHub are tagged with either `help-wanted <https://github.com/DRMacIver/hypothesis/labels/help-wanted>`_
-if I think they're viable for someone else to pick up or `for-a-modest-fee <https://github.com/DRMacIver/hypothesis/labels/for-a-modest-fee>`_ if
+All enhancement tickets on GitHub are tagged with either `help-wanted <https://github.com/HypothesisWorks/hypothesis-python/labels/help-wanted>`_
+if I think they're viable for someone else to pick up or `for-a-modest-fee <https://github.com/HypothesisWorks/hypothesis-python/labels/for-a-modest-fee>`_ if
 I think they are not and that if you want them you should probably talk to me about paid development.
 
 You are of course entirely welcome to ask for paid development on something that is marked help-wanted,

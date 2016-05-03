@@ -63,7 +63,7 @@ setup(
     author_email='david@drmaciver.com',
     packages=find_packages(SOURCE),
     package_dir={"": SOURCE},
-    url='https://github.com/DRMacIver/hypothesis',
+    url='https://github.com/HypothesisWorks/hypothesis-python',
     license='MPL v2',
     description='A library for property based testing',
     zip_safe=False,
