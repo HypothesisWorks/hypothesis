@@ -4,7 +4,7 @@ layout: page
 date: 2015-04-23 22:03
 ---
 
-Normal "automated" software testing is surprisingly manual. Every scenario the computer runs, a developer had to
+Normal "automated" software testing is surprisingly manual. Every scenario the computer runs, someone had to
 write by hand. Hypothesis can fix this.
 
 Hypothesis is a new generation of tools for automating your testing process. It combines human understanding of
