@@ -184,20 +184,6 @@ against 1.8.
 
 It's large enough that it is :doc:`documented elsewhere <django>`.
 
------------------
-hypothesis-pytest
------------------
-
-hypothesis-pytest is actually available as a separate package that is installed as
-hypothesis-pytest rather than hypothesis[pytest]. This may change in future but the
-package will remain for compatibility reasons if it does.
-
-hypothesis-pytest is the world's most basic pytest plugin. Install it to get
-slightly better integrated example reporting when using @given and running
-under pytest.
-
-It can also load :ref:`settings Profiles <settings_profiles>`.
-
 ------------------
 hypothesis[numpy]
 ------------------
