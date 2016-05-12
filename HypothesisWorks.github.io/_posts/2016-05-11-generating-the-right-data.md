@@ -36,7 +36,8 @@ A project has a name, a start date, and an end date.
 
 So how do we generate such a thing?
 
-Well, first we need to figure out the right data to generate:
+We'll start by generating the data we need for each field, and then at the end
+we'll put it all together to generate a project.
 
 ### Names
 
