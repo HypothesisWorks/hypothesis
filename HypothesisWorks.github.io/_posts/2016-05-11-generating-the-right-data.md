@@ -6,10 +6,12 @@ title: Generating the right data
 published: true
 ---
 
-One thing that often causes people problems is figuring out how to generate the right data to fit their data
-model. You can start with just generating strings and integers, but eventually you want to be able to generate
-objects from your domain model. Hypothesis provides a lot of tools to help you build data as you want it,
-but sometimes the choice can be a bit overwhelming.
+One thing that often causes people problems is figuring out how to generate
+the right data to fit their data
+model. You can start with just generating strings and integers, but eventually you want
+to be able to generate
+objects from your domain model. Hypothesis provides a lot of tools to help you build the
+data you want, but sometimes the choice can be a bit overwhelming.
 
 Here's a worked example to walk you through some of the details and help you get to grips with how to use
 them.
@@ -34,10 +36,14 @@ class Project(object):
 
 A project has a name, a start date, and an end date.
 
-So how do we generate such a thing?
+How do we generate such a thing?
+
+The idea is to break the problem down into parts, and then use the tools
+Hypothesis provides to assemble those parts into a strategy for generating
+our projects.
 
 We'll start by generating the data we need for each field, and then at the end
-we'll put it all together to generate a project.
+we'll see how to put it all together to generate a Project.
 
 ### Names
 
@@ -153,7 +159,7 @@ IndexError: string index out of range
 Whoops!
 
 The problem is that our initial test worked because the strings we were generating were always
-non-empty because of the min_size parameter. We're still only generating non-empty strings,
+non-empty because of the min\_size parameter. We're still only generating non-empty strings,
 but if we generate a string which is all spaces then strip it, the result will be empty
 *after* our map.
 
