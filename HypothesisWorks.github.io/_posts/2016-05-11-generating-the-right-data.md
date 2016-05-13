@@ -120,10 +120,10 @@ asking Hypothesis for a more specific example:
 ' '
 ```
 
-Do do this we're going to use the strategy's *map* method which lets you compose it with
-an arbitrary function to post-process the results into the for you want:
+So lets fix it so that they can't by stripping the spaces off it.
 
-So lets fix it so that they can't by stripping the spaces off it:
+To do this we're going to use the strategy's *map* method which lets you compose it with
+an arbitrary function to post-process the results into the for you want:
 
 ```pycon
 >>> names = text(characters(max_codepoint=1000, blacklist_categories=('Cc', 'Cs')), min_size=1).map(
