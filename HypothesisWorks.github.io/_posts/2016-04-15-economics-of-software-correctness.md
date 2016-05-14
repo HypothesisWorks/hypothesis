@@ -26,7 +26,8 @@ And "too expensive" doesn't mean "It will knock 10% off our profit margins, we c
 
 ("sell" and "release" here can mean a variety of things. It can mean that terribly unfashionable behaviour where people give you money and you give them a license to your software. It can mean subscriptions. It can mean ad space. It can even mean paid work. I'm just going to keep saying sell and release).
 
-NASA can do it because when they introduce a software bug they potentially lose some combination of billions of dollars, years of work and many lives. When that's the cost of a bug, spending that much time and money on correctness seems like a great deal. Safety critical industries like medical technology and aviation can do it for similar reasons (<a href="https://en.wikipedia.org/wiki/Therac-25">buggy medical technology kills people</a>, and <a href="http://www.engadget.com/2015/05/01/boeing-787-dreamliner-software-bug/">you don't want your engines power cycling themselves midflight</a>).
+NASA can do it because when they introduce a software bug they potentially lose some combination of billions of dollars, years of work and many lives. When that's the cost of a bug, spending that much time and money on correctness seems like a great deal. Safety critical industries like medical technology and aviation can do it for similar reasons
+([buggy medical technology kills people](https://en.wikipedia.org/wiki/Therac-25) and [you don't want your engines power cycling themselves midflight](http://www.engadget.com/2015/05/01/boeing-787-dreamliner-software-bug/)).
 
 The rest of us aren't writing safety critical software, and as a result people aren't willing to pay for that level of correctness.
 
