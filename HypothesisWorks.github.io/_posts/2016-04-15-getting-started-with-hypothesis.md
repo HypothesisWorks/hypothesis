@@ -6,21 +6,21 @@ title: Getting started with Hypothesis
 published: true
 ---
 
-Property based testing will speed up your testing process and improve your software quality,
+Hypothesis will speed up your testing process and improve your software quality,
 but when first starting out people often struggle to figure out exactly how to use it.
 
-Until you're used to thinking in property based tests, it's not always obvious what the invariants of your
+Until you're used to thinking in this style of testing, it's not always obvious what the invariants of your
 code actually *are*, and people get stuck trying to come up with interesting ones to test.
 
-Fortunately, there's a simple property which every piece of software should satisfy, and which can be
+Fortunately, there's a simple invariant which every piece of software should satisfy, and which can be
 remarkably powerful as a way to uncover surprisingly deep bugs in your software.
 
 <!--more-->
 
-That property is simple: The software shouldn't crash. Or sometimes, it should only crash in defined
+That invariant is simple: The software shouldn't crash. Or sometimes, it should only crash in defined
 ways.
 
-There is then a standard property based test you can write for most of your code that asserts this
+There is then a standard test you can write for most of your code that asserts this
 invariant.
 
 It consists of two steps:
@@ -28,8 +28,10 @@ It consists of two steps:
 1. Pick a function in your code base that you want to be better tested.
 2. Call it with random data.
 
+This style of testing is usually called *fuzzing*.
+
 This will possibly require you to figure out how to generate your domain objects. Hypothesis
-[has a pretty extensive library of tools for generating custom types](http://hypothesis.readthedocs.org/en/release/data.html),
+[has a pretty extensive library of tools for generating custom types]({{site.url}}{% post_url 2016-05-11-generating-the-right-data %})
 but if you can, try to start somewhere where the types you need aren’t *too* complicated to generate.
 
 Chances are actually pretty good that you’ll find something wrong this way if you pick a
@@ -81,4 +83,4 @@ Once you think you've got the hang of this, a good next step is to start looking
 [Encode/Decode pairs]({{site.url}}{% post_url 2016-04-16-encode-decode-invariant %}) in
 your code, as they're a fairly easy properties to test and are both rich sources of bugs.
 
-And, of course, if you’re still having trouble getting started with property-based testing, the other easy way is to persuade your company [to hire us for a training course](/training/). Drop us an email at [training@hypothesis.works](mailto:training@hypothesis.works])
+And, of course, if you’re still having trouble getting started with Hypothesis, the other easy way is to persuade your company [to hire us for a training course](/training/). Drop us an email at [training@hypothesis.works](mailto:training@hypothesis.works])
