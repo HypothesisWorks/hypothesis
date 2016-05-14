@@ -45,7 +45,7 @@ As evidence I present the following:
 2. The many successful property based testing systems for dynamic languages. e.g. Erlang
    QuickCheck, test.check, Hypothesis.
 3. [SmallCheck](https://hackage.haskell.org/package/smallcheck). I have mixed feelings about
-   its effectiveness.
+   its effectiveness, but it's unambiguously property-based testing.
 4. It's very easy to hand-roll your own testing protocols for property-based testing of a
    particular result. For example, I've [previously done this for testing a code formatter](
    http://www.drmaciver.com/2015/03/27-bugs-in-24-hours/): Run it over a corpus (more on
