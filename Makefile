@@ -7,6 +7,7 @@ SPHINX_BUILDDIR      = docs/_build
 ALLSPHINXOPTS   = -d $(SPHINX_BUILDDIR)/doctrees docs -W
 
 export BUILD_RUNTIMES?=$(HOME)/.hypothesis-build-runtime
+export TOX_WORK_DIR=$(BUILD_RUNTIMES)/.tox
 
 PY26=$(BUILD_RUNTIMES)/snakepit/python2.6
 PY27=$(BUILD_RUNTIMES)/snakepit/python2.7
