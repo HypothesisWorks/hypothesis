@@ -6,7 +6,7 @@ SPHINXBUILD   = $(DEV_PYTHON) -m sphinx
 SPHINX_BUILDDIR      = docs/_build
 ALLSPHINXOPTS   = -d $(SPHINX_BUILDDIR)/doctrees docs -W
 
-BUILD_RUNTIMES?=$(PWD)/.runtimes
+export BUILD_RUNTIMES?=$(HOME)/.hypothesis-build-runtime
 
 PY26=$(BUILD_RUNTIMES)/snakepit/python2.6
 PY27=$(BUILD_RUNTIMES)/snakepit/python2.7
@@ -61,6 +61,8 @@ $(TOOL_VIRTUALENV): $(PY34)
 	mkdir -p $(TOOLS)
 
 $(TOOLS): $(TOOL_VIRTUALENV)
+
+install-tools: $(TOOLS)
 
 $(ISORT_VIRTUALENV): $(PY34)
 	$(PY34) -m virtualenv $(ISORT_VIRTUALENV)

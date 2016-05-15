@@ -26,7 +26,7 @@ env | grep UTF
 # ever not being acquired. 
 
 BASE=${BUILD_RUNTIMES-$PWD/.runtimes}
-echo $BASE
+
 mkdir -p $BASE
 
 LOCKFILE="$BASE/.install-lockfile"
