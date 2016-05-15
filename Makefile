@@ -6,7 +6,9 @@ SPHINXBUILD   = $(DEV_PYTHON) -m sphinx
 SPHINX_BUILDDIR      = docs/_build
 ALLSPHINXOPTS   = -d $(SPHINX_BUILDDIR)/doctrees docs -W
 
-BUILD_RUNTIMES?=$(PWD)/.runtimes
+export BUILD_RUNTIMES?=$(HOME)/.cache/hypothesis-build-runtimes
+export TOX_WORK_DIR=$(BUILD_RUNTIMES)/.tox
+export COVERAGE_FILE=$(BUILD_RUNTIMES)/.coverage
 
 PY26=$(BUILD_RUNTIMES)/snakepit/python2.6
 PY27=$(BUILD_RUNTIMES)/snakepit/python2.7
@@ -61,6 +63,8 @@ $(TOOL_VIRTUALENV): $(PY34)
 	mkdir -p $(TOOLS)
 
 $(TOOLS): $(TOOL_VIRTUALENV)
+
+install-tools: $(TOOLS)
 
 $(ISORT_VIRTUALENV): $(PY34)
 	$(PY34) -m virtualenv $(ISORT_VIRTUALENV)
@@ -160,7 +164,6 @@ check-fast: lint $(PY26) $(PY35) $(PYPY) $(TOX)
 $(TOX): $(PY35) tox.ini $(TOOLS)
 	rm -f $(TOX)
 	$(TOOL_INSTALL) tox
-	rm -rf .tox
 	ln -sf $(TOOL_VIRTUALENV)/bin/tox $(TOX)
 	touch $(TOOL_VIRTUALENV)/bin/tox $(TOX)
 
