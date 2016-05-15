@@ -1,8 +1,8 @@
 [run]
 branch = True
 include =
-    .tox/*/lib/*/site-packages/hypothesis/*.py
-    .tox/*/lib/*/site-packages/hypothesis/**/*.py
+    **/.tox/*/lib/*/site-packages/hypothesis/*.py
+    **/.tox/*/lib/*/site-packages/hypothesis/**/*.py
 omit =
     **/_settings.py
     **/pytestplugin.py
