@@ -3,11 +3,14 @@
 
 set -e -x
 
+sudo ln -fs /usr/share/zoneinfo/UTC /etc/localtime
+
 if [ ! $(which node) ] ; then
     # Ugh
     curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -
-    sudo apt-get install -y git libreadline-dev libssl-dev zlib1g-dev build-essential nodejs
 fi
+
+sudo apt-get install -y git libreadline-dev libssl-dev zlib1g-dev build-essential nodejs psmisc
 
 if [ ! -d ~/.rbenv  ]; then
     git clone https://github.com/rbenv/rbenv.git ~/.rbenv
@@ -38,6 +41,8 @@ if [ ! $(killall bundle 2>/dev/null) ]; then
     rm -f jekyll.log
 fi
 
-nohup bundle exec jekyll serve -H 0.0.0.0 > jekyll.log 2>&1 &
+nohup bundle exec jekyll serve -H 0.0.0.0 --force_polling > jekyll.log 2>&1 &
 
 sleep 1
+
+cat jekyll.log
