@@ -4,6 +4,7 @@ tags: intro python technical properties
 date: 2016-04-15 13:00
 title: Getting started with Hypothesis
 published: true
+author: drmaciver
 ---
 
 Hypothesis will speed up your testing process and improve your software quality,

@@ -264,3 +264,9 @@ div.container {
 pre {
     margin: 1em 2em 0.5em 2em;
 }
+
+
+.post-metadata div.author {
+    font-size: 20px;
+}
+

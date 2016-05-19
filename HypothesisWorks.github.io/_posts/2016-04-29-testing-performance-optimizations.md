@@ -4,6 +4,7 @@ tags: technical intro python
 date: 2016-04-29 11:00
 title: Testing performance optimizations
 published: true
+author: drmaciver
 ---
 
 Once you've 

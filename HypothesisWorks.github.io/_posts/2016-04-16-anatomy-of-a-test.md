@@ -4,6 +4,7 @@ tags: python details technical
 date: 2016-04-16 06:00
 title: Anatomy of a Hypothesis Based Test
 published: true
+author: drmaciver
 ---
 
 What happens when you run a test using Hypothesis? This article will help you understand.

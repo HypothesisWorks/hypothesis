@@ -4,6 +4,7 @@ tags: python intro technical properties
 date: 2016-04-16 06:00
 title: The Encode/Decode invariant
 published: true
+author: drmaciver
 ---
 
 One of the simplest types of invariant to find once you move past

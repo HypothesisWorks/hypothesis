@@ -4,6 +4,7 @@ tags: news python
 date: 2016-05-19 12:00
 title: Announcing Hypothesis Legacy Support
 published: true
+author: drmaciver
 ---
 
 For a brief period, Python 2.6 was supported in [Hypothesis for Python](

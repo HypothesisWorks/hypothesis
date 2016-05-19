@@ -9,11 +9,19 @@ layout: default
         <header class="page-header">
           <h3 class="page-title"><a href="{{page.url|prepend: site.baseurl}}">{{ page.title }}</a></h3>
           <div class="post-metadata">
+
+            {% assign author = site.data.authors[page.author] %}
+
+            <div class="author">
+              <a href="{{author.url}}">{{ author.name }}</a>
+            </div>
+
             <div> <i class="fa fa-calendar"></i>
               <time>
                 {{ page.date | date:'%A, %B %d, %Y'}}
               </time>
             </div>
+
             <div> <i class="fa fa-tag"></i>
               {% assign sorted_tags = page.tags |  sort %}
               {% for tag in sorted_tags %}

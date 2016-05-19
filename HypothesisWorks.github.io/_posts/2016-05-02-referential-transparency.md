@@ -4,6 +4,7 @@ tags: non-technical
 date: 2016-05-02 08:00
 title: You Don't Need Referential Transparency
 published: true
+author: drmaciver
 ---
 
 It's a common belief that in order for property based testing to be useful, your code must be [referentially transparent](https://en.wikipedia.org/wiki/Referential_transparency). That is, it must be a pure function with no side effects that just takes input data and produces output data and is solely defined by what input data produces what output data.

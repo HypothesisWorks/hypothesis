@@ -4,6 +4,7 @@ tags: python technical intro
 date: 2016-04-19 07:00
 title: Rule Based Stateful Testing
 published: true
+author: drmaciver
 ---
 
 Hypothesis's standard testing mechanisms are very good for testing things that can be

@@ -4,6 +4,7 @@ tags: technical python details
 date: 2016-05-11 10:00
 title: Generating the right data
 published: true
+author: drmaciver
 ---
 
 One thing that often causes people problems is figuring out how to generate

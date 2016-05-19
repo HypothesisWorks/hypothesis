@@ -4,7 +4,8 @@ tags: writing-good-software non-technical
 date: 2016-04-15 15:00
 title: The Economics of Software Correctness
 published: true
----
+author: drmaciver
+---------
 
 You have probably never written a significant piece of correct software.
 

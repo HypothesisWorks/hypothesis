@@ -4,6 +4,7 @@ tags: non-technical philosophy
 date: 2016-05-14 09:00
 title: What is Property Based Testing?
 published: true
+author: drmaciver
 ---
 
 I get asked this a lot, and I write property based testing tools for a living, so you'd think
