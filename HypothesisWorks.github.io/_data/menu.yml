@@ -4,6 +4,10 @@ mainmenu:
     url: "/"
     text: "Home"
     icon_class: fa-home
+  products:
+    url: "/products/"
+    text: "Products"
+    icon_class: fa-wrench
   services:
     url: "/services/"
     text: "Services"
