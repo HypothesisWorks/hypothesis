@@ -59,3 +59,8 @@ __pycache__
 *.pyc
 
 .jekyll-metadata
+
+.idea
+.vagrant
+HypothesisWorks.github.io.iml
+jekyll.log
