@@ -13,8 +13,6 @@ a priority and support was dropped in Hypothesis 2.0.
 
 I've now added it back, but under a more restrictive license.
 
-<!--more-->
-
 If you want to use Hypothesis on Python 2.6, you can now do so by installing
 the [hypothesislegacysupport]({{site.url}}/products/#hypothesis-legacy-support)
 package. This will allow you to run Hypothesis on Python 2.6.
