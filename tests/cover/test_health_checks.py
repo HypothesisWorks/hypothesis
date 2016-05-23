@@ -26,6 +26,7 @@ import hypothesis.strategies as st
 from hypothesis import given, settings, HealthCheck
 from hypothesis.errors import FailedHealthCheck
 from hypothesis.control import assume
+from tests.common.utils import capture_out
 from hypothesis.internal.compat import int_from_bytes
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
@@ -64,17 +65,46 @@ def test_error_in_strategy_produces_health_check_error():
     assert 'executor' not in e.value.args[0]
 
 
-def test_suppressing_a_health_check():
+def test_suppressing_error_in_value_generation():
     def boom(x):
         raise ValueError()
 
-    @settings(suppress_health_checks=[HealthCheck.exception_in_generation])
+    @settings(suppress_health_check=[HealthCheck.exception_in_generation])
     @given(st.integers().map(boom))
     def test(x):
         pass
 
+    with capture_out() as out:
+        with reporting.with_reporter(reporting.default):
+            with raises(ValueError):
+                test()
+    assert 'ValueError' not in out.getvalue()
+
+
+def test_suppressing_filtering_health_check():
+    count = [0]
+
+    def too_soon(x):
+        count[0] += 1
+        return count[0] >= 200
+
+    @given(st.integers().filter(too_soon))
+    def test1(x):
+        raise ValueError()
+
+    with raises(FailedHealthCheck):
+        test1()
+
+    count[0] = 0
+
+    @settings(suppress_health_check=[
+        HealthCheck.filter_too_much, HealthCheck.too_slow])
+    @given(st.integers().filter(too_soon))
+    def test2(x):
+        raise ValueError()
+
     with raises(ValueError):
-        test()
+        test2()
 
 
 def test_error_in_strategy_with_custom_executor():

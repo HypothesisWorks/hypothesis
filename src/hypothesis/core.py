@@ -369,6 +369,11 @@ def given(*generator_arguments, **generator_kwargs):
                     except InvalidArgument:
                         raise
                     except Exception:
+                        if (
+                            HealthCheck.exception_in_generation in
+                            settings.suppress_health_check
+                        ):
+                            raise
                         report(traceback.format_exc())
                         if test_runner is default_new_style_executor:
                             fail_health_check(
@@ -431,13 +436,8 @@ def given(*generator_arguments, **generator_kwargs):
                     )
             last_exception = [None]
             repr_for_last_exception = [None]
-            performed_random_check = [False]
 
             def evaluate_test_data(data):
-                if perform_health_check and not performed_random_check[0]:
-                    performed_random_check[0] = True
-                else:
-                    initial_state = None
                 try:
                     result = test_runner(data, reify_and_execute(
                         search_strategy, test,
