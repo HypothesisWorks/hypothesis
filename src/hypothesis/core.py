@@ -24,7 +24,6 @@ import time
 import inspect
 import functools
 import traceback
-from random import getstate as getglobalrandomstate
 from random import Random
 from collections import namedtuple
 
@@ -89,8 +88,15 @@ def reify_and_execute(
     print_example=False,
     is_final=False,
 ):
+    from hypothesis.strategies import random_module
+
     def run(data):
+        from hypothesis.control import note
+
         with BuildContext(is_final=is_final):
+            seed = data.draw(random_module()).seed
+            if seed != 0:
+                note('random.seed(%d)' % (seed,))
             args, kwargs = data.draw(search_strategy)
 
             if print_example:
@@ -314,7 +320,6 @@ def given(*generator_arguments, **generator_kwargs):
                 return
 
             if perform_health_check:
-                initial_state = getglobalrandomstate()
                 health_check_random = Random(random.getrandbits(128))
                 # We "pre warm" the health check with one draw to give it some
                 # time to calculate any cached data. This prevents the case
@@ -424,24 +429,12 @@ def given(*generator_arguments, **generator_kwargs):
                     ) % (count, runtime, filtered_draws, overruns),
                         HealthCheck.too_slow,
                     )
-                if getglobalrandomstate() != initial_state:
-                    fail_health_check(
-                        'Data generation depends on global random module. '
-                        'This makes results impossible to replay, which '
-                        'prevents Hypothesis from working correctly. '
-                        'If you want to use methods from random, use '
-                        'randoms() from hypothesis.strategies to get an '
-                        'instance of Random you can use. Alternatively, you '
-                        'can use the random_module() strategy to explicitly '
-                        'seed the random module.', HealthCheck.random_module,
-                    )
             last_exception = [None]
             repr_for_last_exception = [None]
             performed_random_check = [False]
 
             def evaluate_test_data(data):
                 if perform_health_check and not performed_random_check[0]:
-                    initial_state = getglobalrandomstate()
                     performed_random_check[0] = True
                 else:
                     initial_state = None
@@ -466,20 +459,6 @@ def given(*generator_arguments, **generator_kwargs):
                     last_exception[0] = traceback.format_exc()
                     verbose_report(last_exception[0])
                     data.mark_interesting()
-                finally:
-                    if (
-                        initial_state is not None and
-                        getglobalrandomstate() != initial_state
-                    ):
-                        fail_health_check(
-                            'Your test used the global random module. '
-                            'This is unlikely to work correctly. You should '
-                            'consider using the randoms() strategy from '
-                            'hypothesis.strategies instead. Alternatively, '
-                            'you can use the random_module() strategy to '
-                            'explicitly seed the random module.',
-                            HealthCheck.random_module,
-                        )
 
             from hypothesis.internal.conjecture.engine import TestRunner
 

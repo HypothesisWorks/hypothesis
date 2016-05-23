@@ -39,28 +39,6 @@ def test_slow_generation_fails_a_health_check():
         test()
 
 
-def test_global_random_in_strategy_fails_a_health_check():
-    import random
-
-    @given(st.lists(st.integers(), min_size=1).map(random.choice))
-    def test(x):
-        pass
-
-    with raises(FailedHealthCheck):
-        test()
-
-
-def test_global_random_in_test_fails_a_health_check():
-    import random
-
-    @given(st.lists(st.integers(), min_size=1))
-    def test(x):
-        random.choice(x)
-
-    with raises(FailedHealthCheck):
-        test()
-
-
 def test_default_health_check_can_weaken_specific():
     import random
 
@@ -84,6 +62,19 @@ def test_error_in_strategy_produces_health_check_error():
         with reporting.with_reporter(reporting.default):
             test()
     assert 'executor' not in e.value.args[0]
+
+
+def test_suppressing_a_health_check():
+    def boom(x):
+        raise ValueError()
+
+    @settings(suppress_health_checks=[HealthCheck.exception_in_generation])
+    @given(st.integers().map(boom))
+    def test(x):
+        pass
+
+    with raises(ValueError):
+        test()
 
 
 def test_error_in_strategy_with_custom_executor():
@@ -147,18 +138,6 @@ def test_large_data_will_fail_a_health_check():
     assert 'allowable size' in e.value.args[0]
 
 
-def test_nesting_without_control_fails_health_check():
-    @given(st.integers())
-    def test_blah(x):
-        @given(st.integers())
-        def test_nest(y):
-            assert y < x
-        with raises(AssertionError):
-            test_nest()
-    with raises(FailedHealthCheck):
-        test_blah()
-
-
 def test_returning_non_none_is_forbidden():
     @given(st.integers())
     def a(x):
@@ -175,22 +154,3 @@ def test_returning_non_none_does_not_fail_if_health_check_disabled():
         return 1
 
     a()
-
-
-@given(st.integers())
-@settings(suppress_health_check=[HealthCheck.random_module])
-def test_can_suppress_a_single_health_check(i):
-    import random
-    random.seed(i)
-
-
-def test_suppressing_health_check_does_not_suppress_others():
-    import random
-
-    @given(st.integers().filter(lambda x: random.randint(0, 1) and False))
-    @settings(suppress_health_check=[HealthCheck.random_module])
-    def test(i):
-        pass
-
-    with raises(FailedHealthCheck):
-        test()
