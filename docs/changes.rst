@@ -22,6 +22,19 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 ------------------
+3.2.0 - 2016-05-19
+------------------
+
+This is a small single-feature release:
+
+* All tests using @given now fix the global random seed. This removes the health
+  check for that. If a non-zero seed is required for the final falsifying
+  example, it will be reported. Otherwise Hypothesis will assume randomization
+  was not a significant factor for the test and be silent on the subject. If you
+  use the random_module() strategy this will continue to work and will always
+  display the seed.
+
+------------------
 3.1.3 - 2016-05-01
 ------------------
 
