@@ -22,8 +22,8 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import just, lists
 from hypothesis.extra.django import TestCase, TransactionTestCase
 from tests.django.toystore.models import Store, Company, Customer, \
-    ManyInts, SelfLoop, Customish, CustomishField, CouldBeCharming, \
-    CustomishDefault, MandatoryComputed
+    ManyNumerics, SelfLoop, Customish, CustomishField, CouldBeCharming, \
+    CustomishDefault, MandatoryComputed, RestrictedFields
 from hypothesis.extra.django.models import models, default_value, \
     add_default_field_mapping
 
@@ -66,7 +66,7 @@ class TestGetsBasicModels(TestCase):
     def test_sl(self, sl):
         self.assertIsNone(sl.me)
 
-    @given(lists(models(ManyInts)))
+    @given(lists(models(ManyNumerics)))
     def test_no_overflow_in_integer(self, manyints):
         pass
 
@@ -102,3 +102,17 @@ class TestsNeedingRollback(TransactionTestCase):
     def test_can_get_examples(self):
         for _ in range(200):
             models(Company).example()
+
+
+class TestRestrictedFields(TestCase):
+    @given(models(RestrictedFields))
+    def test_constructs_valid_instance(self, instance):
+        self.assertTrue(isinstance(instance, RestrictedFields))
+        instance.full_clean()
+        self.assertLessEqual(len(instance.text_field_4), 4)
+        self.assertLessEqual(len(instance.char_field_4), 4)
+        self.assertIn(instance.choice_field_text, ('foo', 'bar'))
+        self.assertIn(instance.choice_field_int, (1, 2))
+        self.assertIn(instance.null_choice_field_int, (1, 2, None))
+        self.assertEqual(instance.even_number_field % 2, 0)
+        self.assertTrue(instance.non_blank_text_field)

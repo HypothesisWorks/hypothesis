@@ -18,6 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 from django.db import models
+from django.core.exceptions import ValidationError
 
 
 class Company(models.Model):
@@ -73,13 +74,15 @@ class LoopB(models.Model):
     a = models.ForeignKey(u'LoopA', null=True)
 
 
-class ManyInts(models.Model):
+class ManyNumerics(models.Model):
     i1 = models.IntegerField()
     i2 = models.SmallIntegerField()
     i3 = models.BigIntegerField()
 
     p1 = models.PositiveIntegerField()
     p2 = models.PositiveSmallIntegerField()
+
+    d = models.DecimalField(decimal_places=2, max_digits=5)
 
 
 class CustomishDefault(models.Model):
@@ -96,3 +99,27 @@ class MandatoryComputed(models.Model):
         cname = kw[u'name'] + u'_company'
         kw[u'company'] = Company.objects.create(name=cname)
         super(MandatoryComputed, self).__init__(**kw)
+
+
+def validate_even(value):
+    if value % 2 != 0:
+        raise ValidationError('')
+
+
+class RestrictedFields(models.Model):
+    text_field_4 = models.TextField(max_length=4, blank=True)
+    char_field_4 = models.CharField(max_length=4, blank=True)
+    choice_field_text = models.TextField(
+        choices=(('foo', 'Foo'), ('bar', 'Bar'))
+    )
+    choice_field_int = models.IntegerField(
+        choices=((1, 'First'), (2, 'Second'))
+    )
+    null_choice_field_int = models.IntegerField(
+        choices=((1, 'First'), (2, 'Second')),
+        null=True, blank=True
+    )
+    even_number_field = models.IntegerField(
+        validators=[validate_even]
+    )
+    non_blank_text_field = models.TextField(blank=False)
