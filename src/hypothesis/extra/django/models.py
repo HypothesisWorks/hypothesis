@@ -18,6 +18,8 @@
 from __future__ import division, print_function, absolute_import
 
 import django.db.models as dm
+from decimal import Decimal
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 
 import hypothesis.strategies as st
@@ -60,10 +62,7 @@ def field_mappings():
             dm.PositiveSmallIntegerField: st.integers(0, 32767),
             dm.BinaryField: st.binary(),
             dm.BooleanField: st.booleans(),
-            dm.CharField: st.text(),
-            dm.TextField: st.text(),
             dm.DateTimeField: datetimes(allow_naive=False),
-            dm.EmailField: ff.fake_factory(u'email'),
             dm.FloatField: st.floats(),
             dm.NullBooleanField: st.one_of(st.none(), st.booleans()),
         }
@@ -77,22 +76,72 @@ def add_default_field_mapping(field_type, strategy):
 default_value = UniqueIdentifier(u'default_value')
 
 
+class UnmappedFieldError(Exception):
+    pass
+
+
+def validator_to_filter(f):
+    """
+    Converts the field run_validators method to something suitable for use in
+    filter.
+    """
+
+    def validate(value):
+        try:
+            f.run_validators(value)
+            return True
+        except ValidationError:
+            return False
+
+    return validate
+
+
+def _get_strategy_for_field(f):
+    if isinstance(f, dm.AutoField):
+        return default_value
+    elif f.choices:
+        choices = [value for (value, name) in f.choices]
+        if isinstance(f, (dm.CharField, dm.TextField)) and f.blank:
+            choices.append(u'')
+        strategy = st.sampled_from(choices)
+    elif isinstance(f, dm.EmailField):
+        return ff.fake_factory(u'email')
+    elif type(f) in (dm.TextField, dm.CharField):
+        strategy = st.text(min_size=(None if f.blank else 1),
+                           max_size=f.max_length)
+    elif type(f) == dm.DecimalField:
+        m = 10 ** f.max_digits - 1
+        div = 10 ** f.decimal_places
+        q = Decimal('1.' + ('0' * f.decimal_places))
+        strategy = (
+            st.integers(min_value=-m, max_value=m)
+            .map(lambda n: (Decimal(n) / div).quantize(q)))
+    else:
+        try:
+            strategy = field_mappings()[type(f)]
+        except KeyError:
+            if f.null:
+                return None
+            else:
+                raise UnmappedFieldError(f)
+    if f.validators:
+        strategy = strategy.filter(validator_to_filter(f))
+    if f.null:
+        strategy = st.one_of(st.none(), strategy)
+    return strategy
+
+
 def models(model, **extra):
     result = {}
-    mappings = field_mappings()
     mandatory = set()
     for f in model._meta.concrete_fields:
-        if isinstance(f, dm.AutoField):
-            continue
         try:
-            mapped = mappings[type(f)]
-        except KeyError:
-            if not f.null:
-                mandatory.add(f.name)
+            strategy = _get_strategy_for_field(f)
+        except UnmappedFieldError:
+            mandatory.add(f.name)
             continue
-        if f.null:
-            mapped = st.one_of(st.none(), mapped)
-        result[f.name] = mapped
+        if strategy is not None:
+            result[f.name] = strategy
     missed = {x for x in mandatory if x not in extra}
     if missed:
         raise InvalidArgument((
