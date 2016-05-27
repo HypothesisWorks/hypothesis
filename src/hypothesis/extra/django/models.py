@@ -17,10 +17,11 @@
 
 from __future__ import division, print_function, absolute_import
 
-import django.db.models as dm
 from decimal import Decimal
-from django.core.exceptions import ValidationError
+
+import django.db.models as dm
 from django.db import IntegrityError
+from django.core.exceptions import ValidationError
 
 import hypothesis.strategies as st
 import hypothesis.extra.fakefactory as ff
@@ -81,10 +82,8 @@ class UnmappedFieldError(Exception):
 
 
 def validator_to_filter(f):
-    """
-    Converts the field run_validators method to something suitable for use in
-    filter.
-    """
+    """Converts the field run_validators method to something suitable for use
+    in filter."""
 
     def validate(value):
         try:

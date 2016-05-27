@@ -22,8 +22,8 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import just, lists
 from hypothesis.extra.django import TestCase, TransactionTestCase
 from tests.django.toystore.models import Store, Company, Customer, \
-    ManyNumerics, SelfLoop, Customish, CustomishField, CouldBeCharming, \
-    CustomishDefault, MandatoryComputed, RestrictedFields
+    SelfLoop, Customish, ManyNumerics, CustomishField, CouldBeCharming, \
+    CustomishDefault, RestrictedFields, MandatoryComputed
 from hypothesis.extra.django.models import models, default_value, \
     add_default_field_mapping
 
@@ -105,6 +105,7 @@ class TestsNeedingRollback(TransactionTestCase):
 
 
 class TestRestrictedFields(TestCase):
+
     @given(models(RestrictedFields))
     def test_constructs_valid_instance(self, instance):
         self.assertTrue(isinstance(instance, RestrictedFields))
