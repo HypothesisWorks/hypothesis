@@ -22,6 +22,22 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 ------------------
+3.3.0 - 2016-05-27
+------------------
+
+This release is entirely provided by `Lucas Wiman <https://github.com/lucaswiman>`_:
+
+models() strategies from hypothesis.extra.django will now respect much more of
+Django's validations out of the box. Wherever possible full_clean() should
+succeed.
+
+In particular:
+
+* The max_length, blank and choices kwargs are now respected.
+* Add support for DecimalField.
+* If a field includes validators, the list of validators are used to filter the field strategy.
+
+------------------
 3.2.0 - 2016-05-19
 ------------------
 
