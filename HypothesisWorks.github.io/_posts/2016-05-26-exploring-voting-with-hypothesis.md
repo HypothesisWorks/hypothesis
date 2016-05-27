@@ -131,6 +131,7 @@ resulted in a tie, but they resulted in distinct candidates winning.
 We can now run this in the console:
 
 ```
+>>> from hypothesis import find
 >>> import voting as v
 >>> distinct = find(v.election(), v.differing_without_ties)
 >>> distinct
@@ -163,7 +164,7 @@ We can check to make sure that these really do give different results:
 
 There are a lot of other interesting properties of voting systems to
 explore, but this is an article about Hypothesis rather than one about
-voting, so I'll stop here. However the intersted reader might want to
+voting, so I'll stop here. However the interested reader might want to
 try to build on this to:
 
 1. Find an election which has a [Condorcet Cycle](https://en.wikipedia.org/wiki/Voting_paradox)
