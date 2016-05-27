@@ -81,7 +81,7 @@ is the number of voters who have ranked that candidate highest amongst
 all the ones remaining. The candidates with the joint lowest score
 drop out.
 
-At the end, we'll either have either zero or one candidates remainng (
+At the end, we'll either have either zero or one candidates remaining (
 we can have zero if all candidates are tied for joint lowest score at
 some point). If we have zero, that's a draw. If we have one, that's a
 victory.
