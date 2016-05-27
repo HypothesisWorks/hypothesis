@@ -22,7 +22,7 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 ------------------
-3.3.0 - 2016-05-27
+3.4.0 - 2016-05-27
 ------------------
 
 This release is entirely provided by `Lucas Wiman <https://github.com/lucaswiman>`_:
@@ -36,6 +36,12 @@ In particular:
 * The max_length, blank and choices kwargs are now respected.
 * Add support for DecimalField.
 * If a field includes validators, the list of validators are used to filter the field strategy.
+
+------------------
+3.3.0 - 2016-05-27
+------------------
+
+This release went wrong and is functionally equivalent to 3.2.0. Ignore it.
 
 ------------------
 3.2.0 - 2016-05-19
