@@ -1,7 +1,7 @@
 ---
 layout: post
 tags: technical python
-date: 2016-04-29 11:00
+date: 2016-05-29 21:00
 title: Testing Optimizers
 published: true
 author: drmaciver
