@@ -259,8 +259,8 @@ We can fix this by fixing our heapmerge to be correct:
 
 ```python
 def heapmerge(x, y):
-    result = list(heap1)
-    for v in heap2:
+    result = list(x)
+    for v in y:
         heappush(result, v)
     return result
 ```
