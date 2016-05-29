@@ -125,6 +125,7 @@ failing example.
 In fact, both of these tests fail:
 
 ```
+
     @given(Items, Capacities, st.data())
     def test_cloning_an_item(items, capacity, data):
         original_solution = pack_knapsack(items, capacity)
