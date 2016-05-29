@@ -126,21 +126,6 @@ In fact, both of these tests fail:
 
 ```
 
-    @given(Items, Capacities, st.data())
-    def test_cloning_an_item(items, capacity, data):
-        original_solution = pack_knapsack(items, capacity)
-        assume(original_solution)
-        items.append(data.draw(st.sampled_from(original_solution)))
-        new_solution = pack_knapsack(items, capacity)
->       assert score_items(new_solution) >= score_items(original_solution)
-E       assert 3 >= 4
-E        +  where 3 = score_items([(1, 1), (1, 1), (1, 1)])
-E        +  and   4 = score_items([(1, 1), (1, 1), (2, 5)])
-
-knapskack.py:39: AssertionError
-
------ Hypothesis -----
-
 Falsifying example: test_cloning_an_item(items=[(1, 1), (1, 1), (2, 5)], capacity=7, data=data(...))
 Draw 1: (1, 1)
 
@@ -153,23 +138,9 @@ items that are small enough to fit in it.
 
 ```
 
-    @given(Items, Capacities, st.data())
-    def test_removing_a_chosen_item(items, capacity, data):
-        original_solution = pack_knapsack(items, capacity)
-        assume(len(original_solution) >= 2)
-        item = data.draw(st.sampled_from(original_solution))
-        items.remove(item)
-        new_solution = pack_knapsack(items, capacity)
->       assert score_items(new_solution) <= score_items(original_solution)
-E       assert 3 <= 2
-E        +  where 3 = score_items([(1, 2), (2, 4)])
-E        +  and   2 = score_items([(1, 1), (1, 2)])
-
-knapskack.py:49: AssertionError
------ Hypothesis -----
-
 Falsifying example: test_removing_a_chosen_item(items=[(1, 1), (2, 4), (1, 2)], capacity=6, data=data(...))
 Draw 1: (1, 1)
+
 ```
 
 In this case what happens is the opposite: Previously the greedy
