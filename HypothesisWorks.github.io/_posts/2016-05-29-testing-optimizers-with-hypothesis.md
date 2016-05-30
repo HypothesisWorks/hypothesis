@@ -7,8 +7,7 @@ published: true
 author: drmaciver
 ---
 
-We've [previously looked into testing performance optimizations]
-({{site.url}}{% post_url 2016-04-29-testing-performance-optimizations %})
+We've [previously looked into testing performance optimizations]({{site.url}}{% post_url 2016-04-29-testing-performance-optimizations %})
 using Hypothesis, but this
 article is about something quite different: It's about testing code
 that is designed to optimize a value. That is, you have some function
