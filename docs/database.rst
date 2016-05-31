@@ -21,15 +21,17 @@ workflow considerably by making sure that the examples you've just found are rep
 File locations
 --------------
 
-The default (and currently only) storage format is as rather weirdly unidiomatic JSON saved
-in an sqlite3 database. The standard location for that is .hypothesis/examples.db in your current
-working directory. You can override this, either by setting either the database\_file property on
+The default storage format is as a fairly opaque directory structure. Each test
+corresponds to a directory, and each example to a file within that directory.
+The standard location for it is .hypothesis/examples in your current working
+directory. You can override this, either by setting either the database\_file property on
 a settings object (you probably want to specify it on settings.default) or by setting the
 HYPOTHESIS\_DATABASE\_FILE environment variable.
 
-Note: There are other files in .hypothesis but everything other than the examples.db will be
-transparently created on demand. You don't need to and probably shouldn't check those into git.
-Adding .hypothesis/eval_source to your .gitignore or equivalent is probably a good idea.
+There is also a legacy sqlite3 based format. This is mostly still supported for
+compatibility reasons, and support will be dropped in some future version of
+Hypothesis. If you use a database file name ending in .db, .sqlite or .sqlite3
+that format will be used instead.
 
 --------------------------------------------
 Upgrading Hypothesis and changing your tests
@@ -44,28 +46,15 @@ that generates an argument sometimes gives you data from the old strategy.
 Sharing your example database
 -----------------------------
 
-It may be convenient to share an example database between multiple machines - e.g. having a CI
-server continually running to look for bugs, then sharing any changes it makes.
-
 The only currently supported workflow for this (though it would be easy enough to add new ones)
-is via checking the examples.db file into git. Hypothesis provides a git merge script, executable
-as python -m hypothesis.tools.mergedbs.
+is via checking the examples directory into version control.
 
-For example, in order to make this work with the standard location:
+The directory structure is designed so that it is entirely suitable for checking
+in to git, mercurial, or any similar version control system. It will be updated
+reasonably often, so you might not want to do that in the course of normal
+development, but it will correctly handle merges, deletes, etc without a
+problem if you just add the directory into version control.
 
-In .gitattributes add:
-
-.. code::
-
-  .hypothesis/examples.db merge=hypothesisdb
-
-And in .git/config add:
-
-.. code::
-
-  [merge "hypothesisdb"]
-      name = Hypothesis database files
-      driver = python -m hypothesis.tools.mergedbs %O %A %B
-
-This will cause the Hypothesis merge script to be used when both sides of a merge have changed
-the example database.
+Note: There are other files in .hypothesis but everything other than the examples will be
+transparently created on demand. You don't need to and probably shouldn't check those into git.
+Adding .hypothesis/eval_source to your .gitignore or equivalent is probably a good idea.
