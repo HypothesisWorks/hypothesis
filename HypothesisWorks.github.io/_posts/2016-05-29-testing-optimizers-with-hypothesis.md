@@ -1,6 +1,6 @@
 ---
 layout: post
-tags: technical python
+tags: technical python example
 date: 2016-05-29 21:00
 title: Testing Optimizers
 published: true

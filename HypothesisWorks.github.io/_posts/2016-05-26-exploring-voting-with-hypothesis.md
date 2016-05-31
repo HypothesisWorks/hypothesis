@@ -1,6 +1,6 @@
 ---
 layout: post
-tags: python technical
+tags: python technical example
 date: 2016-05-26 11:00
 title: Exploring Voting Systems with Hypothesis
 published: true
