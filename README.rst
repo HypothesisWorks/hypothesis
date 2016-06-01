@@ -41,7 +41,7 @@ and a mailing list <https://hypothesis.readthedocs.org/en/latest/community.html>
 If you want to receive occasional updates about Hypothesis, including useful tips and tricks, there's a
 `TinyLetter mailing list to sign up for them <http://tinyletter.com/DRMacIver/>`_.
 
-If you want to contribute to Hypothesis, `instructions are here <https://github.com/Hypothesis/hypothesis-python/blob/master/CONTRIBUTING.rst>`_.
+If you want to contribute to Hypothesis, `instructions are here <https://github.com/HypothesisWorks/hypothesis-python/blob/master/CONTRIBUTING.rst>`_.
 
 If you want to hear from people who are already using Hypothesis, some of them `have written
 about it <https://hypothesis.readthedocs.org/en/latest/endorsements.html>`_.
