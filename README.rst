@@ -1,6 +1,6 @@
-==========
-Hypothesis
-==========
+=========================
+Hypothesis |Build Status| 
+=========================
 
 Hypothesis is an advanced testing library for Python. It lets you write tests which
 are parametrized by a source of examples, and then generates simple and comprehensible
@@ -47,3 +47,6 @@ If you want to hear from people who are already using Hypothesis, some of them `
 about it <https://hypothesis.readthedocs.org/en/latest/endorsements.html>`_.
 
 If you want to create a downstream package of Hypothesis, please read `these guidelines for packagers <http://hypothesis.readthedocs.org/en/latest/packaging.html>`_
+
+.. |Build Status| image:: https://travis-ci.org/HypothesisWorks/hypothesis-python.svg?branch=master
+    :target: https://travis-ci.org/HypothesisWorks/hypothesis-python
