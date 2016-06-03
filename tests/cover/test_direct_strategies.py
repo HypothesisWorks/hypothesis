@@ -18,6 +18,8 @@
 from __future__ import division, print_function, absolute_import
 
 import math
+import decimal
+import fractions
 
 import pytest
 
@@ -55,6 +57,11 @@ def fn_ktest(*fnkwargs):
 @fn_ktest(
     (ds.integers, {u'min_value': float(u'nan')}),
     (ds.integers, {u'min_value': 2, u'max_value': 1}),
+    (ds.decimals, {u'min_value': float(u'nan')}),
+    (ds.decimals, {u'min_value': 2, u'max_value': 1}),
+    (ds.fractions, {u'min_value': float(u'nan')}),
+    (ds.fractions, {u'min_value': 2, u'max_value': 1}),
+    (ds.fractions, {u'max_denominator': 0}),
     (ds.lists, {}),
     (ds.lists, {u'average_size': '5'}),
     (ds.lists, {u'average_size': float(u'nan')}),
@@ -90,6 +97,14 @@ def test_validates_keyword_arguments(fn, kwargs):
     (ds.integers, {u'max_value': 0}),
     (ds.integers, {u'min_value': decimal.Decimal('1.5')}),
     (ds.integers, {u'min_value': fractions.Fraction(1, 2)}),
+    (ds.decimals, {u'min_value': 1.0, u'max_value': 1.5}),
+    (ds.decimals, {u'min_value': decimal.Decimal('1.5')}),
+    (ds.decimals, {u'min_value': fractions.Fraction(1, 3)}),
+    (ds.fractions, {
+        u'min_value': -1, u'max_value': 1, u'max_denominator': 1000}),
+    (ds.fractions, {u'min_value': 1.0}),
+    (ds.fractions, {u'min_value': decimal.Decimal('1.0')}),
+    (ds.fractions, {u'min_value': fractions.Fraction(1, 2)}),
     (ds.lists, {u'max_size': 0}),
     (ds.lists, {u'elements': ds.integers()}),
     (ds.lists, {u'elements': ds.integers(), u'max_size': 5}),
@@ -162,6 +177,27 @@ def test_has_lower_bound(x):
 @given(ds.integers(min_value=1, max_value=2))
 def test_is_in_bounds(x):
     assert 1 <= x <= 2
+
+
+@given(ds.fractions(min_value=-1, max_value=1, max_denominator=1000))
+def test_fraction_is_in_bounds(x):
+    assert -1 <= x <= 1 and abs(x.denominator) <= 1000
+
+
+@given(ds.fractions(min_value=fractions.Fraction(1, 2)))
+def test_fraction_gt_positive(x):
+    assert fractions.Fraction(1, 2) <= x
+
+
+@given(ds.fractions(max_value=fractions.Fraction(-1, 2)))
+def test_fraction_lt_negative(x):
+    assert x <= fractions.Fraction(-1, 2)
+
+
+@given(ds.decimals(min_value=-1.5, max_value=1.5))
+def test_decimal_is_in_bounds(x):
+    # decimal.Decimal("-1.5") == -1.5 (not explicitly testable in py2.6)
+    assert decimal.Decimal('-1.5') <= x <= decimal.Decimal('1.5')
 
 
 def test_float_can_find_max_value_inf():
