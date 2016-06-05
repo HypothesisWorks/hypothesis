@@ -191,13 +191,14 @@ In the end, we compromised and implemented a relatively conservative strategy
 to simulate the good, normal, sensible branch names that we expected:
 
 ```python
-    from string import letters
+    from string import ascii_lowercase
+
+    VALID_BRANCH_CHARS = ascii_lowercase + '_-.'
 
     def valid_branch_names():
         # TODO: Handle unicode / weird branch names by rejecting them early, raising nice errors
         # TODO: How do we handle case-insensitive file systems?
-        return st.text(
-            alphabet=letters, min_size=1, max_size=112).map(lambda t: t.lower())
+        return st.text(alphabet=VALID_BRANCH_CHARS, min_size=1, max_size=112)
 ```
 
 Not ideal, but *much* more extensive than just hard-coding `"new-branch"`, and
