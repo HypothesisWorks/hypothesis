@@ -19,7 +19,7 @@ Background
 
 I used to work on a command-line tool with an interface much like git's. It
 had a repository, and within that repository you could create branches and
-switch between them. Let's call the tool tlr
+switch between them. Let's call the tool `tlr`.
 
 It was supposed to behave something like this:
 
