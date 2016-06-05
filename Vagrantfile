@@ -14,6 +14,10 @@ sudo apt-get install -y git libreadline-dev libssl-dev zlib1g-dev build-essentia
 if [ ! $(grep -q 'cd /vagrant' $HOME/.bashrc) ]; then
     echo 'cd /vagrant' >> $HOME/.bashrc
 fi
+if [ ! $(grep -q 'snakepit' $HOME/.bashrc) ]; then
+    echo 'export PATH=$PATH:$HOME/.cache/hypothesis-build-runtimes/snakepit' >> $HOME/.bashrc
+    echo 'export PATH=$PATH:$HOME/.cache/hypothesis-build-runtimes/tools' >> $HOME/.bashrc
+fi
 
 cd /vagrant/
 
