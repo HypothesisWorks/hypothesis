@@ -72,7 +72,8 @@ of verbose output are, well, verbose, but they should convey the idea).
     [True]
     >>> from hypothesis import given
     >>> from hypothesis.strategies import integers
-    >>> @given(integers(), settings=settings(verbosity=Verbosity.verbose))
+    >>> @given(integers())
+    ... @settings(verbosity=Verbosity.verbose)
     ... def test_foo(x):
     ...     assert x > 0
     ...
