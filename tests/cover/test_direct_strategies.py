@@ -56,6 +56,7 @@ def fn_ktest(*fnkwargs):
     (ds.integers, {u'min_value': float(u'nan')}),
     (ds.integers, {u'min_value': 2, u'max_value': 1}),
     (ds.lists, {}),
+    (ds.lists, {u'average_size': '5'}),
     (ds.lists, {u'average_size': float(u'nan')}),
     (ds.lists, {u'min_size': 10, u'max_size': 9}),
     (ds.lists, {u'min_size': -10, u'max_size': -9}),
