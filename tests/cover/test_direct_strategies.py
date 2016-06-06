@@ -87,6 +87,8 @@ def test_validates_keyword_arguments(fn, kwargs):
     (ds.integers, {u'min_value': 11}),
     (ds.integers, {u'min_value': 11, u'max_value': 100}),
     (ds.integers, {u'max_value': 0}),
+    (ds.integers, {u'min_value': decimal.Decimal('1.5')}),
+    (ds.integers, {u'min_value': fractions.Fraction(1, 2)}),
     (ds.lists, {u'max_size': 0}),
     (ds.lists, {u'elements': ds.integers()}),
     (ds.lists, {u'elements': ds.integers(), u'max_size': 5}),

@@ -194,36 +194,48 @@ def integers(min_value=None, max_value=None):
 
     """
 
-    check_valid_integer(min_value)
-    check_valid_integer(max_value)
+    check_valid_bound(min_value, 'min_value')
+    check_valid_bound(max_value, 'max_value')
     check_valid_interval(min_value, max_value, 'min_value', 'max_value')
 
     from hypothesis.searchstrategy.numbers import IntegersFromStrategy, \
         BoundedIntStrategy, WideRangeIntStrategy
 
-    if min_value is None:
-        if max_value is None:
+    min_int_value = None
+    if min_value is not None:
+        min_int_value = int(min_value)
+        if min_int_value != min_value and min_value > 0:
+            min_int_value += 1
+
+    max_int_value = None
+    if max_value is not None:
+        max_int_value = int(max_value)
+        if max_int_value != max_value and max_value < 0:
+            max_int_value -= 1
+
+    if min_int_value is None:
+        if max_int_value is None:
             return (
                 WideRangeIntStrategy()
             )
         else:
-            return IntegersFromStrategy(0).map(lambda x: max_value - x)
+            return IntegersFromStrategy(0).map(lambda x: max_int_value - x)
     else:
-        if max_value is None:
-            return IntegersFromStrategy(min_value)
+        if max_int_value is None:
+            return IntegersFromStrategy(min_int_value)
         else:
-            assert min_value <= max_value
-            if min_value == max_value:
-                return just(min_value)
-            elif min_value >= 0:
-                return BoundedIntStrategy(min_value, max_value)
-            elif max_value <= 0:
-                return BoundedIntStrategy(-max_value, -min_value).map(
-                    lambda t: -t
-                )
+            assert min_int_value <= max_int_value
+            if min_int_value == max_int_value:
+                return just(min_int_value)
+            elif min_int_value >= 0:
+                return BoundedIntStrategy(min_int_value, max_int_value)
+            elif max_int_value <= 0:
+                return BoundedIntStrategy(
+                    -max_int_value, -min_int_value
+                ).map(lambda t: -t)
             else:
-                return integers(min_value=0, max_value=max_value) | \
-                    integers(min_value=min_value, max_value=0)
+                return integers(min_value=0, max_value=max_int_value) | \
+                    integers(min_value=min_int_value, max_value=0)
 
 
 @cacheable
