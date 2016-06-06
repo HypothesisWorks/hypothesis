@@ -19,6 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import math
 from decimal import Decimal
+from numbers import Rational
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.control import assume
@@ -1050,7 +1051,7 @@ def check_valid_bound(value, name):
     Otherwise raises InvalidArgument.
 
     """
-    if value is None:
+    if value is None or isinstance(value, integer_types + (Rational,)):
         return
     if math.isnan(value):
         raise InvalidArgument(u'Invalid end point %s %r' % (value, name))
