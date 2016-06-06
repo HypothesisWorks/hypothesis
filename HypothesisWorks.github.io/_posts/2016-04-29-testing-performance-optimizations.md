@@ -1,6 +1,6 @@
 ---
 layout: post
-tags: technical intro python
+tags: technical intro python properties
 date: 2016-04-29 11:00
 title: Testing performance optimizations
 published: true
