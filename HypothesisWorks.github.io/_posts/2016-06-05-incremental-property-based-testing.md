@@ -273,6 +273,6 @@ newly created branch.
 We got there not by sitting down and thinking about the properties of our
 software in the abstract, nor by necessarily knowing much about property-based
 testing, but rather by incrementally taking advantage of features of Python
-and Hypothesis until our code. On the way, we discovered and, umm, contained a
-whole class of bugs, and we made sure that all future tests would be heaps
-more powerful. Win.
+and Hypothesis. On the way, we discovered and, umm, contained a whole class of
+bugs, and we made sure that all future tests would be heaps more powerful.
+Win.
