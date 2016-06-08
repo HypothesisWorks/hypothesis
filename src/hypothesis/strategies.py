@@ -388,7 +388,7 @@ def sampled_from(elements):
     elements.
 
     Note that as with just, values will not be copied and thus you
-    should be careful of using mutable data
+    should be careful of using mutable data.
 
     """
 
