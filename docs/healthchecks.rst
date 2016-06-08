@@ -17,6 +17,9 @@ If any of these scenarios are detected, Hypothesis will emit a warning about the
 The general goal of these health checks is to warn you about things that you are doing that might
 appear to work but will either cause Hypothesis to not work correctly or to perform badly.
 
-These health checks are affected by the perform_health_check settings. If the
-perform_health_check setting is set to False, these health checks will be skipped entirely. This is
-not recommended.
+To selectively disable health checks, use the suppress_health_check settings.
+The argument for this parameter is a list with elements drawn from any of
+the class-level attributes of the HealthCheck class.
+
+To disable all health checks, set the perform_health_check settings parameter
+to False.
