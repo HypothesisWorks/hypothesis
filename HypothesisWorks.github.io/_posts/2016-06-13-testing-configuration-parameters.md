@@ -1,7 +1,7 @@
 ---
 layout: post
 tags: technical python properties
-date: 2016-06-13 17:00
+date: 2016-06-13 00:00
 title: Testing Configuration Parameters
 published: true
 author: drmaciver
@@ -50,6 +50,7 @@ We can verify that hashing works correctly fairly immediately using
 Hypothesis:
 
 ```python
+
 from argon2 import PasswordHasher
 
 from hypothesis import given
@@ -62,6 +63,7 @@ class TestPasswordHasherWithHypothesis(object):
         ph = PasswordHasher()
         hash = ph.hash(password)
         assert ph.verify(hash, password)
+
 ```
 
 This takes an arbitrary text password, hashes it and verifies it against
@@ -74,6 +76,7 @@ a lot of different parameters to it. We can expand the test to vary
 them and see what happens:
 
 ```python
+
 from argon2 import PasswordHasher
 
 from hypothesis import given, assume
@@ -101,6 +104,7 @@ class TestPasswordHasherWithHypothesis(object):
         )
         hash = ph.hash(password)
         assert ph.verify(hash, password)
+
 ```
 
 
