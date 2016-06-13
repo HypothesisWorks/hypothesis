@@ -1,7 +1,7 @@
 ---
 layout: post
 tags: technical python properties
-date: 2016-05-29 21:00
+date: 2016-06-13 17:00
 title: Testing Configuration Parameters
 published: true
 author: drmaciver
