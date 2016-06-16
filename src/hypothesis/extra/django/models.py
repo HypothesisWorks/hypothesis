@@ -257,20 +257,27 @@ def field_values(field, **kwargs):
 
 # Model strategies.
 
-def models(model, _db=None, **field_strategies):
+def models(model, _db=None, _minimal=False, **field_strategies):
     for field in model._meta.concrete_fields:
-        if field.name not in field_strategies:
-            try:
-                strategy = field_values(field)
-            except UnmappedFieldError:
-                raise InvalidArgument(
-                    u"Missing argument for mandatory field {model}.{field}"
-                    .format(
-                        model=model.__name__,
-                        field=field.name,
-                    )
+        # Don't override developer choices.
+        if field.name in field_strategies:
+            continue
+        # If in minimal mode, do not generate unnecessary data.
+        if _minimal:
+            if field.blank or field.null or field.has_default():
+                continue
+        # Get the mapped field strategy.
+        try:
+            strategy = field_values(field)
+        except UnmappedFieldError:
+            raise InvalidArgument(
+                u"Missing argument for mandatory field {model}.{field}"
+                .format(
+                    model=model.__name__,
+                    field=field.name,
                 )
-            field_strategies[field.name] = strategy
+            )
+        field_strategies[field.name] = strategy
     # Remove default_values so we don't try to generate anything for those.
     field_strategies = {
         field_name: strategy
@@ -304,3 +311,6 @@ def models(model, _db=None, **field_strategies):
             # is longer than a VARCHAR *once encoded by the database*.
             assume(False)
     return model_data_strategy.map(_create_model)
+
+
+minimal_models = partial(models, _minimal=True)
