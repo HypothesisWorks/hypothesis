@@ -277,13 +277,13 @@ def field_values(field, **kwargs):
 
 # Model strategies.
 
-def models(model, _db=None, _minimal=False, **field_strategies):
+def models(model, __db=None, __minimal=False, **field_strategies):
     for field in model._meta.concrete_fields:
         # Don't override developer choices.
         if field.name in field_strategies:
             continue
         # If in minimal mode, do not generate unnecessary data.
-        if _minimal:
+        if __minimal:
             if field.blank or field.null or field.has_default():
                 continue
         # Get the mapped field strategy.
@@ -307,7 +307,7 @@ def models(model, _db=None, _minimal=False, **field_strategies):
     }
     # Create the model data.
     model_data_strategy = st.fixed_dictionaries(field_strategies)
-    return ModelStrategy(model, _db, model_data_strategy)
+    return ModelStrategy(model, __db, model_data_strategy)
 
 
 class ModelStrategy(SearchStrategy):
@@ -355,4 +355,4 @@ class ModelStrategy(SearchStrategy):
                 data.mark_invalid()
 
 
-minimal_models = partial(models, _minimal=True)
+minimal_models = partial(models, __minimal=True)
