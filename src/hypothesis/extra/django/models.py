@@ -15,161 +15,292 @@
 #
 # END HEADER
 
-from __future__ import division, print_function, absolute_import
 
+import string
 from decimal import Decimal
-
-import django.db.models as dm
-from django.db import IntegrityError
 from django.core.exceptions import ValidationError
-
-import hypothesis.strategies as st
-import hypothesis.extra.fakefactory as ff
+from django.db.utils import DataError
+from django.db import models as dm, transaction, router, IntegrityError
+from functools import wraps, partial
+from hypothesis import strategies as st, assume
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.datetime import datetimes
+from hypothesis.extra.fakefactory import fake_factory
 from hypothesis.utils.conventions import UniqueIdentifier
-from hypothesis.searchstrategy.strategies import SearchStrategy
-
-
-class ModelNotSupported(Exception):
-    pass
-
-
-def referenced_models(model, seen=None):
-    if seen is None:
-        seen = set()
-    for f in model._meta.concrete_fields:
-        if isinstance(f, dm.ForeignKey):
-            t = f.rel.to
-            if t not in seen:
-                seen.add(t)
-                referenced_models(t, seen)
-    return seen
-
-
-__default_field_mappings = None
-
-
-def field_mappings():
-    global __default_field_mappings
-
-    if __default_field_mappings is None:
-        __default_field_mappings = {
-            dm.SmallIntegerField: st.integers(-32768, 32767),
-            dm.IntegerField: st.integers(-2147483648, 2147483647),
-            dm.BigIntegerField:
-                st.integers(-9223372036854775808, 9223372036854775807),
-            dm.PositiveIntegerField: st.integers(0, 2147483647),
-            dm.PositiveSmallIntegerField: st.integers(0, 32767),
-            dm.BinaryField: st.binary(),
-            dm.BooleanField: st.booleans(),
-            dm.DateTimeField: datetimes(allow_naive=False),
-            dm.FloatField: st.floats(),
-            dm.NullBooleanField: st.one_of(st.none(), st.booleans()),
-        }
-    return __default_field_mappings
-
-
-def add_default_field_mapping(field_type, strategy):
-    field_mappings()[field_type] = strategy
 
 
 default_value = UniqueIdentifier(u'default_value')
+
+
+def model_text(alphabet=st.characters(blacklist_characters="\x00",
+               blacklist_categories=("Cs",)), **kwargs):
+    """
+    A modified text strategy that plays nicer with Django databases.
+
+    - Excludes the null character, which results in field truncation
+      in Postgres.
+    """
+    return st.text(alphabet=alphabet, **kwargs)
+
+
+# Field strategies.
+
+_field_mappings = {
+    dm.AutoField: default_value,
+}
+
+
+def add_default_field_mapping(field_type, strategy):
+    _field_mappings[field_type] = strategy
+
+
+def validator_to_filter(field):
+    def validate(value):
+        try:
+            field.run_validators(value)
+            return True
+        except ValidationError:
+            return False
+    return validate
+
+
+def field_strategy(*field_types):
+    """
+    Decorates the given field strategy factory to add support for:
+
+    - Passing in min_size and max_size kwargs for the field.
+    - Blank fields.
+    - Null fields.
+    - Filtering by field validators.
+
+    The field strategy is registered for the given fields.
+    """
+    def decorator(func):
+        @wraps(func)
+        def create_field_strategy(field, **kwargs):
+            # Handle field choices.
+            if field.choices:
+                choices = [
+                    value
+                    for (value, name)
+                    in field.get_choices(include_blank=field.blank)
+                ]
+                strategy = st.sampled_from(choices)
+            else:
+                # Run the factory function.
+                strategy = func(field, **kwargs)
+            # Add in null values.
+            if field.null:
+                strategy = st.one_of(strategy, st.none())
+            # Filter by validators.
+            strategy = strategy.filter(validator_to_filter(field))
+            return strategy
+        for field_type in field_types:
+            add_default_field_mapping(field_type, create_field_strategy)
+        return create_field_strategy
+    return decorator
+
+
+def _simple_field_strategy(*field_types):
+    def decorator(func, **defaults):
+        @field_strategy(*field_types)
+        def create_simple_field_strategy(field, **kwargs):
+            params = defaults.copy()
+            params.update(kwargs)
+            return func(**params)
+        return create_simple_field_strategy
+    return decorator
+
+
+def _fake_factory_field_strategy(*field_types):
+    def decorator(strategy_name):
+        @field_strategy(*field_types)
+        def create_fake_factory_field_strategy(field, min_size=None,
+                                               max_size=None):
+            strategy = fake_factory(strategy_name)
+            # Add in blank values.
+            if field.blank:
+                strategy = st.one_of(strategy, st.just(u""))
+            # Emulate min size.
+            if min_size is not None:
+                strategy = strategy.filter(lambda v: len(v) >= min_size)
+            # Emulate max size.
+            if max_size is not None:
+                strategy = strategy.filter(lambda v: len(v) <= max_size)
+            return strategy
+        return create_fake_factory_field_strategy
+    return decorator
+
+
+big_integer_field_values = _simple_field_strategy(dm.BigIntegerField)(
+    st.integers,
+    min_value=-9223372036854775808,
+    max_value=9223372036854775807,
+)
+
+
+binary_field_values = _simple_field_strategy(dm.BinaryField)(st.binary)
+
+
+boolean_field_values = _simple_field_strategy(dm.BooleanField)(st.booleans)
+
+
+char_field_values = _simple_field_strategy(
+    dm.CharField,
+    dm.TextField,
+)(model_text)
+
+
+@field_strategy(dm.CharField, dm.TextField)
+def char_field_values(field, **kwargs):
+    if field.blank:
+        kwargs.setdefault("min_size", 0)
+    if field.max_length:
+        kwargs.setdefault("max_size", field.max_length)
+    return model_text(**kwargs)
+
+
+datetime_field_values = _simple_field_strategy(dm.DateTimeField)(
+    datetimes,
+    allow_naive=False,
+)
+
+
+@field_strategy(dm.DecimalField)
+def decimal_field_values(field, **kwargs):
+    """
+    A strategy of valid values for the given decimal field.
+    """
+    m = 10 ** field.max_digits - 1
+    div = 10 ** field.decimal_places
+    q = Decimal('1.' + ('0' * field.decimal_places))
+    kwargs.setdefault("min_value", -m)
+    kwargs.setdefault("max_value", m)
+    return (st.integers(**kwargs)
+            .map(lambda n: (Decimal(n) / div).quantize(q)))
+
+
+email_field_values = _fake_factory_field_strategy(dm.EmailField)(u"email")
+
+
+float_field_values = _fake_factory_field_strategy(dm.FloatField)(st.floats)
+
+
+integer_field_values = _simple_field_strategy(dm.IntegerField)(
+    st.integers,
+    min_value=-2147483648,
+    max_value=2147483647,
+)
+
+
+null_boolean_field_values = _simple_field_strategy(dm.NullBooleanField)(
+    partial(st.one_of, st.none(), st.booleans()),
+)
+
+
+positive_integer_field_values = _simple_field_strategy(
+    dm.PositiveIntegerField,
+)(
+    st.integers,
+    min_value=0,
+    max_value=2147483647,
+)
+
+
+positive_small_integer_field_values = _simple_field_strategy(
+    dm.PositiveSmallIntegerField,
+)(
+    st.integers,
+    min_value=0,
+    max_value=32767,
+)
+
+
+slug_field_values = _simple_field_strategy(dm.SlugField)(
+    model_text,
+    alphabet=string.digits + string.ascii_letters + "-",
+)
+
+
+small_integer_field_values = _simple_field_strategy(dm.SmallIntegerField)(
+    st.integers,
+    min_value=-32768,
+    max_value=32767,
+),
+
+
+url_field_values = _fake_factory_field_strategy(dm.URLField)(u"uri"),
 
 
 class UnmappedFieldError(Exception):
     pass
 
 
-def validator_to_filter(f):
-    """Converts the field run_validators method to something suitable for use
-    in filter."""
-
-    def validate(value):
-        try:
-            f.run_validators(value)
-            return True
-        except ValidationError:
-            return False
-
-    return validate
-
-
-def _get_strategy_for_field(f):
-    if isinstance(f, dm.AutoField):
-        return default_value
-    elif f.choices:
-        choices = [value for (value, name) in f.choices]
-        if isinstance(f, (dm.CharField, dm.TextField)) and f.blank:
-            choices.append(u'')
-        strategy = st.sampled_from(choices)
-    elif isinstance(f, dm.EmailField):
-        return ff.fake_factory(u'email')
-    elif type(f) in (dm.TextField, dm.CharField):
-        strategy = st.text(min_size=(None if f.blank else 1),
-                           max_size=f.max_length)
-    elif type(f) == dm.DecimalField:
-        m = 10 ** f.max_digits - 1
-        div = 10 ** f.decimal_places
-        q = Decimal('1.' + ('0' * f.decimal_places))
-        strategy = (
-            st.integers(min_value=-m, max_value=m)
-            .map(lambda n: (Decimal(n) / div).quantize(q)))
+def field_values(field, **kwargs):
+    """
+    A strategy of valid values for the given field.
+    """
+    try:
+        strategy = _field_mappings[type(field)]
+    except KeyError:
+        # Fallback field handlers.
+        if field.null:
+            return st.none()
+        else:
+            raise UnmappedFieldError(field)
     else:
-        try:
-            strategy = field_mappings()[type(f)]
-        except KeyError:
-            if f.null:
-                return None
-            else:
-                raise UnmappedFieldError(f)
-    if f.validators:
-        strategy = strategy.filter(validator_to_filter(f))
-    if f.null:
-        strategy = st.one_of(st.none(), strategy)
+        # Allow strategy factories.
+        if callable(strategy):
+            strategy = strategy(field, **kwargs)
     return strategy
 
 
-def models(model, **extra):
-    result = {}
-    mandatory = set()
-    for f in model._meta.concrete_fields:
-        try:
-            strategy = _get_strategy_for_field(f)
-        except UnmappedFieldError:
-            mandatory.add(f.name)
-            continue
-        if strategy is not None:
-            result[f.name] = strategy
-    missed = {x for x in mandatory if x not in extra}
-    if missed:
-        raise InvalidArgument((
-            u'Missing arguments for mandatory field%s %s for model %s' % (
-                u's' if len(missed) > 1 else u'',
-                u', '.join(missed),
-                model.__name__,
-            )))
-    result.update(extra)
+# Model strategies.
+
+def models(model, _db=None, **field_strategies):
+    for field in model._meta.concrete_fields:
+        if field.name not in field_strategies:
+            try:
+                strategy = field_values(field)
+            except UnmappedFieldError:
+                raise InvalidArgument(
+                    u"Missing argument for mandatory field {model}.{field}"
+                    .format(
+                        model=model.__name__,
+                        field=field.name,
+                    )
+                )
+            field_strategies[field.name] = strategy
     # Remove default_values so we don't try to generate anything for those.
-    result = {k: v for k, v in result.items() if v is not default_value}
-    return ModelStrategy(model, result)
+    field_strategies = {
+        field_name: strategy
+        for field_name, strategy
+        in field_strategies.items()
+        if strategy is not default_value
+    }
+    # Create the model data.
+    model_data_strategy = st.fixed_dictionaries(field_strategies)
+    _db = _db or router.db_for_write(model)
 
-
-class ModelStrategy(SearchStrategy):
-
-    def __init__(self, model, mappings):
-        super(ModelStrategy, self).__init__()
-        self.model = model
-        self.arg_strategy = st.fixed_dictionaries(mappings)
-
-    def __repr__(self):
-        return u'ModelStrategy(%s)' % (self.model.__name__,)
-
-    def do_draw(self, data):
+    def _create_model(model_data):
+        # Create the model.
+        obj = model(**model_data)
+        # We need to wrap the model create in an atomic block, which means we
+        # need to use the correct write database for the model.
         try:
-            result, _ = self.model.objects.get_or_create(
-                **self.arg_strategy.do_draw(data)
-            )
-            return result
-        except IntegrityError:
-            data.mark_invalid()
+            # This should catch unique checks, plus any other custom
+            # validation on the model.
+            obj.full_clean()
+            # If the save gives an IntegrityError, this will roll the
+            # savepoint back.
+            with transaction.atomic(using=_db):
+                obj.save(using=_db)
+            return obj
+        except (ValidationError, IntegrityError, DataError):
+            # ValidationError: The full_clean failed.
+            # IntegrityError: A unique key was violated.
+            # DataError: Something weird happened. For example,
+            # some Postgres database encodings will refuse text that
+            # is longer than a VARCHAR *once encoded by the database*.
+            assume(False)
+    return model_data_strategy.map(_create_model)
