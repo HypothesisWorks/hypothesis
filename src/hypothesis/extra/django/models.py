@@ -158,7 +158,7 @@ add_default_field_mapping(dm.BooleanField, boolean_field_values)
 
 @add_default_field_mapping(dm.CharField)
 @add_default_field_mapping(dm.TextField)
-@field_strategy(blank_choices=("",))
+@field_strategy(blank_choices=('',))
 def char_field_values(field, **kwargs):
     if field.blank:
         kwargs.setdefault('min_size', 0)
