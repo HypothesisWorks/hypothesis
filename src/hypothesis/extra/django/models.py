@@ -216,10 +216,11 @@ positive_small_integer_field_values = _simple_field_strategy(
 )
 
 
-slug_field_values = _simple_field_strategy(dm.SlugField)(
-    model_text,
+slug_field_values = partial(
+    char_field_values,
     alphabet=string.digits + string.ascii_letters + "-",
 )
+add_default_field_mapping(dm.SlugField, slug_field_values)
 
 
 small_integer_field_values = _simple_field_strategy(dm.SmallIntegerField)(
