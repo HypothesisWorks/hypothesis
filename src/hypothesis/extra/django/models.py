@@ -55,8 +55,11 @@ _field_mappings = {
 }
 
 
-def add_default_field_mapping(field_type, strategy):
+def add_default_field_mapping(field_type, strategy=None):
+    if strategy is None:
+        return partial(add_default_field_mapping, field_type)
     _field_mappings[field_type] = strategy
+    return strategy
 
 
 def validator_to_filter(field):
@@ -69,7 +72,7 @@ def validator_to_filter(field):
     return validate
 
 
-def field_strategy(*field_types, blank_choices=()):
+def field_strategy(blank_choices=()):
     """
     Decorates the given field strategy factory to add support for:
 
@@ -102,15 +105,13 @@ def field_strategy(*field_types, blank_choices=()):
             # Filter by validators.
             strategy = strategy.filter(validator_to_filter(field))
             return strategy
-        for field_type in field_types:
-            add_default_field_mapping(field_type, create_field_strategy)
         return create_field_strategy
     return decorator
 
 
-def _simple_field_strategy(*field_types):
+def _simple_field_strategy(blank_choices=()):
     def decorator(func, **defaults):
-        @field_strategy(*field_types)
+        @field_strategy(blank_choices=blank_choices)
         def create_simple_field_strategy(field, **kwargs):
             params = defaults.copy()
             params.update(kwargs)
@@ -119,9 +120,9 @@ def _simple_field_strategy(*field_types):
     return decorator
 
 
-def _fake_factory_field_strategy(*field_types, blank_choices=()):
+def _fake_factory_field_strategy(blank_choices=()):
     def decorator(strategy_name):
-        @field_strategy(*field_types, blank_choices=blank_choices)
+        @field_strategy(blank_choices=blank_choices)
         def create_fake_factory_field_strategy(field, min_size=None,
                                                max_size=None):
             strategy = fake_factory(strategy_name)
@@ -139,26 +140,25 @@ def _fake_factory_field_strategy(*field_types, blank_choices=()):
     return decorator
 
 
-big_integer_field_values = _simple_field_strategy(dm.BigIntegerField)(
+big_integer_field_values = _simple_field_strategy()(
     st.integers,
     min_value=-9223372036854775808,
     max_value=9223372036854775807,
 )
+add_default_field_mapping(dm.BigIntegerField, big_integer_field_values)
 
 
-binary_field_values = _simple_field_strategy(dm.BinaryField)(st.binary)
+binary_field_values = _simple_field_strategy()(st.binary)
+add_default_field_mapping(dm.BinaryField, binary_field_values)
 
 
-boolean_field_values = _simple_field_strategy(dm.BooleanField)(st.booleans)
+boolean_field_values = _simple_field_strategy()(st.booleans)
+add_default_field_mapping(dm.BooleanField, boolean_field_values)
 
 
-char_field_values = _simple_field_strategy(
-    dm.CharField,
-    dm.TextField,
-)(model_text)
-
-
-@field_strategy(dm.CharField, dm.TextField, blank_choices=("",))
+@add_default_field_mapping(dm.CharField)
+@add_default_field_mapping(dm.TextField)
+@field_strategy(blank_choices=("",))
 def char_field_values(field, **kwargs):
     if field.blank:
         kwargs.setdefault('min_size', 0)
@@ -167,13 +167,15 @@ def char_field_values(field, **kwargs):
     return model_text(**kwargs)
 
 
-datetime_field_values = _simple_field_strategy(dm.DateTimeField)(
+datetime_field_values = _simple_field_strategy()(
     datetimes,
     allow_naive=False,
 )
+add_default_field_mapping(dm.DateTimeField, datetime_field_values)
 
 
-@field_strategy(dm.DecimalField)
+@add_default_field_mapping(dm.DecimalField)
+@field_strategy()
 def decimal_field_values(field, **kwargs):
     """A strategy of valid values for the given decimal field."""
     m = 10 ** field.max_digits - 1
@@ -186,41 +188,48 @@ def decimal_field_values(field, **kwargs):
 
 
 email_field_values = _fake_factory_field_strategy(
-    dm.EmailField,
     blank_choices=(u'',),
 )(u'email')
+add_default_field_mapping(dm.EmailField, email_field_values)
 
 
-float_field_values = _simple_field_strategy(dm.FloatField)(st.floats)
+float_field_values = _simple_field_strategy()(st.floats)
+add_default_field_mapping(dm.FloatField, float_field_values)
 
 
-integer_field_values = _simple_field_strategy(dm.IntegerField)(
+integer_field_values = _simple_field_strategy()(
     st.integers,
     min_value=-2147483648,
     max_value=2147483647,
 )
+add_default_field_mapping(dm.IntegerField, integer_field_values)
 
 
-null_boolean_field_values = _simple_field_strategy(dm.NullBooleanField)(
+null_boolean_field_values = _simple_field_strategy()(
     partial(st.one_of, st.none(), st.booleans()),
 )
+add_default_field_mapping(dm.NullBooleanField, null_boolean_field_values)
 
 
-positive_integer_field_values = _simple_field_strategy(
-    dm.PositiveIntegerField,
-)(
+positive_integer_field_values = _simple_field_strategy()(
     st.integers,
     min_value=0,
     max_value=2147483647,
 )
+add_default_field_mapping(
+    dm.PositiveIntegerField,
+    positive_integer_field_values,
+)
 
 
-positive_small_integer_field_values = _simple_field_strategy(
-    dm.PositiveSmallIntegerField,
-)(
+positive_small_integer_field_values = _simple_field_strategy()(
     st.integers,
     min_value=0,
     max_value=32767,
+)
+add_default_field_mapping(
+    dm.PositiveSmallIntegerField,
+    positive_small_integer_field_values,
 )
 
 
@@ -231,17 +240,18 @@ slug_field_values = partial(
 add_default_field_mapping(dm.SlugField, slug_field_values)
 
 
-small_integer_field_values = _simple_field_strategy(dm.SmallIntegerField)(
+small_integer_field_values = _simple_field_strategy()(
     st.integers,
     min_value=-32768,
     max_value=32767,
-),
+)
+add_default_field_mapping(dm.SmallIntegerField, small_integer_field_values)
 
 
 url_field_values = _fake_factory_field_strategy(
-    dm.URLField,
     blank_choices=(u'',),
 )(u'uri'),
+add_default_field_mapping(dm.URLField, url_field_values)
 
 
 class UnmappedFieldError(Exception):
