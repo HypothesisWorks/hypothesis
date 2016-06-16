@@ -49,7 +49,7 @@ class Customish(models.Model):
 class Customer(models.Model):
     name = models.CharField(max_length=100, unique=True)
     email = models.EmailField(max_length=100, unique=True)
-    gender = models.CharField(max_length=50, null=True)
+    gender = models.CharField(max_length=50, null=True, blank=True)
     age = models.IntegerField()
     birthday = models.DateTimeField()
 
@@ -59,11 +59,11 @@ class Charming(models.Model):
 
 
 class CouldBeCharming(models.Model):
-    charm = CharmField(null=True)
+    charm = CharmField(null=True, blank=True)
 
 
 class SelfLoop(models.Model):
-    me = models.ForeignKey(u'self', null=True)
+    me = models.ForeignKey(u'self', null=True, blank=True)
 
 
 class LoopA(models.Model):
@@ -71,7 +71,7 @@ class LoopA(models.Model):
 
 
 class LoopB(models.Model):
-    a = models.ForeignKey(u'LoopA', null=True)
+    a = models.ForeignKey(u'LoopA', null=True, blank=True)
 
 
 class ManyNumerics(models.Model):

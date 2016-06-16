@@ -22,10 +22,11 @@ from django.core.exceptions import ValidationError
 from django.db.utils import DataError
 from django.db import models as dm, transaction, router, IntegrityError
 from functools import wraps, partial
-from hypothesis import strategies as st, assume
+from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.datetime import datetimes
 from hypothesis.extra.fakefactory import fake_factory
+from hypothesis.searchstrategy.strategies import SearchStrategy
 from hypothesis.utils.conventions import UniqueIdentifier
 
 
@@ -64,7 +65,13 @@ def validator_to_filter(field):
     return validate
 
 
-def field_strategy(*field_types):
+def _get_field_blank_value(field):
+    if field.null:
+        return None
+    return ""
+
+
+def field_strategy(*field_types, blank_choices=()):
     """
     Decorates the given field strategy factory to add support for:
 
@@ -83,8 +90,10 @@ def field_strategy(*field_types):
                 choices = [
                     value
                     for (value, name)
-                    in field.get_choices(include_blank=field.blank)
+                    in field.choices
                 ]
+                if field.blank:
+                    choices.extend(blank_choices)
                 strategy = st.sampled_from(choices)
             else:
                 # Run the factory function.
@@ -112,15 +121,15 @@ def _simple_field_strategy(*field_types):
     return decorator
 
 
-def _fake_factory_field_strategy(*field_types):
+def _fake_factory_field_strategy(*field_types, blank_choices=()):
     def decorator(strategy_name):
-        @field_strategy(*field_types)
+        @field_strategy(*field_types, blank_choices=blank_choices)
         def create_fake_factory_field_strategy(field, min_size=None,
                                                max_size=None):
             strategy = fake_factory(strategy_name)
             # Add in blank values.
             if field.blank:
-                strategy = st.one_of(strategy, st.just(u""))
+                strategy = st.one_of(strategy, *blank_choices)
             # Emulate min size.
             if min_size is not None:
                 strategy = strategy.filter(lambda v: len(v) >= min_size)
@@ -151,7 +160,7 @@ char_field_values = _simple_field_strategy(
 )(model_text)
 
 
-@field_strategy(dm.CharField, dm.TextField)
+@field_strategy(dm.CharField, dm.TextField, blank_choices=("",))
 def char_field_values(field, **kwargs):
     if field.blank:
         kwargs.setdefault("min_size", 0)
@@ -180,10 +189,13 @@ def decimal_field_values(field, **kwargs):
             .map(lambda n: (Decimal(n) / div).quantize(q)))
 
 
-email_field_values = _fake_factory_field_strategy(dm.EmailField)(u"email")
+email_field_values = _fake_factory_field_strategy(
+    dm.EmailField,
+    blank_choices=("",),
+)(u"email")
 
 
-float_field_values = _fake_factory_field_strategy(dm.FloatField)(st.floats)
+float_field_values = _simple_field_strategy(dm.FloatField)(st.floats)
 
 
 integer_field_values = _simple_field_strategy(dm.IntegerField)(
@@ -230,7 +242,10 @@ small_integer_field_values = _simple_field_strategy(dm.SmallIntegerField)(
 ),
 
 
-url_field_values = _fake_factory_field_strategy(dm.URLField)(u"uri"),
+url_field_values = _fake_factory_field_strategy(
+    dm.URLField,
+    blank_choices=("",),
+)(u"uri"),
 
 
 class UnmappedFieldError(Exception):
@@ -288,30 +303,52 @@ def models(model, _db=None, _minimal=False, **field_strategies):
     }
     # Create the model data.
     model_data_strategy = st.fixed_dictionaries(field_strategies)
-    _db = _db or router.db_for_write(model)
+    return ModelStrategy(model, _db, model_data_strategy)
 
-    def _create_model(model_data):
-        # Create the model.
-        obj = model(**model_data)
-        # We need to wrap the model create in an atomic block, which means we
-        # need to use the correct write database for the model.
+
+class ModelStrategy(SearchStrategy):
+
+    def __init__(self, model, db, model_data_strategy):
+        super(ModelStrategy, self).__init__()
+        self.model = model
+        self.db = db
+        self.model_data_strategy = model_data_strategy
+
+    def __repr__(self):
+        return u'ModelStrategy(%s)' % (self.model.__name__,)
+
+    def do_draw(self, data):
+        model_data = data.draw(self.model_data_strategy)
         try:
-            # This should catch unique checks, plus any other custom
-            # validation on the model.
-            obj.full_clean()
+            # We need to wrap the model create in an atomic block, so
+            # we need to use the correct write database for the model.
+            db = self.db or router.db_for_write(self.model)
             # If the save gives an IntegrityError, this will roll the
             # savepoint back.
-            with transaction.atomic(using=_db):
-                obj.save(using=_db)
+            with transaction.atomic(using=db):
+                # Create the model inside the transaction, just in case it
+                # performs database actions in __init__.
+                obj = self.model(**model_data)
+                # This should catch unique checks, plus any other custom
+                # validation on the model.
+                obj.full_clean()
+                obj.save(using=db)
             return obj
-        except (ValidationError, IntegrityError, DataError):
-            # ValidationError: The full_clean failed.
-            # IntegrityError: A unique key was violated.
-            # DataError: Something weird happened. For example,
+        except DataError:
+            # Something weird happened. For example,
             # some Postgres database encodings will refuse text that
             # is longer than a VARCHAR *once encoded by the database*.
-            assume(False)
-    return model_data_strategy.map(_create_model)
+            data.mark_invalid()
+        except (ValidationError, IntegrityError):
+            # This might mean that a unique key way violoated.
+            # As a fallback, try to get the identical model. This is needed
+            # for example() calls, which expect to be able to call the
+            # strategey idempotently.
+            try:
+                return self.model._default_manager.get(**model_data)
+            except self.model.DoesNotExist:
+                # Something other than a unique violoation
+                data.mark_invalid()
 
 
 minimal_models = partial(models, _minimal=True)
