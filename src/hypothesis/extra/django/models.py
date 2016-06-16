@@ -334,14 +334,14 @@ class ModelStrategy(SearchStrategy):
             # is longer than a VARCHAR *once encoded by the database*.
             data.mark_invalid()
         except (ValidationError, IntegrityError):
-            # This might mean that a unique key way violoated.
+            # This might mean that a unique key was violoated.
             # As a fallback, try to get the identical model. This is needed
             # for example() calls, which expect to be able to call the
-            # strategey idempotently.
+            # strategy idempotently.
             try:
                 return self.model._default_manager.get(**model_data)
             except self.model.DoesNotExist:
-                # Something other than a unique violoation
+                # Something other than a unique violation
                 data.mark_invalid()
 
 
