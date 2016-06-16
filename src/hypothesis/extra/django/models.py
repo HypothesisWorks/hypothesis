@@ -37,8 +37,8 @@ from hypothesis.searchstrategy.strategies import SearchStrategy
 default_value = UniqueIdentifier(u'default_value')
 
 
-def model_text(alphabet=st.characters(blacklist_characters="\x00",
-                                      blacklist_categories=("Cs",)), **kwargs):
+def model_text(alphabet=st.characters(blacklist_characters='\x00',
+                                      blacklist_categories=('Cs',)), **kwargs):
     """A modified text strategy that plays nicer with Django databases.
 
     - Excludes the null character, which results in field truncation
