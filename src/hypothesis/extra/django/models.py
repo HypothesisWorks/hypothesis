@@ -15,19 +15,23 @@
 #
 # END HEADER
 
+from __future__ import division, print_function, absolute_import
 
 import string
 from decimal import Decimal
-from django.core.exceptions import ValidationError
-from django.db.utils import DataError
-from django.db import models as dm, transaction, router, IntegrityError
 from functools import wraps, partial
+
+from django.db import models as dm
+from django.db import router, transaction, IntegrityError
+from django.db.utils import DataError
+from django.core.exceptions import ValidationError
+
 from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.datetime import datetimes
 from hypothesis.extra.fakefactory import fake_factory
-from hypothesis.searchstrategy.strategies import SearchStrategy
 from hypothesis.utils.conventions import UniqueIdentifier
+from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
 default_value = UniqueIdentifier(u'default_value')
