@@ -265,19 +265,29 @@ def field_values(field, **kwargs):
     except KeyError:
         # Fallback field handlers.
         if field.null:
-            return st.none()
+            strategy = st.none()
         else:
             raise UnmappedFieldError(field)
-    else:
-        # Allow strategy factories.
-        if callable(strategy):
-            strategy = strategy(field, **kwargs)
+    # Allow strategy factories.
+    if callable(strategy):
+        strategy = strategy(field, **kwargs)
     return strategy
 
 
 # Model strategies.
 
 def models(model, __db=None, __minimal=False, **field_strategies):
+    # Allow strategy factories.
+    field_strategies = {
+        field_name: (
+            strategy(model._meta.get_field(field_name))
+            if callable(strategy)
+            else strategy
+        )
+        for field_name, strategy
+        in field_strategies.items()
+    }
+    # Introspect model for extra fields.
     for field in model._meta.concrete_fields:
         # Don't override developer choices.
         if field.name in field_strategies:
