@@ -98,7 +98,7 @@ def field_strategy(*field_types, blank_choices=()):
                 strategy = func(field, **kwargs)
             # Add in null values.
             if field.null:
-                strategy = st.one_of(strategy, st.none())
+                strategy = st.one_of(st.none(), strategy)
             # Filter by validators.
             strategy = strategy.filter(validator_to_filter(field))
             return strategy
