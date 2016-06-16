@@ -38,12 +38,12 @@ default_value = UniqueIdentifier(u'default_value')
 
 
 def model_text(alphabet=st.characters(blacklist_characters="\x00",
-               blacklist_categories=("Cs",)), **kwargs):
-    """
-    A modified text strategy that plays nicer with Django databases.
+                                      blacklist_categories=("Cs",)), **kwargs):
+    """A modified text strategy that plays nicer with Django databases.
 
     - Excludes the null character, which results in field truncation
       in Postgres.
+
     """
     return st.text(alphabet=alphabet, **kwargs)
 
@@ -67,12 +67,6 @@ def validator_to_filter(field):
         except ValidationError:
             return False
     return validate
-
-
-def _get_field_blank_value(field):
-    if field.null:
-        return None
-    return ""
 
 
 def field_strategy(*field_types, blank_choices=()):
@@ -167,9 +161,9 @@ char_field_values = _simple_field_strategy(
 @field_strategy(dm.CharField, dm.TextField, blank_choices=("",))
 def char_field_values(field, **kwargs):
     if field.blank:
-        kwargs.setdefault("min_size", 0)
+        kwargs.setdefault('min_size', 0)
     if field.max_length:
-        kwargs.setdefault("max_size", field.max_length)
+        kwargs.setdefault('max_size', field.max_length)
     return model_text(**kwargs)
 
 
@@ -181,22 +175,20 @@ datetime_field_values = _simple_field_strategy(dm.DateTimeField)(
 
 @field_strategy(dm.DecimalField)
 def decimal_field_values(field, **kwargs):
-    """
-    A strategy of valid values for the given decimal field.
-    """
+    """A strategy of valid values for the given decimal field."""
     m = 10 ** field.max_digits - 1
     div = 10 ** field.decimal_places
     q = Decimal('1.' + ('0' * field.decimal_places))
-    kwargs.setdefault("min_value", -m)
-    kwargs.setdefault("max_value", m)
+    kwargs.setdefault('min_value', -m)
+    kwargs.setdefault('max_value', m)
     return (st.integers(**kwargs)
             .map(lambda n: (Decimal(n) / div).quantize(q)))
 
 
 email_field_values = _fake_factory_field_strategy(
     dm.EmailField,
-    blank_choices=("",),
-)(u"email")
+    blank_choices=(u'',),
+)(u'email')
 
 
 float_field_values = _simple_field_strategy(dm.FloatField)(st.floats)
@@ -234,7 +226,7 @@ positive_small_integer_field_values = _simple_field_strategy(
 
 slug_field_values = partial(
     char_field_values,
-    alphabet=string.digits + string.ascii_letters + "-",
+    alphabet=string.digits + string.ascii_letters + '-',
 )
 add_default_field_mapping(dm.SlugField, slug_field_values)
 
@@ -248,8 +240,8 @@ small_integer_field_values = _simple_field_strategy(dm.SmallIntegerField)(
 
 url_field_values = _fake_factory_field_strategy(
     dm.URLField,
-    blank_choices=("",),
-)(u"uri"),
+    blank_choices=(u'',),
+)(u'uri'),
 
 
 class UnmappedFieldError(Exception):
@@ -257,9 +249,7 @@ class UnmappedFieldError(Exception):
 
 
 def field_values(field, **kwargs):
-    """
-    A strategy of valid values for the given field.
-    """
+    """A strategy of valid values for the given field."""
     try:
         strategy = _field_mappings[type(field)]
     except KeyError:
@@ -291,7 +281,7 @@ def models(model, _db=None, _minimal=False, **field_strategies):
             strategy = field_values(field)
         except UnmappedFieldError:
             raise InvalidArgument(
-                u"Missing argument for mandatory field {model}.{field}"
+                u'Missing argument for mandatory field {model}.{field}'
                 .format(
                     model=model.__name__,
                     field=field.name,
