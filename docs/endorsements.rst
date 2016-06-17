@@ -118,9 +118,9 @@ to verify that a vendor's Python and non-Python implementations of an algorithm
 matched, and it found about a dozen cases that previous example-based testing
 and code inspections had not. Since then I've been evangelizing for it at our firm.
 
--------------------------------------------
+--------------------------------------------
 `Russel Winder <https://www.russel.org.uk>`_
--------------------------------------------
+--------------------------------------------
 
 I am using Hypothesis as an integral part of my Python workshops. Testing is an integral part of Python
 programming and whilst unittest and, better, py.test can handle example-based testing, property-based
