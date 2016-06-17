@@ -52,8 +52,8 @@ _field_mappings = {}
 
 
 def add_default_field_mapping(field_type, strategy=None):
-    """Registers a strategy or strategy factory as the default handler
-    for a Django model field type."""
+    """Registers a strategy or strategy factory as the default handler for a
+    Django model field type."""
     # Allow use as a decorator.
     if strategy is None:
         return partial(add_default_field_mapping, field_type)
@@ -71,8 +71,8 @@ def default_value(field):
 
 
 def validator_to_filter(field):
-    """Creates a filter for the given field that filters out values
-    that do not pass field validation."""
+    """Creates a filter for the given field that filters out values that do not
+    pass field validation."""
     def validate(value):
         try:
             field.run_validators(value)
@@ -299,8 +299,8 @@ def field_values(field, **kwargs):
 
 @defines_strategy
 def optional_field_values(field, strategy, default_bias=0.9):
-    """Modifies the strategy to produce the default field value
-    in (default_bias * 100) percent of examples."""
+    """Modifies the strategy to produce the default field value in
+    default_bias percent of examples."""
     return (st.floats(min_value=0.0, max_value=1.0)
             .flatmap(lambda v: (
                 default_value(field)
