@@ -11,7 +11,7 @@ from hypothesis.extra.django.models import models
 from tests.django.test_app.models import TestModel
 
 
-class FieldsTest(TestCase):
+class ModelsTest(TestCase):
 
     @given(models(TestModel))
     def testModelFieldTypes(self, obj):
@@ -37,18 +37,34 @@ class FieldsTest(TestCase):
         URLValidator()(obj.url_field)
 
 
-class RollbackTestBase(object):
+# Tests for the functionality of the Django TestCase derivatives.
+
+class TestCaseTestBase(object):
+
+    def testNonHypothesisTest(self):
+        self.assertEqual(TestModel.objects.count(), 0)
+        # Easiest way to create a TestModel instance!
+        models(TestModel).example()
+        self.assertEqual(TestModel.objects.count(), 1)
 
     @given(models(TestModel))
     def testDatabaseRollback(self, obj):
         self.assertEqual(TestModel.objects.count(), 1)
 
+    @classmethod
+    def tearDownClass(cls):
+        super(TestCaseTestBase, cls).tearDownClass()
+        # If the test methods cleaned up correctly, then there will
+        # be no TestModel instances in the database. Can't use
+        # assertEqual(), however, as there is no longer any self!
+        assert TestModel.objects.count() == 0
 
-class RollbackTest(RollbackTestBase, TestCase):
+
+class TestCaseTest(TestCaseTestBase, TestCase):
 
     pass
 
 
-class RollbackTransactionTest(RollbackTestBase, TransactionTestCase):
+class TransactionTestCaseTest(TestCaseTestBase, TransactionTestCase):
 
     pass

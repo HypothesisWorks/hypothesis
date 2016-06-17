@@ -165,8 +165,8 @@ add_default_field_mapping(dm.BooleanField, boolean_field_values)
 @defines_field_strategy
 def char_field_values(field, **kwargs):
     """A strategy of valid values for the given CharField."""
-    if field.blank:
-        kwargs.setdefault('min_size', 0)
+    if not field.blank:
+        kwargs.setdefault('min_size', 1)
     if field.max_length:
         kwargs.setdefault('max_size', field.max_length)
     return model_text(**kwargs)
@@ -360,6 +360,18 @@ class ModelStrategy(SearchStrategy):
                     field=ex.args[0].name,
                 )
             )
+        model_data = {
+            field_name: field_value
+            for field_name, field_value
+            in model_data.items()
+            # Remove None AutoFields from the model data, since these
+            # will change with every instance and mess up the get_or_create
+            # functionality.
+            if field_value is not None or not isinstance(
+                self.model._meta.get_field(field_name),
+                dm.AutoField,
+            )
+        }
         try:
             # We need to wrap the model create in an atomic block, so
             # we need to use the correct write database for the model.
@@ -367,40 +379,29 @@ class ModelStrategy(SearchStrategy):
             # If the save gives an IntegrityError, this will roll the
             # savepoint back.
             with transaction.atomic(using=db):
-                # Create the model inside the transaction, just in case it
-                # performs database actions in __init__.
-                obj = self.model(**model_data)
-                # This should catch unique checks, plus any other custom
-                # validation on the model.
-                obj.full_clean()
-                obj.save(using=db)
+                # Try to get the identical model first. This is needed
+                # for example() calls, which expect to be able to call the
+                # strategy idempotently. We don't use get_or_create because
+                # we want to call full_clean() before save, and there's
+                # no worry about race conditions in tests.
+                try:
+                    obj = self.model._default_manager.get(**model_data)
+                except self.model.DoesNotExist:
+                    # Create the model inside the transaction, just in case it
+                    # performs database actions in __init__.
+                    obj = self.model(**model_data)
+                    # This should catch unique checks, plus any other custom
+                    # validation on the model.
+                    obj.full_clean()
+                    obj.save(using=db)
             return obj
-        except DataError:
-            # Something weird happened. For example,
+        except (DataError, ValidationError, IntegrityError) as ex:
+            # DataError: Something weird happened. For example,
             # some Postgres database encodings will refuse text that
             # is longer than a VARCHAR *once encoded by the database*.
+            # ValidationError/IntegrityError: Validation failed. Hopefully
+            # this won't filter out too much data.
+            print(ex)
             pass
-        except (ValidationError, IntegrityError) as ex:
-            # This might mean that a unique key was violated.
-            # As a fallback, try to get the identical model. This is needed
-            # for example() calls, which expect to be able to call the
-            # strategy idempotently.
-            model_keys = {
-                field_name: field_value
-                for field_name, field_value
-                in model_data.items()
-                # Remove auto fields from the model keys, since these
-                # will change with every instance.
-                if not isinstance(
-                    self.model._meta.get_field(field_name),
-                    dm.AutoField,
-                )
-            }
-            if model_keys:
-                try:
-                    return self.model._default_manager.get(**model_keys)
-                except self.model.DoesNotExist:
-                    # It was something other than a unique violation
-                    pass
         # No model could be created.
         data.mark_invalid()

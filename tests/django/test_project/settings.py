@@ -18,3 +18,5 @@ DATABASES = {
 USE_TZ = True
 
 TIMEZONE = "UTC"
+
+USE_I18N = False
