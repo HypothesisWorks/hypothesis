@@ -28,7 +28,7 @@ from django.core.exceptions import ValidationError
 
 from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
-from hypothesis.extra.datetime import datetimes
+from hypothesis.extra.datetime import dates, datetimes, times
 from hypothesis.extra.fakefactory import fake_factory
 from hypothesis.searchstrategy.strategies import SearchStrategy
 from hypothesis.strategies import defines_strategy
@@ -181,6 +181,10 @@ def char_field_values(field, **kwargs):
     return model_text(**kwargs)
 
 
+date_field_values = _simple_field_strategy()(dates)
+add_default_field_mapping(dm.DateField, date_field_values)
+
+
 datetime_field_values = _simple_field_strategy()(
     datetimes,
     allow_naive=False,
@@ -260,6 +264,13 @@ small_integer_field_values = _simple_field_strategy()(
     max_value=32767,
 )
 add_default_field_mapping(dm.SmallIntegerField, small_integer_field_values)
+
+
+time_field_values = _simple_field_strategy()(
+    times,
+    allow_naive=False,
+)
+add_default_field_mapping(dm.TimeField, time_field_values)
 
 
 url_field_values = _fake_factory_field_strategy(
