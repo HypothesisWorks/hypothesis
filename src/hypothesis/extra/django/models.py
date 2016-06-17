@@ -82,7 +82,7 @@ def validator_to_filter(field):
     return validate
 
 
-def defines_field_strategy(blank_values=()):
+def defines_field_strategy(func):
     """
     Decorates the given field strategy factory to add support for:
 
@@ -91,69 +91,60 @@ def defines_field_strategy(blank_values=()):
     - Filtering by field validators.
 
     """
-    def decorator(func):
-        @defines_strategy
-        @wraps(func)
-        def create_field_strategy(field, **kwargs):
-            # Handle field choices.
-            if field.choices:
-                choices = [
-                    value
-                    for (value, name)
-                    in field.choices
-                ]
-                if field.blank:
-                    choices.extend(blank_values)
-                strategy = st.sampled_from(choices)
-            else:
-                # Run the factory function.
-                strategy = func(field, **kwargs)
-            # Add in null values.
-            if field.null:
-                strategy = st.one_of(st.none(), strategy)
-            # Filter by validators.
-            strategy = strategy.filter(validator_to_filter(field))
-            return strategy
-        return create_field_strategy
-    return decorator
+    @defines_strategy
+    @wraps(func)
+    def create_field_strategy(field, **kwargs):
+        # Handle field choices.
+        if field.choices:
+            choices = [
+                value
+                for (value, name)
+                in field.choices
+            ]
+            if field.blank and field.empty_strings_allowed:
+                choices.extend(u'')
+            strategy = st.sampled_from(choices)
+        else:
+            # Run the factory function.
+            strategy = func(field, **kwargs)
+        # Add in null values.
+        if field.null:
+            strategy = st.one_of(st.none(), strategy)
+        # Filter by validators.
+        strategy = strategy.filter(validator_to_filter(field))
+        return strategy
+    return create_field_strategy
 
 
-def _simple_field_strategy(blank_values=()):
-    def decorator(func, **defaults):
-        @defines_field_strategy(blank_values=blank_values)
-        def create_simple_field_strategy(field, **kwargs):
-            params = defaults.copy()
-            params.update(kwargs)
-            return func(**params)
-        return create_simple_field_strategy
-    return decorator
+def _simple_field_strategy(func, **defaults):
+    @defines_field_strategy
+    def create_simple_field_strategy(field, **kwargs):
+        params = defaults.copy()
+        params.update(kwargs)
+        return func(**params)
+    return create_simple_field_strategy
 
 
-def _fake_factory_field_strategy(blank_values=()):
-    def decorator(strategy_name):
-        @defines_field_strategy(blank_values=blank_values)
-        def create_fake_factory_field_strategy(field, min_size=None,
-                                               max_size=None):
-            strategy = fake_factory(strategy_name)
-            # Add in blank values.
-            if field.blank:
-                strategy = st.one_of(strategy, *blank_values)
-            # Emulate min size.
-            if min_size is not None:
-                strategy = strategy.filter(lambda v: len(v) >= min_size)
-            # Emulate max size.
-            if max_size is not None:
-                strategy = strategy.filter(lambda v: len(v) <= max_size)
-            # Emulate blank.
-            if field.blank and blank_values:
-                strategy = st.one_of(st.sampled_from(blank_values), strategy)
-            # All done!
-            return strategy
-        return create_fake_factory_field_strategy
-    return decorator
+def _fake_factory_field_strategy(strategy_name):
+    @defines_field_strategy
+    def create_fake_factory_field_strategy(field, min_size=None,
+                                           max_size=None):
+        strategy = fake_factory(strategy_name)
+        # Emulate blank.
+        if field.blank and field.empty_strings_allowed:
+            strategy = st.one_of(strategy, u'')
+        # Emulate min size.
+        if min_size is not None:
+            strategy = strategy.filter(lambda v: len(v) >= min_size)
+        # Emulate max size.
+        if max_size is not None:
+            strategy = strategy.filter(lambda v: len(v) <= max_size)
+        # All done!
+        return strategy
+    return create_fake_factory_field_strategy
 
 
-big_integer_field_values = _simple_field_strategy()(
+big_integer_field_values = _simple_field_strategy(
     st.integers,
     min_value=-9223372036854775808,
     max_value=9223372036854775807,
@@ -161,17 +152,17 @@ big_integer_field_values = _simple_field_strategy()(
 add_default_field_mapping(dm.BigIntegerField, big_integer_field_values)
 
 
-binary_field_values = _simple_field_strategy()(st.binary)
+binary_field_values = _simple_field_strategy(st.binary)
 add_default_field_mapping(dm.BinaryField, binary_field_values)
 
 
-boolean_field_values = _simple_field_strategy()(st.booleans)
+boolean_field_values = _simple_field_strategy(st.booleans)
 add_default_field_mapping(dm.BooleanField, boolean_field_values)
 
 
 @add_default_field_mapping(dm.CharField)
 @add_default_field_mapping(dm.TextField)
-@defines_field_strategy(blank_values=('',))
+@defines_field_strategy
 def char_field_values(field, **kwargs):
     """A strategy of valid values for the given CharField."""
     if field.blank:
@@ -181,11 +172,11 @@ def char_field_values(field, **kwargs):
     return model_text(**kwargs)
 
 
-date_field_values = _simple_field_strategy()(dates)
+date_field_values = _simple_field_strategy(dates)
 add_default_field_mapping(dm.DateField, date_field_values)
 
 
-datetime_field_values = _simple_field_strategy()(
+datetime_field_values = _simple_field_strategy(
     datetimes,
     allow_naive=False,
 )
@@ -193,7 +184,7 @@ add_default_field_mapping(dm.DateTimeField, datetime_field_values)
 
 
 @add_default_field_mapping(dm.DecimalField)
-@defines_field_strategy()
+@defines_field_strategy
 def decimal_field_values(field, **kwargs):
     """A strategy of valid values for the given DecimalField."""
     m = 10 ** field.max_digits - 1
@@ -205,17 +196,15 @@ def decimal_field_values(field, **kwargs):
             .map(lambda n: (Decimal(n) / div).quantize(q)))
 
 
-email_field_values = _fake_factory_field_strategy(
-    blank_values=(u'',),
-)(u'email')
+email_field_values = _fake_factory_field_strategy(u'email')
 add_default_field_mapping(dm.EmailField, email_field_values)
 
 
-float_field_values = _simple_field_strategy()(st.floats)
+float_field_values = _simple_field_strategy(st.floats)
 add_default_field_mapping(dm.FloatField, float_field_values)
 
 
-integer_field_values = _simple_field_strategy()(
+integer_field_values = _simple_field_strategy(
     st.integers,
     min_value=-2147483648,
     max_value=2147483647,
@@ -223,13 +212,13 @@ integer_field_values = _simple_field_strategy()(
 add_default_field_mapping(dm.IntegerField, integer_field_values)
 
 
-null_boolean_field_values = _simple_field_strategy()(
+null_boolean_field_values = _simple_field_strategy(
     partial(st.one_of, st.none(), st.booleans()),
 )
 add_default_field_mapping(dm.NullBooleanField, null_boolean_field_values)
 
 
-positive_integer_field_values = _simple_field_strategy()(
+positive_integer_field_values = _simple_field_strategy(
     st.integers,
     min_value=0,
     max_value=2147483647,
@@ -240,7 +229,7 @@ add_default_field_mapping(
 )
 
 
-positive_small_integer_field_values = _simple_field_strategy()(
+positive_small_integer_field_values = _simple_field_strategy(
     st.integers,
     min_value=0,
     max_value=32767,
@@ -258,7 +247,7 @@ slug_field_values = partial(
 add_default_field_mapping(dm.SlugField, slug_field_values)
 
 
-small_integer_field_values = _simple_field_strategy()(
+small_integer_field_values = _simple_field_strategy(
     st.integers,
     min_value=-32768,
     max_value=32767,
@@ -266,16 +255,14 @@ small_integer_field_values = _simple_field_strategy()(
 add_default_field_mapping(dm.SmallIntegerField, small_integer_field_values)
 
 
-time_field_values = _simple_field_strategy()(
+time_field_values = _simple_field_strategy(
     times,
-    allow_naive=False,
+    timezones=(),
 )
 add_default_field_mapping(dm.TimeField, time_field_values)
 
 
-url_field_values = _fake_factory_field_strategy(
-    blank_values=(u'',),
-)(u'uri'),
+url_field_values = _fake_factory_field_strategy(u'uri')
 add_default_field_mapping(dm.URLField, url_field_values)
 
 
@@ -290,7 +277,8 @@ def _resolve_strategy_factory(strategy, *args, **kwargs):
 
 
 def _field_has_default(field):
-    return field.blank or field.null or field.has_default()
+    return ((field.blank and field.empty_strings_allowed) or
+            field.null or field.has_default())
 
 
 @defines_strategy
