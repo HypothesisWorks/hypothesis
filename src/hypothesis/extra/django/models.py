@@ -323,7 +323,7 @@ def optional_field_values(field, strategy, default_bias=0.9):
 # Model strategies.
 
 @defines_strategy
-def models(model, __db=None, __default_bias=0.9, **field_strategies):
+def models(model, __db=st.none(), __default_bias=0.9, **field_strategies):
     # Allow strategy factories.
     field_strategies = {
         field_name: _resolve_strategy_factory(
@@ -375,7 +375,7 @@ class ModelStrategy(SearchStrategy):
         try:
             # We need to wrap the model create in an atomic block, so
             # we need to use the correct write database for the model.
-            db = self.db or router.db_for_write(self.model)
+            db = data.draw(self.db) or router.db_for_write(self.model)
             # If the save gives an IntegrityError, this will roll the
             # savepoint back.
             with transaction.atomic(using=db):
