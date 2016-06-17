@@ -323,10 +323,7 @@ def models(model, __db=None, __default_bias=0.9, **field_strategies):
         in field_strategies.items()
     }
     # Introspect model for extra fields.
-    for field in model._meta.get_fields():
-        # Don't provide values for non-concrete fields.
-        if not field.concrete:
-            continue
+    for field in model._meta.concrete_fields:
         # Don't override developer choices.
         if field.name in field_strategies:
             continue
