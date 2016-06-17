@@ -94,8 +94,6 @@ class MandatoryComputed(models.Model):
     company = models.ForeignKey(Company, null=False)
 
     def __init__(self, **kw):
-        if u'company' in kw:
-            raise RuntimeError()
         cname = kw[u'name'] + u'_company'
         kw[u'company'] = Company.objects.create(name=cname)
         super(MandatoryComputed, self).__init__(**kw)

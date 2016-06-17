@@ -75,20 +75,16 @@ class TestGetsBasicModels(TestCase):
         assert x.customish == u'a'
 
     def test_mandatory_fields_are_mandatory(self):
-        self.assertRaises(InvalidArgument, models, Store)
+        self.assertRaises(InvalidArgument, models(Store).example)
 
     def test_mandatory_computed_fields_are_mandatory(self):
-        self.assertRaises(InvalidArgument, models, MandatoryComputed)
-
-    def test_mandatory_computed_fields_may_not_be_provided(self):
-        mc = models(MandatoryComputed, company=models(Company))
-        self.assertRaises(RuntimeError, mc.example)
+        self.assertRaises(InvalidArgument, models(MandatoryComputed).example)
 
     @given(models(MandatoryComputed, company=default_value))
     def test_mandatory_computed_field_default(self, x):
         assert x.company.name == x.name + u'_company'
 
-    @given(models(CustomishDefault))
+    @given(models(CustomishDefault, __default_bias=0))
     def test_customish_default_generated(self, x):
         assert x.customish == u'a'
 

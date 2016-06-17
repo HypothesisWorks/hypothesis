@@ -30,13 +30,11 @@ from hypothesis import strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.datetime import datetimes
 from hypothesis.extra.fakefactory import fake_factory
-from hypothesis.utils.conventions import UniqueIdentifier
 from hypothesis.searchstrategy.strategies import SearchStrategy
+from hypothesis.strategies import defines_strategy
 
 
-default_value = UniqueIdentifier(u'default_value')
-
-
+@defines_strategy
 def model_text(alphabet=st.characters(blacklist_characters='\x00',
                                       blacklist_categories=('Cs',)), **kwargs):
     """A modified text strategy that plays nicer with Django databases.
@@ -50,19 +48,31 @@ def model_text(alphabet=st.characters(blacklist_characters='\x00',
 
 # Field strategies.
 
-_field_mappings = {
-    dm.AutoField: default_value,
-}
+_field_mappings = {}
 
 
 def add_default_field_mapping(field_type, strategy=None):
+    """Registers a strategy or strategy factory as the default handler
+    for a Django model field type."""
+    # Allow use as a decorator.
     if strategy is None:
         return partial(add_default_field_mapping, field_type)
+    # Allow use directly.
     _field_mappings[field_type] = strategy
+    # Return the strategy, to complete usage as a decorator.
     return strategy
 
 
+@add_default_field_mapping(dm.AutoField)
+@defines_strategy
+def default_value(field):
+    """A strategy that returns the default value for the field."""
+    return st.just(field.get_default())
+
+
 def validator_to_filter(field):
+    """Creates a filter for the given field that filters out values
+    that do not pass field validation."""
     def validate(value):
         try:
             field.run_validators(value)
@@ -72,18 +82,17 @@ def validator_to_filter(field):
     return validate
 
 
-def field_strategy(blank_choices=()):
+def defines_field_strategy(blank_values=()):
     """
     Decorates the given field strategy factory to add support for:
 
-    - Passing in min_size and max_size kwargs for the field.
-    - Blank fields.
+    - Fields with choices.
     - Null fields.
     - Filtering by field validators.
 
-    The field strategy is registered for the given fields.
     """
     def decorator(func):
+        @defines_strategy
         @wraps(func)
         def create_field_strategy(field, **kwargs):
             # Handle field choices.
@@ -94,7 +103,7 @@ def field_strategy(blank_choices=()):
                     in field.choices
                 ]
                 if field.blank:
-                    choices.extend(blank_choices)
+                    choices.extend(blank_values)
                 strategy = st.sampled_from(choices)
             else:
                 # Run the factory function.
@@ -109,9 +118,9 @@ def field_strategy(blank_choices=()):
     return decorator
 
 
-def _simple_field_strategy(blank_choices=()):
+def _simple_field_strategy(blank_values=()):
     def decorator(func, **defaults):
-        @field_strategy(blank_choices=blank_choices)
+        @defines_field_strategy(blank_values=blank_values)
         def create_simple_field_strategy(field, **kwargs):
             params = defaults.copy()
             params.update(kwargs)
@@ -120,21 +129,25 @@ def _simple_field_strategy(blank_choices=()):
     return decorator
 
 
-def _fake_factory_field_strategy(blank_choices=()):
+def _fake_factory_field_strategy(blank_values=()):
     def decorator(strategy_name):
-        @field_strategy(blank_choices=blank_choices)
+        @defines_field_strategy(blank_values=blank_values)
         def create_fake_factory_field_strategy(field, min_size=None,
                                                max_size=None):
             strategy = fake_factory(strategy_name)
             # Add in blank values.
             if field.blank:
-                strategy = st.one_of(strategy, *blank_choices)
+                strategy = st.one_of(strategy, *blank_values)
             # Emulate min size.
             if min_size is not None:
                 strategy = strategy.filter(lambda v: len(v) >= min_size)
             # Emulate max size.
             if max_size is not None:
                 strategy = strategy.filter(lambda v: len(v) <= max_size)
+            # Emulate blank.
+            if field.blank and blank_values:
+                strategy = st.one_of(st.sampled_from(blank_values), strategy)
+            # All done!
             return strategy
         return create_fake_factory_field_strategy
     return decorator
@@ -158,8 +171,9 @@ add_default_field_mapping(dm.BooleanField, boolean_field_values)
 
 @add_default_field_mapping(dm.CharField)
 @add_default_field_mapping(dm.TextField)
-@field_strategy(blank_choices=('',))
+@defines_field_strategy(blank_values=('',))
 def char_field_values(field, **kwargs):
+    """A strategy of valid values for the given CharField."""
     if field.blank:
         kwargs.setdefault('min_size', 0)
     if field.max_length:
@@ -175,9 +189,9 @@ add_default_field_mapping(dm.DateTimeField, datetime_field_values)
 
 
 @add_default_field_mapping(dm.DecimalField)
-@field_strategy()
+@defines_field_strategy()
 def decimal_field_values(field, **kwargs):
-    """A strategy of valid values for the given decimal field."""
+    """A strategy of valid values for the given DecimalField."""
     m = 10 ** field.max_digits - 1
     div = 10 ** field.decimal_places
     q = Decimal('1.' + ('0' * field.decimal_places))
@@ -188,7 +202,7 @@ def decimal_field_values(field, **kwargs):
 
 
 email_field_values = _fake_factory_field_strategy(
-    blank_choices=(u'',),
+    blank_values=(u'',),
 )(u'email')
 add_default_field_mapping(dm.EmailField, email_field_values)
 
@@ -249,7 +263,7 @@ add_default_field_mapping(dm.SmallIntegerField, small_integer_field_values)
 
 
 url_field_values = _fake_factory_field_strategy(
-    blank_choices=(u'',),
+    blank_values=(u'',),
 )(u'uri'),
 add_default_field_mapping(dm.URLField, url_field_values)
 
@@ -258,31 +272,52 @@ class UnmappedFieldError(Exception):
     pass
 
 
+def _resolve_strategy_factory(strategy, *args, **kwargs):
+    if callable(strategy):
+        return strategy(*args, **kwargs)
+    return strategy
+
+
+def _field_has_default(field):
+    return field.blank or field.null or field.has_default()
+
+
+@defines_strategy
 def field_values(field, **kwargs):
     """A strategy of valid values for the given field."""
     try:
         strategy = _field_mappings[type(field)]
     except KeyError:
         # Fallback field handlers.
-        if field.null:
-            strategy = st.none()
+        if _field_has_default(field):
+            strategy = default_value
         else:
             raise UnmappedFieldError(field)
-    # Allow strategy factories.
-    if callable(strategy):
-        strategy = strategy(field, **kwargs)
+    strategy = _resolve_strategy_factory(strategy, field, **kwargs)
     return strategy
+
+
+@defines_strategy
+def optional_field_values(field, strategy, default_bias=0.9):
+    """Modifies the strategy to produce the default field value
+    in (default_bias * 100) percent of examples."""
+    return (st.floats(min_value=0.0, max_value=1.0)
+            .flatmap(lambda v: (
+                default_value(field)
+                if v < default_bias
+                else strategy
+            )))
 
 
 # Model strategies.
 
-def models(model, __db=None, __minimal=False, **field_strategies):
+@defines_strategy
+def models(model, __db=None, __default_bias=0.9, **field_strategies):
     # Allow strategy factories.
     field_strategies = {
-        field_name: (
-            strategy(model._meta.get_field(field_name))
-            if callable(strategy)
-            else strategy
+        field_name: _resolve_strategy_factory(
+            strategy,
+            model._meta.get_field(field_name),
         )
         for field_name, strategy
         in field_strategies.items()
@@ -292,29 +327,13 @@ def models(model, __db=None, __minimal=False, **field_strategies):
         # Don't override developer choices.
         if field.name in field_strategies:
             continue
-        # If in minimal mode, do not generate unnecessary data.
-        if __minimal:
-            if field.blank or field.null or field.has_default():
-                continue
         # Get the mapped field strategy.
-        try:
-            strategy = field_values(field)
-        except UnmappedFieldError:
-            raise InvalidArgument(
-                u'Missing argument for mandatory field {model}.{field}'
-                .format(
-                    model=model.__name__,
-                    field=field.name,
-                )
-            )
+        strategy = field_values(field)
+        # Apply default bias.
+        if _field_has_default(field):
+            strategy = optional_field_values(field, strategy, __default_bias)
+        # Store generated field strategy.
         field_strategies[field.name] = strategy
-    # Remove default_values so we don't try to generate anything for those.
-    field_strategies = {
-        field_name: strategy
-        for field_name, strategy
-        in field_strategies.items()
-        if strategy is not default_value
-    }
     # Create the model data.
     model_data_strategy = st.fixed_dictionaries(field_strategies)
     return ModelStrategy(model, __db, model_data_strategy)
@@ -332,7 +351,16 @@ class ModelStrategy(SearchStrategy):
         return u'ModelStrategy(%s)' % (self.model.__name__,)
 
     def do_draw(self, data):
-        model_data = data.draw(self.model_data_strategy)
+        try:
+            model_data = data.draw(self.model_data_strategy)
+        except UnmappedFieldError as ex:
+            raise InvalidArgument(
+                u'Missing argument for mandatory field {model}.{field}'
+                .format(
+                    model=self.model.__name__,
+                    field=ex.args[0].name,
+                )
+            )
         try:
             # We need to wrap the model create in an atomic block, so
             # we need to use the correct write database for the model.
@@ -352,17 +380,28 @@ class ModelStrategy(SearchStrategy):
             # Something weird happened. For example,
             # some Postgres database encodings will refuse text that
             # is longer than a VARCHAR *once encoded by the database*.
-            data.mark_invalid()
-        except (ValidationError, IntegrityError):
-            # This might mean that a unique key was violoated.
+            pass
+        except (ValidationError, IntegrityError) as ex:
+            # This might mean that a unique key was violated.
             # As a fallback, try to get the identical model. This is needed
             # for example() calls, which expect to be able to call the
             # strategy idempotently.
-            try:
-                return self.model._default_manager.get(**model_data)
-            except self.model.DoesNotExist:
-                # Something other than a unique violation
-                data.mark_invalid()
-
-
-minimal_models = partial(models, __minimal=True)
+            model_keys = {
+                field_name: field_value
+                for field_name, field_value
+                in model_data.items()
+                # Remove auto fields from the model keys, since these
+                # will change with every instance.
+                if not isinstance(
+                    self.model._meta.get_field(field_name),
+                    dm.AutoField,
+                )
+            }
+            if model_keys:
+                try:
+                    return self.model._default_manager.get(**model_keys)
+                except self.model.DoesNotExist:
+                    # It was something other than a unique violation
+                    pass
+        # No model could be created.
+        data.mark_invalid()
