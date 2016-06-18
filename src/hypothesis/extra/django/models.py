@@ -26,10 +26,9 @@ from django.db import router, transaction, IntegrityError
 from django.db.utils import DataError
 from django.core.exceptions import ValidationError
 
-from hypothesis import strategies as st
+from hypothesis import assume, strategies as st
 from hypothesis.extra.datetime import dates, datetimes, times
 from hypothesis.extra.fakefactory import fake_factory
-from hypothesis.searchstrategy.strategies import SearchStrategy
 from hypothesis.strategies import defines_strategy
 
 
@@ -298,8 +297,8 @@ def field_values(field, **kwargs):
 
 # Model strategies.
 
-@defines_strategy
-def models(model, __db=st.none(), **field_strategies):
+@st.composite
+def models(draw, model, __db=st.none(), **field_strategies):
     """A strategy of valid models, saved to the database."""
     # Allow strategy factories.
     field_strategies = {
@@ -317,61 +316,48 @@ def models(model, __db=st.none(), **field_strategies):
             continue
         # Store default field strategy.
         field_strategies[field.name] = field_values(field)
-    # Create the model data.
+    # Create the model data strategy.
     model_data_strategy = st.fixed_dictionaries(field_strategies)
-    return ModelStrategy(model, __db, model_data_strategy)
-
-
-class ModelStrategy(SearchStrategy):
-
-    def __init__(self, model, db, model_data_strategy):
-        super(ModelStrategy, self).__init__()
-        self.model = model
-        self.db = db
-        self.model_data_strategy = model_data_strategy
-
-    def __repr__(self):
-        return u'ModelStrategy(%s)' % (self.model.__name__,)
-
-    def do_draw(self, data):
-        model_data = data.draw(self.model_data_strategy)
-        model_key = {
-            field_name: field_value
-            for field_name, field_value
-            in model_data.items()
-            # Remove generated data from the model data, since these
-            # will change with every instance and mess up the get_or_create
-            # functionality. This will catch AutoFields and friends.
-            if (field_value is not None or
-                self.model._meta.get_field(field_name).null)
-        }
-        try:
-            # We need to wrap the model create in an atomic block, so
-            # we need to use the correct write database for the model.
-            db = data.draw(self.db) or router.db_for_write(self.model)
-            # If the save gives an IntegrityError, this will roll the
-            # savepoint back.
-            with transaction.atomic(using=db):
-                # Try to get the identical model first. This is needed
-                # for example() calls, which expect to be able to call the
-                # strategy idempotently. We don't use get_or_create because
-                # we want to call full_clean() before save, and there's
-                # no worry about race conditions in tests.
-                try:
-                    obj = self.model._default_manager.get(**model_key)
-                except self.model.DoesNotExist:
-                    # Create the model inside the transaction, just in case it
-                    # performs database actions in __init__.
-                    obj = self.model(**model_data)
-                    # This should catch unique checks, plus any other custom
-                    # validation on the model.
-                    obj.full_clean()
-                    obj.save(using=db)
-            return obj
-        except (DataError, ValidationError, IntegrityError):
-            # DataError: Something weird happened. For example,
-            # some Postgres database encodings will refuse text that
-            # is longer than a VARCHAR *once encoded by the database*.
-            # ValidationError/IntegrityError: Validation failed. Hopefully
-            # this won't filter out too much data.
-            data.mark_invalid()
+    # We need to wrap the model create in an atomic block, so
+    # we need to use the correct write database for the model.
+    db = draw(__db) or router.db_for_write(model)
+    try:
+        # If the save gives an IntegrityError, this will roll the
+        # savepoint back.
+        with transaction.atomic(using=db):
+            # Perform all other operations inside the transaction, just in
+            # case they're impure.
+            model_data = draw(model_data_strategy)
+            model_key = {
+                field_name: field_value
+                for field_name, field_value
+                in model_data.items()
+                # Remove generated data from the model data, since these
+                # will change with every instance and mess up the get_or_create
+                # functionality. This will catch AutoFields and friends.
+                if (field_value is not None or
+                    model._meta.get_field(field_name).null)
+            }
+            # Try to get the identical model first. This is needed
+            # for example() calls, which expect to be able to call the
+            # strategy idempotently. We don't use get_or_create because
+            # we want to call full_clean() before save, and there's
+            # no worry about race conditions in tests.
+            try:
+                obj = model._default_manager.get(**model_key)
+            except model.DoesNotExist:
+                # Create the model inside the transaction, just in case it
+                # performs database actions in __init__.
+                obj = model(**model_data)
+                # This should catch unique checks, plus any other custom
+                # validation on the model.
+                obj.full_clean()
+                obj.save(using=db)
+        return obj
+    except (DataError, ValidationError, IntegrityError):
+        # DataError: Something weird happened. For example,
+        # some Postgres database encodings will refuse text that
+        # is longer than a VARCHAR *once encoded by the database*.
+        # ValidationError/IntegrityError: Validation failed. Hopefully
+        # this won't filter out too much data.
+        assume(False)
