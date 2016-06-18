@@ -361,9 +361,8 @@ class ModelStrategy(SearchStrategy):
                 # strategy idempotently. We don't use get_or_create because
                 # we want to call full_clean() before save, and there's
                 # no worry about race conditions in tests.
-                try:
-                    obj = self.model._default_manager.get(**model_key)
-                except self.model.DoesNotExist:
+                obj = self.model._default_manager.filter(**model_key).first()
+                if obj is None:
                     # Create the model inside the transaction, just in case it
                     # performs database actions in __init__.
                     obj = self.model(**model_data)
