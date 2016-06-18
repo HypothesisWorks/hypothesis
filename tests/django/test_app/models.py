@@ -13,6 +13,35 @@ class TestModel(models.Model):
         max_length=200,
     )
 
+    char_field_blank = models.CharField(
+        max_length=200,
+        blank=True,
+    )
+
+    char_field_choices = models.CharField(
+        max_length=200,
+        choices=(
+            ("foo", "Foo"),
+            ("bar", "Bar"),
+        ),
+    )
+
+    char_field_default = models.CharField(
+        max_length=200,
+        default="foo",
+    )
+
+    char_field_none = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+    )
+
+    char_field_unique = models.CharField(
+        max_length=200,
+        unique=True,
+    )
+
     date_field = models.DateField()
 
     datetime_field = models.DateTimeField()
@@ -24,6 +53,14 @@ class TestModel(models.Model):
 
     email_field = models.EmailField()
 
+    email_field_blank = models.EmailField(
+        blank=True,
+    )
+
+    email_field_max_length = models.EmailField(
+        max_length=50,
+    )
+
     float_field = models.FloatField()
 
     integer_field = models.IntegerField()
@@ -34,7 +71,9 @@ class TestModel(models.Model):
 
     positive_small_integer_field = models.PositiveSmallIntegerField()
 
-    slug_field = models.SlugField()
+    slug_field = models.SlugField(
+        db_index=False,
+    )
 
     small_integer_field = models.SmallIntegerField()
 

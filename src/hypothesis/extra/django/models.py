@@ -27,7 +27,6 @@ from django.db.utils import DataError
 from django.core.exceptions import ValidationError
 
 from hypothesis import strategies as st
-from hypothesis.errors import InvalidArgument
 from hypothesis.extra.datetime import dates, datetimes, times
 from hypothesis.extra.fakefactory import fake_factory
 from hypothesis.searchstrategy.strategies import SearchStrategy
@@ -88,25 +87,38 @@ def defines_field_strategy(func):
 
     - Fields with choices.
     - Null fields.
+    - Blank fields.
     - Filtering by field validators.
 
     """
     @defines_strategy
     @wraps(func)
     def create_field_strategy(field, **kwargs):
+        extra_choices = set()
+        if field.null:
+            extra_choices.add(None)
+        if field.blank and field.empty_strings_allowed:
+            extra_choices.add(u'')
+        if field.has_default():
+            extra_choices.add(field.get_default())
         # Handle field choices.
         if field.choices:
-            choices = [
+            choices = set(
                 value
                 for (value, name)
                 in field.choices
-            ]
-            if field.blank and field.empty_strings_allowed:
-                choices.extend(u'')
+            )
+            choices.update(extra_choices)
             strategy = st.sampled_from(choices)
         else:
             # Run the factory function.
             strategy = func(field, **kwargs)
+            # The final strategy will be biased towards the extra
+            # choices, which is quite useful, as models with large
+            # numbers of CharField and TextField will otherwise
+            # consume large amounts of the data buffer, causing
+            # overflows.
+            strategy = st.one_of(st.sampled_from(extra_choices), strategy)
         # Add in null values.
         if field.null:
             strategy = st.one_of(st.none(), strategy)
@@ -130,9 +142,6 @@ def _fake_factory_field_strategy(strategy_name):
     def create_fake_factory_field_strategy(field, min_size=None,
                                            max_size=None):
         strategy = fake_factory(strategy_name)
-        # Emulate blank.
-        if field.blank and field.empty_strings_allowed:
-            strategy = st.one_of(strategy, u'')
         # Emulate min size.
         if min_size is not None:
             strategy = strategy.filter(lambda v: len(v) >= min_size)
@@ -167,7 +176,7 @@ def char_field_values(field, **kwargs):
     """A strategy of valid values for the given CharField."""
     if not field.blank:
         kwargs.setdefault('min_size', 1)
-    if field.max_length:
+    if field.max_length is not None:
         kwargs.setdefault('max_size', field.max_length)
     return model_text(**kwargs)
 
@@ -200,7 +209,11 @@ email_field_values = _fake_factory_field_strategy(u'email')
 add_default_field_mapping(dm.EmailField, email_field_values)
 
 
-float_field_values = _simple_field_strategy(st.floats)
+float_field_values = _simple_field_strategy(
+    st.floats,
+    allow_nan=False,
+    allow_infinity=False,
+)
 add_default_field_mapping(dm.FloatField, float_field_values)
 
 
@@ -266,19 +279,10 @@ url_field_values = _fake_factory_field_strategy(u'uri')
 add_default_field_mapping(dm.URLField, url_field_values)
 
 
-class UnmappedFieldError(Exception):
-    pass
-
-
 def _resolve_strategy_factory(strategy, *args, **kwargs):
     if callable(strategy):
         return strategy(*args, **kwargs)
     return strategy
-
-
-def _field_has_default(field):
-    return ((field.blank and field.empty_strings_allowed) or
-            field.null or field.has_default())
 
 
 @defines_strategy
@@ -287,31 +291,16 @@ def field_values(field, **kwargs):
     try:
         strategy = _field_mappings[type(field)]
     except KeyError:
-        # Fallback field handlers.
-        if _field_has_default(field):
-            strategy = default_value
-        else:
-            raise UnmappedFieldError(field)
+        strategy = _simple_field_strategy(st.nothing)
     strategy = _resolve_strategy_factory(strategy, field, **kwargs)
     return strategy
-
-
-@defines_strategy
-def optional_field_values(field, strategy, default_bias=0.9):
-    """Modifies the strategy to produce the default field value in
-    default_bias percent of examples."""
-    return (st.floats(min_value=0.0, max_value=1.0)
-            .flatmap(lambda v: (
-                default_value(field)
-                if v < default_bias
-                else strategy
-            )))
 
 
 # Model strategies.
 
 @defines_strategy
-def models(model, __db=st.none(), __default_bias=0.9, **field_strategies):
+def models(model, __db=st.none(), **field_strategies):
+    """A strategy of valid models, saved to the database."""
     # Allow strategy factories.
     field_strategies = {
         field_name: _resolve_strategy_factory(
@@ -326,13 +315,8 @@ def models(model, __db=st.none(), __default_bias=0.9, **field_strategies):
         # Don't override developer choices.
         if field.name in field_strategies:
             continue
-        # Get the mapped field strategy.
-        strategy = field_values(field)
-        # Apply default bias.
-        if _field_has_default(field):
-            strategy = optional_field_values(field, strategy, __default_bias)
-        # Store generated field strategy.
-        field_strategies[field.name] = strategy
+        # Store default field strategy.
+        field_strategies[field.name] = field_values(field)
     # Create the model data.
     model_data_strategy = st.fixed_dictionaries(field_strategies)
     return ModelStrategy(model, __db, model_data_strategy)
@@ -350,16 +334,7 @@ class ModelStrategy(SearchStrategy):
         return u'ModelStrategy(%s)' % (self.model.__name__,)
 
     def do_draw(self, data):
-        try:
-            model_data = data.draw(self.model_data_strategy)
-        except UnmappedFieldError as ex:
-            raise InvalidArgument(
-                u'Missing argument for mandatory field {model}.{field}'
-                .format(
-                    model=self.model.__name__,
-                    field=ex.args[0].name,
-                )
-            )
+        model_data = data.draw(self.model_data_strategy)
         model_data = {
             field_name: field_value
             for field_name, field_value
@@ -395,13 +370,12 @@ class ModelStrategy(SearchStrategy):
                     obj.full_clean()
                     obj.save(using=db)
             return obj
-        except (DataError, ValidationError, IntegrityError) as ex:
+        except (DataError, ValidationError, IntegrityError):
             # DataError: Something weird happened. For example,
             # some Postgres database encodings will refuse text that
             # is longer than a VARCHAR *once encoded by the database*.
             # ValidationError/IntegrityError: Validation failed. Hopefully
             # this won't filter out too much data.
-            print(ex)
             pass
         # No model could be created.
         data.mark_invalid()
