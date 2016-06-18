@@ -3,12 +3,17 @@ from decimal import Decimal
 
 from django.utils import six
 
-from hypothesis import given, strategies as st
+from hypothesis import given, strategies as st, settings, HealthCheck
 from hypothesis.extra.django import TestCase, TransactionTestCase
 from hypothesis.extra.django.models import models
 from hypothesis.internal.compat import hrange
 
 from tests.django.test_app.models import TestModel
+
+
+allow_slow = settings(
+    suppress_health_check=[HealthCheck.too_slow],
+)
 
 
 class ModelsTest(TestCase):
@@ -48,15 +53,18 @@ class ModelsTest(TestCase):
         self.assertIsInstance(obj.url_field, six.text_type)
 
     @given(models(TestModel))
+    @allow_slow
     def testCanGenerateModels(self, obj):
         self.assertTestModel(obj)
 
     @given(models(TestModel, __db=st.just("extra")))
+    @allow_slow
     def testCanGenerateModelsSingleDb(self, obj):
         self.assertTestModel(obj)
         self.assertEqual(TestModel.objects.using("extra").count(), 1)
 
     @given(models(TestModel, __db=st.sampled_from(("default", "extra"))))
+    @allow_slow
     def testCanGenerateModelsMultiDb(self, obj):
         self.assertTestModel(obj)
 
@@ -78,6 +86,7 @@ class TestCaseTestBase(object):
         self.assertEqual(TestModel.objects.count(), 1)
 
     @given(models(TestModel))
+    @allow_slow
     def testDatabaseRollback(self, obj):
         self.assertEqual(TestModel.objects.count(), 1)
 

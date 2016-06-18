@@ -119,9 +119,6 @@ def defines_field_strategy(func):
             # consume large amounts of the data buffer, causing
             # overflows.
             strategy = st.one_of(st.sampled_from(extra_choices), strategy)
-        # Add in null values.
-        if field.null:
-            strategy = st.one_of(st.none(), strategy)
         # Filter by validators.
         strategy = strategy.filter(validator_to_filter(field))
         return strategy
@@ -143,9 +140,13 @@ def _fake_factory_field_strategy(strategy_name):
                                            max_size=None):
         strategy = fake_factory(strategy_name)
         # Emulate min size.
+        if min_size is None and field.blank:
+            min_size = 1
         if min_size is not None:
             strategy = strategy.filter(lambda v: len(v) >= min_size)
         # Emulate max size.
+        if max_size is None and field.max_length is not None:
+            max_size = field.max_length
         if max_size is not None:
             strategy = strategy.filter(lambda v: len(v) <= max_size)
         # All done!
