@@ -1,8 +1,3 @@
-from datetime import date, datetime, time
-from decimal import Decimal
-
-from django.utils import six
-
 from hypothesis import given, strategies as st, settings, HealthCheck
 from hypothesis.extra.django import TestCase, TransactionTestCase
 from hypothesis.extra.django.models import models, default_value
@@ -22,35 +17,10 @@ class ModelsTest(TestCase):
 
     def assertTestModel(self, obj):
         self.assertIsInstance(obj, TestModel)
-        # Rather than test field values individually, just let Django test it
-        # for us!
+        # Our aim is to generate valid Django models. Django's validation is
+        # better than anything we can specify here, and will catch any issues
+        # with our field strategies.
         obj.full_clean()
-        # But lets's also sanity check the field types, just to be on the
-        # safe side...
-        self.assertIsInstance(obj.big_integer_field, int)
-        self.assertIsInstance(obj.binary_field, six.binary_type)
-        self.assertIsInstance(obj.boolean_field, bool)
-        self.assertIsInstance(obj.char_field, six.text_type)
-        self.assertIsInstance(obj.char_field_blank, six.text_type)
-        self.assertIsInstance(obj.char_field_default, six.text_type)
-        self.assertIsInstance(obj.char_field_none, (six.text_type, type(None)))
-        self.assertIsInstance(obj.char_field_unique, six.text_type)
-        self.assertIsInstance(obj.date_field, date)
-        self.assertIsInstance(obj.datetime_field, datetime)
-        self.assertIsInstance(obj.decimal_field, Decimal)
-        self.assertIsInstance(obj.email_field, six.text_type)
-        self.assertIsInstance(obj.email_field_blank, six.text_type)
-        self.assertIsInstance(obj.email_field_max_length, six.text_type)
-        self.assertIsInstance(obj.float_field, float)
-        self.assertIsInstance(obj.integer_field, int)
-        self.assertIsInstance(obj.null_boolean_field, (bool, type(None)))
-        self.assertIsInstance(obj.positive_integer_field, int)
-        self.assertIsInstance(obj.positive_small_integer_field, int)
-        self.assertIsInstance(obj.slug_field, six.text_type)
-        self.assertIsInstance(obj.small_integer_field, int)
-        self.assertIsInstance(obj.text_field, six.text_type)
-        self.assertIsInstance(obj.time_field, time)
-        self.assertIsInstance(obj.url_field, six.text_type)
 
     @given(models(TestModel))
     @allow_slow
@@ -68,6 +38,24 @@ class ModelsTest(TestCase):
     def testCanGenerateModelsFieldOverrides(self, obj):
         self.assertTestModel(obj)
         self.assertEqual(obj.char_field, "field_override")
+
+    @given(models(TestModel, char_field=st.sampled_from(("", "value",))))
+    @settings(
+        suppress_health_check=[
+            HealthCheck.too_slow,
+            HealthCheck.filter_too_much,
+        ],
+    )
+    def testCanGenerateModelsFieldOverridesInvalidValues(self, obj):
+        self.assertTestModel(obj)
+        # All blank values will be filtered out.
+        self.assertEqual(obj.char_field, "value")
+
+    @given(models(TestModel, foreign_key_field=models(TestModel)))
+    @allow_slow
+    def testCanGenerateModelsForeignKeyOverrides(self, obj):
+        self.assertTestModel(obj)
+        self.assertTestModel(obj.foreign_key_field)
 
     @given(models(TestModel, __db=st.just("extra")))
     @allow_slow
