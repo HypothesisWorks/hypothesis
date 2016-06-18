@@ -28,7 +28,7 @@ class TestModel(models.Model):
 
     char_field_default = models.CharField(
         max_length=200,
-        default="foo",
+        default="default_value",
     )
 
     char_field_none = models.CharField(
@@ -62,6 +62,12 @@ class TestModel(models.Model):
     )
 
     float_field = models.FloatField()
+
+    foreign_key_field = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+    )
 
     integer_field = models.IntegerField()
 

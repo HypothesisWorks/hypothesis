@@ -5,7 +5,7 @@ from django.utils import six
 
 from hypothesis import given, strategies as st, settings, HealthCheck
 from hypothesis.extra.django import TestCase, TransactionTestCase
-from hypothesis.extra.django.models import models
+from hypothesis.extra.django.models import models, default_value
 from hypothesis.internal.compat import hrange
 
 from tests.django.test_app.models import TestModel
@@ -56,6 +56,18 @@ class ModelsTest(TestCase):
     @allow_slow
     def testCanGenerateModels(self, obj):
         self.assertTestModel(obj)
+
+    @given(models(TestModel, char_field_default=default_value))
+    @allow_slow
+    def testCanGenerateModelsDefaultValues(self, obj):
+        self.assertTestModel(obj)
+        self.assertEqual(obj.char_field_default, "default_value")
+
+    @given(models(TestModel, char_field=st.just("field_override")))
+    @allow_slow
+    def testCanGenerateModelsFieldOverrides(self, obj):
+        self.assertTestModel(obj)
+        self.assertEqual(obj.char_field, "field_override")
 
     @given(models(TestModel, __db=st.just("extra")))
     @allow_slow
