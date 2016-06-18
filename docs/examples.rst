@@ -481,4 +481,4 @@ then use the result and go on to do other things are definitely also possible.
         unittest.main()
 
 .. _py.test: http://pytest.org/
-.. _nose: https://nose.readthedocs.org/
+.. _nose: https://nose.readthedocs.io/

@@ -64,7 +64,7 @@ The build
 ~~~~~~~~~
 
 The build is orchestrated by a giant Makefile which handles installation of the relevant pythons.
-Actually running the tests is managed by `tox <https://tox.readthedocs.org/en/latest/>`_, but the Makefile
+Actually running the tests is managed by `tox <https://tox.readthedocs.io/en/latest/>`_, but the Makefile
 will call out to the relevant tox environments so you mostly don't have to know anything about that
 unless you want to make changes to the test config. You also mostly don't need to know anything about make
 except to type 'make' followed by the name of the task you want to run.
