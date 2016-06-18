@@ -335,17 +335,15 @@ class ModelStrategy(SearchStrategy):
 
     def do_draw(self, data):
         model_data = data.draw(self.model_data_strategy)
-        model_data = {
+        model_key = {
             field_name: field_value
             for field_name, field_value
             in model_data.items()
-            # Remove None AutoFields from the model data, since these
+            # Remove generated data from the model data, since these
             # will change with every instance and mess up the get_or_create
-            # functionality.
-            if field_value is not None or not isinstance(
-                self.model._meta.get_field(field_name),
-                dm.AutoField,
-            )
+            # functionality. This will catch AutoFields and friends.
+            if (field_value is not None or
+                self.model._meta.get_field(field_name).null)
         }
         try:
             # We need to wrap the model create in an atomic block, so
@@ -360,7 +358,7 @@ class ModelStrategy(SearchStrategy):
                 # we want to call full_clean() before save, and there's
                 # no worry about race conditions in tests.
                 try:
-                    obj = self.model._default_manager.get(**model_data)
+                    obj = self.model._default_manager.get(**model_key)
                 except self.model.DoesNotExist:
                     # Create the model inside the transaction, just in case it
                     # performs database actions in __init__.
@@ -376,6 +374,4 @@ class ModelStrategy(SearchStrategy):
             # is longer than a VARCHAR *once encoded by the database*.
             # ValidationError/IntegrityError: Validation failed. Hopefully
             # this won't filter out too much data.
-            pass
-        # No model could be created.
-        data.mark_invalid()
+            data.mark_invalid()
