@@ -125,7 +125,7 @@ And then made the simplest change to our test to actually use it:
 Here, rather than providing the branch name as a default argument value, we
 are telling Hypothesis to come up with a branch name for us using the
 `just("new-branch")`
-[strategy](http://hypothesis.readthedocs.io/en/latest/data.html). This
+[strategy](https://hypothesis.readthedocs.io/en/latest/data.html). This
 strategy will always come up with `"new-branch"`, so it's actually no
 different from what we had before.
 

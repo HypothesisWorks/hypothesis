@@ -10,7 +10,7 @@ Hypothesis **makes your testing less labor-intensive and more thorough**. You'll
 
 You don't *need* training to use Hypothesis, if you're not using Hypothesis already, why not just try it out first?
 
-Hypothesis has [extensive documentation](https://hypothesis.readthedocs.org/en/latest/), and a body of introductory articles are available [right here](/articles/intro/) to get you started. These resources and will help you and your team begin testing with Hypothesis in no time. Give it a spin!
+Hypothesis has [extensive documentation](https://hypothesis.readthedocs.io/en/latest/), and a body of introductory articles are available [right here](/articles/intro/) to get you started. These resources and will help you and your team begin testing with Hypothesis in no time. Give it a spin!
 
 Now that you *are* using Hypothesis, ask your team two questions:
 

@@ -25,7 +25,7 @@ To use Hypothesis for Python, simply add the *hypothesis* package to your requir
 or *pip install hypothesis* directly.
 
 The code is [available on Github](https://github.com/HypothesisWorks/hypothesis-python)
-and documentation is available [on readthedocs](http://hypothesis.readthedocs.io/).
+and documentation is available [on readthedocs](https://hypothesis.readthedocs.io/).
 
 ### Hypothesis Legacy Support
 
