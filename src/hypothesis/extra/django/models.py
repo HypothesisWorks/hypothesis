@@ -88,6 +88,7 @@ def defines_field_strategy(func):
     - Fields with choices.
     - Null fields.
     - Blank fields.
+    - Max length constraints.
     - Filtering by field validators.
 
     """
@@ -97,10 +98,15 @@ def defines_field_strategy(func):
         extra_choices = set()
         if field.null:
             extra_choices.add(None)
-        if field.blank and field.empty_strings_allowed:
-            extra_choices.add(u'')
+        if field.empty_strings_allowed:
+            if field.blank:
+                extra_choices.add(u'')
+            else:
+                kwargs.setdefault('min_size', 1)
         if field.has_default():
             extra_choices.add(field.get_default())
+        if field.max_length is not None:
+            kwargs.setdefault('max_size', field.max_length)
         # Handle field choices.
         if field.choices:
             choices = set(
@@ -140,13 +146,9 @@ def _fake_factory_field_strategy(strategy_name):
                                            max_size=None):
         strategy = fake_factory(strategy_name)
         # Emulate min size.
-        if min_size is None and field.blank:
-            min_size = 1
         if min_size is not None:
             strategy = strategy.filter(lambda v: len(v) >= min_size)
         # Emulate max size.
-        if max_size is None and field.max_length is not None:
-            max_size = field.max_length
         if max_size is not None:
             strategy = strategy.filter(lambda v: len(v) <= max_size)
         # All done!
@@ -170,16 +172,9 @@ boolean_field_values = _simple_field_strategy(st.booleans)
 add_default_field_mapping(dm.BooleanField, boolean_field_values)
 
 
-@add_default_field_mapping(dm.CharField)
-@add_default_field_mapping(dm.TextField)
-@defines_field_strategy
-def char_field_values(field, **kwargs):
-    """A strategy of valid values for the given CharField."""
-    if not field.blank:
-        kwargs.setdefault('min_size', 1)
-    if field.max_length is not None:
-        kwargs.setdefault('max_size', field.max_length)
-    return model_text(**kwargs)
+char_field_values = _simple_field_strategy(model_text)
+add_default_field_mapping(dm.CharField, char_field_values)
+add_default_field_mapping(dm.TextField, char_field_values)
 
 
 date_field_values = _simple_field_strategy(dates)
@@ -254,8 +249,8 @@ add_default_field_mapping(
 )
 
 
-slug_field_values = partial(
-    char_field_values,
+slug_field_values = _simple_field_strategy(
+    model_text,
     alphabet=string.digits + string.ascii_letters + '-',
 )
 add_default_field_mapping(dm.SlugField, slug_field_values)
