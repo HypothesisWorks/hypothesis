@@ -73,8 +73,6 @@ class SearchStrategy(object):
     hashable probably won't be.
 
     This may all seem overly complicated but it's for a fairly good reason.
-    For more discussion of the motivation see
-    http://hypothesis.readthedocs.org/en/master/internals.html
 
     Given these, data generation happens in three phases:
 

@@ -293,7 +293,7 @@ def given(*generator_arguments, **generator_kwargs):
                 if label in settings.suppress_health_check:
                     return
                 message += (
-                    '\nSee http://hypothesis.readthedocs.org/en/latest/health'
+                    '\nSee https://hypothesis.readthedocs.io/en/latest/health'
                     'checks.html for more information about this. '
                 )
                 message += (
