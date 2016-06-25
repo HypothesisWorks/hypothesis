@@ -19,6 +19,9 @@ from __future__ import division, print_function, absolute_import
 
 
 def clamp(lower, value, upper):
+    if (lower is not None) and (upper is not None) and (lower > upper):
+        raise ValueError("Cannot clamp with lower > upper: %r > %r" %
+                         (lower, upper))
     if lower is not None:
         value = max(lower, value)
     if upper is not None:
