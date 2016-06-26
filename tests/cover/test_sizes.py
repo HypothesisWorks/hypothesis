@@ -17,7 +17,10 @@
 
 from __future__ import division, print_function, absolute_import
 
+from hypothesis import assume, given
+from hypothesis.strategies import integers
 from hypothesis.utils.size import clamp
+import pytest
 
 
 def test_clamp():
@@ -25,3 +28,22 @@ def test_clamp():
     assert clamp(None, 10, 1) == 1
     assert clamp(1, 0, 1) == 1
     assert clamp(1, 0, None) == 1
+
+
+@given(value=integers(), bound=integers())
+def test_one_sided_clamp(value, bound):
+    assert clamp(lower=None, value=value, upper=bound) <= bound
+    assert clamp(lower=bound, value=value, upper=None) >= bound
+
+
+@given(value=integers(), lower=integers(), upper=integers())
+def test_two_sided_clamp(value, lower, upper):
+    assume(lower <= upper)
+    assert lower <= clamp(lower, value, upper) <= upper
+
+
+@given(value=integers(), lower=integers(), upper=integers())
+def test_invalid_clamp_is_error(value, lower, upper):
+    assume(lower > upper)
+    with pytest.raises(ValueError):
+        clamp(lower, value, upper)
