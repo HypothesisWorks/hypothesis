@@ -123,7 +123,7 @@ Of course, once it starts failing Hypothesis's test database kicks in,
 and the test keeps failing until the bug is fixed, but low probability
 failures are still annoying because they move the point at which you
 discover the problem further away from when you introduced it. This is
-especically true when you're using [stateful testing
+especially true when you're using [stateful testing
 ]({{site.url}}{% post_url 2016-04-19-rule-based-stateful-testing %}),
 because the search space is so large that there are a lot of low
 probability bugs.
@@ -162,5 +162,5 @@ So, in conclusion:
 1. When the problem is fully specified, this gives you a natural source
    of tests that you can easily write using Hypothesis.
 2. However this is where your tests should *start* rather than finish,
-   and you still need to think about other intersting ways to test your
+   and you still need to think about other interesting ways to test your
    software.
