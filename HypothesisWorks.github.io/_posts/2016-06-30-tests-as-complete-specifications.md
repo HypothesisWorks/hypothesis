@@ -108,14 +108,14 @@ Falsifying example: test_inserting_at_smaller_index_gives_unsorted(
  )
 ```
 
-(you may also get `(ls=[-1, 0, 0, 0, 0], v=0)`)
+(you may also get (ls=[-1, 0, 0, 0, 0], v=0))
 
 However when I run it it usually *doesn't* fail the first time. It
 usually takes somewhere between two and five runs before it fails. This
 is because in order to trigger this behaviour being wrong you need
-quite specific behaviour: `value` needs to appear in `ls` at least
+quite specific behaviour: value needs to appear in ls at least
 twice, and it needs to do so in such a way that one of the indices where
-it appears that is *not* the first one gets chosen as `mid` at some
+it appears that is *not* the first one gets chosen as mid at some
 point in the process. Hypothesis does some things that boost the
 chances of this happening, but they don't boost it *that* much.
 
