@@ -170,15 +170,15 @@ As a result, you probably don't care about the bugs it will find:
 Generally speaking most peoples' attitude to floating point errors is
 "Eh, those are weird numbers, we don't really care about that. It's
 probably good enough". Very few people are actually prepared to do the
-required work of a numerical sensitivity analysis that accurate floating
-point code.
+required work of a numerical sensitivity analysis that is needed if you
+want your floating point code to be correct.
 
 I used to use this example a lot for demonstrating Hypothesis to people,
-but because of these problems I tend not to anyway: Telling people about
-bugs they're not going to want to  fix isn't going to get you bug fixes
-or friends.
+but because of these problems I tend not to any more: Telling people
+about bugs they're not going to want to fix will get you neither bug
+fixes nor friends.
 
-But it's worth knowing that this is a problem: Programming is really
+But it's worth knowing that this is a problem: Programming *is* really
 hard, and ignoring the problems won't make it less hard. You can ignore
 the correctness issues until they actually bite you, but it's best not
 to be surprised when they do.
