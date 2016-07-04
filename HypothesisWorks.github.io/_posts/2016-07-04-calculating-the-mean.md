@@ -87,9 +87,9 @@ cause rounding errors. In this case we have the problem that (x / 3) * 3
 may not be equal to x in general.
 
 So now we've got a sense of why this might be hard. Lets see how
-existing implementations might do.
+existing implementations do at satisfying this test.
 
-First lets try numpy:
+First let's try numpy:
 
 ```python
 import numpy as np
@@ -98,7 +98,7 @@ def mean(ls):
     return np.array(ls).mean()
 ```
 
-This runs into the problem we started with:
+This runs into the problem we had in our first implementation:
 
 ```
 assert min(ls) <= mean(ls) <= max(ls)
@@ -144,10 +144,14 @@ def mean(ls):
 
 i.e. just restricting the value to lie in the desired range.
 
-In general calculating the mean is a hard problem. Here's a [30 page
+However getting an actually correct implementation of the mean (which
+*would* pass this test) is quite hard:
+
+To see just how hard, here's a [30 page
 paper on calculating the mean of two numbers](https://hal.archives-ouvertes.fr/file/index/docid/576641/filename/computing-midpoint.pdf).
-I don't know about you, but I find it almost impossible to hold its
-conclusions in my head.
+
+I wouldn't feel obliged to read that paper if I were you. I *have* read
+it and I don't remember many of the details.
 
 This test is a nice instance of a general one: Once you've got the
 [this code doesn't crash]({{site.url}}{% post_url 2016-04-15-getting-started-with-hypothesis %}),
