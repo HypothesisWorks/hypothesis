@@ -118,3 +118,12 @@ def test_successive_union():
     for v in cm.charmap().values():
         x = cm._union_interval_lists(x, v)
     assert x == ((0, sys.maxunicode),)
+
+
+def test_can_handle_race_between_exist_and_create(monkeypatch):
+    x = cm.charmap()
+    cm._charmap = None
+    monkeypatch.setattr(os.path, 'exists', lambda p: False)
+    y = cm.charmap()
+    assert x is not y
+    assert x == y

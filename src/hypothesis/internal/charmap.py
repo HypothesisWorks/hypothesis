@@ -60,7 +60,12 @@ def charmap():
             os.close(fd)
             with GzipFile(tmpfile, 'wb', mtime=1) as o:
                 o.write(pickle.dumps(data, pickle.HIGHEST_PROTOCOL))
-            os.rename(tmpfile, f)
+            try:
+                os.rename(tmpfile, f)
+            except FileExistsError:  # pragma: no cover
+                # This exception is only raised on Windows, and coverage is
+                # measured on Linux.
+                pass
 
         with GzipFile(f, 'rb') as i:
             _charmap = dict(pickle.loads(i.read()))
