@@ -481,3 +481,19 @@ def cast_unicode(s, encoding=None):
 
 def get_stream_enc(stream, default=None):
     return getattr(stream, 'encoding', None) or default
+
+
+# We need to know what sort of exception gets thrown when you try to write over
+# an existing file where you're not allowed to. This is rather less consistent
+# between versions than might be hoped.
+if PY3:
+    # Note: This only works on >= 3.3, but we only support >= 3.3 so that's
+    # fine
+    FileExistsError = FileExistsError
+elif WINDOWS:
+    FileExistsError = WindowsError
+else:
+    # This doesn't happen in this case: We're not on windows and don't support
+    # the x flag because it's Python 2, so there are no places where this can
+    # be thrown.
+    FileExistsError = None
