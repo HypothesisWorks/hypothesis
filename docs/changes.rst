@@ -22,6 +22,17 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 ------------------
+3.4.1 - 2016-07-07
+------------------
+
+This is a bug fix release for a single bug:
+
+* On Windows when running two Hypothesis processes in parallel (e.g. using
+  pytest-xdist) they could race with each other and one would raise an exception
+  due to the non-atomic nature of file renaming on Windows and the fact that you
+  can't rename over an existing file. This is now fixed.
+
+------------------
 3.4.0 - 2016-05-27
 ------------------
 
