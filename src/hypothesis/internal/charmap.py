@@ -41,10 +41,10 @@ def charmap():
     if _charmap is None:
         f = charmap_file()
         if not os.path.exists(f):
-            _charmap = {}
+            tmp_charmap = {}
             for i in range(0, sys.maxunicode + 1):
                 cat = unicodedata.category(hunichr(i))
-                rs = _charmap.setdefault(cat, [])
+                rs = tmp_charmap.setdefault(cat, [])
                 if rs and rs[-1][-1] == i - 1:
                     rs[-1][-1] += 1
                 else:
@@ -53,7 +53,7 @@ def charmap():
             # a stable format for our charmap.
             data = sorted(
                 (k, tuple((map(tuple, v))))
-                for k, v in _charmap.items())
+                for k, v in tmp_charmap.items())
 
             # Write the Unicode table atomically
             fd, tmpfile = tempfile.mkstemp(dir=tmpdir())
@@ -66,7 +66,6 @@ def charmap():
                 # This exception is only raised on Windows, and coverage is
                 # measured on Linux.
                 pass
-
         with GzipFile(f, 'rb') as i:
             _charmap = dict(pickle.loads(i.read()))
     assert _charmap is not None

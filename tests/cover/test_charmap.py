@@ -21,6 +21,8 @@ import os
 import sys
 import unicodedata
 
+import pytest
+
 import hypothesis.strategies as st
 import hypothesis.internal.charmap as cm
 from hypothesis import given, assume
@@ -127,3 +129,17 @@ def test_can_handle_race_between_exist_and_create(monkeypatch):
     y = cm.charmap()
     assert x is not y
     assert x == y
+
+
+def test_exception_in_write_does_not_lead_to_broken_charmap(monkeypatch):
+    def broken(*args, **kwargs):
+        raise ValueError()
+
+    cm._charmap = None
+    monkeypatch.setattr(os.path, 'exists', lambda p: False)
+    monkeypatch.setattr(os, 'rename', broken)
+    with pytest.raises(ValueError):
+        cm.charmap()
+
+    with pytest.raises(ValueError):
+        cm.charmap()
