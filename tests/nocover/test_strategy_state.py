@@ -28,11 +28,24 @@ from hypothesis.stateful import rule, Bundle, RuleBasedStateMachine
 from hypothesis.strategies import just, none, text, lists, binary, \
     floats, tuples, booleans, decimals, integers, fractions, \
     float_to_int, int_to_float, sampled_from, complex_numbers
-from hypothesis.utils.size import clamp
 from hypothesis.internal.debug import timeout
 from hypothesis.internal.compat import PYPY
 
 AVERAGE_LIST_LENGTH = 2
+
+
+def clamp(lower, value, upper):
+    """Given a value and optional lower/upper bounds, 'clamp' the
+    value so that it satisfies lower <= value <= upper.
+    """
+    if (lower is not None) and (upper is not None) and (lower > upper):
+        raise ValueError('Cannot clamp with lower > upper: %r > %r' %
+                         (lower, upper))
+    if lower is not None:
+        value = max(lower, value)
+    if upper is not None:
+        value = min(value, upper)
+    return value
 
 
 class HypothesisSpec(RuleBasedStateMachine):
