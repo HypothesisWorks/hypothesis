@@ -65,10 +65,7 @@ class settingsProperty(object):
         obj.__dict__[self.name] = value
 
     def __delete__(self, obj):
-        try:
-            del obj.__dict__[self.name]
-        except KeyError:
-            raise AttributeError(self.name)
+        raise AttributeError('Cannot delete attribute %s' % (self.name,))
 
     @property
     def __doc__(self):
@@ -138,6 +135,7 @@ class settings(settingsMeta('settings', (object,), {})):
     ):
         self._construction_complete = False
         self._database = kwargs.pop('database', not_set)
+        database_file = kwargs.get('database_file', not_set)
         explicit_kwargs = list(kwargs)
         defaults = parent or settings.default
         if defaults is not None:
@@ -147,7 +145,7 @@ class settings(settingsMeta('settings', (object,), {})):
                 elif setting.validator:
                     kwargs[setting.name] = setting.validator(
                         kwargs[setting.name])
-            if self._database is not_set:
+            if self._database is not_set and database_file is not_set:
                 self._database = defaults.database
         for name, value in kwargs.items():
             if name not in all_settings:
@@ -194,12 +192,7 @@ class settings(settingsMeta('settings', (object,), {})):
             )
         if options is not None:
             options = tuple(options)
-            if default not in options:
-                raise InvalidArgument(
-                    'Default value %r is not in options %r' % (
-                        default, options
-                    )
-                )
+            assert default in options
 
         all_settings[name] = Setting(
             name, description.strip(), default, options, deprecation, validator
@@ -214,13 +207,11 @@ class settings(settingsMeta('settings', (object,), {})):
         if name in settings._WHITELISTED_REAL_PROPERTIES:
             return object.__setattr__(self, name, value)
         elif name == 'database':
-            if self._construction_complete:
-                raise AttributeError(
-                    'settings objects are immutable and may not be assigned to'
-                    ' after construction.'
-                )
-            else:
-                return object.__setattr__(self, '_database', value)
+            assert self._construction_complete
+            raise AttributeError(
+                'settings objects are immutable and may not be assigned to'
+                ' after construction.'
+            )
         elif name in all_settings:
             if self._construction_complete:
                 raise AttributeError(
@@ -262,20 +253,15 @@ class settings(settingsMeta('settings', (object,), {})):
         this property is accessed on a particular thread.
 
         """
-        try:
-            if self._database is not_set and self.database_file is not None:
-                from hypothesis.database import ExampleDatabase
-                if self.database_file not in _db_cache:
-                    _db_cache[self.database_file] = (
-                        ExampleDatabase(self.database_file))
-                return _db_cache[self.database_file]
-            if self._database is not_set:
-                self._database = None
-            return self._database
-        except AttributeError:
-            import traceback
-            traceback.print_exc()
-            assert False
+        if self._database is not_set and self.database_file is not None:
+            from hypothesis.database import ExampleDatabase
+            if self.database_file not in _db_cache:
+                _db_cache[self.database_file] = (
+                    ExampleDatabase(self.database_file))
+            return _db_cache[self.database_file]
+        if self._database is not_set:
+            self._database = None
+        return self._database
 
     def __enter__(self):
         default_context_manager = default_variable.with_value(self)
@@ -519,7 +505,7 @@ Verbosity.all = [
 
 ENVIRONMENT_VERBOSITY_OVERRIDE = os.getenv('HYPOTHESIS_VERBOSITY_LEVEL')
 
-if ENVIRONMENT_VERBOSITY_OVERRIDE:
+if ENVIRONMENT_VERBOSITY_OVERRIDE:  # pragma: no cover
     DEFAULT_VERBOSITY = Verbosity.by_name(ENVIRONMENT_VERBOSITY_OVERRIDE)
 else:
     DEFAULT_VERBOSITY = Verbosity.normal

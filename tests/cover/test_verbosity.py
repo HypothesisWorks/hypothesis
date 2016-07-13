@@ -19,7 +19,10 @@ from __future__ import division, print_function, absolute_import
 
 from contextlib import contextmanager
 
+import pytest
+
 from hypothesis import find, given
+from hypothesis.errors import InvalidArgument
 from tests.common.utils import fails, capture_out
 from hypothesis._settings import settings, Verbosity
 from hypothesis.reporting import default as default_reporter
@@ -93,3 +96,39 @@ def test_includes_intermediate_results_in_verbose_mode():
     lines = o.getvalue().splitlines()
     assert len([l for l in lines if u'example' in l]) > 2
     assert len([l for l in lines if u'AssertionError' in l])
+
+
+VERBOSITIES = [
+    Verbosity.quiet, Verbosity.normal, Verbosity.verbose, Verbosity.debug
+]
+
+
+def test_verbosity_can_be_accessed_by_name():
+    for f in VERBOSITIES:
+        assert f is Verbosity.by_name(f.name)
+
+
+def test_verbosity_is_sorted():
+    assert VERBOSITIES == sorted(VERBOSITIES)
+
+
+def test_hash_verbosity():
+    x = {}
+    for f in VERBOSITIES:
+        x[f] = f
+    for k, v in x.items():
+        assert k == v
+        assert k is v
+
+
+def test_verbosities_are_inequal():
+    for f in VERBOSITIES:
+        for g in VERBOSITIES:
+            if f is not g:
+                assert f != g
+                assert (f <= g) or (g <= f)
+
+
+def test_verbosity_of_bad_name():
+    with pytest.raises(InvalidArgument):
+        Verbosity.by_name('cabbage')

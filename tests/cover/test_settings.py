@@ -18,13 +18,15 @@
 from __future__ import division, print_function, absolute_import
 
 import os
+from tempfile import mkdtemp
 
 import pytest
 
 import hypothesis
-from hypothesis.errors import InvalidArgument
-from hypothesis.database import ExampleDatabase
-from hypothesis._settings import settings, Verbosity
+from hypothesis.errors import InvalidState, InvalidArgument
+from hypothesis.database import ExampleDatabase, \
+    DirectoryBasedExampleDatabase
+from hypothesis._settings import settings, Verbosity, note_deprecation
 
 
 def test_has_docstrings():
@@ -163,3 +165,53 @@ def test_load_non_existent_profile():
 def test_runs_tests_with_defaults_from_conftest():
     assert settings.default.strict
     assert settings.default.timeout == -1
+
+
+def test_cannot_delete_a_setting():
+    x = settings()
+    with pytest.raises(AttributeError):
+        del x.max_examples
+    x.max_examples
+
+    x = settings()
+    with pytest.raises(AttributeError):
+        del x.foo
+
+
+def test_deprecate_uses_default():
+    with settings(strict=False):
+        note_deprecation('Hi')
+
+    with settings(strict=True):
+        with pytest.raises(DeprecationWarning):
+            note_deprecation('Hi')
+
+
+def test_cannot_set_settings():
+    x = settings()
+    with pytest.raises(AttributeError):
+        x.max_examples = 'foo'
+    with pytest.raises(AttributeError):
+        x.database = 'foo'
+    assert x.max_examples != 'foo'
+    assert x.database != 'foo'
+
+
+def test_can_have_none_database():
+    assert settings(database=None).database is None
+
+
+def test_can_have_none_database_file():
+    assert settings(database_file=None).database is None
+
+
+def test_can_override_database_file():
+    f = mkdtemp()
+    x = settings(database_file=f)
+    assert isinstance(x.database, DirectoryBasedExampleDatabase)
+    assert x.database.path == f
+
+
+def test_cannot_define_settings_once_locked():
+    with pytest.raises(InvalidState):
+        settings.define_setting('hi', 'there', 4)

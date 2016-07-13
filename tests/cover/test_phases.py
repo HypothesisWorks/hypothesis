@@ -17,8 +17,11 @@
 
 from __future__ import division, print_function, absolute_import
 
+import pytest
+
 import hypothesis.strategies as st
 from hypothesis import given, Phase, example, settings
+from hypothesis.errors import InvalidArgument
 
 
 @example(11)
@@ -39,3 +42,12 @@ def test_does_not_use_explicit_examples(i):
 @given(st.booleans())
 def test_this_would_fail_if_you_ran_it(b):
     assert False
+
+
+def test_phases_default_to_all():
+    assert settings(phases=None).phases == tuple(Phase)
+
+
+def test_rejects_non_phases():
+    with pytest.raises(InvalidArgument):
+        settings(phases=['cabbage'])
