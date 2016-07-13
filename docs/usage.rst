@@ -38,4 +38,5 @@ then it should be available on pypi.
 * `tchannel <https://github.com/uber/tchannel-python>`_
 * `vdirsyncer <https://github.com/untitaker/vdirsyncer>`_
 * `wcag-contrast-ratio <https://github.com/gsnedders/wcag-contrast-ratio>`_
+* `yacluster <https://github.com/KrzysiekJ/yacluster>`_
 * `yturl <https://github.com/cdown/yturl>`_

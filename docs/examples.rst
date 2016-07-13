@@ -113,7 +113,7 @@ We can now write a test:
 
   from hypothesis import given
 
-  @given(s.lists(Node))
+  @given(s.lists(NodeStrategy))
   def test_sorting_nodes_is_prefix_sorted(xs):
       sort_nodes(xs)
       assert is_prefix_sorted(xs)
