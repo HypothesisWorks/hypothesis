@@ -152,10 +152,6 @@ class settings(settingsMeta('settings', (object,), {})):
             setattr(self, name, value)
         self.storage = threading.local()
         self._construction_complete = True
-        for k in explicit_kwargs:
-            deprecation = all_settings[k].deprecation
-            if deprecation:
-                note_deprecation(deprecation, self)
 
     def defaults_stack(self):
         try:
@@ -193,7 +189,7 @@ class settings(settingsMeta('settings', (object,), {})):
             assert default in options
 
         all_settings[name] = Setting(
-            name, description.strip(), default, options, deprecation, validator
+            name, description.strip(), default, options, validator
         )
         setattr(settings, name, settingsProperty(name))
 
@@ -316,7 +312,7 @@ class settings(settingsMeta('settings', (object,), {})):
 
 Setting = namedtuple(
     'Setting', (
-        'name', 'description', 'default', 'options', 'deprecation', 'validator'
+        'name', 'description', 'default', 'options', 'validator'
     ))
 
 
