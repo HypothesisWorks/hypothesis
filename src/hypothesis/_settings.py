@@ -134,7 +134,6 @@ class settings(settingsMeta('settings', (object,), {})):
         self._construction_complete = False
         self._database = kwargs.pop('database', not_set)
         database_file = kwargs.get('database_file', not_set)
-        explicit_kwargs = list(kwargs)
         defaults = parent or settings.default
         if defaults is not None:
             for setting in all_settings.values():
