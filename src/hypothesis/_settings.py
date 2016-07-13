@@ -91,9 +91,7 @@ class settingsMeta(type):
         if v is not None:
             return v
         if hasattr(settings, '_current_profile'):
-            default_variable.value = settings.load_profile(
-                settings._current_profile
-            )
+            settings.load_profile(settings._current_profile)
             assert default_variable.value is not None
         return default_variable.value
 
