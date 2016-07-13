@@ -94,9 +94,7 @@ class settingsMeta(type):
 
     @default.setter
     def default(self, value):
-        if default_variable.value is not None:
-            raise AttributeError('Cannot assign settings.default')
-        self._assign_default_internal(value)
+        raise AttributeError('Cannot assign settings.default')
 
     def _assign_default_internal(self, value):
         default_variable.value = value
