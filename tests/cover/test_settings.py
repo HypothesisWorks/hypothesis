@@ -221,3 +221,10 @@ def test_cannot_assign_default():
     with pytest.raises(AttributeError):
         settings.default = settings(max_examples=3)
     assert settings().max_examples != 3
+
+
+def test_does_not_warn_if_quiet():
+    with pytest.warns(None) as rec:
+        note_deprecation('This is bad', settings(
+            strict=False, verbosity=Verbosity.quiet))
+    assert len(rec) == 0
