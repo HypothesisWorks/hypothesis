@@ -21,6 +21,20 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+
+------------------
+3.4.2 - 2016-07-13
+------------------
+
+This is a bug fix release, fixing a number of problems with the settings system:
+
+* Test functions defined using @given can now be called from other threads
+  (Issue #337)
+* Attempting to delete a settings property would previously have silently done
+  the wrong thing. Now it raises an AttributeError.
+* Creating a settings object with a custom database_file parameter was silently
+  getting ignored and the default was being used instead. Now it's not.
+
 ------------------
 3.4.1 - 2016-07-07
 ------------------
