@@ -19,6 +19,8 @@ from __future__ import division, print_function, absolute_import
 
 import math
 from decimal import Decimal
+from numbers import Rational
+from fractions import Fraction
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.control import assume
@@ -193,36 +195,48 @@ def integers(min_value=None, max_value=None):
 
     """
 
-    check_valid_integer(min_value)
-    check_valid_integer(max_value)
+    check_valid_bound(min_value, 'min_value')
+    check_valid_bound(max_value, 'max_value')
     check_valid_interval(min_value, max_value, 'min_value', 'max_value')
 
     from hypothesis.searchstrategy.numbers import IntegersFromStrategy, \
         BoundedIntStrategy, WideRangeIntStrategy
 
-    if min_value is None:
-        if max_value is None:
+    min_int_value = None
+    if min_value is not None:
+        min_int_value = int(min_value)
+        if min_int_value != min_value and min_value > 0:
+            min_int_value += 1
+
+    max_int_value = None
+    if max_value is not None:
+        max_int_value = int(max_value)
+        if max_int_value != max_value and max_value < 0:
+            max_int_value -= 1
+
+    if min_int_value is None:
+        if max_int_value is None:
             return (
                 WideRangeIntStrategy()
             )
         else:
-            return IntegersFromStrategy(0).map(lambda x: max_value - x)
+            return IntegersFromStrategy(0).map(lambda x: max_int_value - x)
     else:
-        if max_value is None:
-            return IntegersFromStrategy(min_value)
+        if max_int_value is None:
+            return IntegersFromStrategy(min_int_value)
         else:
-            assert min_value <= max_value
-            if min_value == max_value:
-                return just(min_value)
-            elif min_value >= 0:
-                return BoundedIntStrategy(min_value, max_value)
-            elif max_value <= 0:
-                return BoundedIntStrategy(-max_value, -min_value).map(
-                    lambda t: -t
-                )
+            assert min_int_value <= max_int_value
+            if min_int_value == max_int_value:
+                return just(min_int_value)
+            elif min_int_value >= 0:
+                return BoundedIntStrategy(min_int_value, max_int_value)
+            elif max_int_value <= 0:
+                return BoundedIntStrategy(
+                    -max_int_value, -min_int_value
+                ).map(lambda t: -t)
             else:
-                return integers(min_value=0, max_value=max_value) | \
-                    integers(min_value=min_value, max_value=0)
+                return integers(min_value=0, max_value=max_int_value) | \
+                    integers(min_value=min_int_value, max_value=0)
 
 
 @cacheable
@@ -729,28 +743,6 @@ def random_module():
 
 @cacheable
 @defines_strategy
-def fractions():
-    """Generates instances of fractions.Fraction."""
-    from fractions import Fraction
-    return tuples(integers(), integers(min_value=1)).map(
-        lambda t: Fraction(*t)
-    )
-
-
-@cacheable
-@defines_strategy
-def decimals():
-    """Generates instances of decimals.Decimal."""
-    return (
-        floats().map(float_to_decimal) |
-        fractions().map(
-            lambda f: Decimal(f.numerator) / f.denominator
-        )
-    )
-
-
-@cacheable
-@defines_strategy
 def builds(target, *args, **kwargs):
     """Generates values by drawing from args and kwargs and passing them to
     target in the appropriate argument position.
@@ -762,6 +754,72 @@ def builds(target, *args, **kwargs):
     """
     return tuples(tuples(*args), fixed_dictionaries(kwargs)).map(
         lambda value: target(*value[0], **value[1])
+    )
+
+
+@cacheable
+@defines_strategy
+def fractions(min_value=None, max_value=None, max_denominator=None):
+    """Returns a strategy which generates Fractions.
+
+    If min_value is not None then all generated values are no less than
+    min_value.
+
+    If max_value is not None then all generated values are no greater than
+    max_value.
+
+    If max_denominator is not None then the absolute value of the denominator
+    of any generated values is no greater than max_denominator. Note that
+    max_denominator must be at least 1.
+
+    """
+    check_valid_bound(min_value, 'min_value')
+    check_valid_bound(max_value, 'max_value')
+    check_valid_interval(min_value, max_value, 'min_value', 'max_value')
+
+    check_valid_integer(max_denominator)
+    if max_denominator is not None and max_denominator < 1:
+        raise InvalidArgument(
+            u'Invalid denominator bound %s' % max_denominator
+        )
+
+    denominator_strategy = integers(min_value=1, max_value=max_denominator)
+
+    def dm_func(denom):
+        max_num = max_value * denom if max_value is not None else None
+        min_num = min_value * denom if min_value is not None else None
+
+        return builds(
+            Fraction,
+            integers(min_value=min_num, max_value=max_num),
+            just(denom)
+        )
+
+    return denominator_strategy.flatmap(dm_func)
+
+
+@cacheable
+@defines_strategy
+def decimals(min_value=None, max_value=None):
+    """Generates instances of decimals.Decimal.
+
+    If min_value is not None then all generated values are no less than
+    min_value.
+
+    If max_value is not None then all generated values are no greater than
+    max_value.
+
+    """
+    check_valid_bound(min_value, 'min_value')
+    check_valid_bound(max_value, 'max_value')
+    check_valid_interval(min_value, max_value, 'min_value', 'max_value')
+
+    floats_strategy = floats(min_value=min_value, max_value=max_value)
+    fractions_strategy = fractions(min_value=min_value, max_value=max_value)
+
+    return (
+        floats_strategy.map(float_to_decimal) |
+        fractions_strategy.map(lambda f: Decimal(f.numerator) / f.denominator)
     )
 
 
@@ -1050,7 +1108,7 @@ def check_valid_bound(value, name):
     Otherwise raises InvalidArgument.
 
     """
-    if value is None:
+    if value is None or isinstance(value, integer_types + (Rational,)):
         return
     if math.isnan(value):
         raise InvalidArgument(u'Invalid end point %s %r' % (value, name))

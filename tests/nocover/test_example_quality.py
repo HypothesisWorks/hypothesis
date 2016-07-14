@@ -86,7 +86,9 @@ def test_minimal_fractions_3():
 @slightly_flaky
 def test_minimal_fractions_4():
     x = minimal(
-        lists(fractions(), min_size=20),
+        lists(
+            fractions(max_denominator=100, max_value=100, min_value=-100),
+            min_size=20),
         lambda s: len([t for t in s if t >= 1]) >= 20
     )
     assert x == [Fraction(1)] * 20
