@@ -1,5 +1,5 @@
 ========
-settings
+Settings
 ========
 
 Hypothesis tries to have good defaults for its behaviour, but sometimes that's
