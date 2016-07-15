@@ -7,8 +7,8 @@ published: true
 author: drmaciver
 ---
 
-3.4.2 - 2016-07-13
-This is a bug fix release, fixing a number of problems with the settings system:
+This is a bug fix release, fixing a number of problems with the settings
+system:
 
 * Test functions defined using @given can now be called from other
   threads (Issue #337)
