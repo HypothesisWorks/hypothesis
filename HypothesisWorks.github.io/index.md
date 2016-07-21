@@ -18,25 +18,25 @@ Don't believe us? Here's what some of our users have to say:
 At Lyst we've used it in a wide variety of situations, from testing APIs to machine learning algorithms and in all
 cases it's given us a great deal more confidence in that code.
 </p>
-<footer><a href="/testimonials/#alex-stapleton">Alex Stapleton</a>, Lead Backend Engineer at <a href="https://www.lyst.com/">Lyst</a></footer></cite>
+<footer><a href="/testimonials/#alex-stapleton">Alex Stapleton</a>, Lead Backend Engineer at <a href="https://www.lyst.com/">Lyst</a></footer>
 </blockquote>
 
 
 <blockquote class="blockquote-reverse pull testimonial">
 When it comes to validating the correctness of your tools, nothing comes close to the thoroughness and power of Hypothesis.
 
- <footer><a href="/testimonials/#cory-benfield">Cory Benfield</a>, <a href="https://github.com/Lukasa">Open source Python developer</a></footer></cite>
+ <footer><a href="/testimonials/#cory-benfield">Cory Benfield</a>, <a href="https://github.com/Lukasa">Open source Python developer</a></footer>
 </blockquote>
 
 
 <blockquote class="blockquote-reverse pull testimonial">
 Hypothesis has been brilliant for expanding the coverage of our test cases, and also for making them much easier to read and understand, so we’re sure we’re testing the things we want in the way we want.
- <footer><a href="/testimonials/#kristian-glass">Kristian Glass</a>, Director of Technology at <a href="https://www.laterpay.net/">LaterPay</a></footer></cite>
+ <footer><a href="/testimonials/#kristian-glass">Kristian Glass</a>, Director of Technology at <a href="https://www.laterpay.net/">LaterPay</a></footer>
 </blockquote>
 
 <blockquote class="blockquote-reverse pull testimonial">
 Hypothesis has located real defects in our code which went undetected by traditional test cases, simply because Hypothesis is more relentlessly devious about test case generation than us mere humans!
- <footer><a href="/testimonials/#sixty-north">Rob Smallshire</a>, <a href="http://sixty-north.com/">Sixty North</a></footer></cite>
+ <footer><a href="/testimonials/#sixty-north">Rob Smallshire</a>, <a href="http://sixty-north.com/">Sixty North</a></footer>
 </blockquote>
 
 See more at our [testimonials page](/testimonials/).
