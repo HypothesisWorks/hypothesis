@@ -90,7 +90,10 @@ class TestRunner(object):
         #   2. Any transition which increases the status is valid
         #   3. If the previous status was interesting, only shrinking
         #      transitions are allowed.
-        self.seen.add(hbytes(data.buffer))
+        key = hbytes(data.buffer)
+        if key in self.seen:
+            return False
+        self.seen.add(key)
         if data.buffer == self.last_data.buffer:
             return False
         if self.last_data.status < data.status:

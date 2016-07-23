@@ -405,3 +405,7 @@ test_float_lists_have_non_reversible_sum = define_test(
     lists(floats(), min_size=2), 0.01, lambda x: sum(x) != sum(reversed(x)),
     condition=lambda x: not math.isnan(sum(x))
 )
+
+test_numbers_are_usually_non_zero = define_test(
+    integers(), 0.9, lambda x: x != 0
+)
