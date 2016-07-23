@@ -1,3 +1,5 @@
+---
+layout: blog_listing
 date: 2015-04-15 15:00
 tag: intro
 ---
@@ -9,10 +11,9 @@ the mood takes you.
 We recommend the following reading order:
 
 1. [Getting started with Hypothesis](/articles/getting-started-with-hypothesis/)
-2. [Evolving toward property-based testing with Hypothesis](/articles/incremental-property-based-testing/)
-3. [Testing performance optimizations](/articles/testing-performance-optimizations/)
-4. [The Encode/Decode Invariant](/articles/encode-decode-invariant)
-5. [Rule Based Stateful Testing](/articles/rule-based-stateful-testing)
+2. [Testing performance optimizations](/articles/testing-performance-optimizations/)
+3. [The Encode/Decode Invariant](/articles/encode-decode-invariant)
+4. [Rule Based Stateful Testing](/articles/rule-based-stateful-testing)
 
 After that, either just experiment with Hypothesis on your own, with [help from the documentation](https://hypothesis.readthedocs.io),
 or check out some of [the other articles here](/articles/) for more inspiration.
