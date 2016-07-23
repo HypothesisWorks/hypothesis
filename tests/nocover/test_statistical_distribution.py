@@ -406,6 +406,14 @@ test_float_lists_have_non_reversible_sum = define_test(
     condition=lambda x: not math.isnan(sum(x))
 )
 
-test_numbers_are_usually_non_zero = define_test(
+test_integers_are_usually_non_zero = define_test(
     integers(), 0.9, lambda x: x != 0
+)
+
+test_integers_are_sometimes_zero = define_test(
+    integers(), 0.05, lambda x: x == 0
+)
+
+test_integers_are_often_small = define_test(
+    integers(), 0.2, lambda x: abs(x) <= 100
 )

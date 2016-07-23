@@ -66,14 +66,13 @@ class WideRangeIntStrategy(IntStrategy):
 
         def distribution(random, n):
             assert n == size
-            k = min(
-                random.randint(0, n * 8 - 1),
-                random.randint(0, n * 8 - 1),
-            )
-            if k > 0:
-                r = random.getrandbits(k)
+            if random.randint(0, 2) > 0:
+                k = 1
+            elif random.randint(0, 2) > 0:
+                k = 2
             else:
-                r = 0
+                k = random.randint(1, size)
+            r = random.getrandbits(k * 8)
             if random.randint(0, 1):
                 r |= sign_mask
             else:
