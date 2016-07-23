@@ -32,8 +32,10 @@ It consists of two steps:
 This style of testing is usually called *fuzzing*.
 
 This will possibly require you to figure out how to generate your domain objects. Hypothesis
-[has a pretty extensive library of tools for generating custom types]({{site.url}}{% post_url 2016-05-11-generating-the-right-data %})
-but if you can, try to start somewhere where the types you need aren’t *too* complicated to generate.
+[has a pretty extensive library]({{site.url}}{% post_url 2016-05-11-generating-the-right-data %})
+of tools (called 'strategies' in Hypothesis terminology) for generating
+custom types but if you can, try to start somewhere where the types you
+need aren’t *too* complicated to generate.
 
 Chances are actually pretty good that you’ll find something wrong this way if you pick a
 sufficiently interesting entry point. For example, there’s a long track record of people trying to
@@ -47,20 +49,31 @@ So at this point you’ll have something like this:
 
 ```python
 from hypothesis import given, reject
+from hypothesis.strategies import integers, text
 
 
-@given(some(), strategies())
+@given(integers(), text())
 def test_some_stuff(x, y):
     try:
         my_function(x, y)
-    except (Ignorable, Exceptions):
+    except SomeExpectedException:
         reject()
 ```
 
-(reject simply filters out the example – you’re trying to find a large number of examples that don’t raise any of those exceptions).
+In this example we generate two values - one integer, one text - and
+pass them to your test function. Hypothesis will repeatedly call the
+test function with values drawn from these strategies, trying to find
+one that produces an unexpected exception.
 
-This is already a pretty good starting point and does have a decent tendency to flush out bugs. You’ll often
-find cases where you forgot some boundary condition and your code misbehaves as a result. But there’s still plenty of room to improve.
+When an exception we know is possible happens (e.g. a ValueError because
+some argument was out of range) we call reject. This discards the
+example, and Hypothesis won't count it towards the 'budget' of examples
+it is allowed to run.
+
+This is already a pretty good starting point and does have a decent
+tendency to flush out bugs. You’ll often find cases where you forgot some
+boundary condition and your code misbehaves as a result. But there’s
+still plenty of room to improve.
 
 There are now two directions you can go in from here:
 
