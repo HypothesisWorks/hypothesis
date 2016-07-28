@@ -240,7 +240,11 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
     def save(self, key, value):
         path = self._value_path(key, value)
         if not os.path.exists(path):
-            tmpname = path + '.' + str(binascii.hexlify(os.urandom(16)))
+            suffix = binascii.hexlify(os.urandom(16))
+            if not isinstance(suffix, str):  # pragma: no branch
+                # On Python 3, binascii.hexlify returns bytes
+                suffix = suffix.decode('ascii')
+            tmpname = path + '.' + suffix
             with open(tmpname, 'wb') as o:
                 o.write(value)
             try:
