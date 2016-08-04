@@ -1,6 +1,6 @@
 ---
 layout: post
-tags: technical python details
+tags: technical python intro
 date: 2016-05-11 10:00
 title: Generating the right data
 published: true
