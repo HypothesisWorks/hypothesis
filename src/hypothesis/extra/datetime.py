@@ -70,6 +70,40 @@ class DatetimeStrategy(SearchStrategy):
                 pass
 
 
+class TimedeltaStrategy(SearchStrategy):
+
+    def __init__(self, min_days=None, max_days=None):
+        MIN = dt.timedelta.min.days
+        MAX = dt.timedelta.max.days
+        self.min_days = min_days or MIN
+        self.max_days = max_days or MAX
+        for a in ['min_days', 'max_days']:
+            days = getattr(self, a)
+            if days < MIN:
+                raise InvalidArgument(u'%s out of range: %d < %d' % (
+                    a, days, MIN
+                ))
+            if days > MAX:
+                raise InvalidArgument(u'%s out of range: %d > %d' % (
+                    a, days, MAX
+                ))
+
+    def do_draw(self, data):
+        while True:
+            try:
+                result = dt.timedelta(
+                    days=cu.centered_integer_range(
+                        data, self.min_days, self.max_days, 0
+                    ),
+                    seconds=cu.integer_range(data, 0, 86400),  # 60 * 60 * 24
+                    microseconds=cu.integer_range(data, 0, 999999),
+                )
+                return result
+
+            except (OverflowError, ValueError):
+                pass
+
+
 @defines_strategy
 def datetimes(allow_naive=None, timezones=None, min_year=None, max_year=None):
     """Return a strategy for generating datetimes.
@@ -123,3 +157,11 @@ def times(allow_naive=None, timezones=None):
 
 def datetime_to_time(dt):
     return dt.timetz()
+
+
+@defines_strategy
+def timedeltas(min_days=None, max_days=None):
+    """Return a strategy for generating timedeltas.
+
+    """
+    return TimedeltaStrategy(min_days=min_days, max_days=max_days)
