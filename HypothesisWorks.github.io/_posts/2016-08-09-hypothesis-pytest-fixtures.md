@@ -1,6 +1,6 @@
 ---
 layout: post
-tags: technical faq
+tags: technical faq python
 date: 2016-08-09 10:00
 title: How do I use pytest fixtures with Hypothesis?
 published: true
