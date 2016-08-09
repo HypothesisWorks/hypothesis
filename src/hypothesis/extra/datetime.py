@@ -161,7 +161,5 @@ def datetime_to_time(dt):
 
 @defines_strategy
 def timedeltas(min_days=None, max_days=None):
-    """Return a strategy for generating timedeltas.
-
-    """
+    """Return a strategy for generating timedeltas."""
     return TimedeltaStrategy(min_days=min_days, max_days=max_days)

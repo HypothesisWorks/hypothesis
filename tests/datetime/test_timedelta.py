@@ -17,13 +17,11 @@
 
 from __future__ import division, print_function, absolute_import
 
-import datetime
-
 import pytest
+
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategytests import strategy_test_suite
-from hypothesis.internal.debug import minimal
 from hypothesis.extra.datetime import timedeltas
+from hypothesis.internal.debug import minimal
 
 
 def test_can_find_positive_delta():
