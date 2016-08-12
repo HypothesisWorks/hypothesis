@@ -17,9 +17,10 @@
 
 from __future__ import division, print_function, absolute_import
 
+import datetime as dt
+
 import pytest
 
-from hypothesis.errors import InvalidArgument
 from hypothesis.extra.datetime import timedeltas
 from hypothesis.internal.debug import minimal
 
@@ -54,20 +55,9 @@ def test_simplifies_towards_zero_delta():
     assert d.microseconds == 0
 
 
-def test_min_days_is_respected():
-    assert minimal(timedeltas(min_days=10)).days == 10
+def test_min_value_is_respected():
+    assert minimal(timedeltas(min_value=dt.timedelta(days=10))).days == 10
 
 
-def test_max_days_is_respected():
-    assert minimal(timedeltas(max_days=-10)).days == -10
-
-
-def test_validates_days_arguments_in_range():
-    with pytest.raises(InvalidArgument):
-        timedeltas(min_days=-10 ** 10).example()
-    with pytest.raises(InvalidArgument):
-        timedeltas(max_days=-10 ** 10).example()
-    with pytest.raises(InvalidArgument):
-        timedeltas(min_days=10 ** 10).example()
-    with pytest.raises(InvalidArgument):
-        timedeltas(max_days=10 ** 10).example()
+def test_max_value_is_respected():
+    assert minimal(timedeltas(max_value=dt.timedelta(days=-10))).days == -10

@@ -72,31 +72,32 @@ class DatetimeStrategy(SearchStrategy):
 
 class TimedeltaStrategy(SearchStrategy):
 
-    def __init__(self, min_days=None, max_days=None):
-        MIN = dt.timedelta.min.days
-        MAX = dt.timedelta.max.days
-        self.min_days = min_days or MIN
-        self.max_days = max_days or MAX
-        for a in ['min_days', 'max_days']:
-            days = getattr(self, a)
-            if days < MIN:
-                raise InvalidArgument(u'%s out of range: %d < %d' % (
-                    a, days, MIN
-                ))
-            if days > MAX:
-                raise InvalidArgument(u'%s out of range: %d > %d' % (
-                    a, days, MAX
-                ))
+    def __init__(self, min_value=None, max_value=None):
+        MIN = dt.timedelta.min
+        MAX = dt.timedelta.max
+        # timedelta(0) is falsey, so we need to be explicit here
+        if min_value is None:
+            min_value = MIN
+        if max_value is None:
+            max_value = MAX
+        self.min_value = min_value
+        self.max_value = max_value
 
     def do_draw(self, data):
         while True:
             try:
                 result = dt.timedelta(
                     days=cu.centered_integer_range(
-                        data, self.min_days, self.max_days, 0
+                        data, self.min_value.days, self.max_value.days, 0
                     ),
-                    seconds=cu.integer_range(data, 0, 86400),  # 60 * 60 * 24
-                    microseconds=cu.integer_range(data, 0, 999999),
+                    seconds=cu.integer_range(
+                        data, self.min_value.seconds, self.max_value.seconds
+                    ),
+                    microseconds=cu.integer_range(
+                        data,
+                        self.min_value.microseconds,
+                        self.max_value.microseconds
+                    ),
                 )
                 return result
 
@@ -160,6 +161,6 @@ def datetime_to_time(dt):
 
 
 @defines_strategy
-def timedeltas(min_days=None, max_days=None):
+def timedeltas(min_value=None, max_value=None):
     """Return a strategy for generating timedeltas."""
-    return TimedeltaStrategy(min_days=min_days, max_days=max_days)
+    return TimedeltaStrategy(min_value=min_value, max_value=max_value)
