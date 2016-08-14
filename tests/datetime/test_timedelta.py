@@ -19,8 +19,6 @@ from __future__ import division, print_function, absolute_import
 
 import datetime as dt
 
-import pytest
-
 from hypothesis.extra.datetime import timedeltas
 from hypothesis.internal.debug import minimal
 

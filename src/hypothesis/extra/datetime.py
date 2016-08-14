@@ -84,25 +84,20 @@ class TimedeltaStrategy(SearchStrategy):
         self.max_value = max_value
 
     def do_draw(self, data):
-        while True:
-            try:
-                result = dt.timedelta(
-                    days=cu.centered_integer_range(
-                        data, self.min_value.days, self.max_value.days, 0
-                    ),
-                    seconds=cu.integer_range(
-                        data, self.min_value.seconds, self.max_value.seconds
-                    ),
-                    microseconds=cu.integer_range(
-                        data,
-                        self.min_value.microseconds,
-                        self.max_value.microseconds
-                    ),
-                )
-                return result
-
-            except (OverflowError, ValueError):
-                pass
+        result = dt.timedelta(
+            days=cu.centered_integer_range(
+                data, self.min_value.days, self.max_value.days, 0
+            ),
+            seconds=cu.integer_range(
+                data, self.min_value.seconds, self.max_value.seconds
+            ),
+            microseconds=cu.integer_range(
+                data,
+                self.min_value.microseconds,
+                self.max_value.microseconds
+            ),
+        )
+        return result
 
 
 @defines_strategy
