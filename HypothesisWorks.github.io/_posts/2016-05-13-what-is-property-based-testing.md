@@ -85,7 +85,7 @@ understanding of their behaviour - and also that fuzzing feels somehow more fund
 
 But you can certainly do property based testing using fuzzing tools, in the same way that you
 can do it with hand-rolled property based testing systems - I could have taken my Python formatting
-test above, added [python-afl](https://bitbucket.org/jwilk/python-afl) to the mix, and
+test above, added [python-afl](http://jwilk.net/software/python-afl) to the mix, and
 that would still be property based testing.
 
 Conversely, you can do fuzzing with property-based testing tools: If fuzzing is not property
