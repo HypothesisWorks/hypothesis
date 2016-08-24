@@ -43,7 +43,8 @@ if PYTEST_VERSION >= (2, 7, 0):
             self.results.append(msg)
 
     def pytest_addoption(parser):
-        parser.addoption(
+        group = parser.getgroup('hypothesis', 'Hypothesis')
+        group.addoption(
             LOAD_PROFILE_OPTION,
             action='store',
             help='Load in a registered hypothesis.settings profile'
