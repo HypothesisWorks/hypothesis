@@ -448,6 +448,13 @@ class HealthCheck(Enum):
     return_value = 5
 
 
+@unique
+class Statistics(IntEnum):
+    never = 0
+    interesting = 1
+    always = 2
+
+
 class Verbosity(object):
 
     def __repr__(self):
@@ -551,6 +558,14 @@ settings.define_setting(
     description="""A list of health checks to disable"""
 )
 
+settings.define_setting(
+    'report_statistics',
+    default=Statistics.interesting,
+    description=u"""
+If set to True, Hypothesis will run a preliminary health check before
+attempting to actually execute your test.
+"""
+)
 
 settings.lock_further_definitions()
 

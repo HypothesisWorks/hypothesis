@@ -36,6 +36,7 @@ from hypothesis._settings import Phase, Verbosity, HealthCheck
 from hypothesis.executors import new_style_executor, \
     default_new_style_executor
 from hypothesis.reporting import report, verbose_report, current_verbosity
+from hypothesis.statistics import note_engine_for_statistics
 from hypothesis.internal.compat import getargspec, str_to_bytes
 from hypothesis.internal.reflection import nicerepr, arg_string, \
     impersonate, copy_argspec, function_digest, fully_qualified_name, \
@@ -472,6 +473,7 @@ def given(*generator_arguments, **generator_kwargs):
                 database_key=database_key,
             )
             runner.run()
+            note_engine_for_statistics(runner)
             run_time = time.time() - start_time
             timed_out = (
                 settings.timeout > 0 and

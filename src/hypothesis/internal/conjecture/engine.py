@@ -18,6 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 import time
+from enum import Enum
 from random import Random, getrandbits
 
 from hypothesis import settings as Settings
@@ -27,6 +28,14 @@ from hypothesis.internal.compat import hbytes, hrange, Counter, \
     text_type, bytes_from_list, to_bytes_sequence, unicode_safe_repr
 from hypothesis.internal.conjecture.data import Status, StopTest, TestData
 from hypothesis.internal.conjecture.minimizer import minimize
+
+
+class ExitReason(Enum):
+    max_examples = 0
+    max_iterations = 1
+    timeout = 2
+    max_shrinks = 3
+    finished = 4
 
 
 class RunIsComplete(Exception):
@@ -51,6 +60,8 @@ class TestRunner(object):
         self.random = random or Random(getrandbits(128))
         self.database_key = database_key
         self.seen = set()
+        self.duplicates = 0
+        self.status_runtimes = {}
 
     def new_buffer(self):
         self.last_data = TestData(
@@ -60,7 +71,6 @@ class TestRunner(object):
         )
         self.test_function(self.last_data)
         self.last_data.freeze()
-        self.note_for_corpus(self.last_data)
 
     def test_function(self, data):
         self.iterations += 1
@@ -74,6 +84,9 @@ class TestRunner(object):
         except:
             self.save_buffer(data.buffer)
             raise
+        finally:
+            data.freeze()
+            self.note_details(data)
         if (
             data.status == Status.INTERESTING and (
                 self.last_data is None or
@@ -92,6 +105,7 @@ class TestRunner(object):
         #      transitions are allowed.
         key = hbytes(data.buffer)
         if key in self.seen:
+            self.duplicates += 1
             return False
         self.seen.add(key)
         if data.buffer == self.last_data.buffer:
@@ -121,9 +135,11 @@ class TestRunner(object):
                 self.database_key, hbytes(buffer)
             )
 
-    def note_for_corpus(self, data):
+    def note_details(self, data):
         if data.status == Status.INTERESTING:
             self.save_buffer(data.buffer)
+        runtime = max(data.finish_time - data.start_time, 0.0)
+        self.status_runtimes.setdefault(data.status, []).append(runtime)
 
     def debug(self, message):
         with self.settings:
@@ -145,6 +161,7 @@ class TestRunner(object):
             self.settings.timeout > 0 and
             time.time() >= self.start_time + self.settings.timeout
         ):
+            self.exit_reason = ExitReason.timeout
             raise RunIsComplete()
         self.examples_considered += 1
         buffer = buffer[:self.last_data.index]
@@ -153,12 +170,11 @@ class TestRunner(object):
         assert sort_key(buffer) <= sort_key(self.last_data.buffer)
         data = TestData.for_buffer(buffer)
         self.test_function(data)
-        data.freeze()
-        self.note_for_corpus(data)
         if self.consider_new_test_data(data):
             self.shrinks += 1
             self.last_data = data
             if self.shrinks >= self.settings.max_shrinks:
+                self.exit_reason = ExitReason.max_shrinks
                 raise RunIsComplete()
             self.last_data = data
             self.changed += 1
@@ -256,10 +272,12 @@ class TestRunner(object):
             )
             for existing in corpus:
                 if self.valid_examples >= self.settings.max_examples:
+                    self.exit_reason = ExitReason.max_examples
                     return
                 if self.iterations >= max(
                     self.settings.max_iterations, self.settings.max_examples
                 ):
+                    self.exit_reason = ExitReason.max_iterations
                     return
                 data = TestData.for_buffer(existing)
                 self.test_function(data)
@@ -292,15 +310,18 @@ class TestRunner(object):
             mutator = self._new_mutator()
             while self.last_data.status != Status.INTERESTING:
                 if self.valid_examples >= self.settings.max_examples:
+                    self.exit_reason = ExitReason.max_examples
                     return
                 if self.iterations >= max(
                     self.settings.max_iterations, self.settings.max_examples
                 ):
+                    self.exit_reason = ExitReason.max_iterations
                     return
                 if (
                     self.settings.timeout > 0 and
                     time.time() >= start_time + self.settings.timeout
                 ):
+                    self.exit_reason = ExitReason.timeout
                     return
                 if mutations >= self.settings.max_mutations:
                     mutations = 0
@@ -313,7 +334,6 @@ class TestRunner(object):
                     )
                     self.test_function(data)
                     data.freeze()
-                    self.note_for_corpus(data)
                     prev_data = self.last_data
                     if self.consider_new_test_data(data):
                         self.last_data = data
@@ -330,6 +350,7 @@ class TestRunner(object):
         assert isinstance(data.output, text_type)
 
         if self.settings.max_shrinks <= 0:
+            self.exit_reason = ExitReason.max_shrinks
             return
 
         if Phase.shrink not in self.settings.phases:
@@ -454,6 +475,7 @@ class TestRunner(object):
                             alternatives = None
                             break
                 i += 1
+        self.exit_reason = ExitReason.finished
 
 
 def _draw_predecessor(rnd, xs):

@@ -22,6 +22,9 @@ import re
 import pytest
 
 from hypothesis.reporting import default as default_reporter
+from hypothesis.reporting import with_reporter
+from hypothesis.statistics import collector
+from hypothesis.internal.compat import text_type, OrderedDict
 
 PYTEST_VERSION = tuple(map(
     int,
@@ -29,6 +32,7 @@ PYTEST_VERSION = tuple(map(
 ))
 
 LOAD_PROFILE_OPTION = '--hypothesis-profile'
+PRINT_STATISTICS_OPTION = '--hypothesis-show-statistics'
 
 if PYTEST_VERSION >= (2, 7, 0):
     class StoringReporter(object):
@@ -40,6 +44,8 @@ if PYTEST_VERSION >= (2, 7, 0):
         def __call__(self, msg):
             if self.config.getoption('capture', 'fd') == 'no':
                 default_reporter(msg)
+            if not isinstance(msg, text_type):
+                msg = repr(msg)
             self.results.append(msg)
 
     def pytest_addoption(parser):
@@ -49,6 +55,12 @@ if PYTEST_VERSION >= (2, 7, 0):
             action='store',
             help='Load in a registered hypothesis.settings profile'
         )
+        parser.addoption(
+            PRINT_STATISTICS_OPTION,
+            action='store_true',
+            help='Configure when statistics are printed',
+            default=False
+        )
 
     def pytest_configure(config):
         from hypothesis import settings
@@ -56,14 +68,23 @@ if PYTEST_VERSION >= (2, 7, 0):
         if profile:
             settings.load_profile(profile)
 
+    gathered_statistics = OrderedDict()
+
     @pytest.mark.hookwrapper
     def pytest_pyfunc_call(pyfuncitem):
-        from hypothesis.reporting import with_reporter
-        store = StoringReporter(pyfuncitem.config)
-        with with_reporter(store):
+        if not getattr(pyfuncitem.obj, 'is_hypothesis_test', False):
             yield
-        if store.results:
-            pyfuncitem.hypothesis_report_information = list(store.results)
+        else:
+            store = StoringReporter(pyfuncitem.config)
+
+            def note_statistics(stats):
+                gathered_statistics[pyfuncitem.name] = stats
+
+            with collector.with_value(note_statistics):
+                with with_reporter(store):
+                    yield
+            if store.results:
+                pyfuncitem.hypothesis_report_information = list(store.results)
 
     @pytest.mark.hookwrapper
     def pytest_runtest_makereport(item, call):
@@ -73,6 +94,32 @@ if PYTEST_VERSION >= (2, 7, 0):
                 'Hypothesis',
                 '\n'.join(item.hypothesis_report_information)
             ))
+
+    def pytest_terminal_summary(terminalreporter):
+        if not terminalreporter.config.getoption(PRINT_STATISTICS_OPTION):
+            return
+        terminalreporter.section('Hypothesis Statistics')
+        for name, statistics in gathered_statistics.items():
+            terminalreporter.write_line(name + ':')
+            terminalreporter.write_line('')
+
+            if not statistics.has_runs:
+                terminalreporter.write_line('  - Test was never run')
+                continue
+
+            terminalreporter.write_line((
+                '  - %d passing examples, %d failing examples,'
+                ' %d invalid examples') % (
+                statistics.passing_examples, statistics.failing_examples,
+                statistics.invalid_examples,
+            ))
+            terminalreporter.write_line(
+                '  - Typical runtimes: %s' % (statistics.runtimes,)
+            )
+            terminalreporter.write_line(
+                '  - Stopped because %s' % (statistics.exit_reason,)
+            )
+            terminalreporter.write_line('')
 
     def pytest_collection_modifyitems(items):
         for item in items:
