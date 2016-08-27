@@ -162,8 +162,9 @@ def one_of(*args):
     """Return a strategy which generates values from any of the argument
     strategies.
 
-    This may be called with one iterable argument instead of multiple strategy
-    arguments. In which case one_of(x) and one_of(\*x) are equivalent.
+    This may be called with one iterable argument instead of multiple
+    strategy arguments. In which case one_of(x) and one_of(\*x) are
+    equivalent.
 
     """
     if len(args) == 1 and not isinstance(args[0], SearchStrategy):
@@ -190,8 +191,8 @@ def integers(min_value=None, max_value=None):
     """Returns a strategy which generates integers (in Python 2 these may be
     ints or longs).
 
-    If min_value is not None then all values will be >=
-    min_value. If max_value is not None then all values will be <= max_value
+    If min_value is not None then all values will be >= min_value. If
+    max_value is not None then all values will be <= max_value
 
     """
 
@@ -747,9 +748,8 @@ def builds(target, *args, **kwargs):
     """Generates values by drawing from args and kwargs and passing them to
     target in the appropriate argument position.
 
-    e.g. builds(target,
-    integers(), flag=booleans()) would draw an integer i and a boolean b and
-    call target(i, flag=b).
+    e.g. builds(target, integers(), flag=booleans()) would draw an
+    integer i and a boolean b and call target(i, flag=b).
 
     """
     return tuples(tuples(*args), fixed_dictionaries(kwargs)).map(
@@ -825,8 +825,7 @@ def decimals(min_value=None, max_value=None):
 
 @defines_strategy
 def recursive(base, extend, max_leaves=100):
-    """
-    base: A strategy to start from.
+    """base: A strategy to start from.
 
     extend: A function which takes a strategy and returns a new strategy.
 
@@ -841,6 +840,7 @@ def recursive(base, extend, max_leaves=100):
     strategy that may return arbitrarily nested and mixed lists of booleans.
     So e.g. False, [True], [False, []], [[[[True]]]], are all valid values to
     be drawn from that strategy.
+
     """
 
     check_strategy(base)
@@ -915,8 +915,8 @@ def composite(f):
 
 def shared(base, key=None):
     """Returns a strategy that draws a single shared value per run, drawn from
-    base. Any two shared instances with the same key will share the same
-    value, otherwise the identity of this strategy will be used. That is:
+    base. Any two shared instances with the same key will share the same value,
+    otherwise the identity of this strategy will be used. That is:
 
     >>> x = shared(s)
     >>> y = shared(s)
@@ -926,6 +926,7 @@ def shared(base, key=None):
 
     >>> x = shared(s, key="hi")
     >>> y = shared(s, key="hi")
+
     """
     from hypothesis.searchstrategy.shared import SharedStrategy
     return SharedStrategy(base, key)
@@ -1116,7 +1117,9 @@ def check_valid_bound(value, name):
 
 def check_valid_size(value, name):
     """Checks that value is either unspecified, or a valid non-negative size
-    expressed as an integer/float. Otherwise raises InvalidArgument.
+    expressed as an integer/float.
+
+    Otherwise raises InvalidArgument.
 
     """
     if value is None:

@@ -17,8 +17,7 @@
 
 # coding: utf-8
 
-"""
-This file originates in the IPython project and is made use of under the
+"""This file originates in the IPython project and is made use of under the
 following licensing terms:
 
 The IPython licensing terms
@@ -55,6 +54,7 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
 ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 """
 
 from __future__ import division, print_function, absolute_import
@@ -237,10 +237,8 @@ def test_indentation():
 
 
 def test_dispatch():
-    """
-    Test correct dispatching: The _repr_pretty_ method for MyDict
-    must be found before the registered printer for dict.
-    """
+    """Test correct dispatching: The _repr_pretty_ method for MyDict must be
+    found before the registered printer for dict."""
     gotoutput = pretty.pretty(MyDict())
     expectedoutput = 'MyDict(...)'
 

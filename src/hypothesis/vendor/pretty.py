@@ -301,9 +301,8 @@ class PrettyPrinter(_PrettyPrinterBase):
 
 
 def _get_mro(obj_class):
-    """ Get a reasonable method resolution order of a class and its superclasses
-    for both old-style and new-style classes.
-    """
+    """Get a reasonable method resolution order of a class and its superclasses
+    for both old-style and new-style classes."""
     if not hasattr(obj_class, '__mro__'):  # pragma: no cover
         # Old-style class. Mix in object to make a fake new-style class.
         try:
@@ -324,12 +323,11 @@ class RepresentationPrinter(PrettyPrinter):
     printer for a python object.
 
     This class stores processing data on `self` so you must *never* use
-    this class in a threaded environment.  Always lock it or reinstanciate
-    it.
-    Instances also have a verbose flag callbacks can access to control their
-    output.  For example the default instance repr prints all attributes and
-    methods that are not prefixed by an underscore if the printer is in
-    verbose mode.
+    this class in a threaded environment.  Always lock it or
+    reinstanciate it. Instances also have a verbose flag callbacks can
+    access to control their output.  For example the default instance
+    repr prints all attributes and methods that are not prefixed by an
+    underscore if the printer is in verbose mode.
 
     """
 

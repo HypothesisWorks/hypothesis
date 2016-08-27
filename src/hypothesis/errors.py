@@ -103,10 +103,9 @@ class Unsatisfiable(HypothesisException):
 
 class Flaky(HypothesisException):
 
-    """
-    This function appears to fail non-deterministically: We have seen it fail
-    when passed this example at least once, but a subsequent invocation did not
-    fail.
+    """This function appears to fail non-deterministically: We have seen it
+    fail when passed this example at least once, but a subsequent invocation
+    did not fail.
 
     Common causes for this problem are:
         1. The function depends on external state. e.g. it uses an external
@@ -117,6 +116,7 @@ class Flaky(HypothesisException):
         3. The function is timing sensitive and can fail or pass depending on
            how long it takes. Try breaking it up into smaller functions which
            dont' do that and testing those instead.
+
     """
 
 

@@ -37,9 +37,8 @@ class BoolStrategy(SearchStrategy):
 
 class JustStrategy(SearchStrategy):
 
-    """
-    A strategy which simply returns a single fixed value with probability 1.
-    """
+    """A strategy which simply returns a single fixed value with probability
+    1."""
 
     def __init__(self, value):
         SearchStrategy.__init__(self)

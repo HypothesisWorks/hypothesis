@@ -103,20 +103,17 @@ SortedLists = st.lists(Values).map(sorted)
 
 @given(ls=SortedLists, v=Values)
 def test_insert_is_sorted(ls, v):
-    """
-    We test the first invariant: binary_search should return an index such that
-    inserting the value provided at that index would result in a sorted set.
-    """
+    """We test the first invariant: binary_search should return an index such
+    that inserting the value provided at that index would result in a sorted
+    set."""
     ls.insert(binary_search(ls, v), v)
     assert is_sorted(ls)
 
 
 @given(ls=SortedLists, v=Values)
 def test_is_minimal(ls, v):
-    """
-    We test the second invariant: binary_search should return an index such
-    that no smaller index is a valid insertion point for v
-    """
+    """We test the second invariant: binary_search should return an index such
+    that no smaller index is a valid insertion point for v."""
     for i in range(binary_search(ls, v)):
         ls2 = list(ls)
         ls2.insert(i, v)
@@ -125,11 +122,10 @@ def test_is_minimal(ls, v):
 
 @given(ls=SortedLists, v=Values)
 def test_inserts_into_same_place_twice(ls, v):
-    """
-    In this we test a *consequence* of the second invariant: When we insert a
-    value into a list twice, the insertion point should be the same both times.
-    This is because we know that v is > the previous element and == the next
-    element.
+    """In this we test a *consequence* of the second invariant: When we insert
+    a value into a list twice, the insertion point should be the same both
+    times. This is because we know that v is > the previous element and == the
+    next element.
 
     In theory if the former passes, this should always pass. In practice,
     failures are detected by this test with much higher probability because it
@@ -138,6 +134,7 @@ def test_inserts_into_same_place_twice(ls, v):
 
     This is an instance of a good general category of test: Testing how the
     function moves in responses to changes in the underlying data.
+
     """
     i = binary_search(ls, v)
     ls.insert(i, v)

@@ -189,9 +189,9 @@ class OneOfStrategy(SearchStrategy):
     """Implements a union of strategies. Given a number of strategies this
     generates values which could have come from any of them.
 
-    The conditional distribution draws uniformly at random from some non-empty
-    subset of these strategies and then draws from the conditional distribution
-    of that strategy.
+    The conditional distribution draws uniformly at random from some
+    non-empty subset of these strategies and then draws from the
+    conditional distribution of that strategy.
 
     """
 

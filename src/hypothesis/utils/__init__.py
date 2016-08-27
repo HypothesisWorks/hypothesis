@@ -16,5 +16,4 @@
 # END HEADER
 
 """hypothesis.utils is a package for things that you can consider part of the
-semi-public Hypothesis API but aren't really the core point.
-"""
+semi-public Hypothesis API but aren't really the core point."""

@@ -35,9 +35,8 @@ AVERAGE_LIST_LENGTH = 2
 
 
 def clamp(lower, value, upper):
-    """Given a value and optional lower/upper bounds, 'clamp' the
-    value so that it satisfies lower <= value <= upper.
-    """
+    """Given a value and optional lower/upper bounds, 'clamp' the value so that
+    it satisfies lower <= value <= upper."""
     if (lower is not None) and (upper is not None) and (lower > upper):
         raise ValueError('Cannot clamp with lower > upper: %r > %r' %
                          (lower, upper))

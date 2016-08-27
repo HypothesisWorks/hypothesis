@@ -127,8 +127,7 @@ def convert_positional_arguments(function, args, kwargs):
     """Return a tuple (new_args, new_kwargs) where all possible arguments have
     been moved to kwargs.
 
-    new_args will only be non-empty if function has a
-    variadic argument.
+    new_args will only be non-empty if function has a variadic argument.
 
     """
     argspec = getargspec(function)
