@@ -363,8 +363,8 @@ def test_projects_end_after_they_started(project):
 There's a lot more to Hypothesis's data generation than this, but hopefully it gives you
 a flavour of the sort of things to try and the sort of things that are possible.
 
-It's worth having a read of [the documentation](http://hypothesis.readthedocs.io/en/latest/data.html)
-for this, and if you're still stuck then try asking [the community](http://hypothesis.readthedocs.io/en/latest/community.html)
+It's worth having a read of [the documentation](https://hypothesis.readthedocs.io/en/latest/data.html)
+for this, and if you're still stuck then try asking [the community](https://hypothesis.readthedocs.io/en/latest/community.html)
 for some help. We're pretty friendly.
 
 

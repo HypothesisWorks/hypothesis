@@ -59,7 +59,7 @@ Hypothesis integrates into your normal testing workflow. Getting started is as s
 writing some code using it - no new services to run, no new test runners to learn.
 
 Right now only the Python version of Hypothesis is production ready. To get started with it, check out
-[the documentation](https://hypothesis.readthedocs.org/en/latest/) or read some of the
+[the documentation](https://hypothesis.readthedocs.io/en/latest/) or read some of the
 [introductory articles here on this site](/articles/intro/).
 
 Once you've got started, or if you have a large number of people who want to get started all at once,
