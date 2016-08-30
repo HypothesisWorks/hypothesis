@@ -113,6 +113,9 @@ check-nose: $(TOX) $(PY35)
 check-pytest30: $(TOX) $(PY35)
 	$(TOX) -e pytest30
 
+check-pytest28: $(TOX) $(PY35)
+	$(TOX) -e pytest28
+
 check-pytest27: $(TOX) $(PY35)
 	$(TOX) -e pytest27
 
