@@ -134,7 +134,7 @@ def test_needs_permission_for_no_timezones():
         datetimes(allow_naive=False, timezones=[]).example()
 
 
-@flaky(max_runs=2, min_passes=1)
+@flaky(max_runs=3, min_passes=1)
 def test_bordering_on_a_leap_year():
     x = minimal(
         datetimes(min_year=2002, max_year=2005),
