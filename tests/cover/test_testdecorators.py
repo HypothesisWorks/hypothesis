@@ -548,7 +548,7 @@ def test_does_not_print_notes_if_all_succeed():
     with capture_out() as out:
         with reporting.with_reporter(reporting.default):
             test()
-        assert not out.getvalue()
+    assert not out.getvalue()
 
 
 def test_prints_notes_once_on_failure():
@@ -556,10 +556,11 @@ def test_prints_notes_once_on_failure():
     @settings(database=None, verbosity=Verbosity.normal)
     def test(xs):
         note('Hi there')
-        assert sum(xs) > 100
+        if sum(xs) <= 100:
+            raise ValueError()
     with capture_out() as out:
         with reporting.with_reporter(reporting.default):
-            with raises(AssertionError):
+            with raises(ValueError):
                 test()
     lines = out.getvalue().strip().splitlines()
     assert len(lines) == 2
