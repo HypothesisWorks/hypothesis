@@ -262,7 +262,7 @@ def test_sets():
                 'frozenset({1, 2})', '{-3, -2, -1}']
     for obj, expected_output in zip(objects, expected):
         got_output = pretty.pretty(obj)
-        yield assert_equal, got_output, expected_output
+        assert_equal(got_output, expected_output)
 
 
 def test_unsortable_set():
@@ -344,7 +344,7 @@ class SB(SA):
 
 
 try:
-    super(SA).__thisclass__
+    super(SA).__self__
 
     def test_super_repr():
         output = pretty.pretty(super(SA))
