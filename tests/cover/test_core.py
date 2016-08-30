@@ -20,6 +20,7 @@ from __future__ import division, print_function, absolute_import
 import time
 
 import pytest
+from flaky import flaky
 
 import hypothesis.strategies as s
 from hypothesis import find, given, reject, settings
@@ -63,6 +64,7 @@ def test_stops_after_max_iterations_if_not_satisfying():
     assert len(tracker) <= max_iterations
 
 
+@flaky(min_passes=1, max_runs=2)
 def test_can_time_out_in_simplify():
     def slow_always_true(x):
         time.sleep(0.1)
