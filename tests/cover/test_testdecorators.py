@@ -561,9 +561,9 @@ def test_prints_notes_once_on_failure():
         with reporting.with_reporter(reporting.default):
             with raises(AssertionError):
                 test()
-        lines = out.getvalue().strip().splitlines()
-        assert len(lines) == 2
-        assert 'Hi there' in lines
+    lines = out.getvalue().strip().splitlines()
+    assert len(lines) == 2
+    assert 'Hi there' in lines
 
 
 @given(lists(max_size=0))
