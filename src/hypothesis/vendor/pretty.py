@@ -648,7 +648,10 @@ def _dict_pprinter_factory(start, end, basetype=None):
 def _super_pprint(obj, p, cycle):
     """The pprint for the super type."""
     try:
+        # This section works around various pypy versions that don't do
+        # have the same attributes on super objects
         obj.__thisclass__
+        obj.__super_
     except AttributeError:  # pragma: no cover
         _repr_pprint(obj, p, cycle)
         return
