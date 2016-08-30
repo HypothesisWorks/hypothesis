@@ -18,10 +18,6 @@ for k, v in sorted(dict(os.environ).items()):
 pip install .
 
 
-if [ "$(python -c 'import sys; print(sys.version_info[:2] == (2, 6))')" == "True" ] ; then
-    pip install --upgrade ./hypothesislegacysupport
-fi
-
 PYTEST="python -m pytest"
 
 $PYTEST tests/cover

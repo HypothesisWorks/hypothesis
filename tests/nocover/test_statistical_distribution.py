@@ -40,11 +40,9 @@ from hypothesis import settings as Settings
 from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.strategies import just, sets, text, lists, floats, \
     tuples, booleans, integers, sampled_from
-from hypothesis.internal.compat import PY26, hrange
+from hypothesis.internal.compat import hrange
 from hypothesis.internal.conjecture.engine import \
     TestRunner as ConTestRunner
-
-pytestmark = pytest.mark.skipif(PY26, reason=u'2.6 lacks erf')
 
 # We run each individual test at a very high level of significance to the
 # point where it will basically only fail if it's really really wildly wrong.

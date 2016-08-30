@@ -6,14 +6,6 @@ environment:
     CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\scripts\\run_with_env.cmd"
 
   matrix:
-    - PYTHON: "C:\\Python26"
-      PYTHON_VERSION: "2.6.9"
-      PYTHON_ARCH: "32"
-
-    - PYTHON: "C:\\Python26-x64"
-      PYTHON_VERSION: "2.6.9"
-      PYTHON_ARCH: "64"
-
     - PYTHON: "C:\\Python27"
       PYTHON_VERSION: "2.7.8"
       PYTHON_ARCH: "32"
@@ -52,7 +44,6 @@ install:
   - "%CMD_IN_ENV% python -m pip.__main__ install --upgrade setuptools pip"
   - "%CMD_IN_ENV% python -m pip.__main__ install setuptools pytest==2.8.0 flaky"
   - "%CMD_IN_ENV% python -m pip.__main__ install .[all]"
-  - "%CMD_IN_ENV% python -m pip.__main__ install --upgrade ./hypothesislegacysupport"
 
 build: false  # Not a C# project, build stuff at the test step instead.
 

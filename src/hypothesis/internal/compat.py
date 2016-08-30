@@ -26,7 +26,10 @@ import math
 import codecs
 import platform
 import importlib
+from gzip import GzipFile
+from base64 import b64decode, b64encode
 from decimal import Context, Decimal, Inexact
+from hashlib import sha1
 from collections import namedtuple
 
 try:
@@ -39,65 +42,24 @@ except ImportError:  # pragma: no cover
 PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
 PYPY = platform.python_implementation() == 'PyPy'
-PY26 = sys.version_info[:2] == (2, 6)
 NO_ARGSPEC = sys.version_info[:2] >= (3, 5)
 HAS_SIGNATURE = sys.version_info[:2] >= (3, 3)
 CAN_UNPACK_BYTE_ARRAY = sys.version_info[:3] >= (2, 7, 4)
 
 WINDOWS = platform.system() == 'Windows'
 
-if PY26:
-    from hypothesis import __version__ as thisversion
-    try:
-        from hypothesislegacysupport import __version__ as thatversion
-    except ImportError:
-        raise ImportError(
-            'Hypothesis is not supported on Python 2.6 without the '
-            'hypothesislegacysupport installed. Check that you have a '
-            'license to use it and then install it in order to continue.'
-        )
-    if thisversion != thatversion:
-        raise ImportError((
-            'hypothesis and hypothesislegacysupport must have exactly the '
-            'same version, but you have hypothesis==%s installed and '
-            'hypothesislegacysupport==%s installed. Please replace one '
-            'with a version compatible with the other.'
-        ) % (thisversion, thatversion))
+if sys.version_info[:2] <= (2, 6):
+    raise ImportError(
+        'Hypothesis is not supported on Python versions before 2.7'
+    )
 
-    from hypothesislegacysupport import GzipFile, bit_length, sha1, \
-        b64encode, b64decode
 
-    _special_floats = {
-        float(u'inf'): Decimal(u'Infinity'),
-        float(u'-inf'): Decimal(u'-Infinity'),
-    }
+def bit_length(n):
+    return n.bit_length()
 
-    def float_to_decimal(f):
-        """Convert a floating point number to a Decimal with no loss of
-        information."""
-        if f in _special_floats:
-            return _special_floats[f]
-        elif math.isnan(f):
-            return Decimal(u'NaN')
-        n, d = f.as_integer_ratio()
-        numerator, denominator = Decimal(n), Decimal(d)
-        ctx = Context(prec=60)
-        result = ctx.divide(numerator, denominator)
-        while ctx.flags[Inexact]:
-            ctx.flags[Inexact] = False
-            ctx.prec *= 2
-            result = ctx.divide(numerator, denominator)
-        return result
-else:
-    from gzip import GzipFile
-    from hashlib import sha1
-    from base64 import b64encode, b64decode
 
-    def bit_length(n):
-        return n.bit_length()
-
-    def float_to_decimal(f):
-        return Decimal(f)
+def float_to_decimal(f):
+    return Decimal(f)
 
 
 if PY3:

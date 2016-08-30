@@ -25,16 +25,8 @@ from hypothesis import given, settings
 from hypothesis.database import ExampleDatabase, SQLiteExampleDatabase, \
     InMemoryExampleDatabase, DirectoryBasedExampleDatabase
 from hypothesis.strategies import lists, binary, tuples
-from hypothesis.internal.compat import PY26, hrange
 
 small_settings = settings(max_examples=100, timeout=4)
-
-if PY26:
-    # Workaround for bug with embedded null characters in a text string under
-    # python 2.6
-    alphabet = [chr(i) for i in hrange(1, 128)]
-else:
-    alphabet = None
 
 
 @given(lists(tuples(binary(), binary())))

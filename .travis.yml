@@ -29,7 +29,6 @@ env:
         - TASK=check-ancient-pip
         - TASK=check-pypy
         - TASK=check-py35
-        - TASK=check-py26
         - TASK=check-py27
         - TASK=check-py273
         - TASK=check-py34

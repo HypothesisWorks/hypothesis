@@ -10,7 +10,6 @@ export BUILD_RUNTIMES?=$(HOME)/.cache/hypothesis-build-runtimes
 export TOX_WORK_DIR=$(BUILD_RUNTIMES)/.tox
 export COVERAGE_FILE=$(BUILD_RUNTIMES)/.coverage
 
-PY26=$(BUILD_RUNTIMES)/snakepit/python2.6
 PY27=$(BUILD_RUNTIMES)/snakepit/python2.7
 PY273=$(BUILD_RUNTIMES)/snakepit/python2.7.3
 PY33=$(BUILD_RUNTIMES)/snakepit/python3.3
@@ -36,9 +35,6 @@ TOOL_INSTALL=$(TOOL_PIP) install --upgrade
 
 export PATH:=$(BUILD_RUNTIMES)/snakepit:$(TOOLS):$(PATH)
 export LC_ALL=en_US.UTF-8
-
-$(PY26):
-	scripts/retry.sh scripts/install.sh 2.6
 
 $(PY27):
 	scripts/retry.sh scripts/install.sh 2.7
@@ -73,11 +69,11 @@ format: $(PYFORMAT) $(ISORT)
 	$(TOOL_PYTHON) scripts/enforce_header.py
 	# isort will sort packages differently depending on whether they're installed
 	$(ISORT_VIRTUALENV)/bin/python -m pip install django pytz pytest fake-factory numpy flaky
-	find src tests hypothesislegacysupport examples -name '*.py' | xargs  env -i \
+	find src tests examples -name '*.py' | xargs  env -i \
             PATH="$(PATH)" $(ISORT) -p hypothesis -ls -m 2 -w 75 \
 			-a  "from __future__ import absolute_import, print_function, division" \
-			-rc src tests examples hypothesislegacysupport/src
-	find src tests hypothesislegacysupport examples -name '*.py' | xargs $(PYFORMAT) -i
+			-rc src tests examples /src
+	find src tests examples -name '*.py' | xargs $(PYFORMAT) -i
 
 lint: $(FLAKE8)
 	$(FLAKE8) src tests --exclude=compat.py,test_reflection.py,test_imports.py,tests/py2 --ignore=E731,E721
@@ -85,9 +81,6 @@ lint: $(FLAKE8)
 check-format: format
 	find src tests -name "*.py" | xargs $(TOOL_PYTHON) scripts/check_encoding_header.py
 	git diff --exit-code
-
-check-py26: $(PY26) $(TOX)
-	$(TOX) -e py26-full
 
 check-py27: $(PY27) $(TOX)
 	$(TOX) -e py27-full
@@ -161,7 +154,7 @@ check-noformat: check-coverage check-py26 check-py27 check-py33 check-py34 check
 
 check: check-format check-noformat
 
-check-fast: lint $(PY26) $(PY35) $(PYPY) $(TOX)
+check-fast: lint $(PY35) $(PYPY) $(TOX)
 	$(TOX) -e pypy-brief
 	$(TOX) -e py35-brief
 	$(TOX) -e py26-brief
