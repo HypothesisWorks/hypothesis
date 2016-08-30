@@ -196,6 +196,7 @@ def test_finds_list_with_plenty_duplicates():
     assert result == [u'0'] * 3
 
 
+@slightly_flaky
 def test_minimal_mixed_list_propagates_leftwards():
     # one_of simplification can't actually simplify to the left, but it regards
     # instances of the leftmost type as strictly simpler. This means that if we
