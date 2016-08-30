@@ -110,6 +110,9 @@ check-pypy: $(PYPY) $(TOX)
 check-nose: $(TOX) $(PY35)
 	$(TOX) -e nose
 
+check-pytest30: $(TOX) $(PY35)
+	$(TOX) -e pytest30
+
 check-pytest27: $(TOX) $(PY35)
 	$(TOX) -e pytest27
 
@@ -121,6 +124,9 @@ check-ancient-pip: $(PY273)
 	
 
 check-pytest: check-pytest26 check-pytest27
+
+check-fakefactory060: $(TOX) $(PY35)
+	$(TOX) -e fakefactory060
 
 check-fakefactory052: $(TOX) $(PY35)
 	$(TOX) -e fakefactory052

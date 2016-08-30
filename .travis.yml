@@ -34,10 +34,12 @@ env:
         - TASK=check-py273
         - TASK=check-py34
         - TASK=check-nose
+        - TASK=check-pytest30
         - TASK=check-pytest27
         - TASK=check-pytest26
         - TASK=check-fakefactory052
         - TASK=check-fakefactory053
+        - TASK=check-fakefactory060
         - TASK=check-pytest26
         - TASK=check-django17
         - TASK=check-django18
