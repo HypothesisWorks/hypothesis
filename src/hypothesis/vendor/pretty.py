@@ -78,6 +78,7 @@ import re
 import sys
 import types
 import datetime
+import platform
 from io import StringIO
 from contextlib import contextmanager
 from collections import deque
@@ -91,6 +92,8 @@ __all__ = ['pretty', 'pprint', 'PrettyPrinter', 'RepresentationPrinter',
 
 MAX_SEQ_LENGTH = 1000
 _re_pattern_type = type(re.compile(''))
+
+PYPY = platform.python_implementation() == 'PyPy'
 
 
 def _safe_getattr(obj, attr, default=None):
@@ -651,8 +654,9 @@ def _super_pprint(obj, p, cycle):
         # This section works around various pypy versions that don't do
         # have the same attributes on super objects
         obj.__thisclass__
-        obj.__super__
+        obj.__self__
     except AttributeError:  # pragma: no cover
+        assert PYPY
         _repr_pprint(obj, p, cycle)
         return
     p.begin_group(8, '<super: ')
