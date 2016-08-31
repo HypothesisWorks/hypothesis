@@ -39,7 +39,6 @@ env:
         - TASK=check-fakefactory052
         - TASK=check-fakefactory053
         - TASK=check-fakefactory060
-        - TASK=check-pytest26
         - TASK=check-django17
         - TASK=check-django18
 
@@ -58,10 +57,6 @@ matrix:
           env: TASK=check-fakefactory052
         - os: osx
           env: TASK=check-fakefactory053
-        - os: osx
-          env: TASK=check-pytest26
-        - os: osx
-          env: TASK=check-pytest27
         - os: osx
           env: TASK=documentation
         - os: osx
