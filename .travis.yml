@@ -36,8 +36,6 @@ env:
         - TASK=check-nose
         - TASK=check-pytest30
         - TASK=check-pytest28
-        - TASK=check-pytest27
-        - TASK=check-pytest26
         - TASK=check-fakefactory052
         - TASK=check-fakefactory053
         - TASK=check-fakefactory060
