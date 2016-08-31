@@ -388,6 +388,7 @@ def test_increasing_integer_sequence():
     assert xs == list(range(start, start + k))
 
 
+@slightly_flaky
 def test_increasing_string_sequence():
     n = 7
     lb = u'✐'
