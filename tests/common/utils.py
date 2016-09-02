@@ -18,6 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 import sys
+import traceback
 import contextlib
 from io import BytesIO, StringIO
 
@@ -49,6 +50,7 @@ def raises(exctype):
         yield e
         assert False, "Expected to raise an exception but didn't"
     except exctype as err:
+        traceback.print_exc()
         e.value = err
         return
 
