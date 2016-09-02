@@ -72,7 +72,7 @@ format: $(PYFORMAT) $(ISORT)
 	find src tests examples -name '*.py' | xargs  env -i \
             PATH="$(PATH)" $(ISORT) -p hypothesis -ls -m 2 -w 75 \
 			-a  "from __future__ import absolute_import, print_function, division" \
-			-rc src tests examples /src
+			-rc src tests examples
 	find src tests examples -name '*.py' | xargs $(PYFORMAT) -i
 
 lint: $(FLAKE8)
