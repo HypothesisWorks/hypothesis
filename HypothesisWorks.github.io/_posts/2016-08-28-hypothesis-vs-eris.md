@@ -131,6 +131,8 @@ Eris allows to filter values with a predicate in the same way, but prefers to al
     }
 ```
 
+Filtering and the constructs that follow are integrated with shrinking in both Hypothesis and Eris: once a test fails and shrinking starts, constraints and transformations will continue to be applied to the generated values so that the simpler inputs are still going to belong to the same distribution; in this scenario, shrinking would only be able to propose numbers greater than 42.
+
 ## Transforming generated values
 
 Another common need consists of transforming the generated value to a different space, for example the set of all even numbers rather than the (larger) set of integers. Hypothesis allows to do this by passing a lambda to the `map()` method of a strategy:
