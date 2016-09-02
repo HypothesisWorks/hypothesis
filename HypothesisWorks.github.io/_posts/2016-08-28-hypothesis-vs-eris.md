@@ -74,29 +74,32 @@ A very simple composition problem consists of generating a collection data struc
 
 ```python
     @given(st.lists(st.integers()))
-    def test_reversing_twice_gives_same_list(self, xs):
+    def test_sorting_a_list_twice_is_the_same_as_sorting_it_once(self, xs):
+        xs.sort()
         ys = list(xs)
-        ys.reverse()
-        ys.reverse()
+        xs.sort()
         self.assertEqual(xs, ys)
 ```
 
 Eris calls *generators* the objects representing statistical distributions, but uses the same compositional pattern for higher-order values like lists and all collections:
 
 ```php
-    public function testArrayReverseIsTheInverseOfItself()
+    public function testArraySortingIsIdempotent()
     {
         $this
             ->forAll(
                 Generator\seq(Generator\nat())
             )
             ->then(function ($array) {
-                $this->assertEquals($array, array_reverse(array_reverse($array)));
+                sort($array);
+                $expected = $array;
+                sort($array);
+                $this->assertEquals($expected, $array);
             });
     }
 ```
 
-In both these test cases, we generate a random list and check that reversing it twice brings us back to the original input.
+In both these test cases, we generate a random list and check that the sorting operation is idempotent: operating it twice on the input data gives the same result as operating it once.
 
 ## Filtering generated values
 
@@ -213,4 +216,4 @@ Hypothesis is a much more mature project than Eris, especially when it comes to 
 
 The Hypothesis examples shown in this post can be found in [this example repository](https://github.com/giorgiosironi/hypothesis-exploration/blob/master/test_eris.py).
 
-The Eris examples can instead be found in the example/ folder of [the](https://github.com/giorgiosironi/eris/blob/master/examples/IntegerTest.php#L9) [Eris](https://github.com/giorgiosironi/eris/blob/master/examples/SequenceTest.php#L9) [repository](https://github.com/giorgiosironi/eris/blob/master/examples/WhenTest.php#L8) [on](https://github.com/giorgiosironi/eris/blob/master/examples/MapTest.php#L8) [Github](https://github.com/giorgiosironi/eris/blob/master/examples/BindTest.php#L8).
+The Eris examples can instead be found in the example/ folder of [the](https://github.com/giorgiosironi/eris/blob/master/examples/IntegerTest.php#L9) [Eris](https://github.com/giorgiosironi/eris/blob/master/examples/SequenceTest.php#L31) [repository](https://github.com/giorgiosironi/eris/blob/master/examples/WhenTest.php#L8) [on](https://github.com/giorgiosironi/eris/blob/master/examples/MapTest.php#L8) [Github](https://github.com/giorgiosironi/eris/blob/master/examples/BindTest.php#L8).
