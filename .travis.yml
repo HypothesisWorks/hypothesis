@@ -49,6 +49,8 @@ matrix:
         - os: osx
           env: TASK=check-py273
         - os: osx
+          env: TASK=check-py34
+        - os: osx
           env: TASK=check-unicode
         - os: osx
           env: TASK=check-ancient-pip
@@ -56,6 +58,8 @@ matrix:
           env: TASK=check-fakefactory052
         - os: osx
           env: TASK=check-fakefactory053
+        - os: osx
+          env: TASK=check-fakefactory060
         - os: osx
           env: TASK=documentation
         - os: osx
