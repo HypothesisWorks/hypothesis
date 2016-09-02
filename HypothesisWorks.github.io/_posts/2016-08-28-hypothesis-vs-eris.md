@@ -34,6 +34,8 @@ class TestEris(unittest.TestCase):
         self.assertEqual(x, y, "Sum between %d and %d should be commutative" % (first, second))
 ```
 
+In this example, I am using the unittest syntax for maximum test portability, but this does not affect Hypothesis, which works across testing frameworks.
+
 Eris provides functionality with a trait instead, that can be composed into the test cases that need access to randomized input. The test method is not augmented with additional parameters, but its code is moved inside an anonymous function for the `then()` primitive. Input distributions are defined in a mathematically-named `forAll()` primitive:
 
 ```php
