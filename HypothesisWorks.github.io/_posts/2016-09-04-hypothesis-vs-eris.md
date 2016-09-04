@@ -1,10 +1,10 @@
 ---
 layout: post
 tags: technical python intro
-date: 2016-08-28 15:00
+date: 2016-09-04 15:00
 title: Hypothesis vs. Eris
 published: true
-author: drmaciver
+author: giorgiosironi
 ---
 
 [Eris](https://github.com/giorgiosironi/eris/) is a library for property-based testing of PHP code, inspired by the mature frameworks that other languages provide like [QuickCheck](https://hackage.haskell.org/package/QuickCheck), Clojure's [test.check](https://github.com/clojure/test.check) and of course Hypothesis.
