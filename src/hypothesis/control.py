@@ -55,7 +55,8 @@ def current_build_context():
 
 class BuildContext(object):
 
-    def __init__(self, is_final=False, close_on_capture=True):
+    def __init__(self, data, is_final=False, close_on_capture=True):
+        self.data = data
         self.tasks = []
         self.is_final = is_final
         self.close_on_capture = close_on_capture
@@ -104,16 +105,29 @@ def cleanup(teardown):
 
 
 def note(value):
-    """Report this value in the final execution.
-
-    Will always call string conversion function of the value even if not
-    printing for consistency of execution
-
-    """
+    """Report this value in the final execution."""
     context = _current_build_context.value
     if context is None:
         raise InvalidArgument(
-            'Cannot make notes outside of build context')
+            'Cannot make notes outside of a test')
     context.notes.append(value)
     if context.is_final:
         report(value)
+
+
+def event(value):
+    """Record an event that occurred this test. Statistics on number of test
+    runs with each event will be reported at the end if you run Hypothesis in
+    statistics reporting mode.
+
+    Events should be strings or convertable to them.
+
+    """
+
+    context = _current_build_context.value
+    if context is None:
+        raise InvalidArgument(
+            'Cannot make record events outside of a test')
+
+    if context.data is not None:
+        context.data.note_event(value)

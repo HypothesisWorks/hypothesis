@@ -68,6 +68,13 @@ class Statistics(object):
         else:
             self.exit_reason = 'nothing left to do'
 
+        self.events = [
+            '%.2f%%, %s' % (
+                c / engine.call_count * 100, e
+            ) for e, c in sorted(
+                engine.event_call_counts.items(), key=lambda x: -x[1])
+        ]
+
 
 def note_engine_for_statistics(engine):
     callback = collector.value

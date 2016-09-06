@@ -21,8 +21,6 @@ to really unreasonable lengths to produce pretty output."""
 
 from __future__ import division, print_function, absolute_import
 
-import re
-import ast
 import sys
 import types
 import hashlib
@@ -36,7 +34,7 @@ from hypothesis.configuration import storage_directory
 from hypothesis.vendor.pretty import pretty
 from hypothesis.internal.compat import PY2, PYPY, hrange, to_str, \
     qualname, getargspec, to_unicode, isidentifier, str_to_bytes, \
-    ARG_NAME_ATTRIBUTE, update_code_location
+    update_code_location
 
 
 def fully_qualified_name(f):
@@ -172,30 +170,6 @@ def convert_positional_arguments(function, args, kwargs):
     )
 
 
-def extract_all_lambdas(tree):
-    lambdas = []
-
-    class Visitor(ast.NodeVisitor):
-
-        def visit_Lambda(self, node):
-            lambdas.append(node)
-
-    Visitor().visit(tree)
-
-    return lambdas
-
-
-def args_for_lambda_ast(l):
-    return [getattr(n, ARG_NAME_ATTRIBUTE) for n in l.args.args]
-
-
-LINE_CONTINUATION = re.compile(r"\\\n")
-WHITESPACE = re.compile(r"\s+")
-PROBABLY_A_COMMENT = re.compile("""#[^'"]*$""")
-SPACE_FOLLOWS_OPEN_BRACKET = re.compile(r"\( ")
-SPACE_PRECEDES_CLOSE_BRACKET = re.compile(r"\( ")
-
-
 lambda_source_cache = {}
 
 
@@ -224,20 +198,25 @@ def _extract_lambda_source(f):
         out=out, is_pypy=PYPY, compile_mode='eval'
     )
     source = out.getvalue()
-    if PY2:
-        source = source.decode('utf-8')
     if source.startswith('return '):
         source = source[len('return '):]
     else:
         source = '<unknown>'
     args = getargspec(f)
-    arg_bits = list(args.args)
+    arg_bits = []
+    for a in args.args:
+        if isinstance(a, str):
+            arg_bits.append(a)
+        else:  # pragma: no cover
+            assert isinstance(a, list)
+            arg_bits.append('(%s)' % (', '.join(a)))
     if args.varargs is not None:
-        arg_bits.append(u'*' + args.varargs)
+        arg_bits.append('*' + args.varargs)
     if args.keywords is not None:
-        arg_bits.append(u'**' + args.keywords)
-    return u'lambda %s: %s' % (
-        u', '.join(arg_bits),  source)
+        arg_bits.append('**' + args.keywords)
+    return 'lambda %s: %s' % (
+        ', '.join(arg_bits), source
+    )
 
 
 def get_pretty_function_description(f):

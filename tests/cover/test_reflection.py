@@ -658,3 +658,11 @@ def test_handles_brackets():
 def test_handles_if_else_in_lambda():
     assert get_pretty_function_description(lambda x: 1 if x else 2) == \
         u'lambda x: 1 if x else 2'
+
+
+def test_can_handle_keyword_argument_lambdas():
+    assert get_pretty_function_description(lambda **x: 1) == 'lambda **x: 1'
+
+
+def test_can_handle_variadic_argument_lambdas():
+    assert get_pretty_function_description(lambda *x: 1) == 'lambda *x: 1'

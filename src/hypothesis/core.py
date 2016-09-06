@@ -94,7 +94,7 @@ def reify_and_execute(
     def run(data):
         from hypothesis.control import note
 
-        with BuildContext(is_final=is_final):
+        with BuildContext(data, is_final=is_final):
             seed = data.draw(random_module()).seed
             if seed != 0:
                 note('random.seed(%d)' % (seed,))
@@ -269,12 +269,13 @@ def given(*generator_arguments, **generator_kwargs):
                     test.__name__, arg_string(test, arguments, example_kwargs)
                 )
                 try:
-                    with BuildContext() as b:
+                    with BuildContext(None) as b:
                         test_runner(
                             None,
                             lambda data: test(*arguments, **example_kwargs)
                         )
                 except BaseException:
+                    traceback.print_exc()
                     report(message_on_failure)
                     for n in b.notes:
                         report(n)
@@ -582,6 +583,7 @@ def find(specifier, condition, settings=None, random=None, database_key=None):
             'Expected SearchStrategy but got %r of type %s' % (
                 specifier, type(specifier).__name__
             ))
+    specifier.validate()
 
     search = specifier
 
@@ -590,7 +592,7 @@ def find(specifier, condition, settings=None, random=None, database_key=None):
     last_data = [None]
 
     def template_condition(data):
-        with BuildContext():
+        with BuildContext(data):
             try:
                 data.is_find = True
                 result = data.draw(search)
@@ -630,8 +632,9 @@ def find(specifier, condition, settings=None, random=None, database_key=None):
     runner.run()
     run_time = time.time() - start
     if runner.last_data.status == Status.INTERESTING:
-        with BuildContext():
-            return TestData.for_buffer(runner.last_data.buffer).draw(search)
+        data = TestData.for_buffer(runner.last_data.buffer)
+        with BuildContext(data):
+            return data.draw(search)
     if runner.valid_examples <= settings.min_satisfying_examples:
         if settings.timeout > 0 and run_time > settings.timeout:
             raise Timeout((

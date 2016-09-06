@@ -20,6 +20,7 @@ from __future__ import division, print_function, absolute_import
 import time
 from enum import Enum
 from random import Random, getrandbits
+from weakref import WeakKeyDictionary
 
 from hypothesis import settings as Settings
 from hypothesis import Phase
@@ -53,8 +54,8 @@ class TestRunner(object):
         self.last_data = None
         self.changed = 0
         self.shrinks = 0
-        self.examples_considered = 0
-        self.iterations = 0
+        self.call_count = 0
+        self.event_call_counts = Counter()
         self.valid_examples = 0
         self.start_time = time.time()
         self.random = random or Random(getrandbits(128))
@@ -62,6 +63,7 @@ class TestRunner(object):
         self.seen = set()
         self.duplicates = 0
         self.status_runtimes = {}
+        self.events_to_strings = WeakKeyDictionary()
 
     def new_buffer(self):
         self.last_data = TestData(
@@ -73,7 +75,7 @@ class TestRunner(object):
         self.last_data.freeze()
 
     def test_function(self, data):
-        self.iterations += 1
+        self.call_count += 1
         try:
             self._test_function(data)
             data.freeze()
@@ -140,6 +142,8 @@ class TestRunner(object):
             self.save_buffer(data.buffer)
         runtime = max(data.finish_time - data.start_time, 0.0)
         self.status_runtimes.setdefault(data.status, []).append(runtime)
+        for event in set(map(self.event_to_string, data.events)):
+            self.event_call_counts[event] += 1
 
     def debug(self, message):
         with self.settings:
@@ -163,7 +167,6 @@ class TestRunner(object):
         ):
             self.exit_reason = ExitReason.timeout
             raise RunIsComplete()
-        self.examples_considered += 1
         buffer = buffer[:self.last_data.index]
         if sort_key(buffer) >= sort_key(self.last_data.buffer):
             return False
@@ -189,7 +192,7 @@ class TestRunner(object):
                 pass
             self.debug(
                 u'Run complete after %d examples (%d valid) and %d shrinks' % (
-                    self.iterations, self.valid_examples, self.shrinks,
+                    self.call_count, self.valid_examples, self.shrinks,
                 ))
 
     def _new_mutator(self):
@@ -274,7 +277,7 @@ class TestRunner(object):
                 if self.valid_examples >= self.settings.max_examples:
                     self.exit_reason = ExitReason.max_examples
                     return
-                if self.iterations >= max(
+                if self.call_count >= max(
                     self.settings.max_iterations, self.settings.max_examples
                 ):
                     self.exit_reason = ExitReason.max_iterations
@@ -312,7 +315,7 @@ class TestRunner(object):
                 if self.valid_examples >= self.settings.max_examples:
                     self.exit_reason = ExitReason.max_examples
                     return
-                if self.iterations >= max(
+                if self.call_count >= max(
                     self.settings.max_iterations, self.settings.max_examples
                 ):
                     self.exit_reason = ExitReason.max_iterations
@@ -476,6 +479,17 @@ class TestRunner(object):
                             break
                 i += 1
         self.exit_reason = ExitReason.finished
+
+    def event_to_string(self, event):
+        if isinstance(event, str):
+            return event
+        try:
+            return self.events_to_strings[event]
+        except KeyError:
+            pass
+        result = str(event)
+        self.events_to_strings[event] = result
+        return result
 
 
 def _draw_predecessor(rnd, xs):

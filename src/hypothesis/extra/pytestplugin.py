@@ -55,7 +55,7 @@ if PYTEST_VERSION >= (2, 7, 0):
             action='store',
             help='Load in a registered hypothesis.settings profile'
         )
-        parser.addoption(
+        group.addoption(
             PRINT_STATISTICS_OPTION,
             action='store_true',
             help='Configure when statistics are printed',
@@ -119,7 +119,13 @@ if PYTEST_VERSION >= (2, 7, 0):
             terminalreporter.write_line(
                 '  - Stopped because %s' % (statistics.exit_reason,)
             )
-            terminalreporter.write_line('')
+            if statistics.events:
+                terminalreporter.write_line('  - Events:')
+                for event in statistics.events:
+                    terminalreporter.write_line(
+                        '    * %s' % (event,)
+                    )
+                terminalreporter.write_line('')
 
     def pytest_collection_modifyitems(items):
         for item in items:

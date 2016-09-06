@@ -20,9 +20,14 @@ from __future__ import division, print_function, absolute_import
 import pytest
 
 from hypothesis.errors import CleanupFailed, InvalidArgument
-from hypothesis.control import note, cleanup, BuildContext, \
+from hypothesis.control import note, event, cleanup, BuildContext, \
     current_build_context, _current_build_context
 from tests.common.utils import capture_out
+from hypothesis.internal.conjecture.data import TestData as TD
+
+
+def bc():
+    return BuildContext(TD.for_buffer(b''))
 
 
 def test_cannot_cleanup_with_no_context():
@@ -31,9 +36,15 @@ def test_cannot_cleanup_with_no_context():
     assert _current_build_context.value is None
 
 
+def test_cannot_event_with_no_context():
+    with pytest.raises(InvalidArgument):
+        event('hi')
+    assert _current_build_context.value is None
+
+
 def test_cleanup_executes_on_leaving_build_context():
     data = []
-    with BuildContext():
+    with bc():
         cleanup(lambda: data.append(1))
         assert not data
     assert data == [1]
@@ -42,9 +53,9 @@ def test_cleanup_executes_on_leaving_build_context():
 
 def test_can_nest_build_context():
     data = []
-    with BuildContext():
+    with bc():
         cleanup(lambda: data.append(1))
-        with BuildContext():
+        with bc():
             cleanup(lambda: data.append(2))
             assert not data
         assert data == [2]
@@ -54,7 +65,7 @@ def test_can_nest_build_context():
 
 def test_does_not_suppress_exceptions():
     with pytest.raises(AssertionError):
-        with BuildContext():
+        with bc():
             assert False
     assert _current_build_context.value is None
 
@@ -62,7 +73,7 @@ def test_does_not_suppress_exceptions():
 def test_suppresses_exceptions_in_teardown():
     with capture_out() as o:
         with pytest.raises(AssertionError):
-            with BuildContext():
+            with bc():
                 def foo():
                     raise ValueError()
                 cleanup(foo)
@@ -75,7 +86,7 @@ def test_suppresses_exceptions_in_teardown():
 def test_runs_multiple_cleanup_with_teardown():
     with capture_out() as o:
         with pytest.raises(AssertionError):
-            with BuildContext():
+            with bc():
                 def foo():
                     raise ValueError()
                 cleanup(foo)
@@ -93,7 +104,7 @@ def test_runs_multiple_cleanup_with_teardown():
 
 def test_raises_error_if_cleanup_fails_but_block_does_not():
     with pytest.raises(CleanupFailed):
-        with BuildContext():
+        with bc():
             def foo():
                 raise ValueError()
             cleanup(foo)
@@ -111,5 +122,5 @@ def test_raises_if_current_build_context_out_of_context():
 
 
 def test_current_build_context_is_current():
-    with BuildContext() as a:
+    with bc() as a:
         assert current_build_context() is a

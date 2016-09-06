@@ -105,7 +105,7 @@ def run_state_machine_as_test(state_machine_factory, settings=None):
     except NoSuchExample:
         return
     try:
-        with BuildContext(is_final=True):
+        with BuildContext(None, is_final=True):
             breaker.run(state_machine_factory(), print_steps=True)
     except StopTest:
         pass

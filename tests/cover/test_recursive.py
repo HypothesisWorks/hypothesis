@@ -49,3 +49,9 @@ def test_can_find_nested():
 def test_recursive_call_validates_expand_returns_strategies():
     with pytest.raises(InvalidArgument):
         st.recursive(st.booleans(), lambda x: 1).example()
+
+
+def test_recursive_call_validates_base_is_strategy():
+    x = st.recursive(1, lambda x: st.none())
+    with pytest.raises(InvalidArgument):
+        x.example()

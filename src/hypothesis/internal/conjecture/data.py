@@ -73,6 +73,7 @@ class TestData(object):
         self.testcounter = global_test_counter
         global_test_counter += 1
         self.start_time = benchmark_time()
+        self.events = set()
 
     def __assert_not_frozen(self, name):
         if self.frozen:
@@ -120,6 +121,9 @@ class TestData(object):
             if not self.intervals or self.intervals[-1] != t:
                 self.intervals.append(t)
 
+    def note_event(self, event):
+        self.events.add(event)
+
     def freeze(self):
         if self.frozen:
             assert isinstance(self.buffer, hbytes)
@@ -136,6 +140,7 @@ class TestData(object):
             key=lambda se: (se[0] - se[1], se[0])
         )
         self.buffer = hbytes(self.buffer)
+        self.events = frozenset(self.events)
         del self._draw_bytes
 
     def draw_bytes(self, n, distribution=uniform):

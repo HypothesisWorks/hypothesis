@@ -823,7 +823,6 @@ def decimals(min_value=None, max_value=None):
     )
 
 
-@defines_strategy
 def recursive(base, extend, max_leaves=100):
     """base: A strategy to start from.
 
@@ -843,13 +842,6 @@ def recursive(base, extend, max_leaves=100):
 
     """
 
-    check_strategy(base)
-    extended = extend(base)
-    if not isinstance(extended, SearchStrategy):
-        raise InvalidArgument(
-            'Expected extend(%r) to be a SearchStrategy but got %r' % (
-                base, extended
-            ))
     from hypothesis.searchstrategy.recursive import RecursiveStrategy
     return RecursiveStrategy(base, extend, max_leaves)
 
