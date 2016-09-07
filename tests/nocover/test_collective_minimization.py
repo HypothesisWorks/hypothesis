@@ -23,10 +23,12 @@ from hypothesis import find, settings
 from tests.common import standard_types
 from hypothesis.errors import NoSuchExample
 from hypothesis.strategies import lists
+from flaky import flaky
 
 
 @pytest.mark.parametrize(
     u'spec', standard_types, ids=list(map(repr, standard_types)))
+@flaky(min_passes=1, max_runs=2)
 def test_can_collectively_minimize(spec):
     """This should generally exercise strategies' strictly_simpler heuristic by
     putting us in a state where example cloning is required to get to the
