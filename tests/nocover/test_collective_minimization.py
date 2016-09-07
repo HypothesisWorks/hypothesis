@@ -18,12 +18,12 @@
 from __future__ import division, print_function, absolute_import
 
 import pytest
+from flaky import flaky
 
 from hypothesis import find, settings
 from tests.common import standard_types
 from hypothesis.errors import NoSuchExample
 from hypothesis.strategies import lists
-from flaky import flaky
 
 
 @pytest.mark.parametrize(
