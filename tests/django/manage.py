@@ -20,12 +20,9 @@ from __future__ import division, print_function, absolute_import
 import os
 import sys
 
-from tests.common.setup import run
-
-if __name__ == u'__main__':
-    run()
+if __name__ == "__main__":
     os.environ.setdefault(
-        u'DJANGO_SETTINGS_MODULE', u'tests.django.toys.settings')
+        "DJANGO_SETTINGS_MODULE", "tests.django.test_project.settings")
 
     from django.core.management import execute_from_command_line
 

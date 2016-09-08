@@ -15,22 +15,31 @@
 #
 # END HEADER
 
-"""WSGI config for toys project.
-
-It exposes the WSGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/1.7/howto/deployment/wsgi/
-
-"""
-
-
 from __future__ import division, print_function, absolute_import
 
 import os
 
-from django.core.wsgi import get_wsgi_application
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-os.environ.setdefault(u'DJANGO_SETTINGS_MODULE', u'toys.settings')
+SECRET_KEY = 'test'
 
-application = get_wsgi_application()
+INSTALLED_APPS = [
+    'tests.django.test_app',
+]
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    },
+    'extra': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db-extra.sqlite3'),
+    },
+}
+
+USE_TZ = True
+
+TIMEZONE = "UTC"
+
+USE_I18N = False
