@@ -287,10 +287,14 @@ def signature_argspec(f):
 
 
 if NO_ARGSPEC:
-    getargspec = signature_argspec
     ArgSpec = FakeArgSpec
 else:
-    from inspect import getargspec, ArgSpec
+    from inspect import ArgSpec
+
+if PY2:
+    from inspect import getargspec
+else:
+    getargspec = signature_argspec
 
 
 importlib_invalidate_caches = getattr(
