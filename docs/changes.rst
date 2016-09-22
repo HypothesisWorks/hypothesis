@@ -21,6 +21,28 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+------------------
+3.5.0 - 2016-09-22
+------------------
+
+This is a feature release.
+
+* fractions() and decimals() strategies now support min_value and max_value
+  parameters. Thanks go to Anne Mulhern for the development of this feature.
+* The Hypothesis pytest plugin now supports a --hypothesis-show-statistics parameter
+  that gives detailed statistics about the tests that were run. Huge thanks to
+  Jean-Louis Fuch, Adfinis-SyGroup and Florian Bruhin for funding the development
+  of this feature.
+* There is a new event() function that can be used to add custom statistics.
+
+Additionally there have been some minor bug fixes:
+
+* In some cases Hypothesis should produce fewer duplicate examples (this will mostly
+  only affect cases with a single parameter).
+* py.test command line parameters are now under an option group for Hypothesis (thanks
+  to David Keijser for fixing this)
+* Hypothesis would previously error if you used function annotations on your tests under
+  Python 3.4.
 
 ------------------
 3.4.2 - 2016-07-13
