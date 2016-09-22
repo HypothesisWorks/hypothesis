@@ -42,6 +42,99 @@ intermediate steps of your test. That's where the ``note`` function comes in:
 The note is printed in the final run of the test in order to include any
 additional information you might need in your test.
 
+
+---------------
+Test Statistics
+---------------
+
+If you are using py.test you can see a number of statistics about the executed tests
+by passing the command line argument --hypothesis-show-statistics. This will include
+some general statistics about the test:
+
+For example if you ran the following with --hypothesis-show-statistics:
+
+.. code-block:: python
+
+  from hypothesis import given, strategies as st
+
+  @given(st.integers())
+  def test_integers(i):
+      pass
+
+
+You would see:
+
+.. code-block:: none
+
+  test_integers:
+
+    - 200 passing examples, 0 failing examples, 0 invalid examples
+    - Typical runtimes: < 1ms
+    - Stopped because settings.max_examples=200
+
+
+The final "Stopped because" line is particularly important to note: It tells you the
+setting value that determined when the test should stop trying new examples. This
+can be useful for understanding the behaviour of your tests. Ideally you'd always want
+this to be max_examples.
+
+In some cases (such as filtered and recursive strategies) you will see events mentioned
+which describe some aspect of the data generation:
+
+.. code-block:: python
+
+  from hypothesis import given, strategies as st
+
+  @given(st.integers().filter(lambda x: x % 2 == 0))
+  def test_even_integers(i):
+      pass
+    
+You would see something like:
+
+.. code-block:: none
+
+  test_even_integers:
+
+    - 200 passing examples, 0 failing examples, 16 invalid examples
+    - Typical runtimes: < 1ms
+    - Stopped because settings.max_examples=200
+    - Events:
+      * 30.56%, Retried draw from integers().filter(lambda x: x % 2 == 0) to satisfy filter
+      * 7.41%, Aborted test because unable to satisfy integers().filter(lambda x: x % 2 == 0)
+
+
+You can also mark custom events in a test using the 'event' function:
+
+
+.. code:: python
+
+  from hypothesis import given, event, strategies as st
+
+  @given(st.integers().filter(lambda x: x % 2 == 0))
+  def test_even_integers(i):
+      event("i mod 3 = %d" % (i % 3,))
+
+
+You will then see output like:
+
+
+.. code-block:: none
+
+  test_even_integers:
+
+    - 200 passing examples, 0 failing examples, 28 invalid examples
+    - Typical runtimes: < 1ms
+    - Stopped because settings.max_examples=200
+    - Events:
+      * 47.81%, Retried draw from integers().filter(lambda x: x % 2 == 0) to satisfy filter
+      * 31.14%, i mod 3 = 2
+      * 28.95%, i mod 3 = 1
+      * 27.63%, i mod 3 = 0
+      * 12.28%, Aborted test because unable to satisfy integers().filter(lambda x: x % 2 == 0)
+
+Arguments to event() can be any hashable type, but two events will be considered the same
+if they are the same when converted to a string with str().
+
 ------------------
 Making assumptions
 ------------------
