@@ -46,4 +46,4 @@ If you want to contribute to Hypothesis, `instructions are here <https://github.
 If you want to hear from people who are already using Hypothesis, some of them `have written
 about it <https://hypothesis.readthedocs.io/en/latest/endorsements.html>`_.
 
-If you want to create a downstream package of Hypothesis, please read `these guidelines for packagers <https://hypothesis.readthedocs.io/en/latest/packaging.html>`_
+If you want to create a downstream package of Hypothesis, please read `these guidelines for packagers <https://hypothesis.readthedocs.io/en/latest/packaging.html>`_.
