@@ -61,3 +61,27 @@ def test_prints_statistics_given_option(testdir):
     assert 'timeout=0.2' in out
     assert 'max_examples=200' in out
     assert 'max_iterations=1000' in out
+
+
+UNITTEST_TESTSUITE = """
+
+from hypothesis import given
+from hypothesis.strategies import integers
+from unittest import TestCase
+
+
+class TestStuff(TestCase):
+    @given(integers())
+    def test_all_valid(self, x):
+        pass
+
+
+"""
+
+
+def test_prints_statistics_for_unittest_tests(testdir):
+    script = testdir.makepyfile(UNITTEST_TESTSUITE)
+    result = testdir.runpytest(script, PRINT_STATISTICS_OPTION)
+    out = '\n'.join(result.stdout.lines)
+    assert 'Hypothesis Statistics' in out
+    assert 'max_examples=200' in out

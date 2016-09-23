@@ -25,6 +25,7 @@ from hypothesis.reporting import default as default_reporter
 from hypothesis.reporting import with_reporter
 from hypothesis.statistics import collector
 from hypothesis.internal.compat import text_type, OrderedDict
+from hypothesis.internal.detection import is_hypothesis_test
 
 PYTEST_VERSION = tuple(map(
     int,
@@ -71,20 +72,20 @@ if PYTEST_VERSION >= (2, 7, 0):
     gathered_statistics = OrderedDict()
 
     @pytest.mark.hookwrapper
-    def pytest_pyfunc_call(pyfuncitem):
-        if not getattr(pyfuncitem.obj, 'is_hypothesis_test', False):
+    def pytest_runtest_call(item):
+        if not is_hypothesis_test(item.function):
             yield
         else:
-            store = StoringReporter(pyfuncitem.config)
+            store = StoringReporter(item.config)
 
             def note_statistics(stats):
-                gathered_statistics[pyfuncitem.name] = stats
+                gathered_statistics[item.name] = stats
 
             with collector.with_value(note_statistics):
                 with with_reporter(store):
                     yield
             if store.results:
-                pyfuncitem.hypothesis_report_information = list(store.results)
+                item.hypothesis_report_information = list(store.results)
 
     @pytest.mark.hookwrapper
     def pytest_runtest_makereport(item, call):
