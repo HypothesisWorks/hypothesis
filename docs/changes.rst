@@ -22,6 +22,18 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 ------------------
+3.5.1 - 2016-09-23
+------------------
+
+This is a bug fix release.
+
+* Hypothesis now runs cleanly in -B and -BB modes, avoiding mixing bytes and unicode.
+* unittest.TestCase tests would now have shown up in the new statistics mode. Now they
+  do.
+* Similarly, stateful tests would not have shown up in statistics and now they do.
+* Statistics now print with pytest node IDs (the names you'd get in pytest verbose mode).
+
+------------------
 3.5.0 - 2016-09-22
 ------------------
 
