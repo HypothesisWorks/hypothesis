@@ -54,6 +54,8 @@ Additionally there have been some minor bug fixes:
   to David Keijser for fixing this)
 * Hypothesis would previously error if you used function annotations on your tests under
   Python 3.4.
+* The repr of many strategies using lambdas has been improved to include the lambda body
+  (this was previously supported in many but not all cases).
 
 ------------------
 3.4.2 - 2016-07-13
