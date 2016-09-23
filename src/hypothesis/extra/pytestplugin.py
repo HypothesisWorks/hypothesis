@@ -79,7 +79,7 @@ if PYTEST_VERSION >= (2, 7, 0):
             store = StoringReporter(item.config)
 
             def note_statistics(stats):
-                gathered_statistics[item.name] = stats
+                gathered_statistics[item.nodeid] = stats
 
             with collector.with_value(note_statistics):
                 with with_reporter(store):

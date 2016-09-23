@@ -84,4 +84,5 @@ def test_prints_statistics_for_unittest_tests(testdir):
     result = testdir.runpytest(script, PRINT_STATISTICS_OPTION)
     out = '\n'.join(result.stdout.lines)
     assert 'Hypothesis Statistics' in out
+    assert 'TestStuff::test_all_valid' in out
     assert 'max_examples=200' in out
