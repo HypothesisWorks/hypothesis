@@ -58,15 +58,17 @@ class Statistics(object):
         else:
             self.runtimes = '%d-%d ms' % (lower, upper)
 
-        if engine.exit_reason != ExitReason.finished:
+        if engine.exit_reason == ExitReason.finished:
+            self.exit_reason = 'nothing left to do'
+        elif engine.exit_reason == ExitReason.flaky:
+            self.exit_reason = 'test was flaky'
+        else:
             self.exit_reason = (
                 'settings.%s=%r' % (
                     engine.exit_reason.name,
                     getattr(engine.settings, engine.exit_reason.name)
                 )
             )
-        else:
-            self.exit_reason = 'nothing left to do'
 
         self.events = [
             '%.2f%%, %s' % (

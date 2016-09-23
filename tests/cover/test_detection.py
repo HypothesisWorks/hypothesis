@@ -18,6 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 from hypothesis import given
+from hypothesis.stateful import GenericStateMachine
 from hypothesis.strategies import integers
 from hypothesis.internal.detection import is_hypothesis_test
 
@@ -52,3 +53,15 @@ def test_detection_of_methods():
             pass
 
     assert is_hypothesis_test(Foo().test)
+
+
+def test_detection_of_stateful_tests():
+    class Stuff(GenericStateMachine):
+
+        def steps(self):
+            return integers()
+
+        def execute_step(self, step):
+            pass
+
+    assert is_hypothesis_test(Stuff.TestCase().runTest)

@@ -630,6 +630,7 @@ def find(specifier, condition, settings=None, random=None, database_key=None):
         database_key=database_key,
     )
     runner.run()
+    note_engine_for_statistics(runner)
     run_time = time.time() - start
     if runner.last_data.status == Status.INTERESTING:
         data = TestData.for_buffer(runner.last_data.buffer)

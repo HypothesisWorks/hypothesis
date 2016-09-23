@@ -176,9 +176,13 @@ class GenericStateMachine(object):
                 min_satisfying_examples=1
             )
 
-            def runTest(self):
-                run_state_machine_as_test(state_machine_class)
+        # We define this outside of the class and assign it because you can't
+        # assign attributes to instance method values in Python 2
+        def runTest(self):
+            run_state_machine_as_test(state_machine_class)
 
+        runTest.is_hypothesis_test = True
+        StateMachineTestCase.runTest = runTest
         base_name = state_machine_class.__name__
         StateMachineTestCase.__name__ = str(
             base_name + u'.TestCase'

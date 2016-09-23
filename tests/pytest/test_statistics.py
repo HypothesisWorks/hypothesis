@@ -74,8 +74,6 @@ class TestStuff(TestCase):
     @given(integers())
     def test_all_valid(self, x):
         pass
-
-
 """
 
 
@@ -85,4 +83,31 @@ def test_prints_statistics_for_unittest_tests(testdir):
     out = '\n'.join(result.stdout.lines)
     assert 'Hypothesis Statistics' in out
     assert 'TestStuff::test_all_valid' in out
+    assert 'max_examples=200' in out
+
+
+STATEFUL_TESTSUITE = """
+
+from hypothesis import given
+from hypothesis.strategies import integers
+from hypothesis.stateful import GenericStateMachine
+
+
+class Stuff(GenericStateMachine):
+    def steps(self):
+        return integers()
+
+    def execute_step(self, step):
+        pass
+
+TestStuff = Stuff.TestCase
+"""
+
+
+def test_prints_statistics_for_stateful_tests(testdir):
+    script = testdir.makepyfile(STATEFUL_TESTSUITE)
+    result = testdir.runpytest(script, PRINT_STATISTICS_OPTION)
+    out = '\n'.join(result.stdout.lines)
+    assert 'Hypothesis Statistics' in out
+    assert 'TestStuff::runTest' in out
     assert 'max_examples=200' in out

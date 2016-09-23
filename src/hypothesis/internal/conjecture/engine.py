@@ -37,6 +37,7 @@ class ExitReason(Enum):
     timeout = 2
     max_shrinks = 3
     finished = 4
+    flaky = 5
 
 
 class RunIsComplete(Exception):
@@ -349,6 +350,7 @@ class TestRunner(object):
 
         data = self.last_data
         if data is None:
+            self.exit_reason = ExitReason.finished
             return
         assert isinstance(data.output, text_type)
 
@@ -357,14 +359,17 @@ class TestRunner(object):
             return
 
         if Phase.shrink not in self.settings.phases:
+            self.exit_reason = ExitReason.finished
             return
 
         if not self.last_data.buffer:
+            self.exit_reason = ExitReason.finished
             return
 
         data = TestData.for_buffer(self.last_data.buffer)
         self.test_function(data)
         if data.status != Status.INTERESTING:
+            self.exit_reason = ExitReason.flaky
             return
 
         change_counter = -1

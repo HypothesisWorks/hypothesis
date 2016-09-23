@@ -17,6 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+import traceback
+
 from hypothesis import strategies as st
 from hypothesis import event, given, example
 from hypothesis.statistics import collector
@@ -29,7 +31,11 @@ def call_for_statistics(test_function):
         result[0] = statistics
 
     with collector.with_value(callback):
-        test_function()
+        try:
+            test_function()
+        except:
+            traceback.print_exc()
+            pass
     assert result[0] is not None
     return result[0]
 
@@ -110,3 +116,18 @@ def test_exact_timing(monkeypatch):
 
     stats = call_for_statistics(test)
     assert stats.runtimes == '~ 500ms'
+
+
+def test_flaky_exit():
+    first = [True]
+
+    @given(st.integers())
+    def test(i):
+        if i > 1001:
+            if first[0]:
+                first[0] = False
+                print('Hi')
+                assert False
+
+    stats = call_for_statistics(test)
+    assert stats.exit_reason == 'test was flaky'
