@@ -21,7 +21,7 @@ This is a feature release.
   parameters. Thanks go to Anne Mulhern for the development of this feature.
 * The Hypothesis pytest plugin now supports a --hypothesis-show-statistics parameter
   that gives detailed statistics about the tests that were run. Huge thanks to
-  Jean-Louis Fuch and Adfinis-SyGroup for funding the development of this feature.
+  Jean-Louis Fuchs and Adfinis-SyGroup for funding the development of this feature.
 * There is a new event() function that can be used to add custom statistics.
 
 Additionally there have been some minor bug fixes:
