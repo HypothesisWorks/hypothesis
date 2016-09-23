@@ -125,7 +125,7 @@ if PYTEST_VERSION >= (2, 7, 0):
                     terminalreporter.write_line(
                         '    * %s' % (event,)
                     )
-                terminalreporter.write_line('')
+            terminalreporter.write_line('')
 
     def pytest_collection_modifyitems(items):
         for item in items:
