@@ -22,6 +22,14 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 ------------------
+3.5.2 - 2016-09-24
+------------------
+
+This is a bug fix release.
+
+* The Hypothesis pytest plugin broke pytest support for doctests. Now it doesn't.
+
+------------------
 3.5.1 - 2016-09-23
 ------------------
 
