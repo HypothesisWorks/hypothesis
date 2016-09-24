@@ -162,8 +162,8 @@ def test_minimize_sets_of_sets():
 
 
 @pytest.mark.parametrize(
-    (u'string',), [(text(),), (binary(),)],
-    ids=[u'text', u'binary()']
+    ('string',), [(text(),), (binary(),)],
+    ids=['text', 'binary()']
 )
 def test_minimal_unsorted_strings(string):
     def dedupe(xs):
