@@ -73,7 +73,7 @@ if PYTEST_VERSION >= (2, 7, 0):
 
     @pytest.mark.hookwrapper
     def pytest_runtest_call(item):
-        if not is_hypothesis_test(item.obj):
+        if not (hasattr(item, 'obj') and is_hypothesis_test(item.obj)):
             yield
         else:
             store = StoringReporter(item.config)
