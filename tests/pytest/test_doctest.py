@@ -22,13 +22,12 @@ pytest_plugins = 'pytester'
 
 def test_can_run_doctests(testdir):
     script = testdir.makepyfile(
-       'def hi():\n'
-       '    """\n'
-       '    >>> i = 5\n'
-       '    >>> i-1\n'
-       '    4"""'
+        'def hi():\n'
+        '    """\n'
+        '    >>> i = 5\n'
+        '    >>> i-1\n'
+        '    4"""'
     )
 
     result = testdir.runpytest(script, '--doctest-modules')
     assert result.ret == 0
-    
