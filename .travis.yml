@@ -33,7 +33,7 @@ env:
         - TASK=check-py273
         - TASK=check-py34
         - TASK=check-nose
-        - TASK=check-pytest30
+        - TASK=check-pytest28
         - TASK=check-fakefactory052
         - TASK=check-fakefactory053
         - TASK=check-fakefactory060
@@ -45,6 +45,8 @@ script:
 
 matrix:
     exclude:
+        - os: osx
+          env: TASK=check-pytest28
         - os: osx
           env: TASK=check-py273
         - os: osx
