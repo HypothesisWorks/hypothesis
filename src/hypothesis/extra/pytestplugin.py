@@ -143,13 +143,60 @@ if PYTEST_VERSION >= (2, 7, 0):
     @pytest.hookimpl(tryfirst=True)
     def pytest_runtest_protocol(item, nextitem):
         if isinstance(item, Function) and is_hypothesis_test(item.function):
+            report_storage.last_report = []
+            runner.runtestprotocol(item, nextitem=nextitem, log=False)
             item.ihook.pytest_runtest_logstart(
                 nodeid=item.nodeid, location=item.location,
             )
-            runner.runtestprotocol(item, nextitem=nextitem, log=False)
             for report in report_storage.last_report:
                 item.ihook.pytest_runtest_logreport(report=report)
             return True
+
+    def convert_given(item):
+        original_item = item
+        given_kwargs = item.function._hypothesis_internal_use_kwargs
+        unwrapped_test = \
+            item.function._hypothesis_internal_use_original_test
+
+        @given(**given_kwargs)
+        @impersonate(unwrapped_test)
+        @copy_argspec(
+            item.function.__name__,
+            ArgSpec(sorted(given_kwargs), None, None, None),
+        )
+        def accept(**kwargs):
+            item_for_unwrapped_test = type(original_item)(
+                name=original_item.name,
+                parent=original_item.parent,
+                args=original_item._args,
+                config=original_item.config,
+                callobj=unwrapped_test,
+                keywords=dict(original_item.keywords),
+                session=original_item.session,
+                originalname=original_item.originalname,
+            )
+            item_for_unwrapped_test.funcargs = {}
+            for k, v in kwargs.items():
+                item_for_unwrapped_test.funcargs[k] = v
+            reports = runner.runtestprotocol(
+                item_for_unwrapped_test, log=False, nextitem=None)
+            report_storage.last_report = reports
+            for r in reports:
+                if r.failed:
+                    raise PytestReportedAsFailed()
+
+        item = type(item)(
+            name=item.name,
+            parent=item.parent,
+            args=item._args,
+            config=item.config,
+            callobj=accept,
+            keywords=dict(item.keywords),
+            session=item.session,
+            originalname=item.originalname,
+        )
+        item.add_marker('hypothesis')
+        return item
 
     def pytest_collection_modifyitems(items):
         for i, item in enumerate(items):
@@ -157,50 +204,7 @@ if PYTEST_VERSION >= (2, 7, 0):
                 continue
 
             if is_hypothesis_test(item.function):
-                original_item = item
-                given_kwargs = item.function._hypothesis_internal_use_kwargs
-                unwrapped_test = \
-                    item.function._hypothesis_internal_use_original_test
-
-                @given(**given_kwargs)
-                @impersonate(unwrapped_test)
-                @copy_argspec(
-                    item.function.__name__,
-                    ArgSpec(sorted(given_kwargs), None, None, None),
-                )
-                def accept(**kwargs):
-                    item_for_unwrapped_test = type(original_item)(
-                        name=original_item.name,
-                        parent=original_item.parent,
-                        args=original_item._args,
-                        config=original_item.config,
-                        callobj=unwrapped_test,
-                        keywords=dict(original_item.keywords),
-                        session=original_item.session,
-                        originalname=original_item.originalname,
-                    )
-                    item_for_unwrapped_test.funcargs = {}
-                    for k, v in kwargs.items():
-                        item_for_unwrapped_test.funcargs[k] = v
-                    reports = runner.runtestprotocol(
-                        item_for_unwrapped_test, log=False, nextitem=None)
-                    report_storage.last_report = reports
-                    for r in reports:
-                        if r.failed:
-                            raise PytestReportedAsFailed()
-
-                item = type(item)(
-                    name=item.name,
-                    parent=item.parent,
-                    args=item._args,
-                    config=item.config,
-                    callobj=accept,
-                    keywords=dict(item.keywords),
-                    session=item.session,
-                    originalname=item.originalname,
-                )
-                items[i] = item
-                item.add_marker('hypothesis')
+                items[i] = convert_given(item)
 
     def load():
         pass
