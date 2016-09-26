@@ -136,10 +136,6 @@ if PYTEST_VERSION >= (2, 7, 0):
                     )
             terminalreporter.write_line('')
 
-    class PytestReportedAsFailed(Exception):
-        """Internal exception class to indicate to given that a test is a
-        failure."""
-
     report_storage = threading.local()
 
     @pytest.hookimpl(tryfirst=True)
