@@ -26,16 +26,12 @@ class HypothesisException(Exception):
     pass
 
 
-class HypothesisControlFlowException(HypothesisException):
-    pass
-
-
 class CleanupFailed(HypothesisException):
 
     """At least one cleanup task failed and no other exception was raised."""
 
 
-class UnsatisfiedAssumption(HypothesisControlFlowException):
+class UnsatisfiedAssumption(HypothesisException):
 
     """An internal error raised by assume.
 
