@@ -61,6 +61,7 @@ def fails_with(e):
         def inverted_test(*arguments, **kwargs):
             with raises(e):
                 f(*arguments, **kwargs)
+        inverted_test.is_hypothesis_test = False
         return inverted_test
     return accepts
 
