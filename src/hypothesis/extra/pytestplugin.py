@@ -25,12 +25,14 @@ import _pytest.runner as runner
 from _pytest.python import Function
 
 from hypothesis import given
+from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.reporting import default as default_reporter
 from hypothesis.reporting import with_reporter
 from hypothesis.statistics import collector
 from hypothesis.internal.compat import ArgSpec, text_type, OrderedDict
 from hypothesis.internal.detection import is_hypothesis_test
-from hypothesis.internal.reflection import impersonate, copy_argspec
+from hypothesis.internal.reflection import proxies, impersonate, \
+    copy_argspec
 from hypothesis.internal.conjecture.data import StopTest
 
 PYTEST_VERSION = tuple(map(
@@ -153,6 +155,9 @@ if PYTEST_VERSION >= (2, 7, 0):
             return True
 
     def convert_given(item):
+        """Takes a Function test item that uses given, takes it apart and puts
+        it back together in a way so that pytest fixtures are instantiated on
+        every call to the function."""
         original_item = item
         given_kwargs = item.function._hypothesis_internal_use_kwargs
         unwrapped_test = \
@@ -165,12 +170,22 @@ if PYTEST_VERSION >= (2, 7, 0):
             ArgSpec(sorted(given_kwargs), None, None, None),
         )
         def accept(**kwargs):
+            captured_exception = [None]
+
+            @proxies(unwrapped_test)
+            def call_test_and_capture_exception(*args, **kwargs):
+                try:
+                    unwrapped_test(*args, **kwargs)
+                except BaseException as e:
+                    captured_exception[0] = e
+                    raise e
+
             item_for_unwrapped_test = type(original_item)(
                 name=original_item.name,
                 parent=original_item.parent,
                 args=original_item._args,
                 config=original_item.config,
-                callobj=unwrapped_test,
+                callobj=call_test_and_capture_exception,
                 keywords=dict(original_item.keywords),
                 session=original_item.session,
                 originalname=original_item.originalname,
@@ -181,9 +196,8 @@ if PYTEST_VERSION >= (2, 7, 0):
             reports = runner.runtestprotocol(
                 item_for_unwrapped_test, log=False, nextitem=None)
             report_storage.last_report = reports
-            for r in reports:
-                if r.failed:
-                    raise PytestReportedAsFailed()
+            if captured_exception[0] is not None:
+                raise captured_exception[0]
 
         item = type(item)(
             name=item.name,
