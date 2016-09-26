@@ -564,6 +564,8 @@ def given(*generator_arguments, **generator_kwargs):
         wrapped_test._hypothesis_internal_use_settings = getattr(
             test, '_hypothesis_internal_use_settings', None
         ) or Settings.default
+        wrapped_test._hypothesis_internal_use_kwargs = generator_kwargs
+        wrapped_test._hypothesis_internal_use_original_test = test
         return wrapped_test
     return run_test_with_generator
 

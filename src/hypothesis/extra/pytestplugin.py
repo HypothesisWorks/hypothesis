@@ -18,14 +18,20 @@
 from __future__ import division, print_function, absolute_import
 
 import re
+import threading
 
 import pytest
+import _pytest.runner as runner
+from _pytest.python import Function
 
+from hypothesis import given
 from hypothesis.reporting import default as default_reporter
 from hypothesis.reporting import with_reporter
 from hypothesis.statistics import collector
-from hypothesis.internal.compat import text_type, OrderedDict
+from hypothesis.internal.compat import ArgSpec, text_type, OrderedDict
 from hypothesis.internal.detection import is_hypothesis_test
+from hypothesis.internal.reflection import impersonate, copy_argspec
+from hypothesis.internal.conjecture.data import StopTest
 
 PYTEST_VERSION = tuple(map(
     int,
@@ -128,11 +134,72 @@ if PYTEST_VERSION >= (2, 7, 0):
                     )
             terminalreporter.write_line('')
 
+    class PytestReportedAsFailed(Exception):
+        """Internal exception class to indicate to given that a test is a
+        failure."""
+
+    report_storage = threading.local()
+
+    @pytest.hookimpl(tryfirst=True)
+    def pytest_runtest_protocol(item, nextitem):
+        if isinstance(item, Function) and is_hypothesis_test(item.function):
+            item.ihook.pytest_runtest_logstart(
+                nodeid=item.nodeid, location=item.location,
+            )
+            runner.runtestprotocol(item, nextitem=nextitem, log=False)
+            for report in report_storage.last_report:
+                item.ihook.pytest_runtest_logreport(report=report)
+            return True
+
     def pytest_collection_modifyitems(items):
-        for item in items:
+        for i, item in enumerate(items):
             if not isinstance(item, pytest.Function):
                 continue
-            if getattr(item.function, 'is_hypothesis_test', False):
+
+            if is_hypothesis_test(item.function):
+                original_item = item
+                given_kwargs = item.function._hypothesis_internal_use_kwargs
+                unwrapped_test = \
+                    item.function._hypothesis_internal_use_original_test
+
+                @given(**given_kwargs)
+                @impersonate(unwrapped_test)
+                @copy_argspec(
+                    item.function.__name__,
+                    ArgSpec(sorted(given_kwargs), None, None, None),
+                )
+                def accept(**kwargs):
+                    item_for_unwrapped_test = type(original_item)(
+                        name=original_item.name,
+                        parent=original_item.parent,
+                        args=original_item._args,
+                        config=original_item.config,
+                        callobj=unwrapped_test,
+                        keywords=dict(original_item.keywords),
+                        session=original_item.session,
+                        originalname=original_item.originalname,
+                    )
+                    item_for_unwrapped_test.funcargs = {}
+                    for k, v in kwargs.items():
+                        item_for_unwrapped_test.funcargs[k] = v
+                    reports = runner.runtestprotocol(
+                        item_for_unwrapped_test, log=False, nextitem=None)
+                    report_storage.last_report = reports
+                    for r in reports:
+                        if r.failed:
+                            raise PytestReportedAsFailed()
+
+                item = type(item)(
+                    name=item.name,
+                    parent=item.parent,
+                    args=item._args,
+                    config=item.config,
+                    callobj=accept,
+                    keywords=dict(item.keywords),
+                    session=item.session,
+                    originalname=item.originalname,
+                )
+                items[i] = item
                 item.add_marker('hypothesis')
 
     def load():
