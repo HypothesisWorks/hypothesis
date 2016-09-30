@@ -82,22 +82,6 @@ if PYTEST_VERSION >= (2, 7, 0):
     gathered_statistics = OrderedDict()
 
     @pytest.mark.hookwrapper
-    def pytest_runtest_call(item):
-        if not (hasattr(item, 'obj') and is_hypothesis_test(item.obj)):
-            yield
-        else:
-            store = StoringReporter(item.config)
-
-            def note_statistics(stats):
-                gathered_statistics[item.nodeid] = stats
-
-            with collector.with_value(note_statistics):
-                with with_reporter(store):
-                    yield
-            if store.results:
-                item.hypothesis_report_information = list(store.results)
-
-    @pytest.mark.hookwrapper
     def pytest_runtest_makereport(item, call):
         report = (yield).get_result()
         if hasattr(item, 'hypothesis_report_information'):
@@ -144,7 +128,18 @@ if PYTEST_VERSION >= (2, 7, 0):
     def pytest_runtest_protocol(item, nextitem):
         if isinstance(item, Function) and is_hypothesis_test(item.function):
             report_storage.last_report = []
-            result = runner.runtestprotocol(item, nextitem=nextitem, log=False)
+            store = StoringReporter(item.config)
+
+            def note_statistics(stats):
+                gathered_statistics[item.nodeid] = stats
+
+            with collector.with_value(note_statistics):
+                with with_reporter(store):
+                    result = runner.runtestprotocol(
+                        item, nextitem=nextitem, log=False)
+            if store.results:
+                item.hypothesis_report_information = list(store.results)
+
             item.ihook.pytest_runtest_logstart(
                 nodeid=item.nodeid, location=item.location,
             )
