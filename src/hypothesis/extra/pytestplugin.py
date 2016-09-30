@@ -159,6 +159,17 @@ if PYTEST_VERSION >= (2, 7, 0):
         unwrapped_test = \
             item.function._hypothesis_internal_use_original_test
 
+        captured_exception = [None]
+
+        @proxies(unwrapped_test)
+        def call_test_and_capture_exception(*args, **kwargs):
+            captured_exception[0] = None
+            try:
+                unwrapped_test(*args, **kwargs)
+            except BaseException as e:
+                captured_exception[0] = e
+                raise e
+
         @given(**given_kwargs)
         @impersonate(unwrapped_test)
         @copy_argspec(
@@ -166,16 +177,6 @@ if PYTEST_VERSION >= (2, 7, 0):
             ArgSpec(sorted(given_kwargs), None, None, None),
         )
         def accept(**kwargs):
-            captured_exception = [None]
-
-            @proxies(unwrapped_test)
-            def call_test_and_capture_exception(*args, **kwargs):
-                try:
-                    unwrapped_test(*args, **kwargs)
-                except BaseException as e:
-                    captured_exception[0] = e
-                    raise e
-
             item_for_unwrapped_test = type(original_item)(
                 name=original_item.name,
                 parent=original_item.parent,
