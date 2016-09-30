@@ -183,31 +183,31 @@ if PYTEST_VERSION >= (2, 7, 0):
             name2fixturedefs=original_fi.name2fixturedefs,
         )
 
+        item_kwargs = dict(
+            name=original_item.name,
+            parent=original_item.parent,
+            args=original_item._args,
+            config=original_item.config,
+            callobj=call_test_and_capture_exception,
+            keywords=dict(original_item.keywords),
+            session=original_item.session,
+            originalname=original_item.originalname,
+            fixtureinfo=fixtureinfo,
+        )
+        try:
+            item_kwargs['callspec'] = original_item.callspec
+        except AttributeError:
+            pass
+
+        item_for_unwrapped_test = type(original_item)(**item_kwargs)
+
         @given(**given_kwargs)
         @impersonate(unwrapped_test)
         @copy_argspec(
             item.function.__name__,
             ArgSpec(sorted(given_kwargs), None, None, None),
         )
-        def accept(**kwargs):
-            item_kwargs = dict(
-                name=original_item.name,
-                parent=original_item.parent,
-                args=original_item._args,
-                config=original_item.config,
-                callobj=call_test_and_capture_exception,
-                keywords=dict(original_item.keywords),
-                session=original_item.session,
-                originalname=original_item.originalname,
-                fixtureinfo=fixtureinfo,
-            )
-            try:
-                item_kwargs['callspec'] = original_item.callspec
-            except AttributeError:
-                pass
-
-            item_for_unwrapped_test = type(original_item)(**item_kwargs)
-
+        def rewritten_test(**kwargs):
             for k, v in kwargs.items():
                 item_for_unwrapped_test.funcargs[k] = v
 
