@@ -14,6 +14,7 @@ then it should be available on pypi.
 * `chardet <https://pypi.python.org/pypi/chardet>`_
 * `cmph-cffi <https://github.com/URXtech/cmph-cffi>`_
 * `cryptography <https://github.com/pyca/cryptography>`_
+* `dbus-signature-pyparsing <https://github.com/stratis-storage/dbus-signature-pyparsing>`_
 * `fastnumbers <https://github.com/SethMMorton/fastnumbers>`_
 * `flocker <https://github.com/ClusterHQ/flocker>`_
 * `flownetpy <https://github.com/debsankha/flownetpy>`_
