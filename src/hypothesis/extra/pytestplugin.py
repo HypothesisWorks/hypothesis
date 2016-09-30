@@ -23,13 +23,15 @@ import threading
 import pytest
 import _pytest.runner as runner
 from _pytest.python import Function
+from _pytest.fixtures import FuncFixtureInfo
 
 from hypothesis import given
 from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.reporting import default as default_reporter
 from hypothesis.reporting import with_reporter
 from hypothesis.statistics import collector
-from hypothesis.internal.compat import ArgSpec, text_type, OrderedDict
+from hypothesis.internal.compat import ArgSpec, text_type, getargspec, \
+    OrderedDict
 from hypothesis.internal.detection import is_hypothesis_test
 from hypothesis.internal.reflection import proxies, impersonate, \
     copy_argspec
@@ -142,13 +144,16 @@ if PYTEST_VERSION >= (2, 7, 0):
     def pytest_runtest_protocol(item, nextitem):
         if isinstance(item, Function) and is_hypothesis_test(item.function):
             report_storage.last_report = []
-            runner.runtestprotocol(item, nextitem=nextitem, log=False)
+            result = runner.runtestprotocol(item, nextitem=nextitem, log=False)
             item.ihook.pytest_runtest_logstart(
                 nodeid=item.nodeid, location=item.location,
             )
-            for report in report_storage.last_report:
+            for report in (report_storage.last_report or result):
                 item.ihook.pytest_runtest_logreport(report=report)
             return True
+
+    class PytestFailedInternal(Exception):
+        pass
 
     def convert_given(item):
         """Takes a Function test item that uses given, takes it apart and puts
@@ -170,6 +175,19 @@ if PYTEST_VERSION >= (2, 7, 0):
                 captured_exception[0] = e
                 raise e
 
+        try:
+            call_test_and_capture_exception.parametrize = item.function.parametrize
+        except AttributeError:
+            pass
+
+        original_fi = original_item._fixtureinfo
+        args = getargspec(unwrapped_test).args
+        fixtureinfo = FuncFixtureInfo(
+            argnames=args,
+            names_closure=sorted(set(original_fi.names_closure) | set(args)),
+            name2fixturedefs=original_fi.name2fixturedefs,
+        )
+
         @given(**given_kwargs)
         @impersonate(unwrapped_test)
         @copy_argspec(
@@ -177,7 +195,7 @@ if PYTEST_VERSION >= (2, 7, 0):
             ArgSpec(sorted(given_kwargs), None, None, None),
         )
         def accept(**kwargs):
-            item_for_unwrapped_test = type(original_item)(
+            item_kwargs = dict(
                 name=original_item.name,
                 parent=original_item.parent,
                 args=original_item._args,
@@ -186,25 +204,33 @@ if PYTEST_VERSION >= (2, 7, 0):
                 keywords=dict(original_item.keywords),
                 session=original_item.session,
                 originalname=original_item.originalname,
+                fixtureinfo=fixtureinfo,
             )
-            item_for_unwrapped_test.funcargs = {}
+            try:
+                item_kwargs['callspec'] = original_item.callspec
+            except AttributeError:
+                pass
+
+            item_for_unwrapped_test = type(original_item)(**item_kwargs)
+
             for k, v in kwargs.items():
                 item_for_unwrapped_test.funcargs[k] = v
+
             reports = runner.runtestprotocol(
                 item_for_unwrapped_test, log=False, nextitem=None)
             report_storage.last_report = reports
             if captured_exception[0] is not None:
                 raise captured_exception[0]
+            else:
+                if any(r.failed for r in reports):
+                    raise PytestFailedInternal()
+
+        assert getargspec(accept).args == []
 
         item = type(item)(
             name=item.name,
             parent=item.parent,
-            args=item._args,
-            config=item.config,
             callobj=accept,
-            keywords=dict(item.keywords),
-            session=item.session,
-            originalname=item.originalname,
         )
         item.add_marker('hypothesis')
         return item
