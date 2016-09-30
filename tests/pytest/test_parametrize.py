@@ -27,3 +27,13 @@ from hypothesis import given
 @given(st.integers())
 def test_can_parametrize(a, b):
     pass
+
+
+@pytest.fixture(params=[1, 2, 3])
+def stuff_and_things(request):
+    return request.param
+
+
+@given(st.integers())
+def test_can_use_parametrized_fixtures(stuff_and_things, b):
+    pass
