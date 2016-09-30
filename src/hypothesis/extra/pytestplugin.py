@@ -215,12 +215,23 @@ if PYTEST_VERSION >= (2, 7, 0):
                 if any(r.failed for r in reports):
                     raise PytestFailedInternal()
 
-        assert getargspec(accept).args == []
+        assert getargspec(rewritten_test).args == []
+
+        for s in (
+            '_hypothesis_internal_use_seed',
+            '_hypothesis_internal_use_settings',
+        ):
+            setattr(rewritten_test, s, getattr(original_item.function, s))
 
         item = type(item)(
-            name=item.name,
-            parent=item.parent,
-            callobj=accept,
+            name=original_item.name,
+            parent=original_item.parent,
+            args=original_item._args,
+            config=original_item.config,
+            callobj=rewritten_test,
+            keywords=dict(original_item.keywords),
+            session=original_item.session,
+            originalname=original_item.originalname,
         )
         item.add_marker('hypothesis')
         return item
