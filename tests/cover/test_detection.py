@@ -20,13 +20,14 @@ from __future__ import division, print_function, absolute_import
 from hypothesis import given
 from hypothesis.stateful import GenericStateMachine
 from hypothesis.strategies import integers
-from hypothesis.internal.detection import is_hypothesis_test
+from hypothesis.internal.detection import is_given, is_hypothesis_test
 
 
 def test_functions_default_to_not_tests():
     def foo():
         pass
     assert not is_hypothesis_test(foo)
+    assert not is_given(foo)
 
 
 def test_methods_default_to_not_tests():
@@ -35,6 +36,7 @@ def test_methods_default_to_not_tests():
         def foo():
             pass
     assert not is_hypothesis_test(Foo().foo)
+    assert not is_given(Foo().foo)
 
 
 def test_detection_of_functions():
@@ -43,6 +45,7 @@ def test_detection_of_functions():
         pass
 
     assert is_hypothesis_test(test)
+    assert is_given(test)
 
 
 def test_detection_of_methods():
@@ -53,6 +56,7 @@ def test_detection_of_methods():
             pass
 
     assert is_hypothesis_test(Foo().test)
+    assert is_given(Foo().test)
 
 
 def test_detection_of_stateful_tests():
@@ -65,3 +69,4 @@ def test_detection_of_stateful_tests():
             pass
 
     assert is_hypothesis_test(Stuff.TestCase().runTest)
+    assert not is_given(Stuff.TestCase().runTest)

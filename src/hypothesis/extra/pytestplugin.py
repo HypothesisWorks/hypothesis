@@ -32,7 +32,7 @@ from hypothesis.reporting import with_reporter
 from hypothesis.statistics import collector
 from hypothesis.internal.compat import ArgSpec, text_type, getargspec, \
     OrderedDict
-from hypothesis.internal.detection import is_hypothesis_test
+from hypothesis.internal.detection import is_given, is_hypothesis_test
 from hypothesis.internal.reflection import proxies, impersonate, \
     copy_argspec
 from hypothesis.internal.conjecture.data import StopTest
@@ -241,7 +241,7 @@ if PYTEST_VERSION >= (2, 7, 0):
             if not isinstance(item, pytest.Function):
                 continue
 
-            if is_hypothesis_test(item.function):
+            if is_given(item.function):
                 items[i] = convert_given(item)
 
     def load():

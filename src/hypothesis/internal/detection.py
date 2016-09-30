@@ -24,3 +24,11 @@ def is_hypothesis_test(test):
     if isinstance(test, MethodType):
         return is_hypothesis_test(test.__func__)
     return getattr(test, 'is_hypothesis_test', False)
+
+
+def is_given(test):
+    if not is_hypothesis_test(test):
+        return False
+    if isinstance(test, MethodType):
+        return is_given(test.__func__)
+    return hasattr(test, '_hypothesis_internal_use_kwargs')
