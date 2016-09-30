@@ -175,11 +175,6 @@ if PYTEST_VERSION >= (2, 7, 0):
                 captured_exception[0] = e
                 raise e
 
-        try:
-            call_test_and_capture_exception.parametrize = item.function.parametrize
-        except AttributeError:
-            pass
-
         original_fi = original_item._fixtureinfo
         args = getargspec(unwrapped_test).args
         fixtureinfo = FuncFixtureInfo(
