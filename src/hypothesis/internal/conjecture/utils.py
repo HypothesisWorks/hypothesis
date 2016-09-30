@@ -68,21 +68,25 @@ def integer_range(data, lower, upper, center=None, distribution=None):
         else:
             probe = upper - v
         return int_to_bytes(probe, n)
-    probe = int_from_bytes(data.draw_bytes(nbytes, byte_distribution)) & mask
-    if probe <= gap:
-        if center == upper:
-            result = upper - probe
-        elif center == lower:
-            result = lower + probe
-        else:
-            if center + probe <= upper:
-                result = center + probe
-            else:
-                result = upper - probe
-        assert lower <= result <= upper
-        return int(result)
+
+    probe = gap + 1
+
+    while probe > gap:
+        probe = int_from_bytes(
+            data.draw_bytes(nbytes, byte_distribution)
+        ) & mask
+
+    if center == upper:
+        result = upper - probe
+    elif center == lower:
+        result = lower + probe
     else:
-        data.mark_invalid()
+        if center + probe <= upper:
+            result = center + probe
+        else:
+            result = upper - probe
+    assert lower <= result <= upper
+    return int(result)
 
 
 def integer_range_with_distribution(data, lower, upper, nums):
