@@ -81,15 +81,6 @@ if PYTEST_VERSION >= (2, 7, 0):
 
     gathered_statistics = OrderedDict()
 
-    @pytest.mark.hookwrapper
-    def pytest_runtest_makereport(item, call):
-        report = (yield).get_result()
-        if hasattr(item, 'hypothesis_report_information'):
-            report.sections.append((
-                'Hypothesis',
-                '\n'.join(item.hypothesis_report_information)
-            ))
-
     def pytest_terminal_summary(terminalreporter):
         if not terminalreporter.config.getoption(PRINT_STATISTICS_OPTION):
             return
@@ -143,7 +134,13 @@ if PYTEST_VERSION >= (2, 7, 0):
             item.ihook.pytest_runtest_logstart(
                 nodeid=item.nodeid, location=item.location,
             )
+
             for report in (report_storage.last_report or result):
+                if report.when == 'call':
+                    report.sections.append((
+                        'Hypothesis',
+                        '\n'.join(store.results)
+                    ))
                 item.ihook.pytest_runtest_logreport(report=report)
             return True
 
