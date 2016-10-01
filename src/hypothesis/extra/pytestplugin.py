@@ -135,7 +135,6 @@ if PYTEST_VERSION >= (2, 7, 0):
             if store.results:
                 item.hypothesis_report_information = list(store.results)
 
-
             for report in (report_storage.last_report or result):
                 if report.when == 'call':
                     report.sections.append((
@@ -171,7 +170,9 @@ if PYTEST_VERSION >= (2, 7, 0):
         original_fi = original_item._fixtureinfo
         args = getargspec(unwrapped_test).args
         fixtureinfo = FuncFixtureInfo(
-            argnames=args,
+            argnames=list(args) + [
+                k for k in given_kwargs if k not in args
+            ],
             names_closure=sorted(set(original_fi.names_closure) | set(args)),
             name2fixturedefs=original_fi.name2fixturedefs,
         )
