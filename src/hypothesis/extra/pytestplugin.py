@@ -124,6 +124,10 @@ if PYTEST_VERSION >= (2, 7, 0):
             def note_statistics(stats):
                 gathered_statistics[item.nodeid] = stats
 
+            item.ihook.pytest_runtest_logstart(
+                nodeid=item.nodeid, location=item.location,
+            )
+
             with collector.with_value(note_statistics):
                 with with_reporter(store):
                     result = runner.runtestprotocol(
@@ -131,9 +135,6 @@ if PYTEST_VERSION >= (2, 7, 0):
             if store.results:
                 item.hypothesis_report_information = list(store.results)
 
-            item.ihook.pytest_runtest_logstart(
-                nodeid=item.nodeid, location=item.location,
-            )
 
             for report in (report_storage.last_report or result):
                 if report.when == 'call':
@@ -205,7 +206,8 @@ if PYTEST_VERSION >= (2, 7, 0):
 
             reports = runner.runtestprotocol(
                 item_for_unwrapped_test, log=False, nextitem=None)
-            report_storage.last_report = reports
+            if not isinstance(captured_exception[0], UnsatisfiedAssumption):
+                report_storage.last_report = reports
             if captured_exception[0] is not None:
                 raise captured_exception[0]
             else:

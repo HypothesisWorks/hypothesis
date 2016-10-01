@@ -25,6 +25,7 @@ pytest_plugins = 'pytester'
 seen = []
 
 
+@settings(max_iterations=10, max_examples=10, min_satisfying_examples=1)
 @given(st.binary(min_size=10))
 def test_mostly_assumes_false(xs):
     if not seen:
