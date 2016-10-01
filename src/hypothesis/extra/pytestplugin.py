@@ -35,6 +35,7 @@ from hypothesis.internal.compat import ArgSpec, text_type, getargspec, \
 from hypothesis.internal.detection import is_given, is_hypothesis_test
 from hypothesis.internal.reflection import proxies, impersonate, \
     copy_argspec
+from hypothesis.internal.conjecture.data import StopTest
 
 PYTEST_VERSION = tuple(map(
     int,
@@ -206,7 +207,9 @@ if PYTEST_VERSION >= (2, 7, 0):
 
             reports = runner.runtestprotocol(
                 item_for_unwrapped_test, log=False, nextitem=None)
-            if not isinstance(captured_exception[0], UnsatisfiedAssumption):
+            if not isinstance(captured_exception[0], (
+                UnsatisfiedAssumption, StopTest
+            )):
                 report_storage.last_report = reports
             if captured_exception[0] is not None:
                 raise captured_exception[0]
