@@ -23,12 +23,10 @@ from tempfile import mkdtemp
 import pytest
 
 import hypothesis
-from hypothesis import given
 from hypothesis.errors import InvalidState, InvalidArgument
 from hypothesis.database import ExampleDatabase, \
     DirectoryBasedExampleDatabase
 from hypothesis._settings import settings, Verbosity, note_deprecation
-from hypothesis.strategies import integers
 
 
 def test_has_docstrings():
@@ -230,9 +228,3 @@ def test_does_not_warn_if_quiet():
         note_deprecation('This is bad', settings(
             strict=False, verbosity=Verbosity.quiet))
     assert len(rec) == 0
-
-
-@settings(max_examples=5)
-@given(integers())
-def test_settings_propagate_into_given(i):
-    assert settings.default.max_examples == 5

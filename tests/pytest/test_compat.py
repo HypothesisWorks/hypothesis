@@ -19,11 +19,80 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
-from hypothesis import given
-from hypothesis.strategies import booleans
+from hypothesis import strategies as st
+from hypothesis import given, assume, settings
+
+pytest_plugins = 'pytester'
+
+seen = []
 
 
-@given(booleans())
+@given(st.booleans())
 @pytest.mark.parametrize('hi', (1, 2, 3))
 def test_parametrize_after_given(hi, i):
+    pass
+
+
+@settings(max_iterations=10, max_examples=10, min_satisfying_examples=1)
+@given(st.binary(min_size=10))
+def test_mostly_assumes_false(xs):
+    if not seen:
+        seen.append(xs)
+    assume(xs in seen)
+
+
+def test_basic_failures(testdir):
+    script = testdir.makepyfile("""
+    from hypothesis import given, settings
+    from hypothesis.strategies import integers
+
+    @given(integers())
+    def test_yes(i):
+        assert True
+
+    @settings(database=None)
+    @given(integers())
+    def test_no(i):
+        assert i < 1001
+    """)
+    result = testdir.runpytest(script)
+    assert result.ret != 0
+    assert 'i=1001' in '\n'.join(result.stdout.lines)
+
+
+def test_runs_module_setup_and_teardown_once(testdir):
+    script = testdir.makepyfile("""
+    from hypothesis import given, settings
+    from hypothesis.strategies import integers
+
+    def setup_module(module):
+        print("SETUP")
+
+    def teardown_module(module):
+        print("TEARDOWN")
+
+    @settings(database=None, max_examples=10)
+    @given(integers())
+    def test_stuff(i):
+        pass
+    """)
+    result = testdir.runpytest(script, '-s')
+    assert result.ret == 0
+    assert result.stdout.lines.count('SETUP') == 1
+    assert result.stdout.lines.count('TEARDOWN') == 1
+
+
+@pytest.mark.parametrize('a', [1, 2, 3])
+@given(st.integers())
+def test_can_parametrize(a, b):
+    pass
+
+
+@pytest.fixture(params=[1, 2, 3])
+def stuff_and_things(request):
+    return request.param
+
+
+@given(st.integers())
+def test_can_use_parametrized_fixtures(stuff_and_things, b):
     pass
