@@ -1,8 +1,8 @@
 ---
 layout: post
 tags: news python non-technical
-date: 2016-09-23 00:00
-title: 3.5.0 and 3.5.1 Releases of Hypothesis for Python
+date: 2016-10-01 00:00
+title: Seeking funding for deeper integration between Hypothesis and pytest
 published: true
 author: drmaciver
 ---
