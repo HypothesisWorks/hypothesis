@@ -24,7 +24,8 @@ import binascii
 import threading
 from contextlib import contextmanager
 
-from hypothesis.internal.compat import sha1, b64decode, b64encode
+from hypothesis.internal.compat import sha1, b64decode, b64encode, \
+    FileNotFoundError
 
 SQLITE_PATH = re.compile(r"\.\(db|sqlite|sqlite3\)$")
 
@@ -234,8 +235,11 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
     def fetch(self, key):
         kp = self._key_path(key)
         for path in os.listdir(kp):
-            with open(os.path.join(kp, path), 'rb') as i:
-                yield i.read()
+            try:
+                with open(os.path.join(kp, path), 'rb') as i:
+                    yield i.read()
+            except FileNotFoundError:
+                pass
 
     def save(self, key, value):
         path = self._value_path(key, value)

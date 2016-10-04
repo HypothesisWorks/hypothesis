@@ -17,6 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import os
 import base64
 
 import pytest
@@ -168,3 +169,13 @@ def test_two_directory_databases_can_interact(tmpdir):
     db2.save(b'foo', b'bar')
     db2.save(b'foo', b'baz')
     assert sorted(db1.fetch(b'foo')) == [b'bar', b'baz']
+
+
+def test_can_handle_disappearing_files(tmpdir, monkeypatch):
+    path = str(tmpdir)
+    db = DirectoryBasedExampleDatabase(path)
+    db.save(b'foo', b'bar')
+    base_listdir = os.listdir
+    monkeypatch.setattr(os, 'listdir',
+                        lambda d: base_listdir(d) + ['this-does-not-exist'])
+    assert list(db.fetch(b'foo')) == [b'bar']
