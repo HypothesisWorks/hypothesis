@@ -30,7 +30,7 @@ from hypothesis.internal.compat import ArgSpec, text_type, getargspec, \
 from hypothesis.internal.floats import is_negative, float_to_int, \
     int_to_float, count_between_floats
 from hypothesis.utils.conventions import not_set
-from hypothesis.internal.reflection import proxies
+from hypothesis.internal.reflection import proxies, impersonate
 from hypothesis.searchstrategy.reprwrapper import ReprWrapperStrategy
 
 __all__ = [
@@ -894,6 +894,7 @@ def composite(f):
         keywords=argspec.keywords, defaults=argspec.defaults
     )
 
+    @impersonate(f)
     @defines_strategy
     @copy_argspec(f.__name__, new_argspec)
     def accept(*args, **kwargs):

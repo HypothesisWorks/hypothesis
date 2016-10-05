@@ -27,6 +27,7 @@ from hypothesis.internal.compat import hrange
 
 @st.composite
 def badly_draw_lists(draw, m=0):
+    """This is my docstring."""
     length = draw(st.integers(m, m + 10))
     return [
         draw(st.integers()) for _ in hrange(length)
@@ -95,3 +96,11 @@ def test_composite_of_lists():
         return draw(st.integers()) + draw(st.integers())
 
     assert find(st.lists(f()), lambda x: len(x) >= 10) == [0] * 10
+
+
+def test_composite_comes_from_wrapped_functions_module():
+    assert badly_draw_lists.__module__ == __name__
+
+
+def test_composite_has_wrapped_functions_documentation():
+    assert badly_draw_lists.__doc__ == 'This is my docstring.'
