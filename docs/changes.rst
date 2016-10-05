@@ -22,6 +22,24 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 ------------------
+3.5.3 - 2016-10-05
+------------------
+
+This is a bug fix release.
+
+Bugs fixed:
+
+* If the same test was running concurrently in two processes and there were
+  examples already in the test database which no longer failed, Hypothesis
+  would sometimes fail with a FileNotFoundError (IOError on Python 2) because
+  an example it was trying to read was deleted before it was read. (Issue
+  `#372 <https://github.com/HypothesisWorks/hypothesis-python/issues/372>`_).
+* Drawing from an integers() strategy with both a min_value and a max_value
+  would reject too many examples needlessly. Now it repeatedly redraws until
+  satisfied. (Pull request `#366 <https://github.com/HypothesisWorks/hypothesis-python/pull/366>`_.
+  Thanks to Calen Pennington for the contribution).
+
+------------------
 3.5.2 - 2016-09-24
 ------------------
 
