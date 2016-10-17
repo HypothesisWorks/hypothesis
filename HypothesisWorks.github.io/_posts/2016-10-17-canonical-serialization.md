@@ -26,7 +26,7 @@ from hypothesis.strategies import lists, tuples, characters, integers
 
 
 @given(lists(tuples(characters(), integers(1, 10))))
-def test_decode_inverts_encode(s):
+def test_encode_inverts_decode(s):
     assert encode(decode(s)) == s
 ```
 
@@ -42,40 +42,55 @@ the code, etc.
 
 So this test *shouldn't* be expected to pass.
 
-You can try to rescue it by replacing == with some sort of semantic equality, but the best
-sort of semantic equality is really just decode(x) == decode(y), so if you do that you mostly
-just end up at the original way around.
-
-But there is another interesting property that emerges out of this, from the idea that some
-of these representations are "non-canonical": That you should be able to produce a single
-canonical representation.
-
-Fortunately you don't have to write much new code to do this, because there's a natural
-choice: The output of your encoder.
-
-So we can define a function as follows that takes a serialized representation and outputs
-a canonical form:
-
-```python
-def make_canonical(data):
-    return encode(decode(data))
-```
-
-Once you have that, the interesting property you can test is this: That the canonical
-version of canonical data is the same as what you've started with. This property is called
-being idempotent (annoyingly "idempotent" gets used to mean something somewhat different
-in most API design, but this is the original mathematical meaning):
+To rescue this, we might imagine we had some sort of function make\_canonical which
+took an encoded data representation and replaced it with a canonical version of that (e.g.
+by normalizing whitespace). The test could then look like this:
 
 
 ```python
 @given(lists(tuples(characters(), integers(1, 10))))
-def test_make_canonical_is_idempotent(s):
-    t = make_canonical(s)
-    assert t == make_canonical(t)
+def test_encode_inverts_decode(s):
+    assert make_canonical(encode(decode(s))) == make_canonical(s)
 ```
 
-This property is less obviously necessary than the original one, and you can certainly
-write encode/decode pairs that are arguably correct but don't have it, but I think it's
+But where would we get that make\_canonical function from? It's not something we really
+want to write ourselves.
+
+Fortunately we can put together the pieces we already have to define such a function
+fairly easily. To see this, lets think about what properties make\_canonical should have.
+
+The following seem reasonable:
+
+1. encode should always produce canonical data. i.e. encode(t) == make_canonical(encode(t))
+2. Canonical data should represent the same value. i.e. decode(s) == decode(make_canonical(s))
+
+But we already know that decode(encode(t)) == t from our original property, so we have a
+natural source of data that is the output of encode: We just decode the data and then
+encode it again.
+
+This gives us the following natural definition of make_canonical:
+
+```python
+def make_canonical(data):
+    return encode(decode(data))
+    ```
+
+But this is nearly the same as the thing we were testing, so we can rewrite our test as:
+
+```python
+@given(lists(tuples(characters(), integers(1, 10))))
+def test_encode_inverts_decode(s):
+    assert make_canonical(make_canonical(s)) == make_canonical(s)
+```
+
+This property is called
+being idempotent (annoyingly "idempotent" gets used to mean something subtly different
+in most API design, but this is the original mathematical meaning).
+
+It's less obviously necessary than the original one, and you can certainly
+write encode/decode pairs that are arguably correct but don't have it (e.g. because
+they change the order of keys in a dictionary, or include a timestamp or sequence
+number in the output), but I think it's
 still worth having and testing. Enforcing consistency like this both helps with debugging
 when things go wrong and also tends to flush out other bugs along the way.
 
