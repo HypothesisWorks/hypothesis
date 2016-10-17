@@ -98,3 +98,33 @@ Even if you don't want to enforce this property, it highlights an important issu
 do need *some* sort of testing of the decoder that doesn't just operate on output from
 the encoder, because the encoder will potentially only output a relatively small subset
 of the valid range of the format.
+
+Often however you'll get the property for free. If the encode and decode functions
+have the property that whenever x == y then f(x) == f(y), then this property automatically
+holds, because make_canonical(x) is encode(decode(encode(decode(x)))), and we know from the
+first property that decode(encode(t)) == t, so with t = decode(x) this expression is
+encode(decode(x)), which is make_canonical(x) as required.
+
+Most encode/decode pairs will have this property, but not all.
+
+The easiest ways to fail to have it are to have side-effects (the aforementioned sequence
+number or randomization), but even without side effects it's possible for it to fail
+if the custom equality doesn't capture every detail about the type. For example in
+Python, if 1.0 was serialized as 1, then the two would compare equal and the property
+would pass, but when re-encoding it might exhibit very different properties (although
+you'd hope that it wouldn't). Another example is that in Python an OrderedDict and a
+dict compare equal regardless of iteration order, which means that two apparently
+equal types might encode to different things if they have different iteration orders
+defined.
+
+Ultimately these issues are probably quite niche. It's likely still worth testing for
+this property, both because of these problems and also because often [mathematically
+equivalent properties can still catch different issues]({{site.url}}{% post_url 2016-06-30-tests-as-complete-specifications %}),
+but it's significantly less important than the more general property we started
+with.
+
+--------------------------------------
+
+Thanks to [Georges Dubus](https://twitter.com/georgesdubus) who pointed out
+the key insight behind the last section on this property following from the original
+one)
