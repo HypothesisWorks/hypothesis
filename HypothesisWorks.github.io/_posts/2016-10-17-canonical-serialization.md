@@ -73,7 +73,7 @@ This gives us the following natural definition of make_canonical:
 ```python
 def make_canonical(data):
     return encode(decode(data))
-    ```
+```
 
 But this is nearly the same as the thing we were testing, so we can rewrite our test as:
 
