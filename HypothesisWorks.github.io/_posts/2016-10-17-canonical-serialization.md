@@ -109,7 +109,7 @@ Most encode/decode pairs will have this property, but not all.
 
 The easiest ways to fail to have it are to have side-effects (the aforementioned sequence
 number or randomization), but even without side effects it's possible for it to fail
-if the custom equality doesn't capture every detail about the type. For example in
+if equality doesn't capture every detail about the type. For example in
 Python, if 1.0 was serialized as 1, then the two would compare equal and the property
 would pass, but when re-encoding it might exhibit very different properties (although
 you'd hope that it wouldn't). Another example is that in Python an OrderedDict and a
@@ -127,4 +127,4 @@ with.
 
 Thanks to [Georges Dubus](https://twitter.com/georgesdubus) who pointed out
 the key insight behind the last section on this property following from the original
-one)
+one.
