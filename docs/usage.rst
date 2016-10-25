@@ -21,6 +21,7 @@ then it should be available on pypi.
 * `funsize <https://github.com/mozilla/funsize>`_
 * `fusion-index <https://github.com/fusionapp/fusion-index>`_
 * `hyper-h2 <https://github.com/python-hyper/hyper-h2>`_
+* `into-dbus-python <https://github.com/stratis-storage/into-dbus-python>`_
 * `justbases <https://github.com/mulkieran/justbases>`_
 * `justbytes <https://github.com/mulkieran/justbytes>`_
 * `mariadb-dyncol <https://github.com/adamchainz/mariadb-dyncol>`_
