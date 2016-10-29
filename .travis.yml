@@ -13,7 +13,6 @@ cache:
     directories:
         - $HOME/.runtimes
         - $HOME/.venv
-        - $HOME/.cache/pip
         - $HOME/wheelhouse
 
 env:
