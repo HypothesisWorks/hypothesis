@@ -24,7 +24,7 @@ Apologies for any inconvenience this may have caused.
 This release reverts Hypothesis to its old pretty printing of lambda functions
 based on attempting to extract the source code rather than decompile the bytecode.
 This is unfortunately slightly inferior in some cases and may result in you
-occasionally seeing things like lambda x: <unknown> in statistics reports and
+occasionally seeing things like `lambda x: <unknown>` in statistics reports and
 strategy reprs.
 
 This removes the dependencies on uncompyle6, xdis and spark-parser.
