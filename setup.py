@@ -53,6 +53,7 @@ extras[":python_version == '3.3'"] = ['enum34']
 
 install_requires = ['uncompyle6']
 
+
 if sys.version_info[0] < 3:
     install_requires.append('enum34')
 
