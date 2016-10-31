@@ -21,8 +21,6 @@ import sys
 from copy import deepcopy
 from functools import partial
 
-import pytest
-
 from tests.common.utils import raises
 from hypothesis.internal.compat import PY3, ArgSpec, getargspec
 from hypothesis.internal.reflection import proxies, arg_string, \
@@ -174,9 +172,8 @@ def test_names_of_functions_are_pretty():
 
 def test_can_have_unicode_in_lambda_sources():
     t = lambda x: 'é' not in x
-    assert get_pretty_function_description(t) in (
-        u"lambda x: 'é' not in x",
-        u"lambda x: '\\xc3\\xa9' not in x",
+    assert get_pretty_function_description(t) == (
+        "lambda x: 'é' not in x"
     )
 
 
@@ -626,43 +623,3 @@ def varargs(*args, **kwargs):
 
 def test_kwargs_appear_in_arg_string():
     assert 'x=1' in arg_string(varargs, (), {'x': 1})
-
-
-def turn_into_constant(x):
-    def accept(f):
-        return lambda: x
-    return accept
-
-
-@turn_into_constant(lambda x: x % 4 == 0)
-def foo(i):
-    pass
-
-
-def test_can_extract_lambdas_in_decorators():
-    assert get_pretty_function_description(foo()) == u'lambda x: x % 4 == 0'
-
-
-def test_can_see_references_to_enclosing_variables():
-    x = 1
-    assert get_pretty_function_description(lambda y: x * y) == \
-        u'lambda y: x * y'
-
-
-def test_handles_brackets():
-    assert get_pretty_function_description(lambda x, y, z: (x + y) * z) == \
-        u'lambda x, y, z: (x + y) * z'
-
-
-@pytest.mark.xfail
-def test_handles_if_else_in_lambda():
-    assert get_pretty_function_description(lambda x: 1 if x else 2) == \
-        u'lambda x: 1 if x else 2'
-
-
-def test_can_handle_keyword_argument_lambdas():
-    assert get_pretty_function_description(lambda **x: 1) == 'lambda **x: 1'
-
-
-def test_can_handle_variadic_argument_lambdas():
-    assert get_pretty_function_description(lambda *x: 1) == 'lambda *x: 1'

@@ -51,7 +51,7 @@ extras['django'].extend(extras['fakefactory'])
 extras[":python_version == '2.7'"] = ['enum34']
 extras[":python_version == '3.3'"] = ['enum34']
 
-install_requires = ['uncompyle6']
+install_requires = []
 
 if sys.version_info[0] < 3:
     install_requires.append('enum34')

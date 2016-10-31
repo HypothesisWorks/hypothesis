@@ -21,20 +21,19 @@ to really unreasonable lengths to produce pretty output."""
 
 from __future__ import division, print_function, absolute_import
 
-import sys
+import re
+import ast
 import types
 import hashlib
 import inspect
-from io import BytesIO, StringIO
 from types import ModuleType
 from functools import wraps
 
-from uncompyle6 import deparse_code
 from hypothesis.configuration import storage_directory
 from hypothesis.vendor.pretty import pretty
-from hypothesis.internal.compat import PY2, PYPY, hrange, to_str, \
-    qualname, getargspec, to_unicode, isidentifier, str_to_bytes, \
-    update_code_location
+from hypothesis.internal.compat import hrange, to_str, qualname, \
+    getargspec, to_unicode, isidentifier, str_to_bytes, \
+    ARG_NAME_ATTRIBUTE, update_code_location
 
 
 def fully_qualified_name(f):
@@ -170,20 +169,31 @@ def convert_positional_arguments(function, args, kwargs):
     )
 
 
-lambda_source_cache = {}
+def extract_all_lambdas(tree):
+    lambdas = []
+
+    class Visitor(ast.NodeVisitor):
+
+        def visit_Lambda(self, node):
+            lambdas.append(node)
+
+    Visitor().visit(tree)
+
+    return lambdas
+
+
+def args_for_lambda_ast(l):
+    return [getattr(n, ARG_NAME_ATTRIBUTE) for n in l.args.args]
+
+
+LINE_CONTINUATION = re.compile(r"\\\n")
+WHITESPACE = re.compile(r"\s+")
+PROBABLY_A_COMMENT = re.compile("""#[^'"]*$""")
+SPACE_FOLLOWS_OPEN_BRACKET = re.compile(r"\( ")
+SPACE_PRECEDES_CLOSE_BRACKET = re.compile(r"\( ")
 
 
 def extract_lambda_source(f):
-    try:
-        return lambda_source_cache[f.__code__]
-    except KeyError:
-        pass
-    result = _extract_lambda_source(f)
-    lambda_source_cache[f.__code__] = result
-    return result
-
-
-def _extract_lambda_source(f):
     """Extracts a single lambda expression from the string source. Returns a
     string indicating an unknown body if it gets confused in any way.
 
@@ -191,32 +201,80 @@ def _extract_lambda_source(f):
     sins, oh lord
 
     """
-    out = BytesIO() if PY2 else StringIO()
-    deparse_code(
-        sys.version_info[0] + sys.version_info[1] * 0.1,
-        f.__code__,
-        out=out, is_pypy=PYPY, compile_mode='eval'
-    )
-    source = out.getvalue()
-    if source.startswith('return '):
-        source = source[len('return '):]
-    else:
-        source = '<unknown>'
-    args = getargspec(f)
-    arg_bits = []
-    for a in args.args:
-        if isinstance(a, str):
-            arg_bits.append(a)
-        else:  # pragma: no cover
-            assert isinstance(a, list)
-            arg_bits.append('(%s)' % (', '.join(a)))
-    if args.varargs is not None:
-        arg_bits.append('*' + args.varargs)
-    if args.keywords is not None:
-        arg_bits.append('**' + args.keywords)
-    return 'lambda %s: %s' % (
-        ', '.join(arg_bits), source
-    )
+    args = getargspec(f).args
+    arg_strings = []
+    # In Python 2 you can have destructuring arguments to functions. This
+    # results in an argspec with non-string values. I'm not very interested in
+    # handling these properly, but it's important to not crash on them.
+    bad_lambda = False
+    for a in args:
+        if isinstance(a, (tuple, list)):  # pragma: no cover
+            arg_strings.append('(%s)' % (', '.join(a),))
+            bad_lambda = True
+        else:
+            assert isinstance(a, str)
+            arg_strings.append(a)
+
+    if_confused = 'lambda %s: <unknown>' % (', '.join(arg_strings),)
+    if bad_lambda:  # pragma: no cover
+        return if_confused
+    try:
+        source = inspect.getsource(f)
+    except IOError:
+        return if_confused
+
+    source = LINE_CONTINUATION.sub(' ', source)
+    source = WHITESPACE.sub(' ', source)
+    source = source.strip()
+
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        for i in hrange(len(source) - 1, len('lambda'), -1):
+            prefix = source[:i]
+            if 'lambda' not in prefix:
+                return if_confused
+            try:
+                tree = ast.parse(prefix)
+                source = prefix
+                break
+            except SyntaxError:
+                continue
+        else:
+            return if_confused
+
+    all_lambdas = extract_all_lambdas(tree)
+    aligned_lambdas = [
+        l for l in all_lambdas
+        if args_for_lambda_ast(l) == args
+    ]
+    if len(aligned_lambdas) != 1:
+        return if_confused
+    lambda_ast = aligned_lambdas[0]
+    assert lambda_ast.lineno == 1
+    source = source[lambda_ast.col_offset:].strip()
+
+    source = source[source.index('lambda'):]
+    for i in hrange(len(source), len('lambda'), -1):  # pragma: no branch
+        try:
+            parsed = ast.parse(source[:i])
+            assert len(parsed.body) == 1
+            assert parsed.body
+            if not isinstance(parsed.body[0].value, ast.Lambda):
+                continue
+            source = source[:i]
+            break
+        except SyntaxError:
+            pass
+    lines = source.split('\n')
+    lines = [PROBABLY_A_COMMENT.sub('', l) for l in lines]
+    source = '\n'.join(lines)
+
+    source = WHITESPACE.sub(' ', source)
+    source = SPACE_FOLLOWS_OPEN_BRACKET.sub('(', source)
+    source = SPACE_PRECEDES_CLOSE_BRACKET.sub(')', source)
+    source = source.strip()
+    return source
 
 
 def get_pretty_function_description(f):
