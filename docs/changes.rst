@@ -22,6 +22,33 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 ------------------
+3.6.0 - 2016-10-31
+------------------
+
+This release reverts Hypothesis to its old pretty printing of lambda functions
+based on attempting to extract the source code rather than decompile the bytecode.
+This is unfortunately slightly inferior in some cases and may result in you
+occasionally seeing things like lambda x: <unknown> in statistics reports and
+strategy reprs.
+
+This removes the dependencies on uncompyle6, xdis and spark-parser.
+
+The reason for this is that the new functionality was based on uncompyle6, which
+turns out to introduce a hidden GPLed dependency - it in turn depended on xdis,
+and although the library was licensed under the MIT license, it contained some
+GPL licensed source code and thus should have been released under the GPL.
+
+My interpretation is that Hypothesis itself was never in violation of the GPL
+(because the license it is under, the Mozilla Public License v2, is fully
+compatible with being included in a GPL licensed work), but I have not consulted
+a lawyer on the subject. Regardless of the answer to this question, adding a
+GPLed dependency will likely cause a lot of users of Hypothesis to inadvertently
+be in violation of the GPL.
+
+As a result, if you are running Hypothesis 3.5.x you really should upgrade to
+this release immediately.
+
+------------------
 3.5.3 - 2016-10-05
 ------------------
 
