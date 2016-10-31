@@ -157,6 +157,10 @@ class SearchStrategy(object):
             strategy=self,
         )
 
+    @property
+    def branches(self):
+        return [self]
+
     def __or__(self, other):
         """Return a strategy which produces values by randomly drawing from one
         of this strategy or the other strategy.
@@ -227,6 +231,10 @@ class OneOfStrategy(SearchStrategy):
         for e in self.element_strategies:
             e.validate()
 
+    @property
+    def branches(self):
+        return self.element_strategies
+
 
 class MappedSearchStrategy(SearchStrategy):
 
@@ -270,6 +278,14 @@ class MappedSearchStrategy(SearchStrategy):
                 if data.index == i:
                     raise
         reject()
+
+    @property
+    def branches(self):
+        branches = [
+            MappedSearchStrategy(pack=self.pack, strategy=strategy)
+            for strategy in self.mapped_strategy.branches
+        ]
+        return branches
 
 
 class FilteredStrategy(SearchStrategy):
