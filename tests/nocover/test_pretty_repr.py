@@ -17,8 +17,10 @@
 
 from __future__ import division, print_function, absolute_import
 
+from decimal import Decimal
+
 import hypothesis.strategies as st
-from hypothesis import given, settings
+from hypothesis import example, given, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.control import reject
 from hypothesis.internal.compat import OrderedDict
@@ -112,6 +114,10 @@ strategy_globals['baz'] = baz
 
 @given(Strategies)
 @settings(max_examples=2000)
+@example((
+    st.floats().map(st.float_to_decimal) |
+    st.fractions().map(lambda f: Decimal(f.numerator) / f.denominator)
+))
 def test_repr_evals_to_thing_with_same_repr(strategy):
     r = repr(strategy)
     via_eval = eval(r, strategy_globals)
