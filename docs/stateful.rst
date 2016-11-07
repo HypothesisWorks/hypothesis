@@ -202,7 +202,7 @@ We've now written a really noddy tree balancing implementation.  This takes
 trees and puts them into a new bundle of data, and we only assert that things
 in the balanced_trees bundle are actually balanced.
 
-If you run this it will sit their silently for a while (you can turn on
+If you run this it will sit there silently for a while (you can turn on
 :ref:`verbose output <verbose-output>` to get slightly more information about
 what's happening. debug will give you all the intermediate programs being run)
 and then run, telling you your test has passed! Our balancing algorithm worked.
