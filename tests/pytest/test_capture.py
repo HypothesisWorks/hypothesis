@@ -83,3 +83,53 @@ def test_output_emitting_unicode(testdir, monkeypatch):
     assert 'test_emits_unicode' in out
     assert escape_unicode_characters(hunichr(1001)) in out
     assert result.ret == 0
+
+
+TRACEBACKHIDE_TIMEOUT = """
+from hypothesis import given, settings
+from hypothesis.strategies import integers
+import time
+
+@given(integers())
+@settings(timeout=1)
+def test_timeout_traceback_is_hidden(i):
+    time.sleep(1.1)
+"""
+
+
+def get_line_num(token, result):
+    for i, line in enumerate(result.stdout.lines):
+        if token in line:
+            return i
+    assert False, 'Token %r not found' % token
+
+
+def test_timeout_traceback_is_hidden(testdir):
+    script = testdir.makepyfile(TRACEBACKHIDE_TIMEOUT)
+    result = testdir.runpytest(script, '--verbose')
+    def_line = get_line_num('def test_timeout_traceback_is_hidden', result)
+    timeout_line = get_line_num('Timeout: Ran out of time', result)
+    # If __tracebackhide__ works, then the Timeout error message will be
+    # next to the test name.  If it doesn't work, then the message will be
+    # many lines apart with source code dump between them.
+    assert timeout_line - def_line == 1
+
+
+TRACEBACKHIDE_HEALTHCHECK = """
+from hypothesis import given, settings
+from hypothesis.strategies import integers
+import time
+@given(integers().map(lambda x: time.sleep(0.2)))
+def test_healthcheck_traceback_is_hidden(x):
+    pass
+"""
+
+
+def test_healthcheck_traceback_is_hidden(testdir):
+    script = testdir.makepyfile(TRACEBACKHIDE_HEALTHCHECK)
+    result = testdir.runpytest(script, '--verbose')
+    def_token = '__ test_healthcheck_traceback_is_hidden __'
+    timeout_token = ': FailedHealthCheck'
+    def_line = get_line_num(def_token, result)
+    timeout_line = get_line_num(timeout_token, result)
+    assert timeout_line - def_line == 6

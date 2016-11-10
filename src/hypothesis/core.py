@@ -245,6 +245,9 @@ def execute_explicit_examples(
 
 
 def fail_health_check(settings, message, label):
+    # Tell pytest to omit the body of this function from tracebacks
+    # http://doc.pytest.org/en/latest/example/simple.html#writing-well-integrated-assertion-helpers
+    __tracebackhide__ = True
     if label in settings.suppress_health_check:
         return
     message += (
@@ -259,6 +262,8 @@ def fail_health_check(settings, message, label):
 
 
 def perform_health_checks(random, settings, test_runner, search_strategy):
+    # Tell pytest to omit the body of this function from tracebacks
+    __tracebackhide__ = True
     if not settings.perform_health_check:
         return
     if not Settings.default.perform_health_check:
@@ -471,6 +476,8 @@ class StateForActualGivenExecution(object):
             data.mark_interesting()
 
     def run(self):
+        # Tell pytest to omit the body of this function from tracebacks
+        __tracebackhide__ = True
         database_key = str_to_bytes(fully_qualified_name(self.test))
         start_time = time.time()
         runner = ConjectureRunner(
@@ -607,6 +614,9 @@ def given(*given_arguments, **given_kwargs):
             test.__name__, test.__doc__, argspec
         )
         def wrapped_test(*arguments, **kwargs):
+            # Tell pytest to omit the body of this function from tracebacks
+            __tracebackhide__ = True
+
             settings = wrapped_test._hypothesis_internal_use_settings
 
             random = get_random_for_wrapped_test(test, wrapped_test)
