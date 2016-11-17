@@ -236,3 +236,7 @@ It lives in the ``hypothesis.extra.numpy`` package.
       array([-2], dtype=int8)
       >>> rla.example()
       array([ 7, -6, -2], dtype=int8)
+
+**Note**: To generate large arrays/matrices, or even medium-sized matrices that
+have 3 or more dimensions, it is necessary to increase the ``buffer_size``
+setting to be greater than it's default of ``8192``.
