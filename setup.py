@@ -39,7 +39,7 @@ assert __version__ is not None
 
 extras = {
     'datetime':  ["pytz"],
-    'fakefactory': ["fake-factory>=0.6.0"],
+    'fakefactory': ["Faker>=0.7.0,<=0.7.1"],
     'django': ['pytz', 'django>=1.7'],
     'numpy': ['numpy>=1.9.0'],
     'pytest': ['pytest>=2.7.0'],
