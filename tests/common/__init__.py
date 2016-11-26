@@ -54,6 +54,7 @@ ABC = namedtuple('ABC', ('a', 'b', 'c'))
 def abc(x, y, z):
     return builds(ABC, x, y, z)
 
+
 with settings(strict=False):
     standard_types = [
         lists(max_size=0), tuples(), sets(max_size=0), frozensets(max_size=0),

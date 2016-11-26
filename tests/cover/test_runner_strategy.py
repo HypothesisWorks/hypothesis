@@ -69,4 +69,5 @@ class RunnerStateMachine(GenericStateMachine):
     def execute_step(self, step):
         assert self is step
 
+
 TestState = RunnerStateMachine.TestCase

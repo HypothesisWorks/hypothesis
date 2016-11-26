@@ -131,5 +131,6 @@ def main():
     print(u'%d new entries and %d deletions from merge' % (
         result.inserts, result.deletions))
 
+
 if __name__ == u'__main__':
     main()

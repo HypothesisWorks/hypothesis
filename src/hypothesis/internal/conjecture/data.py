@@ -41,6 +41,7 @@ class StopTest(BaseException):
         super(StopTest, self).__init__(repr(testcounter))
         self.testcounter = testcounter
 
+
 global_test_counter = 0
 
 

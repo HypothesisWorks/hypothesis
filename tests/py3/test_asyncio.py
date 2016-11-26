@@ -60,5 +60,6 @@ class TestAsyncio(TestCase):
         yield from asyncio.sleep(0.001)
         assert x
 
+
 if __name__ == '__main__':
     unittest.main()

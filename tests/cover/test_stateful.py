@@ -212,6 +212,7 @@ class NotTheLastMachine(RuleBasedStateMachine):
         assert v == self.last
         self.bye_called = True
 
+
 bad_machines = (
     OrderedStateMachine, SetStateMachine, BalancedTrees,
     DepthMachine, RoseTreeStateMachine, NotTheLastMachine,
@@ -354,6 +355,7 @@ class DynamicMachine(RuleBasedStateMachine):
     def test_stuff(x):
         pass
 
+
 DynamicMachine.define_rule(
     targets=(), function=lambda self: 1, arguments={}
 )
@@ -361,6 +363,7 @@ DynamicMachine.define_rule(
 
 class IntAdder(RuleBasedStateMachine):
     pass
+
 
 IntAdder.define_rule(
     targets=(u'ints',), function=lambda self, x: x, arguments={
@@ -478,6 +481,7 @@ class FailsEventually(GenericStateMachine):
     def execute_step(self, _):
         self.counter += 1
         assert self.counter < 10
+
 
 FailsEventually.TestCase.settings = Settings(
     FailsEventually.TestCase.settings, stateful_step_count=5)

@@ -75,4 +75,5 @@ class DatabaseComparison(RuleBasedStateMachine):
             d.close()
         shutil.rmtree(self.tempd)
 
+
 TestDBs = DatabaseComparison.TestCase
