@@ -26,6 +26,15 @@ Hypothesis is extremely practical and advances the state of the art of
 unit testing by some way. It's easy to use, stable, and powerful. If
 you're not using Hypothesis to test your project then you're missing out.
 
+------------------------
+Quick Start/Installation
+------------------------
+If you just want to get started:
+
+.. code-block:: sh
+pip install hypothesis
+.. code-block::
+
 -----------------
 Links of interest
 -----------------
