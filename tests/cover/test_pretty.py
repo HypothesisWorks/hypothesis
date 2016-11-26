@@ -102,6 +102,7 @@ def skip_without(mod):
     except ImportError:
         return pytest.mark.skipif(True, reason='Missing %s' % (mod,))
 
+
 assert_raises = pytest.raises
 
 
@@ -148,6 +149,7 @@ class Dummy2(Dummy1):
 
 class NoModule(object):
     pass
+
 
 NoModule.__module__ = None
 

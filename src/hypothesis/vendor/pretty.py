@@ -108,6 +108,7 @@ def _safe_getattr(obj, attr, default=None):
     except Exception:
         return default
 
+
 if PY3:
     CUnicodeIO = StringIO
 else:  # pragma: no cover
@@ -495,6 +496,7 @@ class GroupQueue(object):
         except ValueError:
             pass
 
+
 try:
     _baseclass_reprs = (object.__repr__, types.InstanceType.__repr__)
 except AttributeError:  # Python 3
@@ -858,6 +860,7 @@ def _counter_pprint(obj, p, cycle):
             p.text('...')
         elif len(obj):
             p.pretty(dict(obj))
+
 
 for_type_by_name('collections', 'defaultdict', _defaultdict_pprint)
 for_type_by_name('collections', 'OrderedDict', _ordereddict_pprint)
