@@ -32,8 +32,8 @@ Quick Start/Installation
 If you just want to get started:
 
 .. code-block:: sh
-pip install hypothesis
-.. code-block::
+  pip install hypothesis
+
 
 -----------------
 Links of interest
