@@ -33,6 +33,7 @@ class Timeout(BaseException):
 class CatchableTimeout(Exception):
     pass
 
+
 try:
     signal.SIGALRM
     # The tests here have a tendency to run away with themselves a it if

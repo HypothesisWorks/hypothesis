@@ -134,6 +134,7 @@ TestDiverseFlatmap = strategy_test_suite(
 def integers_from(x):
     return integers(min_value=x)
 
+
 TestManyFlatmaps = strategy_test_suite(
     integers()
     .flatmap(integers_from)
@@ -186,6 +187,7 @@ def tight_integer_list(draw):
     x = draw(integers())
     y = draw(integers(min_value=x))
     return draw(lists(integers(min_value=x, max_value=y)))
+
 
 TestComposite = strategy_test_suite(tight_integer_list())
 

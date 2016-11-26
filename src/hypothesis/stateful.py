@@ -196,6 +196,7 @@ class GenericStateMachine(object):
         )
         return StateMachineTestCase
 
+
 GenericStateMachine.find_breaking_runner = classmethod(find_breaking_runner)
 
 
@@ -270,6 +271,7 @@ class Bundle(SearchStrategy):
         reference = bundle.pop()
         bundle.insert(integer_range(data, 0, len(bundle)), reference)
         return machine.names_to_values[reference.name]
+
 
 RULE_MARKER = u'hypothesis_stateful_rule'
 PRECONDITION_MARKER = u'hypothesis_stateful_precondition'

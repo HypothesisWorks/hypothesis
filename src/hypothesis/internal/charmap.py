@@ -33,6 +33,7 @@ def charmap_file():
         'charmap.pickle.gz'
     )
 
+
 _charmap = None
 
 

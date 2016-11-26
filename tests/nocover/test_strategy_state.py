@@ -228,6 +228,7 @@ class HypothesisSpec(RuleBasedStateMachine):
     def repr_is_good(self, strat):
         assert u' at 0x' not in repr(strat)
 
+
 MAIN = __name__ == u'__main__'
 
 TestHypothesis = HypothesisSpec.TestCase
