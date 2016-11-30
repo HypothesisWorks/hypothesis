@@ -71,6 +71,7 @@ check out some of the
   manifesto
   endorsements
   usage
+  strategies
   changes
   development
   support
