@@ -1066,6 +1066,10 @@ def data():
             ) % (name,))
     return DataStrategy()
 
+def regex(pattern):
+    from hypothesis.searchstrategy.regex import RegexStrategy
+    return RegexStrategy(pattern)
+
 # Private API below here
 
 
