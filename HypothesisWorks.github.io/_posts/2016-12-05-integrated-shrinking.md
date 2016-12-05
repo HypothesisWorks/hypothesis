@@ -13,8 +13,8 @@ how shrinking is handled.
 Specifically, the way shrinking is handled in Haskell QuickCheck is bad
 and the way it works in Hypothesis (and also in test.check and EQC) is
 good. If you're implementing a property based testing system, you should
-use the good way. If you're using a property based system and it doesn't
-use the good way, you need to know about this failure mode.
+use the good way. If you're using a property based testing system and it
+doesn't use the good way, you need to know about this failure mode.
 
 Unfortunately many (and possibly most) implementations of property based
 testing are based on Haskell's QuickCheck and so make the same mistake.
