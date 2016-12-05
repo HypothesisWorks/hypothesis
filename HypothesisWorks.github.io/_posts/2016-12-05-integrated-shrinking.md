@@ -146,7 +146,7 @@ Haskell](https://mail.haskell.org/pipermail/libraries/2013-November/021674.html)
 and [Jack](https://github.com/ambiata/disorder.hs/tree/master/disorder-jack) is
 an alternative property based system for Haskell that does this - but you
 feel the pain much more quickly in dynamic languages because the typical
-workaround for this problem in Haskell is to define a new type, which lets you
+workaround for this problem in Haskell is to define a newtype, which lets you
 turn off the default shrinking for your types and possibly define your own.
 
 But that's a workaround for a problem that shouldn't be there in the first place,
@@ -155,7 +155,7 @@ your shrinkers, which is more work and more brittle than just having it work
 automatically.
 
 So although (as far as I know) none of the currently popular property based
-testing languages for statically typed languages implement this behaviour
+testing systems for statically typed languages implement this behaviour
 correctly, they absolutely can and they absolutely should. It will improve
 users' lives significantly.
 
