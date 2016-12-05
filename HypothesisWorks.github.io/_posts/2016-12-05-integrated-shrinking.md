@@ -91,7 +91,7 @@ integer which fails the test is 6.
 But suppose Hypothesis implemented type based shrinking (very early
 versions of it *did* implement type based shrinking, but this stopped
 being the case somewhere well before 1.0 when the API looked very
-differnet).
+different).
 
 In that case Hypothesis would just know that these things that were
 failing the tests were integers, so it would say "How about 1? 1 is a
@@ -146,7 +146,7 @@ Haskell](https://mail.haskell.org/pipermail/libraries/2013-November/021674.html)
 and [Jack](https://github.com/ambiata/disorder.hs/tree/master/disorder-jack) is
 an alternative property based system for Haskell that does this - but you
 feel the pain much more quickly in dynamic languages because the typical
-workaround for this problem in Haskell is to define a newtype, which lets you
+workaround for this problem in Haskell is to define a new type, which lets you
 turn off the default shrinking for your types and possibly define your own.
 
 But that's a workaround for a problem that shouldn't be there in the first place,
@@ -155,7 +155,7 @@ your shrinkers, which is more work and more brittle than just having it work
 automatically.
 
 So although (as far as I know) none of the currently popular property based
-testing langugages for statically typed languages implement this behaviour
+testing languages for statically typed languages implement this behaviour
 correctly, they absolutely can and they absolutely should. It will improve
 users' lives significantly.
 
