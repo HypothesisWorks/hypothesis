@@ -91,7 +91,7 @@ integer which fails the test is 6.
 But suppose Hypothesis implemented type based shrinking (very early
 versions of it *did* implement type based shrinking, but this stopped
 being the case somewhere well before 1.0 when the API looked very
-differnet).
+different).
 
 In that case Hypothesis would just know that these things that were
 failing the tests were integers, so it would say "How about 1? 1 is a
@@ -155,7 +155,7 @@ your shrinkers, which is more work and more brittle than just having it work
 automatically.
 
 So although (as far as I know) none of the currently popular property based
-testing langugages for statically typed languages implement this behaviour
+testing systems for statically typed languages implement this behaviour
 correctly, they absolutely can and they absolutely should. It will improve
 users' lives significantly.
 
