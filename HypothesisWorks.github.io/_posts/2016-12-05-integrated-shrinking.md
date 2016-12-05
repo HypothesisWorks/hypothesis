@@ -139,11 +139,13 @@ and trying to recreate the invariants that are automatically
 satisfied with that in your tests and/or your custom shrinkers would
 quickly become a nightmare.
 
-I don't think it's an accident that all of the systems that get this right are
+I don't think it's an accident that the main systems to get this right are
 in dynamic languages. It's certainly not *essential* - [the original proposal that
 lead to the implementation for test.check was for
 Haskell](https://mail.haskell.org/pipermail/libraries/2013-November/021674.html),
-but you feel the pain much more quickly in dynamic languages because the typical
+and [Jack](https://github.com/ambiata/disorder.hs/tree/master/disorder-jack) is
+an alternative property based system for Haskell that does this - but you
+feel the pain much more quickly in dynamic languages because the typical
 workaround for this problem in Haskell is to define a newtype, which lets you
 turn off the default shrinking for your types and possibly define your own.
 
