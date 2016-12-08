@@ -34,9 +34,8 @@ This may seem counter-intuitive, but it actually works pretty well.
 
 <!--more-->
 
-The way this works in Hypothesis or test.check works a bit differently,
-so I'll hold off explaining on how this works for a minute, but lets
-start with why this is important.
+Rather than going into implementation details just yet, lets start
+with why this is important.
 
 Consider the example from the last post:
 
