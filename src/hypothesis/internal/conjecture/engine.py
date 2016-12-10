@@ -376,6 +376,8 @@ class TestRunner(object):
 
         while self.changed > change_counter:
             change_counter = self.changed
+
+            self.debug('Random interval deletes')
             failed_deletes = 0
             while self.last_data.intervals and failed_deletes < 10:
                 if self.random.randint(0, 1):
@@ -394,6 +396,8 @@ class TestRunner(object):
                     failed_deletes = 0
                 else:
                     failed_deletes += 1
+
+            self.debug('Structured interval deletes')
             i = 0
             while i < len(self.last_data.intervals):
                 u, v = self.last_data.intervals[i]
@@ -409,6 +413,8 @@ class TestRunner(object):
                     self.last_data.buffer[i + 1:]
                 ):
                     i += 1
+
+            self.debug('Replacing blocks with simpler blocks')
             i = 0
             while i < len(self.last_data.blocks):
                 u, v = self.last_data.blocks[i]
@@ -427,6 +433,7 @@ class TestRunner(object):
                         break
                 i += 1
 
+            self.debug('Simultaneous shrinking of duplicated blocks')
             block_counter = -1
             while block_counter < self.changed:
                 block_counter = self.changed
@@ -453,6 +460,7 @@ class TestRunner(object):
                         self.random
                     )
 
+            self.debug('Shrinking of individual blocks')
             i = 0
             while i < len(self.last_data.blocks):
                 u, v = self.last_data.blocks[i]
