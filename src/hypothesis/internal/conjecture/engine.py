@@ -406,13 +406,20 @@ class TestRunner(object):
                     self.last_data.buffer[v:]
                 ):
                     i += 1
-            i = 0
-            while i + 1 < len(self.last_data.buffer):
-                if not self.incorporate_new_buffer(
-                    self.last_data.buffer[:i] +
-                    self.last_data.buffer[i + 1:]
-                ):
-                    i += 1
+
+            if change_counter != self.changed:
+                self.debug('Restarting')
+                continue
+
+            self.debug('Lexicographical minimization of whole buffer')
+            minimize(
+                self.last_data.buffer, self.incorporate_new_buffer,
+                cautious=True
+            )
+
+            if change_counter != self.changed:
+                self.debug('Restarting')
+                continue
 
             self.debug('Replacing blocks with simpler blocks')
             i = 0

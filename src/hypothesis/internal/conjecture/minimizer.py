@@ -40,18 +40,19 @@ to do better in practice:
 
 class Minimizer(object):
 
-    def __init__(self, initial, condition, random):
+    def __init__(self, initial, condition, random, cautious):
         self.current = hbytes(initial)
         self.size = len(self.current)
         self.condition = condition
         self.random = random
+        self.cautious = cautious
         self.changes = 0
 
     def incorporate(self, buffer):
         assert isinstance(buffer, hbytes)
         assert len(buffer) == self.size
         assert buffer <= self.current
-        if self.condition(buffer):
+        if buffer != self.current and self.condition(buffer):
             self.current = buffer
             self.changes += 1
             return True
@@ -82,15 +83,38 @@ class Minimizer(object):
             return
         if self.incorporate(hbytes(self.size)):
             return
-        for c in hrange(max(self.current)):
-            if self.incorporate(
-                hbytes(min(b, c) for b in self.current)
-            ):
-                break
-
         change_counter = -1
         while self.current and change_counter < self.changes:
             change_counter = self.changes
+            for c in hrange(max(self.current)):
+                if self.incorporate(
+                    hbytes(min(b, c) for b in self.current)
+                ):
+                    break
+
+            for c in sorted(set(self.current), reverse=True):
+                for d in range(c):
+                    if self.incorporate(
+                        hbytes(d if b == c else b for b in self.current)
+                    ):
+                        break
+
+            for c in range(max(self.current)):
+                k = len(self.current) // 2
+                while k > 0:
+                    i = 0
+                    while i + k <= len(self.current):
+                        self.incorporate(
+                            self.current[:i] +
+                            hbytes(min(b, c) for b in self.current[i:i + k]) +
+                            self.current[i + k:]
+                        )
+                        i += k
+                    k //= 2
+
+            if change_counter != self.changes or self.cautious:
+                continue
+
             for i in hrange(self.size):
                 t = self.current[i]
                 if t > 0:
@@ -126,7 +150,18 @@ for b in hrange(10, 256):
     small_shrinks.append(sorted(result))
 
 
-def minimize(initial, condition, random=None):
-    m = Minimizer(initial, condition, random)
+def minimize(initial, condition, random=None, cautious=False):
+    """Perform a lexicographical minimization of the byte string 'initial' such
+    that the predicate 'condition' returns True, and return the minimized
+    string.
+
+    If 'cautious' is set to True, this will only consider strings that
+    satisfy the stronger condition that no individual byte is increased
+    from the original. e.g. normally bytes([0, 255]) is considered a
+    valid shrink of bytes([1, 0]), but if cautious is set it will not
+    be.
+
+    """
+    m = Minimizer(initial, condition, random, cautious)
     m.run()
     return m.current
