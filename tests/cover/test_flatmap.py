@@ -94,3 +94,13 @@ def test_mixed_list_flatmap():
     result = find(s, criterion)
     assert len(result) == 6
     assert set(result) == set([False, u''])
+
+
+@pytest.mark.parametrize('n', range(1, 10))
+def test_can_shrink_through_a_binding(n):
+    bool_lists = integers(0, 100).flatmap(
+        lambda k: lists(booleans(), min_size=k, max_size=k))
+
+    assert find(
+        bool_lists, lambda x: len(list(filter(bool, x))) >= n
+    ) == [True] * n

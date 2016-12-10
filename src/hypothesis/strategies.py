@@ -901,7 +901,15 @@ def composite(f):
         class CompositeStrategy(SearchStrategy):
 
             def do_draw(self, data):
-                return f(data.draw, *args, **kwargs)
+                first_draw = [True]
+
+                def draw(strategy):
+                    if not first_draw[0]:
+                        data.mark_bind()
+                    first_draw[0] = False
+                    return data.draw(strategy)
+
+                return f(draw, *args, **kwargs)
         return CompositeStrategy()
     return accept
 
@@ -1032,6 +1040,7 @@ def data():
             return 'data(...)'
 
         def draw(self, strategy):
+            self.data.mark_bind()
             result = self.data.draw(strategy)
             self.count += 1
             note('Draw %d: %r' % (self.count, result))

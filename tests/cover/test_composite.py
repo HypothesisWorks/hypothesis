@@ -18,6 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 import pytest
+from flaky import flaky
 
 import hypothesis.strategies as st
 from hypothesis import find, given, assume
@@ -95,3 +96,35 @@ def test_composite_of_lists():
         return draw(st.integers()) + draw(st.integers())
 
     assert find(st.lists(f()), lambda x: len(x) >= 10) == [0] * 10
+
+
+@flaky(min_passes=5, max_runs=5)
+def test_can_shrink_matrices_with_length_param():
+    @st.composite
+    def matrix(draw):
+        rows = draw(st.integers(1, 10))
+        columns = draw(st.integers(1, 10))
+        return [
+            [draw(st.integers(0, 10000)) for _ in range(columns)]
+            for _ in range(rows)
+        ]
+
+    def transpose(m):
+        rows = len(m)
+        columns = len(m[0])
+        result = [
+            [None] * rows
+            for _ in range(columns)
+        ]
+        for i in range(rows):
+            for j in range(columns):
+                result[j][i] = m[i][j]
+        return result
+
+    def is_square(m):
+        return len(m) == len(m[0])
+
+    value = find(matrix(), lambda m: is_square(m) and transpose(m) != m)
+    assert len(value) == 2
+    assert len(value[0]) == 2
+    assert sorted(value[0] + value[1]) == [0, 0, 0, 1]

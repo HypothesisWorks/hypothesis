@@ -93,13 +93,13 @@ class Minimizer(object):
                     break
 
             for c in sorted(set(self.current), reverse=True):
-                for d in range(c):
+                for d in hrange(c):
                     if self.incorporate(
                         hbytes(d if b == c else b for b in self.current)
                     ):
                         break
 
-            for c in range(max(self.current)):
+            for c in hrange(max(self.current)):
                 k = len(self.current) // 2
                 while k > 0:
                     i = 0

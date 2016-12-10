@@ -506,6 +506,37 @@ class TestRunner(object):
                                 break
                     i += 1
 
+            if change_counter != self.changed:
+                self.debug('Restarting')
+                continue
+
+            self.debug('Shuffling suffixes while shrinking %r' % (
+                self.last_data.bind_points,
+            ))
+            b = 0
+            while b < len(self.last_data.bind_points):
+                cutoff = sorted(self.last_data.bind_points)[b]
+
+                def test_value(prefix):
+                    for t in hrange(5):
+                        alphabet = {}
+                        for i, j in self.last_data.blocks[b:]:
+                            alphabet.setdefault(j - i, []).append((i, j))
+                        if t > 0:
+                            for v in alphabet.values():
+                                self.random.shuffle(v)
+                        buf = bytearray(prefix)
+                        for i, j in self.last_data.blocks[b:]:
+                            u, v = alphabet[j - i].pop()
+                            buf.extend(self.last_data.buffer[u:v])
+                        if self.incorporate_new_buffer(hbytes(buf)):
+                            return True
+                    return False
+                minimize(
+                    self.last_data.buffer[:cutoff], test_value, cautious=True
+                )
+                b += 1
+
         self.exit_reason = ExitReason.finished
 
     def event_to_string(self, event):

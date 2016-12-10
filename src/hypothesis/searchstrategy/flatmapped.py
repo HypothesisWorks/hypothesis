@@ -40,4 +40,5 @@ class FlatMapStrategy(SearchStrategy):
 
     def do_draw(self, data):
         source = data.draw(self.flatmapped_strategy)
+        data.mark_bind()
         return data.draw(self.expand(source))
