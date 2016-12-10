@@ -480,24 +480,32 @@ class TestRunner(object):
                 )
                 i += 1
 
-            i = 0
-            alternatives = None
-            while i < len(self.last_data.intervals):
-                if alternatives is None:
-                    alternatives = sorted(set(
-                        self.last_data.buffer[u:v]
-                        for u, v in self.last_data.intervals), key=len)
-                u, v = self.last_data.intervals[i]
-                for a in alternatives:
-                    buf = self.last_data.buffer
-                    if (
-                        len(a) < v - u or
-                        (len(a) == (v - u) and a < buf[u:v])
-                    ):
-                        if self.incorporate_new_buffer(buf[:u] + a + buf[v:]):
-                            alternatives = None
-                            break
-                i += 1
+            self.debug('Replacing intervals with simpler intervals')
+
+            interval_counter = -1
+            while interval_counter != self.changed:
+                interval_counter = self.changed
+                i = 0
+                alternatives = None
+                while i < len(self.last_data.intervals):
+                    if alternatives is None:
+                        alternatives = sorted(set(
+                            self.last_data.buffer[u:v]
+                            for u, v in self.last_data.intervals), key=len)
+                    u, v = self.last_data.intervals[i]
+                    for a in alternatives:
+                        buf = self.last_data.buffer
+                        if (
+                            len(a) < v - u or
+                            (len(a) == (v - u) and a < buf[u:v])
+                        ):
+                            if self.incorporate_new_buffer(
+                                buf[:u] + a + buf[v:]
+                            ):
+                                alternatives = None
+                                break
+                    i += 1
+
         self.exit_reason = ExitReason.finished
 
     def event_to_string(self, event):
