@@ -20,11 +20,11 @@ from __future__ import division, print_function, absolute_import
 import re
 import sys
 import string
-from builtins import chr, range
 from itertools import chain
 
 import hypothesis.strategies as strats
 from hypothesis.searchstrategy import SearchStrategy
+from hypothesis.internal.compat import hunichr, hrange
 
 
 def strategy_concat(strategies):
@@ -71,9 +71,9 @@ class RegexStrategy(SearchStrategy):
     def _handle_character_sets(self, state):
         opcode, value = state
         if opcode == 'range':
-            return [chr(val) for val in range(value[0], value[1] + 1)]
+            return [hunichr(val) for val in hrange(value[0], value[1] + 1)]
         elif opcode == 'literal':
-            return [chr(value)]
+            return [hunichr(value)]
         elif opcode == 'category':
             return self._categories(value)
         else:
@@ -82,9 +82,9 @@ class RegexStrategy(SearchStrategy):
     def _handle_state(self, state):
         opcode, value = state
         if opcode == 'literal':
-            return strats.just(chr(value))
+            return strats.just(hunichr(value))
         elif opcode == 'not_literal':
-            return strats.characters(blacklist_characters=chr(value))
+            return strats.characters(blacklist_characters=hunichr(value))
         elif opcode == 'at':
             return strats.just('')
         elif opcode == 'in':
