@@ -15,74 +15,80 @@
 #
 # END HEADER
 
+from __future__ import division, print_function, absolute_import
+
+import re
+import sys
+import string
+from builtins import chr, range
+from itertools import chain
+
 import hypothesis.strategies as strats
 from hypothesis.searchstrategy import SearchStrategy
-from itertools import chain
-import string
-import sys
-import re
 
-def strategy_join(*strategies):
-    return strats.builds(lambda *x: u"".join(x),*strategies)
 
-#don't use very long examples
-limit = 15
+def strategy_concat(strategies):
+    """given a list of strategies yielding strings return a strategy yielding
+    their concatenation."""
+    return strats.tuples(*strategies).map(lambda x: u"".join(x))
+
 
 class RegexStrategy(SearchStrategy):
-    """
-    Strategy for generating strings conforming to a regular expression
+    """Strategy for generating strings matching a regular expression.
 
-    maybe there are problems with locales
+    Currently does not support \B, positive and negative lookbehind
+    assertions and conditional matching.
+
     """
-    def __init__(self,pattern):
+
+    def __init__(self, pattern):
         parsed = re.sre_parse.parse(pattern)
         self.cache = {}
         self.strategies = [self._handle_state(state) for state in parsed]
 
-    def do_draw(self,data):
+    def do_draw(self, data):
         self.cache = {}
         return u"".join(data.draw(strat) for strat in self.strategies)
 
-    def _categories(self,category):
-        if category == "category_digit":
+    def _categories(self, category):
+        if category == 'category_digit':
             return string.digits
-        elif category == "category_not_digit":
+        elif category == 'category_not_digit':
             return string.ascii_letters + string.punctuation
-        elif category == "category_space":
+        elif category == 'category_space':
             return string.whitespace
-        elif category == "category_not_space":
+        elif category == 'category_not_space':
             return string.printable.strip()
-        elif category == "category_word":
+        elif category == 'category_word':
             return string.ascii_letters + string.digits + '_'
-        elif category == "category_not_word":
+        elif category == 'category_not_word':
             return ''.join(set(string.printable)
-                            .difference(string.ascii_letters +
-                                        string.digits + '_'))
+                           .difference(string.ascii_letters +
+                                       string.digits + '_'))
+        else:
+            raise NotImplementedError
 
-    def _handle_character_sets(self,state):
+    def _handle_character_sets(self, state):
         opcode, value = state
-        if opcode == "range":
-            return [unichr(val) for val in xrange(value[0],value[1]+1)]
-        elif opcode == "literal":
-            return [unichr(value)]
-        elif opcode == "category":
+        if opcode == 'range':
+            return [chr(val) for val in range(value[0], value[1] + 1)]
+        elif opcode == 'literal':
+            return [chr(value)]
+        elif opcode == 'category':
             return self._categories(value)
         else:
-            print "Unknown opcode in handle_negated_state",opcode
+            raise NotImplementedError
 
-    def _handle_state(self,state):
-        """
-        returns a strategy
-        """
+    def _handle_state(self, state):
         opcode, value = state
-        if opcode == "literal":
-            return strats.just(unichr(value))
-        elif opcode == "not_literal":
-            return strats.characters(blacklist_characters=unichr(value))
-        elif opcode == "at":
-            return strats.just("")
-        elif opcode == "in":
-            if value[0][0] == "negate":
+        if opcode == 'literal':
+            return strats.just(chr(value))
+        elif opcode == 'not_literal':
+            return strats.characters(blacklist_characters=chr(value))
+        elif opcode == 'at':
+            return strats.just('')
+        elif opcode == 'in':
+            if value[0][0] == 'negate':
                 candidates = []
                 for v in value[1:]:
                     candidates.extend(chain(*(self._handle_character_sets(v))))
@@ -92,36 +98,34 @@ class RegexStrategy(SearchStrategy):
                 for v in value:
                     candidates.extend(chain(*(self._handle_character_sets(v))))
                 return strats.sampled_from(candidates)
-        elif opcode == "any":
+        elif opcode == 'any':
             return strats.characters()
-        elif opcode == "range":
-            return strats.integers(min_value=value[0],max_value=value[1]).map(unichr)
-        elif opcode == "category":
-            return strats.text(alphabet=categories(value),max_size=1,min_size=1)
-        elif opcode == "branch":
+        elif opcode == 'branch':
             branches = []
-            for branch in value[1]:
-                strat_tuple = strats.tuples(*[self._handle_state(v) for v in branch])
-                branches.append(strat_tuple.map(lambda x: u"".join(x)))
+            for val in value[1]:
+                branch = [self._handle_state(v) for v in val]
+                branches.append(strategy_concat(branch))
             return strats.one_of(branches)
-        elif opcode == "subpattern":
+        elif opcode == 'subpattern':
             parts = []
             for part in value[1]:
                 parts.append(self._handle_state(part))
-            result = strats.tuples(*parts).map(lambda x: u"".join(x))
+            result = strategy_concat(parts)
             if value[0]:
                 self.cache[value[0]] = result
-                result = strats.shared(result,key=value[0])
+                result = strats.shared(result, key=value[0])
             return result
-        elif opcode == "assert":
-            return strats.just("")
-        elif opcode == "assert_not":
-            return strats.just("")
-        elif opcode == "groupref":
-            return strats.shared(self.cache[value],key=value)
-        elif opcode == "min_repeat":
+        elif opcode == 'assert':
+            result = []
+            for part in value[1]:
+                result.append(self._handle_state(part))
+            return strategy_concat(result)
+        elif opcode == 'assert_not':
+            return strats.just('')
+        elif opcode == 'groupref':
+            return strats.shared(self.cache[value], key=value)
+        elif opcode == 'min_repeat':
             start_range, end_range, val = value
-            end_range = min((end_range, limit))
             result = []
             for v in val:
                 part = strats.lists(
@@ -130,10 +134,9 @@ class RegexStrategy(SearchStrategy):
                     max_size=end_range
                 ).map(lambda x: u"".join(x))
                 result.append(part)
-            return strategy_join(*result)
-        elif opcode == "max_repeat":
+            return strategy_concat(result)
+        elif opcode == 'max_repeat':
             start_range, end_range, val = value
-            end_range = min((end_range, limit))
             result = []
             for v in val:
                 part = strats.lists(
@@ -142,6 +145,6 @@ class RegexStrategy(SearchStrategy):
                     max_size=end_range
                 ).map(lambda x: u"".join(x))
                 result.append(part)
-            return strategy_join(*result)
+            return strats.tuples(*result).map(lambda x: u"".join(x))
         else:
-            print "Unknown opcode",opcode, value
+            raise NotImplementedError(opcode)

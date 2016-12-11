@@ -48,6 +48,7 @@ __all__ = [
     'randoms', 'random_module',
     'recursive', 'composite',
     'shared', 'runner',
+    'regex',
 ]
 
 _strategies = set()
@@ -1066,6 +1067,8 @@ def data():
             ) % (name,))
     return DataStrategy()
 
+
+@defines_strategy
 def regex(pattern):
     from hypothesis.searchstrategy.regex import RegexStrategy
     return RegexStrategy(pattern)
