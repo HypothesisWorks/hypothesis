@@ -51,6 +51,7 @@ def test_qualname():
     assert qualname(Foo().bar) == u'Foo.bar'
     assert qualname(qualname) == u'qualname'
 
+
 try:
     from inspect import getargspec
 except ImportError:
@@ -72,6 +73,7 @@ def c(c, d, *ar, **k):
 def d(a1, a2=1, a3=2, a4=None):
     pass
 
+
 if getargspec is not None and HAS_SIGNATURE:
     @pytest.mark.parametrize('f', [
         a, b, c, d
@@ -88,6 +90,7 @@ if getargspec is not None and HAS_SIGNATURE:
 def test_convert_back(bs):
     bs = bytearray(bs)
     assert int_to_bytes(int_from_bytes(bs), len(bs)) == bs
+
 
 bytes8 = st.builds(bytearray, st.binary(min_size=8, max_size=8))
 

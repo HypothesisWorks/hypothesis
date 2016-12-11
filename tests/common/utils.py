@@ -64,4 +64,5 @@ def fails_with(e):
         return inverted_test
     return accepts
 
+
 fails = fails_with(AssertionError)

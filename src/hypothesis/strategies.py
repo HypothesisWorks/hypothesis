@@ -129,6 +129,7 @@ class Nothing(SearchStrategy):
     def flatmap(self, f):
         return self
 
+
 NOTHING = Nothing()
 
 

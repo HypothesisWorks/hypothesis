@@ -41,10 +41,6 @@ fns = [
 ]
 
 
-def return_args(*args, **kwargs):
-    return args, kwargs
-
-
 def builds_ignoring_invalid(target, *args, **kwargs):
     def splat(value):
         try:

@@ -74,6 +74,7 @@ class settingsProperty(object):
             'default value: %r' % (getattr(settings.default, self.name),)
         ))
 
+
 default_variable = DynamicVariable(None)
 
 
@@ -493,6 +494,7 @@ class Verbosity(object):
         if isinstance(result, Verbosity):
             return result
         raise InvalidArgument('No such verbosity level %r' % (key,))
+
 
 Verbosity.quiet = Verbosity('quiet', 0)
 Verbosity.normal = Verbosity('normal', 1)

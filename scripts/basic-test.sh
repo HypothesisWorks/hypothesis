@@ -54,7 +54,7 @@ if [ "$(python -c 'import platform; print(platform.python_implementation())')" !
   if [ "$(python -c 'import sys; print(sys.version_info[0] == 2 or sys.version_info[:2] >= (3, 4))')" == "True" ] ; then
     pip install .[django]
     python -m tests.django.manage test tests.django
-    pip uninstall -y django fake-factory
+    pip uninstall -y django faker
   fi
   fi
 
