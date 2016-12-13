@@ -39,7 +39,7 @@ import hypothesis.internal.reflection as reflection
 from hypothesis import settings as Settings
 from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.strategies import just, sets, text, lists, floats, \
-    tuples, booleans, integers, sampled_from
+    one_of, tuples, booleans, integers, sampled_from
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.conjecture.engine import \
     TestRunner as ConTestRunner
@@ -415,4 +415,41 @@ test_integers_are_sometimes_zero = define_test(
 
 test_integers_are_often_small = define_test(
     integers(), 0.2, lambda x: abs(x) <= 100
+)
+
+# This series of tests checks that the one_of() strategy flattens branches
+# correctly.  In this highly nested strategy, we expected that any one
+# of the eight outcomes could occur with equal probability: 1/8 = 0.125.
+# We check this is the case for values at different levels of nesting.
+one_of_nested_strategy = one_of(
+    just(1),
+    one_of(
+        just(2),
+        just(3),
+        one_of(
+            just(4),
+            just(5),
+            one_of(
+                just(6),
+                just(7),
+                just(8)
+            )
+        )
+    )
+)
+
+test_one_of_flattens_branches_1 = define_test(
+    one_of_nested_strategy, 0.1, lambda x: x == 1,
+)
+
+test_one_of_flattens_branches_3 = define_test(
+    one_of_nested_strategy, 0.1, lambda x: x == 3,
+)
+
+test_one_of_flattens_branches_5 = define_test(
+    one_of_nested_strategy, 0.1, lambda x: x == 3,
+)
+
+test_one_of_flattens_branches_8 = define_test(
+    one_of_nested_strategy, 0.1, lambda x: x == 8,
 )
