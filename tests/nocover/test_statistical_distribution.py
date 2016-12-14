@@ -453,3 +453,36 @@ test_one_of_flattens_branches_5 = define_test(
 test_one_of_flattens_branches_8 = define_test(
     one_of_nested_strategy, 0.1, lambda x: x == 8,
 )
+
+# And now we test interactions with map().  The full set of values this
+# test produces is {1, 4, 6, 16, 20, 24, 28, 32}.  Again, we expect that
+# each value should be produce in roughly equal measure.
+double = lambda x: x * 2
+one_of_nested_strategy_with_map = one_of(
+    just(1),
+    one_of(
+        (just(2) | just(3)).map(double),
+        one_of(
+            (just(4) | just(5)).map(double),
+            one_of(
+                (just(6) | just(7) | just(8)).map(double)
+            )
+        ).map(double)
+    )
+)
+
+test_one_of_flattens_mapped_branches_1 = define_test(
+    one_of_nested_strategy_with_map, 0.1, lambda x: x == 1,
+)
+
+test_one_of_flattens_mapped_branches_6 = define_test(
+    one_of_nested_strategy_with_map, 0.1, lambda x: x == 6,
+)
+
+test_one_of_flattens_mapped_branches_20 = define_test(
+    one_of_nested_strategy_with_map, 0.1, lambda x: x == 20,
+)
+
+test_one_of_flattens_mapped_branches_32 = define_test(
+    one_of_nested_strategy_with_map, 0.1, lambda x: x == 32,
+)
