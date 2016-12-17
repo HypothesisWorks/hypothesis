@@ -376,6 +376,8 @@ class TestRunner(object):
 
         while self.changed > change_counter:
             change_counter = self.changed
+
+            self.debug('Random interval deletes')
             failed_deletes = 0
             while self.last_data.intervals and failed_deletes < 10:
                 if self.random.randint(0, 1):
@@ -394,6 +396,8 @@ class TestRunner(object):
                     failed_deletes = 0
                 else:
                     failed_deletes += 1
+
+            self.debug('Structured interval deletes')
             i = 0
             while i < len(self.last_data.intervals):
                 u, v = self.last_data.intervals[i]
@@ -402,13 +406,22 @@ class TestRunner(object):
                     self.last_data.buffer[v:]
                 ):
                     i += 1
-            i = 0
-            while i + 1 < len(self.last_data.buffer):
-                if not self.incorporate_new_buffer(
-                    self.last_data.buffer[:i] +
-                    self.last_data.buffer[i + 1:]
-                ):
-                    i += 1
+
+            if change_counter != self.changed:
+                self.debug('Restarting')
+                continue
+
+            self.debug('Lexicographical minimization of whole buffer')
+            minimize(
+                self.last_data.buffer, self.incorporate_new_buffer,
+                cautious=True
+            )
+
+            if change_counter != self.changed:
+                self.debug('Restarting')
+                continue
+
+            self.debug('Replacing blocks with simpler blocks')
             i = 0
             while i < len(self.last_data.blocks):
                 u, v = self.last_data.blocks[i]
@@ -427,6 +440,7 @@ class TestRunner(object):
                         break
                 i += 1
 
+            self.debug('Simultaneous shrinking of duplicated blocks')
             block_counter = -1
             while block_counter < self.changed:
                 block_counter = self.changed
@@ -453,6 +467,7 @@ class TestRunner(object):
                         self.random
                     )
 
+            self.debug('Shrinking of individual blocks')
             i = 0
             while i < len(self.last_data.blocks):
                 u, v = self.last_data.blocks[i]
@@ -465,24 +480,63 @@ class TestRunner(object):
                 )
                 i += 1
 
-            i = 0
-            alternatives = None
-            while i < len(self.last_data.intervals):
-                if alternatives is None:
-                    alternatives = sorted(set(
-                        self.last_data.buffer[u:v]
-                        for u, v in self.last_data.intervals), key=len)
-                u, v = self.last_data.intervals[i]
-                for a in alternatives:
-                    buf = self.last_data.buffer
-                    if (
-                        len(a) < v - u or
-                        (len(a) == (v - u) and a < buf[u:v])
-                    ):
-                        if self.incorporate_new_buffer(buf[:u] + a + buf[v:]):
-                            alternatives = None
-                            break
-                i += 1
+            self.debug('Replacing intervals with simpler intervals')
+
+            interval_counter = -1
+            while interval_counter != self.changed:
+                interval_counter = self.changed
+                i = 0
+                alternatives = None
+                while i < len(self.last_data.intervals):
+                    if alternatives is None:
+                        alternatives = sorted(set(
+                            self.last_data.buffer[u:v]
+                            for u, v in self.last_data.intervals), key=len)
+                    u, v = self.last_data.intervals[i]
+                    for a in alternatives:
+                        buf = self.last_data.buffer
+                        if (
+                            len(a) < v - u or
+                            (len(a) == (v - u) and a < buf[u:v])
+                        ):
+                            if self.incorporate_new_buffer(
+                                buf[:u] + a + buf[v:]
+                            ):
+                                alternatives = None
+                                break
+                    i += 1
+
+            if change_counter != self.changed:
+                self.debug('Restarting')
+                continue
+
+            self.debug('Shuffling suffixes while shrinking %r' % (
+                self.last_data.bind_points,
+            ))
+            b = 0
+            while b < len(self.last_data.bind_points):
+                cutoff = sorted(self.last_data.bind_points)[b]
+
+                def test_value(prefix):
+                    for t in hrange(5):
+                        alphabet = {}
+                        for i, j in self.last_data.blocks[b:]:
+                            alphabet.setdefault(j - i, []).append((i, j))
+                        if t > 0:
+                            for v in alphabet.values():
+                                self.random.shuffle(v)
+                        buf = bytearray(prefix)
+                        for i, j in self.last_data.blocks[b:]:
+                            u, v = alphabet[j - i].pop()
+                            buf.extend(self.last_data.buffer[u:v])
+                        if self.incorporate_new_buffer(hbytes(buf)):
+                            return True
+                    return False
+                minimize(
+                    self.last_data.buffer[:cutoff], test_value, cautious=True
+                )
+                b += 1
+
         self.exit_reason = ExitReason.finished
 
     def event_to_string(self, event):
