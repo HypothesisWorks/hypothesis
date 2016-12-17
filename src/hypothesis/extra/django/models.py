@@ -17,6 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import string
 from decimal import Decimal
 
 import django.db.models as dm
@@ -24,7 +25,6 @@ from django.db import IntegrityError
 from django.core.exceptions import ValidationError
 
 import hypothesis.strategies as st
-import hypothesis.extra.fakefactory as ff
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.datetime import datetimes
 from hypothesis.utils.conventions import UniqueIdentifier
@@ -95,6 +95,33 @@ def validator_to_filter(f):
     return validate
 
 
+safe_letters = string.ascii_letters + string.digits + '_-'
+
+domains = st.builds(
+    lambda x, y: '.'.join(x + [y]),
+    st.lists(st.text(safe_letters, min_size=1), min_size=1), st.sampled_from([
+        'com', 'net', 'org', 'biz', 'info',
+    ])
+)
+
+
+email_domains = st.one_of(
+    domains,
+    st.sampled_from(['gmail.com', 'yahoo.com', 'hotmail.com'])
+)
+
+base_emails = st.text(safe_letters, min_size=1)
+
+emails_with_plus = st.builds(
+    lambda x, y: '%s+%s' % (x, y), base_emails, base_emails
+)
+
+emails = st.builds(
+    lambda x, y: '%s@%s' % (x, y),
+    st.one_of(base_emails, emails_with_plus), email_domains
+)
+
+
 def _get_strategy_for_field(f):
     if isinstance(f, dm.AutoField):
         return default_value
@@ -104,7 +131,7 @@ def _get_strategy_for_field(f):
             choices.append(u'')
         strategy = st.sampled_from(choices)
     elif isinstance(f, dm.EmailField):
-        return ff.fake_factory(u'email')
+        return emails
     elif type(f) in (dm.TextField, dm.CharField):
         strategy = st.text(min_size=(None if f.blank else 1),
                            max_size=f.max_length)
