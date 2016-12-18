@@ -23,7 +23,7 @@ from collections import namedtuple
 
 import hypothesis.internal.conjecture.utils as d
 from hypothesis.control import assume
-from hypothesis.internal.compat import int_to_bytes, int_from_bytes, \
+from hypothesis.internal.compat import hbytes, int_from_bytes, \
     bytes_from_list
 from hypothesis.internal.floats import sign
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
@@ -55,36 +55,25 @@ class IntegersFromStrategy(SearchStrategy):
             self.lower_bound + d.geometric(data, 1.0 / self.average_size))
 
 
+BYTE_WEIGHTINGS = []
+
+for b in range(16):
+    w0 = 1 - 0.5 ** (b + 1)
+    BYTE_WEIGHTINGS.append(
+        (w0,) + ((1 - w0) / 255,) * 255
+    )
+
+
 class WideRangeIntStrategy(IntStrategy):
 
     def __repr__(self):
         return 'WideRangeIntStrategy()'
 
     def do_draw(self, data):
-        size = 16
-        sign_mask = 2 ** (size * 8 - 1)
-
-        def distribution(random, n):
-            assert n == size
-            if random.randint(0, 2) > 0:
-                k = 1
-            elif random.randint(0, 2) > 0:
-                k = 2
-            else:
-                k = random.randint(1, size)
-            r = random.getrandbits(k * 8)
-            if random.randint(0, 1):
-                r |= sign_mask
-            else:
-                r &= (~sign_mask)
-            return int_to_bytes(r, n)
-        byt = data.draw_bytes(size, distribution=distribution)
-        r = int_from_bytes(byt)
-        negative = r & sign_mask
-        r &= (~sign_mask)
-        if negative:
-            r = -r
-        return int(r)
+        return int_from_bytes(hbytes(
+            data.draw_byte(b)
+            for b in reversed(BYTE_WEIGHTINGS)
+        ))
 
 
 class BoundedIntStrategy(SearchStrategy):
