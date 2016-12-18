@@ -324,3 +324,11 @@ class FilteredStrategy(SearchStrategy):
             self,
         ))
         data.mark_invalid()
+
+    @property
+    def branches(self):
+        branches = [
+            FilteredStrategy(strategy=strategy, condition=self.condition)
+            for strategy in self.filtered_strategy.branches
+        ]
+        return branches

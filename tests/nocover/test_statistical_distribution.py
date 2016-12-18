@@ -531,3 +531,39 @@ test_one_of_flattens_flatmapped_branches_5 = define_test(
 test_one_of_flattens_flatmapped_branches_7 = define_test(
     one_of_nested_strategy_with_flatmap, 0.1, lambda x: len(x) == 7,
 )
+
+
+# This strategy tests interactions with `filter()`.  It generates the even
+# integers {2, 4, 6, 8} in equal measures.
+one_of_nested_strategy_with_filter = one_of(
+    just(1),
+    just(2),
+    one_of(
+        just(3),
+        just(4),
+        one_of(
+            just(5),
+            just(6),
+            one_of(
+                just(7),
+                just(8),
+            )
+        )
+    )
+).filter(lambda x: x % 2 == 0)
+
+test_one_of_flattens_filtered_branches_2 = define_test(
+    one_of_nested_strategy_with_filter, 0.25, lambda x: len(x) == 2,
+)
+
+test_one_of_flattens_filtered_branches_4 = define_test(
+    one_of_nested_strategy_with_filter, 0.25, lambda x: len(x) == 4,
+)
+
+test_one_of_flattens_filtered_branches_6 = define_test(
+    one_of_nested_strategy_with_filter, 0.25, lambda x: len(x) == 6,
+)
+
+test_one_of_flattens_filtered_branches_8 = define_test(
+    one_of_nested_strategy_with_filter, 0.25, lambda x: len(x) == 8,
+)
