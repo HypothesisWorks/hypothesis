@@ -490,9 +490,9 @@ test_one_of_flattens_mapped_branches_32 = define_test(
 )
 
 
-
 def fixed_list(x, size):
     return lists(just(x), min_size=size, max_size=size)
+
 
 # This strategy tests interactions with `flatmap()`.  It generates lists
 # of length 1-8 (inclusive) in which every element is `None`.
