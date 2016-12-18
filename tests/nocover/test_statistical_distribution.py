@@ -419,47 +419,52 @@ test_integers_are_often_small = define_test(
 
 
 # This series of tests checks that the one_of() strategy flattens branches
-# correctly.  We assert that the probability of any branch is >= 0.1, compared
-# to a 1/8 = 0.125
-# (1/8 = 0.125), regardless of how heavily nested it is in the `one_of()`.
+# correctly.  We assert that the probability of any branch is >= 0.1,
+# approximately (1/8 = 0.125), regardless of how heavily nested it is in the
+# strategy.
 
-# This first strategy chooses an integer between 1 and 8 (inclusive).
+# This first strategy chooses an integer between 0 and 7 (inclusive).
 one_of_nested_strategy = one_of(
-    just(1),
+    just(0),
     one_of(
+        just(1),
         just(2),
-        just(3),
         one_of(
+            just(3),
             just(4),
-            just(5),
             one_of(
+                just(5),
                 just(6),
-                just(7),
-                just(8)
+                just(7)
             )
         )
     )
 )
 
-test_one_of_flattens_branches_1 = define_test(
-    one_of_nested_strategy, 0.1, lambda x: x == 1,
+for i in range(8):
+    exec('''test_one_of_flattens_branches_%d = define_test(
+        one_of_nested_strategy, 0.1, lambda x: x == %d
+    )''' % (i, i))
+
+
+xor_nested_strategy = (
+    just(0) | (
+        just(1) | just(2) | (
+            just(3) | just(4) | (
+                just(5) | just(6) | just(7)
+            )
+        )
+    )
 )
 
-test_one_of_flattens_branches_3 = define_test(
-    one_of_nested_strategy, 0.1, lambda x: x == 3,
-)
-
-test_one_of_flattens_branches_5 = define_test(
-    one_of_nested_strategy, 0.1, lambda x: x == 3,
-)
-
-test_one_of_flattens_branches_8 = define_test(
-    one_of_nested_strategy, 0.1, lambda x: x == 8,
-)
+for i in range(8):
+    exec('''test_xor_flattens_branches_%d = define_test(
+        xor_nested_strategy, 0.1, lambda x: x == %d
+    )''' % (i, i))
 
 
-# This strategy tests interactions with `map()`.  It generates integers from
-# the set {1, 4, 6, 16, 20, 24, 28, 32}.
+# This strategy tests interactions with `map()`.  They generate integers
+# from the set {1, 4, 6, 16, 20, 24, 28, 32}.
 double = lambda x: x * 2
 one_of_nested_strategy_with_map = one_of(
     just(1),
@@ -474,96 +479,70 @@ one_of_nested_strategy_with_map = one_of(
     )
 )
 
-test_one_of_flattens_mapped_branches_1 = define_test(
-    one_of_nested_strategy_with_map, 0.1, lambda x: x == 1,
-)
-
-test_one_of_flattens_mapped_branches_6 = define_test(
-    one_of_nested_strategy_with_map, 0.1, lambda x: x == 6,
-)
-
-test_one_of_flattens_mapped_branches_20 = define_test(
-    one_of_nested_strategy_with_map, 0.1, lambda x: x == 20,
-)
-
-test_one_of_flattens_mapped_branches_32 = define_test(
-    one_of_nested_strategy_with_map, 0.1, lambda x: x == 32,
-)
-
-
-def fixed_list(x, size):
-    return lists(just(x), min_size=size, max_size=size)
+for i in (1, 4, 6, 16, 20, 24, 28, 32):
+    exec('''test_one_of_flattens_map_branches_%d = define_test(
+        one_of_nested_strategy_with_map, 0.1, lambda x: x == %d
+    )''' % (i, i))
 
 
 # This strategy tests interactions with `flatmap()`.  It generates lists
-# of length 1-8 (inclusive) in which every element is `None`.
+# of length 0-7 (inclusive) in which every element is `None`.
 one_of_nested_strategy_with_flatmap = just(None).flatmap(
     lambda x: one_of(
-        fixed_list(x, size=1),
-        fixed_list(x, size=2),
-        one_of(
-            fixed_list(x, size=3),
-            fixed_list(x, size=4),
-            one_of(
-                fixed_list(x, size=5),
-                fixed_list(x, size=6),
-                one_of(
-                    fixed_list(x, size=7),
-                    fixed_list(x, size=8),
+        just([x] * 0), just([x] * 1), one_of(
+            just([x] * 2), just([x] * 3), one_of(
+                just([x] * 4), just([x] * 5), one_of(
+                    just([x] * 6), just([x] * 7),
                 )
             )
         )
     )
 )
 
-test_one_of_flattens_flatmapped_branches_1 = define_test(
-    one_of_nested_strategy_with_flatmap, 0.1, lambda x: len(x) == 1,
+for i in range(8):
+    exec('''test_one_of_flattens_flatmap_branches_%d = define_test(
+        one_of_nested_strategy_with_flatmap, 0.1, lambda x: len(x) == %d
+    )''' % (i, i))
+
+
+xor_nested_strategy_with_flatmap = just(None).flatmap(
+    lambda x: (
+        just([x] * 0) | just([x] * 1) | (
+            just([x] * 2) | just([x] * 3) | (
+                just([x] * 4) | just([x] * 5) | (
+                    just([x] * 6) | just([x] * 7)
+                )
+            )
+        )
+    )
 )
 
-test_one_of_flattens_flatmapped_branches_3 = define_test(
-    one_of_nested_strategy_with_flatmap, 0.1, lambda x: len(x) == 3,
-)
-
-test_one_of_flattens_flatmapped_branches_5 = define_test(
-    one_of_nested_strategy_with_flatmap, 0.1, lambda x: len(x) == 5,
-)
-
-test_one_of_flattens_flatmapped_branches_7 = define_test(
-    one_of_nested_strategy_with_flatmap, 0.1, lambda x: len(x) == 7,
-)
+for i in range(8):
+    exec('''test_xor_flattens_flatmap_branches_%d = define_test(
+        xor_nested_strategy_with_flatmap, 0.1, lambda x: len(x) == %d
+    )''' % (i, i))
 
 
 # This strategy tests interactions with `filter()`.  It generates the even
-# integers {2, 4, 6, 8} in equal measures.
+# integers {0, 2, 4, 6} in equal measures.
 one_of_nested_strategy_with_filter = one_of(
+    just(0),
     just(1),
-    just(2),
     one_of(
+        just(2),
         just(3),
-        just(4),
         one_of(
+            just(4),
             just(5),
-            just(6),
             one_of(
+                just(6),
                 just(7),
-                just(8),
             )
         )
     )
 ).filter(lambda x: x % 2 == 0)
 
-test_one_of_flattens_filtered_branches_2 = define_test(
-    one_of_nested_strategy_with_filter, 0.25, lambda x: len(x) == 2,
-)
-
-test_one_of_flattens_filtered_branches_4 = define_test(
-    one_of_nested_strategy_with_filter, 0.25, lambda x: len(x) == 4,
-)
-
-test_one_of_flattens_filtered_branches_6 = define_test(
-    one_of_nested_strategy_with_filter, 0.25, lambda x: len(x) == 6,
-)
-
-test_one_of_flattens_filtered_branches_8 = define_test(
-    one_of_nested_strategy_with_filter, 0.25, lambda x: len(x) == 8,
-)
+for i in range(4):
+    exec('''test_one_of_flattens_filter_branches_%d = define_test(
+        one_of_nested_strategy_with_filter, 0.2, lambda x: x == 2 * %d
+    )''' % (i, i))
