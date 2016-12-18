@@ -175,7 +175,6 @@ class ConjectureData(object):
         assert len(result) == n
         assert self.index == initial
         self.buffer.extend(result)
-        self.intervals.append((initial, self.index))
         return reasonable_byte_type(result)
 
     def mark_interesting(self):
