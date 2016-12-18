@@ -417,10 +417,12 @@ test_integers_are_often_small = define_test(
     integers(), 0.2, lambda x: abs(x) <= 100
 )
 
+
 # This series of tests checks that the one_of() strategy flattens branches
-# correctly.  In this highly nested strategy, we expected that any one
-# of the eight outcomes could occur with equal probability: 1/8 = 0.125.
-# We check this is the case for values at different levels of nesting.
+# correctly.  We assert that the probability of any branch is equal
+# (1/8 = 0.125), regardless of how heavily nested it is in the `one_of()`.
+
+# This first strategy chooses an integer between 1 and 8 (inclusive).
 one_of_nested_strategy = one_of(
     just(1),
     one_of(
@@ -454,9 +456,9 @@ test_one_of_flattens_branches_8 = define_test(
     one_of_nested_strategy, 0.1, lambda x: x == 8,
 )
 
-# And now we test interactions with map().  The full set of values this
-# test produces is {1, 4, 6, 16, 20, 24, 28, 32}.  Again, we expect that
-# each value should be produce in roughly equal measure.
+
+# This strategy tests interactions with `map()`.  It generates integers from
+# the set {1, 4, 6, 16, 20, 24, 28, 32}.
 double = lambda x: x * 2
 one_of_nested_strategy_with_map = one_of(
     just(1),
@@ -485,4 +487,46 @@ test_one_of_flattens_mapped_branches_20 = define_test(
 
 test_one_of_flattens_mapped_branches_32 = define_test(
     one_of_nested_strategy_with_map, 0.1, lambda x: x == 32,
+)
+
+
+
+def fixed_list(x, size):
+    return lists(just(x), min_size=size, max_size=size)
+
+# This strategy tests interactions with `flatmap()`.  It generates lists
+# of length 1-8 (inclusive) in which every element is `None`.
+one_of_nested_strategy_with_flatmap = just(None).flatmap(
+    lambda x: one_of(
+        fixed_list(x, size=1),
+        fixed_list(x, size=2),
+        one_of(
+            fixed_list(x, size=3),
+            fixed_list(x, size=4),
+            one_of(
+                fixed_list(x, size=5),
+                fixed_list(x, size=6),
+                one_of(
+                    fixed_list(x, size=7),
+                    fixed_list(x, size=8),
+                )
+            )
+        )
+    )
+)
+
+test_one_of_flattens_flatmapped_branches_1 = define_test(
+    one_of_nested_strategy_with_flatmap, 0.1, lambda x: len(x) == 1,
+)
+
+test_one_of_flattens_flatmapped_branches_3 = define_test(
+    one_of_nested_strategy_with_flatmap, 0.1, lambda x: len(x) == 3,
+)
+
+test_one_of_flattens_flatmapped_branches_5 = define_test(
+    one_of_nested_strategy_with_flatmap, 0.1, lambda x: len(x) == 5,
+)
+
+test_one_of_flattens_flatmapped_branches_7 = define_test(
+    one_of_nested_strategy_with_flatmap, 0.1, lambda x: len(x) == 7,
 )

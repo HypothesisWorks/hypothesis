@@ -103,7 +103,3 @@ class DeferredStrategy(SearchStrategy):
 
     def do_draw(self, data):
         return data.draw(self.wrapped_strategy)
-
-    # @property
-    # def branches(self):
-    #     return self.wrapped_strategy.branches
