@@ -419,7 +419,8 @@ test_integers_are_often_small = define_test(
 
 
 # This series of tests checks that the one_of() strategy flattens branches
-# correctly.  We assert that the probability of any branch is equal
+# correctly.  We assert that the probability of any branch is >= 0.1, compared
+# to a 1/8 = 0.125
 # (1/8 = 0.125), regardless of how heavily nested it is in the `one_of()`.
 
 # This first strategy chooses an integer between 1 and 8 (inclusive).

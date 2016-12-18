@@ -281,11 +281,10 @@ class MappedSearchStrategy(SearchStrategy):
 
     @property
     def branches(self):
-        branches = [
+        return [
             MappedSearchStrategy(pack=self.pack, strategy=strategy)
             for strategy in self.mapped_strategy.branches
         ]
-        return branches
 
 
 class FilteredStrategy(SearchStrategy):

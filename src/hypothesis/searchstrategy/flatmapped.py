@@ -45,8 +45,7 @@ class FlatMapStrategy(SearchStrategy):
 
     @property
     def branches(self):
-        branches = [
+        return [
             FlatMapStrategy(strategy=strategy, expand=self.expand)
             for strategy in self.flatmapped_strategy.branches
         ]
-        return branches
