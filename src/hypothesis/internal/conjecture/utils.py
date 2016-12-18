@@ -19,7 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import math
 
-from hypothesis.internal.compat import hbytes, bit_length, int_to_bytes, \
+from hypothesis.internal.compat import bit_length, int_to_bytes, \
     int_from_bytes
 
 
@@ -125,16 +125,11 @@ def geometric(data, p):
 
 
 def boolean(data):
-    return bool(n_byte_unsigned(data, 1) & 1)
+    return biased_coin(data, 0.5)
 
 
 def biased_coin(data, p):
-    def distribution(random, n):
-        assert n == 1
-        return hbytes([int(random.random() <= p)])
-    return bool(
-        data.draw_bytes(1, distribution)[0] & 1
-    )
+    return bool(data.draw_byte([1 - p, p]) & 1)
 
 
 def write(data, string):

@@ -23,6 +23,7 @@ from hypothesis.errors import Frozen, InvalidArgument
 from hypothesis.internal.compat import hbytes, hrange, text_type, \
     int_to_bytes, benchmark_time, unicode_safe_repr, \
     reasonable_byte_type
+from hypothesis.internal.sampler import sampler
 
 
 def uniform(random, n):
@@ -44,6 +45,10 @@ class StopTest(BaseException):
 
 
 global_test_counter = 0
+
+BYTES_TO_STRINGS = [hbytes([b]) for b in range(256)]
+
+UNIFORM_WEIGHTS = (1,) * 256
 
 
 class TestData(object):
@@ -71,6 +76,7 @@ class TestData(object):
         self.intervals_by_level = []
         self.intervals = []
         self.interval_stack = []
+        self.interval_counter_stack = []
         global global_test_counter
         self.testcounter = global_test_counter
         global_test_counter += 1
@@ -123,6 +129,7 @@ class TestData(object):
     def start_example(self):
         self.__assert_not_frozen('start_example')
         self.interval_stack.append(self.index)
+        self.interval_counter_stack.append(len(self.intervals))
         self.level += 1
 
     def stop_example(self):
@@ -131,10 +138,16 @@ class TestData(object):
         while self.level >= len(self.intervals_by_level):
             self.intervals_by_level.append([])
         k = self.interval_stack.pop()
+        old_length = self.interval_counter_stack.pop()
+
         if k != self.index:
             t = (k, self.index)
             self.intervals_by_level[self.level].append(t)
             if not self.intervals or self.intervals[-1] != t:
+                if old_length == len(self.intervals) and self.blocks[-1] != t:
+                    self.blocks.append(t)
+                    self.block_starts.setdefault(
+                        t[1] - t[0], []).append(t[0])
                 self.intervals.append(t)
 
     def note_event(self, event):
@@ -176,6 +189,19 @@ class TestData(object):
         assert self.index == initial
         self.buffer.extend(result)
         return reasonable_byte_type(result)
+
+    def draw_byte(self, weights=UNIFORM_WEIGHTS):
+        weights = tuple(weights)
+
+        s = sampler(weights)
+
+        def distribution(random, n):
+            assert n == 1, n
+            return BYTES_TO_STRINGS[s.sample(random)]
+        while True:
+            result = self.draw_bytes(1, distribution)[0]
+            if result < len(weights) and weights[result] > 0:
+                return result
 
     def mark_interesting(self):
         self.__assert_not_frozen('mark_interesting')
