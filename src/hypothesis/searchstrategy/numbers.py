@@ -64,16 +64,30 @@ for b in range(16):
     )
 
 
+# Give the high bit an equal chance of being 0 or 1, so as to spread the
+# distribution evenly among negative and positive integers
+BYTE_WEIGHTINGS[-1] = list(BYTE_WEIGHTINGS[-1])
+BYTE_WEIGHTINGS[-1][128] = BYTE_WEIGHTINGS[-1][0]
+BYTE_WEIGHTINGS[-1] = tuple(BYTE_WEIGHTINGS[-1])
+
+
 class WideRangeIntStrategy(IntStrategy):
 
     def __repr__(self):
         return 'WideRangeIntStrategy()'
 
     def do_draw(self, data):
-        return int_from_bytes(hbytes(
+        r = int_from_bytes(hbytes(
             data.draw_byte(b)
             for b in reversed(BYTE_WEIGHTINGS)
         ))
+        size = len(BYTE_WEIGHTINGS)
+        sign_mask = 2 ** (size * 8 - 1)
+        negative = r & sign_mask
+        r &= (~sign_mask)
+        if negative:
+            r = -r
+        return int(r)
 
 
 class BoundedIntStrategy(SearchStrategy):
