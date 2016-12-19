@@ -185,6 +185,8 @@ class TestData(object):
         result = self._draw_bytes(self, n, distribution)
         self.block_starts.setdefault(n, []).append(initial)
         self.blocks.append((initial, initial + n))
+        if not self.interval_stack:
+            self.intervals.append((initial, initial + n))
         assert len(result) == n
         assert self.index == initial
         self.buffer.extend(result)
