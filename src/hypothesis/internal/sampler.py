@@ -99,6 +99,7 @@ class VoseAliasSampler(object):
                 range(len(self._probabilities)),
                 self._probabilities, self._alias)),)
 
+
 cache = {}
 
 
