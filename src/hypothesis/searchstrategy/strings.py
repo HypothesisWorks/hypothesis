@@ -21,7 +21,8 @@ import math
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal import charmap
-from hypothesis.internal.compat import hunichr, text_type, binary_type
+from hypothesis.internal.compat import hrange, hunichr, text_type, \
+    binary_type
 from hypothesis.internal.intervalsets import IntervalSet
 from hypothesis.internal.conjecture.utils import integer_range
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
@@ -132,4 +133,7 @@ class FixedSizeBytes(SearchStrategy):
         self.size = size
 
     def do_draw(self, data):
-        return binary_type(data.draw_bytes(self.size))
+        buf = bytearray()
+        for _ in hrange(self.size):
+            buf.append(data.draw_byte())
+        return binary_type(buf)
