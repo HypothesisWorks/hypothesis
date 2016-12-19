@@ -205,6 +205,22 @@ class ConjectureData(object):
             if result < len(weights) and weights[result] > 0:
                 return result
 
+    def draw_from_mixture(self, mixture):
+        if not mixture.has_matches:
+            self.mark_invalid()
+        result = bytearray()
+        while True:
+            if not mixture.matches_non_empty:
+                break
+            if mixture.matches_empty:
+                p = 0.5 * mixture.stop_weight
+                if not self.draw_byte([p, 1 - p]):
+                    break
+            c = self.draw_byte(mixture.weights)
+            mixture = mixture.derivative(c)
+            result.append(c)
+        return reasonable_byte_type(result)
+
     def mark_interesting(self):
         self.__assert_not_frozen('mark_interesting')
         self.status = Status.INTERESTING
