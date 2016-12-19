@@ -1,6 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
-
 # coding=utf-8
 #
 # This file is part of Hypothesis, which may be found at
@@ -17,6 +14,9 @@ from __future__ import division, print_function, absolute_import
 # obtain one at http://mozilla.org/MPL/2.0/.
 #
 # END HEADER
+
+from __future__ import division, print_function, absolute_import
+
 
 def gcd(a, *bs):
     for b in bs:
