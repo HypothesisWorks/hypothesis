@@ -46,7 +46,7 @@ if [ "$DARWIN" = true ]; then
 fi
 
 # fake-factory doesn't have a correct universal wheel
-pip install --no-use-wheel faker
+pip install --no-binary :all: faker
 $PYTEST tests/fakefactory/
 pip uninstall -y faker
 
