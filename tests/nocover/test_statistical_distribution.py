@@ -42,7 +42,7 @@ from hypothesis.strategies import just, sets, text, lists, floats, \
     one_of, tuples, booleans, integers, sampled_from
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.conjecture.engine import \
-    TestRunner as ConTestRunner
+    ConjectureRunner as ConConjectureRunner
 
 # We run each individual test at a very high level of significance to the
 # point where it will basically only fail if it's really really wildly wrong.
@@ -174,7 +174,7 @@ def define_test(specifier, q, predicate, condition=None):
             successful_runs[0] += 1
             if predicate(value):
                 count[0] += 1
-        ConTestRunner(
+        ConConjectureRunner(
             test_function,
             settings=Settings(
                 max_examples=MAX_RUNS,

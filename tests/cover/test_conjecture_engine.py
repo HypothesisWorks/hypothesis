@@ -25,14 +25,14 @@ from hypothesis import given, Phase, settings
 from hypothesis.database import ExampleDatabase
 from hypothesis.internal.compat import hbytes, int_from_bytes, \
     bytes_from_list
-from hypothesis.internal.conjecture.data import Status, TestData
-from hypothesis.internal.conjecture.engine import TestRunner
+from hypothesis.internal.conjecture.data import Status, ConjectureData
+from hypothesis.internal.conjecture.engine import ConjectureRunner
 
 MAX_SHRINKS = 2000
 
 
 def run_to_buffer(f):
-    runner = TestRunner(f, settings=settings(
+    runner = ConjectureRunner(f, settings=settings(
         max_examples=5000, max_iterations=10000, max_shrinks=MAX_SHRINKS,
         buffer_size=1024,
         database=None,
@@ -128,7 +128,7 @@ def test_can_load_data_from_a_corpus():
     def f(data):
         if data.draw_bytes(len(value)) == value:
             data.mark_interesting()
-    runner = TestRunner(
+    runner = ConjectureRunner(
         f, settings=settings(database=db), database_key=key)
     runner.run()
     assert runner.last_data.status == Status.INTERESTING
@@ -144,7 +144,7 @@ def test_terminates_shrinks():
         if sum(x) >= 500:
             shrinks[0] += 1
             data.mark_interesting()
-    runner = TestRunner(tf, settings=settings(
+    runner = ConjectureRunner(tf, settings=settings(
         max_examples=5000, max_iterations=10000, max_shrinks=10,
         database=None,
     ))
@@ -165,7 +165,7 @@ def test_detects_flakiness():
         if not failed_once[0]:
             failed_once[0] = True
             data.mark_interesting()
-    runner = TestRunner(tf)
+    runner = ConjectureRunner(tf)
     runner.run()
     assert count == [2]
 
@@ -187,7 +187,7 @@ def test_variadic_draw():
     def b(data):
         if any(all(d) for d in draw_list(data)):
             data.mark_interesting()
-    l = draw_list(TestData.for_buffer(b))
+    l = draw_list(ConjectureData.for_buffer(b))
     assert len(l) == 1
     assert len(l[0]) == 1
 
@@ -207,7 +207,7 @@ def test_can_navigate_to_a_valid_example():
         i = int_from_bytes(data.draw_bytes(2))
         data.draw_bytes(i)
         data.mark_interesting()
-    runner = TestRunner(f, settings=settings(
+    runner = ConjectureRunner(f, settings=settings(
         max_examples=5000, max_iterations=10000,
         buffer_size=2,
         database=None,
@@ -231,7 +231,7 @@ def test_stops_after_max_iterations_when_generating():
         seen.append(data.draw_bytes(len(value)))
         data.mark_invalid()
 
-    runner = TestRunner(f, settings=settings(
+    runner = ConjectureRunner(f, settings=settings(
         max_examples=1, max_iterations=max_iterations,
         database=db,
     ), database_key=key)
@@ -254,7 +254,7 @@ def test_stops_after_max_iterations_when_reading():
         seen.append(data.draw_bytes(1))
         data.mark_invalid()
 
-    runner = TestRunner(f, settings=settings(
+    runner = ConjectureRunner(f, settings=settings(
         max_examples=1, max_iterations=max_iterations,
         database=db,
     ), database_key=key)
@@ -274,7 +274,7 @@ def test_stops_after_max_examples_when_reading():
     def f(data):
         seen.append(data.draw_bytes(1))
 
-    runner = TestRunner(f, settings=settings(
+    runner = ConjectureRunner(f, settings=settings(
         max_examples=1,
         database=db,
     ), database_key=key)
@@ -288,7 +288,7 @@ def test_stops_after_max_examples_when_generating():
     def f(data):
         seen.append(data.draw_bytes(1))
 
-    runner = TestRunner(f, settings=settings(
+    runner = ConjectureRunner(f, settings=settings(
         max_examples=1,
         database=None,
     ))
@@ -311,7 +311,7 @@ def test_interleaving_engines(rnd):
                     d2.mark_interesting()
                 if 0 in result:
                     d2.mark_invalid()
-        runner = TestRunner(g, random=rnd)
+        runner = ConjectureRunner(g, random=rnd)
         runner.run()
         if runner.last_data.status == Status.INTERESTING:
             data.mark_interesting()
@@ -325,7 +325,8 @@ def test_run_with_timeout_while_shrinking():
         if any(x):
             data.mark_interesting()
 
-    runner = TestRunner(f, settings=settings(database=None, timeout=0.2,))
+    runner = ConjectureRunner(
+        f, settings=settings(database=None, timeout=0.2,))
     start = time.time()
     runner.run()
     assert time.time() <= start + 1
@@ -336,7 +337,8 @@ def test_run_with_timeout_while_boring():
     def f(data):
         time.sleep(0.1)
 
-    runner = TestRunner(f, settings=settings(database=None, timeout=0.2,))
+    runner = ConjectureRunner(
+        f, settings=settings(database=None, timeout=0.2,))
     start = time.time()
     runner.run()
     assert time.time() <= start + 1
@@ -350,7 +352,8 @@ def test_max_shrinks_can_disable_shrinking():
         seen.add(hbytes(data.draw_bytes(32)))
         data.mark_interesting()
 
-    runner = TestRunner(f, settings=settings(database=None, max_shrinks=0,))
+    runner = ConjectureRunner(
+        f, settings=settings(database=None, max_shrinks=0,))
     runner.run()
     assert len(seen) == 1
 
@@ -362,7 +365,7 @@ def test_phases_can_disable_shrinking():
         seen.add(hbytes(data.draw_bytes(32)))
         data.mark_interesting()
 
-    runner = TestRunner(f, settings=settings(
+    runner = ConjectureRunner(f, settings=settings(
         database=None, phases=(Phase.reuse, Phase.generate),
     ))
     runner.run()
@@ -382,7 +385,7 @@ def test_saves_data_while_shrinking():
             seen.add(hbytes(x))
         if hbytes(x) in seen:
             data.mark_interesting()
-    runner = TestRunner(
+    runner = ConjectureRunner(
         f, settings=settings(database=db), database_key=key)
     runner.run()
     assert runner.last_data.status == Status.INTERESTING
@@ -444,14 +447,14 @@ def test_garbage_collects_the_database():
             seen.add(x)
         if x in seen:
             data.mark_interesting()
-    runner = TestRunner(
+    runner = ConjectureRunner(
         f, settings=settings(database=db, max_shrinks=2 * n), database_key=key)
     runner.run()
     assert runner.last_data.status == Status.INTERESTING
     assert len(seen) == n
     assert set(db.fetch(key)) == seen
     go = False
-    runner = TestRunner(
+    runner = ConjectureRunner(
         f, settings=settings(database=db, max_shrinks=2 * n), database_key=key)
     runner.run()
     assert 0 < len(set(db.fetch(key))) < n
