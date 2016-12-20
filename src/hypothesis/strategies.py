@@ -379,7 +379,7 @@ def floats(
 @defines_strategy
 def complex_numbers():
     """Returns a strategy that generates complex numbers."""
-    from hypothesis.searchstrategy.numbers import ComplexStrategy
+    from hypothesis.searchstrategy.floats import ComplexStrategy
     return ComplexStrategy(
         tuples(floats(), floats())
     )
