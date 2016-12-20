@@ -353,6 +353,7 @@ class Wildcard(Grammar):
     def __repr__(self):
         return 'Wildcard(%s)' % (self.length,)
 
+
 ALL_BYTES = frozenset(range(256))
 
 

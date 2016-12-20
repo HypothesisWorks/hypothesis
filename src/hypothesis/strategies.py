@@ -301,7 +301,8 @@ def floats(
                     allow_infinity
                 ))
 
-    from hypothesis.searchstrategy.floats import FloatStrategy, FixedBoundedFloatStrategy
+    from hypothesis.searchstrategy.floats import FloatStrategy, \
+        FixedBoundedFloatStrategy
     from hypothesis.internal.floats import sign
     if min_value is None and max_value is None:
         return FloatStrategy(
