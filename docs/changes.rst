@@ -27,15 +27,16 @@ information to the contrary.
 ------------------
 
 This release fixes a dependency problem and makes some small behind the scenes
-imporvements.
+improvements.
 
 * The fake-factory dependency was renamed to faker. If you were depending on
   it through hypothesis[django] or hypothesis[fake-factory] without pinning it
   yourself then it would have failed to install properly. This release changes
-  the hypothesis[fake-factory] install to depend on faker instead.
+  it so that hypothesis[fakefactory] (which can now also be installed as
+  hypothesis[faker]) will install the renamed faker package instead.
 * This release also removed the dependency of hypothesis[django] on
-  hypothesis[fake-factory] - it was only being used for emails. These now use
-  a custom strategy that isn't from fake-factory. As a result you should also
+  hypothesis[fakefactory] - it was only being used for emails. These now use
+  a custom strategy that isn't from fakefactory. As a result you should also
   see performance improvements of tests which generated User objects or other
   things with email fields, as well as better shrinking of email addresses.
 * The distribution of code using nested calls to one_of or the | operator for
