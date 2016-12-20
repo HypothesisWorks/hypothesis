@@ -21,6 +21,31 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+
+------------------
+3.6.1 - 2016-12-20
+------------------
+
+This release fixes a dependency problem and makes some small behind the scenes
+improvements.
+
+* The fake-factory dependency was renamed to faker. If you were depending on
+  it through hypothesis[django] or hypothesis[fake-factory] without pinning it
+  yourself then it would have failed to install properly. This release changes
+  it so that hypothesis[fakefactory] (which can now also be installed as
+  hypothesis[faker]) will install the renamed faker package instead.
+* This release also removed the dependency of hypothesis[django] on
+  hypothesis[fakefactory] - it was only being used for emails. These now use
+  a custom strategy that isn't from fakefactory. As a result you should also
+  see performance improvements of tests which generated User objects or other
+  things with email fields, as well as better shrinking of email addresses.
+* The distribution of code using nested calls to one_of or the | operator for
+  combining strategies has been improved, as branches are now flattened to give
+  a more uniform distribution.
+* Examples using composite or flatmap should now shrink better. In particular
+  this will affect things which work by first generating a length and then
+  generating that many items, which have historically not shrunk very well.
+
 ------------------
 3.6.0 - 2016-10-31
 ------------------

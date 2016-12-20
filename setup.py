@@ -45,6 +45,8 @@ extras = {
     'pytest': ['pytest>=2.7.0'],
 }
 
+extras['faker'] = extras['fakefactory']
+
 extras['all'] = sorted(sum(extras.values(), []))
 
 extras[":python_version == '2.7'"] = ['enum34']
