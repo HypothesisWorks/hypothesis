@@ -496,6 +496,71 @@ class _Everything(Grammar):
     def __repr__(self):
         return 'Everything'
 
+
+class Interval(Grammar):
+
+    def __init__(self, lower, upper):
+        Grammar.__init__(self)
+        assert len(lower) == len(upper) != 0
+        assert lower <= upper
+        self.upper = upper
+        self.lower = lower
+
+    @property
+    def matches_empty(self):
+        return False
+
+    def __hash__(self):
+        return hash((self.lower, self.upper))
+
+    def _do_cmp(self, other):
+        if len(self.lower) < len(other.lower):
+            return -1
+        if len(self.lower) > len(other.lower):
+            return -1
+        if self.lower < other.lower:
+            return -1
+        if self.lower > other.lower:
+            return 1
+        if self.upper < other.upper:
+            return -1
+        if self.upper > other.upper:
+            return 1
+        return 0
+
+    def _calculate_initial_values(self):
+        return range(self.lower[0], self.upper[0] + 1)
+
+    def _calculate_derivative(self, b):
+        if b < self.lower[0] or b > self.upper[0]:
+            return Nil
+        elif len(self.lower) == 1:
+            return Epsilon
+        elif b == self.lower[0] == self.upper[0]:
+            ln = self.lower[1:]
+            un = self.upper[1:]
+            return Interval(ln, un)
+        elif b == self.lower[0]:
+            assert b < self.upper[0]
+            ln = self.lower[1:]
+            return Interval(ln, bytes([255] * len(ln)))
+        elif b == self.upper[0]:
+            un = self.upper[1:]
+            return Interval(bytes([0] * len(un)), un)
+        else:
+            assert self.lower[0] < b < self.upper[0]
+            return Wildcard(len(self.lower) - 1)
+
+    def _do_normalize(self):
+        if self.lower == self.upper:
+            return Literal(self.lower).normalize()
+        else:
+            return self
+
+    def __repr__(self):
+        return 'Interval(%r, %r)' % (self.lower, self.upper)
+
+
 Nil = _Nil()
 Everything = _Everything()
 Epsilon = Literal(b'').normalize()
@@ -507,6 +572,7 @@ for i, c in enumerate([
     Everything,
     Wildcard,
     Literal,
+    Interval,
     Negation,
     Star,
     Alternation,
