@@ -19,15 +19,12 @@ from __future__ import division, print_function, absolute_import
 
 import math
 import struct
-from collections import namedtuple
 
 import hypothesis.internal.conjecture.utils as d
 from hypothesis.control import assume
 from hypothesis.internal.compat import hbytes, int_from_bytes, \
     bytes_from_list
-from hypothesis.internal.floats import sign
-from hypothesis.searchstrategy.strategies import SearchStrategy, \
-    MappedSearchStrategy
+from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
 class IntStrategy(SearchStrategy):
