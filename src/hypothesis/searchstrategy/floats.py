@@ -47,6 +47,7 @@ def _one_of_floats(ls):
         Literal(struct.pack('!d', f)) for f in ls
     ])
 
+
 INFINITY = _one_of_floats([
     float('inf'), float('-inf'),
 ])
