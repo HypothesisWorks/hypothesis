@@ -299,8 +299,8 @@ def floats(
                     allow_infinity
                 ))
 
-    from hypothesis.searchstrategy.numbers import FloatStrategy, \
-        FixedBoundedFloatStrategy
+    from hypothesis.searchstrategy.floats import FloatStrategy
+    from hypothesis.searchstrategy.numbers import FixedBoundedFloatStrategy
     if min_value is None and max_value is None:
         return FloatStrategy(
             allow_infinity=allow_infinity, allow_nan=allow_nan,
