@@ -197,68 +197,8 @@ class TestRunner(object):
                 ))
 
     def _new_mutator(self):
-        def draw_new(data, n, distribution):
-            return distribution(self.random, n)
-
-        def draw_existing(data, n, distribution):
-            return self.last_data.buffer[data.index:data.index + n]
-
-        def draw_smaller(data, n, distribution):
-            existing = self.last_data.buffer[data.index:data.index + n]
-            r = distribution(self.random, n)
-            if r <= existing:
-                return r
-            return _draw_predecessor(self.random, existing)
-
-        def draw_larger(data, n, distribution):
-            existing = self.last_data.buffer[data.index:data.index + n]
-            r = distribution(self.random, n)
-            if r >= existing:
-                return r
-            return _draw_successor(self.random, existing)
-
-        def reuse_existing(data, n, distribution):
-            choices = data.block_starts.get(n, []) or \
-                self.last_data.block_starts.get(n, [])
-            if choices:
-                i = self.random.choice(choices)
-                return self.last_data.buffer[i:i + n]
-            else:
-                return distribution(self.random, n)
-
-        def flip_bit(data, n, distribution):
-            buf = bytearray(
-                self.last_data.buffer[data.index:data.index + n])
-            i = self.random.randint(0, n - 1)
-            k = self.random.randint(0, 7)
-            buf[i] ^= (1 << k)
-            return hbytes(buf)
-
-        def draw_zero(data, n, distribution):
-            return b'\0' * n
-
-        def draw_constant(data, n, distribution):
-            return bytes_from_list([
-                self.random.randint(0, 255)
-            ] * n)
-
-        options = [
-            draw_new,
-            reuse_existing, reuse_existing,
-            draw_existing, draw_smaller, draw_larger,
-            flip_bit, draw_zero, draw_constant,
-        ]
-
-        bits = [
-            self.random.choice(options) for _ in hrange(3)
-        ]
-
         def draw_mutated(data, n, distribution):
-            if (
-                data.index + n > len(self.last_data.buffer)
-            ):
-                return distribution(self.random, n)
-            return self.random.choice(bits)(data, n, distribution)
+            return distribution(self.random, n)
         return draw_mutated
 
     def _run(self):
