@@ -233,7 +233,10 @@ class OneOfStrategy(SearchStrategy):
 
     @property
     def branches(self):
-        return self.element_strategies
+        if self.bias is None:
+            return self.element_strategies
+        else:
+            return [self]
 
 
 class MappedSearchStrategy(SearchStrategy):
