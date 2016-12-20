@@ -17,13 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
-import math
-import struct
-
 import hypothesis.internal.conjecture.utils as d
-from hypothesis.control import assume
-from hypothesis.internal.compat import hbytes, int_from_bytes, \
-    bytes_from_list
+from hypothesis.internal.compat import hbytes, int_from_bytes
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
@@ -102,63 +97,3 @@ class BoundedIntStrategy(SearchStrategy):
 
     def do_draw(self, data):
         return d.integer_range(data, self.start, self.end)
-
-
-NASTY_FLOATS = [
-    0.0, 0.5, 1.0 / 3, 10e6, 10e-6, 1.175494351e-38, 2.2250738585072014e-308,
-    1.7976931348623157e+308, 3.402823466e+38, 9007199254740992, 1 - 10e-6,
-    2 + 10e-6, 1.192092896e-07, 2.2204460492503131e-016,
-
-] + [float('inf'), float('nan')] * 5
-NASTY_FLOATS.extend([-x for x in NASTY_FLOATS])
-
-
-class FloatStrategy(SearchStrategy):
-
-    """Generic superclass for strategies which produce floats."""
-
-    def __init__(self, allow_infinity, allow_nan):
-        SearchStrategy.__init__(self)
-        assert isinstance(allow_infinity, bool)
-        assert isinstance(allow_nan, bool)
-        self.allow_infinity = allow_infinity
-        self.allow_nan = allow_nan
-
-    def __repr__(self):
-        return '%s()' % (self.__class__.__name__,)
-
-    def permitted(self, f):
-        if not self.allow_infinity and math.isinf(f):
-            return False
-        if not self.allow_nan and math.isnan(f):
-            return False
-        return True
-
-    def do_draw(self, data):
-        def draw_float_bytes(random, n):
-            assert n == 8
-            while True:
-                i = random.randint(1, 10)
-                if i <= 4:
-                    f = random.choice(NASTY_FLOATS)
-                elif i == 5:
-                    return bytes_from_list(
-                        random.randint(0, 255) for _ in range(8))
-                elif i == 6:
-                    f = random.random() * (
-                        random.randint(0, 1) * 2 - 1
-                    )
-                elif i == 7:
-                    f = random.gauss(0, 1)
-                elif i == 8:
-                    f = float(random.randint(-2 ** 63, 2 ** 63))
-                else:
-                    f = random.gauss(
-                        random.randint(-2 ** 63, 2 ** 63), 1
-                    )
-                if self.permitted(f):
-                    return struct.pack(b'!d', f)
-        result = struct.unpack(b'!d', bytes(
-            data.draw_bytes(8, draw_float_bytes)))[0]
-        assume(self.permitted(result))
-        return result
