@@ -42,3 +42,10 @@ class FlatMapStrategy(SearchStrategy):
         source = data.draw(self.flatmapped_strategy)
         data.mark_bind()
         return data.draw(self.expand(source))
+
+    @property
+    def branches(self):
+        return [
+            FlatMapStrategy(strategy=strategy, expand=self.expand)
+            for strategy in self.flatmapped_strategy.branches
+        ]
