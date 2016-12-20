@@ -200,25 +200,37 @@ class ConjectureData(object):
         def distribution(random, n):
             assert n == 1, n
             return BYTES_TO_STRINGS[s.sample(random)]
-        while True:
-            result = self.draw_bytes(1, distribution)[0]
-            if result < len(weights) and weights[result] > 0:
-                return result
-
-    def draw_from_mixture(self, mixture):
-        if not mixture.has_matches:
+        result = self.draw_bytes(1, distribution)[0]
+        if result < len(weights) and weights[result] > 0:
+            return result
+        else:
             self.mark_invalid()
+
+    def draw_from_grammar(self, grammar):
+        self.start_example()
         result = bytearray()
+
+        weights = [0] * 256
+
         while True:
-            if not mixture.matches_non_empty:
+            if not grammar.initial_values():
+                # We can get into circumstances where we've gone astray because
+                # of intersection grammars. In that case there's nothing we
+                # can do but abort the test or try again from the beginning.
+                if not grammar.matches_empty:
+                    self.mark_invalid()
                 break
-            if mixture.matches_empty:
-                p = 0.5 * mixture.stop_weight
+            if grammar.matches_empty:
+                p = 0.5
                 if not self.draw_byte([p, 1 - p]):
                     break
-            c = self.draw_byte(mixture.weights)
-            mixture = mixture.derivative(c)
+            values = grammar.initial_values()
+            for i in range(256):
+                weights[i] = int(i in values)
+            c = self.draw_byte(weights)
+            grammar = grammar.derivative(c)
             result.append(c)
+        self.stop_example()
         return reasonable_byte_type(result)
 
     def mark_interesting(self):
