@@ -170,7 +170,6 @@ def minimize(initial, condition, random=None, cautious=False):
     be.
 
     """
-    print(len(initial), cautious)
     m = Minimizer(initial, condition, random, cautious)
     m.run()
     return m.current
