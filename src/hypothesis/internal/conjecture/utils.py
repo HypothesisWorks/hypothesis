@@ -17,8 +17,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import math
-
 from hypothesis.internal.compat import bit_length, int_to_bytes, \
     int_from_bytes
 
@@ -106,22 +104,14 @@ def choice(data, values):
 
 
 def geometric(data, p):
-    denom = math.log1p(-p)
-    n_bytes = 8
-
-    def distribution(random, n):
-        assert n == n_bytes
-        for _ in range(100):
-            try:
-                return int_to_bytes(int(
-                    math.log1p(-random.random()) / denom), n)
-            # This is basically impossible to hit but is required for
-            # correctness
-            except OverflowError:  # pragma: no cover
-                pass
-        # We got a one in a million chance 100 times in a row. Something is up.
-        assert False  # pragma: no cover
-    return int_from_bytes(data.draw_bytes(n_bytes, distribution))
+    weights = tuple((1 - p) ** i for i in range(256))
+    result = 0
+    while True:
+        i = data.draw_byte(weights)
+        if i < 255:
+            return result + i
+        else:
+            result += 255
 
 
 def boolean(data):
