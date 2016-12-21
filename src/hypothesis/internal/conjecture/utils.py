@@ -19,10 +19,11 @@ from __future__ import division, print_function, absolute_import
 
 from hypothesis.internal.compat import bit_length, int_to_bytes, \
     int_from_bytes
+from hypothesis.internal.conjecture.grammar import Interval
 
 
 def n_byte_unsigned(data, n):
-    return int_from_bytes(data.draw_bytes(n))
+    return int_from_bytes(bytes(data.draw_byte() for _ in range(n)))
 
 
 def saturate(n):
@@ -34,7 +35,7 @@ def saturate(n):
     return n
 
 
-def integer_range(data, lower, upper, center=None, distribution=None):
+def integer_range(data, lower, upper, center=None):
     assert lower <= upper
     if lower == upper:
         return int(lower)
@@ -42,16 +43,39 @@ def integer_range(data, lower, upper, center=None, distribution=None):
     if center is None:
         center = lower
     center = min(max(center, lower), upper)
-    if distribution is None:
-        if lower < center < upper:
-            def distribution(random):
-                if random.randint(0, 1):
-                    return random.randint(center, upper)
-                else:
-                    return random.randint(lower, center)
-        else:
-            def distribution(random):
-                return random.randint(lower, upper)
+    if lower < center < upper:
+        def distribution(random):
+            if random.randint(0, 1):
+                return random.randint(center, upper)
+            else:
+                return random.randint(lower, center)
+    else:
+        def distribution(random):
+            return random.randint(lower, upper)
+
+    gap = upper - lower
+
+    bits = bit_length(gap)
+    nbytes = bits // 8 + int(bits % 8 != 0)
+
+    i = int_from_bytes(
+        data.draw_from_grammar(
+            Interval(b'\0' * nbytes, int_to_bytes(gap, nbytes)))
+    )
+
+    result = center + i
+    if result > upper:
+        result = center - (result - upper)
+    assert lower <= result <= upper
+    return result
+
+
+def integer_range_with_distribution(data, lower, upper, distribution):
+    assert lower <= upper
+    if lower == upper:
+        return int(lower)
+
+    assert distribution is not None
 
     gap = upper - lower
     bits = bit_length(gap)
@@ -60,37 +84,17 @@ def integer_range(data, lower, upper, center=None, distribution=None):
 
     def byte_distribution(random, n):
         assert n == nbytes
-        v = distribution(random)
-        if v >= center:
-            probe = v - center
-        else:
-            probe = upper - v
-        return int_to_bytes(probe, n)
+        return int_to_bytes(distribution(random), n)
 
-    probe = gap + 1
+    result = gap + 1
 
-    while probe > gap:
-        probe = int_from_bytes(
+    while result > gap:
+        result = int_from_bytes(
             data.draw_bytes(nbytes, byte_distribution)
         ) & mask
 
-    if center == upper:
-        result = upper - probe
-    elif center == lower:
-        result = lower + probe
-    else:
-        if center + probe <= upper:
-            result = center + probe
-        else:
-            result = upper - probe
     assert lower <= result <= upper
     return int(result)
-
-
-def integer_range_with_distribution(data, lower, upper, nums):
-    return integer_range(
-        data, lower, upper, distribution=nums
-    )
 
 
 def centered_integer_range(data, lower, upper, center):
@@ -123,9 +127,8 @@ def biased_coin(data, p):
 
 
 def write(data, string):
-    def distribution(random, n):
-        assert n == len(string)
-        return string
-    x = data.draw_bytes(len(string), distribution)
-    if x != string:
-        data.mark_invalid()
+    weights = [0] * 256
+    for c in string:
+        weights[c] = 1
+        data.draw_byte(weights)
+        weights[c] = 0
