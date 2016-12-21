@@ -41,8 +41,6 @@ def codepoint_interval(lower, upper):
 
 ANY_CODEPOINT = codepoint_interval(0, sys.maxunicode)
 
-GOOD_CODEPOINTS = codepoint_interval(ord('0'), sys.maxunicode)
-
 CATEGORY_GRAMMARS = {}
 
 
@@ -78,11 +76,11 @@ class OneCharStringStrategy(SearchStrategy):
                 c for c in categories if c in whitelist_categories)
         if blacklist_categories is not None:
             categories = tuple(
-                c for c in categories if c in blacklist_categories)
+                c for c in categories if c not in blacklist_categories)
 
         grammars_by_category = tuple(category_grammar(c) for c in categories)
 
-        base_grammar = Alternation(grammars_by_category)
+        base_grammar = Alternation(grammars_by_category).normalize()
 
         if blacklist_characters is not None:
             base_grammar = Intersection([
@@ -98,11 +96,23 @@ class OneCharStringStrategy(SearchStrategy):
                 codepoint_interval(
                     min_codepoint or 0, max_codepoint or sys.maxunicode)])
 
-        grammars = (
-            Intersection([base_grammar, GOOD_CODEPOINTS]), base_grammar
-        ) + grammars_by_category
-        self.grammars = tuple(g.normalize() for g in grammars)
-        self.weights = (1,) * len(self.grammars)
+        base_grammar = base_grammar.normalize()
+        grammars_by_category = tuple(
+            Intersection([g, base_grammar]).normalize()
+            for g in grammars_by_category
+        )
+
+        shrinking_grammars = [
+            Intersection([
+                codepoint_interval(ord('0') - i, sys.maxunicode),
+                base_grammar]).normalize()
+            for i in range(ord('0'))
+        ]
+        shrinking_grammars.append(base_grammar),
+
+        self.grammars = tuple(shrinking_grammars) + grammars_by_category
+        self.weights = (1,) * len(shrinking_grammars) + (
+            len(shrinking_grammars),) * len(grammars_by_category)
 
     def do_draw(self, data):
         i = data.draw_byte(self.weights)
@@ -121,7 +131,9 @@ class StringStrategy(MappedSearchStrategy):
         )
 
     def __repr__(self):
-        return 'StringStrategy()'
+        return 'StringStrategy(%r)' % (
+            self.mapped_strategy,
+        )
 
     def pack(self, ls):
         return u''.join(ls)

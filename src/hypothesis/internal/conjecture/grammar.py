@@ -291,6 +291,8 @@ class Alternation(BranchGrammar):
             c = c.normalize()
             if c is Nil:
                 pass
+            elif c is Everything:
+                return Everything
             elif isinstance(c, Alternation):
                 children.update(c.children)
             else:
@@ -570,7 +572,7 @@ ORDER_SCORES = {}
 
 for i, c in enumerate([
     _Nil,
-    Everything,
+    _Everything,
     Wildcard,
     Literal,
     Interval,

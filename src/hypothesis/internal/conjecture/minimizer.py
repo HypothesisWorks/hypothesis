@@ -70,6 +70,14 @@ class Minimizer(object):
             return True
         if i == self.size - 1:
             return False
+
+        for d in range(self.current[-1] + 1, 256):
+            if self.incorporate(
+                self.current[:i] + hbytes([c]) +
+                self.current[i+1:-1] + hbytes([d])
+            ):
+                return True
+
         return self.incorporate(
             self.current[:i] + hbytes([c, 255]) +
             self.current[i + 2:]
@@ -162,6 +170,7 @@ def minimize(initial, condition, random=None, cautious=False):
     be.
 
     """
+    print(len(initial), cautious)
     m = Minimizer(initial, condition, random, cautious)
     m.run()
     return m.current
