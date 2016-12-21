@@ -50,3 +50,17 @@ def test_intervals_shrink_to_center(inter, rnd):
             assert find(s, lambda x: x < center) == center - 1
         if center < upper:
             assert find(s, lambda x: x > center) == center + 1
+
+
+@given(
+    st.tuples(st.integers(), st.integers(), st.integers()).map(sorted),
+    st.random_module(),
+)
+@settings(timeout=10, max_shrinks=0)
+def test_interval_endpoints_are_respected(inter, rnd):
+    lower, center, upper = inter
+
+    @settings(database=None, max_shrinks=2000)
+    @given(interval(lower, upper, center))
+    def test(i):
+        assert lower <= i <= upper

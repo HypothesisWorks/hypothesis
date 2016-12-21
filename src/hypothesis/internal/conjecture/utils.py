@@ -50,12 +50,16 @@ def integer_range(data, lower, upper, center=None):
     bits = bit_length(gap)
     nbytes = bits // 8 + int(bits % 8 != 0)
 
-    zero = b'\0' * nbytes
     max_string = int_to_bytes(gap, nbytes)
-    all_valid = Interval(zero, max_string)
-    special = Alternation(Literal(v) for v in [
-        zero, int_to_bytes(center - lower, nbytes)
-    ])
+    all_valid = Interval(int_to_bytes(0, nbytes), max_string)
+
+    special_integers = {0, 1, gap - 1, gap}
+    if center > lower:
+        special_integers.add(upper - center)
+
+    special = Alternation(
+        Literal(int_to_bytes(v, nbytes))
+        for v in special_integers)
 
     if boolean(data):
         grammar = special
