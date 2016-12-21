@@ -88,7 +88,7 @@ class OneCharStringStrategy(SearchStrategy):
             base_grammar = Intersection([
                 base_grammar,
                 Negation(Alternation([
-                    Literal(int_to_bytes(v, N_BYTES_FOR_CODEPOINT))
+                    Literal(int_to_bytes(ord(v), N_BYTES_FOR_CODEPOINT))
                     for v in blacklist_characters
                 ]))])
 
