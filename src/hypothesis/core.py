@@ -314,8 +314,8 @@ def given(*generator_arguments, **generator_kwargs):
             perform_health_check = settings.perform_health_check
             perform_health_check &= Settings.default.perform_health_check
 
-            from hypothesis.internal.conjecture.data import TestData, Status, \
-                StopTest
+            from hypothesis.internal.conjecture.data import ConjectureData, \
+                Status, StopTest
             if not (
                 Phase.reuse in settings.phases or
                 Phase.generate in settings.phases
@@ -328,7 +328,7 @@ def given(*generator_arguments, **generator_kwargs):
                 # time to calculate any cached data. This prevents the case
                 # where the first draw of the health check takes ages because
                 # of loading unicode data the first time.
-                data = TestData(
+                data = ConjectureData(
                     max_length=settings.buffer_size,
                     draw_bytes=lambda data, n, distribution:
                     distribution(health_check_random, n)
@@ -350,7 +350,7 @@ def given(*generator_arguments, **generator_kwargs):
                     filtered_draws < 50 and overruns < 20
                 ):
                     try:
-                        data = TestData(
+                        data = ConjectureData(
                             max_length=settings.buffer_size,
                             draw_bytes=lambda data, n, distribution:
                             distribution(health_check_random, n)
@@ -463,12 +463,12 @@ def given(*generator_arguments, **generator_kwargs):
                     verbose_report(last_exception[0])
                     data.mark_interesting()
 
-            from hypothesis.internal.conjecture.engine import TestRunner
+            from hypothesis.internal.conjecture.engine import ConjectureRunner
 
             falsifying_example = None
             database_key = str_to_bytes(fully_qualified_name(test))
             start_time = time.time()
-            runner = TestRunner(
+            runner = ConjectureRunner(
                 evaluate_test_data,
                 settings=settings, random=random,
                 database_key=database_key,
@@ -518,7 +518,7 @@ def given(*generator_arguments, **generator_kwargs):
             try:
                 with settings:
                     test_runner(
-                        TestData.for_buffer(falsifying_example),
+                        ConjectureData.for_buffer(falsifying_example),
                         reify_and_execute(
                             search_strategy, test,
                             print_example=True, is_final=True
@@ -546,7 +546,7 @@ def given(*generator_arguments, **generator_kwargs):
 
             try:
                 test_runner(
-                    TestData.for_buffer(falsifying_example),
+                    ConjectureData.for_buffer(falsifying_example),
                     reify_and_execute(
                         search_strategy,
                         test_is_flaky(test, repr_for_last_exception[0]),
@@ -621,11 +621,11 @@ def find(specifier, condition, settings=None, random=None, database_key=None):
                 last_data[0] = data
         if success and not data.frozen:
             data.mark_interesting()
-    from hypothesis.internal.conjecture.engine import TestRunner
-    from hypothesis.internal.conjecture.data import TestData, Status
+    from hypothesis.internal.conjecture.engine import ConjectureRunner
+    from hypothesis.internal.conjecture.data import ConjectureData, Status
 
     start = time.time()
-    runner = TestRunner(
+    runner = ConjectureRunner(
         template_condition, settings=settings, random=random,
         database_key=database_key,
     )
@@ -633,7 +633,7 @@ def find(specifier, condition, settings=None, random=None, database_key=None):
     note_engine_for_statistics(runner)
     run_time = time.time() - start
     if runner.last_data.status == Status.INTERESTING:
-        data = TestData.for_buffer(runner.last_data.buffer)
+        data = ConjectureData.for_buffer(runner.last_data.buffer)
         with BuildContext(data):
             return data.draw(search)
     if runner.valid_examples <= settings.min_satisfying_examples:

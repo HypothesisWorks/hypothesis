@@ -27,7 +27,8 @@ from hypothesis import Phase
 from hypothesis.reporting import debug_report
 from hypothesis.internal.compat import hbytes, hrange, Counter, \
     text_type, bytes_from_list, to_bytes_sequence, unicode_safe_repr
-from hypothesis.internal.conjecture.data import Status, StopTest, TestData
+from hypothesis.internal.conjecture.data import Status, StopTest, \
+    ConjectureData
 from hypothesis.internal.conjecture.minimizer import minimize
 
 
@@ -44,7 +45,7 @@ class RunIsComplete(Exception):
     pass
 
 
-class TestRunner(object):
+class ConjectureRunner(object):
 
     def __init__(
         self, test_function, settings=None, random=None,
@@ -67,7 +68,7 @@ class TestRunner(object):
         self.events_to_strings = WeakKeyDictionary()
 
     def new_buffer(self):
-        self.last_data = TestData(
+        self.last_data = ConjectureData(
             max_length=self.settings.buffer_size,
             draw_bytes=lambda data, n, distribution:
             distribution(self.random, n)
@@ -172,7 +173,7 @@ class TestRunner(object):
         if sort_key(buffer) >= sort_key(self.last_data.buffer):
             return False
         assert sort_key(buffer) <= sort_key(self.last_data.buffer)
-        data = TestData.for_buffer(buffer)
+        data = ConjectureData.for_buffer(buffer)
         self.test_function(data)
         if self.consider_new_test_data(data):
             self.shrinks += 1
@@ -283,7 +284,7 @@ class TestRunner(object):
                 ):
                     self.exit_reason = ExitReason.max_iterations
                     return
-                data = TestData.for_buffer(existing)
+                data = ConjectureData.for_buffer(existing)
                 self.test_function(data)
                 data.freeze()
                 self.last_data = data
@@ -332,7 +333,7 @@ class TestRunner(object):
                     self.new_buffer()
                     mutator = self._new_mutator()
                 else:
-                    data = TestData(
+                    data = ConjectureData(
                         draw_bytes=mutator,
                         max_length=self.settings.buffer_size
                     )
@@ -366,7 +367,7 @@ class TestRunner(object):
             self.exit_reason = ExitReason.finished
             return
 
-        data = TestData.for_buffer(self.last_data.buffer)
+        data = ConjectureData.for_buffer(self.last_data.buffer)
         self.test_function(data)
         if data.status != Status.INTERESTING:
             self.exit_reason = ExitReason.flaky

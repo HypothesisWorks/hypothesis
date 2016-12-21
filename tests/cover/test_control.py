@@ -23,7 +23,7 @@ from hypothesis.errors import CleanupFailed, InvalidArgument
 from hypothesis.control import note, event, cleanup, BuildContext, \
     current_build_context, _current_build_context
 from tests.common.utils import capture_out
-from hypothesis.internal.conjecture.data import TestData as TD
+from hypothesis.internal.conjecture.data import ConjectureData as TD
 
 
 def bc():

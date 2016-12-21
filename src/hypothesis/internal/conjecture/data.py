@@ -46,11 +46,11 @@ class StopTest(BaseException):
 global_test_counter = 0
 
 
-class TestData(object):
+class ConjectureData(object):
 
     @classmethod
     def for_buffer(self, buffer):
-        return TestData(
+        return ConjectureData(
             max_length=len(buffer),
             draw_bytes=lambda data, n, distribution:
             buffer[data.index:data.index + n]
@@ -81,7 +81,7 @@ class TestData(object):
     def __assert_not_frozen(self, name):
         if self.frozen:
             raise Frozen(
-                'Cannot call %s on frozen TestData' % (
+                'Cannot call %s on frozen ConjectureData' % (
                     name,))
 
     @property
