@@ -214,7 +214,6 @@ class TestData(object):
             self.mark_invalid()
 
     def draw_from_grammar(self, grammar):
-        self.start_example()
         result = bytearray()
 
         weights = [0] * 256
@@ -237,7 +236,6 @@ class TestData(object):
             c = self.draw_byte(weights)
             grammar = grammar.derivative(c)
             result.append(c)
-        self.stop_example()
         return reasonable_byte_type(result)
 
     def mark_interesting(self):

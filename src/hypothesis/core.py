@@ -596,7 +596,7 @@ def find(specifier, condition, settings=None, random=None, database_key=None):
             try:
                 data.is_find = True
                 result = data.draw(search)
-                data.note(result)
+                data.note(repr(result))
                 success = condition(result)
             except UnsatisfiedAssumption:
                 data.mark_invalid()
