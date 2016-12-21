@@ -68,7 +68,7 @@ class ConjectureData(object):
         self.overdraw = 0
         self.level = 0
         self.block_starts = {}
-        self.blocks = []
+        self.blocks = [[0, 0]]
         self.buffer = bytearray()
         self.output = u''
         self.status = Status.VALID
@@ -83,6 +83,14 @@ class ConjectureData(object):
         self.start_time = benchmark_time()
         self.events = set()
         self.bind_points = set()
+
+    def __block_boundary(self):
+        i, j = self.blocks[-1]
+        if i == j:
+            return
+        if not self.interval_stack:
+            self.intervals.append(tuple(self.blocks[-1]))
+        self.blocks.append([self.index, self.index])
 
     def __assert_not_frozen(self, name):
         if self.frozen:
@@ -128,26 +136,23 @@ class ConjectureData(object):
 
     def start_example(self):
         self.__assert_not_frozen('start_example')
+        self.__block_boundary()
         self.interval_stack.append(self.index)
         self.interval_counter_stack.append(len(self.intervals))
         self.level += 1
 
     def stop_example(self):
         self.__assert_not_frozen('stop_example')
+        self.__block_boundary()
         self.level -= 1
         while self.level >= len(self.intervals_by_level):
             self.intervals_by_level.append([])
         k = self.interval_stack.pop()
-        old_length = self.interval_counter_stack.pop()
 
         if k != self.index:
             t = (k, self.index)
             self.intervals_by_level[self.level].append(t)
             if not self.intervals or self.intervals[-1] != t:
-                if old_length == len(self.intervals) and self.blocks[-1] != t:
-                    self.blocks.append(t)
-                    self.block_starts.setdefault(
-                        t[1] - t[0], []).append(t[0])
                 self.intervals.append(t)
 
     def note_event(self, event):
@@ -158,6 +163,9 @@ class ConjectureData(object):
             assert isinstance(self.buffer, hbytes)
             return
         self.frozen = True
+        self.blocks = list(map(tuple, self.blocks))
+        for i, j in self.blocks:
+            self.block_starts.setdefault(j - i, []).append(i)
         self.finish_time = benchmark_time()
         # Intervals are sorted as longest first, then by interval start.
         for l in self.intervals_by_level:
@@ -183,13 +191,12 @@ class ConjectureData(object):
             self.freeze()
             raise StopTest(self.testcounter)
         result = self._draw_bytes(self, n, distribution)
-        self.block_starts.setdefault(n, []).append(initial)
-        self.blocks.append((initial, initial + n))
         if not self.interval_stack:
             self.intervals.append((initial, initial + n))
         assert len(result) == n
         assert self.index == initial
         self.buffer.extend(result)
+        self.blocks[-1][-1] += n
         return reasonable_byte_type(result)
 
     def draw_byte(self, weights=UNIFORM_WEIGHTS):
