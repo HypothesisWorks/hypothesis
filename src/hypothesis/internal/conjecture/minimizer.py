@@ -74,7 +74,7 @@ class Minimizer(object):
         for d in range(self.current[-1] + 1, 256):
             if self.incorporate(
                 self.current[:i] + hbytes([c]) +
-                self.current[i+1:-1] + hbytes([d])
+                self.current[i + 1:-1] + hbytes([d])
             ):
                 return True
 
