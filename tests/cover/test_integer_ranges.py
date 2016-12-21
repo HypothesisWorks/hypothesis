@@ -19,7 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import hypothesis.strategies as st
 from hypothesis import find, given, settings
-from hypothesis.internal.conjecture.data import TestData
+from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.utils import integer_range
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
@@ -65,7 +65,7 @@ def test_intervals_shrink_to_center(inter, rnd):
 def test_distribution_is_correctly_translated(inter, rnd):
     assert inter == sorted(inter)
     lower, c1, c2, upper = inter
-    d = TestData(
+    d = ConjectureData(
         draw_bytes=lambda data, n, distribution: distribution(rnd, n),
         max_length=10 ** 6
     )

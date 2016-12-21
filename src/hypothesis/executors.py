@@ -58,7 +58,7 @@ def default_new_style_executor(data, function):
     return function(data)
 
 
-class TestRunner(object):
+class ConjectureRunner(object):
 
     def hypothesis_execute_example_with_data(self, data, function):
         return function(data)
@@ -67,7 +67,7 @@ class TestRunner(object):
 def new_style_executor(runner):
     if runner is None:
         return default_new_style_executor
-    if isinstance(runner, TestRunner):
+    if isinstance(runner, ConjectureRunner):
         return runner.hypothesis_execute_example_with_data
 
     old_school = executor(runner)
