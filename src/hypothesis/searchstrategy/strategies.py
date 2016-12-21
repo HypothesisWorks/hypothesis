@@ -215,8 +215,7 @@ class OneOfStrategy(SearchStrategy):
                     i = random.randint(0, n - 1)
                     if random.random() <= self.weights[i]:
                         return i
-            i = cu.integer_range_with_distribution(
-                data, 0, n - 1, biased_i)
+            i = cu.weighted_integer(data, self.weights)
 
         return data.draw(self.element_strategies[i])
 
