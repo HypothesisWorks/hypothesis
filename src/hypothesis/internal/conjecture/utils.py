@@ -19,8 +19,8 @@ from __future__ import division, print_function, absolute_import
 
 from hypothesis.internal.compat import bit_length, int_to_bytes, \
     int_from_bytes
-from hypothesis.internal.conjecture.grammar import Interval, Alternation, \
-    Literal
+from hypothesis.internal.conjecture.grammar import Literal, Interval, \
+    Alternation
 
 
 def n_byte_unsigned(data, n):
@@ -71,31 +71,19 @@ def integer_range(data, lower, upper, center=None):
     return result
 
 
-def integer_range_with_distribution(data, lower, upper, distribution):
-    assert lower <= upper
-    if lower == upper:
-        return int(lower)
+def weighted_integer(data, weights):
+    BYTE_THRESHOLD = 256
 
-    assert distribution is not None
-
-    gap = upper - lower
-    bits = bit_length(gap)
-    nbytes = bits // 8 + int(bits % 8 != 0)
-    mask = saturate(gap)
-
-    def byte_distribution(random, n):
-        assert n == nbytes
-        return int_to_bytes(distribution(random), n)
-
-    result = gap + 1
-
-    while result > gap:
-        result = int_from_bytes(
-            data.draw_bytes(nbytes, byte_distribution)
-        ) & mask
-
-    assert lower <= result <= upper
-    return int(result)
+    if len(weights) <= BYTE_THRESHOLD:
+        return data.draw_byte(weights)
+    else:
+        w0 = sum(weights[:BYTE_THRESHOLD])
+        new_weights = (w0,) + tuple(weights[BYTE_THRESHOLD:])
+        i = weighted_integer(new_weights)
+        if i == 0:
+            return weighted_integer(weights[:BYTE_THRESHOLD])
+        else:
+            return BYTE_THRESHOLD + i - 1
 
 
 def centered_integer_range(data, lower, upper, center):
