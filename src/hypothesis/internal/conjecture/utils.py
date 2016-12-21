@@ -19,7 +19,8 @@ from __future__ import division, print_function, absolute_import
 
 from hypothesis.internal.compat import bit_length, int_to_bytes, \
     int_from_bytes
-from hypothesis.internal.conjecture.grammar import Interval
+from hypothesis.internal.conjecture.grammar import Interval, Alternation, \
+    Literal
 
 
 def n_byte_unsigned(data, n):
@@ -43,25 +44,25 @@ def integer_range(data, lower, upper, center=None):
     if center is None:
         center = lower
     center = min(max(center, lower), upper)
-    if lower < center < upper:
-        def distribution(random):
-            if random.randint(0, 1):
-                return random.randint(center, upper)
-            else:
-                return random.randint(lower, center)
-    else:
-        def distribution(random):
-            return random.randint(lower, upper)
 
     gap = upper - lower
 
     bits = bit_length(gap)
     nbytes = bits // 8 + int(bits % 8 != 0)
 
-    i = int_from_bytes(
-        data.draw_from_grammar(
-            Interval(b'\0' * nbytes, int_to_bytes(gap, nbytes)))
-    )
+    zero = b'\0' * nbytes
+    max_string = int_to_bytes(gap, nbytes)
+    all_valid = Interval(zero, max_string)
+    special = Alternation(Literal(v) for v in [
+        zero, int_to_bytes(center - lower, nbytes)
+    ])
+
+    if boolean(data):
+        grammar = special
+    else:
+        grammar = all_valid
+
+    i = int_from_bytes(data.draw_from_grammar(grammar))
 
     result = center + i
     if result > upper:

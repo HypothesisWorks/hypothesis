@@ -21,12 +21,14 @@ import math
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal import charmap
-from hypothesis.internal.compat import hrange, hunichr, text_type, \
+from hypothesis.internal.compat import hunichr, text_type, \
     binary_type
 from hypothesis.internal.intervalsets import IntervalSet
-from hypothesis.internal.conjecture.utils import integer_range
+from hypothesis.internal.conjecture.utils import \
+    integer_range_with_distribution
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
     MappedSearchStrategy
+from hypothesis.internal.conjecture.grammar import Wildcard
 
 
 class OneCharStringStrategy(SearchStrategy):
@@ -87,9 +89,9 @@ class OneCharStringStrategy(SearchStrategy):
                     int(math.log(random.random()) / denom))
 
         while True:
-            i = integer_range(
+            i = integer_range_with_distribution(
                 data, 0, len(self.intervals) - 1,
-                center=self.zero_point, distribution=d
+                distribution=d
             )
             c = hunichr(self.intervals[i])
             if c not in self.blacklist_characters:
@@ -130,10 +132,7 @@ class BinaryStringStrategy(MappedSearchStrategy):
 class FixedSizeBytes(SearchStrategy):
 
     def __init__(self, size):
-        self.size = size
+        self.grammar = Wildcard(size)
 
     def do_draw(self, data):
-        buf = bytearray()
-        for _ in hrange(self.size):
-            buf.append(data.draw_byte())
-        return binary_type(buf)
+        return data.draw_from_grammar(self.grammar)
