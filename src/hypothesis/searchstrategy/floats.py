@@ -114,7 +114,7 @@ def float_order_key(k):
 
 def _float_interval(u, v):
     return Interval(*sorted(struct.pack(
-        '!d', f) for f in (u, v))),
+        '!d', f) for f in (u, v)))
 
 
 class FixedBoundedFloatStrategy(SearchStrategy):
