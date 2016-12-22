@@ -84,12 +84,10 @@ class OneCharStringStrategy(SearchStrategy):
         base_grammar = Alternation(grammars_by_category).normalize()
 
         if blacklist_characters is not None:
-            base_grammar = Intersection([
-                base_grammar,
-                Negation(Alternation([
-                    Literal(int_to_bytes(ord(v), N_BYTES_FOR_CODEPOINT))
-                    for v in blacklist_characters
-                ]))])
+            base_grammar = Intersection([base_grammar] + [
+                Negation(Literal(int_to_bytes(ord(v), N_BYTES_FOR_CODEPOINT)))
+                for v in blacklist_characters
+            ])
 
         if min_codepoint is not None or max_codepoint is not None:
             base_grammar = Intersection([
@@ -118,6 +116,10 @@ class OneCharStringStrategy(SearchStrategy):
         self.grammars = tuple(shrinking_grammars) + grammars_by_category
         self.weights = (1,) * len(shrinking_grammars) + (
             len(shrinking_grammars),) * len(grammars_by_category)
+
+    def validate(self):
+        for g in self.grammars:
+            g.has_matches()
 
     def do_draw(self, data):
         i = data.draw_byte(self.weights)
