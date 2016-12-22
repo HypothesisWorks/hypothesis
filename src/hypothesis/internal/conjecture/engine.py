@@ -459,6 +459,11 @@ class ConjectureRunner(object):
                 cutoff = sorted(self.last_data.bind_points)[b]
 
                 def test_value(prefix):
+                    if self.incorporate_new_buffer(
+                        prefix +
+                        hbytes(reversed(self.last_data.buffer[len(prefix):]))
+                    ):
+                        return True
                     for t in hrange(5):
                         alphabet = {}
                         for i, j in self.last_data.blocks[b:]:
