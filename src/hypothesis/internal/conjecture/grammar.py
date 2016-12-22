@@ -17,6 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+import heapq
+
 NORMALIZATION_CACHE = {}
 
 
@@ -31,6 +33,37 @@ class Grammar(object):
         self.normalized = False
         self.__initial_values = None
         self.__derivatives = {}
+        self.__has_matches = None
+
+    def has_matches(self):
+        if self._always_has_matches:
+            return True
+        if self.__has_matches is None:
+            if not self.normalized:
+                self.__has_matches = self.normalize().has_matches()
+            else:
+                self.__has_matches = self.__calculate_has_matches()
+        return self.__has_matches
+
+    @property
+    def _always_has_matches(self):
+        return self.matches_empty
+
+    def __calculate_has_matches(self):
+        self = self.normalize()
+        # Perform a breadth first search of reading characters from the
+        # grammar until we either run into something we know we can match
+        # or we exhaust all possible derivatives and conclude that matching
+        # is impossible
+        queue = []
+        heapq.heappush(queue, (0, self))
+        while queue:
+            n, g = heapq.heappop(queue)
+            if g.__has_matches or g._always_has_matches:
+                return True
+            for c in g.initial_values():
+                heapq.heappush(queue, (n + 1, g.derivative(c)))
+        return False
 
     def derivative(self, b):
         if b not in self.initial_values():
@@ -122,6 +155,10 @@ class Literal(Grammar):
     def __init__(self, value):
         Grammar.__init__(self)
         self.value = value
+
+    @property
+    def _always_has_matches(self):
+        return True
 
     @property
     def matches_empty(self):
@@ -216,6 +253,11 @@ class Concatenation(BranchGrammar):
         self.children = tuple(children)
         assert self.children
         self.matches_empty = all(c.matches_empty for c in self.children)
+        self.__always_has_matches = all(
+            c._always_has_matches for c in self.children)
+
+    def _always_has_matches(self):
+        return self.__always_has_matches
 
     def __hash__(self):
         h = hash(len(self.children))
@@ -278,6 +320,11 @@ class Alternation(BranchGrammar):
         Grammar.__init__(self)
         self.children = tuple(children)
         self.matches_empty = any(c.matches_empty for c in self.children)
+        self.__always_has_matches = any(
+            c._always_has_matches for c in self.children)
+
+    def _always_has_matches(self):
+        return self.__always_has_matches
 
     def __hash__(self):
         h = hash(len(self.children))
@@ -325,6 +372,10 @@ class Wildcard(Grammar):
         Grammar.__init__(self)
         assert length > 0
         self.length = length
+
+    @property
+    def _always_has_matches(self):
+        return True
 
     @property
     def matches_empty(self):
@@ -512,6 +563,10 @@ class Interval(Grammar):
     @property
     def matches_empty(self):
         return False
+
+    @property
+    def _always_has_matches(self):
+        return True
 
     def __hash__(self):
         return hash((self.lower, self.upper))

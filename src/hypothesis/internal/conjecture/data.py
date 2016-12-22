@@ -214,6 +214,8 @@ class ConjectureData(object):
             self.mark_invalid()
 
     def draw_from_grammar(self, grammar):
+        if not grammar.has_matches():
+            self.mark_invalid()
         result = bytearray()
 
         weights = [0] * 256
