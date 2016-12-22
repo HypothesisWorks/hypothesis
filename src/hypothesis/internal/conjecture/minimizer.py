@@ -178,6 +178,7 @@ class Minimizer(object):
             self.rotate_suffixes()
 
 
+
 # Table of useful small shrinks to apply to a number.
 # The idea is that we use these first to see if shrinking is likely to work.
 # If it is, we try a full shrink. In the best case scenario this speeds us
