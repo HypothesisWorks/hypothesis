@@ -19,6 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import sys
 
+from hypothesis.errors import InvalidArgument
 from hypothesis.internal import charmap
 from hypothesis.internal.compat import hunichr, text_type, bit_length, \
     binary_type, int_to_bytes, int_from_bytes
@@ -97,6 +98,10 @@ class OneCharStringStrategy(SearchStrategy):
                     min_codepoint or 0, max_codepoint or sys.maxunicode)])
 
         base_grammar = base_grammar.normalize()
+
+        if not base_grammar.has_matches():
+            raise InvalidArgument('No valid characters in set')
+
         grammars_by_category = tuple(
             Intersection([g, base_grammar]).normalize()
             for g in grammars_by_category
