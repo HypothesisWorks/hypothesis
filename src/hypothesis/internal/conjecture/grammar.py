@@ -45,6 +45,12 @@ class Grammar(object):
                 self.__has_matches = self.__calculate_has_matches()
         return self.__has_matches
 
+    def matches(self, buf):
+        remainder = self
+        for b in buf:
+            remainder = remainder.derivative(b)
+        return remainder.matches_empty
+
     @property
     def _always_has_matches(self):
         return self.matches_empty
