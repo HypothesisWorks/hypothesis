@@ -80,6 +80,7 @@ class OneCharStringStrategy(SearchStrategy):
                 c for c in categories if c not in blacklist_categories)
 
         grammars_by_category = tuple(category_grammar(c) for c in categories)
+        grammars_by_category = tuple(category_grammar(c) for c in categories)
 
         base_grammar = Alternation(grammars_by_category).normalize()
 
@@ -104,6 +105,10 @@ class OneCharStringStrategy(SearchStrategy):
             Intersection([g, base_grammar]).normalize()
             for g in grammars_by_category
         )
+        grammars_by_category = tuple(
+            g for g in grammars_by_category
+            if g.has_matches()
+        )
 
         shrinking_grammars = [
             Intersection([
@@ -113,13 +118,12 @@ class OneCharStringStrategy(SearchStrategy):
         ]
         shrinking_grammars.append(base_grammar),
 
-        self.grammars = tuple(shrinking_grammars) + grammars_by_category
+        shrinking_grammars = tuple(
+            c for c in shrinking_grammars if c.has_matches())
+
+        self.grammars = shrinking_grammars + grammars_by_category
         self.weights = (1,) * len(shrinking_grammars) + (
             len(shrinking_grammars),) * len(grammars_by_category)
-
-    def validate(self):
-        for g in self.grammars:
-            g.has_matches()
 
     def do_draw(self, data):
         i = data.draw_byte(self.weights)
