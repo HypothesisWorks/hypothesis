@@ -328,10 +328,9 @@ def given(*generator_arguments, **generator_kwargs):
                 # time to calculate any cached data. This prevents the case
                 # where the first draw of the health check takes ages because
                 # of loading unicode data the first time.
-                data = ConjectureData(
+                data = ConjectureData.for_random(
                     max_length=settings.buffer_size,
-                    draw_bytes=lambda data, n, distribution:
-                    distribution(health_check_random, n)
+                    random=health_check_random,
                 )
                 with Settings(settings, verbosity=Verbosity.quiet):
                     try:
@@ -350,10 +349,9 @@ def given(*generator_arguments, **generator_kwargs):
                     filtered_draws < 50 and overruns < 20
                 ):
                     try:
-                        data = ConjectureData(
+                        data = ConjectureData.for_random(
                             max_length=settings.buffer_size,
-                            draw_bytes=lambda data, n, distribution:
-                            distribution(health_check_random, n)
+                            random=health_check_random,
                         )
                         with Settings(settings, verbosity=Verbosity.quiet):
                             test_runner(data, reify_and_execute(

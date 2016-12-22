@@ -61,6 +61,13 @@ class ConjectureData(object):
             buffer[data.index:data.index + n]
         )
 
+    @classmethod
+    def for_random(self, random, max_length):
+        return ConjectureData(
+            max_length=max_length,
+            draw_bytes=lambda data, n, distribution: distribution(random, n)
+        )
+
     def __init__(self, max_length, draw_bytes):
         self.max_length = max_length
         self.is_find = False
