@@ -59,10 +59,11 @@ class Grammar(object):
         heapq.heappush(queue, (0, self))
         while queue:
             n, g = heapq.heappop(queue)
-            if g.__has_matches or g._always_has_matches:
-                return True
-            for c in g.initial_values():
-                heapq.heappush(queue, (n + 1, g.derivative(c)))
+            for c in sorted(g.initial_values()):
+                child = g.derivative(c)
+                if child.__has_matches or child._always_has_matches:
+                    return True
+                heapq.heappush(queue, (n + 1, child))
         return False
 
     def derivative(self, b):

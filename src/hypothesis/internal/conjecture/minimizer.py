@@ -169,7 +169,6 @@ for b in hrange(10, 256):
     small_shrinks.append(sorted(result))
 
 
-
 def minimize(initial, condition, random=None, cautious=False):
     """Perform a lexicographical minimization of the byte string 'initial' such
     that the predicate 'condition' returns True, and return the minimized

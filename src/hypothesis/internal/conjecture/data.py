@@ -220,24 +220,23 @@ class ConjectureData(object):
 
         weights = [0] * 256
 
+        state = grammar
         while True:
-            if not grammar.initial_values():
-                # We can get into circumstances where we've gone astray because
-                # of intersection grammars. In that case there's nothing we
-                # can do but abort the test or try again from the beginning.
-                if not grammar.matches_empty:
-                    self.mark_invalid()
-                break
-            if grammar.matches_empty:
+            assert state.has_matches()
+            values = state.initial_values()
+            if state.matches_empty:
+                if not values:
+                    break
                 p = 0.5
                 if not self.draw_byte([p, 1 - p]):
                     break
-            values = grammar.initial_values()
             for i in range(256):
                 weights[i] = int(i in values)
             c = self.draw_byte(weights)
-            grammar = grammar.derivative(c)
-            result.append(c)
+            new_state = state.derivative(c)
+            if new_state.has_matches():
+                state = new_state
+                result.append(c)
         return reasonable_byte_type(result)
 
     def mark_interesting(self):
