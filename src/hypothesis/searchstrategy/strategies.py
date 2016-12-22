@@ -207,20 +207,12 @@ class OneOfStrategy(SearchStrategy):
         self.bias = bias
         if bias is not None:
             assert 0 < bias < 1
-            self.weights = [bias ** i for i in range(len(strategies))]
+            self.weights = tuple(bias ** i for i in range(len(strategies)))
+        else:
+            self.weights = (1,) * len(strategies)
 
     def do_draw(self, data):
-        n = len(self.element_strategies)
-        if self.bias is None:
-            i = cu.integer_range(data, 0, n - 1)
-        else:
-            def biased_i(random):
-                while True:
-                    i = random.randint(0, n - 1)
-                    if random.random() <= self.weights[i]:
-                        return i
-            i = cu.weighted_integer(data, self.weights)
-
+        i = cu.weighted_integer(data, self.weights)
         return data.draw(self.element_strategies[i])
 
     def __repr__(self):
