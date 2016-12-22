@@ -355,7 +355,7 @@ class ConjectureRunner(object):
             self.debug('Lexicographical minimization of whole buffer')
             minimize(
                 self.last_data.buffer, self.incorporate_new_buffer,
-                cautious=True
+                cautious=True, random=self.random,
             )
 
             if change_counter != self.changed:
