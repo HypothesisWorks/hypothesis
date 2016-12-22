@@ -121,9 +121,18 @@ class OneCharStringStrategy(SearchStrategy):
         shrinking_grammars = tuple(
             c for c in shrinking_grammars if c.has_matches())
 
-        self.grammars = shrinking_grammars + grammars_by_category
-        self.weights = (1,) * len(shrinking_grammars) + (
-            len(shrinking_grammars),) * len(grammars_by_category)
+        self.grammars = list(shrinking_grammars + grammars_by_category)
+        self.weights = list((1,) * len(shrinking_grammars) + (
+            len(shrinking_grammars),) * len(grammars_by_category))
+
+        newline = int_to_bytes(ord(b'\n'), N_BYTES_FOR_CODEPOINT)
+        if base_grammar.matches(newline):
+            # If newlines are permitted we create a bias to generate multi
+            # line strings more often - about 10% of characters should be
+            # newlines.
+            self.grammars.append(Literal(newline))
+            self.weights.append(sum(self.weights) * 0.1 / 1.1)
+        assert len(self.grammars) == len(self.weights)
 
     def do_draw(self, data):
         i = data.draw_byte(self.weights)
