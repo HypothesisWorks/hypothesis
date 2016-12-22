@@ -41,6 +41,8 @@ from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.strategies import just, sets, text, lists, floats, \
     one_of, tuples, booleans, integers, sampled_from
 from hypothesis.internal.compat import hrange
+from hypothesis.internal.conjecture.utils import weighted_integer
+from hypothesis.searchstrategy.strategies import SearchStrategy
 from hypothesis.internal.conjecture.engine import \
     ConjectureRunner as ConConjectureRunner
 
@@ -546,3 +548,29 @@ for i in range(4):
     exec('''test_one_of_flattens_filter_branches_%d = define_test(
         one_of_nested_strategy_with_filter, 0.2, lambda x: x == 2 * %d
     )''' % (i, i))
+
+
+class weighted(SearchStrategy):
+
+    def __init__(self, *weights):
+        self.weights = tuple(weights)
+
+    def do_draw(self, data):
+        return weighted_integer(data, self.weights)
+
+
+test_weighted_uniformly_0 = define_test(
+    weighted(1, 1, 1), 0.3, lambda x: x == 0,
+)
+
+test_weighted_uniformly_1 = define_test(
+    weighted(1, 1, 1), 0.3, lambda x: x == 1,
+)
+
+test_weighted_uniformly_2 = define_test(
+    weighted(1, 1, 1), 0.3, lambda x: x == 2,
+)
+
+test_weighted_peaked = define_test(
+    weighted(1, 1, 6, 1, 1), 0.55, lambda x: x == 2
+)

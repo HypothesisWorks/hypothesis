@@ -76,18 +76,22 @@ def integer_range(data, lower, upper, center=None):
 
 
 def weighted_integer(data, weights):
-    BYTE_THRESHOLD = 256
-
-    if len(weights) <= BYTE_THRESHOLD:
+    if len(weights) < 256:
         return data.draw_byte(weights)
-    else:
-        w0 = sum(weights[:BYTE_THRESHOLD])
-        new_weights = (w0,) + tuple(weights[BYTE_THRESHOLD:])
-        i = weighted_integer(new_weights)
-        if i == 0:
-            return weighted_integer(weights[:BYTE_THRESHOLD])
-        else:
-            return BYTE_THRESHOLD + i - 1
+
+    n = len(weights) >> 8
+    assert n > 0
+    bucket_weights = [0] * n
+    for i, c in enumerate(weights):
+        bucket_weights[i >> 8] += c
+
+    bucket = data.draw_byte(bucket_weights) << 8
+    suffix_weights = [0] * 256
+    for i in range(256):
+        if bucket + i >= len(weights):
+            break
+        suffix_weights[i] = weights[bucket + i]
+    return bucket + data.draw_byte(suffix_weights)
 
 
 def centered_integer_range(data, lower, upper, center):
