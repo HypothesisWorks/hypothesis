@@ -474,7 +474,8 @@ class ConjectureRunner(object):
                             return True
                     return False
                 minimize(
-                    self.last_data.buffer[:cutoff], test_value, cautious=True
+                    self.last_data.buffer[:cutoff], test_value, cautious=True,
+                    random=self.random,
                 )
                 b += 1
 
