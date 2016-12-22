@@ -112,6 +112,11 @@ def float_order_key(k):
     return (sign(k), k)
 
 
+def _float_interval(u, v):
+    return Interval(*sorted(struct.pack(
+        '!d', f) for f in (u, v))),
+
+
 class FixedBoundedFloatStrategy(SearchStrategy):
 
     """A strategy for floats distributed between two endpoints.
@@ -135,11 +140,29 @@ class FixedBoundedFloatStrategy(SearchStrategy):
         ]
         critical.append(self.lower_bound)
         critical.append(self.upper_bound)
+
+        gap = (self.upper_bound - self.lower_bound)
+
+        critical.append(
+            self.lower_bound + gap * 0.5
+        )
         self.grammars = [
-            Interval(*sorted(struct.pack(
-                '!d', f) for f in (self.lower_bound, self.upper_bound))),
-            _one_of_floats(critical),
+            _float_interval(self.lower_bound, self.upper_bound),
+            _float_interval(
+                self.lower_bound + gap * 0.25,
+                self.upper_bound - gap * 0.25,
+            ),
+            _float_interval(
+                self.lower_bound,
+                self.lower_bound + gap * 0.25,
+            ),
+            _float_interval(
+                self.upper_bound - gap * 0.25,
+                self.upper_bound,
+            ),
         ]
+
+        self.grammars.append(_one_of_floats(critical))
 
     def __repr__(self):
         return 'FixedBoundedFloatStrategy(%s, %s)' % (
