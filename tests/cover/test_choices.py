@@ -25,7 +25,7 @@ from hypothesis.errors import InvalidArgument
 
 
 def test_exhaustion():
-    @given(st.lists(st.text(), min_size=10), st.choices())
+    @given(st.lists(st.integers(), min_size=10), st.choices())
     def test(ls, choice):
         while ls:
             l = choice(ls)
