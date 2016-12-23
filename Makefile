@@ -15,6 +15,7 @@ PY273=$(BUILD_RUNTIMES)/snakepit/python2.7.3
 PY33=$(BUILD_RUNTIMES)/snakepit/python3.3
 PY34=$(BUILD_RUNTIMES)/snakepit/python3.4
 PY35=$(BUILD_RUNTIMES)/snakepit/python3.5
+PY36=$(BUILD_RUNTIMES)/snakepit/python3.6
 PYPY=$(BUILD_RUNTIMES)/snakepit/pypy
 
 TOOLS=$(BUILD_RUNTIMES)/tools
@@ -50,6 +51,10 @@ $(PY34):
 
 $(PY35):
 	scripts/retry.sh scripts/install.sh 3.5
+
+$(PY36):
+	scripts/retry.sh scripts/install.sh 3.6
+
 
 $(PYPY):
 	scripts/retry.sh scripts/install.sh pypy
@@ -96,6 +101,9 @@ check-py34: $(py34) $(TOX)
 
 check-py35: $(PY35) $(TOX)
 	$(TOX) -e py35-full
+
+check-py36: $(PY36) $(TOX)
+	$(TOX) -e py36-full
 
 check-pypy: $(PYPY) $(TOX)
 	$(TOX) -e pypy-full

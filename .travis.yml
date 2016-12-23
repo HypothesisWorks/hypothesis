@@ -28,6 +28,7 @@ env:
         - TASK=check-unicode
         - TASK=check-ancient-pip
         - TASK=check-pypy
+        - TASK=check-py36
         - TASK=check-py35
         - TASK=check-py27
         - TASK=check-py273
