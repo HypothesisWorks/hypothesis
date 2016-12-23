@@ -19,11 +19,10 @@
 
 from __future__ import division, print_function, absolute_import
 
-import os
 import re
 import sys
-import math
 import codecs
+import struct
 import platform
 import importlib
 from gzip import GzipFile
@@ -426,10 +425,18 @@ if PY2:
     hbytes = compatbytes
     reasonable_byte_type = bytearray
     string_types = (str, unicode)
+
+    def struct_pack(fmt, *v):
+        return hbytes(struct.pack(fmt, *v))
+
+    def struct_unpack(fmt, buffer):
+        return struct.unpack(fmt, str(buffer))
 else:
     hbytes = bytes
     reasonable_byte_type = bytes
     string_types = (str,)
+    struct_pack = struct.pack
+    struct_unpack = struct.unpack
 
 
 if PY2:

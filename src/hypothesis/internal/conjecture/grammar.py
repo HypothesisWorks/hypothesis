@@ -19,6 +19,8 @@ from __future__ import division, print_function, absolute_import
 
 import heapq
 
+from hypothesis.internal.compat import hbytes
+
 NORMALIZATION_CACHE = {}
 
 
@@ -86,9 +88,11 @@ class Grammar(object):
 
     def initial_values(self):
         if self.__initial_values is None:
-            self.__initial_values = frozenset(
+            result = frozenset(
                 self._calculate_initial_values()
             )
+            assert all(isinstance(i, int) for i in result), self
+            self.__initial_values = result
         return self.__initial_values
 
     def __cmp__(self, other):
@@ -161,6 +165,7 @@ class Literal(Grammar):
 
     def __init__(self, value):
         Grammar.__init__(self)
+        assert isinstance(value, hbytes)
         self.value = value
 
     @property
@@ -564,6 +569,8 @@ class Interval(Grammar):
         Grammar.__init__(self)
         assert len(lower) == len(upper) != 0
         assert lower <= upper
+        assert isinstance(lower, hbytes)
+        assert isinstance(upper, hbytes)
         self.upper = upper
         self.lower = lower
 
@@ -608,10 +615,10 @@ class Interval(Grammar):
         elif b == self.lower[0]:
             assert b < self.upper[0]
             ln = self.lower[1:]
-            return Interval(ln, bytes([255] * len(ln)))
+            return Interval(ln, hbytes([255] * len(ln)))
         elif b == self.upper[0]:
             un = self.upper[1:]
-            return Interval(bytes([0] * len(un)), un)
+            return Interval(hbytes([0] * len(un)), un)
         else:
             assert self.lower[0] < b < self.upper[0]
             return Wildcard(len(self.lower) - 1)
@@ -628,7 +635,7 @@ class Interval(Grammar):
 
 Nil = _Nil()
 Everything = _Everything()
-Epsilon = Literal(b'').normalize()
+Epsilon = Literal(hbytes(b'')).normalize()
 
 ORDER_SCORES = {}
 
