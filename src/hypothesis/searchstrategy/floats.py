@@ -161,8 +161,8 @@ class FixedBoundedFloatStrategy(SearchStrategy):
                 self.upper_bound,
             ),
         ]
-
         self.grammars.append(_one_of_floats(critical))
+        self.weights = (1,) * len(self.grammars)
 
     def __repr__(self):
         return 'FixedBoundedFloatStrategy(%s, %s)' % (
@@ -170,7 +170,7 @@ class FixedBoundedFloatStrategy(SearchStrategy):
         )
 
     def do_draw(self, data):
-        g = self.grammars[data.draw_byte((1, 1))]
+        g = self.grammars[data.draw_byte(self.weights)]
         return struct.unpack('!d', data.draw_from_grammar(g))[0]
 
 
