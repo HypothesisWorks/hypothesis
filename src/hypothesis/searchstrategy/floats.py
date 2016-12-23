@@ -104,7 +104,7 @@ class FloatStrategy(SearchStrategy):
         g = self.grammars[data.draw_byte(self.weights)]
         buf = data.draw_from_grammar(g)
         assert len(buf) == 8, (buf, g)
-        return struct_unpack('!d', str(buf))[0]
+        return struct_unpack('!d', buf)[0]
 
 
 def float_order_key(k):
