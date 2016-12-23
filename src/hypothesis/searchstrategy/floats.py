@@ -17,8 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-import struct
-
+from hypothesis.internal.compat import hbytes, struct_pack, struct_unpack
 from hypothesis.internal.floats import sign
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
     MappedSearchStrategy
@@ -27,7 +26,7 @@ from hypothesis.internal.conjecture.grammar import Literal, Interval, \
 
 
 def _allowed_bytes(ls):
-    return Alternation(Literal(bytes([l])) for l in ls)
+    return Alternation(Literal(hbytes([l])) for l in ls)
 
 
 def _filtered_bytes(f):
@@ -44,7 +43,7 @@ NEGATIVE_FLOAT = Concatenation([
 
 def _one_of_floats(ls):
     return Alternation([
-        Literal(struct.pack('!d', f)) for f in ls
+        Literal(struct_pack('!d', f)) for f in ls
     ])
 
 
@@ -105,7 +104,7 @@ class FloatStrategy(SearchStrategy):
         g = self.grammars[data.draw_byte(self.weights)]
         buf = data.draw_from_grammar(g)
         assert len(buf) == 8, (buf, g)
-        return struct.unpack('!d', buf)[0]
+        return struct_unpack('!d', str(buf))[0]
 
 
 def float_order_key(k):
@@ -113,7 +112,7 @@ def float_order_key(k):
 
 
 def _float_interval(u, v):
-    return Interval(*sorted(struct.pack(
+    return Interval(*sorted(struct_pack(
         '!d', f) for f in (u, v)))
 
 
@@ -171,7 +170,7 @@ class FixedBoundedFloatStrategy(SearchStrategy):
 
     def do_draw(self, data):
         g = self.grammars[data.draw_byte(self.weights)]
-        return struct.unpack('!d', data.draw_from_grammar(g))[0]
+        return struct_unpack('!d', data.draw_from_grammar(g))[0]
 
 
 class ComplexStrategy(MappedSearchStrategy):
