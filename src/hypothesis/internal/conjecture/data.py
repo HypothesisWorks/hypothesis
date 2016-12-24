@@ -226,6 +226,21 @@ class ConjectureData(object):
         else:
             self.mark_invalid()
 
+    def __draw_prefix(self, result, grammar):
+        state = grammar
+        while True:
+            weights = state.weights()
+            if not any(weights):
+                assert state.matches_empty
+                break
+            if state.matches_empty:
+                return state
+            c = self.draw_byte(weights, state.choices())
+            new_state = state.derivative(c)
+            if new_state.has_matches():
+                state = new_state
+                result.append(c)
+
     def draw_from_grammar(self, grammar):
         if not grammar.has_matches():
             self.mark_invalid()
@@ -234,19 +249,13 @@ class ConjectureData(object):
         state = grammar
         while True:
             assert state.has_matches()
-            weights = state.weights()
-            if not any(weights):
-                assert state.matches_empty
+            state = self.__draw_prefix(result, state)
+            if state is None:
                 break
-            if state.matches_empty:
-                p = 0.5
-                if not self.draw_byte([p, 1 - p]):
-                    break
-            c = self.draw_byte(weights, state.choices())
-            new_state = state.derivative(c)
-            if new_state.has_matches():
-                state = new_state
-                result.append(c)
+            assert state.matches_empty
+            p = 0.5
+            if not self.draw_byte([p, 1 - p]):
+                break
         return reasonable_byte_type(result)
 
     def mark_interesting(self):
