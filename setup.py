@@ -52,7 +52,7 @@ extras['all'] = sorted(sum(extras.values(), []))
 extras[":python_version == '2.7'"] = ['enum34']
 extras[":python_version == '3.3'"] = ['enum34']
 
-install_requires = []
+install_requires = ['cffi>=1.0.0']
 
 if sys.version_info[0] < 3:
     install_requires.append('enum34')
@@ -70,6 +70,9 @@ setup(
     zip_safe=False,
     extras_require=extras,
     install_requires=install_requires,
+    setup_requires=['cffi>=1.0.0'],
+    cffi_modules=[os.path.join(
+        SOURCE, "hypothesis", "internal", "sampler_build.py")+":ffibuilder"],
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",

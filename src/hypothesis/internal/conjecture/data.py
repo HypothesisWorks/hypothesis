@@ -23,7 +23,7 @@ from hypothesis.errors import Frozen, InvalidArgument
 from hypothesis.internal.compat import hbytes, hrange, text_type, \
     int_to_bytes, benchmark_time, unicode_safe_repr, \
     reasonable_byte_type
-from hypothesis.internal.sampler import sampler
+import hypothesis.internal._sampler as s
 
 
 def uniform(random, n):
@@ -51,9 +51,18 @@ BYTES_TO_STRINGS = [hbytes([b]) for b in range(256)]
 UNIFORM_WEIGHTS = (1,) * 256
 
 
+sampler_cache = {}
+
+
 def draw_random(random):
     def accept(data, weights, choices):
-        return choices[sampler(weights).sample(random)]
+        try:
+            sampler = sampler_cache[weights]
+        except KeyError:
+            sampler = s.lib.random_sampler_new(
+                len(weights), weights, random.getrandbits(32))
+            sampler_cache[weights] = sampler
+        return choices[s.lib.random_sampler_sample(sampler)]
     return accept
 
 ALL_BYTES = hrange(256)
