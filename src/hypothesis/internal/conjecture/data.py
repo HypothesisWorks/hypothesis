@@ -57,21 +57,20 @@ class ConjectureData(object):
     def for_buffer(self, buffer):
         return ConjectureData(
             max_length=len(buffer),
-            draw_bytes=lambda data, n, distribution:
-            buffer[data.index:data.index + n]
+            draw_byte=lambda data, weights: buffer[data.index],
         )
 
     @classmethod
     def for_random(self, random, max_length):
         return ConjectureData(
             max_length=max_length,
-            draw_bytes=lambda data, n, distribution: distribution(random, n)
+            draw_byte=lambda data, weights: sampler(weights).sample(random),
         )
 
-    def __init__(self, max_length, draw_bytes):
+    def __init__(self, max_length, draw_byte):
         self.max_length = max_length
         self.is_find = False
-        self._draw_bytes = draw_bytes
+        self._draw_byte = draw_byte
         self.overdraw = 0
         self.level = 0
         self.block_starts = {}
@@ -185,37 +184,19 @@ class ConjectureData(object):
         )
         self.buffer = hbytes(self.buffer)
         self.events = frozenset(self.events)
-        del self._draw_bytes
+        del self._draw_byte
 
-    def draw_bytes(self, n, distribution=uniform):
-        if n == 0:
-            return hbytes(b'')
-        self.__assert_not_frozen('draw_bytes')
-        initial = self.index
-        if self.index + n > self.max_length:
-            self.overdraw = self.index + n - self.max_length
+    def draw_byte(self, weights=UNIFORM_WEIGHTS):
+        if self.index >= self.max_length:
+            self.overdraw = 1
             self.status = Status.OVERRUN
             self.freeze()
             raise StopTest(self.testcounter)
-        result = self._draw_bytes(self, n, distribution)
-        if not self.interval_stack:
-            self.intervals.append((initial, initial + n))
-        assert len(result) == n
-        assert self.index == initial
-        self.buffer.extend(result)
-        self.blocks[-1][-1] += n
-        return reasonable_byte_type(result)
 
-    def draw_byte(self, weights=UNIFORM_WEIGHTS):
-        weights = tuple(weights)
-
-        s = sampler(weights)
-
-        def distribution(random, n):
-            assert n == 1, n
-            return BYTES_TO_STRINGS[s.sample(random)]
-        result = self.draw_bytes(1, distribution)[0]
+        result = self._draw_byte(self, tuple(weights))
         if result < len(weights) and weights[result] > 0:
+            self.buffer.append(result)
+            self.blocks[-1][-1] += 1
             return result
         else:
             self.mark_invalid()
