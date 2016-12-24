@@ -17,6 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+from hypothesis.internal.compat import bit_length
+
 
 def gcd(a, *bs):
     for b in bs:
@@ -110,11 +112,36 @@ class VoseAliasSampler(object):
 
 
 class UniformSampler(object):
+
     def __init__(self, values):
         self.values = tuple(values)
+        assert len(self.values) > 1
+        mask = len(self.values) - 1
+        mask |= (mask >> 1)
+        mask |= (mask >> 2)
+        mask |= (mask >> 4)
+        mask |= (mask >> 8)
+        mask |= (mask >> 16)
+        mask |= (mask >> 32)
+        self.mask = mask
+        self.nbits = bit_length(mask)
 
     def sample(self, random):
-        return random.choice(self.values)
+        while True:
+            i = random.getrandbits(self.nbits) & self.mask
+            try:
+                return self.values[i]
+            except IndexError:
+                pass
+
+
+class ConstantSampler(object):
+
+    def __init__(self, value):
+        self.value = value
+
+    def sample(self, random):
+        return self.value
 
 
 cache = {}
@@ -130,7 +157,11 @@ def sampler(weights):
     unique_weights = set(weights)
     unique_weights.discard(0)
     if len(unique_weights) == 1:
-        result = UniformSampler(i for i, w in enumerate(weights) if w)
+        values = tuple(i for i, w in enumerate(weights) if w)
+        if len(values) > 1:
+            result = UniformSampler(values)
+        else:
+            result = ConstantSampler(values[0])
     else:
         result = VoseAliasSampler(weights)
     cache[weights] = result
