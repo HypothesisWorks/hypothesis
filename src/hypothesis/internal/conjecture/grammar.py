@@ -36,6 +36,15 @@ class Grammar(object):
         self.__initial_values = None
         self.__derivatives = {}
         self.__has_matches = None
+        self.__weights = None
+
+    def weights(self):
+        if self.__weights is None:
+            tmp = [0] * 256
+            for c in self.initial_values():
+                tmp[c] = 1
+            self.__weights = tuple(tmp)
+        return self.__weights
 
     def has_matches(self):
         if self._always_has_matches:
@@ -83,6 +92,11 @@ class Grammar(object):
             pass
 
         r = self._calculate_derivative(b).normalize()
+        if not r.has_matches():
+            r = Nil
+            tmp = list(self.weights())
+            tmp[b] = 0
+            self.__weights = tuple(tmp)
         self.__derivatives[b] = r
         return r
 

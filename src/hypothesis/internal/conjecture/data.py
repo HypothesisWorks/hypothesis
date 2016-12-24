@@ -206,20 +206,17 @@ class ConjectureData(object):
             self.mark_invalid()
         result = bytearray()
 
-        weights = [0] * 256
-
         state = grammar
         while True:
             assert state.has_matches()
-            values = state.initial_values()
+            weights = state.weights()
+            if not any(weights):
+                assert state.matches_empty
+                break
             if state.matches_empty:
-                if not values:
-                    break
                 p = 0.5
                 if not self.draw_byte([p, 1 - p]):
                     break
-            for i in range(256):
-                weights[i] = int(i in values)
             c = self.draw_byte(weights)
             new_state = state.derivative(c)
             if new_state.has_matches():
