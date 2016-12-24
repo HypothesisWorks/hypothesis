@@ -17,7 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis.internal.compat import bit_length, int_to_bytes, \
+from hypothesis.internal.compat import hbytes, bit_length, int_to_bytes, \
     int_from_bytes
 from hypothesis.internal.conjecture.grammar import Literal, Interval, \
     Alternation
