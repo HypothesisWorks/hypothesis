@@ -22,21 +22,6 @@ import math
 from hypothesis.internal.compat import bit_length
 
 
-def gcd(a, *bs):
-    for b in bs:
-        while b != 0:
-            t = b
-            b = a % b
-            a = t
-    return a
-
-
-def lcm(a, *bs):
-    for b in bs:
-        a = a * b // gcd(a, b)
-    return a
-
-
 class VoseAliasSampler(object):
     """Samples integers from a weighted distribution using Vose's algorithm for
     the Alias Method.
@@ -162,9 +147,16 @@ def sampler(weights):
     except KeyError:
         pass
 
-    unique_weights = set(weights)
-    unique_weights.discard(0)
-    if len(unique_weights) == 1:
+    seen_weight = None
+    has_only_one_weight = True
+    for w in weights:
+        if w:
+            if seen_weight is None:
+                seen_weight = w
+            elif seen_weight != w:
+                has_only_one_weight = False
+                break
+    if has_only_one_weight:
         values = tuple(i for i, w in enumerate(weights) if w)
         if len(values) > 1:
             result = UniformSampler(values)
