@@ -37,14 +37,21 @@ class Grammar(object):
         self.__derivatives = {}
         self.__has_matches = None
         self.__weights = None
+        self.__choices = None
 
     def weights(self):
         if self.__weights is None:
-            tmp = [0] * 256
-            for c in self.initial_values():
-                tmp[c] = 1
+            choices = tuple(sorted(self.initial_values()))
+            tmp = [0] * len(choices)
+            for i, c in enumerate(choices):
+                tmp[i] = 1
             self.__weights = tuple(tmp)
+            self.__choices = choices
         return self.__weights
+
+    def choices(self):
+        self.weights()
+        return self.__choices
 
     def has_matches(self):
         if self._always_has_matches:
@@ -95,7 +102,7 @@ class Grammar(object):
         if not r.has_matches():
             r = Nil
             tmp = list(self.weights())
-            tmp[b] = 0
+            tmp[self.choices.index(b)] = 0
             self.__weights = tuple(tmp)
         self.__derivatives[b] = r
         return r

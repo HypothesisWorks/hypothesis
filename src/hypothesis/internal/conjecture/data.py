@@ -51,20 +51,28 @@ BYTES_TO_STRINGS = [hbytes([b]) for b in range(256)]
 UNIFORM_WEIGHTS = (1,) * 256
 
 
+def draw_random(random):
+    def accept(data, weights, choices):
+        return choices[sampler(weights).sample(random)]
+    return accept
+
+ALL_BYTES = hrange(256)
+
+
 class ConjectureData(object):
 
     @classmethod
     def for_buffer(self, buffer):
         return ConjectureData(
             max_length=len(buffer),
-            draw_byte=lambda data, weights: buffer[data.index],
+            draw_byte=lambda data, weights, choices: buffer[data.index],
         )
 
     @classmethod
     def for_random(self, random, max_length):
         return ConjectureData(
             max_length=max_length,
-            draw_byte=lambda data, weights: sampler(weights).sample(random),
+            draw_byte=draw_random(random),
         )
 
     def __init__(self, max_length, draw_byte):
@@ -186,15 +194,32 @@ class ConjectureData(object):
         self.events = frozenset(self.events)
         del self._draw_byte
 
-    def draw_byte(self, weights=UNIFORM_WEIGHTS):
+    def draw_byte(self, weights=UNIFORM_WEIGHTS, choices=None):
         if self.index >= self.max_length:
             self.overdraw = 1
             self.status = Status.OVERRUN
             self.freeze()
             raise StopTest(self.testcounter)
 
-        result = self._draw_byte(self, tuple(weights))
-        if result < len(weights) and weights[result] > 0:
+        if choices is not None:
+            assert len(choices) == len(weights)
+
+        result = self._draw_byte(self, tuple(weights), choices or ALL_BYTES)
+
+        if choices is None:
+            index_of_result = result
+        else:
+            try:
+                index_of_result = choices.index(result)
+            except ValueError:
+                index_of_result = len(weights)
+
+        if index_of_result >= len(weights):
+            weight_of_result = 0
+        else:
+            weight_of_result = weights[index_of_result]
+
+        if weight_of_result > 0:
             self.buffer.append(result)
             self.blocks[-1][-1] += 1
             return result
@@ -217,7 +242,7 @@ class ConjectureData(object):
                 p = 0.5
                 if not self.draw_byte([p, 1 - p]):
                     break
-            c = self.draw_byte(weights)
+            c = self.draw_byte(weights, state.choices())
             new_state = state.derivative(c)
             if new_state.has_matches():
                 state = new_state
