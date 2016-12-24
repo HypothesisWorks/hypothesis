@@ -88,7 +88,16 @@ class VoseAliasSampler(object):
 
     def sample(self, random):
         i = random.randint(0, len(self._probabilities) - 1)
-        if random.random() <= self._probabilities[i]:
+        p = self._probabilities[i]
+
+        if p >= 1:
+            toss = True
+        elif p <= 0:
+            toss = False
+        else:
+            toss = random.random() <= p
+
+        if toss:
             return i
         else:
             return self._alias[i]
@@ -100,6 +109,14 @@ class VoseAliasSampler(object):
                 self._probabilities, self._alias)),)
 
 
+class UniformSampler(object):
+    def __init__(self, values):
+        self.values = tuple(values)
+
+    def sample(self, random):
+        return random.choice(self.values)
+
+
 cache = {}
 
 
@@ -108,5 +125,13 @@ def sampler(weights):
     try:
         return cache[weights]
     except KeyError:
-        cache[weights] = VoseAliasSampler(weights)
-        return cache[weights]
+        pass
+
+    unique_weights = set(weights)
+    unique_weights.discard(0)
+    if len(unique_weights) == 1:
+        result = UniformSampler(i for i, w in enumerate(weights) if w)
+    else:
+        result = VoseAliasSampler(weights)
+    cache[weights] = result
+    return result
