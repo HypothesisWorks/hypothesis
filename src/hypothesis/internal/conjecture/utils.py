@@ -125,7 +125,7 @@ def biased_coin(data, p):
 
 def write(data, string):
     weights = [0] * 256
-    for c in string:
+    for c in hbytes(string):
         weights[c] = 1
         data.draw_byte(weights)
         weights[c] = 0
