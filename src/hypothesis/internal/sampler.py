@@ -17,6 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+import math
+
 from hypothesis.internal.compat import bit_length
 
 
@@ -125,14 +127,20 @@ class UniformSampler(object):
         mask |= (mask >> 32)
         self.mask = mask
         self.nbits = bit_length(mask)
+        self.n_draws = int(math.floor(32 / self.nbits))
+        assert self.n_draws > 0
+        self.queue = []
 
     def sample(self, random):
-        while True:
-            i = random.getrandbits(self.nbits) & self.mask
-            try:
-                return self.values[i]
-            except IndexError:
-                pass
+        while not self.queue:
+            n = len(self.values)
+            bits = random.getrandbits(32)
+            for _ in range(self.n_draws):
+                i = bits & self.mask
+                if i < n:
+                    self.queue.append(i)
+                bits >>= self.nbits
+        return self.values[self.queue.pop()]
 
 
 class ConstantSampler(object):
