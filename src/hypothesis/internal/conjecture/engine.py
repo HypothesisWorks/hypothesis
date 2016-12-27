@@ -45,6 +45,9 @@ class RunIsComplete(Exception):
     pass
 
 
+SENTINEL = object()
+
+
 class ConjectureRunner(object):
 
     def __init__(
@@ -66,6 +69,7 @@ class ConjectureRunner(object):
         self.duplicates = 0
         self.status_runtimes = {}
         self.events_to_strings = WeakKeyDictionary()
+        self.tree = {}
 
     def new_buffer(self):
         self.last_data = ConjectureData.for_random(
@@ -145,6 +149,20 @@ class ConjectureRunner(object):
         self.status_runtimes.setdefault(data.status, []).append(runtime)
         for event in set(map(self.event_to_string, data.events)):
             self.event_call_counts[event] += 1
+        if data.buffer:
+            tree = self.tree
+
+            for ws, cs, b in zip(data.weights, data.choices, data.buffer[:-1]):
+                try:
+                    tree = tree[b]
+                except KeyError:
+                    new_tree = {}
+                    for w, c in zip(ws, cs):
+                        if w > 0:
+                            new_tree[c] = {}
+                    tree[b] = new_tree
+                    tree = new_tree
+            tree[data.buffer[-1]] = SENTINEL
 
     def debug(self, message):
         with self.settings:
@@ -158,8 +176,24 @@ class ConjectureRunner(object):
             data.output,
         ))
 
+    def __prescreen_buffer(self, buffer):
+        assert self.tree
+        tree = self.tree
+        for b in buffer:
+            if not tree:
+                return True
+            try:
+                tree = tree[b]
+            except KeyError:
+                return False
+            if tree is SENTINEL:
+                return False
+        return False
+
     def incorporate_new_buffer(self, buffer):
         if buffer in self.seen:
+            return False
+        if not self.__prescreen_buffer(buffer):
             return False
         assert self.last_data.status == Status.INTERESTING
         if (

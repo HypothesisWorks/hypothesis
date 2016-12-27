@@ -128,6 +128,8 @@ class ConjectureData(object):
         self.start_time = benchmark_time()
         self.events = set()
         self.bind_points = set()
+        self.weights = []
+        self.choices = []
 
     def __block_boundary(self):
         i, j = self.blocks[-1]
@@ -261,6 +263,9 @@ class ConjectureData(object):
                 self.mark_invalid()
         self.buffer.append(result)
         self.blocks[-1][-1] += 1
+        self.weights.append(weights)
+        self.choices.append(choices)
+        assert len(self.weights) == len(self.buffer) == len(self.choices)
         return result
 
     def __draw_prefix(self, result, grammar):
