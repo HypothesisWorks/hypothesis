@@ -38,7 +38,7 @@ ANY_FLOAT = Wildcard(8)
 NEGATIVE_FLOAT = Concatenation([
     _filtered_bytes(lambda b: b >> 7),
     Wildcard(7)
-]).normalize()
+])
 
 
 def _one_of_floats(ls):
@@ -89,7 +89,6 @@ class FloatStrategy(SearchStrategy):
             base = Intersection([base, Negation(INFINITY)])
         if not allow_nan:
             base = Intersection([base, Negation(NAN)])
-        base = base.normalize()
 
         self.weights = [2, 5]
         self.grammars = [base, NASTY_FLOATS]

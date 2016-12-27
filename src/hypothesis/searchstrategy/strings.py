@@ -82,7 +82,7 @@ class OneCharStringStrategy(SearchStrategy):
         grammars_by_category = tuple(category_grammar(c) for c in categories)
         grammars_by_category = tuple(category_grammar(c) for c in categories)
 
-        base_grammar = Alternation(grammars_by_category).normalize()
+        base_grammar = Alternation(grammars_by_category)
 
         if blacklist_characters is not None:
             base_grammar = Intersection([base_grammar] + [
@@ -96,13 +96,11 @@ class OneCharStringStrategy(SearchStrategy):
                 codepoint_interval(
                     min_codepoint or 0, max_codepoint or sys.maxunicode)])
 
-        base_grammar = base_grammar.normalize()
-
         if not base_grammar.has_matches():
             raise InvalidArgument('No valid characters in set')
 
         grammars_by_category = tuple(
-            Intersection([g, base_grammar]).normalize()
+            Intersection([g, base_grammar])
             for g in grammars_by_category
         )
         grammars_by_category = tuple(
@@ -113,7 +111,7 @@ class OneCharStringStrategy(SearchStrategy):
         shrinking_grammars = [
             Intersection([
                 codepoint_interval(ord('0') - i, sys.maxunicode),
-                base_grammar]).normalize()
+                base_grammar])
             for i in range(ord('0'))
         ]
         shrinking_grammars.append(base_grammar),

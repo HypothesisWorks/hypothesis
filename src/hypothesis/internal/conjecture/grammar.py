@@ -20,19 +20,38 @@ from __future__ import division, print_function, absolute_import
 import heapq
 
 from hypothesis.internal.compat import hbytes
+import functools
+import types
 
-NORMALIZATION_CACHE = {}
+
+def tupleize(args):
+    result = []
+    for a in args:
+        if isinstance(a, (tuple, list, types.GeneratorType)):
+            a = tuple(a)
+        result.append(a)
+    return tuple(result)
 
 
-def _clear_cache():
-    NORMALIZATION_CACHE.clear()
+def cached(function):
+    cache = {}
+
+    @functools.wraps(function)
+    def accept(*args):
+        args = tupleize(args)
+        try:
+            return cache[args]
+        except KeyError:
+            pass
+        result = function(*args)
+        cache[args] = result
+        return result
+    return accept
 
 
 class Grammar(object):
 
     def __init__(self):
-        self.__normalizes_to = None
-        self.normalized = False
         self.__initial_values = None
         self.__derivatives = {}
         self.__has_matches = None
@@ -57,10 +76,7 @@ class Grammar(object):
         if self._always_has_matches:
             return True
         if self.__has_matches is None:
-            if not self.normalized:
-                self.__has_matches = self.normalize().has_matches()
-            else:
-                self.__has_matches = self.__calculate_has_matches()
+            self.__has_matches = self.__calculate_has_matches()
         return self.__has_matches
 
     def matches(self, buf):
@@ -74,7 +90,6 @@ class Grammar(object):
         return self.matches_empty
 
     def __calculate_has_matches(self):
-        self = self.normalize()
         # Perform a breadth first search of reading characters from the
         # grammar until we either run into something we know we can match
         # or we exhaust all possible derivatives and conclude that matching
@@ -98,7 +113,7 @@ class Grammar(object):
         except KeyError:
             pass
 
-        r = self._calculate_derivative(b).normalize()
+        r = self._calculate_derivative(b)
         if not r.has_matches():
             r = Nil
             tmp = list(self.weights())
@@ -126,16 +141,17 @@ class Grammar(object):
                 return -1
             else:
                 return 1
-        return self._do_cmp(other)
+        result = self._do_cmp(other)
+        assert result != 0
+        return result
 
     def __eq__(self, other):
         if not isinstance(other, Grammar):
             return NotImplemented
-        if self is other:
-            return True
-        if self.normalized and other.normalized:
-            return False
-        return self.__cmp__(other) == 0
+        return self is other
+
+    def __hash__(self):
+        return hash(id(self))
 
     def __ne__(self, other):
         if not isinstance(other, Grammar):
@@ -162,31 +178,11 @@ class Grammar(object):
             return NotImplemented
         return self.__cmp__(other) >= 0
 
-    def normalize(self):
-        if self.normalized:
-            return self
-        elif self.__normalizes_to is not None:
-            return self.__normalizes_to
-        else:
-            try:
-                result = NORMALIZATION_CACHE[self]
-            except KeyError:
-                result = self._do_normalize()
-                try:
-                    result = NORMALIZATION_CACHE[self]
-                except KeyError:
-                    result.normalized = True
-                    NORMALIZATION_CACHE[self] = result
-            self.__normalizes_to = result
-            return result
 
-
-class Literal(Grammar):
-    normalized = False
-
+class _Literal(Grammar):
     def __init__(self, value):
         Grammar.__init__(self)
-        assert isinstance(value, hbytes)
+        assert isinstance(value, hbytes), value
         self.value = value
 
     @property
@@ -214,9 +210,6 @@ class Literal(Grammar):
         if self.value:
             yield self.value[0]
 
-    def __hash__(self):
-        return hash(self.value)
-
     def _do_normalize(self):
         return self
 
@@ -226,6 +219,11 @@ class Literal(Grammar):
 
     def __repr__(self):
         return 'Literal(%r)' % (self.value,)
+
+
+@cached
+def Literal(value):
+    return _Literal(value)
 
 
 class BranchGrammar(Grammar):
@@ -242,7 +240,7 @@ class BranchGrammar(Grammar):
         return 0
 
 
-class Negation(Grammar):
+class _Negation(Grammar):
 
     def __init__(self, child):
         Grammar.__init__(self)
@@ -255,20 +253,6 @@ class Negation(Grammar):
     def _do_cmp(self, other):
         return self.child.__cmp__(other)
 
-    def __hash__(self):
-        return 1 + ~hash(self.child)
-
-    def _do_normalize(self):
-        c = self.child.normalize()
-        if isinstance(c, Negation):
-            return c.child
-        elif c is Nil:
-            return Everything
-        elif c is Everything:
-            return Nil
-        else:
-            return Negation(c)
-
     def _calculate_initial_values(self):
         return ALL_BYTES
 
@@ -279,7 +263,18 @@ class Negation(Grammar):
         return 'Negation(%s)' % (self.child,)
 
 
-class Concatenation(BranchGrammar):
+@cached
+def Negation(child):
+    if isinstance(child, Negation):
+        return child.child
+    if child is Nil:
+        return Everything
+    if child is Everything:
+        return Nil
+    return _Negation(child)
+
+
+class _Concatenation(BranchGrammar):
 
     def __init__(self, children):
         Grammar.__init__(self)
@@ -291,40 +286,6 @@ class Concatenation(BranchGrammar):
 
     def _always_has_matches(self):
         return self.__always_has_matches
-
-    def __hash__(self):
-        h = hash(len(self.children))
-        for c in self.children:
-            h *= 31
-            h += hash(c)
-        return h
-
-    def _do_normalize(self):
-        children = []
-        for c in self.children:
-            c = c.normalize()
-            if c is Nil:
-                return Nil
-            if isinstance(c, Concatenation):
-                children.extend(c.children)
-            elif isinstance(c, Literal) and not c.value:
-                pass
-            elif (
-                isinstance(c, Literal) and children and
-                isinstance(children[-1], Literal)
-            ):
-                children[-1] = Literal(children[-1].value + c.value)
-            elif (
-                isinstance(c, Wildcard) and children and
-                isinstance(children[-1], Wildcard)
-            ):
-                children[-1] = Wildcard(children[-1].size + c.size)
-            else:
-                children.append(c)
-        if len(children) == 1:
-            return children[0]
-        else:
-            return Concatenation(children)
 
     def _calculate_initial_values(self):
         result = set()
@@ -347,7 +308,40 @@ class Concatenation(BranchGrammar):
         return 'Concatenation(%s)' % (self.children,)
 
 
-class Alternation(BranchGrammar):
+@cached
+def base_concatenation(renormalized):
+    if len(renormalized) == 1:
+        return renormalized[0]
+    else:
+        return _Concatenation(renormalized)
+
+
+@cached
+def Concatenation(children):
+    renormalized = []
+    for c in children:
+        if c is Nil:
+            return Nil
+        if isinstance(c, _Concatenation):
+            renormalized.extend(c.children)
+        elif isinstance(c, _Literal) and not c.value:
+            pass
+        elif (
+            isinstance(c, _Literal) and renormalized and
+            isinstance(renormalized[-1], Literal)
+        ):
+            renormalized[-1] = Literal(renormalized[-1].value + c.value)
+        elif (
+            isinstance(c, _Wildcard) and renormalized and
+            isinstance(renormalized[-1], _Wildcard)
+        ):
+            renormalized[-1] = Wildcard(renormalized[-1].size + c.size)
+        else:
+            renormalized.append(c)
+    return base_concatenation(renormalized)
+
+
+class _Alternation(BranchGrammar):
 
     def __init__(self, children):
         Grammar.__init__(self)
@@ -358,33 +352,6 @@ class Alternation(BranchGrammar):
 
     def _always_has_matches(self):
         return self.__always_has_matches
-
-    def __hash__(self):
-        h = hash(len(self.children))
-        for c in self.children:
-            h ^= hash(c)
-        return h
-
-    def _do_normalize(self):
-        children = set()
-        for c in self.children:
-            c = c.normalize()
-            if c is Nil:
-                pass
-            elif c is Everything:
-                return Everything
-            elif isinstance(c, Alternation):
-                children.update(c.children)
-            else:
-                children.add(c)
-        if not children:
-            return Nil
-        else:
-            children = sorted(children)
-            if len(children) > 1:
-                return Alternation(children)
-            else:
-                return children[0]
 
     def _calculate_initial_values(self):
         result = set()
@@ -399,7 +366,32 @@ class Alternation(BranchGrammar):
         return 'Alternation(%s)' % (self.children,)
 
 
-class Wildcard(Grammar):
+@cached
+def base_alternation(renormalized):
+    if len(renormalized) > 1:
+        return _Alternation(renormalized)
+    else:
+        return renormalized[0]
+
+
+def Alternation(children):
+    renormalized = set()
+    for c in children:
+        if c is Nil:
+            pass
+        elif c is Everything:
+            return Everything
+        elif isinstance(c, _Alternation):
+            renormalized.update(c.children)
+        else:
+            renormalized.add(c)
+    if not renormalized:
+        return Nil
+    else:
+        return base_alternation(tuple(sorted(renormalized)))
+
+
+class _Wildcard(Grammar):
 
     def __init__(self, length):
         Grammar.__init__(self)
@@ -414,18 +406,12 @@ class Wildcard(Grammar):
     def matches_empty(self):
         return False
 
-    def __hash__(self):
-        return hash(self.length)
-
     def _do_cmp(self, other):
         if self.length < other.length:
             return -1
         if self.length > other.length:
             return 1
         return 0
-
-    def _do_normalize(self):
-        return self
 
     def _calculate_initial_values(self):
         return ALL_BYTES
@@ -440,52 +426,20 @@ class Wildcard(Grammar):
         return 'Wildcard(%s)' % (self.length,)
 
 
+@cached
+def Wildcard(length):
+    return _Wildcard(length)
+
+
 ALL_BYTES = frozenset(range(256))
 
 
-class Intersection(BranchGrammar):
+class _Intersection(BranchGrammar):
 
     def __init__(self, children):
         Grammar.__init__(self)
         self.children = tuple(children)
         self.matches_empty = all(c.matches_empty for c in self.children)
-
-    def __hash__(self):
-        h = hash(len(self.children))
-        for c in self.children:
-            h ^= hash(c)
-        return ~h
-
-    def _do_normalize(self):
-        # It requires a non-trivial amount of calculation to determine whether
-        # an intersection type is non-empty. We don't do all of it at
-        # normalization time, but this is a pretty good shortcut which will
-        # often catch the basic cases.
-        if not self.initial_values():
-            if self.matches_empty:
-                return Epsilon
-            else:
-                return Nil
-
-        children = set()
-        for c in self.children:
-            c = c.normalize()
-            if c is Nil:
-                return Nil
-            elif c is Everything:
-                pass
-            elif isinstance(c, Intersection):
-                children.update(c.children)
-            else:
-                children.add(c)
-        if not children:
-            return Everything
-        else:
-            children = sorted(children)
-            if len(children) > 1:
-                return Intersection(children)
-            else:
-                return children[0]
 
     def _calculate_initial_values(self):
         result = None
@@ -503,7 +457,38 @@ class Intersection(BranchGrammar):
         return 'Intersection(%r)' % (self.children,)
 
 
-class Star(Grammar):
+@cached
+def base_intersection(children):
+    if not children:
+        return Everything
+    if len(children) == 1:
+        return children[0]
+    result = _Intersection(children)
+    if not result.initial_values():
+        if result.matches_empty:
+            return Epsilon
+        else:
+            return Nil
+    else:
+        return result
+
+
+@cached
+def Intersection(children):
+    renormalized = set()
+    for c in children:
+        if c is Nil:
+            return Nil
+        elif c is Everything:
+            pass
+        elif isinstance(c, _Intersection):
+            renormalized.update(c.children)
+        else:
+            renormalized.add(c)
+    return base_intersection(sorted(renormalized))
+
+
+class _Star(Grammar):
 
     def __init__(self, child):
         Grammar.__init__(self)
@@ -516,18 +501,6 @@ class Star(Grammar):
     def _do_cmp(self, other):
         return self.child.__cmp__(other)
 
-    def __hash__(self):
-        return ~hash(self.child)
-
-    def _do_normalize(self):
-        c = self.child.normalize()
-        if isinstance(c, Star):
-            return c
-        elif c is Nil:
-            return Epsilon
-        else:
-            return Star(c)
-
     def _calculate_initial_values(self):
         return self.child.initial_values()
 
@@ -538,15 +511,24 @@ class Star(Grammar):
         return 'Star(%r)' % (self.child,)
 
 
+@cached
+def Star(child):
+    if isinstance(child, _Star):
+        return child
+    if child is Epsilon:
+        return child
+    if child is Nil:
+        return child
+    if child is Everything:
+        return child
+    return _Star(child)
+
+
 class _Nil(Grammar):
 
     def __init__(self):
         Grammar.__init__(self)
-        self.normalized = True
         self.matches_empty = False
-
-    def __hash__(self):
-        return 4
 
     def _do_cmp(self):
         assert False
@@ -565,11 +547,7 @@ class _Everything(Grammar):
 
     def __init__(self):
         Grammar.__init__(self)
-        self.normalized = True
         self.matches_empty = True
-
-    def __hash__(self):
-        return 7
 
     def _do_cmp(self):
         assert False
@@ -584,7 +562,7 @@ class _Everything(Grammar):
         return 'Everything'
 
 
-class Interval(Grammar):
+class _Interval(Grammar):
 
     def __init__(self, lower, upper):
         Grammar.__init__(self)
@@ -602,9 +580,6 @@ class Interval(Grammar):
     @property
     def _always_has_matches(self):
         return True
-
-    def __hash__(self):
-        return hash((self.lower, self.upper))
 
     def _do_cmp(self, other):
         if len(self.lower) < len(other.lower):
@@ -644,32 +619,32 @@ class Interval(Grammar):
             assert self.lower[0] < b < self.upper[0]
             return Wildcard(len(self.lower) - 1)
 
-    def _do_normalize(self):
-        if self.lower == self.upper:
-            return Literal(self.lower).normalize()
-        else:
-            return self
-
     def __repr__(self):
         return 'Interval(%r, %r)' % (self.lower, self.upper)
 
 
+@cached
+def Interval(lower, upper):
+    if lower == upper:
+        return Literal(lower)
+    return _Interval(lower, upper)
+
 Nil = _Nil()
 Everything = _Everything()
-Epsilon = Literal(hbytes(b'')).normalize()
+Epsilon = Literal(hbytes(b''))
 
 ORDER_SCORES = {}
 
 for i, c in enumerate([
     _Nil,
     _Everything,
-    Wildcard,
-    Literal,
-    Interval,
-    Negation,
-    Star,
-    Alternation,
-    Concatenation,
-    Intersection,
+    _Wildcard,
+    _Literal,
+    _Interval,
+    _Negation,
+    _Star,
+    _Alternation,
+    _Concatenation,
+    _Intersection,
 ]):
     ORDER_SCORES[c] = i
