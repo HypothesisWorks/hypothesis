@@ -25,7 +25,11 @@ ffibuilder.cdef("""
     void mersenne_twister_free(void *mt);
 """)
 
+# Putting this at the module level is gross, but AFAICT it's the only way to
+# get custom CFLAGS working with cffi_modules out of the box without doing a
+# bunch of extra work.
+os.environ['CFLAGS'] = '--std=c99'
+
 if __name__ == "__main__":
     os.chdir(SRC)
-    os.environ['CFLAGS'] = '--std=c99'
     ffibuilder.compile(verbose=True)
