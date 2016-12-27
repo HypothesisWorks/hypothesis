@@ -16,6 +16,7 @@ struct mt {
 typedef struct {
   size_t n_items;
   size_t item_mask;
+  uint8_t n_bits_needed;
   size_t *alias_table;
   double *probabilities;
 } random_sampler;
@@ -36,6 +37,17 @@ void mersenne_twister_free(struct mt *mt){
 }
 
 
+static uint8_t highest_set_bit(size_t i){
+    // Note: Not very efficient, but not even close to being the hot path for
+    // where we use it.
+    uint8_t result = 0;
+    while(i){
+        result++;
+        i >>= 1;
+    }
+    return result;
+}
+
 random_sampler *random_sampler_new(size_t n_items, double *weights){
   void *data = malloc(sizeof(random_sampler) + n_items * sizeof(size_t) + n_items * sizeof(double));
 
@@ -50,6 +62,8 @@ random_sampler *random_sampler_new(size_t n_items, double *weights){
   mask |= (mask >> 16);
   mask |= (mask >> 32);
   result->item_mask = mask;
+
+  result->n_bits_needed = highest_set_bit(n_items);
 
   result->alias_table = (size_t*)(data + sizeof(random_sampler));
   result->probabilities =  (double*)(data + sizeof(random_sampler) + n_items * sizeof(size_t));
@@ -144,10 +158,15 @@ static double mt_random_double(struct mt *mt);
 
 size_t random_sampler_sample(random_sampler *sampler, struct mt *mt){
   size_t i = sampler->n_items;;
-  while(i >= sampler->n_items){
-    // FIXME: Potentially wasting a lot of bits here.
-    i = genrand64_int64(mt) & sampler->item_mask;
+  while(true){
+    uint64_t probe = genrand64_int64(mt);
+    for(uint8_t t = 0; t < 64; t += sampler->n_bits_needed){
+        i = probe & sampler->item_mask;
+        if(i < sampler->n_items) goto done;
+        probe >>= sampler->n_bits_needed;
+    }
   }
+  done: assert(i < sampler->n_items);
   size_t j = sampler->alias_table[i];
   if(i == j) return i;
   if(mt_random_double(mt) <= sampler->probabilities[i]){
