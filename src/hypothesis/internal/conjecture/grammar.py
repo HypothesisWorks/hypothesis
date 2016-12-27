@@ -274,15 +274,20 @@ def Negation(child):
     return _Negation(child)
 
 
-class _Concatenation(BranchGrammar):
+class _Concatenation(Grammar):
 
-    def __init__(self, children):
+    def __init__(self, left, right):
         Grammar.__init__(self)
-        self.children = tuple(children)
-        assert self.children
-        self.matches_empty = all(c.matches_empty for c in self.children)
-        self.__always_has_matches = all(
-            c._always_has_matches for c in self.children)
+        self.left = left
+        self.right = right
+        self.matches_empty = (
+            self.left.matches_empty and self.right.matches_empty)
+        self.__always_has_matches = (
+            self.left._always_has_matches and self.right._always_has_matches)
+
+    @property
+    def childen(self):
+        return (self.left, self.right)
 
     def _always_has_matches(self):
         return self.__always_has_matches
@@ -296,13 +301,10 @@ class _Concatenation(BranchGrammar):
         return result
 
     def _calculate_derivative(self, b):
-        parts = []
-        for i, c in enumerate(self.children):
-            parts.append(Concatenation(
-                (c.derivative(b),) + self.children[i + 1:]))
-            if not c.matches_empty:
-                break
-        return Alternation(parts)
+        base = Concatenation((self.left.derivative(b), self.right))
+        if self.left.matches_empty:
+            base = Alternation((self.right.derivative(b), base))
+        return base
 
     def __repr__(self):
         return 'Concatenation(%s)' % (self.children,)
@@ -310,10 +312,13 @@ class _Concatenation(BranchGrammar):
 
 @cached
 def base_concatenation(renormalized):
+    if len(renormalized) == 0:
+        return Epsilon
     if len(renormalized) == 1:
         return renormalized[0]
     else:
-        return _Concatenation(renormalized)
+        return _Concatenation(renormalized[0], base_concatenation(
+            renormalized[1:]))
 
 
 @cached
