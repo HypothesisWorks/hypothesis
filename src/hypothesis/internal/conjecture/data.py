@@ -87,7 +87,7 @@ def draw_random(random):
         return choices[sampler.sample(weights)]
     return accept
 
-ALL_BYTES = hrange(256)
+ALL_BYTES = list(hrange(256))
 
 
 class ConjectureData(object):
@@ -235,15 +235,14 @@ class ConjectureData(object):
         if choices is not None:
             assert len(choices) == len(weights)
         else:
-            choices = hrange(len(weights))
+            choices = ALL_BYTES
 
         if len(weights) == 1:
             result = choices[0]
             if not weights[0]:
                 self.mark_invalid()
         else:
-            result = self._draw_byte(
-                self, tuple(weights), choices or ALL_BYTES)
+            result = self._draw_byte(self, tuple(weights), choices)
 
             if choices is None:
                 index_of_result = result

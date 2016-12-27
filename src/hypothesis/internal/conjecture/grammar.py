@@ -435,7 +435,7 @@ def bagged(renormalized):
     parts = []
     for c in tmp.initial_values():
         r = tmp.derivative(c)
-        if r is not Nil:
+        if r.has_matches():
             parts.append((c, r))
     return base_bagged(sorted(parts), tmp.matches_empty)
 
