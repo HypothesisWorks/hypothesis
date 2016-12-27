@@ -425,14 +425,19 @@ def char(c):
 
 
 @cached
+def base_bagged(parts, matches_empty):
+    return _Bagged(parts, matches_empty)
+
+
+@cached
 def bagged(renormalized):
     tmp = _Alternation(renormalized)
-    parts = {}
+    parts = []
     for c in tmp.initial_values():
         r = tmp.derivative(c)
         if r is not Nil:
-            parts[c] = r
-    return _Bagged(parts, tmp.matches_empty)
+            parts.append((c, r))
+    return base_bagged(sorted(parts), tmp.matches_empty)
 
 
 @cached
