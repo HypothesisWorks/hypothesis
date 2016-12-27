@@ -18,8 +18,6 @@ typedef struct {
   size_t item_mask;
   size_t *alias_table;
   double *probabilities;
-
-  struct mt mersenne_twister;
 } random_sampler;
 
 
@@ -27,14 +25,22 @@ static void mt_seed(struct mt *mt, uint64_t seed);
 static uint64_t genrand64_int64(struct mt *r);
 
 
-random_sampler *random_sampler_new(size_t n_items, double *weights, uint64_t seed){
+struct mt *mersenne_twister_new(uint64_t seed){
+    struct mt *result = malloc(sizeof(struct mt));
+    mt_seed(result, seed);
+    return result;
+}
+
+void mersenne_twister_free(struct mt *mt){
+    free(mt);
+}
+
+
+random_sampler *random_sampler_new(size_t n_items, double *weights){
   void *data = malloc(sizeof(random_sampler) + n_items * sizeof(size_t) + n_items * sizeof(double));
 
   random_sampler *result = (random_sampler*)data;
     result->n_items = n_items;
-
-  mt_seed(&(result->mersenne_twister), seed);
-
 
   size_t mask = n_items;
   mask |= (mask >> 1);
@@ -136,8 +142,7 @@ void random_sampler_debug(random_sampler *sampler){
 
 static double mt_random_double(struct mt *mt);
 
-size_t random_sampler_sample(random_sampler *sampler){
-  struct mt *mt = &(sampler->mersenne_twister);
+size_t random_sampler_sample(random_sampler *sampler, struct mt *mt){
   size_t i = sampler->n_items;;
   while(i >= sampler->n_items){
     // FIXME: Potentially wasting a lot of bits here.

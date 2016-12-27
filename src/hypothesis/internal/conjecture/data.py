@@ -51,18 +51,40 @@ BYTES_TO_STRINGS = [hbytes([b]) for b in range(256)]
 UNIFORM_WEIGHTS = (1,) * 256
 
 
-sampler_cache = {}
+class Sampler(object):
+    __slots__ = ('ffi', 'lib', '__mt', '__sampler_cache', '__tmp')
+
+    def __init__(self, random):
+        self.lib = s.lib
+        self.ffi = s.ffi
+        self.__tmp = self.ffi.new('double[256]')
+        self.__mt = self.lib.mersenne_twister_new(random.getrandbits(64))
+        self.__sampler_cache = {}
+
+    def sample(self, weights):
+        if len(weights) == 1:
+            return 0
+        weights = tuple(weights)
+        try:
+            sampler = self.__sampler_cache[weights]
+        except KeyError:
+            for i, w in enumerate(weights):
+                self.__tmp[i] = w
+            sampler = self.__sampler_cache.setdefault(
+                weights, self.lib.random_sampler_new(len(weights), self.__tmp))
+        return self.lib.random_sampler_sample(sampler, self.__mt)
+
+    def __del__(self):
+        self.lib.mersenne_twister_free(self.__mt)
+        for v in self.__sampler_cache.values():
+            self.lib.random_sampler_free(v)
 
 
 def draw_random(random):
+    sampler = Sampler(random)
+
     def accept(data, weights, choices):
-        try:
-            sampler = sampler_cache[weights]
-        except KeyError:
-            sampler = s.lib.random_sampler_new(
-                len(weights), weights, random.getrandbits(32))
-            sampler_cache[weights] = sampler
-        return choices[s.lib.random_sampler_sample(sampler)]
+        return choices[sampler.sample(weights)]
     return accept
 
 ALL_BYTES = hrange(256)
@@ -212,28 +234,35 @@ class ConjectureData(object):
 
         if choices is not None:
             assert len(choices) == len(weights)
-
-        result = self._draw_byte(self, tuple(weights), choices or ALL_BYTES)
-
-        if choices is None:
-            index_of_result = result
         else:
-            try:
-                index_of_result = choices.index(result)
-            except ValueError:
-                index_of_result = len(weights)
+            choices = hrange(len(weights))
 
-        if index_of_result >= len(weights):
-            weight_of_result = 0
+        if len(weights) == 1:
+            result = choices[0]
+            if not weights[0]:
+                self.mark_invalid()
         else:
-            weight_of_result = weights[index_of_result]
+            result = self._draw_byte(
+                self, tuple(weights), choices or ALL_BYTES)
 
-        if weight_of_result > 0:
-            self.buffer.append(result)
-            self.blocks[-1][-1] += 1
-            return result
-        else:
-            self.mark_invalid()
+            if choices is None:
+                index_of_result = result
+            else:
+                try:
+                    index_of_result = choices.index(result)
+                except ValueError:
+                    index_of_result = len(weights)
+
+            if index_of_result >= len(weights):
+                weight_of_result = 0
+            else:
+                weight_of_result = weights[index_of_result]
+
+            if weight_of_result <= 0:
+                self.mark_invalid()
+        self.buffer.append(result)
+        self.blocks[-1][-1] += 1
+        return result
 
     def __draw_prefix(self, result, grammar):
         state = grammar
