@@ -196,10 +196,7 @@ class ConjectureRunner(object):
                     self.call_count, self.valid_examples, self.shrinks,
                 ))
 
-    def _run(self):
-        self.last_data = None
-        start_time = time.time()
-
+    def __retry_previous_examples(self):
         if (
             self.settings.database is not None and
             self.database_key is not None
@@ -238,6 +235,7 @@ class ConjectureRunner(object):
                     self.last_data = data
                     break
 
+    def __generate_new_examples(self):
         if Phase.generate in self.settings.phases:
             if (
                 self.last_data is None or
@@ -256,7 +254,7 @@ class ConjectureRunner(object):
                     return
                 if (
                     self.settings.timeout > 0 and
-                    time.time() >= start_time + self.settings.timeout
+                    time.time() >= self.start_time + self.settings.timeout
                 ):
                     self.exit_reason = ExitReason.timeout
                     return
@@ -269,6 +267,12 @@ class ConjectureRunner(object):
                 if self.consider_new_test_data(data):
                     self.last_data = data
 
+    def _run(self):
+        self.last_data = None
+        self.start_time = time.time()
+
+        self.__retry_previous_examples()
+        self.__generate_new_examples()
         data = self.last_data
         if data is None:
             self.exit_reason = ExitReason.finished
@@ -293,6 +297,9 @@ class ConjectureRunner(object):
             self.exit_reason = ExitReason.flaky
             return
 
+        self.__shrink_best_example()
+
+    def __shrink_best_example(self):
         change_counter = -1
 
         while self.changed > change_counter:
