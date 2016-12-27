@@ -29,6 +29,8 @@ def tupleize(args):
     for a in args:
         if isinstance(a, (tuple, list, types.GeneratorType)):
             a = tuple(a)
+        if isinstance(a, set):
+            a = frozenset(a)
         result.append(a)
     return tuple(result)
 
@@ -285,19 +287,19 @@ class _Concatenation(Grammar):
         self.__always_has_matches = (
             self.left._always_has_matches and self.right._always_has_matches)
 
-    @property
-    def childen(self):
-        return (self.left, self.right)
+    def _do_cmp(self, other):
+        c = self.left.__cmp__(other.left)
+        if c != 0:
+            return c
+        return self.right.__cmp__(other.right)
 
     def _always_has_matches(self):
         return self.__always_has_matches
 
     def _calculate_initial_values(self):
-        result = set()
-        for c in self.children:
-            result.update(c.initial_values())
-            if not c.matches_empty:
-                break
+        result = set(self.left.initial_values())
+        if self.left.matches_empty:
+            result.update(self.right.initial_values())
         return result
 
     def _calculate_derivative(self, b):
@@ -307,7 +309,7 @@ class _Concatenation(Grammar):
         return base
 
     def __repr__(self):
-        return 'Concatenation(%s)' % (self.children,)
+        return 'Concatenation(%r, %r)' % (self.left, self.right)
 
 
 @cached
@@ -324,11 +326,13 @@ def base_concatenation(renormalized):
 @cached
 def Concatenation(children):
     renormalized = []
+
     for c in children:
         if c is Nil:
             return Nil
         if isinstance(c, _Concatenation):
-            renormalized.extend(c.children)
+            renormalized.append(c.left)
+            renormalized.append(c.right)
         elif isinstance(c, _Literal) and not c.value:
             pass
         elif (
@@ -371,29 +375,163 @@ class _Alternation(BranchGrammar):
         return 'Alternation(%s)' % (self.children,)
 
 
+class _Bagged(Grammar):
+
+    def __init__(self, children, matches_empty):
+        Grammar.__init__(self)
+        self.children = dict(children)
+        self.matches_empty = matches_empty
+        self.__always_has_matches = matches_empty or any(
+            c._always_has_matches for c in self.children.values())
+
+    def _do_cmp(self, other):
+        if self.matches_empty and not other.matches_empty:
+            return -1
+        if other.matches_empty and not self.matches_empty:
+            return 1
+        if len(self.children) < len(other.children):
+            return -1
+        if len(self.children) > len(other.children):
+            return -1
+        for (a, u), (b, v) in zip(
+            sorted(self.children.items()),
+            sorted(other.children.items()),
+        ):
+            if a < b:
+                return -1
+            if b < a:
+                return 1
+            t = u.__cmp__(v)
+            if t != 0:
+                return t
+        return 0
+
+    def _always_has_matches(self):
+        return self.__always_has_matches
+
+    def _calculate_initial_values(self):
+        return frozenset(self.children)
+
+    def _calculate_derivative(self, b):
+        return self.children.get(b, Nil)
+
+    def __repr__(self):
+        return 'Bagged(%r, %r)' % (self.children, self.matches_empty)
+
+
+@cached
+def char(c):
+    return Literal(hbytes([c]))
+
+
+@cached
+def bagged(renormalized):
+    tmp = _Alternation(renormalized)
+    parts = {}
+    for c in tmp.initial_values():
+        r = tmp.derivative(c)
+        if r is not Nil:
+            parts[c] = r
+    return _Bagged(parts, tmp.matches_empty)
+
+
 @cached
 def base_alternation(renormalized):
-    if len(renormalized) > 1:
+    if not renormalized:
+        return Nil
+    elif len(renormalized) > 1:
         return _Alternation(renormalized)
     else:
         return renormalized[0]
 
 
+class _Charset(Grammar):
+    def __init__(self, chars):
+        Grammar.__init__(self)
+        self.chars = frozenset(chars)
+        assert all(isinstance(i, int) for i in self.chars), self.chars
+
+    @property
+    def matches_empty(self):
+        return False
+
+    @property
+    def _always_has_matches(self):
+        return True
+
+    def _calculate_initial_values(self):
+        return self.chars
+
+    def _calculate_derivative(self, b):
+        if b in self.chars:
+            return Epsilon
+        else:
+            return Nil
+
+    def _do_cmp(self, other):
+        if len(self.chars) < len(other.chars):
+            return -1
+        if len(self.chars) > len(other.chars):
+            return 1
+        c1 = sorted(self.chars)
+        c2 = sorted(other.chars)
+        if c1 < c2:
+            return -1
+        else:
+            assert c1 > c2
+            return 1
+
+
+@cached
+def Charset(chars):
+    if not isinstance(chars, frozenset):
+        return Charset(frozenset(chars))
+    if not chars:
+        return Nil
+    return _Charset(chars)
+
+
+@cached
 def Alternation(children):
+    children = tuple(children)
+    if len(children) == 1:
+        return children[0]
+    if not len(children):
+        return Nil
+
+    use_bag = False
+
+    single_chars = set()
+
     renormalized = set()
     for c in children:
-        if c is Nil:
+        if not c.has_matches():
             pass
         elif c is Everything:
             return Everything
         elif isinstance(c, _Alternation):
             renormalized.update(c.children)
+        elif isinstance(c, _Bagged):
+            use_bag = True
+            renormalized.add(c)
+        elif isinstance(c, _Literal) and len(c.value) == 1:
+            single_chars.add(c.value[0])
+        elif isinstance(c, _Interval) and len(c.lower) == 1:
+            single_chars.update(range(c.lower[0], c.upper[0] + 1))
+        elif isinstance(c, _Charset):
+            single_chars.update(c.chars)
         else:
             renormalized.add(c)
-    if not renormalized:
-        return Nil
+
+    if single_chars:
+        renormalized.add(Charset(single_chars))
+
+    renormalized = tuple(sorted(renormalized))
+
+    if len(renormalized) > 10 or use_bag:
+        return bagged(renormalized)
     else:
-        return base_alternation(tuple(sorted(renormalized)))
+        return base_alternation(renormalized)
 
 
 class _Wildcard(Grammar):
@@ -645,9 +783,11 @@ for i, c in enumerate([
     _Everything,
     _Wildcard,
     _Literal,
+    _Charset,
     _Interval,
     _Negation,
     _Star,
+    _Bagged,
     _Alternation,
     _Concatenation,
     _Intersection,
