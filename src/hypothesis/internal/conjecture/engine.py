@@ -66,11 +66,10 @@ class TreeNode(object):
                 self.weights = weights
                 self.choices = choices
                 self.status = NodeStatus.EXPLORED
-                self.children = {
-                    c: TreeNode()
-                    for c, w in zip(choices, weights)
-                    if w > 0
-                }
+                self.children = [None] * 256
+                for c, w in zip(choices, weights):
+                    if w > 0:
+                        self.children[c] = TreeNode()
             else:
                 self.status = NodeStatus.FINISHED
         else:
@@ -86,7 +85,10 @@ class TreeNode(object):
                     ))
 
     def walk(self, byte):
-        return self.children[byte]
+        result = self.children[byte]
+        if result is None:
+            raise KeyError()
+        return result
 
 
 class RunIsComplete(Exception):
@@ -215,8 +217,8 @@ class ConjectureRunner(object):
                 tree.status = NodeStatus.FINISHED
             for node in reversed(trail):
                 if all(
-                    v.status == NodeStatus.FINISHED
-                    for v in node.children.values()
+                    v is None or v.status == NodeStatus.FINISHED
+                    for v in node.children
                 ):
                     tree.status = NodeStatus.FINISHED
                 else:
