@@ -53,7 +53,7 @@ class NodeStatus(IntEnum):
 class TreeNode(object):
     def __init__(self):
         self.status = NodeStatus.UNEXPLORED
-        self.children = []
+        self.children = {}
 
     def __repr__(self):
         return "TreeNode(%r, %r)" % (
@@ -84,11 +84,10 @@ class TreeNode(object):
     def check_finished(self):
         for w, c in zip(self.weights, self.choices):
             if w > 0:
-                if c >= len(self.children):
-                    return False
-                if self.children[c] is None:
-                    return False
-                if self.children[c].status != NodeStatus.FINISHED:
+                try:
+                    if self.children[c].status != NodeStatus.FINISHED:
+                        return False
+                except KeyError:
                     return False
         self.status = NodeStatus.FINISHED
         return True
@@ -103,18 +102,16 @@ class TreeNode(object):
         return self.weights[i]
 
     def walk(self, byte):
-        while byte >= len(self.children):
-            self.children.append(None)
-        result = self.children[byte]
-        if result is SENTINEL:
-            raise KeyError()
-        if result is None:
+        try:
+            result = self.children[byte]
+        except KeyError:
             if self.__weight(byte) > 0:
                 result = TreeNode()
-                self.children[byte] = result
             else:
-                self.children[byte] = SENTINEL
-                raise KeyError()
+                result = SENTINEL
+            self.children[byte] = result
+        if result is SENTINEL:
+            raise KeyError()
         return result
 
 
