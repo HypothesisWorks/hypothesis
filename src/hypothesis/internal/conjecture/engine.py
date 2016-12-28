@@ -53,6 +53,7 @@ class NodeStatus(IntEnum):
 class TreeNode(object):
     def __init__(self):
         self.status = NodeStatus.UNEXPLORED
+        self.children = []
 
     def __repr__(self):
         return "TreeNode(%r, %r)" % (
@@ -66,10 +67,6 @@ class TreeNode(object):
                 self.weights = weights
                 self.choices = choices
                 self.status = NodeStatus.EXPLORED
-                self.children = [None] * 256
-                for c, w in zip(choices, weights):
-                    if w > 0:
-                        self.children[c] = TreeNode()
             else:
                 self.status = NodeStatus.FINISHED
         else:
@@ -84,11 +81,44 @@ class TreeNode(object):
                         list(zip(choices, weights)),
                     ))
 
+    def check_finished(self):
+        for w, c in zip(self.weights, self.choices):
+            if w > 0:
+                if c >= len(self.children):
+                    return False
+                if self.children[c] is None:
+                    return False
+                if self.children[c].status != NodeStatus.FINISHED:
+                    return False
+        self.status = NodeStatus.FINISHED
+        return True
+
+    def __weight(self, byte):
+        try:
+            i = self.choices.index(byte)
+        except ValueError:
+            return 0
+        if i >= len(self.weights):
+            return 0
+        return self.weights[i]
+
     def walk(self, byte):
+        while byte >= len(self.children):
+            self.children.append(None)
         result = self.children[byte]
-        if result is None:
+        if result is SENTINEL:
             raise KeyError()
+        if result is None:
+            if self.__weight(byte) > 0:
+                result = TreeNode()
+                self.children[byte] = result
+            else:
+                self.children[byte] = SENTINEL
+                raise KeyError()
         return result
+
+
+SENTINEL = object()
 
 
 class RunIsComplete(Exception):
@@ -216,12 +246,7 @@ class ConjectureRunner(object):
             if completed:
                 tree.status = NodeStatus.FINISHED
             for node in reversed(trail):
-                if all(
-                    v is None or v.status == NodeStatus.FINISHED
-                    for v in node.children
-                ):
-                    tree.status = NodeStatus.FINISHED
-                else:
+                if not node.check_finished():
                     break
 
     def debug(self, message):

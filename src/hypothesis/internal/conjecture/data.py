@@ -87,7 +87,7 @@ def draw_random(random):
         return choices[sampler.sample(weights)]
     return accept
 
-ALL_BYTES = list(hrange(256))
+ALL_BYTES = tuple(hrange(256))
 
 
 class ConjectureData(object):
