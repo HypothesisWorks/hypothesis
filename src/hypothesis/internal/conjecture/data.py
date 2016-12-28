@@ -246,7 +246,7 @@ class ConjectureData(object):
         else:
             result = self._draw_byte(self, tuple(weights), choices)
 
-            if choices is None:
+            if choices is ALL_BYTES:
                 index_of_result = result
             else:
                 try:
