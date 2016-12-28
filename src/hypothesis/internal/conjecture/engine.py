@@ -30,6 +30,9 @@ from hypothesis.internal.compat import hbytes, hrange, Counter, \
 from hypothesis.internal.conjecture.data import Status, StopTest, \
     ConjectureData
 from hypothesis.internal.conjecture.minimizer import minimize
+from enum import IntEnum
+
+from hypothesis.errors import Flaky
 
 
 class ExitReason(Enum):
@@ -41,11 +44,53 @@ class ExitReason(Enum):
     flaky = 5
 
 
+class NodeStatus(IntEnum):
+    UNEXPLORED = 0
+    EXPLORED = 1
+    FINISHED = 2
+
+
+class TreeNode(object):
+    def __init__(self):
+        self.status = NodeStatus.UNEXPLORED
+
+    def __repr__(self):
+        return "TreeNode(%r, %r)" % (
+            self.status, getattr(self, 'children', None))
+
+    def explore(self, weights, choices):
+        weights = tuple(weights)
+        choices = tuple(choices)
+        if self.status == NodeStatus.UNEXPLORED:
+            if weights:
+                self.weights = weights
+                self.choices = choices
+                self.status = NodeStatus.EXPLORED
+                self.children = {
+                    c: TreeNode()
+                    for c, w in zip(choices, weights)
+                    if w > 0
+                }
+            else:
+                self.status = NodeStatus.FINISHED
+        else:
+            if (
+                weights != self.weights or
+                choices != self.choices
+            ):
+                raise Flaky(
+                    "Saw different options on different visits. Expected %r "
+                    "but got %r." % (
+                        list(zip(self.choices, self.weights)),
+                        list(zip(choices, weights)),
+                    ))
+
+    def walk(self, byte):
+        return self.children[byte]
+
+
 class RunIsComplete(Exception):
     pass
-
-
-SENTINEL = object()
 
 
 class ConjectureRunner(object):
@@ -69,7 +114,7 @@ class ConjectureRunner(object):
         self.duplicates = 0
         self.status_runtimes = {}
         self.events_to_strings = WeakKeyDictionary()
-        self.tree = {}
+        self.tree = TreeNode()
 
     def new_buffer(self):
         self.last_data = ConjectureData.for_random(
@@ -151,18 +196,31 @@ class ConjectureRunner(object):
             self.event_call_counts[event] += 1
         if data.buffer:
             tree = self.tree
+            trail = []
 
-            for ws, cs, b in zip(data.weights, data.choices, data.buffer[:-1]):
+            # Sometimes e.g. when shrinking we take a path that leads off the
+            # tree. In that case we just stop early and only explore until we
+            # got to that point.
+            completed = True
+            for ws, cs, b in zip(data.weights, data.choices, data.buffer):
+                tree.explore(ws, cs)
+                trail.append(tree)
                 try:
-                    tree = tree[b]
+                    tree = tree.walk(b)
                 except KeyError:
-                    new_tree = {}
-                    for w, c in zip(ws, cs):
-                        if w > 0:
-                            new_tree[c] = {}
-                    tree[b] = new_tree
-                    tree = new_tree
-            tree[data.buffer[-1]] = SENTINEL
+                    completed = False
+                    break
+
+            if completed:
+                tree.status = NodeStatus.FINISHED
+            for node in reversed(trail):
+                if all(
+                    v.status == NodeStatus.FINISHED
+                    for v in node.children.values()
+                ):
+                    tree.status = NodeStatus.FINISHED
+                else:
+                    break
 
     def debug(self, message):
         with self.settings:
@@ -177,18 +235,17 @@ class ConjectureRunner(object):
         ))
 
     def __prescreen_buffer(self, buffer):
-        assert self.tree
         tree = self.tree
         for b in buffer:
-            if not tree:
+            if tree.status == NodeStatus.UNEXPLORED:
                 return True
+            if tree.status == NodeStatus.FINISHED:
+                return False
             try:
-                tree = tree[b]
+                tree = tree.walk(b)
             except KeyError:
                 return False
-            if tree is SENTINEL:
-                return False
-        return False
+        return tree.status == NodeStatus.UNEXPLORED
 
     def incorporate_new_buffer(self, buffer):
         if buffer in self.seen:

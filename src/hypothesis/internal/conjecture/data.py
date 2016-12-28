@@ -278,10 +278,10 @@ class ConjectureData(object):
             if state.matches_empty:
                 return state
             c = self.draw_byte(weights, state.choices())
-            new_state = state.derivative(c)
-            if new_state.has_matches():
-                state = new_state
-                result.append(c)
+            state = state.derivative(c)
+            if not state.has_matches():
+                self.mark_invalid()
+            result.append(c)
 
     def draw_from_grammar(self, grammar):
         if not grammar.has_matches():
