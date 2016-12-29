@@ -334,7 +334,7 @@ def Concatenation(children):
             pass
         elif (
             isinstance(c, _Literal) and renormalized and
-            isinstance(renormalized[-1], Literal)
+            isinstance(renormalized[-1], _Literal)
         ):
             renormalized[-1] = Literal(renormalized[-1].value + c.value)
         elif (

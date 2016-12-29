@@ -23,6 +23,7 @@ from hypothesis.searchstrategy.strategies import SearchStrategy, \
     MappedSearchStrategy
 from hypothesis.internal.conjecture.grammar import Literal, Interval, \
     Negation, Wildcard, Alternation, Intersection, Concatenation
+import hypothesis.internal.conjecture.utils as cu
 
 
 def _allowed_bytes(ls):
@@ -76,6 +77,31 @@ BASE_WEIGHTS = [
 ]
 
 
+CONSTRAIN_CACHE = {}
+
+
+def _constrain_bits(n):
+    assert n > 8
+    try:
+        return CONSTRAIN_CACHE[n]
+    except KeyError:
+        pass
+    if n % 8 == 0:
+        result = Concatenation((
+            Wildcard(n // 8),
+            Literal(hbytes(b'\0' * (8 - n // 8))),
+        ))
+    else:
+        mask = (1 << (8 - (n % 8))) & 1
+        result = Concatenation((
+            Wildcard(n // 8),
+            _filtered_bytes(lambda x: mask & x == 0),
+            Literal(hbytes(b'\0' * (8 - n // 8 - 1))),
+        ))
+    CONSTRAIN_CACHE[n] = result
+    return result
+
+
 class FloatStrategy(SearchStrategy):
 
     """Generic superclass for strategies which produce floats."""
@@ -100,8 +126,10 @@ class FloatStrategy(SearchStrategy):
             self.grammars.append(NAN)
 
     def do_draw(self, data):
+        constraint = cu.integer_range(data, 11, 64)
         g = self.grammars[data.draw_byte(self.weights)]
-        buf = data.draw_from_grammar(g)
+        buf = data.draw_from_grammar(
+            Intersection((g, _constrain_bits(constraint))))
         assert len(buf) == 8, (buf, g)
         return struct_unpack('!d', buf)[0]
 
