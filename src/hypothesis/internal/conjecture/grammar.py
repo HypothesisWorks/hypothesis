@@ -19,9 +19,10 @@ from __future__ import division, print_function, absolute_import
 
 import heapq
 
-from hypothesis.internal.compat import hbytes
+from hypothesis.internal.compat import hbytes, hrange
 import functools
 import types
+from collections import deque
 
 
 def tupleize(args):
@@ -47,6 +48,9 @@ def cached(function):
             pass
         result = function(*args)
         cache[args] = result
+        if isinstance(result, Grammar) and not result.has_matches():
+            result = Nil
+            cache[args] = result
         return result
     return accept
 
@@ -107,6 +111,27 @@ class Grammar(object):
                 heapq.heappush(queue, (n + 1, child))
         return False
 
+    def smallest_match(self):
+        queue = deque()
+        queue.append((self, ()))
+        seen = set()
+        while queue:
+            grammar, path = queue.popleft()
+            if grammar in seen:
+                continue
+            seen.add(grammar)
+            if grammar.matches_empty:
+                result = bytearray()
+                while path:
+                    path, c = path
+                    result.append(c)
+                result.reverse()
+                return hbytes(result)
+            if grammar.has_matches():
+                for c in sorted(grammar.initial_values()):
+                    queue.append((grammar.derivative(c), (path, c)))
+        return None
+
     def derivative(self, b):
         if b not in self.initial_values():
             return Nil
@@ -128,6 +153,10 @@ class Grammar(object):
             )
             assert all(isinstance(i, int) for i in result), self
             self.__initial_values = result
+            self.__initial_values = frozenset(
+                c for c in result
+                if self.derivative(c) is not Nil
+            )
         return self.__initial_values
 
     def __cmp__(self, other):
@@ -222,7 +251,10 @@ class _Literal(Grammar):
 
 @cached
 def Literal(value):
-    return _Literal(value)
+    if len(value) == 1:
+        return Charset(tuple(value))
+    else:
+        return _Literal(value)
 
 
 class BranchGrammar(Grammar):
@@ -266,10 +298,12 @@ class _Negation(Grammar):
 def Negation(child):
     if isinstance(child, _Negation):
         return child.child
-    if child is Nil:
+    if not child.has_matches():
         return Everything
     if child is Everything:
         return Nil
+    if isinstance(child, _Intersection):
+        return Alternation(Negation(c) for c in child)
     return _Negation(child)
 
 
@@ -341,7 +375,7 @@ def Concatenation(children):
             isinstance(c, _Wildcard) and renormalized and
             isinstance(renormalized[-1], _Wildcard)
         ):
-            renormalized[-1] = Wildcard(renormalized[-1].size + c.size)
+            renormalized[-1] = Wildcard(renormalized[-1].length + c.length)
         else:
             renormalized.append(c)
     return base_concatenation(renormalized)
@@ -417,7 +451,7 @@ class _Bagged(Grammar):
 
 
 @cached
-def char(c):
+def Char(c):
     return Literal(hbytes([c]))
 
 
@@ -452,6 +486,9 @@ class _Charset(Grammar):
         Grammar.__init__(self)
         self.chars = frozenset(chars)
         assert all(isinstance(i, int) for i in self.chars), self.chars
+
+    def __repr__(self):
+        return "Charset(%r)" % (tuple(sorted(self.chars)),)
 
     @property
     def matches_empty(self):
@@ -516,10 +553,6 @@ def Alternation(children):
         elif isinstance(c, _Bagged):
             use_bag = True
             renormalized.add(c)
-        elif isinstance(c, _Literal) and len(c.value) == 1:
-            single_chars.add(c.value[0])
-        elif isinstance(c, _Interval) and len(c.lower) == 1:
-            single_chars.update(range(c.lower[0], c.upper[0] + 1))
         elif isinstance(c, _Charset):
             single_chars.update(c.chars)
         else:
@@ -609,11 +642,16 @@ def base_intersection(children):
     if len(children) == 1:
         return children[0]
     result = _Intersection(children)
-    if not result.initial_values():
-        if result.matches_empty:
-            return Epsilon
-        else:
-            return Nil
+    if not result.has_matches():
+        return Nil
+    elif not result.initial_values():
+        assert result.matches_empty
+        return Epsilon
+    elif len(result.initial_values()) == 1:
+        c = list(result.initial_values())[0]
+        return Concatenation((
+            Char(c), result.derivative(c)
+        ))
     else:
         return result
 
@@ -770,8 +808,12 @@ class _Interval(Grammar):
 
 @cached
 def Interval(lower, upper):
+    assert lower <= upper
+    assert len(lower) == len(upper)
     if lower == upper:
         return Literal(lower)
+    if len(lower) == 1:
+        return Charset(hrange(lower[0], upper[0] + 1))
     return _Interval(lower, upper)
 
 Nil = _Nil()
