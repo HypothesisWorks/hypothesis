@@ -28,7 +28,7 @@ from hypothesis.reporting import debug_report
 from hypothesis.internal.compat import hbytes, hrange, Counter, \
     text_type, unicode_safe_repr
 from hypothesis.internal.conjecture.data import Status, StopTest, \
-    ConjectureData
+    ConjectureData, Sampler
 from hypothesis.internal.conjecture.minimizer import minimize
 from enum import IntEnum
 
@@ -55,6 +55,8 @@ class TreeNode(object):
         self.status = NodeStatus.UNEXPLORED
         self.children = {}
         self.__path = path
+        self.explore_depth = 0
+        self.__selection_weights = None
 
     @property
     def path(self):
@@ -94,7 +96,61 @@ class TreeNode(object):
                         list(zip(choices, weights)),
                     ))
 
-    def check_finished(self):
+    @property
+    def selection_weights(self):
+        if self.__selection_weights is None:
+            return self.weights
+        else:
+            return self.__selection_weights
+
+    def __valid_choices(self):
+        for w, c in zip(self.weights, self.choices):
+            if w > 0:
+                yield c
+
+    def update_from_children(self):
+        if not self.__check_finished():
+            explore_depth = None
+            for c in self.__valid_choices():
+                if c not in self.children:
+                    explore_depth = 0
+                    break
+                elif explore_depth is None:
+                    explore_depth = 1 + self.children[c].explore_depth
+                else:
+                    explore_depth = min(
+                        explore_depth, 1 + self.children[c].explore_depth)
+            self.explore_depth = explore_depth
+
+            selection_weights = list(self.weights)
+            if self.explore_depth == 0:
+                for i in hrange(len(selection_weights)):
+                    if self.choices[i] in self.children:
+                        selection_weights[i] = 0
+            else:
+                target = min(
+                    self.children[c].explore_depth
+                    for c in self.__valid_choices()
+                    if self.children[c].status != NodeStatus.FINISHED)
+                for i, c in enumerate(self.choices):
+                    try:
+                        child = self.children[c]
+                    except KeyError:
+                        try:
+                            selection_weights[i] = 0
+                        except IndexError:
+                            break
+                        continue
+                    if child is SENTINEL:
+                        continue
+                    if (
+                        child.status == NodeStatus.FINISHED or
+                        child.explore_depth > target
+                    ):
+                        selection_weights[i] = 0
+            self.__selection_weights = tuple(selection_weights)
+
+    def __check_finished(self):
         for w, c in zip(self.weights, self.choices):
             if w > 0:
                 try:
@@ -151,6 +207,7 @@ class ConjectureRunner(object):
         self.valid_examples = 0
         self.start_time = time.time()
         self.random = random or Random(getrandbits(128))
+        self.sampler = Sampler(self.random)
         self.database_key = database_key
         self.seen = set()
         self.duplicates = 0
@@ -257,8 +314,7 @@ class ConjectureRunner(object):
                 assert data.buffer == tree.path
                 tree.explore((), ())
             for node in reversed(trail):
-                if not node.check_finished():
-                    break
+                node.update_from_children()
 
     def debug(self, message):
         with self.settings:
@@ -387,9 +443,19 @@ class ConjectureRunner(object):
                 ):
                     self.exit_reason = ExitReason.timeout
                     return
-                data = ConjectureData.for_random(
+
+                node = [self.tree]
+
+                def draw_byte(data, weights, choices):
+                    node[0].explore(weights, choices)
+                    result = choices[
+                        self.sampler.sample(node[0].selection_weights)]
+                    node[0] = node[0].walk(result)
+                    return result
+
+                data = ConjectureData(
                     max_length=self.settings.buffer_size,
-                    random=self.random,
+                    draw_byte=draw_byte,
                 )
                 self.test_function(data)
                 data.freeze()
