@@ -118,9 +118,6 @@ class Grammar(object):
         r = self._calculate_derivative(b)
         if not r.has_matches():
             r = Nil
-            tmp = list(self.weights())
-            tmp[self.choices.index(b)] = 0
-            self.__weights = tuple(tmp)
         self.__derivatives[b] = r
         return r
 
@@ -267,7 +264,7 @@ class _Negation(Grammar):
 
 @cached
 def Negation(child):
-    if isinstance(child, Negation):
+    if isinstance(child, _Negation):
         return child.child
     if child is Nil:
         return Everything
