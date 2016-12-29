@@ -209,6 +209,7 @@ class ConjectureData(object):
         if self.frozen:
             assert isinstance(self.buffer, hbytes)
             return
+        assert len(self.weights) == len(self.buffer) == len(self.choices)
         self.frozen = True
         self.blocks = list(map(tuple, self.blocks))
         for i, j in self.blocks:
@@ -239,33 +240,27 @@ class ConjectureData(object):
         else:
             choices = ALL_BYTES
 
-        if len(weights) == 1:
-            result = choices[0]
-            if not weights[0]:
-                self.mark_invalid()
-        else:
-            result = self._draw_byte(self, tuple(weights), choices)
-
-            if choices is ALL_BYTES:
-                index_of_result = result
-            else:
-                try:
-                    index_of_result = choices.index(result)
-                except ValueError:
-                    index_of_result = len(weights)
-
-            if index_of_result >= len(weights):
-                weight_of_result = 0
-            else:
-                weight_of_result = weights[index_of_result]
-
-            if weight_of_result <= 0:
-                self.mark_invalid()
+        result = self._draw_byte(self, tuple(weights), choices)
         self.buffer.append(result)
-        self.blocks[-1][-1] += 1
         self.weights.append(weights)
         self.choices.append(choices)
-        assert len(self.weights) == len(self.buffer) == len(self.choices)
+
+        if choices is ALL_BYTES:
+            index_of_result = result
+        else:
+            try:
+                index_of_result = choices.index(result)
+            except ValueError:
+                index_of_result = len(weights)
+
+        if index_of_result >= len(weights):
+            weight_of_result = 0
+        else:
+            weight_of_result = weights[index_of_result]
+
+        if weight_of_result <= 0:
+            self.mark_invalid()
+        self.blocks[-1][-1] += 1
         return result
 
     def __draw_prefix(self, result, grammar):
@@ -307,6 +302,7 @@ class ConjectureData(object):
         raise StopTest(self.testcounter)
 
     def mark_invalid(self):
+        #import traceback; traceback.print_stack()
         self.__assert_not_frozen('mark_invalid')
         self.status = Status.INVALID
         self.freeze()

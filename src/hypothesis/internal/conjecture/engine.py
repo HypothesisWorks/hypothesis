@@ -51,9 +51,20 @@ class NodeStatus(IntEnum):
 
 
 class TreeNode(object):
-    def __init__(self):
+    def __init__(self, path):
         self.status = NodeStatus.UNEXPLORED
         self.children = {}
+        self.__path = path
+
+    @property
+    def path(self):
+        result = bytearray()
+        p = self.__path
+        while p:
+            t, p = p
+            result.append(t)
+        result.reverse()
+        return hbytes(result)
 
     def __repr__(self):
         return "TreeNode(%r, %r)" % (
@@ -69,6 +80,8 @@ class TreeNode(object):
                 self.status = NodeStatus.EXPLORED
             else:
                 self.status = NodeStatus.FINISHED
+                self.weights = ()
+                self.choices = ()
         else:
             if (
                 weights != self.weights or
@@ -106,7 +119,7 @@ class TreeNode(object):
             result = self.children[byte]
         except KeyError:
             if self.__weight(byte) > 0:
-                result = TreeNode()
+                result = TreeNode((byte, self.__path))
             else:
                 result = SENTINEL
             self.children[byte] = result
@@ -143,7 +156,7 @@ class ConjectureRunner(object):
         self.duplicates = 0
         self.status_runtimes = {}
         self.events_to_strings = WeakKeyDictionary()
-        self.tree = TreeNode()
+        self.tree = TreeNode(())
 
     def new_buffer(self):
         self.last_data = ConjectureData.for_random(
@@ -230,7 +243,7 @@ class ConjectureRunner(object):
             # Sometimes e.g. when shrinking we take a path that leads off the
             # tree. In that case we just stop early and only explore until we
             # got to that point.
-            completed = True
+            completed = data.status != Status.OVERRUN
             for ws, cs, b in zip(data.weights, data.choices, data.buffer):
                 tree.explore(ws, cs)
                 trail.append(tree)
@@ -241,7 +254,8 @@ class ConjectureRunner(object):
                     break
 
             if completed:
-                tree.status = NodeStatus.FINISHED
+                assert data.buffer == tree.path
+                tree.explore((), ())
             for node in reversed(trail):
                 if not node.check_finished():
                     break
