@@ -54,6 +54,7 @@ class TreeNode(object):
     def __init__(self, index, parent):
         self.parent = parent
         self.index = index
+        assert parent is None or index < len(parent().weights)
         self.children = {}
         self.status = NodeStatus.UNEXPLORED
         self.explore_depth = -1
@@ -128,7 +129,8 @@ class TreeNode(object):
                 parent.live_count -= 1
                 if parent.live_count == 0:
                     parent.status = NodeStatus.FINISHED
-            parent.selection_weights[self.index] = 0
+                    continue
+            parent.selection_weights[node.index] = 0
             parent.__selectable -= 1
             if parent.__selectable <= 0:
                 parent.__update_depth()
@@ -175,7 +177,7 @@ class TreeNode(object):
                     child.explore_depth > target
                 ):
                     selection_weights[i] = 0
-        self.__selection_weights = tuple(selection_weights)
+        self.__selection_weights = selection_weights
         self.__selectable = len([w for w in self.__selection_weights if w > 0])
 
     def __check_finished(self):
@@ -214,6 +216,7 @@ class TreeNode(object):
             self.children[byte] = result
         if result is SENTINEL:
             raise KeyError()
+        assert self.choices[result.index] == byte
         return result
 
 
@@ -486,7 +489,6 @@ class ConjectureRunner(object):
                     result = choices[
                         self.sampler.sample(node[0].selection_weights)]
                     node[0] = node[0].walk(result)
-                    assert node[0].status != NodeStatus.FINISHED
                     return result
 
                 data = ConjectureData(
