@@ -109,6 +109,10 @@ class TreeNode(object):
             if w > 0:
                 yield c
 
+    @property
+    def char(self):
+        return self.__path[-1]
+
     def update_parent(self, parent):
         if self.status == NodeStatus.FINISHED:
             assert parent.live_count > 0
@@ -119,7 +123,7 @@ class TreeNode(object):
         if parent.explore_depth <= 1 + self.explore_depth:
             parent.__update_depth()
         try:
-            i = parent.choices.index(self.path[-1])
+            i = parent.choices.index(self.char)
         except ValueError:
             return
         selection_weights = list(parent.selection_weights)
