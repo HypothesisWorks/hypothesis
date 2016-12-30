@@ -412,17 +412,24 @@ class ConjectureRunner(object):
                 self.debug('Restarting')
                 continue
 
-            self.debug('Lexicographical minimization of whole buffer')
-            minimize(
-                self.last_data.buffer, self.incorporate_new_buffer,
-                cautious=True
-            )
+            self.debug('Bulk replacing blocks with simpler blocks')
+            i = 0
+            while i < len(self.last_data.blocks):
+                u, v = self.last_data.blocks[i]
+                buf = self.last_data.buffer
+                block = buf[u:v]
+                n = v - u
 
-            if change_counter != self.changed:
-                self.debug('Restarting')
-                continue
+                buffer = bytearray()
+                for r, s in self.last_data.blocks:
+                    if s - r == n and self.last_data.buffer[r:s] > block:
+                        buffer.extend(block)
+                    else:
+                        buffer.extend(self.last_data.buffer[r:s])
+                self.incorporate_new_buffer(hbytes(buffer))
+                i += 1
 
-            self.debug('Replacing blocks with simpler blocks')
+            self.debug('Replacing individual blocks with simpler blocks')
             i = 0
             while i < len(self.last_data.blocks):
                 u, v = self.last_data.blocks[i]
@@ -467,6 +474,16 @@ class ConjectureRunner(object):
                         lambda b: self.incorporate_new_buffer(replace(b)),
                         self.random
                     )
+
+            if change_counter != self.changed:
+                self.debug('Restarting')
+                continue
+
+            self.debug('Lexicographical minimization of whole buffer')
+            minimize(
+                self.last_data.buffer, self.incorporate_new_buffer,
+                cautious=True
+            )
 
             self.debug('Shrinking of individual blocks')
             i = 0
