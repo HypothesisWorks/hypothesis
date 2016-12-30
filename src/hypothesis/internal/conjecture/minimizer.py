@@ -47,11 +47,15 @@ class Minimizer(object):
         self.random = random
         self.cautious = cautious
         self.changes = 0
+        self.seen = set()
 
     def incorporate(self, buffer):
         assert isinstance(buffer, hbytes)
         assert len(buffer) == self.size
         assert buffer <= self.current
+        if buffer in self.seen:
+            return False
+        self.seen.add(buffer)
         if buffer != self.current and self.condition(buffer):
             self.current = buffer
             self.changes += 1
@@ -68,8 +72,13 @@ class Minimizer(object):
             self.current[i + 1:]
         ):
             return True
+
+        if self.cautious:
+            return False
+
         if i == self.size - 1:
             return False
+
         return self.incorporate(
             self.current[:i] + hbytes([c, 255]) +
             self.current[i + 2:]
@@ -78,55 +87,95 @@ class Minimizer(object):
             hbytes([255] * (self.size - i - 1))
         )
 
+    def ddlower(self, c):
+        self.ddfixate(lambda b: min(b, c))
+
+    def ddshift(self):
+        self.ddfixate(lambda b: b >> 1)
+
+    def ddsub(self):
+        self.ddfixate(lambda b: max(0, b - 1))
+
+    def ddfixate(self, f):
+        prev = -1
+        while prev != self.changes:
+            prev = self.changes
+            k = len(self.current)
+            while k > 0:
+                i = 0
+                while i + k <= len(self.current):
+                    self.incorporate(
+                        self.current[:i] +
+                        hbytes(f(b) for b in self.current[i:i + k]) +
+                        self.current[i + k:]
+                    )
+                    i += k
+                k //= 2
+
+    def rotate_suffixes(self):
+        for significant, c in enumerate(self.current):
+            if c:
+                break
+        assert self.current[significant]
+
+        prefix = bytes(significant)
+
+        for i in range(1, self.size - significant):
+            left = self.current[significant:significant + i]
+            right = self.current[significant + i:]
+            rotated = prefix + right + left
+            if rotated < self.current:
+                self.incorporate(rotated)
+
+    def shrink_indices(self):
+        for i in hrange(self.size):
+            t = self.current[i]
+            if t > 0:
+                ss = small_shrinks[self.current[i]]
+                for c in ss:
+                    if self._shrink_index(i, c):
+                        for c in hrange(self.current[i]):
+                            if c in ss:
+                                continue
+                            if self._shrink_index(i, c):
+                                break
+                        break
+
     def run(self):
         if not any(self.current):
             return
+        if len(self.current) == 1:
+            for c in range(self.current[0]):
+                if self.incorporate(hbytes([c])):
+                    break
+            return
         if self.incorporate(hbytes(self.size)):
+            return
+        if self.incorporate(hbytes([0] * (self.size - 1) + [1])):
             return
         change_counter = -1
         while self.current and change_counter < self.changes:
             change_counter = self.changes
-            for c in hrange(max(self.current)):
-                if self.incorporate(
-                    hbytes(min(b, c) for b in self.current)
-                ):
-                    break
 
-            for c in sorted(set(self.current), reverse=True):
-                for d in hrange(c):
-                    if self.incorporate(
-                        hbytes(d if b == c else b for b in self.current)
-                    ):
-                        break
+            self.ddlower(0)
+            self.ddlower(1)
+            self.ddshift()
+            self.ddsub()
 
-            for c in hrange(max(self.current)):
-                k = len(self.current) // 2
-                while k > 0:
-                    i = 0
-                    while i + k <= len(self.current):
-                        self.incorporate(
-                            self.current[:i] +
-                            hbytes(min(b, c) for b in self.current[i:i + k]) +
-                            self.current[i + k:]
-                        )
-                        i += k
-                    k //= 2
+            if change_counter != self.changes:
+                continue
+
+            for c in sorted(set(self.current) - {0, 1, max(self.current)}):
+                self.ddlower(c)
+
+            if change_counter != self.changes:
+                continue
+            self.shrink_indices()
 
             if change_counter != self.changes or self.cautious:
                 continue
 
-            for i in hrange(self.size):
-                t = self.current[i]
-                if t > 0:
-                    ss = small_shrinks[self.current[i]]
-                    for c in ss:
-                        if self._shrink_index(i, c):
-                            for c in hrange(self.current[i]):
-                                if c in ss:
-                                    continue
-                                if self._shrink_index(i, c):
-                                    break
-                            break
+            self.rotate_suffixes()
 
 
 # Table of useful small shrinks to apply to a number.
@@ -147,7 +196,7 @@ for b in hrange(10, 256):
         result.add(b ^ (1 << i))
     result.discard(b)
     assert len(result) <= 10
-    small_shrinks.append(sorted(result))
+    small_shrinks.append(sorted(c for c in result if c < b))
 
 
 def minimize(initial, condition, random=None, cautious=False):
