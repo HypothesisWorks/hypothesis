@@ -18,11 +18,11 @@
 from __future__ import division, print_function, absolute_import
 
 import heapq
+import types
+import functools
+from collections import deque
 
 from hypothesis.internal.compat import hbytes, hrange
-import functools
-import types
-from collections import deque
 
 
 def tupleize(args):
@@ -208,6 +208,7 @@ class Grammar(object):
 
 
 class _Literal(Grammar):
+
     def __init__(self, value):
         Grammar.__init__(self)
         assert isinstance(value, hbytes), value
@@ -482,13 +483,14 @@ def base_alternation(renormalized):
 
 
 class _Charset(Grammar):
+
     def __init__(self, chars):
         Grammar.__init__(self)
         self.chars = frozenset(chars)
         assert all(isinstance(i, int) for i in self.chars), self.chars
 
     def __repr__(self):
-        return "Charset(%r)" % (tuple(sorted(self.chars)),)
+        return 'Charset(%r)' % (tuple(sorted(self.chars)),)
 
     @property
     def matches_empty(self):

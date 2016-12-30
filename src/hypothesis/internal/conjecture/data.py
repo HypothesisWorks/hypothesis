@@ -19,11 +19,11 @@ from __future__ import division, print_function, absolute_import
 
 from enum import IntEnum
 
+import hypothesis.internal._sampler as s
 from hypothesis.errors import Frozen, InvalidArgument
 from hypothesis.internal.compat import hbytes, hrange, text_type, \
     int_to_bytes, benchmark_time, unicode_safe_repr, \
     reasonable_byte_type
-import hypothesis.internal._sampler as s
 
 
 def uniform(random, n):

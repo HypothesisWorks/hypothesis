@@ -17,13 +17,13 @@
 
 from __future__ import division, print_function, absolute_import
 
+import hypothesis.internal.conjecture.utils as cu
 from hypothesis.internal.compat import hbytes, struct_pack, struct_unpack
 from hypothesis.internal.floats import sign
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
     MappedSearchStrategy
 from hypothesis.internal.conjecture.grammar import Literal, Interval, \
     Negation, Wildcard, Alternation, Intersection, Concatenation
-import hypothesis.internal.conjecture.utils as cu
 
 
 def _allowed_bytes(ls):

@@ -18,21 +18,19 @@
 from __future__ import division, print_function, absolute_import
 
 import time
-from enum import Enum
+from enum import Enum, IntEnum
 from random import Random, getrandbits
-from weakref import WeakKeyDictionary
+from weakref import ref, WeakKeyDictionary
 
 from hypothesis import settings as Settings
 from hypothesis import Phase
+from hypothesis.errors import Flaky
 from hypothesis.reporting import debug_report
 from hypothesis.internal.compat import hbytes, hrange, Counter, \
     text_type, unicode_safe_repr
-from hypothesis.internal.conjecture.data import Status, StopTest, \
-    ConjectureData, Sampler
+from hypothesis.internal.conjecture.data import Status, Sampler, \
+    StopTest, ConjectureData
 from hypothesis.internal.conjecture.minimizer import minimize
-from enum import IntEnum
-from weakref import ref
-from hypothesis.errors import Flaky
 
 
 class ExitReason(Enum):
@@ -51,6 +49,7 @@ class NodeStatus(IntEnum):
 
 
 class TreeNode(object):
+
     def __init__(self, index, parent):
         self.parent = parent
         self.index = index
@@ -71,7 +70,7 @@ class TreeNode(object):
         return hbytes(result)
 
     def __repr__(self):
-        return "TreeNode(%r, %r)" % (
+        return 'TreeNode(%r, %r)' % (
             self.status, getattr(self, 'children', None))
 
     def explore(self, weights, choices):
@@ -93,8 +92,8 @@ class TreeNode(object):
                 choices != self.choices
             ):
                 raise Flaky(
-                    "Saw different options on different visits. Expected %r "
-                    "but got %r." % (
+                    'Saw different options on different visits. Expected %r '
+                    'but got %r.' % (
                         list(zip(self.choices, self.weights)),
                         list(zip(choices, weights)),
                     ))
