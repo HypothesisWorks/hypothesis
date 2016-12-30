@@ -36,13 +36,30 @@ def saturate(n):
     return n
 
 
+RANGE_CACHE = {}
+
+
+def basic_integer_range(data, lower, upper):
+    bits = max(bit_length(lower), bit_length(upper))
+    nbytes = bits // 8 + int(bits % 8 != 0)
+    key = (lower, upper)
+    try:
+        all_valid = RANGE_CACHE[key]
+    except KeyError:
+        all_valid = Interval(
+            int_to_bytes(lower, nbytes),
+            int_to_bytes(upper, nbytes))
+        RANGE_CACHE[key] = all_valid
+    return int_from_bytes(data.draw_from_grammar(all_valid))
+
+
 def integer_range(data, lower, upper, center=None):
     assert lower <= upper
     if lower == upper:
         return int(lower)
 
     if center is None:
-        center = lower
+        return basic_integer_range(data, lower, upper)
     center = min(max(center, lower), upper)
 
     gap = upper - lower
