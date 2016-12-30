@@ -572,7 +572,6 @@ class ConjectureRunner(object):
                 self.debug('Restarting')
                 continue
 
-<<<<<<< HEAD
             self.debug('Bulk replacing blocks with simpler blocks')
             i = 0
             while i < len(self.last_data.blocks):
@@ -591,9 +590,6 @@ class ConjectureRunner(object):
                 i += 1
 
             self.debug('Replacing individual blocks with simpler blocks')
-=======
-            self.debug('Replacing blocks with simpler blocks')
->>>>>>> b917e8e... Move whole buffer lexicographic minimization to later in process
             i = 0
             while i < len(self.last_data.blocks):
                 u, v = self.last_data.blocks[i]
