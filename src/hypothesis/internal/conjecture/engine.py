@@ -239,6 +239,7 @@ class ConjectureRunner(object):
         self.status_runtimes = {}
         self.events_to_strings = WeakKeyDictionary()
         self.tree = TreeNode(())
+        self.shrink_mode = False
 
     def new_buffer(self):
         self.last_data = ConjectureData.for_random(
@@ -338,8 +339,10 @@ class ConjectureRunner(object):
             if completed:
                 assert data.buffer == tree.path
                 tree.explore((), ())
-            for i in range(len(trail) - 1, 0, -1):
-                trail[i].update_parent(trail[i - 1])
+
+            if not self.shrink_mode:
+                for i in range(len(trail) - 1, 0, -1):
+                    trail[i].update_parent(trail[i - 1])
 
     def debug(self, message):
         with self.settings:
@@ -452,6 +455,7 @@ class ConjectureRunner(object):
                 self.last_data.status < Status.INTERESTING
             ):
                 self.new_buffer()
+            self.shrink_mode = False
 
             while self.last_data.status != Status.INTERESTING:
                 if self.valid_examples >= self.settings.max_examples:
@@ -520,6 +524,8 @@ class ConjectureRunner(object):
         self.__shrink_best_example()
 
     def __shrink_best_example(self):
+        self.shrink_mode = True
+
         change_counter = -1
 
         while self.changed > change_counter:
