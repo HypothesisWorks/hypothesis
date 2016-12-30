@@ -31,7 +31,7 @@ from hypothesis.internal.conjecture.data import Status, StopTest, \
     ConjectureData, Sampler
 from hypothesis.internal.conjecture.minimizer import minimize
 from enum import IntEnum
-
+from weakref import ref
 from hypothesis.errors import Flaky
 
 
@@ -51,20 +51,21 @@ class NodeStatus(IntEnum):
 
 
 class TreeNode(object):
-    def __init__(self, path):
-        self.status = NodeStatus.UNEXPLORED
+    def __init__(self, index, parent):
+        self.parent = parent
+        self.index = index
         self.children = {}
-        self.__path = path
-        self.explore_depth = 0
+        self.status = NodeStatus.UNEXPLORED
+        self.explore_depth = -1
         self.__selection_weights = None
 
     @property
     def path(self):
         result = bytearray()
-        p = self.__path
-        while p:
-            t, p = p
-            result.append(t)
+        p = self
+        while p.parent is not None:
+            result.append(p.char)
+            p = p.parent()
         result.reverse()
         return hbytes(result)
 
@@ -100,9 +101,9 @@ class TreeNode(object):
     @property
     def selection_weights(self):
         if self.__selection_weights is None:
-            return self.weights
-        else:
-            return self.__selection_weights
+            self.__selection_weights = list(self.weights)
+            self.__selectable = len([w for w in self.weights if w > 0])
+        return self.__selection_weights
 
     def __valid_choices(self):
         for w, c in zip(self.weights, self.choices):
@@ -111,27 +112,28 @@ class TreeNode(object):
 
     @property
     def char(self):
-        return self.__path[-1]
+        return self.parent().choices[self.index]
 
-    def update_parent(self, parent):
-        if self.status == NodeStatus.FINISHED:
-            assert parent.live_count > 0
-            parent.live_count -= 1
-            if parent.live_count == 0:
-                parent.status = NodeStatus.FINISHED
-                return True
-        if parent.explore_depth <= 1 + self.explore_depth:
-            parent.__update_depth()
-        try:
-            i = parent.choices.index(self.char)
-        except ValueError:
-            return
-        selection_weights = list(parent.selection_weights)
-        selection_weights[i] = 0
-        if not any(selection_weights):
-            parent.__update_selection_weights()
-        else:
-            parent.__selection_weights = tuple(selection_weights)
+    @property
+    def finished(self):
+        return self.status == NodeStatus.FINISHED
+
+    def update_ancestors(self):
+        node = self
+        while node.parent is not None:
+            parent = node.parent()
+            assert parent is not node
+            if node.finished:
+                assert parent.live_count > 0, parent.live_count
+                parent.live_count -= 1
+                if parent.live_count == 0:
+                    parent.status = NodeStatus.FINISHED
+            parent.selection_weights[self.index] = 0
+            parent.__selectable -= 1
+            if parent.__selectable <= 0:
+                parent.__update_depth()
+                parent.__update_selection_weights()
+            node = parent
 
     def __update_depth(self):
         explore_depth = None
@@ -174,6 +176,7 @@ class TreeNode(object):
                 ):
                     selection_weights[i] = 0
         self.__selection_weights = tuple(selection_weights)
+        self.__selectable = len([w for w in self.__selection_weights if w > 0])
 
     def __check_finished(self):
         for w, c in zip(self.weights, self.choices):
@@ -196,13 +199,18 @@ class TreeNode(object):
         return self.weights[i]
 
     def walk(self, byte):
+        result = None
         try:
             result = self.children[byte]
         except KeyError:
-            if self.__weight(byte) > 0:
-                result = TreeNode((byte, self.__path))
-            else:
+            try:
+                index = self.choices.index(byte)
+                if index >= len(self.weights) or self.weights[index] <= 0:
+                    result = SENTINEL
+            except ValueError:
                 result = SENTINEL
+            if result is not SENTINEL:
+                result = TreeNode(parent=ref(self), index=index)
             self.children[byte] = result
         if result is SENTINEL:
             raise KeyError()
@@ -238,7 +246,7 @@ class ConjectureRunner(object):
         self.duplicates = 0
         self.status_runtimes = {}
         self.events_to_strings = WeakKeyDictionary()
-        self.tree = TreeNode(())
+        self.tree = TreeNode(index=-1, parent=None)
         self.shrink_mode = False
 
     def new_buffer(self):
@@ -321,7 +329,6 @@ class ConjectureRunner(object):
             self.event_call_counts[event] += 1
         if data.buffer:
             tree = self.tree
-            trail = []
 
             # Sometimes e.g. when shrinking we take a path that leads off the
             # tree. In that case we just stop early and only explore until we
@@ -329,20 +336,19 @@ class ConjectureRunner(object):
             completed = data.status != Status.OVERRUN
             for ws, cs, b in zip(data.weights, data.choices, data.buffer):
                 tree.explore(ws, cs)
-                trail.append(tree)
                 try:
                     tree = tree.walk(b)
                 except KeyError:
                     completed = False
                     break
 
-            if completed:
-                assert data.buffer == tree.path
-                tree.explore((), ())
+            if tree.status != NodeStatus.FINISHED:
+                if completed:
+                    assert data.buffer == tree.path
+                    tree.explore((), ())
 
-            if not self.shrink_mode:
-                for i in range(len(trail) - 1, 0, -1):
-                    trail[i].update_parent(trail[i - 1])
+                if not self.shrink_mode:
+                    tree.update_ancestors()
 
     def debug(self, message):
         with self.settings:
@@ -480,6 +486,7 @@ class ConjectureRunner(object):
                     result = choices[
                         self.sampler.sample(node[0].selection_weights)]
                     node[0] = node[0].walk(result)
+                    assert node[0].status != NodeStatus.FINISHED
                     return result
 
                 data = ConjectureData(
