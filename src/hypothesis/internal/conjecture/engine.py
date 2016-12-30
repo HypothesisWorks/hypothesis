@@ -76,6 +76,7 @@ class TreeNode(object):
         weights = tuple(weights)
         choices = tuple(choices)
         if self.status == NodeStatus.UNEXPLORED:
+            self.live_count = len([w for w in weights if w > 0])
             if weights:
                 self.weights = weights
                 self.choices = choices
@@ -108,47 +109,67 @@ class TreeNode(object):
             if w > 0:
                 yield c
 
-    def update_from_children(self):
-        if not self.__check_finished():
-            explore_depth = None
-            for c in self.__valid_choices():
-                if c not in self.children:
-                    explore_depth = 0
-                    break
-                elif explore_depth is None:
-                    explore_depth = 1 + self.children[c].explore_depth
-                else:
-                    explore_depth = min(
-                        explore_depth, 1 + self.children[c].explore_depth)
-            self.explore_depth = explore_depth
+    def update_parent(self, parent):
+        if self.status == NodeStatus.FINISHED:
+            assert parent.live_count > 0
+            parent.live_count -= 1
+            if parent.live_count == 0:
+                parent.status = NodeStatus.FINISHED
+                return True
+        if parent.explore_depth <= 1 + self.explore_depth:
+            parent.__update_depth()
+        try:
+            i = parent.choices.index(self.path[-1])
+        except ValueError:
+            return
+        selection_weights = list(parent.selection_weights)
+        selection_weights[i] = 0
+        if not any(selection_weights):
+            parent.__update_selection_weights()
+        else:
+            parent.__selection_weights = tuple(selection_weights)
 
-            selection_weights = list(self.weights)
-            if self.explore_depth == 0:
-                for i in hrange(len(selection_weights)):
-                    if self.choices[i] in self.children:
-                        selection_weights[i] = 0
+    def __update_depth(self):
+        explore_depth = None
+        for c in self.__valid_choices():
+            if c not in self.children:
+                explore_depth = 0
+                break
+            elif explore_depth is None:
+                explore_depth = 1 + self.children[c].explore_depth
             else:
-                target = min(
-                    self.children[c].explore_depth
-                    for c in self.__valid_choices()
-                    if self.children[c].status != NodeStatus.FINISHED)
-                for i, c in enumerate(self.choices):
+                explore_depth = min(
+                    explore_depth, 1 + self.children[c].explore_depth)
+        self.explore_depth = explore_depth
+
+    def __update_selection_weights(self):
+        selection_weights = list(self.weights)
+        if self.explore_depth == 0:
+            for i in hrange(len(selection_weights)):
+                if self.choices[i] in self.children:
+                    selection_weights[i] = 0
+        else:
+            target = min(
+                self.children[c].explore_depth
+                for c in self.__valid_choices()
+                if self.children[c].status != NodeStatus.FINISHED)
+            for i, c in enumerate(self.choices):
+                try:
+                    child = self.children[c]
+                except KeyError:
                     try:
-                        child = self.children[c]
-                    except KeyError:
-                        try:
-                            selection_weights[i] = 0
-                        except IndexError:
-                            break
-                        continue
-                    if child is SENTINEL:
-                        continue
-                    if (
-                        child.status == NodeStatus.FINISHED or
-                        child.explore_depth > target
-                    ):
                         selection_weights[i] = 0
-            self.__selection_weights = tuple(selection_weights)
+                    except IndexError:
+                        break
+                    continue
+                if child is SENTINEL:
+                    continue
+                if (
+                    child.status == NodeStatus.FINISHED or
+                    child.explore_depth > target
+                ):
+                    selection_weights[i] = 0
+        self.__selection_weights = tuple(selection_weights)
 
     def __check_finished(self):
         for w, c in zip(self.weights, self.choices):
@@ -313,8 +334,8 @@ class ConjectureRunner(object):
             if completed:
                 assert data.buffer == tree.path
                 tree.explore((), ())
-            for node in reversed(trail):
-                node.update_from_children()
+            for i in range(len(trail) - 1, 0, -1):
+                trail[i].update_parent(trail[i - 1])
 
     def debug(self, message):
         with self.settings:
