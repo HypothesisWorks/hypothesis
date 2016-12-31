@@ -184,6 +184,7 @@ typedef struct {
     double *weights;
     uint64_t hash;
     size_t access_date;
+    size_t original_weights;
 } sampler_entry;
 
 
@@ -238,7 +239,7 @@ static random_sampler *lookup_sampler(
         if((existing->hash == hash) && (existing->sampler->n_items == n_items)){
             assert(existing->capacity >= n_items);
             existing->access_date = ++(family->generation);
-            if(memcmp(
+            if((existing->original_weights == (size_t)weights) || memcmp(
                 existing->weights, weights, n_items * sizeof(double)
             ) == 0){
                 //printf("Cache hit after %d\n", (int)_i);
@@ -264,6 +265,7 @@ static random_sampler *lookup_sampler(
     result->sampler = random_sampler_new(n_items, weights);
     result->hash = hash;
     result->access_date = ++(family->generation);
+    result->original_weights = (size_t)weights;
     return result->sampler;
 }
 
