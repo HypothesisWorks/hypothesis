@@ -135,6 +135,7 @@ size_t random_sampler_sample(random_sampler *sampler, struct mt *mt){
           if(sampler->uniform) return i;
 
           size_t result = sampler->alias_table[i];
+          assert(result < sampler->n_items);
           if((i > 0) && (result == sampler->alias_table[i - 1])){ 
             return result;
           }
