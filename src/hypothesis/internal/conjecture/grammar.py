@@ -21,6 +21,7 @@ import heapq
 import types
 import functools
 from collections import deque
+from array import array
 
 from hypothesis.internal.compat import hbytes, hrange
 
@@ -67,10 +68,7 @@ class Grammar(object):
     def weights(self):
         if self.__weights is None:
             choices = tuple(sorted(self.initial_values()))
-            tmp = [0] * len(choices)
-            for i, c in enumerate(choices):
-                tmp[i] = 1
-            self.__weights = tuple(tmp)
+            self.__weights = array('d', [1] * len(choices))
             self.__choices = choices
         return self.__weights
 

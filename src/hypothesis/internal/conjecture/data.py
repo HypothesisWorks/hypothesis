@@ -60,7 +60,8 @@ class Sampler(object):
 
     def sample(self, weights):
         return self.lib.sampler_family_sample(
-            self.__samplers, len(weights), weights)
+            self.__samplers, len(weights),
+            s.ffi.cast("double*", s.ffi.from_buffer(weights)))
 
     def __del__(self):
         self.lib.sampler_family_free(self.__samplers)
