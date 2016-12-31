@@ -814,18 +814,6 @@ def Interval(lower, upper):
         return Literal(lower)
     if len(lower) == 1:
         return Charset(hrange(lower[0], upper[0] + 1))
-
-    prefix = 0
-    while True:
-        if lower[prefix] != upper[prefix]:
-            break
-        prefix += 1
-    assert prefix < len(lower)
-    if prefix > 0:
-        return Concatenation((
-            Literal(lower[:prefix]),
-            Interval(lower[:prefix], upper[:prefix]),
-        ))
     return _Interval(lower, upper)
 
 Nil = _Nil()
