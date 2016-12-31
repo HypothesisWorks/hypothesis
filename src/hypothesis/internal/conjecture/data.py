@@ -24,6 +24,7 @@ from hypothesis.errors import Frozen, InvalidArgument
 from hypothesis.internal.compat import hbytes, hrange, text_type, \
     int_to_bytes, benchmark_time, unicode_safe_repr, \
     reasonable_byte_type
+from array import array
 
 
 def uniform(random, n):
@@ -48,11 +49,14 @@ global_test_counter = 0
 
 BYTES_TO_STRINGS = [hbytes([b]) for b in range(256)]
 
-UNIFORM_WEIGHTS = (1,) * 256
+UNIFORM_WEIGHTS = array('d', (1,) * 256)
 
 
 def _array_to_pointer(weights):
-    return s.ffi.from_buffer(weights)
+    try:
+        return s.ffi.from_buffer(weights)
+    except TypeError:
+        return _array_to_pointer(array('d', weights))
 
 
 class Sampler(object):
