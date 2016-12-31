@@ -21,6 +21,8 @@ typedef struct {
   uint8_t n_bits_needed;
   size_t *alias_table;
   double *probabilities;
+  size_t *small_stack;
+  size_t *large_stack;
 } random_sampler;
 
 
@@ -51,13 +53,15 @@ static uint8_t highest_set_bit(size_t i){
 }
 
 static random_sampler *random_sampler_create(size_t capacity){
-  void *data = malloc(sizeof(random_sampler) + capacity * sizeof(size_t) + capacity * sizeof(double));
+  void *data = malloc(sizeof(random_sampler) + capacity * sizeof(size_t) * 3 + capacity * sizeof(double));
   random_sampler *result = (random_sampler*)data;
   result->capacity = capacity;
   result->n_items = 0;
   
   result->alias_table = (size_t*)(data + sizeof(random_sampler));
-  result->probabilities =  (double*)(data + sizeof(random_sampler) + capacity * sizeof(size_t));
+  result->probabilities =  (double*)((void*)result->alias_table + capacity * sizeof(size_t));
+  result->small_stack =  (size_t*)((void*)result->probabilities + capacity * sizeof(double));
+  result->large_stack =  (size_t*)((void*)result->small_stack + capacity * sizeof(size_t));
   return result;
 }
 
@@ -98,8 +102,8 @@ static void random_sampler_initialize(random_sampler *result, size_t n_items, do
   } else {
     assert(n_items > 1);
 
-    size_t *small = malloc(sizeof(size_t) * n_items);
-    size_t *large = malloc(sizeof(size_t) * n_items);
+    size_t *small = result->small_stack;
+    size_t *large = result->large_stack; 
 
     for(size_t i = 0; i < n_items; i++){
       result->probabilities[i] = weights[i] * n_items / total;
@@ -142,9 +146,6 @@ static void random_sampler_initialize(random_sampler *result, size_t n_items, do
       result->alias_table[i] = i;
       result->probabilities[i] = 1.0;
     }
-
-    free(small);
-    free(large);
   }
 }
 
