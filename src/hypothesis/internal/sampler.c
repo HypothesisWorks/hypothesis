@@ -23,6 +23,8 @@ typedef struct {
   double *probabilities;
   size_t *small_stack;
   size_t *large_stack;
+  size_t small_height;
+  size_t large_height;
 } random_sampler;
 
 
@@ -65,6 +67,35 @@ static random_sampler *random_sampler_create(size_t capacity){
   return result;
 }
 
+static void balance_random_sampler(random_sampler *result){
+  size_t *small = result->small_stack;
+  size_t *large = result->large_stack; 
+
+  while((result->small_height > 0) && (result->large_height > 0)){
+    size_t l = small[--result->small_height];
+    size_t g = large[--result->large_height];
+    assert(result->probabilities[g] >= 1);
+    assert(result->probabilities[l] <= 1);
+    result->alias_table[l] = g;
+    result->probabilities[g] = (result->probabilities[l] + result->probabilities[g]) - 1;
+    if(result->probabilities[g] < 1){
+      small[result->small_height++] = g;
+    } else {
+      large[result->large_height++] = g;
+    }
+  }
+
+  while(result->large_height > 0){
+    size_t i = large[--result->large_height];
+    result->alias_table[i] = i;
+    result->probabilities[i] = 1.0;
+  }
+  while(result->small_height > 0){
+    size_t i = small[--result->small_height];
+    result->alias_table[i] = i;
+    result->probabilities[i] = 1.0;
+  }
+}
 
 static void random_sampler_initialize(random_sampler *result, size_t n_items, double *weights){
   if(result->n_items != n_items){
@@ -102,50 +133,25 @@ static void random_sampler_initialize(random_sampler *result, size_t n_items, do
   } else {
     assert(n_items > 1);
 
-    size_t *small = result->small_stack;
-    size_t *large = result->large_stack; 
-
     for(size_t i = 0; i < n_items; i++){
       result->probabilities[i] = weights[i] * n_items / total;
     }
 
-    size_t small_height = 0;
-    size_t large_height = 0;
+    result->small_height = 0;
+    result->large_height = 0;
 
     for(size_t i = 0; i < n_items; i++){
       double p = weights[i] * n_items / total;
       result->probabilities[i] = p;
+      result->alias_table[i] = n_items;
       if(p < 1){
-        small[small_height++] = i;
+        result->small_stack[result->small_height++] = i;
       } else {
-        large[large_height++] = i;
+        result->large_stack[result->large_height++] = i;
       }
     }
 
-    while((small_height > 0) && (large_height > 0)){
-      size_t l = small[--small_height];
-      size_t g = large[--large_height];
-      assert(result->probabilities[g] >= 1);
-      assert(result->probabilities[l] <= 1);
-      result->alias_table[l] = g;
-      result->probabilities[g] = (result->probabilities[l] + result->probabilities[g]) - 1;
-      if(result->probabilities[g] < 1){
-        small[small_height++] = g;
-      } else {
-        large[large_height++] = g;
-      }
-    }
-
-    while(large_height > 0){
-      size_t i = large[--large_height];
-      result->alias_table[i] = i;
-      result->probabilities[i] = 1.0;
-    }
-    while(small_height > 0){
-      size_t i = small[--small_height];
-      result->alias_table[i] = i;
-      result->probabilities[i] = 1.0;
-    }
+    balance_random_sampler(result);
   }
 }
 
