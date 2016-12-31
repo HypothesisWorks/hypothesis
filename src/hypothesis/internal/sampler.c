@@ -187,7 +187,6 @@ typedef struct {
     double *weights;
     uint64_t hash;
     size_t access_date;
-    size_t original_weights;
 } sampler_entry;
 
 
@@ -219,24 +218,18 @@ uint64_t hash_double(uint64_t seed, double x){
     return hash64(seed ^ key);
 }
 
-static uint64_t hash_doubles(size_t n_items, double* weights){
-    uint64_t result = hash64((uint64_t)n_items);
-    assert(sizeof(double) == sizeof(uint64_t));
-    double total = 0.0;
-    double min = INFINITY;
-    double max = -INFINITY;
-
-    for(size_t i = 0; i < n_items; i++){
-        double x = weights[i];
-        total += x;
-        if(min > x) min = x;
-        if(max < x) max = x;
+static uint64_t memhash(size_t n, char *bytes){
+    uint64_t lenhash = hash64((uint64_t)n);
+    uint64_t accumulator = 0;
+    for(size_t i = 0; i < n; i++){
+        accumulator *= 31;
+        accumulator += ((uint64_t)bytes[i] & 0xff);
     }
-    result = hash_double(result, total);
-    result = hash_double(result, min);
-    result = hash_double(result, max);
-    result = hash_double(result, weights[0]);
-    return result;
+    return hash64(lenhash ^ accumulator);
+}
+
+static uint64_t hash_doubles(size_t n_items, double* weights){
+    return memhash(n_items * sizeof(double), (char*)weights);
 }
 
 static void push_index(sampler_family *family, size_t index){
@@ -311,7 +304,6 @@ static random_sampler *lookup_sampler(
     result->sampler = random_sampler_new(n_items, weights);
     result->hash = hash;
     result->access_date = ++(family->generation);
-    result->original_weights = (size_t)weights;
     return result->sampler;
 }
 
