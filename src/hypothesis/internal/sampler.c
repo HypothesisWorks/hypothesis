@@ -14,17 +14,18 @@ struct mt {
     int16_t mti;
 };
 
+
 typedef struct {
   size_t capacity;
   size_t n_items;
   size_t item_mask;
   uint8_t n_bits_needed;
+  bool uniform;
+  double total;
+  double *weights;
+
+  size_t table_size;
   size_t *alias_table;
-  double *probabilities;
-  size_t *small_stack;
-  size_t *large_stack;
-  size_t small_height;
-  size_t large_height;
 } random_sampler;
 
 
@@ -55,64 +56,21 @@ static uint8_t highest_set_bit(size_t i){
 }
 
 static random_sampler *random_sampler_create(size_t capacity){
-  void *data = malloc(sizeof(random_sampler) + capacity * sizeof(size_t) * 3 + capacity * sizeof(double));
+  void *data = malloc(sizeof(random_sampler) + capacity * sizeof(size_t) * 2 + capacity * sizeof(double));
   random_sampler *result = (random_sampler*)data;
   result->capacity = capacity;
   result->n_items = 0;
-  
-  result->alias_table = (size_t*)(data + sizeof(random_sampler));
-  result->probabilities =  (double*)((void*)result->alias_table + capacity * sizeof(size_t));
-  result->small_stack =  (size_t*)((void*)result->probabilities + capacity * sizeof(double));
-  result->large_stack =  (size_t*)((void*)result->small_stack + capacity * sizeof(size_t));
+  result->weights = (double*)(data + sizeof(random_sampler));
+  result->alias_table =  (size_t*)((void*)result->weights + capacity * sizeof(double));
   return result;
 }
 
-static void balance_random_sampler(random_sampler *result){
-  size_t *small = result->small_stack;
-  size_t *large = result->large_stack; 
-
-  while((result->small_height > 0) && (result->large_height > 0)){
-    size_t l = small[--result->small_height];
-    size_t g = large[--result->large_height];
-    assert(result->probabilities[g] >= 1);
-    assert(result->probabilities[l] <= 1);
-    result->alias_table[l] = g;
-    result->probabilities[g] = (result->probabilities[l] + result->probabilities[g]) - 1;
-    if(result->probabilities[g] < 1){
-      small[result->small_height++] = g;
-    } else {
-      large[result->large_height++] = g;
-    }
-  }
-
-  while(result->large_height > 0){
-    size_t i = large[--result->large_height];
-    result->alias_table[i] = i;
-    result->probabilities[i] = 1.0;
-  }
-  while(result->small_height > 0){
-    size_t i = small[--result->small_height];
-    result->alias_table[i] = i;
-    result->probabilities[i] = 1.0;
-  }
-}
-
 static void random_sampler_initialize(random_sampler *result, size_t n_items, double *weights){
-  if(result->n_items != n_items){
-      result->n_items = n_items;
+  assert(n_items <= result->capacity);
 
-      size_t mask = n_items;
-      mask |= (mask >> 1);
-      mask |= (mask >> 2);
-      mask |= (mask >> 4);
-      mask |= (mask >> 8);
-      mask |= (mask >> 16);
-      mask |= (mask >> 32);
-      result->item_mask = mask;
-
-      result->n_bits_needed = highest_set_bit(n_items);
-  }
-
+  memcpy(result->weights, weights, sizeof(double) * n_items);
+   
+  result->n_items = n_items;
   double min = INFINITY;
   double max = -INFINITY;
   double total = 0.0;
@@ -123,36 +81,36 @@ static void random_sampler_initialize(random_sampler *result, size_t n_items, do
     if(x > max) max = x;
     total += x;
   }
+  result->total = total;
+
   if((min == max) || (total <= 0) || isnan(total)){
-    // fast path for a uniform sampler
-    
-    for(size_t i = 0; i < n_items; i++){
-      result->alias_table[i] = i;
-      result->probabilities[i] = 1.0;
-    }
+    result->uniform = true;
+    result->table_size = result->n_items;
   } else {
     assert(n_items > 1);
+    result->uniform = false;
+
+    result->table_size = 0;
 
     for(size_t i = 0; i < n_items; i++){
-      result->probabilities[i] = weights[i] * n_items / total;
-    }
-
-    result->small_height = 0;
-    result->large_height = 0;
-
-    for(size_t i = 0; i < n_items; i++){
-      double p = weights[i] * n_items / total;
-      result->probabilities[i] = p;
-      result->alias_table[i] = n_items;
-      if(p < 1){
-        result->small_stack[result->small_height++] = i;
-      } else {
-        result->large_stack[result->large_height++] = i;
+      double w = floor(n_items * weights[i] / total) + 1;
+      for(int j = 0; j < w; j++){
+          result->alias_table[result->table_size++] = i;
+          assert(result->table_size <= 2 * n_items);
       }
     }
-
-    balance_random_sampler(result);
   }
+
+  size_t mask = result->table_size;
+  mask |= (mask >> 1);
+  mask |= (mask >> 2);
+  mask |= (mask >> 4);
+  mask |= (mask >> 8);
+  mask |= (mask >> 16);
+  mask |= (mask >> 32);
+  result->item_mask = mask;
+
+  result->n_bits_needed = highest_set_bit(n_items);
 }
 
 random_sampler *random_sampler_new(size_t n_items, double *weights){
@@ -165,36 +123,31 @@ void random_sampler_free(random_sampler *sampler){
   free(sampler);
 }
 
-void random_sampler_debug(random_sampler *sampler){
-    printf("random_sampler for %d items\n", (int)(sampler->n_items));
-    printf("Aliases: ");
-    for(size_t i = 0; i < sampler->n_items; i++)
-        printf("%d ", (int)(sampler->alias_table[i]));
-    printf("\nWeights: ");
-    for(size_t i = 0; i < sampler->n_items; i++)
-        printf("%.2f ", (sampler->probabilities[i]));
-    printf("\n  ");
-}
-
 static double mt_random_double(struct mt *mt);
 
 size_t random_sampler_sample(random_sampler *sampler, struct mt *mt){
-  size_t i = sampler->n_items;;
+  size_t i = sampler->n_items;
   while(true){
     uint64_t probe = genrand64_int64(mt);
     for(uint8_t t = 0; t < 64; t += sampler->n_bits_needed){
         i = probe & sampler->item_mask;
-        if(i < sampler->n_items) goto done;
+        if(i < sampler->table_size){
+          if(sampler->uniform) return i;
+
+          size_t result = sampler->alias_table[i];
+          if((i > 0) && (result == sampler->alias_table[i - 1])){ 
+            return result;
+          }
+          double q = sampler->n_items * sampler->weights[result] / sampler->total;
+          double threshold = 1.0 - (q - floor(q));
+          assert(!isnan(threshold));
+          if((threshold < 1.0) && (mt_random_double(mt) > threshold)){
+            return result;
+          }
+          // printf("Rejected :(, %d, %d, %.2f\n", (int)i, (int)result, threshold);
+        }
         probe >>= sampler->n_bits_needed;
     }
-  }
-  done: assert(i < sampler->n_items);
-  size_t j = sampler->alias_table[i];
-  if(i == j) return i;
-  if(mt_random_double(mt) <= sampler->probabilities[i]){
-    return i;
-  } else {
-    return j;
   }
 }
 
@@ -204,8 +157,6 @@ size_t random_sampler_sample(random_sampler *sampler, struct mt *mt){
 
 typedef struct {
     random_sampler *sampler;
-    size_t capacity;
-    double *weights;
     uint64_t hash;
     size_t access_date;
 } sampler_entry;
@@ -273,10 +224,10 @@ static random_sampler *lookup_sampler(
         sampler_entry *recent_entry = family->entries + family->recent[i];
 
         if(
-            (recent_entry->weights != NULL) &&
+            (recent_entry->sampler != NULL) &&
             (recent_entry->sampler->n_items == n_items) &&
             (memcmp(
-                recent_entry->weights, weights, n_items * sizeof(double)) == 0)
+                recent_entry->sampler->weights, weights, n_items * sizeof(double)) == 0)
         ){
             recent_entry->access_date = ++(family->generation);
             family->last_index = i;
@@ -292,15 +243,15 @@ static random_sampler *lookup_sampler(
     for(size_t _i = 0; _i < PROBE_MAX; _i++){
         size_t i = (probe + _i) % family->capacity;
         sampler_entry *existing = family->entries + i;
-        if(existing->weights == NULL){
+        if(existing->sampler == NULL){
             target = i;
             break;
         }
         if((existing->hash == hash) && (existing->sampler->n_items == n_items)){
-            assert(existing->capacity >= n_items);
+            assert(existing->sampler->capacity >= n_items);
             existing->access_date = ++(family->generation);
             if(memcmp(
-                existing->weights, weights, n_items * sizeof(double)
+                existing->sampler->weights, weights, n_items * sizeof(double)
             ) == 0){
                 //printf("Cache hit after %d\n", (int)_i);
                 push_index(family, i);
@@ -317,12 +268,6 @@ static random_sampler *lookup_sampler(
     //printf("Cache miss\n");
     push_index(family, target);
     sampler_entry *result = family->entries + target;
-    if((result->capacity < n_items) || (result->weights == NULL)){
-        free(result->weights);
-        result->capacity = n_items * 2;
-        result->weights = malloc(result->capacity * sizeof(double));
-    }
-    memcpy(result->weights, weights, sizeof(double) * n_items);
    
     if((result->sampler == NULL) || (result->sampler->capacity < n_items)){
         random_sampler_free(result->sampler);
@@ -355,7 +300,6 @@ sampler_family *sampler_family_new(size_t capacity, uint64_t seed){
 void sampler_family_free(sampler_family *family){
     for(size_t i = 0; i < family->capacity; i++){
         sampler_entry *entry = family->entries + i;
-        free(entry->weights);
         random_sampler_free(entry->sampler);
     }
     free(family->entries);
