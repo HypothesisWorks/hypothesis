@@ -338,6 +338,7 @@ void sampler_family_free(sampler_family *family){
         free(family->entries->weights);
         random_sampler_free(family->entries->sampler);
     }
+    free(family->entries);
     free(family);
 }
 
