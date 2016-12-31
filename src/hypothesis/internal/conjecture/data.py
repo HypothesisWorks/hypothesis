@@ -18,13 +18,13 @@
 from __future__ import division, print_function, absolute_import
 
 from enum import IntEnum
+from array import array
 
 import hypothesis.internal._sampler as s
 from hypothesis.errors import Frozen, InvalidArgument
 from hypothesis.internal.compat import hbytes, hrange, text_type, \
     int_to_bytes, benchmark_time, unicode_safe_repr, \
     reasonable_byte_type
-from array import array
 
 
 def uniform(random, n):
@@ -53,13 +53,11 @@ UNIFORM_WEIGHTS = array('d', (1,) * 256)
 
 
 def _array_to_pointer(weights):
-    try:
-        return s.ffi.from_buffer(weights)
-    except TypeError:
-        return _array_to_pointer(array('d', weights))
+    return s.ffi.from_buffer(weights)
 
 
 class Sampler(object):
+
     def __init__(self, random):
         self.lib = s.lib
         self.__samplers = self.lib.sampler_family_new(
@@ -234,7 +232,7 @@ class ConjectureData(object):
         else:
             choices = ALL_BYTES
 
-        result = self._draw_byte(self, tuple(weights), choices)
+        result = self._draw_byte(self, weights, choices)
         self.buffer.append(result)
         self.weights.append(weights)
         self.choices.append(choices)

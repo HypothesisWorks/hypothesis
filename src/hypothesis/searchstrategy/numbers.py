@@ -17,6 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+from array import array
+
 import hypothesis.internal.conjecture.utils as d
 from hypothesis.internal.compat import hbytes, int_from_bytes
 from hypothesis.searchstrategy.strategies import SearchStrategy
@@ -52,15 +54,13 @@ BYTE_WEIGHTINGS = []
 for b in range(16):
     w0 = 1 - 0.5 ** (b + 1)
     BYTE_WEIGHTINGS.append(
-        (w0,) + ((1 - w0) / 255,) * 255
+        array('d', (w0,) + ((1 - w0) / 255,) * 255)
     )
 
 
 # Give the high bit an equal chance of being 0 or 1, so as to spread the
 # distribution evenly among negative and positive integers
-BYTE_WEIGHTINGS[-1] = list(BYTE_WEIGHTINGS[-1])
 BYTE_WEIGHTINGS[-1][128] = BYTE_WEIGHTINGS[-1][0]
-BYTE_WEIGHTINGS[-1] = tuple(BYTE_WEIGHTINGS[-1])
 
 
 class WideRangeIntStrategy(IntStrategy):

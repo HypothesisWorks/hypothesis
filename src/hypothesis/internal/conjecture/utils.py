@@ -17,6 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+from array import array
+
 from hypothesis.internal.compat import hbytes, bit_length, int_to_bytes, \
     int_from_bytes
 from hypothesis.internal.conjecture.grammar import Literal, Interval, \
@@ -98,12 +100,12 @@ def weighted_integer(data, weights):
 
     n = len(weights) >> 8
     assert n > 0
-    bucket_weights = [0] * n
+    bucket_weights = array('d', [0] * n)
     for i, c in enumerate(weights):
         bucket_weights[i >> 8] += c
 
     bucket = data.draw_byte(bucket_weights) << 8
-    suffix_weights = [0] * 256
+    suffix_weights = array('d', [0] * 256)
     for i in range(256):
         if bucket + i >= len(weights):
             break
@@ -122,7 +124,7 @@ def choice(data, values):
 
 
 def geometric(data, p):
-    weights = tuple((1 - p) ** i for i in range(256))
+    weights = array('d', ((1 - p) ** i for i in range(256)))
     result = 0
     while True:
         i = data.draw_byte(weights)
@@ -137,7 +139,7 @@ def boolean(data):
 
 
 def biased_coin(data, p):
-    return bool(data.draw_byte([1 - p, p]) & 1)
+    return bool(data.draw_byte(array('d', [1 - p, p])) & 1)
 
 
 def write(data, string):

@@ -17,6 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+from array import array
+
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis.errors import NoExamples, NoSuchExample, Unsatisfiable, \
     UnsatisfiedAssumption
@@ -207,9 +209,10 @@ class OneOfStrategy(SearchStrategy):
         self.bias = bias
         if bias is not None:
             assert 0 < bias < 1
-            self.weights = tuple(bias ** i for i in range(len(strategies)))
+            self.weights = array(
+                'd', (bias ** i for i in range(len(strategies))))
         else:
-            self.weights = (1,) * len(strategies)
+            self.weights = array('d', (1,) * len(strategies))
 
     def do_draw(self, data):
         i = cu.weighted_integer(data, self.weights)

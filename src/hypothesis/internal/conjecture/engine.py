@@ -19,6 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import time
 from enum import Enum, IntEnum
+from array import array
 from random import Random, getrandbits
 from weakref import ref, WeakKeyDictionary
 
@@ -101,7 +102,7 @@ class TreeNode(object):
     @property
     def selection_weights(self):
         if self.__selection_weights is None:
-            self.__selection_weights = list(self.weights)
+            self.__selection_weights = array('d', self.weights)
             self.__selectable = len([w for w in self.weights if w > 0])
         return self.__selection_weights
 
@@ -123,17 +124,18 @@ class TreeNode(object):
         while node.parent is not None:
             parent = node.parent()
             assert parent is not node
-            if node.finished:
-                assert parent.live_count > 0, parent.live_count
-                parent.live_count -= 1
-                if parent.live_count == 0:
-                    parent.status = NodeStatus.FINISHED
-                    continue
-            parent.selection_weights[node.index] = 0
-            parent.__selectable -= 1
-            if parent.__selectable <= 0:
-                parent.__update_depth()
-                parent.__update_selection_weights()
+            if not parent.finished:
+                if node.finished:
+                    assert parent.live_count > 0, parent.live_count
+                    parent.live_count -= 1
+                    if parent.live_count == 0:
+                        parent.status = NodeStatus.FINISHED
+                        continue
+                parent.selection_weights[node.index] = 0
+                parent.__selectable -= 1
+                if parent.__selectable <= 0:
+                    parent.__update_depth()
+                    parent.__update_selection_weights()
             node = parent
 
     def __update_depth(self):
@@ -150,7 +152,7 @@ class TreeNode(object):
         self.explore_depth = explore_depth
 
     def __update_selection_weights(self):
-        selection_weights = list(self.weights)
+        selection_weights = array('d', self.weights)
         if self.explore_depth == 0:
             for i in hrange(len(selection_weights)):
                 if self.choices[i] in self.children:

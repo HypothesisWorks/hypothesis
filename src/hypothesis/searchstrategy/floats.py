@@ -17,6 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+from array import array
+
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis.internal.compat import hbytes, struct_pack, struct_unpack
 from hypothesis.internal.floats import sign
@@ -116,7 +118,7 @@ class FloatStrategy(SearchStrategy):
         if not allow_nan:
             base = Intersection([base, Negation(NAN)])
 
-        self.weights = [2, 5]
+        self.weights = array('d', [2, 5])
         self.grammars = [base, NASTY_FLOATS]
         if allow_infinity:
             self.weights.append(5)
@@ -188,7 +190,6 @@ class FixedBoundedFloatStrategy(SearchStrategy):
             ),
         ]
         self.grammars.append(_one_of_floats(critical))
-        self.weights = (1,) * len(self.grammars)
 
     def __repr__(self):
         return 'FixedBoundedFloatStrategy(%s, %s)' % (
@@ -196,7 +197,7 @@ class FixedBoundedFloatStrategy(SearchStrategy):
         )
 
     def do_draw(self, data):
-        g = self.grammars[data.draw_byte(self.weights)]
+        g = self.grammars[cu.integer_range(data, 0, len(self.grammars) - 1)]
         return struct_unpack('!d', data.draw_from_grammar(g))[0]
 
 

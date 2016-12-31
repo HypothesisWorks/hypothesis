@@ -18,6 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 import sys
+from array import array
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal import charmap
@@ -120,7 +121,7 @@ class OneCharStringStrategy(SearchStrategy):
             c for c in shrinking_grammars if c.has_matches())
 
         self.grammars = list(shrinking_grammars + grammars_by_category)
-        self.weights = list((1,) * len(shrinking_grammars) + (
+        self.weights = array('d', (1,) * len(shrinking_grammars) + (
             len(shrinking_grammars),) * len(grammars_by_category))
 
         newline = int_to_bytes(ord(b'\n'), N_BYTES_FOR_CODEPOINT)

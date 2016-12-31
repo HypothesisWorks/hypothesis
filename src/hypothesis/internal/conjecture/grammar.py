@@ -20,8 +20,8 @@ from __future__ import division, print_function, absolute_import
 import heapq
 import types
 import functools
-from collections import deque
 from array import array
+from collections import deque
 
 from hypothesis.internal.compat import hbytes, hrange
 

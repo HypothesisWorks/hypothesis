@@ -21,7 +21,7 @@ import os
 import warnings
 from tempfile import mkdtemp
 
-from hypothesis import settings
+from hypothesis import settings, HealthCheck
 from hypothesis.configuration import set_hypothesis_home_dir
 from hypothesis.internal.charmap import charmap, charmap_file
 
@@ -36,7 +36,10 @@ def run():
     assert isinstance(settings, type)
 
     settings.register_profile(
-        'default', settings(timeout=-1, strict=True)
+        'default', settings(
+            timeout=-1, strict=True,
+            perform_health_check=False,
+        )
     )
 
     settings.register_profile(
