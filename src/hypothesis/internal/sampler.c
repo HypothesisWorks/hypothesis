@@ -335,8 +335,9 @@ sampler_family *sampler_family_new(size_t capacity, uint64_t seed){
 
 void sampler_family_free(sampler_family *family){
     for(size_t i = 0; i < family->capacity; i++){
-        free(family->entries->weights);
-        random_sampler_free(family->entries->sampler);
+        sampler_entry *entry = family->entries + i;
+        free(entry->weights);
+        random_sampler_free(entry->sampler);
     }
     free(family->entries);
     free(family);
