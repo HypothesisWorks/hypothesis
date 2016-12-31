@@ -51,6 +51,10 @@ BYTES_TO_STRINGS = [hbytes([b]) for b in range(256)]
 UNIFORM_WEIGHTS = (1,) * 256
 
 
+def _array_to_pointer(weights):
+    return s.ffi.cast("double*", s.ffi.from_buffer(weights))
+
+
 class Sampler(object):
     def __init__(self, random):
         self.lib = s.lib
@@ -60,8 +64,7 @@ class Sampler(object):
 
     def sample(self, weights):
         return self.lib.sampler_family_sample(
-            self.__samplers, len(weights),
-            s.ffi.cast("double*", s.ffi.from_buffer(weights)))
+            self.__samplers, len(weights), _array_to_pointer(weights))
 
     def __del__(self):
         self.lib.sampler_family_free(self.__samplers)
@@ -289,7 +292,6 @@ class ConjectureData(object):
         raise StopTest(self.testcounter)
 
     def mark_invalid(self):
-        #import traceback; traceback.print_stack()
         self.__assert_not_frozen('mark_invalid')
         self.status = Status.INVALID
         self.freeze()
