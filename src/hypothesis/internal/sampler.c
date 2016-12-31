@@ -193,6 +193,7 @@ typedef struct {
     sampler_entry *entries;
     struct mt mersenne_twister;
     uint64_t generation;
+    size_t last_index;
 } sampler_family;
 
 
@@ -239,6 +240,18 @@ static uint64_t hash_doubles(size_t n_items, double* weights){
 static random_sampler *lookup_sampler(
     sampler_family *family, size_t n_items, double* weights
 ){
+    sampler_entry *last_entry = family->entries + family->last_index;
+
+    if(
+        (last_entry->weights != NULL) &&
+        (last_entry->sampler->n_items == n_items) &&
+        (memcmp(
+            last_entry->weights, weights, n_items * sizeof(double)) == 0)
+    ){
+        last_entry->access_date = ++(family->generation);
+        return last_entry->sampler;
+    }
+
     uint64_t hash = hash_doubles(n_items, weights);
 
     size_t probe = (hash % (uint64_t)family->capacity);
@@ -258,6 +271,7 @@ static random_sampler *lookup_sampler(
                 existing->weights, weights, n_items * sizeof(double)
             ) == 0){
                 //printf("Cache hit after %d\n", (int)_i);
+                family->last_index = i;
                 return existing->sampler;
             }
         }
@@ -269,6 +283,7 @@ static random_sampler *lookup_sampler(
     // We didn't find an existing sampler, so it's time to create a new one.
 
     //printf("Cache miss\n");
+    family->last_index = target;
     sampler_entry *result = family->entries + target;
     if((result->capacity < n_items) || (result->weights == NULL)){
         free(result->weights);
@@ -294,6 +309,7 @@ size_t sampler_family_sample(sampler_family *samplers, size_t n_items, double *w
 
 sampler_family *sampler_family_new(size_t capacity, uint64_t seed){
     sampler_family *result = (sampler_family*)malloc(sizeof(sampler_family));
+    result->last_index = 0;
     result->generation = 0;
     result->capacity = capacity;
     result->entries = calloc(capacity, sizeof(sampler_entry));
