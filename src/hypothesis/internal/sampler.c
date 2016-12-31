@@ -178,6 +178,9 @@ size_t random_sampler_sample(random_sampler *sampler, struct mt *mt){
 }
 
 
+#define RECENCY 4
+
+
 typedef struct {
     random_sampler *sampler;
     size_t capacity;
@@ -194,6 +197,7 @@ typedef struct {
     struct mt mersenne_twister;
     uint64_t generation;
     size_t last_index;
+    size_t recent[RECENCY];
 } sampler_family;
 
 
@@ -235,21 +239,33 @@ static uint64_t hash_doubles(size_t n_items, double* weights){
     return result;
 }
 
+static void push_index(sampler_family *family, size_t index){
+    assert(family->last_index < RECENCY);
+    family->last_index = (family->last_index + 1) & (RECENCY - 1);
+    family->recent[family->last_index] = index; 
+}
+
 #define PROBE_MAX 8
 
 static random_sampler *lookup_sampler(
     sampler_family *family, size_t n_items, double* weights
 ){
-    sampler_entry *last_entry = family->entries + family->last_index;
 
-    if(
-        (last_entry->weights != NULL) &&
-        (last_entry->sampler->n_items == n_items) &&
-        (memcmp(
-            last_entry->weights, weights, n_items * sizeof(double)) == 0)
-    ){
-        last_entry->access_date = ++(family->generation);
-        return last_entry->sampler;
+    for(size_t _i = 0; _i < RECENCY; _i++){
+        size_t i = (_i + family->last_index) % RECENCY;
+
+        sampler_entry *recent_entry = family->entries + family->recent[i];
+
+        if(
+            (recent_entry->weights != NULL) &&
+            (recent_entry->sampler->n_items == n_items) &&
+            (memcmp(
+                recent_entry->weights, weights, n_items * sizeof(double)) == 0)
+        ){
+            recent_entry->access_date = ++(family->generation);
+            family->last_index = i;
+            return recent_entry->sampler;
+        }
     }
 
     uint64_t hash = hash_doubles(n_items, weights);
@@ -271,7 +287,7 @@ static random_sampler *lookup_sampler(
                 existing->weights, weights, n_items * sizeof(double)
             ) == 0){
                 //printf("Cache hit after %d\n", (int)_i);
-                family->last_index = i;
+                push_index(family, i);
                 return existing->sampler;
             }
         }
@@ -283,7 +299,7 @@ static random_sampler *lookup_sampler(
     // We didn't find an existing sampler, so it's time to create a new one.
 
     //printf("Cache miss\n");
-    family->last_index = target;
+    push_index(family, target);
     sampler_entry *result = family->entries + target;
     if((result->capacity < n_items) || (result->weights == NULL)){
         free(result->weights);
