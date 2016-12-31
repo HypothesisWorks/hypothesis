@@ -134,8 +134,9 @@ class OneCharStringStrategy(SearchStrategy):
 
     def do_draw(self, data):
         i = data.draw_byte(self.weights)
-        return hunichr(
-            int_from_bytes(data.draw_from_grammar(self.grammars[i])))
+        c = int_from_bytes(data.draw_from_grammar(self.grammars[i]))
+        assert 0 <= c <= sys.maxunicode, c
+        return hunichr(c)
 
 
 class StringStrategy(MappedSearchStrategy):
