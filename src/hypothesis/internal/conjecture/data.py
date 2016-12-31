@@ -52,32 +52,18 @@ UNIFORM_WEIGHTS = (1,) * 256
 
 
 class Sampler(object):
-    __slots__ = ('ffi', 'lib', '__mt', '__sampler_cache', '__tmp')
-
     def __init__(self, random):
         self.lib = s.lib
-        self.ffi = s.ffi
-        self.__tmp = self.ffi.new('double[256]')
-        self.__mt = self.lib.mersenne_twister_new(random.getrandbits(64))
-        self.__sampler_cache = {}
+        self.__samplers = self.lib.sampler_family_new(
+            2048, random.getrandbits(64)
+        )
 
     def sample(self, weights):
-        if len(weights) == 1:
-            return 0
-        weights = tuple(weights)
-        try:
-            sampler = self.__sampler_cache[weights]
-        except KeyError:
-            for i, w in enumerate(weights):
-                self.__tmp[i] = w
-            sampler = self.__sampler_cache.setdefault(
-                weights, self.lib.random_sampler_new(len(weights), self.__tmp))
-        return self.lib.random_sampler_sample(sampler, self.__mt)
+        return self.lib.sampler_family_sample(
+            self.__samplers, len(weights), weights)
 
     def __del__(self):
-        self.lib.mersenne_twister_free(self.__mt)
-        for v in self.__sampler_cache.values():
-            self.lib.random_sampler_free(v)
+        self.lib.sampler_family_free(self.__samplers)
 
 
 def draw_random(random):

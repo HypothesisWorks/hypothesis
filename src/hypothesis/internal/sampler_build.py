@@ -43,6 +43,11 @@ ffibuilder.cdef("""
 
     void *mersenne_twister_new(uint64_t seed);
     void mersenne_twister_free(void *mt);
+
+    void *sampler_family_new(size_t capacity, uint64_t seed);
+    void sampler_family_free(void *samplers);
+    size_t sampler_family_sample(
+        void *samplers, size_t n_items, double *weights);
 """)
 
 # Putting this at the module level is gross, but AFAICT it's the only way to

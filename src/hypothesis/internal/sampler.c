@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 
 #define mt_PARAM_N 312
 
@@ -175,6 +176,122 @@ size_t random_sampler_sample(random_sampler *sampler, struct mt *mt){
     return j;
   }
 }
+
+
+typedef struct {
+    random_sampler *sampler;
+    size_t capacity;
+    double *weights;
+    uint64_t hash;
+    size_t access_date;
+} sampler_entry;
+
+
+typedef struct {
+    size_t capacity;
+    sampler_entry *entries;
+    struct mt mersenne_twister;
+    uint64_t generation;
+} sampler_family;
+
+
+uint64_t hash64(uint64_t key){
+    // Thomas Wang's 64 bit integer hash function
+    key = (~key) + (key << 21); // key = (key << 21) - key - 1;
+    key = key ^ (key >> 24);
+    key = (key + (key << 3)) + (key << 8); // key * 265
+    key = key ^ (key >> 14);
+    key = (key + (key << 2)) + (key << 4); // key * 21
+    key = key ^ (key >> 28);
+    key = key + (key << 31);
+    return key;
+}
+
+static uint64_t hash_doubles(size_t n_items, double* weights){
+    uint64_t result = hash64((uint64_t)n_items);
+    assert(sizeof(double) == sizeof(uint64_t));
+    for(size_t i = 0; i < n_items; i++){
+        uint64_t key;
+        memcpy(&key, weights + i, sizeof(double));
+        result = hash64(result ^ key);
+    }
+    return result;
+}
+
+#define PROBE_MAX 8
+
+static random_sampler *lookup_sampler(
+    sampler_family *family, size_t n_items, double* weights
+){
+    uint64_t hash = hash_doubles(n_items, weights);
+
+    size_t probe = (hash % (uint64_t)family->capacity);
+    size_t target = probe;
+    uint64_t target_date = family->entries[probe].access_date;
+    for(size_t _i = 0; _i < PROBE_MAX; _i++){
+        size_t i = (probe + _i) % family->capacity;
+        sampler_entry *existing = family->entries + i;
+        if(existing->weights == NULL){
+            target = i;
+            break;
+        }
+        if((existing->hash == hash) && (existing->sampler->n_items == n_items)){
+            assert(existing->capacity >= n_items);
+            existing->access_date = ++(family->generation);
+            if(memcmp(
+                existing->weights, weights, n_items * sizeof(double)
+            ) == 0){
+                //printf("Cache hit after %d\n", (int)_i);
+                return existing->sampler;
+            }
+        }
+        if(existing->access_date < target_date){
+            target = i;
+            target_date = existing->access_date;
+        }
+    }
+    // We didn't find an existing sampler, so it's time to create a new one.
+
+    //printf("Cache miss\n");
+    sampler_entry *result = family->entries + target;
+    if((result->capacity < n_items) || (result->weights == NULL)){
+        free(result->weights);
+        result->capacity = n_items * 2;
+        result->weights = malloc(result->capacity * sizeof(double));
+    }
+    random_sampler_free(result->sampler);
+    memcpy(result->weights, weights, sizeof(double) * n_items);
+    result->sampler = random_sampler_new(n_items, weights);
+    result->hash = hash;
+    result->access_date = ++(family->generation);
+    return result->sampler;
+}
+
+
+size_t sampler_family_sample(sampler_family *samplers, size_t n_items, double *weights){
+    if(n_items <= 1) return 0;
+    random_sampler *sampler = lookup_sampler(samplers, n_items, weights);
+    return random_sampler_sample(sampler, &(samplers->mersenne_twister));
+}
+
+
+sampler_family *sampler_family_new(size_t capacity, uint64_t seed){
+    sampler_family *result = (sampler_family*)malloc(sizeof(sampler_family));
+    result->generation = 0;
+    result->capacity = capacity;
+    result->entries = calloc(capacity, sizeof(sampler_entry));
+    mt_seed(&(result->mersenne_twister), seed);
+    return result;
+}
+
+void sampler_family_free(sampler_family *family){
+    for(size_t i = 0; i < family->capacity; i++){
+        free(family->entries->weights);
+        random_sampler_free(family->entries->sampler);
+    }
+    free(family);
+}
+
 
 /* 
    A C-program for MT19937-64 (2004/9/29 version).
