@@ -52,7 +52,7 @@ UNIFORM_WEIGHTS = (1,) * 256
 
 
 def _array_to_pointer(weights):
-    return s.ffi.cast("double*", s.ffi.from_buffer(weights))
+    return s.ffi.from_buffer(weights)
 
 
 class Sampler(object):

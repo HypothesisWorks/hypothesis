@@ -46,7 +46,7 @@ ffibuilder.cdef("""
     void *sampler_family_new(size_t capacity, uint64_t seed);
     void sampler_family_free(void *samplers);
     size_t sampler_family_sample(
-        void *samplers, size_t n_items, double *weights);
+        void *samplers, size_t n_items, void *weights);
 """)
 
 # Putting this at the module level is gross, but AFAICT it's the only way to
