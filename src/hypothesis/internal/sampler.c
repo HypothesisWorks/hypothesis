@@ -208,14 +208,29 @@ uint64_t hash64(uint64_t key){
     return key;
 }
 
+uint64_t hash_double(uint64_t seed, double x){
+    uint64_t key;
+    memcpy(&key, &x, sizeof(double));
+    return hash64(seed ^ key);
+}
+
 static uint64_t hash_doubles(size_t n_items, double* weights){
     uint64_t result = hash64((uint64_t)n_items);
     assert(sizeof(double) == sizeof(uint64_t));
+    double total = 0.0;
+    double min = INFINITY;
+    double max = -INFINITY;
+
     for(size_t i = 0; i < n_items; i++){
-        uint64_t key;
-        memcpy(&key, weights + i, sizeof(double));
-        result = hash64(result ^ key);
+        double x = weights[i];
+        total += x;
+        if(min > x) min = x;
+        if(max < x) max = x;
     }
+    result = hash_double(result, total);
+    result = hash_double(result, min);
+    result = hash_double(result, max);
+    result = hash_double(result, weights[0]);
     return result;
 }
 
@@ -239,7 +254,7 @@ static random_sampler *lookup_sampler(
         if((existing->hash == hash) && (existing->sampler->n_items == n_items)){
             assert(existing->capacity >= n_items);
             existing->access_date = ++(family->generation);
-            if((existing->original_weights == (size_t)weights) || memcmp(
+            if(memcmp(
                 existing->weights, weights, n_items * sizeof(double)
             ) == 0){
                 //printf("Cache hit after %d\n", (int)_i);
