@@ -15,6 +15,7 @@ struct mt {
 };
 
 typedef struct {
+  size_t capacity;
   size_t n_items;
   size_t item_mask;
   uint8_t n_bits_needed;
@@ -49,25 +50,33 @@ static uint8_t highest_set_bit(size_t i){
     return result;
 }
 
-random_sampler *random_sampler_new(size_t n_items, double *weights){
-  void *data = malloc(sizeof(random_sampler) + n_items * sizeof(size_t) + n_items * sizeof(double));
-
+static random_sampler *random_sampler_create(size_t capacity){
+  void *data = malloc(sizeof(random_sampler) + capacity * sizeof(size_t) + capacity * sizeof(double));
   random_sampler *result = (random_sampler*)data;
-    result->n_items = n_items;
-
-  size_t mask = n_items;
-  mask |= (mask >> 1);
-  mask |= (mask >> 2);
-  mask |= (mask >> 4);
-  mask |= (mask >> 8);
-  mask |= (mask >> 16);
-  mask |= (mask >> 32);
-  result->item_mask = mask;
-
-  result->n_bits_needed = highest_set_bit(n_items);
-
+  result->capacity = capacity;
+  result->n_items = 0;
+  
   result->alias_table = (size_t*)(data + sizeof(random_sampler));
-  result->probabilities =  (double*)(data + sizeof(random_sampler) + n_items * sizeof(size_t));
+  result->probabilities =  (double*)(data + sizeof(random_sampler) + capacity * sizeof(size_t));
+  return result;
+}
+
+
+static void random_sampler_initialize(random_sampler *result, size_t n_items, double *weights){
+  if(result->n_items != n_items){
+      result->n_items = n_items;
+
+      size_t mask = n_items;
+      mask |= (mask >> 1);
+      mask |= (mask >> 2);
+      mask |= (mask >> 4);
+      mask |= (mask >> 8);
+      mask |= (mask >> 16);
+      mask |= (mask >> 32);
+      result->item_mask = mask;
+
+      result->n_bits_needed = highest_set_bit(n_items);
+  }
 
   double min = INFINITY;
   double max = -INFINITY;
@@ -137,6 +146,11 @@ random_sampler *random_sampler_new(size_t n_items, double *weights){
     free(small);
     free(large);
   }
+}
+
+random_sampler *random_sampler_new(size_t n_items, double *weights){
+  random_sampler *result = random_sampler_create(n_items);
+  random_sampler_initialize(result, n_items, weights);
   return result;
 }
 
@@ -192,6 +206,7 @@ typedef struct {
 
 typedef struct {
     size_t capacity;
+    size_t max_items;
     sampler_entry *entries;
     struct mt mersenne_twister;
     uint64_t generation;
@@ -243,6 +258,7 @@ static void push_index(sampler_family *family, size_t index){
 static random_sampler *lookup_sampler(
     sampler_family *family, size_t n_items, double* weights
 ){
+    if(n_items > family->max_items) family->max_items = n_items;
 
     for(size_t _i = 0; _i < RECENCY; _i++){
         size_t i = (_i + family->last_index) % RECENCY;
@@ -299,9 +315,13 @@ static random_sampler *lookup_sampler(
         result->capacity = n_items * 2;
         result->weights = malloc(result->capacity * sizeof(double));
     }
-    random_sampler_free(result->sampler);
     memcpy(result->weights, weights, sizeof(double) * n_items);
-    result->sampler = random_sampler_new(n_items, weights);
+   
+    if((result->sampler == NULL) || (result->sampler->capacity < n_items)){
+        random_sampler_free(result->sampler);
+        result->sampler = random_sampler_create(family->max_items);
+    }
+    random_sampler_initialize(result->sampler, n_items, weights);
     result->hash = hash;
     result->access_date = ++(family->generation);
     return result->sampler;
