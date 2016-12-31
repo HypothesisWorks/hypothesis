@@ -324,7 +324,7 @@ size_t sampler_family_sample(sampler_family *samplers, size_t n_items, double *w
 
 
 sampler_family *sampler_family_new(size_t capacity, uint64_t seed){
-    sampler_family *result = (sampler_family*)malloc(sizeof(sampler_family));
+    sampler_family *result = (sampler_family*)calloc(1, sizeof(sampler_family));
     result->last_index = 0;
     result->generation = 0;
     result->capacity = capacity;
