@@ -243,7 +243,7 @@ uint64_t hash_double(uint64_t seed, double x){
 static uint64_t memhash(size_t n, char *bytes){
     uint64_t lenhash = hash64((uint64_t)n);
     uint64_t accumulator = 0;
-    for(size_t i = 0; i < n; i++){
+    for(size_t i = 0; i < n; i += 4){
         accumulator *= 31;
         accumulator += ((uint64_t)bytes[i] & 0xff);
     }
