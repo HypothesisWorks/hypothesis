@@ -378,35 +378,25 @@ class ConjectureRunner(object):
         while self.changed > change_counter:
             change_counter = self.changed
 
-            self.debug('Random interval deletes')
-            failed_deletes = 0
-            while self.last_data.intervals and failed_deletes < 10:
-                if self.random.randint(0, 1):
-                    u, v = self.random.choice(self.last_data.intervals)
-                else:
-                    n = len(self.last_data.buffer) - 1
-                    u, v = sorted((
-                        self.random.choice(self.last_data.intervals)
-                    ))
-                if (
-                    v < len(self.last_data.buffer)
-                ) and self.incorporate_new_buffer(
-                    self.last_data.buffer[:u] +
-                    self.last_data.buffer[v:]
-                ):
-                    failed_deletes = 0
-                else:
-                    failed_deletes += 1
-
             self.debug('Structured interval deletes')
-            i = 0
-            while i < len(self.last_data.intervals):
-                u, v = self.last_data.intervals[i]
-                if not self.incorporate_new_buffer(
-                    self.last_data.buffer[:u] +
-                    self.last_data.buffer[v:]
-                ):
-                    i += 1
+
+            k = len(self.last_data.intervals) // 2
+            while k > 0:
+                i = 0
+                while i + k <= len(self.last_data.intervals):
+                    bitmask = [True] * len(self.last_data.buffer)
+
+                    for u, v in self.last_data.intervals[i:i + k]:
+                        for t in range(u, v):
+                            bitmask[t] = False
+
+                    u, v = self.last_data.intervals[i]
+                    if not self.incorporate_new_buffer(hbytes(
+                        b for b, v in zip(self.last_data.buffer, bitmask)
+                        if v
+                    )):
+                        i += k
+                k //= 2
 
             if change_counter != self.changed:
                 self.debug('Restarting')
