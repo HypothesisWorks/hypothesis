@@ -816,6 +816,7 @@ def Interval(lower, upper):
         return Charset(hrange(lower[0], upper[0] + 1))
     return _Interval(lower, upper)
 
+
 Nil = _Nil()
 Everything = _Everything()
 Epsilon = Literal(hbytes(b''))

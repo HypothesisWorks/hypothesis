@@ -79,6 +79,7 @@ def draw_random(random):
         return choices[sampler.sample(weights)]
     return accept
 
+
 ALL_BYTES = tuple(hrange(256))
 
 
