@@ -28,7 +28,7 @@ SRC = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 assert os.path.basename(SRC) == 'src', SRC
 
 with open(
-    os.path.join(os.path.dirname(__file__), 'sampler.c'),
+    os.path.join(SRC, "hypothesis", "internal", 'sampler.c'),
 ) as i:
     ffibuilder.set_source(
         'hypothesis.internal._sampler', i.read()

@@ -64,6 +64,7 @@ setup(
     author_email='david@drmaciver.com',
     packages=find_packages(SOURCE),
     package_dir={"": SOURCE},
+    package_data={"": os.path.join(SOURCE, "hypothesis", "internal", "*.c")},
     url='https://github.com/HypothesisWorks/hypothesis-python',
     license='MPL v2',
     description='A library for property based testing',
