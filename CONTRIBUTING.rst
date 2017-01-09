@@ -98,8 +98,8 @@ You can also run a number of finer grained make tasks:
   check-py35, check-pypy.
 * check-coverage will run a subset of the tests on python 3.5 and then assert that this gave 100% coverage
 * lint will just run some source code checks.
-* django will just run tests for the django integration
-* pytest will just run tests for the pytest plugin
+* check-django will just run tests for the django integration
+* check-pytest will just run tests for the pytest plugin
 
 Note: The build requires a lot of different versions of python, so rather than have you install them yourself,
 the makefile will install them itself in a local directory. This means that the first time you run a task you
