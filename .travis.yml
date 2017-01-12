@@ -8,14 +8,6 @@ os:
     - osx
     - linux
 
-cache:
-    apt: true
-    directories:
-        - $HOME/.runtimes
-        - $HOME/.venv
-        - $HOME/.cache/pip
-        - $HOME/wheelhouse
-
 env:
     global:
         - BUILD_RUNTIMES=$HOME/.runtimes
