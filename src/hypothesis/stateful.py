@@ -43,7 +43,7 @@ from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.strategies import just, lists, builds, one_of, runner, \
     integers
 from hypothesis.vendor.pretty import CUnicodeIO, RepresentationPrinter
-from hypothesis.internal.reflection import proxies, nicerepr
+from hypothesis.internal.reflection import nicerepr
 from hypothesis.internal.conjecture.data import StopTest
 from hypothesis.internal.conjecture.utils import integer_range
 from hypothesis.searchstrategy.strategies import SearchStrategy
@@ -311,12 +311,8 @@ def rule(targets=(), target=None, **kwargs):
                     function=f, precondition=precondition,
                     parent_rule=parent_rule)
 
-        @proxies(f)
-        def rule_wrapper(*args, **kwargs):
-            return f(*args, **kwargs)
-
-        setattr(rule_wrapper, RULE_MARKER, rule)
-        return rule_wrapper
+        setattr(f, RULE_MARKER, rule)
+        return f
     return accept
 
 
@@ -345,19 +341,20 @@ def precondition(precond):
 
     """
     def decorator(f):
-        @proxies(f)
-        def precondition_wrapper(*args, **kwargs):
-            return f(*args, **kwargs)
-
+        existing_precondition = getattr(f, PRECONDITION_MARKER, None)
+        if existing_precondition is not None:
+            raise InvalidDefinition(
+                'A function cannot be have two preconditions. ',
+                Settings.default,
+            )
+        setattr(f, PRECONDITION_MARKER, precond)
         rule = getattr(f, RULE_MARKER, None)
-        if rule is None:
-            setattr(precondition_wrapper, PRECONDITION_MARKER, precond)
-        else:
+        if rule is not None:
             new_rule = Rule(targets=rule.targets, arguments=rule.arguments,
                             function=rule.function, precondition=precond,
                             parent_rule=rule.parent_rule)
-            setattr(precondition_wrapper, RULE_MARKER, new_rule)
-        return precondition_wrapper
+            setattr(f, RULE_MARKER, new_rule)
+        return f
     return decorator
 
 
