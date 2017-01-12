@@ -251,8 +251,7 @@ class StateMachineSearchStrategy(SearchStrategy):
 
 Rule = namedtuple(
     u'Rule',
-    (u'targets', u'function', u'arguments', u'precondition',
-     u'parent_rule')
+    (u'targets', u'function', u'arguments', u'precondition')
 )
 
 self_strategy = runner()
@@ -300,16 +299,15 @@ def rule(targets=(), target=None, **kwargs):
         converted_targets.append(t)
 
     def accept(f):
-        parent_rule = getattr(f, RULE_MARKER, None)
-        if parent_rule is not None:
+        existing_rule = getattr(f, RULE_MARKER, None)
+        if existing_rule is not None:
             raise InvalidDefinition(
                 'A function cannot be used for two distinct rules. ',
                 Settings.default,
             )
         precondition = getattr(f, PRECONDITION_MARKER, None)
         rule = Rule(targets=tuple(converted_targets), arguments=kwargs,
-                    function=f, precondition=precondition,
-                    parent_rule=parent_rule)
+                    function=f, precondition=precondition)
 
         @proxies(f)
         def rule_wrapper(*args, **kwargs):
@@ -354,8 +352,7 @@ def precondition(precond):
             setattr(precondition_wrapper, PRECONDITION_MARKER, precond)
         else:
             new_rule = Rule(targets=rule.targets, arguments=rule.arguments,
-                            function=rule.function, precondition=precond,
-                            parent_rule=rule.parent_rule)
+                            function=rule.function, precondition=precond)
             setattr(precondition_wrapper, RULE_MARKER, new_rule)
         return precondition_wrapper
     return decorator
@@ -426,18 +423,15 @@ class RuleBasedStateMachine(GenericStateMachine):
 
         for k, v in inspect.getmembers(cls):
             r = getattr(v, RULE_MARKER, None)
-            while r is not None:
+            if r is not None:
                 cls.define_rule(
                     r.targets, r.function, r.arguments, r.precondition,
-                    r.parent_rule
                 )
-                r = r.parent_rule
         cls._rules_per_class[cls] = cls._base_rules_per_class.pop(cls, [])
         return cls._rules_per_class[cls]
 
     @classmethod
-    def define_rule(cls, targets, function, arguments, precondition=None,
-                    parent_rule=None):
+    def define_rule(cls, targets, function, arguments, precondition=None):
         converted_arguments = {}
         for k, v in arguments.items():
             converted_arguments[k] = v
@@ -449,7 +443,6 @@ class RuleBasedStateMachine(GenericStateMachine):
         return target.append(
             Rule(
                 targets, function, converted_arguments, precondition,
-                parent_rule
             )
         )
 
