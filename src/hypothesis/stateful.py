@@ -516,8 +516,9 @@ class RuleBasedStateMachine(GenericStateMachine):
             self.__checked_initial_invariants = True
             need_to_run_invariants = False
             for invar in self.invariants():
-                if invar.precondition is not None and invar.precondition(self):
-                    need_to_run_invariants = True
+                if invar.precondition and not invar.precondition(self):
+                    continue
+                need_to_run_invariants = True
             if need_to_run_invariants:
                 def check_invariants(self):
                     pass
@@ -531,7 +532,7 @@ class RuleBasedStateMachine(GenericStateMachine):
         for rule in self.rules():
             converted_arguments = {}
             valid = True
-            if rule.precondition is not None and not rule.precondition(self):
+            if rule.precondition and not rule.precondition(self):
                 continue
             for k, v in sorted(rule.arguments.items()):
                 if isinstance(v, Bundle):
@@ -593,6 +594,6 @@ class RuleBasedStateMachine(GenericStateMachine):
                 self.bundle(target).append(VarReference(name))
 
         for invar in self.invariants():
-            if invar.precondition is not None and not invar.precondition(self):
+            if invar.precondition and not invar.precondition(self):
                 continue
             invar.function(self)
