@@ -637,8 +637,8 @@ def test_multiple_invariants():
 
 
 def test_explicit_invariant_call_with_precondition():
-    """Invariants can be called explictly even if their precondition is not
-    statisfied."""
+    """Invariants can be called explicitly even if their precondition is not
+    satisfied."""
     class BadPrecondition(RuleBasedStateMachine):
 
         def __init__(self):

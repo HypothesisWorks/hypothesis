@@ -276,11 +276,11 @@ preconditions, you should store relevant data on the instance instead.
 Invariant
 ---------
 
-Often the are invariants that you want to ensure are met after every step in a process.
-It would be possible to add these as rules that are run, but they would be run
-zero or multiple times between other rules. Hypothesis provides a `invariant` decorator,
-that marks a function to be run after every step. The function can raise an exception
-to indicate an error has been detected.
+Often there are invariants that you want to ensure are met after every step in
+a process.  It would be possible to add these as rules that are run, but they
+would be run zero or multiple times between other rules. Hypothesis provides an
+``invariant`` decorator, that marks a function to be run after every step. The
+function can raise an exception to indicate an error has been detected.
 
 .. code:: python
 
