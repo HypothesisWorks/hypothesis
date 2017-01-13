@@ -655,3 +655,24 @@ def test_explicit_invariant_call_with_precondition():
 
     with pytest.raises(ValueError):
         run_state_machine_as_test(BadPrecondition)
+
+
+def test_invariant_checks_initial_state():
+    """Invariants are checked before any rules run."""
+    class BadPrecondition(RuleBasedStateMachine):
+
+        def __init__(self):
+            super(BadPrecondition, self).__init__()
+            self.num = 0
+
+        @invariant()
+        def test_blah(self):
+            if self.num == 0:
+                raise ValueError()
+
+        @rule()
+        def test_foo(self):
+            self.num += 1
+
+    with pytest.raises(ValueError):
+        run_state_machine_as_test(BadPrecondition)

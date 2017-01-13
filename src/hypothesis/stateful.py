@@ -435,6 +435,7 @@ class RuleBasedStateMachine(GenericStateMachine):
         self.names_to_values = {}
         self.__stream = CUnicodeIO()
         self.__printer = RepresentationPrinter(self.__stream)
+        self.__checked_initial_invariants = False
 
     def __pretty(self, value):
         self.__stream.seek(0)
@@ -511,6 +512,21 @@ class RuleBasedStateMachine(GenericStateMachine):
         )
 
     def steps(self):
+        if not self.__checked_initial_invariants:
+            self.__checked_initial_invariants = True
+            need_to_run_invariants = False
+            for invar in self.invariants():
+                if invar.precondition is not None and invar.precondition(self):
+                    need_to_run_invariants = True
+            if need_to_run_invariants:
+                def check_invariants(self):
+                    pass
+                return just((
+                    Rule(targets=(), function=check_invariants,
+                         arguments={}, precondition=None),
+                    {},
+                ))
+
         strategies = []
         for rule in self.rules():
             converted_arguments = {}
