@@ -273,6 +273,41 @@ useful sequence of steps will be generated.
 Note that currently preconditions can't access bundles; if you need to use
 preconditions, you should store relevant data on the instance instead.
 
+Invariant
+---------
+
+Often the are invariants that you want to ensure are met after every step in a process.
+It would be possible to add these as rules that are run, but they would be run
+zero or multiple times between other rules. Hypothesis provides a `invariant` decorator,
+that marks a function to be run after every step. The function can raise an exception
+to indicate an error has been detected.
+
+.. code:: python
+
+    from hypothesis.stateful import RuleBasedStateMachine, rule, invariant
+
+    class NumberModifier(RuleBasedStateMachine):
+
+        num = 0
+
+        @rule()
+        def add_two(self):
+            self.num += 2
+            if self.num > 50:
+                self.num += 1
+
+        @invariant()
+        def divide_with_one(self):
+            assert self.num % 2 == 0
+
+    NumberTest = NumberModifier.TestCase
+
+Invariants can also have ``precondition``\ s applied to them, in which case
+they will only be run if the precondition function returns true.
+
+Note that currently invariants can't access bundles; if you need to use
+invariants, you should store relevant data on the instance instead.
+
 ----------------------
 Generic state machines
 ----------------------

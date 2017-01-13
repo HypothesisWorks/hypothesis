@@ -274,6 +274,7 @@ class Bundle(SearchStrategy):
 
 RULE_MARKER = u'hypothesis_stateful_rule'
 PRECONDITION_MARKER = u'hypothesis_stateful_precondition'
+INVARIANT_MARKER = u'hypothesis_stateful_invariant'
 
 
 def rule(targets=(), target=None, **kwargs):
@@ -354,8 +355,55 @@ def precondition(precond):
             new_rule = Rule(targets=rule.targets, arguments=rule.arguments,
                             function=rule.function, precondition=precond)
             setattr(precondition_wrapper, RULE_MARKER, new_rule)
+
+        invariant = getattr(f, INVARIANT_MARKER, None)
+        if invariant is not None:
+            new_invariant = Invariant(function=invariant.function,
+                                      precondition=precond)
+            setattr(precondition_wrapper, INVARIANT_MARKER, new_invariant)
+
         return precondition_wrapper
     return decorator
+
+
+Invariant = namedtuple(
+    u'Invariant',
+    (u'function', u'precondition')
+)
+
+
+def invariant():
+    """Decorator to apply an invariant for rules in a RuleBasedStateMachine.
+    The decorated function will be run after every rule and can raise an
+    exception to indicate failed invariants.
+
+    For example::
+
+        class MyTestMachine(RuleBasedStateMachine):
+            state = 1
+
+            @invariant()
+            def is_nonzero(self):
+                assert self.state != 0
+
+    """
+    def accept(f):
+        existing_invariant = getattr(f, INVARIANT_MARKER, None)
+        if existing_invariant is not None:
+            raise InvalidDefinition(
+                'A function cannot be used for two distinct invariants.',
+                Settings.default,
+            )
+        precondition = getattr(f, PRECONDITION_MARKER, None)
+        rule = Invariant(function=f, precondition=precondition)
+
+        @proxies(f)
+        def invariant_wrapper(*args, **kwargs):
+            return f(*args, **kwargs)
+
+        setattr(invariant_wrapper, INVARIANT_MARKER, rule)
+        return invariant_wrapper
+    return accept
 
 
 ShuffleBundle = namedtuple('ShuffleBundle', ('bundle', 'swaps'))
@@ -374,6 +422,7 @@ class RuleBasedStateMachine(GenericStateMachine):
 
     """
     _rules_per_class = {}
+    _invariants_per_class = {}
     _base_rules_per_class = {}
 
     def __init__(self):
@@ -429,6 +478,21 @@ class RuleBasedStateMachine(GenericStateMachine):
                 )
         cls._rules_per_class[cls] = cls._base_rules_per_class.pop(cls, [])
         return cls._rules_per_class[cls]
+
+    @classmethod
+    def invariants(cls):
+        try:
+            return cls._invariants_per_class[cls]
+        except KeyError:
+            pass
+
+        target = []
+        for k, v in inspect.getmembers(cls):
+            i = getattr(v, INVARIANT_MARKER, None)
+            if i is not None:
+                target.append(i)
+        cls._invariants_per_class[cls] = target
+        return cls._invariants_per_class[cls]
 
     @classmethod
     def define_rule(cls, targets, function, arguments, precondition=None):
@@ -511,3 +575,8 @@ class RuleBasedStateMachine(GenericStateMachine):
             )
             for target in rule.targets:
                 self.bundle(target).append(VarReference(name))
+
+        for invar in self.invariants():
+            if invar.precondition is not None and not invar.precondition(self):
+                continue
+            invar.function(self)

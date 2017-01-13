@@ -28,7 +28,7 @@ from hypothesis.errors import Flaky, InvalidDefinition
 from hypothesis.control import current_build_context
 from tests.common.utils import raises, capture_out
 from hypothesis.database import ExampleDatabase
-from hypothesis.stateful import rule, Bundle, precondition, \
+from hypothesis.stateful import rule, Bundle, invariant, precondition, \
     GenericStateMachine, RuleBasedStateMachine, \
     run_state_machine_as_test
 from hypothesis.strategies import just, none, lists, binary, tuples, \
@@ -534,6 +534,118 @@ def test_can_explicitly_call_functions_when_precondition_not_satisfied():
 
         @precondition(lambda self: False)
         @rule()
+        def test_blah(self):
+            raise ValueError()
+
+        @rule()
+        def test_foo(self):
+            self.test_blah()
+
+    with pytest.raises(ValueError):
+        run_state_machine_as_test(BadPrecondition)
+
+
+def test_invariant():
+    """If an invariant raise an exception, the exception is propagated."""
+    class Invariant(RuleBasedStateMachine):
+
+        def __init__(self):
+            super(Invariant, self).__init__()
+
+        @invariant()
+        def test_blah(self):
+            raise ValueError()
+
+        @rule()
+        def do_stuff(self):
+            pass
+
+    with pytest.raises(ValueError):
+        run_state_machine_as_test(Invariant)
+
+
+def test_no_double_invariant():
+    """The invariant decorator can't be applied multiple times to a single
+    function."""
+    with raises(InvalidDefinition):
+        class Invariant(RuleBasedStateMachine):
+
+            def __init__(self):
+                super(Invariant, self).__init__()
+
+            @invariant()
+            @invariant()
+            def test_blah(self):
+                pass
+
+            @rule()
+            def do_stuff(self):
+                pass
+
+
+def test_invariant_precondition():
+    """If an invariant precodition isn't met, the invariant isn't run.
+
+    The precondition decorator can be applied in any order.
+
+    """
+    class Invariant(RuleBasedStateMachine):
+
+        def __init__(self):
+            super(Invariant, self).__init__()
+
+        @invariant()
+        @precondition(lambda _: False)
+        def an_invariant(self):
+            raise ValueError()
+
+        @precondition(lambda _: False)
+        @invariant()
+        def another_invariant(self):
+            raise ValueError()
+
+        @rule()
+        def do_stuff(self):
+            pass
+
+    run_state_machine_as_test(Invariant)
+
+
+def test_multiple_invariants():
+    """If multiple invariants are present, they all get run."""
+    class Invariant(RuleBasedStateMachine):
+
+        def __init__(self):
+            super(Invariant, self).__init__()
+            self.first_invariant_ran = False
+
+        @invariant()
+        def invariant_1(self):
+            self.first_invariant_ran = True
+
+        @precondition(lambda self: self.first_invariant_ran)
+        @invariant()
+        def invariant_2(self):
+            raise ValueError()
+
+        @rule()
+        def do_stuff(self):
+            pass
+
+    with pytest.raises(ValueError):
+        run_state_machine_as_test(Invariant)
+
+
+def test_explicit_invariant_call_with_precondition():
+    """Invariants can be called explictly even if their precondition is not
+    statisfied."""
+    class BadPrecondition(RuleBasedStateMachine):
+
+        def __init__(self):
+            super(BadPrecondition, self).__init__()
+
+        @precondition(lambda self: False)
+        @invariant()
         def test_blah(self):
             raise ValueError()
 
