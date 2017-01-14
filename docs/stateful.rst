@@ -342,8 +342,6 @@ should be robust against minor changes in the state. Steps that change a lot
 between slightly different executions will tend to produce worse quality
 examples because they're hard to simplify.
 
-a method you can implement if you need to clean something up at the end.
-
 The steps method *may* depend on external state, but it's not advisable and
 may produce flaky tests.
 
