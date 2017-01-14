@@ -324,15 +324,15 @@ It essentially executes the following loop:
 
 .. code:: python
 
-  machine = MyStateMachine()
-  try:
-    machine.check_invariants()
-    for _ in range(n_steps):
-      step = machine.steps().example()
-      machine.execute_step(step)
-      machine.check_invariants()
-  finally:
-    machine.teardown()
+    machine = MyStateMachine()
+    try:
+        machine.check_invariants()
+        for _ in range(n_steps):
+            step = machine.steps().example()
+            machine.execute_step(step)
+            machine.check_invariants()
+    finally:
+        machine.teardown()
 
 Where ``steps`` and ``execute_step`` are methods you must implement, and
 ``teardown`` and ``check_invarants`` are methods you can implement if required.
@@ -353,14 +353,14 @@ that the following throws an exception:
 
 .. code:: python
 
-  machine = MyStateMachine()
-  try:
-    machine.check_invariants()
-    for step in steps:
-      machine.execute_step(step)
-      machine.check_invariants()
-  finally:
-    machine.teardown()
+    machine = MyStateMachine()
+    try:
+        machine.check_invariants()
+        for step in steps:
+            machine.execute_step(step)
+            machine.check_invariants()
+    finally:
+        machine.teardown()
 
 and such that at every point, the step executed is one that could plausible
 have come from a call to ``steps`` in the current state.

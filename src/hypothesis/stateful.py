@@ -124,14 +124,14 @@ class GenericStateMachine(object):
     The way this is used is that Hypothesis will repeatedly execute something
     that looks something like::
 
-      x = MyStatemachineSubclass()
-      x.check_invariants()
-      try:
-        for _ in range(n_steps):
-            x.execute_step(x.steps().example())
-            x.check_invariants()
-      finally:
-        x.teardown()
+        x = MyStatemachineSubclass()
+        x.check_invariants()
+        try:
+            for _ in range(n_steps):
+                x.execute_step(x.steps().example())
+                x.check_invariants()
+        finally:
+            x.teardown()
 
     And if this ever produces an error it will shrink it down to a small
     sequence of example choices demonstrating that.
