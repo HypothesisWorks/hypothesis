@@ -17,7 +17,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import math
 import time
 import signal
 
@@ -46,6 +45,9 @@ try:
                 start = time.time()
 
                 def handler(signum, frame):
+                    if time.time() <= start + seconds:
+                        signal.alarm(1)
+                        return
                     if catchable:
                         raise CatchableTimeout(
                             u'Timed out after %.2fs' % (time.time() - start))
@@ -54,7 +56,7 @@ try:
                             u'Timed out after %.2fs' % (time.time() - start))
 
                 old_handler = signal.signal(signal.SIGALRM, handler)
-                signal.alarm(int(math.ceil(seconds)))
+                signal.alarm(1)
                 try:
                     return f(*args, **kwargs)
                 finally:

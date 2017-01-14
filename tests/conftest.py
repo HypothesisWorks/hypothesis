@@ -18,6 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 import gc
+import time as time_module
 
 import pytest
 
@@ -27,5 +28,31 @@ run()
 
 
 @pytest.fixture(scope=u'function', autouse=True)
-def some_fixture():
+def gc_before_each_test():
     gc.collect()
+
+
+@pytest.fixture(scope=u'function', autouse=True)
+def consistently_increment_time(monkeypatch):
+    """Rather than rely on real system time we monkey patch time.time so that
+    it passes at a consistent rate between calls.
+
+    The reason for this is that when these tests run on travis, performance is
+    extremely variable and the VM the tests are on might go to sleep for a bit,
+    introducing arbitrary delays. This can cause a number of tests to fail
+    flakily.
+
+    Replacing time with a fake version under our control avoids this problem.
+
+    """
+    current_time = [time_module.time()]
+
+    def time():
+        current_time[0] += 0.0001
+        return current_time[0]
+
+    def sleep(naptime):
+        current_time[0] += naptime
+
+    monkeypatch.setattr(time_module, 'time', time)
+    monkeypatch.setattr(time_module, 'sleep', sleep)
