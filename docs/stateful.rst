@@ -326,38 +326,44 @@ It essentially executes the following loop:
 
   machine = MyStateMachine()
   try:
+    machine.check_invariants()
     for _ in range(n_steps):
       step = machine.steps().example()
       machine.execute_step(step)
+      machine.check_invariants()
   finally:
     machine.teardown()
 
-Where steps() and execute_step() are methods you must implement, and teardown
-is a method you can implement if you need to clean something up at the end.
-steps  returns a strategy, which is allowed to depend arbitrarily on the
+Where ``steps`` and ``execute_step`` are methods you must implement, and
+``teardown`` and ``check_invarants`` are methods you can implement if required.
+``steps`` returns a strategy, which is allowed to depend arbitrarily on the
 current state of the test execution. *Ideally* a good steps implementation
 should be robust against minor changes in the state. Steps that change a lot
 between slightly different executions will tend to produce worse quality
 examples because they're hard to simplify.
 
+a method you can implement if you need to clean something up at the end.
+
 The steps method *may* depend on external state, but it's not advisable and
 may produce flaky tests.
 
-If any of execute_step or teardown produces an error, Hypothesis will try to
-find a minimal sequence of values steps such that the following throws an
-exception:
+If any of ``execute_step``, ``check_invariants`` or ``teardown`` produces an
+exception, Hypothesis will try to find a minimal sequence of values steps such
+that the following throws an exception:
 
 .. code:: python
 
+  machine = MyStateMachine()
   try:
-    machine = MyStateMachine()
+    machine.check_invariants()
     for step in steps:
       machine.execute_step(step)
+      machine.check_invariants()
   finally:
     machine.teardown()
 
 and such that at every point, the step executed is one that could plausible
-have come from a call to steps() in the current state.
+have come from a call to ``steps`` in the current state.
 
 Here's an example of using stateful testing to test a broken implementation
 of a set in terms of a list (note that you could easily do something close to

@@ -122,11 +122,16 @@ class GenericStateMachine(object):
     The intent is for it to be subclassed to provide state machine descriptions
 
     The way this is used is that Hypothesis will repeatedly execute something
-    that looks something like:
+    that looks something like::
 
-    x = MyStatemachineSubclass()
-    for _ in range(n_steps):
-        x.execute_step(x.steps().example())
+      x = MyStatemachineSubclass()
+      x.check_invariants()
+      try:
+        for _ in range(n_steps):
+            x.execute_step(x.steps().example())
+            x.check_invariants()
+      finally:
+        x.teardown()
 
     And if this ever produces an error it will shrink it down to a small
     sequence of example choices demonstrating that.
@@ -158,7 +163,9 @@ class GenericStateMachine(object):
         Does nothing by default
 
         """
-        pass
+
+    def check_invariants(self):
+        """Called after initializing and after executing each step."""
 
     _test_case_cache = {}
 
@@ -220,6 +227,8 @@ class StateMachineRunner(object):
 
         stopping_value = 1 - 1.0 / (1 + self.n_steps * 0.5)
         try:
+            state_machine.check_invariants()
+
             steps = 0
             while True:
                 if steps == self.n_steps:
@@ -236,6 +245,7 @@ class StateMachineRunner(object):
                         state_machine.print_step(value)
                     state_machine.execute_step(value)
                 self.data.stop_example()
+                state_machine.check_invariants()
         finally:
             state_machine.teardown()
 
@@ -435,7 +445,6 @@ class RuleBasedStateMachine(GenericStateMachine):
         self.names_to_values = {}
         self.__stream = CUnicodeIO()
         self.__printer = RepresentationPrinter(self.__stream)
-        self.__checked_initial_invariants = False
 
     def __pretty(self, value):
         self.__stream.seek(0)
@@ -512,22 +521,6 @@ class RuleBasedStateMachine(GenericStateMachine):
         )
 
     def steps(self):
-        if not self.__checked_initial_invariants:
-            self.__checked_initial_invariants = True
-            need_to_run_invariants = False
-            for invar in self.invariants():
-                if invar.precondition and not invar.precondition(self):
-                    continue
-                need_to_run_invariants = True
-            if need_to_run_invariants:
-                def check_invariants(self):
-                    pass
-                return just((
-                    Rule(targets=(), function=check_invariants,
-                         arguments={}, precondition=None),
-                    {},
-                ))
-
         strategies = []
         for rule in self.rules():
             converted_arguments = {}
@@ -593,6 +586,7 @@ class RuleBasedStateMachine(GenericStateMachine):
             for target in rule.targets:
                 self.bundle(target).append(VarReference(name))
 
+    def check_invariants(self):
         for invar in self.invariants():
             if invar.precondition and not invar.precondition(self):
                 continue
