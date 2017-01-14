@@ -379,8 +379,8 @@ def precondition(precond):
 
 
 Invariant = namedtuple(
-    u'Invariant',
-    (u'function', u'precondition')
+    'Invariant',
+    ('function', 'precondition')
 )
 
 
