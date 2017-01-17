@@ -49,6 +49,25 @@ def test_prints_on_failure():
     assert 'Draw 2: 0' in result
 
 
+def test_prints_labels_if_given_on_failure():
+    @given(st.data())
+    def test(data):
+        x = data.draw(st.lists(st.integers(), min_size=1),
+                      label='Some numbers')
+        y = data.draw(st.sampled_from(x), label='A number')
+        assert y in x
+        x.remove(y)
+        assert y not in x
+
+    with raises(AssertionError):
+        with capture_out() as out:
+            with reporting.with_reporter(reporting.default):
+                test()
+    result = out.getvalue()
+    assert 'Draw 1 (Some numbers): [0, 0]' in result
+    assert 'Draw 2 (A number): 0' in result
+
+
 def test_given_twice_is_same():
     @given(st.data(), st.data())
     def test(data1, data2):
