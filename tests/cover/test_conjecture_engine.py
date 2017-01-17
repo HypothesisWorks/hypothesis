@@ -439,12 +439,15 @@ def test_garbage_collects_the_database():
     seen = set()
     go = True
 
+    counter = [0]
+
     def f(data):
         x = hbytes(data.draw_bytes(512))
         if not go:
             return
-        if sum(x) >= 5000 and len(seen) < n:
+        if counter[0] % 10 == 0 and len(seen) < n:
             seen.add(x)
+        counter[0] += 1
         if x in seen:
             data.mark_interesting()
     runner = ConjectureRunner(
