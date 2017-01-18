@@ -39,8 +39,9 @@ from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.statistics import note_engine_for_statistics
 from hypothesis.internal.compat import getargspec, str_to_bytes
 from hypothesis.internal.reflection import nicerepr, arg_string, \
-    impersonate, copy_argspec, function_digest, fully_qualified_name, \
-    convert_positional_arguments, get_pretty_function_description
+    impersonate, function_digest, fully_qualified_name, \
+    define_function_signature, convert_positional_arguments, \
+    get_pretty_function_description
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
@@ -216,7 +217,7 @@ def given(*generator_arguments, **generator_kwargs):
         )
 
         @impersonate(test)
-        @copy_argspec(
+        @define_function_signature(
             test.__name__, test.__doc__, argspec
         )
         def wrapped_test(*arguments, **kwargs):

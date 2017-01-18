@@ -26,9 +26,9 @@ import pytest
 from tests.common.utils import raises
 from hypothesis.internal.compat import PY3, ArgSpec, getargspec
 from hypothesis.internal.reflection import proxies, arg_string, \
-    copy_argspec, unbind_method, eval_directory, function_digest, \
-    fully_qualified_name, source_exec_as_module, \
-    convert_keyword_arguments, convert_positional_arguments, \
+    unbind_method, eval_directory, function_digest, fully_qualified_name, \
+    source_exec_as_module, convert_keyword_arguments, \
+    define_function_signature, convert_positional_arguments, \
     get_pretty_function_description
 
 
@@ -433,7 +433,8 @@ def has_kwargs(**kwargs):
 ])
 def test_copying_preserves_argspec(f):
     af = getargspec(f)
-    t = copy_argspec('foo', 'docstring', getargspec(f))(universal_acceptor)
+    t = define_function_signature(
+        'foo', 'docstring', getargspec(f))(universal_acceptor)
     at = getargspec(t)
     assert af.args == at.args
     assert af.varargs == at.varargs
@@ -445,35 +446,35 @@ def test_name_does_not_clash_with_function_names():
     def f():
         pass
 
-    @copy_argspec('f', 'A docstring for f', getargspec(f))
+    @define_function_signature('f', 'A docstring for f', getargspec(f))
     def g():
         pass
     g()
 
 
 def test_copying_sets_name():
-    f = copy_argspec(
+    f = define_function_signature(
         'hello_world', 'A docstring for hello_world',
         getargspec(has_two_args))(universal_acceptor)
     assert f.__name__ == 'hello_world'
 
 
 def test_copying_sets_docstring():
-    f = copy_argspec(
+    f = define_function_signature(
         'foo', 'A docstring for foo',
         getargspec(has_two_args))(universal_acceptor)
     assert f.__doc__ == 'A docstring for foo'
 
 
 def test_uses_defaults():
-    f = copy_argspec(
+    f = define_function_signature(
         'foo', 'A docstring for foo',
         getargspec(has_a_default))(universal_acceptor)
     assert f(3, 2) == ((3, 2, 1), {})
 
 
 def test_uses_varargs():
-    f = copy_argspec(
+    f = define_function_signature(
         'foo', 'A docstring for foo',
         getargspec(has_varargs))(universal_acceptor)
     assert f(1, 2) == ((1, 2), {})
@@ -503,36 +504,36 @@ def test_exec_leaves_sys_path_unchanged():
     assert sys.path == old_path
 
 
-def test_copy_argspec_works_with_conflicts():
+def test_define_function_signature_works_with_conflicts():
     def accepts_everything(*args, **kwargs):
         pass
 
-    copy_argspec('hello', 'A docstring for hello', ArgSpec(
+    define_function_signature('hello', 'A docstring for hello', ArgSpec(
         args=('f',), varargs=None, keywords=None, defaults=None
     ))(accepts_everything)(1)
 
-    copy_argspec('hello', 'A docstring for hello', ArgSpec(
+    define_function_signature('hello', 'A docstring for hello', ArgSpec(
         args=(), varargs='f', keywords=None, defaults=None
     ))(accepts_everything)(1)
 
-    copy_argspec('hello', 'A docstring for hello', ArgSpec(
+    define_function_signature('hello', 'A docstring for hello', ArgSpec(
         args=(), varargs=None, keywords='f', defaults=None
     ))(accepts_everything)()
 
-    copy_argspec('hello', 'A docstring for hello', ArgSpec(
+    define_function_signature('hello', 'A docstring for hello', ArgSpec(
         args=('f', 'f_3'), varargs='f_1', keywords='f_2', defaults=None
     ))(accepts_everything)(1, 2)
 
 
-def test_copy_argspec_validates_arguments():
+def test_define_function_signature_validates_arguments():
     with raises(ValueError):
-        copy_argspec('hello_world', 'A docstring for hello_world', ArgSpec(
+        define_function_signature('hello_world', None, ArgSpec(
             args=['a b'], varargs=None, keywords=None, defaults=None))
 
 
-def test_copy_argspec_validates_function_name():
+def test_define_function_signature_validates_function_name():
     with raises(ValueError):
-        copy_argspec('hello world', 'A docstring for hello_world', ArgSpec(
+        define_function_signature('hello world', None, ArgSpec(
             args=['a', 'b'], varargs=None, keywords=None, defaults=None))
 
 

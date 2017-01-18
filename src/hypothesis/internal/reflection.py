@@ -366,7 +366,7 @@ def accept(%(funcname)s):
 """.strip() + '\n'
 
 
-def copy_argspec(name, docstring, argspec):
+def define_function_signature(name, docstring, argspec):
     """A decorator which sets the name, argspec and docstring of the function
     passed into it."""
     check_valid_identifier(name)
@@ -455,6 +455,6 @@ def impersonate(target):
 def proxies(target):
     def accept(proxy):
         return impersonate(target)(wraps(target)(
-            copy_argspec(
+            define_function_signature(
                 target.__name__, target.__doc__, getargspec(target))(proxy)))
     return accept

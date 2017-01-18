@@ -881,7 +881,7 @@ def composite(f):
 
     """
 
-    from hypothesis.internal.reflection import copy_argspec
+    from hypothesis.internal.reflection import define_function_signature
     argspec = getargspec(f)
 
     if (
@@ -902,7 +902,7 @@ def composite(f):
     )
 
     @defines_strategy
-    @copy_argspec(f.__name__, f.__doc__, new_argspec)
+    @define_function_signature(f.__name__, f.__doc__, new_argspec)
     def accept(*args, **kwargs):
         class CompositeStrategy(SearchStrategy):
 
