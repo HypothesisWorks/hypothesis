@@ -28,11 +28,11 @@ env:
         - TASK=check-unicode
         - TASK=check-ancient-pip
         - TASK=check-pypy
-        - TASK=check-py36
-        - TASK=check-py35
         - TASK=check-py27
         - TASK=check-py273
         - TASK=check-py34
+        - TASK=check-py35
+        - TASK=check-py36
         - TASK=check-nose
         - TASK=check-pytest28
         - TASK=check-fakefactory052
@@ -49,23 +49,29 @@ script:
 matrix:
     exclude:
         - os: osx
-          env: TASK=check-pytest28
+          env: TASK=documentation
+        - os: osx
+          env: TASK=lint
+        - os: osx
+          env: TASK=check-format
+        - os: osx
+          env: TASK=check-coverage
+        - os: osx
+          env: TASK=check-unicode
+        - os: osx
+          env: TASK=check-ancient-pip
         - os: osx
           env: TASK=check-py273
         - os: osx
           env: TASK=check-py34
         - os: osx
-          env: TASK=check-unicode
-        - os: osx
-          env: TASK=check-ancient-pip
+          env: TASK=check-pytest28
         - os: osx
           env: TASK=check-fakefactory052
         - os: osx
           env: TASK=check-fakefactory053
         - os: osx
           env: TASK=check-fakefactory060
-        - os: osx
-          env: TASK=documentation
         - os: osx
           env: TASK=check-django17
         - os: osx
