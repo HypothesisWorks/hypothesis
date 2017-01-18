@@ -1,4 +1,3 @@
-import subprocess
 import os
 import sys
 
@@ -7,29 +6,10 @@ HEADER_FILE = "scripts/header.py"
 HEADER_SOURCE = open(HEADER_FILE).read().strip()
 
 
-def all_python_files():
-    lines = subprocess.check_output([
-        "git", "ls-tree", "--full-tree", "-r", "HEAD",
-    ]).decode('utf-8').split("\n")
-    files = [
-        l.split()[-1]
-        for l in lines
-        if l
-    ]
-    return [
-        f for f in files
-        if f[-3:] == ".py"
-    ]
-
-
 def main():
     rootdir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    print("cd %r" % (rootdir,))
     os.chdir(rootdir)
-    if len(sys.argv) > 1:
-        files = sys.argv[1:]
-    else:
-        files = all_python_files()
+    files = sys.argv[1:]
     try:
         files.remove("scripts/enforce_header.py")
     except ValueError:
@@ -60,6 +40,7 @@ def main():
             o.write("\n\n")
             o.write(source)
             o.write("\n")
+
 
 if __name__ == '__main__':
     main()

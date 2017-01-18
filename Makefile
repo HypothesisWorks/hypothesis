@@ -34,6 +34,8 @@ TOOL_PYTHON=$(TOOL_VIRTUALENV)/bin/python
 TOOL_PIP=$(TOOL_VIRTUALENV)/bin/pip
 TOOL_INSTALL=$(TOOL_PIP) install --upgrade
 
+FILES_TO_FORMAT=find src tests -name '*.py' -not -path '*/vendor/*'
+
 export PATH:=$(BUILD_RUNTIMES)/snakepit:$(TOOLS):$(PATH)
 export LC_ALL=en_US.UTF-8
 
@@ -71,14 +73,13 @@ $(ISORT_VIRTUALENV): $(PY34)
 	$(PY34) -m virtualenv $(ISORT_VIRTUALENV)
 
 format: $(PYFORMAT) $(ISORT)
-	$(TOOL_PYTHON) scripts/enforce_header.py
+	$(FILES_TO_FORMAT) | $(TOOL_PYTHON) scripts/enforce_header.py
 	# isort will sort packages differently depending on whether they're installed
 	$(ISORT_VIRTUALENV)/bin/python -m pip install django pytz pytest fake-factory numpy flaky
-	find src tests examples -name '*.py' | xargs  env -i \
-            PATH="$(PATH)" $(ISORT) -p hypothesis -ls -m 2 -w 75 \
-			-a  "from __future__ import absolute_import, print_function, division" \
+	$(FILES_TO_FORMAT) | xargs env -i PATH="$(PATH)" $(ISORT) -p hypothesis -ls -m 2 -w 75 \
+			-a "from __future__ import absolute_import, print_function, division" \
 			-rc src tests examples
-	find src tests examples -name '*.py' | xargs $(PYFORMAT) -i
+	$(FILES_TO_FORMAT) | xargs $(PYFORMAT) -i
 
 lint: $(FLAKE8)
 	$(FLAKE8) src tests --exclude=compat.py,test_reflection.py,test_imports.py,tests/py2 --ignore=E731,E721
