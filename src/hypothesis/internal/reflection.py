@@ -360,14 +360,15 @@ from hypothesis.utils.conventions import not_set
 
 def accept(%(funcname)s):
     def %(name)s(%(argspec)s):
+        '''%(docstring)s'''
         return %(funcname)s(%(invocation)s)
     return %(name)s
 """.strip() + '\n'
 
 
-def copy_argspec(name, argspec):
-    """A decorator which sets the name and argspec of the function passed into
-    it."""
+def copy_argspec(name, docstring, argspec):
+    """A decorator which sets the name, argspec and docstring of the function
+    passed into it."""
     check_valid_identifier(name)
     for a in argspec.args:
         check_valid_identifier(a)
@@ -420,6 +421,7 @@ def copy_argspec(name, argspec):
             COPY_ARGSPEC_SCRIPT % {
                 'name': name,
                 'funcname': funcname,
+                'docstring': docstring,
                 'argspec': ', '.join(parts),
                 'invocation': ', '.join(invocation_parts)
             }).accept
@@ -453,5 +455,6 @@ def impersonate(target):
 def proxies(target):
     def accept(proxy):
         return impersonate(target)(wraps(target)(
-            copy_argspec(target.__name__, getargspec(target))(proxy)))
+            copy_argspec(
+                target.__name__, target.__doc__, getargspec(target))(proxy)))
     return accept

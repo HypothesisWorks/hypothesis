@@ -217,7 +217,7 @@ def given(*generator_arguments, **generator_kwargs):
 
         @impersonate(test)
         @copy_argspec(
-            test.__name__, argspec
+            test.__name__, test.__doc__, argspec
         )
         def wrapped_test(*arguments, **kwargs):
             settings = wrapped_test._hypothesis_internal_use_settings

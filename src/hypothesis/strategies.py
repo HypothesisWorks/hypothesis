@@ -902,7 +902,7 @@ def composite(f):
     )
 
     @defines_strategy
-    @copy_argspec(f.__name__, new_argspec)
+    @copy_argspec(f.__name__, f.__doc__, new_argspec)
     def accept(*args, **kwargs):
         class CompositeStrategy(SearchStrategy):
 

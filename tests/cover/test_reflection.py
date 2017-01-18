@@ -21,6 +21,8 @@ import sys
 from copy import deepcopy
 from functools import partial
 
+import pytest
+
 from tests.common.utils import raises
 from hypothesis.internal.compat import PY3, ArgSpec, getargspec
 from hypothesis.internal.reflection import proxies, arg_string, \
@@ -423,22 +425,27 @@ def has_kwargs(**kwargs):
     pass
 
 
-def test_copying_preserves_argspec():
-    for f in [has_one_arg, has_two_args, has_varargs, has_kwargs]:
-        af = getargspec(f)
-        t = copy_argspec('foo', getargspec(f))(universal_acceptor)
-        at = getargspec(t)
-        assert af.args == at.args
-        assert af.varargs == at.varargs
-        assert af.keywords == at.keywords
-        assert len(af.defaults or ()) == len(at.defaults or ())
+@pytest.mark.parametrize('f', [
+    has_one_arg,
+    has_two_args,
+    has_varargs,
+    has_kwargs,
+])
+def test_copying_preserves_argspec(f):
+    af = getargspec(f)
+    t = copy_argspec('foo', 'docstring', getargspec(f))(universal_acceptor)
+    at = getargspec(t)
+    assert af.args == at.args
+    assert af.varargs == at.varargs
+    assert af.keywords == at.keywords
+    assert len(af.defaults or ()) == len(at.defaults or ())
 
 
 def test_name_does_not_clash_with_function_names():
     def f():
         pass
 
-    @copy_argspec('f', getargspec(f))
+    @copy_argspec('f', 'A docstring for f', getargspec(f))
     def g():
         pass
     g()
@@ -446,19 +453,29 @@ def test_name_does_not_clash_with_function_names():
 
 def test_copying_sets_name():
     f = copy_argspec(
-        'hello_world', getargspec(has_two_args))(universal_acceptor)
+        'hello_world', 'A docstring for hello_world',
+        getargspec(has_two_args))(universal_acceptor)
     assert f.__name__ == 'hello_world'
+
+
+def test_copying_sets_docstring():
+    f = copy_argspec(
+        'foo', 'A docstring for foo',
+        getargspec(has_two_args))(universal_acceptor)
+    assert f.__doc__ == 'A docstring for foo'
 
 
 def test_uses_defaults():
     f = copy_argspec(
-        'foo', getargspec(has_a_default))(universal_acceptor)
+        'foo', 'A docstring for foo',
+        getargspec(has_a_default))(universal_acceptor)
     assert f(3, 2) == ((3, 2, 1), {})
 
 
 def test_uses_varargs():
     f = copy_argspec(
-        'foo', getargspec(has_varargs))(universal_acceptor)
+        'foo', 'A docstring for foo',
+        getargspec(has_varargs))(universal_acceptor)
     assert f(1, 2) == ((1, 2), {})
 
 
@@ -490,32 +507,32 @@ def test_copy_argspec_works_with_conflicts():
     def accepts_everything(*args, **kwargs):
         pass
 
-    copy_argspec('hello', ArgSpec(
+    copy_argspec('hello', 'A docstring for hello', ArgSpec(
         args=('f',), varargs=None, keywords=None, defaults=None
     ))(accepts_everything)(1)
 
-    copy_argspec('hello', ArgSpec(
+    copy_argspec('hello', 'A docstring for hello', ArgSpec(
         args=(), varargs='f', keywords=None, defaults=None
     ))(accepts_everything)(1)
 
-    copy_argspec('hello', ArgSpec(
+    copy_argspec('hello', 'A docstring for hello', ArgSpec(
         args=(), varargs=None, keywords='f', defaults=None
     ))(accepts_everything)()
 
-    copy_argspec('hello', ArgSpec(
+    copy_argspec('hello', 'A docstring for hello', ArgSpec(
         args=('f', 'f_3'), varargs='f_1', keywords='f_2', defaults=None
     ))(accepts_everything)(1, 2)
 
 
 def test_copy_argspec_validates_arguments():
     with raises(ValueError):
-        copy_argspec('hello_world', ArgSpec(
+        copy_argspec('hello_world', 'A docstring for hello_world', ArgSpec(
             args=['a b'], varargs=None, keywords=None, defaults=None))
 
 
 def test_copy_argspec_validates_function_name():
     with raises(ValueError):
-        copy_argspec('hello world', ArgSpec(
+        copy_argspec('hello world', 'A docstring for hello_world', ArgSpec(
             args=['a', 'b'], varargs=None, keywords=None, defaults=None))
 
 
