@@ -17,8 +17,10 @@
 
 from __future__ import division, print_function, absolute_import
 
+import math
+
 from hypothesis import given, assume
-from tests.common.utils import fails
+from tests.common.utils import fails, fails_with
 from hypothesis.strategies import decimals, fractions, float_to_decimal
 
 
@@ -32,3 +34,25 @@ def test_all_decimals_can_be_exact_floats(x):
 @given(fractions(), fractions(), fractions())
 def test_fraction_addition_is_well_behaved(x, y, z):
     assert x + y + z == y + x + z
+
+
+@fails_with(AssertionError)
+@given(decimals())
+def test_decimals_include_nan(x):
+    assert not math.isnan(x)
+
+
+@fails_with(AssertionError)
+@given(decimals())
+def test_decimals_include_inf(x):
+    assert not math.isinf(x)
+
+
+@given(decimals(allow_nan=False))
+def test_decimals_can_disallow_nan(x):
+    assert not math.isnan(x)
+
+
+@given(decimals(allow_infinity=False))
+def test_decimals_can_disallow_inf(x):
+    assert not math.isinf(x)
