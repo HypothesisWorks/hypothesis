@@ -360,7 +360,6 @@ from hypothesis.utils.conventions import not_set
 
 def accept(%(funcname)s):
     def %(name)s(%(argspec)s):
-        '''%(docstring)s'''
         return %(funcname)s(%(invocation)s)
     return %(name)s
 """.strip() + '\n'
@@ -421,12 +420,12 @@ def define_function_signature(name, docstring, argspec):
             COPY_ARGSPEC_SCRIPT % {
                 'name': name,
                 'funcname': funcname,
-                'docstring': docstring,
                 'argspec': ', '.join(parts),
                 'invocation': ', '.join(invocation_parts)
             }).accept
 
         result = base_accept(f)
+        result.__doc__ = docstring
         result.__defaults__ = argspec.defaults
         return result
     return accept
