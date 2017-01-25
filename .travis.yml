@@ -40,6 +40,8 @@ env:
         - TASK=check-fakefactory060
         - TASK=check-django17
         - TASK=check-django18
+        - TASK=check-django19
+        - TASK=check-django110
 
 script:
     - make $TASK
@@ -68,6 +70,10 @@ matrix:
           env: TASK=check-django17
         - os: osx
           env: TASK=check-django18
+        - os: osx
+          env: TASK=check-django19
+        - os: osx
+          env: TASK=check-django110
         - os: osx
           env: TASK=check-examples2
         - os: osx
