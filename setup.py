@@ -42,7 +42,7 @@ extras = {
     'fakefactory': ["Faker>=0.7.0,<=0.7.1"],
     'django': ['pytz', 'django>=1.7'],
     'numpy': ['numpy>=1.9.0'],
-    'pytest': ['pytest>=2.7.0'],
+    'pytest': ['pytest>=2.8.0'],
 }
 
 extras['faker'] = extras['fakefactory']
