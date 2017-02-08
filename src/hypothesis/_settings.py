@@ -49,8 +49,9 @@ _db_cache = {}
 
 class settingsProperty(object):
 
-    def __init__(self, name):
+    def __init__(self, name, show_default):
         self.name = name
+        self.show_default = show_default
 
     def __get__(self, obj, type=None):
         if obj is None:
@@ -69,9 +70,11 @@ class settingsProperty(object):
 
     @property
     def __doc__(self):
+        default = repr(getattr(settings.default, self.name)) if \
+            self.show_default else '(dynamically calculated)'
         return '\n'.join((
             all_settings[self.name].description,
-            'default value: %r' % (getattr(settings.default, self.name),)
+            'default value: %s' % (default,)
         ))
 
 
@@ -167,7 +170,7 @@ class settings(settingsMeta('settings', (object,), {})):
     @classmethod
     def define_setting(
         cls, name, description, default, options=None, deprecation=None,
-        validator=None,
+        validator=None, show_default=True,
     ):
         """Add a new setting.
 
@@ -191,7 +194,7 @@ class settings(settingsMeta('settings', (object,), {})):
         all_settings[name] = Setting(
             name, description.strip(), default, options, validator
         )
-        setattr(settings, name, settingsProperty(name))
+        setattr(settings, name, settingsProperty(name, show_default))
 
     @classmethod
     def lock_further_definitions(cls):
@@ -423,6 +426,7 @@ settings.define_setting(
         os.getenv('HYPOTHESIS_DATABASE_FILE') or
         os.path.join(hypothesis_home_dir(), 'examples')
     ),
+    show_default=False,
     description="""
     database: An instance of hypothesis.database.ExampleDatabase that will be
 used to save examples to and load previous examples from. May be None
