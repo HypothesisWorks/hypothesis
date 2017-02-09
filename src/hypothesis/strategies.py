@@ -25,8 +25,8 @@ from fractions import Fraction
 from hypothesis.errors import InvalidArgument
 from hypothesis.control import assume
 from hypothesis.searchstrategy import SearchStrategy
-from hypothesis.internal.compat import ArgSpec, text_type, getargspec, \
-    integer_types, float_to_decimal
+from hypothesis.internal.compat import hrange, ArgSpec, text_type, \
+    getargspec, integer_types, float_to_decimal
 from hypothesis.internal.floats import is_negative, float_to_int, \
     int_to_float, count_between_floats
 from hypothesis.utils.conventions import not_set
@@ -857,18 +857,24 @@ def recursive(base, extend, max_leaves=100):
 def permutations(values):
     """Return a strategy which returns permutations of the collection
     "values"."""
+    from hypothesis.internal.conjecture.utils import integer_range
+
     values = list(values)
     if not values:
-        return just(()).map(lambda _: [])
+        return builds(list)
 
-    def build_permutation(swaps):
-        initial = list(values)
-        for i, j in swaps:
-            initial[i], initial[j] = initial[j], initial[i]
-        return initial
-    n = len(values)
-    index = integers(0, n - 1)
-    return lists(tuples(index, index), max_size=n ** 2).map(build_permutation)
+    class PermutationStrategy(SearchStrategy):
+
+        def do_draw(self, data):
+            # Reversed Fisher-Yates shuffle. Reverse order so that it shrinks
+            # propertly: This way we prefer things that are lexicographically
+            # closer to the identity.
+            result = list(values)
+            for i in hrange(len(result)):
+                j = integer_range(data, i, len(result) - 1)
+                result[i], result[j] = result[j], result[i]
+            return result
+    return PermutationStrategy()
 
 
 @cacheable
