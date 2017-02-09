@@ -65,8 +65,7 @@ class Minimizer(object):
     def _shrink_index(self, i, c):
         assert isinstance(self.current, hbytes)
         assert 0 <= i < self.size
-        if self.current[i] <= c:
-            return False
+        assert self.current[i] > c
         if self.incorporate(
             self.current[:i] + hbytes([c]) +
             self.current[i + 1:]
@@ -113,7 +112,7 @@ class Minimizer(object):
                 k //= 2
 
     def rotate_suffixes(self):
-        for significant, c in enumerate(self.current):
+        for significant, c in enumerate(self.current):  # pragma: no branch
             if c:
                 break
         assert self.current[significant]
