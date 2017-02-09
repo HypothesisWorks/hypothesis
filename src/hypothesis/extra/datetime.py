@@ -126,21 +126,20 @@ def datetime_to_time(dt):
 
 SECS_IN_DAY = 3600 * 24
 MICROS_IN_SEC = 1000000
-MICROS_IN_DAY = MICROS_IN_SEC * SECS_IN_DAY
 class TimedeltaStrategy(SearchStrategy):
 
     def __init__(self, min_value=dt.timedelta.min, max_value=dt.timedelta.max):
+        assert type(min_value) == dt.timedelta, 'min_value must be a timedelta'
+        assert type(max_value) == dt.timedelta, 'min_value must be a timedelta'
+        assert min_value <= max_value, 'max_value cannot be smaller than min_value'
+
         self.max_micros = max_value.microseconds + (max_value.seconds + max_value.days * SECS_IN_DAY) * MICROS_IN_SEC
         self.min_micros = min_value.microseconds + (min_value.seconds + min_value.days * SECS_IN_DAY) * MICROS_IN_SEC
 
     def do_draw(self, data):
         new_td_micros = cu.integer_range(data, self.min_micros, self.max_micros)
 
-        days = new_td_micros / MICROS_IN_DAY
-        secs = (new_td_micros - days * MICROS_IN_DAY) / MICROS_IN_SEC
-        micros = (new_td_micros - days * MICROS_IN_DAY - secs * MICROS_IN_SEC)
-
-        return dt.timedelta(days=days, seconds=secs, microseconds=micros)
+        return dt.timedelta(microseconds=new_td_micros)
 
 
 @defines_strategy
