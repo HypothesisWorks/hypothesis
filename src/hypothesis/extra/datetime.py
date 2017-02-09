@@ -124,22 +124,31 @@ def times(allow_naive=None, timezones=None):
 def datetime_to_time(dt):
     return dt.timetz()
 
-SECS_IN_DAY = 3600 * 24
-MICROS_IN_SEC = 1000000
+
 class TimedeltaStrategy(SearchStrategy):
 
     def __init__(self, min_value=dt.timedelta.min, max_value=dt.timedelta.max):
         assert type(min_value) == dt.timedelta, 'min_value must be a timedelta'
         assert type(max_value) == dt.timedelta, 'min_value must be a timedelta'
-        assert min_value <= max_value, 'max_value cannot be smaller than min_value'
+        assert min_value <= max_value,\
+            'max_value must not be smaller than min_value'
 
-        self.max_micros = max_value.microseconds + (max_value.seconds + max_value.days * SECS_IN_DAY) * MICROS_IN_SEC
-        self.min_micros = min_value.microseconds + (min_value.seconds + min_value.days * SECS_IN_DAY) * MICROS_IN_SEC
+        SECS_IN_DAY = 3600 * 24
+        MICROS_IN_SEC = 1000000
+
+        max_days, min_days = max_value.days, min_value.days
+        max_secs, min_secs = max_value.seconds, min_value.seconds
+        max_ms, min_ms = max_value.microseconds, min_value.microseconds
+
+        self.max_micros = (max_ms + (max_secs * MICROS_IN_SEC) +
+                           (max_days * SECS_IN_DAY * MICROS_IN_SEC))
+        self.min_micros = (min_ms + (min_secs * MICROS_IN_SEC) +
+                           (min_days * SECS_IN_DAY * MICROS_IN_SEC))
 
     def do_draw(self, data):
-        new_td_micros = cu.integer_range(data, self.min_micros, self.max_micros)
+        td_micros = cu.integer_range(data, self.min_micros, self.max_micros)
 
-        return dt.timedelta(microseconds=new_td_micros)
+        return dt.timedelta(microseconds=td_micros)
 
 
 @defines_strategy
