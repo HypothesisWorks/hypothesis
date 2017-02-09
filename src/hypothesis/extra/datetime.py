@@ -123,3 +123,60 @@ def times(allow_naive=None, timezones=None):
 
 def datetime_to_time(dt):
     return dt.timetz()
+
+class TimedeltaStrategy(SearchStrategy):
+
+    def __init__(self, min_days=None, max_days=None,
+                min_secs=None, max_secs=None,
+                min_micros=None, max_micros=None,
+                min_value=None, max_value=None,
+                positive_only=False):
+
+        # Boundaries imposed by the type definition.
+        # See https://docs.python.org/2/library/datetime.html#datetime.timedelta
+        MIN_DAYS = -999999999
+        MAX_DAYS = 999999999
+        MIN_SECS = 0
+        MAX_SECS = 3600 * 24
+        MIN_MICROS = 0
+        MAX_MICROS = 1000000
+
+        self.min_days = MIN_DAYS if min_days is None else max(min_days, MIN_DAYS)
+        self.max_days = MAX_DAYS if max_days is None else min(max_days, MAX_DAYS)
+        self.min_secs = MIN_SECS if min_secs is None else max(min_secs, MIN_SECS)
+        self.max_secs = MAX_SECS if max_secs is None else min(max_secs, MAX_SECS)
+        self.min_micros = MIN_MICROS if min_micros is None else max(min_micros, MIN_MICROS)
+        self.max_micros = MAX_MICROS if max_micros is None else min(max_micros, MAX_MICROS)
+
+        if min_value is not None:
+            self.min_days = max(self.min_days, min_value.days)
+            self.min_secs = max(self.min_secs, min_value.seconds)
+            self.min_micros = max(self.min_micros, min_value.microseconds)
+
+        if max_value is not None:
+            self.max_days = min(self.max_days, max_value.days)
+            self.max_secs = min(self.max_secs, max_value.seconds)
+            self.max_micros = min(self.max_micros, max_value.microseconds)
+
+        if positive_only:
+            self.min_days = max(0, self.min_days)
+            self.min_secs = max(0, self.min_secs)
+            self.min_micros = max(0, self.min_micros)
+
+    def do_draw(self, data):
+
+        return dt.timedelta(
+            days=cu.integer_range(data, self.min_days, self.max_days),
+            seconds=cu.integer_range(data, self.min_secs, self.max_secs),
+            microseconds=cu.integer_range(data, self.min_micros, self.max_micros))
+
+
+@defines_strategy
+def timedeltas(min_days=None, max_days=None,
+            min_secs=None, max_secs=None,
+            min_micros=None, max_micros=None,
+            min_value=None, max_value=None,
+            positive_only=False):
+    return TimedeltaStrategy(min_days, max_days, min_secs, max_secs,
+                             min_micros, max_micros, min_value,
+                             max_value, positive_only)
