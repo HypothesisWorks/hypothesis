@@ -392,7 +392,7 @@ class compatbytes(bytearray):
         return compatbytes(bytearray.__add__(self, value))
 
     def __radd__(self, value):
-        return compatbytes(bytearray.__radd__(self, value))
+        return compatbytes(bytearray.__add__(value, self))
 
     def __mul__(self, value):
         return compatbytes(bytearray.__mul__(self, value))

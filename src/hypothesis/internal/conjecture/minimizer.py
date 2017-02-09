@@ -118,7 +118,7 @@ class Minimizer(object):
                 break
         assert self.current[significant]
 
-        prefix = bytes(significant)
+        prefix = hbytes(significant)
 
         for i in range(1, self.size - significant):
             left = self.current[significant:significant + i]
