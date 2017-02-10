@@ -119,8 +119,8 @@ For example, it's super useful and highly appreciated if you do any of:
 * Write about Hypothesis
 * Build libraries and tools on top of Hypothesis outside the main repo
 
-Of, if you're OK with the pull request but don't feel quite ready to touch the code, you can always
-help to improve the documentation. Spot a tyop? Fix it up and send me a pull request!
+Or, if you're OK with the pull request but don't feel quite ready to touch the code, you can always
+help to improve the documentation. Spot a typo? Fix it up and send me a pull request!
 
 If you need any help with any of these, get in touch and I'll be extremely happy to provide it.
 
