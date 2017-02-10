@@ -8,6 +8,10 @@ os:
     - osx
     - linux
 
+branches:
+  only:
+    - "master"
+
 cache:
     apt: true
     directories:
