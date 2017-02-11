@@ -35,9 +35,8 @@ env:
         - TASK=check-py36
         - TASK=check-nose
         - TASK=check-pytest28
-        - TASK=check-fakefactory052
-        - TASK=check-fakefactory053
-        - TASK=check-fakefactory060
+        - TASK=check-faker070
+        - TASK=check-faker071
         - TASK=check-django17
         - TASK=check-django18
         - TASK=check-django19
@@ -67,11 +66,9 @@ matrix:
         - os: osx
           env: TASK=check-pytest28
         - os: osx
-          env: TASK=check-fakefactory052
+          env: TASK=check-faker070
         - os: osx
-          env: TASK=check-fakefactory053
-        - os: osx
-          env: TASK=check-fakefactory060
+          env: TASK=check-faker071
         - os: osx
           env: TASK=check-django17
         - os: osx
