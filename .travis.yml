@@ -25,18 +25,23 @@ env:
         - BUILD_RUNTIMES=$HOME/.runtimes
 
     matrix:
+        # Core tests that we want to run first.
         - TASK=documentation
         - TASK=lint
         - TASK=check-format
         - TASK=check-coverage
-        - TASK=check-unicode
-        - TASK=check-ancient-pip
         - TASK=check-pypy
         - TASK=check-py27
+        - TASK=check-py36
+
+        # Less important tests that will probably
+        # pass whenever the above do but are still
+        # worth testing.
+        - TASK=check-unicode
+        - TASK=check-ancient-pip
         - TASK=check-py273
         - TASK=check-py34
         - TASK=check-py35
-        - TASK=check-py36
         - TASK=check-nose
         - TASK=check-pytest28
         - TASK=check-fakefactory052
