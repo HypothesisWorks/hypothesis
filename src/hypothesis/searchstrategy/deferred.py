@@ -31,6 +31,18 @@ def tupleize(x):
         return x
 
 
+def unwrap_strategies(s):
+    if isinstance(s, SearchStrategy):
+        while True:
+            assert isinstance(s, SearchStrategy)
+            try:
+                s = s.wrapped_strategy
+            except AttributeError:
+                return s
+    else:
+        return s
+
+
 class DeferredStrategy(SearchStrategy):
 
     """A strategy which is defined purely by conversion to and from another
@@ -64,9 +76,9 @@ class DeferredStrategy(SearchStrategy):
         if self.__wrapped_strategy is None:
             with self.__settings:
                 self.__wrapped_strategy = self.__function(
-                    *self.__args,
-                    **self.__kwargs
-                )
+                    *[unwrap_strategies(s) for s in self.__args],
+                    **{k: unwrap_strategies(v)
+                       for k, v in self.__kwargs.items()})
         return self.__wrapped_strategy
 
     def validate(self):
