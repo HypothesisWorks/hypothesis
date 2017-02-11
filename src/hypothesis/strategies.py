@@ -1051,11 +1051,14 @@ def data():
         def __repr__(self):
             return 'data(...)'
 
-        def draw(self, strategy):
+        def draw(self, strategy, label=None):
             self.data.mark_bind()
             result = self.data.draw(strategy)
             self.count += 1
-            note('Draw %d: %r' % (self.count, result))
+            if label is not None:
+                note('Draw %d (%s): %r' % (self.count, label, result))
+            else:
+                note('Draw %d: %r' % (self.count, result))
             return result
 
     class DataStrategy(SearchStrategy):
