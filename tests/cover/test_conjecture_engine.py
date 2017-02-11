@@ -442,10 +442,16 @@ def test_garbage_collects_the_database():
     counter = [0]
 
     def f(data):
+        """This function is designed to shrink very badly.
+
+        So we only occasionally mark things as interesting, and require
+        a certain amount of complexity to do so.
+
+        """
         x = hbytes(data.draw_bytes(512))
         if not go:
             return
-        if counter[0] % 10 == 0 and len(seen) < n:
+        if counter[0] % 10 == 0 and len(seen) < n and sum(x) > 1000:
             seen.add(x)
         counter[0] += 1
         if x in seen:
