@@ -45,6 +45,10 @@ if [ "$DARWIN" = true ]; then
   exit 0
 fi
 
+if [ "$(python -c 'import sys; print(sys.version_info[:2] in ((2, 7), (3, 6))')" = "False" ] ; then
+  exit 0
+fi
+
 # fake-factory doesn't have a correct universal wheel
 pip install --no-binary :all: faker
 $PYTEST tests/fakefactory/
