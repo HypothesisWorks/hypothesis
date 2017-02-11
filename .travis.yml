@@ -69,6 +69,8 @@ matrix:
         - os: osx
           env: TASK=check-py34
         - os: osx
+          env: TASK=check-py35
+        - os: osx
           env: TASK=check-pytest28
         - os: osx
           env: TASK=check-fakefactory052
