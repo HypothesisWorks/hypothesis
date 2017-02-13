@@ -47,7 +47,7 @@ class interval(SearchStrategy):
 def test_intervals_shrink_to_center(inter, rnd):
     lower, center, upper = inter
     s = interval(lower, upper, center)
-    with settings(database=None, max_shrinks=2000):
+    with settings(database=None, max_shrinks=2000, timeout=-1):
         assert find(s, lambda x: True) == center
         if lower < center:
             assert find(s, lambda x: x < center) == center - 1
