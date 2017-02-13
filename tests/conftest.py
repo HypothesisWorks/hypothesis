@@ -48,7 +48,7 @@ def consistently_increment_time(monkeypatch):
     current_time = [time_module.time()]
 
     def time():
-        current_time[0] += 0.0001
+        current_time[0] += 0.01
         return current_time[0]
 
     def sleep(naptime):
