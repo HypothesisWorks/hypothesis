@@ -49,7 +49,7 @@ def test_minimize_list_on_large_structure():
 
     assert minimal(
         lists(integers(), min_size=60, average_size=120), test_list_in_range,
-        timeout_after=30,
+        timeout_after=60,
     ) == [10] * 60
 
 
@@ -103,7 +103,7 @@ def test_minimize_list_of_floats_on_large_structure():
 
     result = minimal(
         lists(floats(), min_size=50, average_size=100),
-        test_list_in_range, timeout_after=20)
+        test_list_in_range, timeout_after=60)
     result.sort()
     assert result == [0.0] * 20 + [3.0] * 30
 
@@ -215,7 +215,8 @@ def test_minimal_mixed_list_propagates_leftwards():
 
     assert minimal(
         lists(booleans() | tuples(integers()), min_size=50),
-        long_list_with_enough_bools
+        long_list_with_enough_bools,
+        timeout_after=60,
     ) == [False] * 50
 
 
@@ -310,7 +311,8 @@ def test_minimize_multiple_elements_in_silly_large_int_range_min_is_not_dupe():
     x = minimal(
         lists(ir),
         lambda x: (
-            assume(len(x) >= 20) and all(x[i] >= target[i] for i in target))
+            assume(len(x) >= 20) and all(x[i] >= target[i] for i in target)),
+        timeout_after=60,
     )
     assert x == target
 
@@ -437,7 +439,8 @@ def test_increasing_float_sequence():
     xs = minimal(
         lists(floats()), lambda x: length_of_longest_ordered_sequence([
             t for t in x if t >= 0
-        ]) >= 7 and len([t for t in x if t >= 500.0]) >= 4
+        ]) >= 7 and len([t for t in x if t >= 500.0]) >= 4,
+        timeout_after=60,
     )
     assert max(xs) < 1000
     assert not any(math.isinf(x) for x in xs)
