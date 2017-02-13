@@ -86,8 +86,8 @@ class Minimizer(object):
             hbytes([255] * (self.size - i - 1))
         )
 
-    def ddlower(self, c):
-        self.ddfixate(lambda b: min(b, c))
+    def ddzero(self):
+        self.ddfixate(lambda b: 0)
 
     def ddshift(self):
         self.ddfixate(lambda b: b >> 1)
@@ -156,19 +156,13 @@ class Minimizer(object):
         while self.current and change_counter < self.changes:
             change_counter = self.changes
 
-            self.ddlower(0)
-            self.ddlower(1)
+            self.ddzero()
             self.ddshift()
             self.ddsub()
 
             if change_counter != self.changes:
                 continue
 
-            for c in sorted(set(self.current) - {0, 1, max(self.current)}):
-                self.ddlower(c)
-
-            if change_counter != self.changes:
-                continue
             self.shrink_indices()
 
             if change_counter != self.changes or self.cautious:
