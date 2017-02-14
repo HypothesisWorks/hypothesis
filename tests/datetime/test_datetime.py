@@ -139,7 +139,7 @@ def test_bordering_on_a_leap_year():
     x = minimal(
         datetimes(min_year=2002, max_year=2005),
         lambda x: x.month == 2 and x.day == 29,
-        settings=settings(database=None, max_examples=10 ** 7)
+        settings=settings(database=None, max_examples=10 ** 7, timeout=-1)
     )
     assert x.year == 2004
 
