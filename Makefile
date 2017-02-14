@@ -118,6 +118,9 @@ check-pytest30: $(TOX) $(PY35)
 check-pytest28: $(TOX) $(PY35)
 	$(TOX) -e pytest28
 
+check-quality: $(PY36) $(TOX)
+	$(TOX) -e quality
+
 check-ancient-pip: $(PY273)
 	scripts/check-ancient-pip.sh $(PY273)
 
