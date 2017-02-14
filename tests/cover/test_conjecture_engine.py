@@ -439,23 +439,33 @@ def test_garbage_collects_the_database():
     seen = set()
     go = True
 
+    counter = [0]
+
     def f(data):
+        """This function is designed to shrink very badly.
+
+        So we only occasionally mark things as interesting, and require
+        a certain amount of complexity to do so.
+
+        """
         x = hbytes(data.draw_bytes(512))
         if not go:
             return
-        if sum(x) >= 5000 and len(seen) < n:
+        if counter[0] % 10 == 0 and len(seen) < n and sum(x) > 1000:
             seen.add(x)
+        counter[0] += 1
         if x in seen:
             data.mark_interesting()
-    runner = ConjectureRunner(
-        f, settings=settings(database=db, max_shrinks=2 * n), database_key=key)
+
+    local_settings = settings(database=db, max_shrinks=2 * n, timeout=-1)
+
+    runner = ConjectureRunner(f, settings=local_settings, database_key=key)
     runner.run()
     assert runner.last_data.status == Status.INTERESTING
     assert len(seen) == n
     assert set(db.fetch(key)) == seen
     go = False
-    runner = ConjectureRunner(
-        f, settings=settings(database=db, max_shrinks=2 * n), database_key=key)
+    runner = ConjectureRunner(f, settings=local_settings, database_key=key)
     runner.run()
     assert 0 < len(set(db.fetch(key))) < n
 

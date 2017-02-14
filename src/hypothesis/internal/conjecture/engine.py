@@ -378,51 +378,48 @@ class ConjectureRunner(object):
         while self.changed > change_counter:
             change_counter = self.changed
 
-            self.debug('Random interval deletes')
-            failed_deletes = 0
-            while self.last_data.intervals and failed_deletes < 10:
-                if self.random.randint(0, 1):
-                    u, v = self.random.choice(self.last_data.intervals)
-                else:
-                    n = len(self.last_data.buffer) - 1
-                    u, v = sorted((
-                        self.random.choice(self.last_data.intervals)
-                    ))
-                if (
-                    v < len(self.last_data.buffer)
-                ) and self.incorporate_new_buffer(
-                    self.last_data.buffer[:u] +
-                    self.last_data.buffer[v:]
-                ):
-                    failed_deletes = 0
-                else:
-                    failed_deletes += 1
-
             self.debug('Structured interval deletes')
+
+            k = len(self.last_data.intervals) // 2
+            while k > 0:
+                i = 0
+                while i + k <= len(self.last_data.intervals):
+                    bitmask = [True] * len(self.last_data.buffer)
+
+                    for u, v in self.last_data.intervals[i:i + k]:
+                        for t in range(u, v):
+                            bitmask[t] = False
+
+                    u, v = self.last_data.intervals[i]
+                    if not self.incorporate_new_buffer(hbytes(
+                        b for b, v in zip(self.last_data.buffer, bitmask)
+                        if v
+                    )):
+                        i += k
+                k //= 2
+
+            if change_counter != self.changed:
+                self.debug('Restarting')
+                continue
+
+            self.debug('Bulk replacing blocks with simpler blocks')
             i = 0
-            while i < len(self.last_data.intervals):
-                u, v = self.last_data.intervals[i]
-                if not self.incorporate_new_buffer(
-                    self.last_data.buffer[:u] +
-                    self.last_data.buffer[v:]
-                ):
-                    i += 1
+            while i < len(self.last_data.blocks):
+                u, v = self.last_data.blocks[i]
+                buf = self.last_data.buffer
+                block = buf[u:v]
+                n = v - u
 
-            if change_counter != self.changed:
-                self.debug('Restarting')
-                continue
+                buffer = bytearray()
+                for r, s in self.last_data.blocks:
+                    if s - r == n and self.last_data.buffer[r:s] > block:
+                        buffer.extend(block)
+                    else:
+                        buffer.extend(self.last_data.buffer[r:s])
+                self.incorporate_new_buffer(hbytes(buffer))
+                i += 1
 
-            self.debug('Lexicographical minimization of whole buffer')
-            minimize(
-                self.last_data.buffer, self.incorporate_new_buffer,
-                cautious=True
-            )
-
-            if change_counter != self.changed:
-                self.debug('Restarting')
-                continue
-
-            self.debug('Replacing blocks with simpler blocks')
+            self.debug('Replacing individual blocks with simpler blocks')
             i = 0
             while i < len(self.last_data.blocks):
                 u, v = self.last_data.blocks[i]
@@ -467,6 +464,16 @@ class ConjectureRunner(object):
                         lambda b: self.incorporate_new_buffer(replace(b)),
                         self.random
                     )
+
+            if change_counter != self.changed:
+                self.debug('Restarting')
+                continue
+
+            self.debug('Lexicographical minimization of whole buffer')
+            minimize(
+                self.last_data.buffer, self.incorporate_new_buffer,
+                cautious=True
+            )
 
             self.debug('Shrinking of individual blocks')
             i = 0
