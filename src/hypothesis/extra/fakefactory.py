@@ -23,6 +23,7 @@ from random import Random
 import faker
 from faker.factory import AVAILABLE_LOCALES
 
+import hypothesis.internal.conjecture.utils as cu
 from hypothesis.internal.compat import text_type
 from hypothesis.internal.reflection import check_valid_identifier
 from hypothesis.searchstrategy.strategies import SearchStrategy
@@ -73,7 +74,7 @@ class FakeFactoryStrategy(SearchStrategy):
         self.factories = {}
 
     def do_draw(self, data):
-        seed = data.draw_bytes(4)
+        seed = cu.n_byte_unsigned(4)
         random = Random(bytes(seed))
         return self.gen_example(random)
 

@@ -70,6 +70,7 @@ class Minimizer(object):
             return True
         if i == self.size - 1:
             return False
+
         return self.incorporate(
             self.current[:i] + hbytes([c, 255]) +
             self.current[i + 2:]
@@ -81,11 +82,19 @@ class Minimizer(object):
     def run(self):
         if not any(self.current):
             return
+        if len(self.current) == 1:
+            for c in range(self.current[0]):
+                if self.incorporate(hbytes([c])):
+                    break
+            return
         if self.incorporate(hbytes(self.size)):
+            return
+        if self.incorporate(hbytes([0] * (self.size - 1) + [1])):
             return
         change_counter = -1
         while self.current and change_counter < self.changes:
             change_counter = self.changes
+
             for c in hrange(max(self.current)):
                 if self.incorporate(
                     hbytes(min(b, c) for b in self.current)
@@ -128,6 +137,17 @@ class Minimizer(object):
                                     break
                             break
 
+            if change_counter != self.changes or self.cautious:
+                continue
+
+            for c in range(256):
+                for i in hrange(self.size - 1):
+                    if self.current[i] > 0:
+                        x = bytearray(self.current)
+                        x[i] -= 1
+                        x[-1] = c
+                        self.incorporate(hbytes(x))
+
 
 # Table of useful small shrinks to apply to a number.
 # The idea is that we use these first to see if shrinking is likely to work.
@@ -162,6 +182,7 @@ def minimize(initial, condition, random=None, cautious=False):
     be.
 
     """
+    assert random is not None
     m = Minimizer(initial, condition, random, cautious)
     m.run()
     return m.current

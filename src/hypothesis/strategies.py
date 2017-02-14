@@ -301,14 +301,19 @@ def floats(
                     allow_infinity
                 ))
 
-    from hypothesis.searchstrategy.numbers import FloatStrategy, \
+    from hypothesis.searchstrategy.floats import FloatStrategy, \
         FixedBoundedFloatStrategy
+    from hypothesis.internal.floats import sign
     if min_value is None and max_value is None:
         return FloatStrategy(
             allow_infinity=allow_infinity, allow_nan=allow_nan,
         )
     elif min_value is not None and max_value is not None:
-        if min_value == max_value:
+        if sign(min_value) != sign(max_value):
+            return floats(min_value=0.0, max_value=max_value) | floats(
+                min_value=min_value, max_value=-0.0,
+            )
+        elif min_value == max_value:
             return just(min_value)
         elif math.isinf(max_value - min_value):
             assert min_value < 0 and max_value > 0
@@ -374,7 +379,7 @@ def floats(
 @defines_strategy
 def complex_numbers():
     """Returns a strategy that generates complex numbers."""
-    from hypothesis.searchstrategy.numbers import ComplexStrategy
+    from hypothesis.searchstrategy.floats import ComplexStrategy
     return ComplexStrategy(
         tuples(floats(), floats())
     )

@@ -23,6 +23,7 @@ from hypothesis.errors import Frozen, InvalidArgument
 from hypothesis.internal.compat import hbytes, hrange, text_type, \
     int_to_bytes, benchmark_time, unicode_safe_repr, \
     reasonable_byte_type
+import hypothesis.internal._sampler as s
 
 
 def uniform(random, n):
@@ -45,6 +46,27 @@ class StopTest(BaseException):
 
 global_test_counter = 0
 
+BYTES_TO_STRINGS = [hbytes([b]) for b in range(256)]
+
+UNIFORM_WEIGHTS = (1,) * 256
+
+
+sampler_cache = {}
+
+
+def draw_random(random):
+    def accept(data, weights, choices):
+        try:
+            sampler = sampler_cache[weights]
+        except KeyError:
+            sampler = s.lib.random_sampler_new(
+                len(weights), weights, random.getrandbits(32))
+            sampler_cache[weights] = sampler
+        return choices[s.lib.random_sampler_sample(sampler)]
+    return accept
+
+ALL_BYTES = hrange(256)
+
 
 class ConjectureData(object):
 
@@ -52,18 +74,24 @@ class ConjectureData(object):
     def for_buffer(self, buffer):
         return ConjectureData(
             max_length=len(buffer),
-            draw_bytes=lambda data, n, distribution:
-            buffer[data.index:data.index + n]
+            draw_byte=lambda data, weights, choices: buffer[data.index],
         )
 
-    def __init__(self, max_length, draw_bytes):
+    @classmethod
+    def for_random(self, random, max_length):
+        return ConjectureData(
+            max_length=max_length,
+            draw_byte=draw_random(random),
+        )
+
+    def __init__(self, max_length, draw_byte):
         self.max_length = max_length
         self.is_find = False
-        self._draw_bytes = draw_bytes
+        self._draw_byte = draw_byte
         self.overdraw = 0
         self.level = 0
         self.block_starts = {}
-        self.blocks = []
+        self.blocks = [[0, 0]]
         self.buffer = bytearray()
         self.output = u''
         self.status = Status.VALID
@@ -71,12 +99,21 @@ class ConjectureData(object):
         self.intervals_by_level = []
         self.intervals = []
         self.interval_stack = []
+        self.interval_counter_stack = []
         global global_test_counter
         self.testcounter = global_test_counter
         global_test_counter += 1
         self.start_time = benchmark_time()
         self.events = set()
         self.bind_points = set()
+
+    def __block_boundary(self):
+        i, j = self.blocks[-1]
+        if i == j:
+            return
+        if not self.interval_stack:
+            self.intervals.append(tuple(self.blocks[-1]))
+        self.blocks.append([self.index, self.index])
 
     def __assert_not_frozen(self, name):
         if self.frozen:
@@ -122,15 +159,19 @@ class ConjectureData(object):
 
     def start_example(self):
         self.__assert_not_frozen('start_example')
+        self.__block_boundary()
         self.interval_stack.append(self.index)
+        self.interval_counter_stack.append(len(self.intervals))
         self.level += 1
 
     def stop_example(self):
         self.__assert_not_frozen('stop_example')
+        self.__block_boundary()
         self.level -= 1
         while self.level >= len(self.intervals_by_level):
             self.intervals_by_level.append([])
         k = self.interval_stack.pop()
+
         if k != self.index:
             t = (k, self.index)
             self.intervals_by_level[self.level].append(t)
@@ -145,6 +186,9 @@ class ConjectureData(object):
             assert isinstance(self.buffer, hbytes)
             return
         self.frozen = True
+        self.blocks = list(map(tuple, self.blocks))
+        for i, j in self.blocks:
+            self.block_starts.setdefault(j - i, []).append(i)
         self.finish_time = benchmark_time()
         # Intervals are sorted as longest first, then by interval start.
         for l in self.intervals_by_level:
@@ -157,25 +201,70 @@ class ConjectureData(object):
         )
         self.buffer = hbytes(self.buffer)
         self.events = frozenset(self.events)
-        del self._draw_bytes
+        del self._draw_byte
 
-    def draw_bytes(self, n, distribution=uniform):
-        if n == 0:
-            return hbytes(b'')
-        self.__assert_not_frozen('draw_bytes')
-        initial = self.index
-        if self.index + n > self.max_length:
-            self.overdraw = self.index + n - self.max_length
+    def draw_byte(self, weights=UNIFORM_WEIGHTS, choices=None):
+        if self.index >= self.max_length:
+            self.overdraw = 1
             self.status = Status.OVERRUN
             self.freeze()
             raise StopTest(self.testcounter)
-        result = self._draw_bytes(self, n, distribution)
-        self.block_starts.setdefault(n, []).append(initial)
-        self.blocks.append((initial, initial + n))
-        assert len(result) == n
-        assert self.index == initial
-        self.buffer.extend(result)
-        self.intervals.append((initial, self.index))
+
+        if choices is not None:
+            assert len(choices) == len(weights)
+
+        result = self._draw_byte(self, tuple(weights), choices or ALL_BYTES)
+
+        if choices is None:
+            index_of_result = result
+        else:
+            try:
+                index_of_result = choices.index(result)
+            except ValueError:
+                index_of_result = len(weights)
+
+        if index_of_result >= len(weights):
+            weight_of_result = 0
+        else:
+            weight_of_result = weights[index_of_result]
+
+        if weight_of_result > 0:
+            self.buffer.append(result)
+            self.blocks[-1][-1] += 1
+            return result
+        else:
+            self.mark_invalid()
+
+    def __draw_prefix(self, result, grammar):
+        state = grammar
+        while True:
+            weights = state.weights()
+            if not any(weights):
+                assert state.matches_empty
+                break
+            if state.matches_empty:
+                return state
+            c = self.draw_byte(weights, state.choices())
+            new_state = state.derivative(c)
+            if new_state.has_matches():
+                state = new_state
+                result.append(c)
+
+    def draw_from_grammar(self, grammar):
+        if not grammar.has_matches():
+            self.mark_invalid()
+        result = bytearray()
+
+        state = grammar
+        while True:
+            assert state.has_matches()
+            state = self.__draw_prefix(result, state)
+            if state is None:
+                break
+            assert state.matches_empty
+            p = 0.5
+            if not self.draw_byte([p, 1 - p]):
+                break
         return reasonable_byte_type(result)
 
     def mark_interesting(self):

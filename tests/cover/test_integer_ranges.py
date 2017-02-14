@@ -19,23 +19,20 @@ from __future__ import division, print_function, absolute_import
 
 import hypothesis.strategies as st
 from hypothesis import find, given, settings
-from hypothesis.internal.conjecture.data import ConjectureData
 from hypothesis.internal.conjecture.utils import integer_range
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
 class interval(SearchStrategy):
 
-    def __init__(self, lower, upper, center=None, distribution=None):
+    def __init__(self, lower, upper, center=None):
         self.lower = lower
         self.upper = upper
         self.center = center
-        self.distribution = distribution
 
     def do_draw(self, data):
         return integer_range(
             data, self.lower, self.upper, center=self.center,
-            distribution=self.distribution,
         )
 
 
@@ -56,18 +53,14 @@ def test_intervals_shrink_to_center(inter, rnd):
 
 
 @given(
-    st.tuples(
-        st.integers(), st.integers(), st.integers(), st.integers()
-    ).map(sorted),
-    st.randoms(),
+    st.tuples(st.integers(), st.integers(), st.integers()).map(sorted),
+    st.random_module(),
 )
 @settings(timeout=10, max_shrinks=0)
-def test_distribution_is_correctly_translated(inter, rnd):
-    assert inter == sorted(inter)
-    lower, c1, c2, upper = inter
-    d = ConjectureData(
-        draw_bytes=lambda data, n, distribution: distribution(rnd, n),
-        max_length=10 ** 6
-    )
-    assert d.draw(interval(lower, upper, c1, lambda r: c2)) == c2
-    assert d.draw(interval(lower, upper, c2, lambda r: c1)) == c1
+def test_interval_endpoints_are_respected(inter, rnd):
+    lower, center, upper = inter
+
+    @settings(database=None, max_shrinks=2000)
+    @given(interval(lower, upper, center))
+    def test(i):
+        assert lower <= i <= upper

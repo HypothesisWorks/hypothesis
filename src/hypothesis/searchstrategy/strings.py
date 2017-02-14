@@ -17,15 +17,45 @@
 
 from __future__ import division, print_function, absolute_import
 
-import math
+import sys
 
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal import charmap
-from hypothesis.internal.compat import hunichr, text_type, binary_type
-from hypothesis.internal.intervalsets import IntervalSet
-from hypothesis.internal.conjecture.utils import integer_range
+from hypothesis.internal.compat import hunichr, text_type, bit_length, \
+    binary_type, int_to_bytes, int_from_bytes
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
     MappedSearchStrategy
+from hypothesis.internal.conjecture.grammar import Literal, Interval, \
+    Negation, Wildcard, Alternation, Intersection
+
+N_BYTES_FOR_CODEPOINT = (
+    bit_length(sys.maxunicode) // 8 + int(bit_length(sys.maxunicode) % 8 != 0)
+)
+
+
+def codepoint_interval(lower, upper):
+    return Interval(
+        int_to_bytes(lower, N_BYTES_FOR_CODEPOINT),
+        int_to_bytes(upper, N_BYTES_FOR_CODEPOINT),
+    )
+
+
+ANY_CODEPOINT = codepoint_interval(0, sys.maxunicode)
+
+CATEGORY_GRAMMARS = {}
+
+
+def category_grammar(category):
+    try:
+        return CATEGORY_GRAMMARS[category]
+    except KeyError:
+        pass
+    result = Alternation([
+        codepoint_interval(i, j)
+        for i, j in charmap.charmap()[category]
+    ])
+    CATEGORY_GRAMMARS[category] = result
+    return result
 
 
 class OneCharStringStrategy(SearchStrategy):
@@ -40,59 +70,74 @@ class OneCharStringStrategy(SearchStrategy):
                  blacklist_characters=None,
                  min_codepoint=None,
                  max_codepoint=None):
-        intervals = charmap.query(
-            include_categories=whitelist_categories,
-            exclude_categories=blacklist_categories,
-            min_codepoint=min_codepoint,
-            max_codepoint=max_codepoint,
+
+        categories = tuple(charmap.categories())
+        if whitelist_categories is not None:
+            categories = tuple(
+                c for c in categories if c in whitelist_categories)
+        if blacklist_categories is not None:
+            categories = tuple(
+                c for c in categories if c not in blacklist_categories)
+
+        grammars_by_category = tuple(category_grammar(c) for c in categories)
+        grammars_by_category = tuple(category_grammar(c) for c in categories)
+
+        base_grammar = Alternation(grammars_by_category).normalize()
+
+        if blacklist_characters is not None:
+            base_grammar = Intersection([base_grammar] + [
+                Negation(Literal(int_to_bytes(ord(v), N_BYTES_FOR_CODEPOINT)))
+                for v in blacklist_characters
+            ])
+
+        if min_codepoint is not None or max_codepoint is not None:
+            base_grammar = Intersection([
+                base_grammar,
+                codepoint_interval(
+                    min_codepoint or 0, max_codepoint or sys.maxunicode)])
+
+        base_grammar = base_grammar.normalize()
+
+        if not base_grammar.has_matches():
+            raise InvalidArgument('No valid characters in set')
+
+        grammars_by_category = tuple(
+            Intersection([g, base_grammar]).normalize()
+            for g in grammars_by_category
         )
-        if not intervals:
-            raise InvalidArgument(
-                'No valid characters in set'
-            )
-        self.intervals = IntervalSet(intervals)
-        if blacklist_characters:
-            self.blacklist_characters = set(
-                b for b in blacklist_characters if ord(b) in self.intervals
-            )
-            if len(self.blacklist_characters) == len(self.intervals):
-                raise InvalidArgument(
-                    'No valid characters in set'
-                )
-        else:
-            self.blacklist_characters = set()
-        self.zero_point = self.intervals.index_above(ord('0'))
-        self.special = []
-        if '\n' not in self.blacklist_characters:
-            n = ord('\n')
-            try:
-                self.special.append(self.intervals.index(n))
-            except ValueError:
-                pass
+        grammars_by_category = tuple(
+            g for g in grammars_by_category
+            if g.has_matches()
+        )
+
+        shrinking_grammars = [
+            Intersection([
+                codepoint_interval(ord('0') - i, sys.maxunicode),
+                base_grammar]).normalize()
+            for i in range(ord('0'))
+        ]
+        shrinking_grammars.append(base_grammar),
+
+        shrinking_grammars = tuple(
+            c for c in shrinking_grammars if c.has_matches())
+
+        self.grammars = list(shrinking_grammars + grammars_by_category)
+        self.weights = list((1,) * len(shrinking_grammars) + (
+            len(shrinking_grammars),) * len(grammars_by_category))
+
+        newline = int_to_bytes(ord(b'\n'), N_BYTES_FOR_CODEPOINT)
+        if base_grammar.matches(newline):
+            # If newlines are permitted we create a bias to generate multi
+            # line strings more often - about 10% of characters should be
+            # newlines.
+            self.grammars.append(Literal(newline))
+            self.weights.append(sum(self.weights) * 0.1 / 1.1)
+        assert len(self.grammars) == len(self.weights)
 
     def do_draw(self, data):
-        denom = math.log1p(-1 / 127)
-
-        def d(random):
-            if self.special and random.randint(0, 10) == 0:
-                return random.choice(self.special)
-            if len(self.intervals) <= 256 or random.randint(0, 1):
-                i = random.randint(0, len(self.intervals.offsets) - 1)
-                u, v = self.intervals.intervals[i]
-                return self.intervals.offsets[i] + random.randint(0, v - u + 1)
-            else:
-                return min(
-                    len(self.intervals) - 1,
-                    int(math.log(random.random()) / denom))
-
-        while True:
-            i = integer_range(
-                data, 0, len(self.intervals) - 1,
-                center=self.zero_point, distribution=d
-            )
-            c = hunichr(self.intervals[i])
-            if c not in self.blacklist_characters:
-                return c
+        i = data.draw_byte(self.weights)
+        return hunichr(
+            int_from_bytes(data.draw_from_grammar(self.grammars[i])))
 
 
 class StringStrategy(MappedSearchStrategy):
@@ -106,7 +151,9 @@ class StringStrategy(MappedSearchStrategy):
         )
 
     def __repr__(self):
-        return 'StringStrategy()'
+        return 'StringStrategy(%r)' % (
+            self.mapped_strategy,
+        )
 
     def pack(self, ls):
         return u''.join(ls)
@@ -129,7 +176,7 @@ class BinaryStringStrategy(MappedSearchStrategy):
 class FixedSizeBytes(SearchStrategy):
 
     def __init__(self, size):
-        self.size = size
+        self.grammar = Wildcard(size)
 
     def do_draw(self, data):
-        return binary_type(data.draw_bytes(self.size))
+        return data.draw_from_grammar(self.grammar)

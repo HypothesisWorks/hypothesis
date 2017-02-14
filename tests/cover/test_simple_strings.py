@@ -26,8 +26,13 @@ from hypothesis import find, given, settings
 from hypothesis.strategies import text, binary, tuples, characters
 
 
+def test_zero_is_minimal():
+    s = find(text(), bool)
+    assert s == u'0'
+
+
 def test_can_minimize_up_to_zero():
-    s = find(text(), lambda x: any(lambda t: t <= u'0' for t in x))
+    s = find(text(), lambda x: any(t <= u'0' for t in x))
     assert s == u'0'
 
 
