@@ -103,7 +103,7 @@ def test_minimize_list_of_floats_on_large_structure():
 
     result = minimal(
         lists(floats(), min_size=50, average_size=100),
-        test_list_in_range, timeout_after=60)
+        test_list_in_range, timeout_after=120)
     result.sort()
     assert result == [0.0] * 20 + [3.0] * 30
 
