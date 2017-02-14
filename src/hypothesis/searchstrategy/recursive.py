@@ -22,7 +22,6 @@ from contextlib import contextmanager
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.internal.deferredformat import deferredformat
-from hypothesis.searchstrategy.wrappers import WrapperStrategy
 from hypothesis.searchstrategy.strategies import OneOfStrategy, \
     SearchStrategy
 
@@ -31,19 +30,23 @@ class LimitReached(BaseException):
     pass
 
 
-class LimitedStrategy(WrapperStrategy):
+class LimitedStrategy(SearchStrategy):
 
     def __init__(self, strategy):
-        super(LimitedStrategy, self).__init__(strategy)
+        super(LimitedStrategy, self).__init__()
+        self.base_strategy = strategy
         self.marker = 0
         self.currently_capped = False
+
+    def validate(self):
+        self.base_strategy.validate()
 
     def do_draw(self, data):
         assert self.currently_capped
         if self.marker <= 0:
             raise LimitReached()
         self.marker -= 1
-        return super(LimitedStrategy, self).do_draw(data)
+        return self.base_strategy.do_draw(data)
 
     @contextmanager
     def capped(self, max_templates):

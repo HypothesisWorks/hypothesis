@@ -30,16 +30,10 @@ fi
 
 $PYTEST --runpytest=subprocess tests/pytest
 
-if [ "$DARWIN" != true ]; then
-  for f in tests/nocover/test_*.py; do
-    $PYTEST $f
-  done
-fi
-
-
 pip install .[datetime]
 $PYTEST tests/datetime/
 pip uninstall -y pytz
+
 
 if [ "$DARWIN" = true ]; then
   exit 0
@@ -48,6 +42,10 @@ fi
 if [ "$(python -c 'import sys; print(sys.version_info[:2] in ((2, 7), (3, 6))')" = "False" ] ; then
   exit 0
 fi
+
+for f in tests/nocover/test_*.py; do
+  $PYTEST $f
+done
 
 # fake-factory doesn't have a correct universal wheel
 pip install --no-binary :all: faker
