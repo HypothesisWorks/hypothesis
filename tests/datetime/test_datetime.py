@@ -24,7 +24,7 @@ import pytest
 from flaky import flaky
 
 import hypothesis._settings as hs
-from hypothesis import given, assume, settings
+from hypothesis import find, given, assume, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategytests import strategy_test_suite
 from hypothesis.extra.datetime import datetimes
@@ -136,7 +136,7 @@ def test_needs_permission_for_no_timezones():
 
 @flaky(max_runs=3, min_passes=1)
 def test_bordering_on_a_leap_year():
-    x = minimal(
+    x = find(
         datetimes(min_year=2002, max_year=2005),
         lambda x: x.month == 2 and x.day == 29,
         settings=settings(database=None, max_examples=10 ** 7, timeout=-1)
