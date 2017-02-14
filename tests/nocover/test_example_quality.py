@@ -470,7 +470,7 @@ def test_find_large_union_list():
 
     result = minimal(
         lists(sets(integers())),
-        large_mostly_non_overlapping, timeout_after=60)
+        large_mostly_non_overlapping, timeout_after=120)
     union = reduce(operator.or_, result)
     assert len(union) == 30
     assert max(union) == min(union) + len(union) - 1
