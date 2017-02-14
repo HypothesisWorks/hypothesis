@@ -34,6 +34,8 @@ from hypothesis.strategies import integers, floats, just, one_of, \
 __all__ = ['small_verifier', 'timeout', 'standard_types', 'OrderedPair']
 
 
+TIME_INCREMENT = 0.01
+
 OrderedPair = namedtuple('OrderedPair', ('left', 'right'))
 
 

@@ -22,6 +22,7 @@ import time as time_module
 
 import pytest
 
+from tests.common import TIME_INCREMENT
 from tests.common.setup import run
 
 run()
@@ -48,7 +49,7 @@ def consistently_increment_time(monkeypatch):
     current_time = [time_module.time()]
 
     def time():
-        current_time[0] += 0.01
+        current_time[0] += TIME_INCREMENT
         return current_time[0]
 
     def sleep(naptime):
