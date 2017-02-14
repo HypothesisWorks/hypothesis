@@ -65,6 +65,8 @@ matrix:
         - os: osx
           env: TASK=check-format
         - os: osx
+          env: TASK=check-quality
+        - os: osx
           env: TASK=check-coverage
         - os: osx
           env: TASK=check-unicode
