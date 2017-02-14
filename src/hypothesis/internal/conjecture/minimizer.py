@@ -189,7 +189,7 @@ for b in hrange(10, 256):
         result.add(b ^ (1 << i))
     result.discard(b)
     assert len(result) <= 10
-    small_shrinks.append(sorted(c for c in result if c < b))
+    small_shrinks.append(sorted([c for c in result if c < b]))
 
 
 def minimize(initial, condition, random=None, cautious=False):
