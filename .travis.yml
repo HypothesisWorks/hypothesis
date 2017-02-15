@@ -33,6 +33,7 @@ env:
         - TASK=check-pypy
         - TASK=check-py27
         - TASK=check-py36
+        - TASK=check-quality
 
         # Less important tests that will probably
         # pass whenever the above do but are still
@@ -63,6 +64,8 @@ matrix:
           env: TASK=lint
         - os: osx
           env: TASK=check-format
+        - os: osx
+          env: TASK=check-quality
         - os: osx
           env: TASK=check-coverage
         - os: osx
