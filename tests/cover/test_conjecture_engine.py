@@ -470,24 +470,6 @@ def test_garbage_collects_the_database():
     assert 0 < len(set(db.fetch(key))) < n
 
 
-def test_variable_replacement():
-    @run_to_buffer
-    def x(data):
-        for _ in range(5):
-            data.start_example()
-            c = 0
-            while True:
-                d = data.draw_bytes(1)[0]
-                if not d:
-                    break
-                c += d
-            data.stop_example()
-            if c < 1000:
-                data.mark_invalid()
-        data.mark_interesting()
-    assert x == x[:x.index(0) + 1] * 5
-
-
 @given(st.randoms(), st.random_module())
 def test_maliciously_bad_generator(rnd, seed):
     rnd = Random()
