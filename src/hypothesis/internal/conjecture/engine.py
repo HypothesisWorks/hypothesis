@@ -492,6 +492,36 @@ class ConjectureRunner(object):
                 self.debug('Restarting')
                 continue
 
+            self.debug('Reordering blocks')
+            block_lengths = sorted(self.last_data.block_starts, reverse=True)
+            for n in block_lengths:
+                i = 1
+                while i < len(self.last_data.block_starts.get(n, ())):
+                    j = i
+                    while j > 0:
+                        buf = self.last_data.buffer
+                        blocks = self.last_data.block_starts[n]
+                        a_start = blocks[j - 1]
+                        b_start = blocks[j]
+                        a = buf[a_start:a_start + n]
+                        b = buf[b_start:b_start + n]
+                        if a <= b:
+                            break
+                        swapped = (
+                            buf[:a_start] + b + buf[a_start + n:b_start] +
+                            a + buf[b_start + n:])
+                        assert len(swapped) == len(buf)
+                        assert swapped < buf
+                        if self.incorporate_new_buffer(swapped):
+                            j -= 1
+                        else:
+                            break
+                    i += 1
+
+            if change_counter != self.changed:
+                self.debug('Restarting')
+                continue
+
             self.debug('Shuffling suffixes while shrinking %r' % (
                 self.last_data.bind_points,
             ))
