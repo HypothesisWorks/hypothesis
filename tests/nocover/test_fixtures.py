@@ -19,10 +19,12 @@ from __future__ import division, print_function, absolute_import
 
 import time
 
+from tests.common import TIME_INCREMENT
+
 
 def test_time_consistently_increments_in_tests():
     x = time.time()
     y = time.time()
     z = time.time()
-    assert y == x + 0.0001
-    assert z == y + 0.0001
+    assert y == x + TIME_INCREMENT
+    assert z == y + TIME_INCREMENT
