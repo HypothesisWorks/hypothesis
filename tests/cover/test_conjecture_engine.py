@@ -141,12 +141,12 @@ def test_terminates_shrinks():
 
     def tf(data):
         x = hbytes(data.draw_bytes(100))
-        if sum(x) >= 500:
+        if sum(x) >= 5000:
             shrinks[0] += 1
             data.mark_interesting()
     runner = ConjectureRunner(tf, settings=settings(
         max_examples=5000, max_iterations=10000, max_shrinks=10,
-        database=None,
+        database=None, timeout=-1
     ))
     runner.run()
     assert runner.last_data.status == Status.INTERESTING
