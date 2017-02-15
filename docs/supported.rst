@@ -65,8 +65,7 @@ In terms of what's actually *known* to work:
   * py.test fixtures work correctly with Hypothesis based functions, but note that
     function based fixtures will only run once for the whole function, not once per
     example.
-  * Nose has been tried at least once and works fine, and I'm aware of people who
-    use Hypothesis with Nose, but this isn't tested as part of the CI. yield based
+  * Nose works fine with hypothesis, and this is tested as part of the CI. yield based
     tests simply won't work.
   * Integration with Django's testing requires use of the :ref:`hypothesis-django` package.
     The issue is that in Django's tests' normal mode of execution it will reset the
@@ -89,7 +88,8 @@ not work on versions prior to that.
 Regularly verifying this
 ------------------------
 
-Everything mentioned above as explicitly supported is checked on every commit 
-with `Travis <https://travis-ci.org/>`_ and `Appveyor <http://www.appveyor.com>`_
-and goes green before a release happens, so when I say they're supported I really
-mean it.
+Everything mentioned above as explicitly supported is checked on every commit
+with `Travis <https://travis-ci.org/HypothesisWorks/hypothesis-python>`_ and
+`Appveyor <https://ci.appveyor.com/project/DRMacIver/hypothesis-python/>`_
+and goes green before a release happens, so when I say they're supported I
+really mean it.
