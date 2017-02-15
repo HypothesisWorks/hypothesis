@@ -490,14 +490,17 @@ def test_anti_sorted_ordered_pair():
 
 
 def test_constant_lists_of_diverse_length():
-    # This does not currently work very well. We delete, but we don't actually
-    # get all that far with simplification of the individual elements.
+    n_elements = 20
+
     result = minimal(
-        lists(constant_list(integers())),
-        lambda x: len(set(map(len, x))) >= 20,
+        lists(constant_list(integers()), min_size=n_elements),
+        lambda x: len(set(map(len, x))) >= n_elements,
         timeout_after=30,
     )
-    assert len(result) == 20
+    assert len(result) == n_elements
+    for v in result:
+        assert v == [0] * len(v)
+    assert sorted(map(len, result)) == list(hrange(n_elements))
 
 
 def test_finds_non_reversible_floats():
