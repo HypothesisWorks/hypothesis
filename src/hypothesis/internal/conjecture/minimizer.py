@@ -92,9 +92,6 @@ class Minimizer(object):
     def ddshift(self):
         self.ddfixate(lambda b: b >> 1)
 
-    def ddsub(self):
-        self.ddfixate(lambda b: max(0, b - 1))
-
     def ddfixate(self, f):
         prev = -1
         while prev != self.changes:
@@ -158,7 +155,6 @@ class Minimizer(object):
 
             self.ddzero()
             self.ddshift()
-            self.ddsub()
 
             if change_counter != self.changes:
                 continue
