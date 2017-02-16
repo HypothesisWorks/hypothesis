@@ -46,7 +46,7 @@ install:
   - "python --version"
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
   - "%CMD_IN_ENV% python -m pip.__main__ install --upgrade setuptools pip"
-  - "%CMD_IN_ENV% python -m pip.__main__ install setuptools pytest==3.0.2 pytest-xdist==1.15.0 flaky"
+  - "%CMD_IN_ENV% python -m pip.__main__ install setuptools -rrequirements-test.txt
   - "%CMD_IN_ENV% python -m pip.__main__ install .[all]"
 
 build: false  # Not a C# project, build stuff at the test step instead.
