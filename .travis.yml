@@ -59,51 +59,13 @@ script:
 matrix:
     exclude:
         - os: osx
-          env: TASK=documentation
+    include:
         - os: osx
-          env: TASK=lint
+          env: TASK=check-pypy
         - os: osx
-          env: TASK=check-format
+          env: TASK=check-py27
         - os: osx
-          env: TASK=check-quality
-        - os: osx
-          env: TASK=check-coverage
-        - os: osx
-          env: TASK=check-unicode
-        - os: osx
-          env: TASK=check-ancient-pip
-        - os: osx
-          env: TASK=check-py273
-        - os: osx
-          env: TASK=check-py34
-        - os: osx
-          env: TASK=check-py35
-        - os: osx
-          env: TASK=check-pytest28
-        - os: osx
-          env: TASK=check-fakefactory052
-        - os: osx
-          env: TASK=check-fakefactory053
-        - os: osx
-          env: TASK=check-fakefactory060
-        - os: osx
-          env: TASK=check-django17
-        - os: osx
-          env: TASK=check-django18
-        - os: osx
-          env: TASK=check-django19
-        - os: osx
-          env: TASK=check-django110
-        - os: osx
-          env: TASK=check-examples2
-        - os: osx
-          env: TASK=check-examples3
-        - os: osx
-          env: TASK=check-coverage
-        - os: osx
-          env: TASK=check-format
-        - os: osx
-          env: TASK=lint
+          env: TASK=check-py36
     fast_finish: true
 
 notifications:
