@@ -17,59 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
-import time
-import signal
-
 from hypothesis import settings as Settings
 from hypothesis.core import find
-from hypothesis.internal.reflection import proxies
-
-
-class Timeout(BaseException):
-    pass
-
-
-class CatchableTimeout(Exception):
-    pass
-
-
-try:
-    signal.SIGALRM
-    # The tests here have a tendency to run away with themselves a it if
-    # something goes wrong, so we use a relatively hard kill timeout.
-
-    def timeout(seconds=1, catchable=False):
-        def decorate(f):
-            @proxies(f)
-            def wrapped(*args, **kwargs):
-                start = time.time()
-
-                def handler(signum, frame):
-                    if time.time() <= start + seconds:
-                        signal.alarm(1)
-                        return
-                    if catchable:
-                        raise CatchableTimeout(
-                            u'Timed out after %.2fs' % (time.time() - start))
-                    else:
-                        raise Timeout(
-                            u'Timed out after %.2fs' % (time.time() - start))
-
-                old_handler = signal.signal(signal.SIGALRM, handler)
-                signal.alarm(1)
-                try:
-                    return f(*args, **kwargs)
-                finally:
-                    signal.signal(signal.SIGALRM, old_handler)
-                    signal.alarm(0)
-            return wrapped
-        return decorate
-except AttributeError:
-    # We're on an OS with no SIGALRM. Fall back to no timeout.
-    def timeout(seconds=1):
-        def decorate(f):
-            return f
-        return decorate
 
 
 def minimal(
@@ -87,12 +36,9 @@ def minimal(
 
     condition = condition or (lambda x: True)
 
-    @timeout(timeout_after * 1.20)
-    def run():
-        return find(
-            definition,
-            condition,
-            settings=settings,
-            random=random,
-        )
-    return run()
+    return find(
+        definition,
+        condition,
+        settings=settings,
+        random=random,
+    )

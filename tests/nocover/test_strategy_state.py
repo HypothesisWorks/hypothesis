@@ -28,7 +28,6 @@ from hypothesis.stateful import rule, Bundle, RuleBasedStateMachine
 from hypothesis.strategies import just, none, text, lists, binary, \
     floats, tuples, booleans, decimals, integers, fractions, \
     float_to_int, int_to_float, sampled_from, complex_numbers
-from hypothesis.internal.debug import timeout
 from hypothesis.internal.compat import PYPY
 
 AVERAGE_LIST_LENGTH = 2
@@ -61,10 +60,6 @@ class HypothesisSpec(RuleBasedStateMachine):
 
     def teardown(self):
         self.clear_database()
-
-    @timeout(60, catchable=True)
-    def execute_step(self, step):
-        return super(HypothesisSpec, self).execute_step(step)
 
     @rule()
     def clear_database(self):
