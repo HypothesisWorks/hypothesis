@@ -1,0 +1,19 @@
+test:
+  override:
+    - scripts/run-circle.sh
+
+machine:
+  # Courtesy of https://pewpewthespells.com/blog/building_python_on_circleci.html
+  pre:
+    - export PATH=/usr/local/bin:$PATH:/Users/distiller/Library/Python/2.7/bin
+    - pip install --user --ignore-installed --upgrade virtualenv
+    - ln -s $HOME/Library/Python/2.7/bin/virtualenv /usr/local/bin/virtualenv
+    - cd "$(brew --repository)" && git fetch && git reset --hard origin/master
+    - brew update
+
+dependencies:
+  override:
+    - make install-core
+
+  cache_directories:
+    - ~/.cache/hypothesis-build-runtimes
