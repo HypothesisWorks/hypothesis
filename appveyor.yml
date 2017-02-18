@@ -53,8 +53,8 @@ build: false  # Not a C# project, build stuff at the test step instead.
 
 test_script:
   # Build the compiled extension and run the project tests
-  - "%CMD_IN_ENV% python -m pytest tests/cover"
-  - "%CMD_IN_ENV% python -m pytest tests/datetime"
-  - "%CMD_IN_ENV% python -m pytest tests/fakefactory"
+  - "%CMD_IN_ENV% python -m pytest -n 0 tests/cover"
+  - "%CMD_IN_ENV% python -m pytest -n 0 tests/datetime"
+  - "%CMD_IN_ENV% python -m pytest -n 0 tests/fakefactory"
   - "%CMD_IN_ENV% python -m pip.__main__ uninstall flaky -y"
-  - "%CMD_IN_ENV% python -m pytest tests/pytest -p pytester --runpytest subprocess"
+  - "%CMD_IN_ENV% python -m pytest -n 0 tests/pytest -p pytester --runpytest subprocess"
