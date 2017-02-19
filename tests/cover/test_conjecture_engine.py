@@ -301,21 +301,22 @@ def test_stops_after_max_examples_when_generating():
 def test_interleaving_engines(rnd):
     @run_to_buffer
     def x(data):
-        rnd = Random(hbytes(data.draw_bytes(8)))
+        a = data.draw_bytes(8)
 
         def g(d2):
-            while True:
-                b = d2.draw_bytes(1)[0]
-                result = data.draw_bytes(b)
-                if 255 in result:
-                    d2.mark_interesting()
-                if 0 in result:
-                    d2.mark_invalid()
-        runner = ConjectureRunner(g, random=rnd)
+            b = d2.draw_bytes(8)
+            if a != b:
+                d2.mark_interesting()
+        runner = ConjectureRunner(g)
         runner.run()
         if runner.last_data.status == Status.INTERESTING:
-            data.mark_interesting()
-    assert x[8:].count(255) == 1
+            assert runner.last_data.buffer in (
+                hbytes(8),
+                hbytes([0] * 7 + [1]),
+            )
+            if any(runner.last_data.buffer):
+                data.mark_interesting()
+    assert x == hbytes(8)
 
 
 def test_run_with_timeout_while_shrinking():
