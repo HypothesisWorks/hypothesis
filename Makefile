@@ -88,6 +88,8 @@ check-format: format
 	find src tests -name "*.py" | xargs $(TOOL_PYTHON) scripts/check_encoding_header.py
 	git diff --exit-code
 
+install-core: $(PY27) $(PYPY) $(PY36) $(TOX)
+
 check-py27: $(PY27) $(TOX)
 	$(TOX) -e py27-full
 
