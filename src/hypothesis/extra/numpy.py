@@ -291,3 +291,20 @@ def array_dtypes(subtype_strategy=scalar_dtypes(),
                               array_shapes(max_dims=2, max_side=2))
     return st.lists(elements=elements, min_size=min_size, max_size=max_size,
                     unique_by=lambda d: d[0])
+
+
+@st.defines_strategy
+def nested_dtypes(subtype_strategy=scalar_dtypes(),
+                  max_leaves=10, max_itemsize=None):
+    """Return the most-general dtype strategy.
+
+    Elements drawn from this strategy may be simple (from the
+    subtype_strategy), or several such values drawn from `array_dtypes`
+    with ``allow_subarrays=True``. Subdtypes in an array dtype may be
+    nested to any depth, subject to the max_leaves argument.
+
+    """
+    return st.recursive(subtype_strategy,
+                        lambda x: array_dtypes(x, allow_subarrays=True),
+                        max_leaves).filter(
+        lambda d: max_itemsize is None or d.itemsize <= max_itemsize)

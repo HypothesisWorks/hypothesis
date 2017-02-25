@@ -23,8 +23,8 @@ from flaky import flaky
 
 import hypothesis.strategies as st
 from hypothesis import given, settings
-from hypothesis.extra.numpy import arrays, from_dtype, array_dtypes, \
-    array_shapes, scalar_dtypes
+from hypothesis.extra.numpy import arrays, from_dtype, array_shapes, \
+    nested_dtypes, scalar_dtypes
 from hypothesis.strategytests import strategy_test_suite
 from hypothesis.internal.debug import minimal
 from hypothesis.searchstrategy import SearchStrategy
@@ -119,12 +119,12 @@ def test_can_generate_scalar_dtypes(dtype):
     assert isinstance(dtype, np.dtype)
 
 
-@given(array_dtypes())
+@given(nested_dtypes())
 def test_can_generate_compound_dtypes(dtype):
     assert isinstance(dtype, np.dtype)
 
 
-@given(scalar_dtypes() | array_dtypes(allow_subarrays=True),
+@given(nested_dtypes(),
        st.data())
 def test_infer_strategy_from_dtype(dtype, data):
     # Given a dtype
@@ -138,3 +138,7 @@ def test_infer_strategy_from_dtype(dtype, data):
 
 def test_minimise_scalar_dtypes():
     assert minimal(scalar_dtypes()) == np.dtype(u'bool')
+
+
+def test_minimise_nested_types():
+    assert minimal(nested_dtypes()) == np.dtype(u'bool')
