@@ -115,7 +115,7 @@ class Flaky(HypothesisException):
            depends sensitively on where it's been called from.
         3. The function is timing sensitive and can fail or pass depending on
            how long it takes. Try breaking it up into smaller functions which
-           dont' do that and testing those instead.
+           don't do that and testing those instead.
 
     """
 

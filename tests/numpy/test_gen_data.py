@@ -22,9 +22,10 @@ import pytest
 from flaky import flaky
 
 import hypothesis.strategies as st
-from hypothesis import find, given, settings
+from hypothesis import given, settings
 from hypothesis.extra.numpy import arrays, from_dtype
 from hypothesis.strategytests import strategy_test_suite
+from hypothesis.internal.debug import minimal
 from hypothesis.internal.compat import text_type, binary_type
 
 TestFloats = strategy_test_suite(arrays(float, ()))
@@ -65,20 +66,16 @@ def test_assert_fits_in_machine_size(x):
 
 
 def test_generates_and_minimizes():
-    x = find(arrays(float, (2, 2)), lambda t: True)
-    assert (x == np.zeros(shape=(2, 2), dtype=float)).all()
+    assert (minimal(arrays(float, (2, 2))) == np.zeros(shape=(2, 2))).all()
 
 
 def test_can_minimize_large_arrays():
-    x = find(arrays(u'uint32', 500), lambda t: t.any())
-    assert x.sum() == 1
+    assert minimal(arrays(u'uint32', 500), np.any, timeout_after=60).sum() == 1
 
 
 @flaky(max_runs=5, min_passes=1)
 def test_can_minimize_float_arrays():
-    x = find(
-        arrays(float, 50), lambda t: t.sum() >= 1.0,
-        settings=settings(database=None))
+    x = minimal(arrays(float, 50), lambda t: t.sum() >= 1.0)
     assert 1.0 <= x.sum() <= 1.1
 
 
@@ -90,14 +87,12 @@ foos = st.tuples().map(lambda _: Foo())
 
 
 def test_can_create_arrays_of_composite_types():
-    arr = find(arrays(object, 100, foos), lambda x: True)
+    arr = minimal(arrays(object, 100, foos))
     for x in arr:
         assert isinstance(x, Foo)
 
 
 def test_can_create_arrays_of_tuples():
-    arr = find(
-        arrays(object, 10, st.tuples(st.integers(), st.integers())),
-        lambda x: all(t[0] != t[1] for t in x))
-    for a in arr:
-        assert a in ((1, 0), (0, 1))
+    arr = minimal(arrays(object, 10, st.tuples(st.integers(), st.integers())),
+                  lambda x: all(t0 != t1 for t0, t1 in x))
+    assert all(a in ((1, 0), (0, 1)) for a in arr)

@@ -17,14 +17,12 @@
 
 from __future__ import division, print_function, absolute_import
 
-import operator
-
 import numpy as np
 
 import hypothesis.strategies as st
+from hypothesis.errors import InvalidArgument
 from hypothesis.searchstrategy import SearchStrategy
-from hypothesis.internal.compat import hrange, reduce, text_type, \
-    binary_type
+from hypothesis.internal.compat import hrange, text_type, binary_type
 
 
 def from_dtype(dtype):
@@ -45,9 +43,7 @@ def from_dtype(dtype):
     elif dtype.kind == u'U':
         result = st.text()
     else:
-        raise NotImplementedError(
-            u'No strategy implementation for %r' % (dtype,)
-        )
+        raise InvalidArgument(u'No strategy inference for {}'.format(dtype))
     return result.map(dtype.type)
 
 
@@ -56,12 +52,12 @@ class ArrayStrategy(SearchStrategy):
     def __init__(self, element_strategy, shape, dtype):
         self.shape = tuple(shape)
         assert shape
-        self.array_size = reduce(operator.mul, shape)
+        self.array_size = np.prod(shape)
         self.dtype = dtype
         self.element_strategy = element_strategy
 
     def do_draw(self, data):
-        result = np.zeros(dtype=self.dtype, shape=self.array_size)
+        result = np.empty(dtype=self.dtype, shape=self.array_size)
         for i in hrange(self.array_size):
             result[i] = self.element_strategy.do_draw(data)
         return result.reshape(self.shape)
