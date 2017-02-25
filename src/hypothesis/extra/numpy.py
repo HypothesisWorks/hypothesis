@@ -47,6 +47,20 @@ def from_dtype(dtype):
     return result.map(dtype.type)
 
 
+def check_argument(condition, fail_message, *f_args, **f_kwargs):
+    if not condition:
+        raise InvalidArgument(fail_message.format(*f_args, **f_kwargs))
+
+
+def order_check(name, floor, small, large):
+    if floor is None:
+        floor = -np.inf
+    if floor > small > large:
+        check_argument(u'min_{name} was {}, must be at least {} and not more '
+                       u'than max_{name} (was {})', small, floor, large,
+                       name=name, condition=False)
+
+
 class ArrayStrategy(SearchStrategy):
 
     def __init__(self, element_strategy, shape, dtype):
@@ -86,3 +100,12 @@ def arrays(dtype, shape, elements=None):
             dtype=dtype,
             element_strategy=elements
         )
+
+
+@st.defines_strategy
+def array_shapes(min_dims=1, max_dims=3, min_side=1, max_side=10):
+    """Return a strategy for array shapes (tuples of int >= 1)."""
+    order_check('dims', 1, min_dims, max_dims)
+    order_check('side', 1, min_side, max_side)
+    return st.lists(st.integers(min_side, max_side),
+                    min_size=min_dims, max_size=max_dims).map(tuple)

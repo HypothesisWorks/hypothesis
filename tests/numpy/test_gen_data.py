@@ -23,7 +23,7 @@ from flaky import flaky
 
 import hypothesis.strategies as st
 from hypothesis import given, settings
-from hypothesis.extra.numpy import arrays, from_dtype
+from hypothesis.extra.numpy import arrays, from_dtype, array_shapes
 from hypothesis.strategytests import strategy_test_suite
 from hypothesis.internal.debug import minimal
 from hypothesis.internal.compat import text_type, binary_type
@@ -96,3 +96,16 @@ def test_can_create_arrays_of_tuples():
     arr = minimal(arrays(object, 10, st.tuples(st.integers(), st.integers())),
                   lambda x: all(t0 != t1 for t0, t1 in x))
     assert all(a in ((1, 0), (0, 1)) for a in arr)
+
+
+@given(array_shapes())
+def test_can_generate_array_shapes(shape):
+    assert isinstance(shape, tuple)
+    assert all(isinstance(i, int) for i in shape)
+
+
+@given(st.integers(1, 10), st.integers(0, 9), st.integers(1), st.integers(0))
+def test_minimise_array_shapes(min_dims, dim_range, min_side, side_range):
+    smallest = minimal(array_shapes(min_dims, min_dims + dim_range,
+                                    min_side, min_side + side_range))
+    assert len(smallest) == min_dims and all(k == min_side for k in smallest)
