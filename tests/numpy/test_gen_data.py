@@ -136,9 +136,21 @@ def test_infer_strategy_from_dtype(dtype, data):
     data.draw(arrays(dtype, 10, strat))
 
 
+@given(nested_dtypes())
+def test_np_dtype_is_idempotent(dtype):
+    assert dtype == np.dtype(dtype)
+
+
 def test_minimise_scalar_dtypes():
     assert minimal(scalar_dtypes()) == np.dtype(u'bool')
 
 
 def test_minimise_nested_types():
     assert minimal(nested_dtypes()) == np.dtype(u'bool')
+
+
+def test_minimise_array_strategy():
+    smallest = minimal(arrays(
+        nested_dtypes(max_itemsize=settings.default.buffer_size // 3**3),
+        array_shapes(max_dims=3, max_side=3)))
+    assert smallest.dtype == np.dtype(u'bool') and not smallest.any()

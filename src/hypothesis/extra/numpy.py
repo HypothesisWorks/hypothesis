@@ -85,7 +85,12 @@ class ArrayStrategy(SearchStrategy):
 
     def __init__(self, element_strategy, shape, dtype):
         self.shape = tuple(shape)
-        assert shape
+        check_argument(shape,
+                       u'Array shape must have at least one dimension, '
+                       u'provided shape was {}', shape)
+        check_argument(all(isinstance(s, int) for s in shape),
+                       u'Array shape must be integer in each dimension, '
+                       u'provided shape was {}', shape)
         self.array_size = np.prod(shape)
         self.dtype = dtype
         self.element_strategy = element_strategy
@@ -103,23 +108,59 @@ def is_scalar(spec):
     )
 
 
-def arrays(dtype, shape, elements=None):
-    if not isinstance(dtype, np.dtype):
-        dtype = np.dtype(dtype)
+@st.composite
+def arrays(draw, dtype, shape, elements=None):
+    """`dtype` may be any valid input to ``np.dtype`` (this includes
+    ``np.dtype`` objects), or a strategy that generates such values.  `shape`
+    may be an integer >= 0, a tuple of length >= of such integers, or a
+    strategy that generates such values.
+
+    Arrays of specified `dtype` and `shape` are generated for example
+    like this:
+
+    .. code-block:: pycon
+
+      >>> import numpy as np
+      >>> arrays(np.int8, (2, 3)).example()
+      array([[-8,  6,  3],
+             [-6,  4,  6]], dtype=int8)
+
+    If elements is None, Hypothesis infers a strategy based on the dtype,
+    which may give any legal value (including eg ``NaN`` for floats).  If you
+    have more specific requirements, you can supply your own elements strategy
+    - see :doc:`What you can generate and how <data>`.
+
+    .. code-block:: pycon
+
+      >>> import numpy as np
+      >>> from hypothesis.strategies import floats
+      >>> arrays(np.float, 3, elements=floats(0, 1)).example()
+      array([ 0.88974794,  0.77387938,  0.1977879 ])
+
+    .. warning::
+        Hypothesis works really well with NumPy, but is designed for small
+        data.  The default entropy is 8192 bytes - it is impossible to draw
+        an example where ``example_array.nbytes`` is greater than
+        ``settings.default.buffer_size``.
+        See the :doc:`settings documentation <settings>` if you need to
+        increase this value, but be aware that Hypothesis may take much
+        longer to produce a minimal failure case.
+
+    """
+    if isinstance(dtype, SearchStrategy):
+        dtype = draw(dtype)
+    dtype = np.dtype(dtype)
     if elements is None:
         elements = from_dtype(dtype)
+    if isinstance(shape, SearchStrategy):
+        shape = draw(shape)
     if isinstance(shape, int):
         shape = (shape,)
     shape = tuple(shape)
     if not shape:
         if dtype.kind != u'O':
-            return elements
-    else:
-        return ArrayStrategy(
-            shape=shape,
-            dtype=dtype,
-            element_strategy=elements
-        )
+            return draw(elements)
+    return draw(ArrayStrategy(elements, shape, dtype))
 
 
 @st.defines_strategy
