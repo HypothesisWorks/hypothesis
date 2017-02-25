@@ -30,13 +30,25 @@ TIME_RESOLUTIONS = tuple('Y  M  D  h  m  s  ms  us  ns  ps  fs  as'.split())
 
 
 def from_dtype(dtype):
+    # Compound datatypes, eg 'f4,f4,f4'
+    if dtype.names is not None:
+        # mapping np.void.type over a strategy is nonsense, so return now.
+        return st.tuples(
+            *[from_dtype(dtype.fields[name][0]) for name in dtype.names])
+
+    # Subarray datatypes, eg '(2, 3)i4'
+    if dtype.subdtype is not None:
+        subtype, shape = dtype.subdtype
+        return arrays(subtype, shape)
+
+    # Scalar datatypes
     if dtype.kind == u'b':
         result = st.booleans()
     elif dtype.kind == u'f':
         result = st.floats()
     elif dtype.kind == u'c':
         result = st.complex_numbers()
-    elif dtype.kind in (u'S', u'a', u'V'):
+    elif dtype.kind in (u'S', u'a'):
         result = st.binary()
     elif dtype.kind == u'u':
         result = st.integers(
@@ -264,3 +276,18 @@ def unicode_string_dtypes(endianness='?', min_len=0, max_len=16):
     order_check('len', 0, min_len, max_len)
     return dtype_factory('u', list(range(min_len, max_len + 1)),
                          None, endianness)
+
+
+@defines_dtype_strategy
+def array_dtypes(subtype_strategy=scalar_dtypes(),
+                 min_size=1, max_size=5, allow_subarrays=False):
+    """Return a strategy for generating array (compound) dtypes, with members
+    drawn from the given subtype strategy."""
+    order_check('size', 0, min_size, max_size)
+    native_strings = st.text if text_type is str else st.binary
+    elements = st.tuples(native_strings(), subtype_strategy)
+    if allow_subarrays:
+        elements |= st.tuples(native_strings(), subtype_strategy,
+                              array_shapes(max_dims=2, max_side=2))
+    return st.lists(elements=elements, min_size=min_size, max_size=max_size,
+                    unique_by=lambda d: d[0])
