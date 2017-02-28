@@ -124,7 +124,7 @@ def test_can_generate_compound_dtypes(dtype):
     assert isinstance(dtype, np.dtype)
 
 
-@given(nested_dtypes(),
+@given(nested_dtypes(max_itemsize=settings.default.buffer_size // 10),
        st.data())
 def test_infer_strategy_from_dtype(dtype, data):
     # Given a dtype

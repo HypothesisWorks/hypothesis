@@ -22,6 +22,7 @@ import functools
 import numpy as np
 
 import hypothesis.strategies as st
+from hypothesis import settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import hrange, text_type, binary_type
@@ -92,6 +93,15 @@ class ArrayStrategy(SearchStrategy):
                        u'Array shape must be integer in each dimension, '
                        u'provided shape was {}', shape)
         self.array_size = np.prod(shape)
+        buff_size = settings.default.buffer_size
+        check_argument(
+            self.array_size * dtype.itemsize <= buff_size,
+            u'Insufficient bytes of entropy to draw requested array.  '
+            u'shape={}, dtype={}.  Can you reduce the size or dimensions '
+            u'of the array?  What about using a smaller dtype?  If slow '
+            u'test runs and minimisation are acceptable, you  could '
+            u'increase settings().buffer_size from {} to at least {}.',
+            shape, dtype, buff_size, self.array_size * buff_size)
         self.dtype = dtype
         self.element_strategy = element_strategy
 
