@@ -8,7 +8,7 @@ finding edge cases in your code you wouldn't have thought to look for. It is
 stable, powerful and easy to add to any existing test suite.
 
 It works by letting you write tests that assert that something should be true
-for every case, not just the ones you happen to think of. 
+for every case, not just the ones you happen to think of.
 
 Think of a normal unit test as being something like the following:
 
@@ -57,11 +57,12 @@ check out some of the
   :hidden:
 
   quickstart
-  django
   details
   settings
   data
   extras
+  django
+  numpy
   healthchecks
   database
   stateful
