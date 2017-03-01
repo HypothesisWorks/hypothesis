@@ -224,7 +224,7 @@ and finishes at the end of an element, that just deletes
 that element from the list and shifts everything afterwards
 left one space.
 
-Given some careful strategy design tis ends up working
+Given some careful strategy design this ends up working
 pretty well. It does however run into problems in two
 minor cases:
 
