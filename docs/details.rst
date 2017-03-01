@@ -48,10 +48,10 @@ Test Statistics
 ---------------
 
 If you are using py.test you can see a number of statistics about the executed tests
-by passing the command line argument --hypothesis-show-statistics. This will include
+by passing the command line argument ``--hypothesis-show-statistics``. This will include
 some general statistics about the test:
 
-For example if you ran the following with --hypothesis-show-statistics:
+For example if you ran the following with ``--hypothesis-show-statistics``:
 
 .. code-block:: python
 
