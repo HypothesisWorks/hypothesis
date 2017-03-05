@@ -39,6 +39,7 @@ STANDARD_TYPES = list(map(np.dtype, [
     u'int8', u'int32', u'int64',
     u'float', u'float32', u'float64',
     complex,
+    u'datetime64', u'timedelta64',
     bool, text_type, binary_type
 ]))
 

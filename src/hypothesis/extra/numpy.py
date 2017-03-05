@@ -26,6 +26,8 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import hrange, text_type, binary_type
 
+TIME_RESOLUTIONS = tuple('Y  M  D  h  m  s  ms  us  ns  ps  fs  as'.split())
+
 
 def from_dtype(dtype):
     if dtype.kind == u'b':
@@ -44,6 +46,10 @@ def from_dtype(dtype):
         result = st.integers(min_value=min_integer, max_value=-min_integer - 1)
     elif dtype.kind == u'U':
         result = st.text()
+    elif dtype.kind in (u'm', u'M'):
+        res = st.just(dtype.str[-2]) if '[' in dtype.str else \
+            st.sampled_from(TIME_RESOLUTIONS)
+        result = st.builds(dtype.type, st.integers(1 - 2**63, 2**63 - 1), res)
     else:
         raise InvalidArgument(u'No strategy inference for {}'.format(dtype))
     return result.map(dtype.type)
@@ -119,7 +125,7 @@ def scalar_dtypes():
     return st.one_of(boolean_dtypes(),
                      integer_dtypes(), unsigned_integer_dtypes(),
                      floating_dtypes(), complex_number_dtypes(),
-                     )
+                     datetime64_dtypes(), timedelta64_dtypes())
 
 
 def defines_dtype_strategy(strat):
@@ -207,3 +213,36 @@ def complex_number_dtypes(endianness='?', sizes=(64, 128)):
 
     """
     return dtype_factory('c', sizes, (64, 128, 192, 256), endianness)
+
+
+def validate_time_slice(max_period, min_period):
+    check_argument(max_period in TIME_RESOLUTIONS,
+                   u'max_period {} must be a valid resolution in {}',
+                   max_period, TIME_RESOLUTIONS)
+    check_argument(min_period in TIME_RESOLUTIONS,
+                   u'min_period {} must be a valid resolution in {}',
+                   min_period, TIME_RESOLUTIONS)
+    start = TIME_RESOLUTIONS.index(max_period)
+    end = TIME_RESOLUTIONS.index(min_period) + 1
+    check_argument(start < end,
+                   u'max_period {} must be earlier in sequence {} than '
+                   u'min_period {}', max_period, TIME_RESOLUTIONS, min_period)
+    return TIME_RESOLUTIONS[start:end]
+
+
+@defines_dtype_strategy
+def datetime64_dtypes(max_period='Y', min_period='ns', endianness='?'):
+    """Return a strategy for datetime64 dtypes, with various precisions from
+    year to attosecond."""
+    return dtype_factory('datetime64[{}]',
+                         validate_time_slice(max_period, min_period),
+                         TIME_RESOLUTIONS, endianness)
+
+
+@defines_dtype_strategy
+def timedelta64_dtypes(max_period='Y', min_period='ns', endianness='?'):
+    """Return a strategy for timedelta64 dtypes, with various precisions from
+    year to attosecond."""
+    return dtype_factory('timedelta64[{}]',
+                         validate_time_slice(max_period, min_period),
+                         TIME_RESOLUTIONS, endianness)
