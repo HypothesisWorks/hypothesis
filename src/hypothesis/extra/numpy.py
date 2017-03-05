@@ -246,3 +246,21 @@ def timedelta64_dtypes(max_period='Y', min_period='ns', endianness='?'):
     return dtype_factory('timedelta64[{}]',
                          validate_time_slice(max_period, min_period),
                          TIME_RESOLUTIONS, endianness)
+
+
+@defines_dtype_strategy
+def byte_string_dtypes(endianness='?', min_len=0, max_len=16):
+    """Return a strategy for generating bytestring dtypes, of various lengths
+    and byteorder."""
+    order_check('len', 0, min_len, max_len)
+    return dtype_factory('S', list(range(min_len, max_len + 1)),
+                         None, endianness)
+
+
+@defines_dtype_strategy
+def unicode_string_dtypes(endianness='?', min_len=0, max_len=16):
+    """Return a strategy for generating unicode string dtypes, of various
+    lengths and byteorder."""
+    order_check('len', 0, min_len, max_len)
+    return dtype_factory('u', list(range(min_len, max_len + 1)),
+                         None, endianness)
