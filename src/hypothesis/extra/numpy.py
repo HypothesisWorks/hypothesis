@@ -17,6 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+import functools
+
 import numpy as np
 
 import hypothesis.strategies as st
@@ -109,3 +111,23 @@ def array_shapes(min_dims=1, max_dims=3, min_side=1, max_side=10):
     order_check('side', 1, min_side, max_side)
     return st.lists(st.integers(min_side, max_side),
                     min_size=min_dims, max_size=max_dims).map(tuple)
+
+
+@st.defines_strategy
+def scalar_dtypes():
+    """Return a strategy that can return any non-flexible scalar dtype."""
+    return st.one_of(boolean_dtypes(),
+                     )
+
+
+def defines_dtype_strategy(strat):
+    @st.defines_strategy
+    @functools.wraps(strat)
+    def inner(*args, **kwargs):
+        return strat(*args, **kwargs).map(np.dtype)
+    return inner
+
+
+@defines_dtype_strategy
+def boolean_dtypes():
+    return st.just('?')

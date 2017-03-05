@@ -23,9 +23,11 @@ from flaky import flaky
 
 import hypothesis.strategies as st
 from hypothesis import given, settings
-from hypothesis.extra.numpy import arrays, from_dtype, array_shapes
+from hypothesis.extra.numpy import arrays, from_dtype, array_shapes, \
+    scalar_dtypes
 from hypothesis.strategytests import strategy_test_suite
 from hypothesis.internal.debug import minimal
+from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import text_type, binary_type
 
 TestFloats = strategy_test_suite(arrays(float, ()))
@@ -109,3 +111,24 @@ def test_minimise_array_shapes(min_dims, dim_range, min_side, side_range):
     smallest = minimal(array_shapes(min_dims, min_dims + dim_range,
                                     min_side, min_side + side_range))
     assert len(smallest) == min_dims and all(k == min_side for k in smallest)
+
+
+@given(scalar_dtypes())
+def test_can_generate_scalar_dtypes(dtype):
+    assert isinstance(dtype, np.dtype)
+
+
+@given(scalar_dtypes(),
+       st.data())
+def test_infer_strategy_from_dtype(dtype, data):
+    # Given a dtype
+    assert isinstance(dtype, np.dtype)
+    # We can infer a strategy
+    strat = from_dtype(dtype)
+    assert isinstance(strat, SearchStrategy)
+    # And use it to fill an array of that dtype
+    data.draw(arrays(dtype, 10, strat))
+
+
+def test_minimise_scalar_dtypes():
+    assert minimal(scalar_dtypes()) == np.dtype(u'bool')
