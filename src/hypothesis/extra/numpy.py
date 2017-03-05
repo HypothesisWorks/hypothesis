@@ -117,6 +117,7 @@ def array_shapes(min_dims=1, max_dims=3, min_side=1, max_side=10):
 def scalar_dtypes():
     """Return a strategy that can return any non-flexible scalar dtype."""
     return st.one_of(boolean_dtypes(),
+                     integer_dtypes(), unsigned_integer_dtypes(),
                      )
 
 
@@ -131,3 +132,50 @@ def defines_dtype_strategy(strat):
 @defines_dtype_strategy
 def boolean_dtypes():
     return st.just('?')
+
+
+def dtype_factory(kind, sizes, valid_sizes, endianness):
+    # Utility function, shared logic for most integer and string types
+    valid_endian = ('?', '<', '=', '>')
+    check_argument(endianness in valid_endian,
+                   u'Unknown endianness: was {}, must be in {}', valid_endian)
+    if valid_sizes is not None:
+        if isinstance(sizes, int):
+            sizes = (sizes,)
+        check_argument(sizes, 'Dtype must have at least one possible size.')
+        check_argument(all(s in valid_sizes for s in sizes),
+                       u'Invalid sizes: was {} must be an item or sequence '
+                       u'in {}', sizes, valid_sizes)
+        if all(isinstance(s, int) for s in sizes):
+            sizes = sorted(set(s // 8 for s in sizes))
+    strat = st.sampled_from(sizes)
+    if '{}' not in kind:
+        kind += '{}'
+    if endianness == '?':
+        return strat.map(('<' + kind).format) | strat.map(('>' + kind).format)
+    return strat.map((endianness + kind).format)
+
+
+@defines_dtype_strategy
+def unsigned_integer_dtypes(endianness='?', sizes=(8, 16, 32, 64)):
+    """Return a strategy for unsigned integer dtypes.
+
+    endianness may be ``<`` for little-endian, ``>`` for big-endian,
+    ``=`` for native byte order, or ``?`` to allow either byte order.
+    This argument only applies to dtypes of more than one byte.
+
+    sizes must be a collection of integer sizes in bits.  The default
+    (8, 16, 32, 64) covers the full range of sizes.
+
+    """
+    return dtype_factory('u', sizes, (8, 16, 32, 64), endianness)
+
+
+@defines_dtype_strategy
+def integer_dtypes(endianness='?', sizes=(8, 16, 32, 64)):
+    """Return a strategy for signed integer dtypes.
+
+    endianness and sizes are treated as for `unsigned_integer_dtypes`.
+
+    """
+    return dtype_factory('i', sizes, (8, 16, 32, 64), endianness)
