@@ -64,6 +64,8 @@ intersphinx_mapping = {
     'python': ('http://docs.python.org/', None),
 }
 
+autodoc_mock_imports = ['numpy']
+
 
 # -- Options for HTML output ----------------------------------------------
 

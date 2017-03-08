@@ -22,9 +22,12 @@ import pytest
 from flaky import flaky
 
 import hypothesis.strategies as st
-from hypothesis import find, given, settings
-from hypothesis.extra.numpy import arrays, from_dtype
+from hypothesis import given, settings
+from hypothesis.extra.numpy import arrays, from_dtype, array_shapes, \
+    nested_dtypes, scalar_dtypes
 from hypothesis.strategytests import strategy_test_suite
+from hypothesis.internal.debug import minimal
+from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import text_type, binary_type
 
 TestFloats = strategy_test_suite(arrays(float, ()))
@@ -36,6 +39,7 @@ STANDARD_TYPES = list(map(np.dtype, [
     u'int8', u'int32', u'int64',
     u'float', u'float32', u'float64',
     complex,
+    u'datetime64', u'timedelta64',
     bool, text_type, binary_type
 ]))
 
@@ -65,20 +69,16 @@ def test_assert_fits_in_machine_size(x):
 
 
 def test_generates_and_minimizes():
-    x = find(arrays(float, (2, 2)), lambda t: True)
-    assert (x == np.zeros(shape=(2, 2), dtype=float)).all()
+    assert (minimal(arrays(float, (2, 2))) == np.zeros(shape=(2, 2))).all()
 
 
 def test_can_minimize_large_arrays():
-    x = find(arrays(u'uint32', 500), lambda t: t.any())
-    assert x.sum() == 1
+    assert minimal(arrays(u'uint32', 500), np.any, timeout_after=60).sum() == 1
 
 
 @flaky(max_runs=5, min_passes=1)
 def test_can_minimize_float_arrays():
-    x = find(
-        arrays(float, 50), lambda t: t.sum() >= 1.0,
-        settings=settings(database=None))
+    x = minimal(arrays(float, 50), lambda t: t.sum() >= 1.0)
     assert 1.0 <= x.sum() <= 1.1
 
 
@@ -90,14 +90,67 @@ foos = st.tuples().map(lambda _: Foo())
 
 
 def test_can_create_arrays_of_composite_types():
-    arr = find(arrays(object, 100, foos), lambda x: True)
+    arr = minimal(arrays(object, 100, foos))
     for x in arr:
         assert isinstance(x, Foo)
 
 
 def test_can_create_arrays_of_tuples():
-    arr = find(
-        arrays(object, 10, st.tuples(st.integers(), st.integers())),
-        lambda x: all(t[0] != t[1] for t in x))
-    for a in arr:
-        assert a in ((1, 0), (0, 1))
+    arr = minimal(arrays(object, 10, st.tuples(st.integers(), st.integers())),
+                  lambda x: all(t0 != t1 for t0, t1 in x))
+    assert all(a in ((1, 0), (0, 1)) for a in arr)
+
+
+@given(array_shapes())
+def test_can_generate_array_shapes(shape):
+    assert isinstance(shape, tuple)
+    assert all(isinstance(i, int) for i in shape)
+
+
+@given(st.integers(1, 10), st.integers(0, 9), st.integers(1), st.integers(0))
+def test_minimise_array_shapes(min_dims, dim_range, min_side, side_range):
+    smallest = minimal(array_shapes(min_dims, min_dims + dim_range,
+                                    min_side, min_side + side_range))
+    assert len(smallest) == min_dims and all(k == min_side for k in smallest)
+
+
+@given(scalar_dtypes())
+def test_can_generate_scalar_dtypes(dtype):
+    assert isinstance(dtype, np.dtype)
+
+
+@given(nested_dtypes())
+def test_can_generate_compound_dtypes(dtype):
+    assert isinstance(dtype, np.dtype)
+
+
+@given(nested_dtypes(max_itemsize=settings.default.buffer_size // 10),
+       st.data())
+def test_infer_strategy_from_dtype(dtype, data):
+    # Given a dtype
+    assert isinstance(dtype, np.dtype)
+    # We can infer a strategy
+    strat = from_dtype(dtype)
+    assert isinstance(strat, SearchStrategy)
+    # And use it to fill an array of that dtype
+    data.draw(arrays(dtype, 10, strat))
+
+
+@given(nested_dtypes())
+def test_np_dtype_is_idempotent(dtype):
+    assert dtype == np.dtype(dtype)
+
+
+def test_minimise_scalar_dtypes():
+    assert minimal(scalar_dtypes()) == np.dtype(u'bool')
+
+
+def test_minimise_nested_types():
+    assert minimal(nested_dtypes()) == np.dtype(u'bool')
+
+
+def test_minimise_array_strategy():
+    smallest = minimal(arrays(
+        nested_dtypes(max_itemsize=settings.default.buffer_size // 3**3),
+        array_shapes(max_dims=3, max_side=3)))
+    assert smallest.dtype == np.dtype(u'bool') and not smallest.any()

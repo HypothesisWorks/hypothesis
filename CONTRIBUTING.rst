@@ -160,3 +160,4 @@ their individual contributions.
 * `Tariq Khokhar <https://www.github.com/tkb>`_ (`tariq@khokhar.net <mailto:tariq@khokhar.net>`_)
 * `Will Hall <https://www.github.com/wrhall>`_ (`wrsh07@gmail.com <mailto:wrsh07@gmail.com>`_)
 * `Will Thompson <https://www.github.com/wjt>`_ (`will@willthompson.co.uk <mailto:will@willthompson.co.uk>`_)
+* `Zac Hatfield-Dodds <https://www.github.com/Zac-HD>`_ (`zac.hatfield.dodds@gmail.com <mailto:zac.hatfield.dodds@gmail.com>`_)
