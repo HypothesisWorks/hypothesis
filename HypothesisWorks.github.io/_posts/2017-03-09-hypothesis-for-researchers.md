@@ -213,10 +213,20 @@ used directly:
 
 ### What are some interesting research directions?
 
-I have a large number of possible directions that my work on Hypothesis could be taken. Probably a far larger amount than
-I can practically ever work on, so a large part of any PhD would be prioritising.
- 
-The following are what I think of as the four most interesting directions to go next:
+I have a large number of possible directions that my work on Hypothesis could be taken. 
+
+None of these are *necessarily* a thing that would be the focus of a PhD - in doing a PhD I would almost certainly
+focus on a more specific research question that might include some or all of them. These are just areas that I am interested
+of exploring which I think might form an interesting starting point, and whatever focus I actually end up with will likely
+be more carefully tailored in discussion with my potential supervisors.
+
+One thing that's also worth considering: Most of these research directions are ones that would result in improvements
+to Hypothesis without changing its public interface. This results in a great practical advantage to performing the
+research because of the relatively large (and ever-growing) corpus of open source projects which are already using
+Hypothesis - many of these changes could at least partly be validated by just running peoples' existing tests and seeing
+if any new and interesting bugs are found!
+
+Without further ado, here are some of what I think are the most interesting directions to go next.
 
 #### More structured byte streams
 
@@ -235,6 +245,10 @@ Alias Method), and arbitrary grammars (probably using [Boltzmann Samplers](https
 
 This will provide a much more thorough basis for high quality data generation than the current rather ad hoc method
 of specifying byte streams.
+
+This is perhaps more engineering than research, but I think it would at the bare minimum make any paper I wrote about
+the core approach of Hypothesis significantly more compelling, and it contains a number of interesting applications of
+the theory.
 
 #### Glass box testing
 
@@ -256,6 +270,11 @@ search. Coverage would be one source of tags, but others are possible. For examp
 [Concolic testing](https://en.wikipedia.org/wiki/Concolic_testing) that would be another possibly interesting source
 of information to use.
 
+Exactly how much of this is original research and how much is just applications of existing research is yet to be
+determined, but I think it very likely that at the very least figuring out how to make use of this sort of information
+in sharply bounded time is likely to bear interesting fruit. The opportunity to see how Concolic testing behaves in the
+wild is also likely to result in a number of additional questions.
+
 #### Making the Conjecture engine smarter
 
 A thing I've looked into in the past is the possible use of grammar inference to improve shrinking and data generation.
@@ -271,6 +290,14 @@ like to revisit this and see if it can prove useful.
 There are likely a number of other ways that the Conjecture engine can probe the state of the system under test
 to determine interesting potential behaviours, especially in combination with glass box testing features.
 
+I think there are a lot of potentially interesting research directions in here - especially if this is combined with
+the glass box testing. Given that I haven't even been able to make this perform acceptably in the past, the first
+one would be to see if I can!
+
+This will also require a fair bit of practical experimentation to see what works well at actually finding bugs and what
+doesn't. This is one area in particular where a corpus of open source projects tested with Hypothesis will be extremely
+helpful.
+
 #### Other testing abstractions
 
 Despite Hypothesis primarily being a library for property based testing, the core Conjecture engine actually has
@@ -284,6 +311,9 @@ building block on which other tools can be rebuilt and gain a lot of its major f
 
 I don't currently have any concrete plans in this direction, but it seems likely there are some interesting possibilities
 here that will emerge after more review of the testing literature.
+
+This is probably just engineering unless some particularly interesting application emerges, but I think the basic
+potential of the technology would probably give pretty good odds of such an application.
 
 ### What should you do with this information?
 
