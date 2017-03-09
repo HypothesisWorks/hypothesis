@@ -149,7 +149,7 @@ From an end user point of view, Hypothesis adds several important things:
   making it "feel" like normal testing instead of formal methods.
 * Specifying data generators is much easier than in traditional QuickCheck methods, and you get a great deal more
   functionality "for free" when you do. This is similar to [test.check](https://github.com/clojure/test.check) for
-  Clojure, or indeed for the [Erlang version of QuickCheck](http://www.quviq.com/products/erlang-quickcheck/), but
+  Clojure, or indeed to the [Erlang version of QuickCheck](http://www.quviq.com/products/erlang-quickcheck/), but
   some of the design decisions of Hypothesis make it significantly more flexible here.
 * The fact that arbitrary examples can be saved and replayed significantly improves the development work-flow. Other
   implementations of property-based testing either don't do this at all, only save the seed, or rely on being able to
