@@ -41,6 +41,7 @@ Hypothesis is designed to work with a range of Python versions. Currently suppor
 * CPython 2.7.x
 * CPython 3.4.x
 * CPython 3.5.x
+* CPython 3.6.x
 
 If you feel the need to have separate Python 3 and Python 2 packages you can, but Hypothesis works unmodified
 on either.
