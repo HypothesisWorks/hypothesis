@@ -217,7 +217,7 @@ I have a large number of possible directions that my work on Hypothesis could be
 
 None of these are *necessarily* a thing that would be the focus of a PhD - in doing a PhD I would almost certainly
 focus on a more specific research question that might include some or all of them. These are just areas that I am interested
-of exploring which I think might form an interesting starting point, and whatever focus I actually end up with will likely
+in exploring which I think might form an interesting starting point, and whatever focus I actually end up with will likely
 be more carefully tailored in discussion with my potential supervisors.
 
 One thing that's also worth considering: Most of these research directions are ones that would result in improvements
