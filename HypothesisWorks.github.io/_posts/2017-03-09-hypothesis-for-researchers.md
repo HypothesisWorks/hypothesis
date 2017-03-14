@@ -60,11 +60,19 @@ An example of a property-based test using Hypothesis:
 
   @given(st.lists(st.integers()))
   def test_sort_is_idempotent(ls):
-    sort1 = sorted(ls)
-    assert sorted(sort1) == sort1
+      sort1 = sorted(ls)
+      assert sorted(sort1) == sort1
 ```
 
-When this test is run using a standard unit test runner such as py.test, Hypothesis will generate random lists of integers
+This exposes a normal function which can be picked up by a standard runner such as py.test. You can also just call it
+directly:
+
+```python
+  if __name__ == '__main__':
+      test_sort_is_idempotent()
+```
+
+When the test is run, Hypothesis will generate random lists of integers
 and pass them to the test. The test sorts the integers, then sorts them again, and asserts that the two results are the same.
 
 As long as the test passes for every input Hypothesis feeds it this will appear to be a normal test. If it fails however,
