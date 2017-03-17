@@ -209,7 +209,7 @@ and then run, telling you your test has passed! Our balancing algorithm worked.
 
 Now lets break it to make sure the test is still valid:
 
-Changing the split to mid = max(len(leaves) // 3, 1) this should no longer
+Changing the split to ``mid = max(len(leaves) // 3, 1)`` this should no longer
 balance, which gives us the following counter-example:
 
 .. code:: python
