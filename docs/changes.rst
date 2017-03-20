@@ -21,6 +21,43 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+------------------
+3.7.0 - 2017-03-20
+------------------
+
+This is a feature release.
+
+New features:
+
+* Rule based stateful testing now has an @invariant decorator that specifies
+  methods that are run after init and after every step, allowing you to
+  encode properties that should be true at all times. Thanks to Tom Prince for
+  this feature.
+* The decimals strategy now supports allow\_nan and allow\_infinity flags.
+* There are significantly more strategies available for numpy, including for
+  generating arbitrary data types. Thanks to Zac Hatfield Dodds for this
+  feature.
+* When using the data() strategy you can now add a label as an argument to
+  draw(), which will be printed along with the value when an example fails.
+
+Bug fixes:
+
+* Bug fix: @composite now preserves functions' docstrings.
+* The build is now reproducible and doesn't depend on the path you build it
+  from. Thanks to Chris Lamb for this feature.
+* numpy strategies for the void data type did not work correctly. Thanks to
+  Zac Hatfield Dodds for this fix.
+
+There have also been a number of performance optimizations:
+
+* The permutations() strategy is now significantly faster to use for large
+  lists (the underlying algorithm has gone from O(n^2) to O(n)).
+* Shrinking of failing test cases should have got significantly faster in
+  some circumstances where it was previously struggling for a long time.
+* Example generation now involves less indirection, which results in a small
+  speedup in some cases (small enough that you won't really notice it except in
+  pathological cases).
+
 
 ------------------
 3.6.1 - 2016-12-20
@@ -488,7 +525,7 @@ Features:
 * There is a new random_module() strategy which seeds the global random module
   for you and handles things so that you don't get a health check warning if
   you use it inside your tests.
-* floats() now accepts two new arguments: allow_nan and allow_infinity. These
+* floats() now accepts two new arguments: allow\_nan and allow\_infinity. These
   default to the old behaviour, but when set to False will do what the names
   suggest.
 
