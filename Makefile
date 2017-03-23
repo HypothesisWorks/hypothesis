@@ -34,7 +34,9 @@ TOOL_PYTHON=$(TOOL_VIRTUALENV)/bin/python
 TOOL_PIP=$(TOOL_VIRTUALENV)/bin/pip
 TOOL_INSTALL=$(TOOL_PIP) install --upgrade
 
-FILES_TO_FORMAT=find src tests -name '*.py' -not -path '*/vendor/*'
+FILES_TO_FORMAT=find src tests -name '*.py' -not \( \
+								-path '*/vendor/*' -or -name test_lambda_formatting.py \
+								\)
 
 export PATH:=$(BUILD_RUNTIMES)/snakepit:$(TOOLS):$(PATH)
 export LC_ALL=en_US.UTF-8

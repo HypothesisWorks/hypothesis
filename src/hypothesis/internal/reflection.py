@@ -190,7 +190,7 @@ LINE_CONTINUATION = re.compile(r"\\\n")
 WHITESPACE = re.compile(r"\s+")
 PROBABLY_A_COMMENT = re.compile("""#[^'"]*$""")
 SPACE_FOLLOWS_OPEN_BRACKET = re.compile(r"\( ")
-SPACE_PRECEDES_CLOSE_BRACKET = re.compile(r"\( ")
+SPACE_PRECEDES_CLOSE_BRACKET = re.compile(r" \)")
 
 
 def extract_lambda_source(f):
