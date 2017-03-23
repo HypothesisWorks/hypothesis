@@ -81,7 +81,7 @@ def test_leaves_unknown_kwargs_in_dict():
 
 def test_errors_on_bad_kwargs():
     def bar():
-        pass    # pragma: no cover
+        pass
 
     with raises(TypeError):
         convert_keyword_arguments(bar, (), {'foo': 1})
@@ -98,14 +98,14 @@ def test_passes_varargs_correctly():
 
 def test_errors_if_keyword_precedes_positional():
     def foo(x, y):
-        pass  # pragma: no cover
+        pass
     with raises(TypeError):
         convert_keyword_arguments(foo, (1,), {'x': 2})
 
 
 def test_errors_if_not_enough_args():
     def foo(a, b, c, d=1):
-        pass  # pragma: no cover
+        pass
 
     with raises(TypeError):
         convert_keyword_arguments(foo, (1, 2), {'d': 4})
@@ -113,7 +113,7 @@ def test_errors_if_not_enough_args():
 
 def test_errors_on_extra_kwargs():
     def foo(a):
-        pass  # pragma: no cover
+        pass
 
     with raises(TypeError) as e:
         convert_keyword_arguments(foo, (1,), {'b': 1})
@@ -176,10 +176,10 @@ class Foo(object):
 
     @classmethod
     def bar(cls):
-        pass  # pragma: no cover
+        pass
 
     def baz(cls):
-        pass  # pragma: no cover
+        pass
 
     def __repr__(self):
         return 'SoNotFoo()'
@@ -205,7 +205,7 @@ def test_does_not_error_on_confused_sources():
         return f
 
     x = ed(
-        lambda x, y: (  # pragma: no cover
+        lambda x, y: (
             x * y
         ).conjugate() == x.conjugate() * y.conjugate(), complex, complex)
 

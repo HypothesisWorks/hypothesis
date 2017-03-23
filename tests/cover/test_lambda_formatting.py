@@ -46,11 +46,11 @@ def test_can_get_descriptions_of_nested_lambdas_with_different_names():
 def test_source_of_lambda_is_pretty():
     assert get_pretty_function_description(
         lambda x: True
-    ) == 'lambda x: True'  # pragma: no cover
+    ) == 'lambda x: True'
 
 
 def test_variable_names_are_not_pretty():
-    t = lambda x: True  # pragma: no cover
+    t = lambda x: True
     assert get_pretty_function_description(t) == 'lambda x: True'
 
 
@@ -61,35 +61,35 @@ def test_does_not_error_on_dynamically_defined_functions():
 
 def test_collapses_whitespace_nicely():
     t = (
-        lambda x,       y:           1  # pragma: no cover
+        lambda x,       y:           1
     )
     assert get_pretty_function_description(t) == 'lambda x, y: 1'
 
 
 def test_is_not_confused_by_tuples():
-    p = (lambda x: x > 1, 2)[0]  # pragma: no cover
+    p = (lambda x: x > 1, 2)[0]
 
     assert get_pretty_function_description(p) == 'lambda x: x > 1'
 
 
 def test_strips_comments_from_the_end():
-    t = lambda x: 1  # pragma: no cover
+    t = lambda x: 1
     assert get_pretty_function_description(t) == 'lambda x: 1'
 
 
 def test_does_not_strip_hashes_within_a_string():
-    t = lambda x: '#'  # pragma: no cover
+    t = lambda x: '#'
     assert get_pretty_function_description(t) == "lambda x: '#'"
 
 
 def test_can_distinguish_between_two_lambdas_with_different_args():
-    a, b = (lambda x: 1, lambda y: 2)  # pragma: no cover
+    a, b = (lambda x: 1, lambda y: 2)
     assert get_pretty_function_description(a) == 'lambda x: 1'
     assert get_pretty_function_description(b) == 'lambda y: 2'
 
 
 def test_does_not_error_if_it_cannot_distinguish_between_two_lambdas():
-    a, b = (lambda x: 1, lambda x: 2)  # pragma: no cover
+    a, b = (lambda x: 1, lambda x: 2)
     assert 'lambda x:' in get_pretty_function_description(a)
     assert 'lambda x:' in get_pretty_function_description(b)
 
