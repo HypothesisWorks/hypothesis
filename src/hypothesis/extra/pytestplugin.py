@@ -68,6 +68,9 @@ if PYTEST_VERSION >= (2, 7, 0):
         profile = config.getoption(LOAD_PROFILE_OPTION)
         if profile:
             settings.load_profile(profile)
+        config.addinivalue_line(
+            'markers',
+            'hypothesis: Tests which use hypothesis.')
 
     gathered_statistics = OrderedDict()
 
