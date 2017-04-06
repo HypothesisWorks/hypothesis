@@ -8,7 +8,7 @@ author: nchammas
 ---
 
 _This post was originally published on [the author's personal site](http://nchammas.com/writing/how-not-to-die-hard-with-hypothesis).
-It is reproduced here with permission from the author._
+It is reproduced here with his permission._
 
 In the movie [Die Hard with a Vengeance](https://en.wikipedia.org/wiki/Die_Hard_with_a_Vengeance)
 (aka Die Hard 3), there is
@@ -29,6 +29,8 @@ are forced to solve a problem or be blown up: Given a 3 gallon jug and
 (The video title is wrong. It's Die Hard 3.)
 </p>
 </div>
+
+<!--more-->
 
 Apparently, you can solve this problem using a formal specification
 language like [TLA+](https://en.wikipedia.org/wiki/TLA%2B). I don't know
