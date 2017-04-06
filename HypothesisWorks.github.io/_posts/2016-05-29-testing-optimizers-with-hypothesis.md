@@ -5,6 +5,7 @@ date: 2016-05-29 21:00
 title: Testing Optimizers
 published: true
 author: drmaciver
+redirect_from: /articles/testing-optimizers
 ---
 
 We've [previously looked into testing performance optimizations]({{site.url}}{% post_url 2016-04-29-testing-performance-optimizations %})

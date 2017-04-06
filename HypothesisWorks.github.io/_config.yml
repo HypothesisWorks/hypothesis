@@ -25,3 +25,6 @@ show_blog_header: true
 
 tag_descriptions:
   python: "Articles specific to the Python implementation of Hypothesis"
+
+gems:
+  - jekyll-redirect-from
