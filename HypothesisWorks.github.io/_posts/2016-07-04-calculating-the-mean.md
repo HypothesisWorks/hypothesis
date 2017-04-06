@@ -25,7 +25,7 @@ Consider the following test case using Hypothesis:
 from hypothesis import given
 from hypothesis.strategies import lists, floats
 
-@given(lists(floats(allow_nan=False, allow_infinity=False)), min_size=1)
+@given(lists(floats(allow_nan=False, allow_infinity=False), min_size=1))
 def test_mean_is_within_reasonable_bounds(ls):
     assert min(ls) <= mean(ls) <= max(ls)
 ```
