@@ -923,6 +923,7 @@ def composite(f):
 
                 return f(draw, *args, **kwargs)
         return CompositeStrategy()
+    accept.__module__ = f.__module__
     return accept
 
 
