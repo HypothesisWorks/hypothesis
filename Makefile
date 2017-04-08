@@ -152,7 +152,10 @@ check-django19: $(TOX) $(PY35)
 check-django110: $(TOX) $(PY35)
 	$(TOX) -e django110
 
-check-django: check-django17 check-django18 check-django19 check-django110
+check-django111: $(TOX) $(PY35)
+	$(TOX) -e django111
+
+check-django: check-django17 check-django18 check-django19 check-django110 check-django111
 
 check-examples2: $(TOX) $(PY27)
 	$(TOX) -e examples2
