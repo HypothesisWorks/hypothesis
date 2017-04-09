@@ -131,14 +131,11 @@ check-ancient-pip: $(PY273)
 
 check-pytest: check-pytest28 check-pytest30
 
-check-fakefactory060: $(TOX) $(PY35)
-	$(TOX) -e fakefactory060
+check-faker070: $(TOX) $(PY35)
+	$(TOX) -e faker070
 
-check-fakefactory052: $(TOX) $(PY35)
-	$(TOX) -e fakefactory052
-
-check-fakefactory053: $(TOX) $(PY35)
-	$(TOX) -e fakefactory053
+check-faker071: $(TOX) $(PY35)
+	$(TOX) -e faker071
 
 check-django18: $(TOX) $(PY35)
 	$(TOX) -e django18
