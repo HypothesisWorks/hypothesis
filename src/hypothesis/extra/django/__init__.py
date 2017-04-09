@@ -15,16 +15,21 @@
 #
 # END HEADER
 
+from __future__ import division, print_function, absolute_import
+
 import unittest
 
 import django.test as dt
+from hypothesis import lifecycle_hook
 
 
 class HypothesisTestCase(object):
 
+    @lifecycle_hook
     def setup_example(self):
         self._pre_setup()
 
+    @lifecycle_hook
     def teardown_example(self, example):
         self._post_teardown()
 

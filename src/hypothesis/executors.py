@@ -17,6 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+from hypothesis._settings import note_deprecation
+
 
 def default_executor(function):  # pragma: nocover
     raise NotImplementedError()  # We don't actually use this any more
@@ -67,13 +69,31 @@ class ConjectureRunner(object):
 def new_style_executor(runner):
     if runner is None:
         return default_new_style_executor
+
     if isinstance(runner, ConjectureRunner):
+        note_deprecation(
+            'Use of the ConjectureRunner type is deprecated and will go away '
+            'in Hypothesis 4.0. Use the new lifecycle hooks API instead.'
+        )
         return runner.hypothesis_execute_example_with_data
 
     old_school = executor(runner)
     if old_school is default_executor:
         return default_new_style_executor
     else:
+        if old_school is setup_teardown_executor:
+            note_deprecation(
+                'setup_example and teardown_example should be decorated with '
+                '@lifecycle_hook. Use without is deprecated and will stop '
+                'working in Hypothesis 4.0.'
+            )
+        else:
+            note_deprecation(
+                'The classic executor API is deprecated and will go away in '
+                'Hypothesis 4.0. Use the new lifecycle hooks API instead. '
+                "If you did not intend this to be an executor or don't know "
+                'what that means, try decorating @given with @lifecycle(None).'
+            )
         return lambda data, function: old_school(
             lambda: function(data)
         )

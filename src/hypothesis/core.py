@@ -27,6 +27,7 @@ import traceback
 from random import Random
 from collections import namedtuple
 
+import hypothesis._lifecycle as _lifecycle
 from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
     Unsatisfiable, InvalidArgument, FailedHealthCheck, \
     UnsatisfiedAssumption, HypothesisDeprecationWarning
@@ -124,6 +125,26 @@ def seed(seed):
     def accept(test):
         test._hypothesis_internal_use_seed = seed
         return test
+    return accept
+
+
+def lifecycle(target):
+    """Use this object instead of self as the recipient of lifecycle hooks when
+    Hypothesis executes the test.
+
+    If this object is None, this will disable all hooks. If it is not
+    None, it must define at least one valid hook or this will raise a
+    type error.
+
+    """
+    if target is not None and not isinstance(target, _lifecycle.LifeCycle):
+        raise TypeError(
+            'Target %r is not a lifecycle object' % (
+                target,))
+
+    def accept(fn):
+        fn._hypothesis_internal_use_lifecycle_target = target
+        return fn
     return accept
 
 
@@ -232,18 +253,29 @@ def given(*given_arguments, **given_kwargs):
 
             import hypothesis.strategies as sd
 
-            selfy = None
             arguments, kwargs = convert_positional_arguments(
                 wrapped_test, arguments, kwargs)
 
-            # If the test function is a method of some kind, the bound object
-            # will be the first named argument if there are any, otherwise the
-            # first vararg (if any).
+            # If the test function is a method of some kind, the bound
+            # object will be the first named argument if there are any,
+            # otherwise the first vararg (if any).
             if argspec.args:
                 selfy = kwargs.get(argspec.args[0])
             elif arguments:
                 selfy = arguments[0]
-            test_runner = new_style_executor(selfy)
+            else:
+                selfy = None
+
+            try:
+                lifecycle_object = \
+                    wrapped_test._hypothesis_internal_use_lifecycle_target
+            except AttributeError:
+                lifecycle_object = _lifecycle.lifecycle_for(selfy)
+
+            if lifecycle_object is None:
+                test_runner = new_style_executor(selfy)
+            else:
+                test_runner = _lifecycle.lifecycle_executor(lifecycle_object)
 
             for example in reversed(getattr(
                 wrapped_test, 'hypothesis_explicit_examples', ()
@@ -572,6 +604,11 @@ def given(*given_arguments, **given_kwargs):
         wrapped_test._hypothesis_internal_use_settings = getattr(
             test, '_hypothesis_internal_use_settings', None
         ) or Settings.default
+        try:
+            wrapped_test._hypothesis_internal_use_lifecycle_target = \
+                test._hypothesis_internal_use_lifecycle_target
+        except AttributeError:
+            pass
         return wrapped_test
     return run_test_with_generator
 

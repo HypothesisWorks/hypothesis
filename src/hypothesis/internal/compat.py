@@ -495,3 +495,10 @@ else:
     # the x flag because it's Python 2, so there are no places where this can
     # be thrown.
     FileExistsError = None
+
+
+if PY3:
+    def callable(obj):
+        return hasattr(obj, '__call__')
+else:
+    callable = callable
