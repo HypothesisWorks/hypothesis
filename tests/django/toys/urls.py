@@ -18,12 +18,12 @@
 from __future__ import division, print_function, absolute_import
 
 from django.contrib import admin
-from django.conf.urls import url, include, patterns
+from django.conf.urls import url, include
 
-urlpatterns = patterns(u'',
-                       # Examples:
-                       # url(r'^$', 'toys.views.home', name='home'),
-                       # url(r'^blog/', include('blog.urls')),
+urlpatterns = [
+    # Examples:
+    # url(r'^$', 'toys.views.home', name='home'),
+    # url(r'^blog/', include('blog.urls')),
 
-                       url(r'^admin/', include(admin.site.urls)),
-                       )
+    url(r'^admin/', include(admin.site.urls)),
+]
