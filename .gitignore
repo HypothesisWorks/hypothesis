@@ -12,3 +12,4 @@ _build
 .runtimes
 .idea
 .vagrant
+.DS_Store

@@ -47,10 +47,9 @@ env:
         - TASK=check-fakefactory052
         - TASK=check-fakefactory053
         - TASK=check-fakefactory060
-        - TASK=check-django17
         - TASK=check-django18
-        - TASK=check-django19
         - TASK=check-django110
+        - TASK=check-django111
 
 script:
     - make $TASK

@@ -140,19 +140,16 @@ check-fakefactory052: $(TOX) $(PY35)
 check-fakefactory053: $(TOX) $(PY35)
 	$(TOX) -e fakefactory053
 
-check-django17: $(TOX) $(PY35)
-	$(TOX) -e django17
-
 check-django18: $(TOX) $(PY35)
 	$(TOX) -e django18
-
-check-django19: $(TOX) $(PY35)
-	$(TOX) -e django19
 
 check-django110: $(TOX) $(PY35)
 	$(TOX) -e django110
 
-check-django: check-django17 check-django18 check-django19 check-django110
+check-django111: $(TOX) $(PY35)
+	$(TOX) -e django111
+
+check-django: check-django18 check-django110 check-django111
 
 check-examples2: $(TOX) $(PY27)
 	$(TOX) -e examples2

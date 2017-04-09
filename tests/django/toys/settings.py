@@ -70,9 +70,9 @@ MIDDLEWARE_CLASSES = (
     u'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
 
-ROOT_URLCONF = u'toys.urls'
+ROOT_URLCONF = u'tests.django.toys.urls'
 
-WSGI_APPLICATION = u'toys.wsgi.application'
+WSGI_APPLICATION = u'tests.django.toys.wsgi.application'
 
 
 # Database
