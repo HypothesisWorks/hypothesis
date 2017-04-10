@@ -437,6 +437,7 @@ def given(*generator_arguments, **generator_kwargs):
                     )
             last_exception = [None]
             repr_for_last_exception = [None]
+            at_least_one_success = [False]
 
             def evaluate_test_data(data):
                 try:
@@ -448,6 +449,7 @@ def given(*generator_arguments, **generator_kwargs):
                             'Tests run under @given should return None, but '
                             '%s returned %r instead.'
                         ) % (test.__name__, result), HealthCheck.return_value)
+                    at_least_one_success[0] = True
                     return False
                 except UnsatisfiedAssumption:
                     data.mark_invalid()
@@ -462,7 +464,8 @@ def given(*generator_arguments, **generator_kwargs):
                     verbose_report(last_exception[0])
                     data.mark_interesting()
 
-            from hypothesis.internal.conjecture.engine import ConjectureRunner
+            from hypothesis.internal.conjecture.engine import \
+                ConjectureRunner, ExitReason
 
             falsifying_example = None
             database_key = str_to_bytes(fully_qualified_name(test))
@@ -491,6 +494,9 @@ def given(*generator_arguments, **generator_kwargs):
                 if runner.valid_examples < min(
                     settings.min_satisfying_examples,
                     settings.max_examples,
+                ) and not (
+                    runner.exit_reason == ExitReason.finished and
+                    at_least_one_success[0]
                 ):
                     if timed_out:
                         raise Timeout((
@@ -620,7 +626,8 @@ def find(specifier, condition, settings=None, random=None, database_key=None):
                 last_data[0] = data
         if success and not data.frozen:
             data.mark_interesting()
-    from hypothesis.internal.conjecture.engine import ConjectureRunner
+    from hypothesis.internal.conjecture.engine import ConjectureRunner, \
+        ExitReason
     from hypothesis.internal.conjecture.data import ConjectureData, Status
 
     start = time.time()
@@ -635,7 +642,10 @@ def find(specifier, condition, settings=None, random=None, database_key=None):
         data = ConjectureData.for_buffer(runner.last_data.buffer)
         with BuildContext(data):
             return data.draw(search)
-    if runner.valid_examples <= settings.min_satisfying_examples:
+    if (
+        runner.valid_examples <= settings.min_satisfying_examples and
+        runner.exit_reason != ExitReason.finished
+    ):
         if settings.timeout > 0 and run_time > settings.timeout:
             raise Timeout((
                 'Ran out of time before finding enough valid examples for '

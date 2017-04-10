@@ -63,16 +63,30 @@ class ConjectureRunner(object):
         self.start_time = time.time()
         self.random = random or Random(getrandbits(128))
         self.database_key = database_key
-        self.seen = set()
-        self.duplicates = 0
         self.status_runtimes = {}
         self.events_to_strings = WeakKeyDictionary()
 
+        # Tree nodes are stored in an array to prevent heavy nesting of data
+        # structures. Branches are dicts mapping bytes to child nodes (which
+        # will in general only be partially populated). Leaves are
+        # ConjectureData objects that have been previously seen as the result
+        # of following that path.
+        self.tree = [{}]
+
+        # A node is dead if there is nothing left to explore past that point.
+        # Recursively, a node is dead if either it is a leaf or every byte
+        # leads to a dead node when starting from here.
+        self.dead = set()
+
+    def __tree_is_exhausted(self):
+        return 0 in self.dead
+
     def new_buffer(self):
+        assert not self.__tree_is_exhausted()
         self.last_data = ConjectureData(
             max_length=self.settings.buffer_size,
             draw_bytes=lambda data, n, distribution:
-            distribution(self.random, n)
+            self.__rewrite_for_novelty(data, distribution(self.random, n))
         )
         self.test_function(self.last_data)
         self.last_data.freeze()
@@ -92,15 +106,37 @@ class ConjectureRunner(object):
         finally:
             data.freeze()
             self.note_details(data)
-        if (
-            data.status == Status.INTERESTING and (
-                self.last_data is None or
-                data.buffer != self.last_data.buffer
-            )
-        ):
-            self.debug_data(data)
+
+        self.debug_data(data)
         if data.status >= Status.VALID:
             self.valid_examples += 1
+
+        tree_node = self.tree[0]
+        indices = []
+        i = 0
+        for b in data.buffer:
+            indices.append(i)
+            try:
+                i = tree_node[b]
+            except KeyError:
+                i = len(self.tree)
+                self.tree.append({})
+                tree_node[b] = i
+            tree_node = self.tree[i]
+            if i in self.dead:
+                break
+
+        if data.status != Status.OVERRUN and i not in self.dead:
+            self.dead.add(i)
+            self.tree[i] = data
+
+            for j in reversed(indices):
+                if len(self.tree[j]) < 256:
+                    break
+                if set(self.tree[j].values()).issubset(self.dead):
+                    self.dead.add(j)
+                else:
+                    break
 
     def consider_new_test_data(self, data):
         # Transition rules:
@@ -108,11 +144,6 @@ class ConjectureRunner(object):
         #   2. Any transition which increases the status is valid
         #   3. If the previous status was interesting, only shrinking
         #      transitions are allowed.
-        key = hbytes(data.buffer)
-        if key in self.seen:
-            self.duplicates += 1
-            return False
-        self.seen.add(key)
         if data.buffer == self.last_data.buffer:
             return False
         if self.last_data.status < data.status:
@@ -161,8 +192,6 @@ class ConjectureRunner(object):
         ))
 
     def incorporate_new_buffer(self, buffer):
-        if buffer in self.seen:
-            return False
         assert self.last_data.status == Status.INTERESTING
         if (
             self.settings.timeout > 0 and
@@ -170,9 +199,22 @@ class ConjectureRunner(object):
         ):
             self.exit_reason = ExitReason.timeout
             raise RunIsComplete()
+
         buffer = buffer[:self.last_data.index]
         if sort_key(buffer) >= sort_key(self.last_data.buffer):
             return False
+
+        i = 0
+        for b in buffer:
+            if i in self.dead:
+                return False
+            try:
+                i = self.tree[i][b]
+            except KeyError:
+                break
+        else:
+            return False
+
         assert sort_key(buffer) <= sort_key(self.last_data.buffer)
         data = ConjectureData.for_buffer(buffer)
         self.test_function(data)
@@ -261,9 +303,63 @@ class ConjectureRunner(object):
             if (
                 data.index + n > len(self.last_data.buffer)
             ):
-                return distribution(self.random, n)
-            return self.random.choice(bits)(data, n, distribution)
+                result = distribution(self.random, n)
+            else:
+                result = self.random.choice(bits)(data, n, distribution)
+
+            return self.__rewrite_for_novelty(data, result)
+
         return draw_mutated
+
+    def __rewrite_for_novelty(self, data, result):
+        assert isinstance(result, hbytes)
+        try:
+            node_index = data.__current_node_index
+        except AttributeError:
+            assert len(data.buffer) == 0
+            node_index = 0
+            data.__current_node_index = node_index
+            data.__hit_novelty = False
+
+        if data.__hit_novelty:
+            return result
+
+        node = self.tree[node_index]
+        assert node_index not in self.dead
+
+        for i, b in enumerate(result):
+            assert isinstance(b, int)
+            try:
+                new_node_index = node[b]
+            except KeyError:
+                data.__hit_novelty = True
+                return result
+
+            new_node = self.tree[new_node_index]
+
+            if new_node_index in self.dead:
+                if isinstance(result, hbytes):
+                    result = bytearray(result)
+                for c in range(256):
+                    if c not in node:
+                        result[i] = c
+                        data.__hit_novelty = True
+                        return hbytes(result)
+                    else:
+                        new_node_index = node[c]
+                        new_node = self.tree[new_node_index]
+                        if new_node_index not in self.dead:
+                            result[i] = c
+                            break
+                else:  # pragma: no cover
+                    assert False, (
+                        'Found a tree node which is live despite all its '
+                        'children being dead.')
+            node_index = new_node_index
+            node = new_node
+        assert node_index not in self.dead
+        data.__current_node_index = node_index
+        return hbytes(result)
 
     def _run(self):
         self.last_data = None
@@ -291,6 +387,7 @@ class ConjectureRunner(object):
                 self.test_function(data)
                 data.freeze()
                 self.last_data = data
+                self.consider_new_test_data(data)
                 if data.status < Status.VALID:
                     self.settings.database.delete(
                         self.database_key, existing)
@@ -308,7 +405,10 @@ class ConjectureRunner(object):
                     self.last_data = data
                     break
 
-        if Phase.generate in self.settings.phases:
+        if (
+            Phase.generate in self.settings.phases and not
+            self.__tree_is_exhausted()
+        ):
             if (
                 self.last_data is None or
                 self.last_data.status < Status.INTERESTING
@@ -316,7 +416,10 @@ class ConjectureRunner(object):
                 self.new_buffer()
 
             mutator = self._new_mutator()
-            while self.last_data.status != Status.INTERESTING:
+            while (
+                self.last_data.status != Status.INTERESTING
+                and not self.__tree_is_exhausted()
+            ):
                 if self.valid_examples >= self.settings.max_examples:
                     self.exit_reason = ExitReason.max_examples
                     return
@@ -351,6 +454,10 @@ class ConjectureRunner(object):
                         mutator = self._new_mutator()
 
                 mutations += 1
+
+        if self.__tree_is_exhausted():
+            self.exit_reason = ExitReason.finished
+            return
 
         data = self.last_data
         if data is None:
