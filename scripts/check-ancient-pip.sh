@@ -11,7 +11,7 @@ trap "rm -rf $BROKEN_VIRTUALENV" EXIT
 
 $PYTHON -m pip install virtualenv
 $PYTHON -m virtualenv $BROKEN_VIRTUALENV
-$BROKEN_VIRTUALENV/bin/pip install pytest
+$BROKEN_VIRTUALENV/bin/pip install -rrequirements-test.txt
 $BROKEN_VIRTUALENV/bin/python -m pip install --upgrade pip==1.0.0
 $BROKEN_VIRTUALENV/bin/pip install .
 $BROKEN_VIRTUALENV/bin/python -m pytest tests/cover/test_testdecorators.py

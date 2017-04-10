@@ -23,7 +23,6 @@ from flaky import flaky
 
 import hypothesis.strategies as st
 from hypothesis import find, given, example, settings
-from hypothesis.internal.debug import timeout
 from hypothesis.internal.compat import integer_types
 
 
@@ -130,7 +129,6 @@ def test_can_form_sets_of_recursive_data():
 
 @given(st.randoms())
 @settings(max_examples=2, database=None)
-@timeout(60)
 def test_can_flatmap_to_recursive_data(rnd):
     stuff = st.lists(st.integers(), min_size=1).flatmap(
         lambda elts: st.recursive(

@@ -24,14 +24,13 @@ except ImportError:
     pytest = None
 
 from hypothesis._settings import settings
-from hypothesis.internal.debug import timeout
 from hypothesis.strategies import integers, floats, just, one_of, \
     sampled_from, lists, booleans, dictionaries, tuples, \
     frozensets, complex_numbers, sets, text, binary, decimals, fractions, \
     none, randoms, builds, fixed_dictionaries, recursive
 
 
-__all__ = ['small_verifier', 'timeout', 'standard_types', 'OrderedPair']
+__all__ = ['small_verifier', 'standard_types', 'OrderedPair']
 
 
 TIME_INCREMENT = 0.01
