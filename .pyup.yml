@@ -1,0 +1,4 @@
+requirements:
+  - requirements/tools.txt
+      updates: all
+      pin: True
