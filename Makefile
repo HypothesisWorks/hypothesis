@@ -18,6 +18,8 @@ PY35=$(BUILD_RUNTIMES)/snakepit/python3.5
 PY36=$(BUILD_RUNTIMES)/snakepit/python3.6
 PYPY=$(BUILD_RUNTIMES)/snakepit/pypy
 
+BEST_PY3=$(PY36)
+
 TOOLS=$(BUILD_RUNTIMES)/tools
 
 TOX=$(TOOLS)/tox
@@ -60,7 +62,7 @@ $(PY36):
 $(PYPY):
 	scripts/retry.sh scripts/install.sh pypy
 
-$(TOOL_VIRTUALENV): $(PY34) requirements/tools.txt
+$(TOOL_VIRTUALENV): $(BEST_PY3) requirements/tools.txt
 	rm -rf $(TOOL_VIRTUALENV)
 	$(PY34) -m virtualenv $(TOOL_VIRTUALENV)
 	$(TOOL_PIP) install -r requirements/tools.txt
@@ -85,7 +87,7 @@ check-format: format
 	find src tests -name "*.py" | xargs $(TOOL_PYTHON) scripts/check_encoding_header.py
 	git diff --exit-code
 
-install-core: $(PY27) $(PYPY) $(PY36) $(TOX)
+install-core: $(PY27) $(PYPY) $(BEST_PY3) $(TOX)
 
 check-py27: $(PY27) $(TOX)
 	$(TOX) -e py27-full
@@ -102,22 +104,22 @@ check-py34: $(py34) $(TOX)
 check-py35: $(PY35) $(TOX)
 	$(TOX) -e py35-full
 
-check-py36: $(PY36) $(TOX)
+check-py36: $(BEST_PY3) $(TOX)
 	$(TOX) -e py36-full
 
 check-pypy: $(PYPY) $(TOX)
 	$(TOX) -e pypy-full
 
-check-nose: $(TOX) $(PY35)
+check-nose: $(TOX) $(BEST_PY3)
 	$(TOX) -e nose
 
-check-pytest30: $(TOX) $(PY35)
+check-pytest30: $(TOX) $(BEST_PY3)
 	$(TOX) -e pytest30
 
-check-pytest28: $(TOX) $(PY35)
+check-pytest28: $(TOX) $(BEST_PY3)
 	$(TOX) -e pytest28
 
-check-quality: $(PY36) $(TOX)
+check-quality: $(BEST_PY3) $(TOX)
 	$(TOX) -e quality
 
 check-ancient-pip: $(PY273)
@@ -126,19 +128,19 @@ check-ancient-pip: $(PY273)
 
 check-pytest: check-pytest28 check-pytest30
 
-check-faker070: $(TOX) $(PY35)
+check-faker070: $(TOX) $(BEST_PY3)
 	$(TOX) -e faker070
 
-check-faker071: $(TOX) $(PY35)
+check-faker071: $(TOX) $(BEST_PY3)
 	$(TOX) -e faker071
 
-check-django18: $(TOX) $(PY35)
+check-django18: $(TOX) $(BEST_PY3)
 	$(TOX) -e django18
 
-check-django110: $(TOX) $(PY35)
+check-django110: $(TOX) $(BEST_PY3)
 	$(TOX) -e django110
 
-check-django111: $(TOX) $(PY35)
+check-django111: $(TOX) $(BEST_PY3)
 	$(TOX) -e django111
 
 check-django: check-django18 check-django110 check-django111
@@ -146,10 +148,10 @@ check-django: check-django18 check-django110 check-django111
 check-examples2: $(TOX) $(PY27)
 	$(TOX) -e examples2
 
-check-examples3: $(TOX) $(PY35)
+check-examples3: $(TOX) $(BEST_PY3)
 	$(TOX) -e examples3
 
-check-coverage: $(TOX) $(PY35)
+check-coverage: $(TOX) $(BEST_PY3)
 	$(TOX) -e coverage
 
 check-unicode: $(TOX) $(PY27)
@@ -159,13 +161,12 @@ check-noformat: check-coverage check-py26 check-py27 check-py33 check-py34 check
 
 check: check-format check-noformat
 
-check-fast: lint $(PY35) $(PYPY) $(TOX)
+check-fast: lint $(BEST_PY3) $(PYPY) $(TOX)
 	$(TOX) -e pypy-brief
 	$(TOX) -e py35-brief
-	$(TOX) -e py26-brief
-	$(TOX) -e py35-prettyquick
+	$(TOX) -e py36-prettyquick
 
-$(TOX): $(PY35) tox.ini $(TOOLS)
+$(TOX): $(BEST_PY3) tox.ini $(TOOLS)
 	rm -f $(TOX)
 	ln -sf $(TOOL_VIRTUALENV)/bin/tox $(TOX)
 	touch $(TOOL_VIRTUALENV)/bin/tox $(TOX)
