@@ -63,7 +63,8 @@ $(PY36):
 $(PYPY):
 	scripts/retry.sh scripts/install.sh pypy
 
-$(TOOL_VIRTUALENV): $(PY34)
+$(TOOL_VIRTUALENV): $(PY34) requirements/tools.txt
+	rm -rf $(TOOL_VIRTUALENV)
 	$(PY34) -m virtualenv $(TOOL_VIRTUALENV)
 	mkdir -p $(TOOLS)
 
