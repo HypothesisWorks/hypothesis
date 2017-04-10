@@ -215,7 +215,7 @@ def test_does_not_error_on_confused_sources():
 def test_digests_are_reasonably_unique():
     assert (
         function_digest(test_simple_conversion) !=
-        function_digest(test_does_not_error_on_dynamically_defined_functions)
+        function_digest(test_does_not_error_on_confused_sources)
     )
 
 
