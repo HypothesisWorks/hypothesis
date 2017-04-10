@@ -468,7 +468,8 @@ def lists(
                 'want to set unique_by)'
             ))
         else:
-            unique_by = lambda x: x
+            def unique_by(x):
+                return x
 
     if unique_by is not None:
         from hypothesis.searchstrategy.collections import UniqueListStrategy
