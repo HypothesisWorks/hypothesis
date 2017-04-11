@@ -98,7 +98,7 @@ check-py273: $(PY273) $(TOX)
 check-py33: $(PY33) $(TOX)
 	$(TOX) -e py33-full
 
-check-py34: $(py34) $(TOX)
+check-py34: $(PY34) $(TOX)
 	$(TOX) -e py34-full
 
 check-py35: $(PY35) $(TOX)
