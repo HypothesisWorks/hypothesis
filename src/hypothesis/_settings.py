@@ -28,7 +28,7 @@ import os
 import inspect
 import warnings
 import threading
-from enum import Enum, unique, IntEnum
+from enum import Enum, IntEnum, unique
 from collections import namedtuple
 
 from hypothesis.errors import InvalidArgument, HypothesisDeprecationWarning

@@ -21,10 +21,10 @@ import math
 import hashlib
 from random import Random
 
-from hypothesis import seed, given, assume, settings, Verbosity
+from hypothesis import Verbosity, seed, given, assume, settings
 from hypothesis.errors import NoExamples, FailedHealthCheck
 from hypothesis.database import ExampleDatabase
-from hypothesis.stateful import rule, Bundle, RuleBasedStateMachine
+from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
 from hypothesis.strategies import just, none, text, lists, binary, \
     floats, tuples, booleans, decimals, integers, fractions, \
     float_to_int, int_to_float, sampled_from, complex_numbers

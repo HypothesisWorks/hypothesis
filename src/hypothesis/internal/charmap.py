@@ -24,7 +24,7 @@ import tempfile
 import unicodedata
 
 from hypothesis.configuration import tmpdir, storage_directory
-from hypothesis.internal.compat import hunichr, GzipFile, FileExistsError
+from hypothesis.internal.compat import GzipFile, FileExistsError, hunichr
 
 
 def charmap_file():

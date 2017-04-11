@@ -23,8 +23,8 @@ import threading
 from collections import namedtuple
 
 import hypothesis.reporting as reporting
-from hypothesis import note, seed, given, assume, reject, settings, \
-    Verbosity
+from hypothesis import Verbosity, note, seed, given, assume, reject, \
+    settings
 from hypothesis.errors import Unsatisfiable
 from tests.common.utils import fails, raises, fails_with, capture_out
 from hypothesis.strategies import just, sets, text, lists, binary, \

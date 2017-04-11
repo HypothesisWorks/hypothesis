@@ -23,7 +23,7 @@ import hypothesis.internal.conjecture.utils as cu
 from hypothesis.control import assume
 from hypothesis.internal.compat import OrderedDict
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
-    one_of_strategies, MappedSearchStrategy
+    MappedSearchStrategy, one_of_strategies
 
 
 class TupleStrategy(SearchStrategy):

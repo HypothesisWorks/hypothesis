@@ -28,8 +28,8 @@ from hypothesis.errors import Flaky, InvalidDefinition
 from hypothesis.control import current_build_context
 from tests.common.utils import raises, capture_out
 from hypothesis.database import ExampleDatabase
-from hypothesis.stateful import rule, Bundle, invariant, precondition, \
-    GenericStateMachine, RuleBasedStateMachine, \
+from hypothesis.stateful import Bundle, GenericStateMachine, \
+    RuleBasedStateMachine, rule, invariant, precondition, \
     run_state_machine_as_test
 from hypothesis.strategies import just, none, lists, binary, tuples, \
     choices, booleans, integers, sampled_from

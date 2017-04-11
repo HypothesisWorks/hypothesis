@@ -20,7 +20,7 @@ from __future__ import division, print_function, absolute_import
 import pytest
 
 from hypothesis.errors import CleanupFailed, InvalidArgument
-from hypothesis.control import note, event, cleanup, BuildContext, \
+from hypothesis.control import BuildContext, note, event, cleanup, \
     current_build_context, _current_build_context
 from tests.common.utils import capture_out
 from hypothesis.internal.conjecture.data import ConjectureData as TD

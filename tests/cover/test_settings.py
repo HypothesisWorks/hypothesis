@@ -26,7 +26,7 @@ import hypothesis
 from hypothesis.errors import InvalidState, InvalidArgument
 from hypothesis.database import ExampleDatabase, \
     DirectoryBasedExampleDatabase
-from hypothesis._settings import settings, Verbosity, note_deprecation
+from hypothesis._settings import Verbosity, settings, note_deprecation
 
 
 def test_has_docstrings():

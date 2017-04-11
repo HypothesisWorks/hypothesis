@@ -24,8 +24,8 @@ import binascii
 import threading
 from contextlib import contextmanager
 
-from hypothesis.internal.compat import sha1, b64decode, b64encode, \
-    FileNotFoundError
+from hypothesis.internal.compat import FileNotFoundError, sha1, \
+    b64decode, b64encode
 
 SQLITE_PATH = re.compile(r"\.\(db|sqlite|sqlite3\)$")
 

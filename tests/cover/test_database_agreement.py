@@ -24,7 +24,7 @@ import tempfile
 import hypothesis.strategies as st
 from hypothesis.database import SQLiteExampleDatabase, \
     InMemoryExampleDatabase, DirectoryBasedExampleDatabase
-from hypothesis.stateful import rule, Bundle, RuleBasedStateMachine
+from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
 
 
 class DatabaseComparison(RuleBasedStateMachine):

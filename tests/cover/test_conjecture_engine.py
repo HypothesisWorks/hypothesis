@@ -21,7 +21,7 @@ import time
 from random import Random
 
 from hypothesis import strategies as st
-from hypothesis import given, Phase, settings
+from hypothesis import Phase, given, settings
 from hypothesis.database import ExampleDatabase
 from hypothesis.internal.compat import hbytes, int_from_bytes, \
     bytes_from_list

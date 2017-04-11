@@ -23,7 +23,7 @@ from pytest import raises
 
 import hypothesis.reporting as reporting
 import hypothesis.strategies as st
-from hypothesis import given, settings, HealthCheck
+from hypothesis import HealthCheck, given, settings
 from hypothesis.errors import FailedHealthCheck
 from hypothesis.control import assume
 from tests.common.utils import capture_out
