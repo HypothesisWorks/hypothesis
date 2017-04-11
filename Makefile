@@ -27,6 +27,7 @@ SPHINX_BUILD=$(TOOLS)/sphinx-build
 ISORT=$(TOOLS)/isort
 FLAKE8=$(TOOLS)/flake8
 PYFORMAT=$(TOOLS)/pyformat
+RSTLINT=$(TOOLS)/rst-lint
 
 BROKEN_VIRTUALENV=$(BUILD_RUNTIMES)/virtualenvs/broken
 TOOL_VIRTUALENV=$(BUILD_RUNTIMES)/virtualenvs/tools
@@ -165,6 +166,9 @@ check-fast: lint $(PYPY) $(PY36) $(TOX)
 	$(TOX) -e pypy-brief
 	$(TOX) -e py36-prettyquick
 
+check-rst: $(RSTLINT)
+	$(RSTLINT) *.rst
+
 $(TOX): $(BEST_PY3) tox.ini $(TOOLS)
 	rm -f $(TOX)
 	ln -sf $(TOOL_VIRTUALENV)/bin/tox $(TOX)
@@ -178,6 +182,9 @@ $(PYFORMAT): $(TOOLS)
 
 $(ISORT): $(TOOLS)
 	ln -sf $(TOOL_VIRTUALENV)/bin/isort $(ISORT)
+
+$(RSTLINT): $(TOOLS)
+	ln -sf $(TOOL_VIRTUALENV)/bin/rst-lint $(RSTLINT)
 
 $(FLAKE8): $(TOOLS)
 	ln -sf $(TOOL_VIRTUALENV)/bin/flake8 $(FLAKE8)
