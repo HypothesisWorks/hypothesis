@@ -119,7 +119,7 @@ check-pytest30: $(TOX)
 check-pytest28: $(TOX)
 	$(TOX) -e pytest28
 
-check-quality: $(BEST_PY3) $(TOX)
+check-quality: $(TOX)
 	$(TOX) -e quality
 
 check-ancient-pip: $(PY273)
@@ -161,9 +161,8 @@ check-noformat: check-coverage check-py26 check-py27 check-py33 check-py34 check
 
 check: check-format check-noformat
 
-check-fast: lint $(BEST_PY3) $(PYPY) $(TOX)
+check-fast: lint $(PYPY) $(PY36) $(TOX)
 	$(TOX) -e pypy-brief
-	$(TOX) -e py35-brief
 	$(TOX) -e py36-prettyquick
 
 $(TOX): $(BEST_PY3) tox.ini $(TOOLS)
