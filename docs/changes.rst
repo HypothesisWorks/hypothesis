@@ -39,6 +39,7 @@ New features:
   feature.
 * When using the data() strategy you can now add a label as an argument to
   draw(), which will be printed along with the value when an example fails.
+  Thanks to Peter Inglesby for this feature.
 
 Bug fixes:
 
