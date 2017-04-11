@@ -10,7 +10,7 @@ Faker==0.7.11
 flake8==3.3.0
 flaky==3.3.0
 imagesize==0.7.1
-isort==4.1.0
+isort==4.2.5
 Jinja2==2.9.6
 MarkupSafe==1.0
 mccabe==0.6.1
