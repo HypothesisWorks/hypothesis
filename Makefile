@@ -32,7 +32,6 @@ TOOL_VIRTUALENV=$(BUILD_RUNTIMES)/virtualenvs/tools
 ISORT_VIRTUALENV=$(BUILD_RUNTIMES)/virtualenvs/isort
 TOOL_PYTHON=$(TOOL_VIRTUALENV)/bin/python
 TOOL_PIP=$(TOOL_VIRTUALENV)/bin/pip
-TOOL_INSTALL=$(TOOL_PIP) install --upgrade
 
 FILES_TO_FORMAT=find src tests -name '*.py' -not \( \
 								-path '*/vendor/*' -or -name test_lambda_formatting.py \
@@ -66,9 +65,10 @@ $(PYPY):
 $(TOOL_VIRTUALENV): $(PY34) requirements/tools.txt
 	rm -rf $(TOOL_VIRTUALENV)
 	$(PY34) -m virtualenv $(TOOL_VIRTUALENV)
-	mkdir -p $(TOOLS)
+	$(TOOL_PIP) install -r requirements/tools.txt
 
 $(TOOLS): $(TOOL_VIRTUALENV)
+	mkdir -p $(TOOLS)
 
 install-tools: $(TOOLS)
 
@@ -173,7 +173,6 @@ check-fast: lint $(PY35) $(PYPY) $(TOX)
 
 $(TOX): $(PY35) tox.ini $(TOOLS)
 	rm -f $(TOX)
-	$(TOOL_INSTALL) tox
 	ln -sf $(TOOL_VIRTUALENV)/bin/tox $(TOX)
 	touch $(TOOL_VIRTUALENV)/bin/tox $(TOX)
 
@@ -187,7 +186,6 @@ $(SPHINX_AUTOBUILD): $(TOOL_VIRTUALENV)
 	ln -sf $(TOOL_VIRTUALENV)/bin/sphinx-autobuild $(SPHINX_AUTOBUILD)
 
 $(PYFORMAT): $(TOOL_VIRTUALENV)
-	$(TOOL_INSTALL) pyformat
 	ln -sf $(TOOL_VIRTUALENV)/bin/pyformat $(PYFORMAT)
 
 $(ISORT): $(ISORT_VIRTUALENV)
@@ -195,7 +193,6 @@ $(ISORT): $(ISORT_VIRTUALENV)
 	ln -sf $(ISORT_VIRTUALENV)/bin/isort $(ISORT)
 
 $(FLAKE8): $(TOOL_VIRTUALENV)
-	$(TOOL_INSTALL) flake8
 	ln -sf $(TOOL_VIRTUALENV)/bin/flake8 $(FLAKE8)
 
 clean:
