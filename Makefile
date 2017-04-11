@@ -22,7 +22,6 @@ TOOLS=$(BUILD_RUNTIMES)/tools
 
 TOX=$(TOOLS)/tox
 SPHINX_BUILD=$(TOOLS)/sphinx-build
-SPHINX_AUTOBUILD=$(TOOLS)/sphinx-autobuild
 ISORT=$(TOOLS)/isort
 FLAKE8=$(TOOLS)/flake8
 PYFORMAT=$(TOOLS)/pyformat
@@ -177,13 +176,8 @@ $(TOX): $(PY35) tox.ini $(TOOLS)
 	touch $(TOOL_VIRTUALENV)/bin/tox $(TOX)
 
 $(SPHINX_BUILD): $(TOOL_VIRTUALENV)
-	$(TOOL_PYTHON) -m pip install sphinx sphinx-rtd-theme
 	$(TOOL_PYTHON) -m pip install -e .
 	ln -sf $(TOOL_VIRTUALENV)/bin/sphinx-build $(SPHINX_BUILD)
-
-$(SPHINX_AUTOBUILD): $(TOOL_VIRTUALENV)
-	$(TOOL_PYTHON) -m pip install sphinx-autobuild
-	ln -sf $(TOOL_VIRTUALENV)/bin/sphinx-autobuild $(SPHINX_AUTOBUILD)
 
 $(PYFORMAT): $(TOOL_VIRTUALENV)
 	ln -sf $(TOOL_VIRTUALENV)/bin/pyformat $(PYFORMAT)
