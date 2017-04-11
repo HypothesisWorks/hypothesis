@@ -170,16 +170,16 @@ $(TOX): $(PY35) tox.ini $(TOOLS)
 	ln -sf $(TOOL_VIRTUALENV)/bin/tox $(TOX)
 	touch $(TOOL_VIRTUALENV)/bin/tox $(TOX)
 
-$(SPHINX_BUILD): $(TOOL_VIRTUALENV)
+$(SPHINX_BUILD): $(TOOLS)
 	ln -sf $(TOOL_VIRTUALENV)/bin/sphinx-build $(SPHINX_BUILD)
 
-$(PYFORMAT): $(TOOL_VIRTUALENV)
+$(PYFORMAT): $(TOOLS)
 	ln -sf $(TOOL_VIRTUALENV)/bin/pyformat $(PYFORMAT)
 
-$(ISORT): $(TOOL_VIRTUALENV)
+$(ISORT): $(TOOLS)
 	ln -sf $(TOOL_VIRTUALENV)/bin/isort $(ISORT)
 
-$(FLAKE8): $(TOOL_VIRTUALENV)
+$(FLAKE8): $(TOOLS)
 	ln -sf $(TOOL_VIRTUALENV)/bin/flake8 $(FLAKE8)
 
 clean:
