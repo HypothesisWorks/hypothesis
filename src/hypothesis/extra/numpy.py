@@ -17,8 +17,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import functools
-
 import numpy as np
 
 import hypothesis.strategies as st
@@ -26,6 +24,7 @@ from hypothesis import settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import hrange, text_type, binary_type
+from hypothesis.internal.reflection import proxies
 
 TIME_RESOLUTIONS = tuple('Y  M  D  h  m  s  ms  us  ns  ps  fs  as'.split())
 
@@ -193,7 +192,7 @@ def scalar_dtypes():
 
 def defines_dtype_strategy(strat):
     @st.defines_strategy
-    @functools.wraps(strat)
+    @proxies(strat)
     def inner(*args, **kwargs):
         return strat(*args, **kwargs).map(np.dtype)
     return inner

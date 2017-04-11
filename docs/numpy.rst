@@ -15,4 +15,4 @@ shapes and generate all kinds of fixed-size or compound dtypes.
 
 
 .. automodule:: hypothesis.extra.numpy
-   :members: arrays, array_shapes, scalar_dtypes, boolean_dtypes, unsigned_integer_dtypes, integer_dtypes, floating_dtypes, complex_number_dtypes, datetime64_dtypes, timedelta64_dtypes, byte_string_dtypes, unicode_string_dtypes, array_dtypes, nested_dtypes
+   :members:
