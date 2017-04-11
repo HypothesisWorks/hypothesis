@@ -28,7 +28,6 @@ PYFORMAT=$(TOOLS)/pyformat
 
 BROKEN_VIRTUALENV=$(BUILD_RUNTIMES)/virtualenvs/broken
 TOOL_VIRTUALENV=$(BUILD_RUNTIMES)/virtualenvs/tools
-ISORT_VIRTUALENV=$(BUILD_RUNTIMES)/virtualenvs/isort
 TOOL_PYTHON=$(TOOL_VIRTUALENV)/bin/python
 TOOL_PIP=$(TOOL_VIRTUALENV)/bin/pip
 
@@ -71,13 +70,9 @@ $(TOOLS): $(TOOL_VIRTUALENV)
 
 install-tools: $(TOOLS)
 
-$(ISORT_VIRTUALENV): $(PY34)
-	$(PY34) -m virtualenv $(ISORT_VIRTUALENV)
-
 format: $(PYFORMAT) $(ISORT)
 	$(FILES_TO_FORMAT) | $(TOOL_PYTHON) scripts/enforce_header.py
 	# isort will sort packages differently depending on whether they're installed
-	$(ISORT_VIRTUALENV)/bin/python -m pip install django pytz pytest fake-factory numpy flaky
 	$(FILES_TO_FORMAT) | xargs env -i PATH="$(PATH)" $(ISORT) -p hypothesis -ls -m 2 -w 75 \
 			-a "from __future__ import absolute_import, print_function, division" \
 			-rc src tests examples
@@ -182,9 +177,9 @@ $(SPHINX_BUILD): $(TOOL_VIRTUALENV)
 $(PYFORMAT): $(TOOL_VIRTUALENV)
 	ln -sf $(TOOL_VIRTUALENV)/bin/pyformat $(PYFORMAT)
 
-$(ISORT): $(ISORT_VIRTUALENV)
-	$(ISORT_VIRTUALENV)/bin/python -m pip install isort==4.1.0
-	ln -sf $(ISORT_VIRTUALENV)/bin/isort $(ISORT)
+$(ISORT): $(TOOL_VIRTUALENV)
+	$(TOOL_VIRTUALENV)/bin/python -m pip install isort==4.1.0
+	ln -sf $(TOOL_VIRTUALENV)/bin/isort $(ISORT)
 
 $(FLAKE8): $(TOOL_VIRTUALENV)
 	ln -sf $(TOOL_VIRTUALENV)/bin/flake8 $(FLAKE8)
