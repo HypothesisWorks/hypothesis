@@ -20,7 +20,7 @@ from __future__ import division, print_function, absolute_import, \
 
 import pytest
 
-from hypothesis.internal.compat import PY2, hunichr, WINDOWS, \
+from hypothesis.internal.compat import PY2, WINDOWS, hunichr, \
     escape_unicode_characters
 
 pytest_plugins = str('pytester')

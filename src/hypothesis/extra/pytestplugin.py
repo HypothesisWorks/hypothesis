@@ -24,7 +24,7 @@ import pytest
 from hypothesis.reporting import default as default_reporter
 from hypothesis.reporting import with_reporter
 from hypothesis.statistics import collector
-from hypothesis.internal.compat import text_type, OrderedDict
+from hypothesis.internal.compat import OrderedDict, text_type
 from hypothesis.internal.detection import is_hypothesis_test
 
 PYTEST_VERSION = tuple(map(

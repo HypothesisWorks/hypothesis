@@ -24,7 +24,7 @@ import pytest
 from hypothesis import find, given
 from hypothesis.errors import InvalidArgument
 from tests.common.utils import fails, capture_out
-from hypothesis._settings import settings, Verbosity
+from hypothesis._settings import Verbosity, settings
 from hypothesis.reporting import default as default_reporter
 from hypothesis.reporting import with_reporter
 from hypothesis.strategies import lists, booleans, integers

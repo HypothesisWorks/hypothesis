@@ -19,7 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import inspect
 
-from hypothesis._settings import settings, Verbosity
+from hypothesis._settings import Verbosity, settings
 from hypothesis.internal.compat import print_unicode, \
     escape_unicode_characters
 from hypothesis.utils.dynamicvariables import DynamicVariable

@@ -20,7 +20,7 @@ from __future__ import division, print_function, absolute_import
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import given, Phase, example, settings
+from hypothesis import Phase, given, example, settings
 from hypothesis.errors import InvalidArgument
 
 

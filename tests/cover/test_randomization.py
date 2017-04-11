@@ -22,7 +22,7 @@ import random
 from pytest import raises
 
 import hypothesis.strategies as st
-from hypothesis import find, given, settings, Verbosity
+from hypothesis import Verbosity, find, given, settings
 
 
 def test_seeds_off_random():

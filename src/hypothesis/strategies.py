@@ -25,7 +25,7 @@ from fractions import Fraction
 from hypothesis.errors import InvalidArgument
 from hypothesis.control import assume
 from hypothesis.searchstrategy import SearchStrategy
-from hypothesis.internal.compat import hrange, ArgSpec, text_type, \
+from hypothesis.internal.compat import ArgSpec, hrange, text_type, \
     getargspec, integer_types, float_to_decimal
 from hypothesis.internal.floats import is_negative, float_to_int, \
     int_to_float, count_between_floats

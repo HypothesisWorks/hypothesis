@@ -25,7 +25,7 @@ from weakref import WeakKeyDictionary
 from hypothesis import settings as Settings
 from hypothesis import Phase
 from hypothesis.reporting import debug_report
-from hypothesis.internal.compat import hbytes, hrange, Counter, \
+from hypothesis.internal.compat import Counter, hbytes, hrange, \
     text_type, bytes_from_list, to_bytes_sequence, unicode_safe_repr
 from hypothesis.internal.conjecture.data import Status, StopTest, \
     ConjectureData

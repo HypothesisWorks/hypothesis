@@ -33,8 +33,8 @@ from hypothesis.strategies import just, sets, text, lists, binary, \
     floats, tuples, randoms, booleans, decimals, integers, fractions, \
     recursive, frozensets, dictionaries, sampled_from, random_module
 from hypothesis.internal.debug import minimal
-from hypothesis.internal.compat import PY3, hrange, reduce, Counter, \
-    OrderedDict, integer_types
+from hypothesis.internal.compat import PY3, Counter, OrderedDict, hrange, \
+    reduce, integer_types
 
 slightly_flaky = flaky(min_passes=1, max_runs=3)
 

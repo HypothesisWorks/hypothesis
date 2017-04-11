@@ -21,8 +21,8 @@ import pytest
 
 from hypothesis import strategies as st
 from hypothesis import given
-from hypothesis.internal.compat import hrange, qualname, int_to_bytes, \
-    HAS_SIGNATURE, int_from_bytes, signature_argspec
+from hypothesis.internal.compat import HAS_SIGNATURE, hrange, qualname, \
+    int_to_bytes, int_from_bytes, signature_argspec
 
 
 def test_small_hrange():

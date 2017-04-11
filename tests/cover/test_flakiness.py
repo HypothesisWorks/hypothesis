@@ -19,7 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
-from hypothesis import given, assume, reject, example, settings, Verbosity
+from hypothesis import Verbosity, given, assume, reject, example, settings
 from hypothesis.errors import Flaky, Unsatisfiable, UnsatisfiedAssumption
 from hypothesis.strategies import lists, booleans, integers, composite, \
     random_module
