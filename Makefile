@@ -64,7 +64,7 @@ $(PYPY):
 
 $(TOOL_VIRTUALENV): $(BEST_PY3) requirements/tools.txt
 	rm -rf $(TOOL_VIRTUALENV)
-	$(PY34) -m virtualenv $(TOOL_VIRTUALENV)
+	$(BEST_PY3) -m virtualenv $(TOOL_VIRTUALENV)
 	$(TOOL_PIP) install -r requirements/tools.txt
 
 $(TOOLS): $(TOOL_VIRTUALENV)
