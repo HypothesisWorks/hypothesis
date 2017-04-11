@@ -27,6 +27,7 @@ env:
         # Core tests that we want to run first.
         - TASK=documentation
         - TASK=lint
+        - TASK=check-rst
         - TASK=check-format
         - TASK=check-coverage
         - TASK=check-pypy
