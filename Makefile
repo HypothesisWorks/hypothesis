@@ -22,17 +22,14 @@ TOOLS=$(BUILD_RUNTIMES)/tools
 
 TOX=$(TOOLS)/tox
 SPHINX_BUILD=$(TOOLS)/sphinx-build
-SPHINX_AUTOBUILD=$(TOOLS)/sphinx-autobuild
 ISORT=$(TOOLS)/isort
 FLAKE8=$(TOOLS)/flake8
 PYFORMAT=$(TOOLS)/pyformat
 
 BROKEN_VIRTUALENV=$(BUILD_RUNTIMES)/virtualenvs/broken
 TOOL_VIRTUALENV=$(BUILD_RUNTIMES)/virtualenvs/tools
-ISORT_VIRTUALENV=$(BUILD_RUNTIMES)/virtualenvs/isort
 TOOL_PYTHON=$(TOOL_VIRTUALENV)/bin/python
 TOOL_PIP=$(TOOL_VIRTUALENV)/bin/pip
-TOOL_INSTALL=$(TOOL_PIP) install --upgrade
 
 FILES_TO_FORMAT=find src tests -name '*.py' -not \( \
 								-path '*/vendor/*' -or -name test_lambda_formatting.py \
@@ -63,28 +60,26 @@ $(PY36):
 $(PYPY):
 	scripts/retry.sh scripts/install.sh pypy
 
-$(TOOL_VIRTUALENV): $(PY34)
+$(TOOL_VIRTUALENV): $(PY34) requirements/tools.txt
+	rm -rf $(TOOL_VIRTUALENV)
 	$(PY34) -m virtualenv $(TOOL_VIRTUALENV)
-	mkdir -p $(TOOLS)
+	$(TOOL_PIP) install -r requirements/tools.txt
 
 $(TOOLS): $(TOOL_VIRTUALENV)
+	mkdir -p $(TOOLS)
 
 install-tools: $(TOOLS)
-
-$(ISORT_VIRTUALENV): $(PY34)
-	$(PY34) -m virtualenv $(ISORT_VIRTUALENV)
 
 format: $(PYFORMAT) $(ISORT)
 	$(FILES_TO_FORMAT) | $(TOOL_PYTHON) scripts/enforce_header.py
 	# isort will sort packages differently depending on whether they're installed
-	$(ISORT_VIRTUALENV)/bin/python -m pip install django pytz pytest fake-factory numpy flaky
 	$(FILES_TO_FORMAT) | xargs env -i PATH="$(PATH)" $(ISORT) -p hypothesis -ls -m 2 -w 75 \
 			-a "from __future__ import absolute_import, print_function, division" \
 			-rc src tests examples
 	$(FILES_TO_FORMAT) | xargs $(PYFORMAT) -i
 
 lint: $(FLAKE8)
-	$(FLAKE8) src tests --exclude=compat.py,test_reflection.py,test_imports.py,tests/py2 --ignore=E731,E721
+	$(FLAKE8) src tests --exclude=compat.py,test_reflection.py,test_imports.py,tests/py2,test_lambda_formatting.py --ignore=E731,E721
 
 check-format: format
 	find src tests -name "*.py" | xargs $(TOOL_PYTHON) scripts/check_encoding_header.py
@@ -172,29 +167,19 @@ check-fast: lint $(PY35) $(PYPY) $(TOX)
 
 $(TOX): $(PY35) tox.ini $(TOOLS)
 	rm -f $(TOX)
-	$(TOOL_INSTALL) tox
 	ln -sf $(TOOL_VIRTUALENV)/bin/tox $(TOX)
 	touch $(TOOL_VIRTUALENV)/bin/tox $(TOX)
 
-$(SPHINX_BUILD): $(TOOL_VIRTUALENV)
-	$(TOOL_PYTHON) -m pip install sphinx sphinx-rtd-theme
-	$(TOOL_PYTHON) -m pip install -e .
+$(SPHINX_BUILD): $(TOOLS)
 	ln -sf $(TOOL_VIRTUALENV)/bin/sphinx-build $(SPHINX_BUILD)
 
-$(SPHINX_AUTOBUILD): $(TOOL_VIRTUALENV)
-	$(TOOL_PYTHON) -m pip install sphinx-autobuild
-	ln -sf $(TOOL_VIRTUALENV)/bin/sphinx-autobuild $(SPHINX_AUTOBUILD)
-
-$(PYFORMAT): $(TOOL_VIRTUALENV)
-	$(TOOL_INSTALL) pyformat
+$(PYFORMAT): $(TOOLS)
 	ln -sf $(TOOL_VIRTUALENV)/bin/pyformat $(PYFORMAT)
 
-$(ISORT): $(ISORT_VIRTUALENV)
-	$(ISORT_VIRTUALENV)/bin/python -m pip install isort==4.1.0
-	ln -sf $(ISORT_VIRTUALENV)/bin/isort $(ISORT)
+$(ISORT): $(TOOLS)
+	ln -sf $(TOOL_VIRTUALENV)/bin/isort $(ISORT)
 
-$(FLAKE8): $(TOOL_VIRTUALENV)
-	$(TOOL_INSTALL) flake8
+$(FLAKE8): $(TOOLS)
 	ln -sf $(TOOL_VIRTUALENV)/bin/flake8 $(FLAKE8)
 
 clean:
@@ -208,4 +193,4 @@ clean:
 	find src tests -name "__pycache__" -delete
 
 documentation: $(SPHINX_BUILD) docs/*.rst
-	$(SPHINX_BUILD) -W -b html -d docs/_build/doctrees docs docs/_build/html
+	PYTHONPATH=src $(SPHINX_BUILD) -W -b html -d docs/_build/doctrees docs docs/_build/html

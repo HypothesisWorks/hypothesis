@@ -247,6 +247,7 @@ def qualname(f):
     except AttributeError:
         return f.__name__
 
+
 FakeArgSpec = namedtuple(
     'ArgSpec', ('args', 'varargs', 'keywords', 'defaults'))
 
@@ -422,6 +423,7 @@ class compatbytes(bytearray):
     def __contains__(self, value):
         return any(v == value for v in self)
 
+
 if PY2:
     hbytes = compatbytes
     reasonable_byte_type = bytearray
@@ -451,6 +453,7 @@ def cast_unicode(s, encoding=None):
 
 def get_stream_enc(stream, default=None):
     return getattr(stream, 'encoding', None) or default
+
 
 if PY3:
     FileNotFoundError = FileNotFoundError

@@ -172,23 +172,6 @@ def test_names_of_functions_are_pretty():
     ) == 'test_names_of_functions_are_pretty'
 
 
-def test_can_have_unicode_in_lambda_sources():
-    t = lambda x: 'é' not in x
-    assert get_pretty_function_description(t) == (
-        "lambda x: 'é' not in x"
-    )
-
-
-ordered_pair = (
-    lambda right: [].map(
-        lambda length: ()))
-
-
-def test_can_get_descriptions_of_nested_lambdas_with_different_names():
-    assert get_pretty_function_description(ordered_pair) == \
-        'lambda right: [].map(lambda length: ())'
-
-
 class Foo(object):
 
     @classmethod
@@ -217,38 +200,6 @@ def test_class_is_not_included_in_unbound_method():
     )
 
 
-# Note: All of these no branch pragmas are because we don't actually ever want
-# to call these lambdas. We're just inspecting their source.
-
-def test_source_of_lambda_is_pretty():
-    assert get_pretty_function_description(
-        lambda x: True
-    ) == 'lambda x: True'  # pragma: no cover
-
-
-def test_variable_names_are_not_pretty():
-    t = lambda x: True  # pragma: no cover
-    assert get_pretty_function_description(t) == 'lambda x: True'
-
-
-def test_does_not_error_on_dynamically_defined_functions():
-    x = eval('lambda t: 1')
-    get_pretty_function_description(x)
-
-
-def test_collapses_whitespace_nicely():
-    t = (
-        lambda x,       y:           1  # pragma: no cover
-    )
-    assert get_pretty_function_description(t) == 'lambda x, y: 1'
-
-
-def test_is_not_confused_by_tuples():
-    p = (lambda x: x > 1, 2)[0]  # pragma: no cover
-
-    assert get_pretty_function_description(p) == 'lambda x: x > 1'
-
-
 def test_does_not_error_on_confused_sources():
     def ed(f, *args):
         return f
@@ -261,48 +212,10 @@ def test_does_not_error_on_confused_sources():
     get_pretty_function_description(x)
 
 
-def test_strips_comments_from_the_end():
-    t = lambda x: 1  # pragma: no cover
-    assert get_pretty_function_description(t) == 'lambda x: 1'
-
-
-def test_does_not_strip_hashes_within_a_string():
-    t = lambda x: '#'  # pragma: no cover
-    assert get_pretty_function_description(t) == "lambda x: '#'"
-
-
-def test_can_distinguish_between_two_lambdas_with_different_args():
-    a, b = (lambda x: 1, lambda y: 2)  # pragma: no cover
-    assert get_pretty_function_description(a) == 'lambda x: 1'
-    assert get_pretty_function_description(b) == 'lambda y: 2'
-
-
-def test_does_not_error_if_it_cannot_distinguish_between_two_lambdas():
-    a, b = (lambda x: 1, lambda x: 2)  # pragma: no cover
-    assert 'lambda x:' in get_pretty_function_description(a)
-    assert 'lambda x:' in get_pretty_function_description(b)
-
-
-def test_lambda_source_break_after_def_with_brackets():
-    f = (lambda n:
-         'aaa')
-
-    source = get_pretty_function_description(f)
-    assert source == "lambda n: 'aaa'"
-
-
-def test_lambda_source_break_after_def_with_line_continuation():
-    f = lambda n:\
-        'aaa'
-
-    source = get_pretty_function_description(f)
-    assert source == "lambda n: 'aaa'"
-
-
 def test_digests_are_reasonably_unique():
     assert (
         function_digest(test_simple_conversion) !=
-        function_digest(test_does_not_error_on_dynamically_defined_functions)
+        function_digest(test_does_not_error_on_confused_sources)
     )
 
 

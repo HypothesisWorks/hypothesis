@@ -465,7 +465,10 @@ for i in range(8):
 
 # This strategy tests interactions with `map()`.  They generate integers
 # from the set {1, 4, 6, 16, 20, 24, 28, 32}.
-double = lambda x: x * 2
+def double(x):
+    return x * 2
+
+
 one_of_nested_strategy_with_map = one_of(
     just(1),
     one_of(
