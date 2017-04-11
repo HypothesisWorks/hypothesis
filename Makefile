@@ -110,13 +110,13 @@ check-py36: $(BEST_PY3) $(TOX)
 check-pypy: $(PYPY) $(TOX)
 	$(TOX) -e pypy-full
 
-check-nose: $(TOX) $(BEST_PY3)
+check-nose: $(TOX)
 	$(TOX) -e nose
 
-check-pytest30: $(TOX) $(BEST_PY3)
+check-pytest30: $(TOX)
 	$(TOX) -e pytest30
 
-check-pytest28: $(TOX) $(BEST_PY3)
+check-pytest28: $(TOX)
 	$(TOX) -e pytest28
 
 check-quality: $(BEST_PY3) $(TOX)
@@ -128,19 +128,19 @@ check-ancient-pip: $(PY273)
 
 check-pytest: check-pytest28 check-pytest30
 
-check-faker070: $(TOX) $(BEST_PY3)
+check-faker070: $(TOX)
 	$(TOX) -e faker070
 
-check-faker071: $(TOX) $(BEST_PY3)
+check-faker071: $(TOX)
 	$(TOX) -e faker071
 
-check-django18: $(TOX) $(BEST_PY3)
+check-django18: $(TOX)
 	$(TOX) -e django18
 
-check-django110: $(TOX) $(BEST_PY3)
+check-django110: $(TOX)
 	$(TOX) -e django110
 
-check-django111: $(TOX) $(BEST_PY3)
+check-django111: $(TOX)
 	$(TOX) -e django111
 
 check-django: check-django18 check-django110 check-django111
@@ -148,10 +148,10 @@ check-django: check-django18 check-django110 check-django111
 check-examples2: $(TOX) $(PY27)
 	$(TOX) -e examples2
 
-check-examples3: $(TOX) $(BEST_PY3)
+check-examples3: $(TOX)
 	$(TOX) -e examples3
 
-check-coverage: $(TOX) $(BEST_PY3)
+check-coverage: $(TOX)
 	$(TOX) -e coverage
 
 check-unicode: $(TOX) $(PY27)
