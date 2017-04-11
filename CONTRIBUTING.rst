@@ -153,7 +153,7 @@ their individual contributions.
 * `Marius Gedminas <https://www.github.com/mgedmin>`_ (`marius@gedmin.as <mailto:marius@gedmin.as>`_)
 * `Markus Unterwaditzer <http://github.com/untitaker/>`_ (`markus@unterwaditzer.net <mailto:markus@unterwaditzer.net>`_)
 * `Matt Bachmann <https://www.github.com/bachmann1234>`_ (`bachmann.matt@gmail.com <mailto:bachmann.matt@gmail.com>`_)
-* `Max Nordlund <https://www.github.com/maxnordlund`_ (`max.nordlund@gmail.com <mailto:max.nordlund@gmail.com>`_)
+* `Max Nordlund <https://www.github.com/maxnordlund>`_ (`max.nordlund@gmail.com <mailto:max.nordlund@gmail.com>`_)
 * `mulkieran <https://www.github.com/mulkieran>`_
 * `Nicholas Chammas <https://www.github.com/nchammas>`_
 * `Richard Boulton <https://www.github.com/rboulton>`_ (`richard@tartarus.org <mailto:richard@tartarus.org>`_)
