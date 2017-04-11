@@ -171,14 +171,12 @@ $(TOX): $(PY35) tox.ini $(TOOLS)
 	touch $(TOOL_VIRTUALENV)/bin/tox $(TOX)
 
 $(SPHINX_BUILD): $(TOOL_VIRTUALENV)
-	$(TOOL_PYTHON) -m pip install -e .
 	ln -sf $(TOOL_VIRTUALENV)/bin/sphinx-build $(SPHINX_BUILD)
 
 $(PYFORMAT): $(TOOL_VIRTUALENV)
 	ln -sf $(TOOL_VIRTUALENV)/bin/pyformat $(PYFORMAT)
 
 $(ISORT): $(TOOL_VIRTUALENV)
-	$(TOOL_VIRTUALENV)/bin/python -m pip install isort==4.1.0
 	ln -sf $(TOOL_VIRTUALENV)/bin/isort $(ISORT)
 
 $(FLAKE8): $(TOOL_VIRTUALENV)
@@ -195,4 +193,4 @@ clean:
 	find src tests -name "__pycache__" -delete
 
 documentation: $(SPHINX_BUILD) docs/*.rst
-	$(SPHINX_BUILD) -W -b html -d docs/_build/doctrees docs docs/_build/html
+	PYTHONPATH=src $(SPHINX_BUILD) -W -b html -d docs/_build/doctrees docs docs/_build/html
