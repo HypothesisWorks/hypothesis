@@ -412,13 +412,13 @@ def sampled_from(elements):
 
     from hypothesis.searchstrategy.misc import SampledFromStrategy, \
         JustStrategy
-    elements = tuple(iter(elements))
+    from hypothesis.internal.conjecture.utils import check_sample
+    elements = check_sample(elements)
     if not elements:
         return nothing()
     if len(elements) == 1:
         return JustStrategy(elements[0])
-    else:
-        return SampledFromStrategy(elements)
+    return SampledFromStrategy(elements)
 
 
 @cacheable
@@ -955,7 +955,7 @@ def choices():
 
     """
     from hypothesis.control import note, current_build_context
-    from hypothesis.internal.conjecture.utils import choice
+    from hypothesis.internal.conjecture.utils import choice, check_sample
 
     class Chooser(object):
 
@@ -967,7 +967,7 @@ def choices():
         def __call__(self, values):
             if not values:
                 raise IndexError('Cannot choose from empty sequence')
-            result = choice(self.data, values)
+            result = choice(self.data, check_sample(values))
             with self.build_context.local():
                 self.choice_count += 1
                 note('Choice #%d: %r' % (self.choice_count, result))

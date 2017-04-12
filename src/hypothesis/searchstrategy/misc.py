@@ -77,7 +77,7 @@ class SampledFromStrategy(SearchStrategy):
 
     def __init__(self, elements):
         SearchStrategy.__init__(self)
-        self.elements = tuple(elements)
+        self.elements = d.check_sample(elements)
         assert self.elements
 
     def do_draw(self, data):

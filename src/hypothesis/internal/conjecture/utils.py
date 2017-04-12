@@ -18,7 +18,9 @@
 from __future__ import division, print_function, absolute_import
 
 import math
+from collections import Sequence
 
+from hypothesis._settings import note_deprecation
 from hypothesis.internal.compat import hbytes, bit_length, int_to_bytes, \
     int_from_bytes
 
@@ -99,6 +101,22 @@ def centered_integer_range(data, lower, upper, center):
     return integer_range(
         data, lower, upper, center=center
     )
+
+
+def check_sample(values):
+    if not isinstance(values, Sequence):
+        note_deprecation(
+            ('Cannot sample from %r, not a sequence.  ' % (values,)) +
+            'Hypothesis goes to some length to ensure that sampling an '
+            'element from a collection (with `sampled_from` or `choices`) is '
+            'replayable and can be minimised.  To replay a saved example, '
+            'the sampled values must have the same iteration order on every '
+            'run - ruling out sets, dicts, etc due to hash randomisation.  '
+            'Most cases can simply use `sorted(values)`, but mixed types or '
+            'special values such as math.nan require careful handling - and '
+            'note that when simplifying an example, Hypothesis treats '
+            'earlier values as simpler.')
+    return tuple(values)
 
 
 def choice(data, values):

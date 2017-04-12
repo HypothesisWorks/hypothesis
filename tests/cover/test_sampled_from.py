@@ -18,6 +18,8 @@
 from __future__ import division, print_function, absolute_import
 
 from hypothesis import given, settings
+from hypothesis.errors import HypothesisDeprecationWarning
+from tests.common.utils import fails_with
 from hypothesis.strategies import sampled_from
 
 
@@ -25,3 +27,14 @@ from hypothesis.strategies import sampled_from
 @settings(min_satisfying_examples=10)
 def test_can_handle_sampling_from_fewer_than_min_satisfying(v):
     pass
+
+
+@fails_with(HypothesisDeprecationWarning)
+def test_cannot_sample_sets_in_strict_mode():
+    with settings(strict=True):
+        sampled_from(set('abc')).example()
+
+
+def test_can_sample_sets_while_deprecated():
+    with settings(strict=False):
+        assert sampled_from(set('abc')).example() in 'abc'
