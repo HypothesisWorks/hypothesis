@@ -25,8 +25,9 @@ from weakref import WeakKeyDictionary
 from hypothesis import settings as Settings
 from hypothesis import Phase
 from hypothesis.reporting import debug_report
-from hypothesis.internal.compat import Counter, hbytes, hrange, \
-    text_type, bytes_from_list, to_bytes_sequence, unicode_safe_repr
+from hypothesis.internal.compat import EMPTY_BYTES, Counter, hbytes, \
+    hrange, text_type, bytes_from_list, to_bytes_sequence, \
+    unicode_safe_repr
 from hypothesis.internal.conjecture.data import Status, StopTest, \
     ConjectureData
 from hypothesis.internal.conjecture.minimizer import minimize
@@ -225,7 +226,9 @@ class ConjectureRunner(object):
                 i = self.random.choice(choices)
                 return self.last_data.buffer[i:i + n]
             else:
-                return distribution(self.random, n)
+                result = distribution(self.random, n)
+                assert isinstance(result, hbytes)
+                return result
 
         def flip_bit(data, n, distribution):
             buf = bytearray(
@@ -236,7 +239,7 @@ class ConjectureRunner(object):
             return hbytes(buf)
 
         def draw_zero(data, n, distribution):
-            return b'\0' * n
+            return hbytes(b'\0' * n)
 
         def draw_constant(data, n, distribution):
             return bytes_from_list([
@@ -426,7 +429,7 @@ class ConjectureRunner(object):
                 buf = self.last_data.buffer
                 block = buf[u:v]
                 n = v - u
-                all_blocks = sorted(set([bytes(n)] + [
+                all_blocks = sorted(set([hbytes(n)] + [
                     buf[a:a + n]
                     for a in self.last_data.block_starts[n]
                 ]))
@@ -456,9 +459,9 @@ class ConjectureRunner(object):
                     ]
 
                     def replace(b):
-                        return b''.join(
-                            bytes(b if c == block else c) for c in parts
-                        )
+                        return hbytes(EMPTY_BYTES.join(
+                            hbytes(b if c == block else c) for c in parts
+                        ))
                     minimize(
                         block,
                         lambda b: self.incorporate_new_buffer(replace(b)),

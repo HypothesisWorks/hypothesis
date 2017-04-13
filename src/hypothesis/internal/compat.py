@@ -109,12 +109,27 @@ def quiet_raise(exc):
     def zero_byte_sequence(n):
         return bytes(n)
 
+    import struct
+
+    struct_pack = struct.pack
+    struct_unpack = struct.unpack
+
     from time import monotonic as benchmark_time
 else:
     import struct
 
+    def struct_pack(*args):
+        return hbytes(struct.pack(*args))
+
+    if CAN_UNPACK_BYTE_ARRAY:
+        def struct_unpack(fmt, string):
+            return struct.unpack(fmt, string)
+    else:
+        def struct_unpack(fmt, string):
+            return struct.unpack(fmt, str(string))
+
     def zero_byte_sequence(n):
-        return b'\0' * n
+        return hbytes(b'\0' * n)
 
     def int_from_bytes(data):
         assert isinstance(data, bytearray)
@@ -147,7 +162,7 @@ else:
         return hbytes(result)
 
     def bytes_from_list(ls):
-        return bytes(bytearray(ls))
+        return hbytes(bytearray(ls))
 
     def to_bytes_sequence(ls):
         return bytearray(ls)
@@ -390,9 +405,11 @@ class compatbytes(bytearray):
         raise ValueError('Value %r not in sequence %r' % (value, self))
 
     def __add__(self, value):
+        assert isinstance(value, compatbytes)
         return compatbytes(bytearray.__add__(self, value))
 
     def __radd__(self, value):
+        assert isinstance(value, compatbytes)
         return compatbytes(bytearray.__add__(value, self))
 
     def __mul__(self, value):
@@ -433,6 +450,8 @@ else:
     reasonable_byte_type = bytes
     string_types = (str,)
 
+
+EMPTY_BYTES = hbytes(b'')
 
 if PY2:
     def to_str(s):

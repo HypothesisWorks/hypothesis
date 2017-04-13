@@ -18,7 +18,8 @@
 from __future__ import division, print_function, absolute_import
 
 import math
-import struct
+
+from hypothesis.internal.compat import struct_pack, struct_unpack
 
 
 def sign(x):
@@ -48,11 +49,11 @@ def count_between_floats(x, y):
 
 def float_to_int(value):
     return (
-        struct.unpack(b'!Q', struct.pack(b'!d', value))[0]
+        struct_unpack(b'!Q', struct_pack(b'!d', value))[0]
     )
 
 
 def int_to_float(value):
     return (
-        struct.unpack(b'!d', struct.pack(b'!Q', value))[0]
+        struct_unpack(b'!d', struct_pack(b'!Q', value))[0]
     )
