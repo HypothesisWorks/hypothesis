@@ -163,11 +163,6 @@ test_can_produce_nan = define_test(
     floats(), math.isnan
 )
 
-test_can_produce_long_lists_of_negative_integers = define_test(
-    lists(integers()), lambda x: all(t <= 0 for t in x),
-    condition=lambda x: len(x) >= 20
-)
-
 test_can_produce_floats_near_left = define_test(
     floats(0, 1),
     lambda t: t < 0.2
