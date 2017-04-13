@@ -38,6 +38,8 @@ from hypothesis.executors import new_style_executor, \
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.statistics import note_engine_for_statistics
 from hypothesis.internal.compat import getargspec, str_to_bytes
+from hypothesis.internal.escalation import \
+    escalate_hypothesis_internal_error
 from hypothesis.internal.reflection import nicerepr, arg_string, \
     impersonate, function_digest, fully_qualified_name, \
     define_function_signature, convert_positional_arguments, \
@@ -460,6 +462,7 @@ def given(*generator_arguments, **generator_kwargs):
                 ):
                     raise
                 except Exception:
+                    escalate_hypothesis_internal_error()
                     last_exception[0] = traceback.format_exc()
                     verbose_report(last_exception[0])
                     data.mark_interesting()
