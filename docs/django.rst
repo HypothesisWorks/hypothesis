@@ -5,7 +5,9 @@ Hypothesis for Django users
 ===========================
 
 Hypothesis offers a number of features specific for Django testing, available
-in the :mod:`hypothesis[django]` :doc:`extra </extras>`.
+in the :mod:`hypothesis[django]` :doc:`extra </extras>`.  This is tested
+against each supported series with mainstream or extended support -
+if you're still getting security patches, you can test with Hypothesis.
 
 Using it is quite straightforward: All you need to do is subclass
 :class:`hypothesis.extra.django.TestCase` or
@@ -14,7 +16,7 @@ and you can use :func:`@given <hypothesis.core.given>` as normal,
 and the transactions will be per example
 rather than per test function as they would be if you used @given with a normal
 django test suite (this is important because your test function will be called
-multiple times and you don't want them to interfere with eachother). Test cases
+multiple times and you don't want them to interfere with each other). Test cases
 on these classes that do not use
 :func:`@given <hypothesis.core.given>` will be run as normal.
 
