@@ -44,33 +44,4 @@ def test_seed_random_twice(r, r2):
 
 @given(st.random_module())
 def test_does_not_fail_health_check_if_randomness_is_used(r):
-    import random
     random.getrandbits(128)
-
-
-def test_reports_non_zero_seed():
-    random.seed(0)
-    zero_value = random.randint(0, 10)
-
-    with capture_out() as out:
-        with reporting.with_reporter(reporting.default):
-            with pytest.raises(AssertionError):
-                @given(st.integers())
-                def test(r):
-                    assert random.randint(0, 10) == zero_value
-                test()
-    assert 'random.seed' in out.getvalue()
-
-
-def test_does_not_report_zero_seed():
-    random.seed(0)
-    zero_value = random.randint(0, 3)
-
-    with capture_out() as out:
-        with reporting.with_reporter(reporting.default):
-            with pytest.raises(AssertionError):
-                @given(st.integers())
-                def test(r):
-                    assert random.randint(0, 3) != zero_value
-                test()
-    assert 'random.seed' not in out.getvalue()
