@@ -30,7 +30,7 @@ PYFORMAT=$(TOOLS)/pyformat
 RSTLINT=$(TOOLS)/rst-lint
 
 BROKEN_VIRTUALENV=$(BUILD_RUNTIMES)/virtualenvs/broken
-TOOL_VIRTUALENV=$(BUILD_RUNTIMES)/virtualenvs/tools
+TOOL_VIRTUALENV:=$(BUILD_RUNTIMES)/virtualenvs/tools-$(shell scripts/tool-hash.py)
 TOOL_PYTHON=$(TOOL_VIRTUALENV)/bin/python
 TOOL_PIP=$(TOOL_VIRTUALENV)/bin/pip
 
@@ -63,8 +63,8 @@ $(PY36):
 $(PYPY):
 	scripts/retry.sh scripts/install.sh pypy
 
-$(TOOL_VIRTUALENV): $(BEST_PY3) requirements/tools.txt
-	rm -rf $(TOOL_VIRTUALENV)
+$(TOOL_VIRTUALENV): $(BEST_PY3)
+	rm -rf $(BUILD_RUNTIMES)/virtualenvs/tools-*
 	$(BEST_PY3) -m virtualenv $(TOOL_VIRTUALENV)
 	$(TOOL_PIP) install -r requirements/tools.txt
 
