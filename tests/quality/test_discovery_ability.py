@@ -38,10 +38,9 @@ from hypothesis import settings as Settings
 from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.strategies import just, sets, text, lists, floats, \
     one_of, tuples, booleans, integers, sampled_from
+from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import \
     ConjectureRunner as ConConjectureRunner
-from hypothesis.internal.conjecture.data import Status
-
 
 RUNS = 100
 REQUIRED_RUNS = 50
@@ -95,7 +94,7 @@ def define_test(specifier, predicate, condition=None):
                     return
         event = condition_string
         if condition is not None:
-            event += "|"
+            event += '|'
             event += condition_string
 
         description = (
