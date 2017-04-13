@@ -33,106 +33,17 @@ import re
 import math
 import collections
 
-import pytest
-
 import hypothesis.internal.reflection as reflection
 from hypothesis import settings as Settings
 from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.strategies import just, sets, text, lists, floats, \
     one_of, tuples, booleans, integers, sampled_from
-from hypothesis.internal.compat import hrange
+from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import \
     ConjectureRunner as ConConjectureRunner
 
-# We run each individual test at a very high level of significance to the
-# point where it will basically only fail if it's really really wildly wrong.
-# We then run the Benjamini–Hochberg procedure at the end to detect
-# which of these we should consider statistically significant at the 1% level.
-REQUIRED_P = 10e-6
-FALSE_POSITIVE_RATE = 0.01
-MIN_RUNS = 500
-MAX_RUNS = MIN_RUNS * 20
-
-
-def cumulative_normal(x):
-    return 0.5 * (1 + math.erf(x / math.sqrt(2)))
-
-
-def cumulative_binomial_probability(n, p, k):
-    assert 0 <= k <= n
-    assert n > 5
-    # Uses a normal approximation because our n is large enough
-    mean = float(n) * p
-    sd = math.sqrt(n * p * (1 - p))
-    assert mean + 3 * sd <= n
-    assert mean - 3 * sd >= 0
-    return cumulative_normal((k - mean) / sd)
-
-
-class Result(object):
-
-    def __init__(
-        self,
-        success_count,
-        total_runs,
-        desired_probability,
-        predicate,
-        condition_string,
-        specifier,
-    ):
-        self.success_count = success_count
-        self.total_runs = total_runs
-        self.desired_probability = desired_probability
-        self.predicate = predicate
-        self.condition_string = condition_string
-        self.p = cumulative_binomial_probability(
-            total_runs, self.desired_probability, success_count,
-        )
-        self.specifier = specifier
-        self.failed = False
-
-    def description(self):
-        condition_string = (
-            ' | ' + self.condition_string if self.condition_string else u'')
-        return (
-            'P(%s%s) >= %g given %r: p = %g.'
-            ' Occurred in %d / %d = %g of runs. '
-        ) % (
-            strip_lambda(
-                reflection.get_pretty_function_description(self.predicate)),
-            condition_string,
-            self.desired_probability,
-            self.specifier,
-            self.p,
-            self.success_count, self.total_runs,
-            float(self.success_count) / self.total_runs
-        )
-
-
-def teardown_module(module):
-    test_results = []
-    for k, v in vars(module).items():
-        if u'test_' in k and hasattr(v, u'test_result'):
-            test_results.append(v.test_result)
-    test_results.sort(key=lambda x: x.p)
-    n = len(test_results)
-    k = 0
-    for i in hrange(n):
-        if test_results[i].p < (FALSE_POSITIVE_RATE * (i + 1)) / n:
-            k = i + 1
-    rejected = [r for r in test_results[:k] if not r.failed]
-
-    if rejected:
-        raise HypothesisFalsified(
-            ((
-                u'Although these tests were not significant at p < %g, '
-                u'the Benjamini-Hochberg procedure demonstrates that the '
-                u'following are rejected with a false discovery rate of %g: '
-                u'\n\n'
-            ) % (REQUIRED_P, FALSE_POSITIVE_RATE)) + u'\n'.join(
-                (u'  ' + p.description())
-                for p in rejected
-            ))
+RUNS = 100
+REQUIRED_RUNS = 50
 
 
 INITIAL_LAMBDA = re.compile(u'^lambda[^:]*:\s*')
@@ -146,11 +57,7 @@ class HypothesisFalsified(AssertionError):
     pass
 
 
-class ConditionTooHard(Exception):
-    pass
-
-
-def define_test(specifier, q, predicate, condition=None):
+def define_test(specifier, predicate, condition=None):
     def run_test():
         if condition is None:
             def _condition(x):
@@ -161,9 +68,6 @@ def define_test(specifier, q, predicate, condition=None):
             condition_string = strip_lambda(
                 reflection.get_pretty_function_description(condition))
 
-        count = [0]
-        successful_runs = [0]
-
         def test_function(data):
             try:
                 value = data.draw(specifier)
@@ -171,87 +75,48 @@ def define_test(specifier, q, predicate, condition=None):
                 data.mark_invalid()
             if not _condition(value):
                 data.mark_invalid()
-            successful_runs[0] += 1
             if predicate(value):
-                count[0] += 1
-        ConConjectureRunner(
-            test_function,
-            settings=Settings(
-                max_examples=MAX_RUNS,
-                max_iterations=MAX_RUNS * 10,
-            )).run()
-        successful_runs = successful_runs[0]
-        count = count[0]
-        if successful_runs < MIN_RUNS:
-            raise ConditionTooHard((
-                u'Unable to find enough examples satisfying predicate %s '
-                u'only found %d but required at least %d for validity'
-            ) % (
-                condition_string, successful_runs, MIN_RUNS
-            ))
+                data.mark_interesting()
 
-        result = Result(
-            count,
-            successful_runs,
-            q,
-            predicate,
-            condition_string,
-            specifier,
+        successes = 0
+        for _ in range(RUNS):
+            runner = ConConjectureRunner(
+                test_function,
+                settings=Settings(
+                    max_examples=200,
+                    max_iterations=1000,
+                    max_shrinks=0
+                ))
+            runner.run()
+            if runner.last_data.status == Status.INTERESTING:
+                successes += 1
+                if successes >= REQUIRED_RUNS:
+                    return
+        event = condition_string
+        if condition is not None:
+            event += '|'
+            event += condition_string
+
+        description = (
+            u'P(%s) ~ %d / %d = %.2f < %.2f'
+        ) % (
+            event,
+            successes, RUNS,
+            successes / RUNS, (REQUIRED_RUNS / RUNS)
         )
-
-        p = cumulative_binomial_probability(successful_runs, q, count)
-        run_test.test_result = result
-        # The test passes if we fail to reject the null hypothesis that
-        # the probability is at least q
-        if p < REQUIRED_P:
-            result.failed = True
-            raise HypothesisFalsified(result.description() + u' rejected')
+        raise HypothesisFalsified(description + u' rejected')
     return run_test
 
 
-def test_assertion_error_message():
-    # no really. There's enough code in there that it's silly not to test it.
-    # By which I mostly mean "coverage will be sad if I don't".
-    # This also guards against my breaking the tests by making it so that they
-    # always pass even with implausible predicates.
-    with pytest.raises(AssertionError) as e:
-        define_test(floats(), 0.5, lambda x: x == 0.0)()
-    message = e.value.args[0]
-    assert u'x == 0.0' in message
-    assert u'lambda' not in message
-    assert u'rejected' in message
-
-
-def test_raises_an_error_on_impossible_conditions():
-    with pytest.raises(ConditionTooHard) as e:
-        define_test(floats(), 0.5, lambda x: True, condition=lambda x: False)()
-    assert u'only found 0 ' in e.value.args[0]
-
-
-def test_puts_the_condition_in_the_error_message():
-    def positive(x):
-        return x >= 0
-
-    with pytest.raises(AssertionError) as e:
-        define_test(
-            floats(), 0.5, lambda x: x == 0.0,
-            condition=positive)()
-    message = e.value.args[0]
-    assert u'x == 0.0' in message
-    assert u'lambda not in message'
-    assert u'rejected' in message
-    assert u'positive' in message
-
-
-test_can_produce_zero = define_test(integers(), 0.01, lambda x: x == 0)
+test_can_produce_zero = define_test(integers(), lambda x: x == 0)
 test_can_produce_large_magnitude_integers = define_test(
-    integers(), 0.25, lambda x: abs(x) > 1000
+    integers(), lambda x: abs(x) > 1000
 )
 test_can_produce_large_positive_integers = define_test(
-    integers(), 0.13, lambda x: x > 1000
+    integers(), lambda x: x > 1000
 )
 test_can_produce_large_negative_integers = define_test(
-    integers(), 0.13, lambda x: x < -1000
+    integers(), lambda x: x < -1000
 )
 
 
@@ -260,73 +125,68 @@ def long_list(xs):
 
 
 test_can_produce_unstripped_strings = define_test(
-    text(), 0.05, lambda x: x != x.strip()
+    text(), lambda x: x != x.strip()
 )
 
 test_can_produce_stripped_strings = define_test(
-    text(), 0.05, lambda x: x == x.strip()
+    text(), lambda x: x == x.strip()
 )
 
 test_can_produce_multi_line_strings = define_test(
-    text(average_size=25.0), 0.1, lambda x: u'\n' in x
+    text(average_size=25.0), lambda x: u'\n' in x
 )
 
 test_can_produce_ascii_strings = define_test(
-    text(), 0.1, lambda x: all(ord(c) <= 127 for c in x),
+    text(), lambda x: all(ord(c) <= 127 for c in x),
 )
 
 test_can_produce_long_strings_with_no_ascii = define_test(
-    text(), 0.02, lambda x: all(ord(c) > 127 for c in x),
+    text(), lambda x: all(ord(c) > 127 for c in x),
     condition=lambda x: len(x) >= 10
 )
 
 test_can_produce_short_strings_with_some_non_ascii = define_test(
-    text(), 0.1, lambda x: any(ord(c) > 127 for c in x),
+    text(), lambda x: any(ord(c) > 127 for c in x),
     condition=lambda x: len(x) <= 3
 )
 
 test_can_produce_positive_infinity = define_test(
-    floats(), 0.01, lambda x: x == float(u'inf')
+    floats(), lambda x: x == float(u'inf')
 )
 
 test_can_produce_negative_infinity = define_test(
-    floats(), 0.01, lambda x: x == float(u'-inf')
+    floats(), lambda x: x == float(u'-inf')
 )
 
 test_can_produce_nan = define_test(
-    floats(), 0.02, math.isnan
-)
-
-test_can_produce_long_lists_of_negative_integers = define_test(
-    lists(integers()), 0.005, lambda x: all(t <= 0 for t in x),
-    condition=lambda x: len(x) >= 20
+    floats(), math.isnan
 )
 
 test_can_produce_floats_near_left = define_test(
-    floats(0, 1), 0.1,
+    floats(0, 1),
     lambda t: t < 0.2
 )
 
 test_can_produce_floats_near_right = define_test(
-    floats(0, 1), 0.1,
+    floats(0, 1),
     lambda t: t > 0.8
 )
 
 test_can_produce_floats_in_middle = define_test(
-    floats(0, 1), 0.3,
+    floats(0, 1),
     lambda t: 0.2 <= t <= 0.8
 )
 
 test_can_produce_long_lists = define_test(
-    lists(integers(), average_size=25.0), 0.2, long_list
+    lists(integers(), average_size=25.0), long_list
 )
 
 test_can_produce_short_lists = define_test(
-    lists(integers()), 0.2, lambda x: len(x) <= 10
+    lists(integers()), lambda x: len(x) <= 10
 )
 
 test_can_produce_the_same_int_twice = define_test(
-    tuples(lists(integers(), average_size=25.0), integers()), 0.01,
+    tuples(lists(integers(), average_size=25.0), integers()),
     lambda t: t[0].count(t[1]) > 1
 )
 
@@ -341,80 +201,80 @@ def distorted(x):
 
 
 test_sampled_from_large_number_can_mix = define_test(
-    lists(sampled_from(range(50)), min_size=50), 0.1,
+    lists(sampled_from(range(50)), min_size=50),
     lambda x: len(set(x)) >= 25,
 )
 
 
 test_sampled_from_often_distorted = define_test(
-    lists(sampled_from(range(5))), 0.28, distorted_value,
+    lists(sampled_from(range(5))), distorted_value,
     condition=lambda x: len(x) >= 3,
 )
 
 
 test_non_empty_subset_of_two_is_usually_large = define_test(
-    sets(sampled_from((1, 2))), 0.1,
+    sets(sampled_from((1, 2))),
     lambda t: len(t) == 2
 )
 
 test_subset_of_ten_is_sometimes_empty = define_test(
-    sets(integers(1, 10)), 0.05, lambda t: len(t) == 0
+    sets(integers(1, 10)), lambda t: len(t) == 0
 )
 
 test_mostly_sensible_floats = define_test(
-    floats(), 0.5,
+    floats(),
     lambda t: t + 1 > t
 )
 
 test_mostly_largish_floats = define_test(
-    floats(), 0.5,
+    floats(),
     lambda t: t + 1 > 1,
     condition=lambda x: x > 0,
 )
 
 test_ints_can_occasionally_be_really_large = define_test(
-    integers(), 0.01,
+    integers(),
     lambda t: t >= 2 ** 63
 )
 
 test_mixing_is_sometimes_distorted = define_test(
-    lists(booleans() | tuples(), average_size=25.0), 0.05, distorted,
+    lists(booleans() | tuples(), average_size=25.0), distorted,
     condition=lambda x: len(set(map(type, x))) == 2,
 )
 
 test_mixes_2_reasonably_often = define_test(
-    lists(booleans() | tuples(), average_size=25.0), 0.15,
+    lists(booleans() | tuples(), average_size=25.0),
     lambda x: len(set(map(type, x))) > 1,
     condition=bool,
 )
 
 test_partial_mixes_3_reasonably_often = define_test(
-    lists(booleans() | tuples() | just(u'hi'), average_size=25.0), 0.10,
+    lists(booleans() | tuples() | just(u'hi'), average_size=25.0),
     lambda x: 1 < len(set(map(type, x))) < 3,
     condition=bool,
 )
 
 test_mixes_not_too_often = define_test(
-    lists(booleans() | tuples(), average_size=25.0), 0.1,
+    lists(booleans() | tuples(), average_size=25.0),
     lambda x: len(set(map(type, x))) == 1,
     condition=bool,
 )
 
 test_float_lists_have_non_reversible_sum = define_test(
-    lists(floats(), min_size=2), 0.01, lambda x: sum(x) != sum(reversed(x)),
+    lists(floats(), min_size=2), lambda x: sum(x) != sum(reversed(x)),
     condition=lambda x: not math.isnan(sum(x))
 )
 
 test_integers_are_usually_non_zero = define_test(
-    integers(), 0.9, lambda x: x != 0
+    integers(), lambda x: x != 0
 )
 
 test_integers_are_sometimes_zero = define_test(
-    integers(), 0.05, lambda x: x == 0
+    integers(), lambda x: x == 0
 )
 
 test_integers_are_often_small = define_test(
-    integers(), 0.2, lambda x: abs(x) <= 100
+    integers(), lambda x: abs(x) <= 100
 )
 
 
@@ -443,7 +303,7 @@ one_of_nested_strategy = one_of(
 
 for i in range(8):
     exec('''test_one_of_flattens_branches_%d = define_test(
-        one_of_nested_strategy, 0.1, lambda x: x == %d
+        one_of_nested_strategy, lambda x: x == %d
     )''' % (i, i))
 
 
@@ -459,7 +319,7 @@ xor_nested_strategy = (
 
 for i in range(8):
     exec('''test_xor_flattens_branches_%d = define_test(
-        xor_nested_strategy, 0.1, lambda x: x == %d
+        xor_nested_strategy, lambda x: x == %d
     )''' % (i, i))
 
 
@@ -484,7 +344,7 @@ one_of_nested_strategy_with_map = one_of(
 
 for i in (1, 4, 6, 16, 20, 24, 28, 32):
     exec('''test_one_of_flattens_map_branches_%d = define_test(
-        one_of_nested_strategy_with_map, 0.1, lambda x: x == %d
+        one_of_nested_strategy_with_map, lambda x: x == %d
     )''' % (i, i))
 
 
@@ -504,7 +364,7 @@ one_of_nested_strategy_with_flatmap = just(None).flatmap(
 
 for i in range(8):
     exec('''test_one_of_flattens_flatmap_branches_%d = define_test(
-        one_of_nested_strategy_with_flatmap, 0.1, lambda x: len(x) == %d
+        one_of_nested_strategy_with_flatmap, lambda x: len(x) == %d
     )''' % (i, i))
 
 
@@ -522,7 +382,7 @@ xor_nested_strategy_with_flatmap = just(None).flatmap(
 
 for i in range(8):
     exec('''test_xor_flattens_flatmap_branches_%d = define_test(
-        xor_nested_strategy_with_flatmap, 0.1, lambda x: len(x) == %d
+        xor_nested_strategy_with_flatmap, lambda x: len(x) == %d
     )''' % (i, i))
 
 
@@ -547,5 +407,5 @@ one_of_nested_strategy_with_filter = one_of(
 
 for i in range(4):
     exec('''test_one_of_flattens_filter_branches_%d = define_test(
-        one_of_nested_strategy_with_filter, 0.2, lambda x: x == 2 * %d
+        one_of_nested_strategy_with_filter, lambda x: x == 2 * %d
     )''' % (i, i))
