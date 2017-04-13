@@ -144,7 +144,7 @@ class WithRunner(SearchStrategy):
         return self.base.do_draw(data)
 
 
-def given(*generator_arguments, **generator_kwargs):
+def given(*given_arguments, **given_kwargs):
     """A decorator for turning a test function that accepts arguments into a
     randomized test.
 
@@ -153,6 +153,9 @@ def given(*generator_arguments, **generator_kwargs):
 
     """
     def run_test_with_generator(test):
+        generator_arguments = tuple(given_arguments)
+        generator_kwargs = dict(given_kwargs)
+
         original_argspec = getargspec(test)
 
         def invalid(message):
