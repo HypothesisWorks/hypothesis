@@ -123,3 +123,42 @@ def times(allow_naive=None, timezones=None):
 
 def datetime_to_time(dt):
     return dt.timetz()
+
+
+def check_valid_bound(value, name):
+    if not isinstance(value, dt.timedelta):
+        raise InvalidArgument(name + ' must be a timedelta')
+
+
+def check_valid_interval(min_value, max_value, min_name, max_name):
+    if not min_value <= max_value:
+        raise InvalidArgument(min_name + ' must equal or be less than ' + max_name)
+
+
+def timedelta_to_micros(td):
+    SECS_IN_DAY = 3600 * 24
+    MICROS_IN_SEC = 1000000
+    MICROS_IN_DAY = MICROS_IN_SEC * SECS_IN_DAY
+
+    microseconds, seconds, days = td.microseconds, td.seconds, td.days
+    return (microseconds + (seconds * MICROS_IN_SEC) + (days * MICROS_IN_DAY))
+
+
+class TimedeltaStrategy(SearchStrategy):
+
+    def __init__(self, min_value=dt.timedelta.min, max_value=dt.timedelta.max):
+        check_valid_bound(min_value, 'min_value')
+        check_valid_bound(max_value, 'max_value')
+        check_valid_interval(min_value, max_value, 'min_value', 'max_value')
+
+        self.max_micros = timedelta_to_micros(max_value)
+        self.min_micros = timedelta_to_micros(min_value)
+
+    def do_draw(self, data):
+        td_micros = cu.integer_range(data, self.min_micros, self.max_micros)
+        return dt.timedelta(microseconds=td_micros)
+
+
+@defines_strategy
+def timedeltas(min_value=dt.timedelta.min, max_value=dt.timedelta.max):
+    return TimedeltaStrategy(min_value, max_value)
