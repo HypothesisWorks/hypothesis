@@ -125,31 +125,25 @@ def datetime_to_time(dt):
     return dt.timetz()
 
 
-def check_valid_bound(value, name):
-    if not isinstance(value, dt.timedelta):
-        raise InvalidArgument(name + ' must be a timedelta')
-
-
-def check_valid_interval(min_value, max_value, min_name, max_name):
-    if not min_value <= max_value:
-        raise InvalidArgument(min_name + ' must equal or be less than ' + max_name)
-
-
-def timedelta_to_micros(td):
-    SECS_IN_DAY = 3600 * 24
-    MICROS_IN_SEC = 1000000
-    MICROS_IN_DAY = MICROS_IN_SEC * SECS_IN_DAY
-
-    microseconds, seconds, days = td.microseconds, td.seconds, td.days
-    return (microseconds + (seconds * MICROS_IN_SEC) + (days * MICROS_IN_DAY))
-
-
 class TimedeltaStrategy(SearchStrategy):
 
     def __init__(self, min_value=dt.timedelta.min, max_value=dt.timedelta.max):
-        check_valid_bound(min_value, 'min_value')
-        check_valid_bound(max_value, 'max_value')
-        check_valid_interval(min_value, max_value, 'min_value', 'max_value')
+        if not isinstance(min_value, dt.timedelta):
+            raise InvalidArgument(
+                'min_value={} must be a timedelta'.format(min_value))
+        if not isinstance(max_value, dt.timedelta):
+            raise InvalidArgument(
+                'max_value={} must be a timedelta'.format(max_value))
+        if not min_value <= max_value:
+            raise InvalidArgument(
+                'min_value={} must equal or be less than max_value={}'
+                .format(min_value, max_value))
+
+        def timedelta_to_micros(td):
+            MICROS_PER_SEC = 10 ** 6
+            MICROS_PER_DAY = MICROS_PER_SEC * 60 * 60 * 24
+            return (td.microseconds + td.seconds * MICROS_PER_SEC +
+                    td.days * MICROS_PER_DAY)
 
         self.max_micros = timedelta_to_micros(max_value)
         self.min_micros = timedelta_to_micros(min_value)
