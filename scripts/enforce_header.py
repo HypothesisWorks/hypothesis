@@ -37,8 +37,9 @@ def main():
                 o.write(shebang)
                 o.write("\n")
             o.write(HEADER_SOURCE)
-            o.write("\n\n")
-            o.write(source)
+            if source:
+                o.write("\n\n")
+                o.write(source)
             o.write("\n")
 
 
