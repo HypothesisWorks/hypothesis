@@ -21,8 +21,8 @@ hypothesis[datetime]
 --------------------
 
 As might be expected, this provides strategies for which generating instances
-of objects from the ``datetime`` module: ``datetime``\s, ``date``\s, and
-``time``\s. It depends on ``pytz`` to work.
+of objects from the ``datetime`` module: ``datetime``\s, ``date``\s, ``time``\s
+and ``timedelta``\s. It depends on ``pytz`` to work.
 
 It should work with just about any version of ``pytz``. ``pytz`` has a very
 stable API and Hypothesis works around a bug or two in older versions.
