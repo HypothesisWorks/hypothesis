@@ -18,7 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 import math
-from collections import namedtuple
+from collections import Container, namedtuple
 
 from hypothesis.strategies import just, none, sets, text, lists, binary, \
     builds, floats, one_of, tuples, randoms, booleans, decimals, \
@@ -173,12 +173,20 @@ TestJSON = strategy_test_suite(
             dictionaries(text(), js, average_size=2),
         max_leaves=10))
 
+
+def sort_nested(v):
+    if not isinstance(v, Container):
+        return v
+    v = tuple(sort_nested(e) for e in v)
+    return tuple([e for e in v if not isinstance(v, Container)] +
+                 [e for e in v if isinstance(v, Container)])
+
+
 TestWayTooClever = strategy_test_suite(
     recursive(
         frozensets(integers(), min_size=1, average_size=2.0),
-        lambda x: frozensets(x, min_size=2, max_size=4)).flatmap(
-        sampled_from
-    )
+        lambda x: frozensets(x, min_size=2, max_size=4)
+    ).map(sort_nested).flatmap(sampled_from)
 )
 
 
