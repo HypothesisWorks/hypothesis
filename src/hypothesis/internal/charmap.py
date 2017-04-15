@@ -50,7 +50,7 @@ def charmap():
                     rs[-1][-1] += 1
                 else:
                     rs.append([i, i])
-            # We explicitly set the mtime to an arbitary value so as to get
+            # We explicitly set the mtime to an arbitrary value so as to get
             # a stable format for our charmap.
             data = sorted(
                 (k, tuple((map(tuple, v))))

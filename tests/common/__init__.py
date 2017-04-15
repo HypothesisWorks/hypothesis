@@ -43,8 +43,8 @@ ordered_pair = integers().flatmap(
         lambda length: OrderedPair(right - length, right)))
 
 
-def constant_list(strat):
-    return strat.flatmap(
+def constant_list(strategy):
+    return strategy.flatmap(
         lambda v: lists(just(v), average_size=10),
     )
 

@@ -147,7 +147,7 @@ def test_can_find_float_far_from_integral():
     ))
 
 
-def test_can_find_integrish():
+def test_can_find_integral_ish():
     find(floats(), lambda x: (
         is_integral(x * (2 ** 32)) and not is_integral(x * 16)
     ))

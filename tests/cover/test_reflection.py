@@ -452,15 +452,15 @@ def test_define_function_signature_validates_function_name():
 
 class Container(object):
 
-    def funcy(self):
+    def func(self):
         pass
 
 
 def test_fully_qualified_name():
     assert fully_qualified_name(test_copying_preserves_argspec) == \
         'tests.cover.test_reflection.test_copying_preserves_argspec'
-    assert fully_qualified_name(Container.funcy) == \
-        'tests.cover.test_reflection.Container.funcy'
+    assert fully_qualified_name(Container.func) == \
+        'tests.cover.test_reflection.Container.func'
     assert fully_qualified_name(fully_qualified_name) == \
         'hypothesis.internal.reflection.fully_qualified_name'
 

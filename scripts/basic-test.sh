@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e -o xtrace
 
-# We run a reduced set of tests on OSX mostly so the CI runs in vaguely
+# We run a reduced set of tests on OS X mostly so the CI runs in vaguely
 # reasonable time.
 if [[ "$(uname -s)" == 'Darwin' ]]; then
     DARWIN=true

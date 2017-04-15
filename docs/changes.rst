@@ -442,7 +442,7 @@ In particular:
 
 This also includes two non-deprecation changes:
 
-* given's keyword arguments no longer have to be the rightmost arguments and
+* given()'s keyword arguments no longer have to be the rightmost arguments and
   can appear anywhere in the method signature.
 * The max_shrinks setting would sometimes not have been respected.
 
@@ -569,7 +569,7 @@ required a minor version bump):
 
 * Hypothesis will now perform a series of "health checks" as part of running
   your tests. These detect and warn about some common error conditions that
-  people often run into which wouldn't necessarily have caued the test to fail
+  people often run into which wouldn't necessarily have caused the test to fail
   but would cause e.g. degraded performance or confusing results.
 
 -----------------------------------------------------------------------
@@ -958,9 +958,9 @@ This is purely a bug fix release:
 * If you use flatmap in a way that the strategy on the right hand side depends
   sensitively on the left hand side you may have occasionally seen Flaky errors
   caused by producing unreliable examples when minimizing a bug. This use case
-  may still be somewhat fraught to be honest. This code is due a major rearchitecture
-  for 1.8, but in the meantime this release fixes the only source of this error that
-  I'm aware of.
+  may still be somewhat fraught to be honest. This code is scheduled to be
+  rearchitected for 1.8, but in the meantime this release fixes the only source
+  of this error of which I'm aware.
 
 ---------------------------------------------------------------------
 `1.7.1 <https://hypothesis.readthedocs.io/en/1.7.1/>`_ - 2015-06-29
@@ -1617,7 +1617,7 @@ Bugs fixed:
   been minor.
 * Re-export the @given decorator from the main hypothesis namespace. It's
   still available at the old location too.
-* Minor performance optimisation for simplifying long lists.
+* Minor performance optimization for simplifying long lists.
 
 
 ------------------

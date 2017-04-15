@@ -42,10 +42,10 @@ class SetStateMachine(GenericStateMachine):
         self.elements = []
 
     def steps(self):
-        strat = tuples(just(False), integers(0, 5))
+        strategy = tuples(just(False), integers(0, 5))
         if self.elements:
-            strat |= tuples(just(True), sampled_from(self.elements))
-        return strat
+            strategy |= tuples(just(True), sampled_from(self.elements))
+        return strategy
 
     def execute_step(self, step):
         delete, value = step
@@ -522,7 +522,7 @@ def test_stateful_double_rule_is_forbidden(recwarn):
 
             @rule(num=just(1))
             @rule(num=just(2))
-            def whatevs(self, num):
+            def whatever(self, num):
                 pass
 
 
