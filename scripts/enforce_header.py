@@ -1,9 +1,12 @@
+from datetime import datetime
 import os
 import sys
 
 HEADER_FILE = "scripts/header.py"
 
-HEADER_SOURCE = open(HEADER_FILE).read().strip()
+CURRENT_YEAR = datetime.utcnow().year
+
+HEADER_SOURCE = open(HEADER_FILE).read().strip().format(year=CURRENT_YEAR)
 
 
 def main():
@@ -37,8 +40,9 @@ def main():
                 o.write(shebang)
                 o.write("\n")
             o.write(HEADER_SOURCE)
-            o.write("\n\n")
-            o.write(source)
+            if source:
+                o.write("\n\n")
+                o.write(source)
             o.write("\n")
 
 
