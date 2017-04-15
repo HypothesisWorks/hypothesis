@@ -36,11 +36,11 @@ def test_prints_on_failure():
     def test(data):
         x = data.draw(st.lists(st.integers(), min_size=1))
         y = data.draw(st.sampled_from(x))
-        assert y in x
         x.remove(y)
-        assert y not in x
+        if y in x:
+            raise ValueError()
 
-    with raises(AssertionError):
+    with raises(ValueError):
         with capture_out() as out:
             with reporting.with_reporter(reporting.default):
                 test()
