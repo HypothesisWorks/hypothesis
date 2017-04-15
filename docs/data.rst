@@ -4,7 +4,7 @@ What you can generate and how
 
 The general philosophy of Hypothesis data generation is that everything
 should be possible to generate and most things should be easy. Most things in
-the standard library 
+the standard library
 is more aspirational than achieved, the state of the art is already pretty
 good.
 
@@ -30,7 +30,7 @@ Examples on how to use them both are below. First up choice:
 .. code:: python
 
     from hypothesis import given, strategies as st
-    
+
     @given(user=st.text(min_size=1), service=st.text(min_size=1), choice=st.choices())
     def test_tickets(user, service, choice):
         t=choice(('ST', 'LT', 'TG', 'CT'))
@@ -43,7 +43,7 @@ A different, and probably better way to do this, is to use sampled_from:
 .. code:: python
 
     from hypothesis import given, strategies as st
-    
+
     @given(
         user=st.text(min_size=1), service=st.text(min_size=1),
         t=st.sampled_from(('ST', 'LT', 'TG', 'CT')))
@@ -358,6 +358,8 @@ You can use assume inside composite functions:
 This works as assume normally would, filtering out any examples for which the
 passed in argument is falsey.
 
+
+.. _interactive-draw:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Drawing interactively in tests
