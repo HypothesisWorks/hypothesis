@@ -116,7 +116,7 @@ class SearchStrategy(object):
             )
         except (NoSuchExample, Unsatisfiable):
             raise NoExamples(
-                u'Could not find any valid examples in 100 tries'
+                u'Could not find any valid examples in 1000 tries'
             )
 
     def map(self, pack):
@@ -175,7 +175,7 @@ class SearchStrategy(object):
         return one_of_strategies((self, other))
 
     def validate(self):
-        """Through an exception if the strategy is not valid.
+        """Throw an exception if the strategy is not valid.
 
         This can happen due to lazy construction
 
