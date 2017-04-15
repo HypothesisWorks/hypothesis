@@ -40,14 +40,14 @@ __all__ = [
     'choices', 'streaming',
     'booleans', 'integers', 'floats', 'complex_numbers', 'fractions',
     'decimals',
-    'characters', 'text', 'binary',
+    'characters', 'text', 'binary', 'uuids',
     'tuples', 'lists', 'sets', 'frozensets',
     'dictionaries', 'fixed_dictionaries',
     'sampled_from', 'permutations',
     'builds',
     'randoms', 'random_module',
     'recursive', 'composite',
-    'shared', 'runner',
+    'shared', 'runner', 'data',
 ]
 
 _strategies = set()
