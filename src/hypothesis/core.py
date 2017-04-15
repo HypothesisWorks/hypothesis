@@ -92,15 +92,10 @@ def reify_and_execute(
     print_example=False,
     is_final=False,
 ):
-    from hypothesis.strategies import random_module
-
     def run(data):
-        from hypothesis.control import note
-
         with BuildContext(data, is_final=is_final):
-            seed = data.draw(random_module()).seed
-            if seed != 0:
-                note('random.seed(%d)' % (seed,))
+            import random as rnd_module
+            rnd_module.seed(0)
             args, kwargs = data.draw(search_strategy)
 
             if print_example:
