@@ -473,10 +473,6 @@ class ConjectureRunner(object):
             self.exit_reason = ExitReason.finished
             return
 
-        if not self.last_data.buffer:
-            self.exit_reason = ExitReason.finished
-            return
-
         data = ConjectureData.for_buffer(self.last_data.buffer)
         self.test_function(data)
         if data.status != Status.INTERESTING:
