@@ -417,8 +417,8 @@ class ConjectureRunner(object):
 
             mutator = self._new_mutator()
             while (
-                self.last_data.status != Status.INTERESTING
-                and not self.__tree_is_exhausted()
+                self.last_data.status != Status.INTERESTING and
+                not self.__tree_is_exhausted()
             ):
                 if self.valid_examples >= self.settings.max_examples:
                     self.exit_reason = ExitReason.max_examples
