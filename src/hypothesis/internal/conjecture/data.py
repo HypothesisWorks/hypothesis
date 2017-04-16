@@ -21,8 +21,7 @@ from enum import IntEnum
 
 from hypothesis.errors import Frozen, InvalidArgument
 from hypothesis.internal.compat import hbytes, hrange, text_type, \
-    int_to_bytes, benchmark_time, unicode_safe_repr, \
-    reasonable_byte_type
+    int_to_bytes, benchmark_time, unicode_safe_repr
 
 
 def uniform(random, n):
@@ -176,7 +175,7 @@ class ConjectureData(object):
         assert self.index == initial
         self.buffer.extend(result)
         self.intervals.append((initial, self.index))
-        return reasonable_byte_type(result)
+        return hbytes(result)
 
     def mark_interesting(self):
         self.__assert_not_frozen('mark_interesting')

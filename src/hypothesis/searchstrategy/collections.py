@@ -21,7 +21,7 @@ from collections import namedtuple
 
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis.control import assume
-from hypothesis.internal.compat import OrderedDict
+from hypothesis.internal.compat import OrderedDict, hbytes
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
     MappedSearchStrategy, one_of_strategies
 
@@ -62,6 +62,9 @@ class TupleStrategy(SearchStrategy):
         return self.newtuple(
             data.draw(e) for e in self.element_strategies
         )
+
+
+TERMINATOR = hbytes(b'\0')
 
 
 class ListStrategy(SearchStrategy):
@@ -118,7 +121,7 @@ class ListStrategy(SearchStrategy):
             data.stop_example()
             result.append(value)
         else:
-            cu.write(data, b'\0')
+            cu.write(data, TERMINATOR)
         return result
 
     def __repr__(self):
