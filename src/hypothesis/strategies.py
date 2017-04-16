@@ -1039,7 +1039,8 @@ def data():
     It can only be used within @given, not find. This is because the lifetime
     of the object cannot outlast the test body.
 
-    See the rest of the documentation for more complete information.
+    See :ref:`the rest of the documentation <interactive-draw>` for more
+    complete information.
 
     """
     from hypothesis.control import note

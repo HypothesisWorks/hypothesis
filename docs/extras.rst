@@ -179,8 +179,10 @@ hypothesis[django]
 
 hypothesis.extra.django adds support for testing your Django models with Hypothesis.
 
-It should be compatible with any Django since 1.7, but is only tested extensively
-against 1.8.
+It is tested extensively against all versions of Django in mainstream or
+extended support, including LTS releases.  It *may* be compatible with
+earlier versions too, but there's no support from us either and you really
+should update to get security patches.
 
 It's large enough that it is :doc:`documented elsewhere <django>`.
 

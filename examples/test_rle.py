@@ -25,7 +25,7 @@ e.g.
 This demonstrates the useful decode(encode(x)) == x invariant that is often
 a fruitful source of testing with Hypothesis.
 
-It also has an example of testing invariants in resposne to changes in the
+It also has an example of testing invariants in response to changes in the
 underlying data.
 
 """
