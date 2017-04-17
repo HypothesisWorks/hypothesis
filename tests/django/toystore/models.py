@@ -28,6 +28,7 @@ class Company(models.Model):
 class Store(models.Model):
     name = models.CharField(max_length=100, unique=True)
     company = models.ForeignKey(Company, null=False)
+    price = models.DecimalField()
 
 
 class CharmField(models.Field):

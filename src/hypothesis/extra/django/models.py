@@ -66,6 +66,7 @@ def field_mappings():
             dm.DateTimeField: datetimes(allow_naive=False),
             dm.FloatField: st.floats(),
             dm.NullBooleanField: st.one_of(st.none(), st.booleans()),
+            dm.DecimalField: st.decimals(),
         }
     return __default_field_mappings
 
