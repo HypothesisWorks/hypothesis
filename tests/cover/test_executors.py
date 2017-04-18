@@ -18,13 +18,25 @@
 from __future__ import division, print_function, absolute_import
 
 import inspect
+import warnings
 from unittest import TestCase
 
 import pytest
 
-from hypothesis import given, example
+from hypothesis import given, example, settings
+from hypothesis.errors import HypothesisDeprecationWarning
 from hypothesis.executors import ConjectureRunner
 from hypothesis.strategies import booleans, integers
+
+
+def setup_module(fn):
+    settings.load_profile('nonstrict')
+    warnings.simplefilter('always', HypothesisDeprecationWarning)
+
+
+def teardown_module(fn):
+    settings.load_profile('default')
+    warnings.simplefilter('once', HypothesisDeprecationWarning)
 
 
 def test_must_use_result_of_test():

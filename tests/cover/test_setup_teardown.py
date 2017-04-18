@@ -17,11 +17,24 @@
 
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
 import pytest
 
 from hypothesis import given, assume, settings
-from hypothesis.errors import FailedHealthCheck
+from hypothesis.errors import FailedHealthCheck, \
+    HypothesisDeprecationWarning
 from hypothesis.strategies import text, integers
+
+
+def setup_module(fn):
+    settings.load_profile('nonstrict')
+    warnings.simplefilter('always', HypothesisDeprecationWarning)
+
+
+def teardown_module(fn):
+    settings.load_profile('default')
+    warnings.simplefilter('once', HypothesisDeprecationWarning)
 
 
 class HasSetup(object):

@@ -27,6 +27,7 @@ import traceback
 from random import Random
 from collections import namedtuple
 
+import hypothesis._lifecycle as _lifecycle
 from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
     Unsatisfiable, InvalidArgument, FailedHealthCheck, \
     UnsatisfiedAssumption, HypothesisDeprecationWarning
@@ -38,8 +39,6 @@ from hypothesis.executors import new_style_executor, \
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.statistics import note_engine_for_statistics
 from hypothesis.internal.compat import getargspec, str_to_bytes
-from hypothesis.internal.escalation import \
-    escalate_hypothesis_internal_error
 from hypothesis.internal.reflection import nicerepr, arg_string, \
     impersonate, function_digest, fully_qualified_name, \
     define_function_signature, convert_positional_arguments, \
@@ -92,10 +91,15 @@ def reify_and_execute(
     print_example=False,
     is_final=False,
 ):
+    from hypothesis.strategies import random_module
+
     def run(data):
+        from hypothesis.control import note
+
         with BuildContext(data, is_final=is_final):
-            import random as rnd_module
-            rnd_module.seed(0)
+            seed = data.draw(random_module()).seed
+            if seed != 0:
+                note('random.seed(%d)' % (seed,))
             args, kwargs = data.draw(search_strategy)
 
             if print_example:
@@ -127,6 +131,26 @@ def seed(seed):
     return accept
 
 
+def lifecycle(target):
+    """Use this object instead of self as the recipient of lifecycle hooks when
+    Hypothesis executes the test.
+
+    If this object is None, this will disable all hooks. If it is not
+    None, it must define at least one valid hook or this will raise a
+    type error.
+
+    """
+    if target is not None and not isinstance(target, _lifecycle.LifeCycle):
+        raise TypeError(
+            'Target %r is not a lifecycle object' % (
+                target,))
+
+    def accept(fn):
+        fn._hypothesis_internal_use_lifecycle_target = target
+        return fn
+    return accept
+
+
 class WithRunner(SearchStrategy):
 
     def __init__(self, base, runner):
@@ -139,7 +163,7 @@ class WithRunner(SearchStrategy):
         return self.base.do_draw(data)
 
 
-def given(*given_arguments, **given_kwargs):
+def given(*generator_arguments, **generator_kwargs):
     """A decorator for turning a test function that accepts arguments into a
     randomized test.
 
@@ -148,9 +172,6 @@ def given(*given_arguments, **given_kwargs):
 
     """
     def run_test_with_generator(test):
-        generator_arguments = tuple(given_arguments)
-        generator_kwargs = dict(given_kwargs)
-
         original_argspec = getargspec(test)
 
         def invalid(message):
@@ -232,18 +253,32 @@ def given(*given_arguments, **given_kwargs):
 
             import hypothesis.strategies as sd
 
-            selfy = None
             arguments, kwargs = convert_positional_arguments(
                 wrapped_test, arguments, kwargs)
 
-            # If the test function is a method of some kind, the bound object
-            # will be the first named argument if there are any, otherwise the
-            # first vararg (if any).
+            # If the test function is a method of some kind, the bound
+            # object will be the first named argument if there are any,
+            # otherwise the first vararg (if any).
             if argspec.args:
                 selfy = kwargs.get(argspec.args[0])
             elif arguments:
                 selfy = arguments[0]
-            test_runner = new_style_executor(selfy)
+            else:
+                selfy = None
+
+            try:
+                lifecycle_object = \
+                    wrapped_test._hypothesis_internal_use_lifecycle_target
+            except AttributeError:
+                lifecycle_object = _lifecycle.lifecycle_for(selfy)
+
+            if lifecycle_object is None:
+                # Use current settings so that strict=False is picked up for
+                # deprecation.
+                with settings:
+                    test_runner = new_style_executor(selfy)
+            else:
+                test_runner = _lifecycle.lifecycle_executor(lifecycle_object)
 
             for example in reversed(getattr(
                 wrapped_test, 'hypothesis_explicit_examples', ()
@@ -440,7 +475,6 @@ def given(*given_arguments, **given_kwargs):
                     )
             last_exception = [None]
             repr_for_last_exception = [None]
-            at_least_one_success = [False]
 
             def evaluate_test_data(data):
                 try:
@@ -452,7 +486,6 @@ def given(*given_arguments, **given_kwargs):
                             'Tests run under @given should return None, but '
                             '%s returned %r instead.'
                         ) % (test.__name__, result), HealthCheck.return_value)
-                    at_least_one_success[0] = True
                     return False
                 except UnsatisfiedAssumption:
                     data.mark_invalid()
@@ -462,13 +495,11 @@ def given(*given_arguments, **given_kwargs):
                 ):
                     raise
                 except Exception:
-                    escalate_hypothesis_internal_error()
                     last_exception[0] = traceback.format_exc()
                     verbose_report(last_exception[0])
                     data.mark_interesting()
 
-            from hypothesis.internal.conjecture.engine import \
-                ConjectureRunner, ExitReason
+            from hypothesis.internal.conjecture.engine import ConjectureRunner
 
             falsifying_example = None
             database_key = str_to_bytes(fully_qualified_name(test))
@@ -497,9 +528,6 @@ def given(*given_arguments, **given_kwargs):
                 if runner.valid_examples < min(
                     settings.min_satisfying_examples,
                     settings.max_examples,
-                ) and not (
-                    runner.exit_reason == ExitReason.finished and
-                    at_least_one_success[0]
                 ):
                     if timed_out:
                         raise Timeout((
@@ -572,6 +600,11 @@ def given(*given_arguments, **given_kwargs):
         wrapped_test._hypothesis_internal_use_settings = getattr(
             test, '_hypothesis_internal_use_settings', None
         ) or Settings.default
+        try:
+            wrapped_test._hypothesis_internal_use_lifecycle_target = \
+                test._hypothesis_internal_use_lifecycle_target
+        except AttributeError:
+            pass
         return wrapped_test
     return run_test_with_generator
 
@@ -629,8 +662,7 @@ def find(specifier, condition, settings=None, random=None, database_key=None):
                 last_data[0] = data
         if success and not data.frozen:
             data.mark_interesting()
-    from hypothesis.internal.conjecture.engine import ConjectureRunner, \
-        ExitReason
+    from hypothesis.internal.conjecture.engine import ConjectureRunner
     from hypothesis.internal.conjecture.data import ConjectureData, Status
 
     start = time.time()
@@ -645,10 +677,7 @@ def find(specifier, condition, settings=None, random=None, database_key=None):
         data = ConjectureData.for_buffer(runner.last_data.buffer)
         with BuildContext(data):
             return data.draw(search)
-    if (
-        runner.valid_examples <= settings.min_satisfying_examples and
-        runner.exit_reason != ExitReason.finished
-    ):
+    if runner.valid_examples <= settings.min_satisfying_examples:
         if settings.timeout > 0 and run_time > settings.timeout:
             raise Timeout((
                 'Ran out of time before finding enough valid examples for '
