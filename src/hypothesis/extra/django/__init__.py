@@ -20,18 +20,23 @@ from __future__ import division, print_function, absolute_import
 import unittest
 
 import django.test as dt
-from hypothesis import lifecycle_hook
+from hypothesis import LifeCycle
+
+
+class DjangoLifecycle(LifeCycle):
+    def __init__(self, test_case):
+        self.__test_case = test_case
+
+    def setup_example(self):
+        self.__test_case._pre_setup()
+
+    def teardown_example(self, example):
+        self.__test_case._post_teardown()
 
 
 class HypothesisTestCase(object):
-
-    @lifecycle_hook
-    def setup_example(self):
-        self._pre_setup()
-
-    @lifecycle_hook
-    def teardown_example(self, example):
-        self._post_teardown()
+    def hypothesis_lifecycle_definition(self):
+        return DjangoLifecycle(self)
 
     def __call__(self, result=None):
         testMethod = getattr(self, self._testMethodName)

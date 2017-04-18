@@ -55,6 +55,7 @@ def test_error_in_strategy_produces_health_check_error():
     def boom(x):
         raise ValueError()
 
+    @settings(strict=False)
     @given(st.integers().map(boom))
     def test(x):
         pass
@@ -116,6 +117,7 @@ def test_error_in_strategy_with_custom_executor():
         def execute_example(self, f):
             return f()
 
+        @settings(strict=False)
         @given(st.integers().map(boom))
         @settings(database=None)
         def test(self, x):
