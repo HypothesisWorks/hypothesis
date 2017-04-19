@@ -208,7 +208,8 @@ The following are useful questions to ask for almost every change:
 1. Is this change too large? Could it profitably be broken up into
    several smaller changes that could be judged on their individual
    merits?
-2. Is the motivation for this change clear?
+2. Has the motivation for this change been sufficiently clearly
+   explained?
 3. If there is code in this change, does it make sense to at least
    one person who isn't the author? 
 4. Is this change well covered by the review guidelines and is there
