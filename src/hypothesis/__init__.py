@@ -26,7 +26,7 @@ failing examples it finds.
 
 from hypothesis._settings import settings, Verbosity, Phase, HealthCheck
 from hypothesis.version import __version_info__, __version__
-from hypothesis.control import assume, note, reject, event
+from hypothesis.control import assume, note, reject, event, sometimes
 from hypothesis.core import given, find, example, seed
 
 
@@ -43,6 +43,7 @@ __all__ = [
     'example',
     'note',
     'event',
+    'sometimes',
     '__version__',
     '__version_info__',
 ]

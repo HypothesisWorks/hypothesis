@@ -176,7 +176,9 @@ class ConjectureRunner(object):
             self.save_buffer(data.buffer)
         runtime = max(data.finish_time - data.start_time, 0.0)
         self.status_runtimes.setdefault(data.status, []).append(runtime)
-        for event in set(map(self.event_to_string, data.events)):
+        #FIXME: event_to_string destroys metadata of the event
+        #for event in set(map(self.event_to_string, data.events)):
+        for event in data.events:
             self.event_call_counts[event] += 1
 
     def debug(self, message):

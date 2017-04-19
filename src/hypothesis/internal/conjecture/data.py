@@ -17,6 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+from collections import namedtuple
 from enum import IntEnum
 
 from hypothesis.errors import Frozen, InvalidArgument
@@ -33,6 +34,43 @@ class Status(IntEnum):
     INVALID = 1
     VALID = 2
     INTERESTING = 3
+
+
+# event subclasses of tuple don't support weakref
+class Event(object):
+    __frozen = False
+
+    def __init__(self, name, truth):
+        self.name = name
+        self.truth = truth
+        self.__frozen = True
+
+    def __setattr__(self, attr, val):
+        if self.__frozen:
+            raise TypeError('Event is immutable')
+        else:
+            return super(Event, self).__setattr__(attr, val)
+
+    def __repr__(self):
+        return 'Event(%r, %r)' % (self.name, self.truth)
+
+    def __str__(self):
+        if self.truth is None:
+            return self.name
+        else:
+            return '%s was %s' % (self.name, self.truth)
+
+    def __id(self):
+        return (Event, self.name, self.truth)
+
+    def __hash__(self):
+        return hash(self.__id())
+
+    def __eq__(self, other):
+        if isinstance(other, Event):
+            return self.__id() == other.__id()
+        else:
+            return NotImplemented
 
 
 class StopTest(BaseException):
@@ -93,6 +131,17 @@ class ConjectureData(object):
             value = unicode_safe_repr(value)
         self.output += value
 
+    def sometimes(self):
+        """return information on the sometimes() that occurred least frequently"""
+        inf = float('inf')
+        minimum = {'count': inf}
+        for event in self.events:
+            if event.truth is None:
+                continue
+            if 1 < minimum['count']:
+                minimum['event'] = event
+        return minimum
+
     def draw(self, strategy):
         if self.is_find and not strategy.supports_find:
             raise InvalidArgument((
@@ -136,7 +185,8 @@ class ConjectureData(object):
             if not self.intervals or self.intervals[-1] != t:
                 self.intervals.append(t)
 
-    def note_event(self, event):
+    def note_event(self, event, truth=None):
+        event = Event(event, truth)
         self.events.add(event)
 
     def freeze(self):
