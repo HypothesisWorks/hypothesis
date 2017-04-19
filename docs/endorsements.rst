@@ -126,6 +126,17 @@ I am using Hypothesis as an integral part of my Python workshops. Testing is an 
 programming and whilst unittest and, better, py.test can handle example-based testing, property-based
 testing is increasingly far more important than example-base testing, and Hypothesis fits the bill.
 
+---------------------------------------------
+`Wellfire Interactive <https://wellfire.co>`_
+---------------------------------------------
+
+We've been using Hypothesis in a variety of client projects, from testing
+Django-related functionality to domain-specific calculations. It both speeds
+up and simplifies the testing process since there's so much less tedious and
+error-prone work to do in identifying edge cases. Test coverage is nice but
+test depth is even nicer, and it's much easier to get meaningful test depth
+using Hypothesis.
+
 -------------------------------------------
 `Your name goes here <http://example.com>`_
 -------------------------------------------
