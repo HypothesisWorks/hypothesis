@@ -230,7 +230,9 @@ When a public API changes we should ask the following questions:
 2. Are ther eany backwards incompatible changes we'd want to make to this
    API later and if so can we do them now instead? 
 3. How does this API handle invalid input and are the error messages clear
-   when that happens?
+   when that happens? In particular error messages should always display
+   the value that triggered the error, and ideally be specific about the
+   relevant feature of it that caused this failure (e.g. the type).
 4. How could this API otherwise be accidentally misused and is the behaviour
    when that happens clear?
 5. Are there any cases where this API could fail silently and how can
