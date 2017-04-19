@@ -227,7 +227,7 @@ wherever possible.
 When a public API changes we should ask the following questions:
 
 1. Is this change backwards compatible?
-2. Are ther eany backwards incompatible changes we'd want to make to this
+2. Are there any backwards incompatible changes we'd want to make to this
    API later and if so can we do them now instead? 
 3. How does this API handle invalid input and are the error messages clear
    when that happens? In particular error messages should always display
@@ -265,7 +265,7 @@ more general we could or should be doing to fix the others.
 
 In particular a reviewer should ask the following:
 
-1. Does the testing for this adequately capture the bug? t's OK for some
+1. Does the testing for this adequately capture the bug? It's OK for some
    changes to be untested if they would be incredibly hard to test, but in this
    case the reviewer and author should work together to see if they can
    figure out an approach that works.
