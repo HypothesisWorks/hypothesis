@@ -181,8 +181,11 @@ check-rst: $(RSTLINT)
 check-benchmark: $(BENCHMARK_VIRTUALENV)
 	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --check --nruns=100
 
-build-benchmark-data: $(BENCHMARK_VIRTUALENV)
+build-new-benchmark-data: $(BENCHMARK_VIRTUALENV)
 	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --skip-existing --nruns=1000 
+
+update-improved-benchmark-data: $(BENCHMARK_VIRTUALENV)
+	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --update=improved --nruns=1000
 
 $(TOX): $(BEST_PY3) tox.ini $(TOOLS)
 	rm -f $(TOX)
