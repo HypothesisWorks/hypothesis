@@ -190,31 +190,43 @@ and our lives *better*, but it's OK for changes to be mostly neutral.
 The author should be presumed to have a good reason for submitting the
 change in the first place, so neutral is good enough!
 
-The rest of this section outlines specific questions reviewers should
-ask in aid of this, but the above is the most important part and where
-the guidelines below clash with the objectives above, the above wins
-out.
+The rest of this section outlines specific things reviewers should
+focus on in aid of this, broken up by sections according to their area
+of applicability.
 
-When submitting changes it can be helpful to go through a pre-review
-pass of this yourself just to see what people will look at, but it's
-not required.
+All of these conditions must be satisfied for merge. Where the reviewer
+thinks this conflicts with the above higher level goals, they may make
+an exception if both the author and another maintainer agree.
 
 ~~~~~~~~~~~~~~~~~
 General Questions
 ~~~~~~~~~~~~~~~~~
 
-The following are useful questions to ask for almost every change:
+The following are required for almost every change:
 
-1. Is this change too large? Could it profitably be broken up into
-   several smaller changes that could be judged on their individual
-   merits?
-2. Has the motivation for this change been sufficiently clearly
-   explained?
-3. If there is code in this change, does it make sense to at least
-   one person who isn't the author? 
-4. Is this change well covered by the review guidelines and is there
-   anything that could usefully be added to the guidelines to improve
-   that?
+1. Changes must be of reasonable size. If a change could logically
+   be broken up into several smaller changes that could be reviewed
+   separately on their own merits, it should be.
+2. The motivation for each change should be clearly explained (this
+   doesn't have to be an essay, especially for small changes, but
+   at least a sentence of explanation is usually required).
+3. The likely consequences of a change should be outlined (again,
+   this doesn't have an essay, and it may be sufficiently
+   self-explanatory that the motivation section is sufficient).
+
+~~~~~~~~~~~~~~~~~~~~~
+Functionality Changes
+~~~~~~~~~~~~~~~~~~~~~
+
+This section applies to any changes in Hypothesis's behaviour, regardless
+of their nature.
+
+1. The code should be clear in its intent and behaviour.
+2. Behaviour changes should come with appropriate tests to demonstrate
+   the new behaviour.
+3. Hypothesis must never be *flaky*. Flakiness here is
+   defined as anything where a test fails and this does not indicate
+   a bug in Hypothesis or in the way the user wrote the code or the test.
 
 ~~~~~~~~~~~
 API Changes
@@ -227,75 +239,74 @@ wherever possible.
 
 When a public API changes we should ask the following questions:
 
-1. Is this change backwards compatible?
-2. Are there any backwards incompatible changes we'd want to make to this
-   API later and if so can we do them now instead? 
-3. How does this API handle invalid input and are the error messages clear
-   when that happens? In particular error messages should always display
+1. All public API changes must be well documented. If it's not documented,
+   it doesn't count as public API!
+2. Changes must be backwards compatible. Where this is not possible, they
+   must first introduce a deprecation warning, then once the major version
+   is bumped the deprecation warning and the functionality may be removed.
+3. If an API is deprecated, the deprecation warning must make it clear
+   how the user should modify their code to adapt to this change (
+   possibly by referring to documentation).
+4. If it is likely that we will want to make backwards compatible changes
+   to an API later, to whatever extent possible these should be made immediately
+   when it is introduced instead.
+5. APIs should give clear and helpful error messages in response to invalid inputs.
+   In particular error messages should always display
    the value that triggered the error, and ideally be specific about the
    relevant feature of it that caused this failure (e.g. the type).
-4. How could this API otherwise be accidentally misused and is the behaviour
-   when that happens clear?
-5. Are there any cases where this API could fail silently and how can
-   those be avoided?
-6. Could this API introduce a source of flakiness? Flakiness here is
-   defined as anything where Hypothesis fails and this does not indicate
-   a bug in Hypothesis or in the way the user wrote the code or the test.
-7. Will this API be hard to support in the long-term? In particular is the
-   ability to support it very tied to the current Hypothesis internals?
-8. Is any new API adequately documented?
-9. If an API is deprecated, does the deprecation warning make it clear
-   how the user should modify their code to adapt to this change (
-   possibly by referring to documentation)?
-
-In addition, unlike other changes, `DRMacIver <https://github.com/DRMacIver>`_
-in particular is required to approve any public API changes (though other
-maintainers are welcome and likely to chip in to review as well).
+6. Incorrect usage should never "fail silently" - when a user accidentally
+   misuses an API this should result in an explicit error.
+7. Functionality should be limited to that which is easy to support in the
+   long-term. In particular functionality which is very tied to the
+   current Hypothesis internals should be avoided.
+8. `DRMacIver <https://github.com/DRMacIver>`_ must approve the changes
+   though other maintainers are welcome and likely to chip in to review as
+   well).
 
 ~~~~~~~~~
 Bug Fixes
 ~~~~~~~~~
 
-Every bug is actually three bugs:
-
-* The actual bug
-* The bug in the understanding of the author when the bug was introduced
-* The bug in the testing that lead to this bug not being caught
-
-Not every bug fix has to address all three bugs, but code review should
-at least keep an eye on the second two and see if there is anything
-more general we could or should be doing to fix the others.
-
-In particular a reviewer should ask the following:
-
-1. Does the testing for this adequately capture the bug? It's OK for some
-   changes to be untested if they would be incredibly hard to test, but in this
-   case the reviewer and author should work together to see if they can
-   figure out an approach that works.
-2. Is there a more general test that would catch both this bug and similar
-   ones?
-3. Is there a way we could make bugs like this impossible, or at least harder,
-   in future?
+1. All bug fixes must come with a test that demonstrates the bug on master and
+   which is fixed in this branch. An exception *may* be made here if the submitter
+   can convincingly argue that testing this would be prohibitively difficult.
+2. Where possible, a fix that makes it impossible for similar bugs to occur is
+   better.
+3. Where possible, a test that will catch both this bug and a more general class
+   of bug that contains it is better.
 
 
-~~~~~~~~~~~~~~~~~
-Internals Changes
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~
+Engine Changes
+~~~~~~~~~~~~~~
 
-Currently much of the internals of Hypothesis are a bit inscrutable to anyone
-other than DRMacIver. The primary goal of review here is to make sure that
-gets better over time rather than worse. The secondary goal of review 
-is to make sure Hypothesis gets better at finding bugs over time (this is not
-backwards).
+Engine changes are anything that change a "fundamental" of how Hypothesis
+works. A good rule of thumb is that an engine change is anything that touches
+a file in hypothesis.internal.conjecture.
 
-So the main questions to ask for internals changes are:
+All such changes should:
 
-1. Does DRMacIver think this change is a good idea?
-2. Does this change make sense to someone who *isn't* DRMacIver?
+1. Be approved (or authored) by DRMacIver.
+2. Be approved (or authored) by someone who *isn't* DRMacIver (a major problem
+   with this section of the code is that there is too much that only DRMacIver
+   understands properly and we want to fix this).
+3. If appropriate, come with a test in test_discovery_ability.py showing new
+   examples that were previously hard to discover.
+4. If appropriate, come with a test in test_shrink_quality.py showing how they
+   improve the shrinker.
 
-Additional, more usefully general, questions about this:
+~~~~~~~~~~~~~~~~~~~~~~~
+Non-Blocking Questions
+~~~~~~~~~~~~~~~~~~~~~~~
 
-1. Does this improve Hypothesis's bug finding capabilities, and if so is this
-   adequately demonstrated with tests?
-2. Does this improve Hypothesis's shrinking capabilities, and if so is this
-   adequately demonstrated with tests?
+These questions should *not* block merge, but may result in additional
+issues or changes being opened, either by the original author or by the
+reviewer.
+
+1. Is this change well covered by the review items and is there
+   anything that could usefully be added to the guidelines to improve
+   that?
+2. Were any of the review items confusing or annoying when reviewing this
+   change? Could they be improved?
+3. Are there any more general changes suggested by this, and do they have
+   appropriate issues and/or pull requests associated with them?
