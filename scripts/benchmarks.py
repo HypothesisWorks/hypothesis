@@ -277,6 +277,9 @@ def cli(seed, benchmarks, nruns, check, update, fdr, skip_existing):
 
     click.echo("Checking for different means")
 
+    # We now perform a Benjamini Hochberg test. This gives us a list of
+    # possibly significant differences while controlling the false discovery
+    # rate. https://en.wikipedia.org/wiki/False_discovery_rate
     reports.sort(key=lambda x: x.p)
 
     threshold = 0
