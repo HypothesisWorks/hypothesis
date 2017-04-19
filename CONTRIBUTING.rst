@@ -243,7 +243,9 @@ When a public API changes we should ask the following questions:
 7. Will this API be hard to support in the long-term? In particular is the
    ability to support it very tied to the current Hypothesis internals?
 8. Is any new API adequately documented?
-9. Is the upgrade path clear for any deprecated API?
+9. If an API is deprecated, does the deprecation warning make it clear
+   how the user should modify their code to adapt to this change (
+   possibly by referring to documentation)?
 
 In addition, unlike other changes, `DRMacIver <https://github.com/DRMacIver>`_
 in particular is required to approve any public API changes (though other
