@@ -163,3 +163,134 @@ their individual contributions.
 * `Will Hall <https://www.github.com/wrhall>`_ (`wrsh07@gmail.com <mailto:wrsh07@gmail.com>`_)
 * `Will Thompson <https://www.github.com/wjt>`_ (`will@willthompson.co.uk <mailto:will@willthompson.co.uk>`_)
 * `Zac Hatfield-Dodds <https://www.github.com/Zac-HD>`_ (`zac.hatfield.dodds@gmail.com <mailto:zac.hatfield.dodds@gmail.com>`_)
+
+
+-----------------
+Review Guidelines
+-----------------
+
+All changes to Hypothesis go through a code review process, and must be
+signed off by at least one person with write access to the repo other
+than the author of the change. This document
+outlines some guidelines on what to look for and what we're interested
+in. It applies uniformly to maintainers and external contributors.
+
+At a high level, the two things we're looking for in review are answers
+to the following questions:
+
+1. Is this change going to make users' lives worse?
+2. Is this change going to make the maintainers' lives worse?
+
+Code review is a collaborative process between the author and the
+reviewer to try to ensure that the answer to both of those questions
+is no.
+
+Ideally of course the change should also make one or both of the users'
+and our lives *better*, but it's OK for changes to be mostly neutral.
+The author should be presumed to have a good reason for submitting the
+change in the first place, so neutral is good enough!
+
+The rest of this section outlines specific questions reviewers should
+ask in aid of this, but the above is the most important part and where
+the guidelines below clash with the objectives above, the above wins
+out.
+
+When submitting changes it can be helpful to go through a pre-review
+pass of this yourself just to see what people will look at, but it's
+not required.
+
+~~~~~~~~~~~~~~~~~
+General Questions
+~~~~~~~~~~~~~~~~~
+
+The following are useful questions to ask for almost every change:
+
+1. Is this change too large? Could it profitably be broken up into
+   several smaller changes that could be judged on their individual
+   merits?
+2. Is the motivation for this change clear?
+3. If there is code in this change, does it make sense to at least
+   one person who isn't the author? 
+4. Is this change well covered by the review guidelines and is there
+   anything that could usefully be added to the guidelines to improve
+   that?
+
+~~~~~~~~~~~
+API Changes
+~~~~~~~~~~~
+
+Public API changes require the most careful scrutiny of all reviews,
+because they are the ones we are stuck with for the longest: Hypothesis
+follows semver and additionally tries not to break API compatibility
+wherever possible.
+
+When a public API changes we should ask the following questions:
+
+1. Is this change backwards compatible?
+2. Are ther eany backwards incompatible changes we'd want to make to this
+   API later and if so can we do them now instead? 
+3. How does this API handle invalid input and are the error messages clear
+   when that happens?
+4. How could this API otherwise be accidentally misused and is the behaviour
+   when that happens clear?
+5. Are there any cases where this API could fail silently and how can
+   those be avoided?
+6. Could this API introduce a source of flakiness? Flakiness here is
+   defined as anything where Hypothesis fails and this does not indicate
+   a bug in Hypothesis or in the way the user wrote the code or the test.
+7. Will this API be hard to support in the long-term? In particular is the
+   ability to support it very tied to the current Hypothesis internals?
+8. Is any new API adequately documented?
+9. Is the upgrade path clear for any deprecated API?
+
+In addition, unlike other changes, `DRMacIver <https://github.com/DRMacIver>`_
+in particular is required to approve any public API changes (though other
+maintainers are welcome and likely to chip in to review as well).
+
+~~~~~~~~~
+Bug Fixes
+~~~~~~~~~
+
+Every bug is actually three bugs:
+
+* The actual bug
+* The bug in the understanding of the author when the bug was introduced
+* The bug in the testing that lead to this bug not being caught
+
+Not every bug fix has to address all three bugs, but code review should
+at least keep an eye on the second two and see if there is anything
+more general we could or should be doing to fix the others.
+
+In particular a reviewer should ask the following:
+
+1. Does the testing for this adequately capture the bug? t's OK for some
+   changes to be untested if they would be incredibly hard to test, but in this
+   case the reviewer and author should work together to see if they can
+   figure out an approach that works.
+2. Is there a more general test that would catch both this bug and similar
+   ones?
+3. Is there a way we could make bugs like this impossible, or at least harder,
+   in future?
+
+
+~~~~~~~~~~~~~~~~~
+Internals Changes
+~~~~~~~~~~~~~~~~~
+
+Currently much of the internals of Hypothesis are a bit inscrutable to anyone
+other than DRMacIver. The primary goal of review here is to make sure that
+gets better over time rather than worse. The secondary goal of review 
+is to make sure Hypothesis gets better at finding bugs over time (this is not
+backwards).
+
+So the main questions to ask for internals changes are:
+
+1. Does DRMacIver think this change is a good idea?
+2. Does this change make sense to someone who *isn't* DRMacIver?
+
+Additional, more usefully general, questions about this:
+
+1. Does this improve Hypothesis's bug finding capabilities, and if so is this
+   adequately demonstrated with tests?
+2. Does this improve Hypothesis's shrinking capabilities, and if so is this
+   adequately demonstrated with tests?
