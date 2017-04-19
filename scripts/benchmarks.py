@@ -93,7 +93,7 @@ def sometimes(p, name=None):
 
 
 rarely = sometimes(0.1, "rarely")
-often = sometimes(0.9, "often")
+usually = sometimes(0.9, "usually")
 
 
 def minsum(seed, testdata, value):
@@ -106,6 +106,7 @@ define_benchmark("intlists", always, rarely)
 define_benchmark("intlists", always, minsum)
 define_benchmark("intlists", minsum, never)
 define_benchmark("intlists", rarely, never)
+define_benchmark("intlists", usually, usually)
 
 
 def run_benchmark_for_sizes(benchmark, n_runs):
@@ -211,11 +212,12 @@ if it were non-existing. If it is smaller, the existing data will be sampled.
 """)
 @click.argument('benchmarks', nargs=-1)
 @click.option('--check/--no-check', default=False)
+@click.option('--skip-existing/--no-skip-existing', default=False)
 @click.option('--fdr', default=0.001)
 @click.option('--update', type=click.Choice([
     NONE, NEW, ALL, CHANGED, IMPROVED
 ]), default=NEW)
-def cli(seed, benchmarks, nruns, check, update, fdr):
+def cli(seed, benchmarks, nruns, check, update, fdr, skip_existing):
     """
     This is the benchmark runner script for Hypothesis. Rather than running
     benchmarks by *time* this runs benchmarks by *amount of data*. This is
@@ -224,8 +226,12 @@ def cli(seed, benchmarks, nruns, check, update, fdr):
     without reference to the underlying system's performance.
     """
 
-    if check and update not in [NONE, NEW]:
-        raise click.UsageError("check and update cannot be used together")
+    if check:
+        if update not in [NONE, NEW]:
+            raise click.UsageError("check and update cannot be used together")
+        if skip_existing:
+            raise click.UsageError(
+                "check and skip-existing cannot be used together")
 
     for name in benchmarks:
         if name not in BENCHMARKS:
@@ -248,6 +254,8 @@ def cli(seed, benchmarks, nruns, check, update, fdr):
 
     for name in benchmarks or BENCHMARKS:
         if have_existing_data(name):
+            if skip_existing:
+                continue
             new_data = run_benchmark_for_sizes(BENCHMARKS[name], nruns)
 
             old_data = existing_data(name)

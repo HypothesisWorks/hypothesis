@@ -182,7 +182,7 @@ check-benchmark: $(BENCHMARK_VIRTUALENV)
 	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --check --nruns=100
 
 build-benchmark-data: $(BENCHMARK_VIRTUALENV)
-	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --update=improved --nruns=1000
+	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --skip-existing --nruns=1000 
 
 $(TOX): $(BEST_PY3) tox.ini $(TOOLS)
 	rm -f $(TOX)
