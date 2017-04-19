@@ -20,18 +20,21 @@
 from __future__ import division, print_function, absolute_import
 
 import os
+import sys
 import hashlib
 
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(SCRIPTS_DIR)
 
-TOOLS_FILE = os.path.join(
-    ROOT_DIR, "requirements", "tools.txt"
-)
-
-assert os.path.exists(TOOLS_FILE)
-
 if __name__ == '__main__':
-    with open(TOOLS_FILE, 'rb') as f:
+    name = sys.argv[1]
+
+    requirements = os.path.join(
+        ROOT_DIR, "requirements", "%s.txt" % (name,)
+    )
+
+    assert os.path.exists(requirements)
+
+    with open(requirements, 'rb') as f:
         tools = f.read()
     print(hashlib.sha1(tools).hexdigest()[:10])

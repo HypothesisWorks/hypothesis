@@ -35,9 +35,11 @@ import numpy as np
 import sys
 from collections import Counter
 
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 
 DATA_DIR = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    ROOT,
     "benchmark-data",
 )
 
