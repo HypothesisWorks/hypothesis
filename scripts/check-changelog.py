@@ -3,7 +3,7 @@
 import os
 import sys
 
-sys.path.append(os.path.dirname(__file__)) # noqa
+sys.path.append(os.path.dirname(__file__))  # noqa
 
 import hypothesistooling as tools
 from datetime import datetime
