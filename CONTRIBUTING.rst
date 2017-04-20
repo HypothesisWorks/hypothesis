@@ -70,7 +70,7 @@ unless you want to make changes to the test config. You also mostly don't need t
 except to type 'make' followed by the name of the task you want to run.
 
 All of it will be checked on Travis so you don't *have* to run anything locally, but you might
-find it useful to do so: A full travis run takes about an hour, so running a smaller set of
+find it useful to do so: A full Travis run takes about an hour, so running a smaller set of
 tests locally can be helpful.
 
 The makefile should be "fairly" portable, but is currently only known to work on Linux or OS X. It *might* work
@@ -85,7 +85,7 @@ You can also use 'make check-format', which will run format and some linting and
 git diff. Note: This will error even if you started with a git diff, so if you've got any uncommitted changes
 this will necessarily report an error.
 
-'make check' will run check-format and all of the tests. Warning: This will take a *very* long time. On travis the
+'make check' will run check-format and all of the tests. Warning: This will take a *very* long time. On Travis the
 currently takes multiple hours of total build time (it runs in parallel on Travis so you don't have to wait
 quite that long). If you've got a multi-core machine you can run 'make -j 2' (or any higher number if you want
 more) to run 2 jobs in parallel, but to be honest you're probably better off letting travis run this step.
@@ -98,7 +98,7 @@ You can also run a number of finer grained make tasks:
   check-py35, check-pypy.
 * check-coverage will run a subset of the tests on python 3.5 and then assert that this gave 100% coverage
 * lint will just run some source code checks.
-* check-django will just run tests for the django integration
+* check-django will just run tests for the Django integration
 * check-pytest will just run tests for the pytest plugin
 
 Note: The build requires a lot of different versions of python, so rather than have you install them yourself,
@@ -234,8 +234,8 @@ API Changes
 
 Public API changes require the most careful scrutiny of all reviews,
 because they are the ones we are stuck with for the longest: Hypothesis
-follows semver and additionally tries not to break API compatibility
-wherever possible.
+follows semantic versioning, and we don't release new major versions
+very often.
 
 When a public API changes we should ask the following questions:
 
@@ -247,7 +247,7 @@ When a public API changes we should ask the following questions:
 3. If an API is deprecated, the deprecation warning must make it clear
    how the user should modify their code to adapt to this change (
    possibly by referring to documentation).
-4. If it is likely that we will want to make backwards compatible changes
+4. If it is likely that we will want to make backwards incompatible changes
    to an API later, to whatever extent possible these should be made immediately
    when it is introduced instead.
 5. APIs should give clear and helpful error messages in response to invalid inputs.
