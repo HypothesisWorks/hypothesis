@@ -87,9 +87,9 @@ git diff. Note: This will error even if you started with a git diff, so if you'v
 this will necessarily report an error.
 
 'make check' will run check-format and all of the tests. Warning: This will take a *very* long time. On Travis the
-currently takes more than an hour of total build time (it runs in parallel on Travis so you don't have to wait
+build currently takes more than an hour of total time (it runs in parallel on Travis so you don't have to wait
 quite that long). If you've got a multi-core machine you can run 'make -j 2' (or any higher number if you want
-more) to run 2 jobs in parallel, but to be honest you're probably better off letting travis run this step.
+more) to run 2 jobs in parallel, but to be honest you're probably better off letting Travis run this step.
 
 You can also run a number of finer grained make tasks:
 
