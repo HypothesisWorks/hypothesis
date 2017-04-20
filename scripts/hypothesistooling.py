@@ -16,8 +16,11 @@ def tags():
     return set(result)
 
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = subprocess.check_output([
+    "git", "rev-parse", "--show-toplevel"]).decode('ascii').strip()
 SRC = os.path.join(ROOT, "src")
+
+assert os.path.exists(SRC)
 
 
 __version__ = None
