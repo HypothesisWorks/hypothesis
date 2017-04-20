@@ -32,7 +32,7 @@ This is a bug fix and internal improvements release.
   improves the performance of shrinking failing examples by allowing it to
   skip some shrinks that it can determine can't possibly work.
 * Hypothesis will no longer seed the global random arbitrarily unless you have
-  asked it to using random\_module.
+  asked it to using :py:meth:`random_module() <hypothesis.strategies.random_module>`
 * Shrinking would previously have not worked correctly in some special cases
   on Python 2, and would have resulted in suboptimal examples.
 
