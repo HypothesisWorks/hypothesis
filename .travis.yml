@@ -68,15 +68,3 @@ notifications:
       - david@drmaciver.com
     on_success: never
     on_failure: change
-
-before_deploy:
-  - make check-deploy-and-tag
-
-deploy:
-  provider: pypi
-  user: DRMacIver
-  password:
-    secure: T9tUyr9JG3KA8JprHUE8AAVaClUHHPHhiQRXC2/jHJv2EVEx2+EifkuR9sr5q1mCZ06g9v2+jhVNuaZyVuU9mmDKvJfADlPAagkCcgF/siuuJkzd3eIlELZHDtWPwKiZWCAD0Oj6yMdVB2w3/JTpJQhJx7HrL8EqbVdnN9YkMmI=
-  on:
-    branch: master
-    repo: HypothesisWorks/hypothesis-python
