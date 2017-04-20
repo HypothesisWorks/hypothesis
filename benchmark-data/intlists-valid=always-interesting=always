@@ -1,0 +1,67 @@
+# This is an automatically generated file from Hypothesis's benchmarking
+# script (scripts/benchmarks.py). The format is TOTAL SIZE: COUNT, one per
+# line, with lines like this starting with hashes ignored. It's entirely
+# for computer production and consumption, so you should probably just ignore
+# it except for when using that script.
+
+2: 171
+37: 139
+73: 63
+71: 52
+106: 50
+107: 39
+141: 36
+208: 35
+140: 33
+209: 32
+174: 28
+175: 27
+276: 22
+310: 19
+277: 19
+242: 19
+378: 17
+243: 16
+412: 15
+379: 14
+345: 14
+344: 14
+311: 14
+413: 11
+480: 9
+447: 7
+446: 7
+515: 6
+736: 5
+668: 5
+633: 5
+548: 5
+598: 4
+549: 4
+514: 4
+481: 4
+770: 3
+735: 3
+667: 3
+838: 2
+837: 2
+803: 2
+701: 2
+599: 2
+1398: 1
+1297: 1
+1263: 1
+1228: 1
+1144: 1
+1143: 1
+1076: 1
+1041: 1
+940: 1
+939: 1
+872: 1
+804: 1
+769: 1
+702: 1
+498: 1
+158: 1
+90: 1

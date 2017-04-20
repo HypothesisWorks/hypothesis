@@ -29,10 +29,13 @@ FLAKE8=$(TOOLS)/flake8
 PYFORMAT=$(TOOLS)/pyformat
 RSTLINT=$(TOOLS)/rst-lint
 
-BROKEN_VIRTUALENV=$(BUILD_RUNTIMES)/virtualenvs/broken
-TOOL_VIRTUALENV:=$(BUILD_RUNTIMES)/virtualenvs/tools-$(shell scripts/tool-hash.py)
+TOOL_VIRTUALENV:=$(BUILD_RUNTIMES)/virtualenvs/tools-$(shell scripts/tool-hash.py tools)
+
 TOOL_PYTHON=$(TOOL_VIRTUALENV)/bin/python
 TOOL_PIP=$(TOOL_VIRTUALENV)/bin/pip
+
+BENCHMARK_VIRTUALENV:=$(BUILD_RUNTIMES)/virtualenvs/benchmark-$(shell scripts/tool-hash.py benchmark)
+BENCHMARK_PYTHON=$(BENCHMARK_VIRTUALENV)/bin/python
 
 FILES_TO_FORMAT=find src tests -name '*.py' -not \( \
 								-path '*/vendor/*' -or -name test_lambda_formatting.py \
@@ -67,6 +70,11 @@ $(TOOL_VIRTUALENV): $(BEST_PY3)
 	rm -rf $(BUILD_RUNTIMES)/virtualenvs/tools-*
 	$(BEST_PY3) -m virtualenv $(TOOL_VIRTUALENV)
 	$(TOOL_PIP) install -r requirements/tools.txt
+
+$(BENCHMARK_VIRTUALENV): $(BEST_PY3)
+	rm -rf $(BUILD_RUNTIMES)/virtualenvs/benchmark-*
+	$(BEST_PY3) -m virtualenv $(BENCHMARK_VIRTUALENV)
+	$(BENCHMARK_PYTHON) -m pip install -r requirements/benchmark.txt
 
 $(TOOLS): $(TOOL_VIRTUALENV)
 	mkdir -p $(TOOLS)
@@ -178,6 +186,16 @@ check-fast: lint $(PYPY) $(PY36) $(TOX)
 check-rst: $(RSTLINT)
 	$(RSTLINT) *.rst
 
+
+check-benchmark: $(BENCHMARK_VIRTUALENV)
+	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --check --nruns=100
+
+build-new-benchmark-data: $(BENCHMARK_VIRTUALENV)
+	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --skip-existing --nruns=1000 
+
+update-improved-benchmark-data: $(BENCHMARK_VIRTUALENV)
+	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --update=improved --nruns=1000
+
 $(TOX): $(BEST_PY3) tox.ini $(TOOLS)
 	rm -f $(TOX)
 	ln -sf $(TOOL_VIRTUALENV)/bin/tox $(TOX)
@@ -197,6 +215,7 @@ $(RSTLINT): $(TOOLS)
 
 $(FLAKE8): $(TOOLS)
 	ln -sf $(TOOL_VIRTUALENV)/bin/flake8 $(FLAKE8)
+
 
 clean:
 	rm -rf .tox

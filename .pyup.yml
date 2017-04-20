@@ -5,3 +5,6 @@ requirements:
   - requirements/test.txt
       updates: all
       pin: True
+  - requirements/benchmark.txt
+      updates: all
+      pin: True
