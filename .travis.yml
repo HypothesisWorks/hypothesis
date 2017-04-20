@@ -55,6 +55,7 @@ env:
         - TASK=check-django18
         - TASK=check-django110
         - TASK=check-django111
+        - TASK=deploy
 
 script:
     - make $TASK
@@ -69,8 +70,6 @@ notifications:
     on_success: never
     on_failure: change
 
-before_deploy:
-  - make check-deploy-and-tag
 
 deploy:
   provider: pypi
@@ -80,3 +79,4 @@ deploy:
   on:
     branch: master
     repo: HypothesisWorks/hypothesis-python
+    condition: $TASK = deploy
