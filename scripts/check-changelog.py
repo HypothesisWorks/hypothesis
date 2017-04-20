@@ -14,7 +14,7 @@ if __name__ == '__main__':
 
     if "\n%s - " % (tools.__version__,) not in changelog:
         print(
-            "The current version (%s) isn't mentioned in the changelog" % (
+            'The current version (%s) isn\'t mentioned in the changelog' % (
                 tools.__version__,))
         sys.exit(1)
 
@@ -31,7 +31,7 @@ if __name__ == '__main__':
 
     if not any(d in changelog for d in acceptable_dates):
         print((
-            "The current date (%s) isn't mentioned in the changelog. "
-            "Remember this will be released as soon as you merge to master!"
+            'The current date (%s) isn\'t mentioned in the changelog. '
+            'Remember this will be released as soon as you merge to master!'
         ) % (when,))
         sys.exit(1)
