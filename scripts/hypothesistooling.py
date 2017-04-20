@@ -57,13 +57,10 @@ def changelog():
         return i.read()
 
 
-DEVNULL = open(os.devnull)
-
-
 def has_source_changes(version):
     return subprocess.call([
         "git", "diff", "--exit-code", version, SRC,
-    ], stdout=DEVNULL, stderr=DEVNULL) != 0
+    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) != 0
 
 
 def git(*args):
