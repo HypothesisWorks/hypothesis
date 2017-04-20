@@ -87,8 +87,12 @@ def create_tag():
     git("config", "user.name", "Travis CI on behalf of David R. MacIver")
     git("config", "user.email", "david@drmaciver.com")
     git("config", "core.sshCommand", "ssh -i deploy_key")
+    git(
+        "remote", "add", "ssh-origin",
+        "git@github.com:HypothesisWorks/hypothesis-python.git"
+    )
     git("tag", __version__)
-    git("push", "--tags")
+    git("push", "ssh-origin", "--tags")
 
 
 def build_jobs():
