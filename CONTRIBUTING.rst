@@ -198,9 +198,9 @@ All of these conditions must be satisfied for merge. Where the reviewer
 thinks this conflicts with the above higher level goals, they may make
 an exception if both the author and another maintainer agree.
 
-~~~~~~~~~~~~~~~~~
-General Questions
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
+General Requirements
+~~~~~~~~~~~~~~~~~~~~
 
 The following are required for almost every change:
 
@@ -237,7 +237,7 @@ because they are the ones we are stuck with for the longest: Hypothesis
 follows semantic versioning, and we don't release new major versions
 very often.
 
-When a public API changes we should ask the following questions:
+Public API changes must satisfy the following:
 
 1. All public API changes must be well documented. If it's not documented,
    it doesn't count as public API!
