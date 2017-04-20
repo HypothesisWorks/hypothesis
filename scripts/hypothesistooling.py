@@ -36,6 +36,10 @@ def latest_version():
     versions = []
 
     for t in tags():
+        # All versions get tags but not all tags are versions (and there are
+        # a large number of historic tags with a different format for versions)
+        # so we parse each tag as a triple of ints (MAJOR, MINOR, PATCH)
+        # and skip any tag that doesn't match that.
         assert t == t.strip()
         parts = t.split(".")
         if len(parts) != 3:
@@ -44,10 +48,8 @@ def latest_version():
             v = tuple(map(int, parts))
         except ValueError:
             continue
-        try:
-            versions.append((v, t))
-        except ValueError:
-            pass
+
+        versions.append((v, t))
 
     _, latest = max(versions)
 
