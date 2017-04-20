@@ -100,22 +100,16 @@ def build_jobs():
     build_id = os.environ["TRAVIS_BUILD_ID"]
 
     url = "https://api.travis-ci.org/builds/%s" % (build_id,)
-    data = requests.get(url).json()
+    data = requests.get(url, headers={
+        'Accept': "application/vnd.travis-ci.2+json"
+    }).json()
 
-    matrix = data["matrix"]
+    matrix = data["jobs"]
 
-    jobs = {
-        "pending": [],
-        "failed": [],
-        "succeeded": [],
-    }
+    jobs = {}
 
     for m in matrix:
         name = m["config"]["env"].replace("TASK=", "")
-        if m["finished_at"] is None:
-            jobs["pending"].append(name)
-        elif m["result"] != 0:
-            jobs["failed"].append(name)
-        else:
-            jobs["succeeded"].append(name)
+        status = m["state"]
+        jobs.setdefault(status, []).append(name)
     return jobs

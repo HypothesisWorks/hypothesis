@@ -15,13 +15,6 @@ if __name__ == '__main__':
     print("Current version: %s. Latest released version: %s" % (
         tools.__version__, last_release
     ))
-    if not tools.on_master():
-        print("Not deploying due to not being on master")
-        sys.exit(0)
-
-    if not tools.has_source_changes(last_release):
-        print("Not deploying due to no source changes")
-        sys.exit(0)
 
     start_time = time()
 
@@ -29,13 +22,19 @@ if __name__ == '__main__':
 
     while time() <= start_time + 60 * 60:
         jobs = tools.build_jobs()
-        if jobs["failed"]:
+
+        failed_jobs = [
+            v for k, vs in jobs.items() if k not in ('started', 'passed')
+            for v in vs
+        ]
+
+        if failed_jobs:
             print("Failing this due to failure of jobs %s" % (
-                ', '.join(jobs["failed"]),
+                ', '.join(failed_jobs),
             ))
             sys.exit(1)
         else:
-            pending = jobs["pending"]
+            pending = jobs["started"]
             pending.remove("deploy")
             if pending:
                 still_pending = set(pending)
@@ -59,6 +58,14 @@ if __name__ == '__main__':
     else:
         print("We've been waiting for an hour. That seems bad. Failing now")
         sys.exit(1)
+
+    if not tools.on_master():
+        print("Not deploying due to not being on master")
+        sys.exit(0)
+
+    if not tools.has_source_changes(last_release):
+        print("Not deploying due to no source changes")
+        sys.exit(0)
 
     print("Looks good to release! Pushing the tag now.")
     tools.create_tag()
