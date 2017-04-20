@@ -8,6 +8,8 @@ sys.path.append(os.path.dirname(__file__))  # noqa
 
 import hypothesistooling as tools
 
+PENDING_STATUS = ('started', 'created')
+
 
 if __name__ == '__main__':
     last_release = tools.latest_version()
@@ -15,6 +17,14 @@ if __name__ == '__main__':
     print("Current version: %s. Latest released version: %s" % (
         tools.__version__, last_release
     ))
+
+    if not tools.on_master():
+        print("Not deploying due to not being on master")
+        sys.exit(0)
+
+    if not tools.has_source_changes(last_release):
+        print("Not deploying due to no source changes")
+        sys.exit(0)
 
     start_time = time()
 
@@ -24,18 +34,24 @@ if __name__ == '__main__':
         jobs = tools.build_jobs()
 
         failed_jobs = [
-            v for k, vs in jobs.items() if k not in ('started', 'passed')
+            (k, v)
+            for k, vs in jobs.items()
+            if k not in PENDING_STATUS + ('passed',)
             for v in vs
         ]
 
         if failed_jobs:
             print("Failing this due to failure of jobs %s" % (
-                ', '.join(failed_jobs),
+                ', '.join("%s(%s)" % (s, j) for j, s in failed_jobs),
             ))
             sys.exit(1)
         else:
-            pending = jobs["started"]
-            pending.remove("deploy")
+            pending = [j for s in PENDING_STATUS for j in jobs.get(s, ())]
+            try:
+                # This allows us to test the deploy job for a build locally.
+                pending.remove("deploy")
+            except ValueError:
+                pass
             if pending:
                 still_pending = set(pending)
                 if prev_pending is None:
@@ -58,14 +74,6 @@ if __name__ == '__main__':
     else:
         print("We've been waiting for an hour. That seems bad. Failing now")
         sys.exit(1)
-
-    if not tools.on_master():
-        print("Not deploying due to not being on master")
-        sys.exit(0)
-
-    if not tools.has_source_changes(last_release):
-        print("Not deploying due to no source changes")
-        sys.exit(0)
 
     print("Looks good to release! Pushing the tag now.")
     tools.create_tag()
