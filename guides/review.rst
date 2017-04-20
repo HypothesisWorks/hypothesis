@@ -61,9 +61,12 @@ src then it counts.
 3. Hypothesis must never be *flaky*. Flakiness here is
    defined as anything where a test fails and this does not indicate
    a bug in Hypothesis or in the way the user wrote the code or the test.
-4. The version number must be kept up to date. If you're making a change,
-   it should increase the appropriate version (patch for things that don't
-   change public facing functionality, minor for things that do).
+4. The version number must be kept up to date, following
+   `Semantic Versioning <http://semver.org/>`_ conventions: The third (patch)
+   number increases for things that don't change public facing functionality,
+   the second (minor) for things that do but are backwards compatible, and
+   the first (major) changes for things that aren't backwards compatible.
+   See the section on API changes for the latter two.
 5. The changelog should be kept up to date, clearly describing the change
    and including the current date (remember: This will be released as soon
    as it's merged).
