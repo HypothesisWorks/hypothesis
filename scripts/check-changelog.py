@@ -20,9 +20,11 @@ if __name__ == '__main__':
 
     now = datetime.utcnow()
 
+    hour = timedelta(hours=1)
+
     acceptable_dates = {
         d.strftime("%Y-%m-%d")
-        for d in (now, timedelta(hours=1))
+        for d in (now, now + hour, now - hour)
     }
 
     when = ' or '.join(sorted(acceptable_dates))
