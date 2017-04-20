@@ -6,7 +6,7 @@ import sys
 sys.path.append(os.path.dirname(__file__))  # noqa
 
 import hypothesistooling as tools
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 if __name__ == '__main__':
@@ -18,9 +18,16 @@ if __name__ == '__main__':
                 tools.__version__,))
         sys.exit(1)
 
-    when = datetime.utcnow().strftime("%Y-%m-%d")
+    now = datetime.utcnow()
 
-    if when not in changelog:
+    acceptable_dates = {
+        d.strftime("%Y-%m-%d")
+        for d in (now, timedelta(hours=1))
+    }
+
+    when = ' or '.join(sorted(acceptable_dates))
+
+    if not any(d in changelog for d in acceptable_dates):
         print((
             "The current date (%s) isn't mentioned in the changelog. "
             "Remember this will be released as soon as you merge to master!"
