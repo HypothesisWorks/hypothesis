@@ -39,6 +39,7 @@ BENCHMARK_PYTHON=$(BENCHMARK_VIRTUALENV)/bin/python
 
 FILES_TO_FORMAT=find src tests scripts -name '*.py' -not \( \
 								-path '*/vendor/*' -or -name test_lambda_formatting.py \
+                                -or -name header.py \
 								\)
 
 export PATH:=$(BUILD_RUNTIMES)/snakepit:$(TOOLS):$(PATH)
