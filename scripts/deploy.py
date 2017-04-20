@@ -30,6 +30,10 @@ if __name__ == '__main__':
 
     prev_pending = None
 
+    # We time out after an hour, which is a stupidly long time and it should
+    # never actually take that long: A full Travis run only takes about 20-30
+    # minutes! This is really just here as a guard in case something goes
+    # wrong and we're not paying attention so as to not be too mean to Travis..
     while time() <= start_time + 60 * 60:
         jobs = tools.build_jobs()
 
@@ -72,7 +76,7 @@ if __name__ == '__main__':
             else:
                 break
     else:
-        print("We've been waiting for an hour. That seems bad. Failing now")
+        print("We've been waiting for an hour. That seems bad. Failing now.")
         sys.exit(1)
 
     print("Looks good to release! Pushing the tag now.")
