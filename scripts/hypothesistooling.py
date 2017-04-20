@@ -1,12 +1,11 @@
 import subprocess
 import os
-from distutils.version import StrictVersion
 
 
 def current_branch():
     return subprocess.check_output([
         "git", "rev-parse", "--abbrev-ref", "HEAD"
-    ]).decode('ascii')
+    ]).decode('ascii').strip()
 
 
 def tags():
@@ -34,8 +33,16 @@ def latest_version():
     versions = []
 
     for t in tags():
+        assert t == t.strip()
+        parts = t.split(".")
+        if len(parts) != 3:
+            continue
         try:
-            versions.append((StrictVersion(t), t))
+            v = tuple(map(int, parts))
+        except ValueError:
+            continue
+        try:
+            versions.append((v, t))
         except ValueError:
             pass
 
@@ -59,11 +66,14 @@ def has_source_changes(version):
     ], stdout=DEVNULL, stderr=DEVNULL) != 0
 
 
+def git(*args):
+    subprocess.check_call(("git",) + args)
+
+
 def create_tag():
     assert __version__ not in tags()
-    subprocess.check_call([
-        "git", "tag", __version__
-    ])
-    subprocess.check_call([
-        "git", "push", "--tags"
-    ])
+    git("config", "user.name", "Travis CI on behalf of David R. MacIver")
+    git("config", "user.email", "david@drmaciver.com")
+    git("config", "core.sshCommand", "ssh -i deploy_key")
+    git("tag", __version__)
+    git("push", "--tags")

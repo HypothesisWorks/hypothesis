@@ -77,4 +77,4 @@ deploy:
   on:
     branch: master
     repo: HypothesisWorks/hypothesis-python
-    condition: python scripts/should-deploy.py
+    condition: make check-deploy-and-tag
