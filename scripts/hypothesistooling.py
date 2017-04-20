@@ -57,6 +57,16 @@ def latest_version():
     return latest
 
 
+def hash_for_name(name):
+    return subprocess.check_output([
+        "git", "rev-parse", name
+    ]).decode('ascii').strip()
+
+
+def on_master():
+    return hash_for_name("HEAD") == hash_for_name("origin/master")
+
+
 def changelog():
     with open(os.path.join(ROOT, "docs", "changes.rst")) as i:
         return i.read()
@@ -79,3 +89,27 @@ def create_tag():
     git("config", "core.sshCommand", "ssh -i deploy_key")
     git("tag", __version__)
     git("push", "--tags")
+
+
+def build_jobs():
+    """Query the Travis API to find out what the state of the other build jobs
+    is. Note: This usage of Travis has been somewhat reverse engineered due to
+    a certain dearth of documentation as to what values what takes when."""
+    import requests
+
+    build_id = os.environ["TRAVIS_BUILD_ID"]
+
+    url = "https://api.travis-ci.org/builds/%s" % (build_id,)
+    data = requests.get(url, headers={
+        'Accept': "application/vnd.travis-ci.2+json"
+    }).json()
+
+    matrix = data["jobs"]
+
+    jobs = {}
+
+    for m in matrix:
+        name = m["config"]["env"].replace("TASK=", "")
+        status = m["state"]
+        jobs.setdefault(status, []).append(name)
+    return jobs

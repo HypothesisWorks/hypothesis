@@ -90,8 +90,8 @@ check-untagged: $(BEST_PY3)
 check-changelog: $(BEST_PY3)
 	$(BEST_PY3) scripts/check-changelog.py
 
-check-deploy-and-tag: $(BEST_PY3)
-	$(BEST_PY3) scripts/should-deploy.py
+deploy: $(TOOL_VIRTUALENV)
+	$(TOOL_PYTHON) scripts/deploy.py
 
 check-format: format
 	find src tests -name "*.py" | xargs $(TOOL_PYTHON) scripts/check_encoding_header.py
