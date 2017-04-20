@@ -275,6 +275,30 @@ Bug Fixes
 3. Where possible, a test that will catch both this bug and a more general class
    of bug that contains it is better.
 
+~~~~~~~~~~~~~~~~
+Settings Changes
+~~~~~~~~~~~~~~~~
+
+It is tempting to use the Hypothesis settings object as a dumping ground for
+anything and everything that you can think of to control Hypothesis. This
+rapidly gets confusing for users and should be carefully avoided.
+
+New settings should:
+
+1. Be something that the user can meaningfully have an opinion on. Many of the
+   settings that have been added to Hypothesis are just cases where Hypothesis
+   is abdicating responsibility to do the right thing to the user.
+2. Make sense without reference to Hypothesis internals.
+3. Correspond to behaviour which can meaningfully differ between tests - either
+   between two different tests or between two different runs of the same test
+   (e.g. one use case is the profile system, where you might want to run Hypothesis
+   differently in CI and development). If you would never expect a test suite to
+   have more than one value for a setting across any of its runs, it should be
+   some sort of global configuration, not a setting.
+
+Removing settings is not something we have done so far, so the exact process
+is still up in the air, but it should involve a careful deprecation path where
+the default behaviour does not change without first introducing warnings.
 
 ~~~~~~~~~~~~~~
 Engine Changes
