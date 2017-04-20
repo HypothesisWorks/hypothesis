@@ -93,6 +93,10 @@ def create_tag():
     )
     git("tag", __version__)
     git("push", "ssh-origin", "--tags")
+    subprocess.check_call([
+        "ssh-agent", "sh", "-c",
+        "ssh-add deploy_key; git push ssh-origin --tags"
+    ])
 
 
 def build_jobs():
