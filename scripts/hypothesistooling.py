@@ -94,7 +94,9 @@ def create_tag():
     git("tag", __version__)
     subprocess.check_call([
         "ssh-agent", "sh", "-c",
-        "ssh-add deploy_key; git push ssh-origin --tags"
+        "chmod 0600 deploy_key && " +
+        "ssh-add deploy_key && " +
+        "git push ssh-origin --tags"
     ])
 
 
