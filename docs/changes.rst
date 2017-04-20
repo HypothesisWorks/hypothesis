@@ -22,6 +22,21 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 ------------------
+3.7.1 - 2017-04-20
+------------------
+
+This is a bug fix and internal improvements release. 
+
+* In particular Hypothesis now tracks a tree of where it has already explored.
+  This allows it to avoid some classes of duplicate examples, and significantly
+  improves the performance of shrinking failing examples by allowing it to
+  skip some shrinks that it can determine can't possibly work.
+* Hypothesis will no longer seed the global random arbitrarily unless you have
+  asked it to using random\_module.
+* Shrinking would previously have not worked correctly in some special cases
+  on Python 2, and would have resulted in suboptimal examples.
+
+------------------
 3.7.0 - 2017-03-20
 ------------------
 
