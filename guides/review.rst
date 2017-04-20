@@ -1,12 +1,35 @@
------------------
-Review Guidelines
------------------
+===================================
+The Hypothesis Code Review Handbook
+===================================
 
-All changes to Hypothesis go through a code review process, and must be
-signed off by at least one person with write access to the repo other
-than the author of the change. This document
-outlines some guidelines on what to look for and what we're interested
-in. It applies uniformly to maintainers and external contributors.
+Hypothesis has a process of reviewing every change, internal or external.
+This is a document outlining that process. It's partly descriptive, partly
+prescriptive, and entirely prone to change in response to circumstance
+and need. We're still figuring this thing out!
+
+----------------
+How Review Works
+----------------
+
+All changes to Hypothesis must be signed off by at least one person with
+write access to the repo other than the author of the change. Once the
+build is green and a reviewer has approved the change, anyone on the
+maintainer team may merge the request.
+
+More than one maintainer *may* review a change if they wish to, but it's
+not required. Any maintainer may block a pull request by requesting changes.
+
+Consensus on a review is best but not required. If some reviewers have
+approved a pull request and some have requested changes, ideally you
+would try to address all of the changes, but it is OK to dismiss dissenting
+reviews if you feel it appropriate.
+
+We've not tested the case of differing opinions much in practice yet, so
+we may grow firmer guidelines on what to do there over time.
+
+------------
+Review Goals
+------------
 
 At a high level, the two things we're looking for in review are answers
 to the following questions:
@@ -23,13 +46,30 @@ and our lives *better*, but it's OK for changes to be mostly neutral.
 The author should be presumed to have a good reason for submitting the
 change in the first place, so neutral is good enough!
 
-The rest of this section outlines specific things reviewers should
+--------------
+Social Factors
+--------------
+
+* Always thank external contributors. Thank maintainers too, ideally!
+* Remember that the `Code of Conduct <https://hypothesis.readthedocs.io/en/latest/community.html#code-of-conduct>`_
+  applies to pull requests and issues too. Feel free to throw your weight
+  around to enforce this if necessary.
+* Anyone, maintainer or not, is welcome to do a code review. Only official
+  maintainers have the ability to actually approve and merge a pull
+  request, but outside review is also welcome.
+
+------------
+Requirements
+------------
+
+The rest of this document outlines specific things reviewers should
 focus on in aid of this, broken up by sections according to their area
 of applicability.
 
 All of these conditions must be satisfied for merge. Where the reviewer
 thinks this conflicts with the above higher level goals, they may make
 an exception if both the author and another maintainer agree.
+
 
 ~~~~~~~~~~~~~~~~~~~~
 General Requirements
