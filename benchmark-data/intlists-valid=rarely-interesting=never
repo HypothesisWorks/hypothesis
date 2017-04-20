@@ -1,3 +1,9 @@
+# This is an automatically generated file from Hypothesis's benchmarking
+# script (scripts/benchmarks.py). The format is TOTAL SIZE: COUNT, one per
+# line, with lines like this starting with hashes ignored. It's entirely
+# for computer production and consumption, so you should probably just ignore
+# it except for when using that script.
+
 114050: 4
 113982: 4
 113523: 4

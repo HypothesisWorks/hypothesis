@@ -157,6 +157,15 @@ def have_existing_data(name):
 EXISTING_CACHE = {}
 
 
+BENCHMARK_HEADER = """
+# This is an automatically generated file from Hypothesis's benchmarking
+# script (scripts/benchmarks.py). The format is TOTAL SIZE: COUNT, one per
+# line, with lines like this starting with hashes ignored. It's entirely
+# for computer production and consumption, so you should probably just ignore
+# it except for when using that script.
+""".strip()
+
+
 def existing_data(name):
     try:
         return EXISTING_CACHE[name]
@@ -167,7 +176,12 @@ def existing_data(name):
     result = []
     with open(fname) as i:
         for l in i:
-            k, n = l.strip().split(": ")
+            l = l.strip()
+            if not l:
+                continue
+            if l.startswith("#"):
+                continue
+            k, n = l.split(": ")
             k = int(k)
             for _ in range(int(n)):
                 result.append(k)
@@ -178,6 +192,9 @@ def existing_data(name):
 def write_data(name, new_data):
     counts = Counter(new_data)
     with open(benchmark_file(name), 'w') as o:
+        o.write(BENCHMARK_HEADER)
+        o.write('\n')
+        o.write('\n')
         for k, n in sorted(
             counts.items(), reverse=True, key=lambda x: (x[1], x[0])
         ):
