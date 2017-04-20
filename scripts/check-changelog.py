@@ -25,3 +25,4 @@ if __name__ == '__main__':
             "The current date (%s) isn't mentioned in the changelog. "
             "Remember this will be released as soon as you merge to master!"
         ) % (when,))
+        sys.exit(1)
