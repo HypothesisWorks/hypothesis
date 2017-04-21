@@ -15,3 +15,4 @@ _build
 .DS_Store
 deploy_key
 .pypirc
+secrets.tar
