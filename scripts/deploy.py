@@ -7,6 +7,8 @@ import random
 sys.path.append(os.path.dirname(__file__))  # noqa
 
 import hypothesistooling as tools
+import subprocess
+
 
 PENDING_STATUS = ('started', 'created')
 
@@ -81,4 +83,16 @@ if __name__ == '__main__':
 
     print("Looks good to release! Pushing the tag now.")
     tools.create_tag()
+
+    print("Now uploading to pypi.")
+
+    subprocess.check_output([
+        sys.executable, "setup.py", "sdist"
+    ])
+
+    subprocess.check_output([
+        sys.executable, "-m", "twine", "--config-file=./.pypirc",
+        "upload", "dist/*"
+    ])
+
     sys.exit(0)
