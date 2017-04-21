@@ -22,6 +22,15 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 ------------------
+3.7.3 - 2017-04-21
+------------------
+
+This release should include no user visible changes and is purely a refactoring
+release. This modularises the behaviour of the core "given" function, breaking
+it up into smaller and more accessible parts, but its actual behaviour should
+remain unchanged..
+
+------------------
 3.7.2 - 2017-04-21
 ------------------
 
