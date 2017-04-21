@@ -14,3 +14,4 @@ _build
 .vagrant
 .DS_Store
 deploy_key
+.pypirc
