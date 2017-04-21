@@ -22,6 +22,14 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 ------------------
+3.7.2 - 2017-04-21
+------------------
+
+This reverts an undocumented change in 3.7.1 which broke installation on
+debian stable: The specifier for the hypothesis[django] extra\_requires had
+introduced a wild card, which was not supported on the default version of pip.
+
+------------------
 3.7.1 - 2017-04-21
 ------------------
 
