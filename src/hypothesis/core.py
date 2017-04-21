@@ -277,8 +277,10 @@ def perform_health_checks(random, settings, test_runner, search_strategy):
                 search_strategy,
                 lambda *args, **kwargs: None,
             ))
-        except BaseException:
+        except AssertionError:
             escalate_hypothesis_internal_error()
+        except BaseException:
+            pass
     count = 0
     overruns = 0
     filtered_draws = 0
