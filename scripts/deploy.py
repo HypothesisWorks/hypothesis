@@ -38,6 +38,27 @@ PENDING_STATUS = ('started', 'created')
 
 
 if __name__ == '__main__':
+
+    print('Decrypting secrets')
+
+    # We'd normally avoid the use of shell=True, but this is more or less
+    # intended as an opaque string that was given to us by Travis that happens
+    # to be a shell command that we run, and there are a number of good reasons
+    # this particular instance is harmless and would be high effort to
+    # convert (principally: Lack of programmatic generation of the string and
+    # extensive use of environment variables in it), so we're making an
+    # exception here.
+    subprocess.check_call(
+        'openssl aes-256-cbc -K $encrypted_39cb4cc39a80_key '
+        '-iv $encrypted_39cb4cc39a80_iv -in secrets.tar.enc '
+        '-out secrets.tar -d',
+        shell=True
+    )
+
+    subprocess.check_call([
+        'tar', '-xvf', 'secrets.tar',
+    ])
+
     last_release = tools.latest_version()
 
     print('Current version: %s. Latest released version: %s' % (
