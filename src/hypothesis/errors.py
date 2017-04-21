@@ -101,6 +101,14 @@ class Unsatisfiable(HypothesisException):
     """
 
 
+class Always(Unsatisfiable):
+    """A sometimes() was only called with True values"""
+
+
+class Never(Unsatisfiable):
+    """A sometimes() was only called with False values"""
+
+
 class Flaky(HypothesisException):
 
     """This function appears to fail non-deterministically: We have seen it

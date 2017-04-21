@@ -29,7 +29,8 @@ from collections import namedtuple
 
 from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
     Unsatisfiable, InvalidArgument, FailedHealthCheck, \
-    UnsatisfiedAssumption, HypothesisDeprecationWarning
+    UnsatisfiedAssumption, HypothesisDeprecationWarning, \
+    Always, Never
 from hypothesis.control import BuildContext
 from hypothesis._settings import settings as Settings
 from hypothesis._settings import Phase, Verbosity, HealthCheck
@@ -487,6 +488,12 @@ def given(*given_arguments, **given_kwargs):
             )
             if runner.last_data is None:
                 return
+            for event, count in runner.event_call_counts.items():
+                if count == runner.call_count:
+                    if event.truth is True:
+                        raise Always(event.name)
+                    elif event.truth is False:
+                        raise Never(event.name)
             if runner.last_data.status == Status.INTERESTING:
                 falsifying_example = runner.last_data.buffer
                 if settings.database is not None:

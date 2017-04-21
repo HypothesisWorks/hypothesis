@@ -131,3 +131,13 @@ def event(value):
 
     if context.data is not None:
         context.data.note_event(value)
+
+
+def sometimes(value, truth):
+    context = _current_build_context.value
+    if context is None:
+        raise InvalidArgument(
+            'Cannot make record events outside of a test')
+
+    if context.data is not None:
+        context.data.note_event(value, truth)
