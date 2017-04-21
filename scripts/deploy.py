@@ -24,6 +24,15 @@ if __name__ == '__main__':
         tools.__version__, last_release
     ))
 
+    print("Building an sdist...")
+
+    if os.path.exists(DIST):
+        shutil.rmtree(DIST)
+
+    subprocess.check_output([
+        sys.executable, "setup.py", "sdist", "--dist-dir", DIST,
+    ])
+
     if not tools.on_master():
         print("Not deploying due to not being on master")
         sys.exit(0)
@@ -86,15 +95,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     print("Looks good to release!")
-
-    if os.path.exists(DIST):
-        shutil.rmtree(DIST)
-
     print("Now uploading to pypi.")
-
-    subprocess.check_output([
-        sys.executable, "setup.py", "sdist", "--sdist-dir", DIST,
-    ])
 
     subprocess.check_output([
         sys.executable, "-m", "twine", "--config-file=./.pypirc",
