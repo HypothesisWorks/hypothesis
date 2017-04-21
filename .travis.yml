@@ -25,6 +25,7 @@ env:
 
     matrix:
         # Core tests that we want to run first.
+        - TASK=deploy
         - TASK=check-untagged
         - TASK=check-changelog
         - TASK=documentation
@@ -53,7 +54,6 @@ env:
         - TASK=check-django18
         - TASK=check-django110
         - TASK=check-django111
-        - TASK=deploy
 
 script:
     - make $TASK
