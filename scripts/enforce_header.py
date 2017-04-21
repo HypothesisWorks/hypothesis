@@ -21,7 +21,7 @@ import os
 import sys
 from datetime import datetime
 
-HEADER_FILE = "scripts/header.py"
+HEADER_FILE = 'scripts/header.py'
 
 CURRENT_YEAR = datetime.utcnow().year
 
@@ -29,14 +29,14 @@ HEADER_SOURCE = open(HEADER_FILE).read().strip().format(year=CURRENT_YEAR)
 
 
 def main():
-    rootdir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    rootdir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     os.chdir(rootdir)
     files = sys.argv[1:]
 
     for f in files:
         print(f)
         lines = []
-        with open(f, encoding="utf-8") as o:
+        with open(f, encoding='utf-8') as o:
             shebang = None
             first = True
             header_done = False
@@ -52,15 +52,15 @@ def main():
                 else:
                     lines.append(l)
         source = ''.join(lines).strip()
-        with open(f, "w", encoding="utf-8") as o:
+        with open(f, 'w', encoding='utf-8') as o:
             if shebang is not None:
                 o.write(shebang)
-                o.write("\n")
+                o.write('\n')
             o.write(HEADER_SOURCE)
             if source:
-                o.write("\n\n")
+                o.write('\n\n')
                 o.write(source)
-            o.write("\n")
+            o.write('\n')
 
 
 if __name__ == '__main__':
