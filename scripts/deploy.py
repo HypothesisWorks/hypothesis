@@ -93,7 +93,7 @@ if __name__ == '__main__':
     print("Now uploading to pypi.")
 
     subprocess.check_output([
-        sys.executable, "setup.py", "sdist"
+        sys.executable, "setup.py", "sdist", "--sdist-dir", DIST,
     ])
 
     subprocess.check_output([
