@@ -98,8 +98,9 @@ if __name__ == '__main__':
     print("Now uploading to pypi.")
 
     subprocess.check_output([
-        sys.executable, "-m", "twine", "--config-file=./.pypirc",
-        "upload", os.path.join(DIST, "*"),
+        sys.executable, "-m", "twine", "upload",
+        "--config-file", "./.pypirc",
+        os.path.join(DIST, "*"),
     ])
 
     print("Release seems good. Pushing the tag now.")
