@@ -8,7 +8,8 @@ os:
     - linux
 
 before_install:
-  - openssl aes-256-cbc -K $encrypted_39cb4cc39a80_key -iv $encrypted_39cb4cc39a80_iv -in deploy_key.enc -out deploy_key -d
+  - openssl aes-256-cbc -K $encrypted_39cb4cc39a80_key -iv $encrypted_39cb4cc39a80_iv -in secrets.tar.enc -out secrets.tar -d
+  - tar -xvf secrets.tar
 
 branches:
   only:
@@ -70,14 +71,3 @@ notifications:
       - david@drmaciver.com
     on_success: never
     on_failure: change
-
-
-deploy:
-  provider: pypi
-  user: DRMacIver
-  password:
-    secure: T9tUyr9JG3KA8JprHUE8AAVaClUHHPHhiQRXC2/jHJv2EVEx2+EifkuR9sr5q1mCZ06g9v2+jhVNuaZyVuU9mmDKvJfADlPAagkCcgF/siuuJkzd3eIlELZHDtWPwKiZWCAD0Oj6yMdVB2w3/JTpJQhJx7HrL8EqbVdnN9YkMmI=
-  on:
-    branch: master
-    repo: HypothesisWorks/hypothesis-python
-    condition: $TASK = deploy

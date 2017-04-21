@@ -13,3 +13,6 @@ _build
 .idea
 .vagrant
 .DS_Store
+deploy_key
+.pypirc
+secrets.tar

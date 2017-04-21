@@ -2,11 +2,17 @@
 
 import os
 import sys
+import shutil
 from time import time, sleep
 import random
 sys.path.append(os.path.dirname(__file__))  # noqa
 
 import hypothesistooling as tools
+import subprocess
+
+
+DIST = os.path.join(tools.ROOT, "dist")
+
 
 PENDING_STATUS = ('started', 'created')
 
@@ -79,6 +85,23 @@ if __name__ == '__main__':
         print("We've been waiting for an hour. That seems bad. Failing now.")
         sys.exit(1)
 
-    print("Looks good to release! Pushing the tag now.")
+    print("Looks good to release!")
+
+    if os.path.exists(DIST):
+        shutil.rmtree(DIST)
+
+    print("Now uploading to pypi.")
+
+    subprocess.check_output([
+        sys.executable, "setup.py", "sdist", "--sdist-dir", DIST,
+    ])
+
+    subprocess.check_output([
+        sys.executable, "-m", "twine", "--config-file=./.pypirc",
+        "upload", os.path.join(DIST, "*"),
+    ])
+
+    print("Release seems good. Pushing the tag now.")
+
     tools.create_tag()
     sys.exit(0)
