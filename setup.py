@@ -23,6 +23,7 @@ import sys
 def local_file(name):
     return os.path.relpath(os.path.join(os.path.dirname(__file__), name))
 
+
 SOURCE = local_file("src")
 README = local_file("README.rst")
 
@@ -40,7 +41,7 @@ assert __version__ is not None
 extras = {
     'datetime':  ["pytz"],
     'fakefactory': ["Faker>=0.7.0,<=0.7.1"],
-    'django': ['pytz', 'django>=1.8,<2,!=1.9.*'],
+    'django': ['pytz', 'django>=1.8,<2'],
     'numpy': ['numpy>=1.9.0'],
     'pytest': ['pytest>=2.8.0'],
 }
