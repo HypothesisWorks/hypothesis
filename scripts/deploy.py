@@ -38,6 +38,20 @@ PENDING_STATUS = ('started', 'created')
 
 
 if __name__ == '__main__':
+
+    print("Decrypting secrets")
+
+    subprocess.check_call(
+        "openssl aes-256-cbc -K $encrypted_39cb4cc39a80_key "
+        "-iv $encrypted_39cb4cc39a80_iv -in secrets.tar.enc "
+        "-out secrets.tar -d",
+        shell=True
+    )
+
+    subprocess.check_call([
+        "tar", "-xvf", "secrets.tar",
+    ])
+
     last_release = tools.latest_version()
 
     print('Current version: %s. Latest released version: %s' % (

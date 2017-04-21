@@ -100,8 +100,6 @@ check-changelog: $(BEST_PY3)
 	$(BEST_PY3) scripts/check-changelog.py
 
 deploy: $(TOOL_VIRTUALENV)
-	openssl aes-256-cbc -K $encrypted_39cb4cc39a80_key -iv $encrypted_39cb4cc39a80_iv -in secrets.tar.enc -out secrets.tar -d
-	tar -xvf secrets.tar
 	$(TOOL_PYTHON) scripts/deploy.py
 
 check-format: format
