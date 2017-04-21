@@ -186,6 +186,11 @@ check-fast: lint $(PYPY) $(PY36) $(TOX)
 check-rst: $(RSTLINT)
 	$(RSTLINT) *.rst
 
+secret.tar.enc: deploy_key .pypirc
+	rm -f secrets.tar secrets.tar.enc
+	tar -cf secrets.tar deploy_key .pypirc
+	travis encrypt-file secrets.tar
+	rm secrets.tar
 
 check-benchmark: $(BENCHMARK_VIRTUALENV)
 	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --check --nruns=100
