@@ -22,7 +22,7 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 ------------------
-3.7.1 - 2017-04-20
+3.7.1 - 2017-04-21
 ------------------
 
 This is a bug fix and internal improvements release. 
