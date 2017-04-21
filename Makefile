@@ -37,8 +37,9 @@ TOOL_PIP=$(TOOL_VIRTUALENV)/bin/pip
 BENCHMARK_VIRTUALENV:=$(BUILD_RUNTIMES)/virtualenvs/benchmark-$(shell scripts/tool-hash.py benchmark)
 BENCHMARK_PYTHON=$(BENCHMARK_VIRTUALENV)/bin/python
 
-FILES_TO_FORMAT=find src tests -name '*.py' -not \( \
+FILES_TO_FORMAT=find src tests scripts -name '*.py' -not \( \
 								-path '*/vendor/*' -or -name test_lambda_formatting.py \
+                                -or -name header.py \
 								\)
 
 export PATH:=$(BUILD_RUNTIMES)/snakepit:$(TOOLS):$(PATH)

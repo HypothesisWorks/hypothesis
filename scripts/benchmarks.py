@@ -19,28 +19,29 @@
 
 from __future__ import division, print_function, absolute_import
 
-from collections import OrderedDict
-import attr
-import hypothesis.strategies as st
-from hypothesis import settings
-from hypothesis.internal.conjecture.engine import ConjectureRunner
-from hypothesis.internal.conjecture.data import StopTest
-from hypothesis.errors import UnsatisfiedAssumption
-from scipy.stats import ttest_ind
-import click
 import os
+import sys
 import random
 import hashlib
+from collections import Counter, OrderedDict
+
 import numpy as np
-import sys
-from collections import Counter
+
+import attr
+import click
+import hypothesis.strategies as st
+from hypothesis import settings
+from scipy.stats import ttest_ind
+from hypothesis.errors import UnsatisfiedAssumption
+from hypothesis.internal.conjecture.data import StopTest
+from hypothesis.internal.conjecture.engine import ConjectureRunner
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 DATA_DIR = os.path.join(
     ROOT,
-    "benchmark-data",
+    'benchmark-data',
 )
 
 
@@ -67,7 +68,7 @@ STRATEGIES = {
 
 
 def define_benchmark(strategy_name, valid, failing):
-    name = "%s-valid=%s-interesting=%s" % (
+    name = '%s-valid=%s-interesting=%s' % (
         strategy_name, valid.__name__, failing.__name__)
     assert name not in BENCHMARKS
     strategy = STRATEGIES[strategy_name]
@@ -92,25 +93,25 @@ def sometimes(p, name=None):
     return accept
 
 
-rarely = sometimes(0.1, "rarely")
-usually = sometimes(0.9, "usually")
+rarely = sometimes(0.1, 'rarely')
+usually = sometimes(0.9, 'usually')
 
 
 def minsum(seed, testdata, value):
     return sum(value) >= 1000
 
 
-define_benchmark("intlists", always, never)
-define_benchmark("intlists", always, always)
-define_benchmark("intlists", always, rarely)
-define_benchmark("intlists", always, minsum)
-define_benchmark("intlists", minsum, never)
-define_benchmark("intlists", rarely, never)
-define_benchmark("intlists", usually, usually)
+define_benchmark('intlists', always, never)
+define_benchmark('intlists', always, always)
+define_benchmark('intlists', always, rarely)
+define_benchmark('intlists', always, minsum)
+define_benchmark('intlists', minsum, never)
+define_benchmark('intlists', rarely, never)
+define_benchmark('intlists', usually, usually)
 
 
 def run_benchmark_for_sizes(benchmark, n_runs):
-    click.echo("Calculating data for %s" % (benchmark.name,))
+    click.echo('Calculating data for %s' % (benchmark.name,))
     total_sizes = []
 
     with click.progressbar(range(n_runs)) as runs:
@@ -179,9 +180,9 @@ def existing_data(name):
             l = l.strip()
             if not l:
                 continue
-            if l.startswith("#"):
+            if l.startswith('#'):
                 continue
-            k, n = l.split(": ")
+            k, n = l.split(': ')
             k = int(k)
             for _ in range(int(n)):
                 result.append(k)
@@ -198,14 +199,14 @@ def write_data(name, new_data):
         for k, n in sorted(
             counts.items(), reverse=True, key=lambda x: (x[1], x[0])
         ):
-            o.write("%d: %d\n" % (k, n))
+            o.write('%d: %d\n' % (k, n))
 
 
-NONE = "none"
-NEW = "new"
-ALL = "all"
-CHANGED = "changed"
-IMPROVED = "improved"
+NONE = 'none'
+NEW = 'new'
+ALL = 'all'
+CHANGED = 'changed'
+IMPROVED = 'improved'
 
 
 @attr.s
@@ -219,10 +220,10 @@ class Report(object):
 
 @click.command()
 @click.option(
-    "--seed", default=0, help="Set a different random seed for the run"
+    '--seed', default=0, help='Set a different random seed for the run'
 )
 @click.option(
-    "--nruns", default=200, type=int, help="""
+    '--nruns', default=200, type=int, help="""
 Specify the number of runs of each benchmark to perform. If this is larger than
 the number of stored runs then this will result in the existing data treated as
 if it were non-existing. If it is smaller, the existing data will be sampled.
@@ -235,24 +236,26 @@ if it were non-existing. If it is smaller, the existing data will be sampled.
     NONE, NEW, ALL, CHANGED, IMPROVED
 ]), default=NEW)
 def cli(seed, benchmarks, nruns, check, update, fdr, skip_existing):
-    """
-    This is the benchmark runner script for Hypothesis. Rather than running
-    benchmarks by *time* this runs benchmarks by *amount of data*. This is
-    the major determiner of performance in Hypothesis (other than speed of the
-    end user's tests) and has the important property that we can benchmark it
-    without reference to the underlying system's performance.
+    """This is the benchmark runner script for Hypothesis.
+
+    Rather than running benchmarks by *time* this runs benchmarks by
+    *amount of data*. This is the major determiner of performance in
+    Hypothesis (other than speed of the end user's tests) and has the
+    important property that we can benchmark it without reference to the
+    underlying system's performance.
+
     """
 
     if check:
         if update not in [NONE, NEW]:
-            raise click.UsageError("check and update cannot be used together")
+            raise click.UsageError('check and update cannot be used together')
         if skip_existing:
             raise click.UsageError(
-                "check and skip-existing cannot be used together")
+                'check and skip-existing cannot be used together')
 
     for name in benchmarks:
         if name not in BENCHMARKS:
-            raise click.UsageError("Invalid benchmark name %s" % (name,))
+            raise click.UsageError('Invalid benchmark name %s' % (name,))
 
     random.seed(seed)
     try:
@@ -264,7 +267,7 @@ def cli(seed, benchmarks, nruns, check, update, fdr, skip_existing):
     if check:
         for name in benchmarks or BENCHMARKS:
             if not have_existing_data(name):
-                click.echo("No existing data for benchmark %s" % (
+                click.echo('No existing data for benchmark %s' % (
                     name,
                 ))
                 sys.exit(1)
@@ -278,7 +281,7 @@ def cli(seed, benchmarks, nruns, check, update, fdr, skip_existing):
             old_data = existing_data(name)
 
             pp = benchmark_difference_p_value(old_data, new_data)
-            click.echo("p-value for difference %.5f" % (pp,))
+            click.echo('p-value for difference %.5f' % (pp,))
             reports.append(Report(
                 name, pp, np.mean(old_data), np.mean(new_data), new_data
             ))
@@ -292,7 +295,7 @@ def cli(seed, benchmarks, nruns, check, update, fdr, skip_existing):
     if not reports:
         sys.exit(0)
 
-    click.echo("Checking for different means")
+    click.echo('Checking for different means')
 
     # We now perform a Benjamini Hochberg test. This gives us a list of
     # possibly significant differences while controlling the false discovery
@@ -309,17 +312,17 @@ def cli(seed, benchmarks, nruns, check, update, fdr, skip_existing):
 
     if threshold > 0:
         click.echo((
-            "Found %d benchmark%s with significant difference "
-            "at false discovery rate %r"
+            'Found %d benchmark%s with significant difference '
+            'at false discovery rate %r'
         ) % (
             threshold,
-            "s" if threshold > 1 else "",
+            's' if threshold > 1 else '',
             fdr,
         ))
 
     if different:
         for report in different:
-            click.echo("Different means for %s: %.2f -> %.2f. p=%.5f" % (
+            click.echo('Different means for %s: %.2f -> %.2f. p=%.5f' % (
                 report.name, report.old_mean, report.new_mean, report.p
             ))
         if check:
@@ -330,7 +333,7 @@ def cli(seed, benchmarks, nruns, check, update, fdr, skip_existing):
             elif update == IMPROVED and r.new_mean < r.old_mean:
                 write_data(r.name, r.new_data)
     else:
-        click.echo("No significant differences")
+        click.echo('No significant differences')
 
 
 if __name__ == '__main__':
