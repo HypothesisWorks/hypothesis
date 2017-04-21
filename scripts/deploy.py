@@ -81,8 +81,7 @@ if __name__ == '__main__':
         print("We've been waiting for an hour. That seems bad. Failing now.")
         sys.exit(1)
 
-    print("Looks good to release! Pushing the tag now.")
-    tools.create_tag()
+    print("Looks good to release!")
 
     print("Now uploading to pypi.")
 
@@ -95,4 +94,7 @@ if __name__ == '__main__':
         "upload", "dist/*"
     ])
 
+    print("Release seems good. Pushing the tag now.")
+
+    tools.create_tag()
     sys.exit(0)
