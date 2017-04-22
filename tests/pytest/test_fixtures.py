@@ -17,5 +17,30 @@
 
 from __future__ import division, print_function, absolute_import
 
-__version_info__ = (3, 7, 4)
-__version__ = '.'.join(map(str, __version_info__))
+import pytest
+
+from hypothesis import given, example
+from hypothesis.strategies import integers
+
+
+@pytest.fixture
+def infinity():
+    return float('inf')
+
+
+@given(integers())
+def test_can_mix_fixture_and_positional_strategy(infinity, xs):
+    # Hypothesis fills arguments from the right, so if @given() uses
+    # positional arguments then any strategies need to be on the right.
+    assert xs <= infinity
+
+
+@given(xs=integers())
+def test_can_mix_fixture_and_keyword_strategy(xs, infinity):
+    assert xs <= infinity
+
+
+@example(xs=0)
+@given(xs=integers())
+def test_can_mix_fixture_example_and_keyword_strategy(xs, infinity):
+    assert xs <= infinity
