@@ -22,13 +22,22 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 ------------------
+3.7.4 - 2017-04-22
+------------------
+
+This is a bug fix release for a single bug:
+
+* In 3.7.3, using ``@example`` and a pytest fixture in the same test could
+  cause the test to fail to fill the arguments, and throw a TypeError.
+
+------------------
 3.7.3 - 2017-04-21
 ------------------
 
 This release should include no user visible changes and is purely a refactoring
 release. This modularises the behaviour of the core "given" function, breaking
 it up into smaller and more accessible parts, but its actual behaviour should
-remain unchanged..
+remain unchanged.
 
 ------------------
 3.7.2 - 2017-04-21
@@ -42,7 +51,7 @@ introduced a wild card, which was not supported on the default version of pip.
 3.7.1 - 2017-04-21
 ------------------
 
-This is a bug fix and internal improvements release. 
+This is a bug fix and internal improvements release.
 
 * In particular Hypothesis now tracks a tree of where it has already explored.
   This allows it to avoid some classes of duplicate examples, and significantly
@@ -951,7 +960,7 @@ worth having a workaround for.
 New features:
 
 * Much more sensible reprs for strategies, especially ones that come from
-  hypothesis.strategies. These should now have as reprs python code that 
+  hypothesis.strategies. These should now have as reprs python code that
   would produce the same strategy.
 * lists() accepts a unique_by argument which forces the generated lists to be
   only contain elements unique according to some function key (which must
