@@ -131,9 +131,9 @@ def convert_positional_arguments(function, args, kwargs):
 
     """
     argspec = getargspec(function)
-    kwargs = dict(kwargs)
+    new_kwargs = dict(kwargs)
     if not argspec.keywords:
-        for k in kwargs.keys():
+        for k in new_kwargs.keys():
             if k not in argspec.args:
                 raise TypeError(
                     '%s() got an unexpected keyword argument %r' % (
@@ -156,16 +156,16 @@ def convert_positional_arguments(function, args, kwargs):
         )
 
     for arg, name in zip(args, argspec.args):
-        if name in kwargs:
+        if name in new_kwargs:
             raise TypeError(
                 '%s() got multiple values for keyword argument %r' % (
                     function.__name__, name
                 ))
         else:
-            kwargs[name] = arg
+            new_kwargs[name] = arg
     return (
         tuple(args[len(argspec.args):]),
-        kwargs,
+        new_kwargs,
     )
 
 
