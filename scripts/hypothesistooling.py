@@ -91,7 +91,10 @@ def changelog():
         return i.read()
 
 
-def has_source_changes(version):
+def has_source_changes(version=None):
+    if version is None:
+        version = latest_version()
+
     # Check where we branched off from the version. We're only interested
     # in whether *we* introduced any source changes, so we check diff from
     # there rather than the diff to the other side.
