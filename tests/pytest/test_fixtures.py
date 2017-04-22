@@ -15,12 +15,12 @@
 #
 # END HEADER
 
-from __future__ import absolute_import, division, print_function
+from __future__ import division, print_function, absolute_import
+
+import pytest
 
 from hypothesis import given, example
 from hypothesis.strategies import integers
-
-import pytest
 
 
 @pytest.fixture
@@ -30,10 +30,8 @@ def infinity():
 
 @given(integers())
 def test_can_mix_fixture_and_positional_strategy(infinity, xs):
-    """
-    Hypothesis fills arguments from the right, so if @given() is unnamed
-    then any strategies need to be on the right.
-    """
+    # Hypothesis fills arguments from the right, so if @given() uses
+    # positional arguments then any strategies need to be on the right.
     assert xs <= infinity
 
 

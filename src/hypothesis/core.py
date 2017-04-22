@@ -426,7 +426,7 @@ def process_arguments_to_given(
 
     search_strategy.validate()
 
-    return test_runner, search_strategy
+    return arguments, kwargs, test_runner, search_strategy
 
 
 class StateForActualGivenExecution(object):
@@ -607,10 +607,11 @@ def given(*given_arguments, **given_kwargs):
 
             random = get_random_for_wrapped_test(test, wrapped_test)
 
-            test_runner, search_strategy = process_arguments_to_given(
+            processed_args = process_arguments_to_given(
                 wrapped_test, arguments, kwargs, generator_arguments,
                 generator_kwargs, argspec, test, settings
             )
+            arguments, kwargs, test_runner, search_strategy = processed_args
 
             execute_explicit_examples(
                 test_runner, test, wrapped_test, settings, arguments, kwargs
