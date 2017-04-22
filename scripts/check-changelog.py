@@ -29,6 +29,11 @@ sys.path.append(os.path.dirname(__file__))  # noqa
 
 
 if __name__ == '__main__':
+
+    if not tools.has_source_changes():
+        print('No source changes found')
+        sys.exit(0)
+
     changelog = tools.changelog()
 
     if '\n%s - ' % (tools.__version__,) not in changelog:
