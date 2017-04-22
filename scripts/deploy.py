@@ -38,6 +38,8 @@ PENDING_STATUS = ('started', 'created')
 
 
 if __name__ == '__main__':
+    if os.environ.get("TRAVIS_SECURE_ENV_VARS", None) != "true":
+        sys.exit(0)
 
     print('Decrypting secrets')
 
