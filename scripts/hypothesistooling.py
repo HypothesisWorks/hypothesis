@@ -100,10 +100,10 @@ def has_source_changes(version=None):
     # there rather than the diff to the other side.
     point_of_divergence = subprocess.check_output([
         'git', 'merge-base', 'HEAD', version
-    ])
+    ]).strip()
 
     return subprocess.call([
-        'git', 'diff', '--exit-code', point_of_divergence, SRC,
+        'git', 'diff', '--exit-code', point_of_divergence, "HEAD", "--", SRC,
     ]) != 0
 
 
