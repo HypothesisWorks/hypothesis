@@ -156,8 +156,8 @@ check-pytest28: $(TOX)
 check-quality: $(TOX)
 	$(TOX) -e quality
 
-check-ancient-pip: $(PY273)
-	scripts/check-ancient-pip.sh $(PY273)
+check-ancient-pip: $(PY273) $(VIRTUALENV_CMD)
+	scripts/check-ancient-pip.sh $(PY273) $(VIRTUALENV_CMD)
 
 
 check-pytest: check-pytest28 check-pytest30
