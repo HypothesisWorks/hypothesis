@@ -20,7 +20,7 @@ from __future__ import division, print_function, absolute_import
 import pytest
 
 from ophidian.finder import find_pythons
-from ophidian.ophidian import Ophidian
+from ophidian.core import Ophidian
 
 SYSTEM_PYTHONS = list(find_pythons())
 

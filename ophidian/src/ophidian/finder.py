@@ -57,11 +57,9 @@ EXTRA_PATHS = [os.path.expanduser('~/bin')]
 
 
 def default_paths():
-    paths = list(os.environ['PATH'].split(os.pathsep) + EXTRA_PATHS)
-
-    paths.extend(
-        glob.glob(os.path.expanduser('~/.pyenv/versions/*/bin'))
-    )
+    paths = glob.glob(os.path.expanduser("~/.pyenv/versions/*/bin"))
+    paths.extend(os.environ["PATH"].split(os.pathsep))
+    paths.extend(EXTRA_PATHS)
     return paths
 
 

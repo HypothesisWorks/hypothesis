@@ -1,0 +1,89 @@
+#!/usr/bin/env sh
+
+set -eu
+
+# This script involves just enough shell to bootstrap our way to a working
+# system where we don't have to write any more shell and everything can
+# be in Python. Its responsibilities are getting us a working version of
+# pyenv, getting us a working version of Python, and then getting out of
+# the way and running Python.
+
+# Write stdout to stderr, preserving the original stdout in fd 3
+exec 3<&1 1>&2
+
+ROOT="$(dirname $0)"
+REAL_MAIN="$ROOT/src/ophidian/__main__.py"
+
+
+if [ ! -e $REAL_MAIN ] ; then
+    echo "ophidian script is in the wrong directory (expected $REAL_MAIN to exist)" >&2
+    exit 1
+fi
+
+export OPHIDIAN_HOME="${OPHIDIAN_HOME:-"$HOME/.cache/ophidian-storage"}"
+
+localtmp () {
+  # Hack to get mktemp working on Darwin properly.
+  mkdir -p $1
+  OUR_TMP_DIR=$(TMPDIR=$1 mktemp -d 2>/dev/null || TMPDIR=$1 mktemp -d -t 'clonedir')
+}
+
+# First look for pyenv. If there's one installed on the system
+# we'll use that. Otherwise we'll clone our own.
+
+OPHIDIAN_PYENV="$HOME/.pyenv"
+if [ ! -e "$OPHIDIAN_PYENV" ] ; then
+  OPHIDIAN_PYENV="$OPHIDIAN_HOME/.pyenv"
+fi
+
+export OPHIDIAN_PYENV
+
+if [ ! -e "$OPHIDIAN_PYENV" ] ; then
+  localtmp "$OPHIDIAN_HOME/tmp"
+  git clone https://github.com/yyuu/pyenv.git $OUR_TMP_DIR/pyenv;
+  mv $OUR_TMP_DIR/pyenv $OPHIDIAN_PYENV || rm -rf $OUR_TMP_DIR/pyenv;
+fi
+
+# We now have a working copy of pyenv for sure. Let's try and
+# see about getting us a working version of Python.
+
+OPHIDIAN_PYTHON="$OPHIDIAN_HOME/ophidan-python"
+
+if ! $OPHIDIAN_PYTHON -c 'import ophidian' ; then
+  # Step 1: Find a version of Python that we can run on.
+  # We'll work on just about anything we can find.
+
+  BOOTSTRAP="$OPHIDIAN_HOME/bootstrap-python"
+
+  SYSTEM_PYTHON="$(which python || exit 0)";
+
+  if $SYSTEM_PYTHON $ROOT/src/ophidian/issuitablepython.py ; then
+    USE_SYSTEM_PYTHON="${USE_SYSTEM_PYTHON:-"true"}"
+  else
+    USE_SYSTEM_PYTHON="false"
+  fi
+
+  if [ "$USE_SYSTEM_PYTHON" = "false" ] ; then
+    if ! $BOOTSTRAP -c '' 2>/dev/null ; then
+      rm -f $BOOTSTRAP 
+      localtmp "$OPHIDIAN_HOME/builds"
+      $OPHIDIAN_PYENV/plugins/python-build/bin/python-build 3.6.1 "$OUR_TMP_DIR"
+      OPHIDIAN_HOME_PYTHON="$OUR_TMP_DIR/bin/python"
+      $OPHIDIAN_HOME_PYTHON "$ROOT/src/ophidian/createsym.py" $OPHIDIAN_HOME_PYTHON $BOOTSTRAP
+    fi
+  else
+    BOOTSTRAP="$SYSTEM_PYTHON"
+  fi
+
+  # We now have a bootstrap Python. Step 2 is to set things up so that
+  # we have a virtualenv that can run ophidian.
+
+  localtmp "$OPHIDIAN_HOME/builds"
+  $BOOTSTRAP "$ROOT/src/ophidian/definedvenv.py" "$ROOT/requirements/ophidian.txt" "$OUR_TMP_DIR"
+  BUILT_PYTHON="$OUR_TMP_DIR/*/bin/python" 
+  $BUILT_PYTHON -m pip install -e $ROOT
+  $BOOTSTRAP "$ROOT/src/ophidian/createsym.py" "$BUILT_PYTHON" "$OPHIDIAN_PYTHON"
+fi
+
+# Now exec the actual ophidian command, restoring its stdout to the original one.
+exec $OPHIDIAN_PYTHON "$ROOT/src/ophidian/__main__.py" $@ 1>&3
