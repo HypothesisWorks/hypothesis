@@ -24,6 +24,7 @@ BEST_PY3=$(PY36)
 
 TOOLS=$(BUILD_RUNTIMES)/tools
 
+VIRTUALENV_CMD=$(TOOLS)/virtualenv
 TOX=$(TOOLS)/tox
 SPHINX_BUILD=$(TOOLS)/sphinx-build
 ISORT=$(TOOLS)/isort
@@ -86,9 +87,9 @@ $(TOOL_VIRTUALENV): $(BEST_PY3)
 	$(BEST_PY3) -m virtualenv $(TOOL_VIRTUALENV)
 	$(TOOL_PIP) install -r requirements/tools.txt
 
-$(BENCHMARK_VIRTUALENV): $(BEST_PY3)
+$(BENCHMARK_VIRTUALENV): $(VIRTUALENV_CMD)
 	rm -rf $(BUILD_RUNTIMES)/virtualenvs/benchmark-*
-	$(BEST_PY3) -m virtualenv $(BENCHMARK_VIRTUALENV)
+	$(VIRTUALENV_CMD) $(BENCHMARK_VIRTUALENV)
 	$(BENCHMARK_PYTHON) -m pip install -r requirements/benchmark.txt
 
 $(TOOLS): $(TOOL_VIRTUALENV)
@@ -219,6 +220,9 @@ build-new-benchmark-data: $(BENCHMARK_VIRTUALENV)
 
 update-improved-benchmark-data: $(BENCHMARK_VIRTUALENV)
 	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --update=improved --nruns=1000
+
+$(VIRTUALENV_CMD): $(TOOLS)
+	ln -sf $(TOOL_VIRTUALENV)/bin/virtualenv $(VIRTUALENV_CMD)
 
 $(TOX): $(BEST_PY3) tox.ini $(TOOLS)
 	rm -f $(TOX)
