@@ -103,7 +103,7 @@ def has_source_changes(version=None):
     ]).strip()
 
     return subprocess.call([
-        'git', 'diff', '--exit-code', point_of_divergence, "HEAD", "--", SRC,
+        'git', 'diff', '--exit-code', point_of_divergence, 'HEAD', '--', SRC,
     ]) != 0
 
 
