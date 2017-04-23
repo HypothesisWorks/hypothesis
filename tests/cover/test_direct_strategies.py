@@ -280,3 +280,15 @@ def test_none_lists_respect_max_size(ls):
 )
 def test_none_lists_respect_max_and_min_size(ls):
     assert 1 <= len(ls) <= 5
+
+
+@given(ds.iterables(ds.integers(), max_size=5, min_size=1))
+def test_iterables_are_exhaustible(it):
+    for _ in it:
+        pass
+    with pytest.raises(StopIteration):
+        next(it)
+
+
+def test_minimal_iterable():
+    assert list(find(ds.iterables(ds.integers()), lambda x: True)) == []
