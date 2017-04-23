@@ -47,30 +47,37 @@ export LC_ALL=en_US.UTF-8
 
 $(PY27):
 	mkdir -p $(SNAKEPIT)
+	rm -f $(PY27)
 	ln -s $(shell ./ophidian/ophidian --implementation=cpython --major=2 --minor=7) $(PY27)
 
 $(PY273):
 	mkdir -p $(SNAKEPIT)
+	rm -f $(PY273)
 	ln -s $(shell ./ophidian/ophidian --implementation=cpython --major=2 --minor=7 --micro=3) $(PY273)
 
 $(PY33):
 	mkdir -p $(SNAKEPIT)
+	rm -f $(PY33)
 	ln -s $(shell ./ophidian/ophidian --implementation=cpython --major=3 --minor=3) $(PY33)
 
 $(PY34):
 	mkdir -p $(SNAKEPIT)
+	rm -f $(PY34)
 	ln -s $(shell ./ophidian/ophidian --implementation=cpython --major=3 --minor=4) $(PY34)
 
 $(PY35):
 	mkdir -p $(SNAKEPIT)
+	rm -f $(PY35)
 	ln -s $(shell ./ophidian/ophidian --implementation=cpython --major=3 --minor=5) $(PY35)
 
 $(PY36):
 	mkdir -p $(SNAKEPIT)
+	rm -f $(PY36)
 	ln -s $(shell ./ophidian/ophidian --implementation=cpython --major=3 --minor=6) $(PY36)
 
 $(PYPY):
 	mkdir -p $(SNAKEPIT)
+	rm -f $(PYPY)
 	ln -s $(shell ./ophidian/ophidian --implementation=pypy) $(PYPY)
 
 $(TOOL_VIRTUALENV): $(BEST_PY3)
