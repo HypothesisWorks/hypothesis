@@ -101,7 +101,7 @@ def has_source_changes(version):
 
     return subprocess.call([
         'git', 'diff', '--exit-code', point_of_divergence, SRC,
-    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) != 0
+    ]) != 0
 
 
 def git(*args):
