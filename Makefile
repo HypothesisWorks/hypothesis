@@ -10,13 +10,15 @@ export BUILD_RUNTIMES?=$(HOME)/.cache/hypothesis-build-runtimes
 export TOX_WORK_DIR=$(BUILD_RUNTIMES)/.tox
 export COVERAGE_FILE=$(BUILD_RUNTIMES)/.coverage
 
-PY27=$(BUILD_RUNTIMES)/snakepit/python2.7
-PY273=$(BUILD_RUNTIMES)/snakepit/python2.7.3
-PY33=$(BUILD_RUNTIMES)/snakepit/python3.3
-PY34=$(BUILD_RUNTIMES)/snakepit/python3.4
-PY35=$(BUILD_RUNTIMES)/snakepit/python3.5
-PY36=$(BUILD_RUNTIMES)/snakepit/python3.6
-PYPY=$(BUILD_RUNTIMES)/snakepit/pypy
+SNAKEPIT=$(BUILD_RUNTIMES)/snakepit
+
+PY27=$(SNAKEPIT)/python2.7
+PY273=$(SNAKEPIT)/python2.7.3
+PY33=$(SNAKEPIT)/python3.3
+PY34=$(SNAKEPIT)/python3.4
+PY35=$(SNAKEPIT)/python3.5
+PY36=$(SNAKEPIT)/python3.6
+PYPY=$(SNAKEPIT)/pypy
 
 BEST_PY3=$(PY36)
 
@@ -40,30 +42,36 @@ BENCHMARK_PYTHON=$(BENCHMARK_VIRTUALENV)/bin/python
 FILES_TO_FORMAT=$(BEST_PY3) scripts/files-to-format.py
 
 
-export PATH:=$(BUILD_RUNTIMES)/snakepit:$(TOOLS):$(PATH)
+export PATH:=$(SNAKEPIT):$(TOOLS):$(PATH)
 export LC_ALL=en_US.UTF-8
 
 $(PY27):
-	scripts/retry.sh scripts/install.sh 2.7
+	mkdir -p $(SNAKEPIT)
+	ln -s $(shell ./ophidian/ophidian --implementation=cpython --major=2 --minor=7) $(PY27)
 
 $(PY273):
-	scripts/retry.sh scripts/install.sh 2.7.3
+	mkdir -p $(SNAKEPIT)
+	ln -s $(shell ./ophidian/ophidian --implementation=cpython --major=2 --minor=7 --micro=3) $(PY273)
 
 $(PY33):
-	scripts/retry.sh scripts/install.sh 3.3
+	mkdir -p $(SNAKEPIT)
+	ln -s $(shell ./ophidian/ophidian --implementation=cpython --major=3 --minor=3) $(PY33)
 
 $(PY34):
-	scripts/retry.sh scripts/install.sh 3.4
+	mkdir -p $(SNAKEPIT)
+	ln -s $(shell ./ophidian/ophidian --implementation=cpython --major=3 --minor=4) $(PY34)
 
 $(PY35):
-	scripts/retry.sh scripts/install.sh 3.5
+	mkdir -p $(SNAKEPIT)
+	ln -s $(shell ./ophidian/ophidian --implementation=cpython --major=3 --minor=5) $(PY35)
 
 $(PY36):
-	scripts/retry.sh scripts/install.sh 3.6
-
+	mkdir -p $(SNAKEPIT)
+	ln -s $(shell ./ophidian/ophidian --implementation=cpython --major=3 --minor=6) $(PY36)
 
 $(PYPY):
-	scripts/retry.sh scripts/install.sh pypy
+	mkdir -p $(SNAKEPIT)
+	ln -s $(shell ./ophidian/ophidian --implementation=pypy) $(PYPY)
 
 $(TOOL_VIRTUALENV): $(BEST_PY3)
 	rm -rf $(BUILD_RUNTIMES)/virtualenvs/tools-*
@@ -230,7 +238,7 @@ clean:
 	rm -rf .hypothesis
 	rm -rf docs/_build
 	rm -rf $(TOOLS)
-	rm -rf $(BUILD_RUNTIMES)/snakepit
+	rm -rf $(SNAKEPIT)
 	rm -rf $(BUILD_RUNTIMES)/virtualenvs
 	find src tests -name "*.pyc" -delete
 	find src tests -name "__pycache__" -delete
