@@ -42,7 +42,7 @@ Available settings
 .. module:: hypothesis
 .. autoclass:: settings
     :members: max_examples, max_iterations, min_satisfying_examples,
-        max_shrinks, timeout, strict, database_file, stateful_step_count, 
+        max_shrinks, timeout, strict, database_file, stateful_step_count,
         database, perform_health_check, suppress_health_check, buffer_size
 
 .. _verbose-output:
@@ -241,4 +241,3 @@ by your conftest you can load one with the command line option ``--hypothesis-pr
 .. code:: bash
 
     $ py.test tests --hypothesis-profile <profile-name>
-
