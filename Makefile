@@ -185,6 +185,10 @@ check-fast: lint $(PYPY) $(PY36) $(TOX)
 check-rst: $(RSTLINT)
 	$(RSTLINT) *.rst
 
+check-ophidian: $(TOX)
+	cd ophidian &&  $(TOX) -e ophidian-py27
+	cd ophidian &&  $(TOX) -e ophidian-py36
+
 secret.tar.enc: deploy_key .pypirc
 	rm -f secrets.tar secrets.tar.enc
 	tar -cf secrets.tar deploy_key .pypirc
