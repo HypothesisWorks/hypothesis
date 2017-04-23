@@ -96,7 +96,7 @@ def has_source_changes(version):
     # in whether *we* introduced any source changes, so we check diff from
     # there rather than the diff to the other side.
     point_of_divergence = subprocess.check_output([
-        "git", "merge-base", "HEAD", version
+        'git', 'merge-base', 'HEAD', version
     ])
 
     return subprocess.call([
