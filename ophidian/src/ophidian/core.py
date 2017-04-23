@@ -24,6 +24,37 @@ import attr
 from ophidian.finder import Python, find_pythons, python_for_exe
 from ophidian.storage import DictStorage
 
+PYTHON_FIELDS = frozenset(t.name for t in attr.fields(Python))
+
+FORMAT_VERSION = 1
+
+FORMAT_FIELD = 'format-version'
+
+
+def blob_to_python(blob):
+    """Attempt to interpert blob as a valid Python object or return None
+    otherwise."""
+    try:
+        values = json.loads(blob)
+    except ValueError:
+        return None
+    version = values.pop(FORMAT_FIELD, None)
+    if version != FORMAT_VERSION:
+        return None
+    if frozenset(values) != PYTHON_FIELDS:
+        return None
+    return Python(**values)
+
+
+def python_to_blob(python):
+    values = attr.asdict(python)
+    values[FORMAT_FIELD] = FORMAT_VERSION
+    return json.dumps(values).encode('utf-8')
+
+
+class NoSuchPython(Exception):
+    pass
+
 
 @attr.s
 class Ophidian(object):
@@ -45,7 +76,9 @@ class Ophidian(object):
 
         if not self.__added_cache:
             for blob in self.cache.values():
-                p = Python(**json.loads(blob))
+                p = blob_to_python(blob)
+                if p is None:
+                    continue
                 if p.stale:
                     if os.path.exists(p.path):
                         p = python_for_exe(p.path)
@@ -58,7 +91,7 @@ class Ophidian(object):
         def note(p):
             self.__found_pythons.append(p)
             self.__seen_paths.add(p.path)
-            self.cache.put(p.path, json.dumps(attr.asdict(p)))
+            self.cache.put(p.path, python_to_blob(p))
             return p
 
         for p in self.__found_pythons:
@@ -73,9 +106,8 @@ class Ophidian(object):
                 del kwargs[k]
         key = ','.join('%s-%r' % t for t in sorted(kwargs.items()))
         try:
-            value = json.loads(self.cache.get(key))
-            result = Python(**value)
-            if not result.stale:
+            result = blob_to_python(self.cache.get(key))
+            if result is not None and not result.stale:
                 return result
         except KeyError:
             pass
@@ -90,8 +122,12 @@ class Ophidian(object):
                 )
             result = self.find_python(predicate)
         if result is None:
-            raise ValueError('No such Python')
-        self.cache.put(key, json.dumps(attr.asdict(result)))
+            if self.installer is not None:
+                result = python_for_exe(self.installer.install(**kwargs))
+                self.cache.put(result.path, python_to_blob(result))
+            else:
+                raise NoSuchPython('No such Python')
+        self.cache.put(key, python_to_blob(result))
         return result
 
     def find_python(self, predicate):

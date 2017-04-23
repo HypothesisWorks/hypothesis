@@ -19,19 +19,10 @@ from __future__ import division, print_function, absolute_import
 
 import os
 import hashlib
-import binascii
 
 import six
 
-
-def randhex(n):
-    assert n % 2 == 0
-    data = os.urandom(n // 2)
-    result = binascii.hexlify(data)
-    assert len(result) == n
-    if isinstance(result, six.binary_type):
-        result = result.decode('ascii')
-    return result
+from ophidian.utils import randhex
 
 
 class Storage(object):

@@ -41,6 +41,14 @@ checks = {
     'wordsize': calc_max_size(),
 }
 
+try:
+    pypy = sys.pypy_version_info
+except AttributeError:
+    assert checks['implementation'] == 'cpython'
+    checks['identifier'] = 'cpython-%d.%d.%d' % tuple(checks['version']),
+else:
+    checks['identifier'] = 'pypy-%d.%d.%d' % pypy[:3]
+
 
 if sys.version_info[0] == 2:
     checks['wide'] = sys.maxunicode == 1114111

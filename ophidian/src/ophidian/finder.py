@@ -47,6 +47,7 @@ class Python(object):
     wide = attr.ib()
     wordsize = attr.ib()
     mtime = attr.ib()
+    identifier = attr.ib()
 
     @property
     def major(self):

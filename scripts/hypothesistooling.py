@@ -83,7 +83,12 @@ def hash_for_name(name):
 
 
 def on_master():
-    return hash_for_name('HEAD') == hash_for_name('origin/master')
+    head = hash_for_name('HEAD')
+    master = hash_for_name('origin/master')
+    if head != master:
+        print('Current head:', head)
+        print('Current master:', master)
+    return head == master
 
 
 def changelog():
