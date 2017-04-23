@@ -156,3 +156,24 @@ def build_jobs():
         status = m['state']
         jobs.setdefault(status, []).append(name)
     return jobs
+
+
+def modified_files():
+    files = set()
+    for command in [
+        ['git', 'diff', '--name-only', '--diff-filter=d',
+            latest_version(), 'HEAD'],
+        ['git', 'diff', '--name-only']
+    ]:
+        diff_output = subprocess.check_output(command).decode('ascii')
+        for l in diff_output.split('\n'):
+            filepath = l.strip()
+            if filepath:
+                assert os.path.exists(filepath)
+                files.add(filepath)
+    return files
+
+
+def all_files():
+    return subprocess.check_output(['git', 'ls-files']).decode(
+        'ascii').split('\n')

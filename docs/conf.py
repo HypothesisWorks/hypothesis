@@ -3,7 +3,7 @@
 # This file is part of Hypothesis, which may be found at
 # https://github.com/HypothesisWorks/hypothesis-python
 #
-# Most of this work is copyright (C) 2013-2016 David R. MacIver
+# Most of this work is copyright (C) 2013-2017 David R. MacIver
 # (david@drmaciver.com), but it contains contributions by others. See
 # CONTRIBUTING.rst for a full list of people who may hold copyright, and
 # consult the git log if you need to determine who owns an individual
@@ -17,16 +17,19 @@
 
 # -*- coding: utf-8 -*-
 
+from __future__ import division, print_function, absolute_import
+
 # on_rtd is whether we are on readthedocs.org
 import os
 import sys
+
+from hypothesis import __version__
+
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
 sys.path.append(
-    os.path.join(os.path.dirname(__file__), "..", "src")
+    os.path.join(os.path.dirname(__file__), '..', 'src')
 )
-
-from hypothesis import __version__
 
 
 autodoc_member_order = 'bysource'
