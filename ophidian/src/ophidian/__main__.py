@@ -76,7 +76,8 @@ def main(major, minor, micro, install, implementation, identifier):
 
     try:
         found = ophidian.get_python(
-            major=major, minor=minor, implementation=implementation,
+            major=major, minor=minor, micro=micro,
+            implementation=implementation,
             identifier=identifier,
         )
         click.echo(found.path)

@@ -18,6 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 import os
+import re
 import sys
 import subprocess
 
@@ -25,6 +26,7 @@ import attr
 from ophidian.utils import randhex
 
 # Courtesy of mattip grepping the pypy release notes.
+# TODO: Use this to support micro restrictions on pypy
 PYPY_LANGUAGE_MAPPINGS = [
     ('1.5', '2.7.1'),
     ('1.8', '2.7.2'),
@@ -52,10 +54,29 @@ class Installer(object):
 
 
 CPYTHON_PREFIX = 'cpython-'
+PYPY_PREFIX = 'pypy-'
 
 
 class BadInstallSpec(Exception):
     pass
+
+
+def version_regex(major, minor, micro):
+    parts = ['^']
+
+    if major is None:
+        major = r"\d"
+    if minor is None:
+        minor = r"\d"
+    parts.append('%s.%s' % (major, minor))
+    if micro is None:
+        parts.append(r"(\.\d+)?")
+    elif micro is 0:
+        parts.append(r"(\.0)?")
+    else:
+        parts.append(r"\.%d" % (micro,))
+    parts.append('$')
+    return re.compile(''.join(parts))
 
 
 class PyenvInstaller(Installer):
@@ -64,18 +85,41 @@ class PyenvInstaller(Installer):
         self.__installation_directory = installation_directory
         self.__cached_definitions = None
 
-    def install(self, **kwargs):
+    def install(
+        self, major=None, minor=None, micro=None, implementation=None,
+        identifier=None
+    ):
         target = os.path.join(self.__installation_directory, randhex(16))
 
-        identifier = kwargs['identifier']
-
-        if identifier.startswith(CPYTHON_PREFIX):
-            self.__install(identifier[len(CPYTHON_PREFIX):], target)
-            return os.path.join(target, 'bin', 'python')
+        if identifier is not None:
+            if identifier.startswith(CPYTHON_PREFIX):
+                self.__install(identifier[len(CPYTHON_PREFIX):], target)
+            elif identifier.startswith(PYPY_PREFIX):
+                self.__install(
+                    'pypy-portable-' + identifier[len(PYPY_PREFIX):],
+                    target
+                )
+            else:
+                raise BadInstallSpec(
+                    "I don't know how to install identifier %s" % (
+                        identifier,))
+        elif implementation == 'pypy':
+            self.__install(
+                max(
+                    d for d in self.__definitions
+                    if d.startswith('pypy-portable')), target,
+            )
         else:
-            raise BadInstallSpec(
-                "I don't know how to satisfy %s" % (
-                    ', '.join('%s=%r' % t for t in kwargs.items())))
+            definitions = self.__definitions
+            regex = version_regex(
+                major=major, minor=minor, micro=micro
+            )
+            matching_definitions = [d for d in definitions if regex.match(d)]
+            if not matching_definitions:
+                raise BadInstallSpec(
+                    'No definitions matching %r' % (regex.pattern,))
+            self.__install(max(matching_definitions), target)
+        return os.path.join(target, 'bin', 'python')
 
     @property
     def __definitions(self):
@@ -94,7 +138,7 @@ class PyenvInstaller(Installer):
 
         subprocess.check_call([
             self.__binary, identifier, path
-        ], stderr=sys.stderr)
+        ], stdout=sys.stderr)
 
     @property
     def __binary(self):
