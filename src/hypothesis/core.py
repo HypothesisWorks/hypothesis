@@ -436,6 +436,39 @@ def process_arguments_to_given(
     return arguments, kwargs, test_runner, search_strategy
 
 
+def skip_exceptions_to_reraise():
+    """
+    Returns a tuple of exceptions that Hypothesis should re-raise by default.
+    These is the exceptions which mean "skip this test" in our supported
+    Python test runners.
+    """
+    import unittest
+    exceptions = [unittest.SkipTest]
+
+    try:
+        from unittest2 import SkipTest
+        exceptions.append(SkipTest)
+    except ImportError:
+        pass
+
+    try:
+        from pytest.runner import Skipped
+        exceptions.append(Skipped)
+    except ImportError:
+        pass
+
+    try:
+        from nose import SkipTest as NoseSkipTest
+        exceptions.append(NoseSkipTest)
+    except ImportError:
+        pass
+
+    return tuple(exceptions)
+
+
+exceptions_to_reraise = skip_exceptions_to_reraise()
+
+
 class StateForActualGivenExecution(object):
 
     def __init__(self, test_runner, search_strategy, test, settings, random):
@@ -466,7 +499,7 @@ class StateForActualGivenExecution(object):
         except (
             HypothesisDeprecationWarning, FailedHealthCheck,
             StopTest,
-        ):
+        ) + exceptions_to_reraise:
             raise
         except Exception:
             escalate_hypothesis_internal_error()
