@@ -28,7 +28,7 @@ sys.path.append(os.path.dirname(__file__))  # noqa
 def should_format_file(path):
     if os.path.basename(path) in ('header.py', 'test_lambda_formatting.py'):
         return False
-    if '/vendor/' in path:
+    if 'vendor' in path.split(os.pathsep):
         return False
     return path.endswith('.py')
 
