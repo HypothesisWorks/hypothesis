@@ -88,7 +88,7 @@ which describe some aspect of the data generation:
   @given(st.integers().filter(lambda x: x % 2 == 0))
   def test_even_integers(i):
       pass
-    
+
 You would see something like:
 
 .. code-block:: none
@@ -571,4 +571,3 @@ It is *not* permitted for a single example to be a mix of positional and
 keyword arguments. Either are fine, and you can use one in one example and the
 other in another example if for some reason you really want to, but a single
 example must be consistent.
-

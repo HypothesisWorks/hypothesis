@@ -195,4 +195,3 @@ hypothesis.extra.numpy adds support for testing your Numpy code with Hypothesis.
 This includes generating arrays, array shapes, and both scalar or compound dtypes.
 
 Like the Django extra, :doc:`Numpy has it's own page <numpy>`.
-

@@ -59,7 +59,7 @@ You define a rule based state machine as follows:
 
   import unittest
   from collections import namedtuple
-  
+
   from hypothesis import strategies as st
   from hypothesis.stateful import RuleBasedStateMachine, Bundle, rule
 
@@ -139,7 +139,7 @@ So lets balance some trees.
 .. code:: python
 
     from collections import namedtuple
-    
+
     from hypothesis import strategies as st
     from hypothesis.stateful import RuleBasedStateMachine, Bundle, rule
 
