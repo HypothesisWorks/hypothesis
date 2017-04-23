@@ -38,6 +38,11 @@ if __name__ == '__main__':
 
     format_all = os.environ.get('FORMAT_ALL', '').lower() == 'true'
     if 'scripts/header.py' in changed:
+        # We've changed the header, so everything needs its header updated.
+        format_all = True
+    if 'requirements/tools.txt' in changed:
+        # We've changed the tools, which includes a lot of our formatting
+        # logic, so we need to rerun formatters.
         format_all = True
 
     files = tools.all_files() if format_all else changed
