@@ -20,6 +20,7 @@ from __future__ import division, print_function, absolute_import
 import pytest
 
 import hypothesis.strategies as st
+from hypothesis import given
 
 
 def test_includes_non_default_args_in_repr():
@@ -57,3 +58,9 @@ def test_errors_are_deferred_until_repr_is_calculated():
 
     with pytest.raises(ValueError):
         repr(s)
+
+
+@given(st.iterables(st.integers()))
+def test_iterables_repr_is_useful(it):
+    # fairly hard-coded but useful; also ensures _values are inexhaustible
+    assert repr(it) == 'iter({!r})'.format(it._values)

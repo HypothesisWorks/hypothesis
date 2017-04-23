@@ -474,6 +474,13 @@ def get_stream_enc(stream, default=None):
     return getattr(stream, 'encoding', None) or default
 
 
+def implements_iterator(it):
+    """Turn things with a __next__ attribute into iterators on Python 2."""
+    if PY2 and not hasattr(it, 'next') and hasattr(it, '__next__'):
+        it.next = it.__next__
+    return it
+
+
 if PY3:
     FileNotFoundError = FileNotFoundError
 else:

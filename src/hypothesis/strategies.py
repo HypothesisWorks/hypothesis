@@ -26,7 +26,7 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.control import assume
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import ArgSpec, hrange, text_type, \
-    getargspec, integer_types, float_to_decimal
+    getargspec, integer_types, float_to_decimal, implements_iterator
 from hypothesis.internal.floats import is_negative, float_to_int, \
     int_to_float, count_between_floats
 from hypothesis.utils.conventions import not_set
@@ -41,7 +41,7 @@ __all__ = [
     'booleans', 'integers', 'floats', 'complex_numbers', 'fractions',
     'decimals',
     'characters', 'text', 'binary', 'uuids',
-    'tuples', 'lists', 'sets', 'frozensets',
+    'tuples', 'lists', 'sets', 'frozensets', 'iterables',
     'dictionaries', 'fixed_dictionaries',
     'sampled_from', 'permutations',
     'builds',
@@ -539,6 +539,38 @@ def frozensets(elements=None, min_size=None, average_size=None, max_size=None):
         elements=elements, min_size=min_size, average_size=average_size,
         max_size=max_size, unique=True
     ).map(frozenset)
+
+
+@defines_strategy
+def iterables(elements=None, min_size=None, average_size=None, max_size=None,
+              unique_by=None, unique=False):
+    """This has the same behaviour as lists, but returns iterables instead.
+
+    Some iterables cannot be indexed (e.g. sets) and some do not have a
+    fixed length (e.g. generators). This strategy produces iterators,
+    which cannot be indexed and do not have a fixed length. This ensures
+    that you do not accidentally depend on sequence behaviour.
+
+    """
+    @implements_iterator
+    class PrettyIter(object):
+        def __init__(self, values):
+            self._values = values
+            self._iter = iter(self._values)
+
+        def __iter__(self):
+            return self._iter
+
+        def __next__(self):
+            return next(self._iter)
+
+        def __repr__(self):
+            return 'iter({!r})'.format(self._values)
+
+    return lists(
+        elements=elements, min_size=min_size, average_size=average_size,
+        max_size=max_size, unique_by=unique_by, unique=unique
+    ).map(PrettyIter)
 
 
 @defines_strategy

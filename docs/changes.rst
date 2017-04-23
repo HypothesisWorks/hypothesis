@@ -22,6 +22,15 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 ------------------
+3.8.0 - 2017-04-23
+------------------
+
+This is a feature release, adding the ``iterables`` strategy, equivalent
+to ``lists(...).map(iter)`` but with a much more useful repr.  You can use
+this strategy to check that code doesn't accidentally depend on sequence
+properties such as indexing support or repeated iteration.
+
+------------------
 3.7.4 - 2017-04-22
 ------------------
 
