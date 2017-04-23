@@ -19,6 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import os
 import re
+import sys
 import glob
 import json
 import subprocess
@@ -71,6 +72,7 @@ EXTRA_PATHS = [os.path.expanduser('~/bin')]
 
 def default_paths():
     paths = glob.glob(os.path.expanduser('~/.pyenv/versions/*/bin'))
+    paths.append(os.path.dirname(sys.executable))
     paths.extend(os.environ['PATH'].split(os.pathsep))
     paths.extend(EXTRA_PATHS)
     return paths
