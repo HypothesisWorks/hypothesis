@@ -138,6 +138,18 @@ This is a documentation release.  Almost all code examples are now doctests
 checked in CI, eliminating stale examples.
 
 ------------------
+3.8.1 - 2017-04-24
+------------------
+
+This is a bug fix release for a single bug:
+
+* If a test raised a "skip test" exception, Hypothesis would ignore the
+  exception and continue to run the test.  This could cause a skipped test to
+  include a falsifying example in the output.  Hypothesis will now respect
+  skip test exceptions and not print anything to stdout.
+  (`#514 <https://github.com/HypothesisWorks/hypothesis-python/issues/514>`_)
+
+------------------
 3.8.0 - 2017-04-23
 ------------------
 
