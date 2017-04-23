@@ -18,9 +18,10 @@
 from __future__ import division, print_function, absolute_import
 
 import os
+import json
 
 import attr
-from ophidian.finder import find_pythons, python_for_exe
+from ophidian.finder import Python, find_pythons, python_for_exe
 from ophidian.storage import DictStorage
 
 
@@ -33,6 +34,7 @@ class Ophidian(object):
     __python_iterator = None
     __found_pythons = None
     __seen_paths = set()
+    __added_cache = False
 
     def pythons(self):
         if self.__found_pythons is None:
@@ -41,24 +43,54 @@ class Ophidian(object):
             self.__python_iterator = find_pythons(
                 skip_path=lambda p: p in self.__seen_paths)
 
-        for p in self.__found_pythons:
-            yield p
+        if not self.__added_cache:
+            for blob in self.cache.values():
+                p = Python(**json.loads(blob))
+                if p.stale:
+                    if os.path.exists(p.path):
+                        p = python_for_exe(p.path)
+                    else:
+                        continue
+                self.__found_pythons.append(p)
+                self.__seen_paths.add(p.path)
+            self.__added_cache = True
 
         def note(p):
             self.__found_pythons.append(p)
             self.__seen_paths.add(p.path)
+            self.cache.put(p.path, json.dumps(attr.asdict(p)))
             return p
 
-        for p in self.cache.values():
-            if p.stale:
-                if os.path.exists(p.path):
-                    p = python_for_exe(p.path)
-                else:
-                    continue
-            yield note(p)
+        for p in self.__found_pythons:
+            yield p
 
         for p in self.__python_iterator:
             yield note(p)
+
+    def get_python(self, **kwargs):
+        for k, v in list(kwargs.items()):
+            if v is None:
+                del kwargs[k]
+        key = ','.join('%s-%r' % t for t in sorted(kwargs.items()))
+        try:
+            value = json.loads(self.cache.get(key))
+            return Python(**value)
+        except KeyError:
+            pass
+
+        if not kwargs:
+            result = next(self.pythons())
+        else:
+            def predicate(p):
+                return all(
+                    getattr(p, k) == v
+                    for k, v in kwargs()
+                )
+            result = self.find_python(predicate)
+        if result is None:
+            raise ValueError('No such Python')
+        self.cache.put(key, json.dumps(attr.asdict(result)))
+        return result
 
     def find_python(self, predicate):
         for p in self.pythons():

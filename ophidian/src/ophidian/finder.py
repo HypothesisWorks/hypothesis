@@ -57,8 +57,8 @@ EXTRA_PATHS = [os.path.expanduser('~/bin')]
 
 
 def default_paths():
-    paths = glob.glob(os.path.expanduser("~/.pyenv/versions/*/bin"))
-    paths.extend(os.environ["PATH"].split(os.pathsep))
+    paths = glob.glob(os.path.expanduser('~/.pyenv/versions/*/bin'))
+    paths.extend(os.environ['PATH'].split(os.pathsep))
     paths.extend(EXTRA_PATHS)
     return paths
 
@@ -103,7 +103,7 @@ def find_pythons(paths=None, skip_path=None):
     for location in paths:
         if not os.path.isdir(location):
             continue
-        for child in os.listdir(location):
+        for child in sorted(os.listdir(location), key=lambda s: (len(s), s)):
             if not is_valid_python_name(child):
                 continue
             path = os.path.realpath(os.path.join(location, child))

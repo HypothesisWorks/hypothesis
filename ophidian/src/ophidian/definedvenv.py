@@ -19,12 +19,12 @@
 
 from __future__ import division, print_function, absolute_import
 
-import sys
 import os
+import sys
+import shutil
 import hashlib
 import binascii
 import subprocess
-import shutil
 
 
 def fail(*args):
@@ -58,19 +58,19 @@ def randhex():
 if __name__ == '__main__':
 
     if len(sys.argv) != 3:
-        fail("Usage: defined-env.py requirements target-dir")
+        fail('Usage: defined-env.py requirements target-dir')
 
     _, requirements, target = sys.argv
 
     if not os.path.exists(requirements):
-        fail("No such file", requirements)
+        fail('No such file', requirements)
 
     try:
         import virtualenv  # noqas
     except ImportError as e:
         if 'virtualenv' not in e.args[0]:
             raise
-        fail("virtualenv is not installed")
+        fail('virtualenv is not installed')
 
     with open(requirements) as i:
         requirements_data = i.read()
@@ -85,7 +85,7 @@ if __name__ == '__main__':
     name = os.path.basename(requirements).split(os.path.extsep)[0]
 
     virtualenv_name = (
-        "%(implementation)s%(major)d.%(minor)d.%(micro)d-%(name)s-%(hash)s"
+        '%(implementation)s%(major)d.%(minor)d.%(micro)d-%(name)s-%(hash)s'
     ) % {
         'implementation': sys.implementation.name,
         'major': sys.version_info[0],
@@ -96,22 +96,22 @@ if __name__ == '__main__':
     }
 
     target_venv = os.path.join(target, virtualenv_name)
-    target_python = os.path.join(target_venv, "bin", "python")
+    target_python = os.path.join(target_venv, 'bin', 'python')
 
     def build_virtualenv():
         assert not os.path.exists(target_venv)
         try:
             call_or_die([
-                sys.executable, "-m", "virtualenv", target_venv
+                sys.executable, '-m', 'virtualenv', target_venv
             ])
 
             call_or_die([
-                target_python, "-m", "pip", "install", "--upgrade",
-                "pip", "setuptools", "wheel",
+                target_python, '-m', 'pip', 'install', '--upgrade',
+                'pip', 'setuptools', 'wheel',
             ])
             call_or_die([
-                target_python, "-m", "pip", "install",
-                "-r", requirements
+                target_python, '-m', 'pip', 'install',
+                '-r', requirements
             ])
         except BaseException:
             if os.path.exists(target_venv):
@@ -133,8 +133,8 @@ if __name__ == '__main__':
     initially_missing = missing_requirements()
     if initially_missing:
         print(
-            "Reinstalling due to missing requirement%s: %s" % (
-                "s" if len(missing_requirements) > 1 else "",
+            'Reinstalling due to missing requirement%s: %s' % (
+                's' if len(missing_requirements) > 1 else '',
                 ', '.join(sorted(missing_requirements)),
             ), file=sys.stderr
         )
@@ -144,7 +144,7 @@ if __name__ == '__main__':
         if still_missing:
             fail((
                 "Something is going wrong: After reinstallation we're still "
-                "missing %s") % (
+                'missing %s') % (
                     ', '.join(sorted(still_missing),)))
 
     print(target_venv)

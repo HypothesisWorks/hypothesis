@@ -19,8 +19,8 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
-from ophidian.finder import find_pythons
 from ophidian.core import Ophidian
+from ophidian.finder import find_pythons
 
 SYSTEM_PYTHONS = list(find_pythons())
 

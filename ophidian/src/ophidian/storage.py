@@ -17,6 +17,22 @@
 
 from __future__ import division, print_function, absolute_import
 
+import os
+import hashlib
+import binascii
+
+import six
+
+
+def randhex(n):
+    assert n % 2 == 0
+    data = os.urandom(n // 2)
+    result = binascii.hexlify(data)
+    assert len(result) == n
+    if isinstance(result, six.binary_type):
+        result = result.decode('ascii')
+    return result
+
 
 class Storage(object):
     pass
@@ -32,5 +48,72 @@ class DictStorage(Storage):
     def get(self, key):
         return self.__data[key]
 
+    def delete(self, key):
+        try:
+            del self.__data[key]
+        except KeyError:
+            pass
+
     def values(self):
         return self.__data.values()
+
+
+def convert_to_binary(s):
+    assert isinstance(s, (six.text_type, six.binary_type))
+    if isinstance(s, six.text_type):
+        s = s.encode('utf-8')
+    return s
+
+
+class DirStorage(Storage):
+    def __init__(self, path):
+        self.__path = path
+
+    def put(self, key, value):
+        # FIXME: This is not atomic on Windows and needs more careful handling.
+        # Fortunately, ophidian isn't supporting Windows for its first pass
+        # anyway!
+        keyfile = self.__keyfile(key)
+        try:
+            os.unlink(keyfile)
+        except OSError:
+            pass
+        value = convert_to_binary(value)
+        tmpfile = self.__tmpfile()
+        with open(tmpfile, 'wb') as o:
+            o.write(value)
+        try:
+            os.rename(tmpfile, keyfile)
+        except FileExistsError:
+            os.unlink(tmpfile)
+
+    def get(self, key):
+        try:
+            with open(self.__keyfile(key), 'rb') as i:
+                return i.read()
+        except IOError:
+            raise KeyError(key)
+
+    def delete(self, key):
+        try:
+            os.unlink(self.__keyfile(key))
+        except OSError:
+            pass
+
+    def values(self):
+        for c in os.listdir(self.__path):
+            if not c.startswith('tmp-'):
+                with open(os.path.join(self.__path, c), 'rb') as i:
+                    result = i.read()
+                yield result
+
+    def __keyfile(self, key):
+        return os.path.join(
+            self.__path,
+            hashlib.sha256(convert_to_binary(key)).hexdigest(),
+        )
+
+    def __tmpfile(self):
+        return os.path.join(
+            self.__path, 'tmp-%s' % (randhex(16),)
+        )

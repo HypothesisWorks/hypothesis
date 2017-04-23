@@ -49,7 +49,7 @@ fi
 
 OPHIDIAN_PYTHON="$OPHIDIAN_HOME/ophidan-python"
 
-if ! $OPHIDIAN_PYTHON -c 'import ophidian' ; then
+if ! $OPHIDIAN_PYTHON -c 'import ophidian' 2>/dev/null ; then
   # Step 1: Find a version of Python that we can run on.
   # We'll work on just about anything we can find.
 
