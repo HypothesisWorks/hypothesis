@@ -182,8 +182,9 @@ check-fast: lint $(PYPY) $(PY36) $(TOX)
 	$(TOX) -e pypy-brief
 	$(TOX) -e py36-prettyquick
 
-check-rst: $(RSTLINT)
+check-rst: $(RSTLINT) $(FLAKE8)
 	$(RSTLINT) *.rst
+	$(FLAKE8) --select=W191,W291,W292,W293,W391 *.rst docs/*.rst
 
 secret.tar.enc: deploy_key .pypirc
 	rm -f secrets.tar secrets.tar.enc
@@ -195,7 +196,7 @@ check-benchmark: $(BENCHMARK_VIRTUALENV)
 	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --check --nruns=100
 
 build-new-benchmark-data: $(BENCHMARK_VIRTUALENV)
-	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --skip-existing --nruns=1000 
+	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --skip-existing --nruns=1000
 
 update-improved-benchmark-data: $(BENCHMARK_VIRTUALENV)
 	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --update=improved --nruns=1000
