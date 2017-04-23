@@ -161,20 +161,16 @@ def build_jobs():
 def modified_files():
     files = set()
     for command in [
-        ['git', 'diff', '--name-status', latest_version(), 'HEAD'],
-        ['git', 'diff', '--name-status']
+        ['git', 'diff', '--name-only', '--diff-filter=d',
+            latest_version(), 'HEAD'],
+        ['git', 'diff', '--name-only']
     ]:
         diff_output = subprocess.check_output(command).decode('ascii')
         for l in diff_output.split('\n'):
-            if l:
-                parts = l.split('\t')
-                status = parts[0]
-                file = parts[-1]
-                assert status in ('M', 'A', 'D'), status
-                if status == 'D':
-                    continue
-                assert os.path.exists(file)
-                files.add(file)
+            filepath = l.strip()
+            if filepath:
+                assert os.path.exists(filepath)
+                files.add(filepath)
     return files
 
 
