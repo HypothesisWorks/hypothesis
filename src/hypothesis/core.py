@@ -438,6 +438,41 @@ def process_arguments_to_given(
     return arguments, kwargs, test_runner, search_strategy
 
 
+def skip_exceptions_to_reraise():
+    """Return a tuple of exceptions meaning 'skip this test', to re-raise.
+
+    This is intended to cover most common test runners; if you would
+    like another to be added please open an issue or pull request.
+
+    """
+    import unittest
+    # This is a set because nose may simply re-export unittest.SkipTest
+    exceptions = set([unittest.SkipTest])
+
+    try:  # pragma: no cover
+        from unittest2 import SkipTest
+        exceptions.add(SkipTest)
+    except ImportError:
+        pass
+
+    try:  # pragma: no cover
+        from pytest.runner import Skipped
+        exceptions.add(Skipped)
+    except ImportError:
+        pass
+
+    try:  # pragma: no cover
+        from nose import SkipTest as NoseSkipTest
+        exceptions.add(NoseSkipTest)
+    except ImportError:
+        pass
+
+    return tuple(sorted(exceptions, key=str))
+
+
+exceptions_to_reraise = skip_exceptions_to_reraise()
+
+
 class StateForActualGivenExecution(object):
 
     def __init__(self, test_runner, search_strategy, test, settings, random):
@@ -468,7 +503,7 @@ class StateForActualGivenExecution(object):
         except (
             HypothesisDeprecationWarning, FailedHealthCheck,
             StopTest,
-        ):
+        ) + exceptions_to_reraise:
             raise
         except Exception:
             escalate_hypothesis_internal_error()
