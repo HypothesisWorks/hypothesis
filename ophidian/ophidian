@@ -49,6 +49,8 @@ fi
 
 OPHIDIAN_PYTHON="$OPHIDIAN_HOME/ophidan-python"
 
+SUITABLE="$ROOT/src/ophidian/issuitablepython.py"
+
 if ! $OPHIDIAN_PYTHON -c 'import ophidian' 2>/dev/null ; then
   # Step 1: Find a version of Python that we can run on.
   # We'll work on just about anything we can find.
@@ -57,19 +59,22 @@ if ! $OPHIDIAN_PYTHON -c 'import ophidian' 2>/dev/null ; then
 
   SYSTEM_PYTHON="$(which python || exit 0)";
 
-  if $SYSTEM_PYTHON $ROOT/src/ophidian/issuitablepython.py ; then
+  if $SYSTEM_PYTHON "$SUITABLE" > /dev/null ; then
     USE_SYSTEM_PYTHON="${USE_SYSTEM_PYTHON:-"true"}"
   else
     USE_SYSTEM_PYTHON="false"
   fi
 
   if [ "$USE_SYSTEM_PYTHON" = "false" ] ; then
-    if ! $BOOTSTRAP -c '' 2>/dev/null ; then
+    if ! $BOOTSTRAP $SUITABLE 2>/dev/null ; then
       rm -f $BOOTSTRAP 
       localtmp "$OPHIDIAN_HOME/builds"
       $OPHIDIAN_PYENV/plugins/python-build/bin/python-build 3.6.1 "$OUR_TMP_DIR"
       OPHIDIAN_HOME_PYTHON="$OUR_TMP_DIR/bin/python"
       $OPHIDIAN_HOME_PYTHON "$ROOT/src/ophidian/createsym.py" $OPHIDIAN_HOME_PYTHON $BOOTSTRAP
+
+      # If we're installing this ourselves we can guarantee we have an up to date virtualenv
+      $BOOTSTRAP -m pip install --upgrade pip wheel setuptools virtualenv
     fi
   else
     BOOTSTRAP="$SYSTEM_PYTHON"
