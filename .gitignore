@@ -16,3 +16,6 @@ _build
 deploy_key
 .pypirc
 secrets.tar
+dist
+virtualenvs
+v

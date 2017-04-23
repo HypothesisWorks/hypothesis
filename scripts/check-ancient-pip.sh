@@ -4,6 +4,7 @@ set -e
 set -x
 
 PYTHON=$1
+VIRTUALENV_CMD=$2
 
 BROKEN_VIRTUALENV=$($PYTHON -c'import tempfile; print(tempfile.mkdtemp())')
 
@@ -14,7 +15,7 @@ rm -rf tmp-dist-dir
 $PYTHON setup.py sdist --dist-dir=tmp-dist-dir
 
 $PYTHON -m pip install virtualenv
-$PYTHON -m virtualenv $BROKEN_VIRTUALENV
+$VIRTUALENV_CMD --python=$PYTHON $BROKEN_VIRTUALENV
 $BROKEN_VIRTUALENV/bin/pip install -rrequirements/test.txt
 
 # These are versions from debian stable as of 2017-04-21
