@@ -4,7 +4,7 @@ set -e
 set -x
 
 PYTHON=$1
-$VIRTUALENV_CMD=$2
+VIRTUALENV_CMD=$2
 
 BROKEN_VIRTUALENV=$($PYTHON -c'import tempfile; print(tempfile.mkdtemp())')
 
