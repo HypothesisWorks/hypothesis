@@ -51,7 +51,7 @@ setup(
     author_email='david@drmaciver.com',
     packages=find_packages(SOURCE),
     package_dir={'': SOURCE},
-    url='https://github.com/DRMacIver/ophidian',
+    url='https://github.com/HypothesisWorks/hypothesis',
     zip_safe=False,
     install_requires=install_requires,
     classifiers=[
