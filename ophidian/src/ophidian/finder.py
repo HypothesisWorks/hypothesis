@@ -49,6 +49,18 @@ class Python(object):
     mtime = attr.ib()
 
     @property
+    def major(self):
+        return self.version[0]
+
+    @property
+    def minor(self):
+        return self.version[1]
+
+    @property
+    def micro(self):
+        return self.version[2]
+
+    @property
     def stale(self):
         return os.stat(self.path).st_mtime != self.mtime
 

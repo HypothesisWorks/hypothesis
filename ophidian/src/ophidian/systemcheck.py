@@ -37,7 +37,7 @@ def calc_max_size():
 
 checks = {
     'version': list(sys.version_info[:3]),
-    'implementation': implementation,
+    'implementation': implementation.lower(),
     'wordsize': calc_max_size(),
 }
 

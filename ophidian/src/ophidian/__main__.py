@@ -28,9 +28,17 @@ from ophidian.storage import DirStorage
 @click.option('--major', type=int, default=None)
 @click.option('--minor', type=int, default=None)
 @click.option('--micro', type=int, default=None)
+@click.option('--implementation', type=str, default=None)
 @click.option('--install/--no-install', default=True)
-def main(major, minor, micro, install):
+def main(major, minor, micro, install, implementation):
     homedir = os.environ['OPHIDIAN_HOME']
+
+    if implementation is not None:
+        implementation = implementation.lower()
+
+    if implementation not in [None, 'cpython', 'pypy']:
+        raise click.UsageError(
+            'Unsuported implementation %r' % (implementation,))
 
     cache = os.path.join(homedir, 'cache')
     try:
@@ -39,16 +47,9 @@ def main(major, minor, micro, install):
         pass
 
     ophidian = Ophidian(cache=DirStorage(cache))
-
-    def predicate(python):
-        if major is not None and python.version[0] != major:
-            return False
-        if minor is not None and python.version[1] != minor:
-            return False
-        if micro is not None and python.version[2] != micro:
-            return False
-        return True
-    click.echo(ophidian.find_python(predicate).path)
+    click.echo(ophidian.get_python(
+        major=major, minor=minor, micro=micro, implementation=implementation,
+    ).path)
 
 
 if __name__ == '__main__':

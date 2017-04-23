@@ -74,7 +74,9 @@ class Ophidian(object):
         key = ','.join('%s-%r' % t for t in sorted(kwargs.items()))
         try:
             value = json.loads(self.cache.get(key))
-            return Python(**value)
+            result = Python(**value)
+            if not result.stale:
+                return result
         except KeyError:
             pass
 
@@ -84,7 +86,7 @@ class Ophidian(object):
             def predicate(p):
                 return all(
                     getattr(p, k) == v
-                    for k, v in kwargs()
+                    for k, v in kwargs.items()
                 )
             result = self.find_python(predicate)
         if result is None:
