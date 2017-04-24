@@ -118,7 +118,7 @@ $(GHC): $(STACK)
 	$(STACK) setup
 
 $(SHELLCHECK): $(GHC)
-	$(STACK) install shellcheck
+	$(STACK) install ShellCheck
 
 check-shellcheck: $(SHELLCHECK)
 	shellcheck scripts/*.sh
