@@ -437,9 +437,10 @@ def process_arguments_to_given(
 
 
 def skip_exceptions_to_reraise():
-    """
-    Returns a tuple of exceptions that Hypothesis should re-raise by default.
-    These is the exceptions which mean "skip this test" in our supported
+    """Returns a tuple of exceptions that Hypothesis should re-raise by
+    default.
+
+    These are the exceptions which mean "skip_exceptions_to_reraise test" in our supported
     Python test runners.
     """
     import unittest

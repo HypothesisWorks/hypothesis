@@ -37,9 +37,7 @@ def test_to_be_skipped(xs):
 def test_no_falsifying_example_if_pytest_skip(testdir):
     """If ``pytest.skip() is called during a test, Hypothesis should not
     continue running the test and shrink process, nor should it print
-    anything about falsifying examples.
-
-    """
+    anything about falsifying examples."""
     script = testdir.makepyfile(PYTEST_TESTSUITE)
     result = testdir.runpytest(script, '--verbose', '--strict', '-m',
                                'hypothesis')
