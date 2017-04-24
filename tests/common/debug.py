@@ -18,7 +18,13 @@
 from __future__ import division, print_function, absolute_import
 
 from hypothesis import settings as Settings
-from hypothesis.core import find
+from hypothesis import find
+
+TIME_INCREMENT = 0.01
+
+
+class Timeout(BaseException):
+    pass
 
 
 def minimal(
@@ -31,14 +37,22 @@ def minimal(
         max_iterations=100000,
         max_shrinks=5000,
         database=None,
-        timeout=timeout_after,
     )
 
-    condition = condition or (lambda x: True)
+    runtime = [0.0]
+
+    def wrapped_condition(x):
+        runtime[0] += TIME_INCREMENT
+        if runtime[0] >= timeout_after:
+            raise Timeout()
+
+        if condition is None:
+            return True
+        return condition(x)
 
     return find(
         definition,
-        condition,
+        wrapped_condition,
         settings=settings,
         random=random,
     )
