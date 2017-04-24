@@ -83,12 +83,18 @@ def hash_for_name(name):
 
 
 def on_master():
-    return hash_for_name('HEAD') == hash_for_name('origin/master')
+    return hash_for_name('HEAD') == merge_base('HEAD', 'origin/master')
 
 
 def changelog():
     with open(os.path.join(ROOT, 'docs', 'changes.rst')) as i:
         return i.read()
+
+
+def merge_base(a, b):
+    return subprocess.check_output([
+        'git', 'merge-base', a, b,
+    ]).strip()
 
 
 def has_source_changes(version=None):
@@ -98,9 +104,7 @@ def has_source_changes(version=None):
     # Check where we branched off from the version. We're only interested
     # in whether *we* introduced any source changes, so we check diff from
     # there rather than the diff to the other side.
-    point_of_divergence = subprocess.check_output([
-        'git', 'merge-base', 'HEAD', version
-    ]).strip()
+    point_of_divergence = merge_base('HEAD', version)
 
     return subprocess.call([
         'git', 'diff', '--exit-code', point_of_divergence, 'HEAD', '--', SRC,
