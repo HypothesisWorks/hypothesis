@@ -29,36 +29,7 @@ env:
 
     matrix:
         # Core tests that we want to run first.
-        - TASK=check-untagged
-        - TASK=check-changelog
         - TASK=check-shellcheck
-        - TASK=documentation
-        - TASK=lint
-        - TASK=check-rst
-        - TASK=check-format
-        - TASK=check-benchmark
-        - TASK=check-coverage
-        - TASK=check-pypy
-        - TASK=check-py27
-        - TASK=check-py36
-        - TASK=check-quality
-
-        # Less important tests that will probably
-        # pass whenever the above do but are still
-        # worth testing.
-        - TASK=check-unicode
-        - TASK=check-ancient-pip
-        - TASK=check-py273
-        - TASK=check-py34
-        - TASK=check-py35
-        - TASK=check-nose
-        - TASK=check-pytest28
-        - TASK=check-faker070
-        - TASK=check-faker071
-        - TASK=check-django18
-        - TASK=check-django110
-        - TASK=check-django111
-        - TASK=deploy
 
 script:
     - make $TASK
