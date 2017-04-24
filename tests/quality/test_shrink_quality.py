@@ -39,6 +39,10 @@ from hypothesis.internal.compat import PY3, Counter, OrderedDict, hrange, \
 slightly_flaky = flaky(min_passes=1, max_runs=3)
 
 
+def test_minimal_decimal_is_zero():
+    assert minimal(decimals()) == Decimal(0)
+
+
 @slightly_flaky
 def test_minimize_list_on_large_structure():
     def test_list_in_range(xs):
