@@ -136,5 +136,4 @@ class DatabaseMergingState(GenericStateMachine):
 
 
 TestMerging = DatabaseMergingState.TestCase
-TestMerging.settings = settings(
-    TestMerging.settings, timeout=60)
+TestMerging.settings = settings(TestMerging.settings, max_examples=100)

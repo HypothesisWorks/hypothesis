@@ -21,7 +21,7 @@ import math
 import hashlib
 from random import Random
 
-from hypothesis import Verbosity, seed, given, assume, settings
+from hypothesis import Verbosity, seed, given, assume, settings, unlimited
 from hypothesis.errors import NoExamples, FailedHealthCheck
 from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
@@ -232,7 +232,7 @@ TestHypothesis.settings = settings(
     TestHypothesis.settings,
     stateful_step_count=10 if PYPY else 50,
     max_shrinks=500,
-    timeout=500 if MAIN else 60,
+    timeout=unlimited,
     min_satisfying_examples=0,
     verbosity=max(TestHypothesis.settings.verbosity, Verbosity.verbose),
     max_examples=10000 if MAIN else 200,

@@ -27,7 +27,7 @@ from hypothesis.database import ExampleDatabase, SQLiteExampleDatabase, \
     InMemoryExampleDatabase, DirectoryBasedExampleDatabase
 from hypothesis.strategies import lists, binary, tuples
 
-small_settings = settings(max_examples=100, timeout=4)
+small_settings = settings(max_examples=50)
 
 
 @given(lists(tuples(binary(), binary())))

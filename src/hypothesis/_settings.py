@@ -33,12 +33,15 @@ from collections import namedtuple
 
 from hypothesis.errors import InvalidArgument, HypothesisDeprecationWarning
 from hypothesis.configuration import hypothesis_home_dir
-from hypothesis.utils.conventions import not_set
+from hypothesis.utils.conventions import UniqueIdentifier, not_set
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
 __all__ = [
     'settings',
 ]
+
+
+unlimited = UniqueIdentifier('unlimited')
 
 
 all_settings = {}
@@ -138,14 +141,21 @@ class settings(settingsMeta('settings', (object,), {})):
         self._construction_complete = False
         self._database = kwargs.pop('database', not_set)
         database_file = kwargs.get('database_file', not_set)
+        deprecations = []
         defaults = parent or settings.default
         if defaults is not None:
             for setting in all_settings.values():
                 if kwargs.get(setting.name, not_set) is not_set:
                     kwargs[setting.name] = getattr(defaults, setting.name)
-                elif setting.validator:
-                    kwargs[setting.name] = setting.validator(
-                        kwargs[setting.name])
+                else:
+                    if kwargs[setting.name] != setting.future_default:
+                        if (
+                            setting.deprecation_message is not None
+                        ):
+                            deprecations.append(setting)
+                    if setting.validator:
+                        kwargs[setting.name] = setting.validator(
+                            kwargs[setting.name])
             if self._database is not_set and database_file is not_set:
                 self._database = defaults.database
         for name, value in kwargs.items():
@@ -155,6 +165,9 @@ class settings(settingsMeta('settings', (object,), {})):
             setattr(self, name, value)
         self.storage = threading.local()
         self._construction_complete = True
+
+        for d in deprecations:
+            note_deprecation(d.deprecation_message, self)
 
     def defaults_stack(self):
         try:
@@ -170,7 +183,8 @@ class settings(settingsMeta('settings', (object,), {})):
     @classmethod
     def define_setting(
         cls, name, description, default, options=None, deprecation=None,
-        validator=None, show_default=True,
+        validator=None, show_default=True, future_default=not_set,
+        deprecation_message=None,
     ):
         """Add a new setting.
 
@@ -191,8 +205,12 @@ class settings(settingsMeta('settings', (object,), {})):
             options = tuple(options)
             assert default in options
 
+        if future_default is not_set:
+            future_default = default
+
         all_settings[name] = Setting(
-            name, description.strip(), default, options, validator
+            name, description.strip(), default, options, validator,
+            future_default, deprecation_message,
         )
         setattr(settings, name, settingsProperty(name, show_default))
 
@@ -315,7 +333,8 @@ class settings(settingsMeta('settings', (object,), {})):
 
 Setting = namedtuple(
     'Setting', (
-        'name', 'description', 'default', 'options', 'validator'
+        'name', 'description', 'default', 'options', 'validator',
+        'future_default', 'deprecation_message',
     ))
 
 
@@ -380,6 +399,14 @@ shrink the example.
 """
 )
 
+
+def _validate_timeout(n):
+    if n is unlimited:
+        return -1
+    else:
+        return n
+
+
 settings.define_setting(
     'timeout',
     default=60,
@@ -389,7 +416,18 @@ if it has not found many examples. This is a soft rather than a hard
 limit - Hypothesis won't e.g. interrupt execution of the called
 function to stop it. If this value is <= 0 then no timeout will be
 applied.
-"""
+
+Note: This setting is deprecated. In future Hypothesis will be removing the
+timeout feature.
+""",
+    deprecation_message="""
+The timeout feature will go away in a future version of Hypothesis. To get
+the future behaviour set timeout=hypothesis.unlimited instead (which will
+remain valid for a further deprecation period after this setting has gone
+away).
+""",
+    future_default=unlimited,
+    validator=_validate_timeout
 )
 
 settings.define_setting(
@@ -451,6 +489,7 @@ class HealthCheck(Enum):
     too_slow = 3
     random_module = 4
     return_value = 5
+    hung_test = 6
 
 
 @unique

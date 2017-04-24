@@ -72,7 +72,7 @@ def test_can_time_out_in_simplify():
     start = time.time()
     find(
         s.lists(s.booleans()), slow_always_true,
-        settings=settings(timeout=0.1, database=None)
+        settings=settings(timeout=0.1, database=None, strict=False)
     )
     finish = time.time()
     run_time = finish - start

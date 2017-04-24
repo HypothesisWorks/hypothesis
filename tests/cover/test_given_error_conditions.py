@@ -28,7 +28,7 @@ from hypothesis.strategies import booleans, integers
 
 def test_raises_timeout_on_slow_test():
     @given(integers())
-    @settings(timeout=0.01)
+    @settings(timeout=0.01, strict=False)
     def test_is_slow(x):
         time.sleep(0.02)
 

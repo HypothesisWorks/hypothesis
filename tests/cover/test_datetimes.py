@@ -22,7 +22,7 @@ import datetime as dt
 import pytest
 from flaky import flaky
 
-from hypothesis import find, given, settings
+from hypothesis import find, given, settings, unlimited
 from tests.common.debug import minimal
 from hypothesis.strategies import none, dates, times, binary, datetimes, \
     timedeltas
@@ -87,7 +87,7 @@ def test_default_datetimes_are_naive(dt):
 
 @flaky(max_runs=3, min_passes=1)
 def test_bordering_on_a_leap_year():
-    with settings(database=None, max_examples=10 ** 7, timeout=-1):
+    with settings(database=None, max_examples=10 ** 7, timeout=unlimited):
         x = minimal(datetimes(dt.datetime.min.replace(year=2003),
                               dt.datetime.max.replace(year=2005)),
                     lambda x: x.month == 2 and x.day == 29,

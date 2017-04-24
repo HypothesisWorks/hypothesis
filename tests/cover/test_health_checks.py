@@ -177,6 +177,32 @@ def test_returning_non_none_is_forbidden():
         a()
 
 
+def test_a_very_slow_test_will_fail_a_health_check():
+    @given(st.integers())
+    def a(x):
+        time.sleep(1000)
+    with raises(FailedHealthCheck):
+        a()
+
+
+def test_the_slow_test_health_check_can_be_disabled():
+    @given(st.integers())
+    @settings(suppress_health_check=[
+        HealthCheck.hung_test,
+    ])
+    def a(x):
+        time.sleep(1000)
+    a()
+
+
+def test_the_slow_test_health_only_runs_if_health_checks_are_on():
+    @given(st.integers())
+    @settings(perform_health_check=False)
+    def a(x):
+        time.sleep(1000)
+    a()
+
+
 def test_returning_non_none_does_not_fail_if_health_check_disabled():
     @given(st.integers())
     @settings(perform_health_check=False)
