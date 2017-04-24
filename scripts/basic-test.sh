@@ -30,7 +30,7 @@ fi
 
 $PYTEST --runpytest=subprocess tests/pytest
 
-pip install .[datetime]
+pip install ".[datetime]"
 $PYTEST tests/datetime/
 pip uninstall -y pytz
 
@@ -44,7 +44,7 @@ if [ "$(python -c 'import sys; print(sys.version_info[:2] in ((2, 7), (3, 6)))')
 fi
 
 for f in tests/nocover/test_*.py; do
-  $PYTEST $f
+  $PYTEST "$f"
 done
 
 # fake-factory doesn't have a correct universal wheel
@@ -60,10 +60,10 @@ if [ "$(python -c 'import platform; print(platform.python_implementation())')" !
   fi
 
   if [ "$(python -c 'import sys; print(sys.version_info[:2] < (3, 5))')" = "True" ] ; then
-    pushd $HOME
+    pushd "$HOME"
       pip wheel numpy==1.9.2
     popd
-    pip install --find-links=$HOME/wheelhouse numpy==1.9.2
+    pip install --find-links="$HOME/wheelhouse" numpy==1.9.2
     $PYTEST tests/numpy
     pip uninstall -y numpy
   fi

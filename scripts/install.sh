@@ -23,43 +23,43 @@ env | grep UTF
 # containerized travis and we can't install it without sudo.
 # Is is unclear if this is actually useful. I was seeing behaviour that suggested
 # concurrent runs of the installer, but I can't seem to find any evidence of this lock
-# ever not being acquired. 
+# ever not being acquired.
 
 BASE=${BUILD_RUNTIMES-$PWD/.runtimes}
 
-mkdir -p $BASE
+mkdir -p "$BASE"
 
 LOCKFILE="$BASE/.install-lockfile"
 while true; do
-  if mkdir $LOCKFILE 2>/dev/null; then
+  if mkdir "$LOCKFILE" 2>/dev/null; then
     echo "Successfully acquired installer."
     break
   else
     echo "Failed to acquire lock. Is another installer running? Waiting a bit."
   fi
 
-  sleep $[ ( $RANDOM % 10)  + 1 ].$[ ( $RANDOM % 100) ]s
+  sleep $(( ( RANDOM % 10 ) + 1 )).$(( RANDOM % 100 ))s
 
-  if (( $(date '+%s') > 300 + $(stat --format=%X $LOCKFILE) )); then
+  if (( $(date '+%s') > 300 + $(stat --format=%X "$LOCKFILE") )); then
     echo "We've waited long enough"
-    rm -rf $LOCKFILE
+    rm -rf "$LOCKFILE"
   fi
 done
-trap "rm -rf $LOCKFILE" EXIT
+trap 'rm -rf $LOCKFILE' EXIT
 
 
 PYENV=$BASE/pyenv
 
 
 if [ ! -d "$PYENV/.git" ]; then
-  rm -rf $PYENV
-  git clone https://github.com/yyuu/pyenv.git $BASE/pyenv
+  rm -rf "$PYENV"
+  git clone https://github.com/yyuu/pyenv.git "$BASE/pyenv"
 else
   back=$PWD
-  cd $PYENV
+  cd "$PYENV"
   git fetch || echo "Update failed to complete. Ignoring"
   git reset --hard origin/master
-  cd $back
+  cd "$back"
 fi
 
 SNAKEPIT=$BASE/snakepit
@@ -68,18 +68,18 @@ install () {
 
   VERSION="$1"
   ALIAS="$2"
-  mkdir -p $BASE/versions
+  mkdir -p "$BASE/versions"
   SOURCE=$BASE/versions/$ALIAS
 
   if [ ! -e "$SOURCE" ]; then
-    mkdir -p $SNAKEPIT
-    mkdir -p $BASE/versions
-    $BASE/pyenv/plugins/python-build/bin/python-build $VERSION $SOURCE
+    mkdir -p "$SNAKEPIT"
+    mkdir -p "$BASE/versions"
+    "$BASE/pyenv/plugins/python-build/bin/python-build" "$VERSION" "$SOURCE"
   fi
- rm -f $SNAKEPIT/$ALIAS
- mkdir -p $SNAKEPIT
- $SOURCE/bin/python -m pip.__main__ install --upgrade pip wheel virtualenv
- ln -s $SOURCE/bin/python $SNAKEPIT/$ALIAS
+ rm -f "$SNAKEPIT/$ALIAS"
+ mkdir -p "$SNAKEPIT"
+ "$SOURCE/bin/python" -m pip.__main__ install --upgrade pip wheel virtualenv
+ ln -s "$SOURCE/bin/python" "$SNAKEPIT/$ALIAS"
 }
 
 
@@ -112,5 +112,5 @@ for var in "$@"; do
     pypy)
       install pypy-5.3.1 pypy
       ;;
-  esac 
+  esac
 done
