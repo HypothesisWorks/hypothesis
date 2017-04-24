@@ -1,67 +1,27 @@
 # This is an automatically generated file from Hypothesis's benchmarking
-# script (scripts/benchmarks.py). The format is TOTAL SIZE: COUNT, one per
-# line, with lines like this starting with hashes ignored. It's entirely
-# for computer production and consumption, so you should probably just ignore
-# it except for when using that script.
+# script (scripts/benchmarks.py).
+#
+# Lines like this starting with a # are designed to be useful for human
+# consumption when reviewing, specifically with a goal of producing
+# useful diffs so that you can get a sense of the impact of a change.
+#
+# This benchmark is for intlists [lists(elements=integers())], with the validity
+# condition "always" and the interestingness condition "always".
+# See the script for the exact definitions of these criteria.
+#
+# Key statistics for this benchmark:
+#
+# * 1000 examples
+# * Mean size: 183.26 bytes, standard deviation: 202.24 bytes
+#
+# Additional interesting statistics:
+#
+# * Ranging from 2 [171 times] to 1398 [once] bytes.
+# * Median size: 107
+# * 99% of examples had at least 2 bytes
+# * 99% of examples had at most 939 bytes
+#
+# All data after this point is an opaque binary blob. You are not expected
+# to understand it.
 
-2: 171
-37: 139
-73: 63
-71: 52
-106: 50
-107: 39
-141: 36
-208: 35
-140: 33
-209: 32
-174: 28
-175: 27
-276: 22
-310: 19
-277: 19
-242: 19
-378: 17
-243: 16
-412: 15
-379: 14
-345: 14
-344: 14
-311: 14
-413: 11
-480: 9
-447: 7
-446: 7
-515: 6
-736: 5
-668: 5
-633: 5
-548: 5
-598: 4
-549: 4
-514: 4
-481: 4
-770: 3
-735: 3
-667: 3
-838: 2
-837: 2
-803: 2
-701: 2
-599: 2
-1398: 1
-1297: 1
-1263: 1
-1228: 1
-1144: 1
-1143: 1
-1076: 1
-1041: 1
-940: 1
-939: 1
-872: 1
-804: 1
-769: 1
-702: 1
-498: 1
-158: 1
-90: 1
+Data 344: STARTD6FQQAH4KD7FQAX75XLV2DUCGAGAP4FLOAAB56VVWU6YX4P625YCGSCEIDKGYBUEMT757Q4SUXER5OXOIJWXHLRDF7LDGZ66RPRJ7BMPDOD3MQMIQ5CXPD6AD3AP2EJMUGZCDQQWECYH3YO3I2UC4XAWRU7UK26CBB24CEUICQQZIQFNAZPAAQJKA57YLRDVOQKYGT6AFGPO4NFAZQIF4INWQRH6S2R44M6ZC6MBVBRWYHQFDSQDZJ4GGFYYDGEKVPBCGBR4SDXMB4X7UXD642FK4GOM46RXVNAPP6SD5Y7YROPHEXZ7GS4UA4BIU6MHHSHV53DWXUAVVMLFNQ5RCAAAEND
