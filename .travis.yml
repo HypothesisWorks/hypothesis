@@ -72,3 +72,8 @@ notifications:
       - david@drmaciver.com
     on_success: never
     on_failure: change
+
+addons:
+  apt:
+    packages:
+      - libgmp-dev
