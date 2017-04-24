@@ -9,10 +9,6 @@ ghc: 7.8
 os:
     - linux
 
-install:
-  - cabal update
-  - cabal install ShellCheck
-
 branches:
   only:
     - "master"
@@ -24,7 +20,8 @@ cache:
         - $HOME/.venv
         - $HOME/.cache/pip
         - $HOME/wheelhouse
-        - $HOME/.cabal
+        - $HOME/.stack
+        - $HOME/.local
 
 env:
     global:
@@ -34,7 +31,7 @@ env:
         # Core tests that we want to run first.
         - TASK=check-untagged
         - TASK=check-changelog
-        - TASK=shellcheck
+        - TASK=check-shellcheck
         - TASK=documentation
         - TASK=lint
         - TASK=check-rst

@@ -106,7 +106,17 @@ check-format: format
 
 install-core: $(PY27) $(PYPY) $(BEST_PY3) $(TOX)
 
-shellcheck:
+STACK=$(HOME)/.local/bin/stack
+SHELLCHECK=$(HOME)/.local/bin/shellcheck
+
+$(STACK):
+	mkdir -p ~/.local/bin
+	curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C $(HOME)/.local/bin '*/stack'
+
+$(SHELLCHECK): $(STACK)
+	$(STACK) install shellcheck
+
+check-shellcheck: $(SHELLCHECK)
 	shellcheck scripts/*.sh
 
 check-py27: $(PY27) $(TOX)
