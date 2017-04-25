@@ -146,6 +146,7 @@ their individual contributions.
 * `Florian Bruhin <https://www.github.com/The-Compiler>`_
 * `follower <https://www.github.com/follower>`_
 * `Jeremy Thurgood <https://github.com/jerith>`_
+* `JP Viljoen <https://github.com/froztbyte>`_ (`froztbyte@froztbyte.net <mailto:froztbyte@froztbyte.net>`_)
 * `Jonty Wareing <https://www.github.com/Jonty>`_ (`jonty@jonty.co.uk <mailto:jonty@jonty.co.uk>`_)
 * `kbara <https://www.github.com/kbara>`_
 * `Lee Begg <https://www.github.com/llnz2>`_
