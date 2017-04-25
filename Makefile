@@ -201,6 +201,9 @@ build-new-benchmark-data: $(BENCHMARK_VIRTUALENV)
 update-improved-benchmark-data: $(BENCHMARK_VIRTUALENV)
 	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --update=improved --nruns=1000
 
+update-benchmark-headers: $(BENCHMARK_VIRTUALENV)
+	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --only-update-headers
+
 $(TOX): $(BEST_PY3) tox.ini $(TOOLS)
 	rm -f $(TOX)
 	ln -sf $(TOOL_VIRTUALENV)/bin/tox $(TOX)
