@@ -66,7 +66,8 @@ class Benchmark(object):
 
 
 STRATEGIES = {
-    'intlists': st.lists(st.integers())
+    'ints': st.integers(),
+    'intlists': st.lists(st.integers()),
 }
 
 
@@ -96,7 +97,6 @@ def sometimes(p, name=None):
     return accept
 
 
-rarely = sometimes(0.1, 'rarely')
 usually = sometimes(0.9, 'usually')
 
 
@@ -104,13 +104,19 @@ def minsum(seed, testdata, value):
     return sum(value) >= 1000
 
 
-define_benchmark('intlists', always, never)
-define_benchmark('intlists', always, always)
-define_benchmark('intlists', always, rarely)
+def has_duplicates(seed, testdata, value):
+    return len(set(value)) < len(value)
+
+
+for k in STRATEGIES:
+    define_benchmark(k, always, never)
+    define_benchmark(k, always, always)
+    define_benchmark(k, always, usually)
+
+
 define_benchmark('intlists', always, minsum)
-define_benchmark('intlists', minsum, never)
-define_benchmark('intlists', rarely, never)
-define_benchmark('intlists', usually, usually)
+define_benchmark('intlists', always, has_duplicates)
+define_benchmark('intlists', has_duplicates, minsum)
 
 
 def run_benchmark_for_sizes(benchmark, n_runs):
