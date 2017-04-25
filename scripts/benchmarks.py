@@ -109,6 +109,17 @@ def sometimes(p, name=None):
     return accept
 
 
+def lower_bound(seed, testdata, value):
+    rnd = random.Random(seed)
+    for b in testdata.buffer:
+        c = rnd.randint(0, 255)
+        if c < b:
+            return True
+        if c > b:
+            return False
+    return True
+
+
 usually = sometimes(0.9, 'usually')
 
 
@@ -126,6 +137,7 @@ for k in STRATEGIES:
     define_benchmark(k, always, usually)
     define_benchmark(k, always, nontrivial)
     define_benchmark(k, usually, nontrivial)
+    define_benchmark(k, always, lower_bound)
 
 
 define_benchmark('intlists', always, minsum)
