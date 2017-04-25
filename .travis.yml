@@ -4,8 +4,6 @@ sudo: false
 
 env: PYTHONDONTWRITEBYTECODE=x
 
-ghc: 7.8
-
 os:
     - linux
 
