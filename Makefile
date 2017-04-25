@@ -106,6 +106,9 @@ check-format: format
 
 install-core: $(PY27) $(PYPY) $(BEST_PY3) $(TOX)
 
+shellcheck:
+	shellcheck scripts/*.sh
+
 check-py27: $(PY27) $(TOX)
 	$(TOX) -e py27-full
 
