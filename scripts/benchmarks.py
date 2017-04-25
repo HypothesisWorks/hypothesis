@@ -65,10 +65,10 @@ class Benchmark(object):
     interesting = attr.ib()
 
 
-STRATEGIES = {
-    'ints': st.integers(),
-    'intlists': st.lists(st.integers()),
-}
+STRATEGIES = OrderedDict([
+    ('ints', st.integers()),
+    ('intlists', st.lists(st.integers())),
+])
 
 
 def define_benchmark(strategy_name, valid, interesting):
