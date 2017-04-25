@@ -36,7 +36,6 @@ import hypothesis.strategies as st
 from hypothesis import settings
 from scipy.stats import ttest_ind
 from hypothesis.errors import UnsatisfiedAssumption
-from hypothesis.internal.conjecture.data import StopTest
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -136,9 +135,8 @@ def run_benchmark_for_sizes(benchmark, n_runs):
                             interesting_seed, data, value
                         ):
                             data.mark_interesting()
-                except StopTest:
-                    pass
-                sizes.append(len(data.buffer))
+                finally:
+                    sizes.append(len(data.buffer))
             engine = ConjectureRunner(
                 test_function, settings=BENCHMARK_SETTINGS, random=random
             )
