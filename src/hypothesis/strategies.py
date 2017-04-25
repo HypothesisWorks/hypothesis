@@ -965,6 +965,7 @@ def shared(base, key=None):
     base. Any two shared instances with the same key will share the same value,
     otherwise the identity of this strategy will be used. That is:
 
+    >>> s = integers()  # or any other strategy
     >>> x = shared(s)
     >>> y = shared(s)
 

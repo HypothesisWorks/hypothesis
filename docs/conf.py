@@ -36,6 +36,7 @@ autodoc_member_order = 'bysource'
 
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.doctest',
     'sphinx.ext.viewcode',
     'sphinx.ext.intersphinx',
 ]
@@ -68,6 +69,15 @@ intersphinx_mapping = {
 }
 
 autodoc_mock_imports = ['numpy']
+
+doctest_global_setup = '''
+# Some standard imports
+from hypothesis import *
+from hypothesis.strategies import *
+# Ensure that output (including from strategies) is deterministic
+import random
+random.seed(0)
+'''
 
 
 # -- Options for HTML output ----------------------------------------------
