@@ -21,53 +21,18 @@ import sys
 import math
 import operator
 from random import Random
-from decimal import Decimal
 from fractions import Fraction
 
 import pytest
-from flaky import flaky
 
 from hypothesis import find, given, assume, example, settings
 from tests.common import parametrize, ordered_pair, constant_list
 from tests.common.debug import minimal
 from hypothesis.strategies import just, sets, text, lists, binary, \
-    floats, tuples, randoms, booleans, decimals, integers, fractions, \
+    floats, tuples, randoms, booleans, integers, fractions, \
     recursive, frozensets, dictionaries, sampled_from, random_module
-from hypothesis.internal.compat import PY3, Counter, OrderedDict, hrange, \
+from hypothesis.internal.compat import PY3, OrderedDict, hrange, \
     reduce, integer_types
-
-slightly_flaky = flaky(min_passes=1, max_runs=3)
-
-
-def test_minimal_decimal_is_zero():
-    assert minimal(decimals()) == Decimal(0)
-
-
-@slightly_flaky
-def test_minimize_list_on_large_structure():
-    def test_list_in_range(xs):
-        return len([
-            x for x in xs
-            if x >= 10
-        ]) >= 60
-
-    assert minimal(
-        lists(integers(), min_size=60, average_size=120), test_list_in_range,
-        timeout_after=60,
-    ) == [10] * 60
-
-
-@flaky(min_passes=1, max_runs=4)
-def test_minimize_list_of_sets_on_large_structure():
-    def test_list_in_range(xs):
-        return len(list(filter(None, xs))) >= 30
-
-    x = minimal(
-        lists(frozensets(integers()), min_size=30), test_list_in_range,
-        timeout_after=20,
-    )
-
-    assert x == [frozenset([0])] * 30
 
 
 def test_integers_from_minimizes_leftwards():
@@ -85,17 +50,6 @@ def test_minimal_fractions_2():
 def test_minimal_fractions_3():
     assert minimal(
         lists(fractions()), lambda s: len(s) >= 20) == [Fraction(0)] * 20
-
-
-@slightly_flaky
-def test_minimal_fractions_4():
-    x = minimal(
-        lists(
-            fractions(max_denominator=100, max_value=100, min_value=-100),
-            min_size=20),
-        lambda s: len([t for t in s if t >= 1]) >= 20
-    )
-    assert x == [Fraction(1)] * 20
 
 
 def test_minimize_list_of_floats_on_large_structure():
@@ -186,42 +140,6 @@ def test_minimal_unsorted_strings(string):
         if len(ex) > 1:
             for i in hrange(len(ex)):
                 assert ex[:i] in result
-
-
-@slightly_flaky
-def test_finds_list_with_plenty_duplicates():
-    def is_good(xs):
-        return max(Counter(xs).values()) >= 3
-
-    result = minimal(
-        lists(text(min_size=1), average_size=50, min_size=1), is_good,
-        timeout_after=20,
-    )
-    assert result == [u'0'] * 3
-
-
-@slightly_flaky
-def test_minimal_mixed_list_propagates_leftwards():
-    # one_of simplification can't actually simplify to the left, but it regards
-    # instances of the leftmost type as strictly simpler. This means that if we
-    # have any bools in the list we can clone them to replace the more complex
-    # examples to the right.
-    # The check that we have at least one bool is required for this to work,
-    # otherwise the features that ensure sometimes we can get a list of all of
-    # one type will occasionally give us an example which doesn't contain any
-    # bools to clone
-    def long_list_with_enough_bools(x):
-        if len(x) < 50:
-            return False
-        if len([t for t in x if isinstance(t, bool)]) < 10:
-            return False
-        return True
-
-    assert minimal(
-        lists(booleans() | tuples(integers()), min_size=50),
-        long_list_with_enough_bools,
-        timeout_after=60,
-    ) == [False] * 50
 
 
 def test_tuples_do_not_block_cloning():
@@ -366,23 +284,6 @@ def test_increasing_integer_sequence():
     )
     start = xs[0]
     assert xs == list(range(start, start + k))
-
-
-@slightly_flaky
-def test_increasing_string_sequence():
-    n = 7
-    lb = u'✐'
-    xs = minimal(
-        lists(text(min_size=1), min_size=n, average_size=50), lambda t: (
-            t[0] >= lb and
-            t[-1] >= lb and
-            length_of_longest_ordered_sequence(t) >= n
-        ),
-        timeout_after=30,
-    )
-    assert n <= len(xs) <= n + 2
-    for i in hrange(len(xs) - 1):
-        assert abs(len(xs[i + 1]) - len(xs[i])) <= 1
 
 
 def test_decreasing_string_sequence():
@@ -552,17 +453,3 @@ def test_minimize_down_to(rnd, i):
         integers(), lambda x: x >= i,
         settings=settings(max_examples=1000, database=None, max_shrinks=1000))
     assert i == j
-
-
-@flaky(max_runs=2, min_passes=1)
-def test_can_find_quite_deep_lists():
-    def depth(x):
-        if x and isinstance(x, list):
-            return 1 + max(map(depth, x))
-        else:
-            return 1
-
-    deep = find(
-        recursive(booleans(), lambda x: lists(x, max_size=3)),
-        lambda x: depth(x) >= 5)
-    assert deep == [[[[False]]]]
