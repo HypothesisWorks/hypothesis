@@ -18,10 +18,13 @@
 from __future__ import division, print_function, absolute_import
 
 import sys
+import functools
 import traceback
 import contextlib
 from io import BytesIO, StringIO
 
+from hypothesis.errors import HypothesisDeprecationWarning
+from hypothesis._settings import settings
 from hypothesis.reporting import default, with_reporter
 from hypothesis.internal.compat import PY2
 from hypothesis.internal.reflection import proxies
@@ -66,3 +69,22 @@ def fails_with(e):
 
 
 fails = fails_with(AssertionError)
+
+
+def checks_deprecated_behaviour(func):
+    """A decorator for testing deprecated behaviour.
+
+    It will run the function once in non-strict mode (checking existing
+    test constraints), then once in strict mode (checking that a
+    deprecation exception is thrown).  This allows the pre-deprecation
+    tests to be retained with no change beyond the addition of a
+    decorator.
+
+    """
+    @functools.wraps(func)
+    def _inner(*args, **kwargs):
+        with settings(strict=True):
+            fails_with(HypothesisDeprecationWarning)(func)(*args, **kwargs)
+        with settings(strict=False):
+            func(*args, **kwargs)
+    return _inner
