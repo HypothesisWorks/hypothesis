@@ -30,7 +30,7 @@ from tests.common import parametrize
 from hypothesis.strategies import just, sets, text, lists, binary, \
     floats, tuples, randoms, booleans, integers, fractions, \
 from hypothesis.strategies import just, sets, text, lists, \
-    floats, tuples, randoms, booleans, decimals, integers, fractions, \
+    tuples, randoms, booleans, decimals, integers, fractions, \
     recursive, frozensets, dictionaries, sampled_from
 from hypothesis.internal.compat import PY3, OrderedDict, hrange, \
     reduce, integer_types
