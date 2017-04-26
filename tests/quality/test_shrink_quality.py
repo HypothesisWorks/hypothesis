@@ -216,16 +216,6 @@ def test_minimize_long():
 
 
 
-def test_small_sum_lists():
-    xs = minimal(
-        lists(floats(), min_size=100, average_size=200),
-        lambda x:
-            sum(t for t in x if float(u'inf') > t >= 0) >= 1,
-        timeout_after=60,
-    )
-    assert 1.0 <= sum(t for t in xs if t >= 0) <= 1.5
-
-
 def test_find_large_union_list():
     def large_mostly_non_overlapping(xs):
         assume(xs)
