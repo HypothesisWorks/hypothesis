@@ -53,20 +53,6 @@ def test_minimal_fractions_3():
         lists(fractions()), lambda s: len(s) >= 20) == [Fraction(0)] * 20
 
 
-def test_minimize_list_of_floats_on_large_structure():
-    def test_list_in_range(xs):
-        return len([
-            x for x in xs
-            if x >= 3
-        ]) >= 30
-
-    result = minimal(
-        lists(floats(), min_size=50, average_size=100),
-        test_list_in_range, timeout_after=120)
-    result.sort()
-    assert result == [0.0] * 20 + [3.0] * 30
-
-
 def test_minimize_string_to_empty():
     assert minimal(text()) == u''
 
