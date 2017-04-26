@@ -421,13 +421,3 @@ def test_can_simplify_hard_recursive_data_into_boolean_alternative(rnd):
     lvs = leaves(r)
     assert lvs == [False] * 3
     assert all(isinstance(v, bool) for v in lvs), repr(lvs)
-
-
-@given(random_module(), integers(min_value=0))
-@example(None, 62677)
-@settings(max_examples=100, max_shrinks=0)
-def test_minimize_down_to(rnd, i):
-    j = find(
-        integers(), lambda x: x >= i,
-        settings=settings(max_examples=1000, database=None, max_shrinks=1000))
-    assert i == j
