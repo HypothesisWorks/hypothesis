@@ -23,10 +23,10 @@ from flaky import flaky
 
 import hypothesis.strategies as st
 from hypothesis import given, settings
+from tests.common.debug import minimal
 from hypothesis.extra.numpy import arrays, from_dtype, array_shapes, \
     nested_dtypes, scalar_dtypes
 from hypothesis.strategytests import strategy_test_suite
-from hypothesis.internal.debug import minimal
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import text_type, binary_type
 
