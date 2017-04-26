@@ -367,20 +367,6 @@ def test_anti_sorted_ordered_pair():
     assert len(result) == 30
 
 
-def test_constant_lists_of_diverse_length():
-    n_elements = 10
-
-    result = minimal(
-        lists(constant_list(integers()), min_size=n_elements),
-        lambda x: len(set(map(len, x))) >= n_elements,
-        timeout_after=30,
-    )
-    assert len(result) == n_elements
-    for v in result:
-        assert v == [0] * len(v)
-    assert sorted(map(len, result)) == list(hrange(n_elements))
-
-
 @pytest.mark.parametrize('n', [0, 1, 10, 100, 1000])
 def test_containment(n):
     iv = minimal(
