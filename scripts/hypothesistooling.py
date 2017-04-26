@@ -88,10 +88,6 @@ def is_ancestor(a, b):
     ]) == 0
 
 
-def on_master():
-    return hash_for_name('HEAD') == merge_base('HEAD', 'origin/master')
-
-
 def changelog():
     with open(os.path.join(ROOT, 'docs', 'changes.rst')) as i:
         return i.read()
