@@ -89,6 +89,10 @@ def never(seed, testdata, value):
     return False
 
 
+def nontrivial(seed, testdata, value):
+    return sum(testdata.buffer) >= 255
+
+
 def sometimes(p, name=None):
     def accept(seed, testdata, value):
         hasher = hashlib.md5()
@@ -114,6 +118,8 @@ for k in STRATEGIES:
     define_benchmark(k, always, never)
     define_benchmark(k, always, always)
     define_benchmark(k, always, usually)
+    define_benchmark(k, always, nontrivial)
+    define_benchmark(k, usually, nontrivial)
 
 
 define_benchmark('intlists', always, minsum)
