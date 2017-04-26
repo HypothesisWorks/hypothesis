@@ -19,21 +19,17 @@ from __future__ import division, print_function, absolute_import
 
 import sys
 import operator
-from random import Random
 from fractions import Fraction
 
 import pytest
 
-from hypothesis import find, given, assume, example, settings
-from tests.common.debug import minimal
+from hypothesis import find, assume, settings
 from tests.common import parametrize
-from hypothesis.strategies import just, sets, text, lists, binary, \
-    floats, tuples, randoms, booleans, integers, fractions, \
-from hypothesis.strategies import just, sets, text, lists, \
-    tuples, randoms, booleans, decimals, integers, fractions, \
-    recursive, frozensets, dictionaries, sampled_from
-from hypothesis.internal.compat import PY3, OrderedDict, hrange, \
-    reduce, integer_types
+from tests.common.debug import minimal
+from hypothesis.strategies import just, sets, text, lists, tuples, \
+    booleans, integers, fractions, frozensets, dictionaries, \
+    sampled_from
+from hypothesis.internal.compat import PY3, OrderedDict, hrange, reduce
 
 
 def test_integers_from_minimizes_leftwards():
@@ -201,7 +197,6 @@ def test_minimize_long():
         integers(), lambda x: type(x).__name__ == u'long') == sys.maxint + 1
 
 
-
 def test_find_large_union_list():
     def large_mostly_non_overlapping(xs):
         assume(xs)
@@ -237,41 +232,3 @@ def test_duplicate_containment():
         lambda s: s[0].count(s[1]) > 1, timeout_after=100)
     assert ls == [0, 0]
     assert i == 0
-
-
-def test_unique_lists_of_single_characters():
-    x = minimal(
-        lists(text(max_size=1), unique=True, min_size=5)
-    )
-    assert sorted(x) == ['', '0', '1', '2', '3']
-
-
-@given(randoms())
-@settings(max_examples=10, database=None, max_shrinks=0)
-@example(rnd=Random(340282366920938463462798146679426884207))
-def test_can_simplify_hard_recursive_data_into_boolean_alternative(rnd):
-    """This test forces us to exercise the simplification through redrawing
-    functionality, thus testing that we can deal with bad templates."""
-    def leaves(ls):
-        if isinstance(ls, (bool,) + integer_types):
-            return [ls]
-        else:
-            return sum(map(leaves, ls), [])
-
-    def hard(base):
-        return recursive(
-            base, lambda x: lists(x, max_size=5), max_leaves=20)
-    r = find(
-        hard(booleans()) |
-        hard(booleans()) |
-        hard(booleans()) |
-        hard(integers()) |
-        hard(booleans()),
-        lambda x:
-            len(leaves(x)) >= 3 and
-            any(isinstance(t, bool) for t in leaves(x)),
-        random=rnd, settings=settings(
-            database=None, max_examples=5000, max_shrinks=1000))
-    lvs = leaves(r)
-    assert lvs == [False] * 3
-    assert all(isinstance(v, bool) for v in lvs), repr(lvs)
