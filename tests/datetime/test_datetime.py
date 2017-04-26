@@ -26,9 +26,9 @@ from flaky import flaky
 import hypothesis._settings as hs
 from hypothesis import find, given, assume, settings
 from hypothesis.errors import InvalidArgument
+from tests.common.debug import minimal
 from hypothesis.strategytests import strategy_test_suite
 from hypothesis.extra.datetime import datetimes
-from hypothesis.internal.debug import minimal
 from hypothesis.internal.compat import hrange
 
 TestStandardDescriptorFeatures1 = strategy_test_suite(datetimes())

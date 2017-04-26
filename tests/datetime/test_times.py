@@ -21,9 +21,9 @@ import pytz
 
 import hypothesis._settings as hs
 from hypothesis import given, assume
+from tests.common.debug import minimal
 from hypothesis.strategytests import strategy_test_suite
 from hypothesis.extra.datetime import times
-from hypothesis.internal.debug import minimal
 
 TestStandardDescriptorFeatures1 = strategy_test_suite(times())
 

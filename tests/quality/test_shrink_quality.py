@@ -29,10 +29,10 @@ from flaky import flaky
 
 from hypothesis import find, given, assume, example, settings
 from tests.common import parametrize, ordered_pair, constant_list
+from tests.common.debug import minimal
 from hypothesis.strategies import just, sets, text, lists, binary, \
     floats, tuples, randoms, booleans, decimals, integers, fractions, \
     recursive, frozensets, dictionaries, sampled_from, random_module
-from hypothesis.internal.debug import minimal
 from hypothesis.internal.compat import PY3, Counter, OrderedDict, hrange, \
     reduce, integer_types
 

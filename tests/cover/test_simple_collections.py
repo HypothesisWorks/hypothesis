@@ -24,9 +24,9 @@ import pytest
 from flaky import flaky
 
 from hypothesis import find, given, settings
+from tests.common.debug import minimal
 from hypothesis.strategies import sets, text, lists, builds, tuples, \
     booleans, integers, frozensets, dictionaries, fixed_dictionaries
-from hypothesis.internal.debug import minimal
 from hypothesis.internal.compat import OrderedDict
 
 

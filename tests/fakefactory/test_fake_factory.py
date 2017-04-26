@@ -21,8 +21,8 @@ import pytest
 from faker.providers import BaseProvider
 
 from hypothesis import given
+from tests.common.debug import minimal
 from hypothesis.strategytests import strategy_test_suite
-from hypothesis.internal.debug import minimal
 from hypothesis.extra.fakefactory import fake_factory
 
 
