@@ -18,6 +18,8 @@ cache:
         - $HOME/.venv
         - $HOME/.cache/pip
         - $HOME/wheelhouse
+        - $HOME/.stack
+        - $HOME/.local
 
 env:
     global:
@@ -27,6 +29,7 @@ env:
         # Core tests that we want to run first.
         - TASK=check-untagged
         - TASK=check-changelog
+        - TASK=check-shellcheck
         - TASK=documentation
         - TASK=lint
         - TASK=check-rst
@@ -67,3 +70,8 @@ notifications:
       - david@drmaciver.com
     on_success: never
     on_failure: change
+
+addons:
+  apt:
+    packages:
+      - libgmp-dev
