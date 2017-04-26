@@ -423,14 +423,6 @@ def test_can_simplify_hard_recursive_data_into_boolean_alternative(rnd):
     assert all(isinstance(v, bool) for v in lvs), repr(lvs)
 
 
-def test_can_clone_same_length_items():
-    ls = find(
-        lists(frozensets(integers(), min_size=10, max_size=10)),
-        lambda x: len(x) >= 20
-    )
-    assert len(set(ls)) == 1
-
-
 @given(random_module(), integers(min_value=0))
 @example(None, 62677)
 @settings(max_examples=100, max_shrinks=0)
