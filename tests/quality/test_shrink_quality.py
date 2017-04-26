@@ -118,38 +118,6 @@ def test_minimize_sets_of_sets():
                 for t in set_of_sets
             )
 
-
-@pytest.mark.parametrize(
-    ('string',), [(text(),), (binary(),)],
-    ids=['text', 'binary()']
-)
-def test_minimal_unsorted_strings(string):
-    def dedupe(xs):
-        result = []
-        for x in xs:
-            if x not in result:
-                result.append(x)
-        return result
-
-    result = minimal(
-        lists(string).map(dedupe),
-        lambda xs: assume(len(xs) >= 5) and sorted(xs) != xs
-    )
-    assert len(result) == 5
-    for ex in result:
-        if len(ex) > 1:
-            for i in hrange(len(ex)):
-                assert ex[:i] in result
-
-
-def test_tuples_do_not_block_cloning():
-    assert minimal(
-        lists(tuples(booleans() | tuples(integers())), min_size=50),
-        lambda x: any(isinstance(t[0], bool) for t in x),
-        timeout_after=60,
-    ) == [(False,)] * 50
-
-
 def test_can_simplify_flatmap_with_bounded_left_hand_size():
     assert minimal(
         booleans().flatmap(lambda x: lists(just(x))),
@@ -257,52 +225,6 @@ def test_minimize_long():
         integers(), lambda x: type(x).__name__ == u'long') == sys.maxint + 1
 
 
-def length_of_longest_ordered_sequence(xs):
-    if not xs:
-        return 0
-    # FIXME: Needlessly O(n^2) algorithm, but it's a test so eh.
-    lengths = [-1] * len(xs)
-    lengths[-1] = 1
-    for i in hrange(len(xs) - 2, -1, -1):
-        assert lengths[i] == -1
-        for j in hrange(i + 1, len(xs)):
-            assert lengths[j] >= 1
-            if xs[j] > xs[i]:
-                lengths[i] = max(lengths[i], lengths[j] + 1)
-        if lengths[i] < 0:
-            lengths[i] = 1
-    assert all(t >= 1 for t in lengths)
-    return max(lengths)
-
-
-def test_increasing_integer_sequence():
-    k = 6
-    xs = minimal(
-        lists(integers()), lambda t: (
-            len(t) <= 30 and length_of_longest_ordered_sequence(t) >= k),
-        timeout_after=60,
-    )
-    start = xs[0]
-    assert xs == list(range(start, start + k))
-
-
-def test_decreasing_string_sequence():
-    n = 7
-    lb = u'✐'
-    xs = minimal(
-        lists(text(min_size=1), min_size=n, average_size=50), lambda t: (
-            n <= len(t) and
-            all(t) and
-            t[0] >= lb and
-            t[-1] >= lb and
-            length_of_longest_ordered_sequence(list(reversed(t))) >= n
-        ),
-        timeout_after=30,
-    )
-    assert n <= len(xs) <= n + 2
-    for i in hrange(len(xs) - 1):
-        assert abs(len(xs[i + 1]) - len(xs[i])) <= 1
-
 
 def test_small_sum_lists():
     xs = minimal(
@@ -312,32 +234,6 @@ def test_small_sum_lists():
         timeout_after=60,
     )
     assert 1.0 <= sum(t for t in xs if t >= 0) <= 1.5
-
-
-def test_increasing_float_sequence():
-    xs = minimal(
-        lists(floats()), lambda x: length_of_longest_ordered_sequence([
-            t for t in x if t >= 0
-        ]) >= 7 and len([t for t in x if t >= 500.0]) >= 4,
-        timeout_after=60,
-    )
-    assert max(xs) < 1000
-    assert not any(math.isinf(x) for x in xs)
-
-
-def test_increasing_integers_from_sequence():
-    n = 6
-    lb = 50000
-    xs = minimal(
-        lists(integers(min_value=0)), lambda t: (
-            n <= len(t) and
-            all(t) and
-            any(s >= lb for s in t) and
-            length_of_longest_ordered_sequence(t) >= n
-        ),
-        timeout_after=60,
-    )
-    assert n <= len(xs) <= n + 2
 
 
 def test_find_large_union_list():
@@ -357,14 +253,6 @@ def test_find_large_union_list():
         for y in result:
             if x is not y:
                 assert not (x & y)
-
-
-def test_anti_sorted_ordered_pair():
-    result = minimal(
-        lists(ordered_pair, min_size=30),
-        lambda x: (
-            2 < length_of_longest_ordered_sequence(x) <= 10))
-    assert len(result) == 30
 
 
 @pytest.mark.parametrize('n', [0, 1, 10, 100, 1000])
