@@ -22,6 +22,14 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 ------------------
+3.8.2 - 2017-04-26
+------------------
+
+This is a code reorganisation release that moves some internal test helpers
+out of the main source tree so as to not have changes to them trigger releases
+in future.
+
+------------------
 3.8.1 - 2017-04-26
 ------------------
 
