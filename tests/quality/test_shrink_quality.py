@@ -29,6 +29,8 @@ from tests.common.debug import minimal
 from tests.common import parametrize
 from hypothesis.strategies import just, sets, text, lists, binary, \
     floats, tuples, randoms, booleans, integers, fractions, \
+from hypothesis.strategies import just, sets, text, lists, \
+    floats, tuples, randoms, booleans, decimals, integers, fractions, \
     recursive, frozensets, dictionaries, sampled_from
 from hypothesis.internal.compat import PY3, OrderedDict, hrange, \
     reduce, integer_types
@@ -205,18 +207,6 @@ def test_minimize_multiple_elements_in_silly_large_int_range_min_is_not_dupe():
         timeout_after=60,
     )
     assert x == target
-
-
-def test_minimize_one_of_distinct_types():
-    y = booleans() | binary()
-    x = minimal(
-        tuples(y, y),
-        lambda x: type(x[0]) != type(x[1])
-    )
-    assert x in (
-        (False, b''),
-        (b'', False)
-    )
 
 
 @pytest.mark.skipif(PY3, reason=u'Python 3 has better integers')
