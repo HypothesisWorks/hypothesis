@@ -76,7 +76,12 @@ if __name__ == '__main__':
         sys.executable, 'setup.py', 'sdist', '--dist-dir', DIST,
     ])
 
-    if not tools.on_master():
+    HEAD = tools.hash_for_name('HEAD')
+    MASTER = tools.hash_for_name('origin/master')
+    print('Current head:', HEAD)
+    print('Current master:', MASTER)
+
+    if not tools.is_ancestor(HEAD, MASTER):
         print('Not deploying due to not being on master')
         sys.exit(0)
 
