@@ -39,6 +39,10 @@ from hypothesis.internal.compat import PY3, Counter, OrderedDict, hrange, \
 slightly_flaky = flaky(min_passes=1, max_runs=3)
 
 
+def test_minimal_decimal_is_zero():
+    assert minimal(decimals()) == Decimal(0)
+
+
 @slightly_flaky
 def test_minimize_list_on_large_structure():
     def test_list_in_range(xs):
@@ -147,7 +151,7 @@ def test_minimize_3_set_of_tuples():
 
 def test_minimize_sets_of_sets():
     elements = integers(1, 100)
-    size = 15
+    size = 10
     set_of_sets = minimal(
         sets(frozensets(elements)), lambda s: len(s) >= size
     )
@@ -335,32 +339,6 @@ def test_minimize_long():
         integers(), lambda x: type(x).__name__ == u'long') == sys.maxint + 1
 
 
-def test_non_reversible_ints_as_decimals():
-    def not_reversible(xs):
-        ts = list(map(Decimal, xs))
-        return sum(ts) != sum(reversed(ts))
-
-    sigh = minimal(lists(integers()), not_reversible, timeout_after=30)
-    assert len(sigh) <= 25
-
-
-def test_non_reversible_fractions_as_decimals():
-    def not_reversible(xs):
-        xs = [Decimal(x.numerator) / x.denominator for x in xs]
-        return sum(xs) != sum(reversed(xs))
-
-    sigh = minimal(lists(fractions()), not_reversible, timeout_after=20)
-    assert len(sigh) <= 25
-
-
-def test_non_reversible_decimals():
-    def not_reversible(xs):
-        assume(all(x.is_finite() for x in xs))
-        return sum(xs) != sum(reversed(xs))
-    sigh = minimal(lists(decimals()), not_reversible, timeout_after=30)
-    assert len(sigh) <= 25
-
-
 def length_of_longest_ordered_sequence(xs):
     if not xs:
         return 0
@@ -482,15 +460,14 @@ def test_find_large_union_list():
 
 def test_anti_sorted_ordered_pair():
     result = minimal(
-        lists(ordered_pair),
+        lists(ordered_pair, min_size=30),
         lambda x: (
-            len(x) >= 30 and
             2 < length_of_longest_ordered_sequence(x) <= 10))
     assert len(result) == 30
 
 
 def test_constant_lists_of_diverse_length():
-    n_elements = 20
+    n_elements = 10
 
     result = minimal(
         lists(constant_list(integers()), min_size=n_elements),
@@ -501,17 +478,6 @@ def test_constant_lists_of_diverse_length():
     for v in result:
         assert v == [0] * len(v)
     assert sorted(map(len, result)) == list(hrange(n_elements))
-
-
-def test_finds_non_reversible_floats():
-    t = minimal(
-        lists(floats()), lambda xs:
-            not math.isnan(sum(xs)) and sum(xs) != sum(reversed(xs)),
-        timeout_after=40,
-        settings=settings(database=None)
-    )
-    assert len(repr(t)) <= 200
-    print(t)
 
 
 @pytest.mark.parametrize('n', [0, 1, 10, 100, 1000])

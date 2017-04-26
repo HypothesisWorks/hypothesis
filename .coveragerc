@@ -6,7 +6,6 @@ include =
 omit =
     **/pytestplugin.py
     **/strategytests.py
-    **/internal/debug.py
     **/compat*.py
     **/extra/__init__.py
 
