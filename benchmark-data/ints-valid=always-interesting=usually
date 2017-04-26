@@ -1,0 +1,27 @@
+# This is an automatically generated file from Hypothesis's benchmarking
+# script (scripts/benchmarks.py).
+#
+# Lines like this starting with a # are designed to be useful for human
+# consumption when reviewing, specifically with a goal of producing
+# useful diffs so that you can get a sense of the impact of a change.
+#
+# This benchmark is for ints [integers()], with the validity
+# condition "always" and the interestingness condition "usually".
+# See the script for the exact definitions of these criteria.
+#
+# Key statistics for this benchmark:
+#
+# * 1000 examples
+# * Mean size: 51.39 bytes, standard deviation: 12.97 bytes
+#
+# Additional interesting statistics:
+#
+# * Ranging from 32 [2 times] to 224 [once] bytes.
+# * Median size: 48
+# * 99% of examples had at least 48 bytes
+# * 99% of examples had at most 112 bytes
+#
+# All data after this point is an opaque binary blob. You are not expected
+# to understand it.
+
+Data 128: STARTD6FQQAGBSP7VQAX75XJLCDOAEAGEJUKVDAQALPSYY2MSKYX7GUBGLFBKUJB366F7XH3O4U2HTE6ACAAAAAAKXQVRXOWP7GHJCWGZ6WELN6XLCSW6D7XFWACMVIHQAAA=END
