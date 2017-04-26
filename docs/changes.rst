@@ -22,7 +22,7 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 ------------------
-3.8.1 - 2017-04-25
+3.8.1 - 2017-04-26
 ------------------
 
 This is a documentation release.  Almost all code examples are now doctests
