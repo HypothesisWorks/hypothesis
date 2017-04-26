@@ -24,6 +24,7 @@ cache:
 env:
     global:
         - BUILD_RUNTIMES=$HOME/.runtimes
+        - FORMAT_ALL=true
 
     matrix:
         # Core tests that we want to run first.
