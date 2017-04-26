@@ -82,6 +82,12 @@ def hash_for_name(name):
     ]).decode('ascii').strip()
 
 
+def is_ancestor(a, b):
+    return subprocess.call([
+        'git', '--is-ancestor', a, b
+    ]) == 0
+
+
 def on_master():
     return hash_for_name('HEAD') == merge_base('HEAD', 'origin/master')
 
