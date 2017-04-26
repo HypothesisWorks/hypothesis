@@ -83,9 +83,11 @@ def hash_for_name(name):
 
 
 def is_ancestor(a, b):
-    return subprocess.call([
-        'git', '--is-ancestor', a, b
-    ]) == 0
+    check = subprocess.call([
+        'git', 'merge-base', '--is-ancestor', a, b
+    ])
+    assert 0 <= check <= 1
+    return check == 0
 
 
 def changelog():
