@@ -18,7 +18,6 @@
 from __future__ import division, print_function, absolute_import
 
 import sys
-import math
 import operator
 from random import Random
 from fractions import Fraction
@@ -26,11 +25,11 @@ from fractions import Fraction
 import pytest
 
 from hypothesis import find, given, assume, example, settings
-from tests.common import parametrize, ordered_pair, constant_list
 from tests.common.debug import minimal
+from tests.common import parametrize
 from hypothesis.strategies import just, sets, text, lists, binary, \
     floats, tuples, randoms, booleans, integers, fractions, \
-    recursive, frozensets, dictionaries, sampled_from, random_module
+    recursive, frozensets, dictionaries, sampled_from
 from hypothesis.internal.compat import PY3, OrderedDict, hrange, \
     reduce, integer_types
 
@@ -117,6 +116,7 @@ def test_minimize_sets_of_sets():
                 s != t and t.issubset(s)
                 for t in set_of_sets
             )
+
 
 def test_can_simplify_flatmap_with_bounded_left_hand_size():
     assert minimal(
