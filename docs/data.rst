@@ -66,15 +66,15 @@ types.
     >>> from hypothesis.types import Stream
     >>> x = Stream(iter(integers().example, None))
     >>> # Equivalent to `streaming(integers()).example()`, which is not supported
-    >>> x
+    >>> x  # doctest: -ELLIPSIS
     Stream(...)
     >>> x[2]
     131
-    >>> x
+    >>> x  # doctest: -ELLIPSIS
     Stream(-225, 50, 131, ...)
     >>> x[10]
     127
-    >>> x
+    >>> x  # doctest: -ELLIPSIS
     Stream(-225, 50, 131, 30781241791694610923869406150329382725, 89, 62248, 107, 35771, -113, 79, 127, ...)
 
 Think of a Stream as an infinite list where we've only evaluated as much as
@@ -102,13 +102,13 @@ bound then iter on those streams *will* terminate:
     >>> list(x[:5])
     [-225, 50, 131, 30781241791694610923869406150329382725, 89]
     >>> y = x[1::2]
-    >>> y
+    >>> y  # doctest: -ELLIPSIS
     Stream(...)
     >>> y[0]
     50
     >>> y[1]
     30781241791694610923869406150329382725
-    >>> y
+    >>> y  # doctest: -ELLIPSIS
     Stream(50, 30781241791694610923869406150329382725, ...)
 
 You can also apply a function to transform a stream:
@@ -121,9 +121,9 @@ You can also apply a function to transform a stream:
     -344
     >>> t[0]
     -172
-    >>> tm
+    >>> tm  # doctest: -ELLIPSIS
     Stream(-344, ...)
-    >>> t
+    >>> t  # doctest: -ELLIPSIS
     Stream(-172, ...)
 
 map creates a new stream where each element of the stream is the function
