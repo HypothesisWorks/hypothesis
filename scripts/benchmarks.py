@@ -21,9 +21,9 @@ from __future__ import division, print_function, absolute_import
 
 import os
 import sys
-import gzip
 import json
 import math
+import zlib
 import base64
 import random
 import hashlib
@@ -211,14 +211,14 @@ def existing_data(name):
 
 def data_to_blob(data):
     as_json = json.dumps(attr.asdict(data)).encode('utf-8')
-    compressed = gzip.compress(as_json)
+    compressed = zlib.compress(as_json)
     as_base64 = base64.b32encode(compressed)
     return as_base64.decode('ascii')
 
 
 def blob_to_data(blob):
     from_base64 = base64.b32decode(blob.encode('ascii'))
-    decompressed = gzip.decompress(from_base64)
+    decompressed = zlib.decompress(from_base64)
     parsed = json.loads(decompressed)
     return BenchmarkData(**parsed)
 
