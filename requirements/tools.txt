@@ -33,7 +33,7 @@ pytz==2017.2
 requests==2.13.0
 requests-toolbelt==0.7.1
 restructuredtext-lint==1.0.1
-setuptools==35.0.1
+setuptools==35.0.2
 six==1.10.0
 snowballstemmer==1.2.1
 Sphinx==1.5.5
