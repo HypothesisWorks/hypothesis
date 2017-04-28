@@ -408,10 +408,13 @@ def dates(min_year=None, max_year=None, min_date=None, max_date=None):
 
 
 @defines_strategy
-def times(allow_naive=None, timezones=None):
+def times(allow_naive=None, timezones=None,
+          min_time=dt.time.min, max_time=dt.time.max):
     """Return a strategy for generating times.
 
-    The arguments are exactly as for :py:func:`datetimes`.  For example:
+    allow_naive and timezones are interpreted as for naive bounds in
+    :py:func:`datetimes`.  min_time and max_time must be naive datetime.time
+    objects.  Tz-aware bounds are not supported for the time strategy.
 
     .. doctest::
         >>> times().example()
@@ -420,6 +423,21 @@ def times(allow_naive=None, timezones=None):
         datetime.time(22, 31, 45, 811336, tzinfo=<...>)
 
     """
+    msg = '%s=%r must be a datetime.time object.'
+    if not isinstance(min_time, dt.time):
+        raise InvalidArgument(msg % ('min_time', min_time))
+    if not isinstance(max_time, dt.time):
+        raise InvalidArgument(msg % ('max_time', max_time))
+    if min_time.tzinfo is not None:
+        raise InvalidArgument('min_time=%r must not have tzinfo' % min_time)
+    if max_time.tzinfo is not None:
+        raise InvalidArgument('max_time=%r must not have tzinfo' % max_time)
+    if min_time == max_time:
+        return just(min_time)
+    check_valid_interval(min_time, max_time, 'min_time', 'max_time')
+    day = dt.date(2000, 1, 1)
     return datetimes(
         allow_naive=allow_naive, timezones=timezones,
+        min_datetime=dt.datetime.combine(day, min_time),
+        max_datetime=dt.datetime.combine(day, max_time)
     ).map(lambda t: t.timetz())

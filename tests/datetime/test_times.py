@@ -18,9 +18,11 @@
 from __future__ import division, print_function, absolute_import
 
 import pytz
+import pytest
 
 import hypothesis._settings as hs
 from hypothesis import given, assume
+from hypothesis.errors import InvalidArgument
 from tests.common.debug import minimal
 from hypothesis.strategytests import strategy_test_suite
 from hypothesis.extra.datetime import times
@@ -84,3 +86,41 @@ def test_restricts_to_allowed_set_of_timezones():
     timezones = list(map(pytz.timezone, list(pytz.all_timezones)[:3]))
     x = minimal(times(timezones=timezones))
     assert any(tz.zone == x.tzinfo.zone for tz in timezones)
+
+
+def test_validate_min_max_time_arg_types():
+    with pytest.raises(InvalidArgument):
+        times(min_time=12).example()
+    with pytest.raises(InvalidArgument):
+        times(max_time=12).example()
+
+
+@given(times())
+def test_handles_identical_bounds(time):
+    # Equivalent to just(time).example()
+    time = time.replace(tzinfo=None)
+    ex = times(min_time=time, max_time=time).example().replace(tzinfo=None)
+    assert ex == time
+
+
+@given(x=times(timezones=[]), y=times(timezones=[]))
+def test_bounds(x, y):
+    min_time, max_time = sorted([x, y])
+    strat = times(min_time=min_time, max_time=max_time, timezones=[])
+    assert min_time <= strat.example() <= max_time
+
+
+@given(x=times(timezones=[]), y=times(timezones=[]))
+def test_bounds_must_be_ordered(x, y):
+    assume(x != y)
+    min_time, max_time = sorted([x, y])
+    with pytest.raises(InvalidArgument):
+        times(min_time=max_time, max_time=min_time, timezones=[]).example()
+
+
+@given(aware=times(allow_naive=False))
+def test_cannot_use_aware_bounds(aware):
+    with pytest.raises(InvalidArgument):
+        times(min_time=aware).example()
+    with pytest.raises(InvalidArgument):
+        times(max_time=aware).example()
