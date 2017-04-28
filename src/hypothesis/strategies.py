@@ -585,7 +585,7 @@ def fixed_dictionaries(mapping):
 
     """
     from hypothesis.searchstrategy.collections import FixedKeysDictStrategy
-    check_type(dict, mapping)
+    check_type(dict, mapping, 'mapping')
     for v in mapping.values():
         check_strategy(v)
     for v in mapping.values():
@@ -1183,15 +1183,17 @@ def data():
 # Private API below here
 
 
-def check_type(typ, arg):
+def check_type(typ, arg, name=''):
+    if name:
+        name += '='
     if not isinstance(arg, typ):
         if isinstance(typ, type):
             typ_string = typ.__name__
         else:
             typ_string = 'one of %s' % (
                 ', '.join(t.__name__ for t in typ))
-        raise InvalidArgument(
-            'Expected %s but got %r' % (typ_string, arg,))
+        raise InvalidArgument('Expected %s but got %s%r (type=%s)'
+                              % (typ_string, name, arg, type(arg).__name__))
 
 
 def check_strategy(arg):
