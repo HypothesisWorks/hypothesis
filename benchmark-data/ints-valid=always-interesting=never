@@ -13,12 +13,12 @@
 #
 # Key statistics for this benchmark:
 #
-# * 1000 examples
+# * 200 examples
 # * Mean size: 3200.00 bytes, standard deviation: 0.00 bytes
 #
 # Additional interesting statistics:
 #
-# * Ranging from 3200 [1000 times] to 3200 [1000 times] bytes.
+# * Ranging from 3200 [200 times] to 3200 [200 times] bytes.
 # * Median size: 3200
 # * 99% of examples had at least 3200 bytes
 # * 99% of examples had at most 3200 bytes
@@ -26,4 +26,4 @@
 # All data after this point is an opaque binary blob. You are not expected
 # to understand it.
 
-Data 104: STARTPCOO3RFBBWADAEAAYBKT5LZLDJYF3JOB6EBF2B3BO53EBX4JPNZF255NDQY7PLPXC23G3W5WNXN3M3P375DYWXCVM6HOR3YHFRKDDEA=END
+Data 112: STARTPCOO3RZBB2ADADCA2GVTJVITBU4K5MRATK2AEPOUTLOZ2XIC67OXXJPBV7VSLPLUHQZ3PTWDNQ26DHDTZY46PHHTP57DPUMRDH53MPSSTFZRK===END

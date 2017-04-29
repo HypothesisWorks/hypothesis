@@ -210,16 +210,16 @@ secret.tar.enc: deploy_key .pypirc
 	rm secrets.tar
 
 check-benchmark: $(BENCHMARK_VIRTUALENV)
-	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --check --nruns=100
+	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --check
 
 build-new-benchmark-data: $(BENCHMARK_VIRTUALENV)
-	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --skip-existing --nruns=1000
+	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --skip-existing
 
 update-improved-benchmark-data: $(BENCHMARK_VIRTUALENV)
-	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --update=improved --nruns=1000
+	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --update=improved
 
 update-all-benchmark-data: $(BENCHMARK_VIRTUALENV)
-	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --update=all --nruns=1000
+	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --update=all
 
 update-benchmark-headers: $(BENCHMARK_VIRTUALENV)
 	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --only-update-headers
