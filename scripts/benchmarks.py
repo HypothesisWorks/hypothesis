@@ -35,7 +35,7 @@ import attr
 import click
 import hypothesis.strategies as st
 from hypothesis import settings
-from scipy.stats import ttest_rel
+from scipy.stats import wilcoxon
 from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.data import Status
@@ -206,13 +206,6 @@ def run_benchmark(benchmark, n_runs, base_seed):
                 )
             )
     return BenchmarkData(data=results, seed=base_seed)
-
-
-def benchmark_difference_p_value(existing, recent):
-    new_sizes = [d.size for d in recent.data]
-    existing_sizes = [d.size for d in existing.data][:len(new_sizes)]
-    np.random.seed(0)
-    return ttest_rel(existing_sizes, new_sizes)[1]
 
 
 def benchmark_file(name):
@@ -462,15 +455,15 @@ def cli(
                         old_values.append(v_old)
                         new_values.append(v_new)
                 assert len(old_values) == len(new_values)
-                if old_values == new_values:
-                    continue
-                    click.echo('Skipping %s in %s due to trivial benchmark' % (
-                        target, name,
-                    ))
+                differences = sum(
+                    u != v for u, v in zip(old_values, new_values))
+                if differences <= 20:
+                    click.echo((
+                        'Skipping %s in %s due to %d < 20 '
+                        'different examples') % (target, name, differences))
                     continue
 
-                np.random.seed(0)
-                pp = ttest_rel(old_values, new_values)[1]
+                pp = wilcoxon(old_values, new_values)[1]
                 assert not math.isnan(pp)
                 click.echo('p-value for difference in %s %.5f' % (target, pp,))
                 reports.append(Report(
