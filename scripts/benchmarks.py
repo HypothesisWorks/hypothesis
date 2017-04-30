@@ -37,8 +37,8 @@ import hypothesis.strategies as st
 from hypothesis import settings
 from scipy.stats import wilcoxon
 from hypothesis.errors import UnsatisfiedAssumption
-from hypothesis.internal.conjecture.engine import ConjectureRunner
 from hypothesis.internal.conjecture.data import Status
+from hypothesis.internal.conjecture.engine import ConjectureRunner
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -266,8 +266,8 @@ def blob_to_data(blob):
     decompressed = zlib.decompress(from_base64)
     parsed = json.loads(decompressed)
     return BenchmarkData(
-        data=[SingleBenchmarkResult(**p) for p in parsed["data"]],
-        seed=parsed["seed"],
+        data=[SingleBenchmarkResult(**p) for p in parsed['data']],
+        seed=parsed['seed'],
     )
 
 
@@ -318,7 +318,7 @@ def write_data(name, new_data):
     ][0]
     sizes = [d.size for d in new_data.data]
     discovery = sum(d.success for d in new_data.data)
-    shrunk_size = "N/A" if not discovery else str(np.mean([
+    shrunk_size = 'N/A' if not discovery else str(np.mean([
         d.success_size for d in new_data.data if d.success
     ]))
     with open(benchmark_file(name), 'w') as o:
