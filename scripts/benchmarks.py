@@ -38,6 +38,7 @@ from hypothesis import settings
 from scipy.stats import ttest_rel
 from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.internal.conjecture.engine import ConjectureRunner
+from hypothesis.internal.conjecture.data import Status
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -82,6 +83,8 @@ class BenchmarkData(object):
 @attr.s()
 class SingleBenchmarkResult(object):
     size = attr.ib()
+    success = attr.ib()
+    success_size = attr.ib()
 
 
 STRATEGIES = OrderedDict([
@@ -153,7 +156,7 @@ def random_for_int(i):
     return random.Random(seed)
 
 
-def run_benchmark_for_sizes(benchmark, n_runs, base_seed):
+def run_benchmark(benchmark, n_runs, base_seed):
     click.echo('Calculating data for %s' % (benchmark.name,))
     results = []
 
@@ -192,7 +195,16 @@ def run_benchmark_for_sizes(benchmark, n_runs, base_seed):
             )
             engine.run()
             assert len(sizes) > 0
-            results.append(SingleBenchmarkResult(size=sum(sizes)))
+            success = int(engine.last_data.status == Status.INTERESTING)
+            success_size = None if not success else len(
+                engine.last_data.buffer)
+            results.append(
+                SingleBenchmarkResult(
+                    size=sum(sizes),
+                    success=success,
+                    success_size=success_size,
+                )
+            )
     return BenchmarkData(data=results, seed=base_seed)
 
 
@@ -282,8 +294,9 @@ BENCHMARK_HEADER = """
 #
 # Key statistics for this benchmark:
 #
-# * %(count)d examples
+# * %(count)d runs, of which %(discovery)s succeeded.
 # * Mean size: %(mean).2f bytes, standard deviation: %(sd).2f bytes
+# * Mean shrunk size: %(shrunk_size)s
 #
 # Additional interesting statistics:
 #
@@ -311,6 +324,10 @@ def write_data(name, new_data):
         k for k, v in STRATEGIES.items() if v == benchmark.strategy
     ][0]
     sizes = [d.size for d in new_data.data]
+    discovery = sum(d.success for d in new_data.data)
+    shrunk_size = "N/A" if not discovery else str(np.mean([
+        d.success_size for d in new_data.data if d.success
+    ]))
     with open(benchmark_file(name), 'w') as o:
         o.write(BENCHMARK_HEADER % {
             'strategy_name': strategy_name,
@@ -319,11 +336,13 @@ def write_data(name, new_data):
             'interesting': benchmark.interesting.__name__,
             'seed': new_data.seed,
             'count': len(sizes),
+            'discovery': discovery,
+            'mean': np.mean(sizes),
+            'shrunk_size': shrunk_size,
             'min': min(sizes),
             'nmin': times(sizes.count(min(sizes))),
             'nmax': times(sizes.count(max(sizes))),
             'max': max(sizes),
-            'mean': np.mean(sizes),
             'sd': np.std(sizes),
             'median': int(np.percentile(sizes, 50, interpolation='lower')),
             'lo': int(np.percentile(sizes, 1, interpolation='lower')),
@@ -344,12 +363,12 @@ NONE = 'none'
 NEW = 'new'
 ALL = 'all'
 CHANGED = 'changed'
-IMPROVED = 'improved'
 
 
 @attr.s
 class Report(object):
     name = attr.ib()
+    target = attr.ib()
     p = attr.ib()
     old_mean = attr.ib()
     new_mean = attr.ib()
@@ -371,7 +390,7 @@ if it were non-existing. If it is smaller, the existing data will be sampled.
 @click.option('--skip-existing/--no-skip-existing', default=False)
 @click.option('--fdr', default=0.001)
 @click.option('--update', type=click.Choice([
-    NONE, NEW, ALL, CHANGED, IMPROVED
+    NONE, NEW, ALL, CHANGED,
 ]), default=NEW)
 @click.option('--only-update-headers/--full-run', default=False)
 def cli(
@@ -427,28 +446,41 @@ def cli(
             if skip_existing:
                 continue
             old_data = existing_data(name)
-            new_data = run_benchmark_for_sizes(
+            new_data = run_benchmark(
                 BENCHMARKS[name],
                 len(old_data.data) if nruns is None else nruns,
                 old_data.seed + 1)
 
-            if old_data.is_identical(new_data):
-                click.echo('Skipping %s due to trivial benchmark' % (
-                    name,
-                ))
-                continue
+            for target in ('size', 'success', 'success_size'):
 
-            pp = benchmark_difference_p_value(old_data, new_data)
-            assert not math.isnan(pp)
-            click.echo('p-value for difference %.5f' % (pp,))
-            reports.append(Report(
-                name, pp, np.mean(old_data.sizes), np.mean(new_data.sizes),
-                new_data,
-            ))
+                old_values = []
+                new_values = []
+                for d_old, d_new in zip(old_data.data, new_data.data):
+                    v_old = getattr(d_old, target)
+                    v_new = getattr(d_new, target)
+                    if v_old is not None and v_new is not None:
+                        old_values.append(v_old)
+                        new_values.append(v_new)
+                assert len(old_values) == len(new_values)
+                if old_values == new_values:
+                    continue
+                    click.echo('Skipping %s in %s due to trivial benchmark' % (
+                        target, name,
+                    ))
+                    continue
+
+                np.random.seed(0)
+                pp = ttest_rel(old_values, new_values)[1]
+                assert not math.isnan(pp)
+                click.echo('p-value for difference in %s %.5f' % (target, pp,))
+                reports.append(Report(
+                    name, target, pp, np.mean(old_values), np.mean(new_values),
+                    new_data,
+                ))
             if update == ALL:
                 write_data(name, new_data)
         elif update != NONE:
-            new_data = run_benchmark_for_sizes(
+            new_data = run_benchmark(
                 BENCHMARKS[name], DEFAULT_RUNS if nruns is None else nruns, 0)
             write_data(name, new_data)
 
@@ -482,16 +514,15 @@ def cli(
 
     if different:
         for report in different:
-            click.echo('Different means for %s: %.2f -> %.2f. p=%.5f' % (
-                report.name, report.old_mean, report.new_mean, report.p
+            click.echo('Different means for %s in %s: %.2f -> %.2f. p=%.5f' % (
+                report.target, report.name, report.old_mean, report.new_mean,
+                report.p
             ))
         if check:
             sys.exit(1)
-        for r in different:
-            if update == CHANGED:
-                write_data(r.name, r.new_data)
-            elif update == IMPROVED and r.new_mean < r.old_mean:
-                write_data(r.name, r.new_data)
+        if update == CHANGED:
+            for name, data in {r.name: r.new_data for r in different}.items():
+                write_data(name, data)
     else:
         click.echo('No significant differences')
 

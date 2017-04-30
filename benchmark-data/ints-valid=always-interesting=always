@@ -13,8 +13,9 @@
 #
 # Key statistics for this benchmark:
 #
-# * 200 examples
+# * 200 runs, of which 200 succeeded.
 # * Mean size: 48.00 bytes, standard deviation: 0.00 bytes
+# * Mean shrunk size: 16.0
 #
 # Additional interesting statistics:
 #
@@ -26,4 +27,4 @@
 # All data after this point is an opaque binary blob. You are not expected
 # to understand it.
 
-Data 104: STARTPCOKWVSKJEWESVFSKKEK4VRKZ2WEUBNSJQWGU5IUIZ42HPCR3YUG7FBXZIN6LDPSIZ42HPHBYSF5KUKQFJHE2TIB6IGGUAKOQMWY2===END
+Data 176: STARTPCOO3SRRBKBTAAEF4GVYJTAOA2SBJLZCKJCDGOFHFZFO5XQIIIX7C3PPP56FPXEW54JMOMC5WHWGO3TLPB3SDFTDLVZSSLOTX47I6SFP3ICZ5Z3ZT3TXTHXHPGPOO6M6454Z5Z3ZT3TXTHXHPGPOO6P663Z73ZV4WXVOWDZIHFN4K===END

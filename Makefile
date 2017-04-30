@@ -215,8 +215,8 @@ check-benchmark: $(BENCHMARK_VIRTUALENV)
 build-new-benchmark-data: $(BENCHMARK_VIRTUALENV)
 	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --skip-existing
 
-update-improved-benchmark-data: $(BENCHMARK_VIRTUALENV)
-	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --update=improved
+update-changed-benchmark-data: $(BENCHMARK_VIRTUALENV)
+	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --update=changed
 
 update-all-benchmark-data: $(BENCHMARK_VIRTUALENV)
 	PYTHONPATH=src $(BENCHMARK_PYTHON) scripts/benchmarks.py --update=all
