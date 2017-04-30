@@ -489,15 +489,19 @@ def cli(
 
     click.echo('Checking for different means')
 
-    # We now perform a Benjamini Hochberg test. This gives us a list of
-    # possibly significant differences while controlling the false discovery
+    # We now perform a Benjamini-Hochberg-Yekutieli test. This gives us a list
+    # of possibly significant differences while controlling the false discovery
     # rate. https://en.wikipedia.org/wiki/False_discovery_rate
     reports.sort(key=lambda x: x.p)
 
     threshold = 0
     n = len(reports)
+    harmonic = 0
     for k, report in enumerate(reports, 1):
-        if report.p <= k * fdr / n:
+        # The harmonic numbers are needed to adjust for the fact that our
+        # different tests are not independent and are of uncertain correlation.
+        harmonic += 1 / k
+        if report.p <= k * fdr / (n * harmonic):
             assert report.p <= fdr
             threshold = k
     different = reports[:threshold]
