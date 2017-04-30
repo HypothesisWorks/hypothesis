@@ -45,7 +45,7 @@ __all__ = [
     'tuples', 'lists', 'sets', 'frozensets', 'iterables',
     'dictionaries', 'fixed_dictionaries',
     'sampled_from', 'permutations',
-    'datetimes', 'dates', 'times',
+    'datetimes', 'dates', 'times', 'timedeltas',
     'builds',
     'randoms', 'random_module',
     'recursive', 'composite',
@@ -1054,6 +1054,19 @@ def times(min_time=dt.time.min, max_time=dt.time.max, timezones=none()):
     return datetimes(min_datetime=dt.datetime.combine(day, min_time),
                      max_datetime=dt.datetime.combine(day, max_time),
                      timezones=timezones).map(lambda t: t.timetz())
+
+
+@defines_strategy
+def timedeltas(min_delta=dt.timedelta.min, max_delta=dt.timedelta.max):
+    """A strategy for timedeltas between ``min_delta`` and ``max_delta``."""
+    from hypothesis.searchstrategy.datetime import TimedeltaStrategy
+
+    check_type(dt.timedelta, min_delta, 'min_delta')
+    check_type(dt.timedelta, max_delta, 'max_delta')
+    check_valid_interval(min_delta, max_delta, 'min_delta', 'max_delta')
+    if min_delta == max_delta:
+        return just(min_delta)
+    return TimedeltaStrategy(min_delta=min_delta, max_delta=max_delta)
 
 
 @cacheable

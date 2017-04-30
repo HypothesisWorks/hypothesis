@@ -22,7 +22,7 @@ import datetime as dt
 from hypothesis.internal.conjecture import utils
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
-__all__ = ['DateStrategy', 'DatetimeStrategy']
+__all__ = ['DateStrategy', 'DatetimeStrategy', 'TimedeltaStrategy']
 
 
 def is_pytz_timezone(tz):
@@ -93,3 +93,28 @@ class DateStrategy(SearchStrategy):
     def do_draw(self, data):
         return self.min_date + dt.timedelta(days=utils.centered_integer_range(
             data, 0, self.days_apart, center=self.center))
+
+
+class TimedeltaStrategy(SearchStrategy):
+
+    def __init__(self, min_delta, max_delta):
+        assert isinstance(min_delta, dt.timedelta)
+        assert isinstance(max_delta, dt.timedelta)
+        assert min_delta < max_delta
+        self.min_delta = min_delta
+        self.max_delta = max_delta
+
+    def do_draw(self, data):
+        result = dict()
+        low_bound = True
+        high_bound = True
+        for name in ('days', 'seconds', 'microseconds'):
+            low = getattr(
+                self.min_delta if low_bound else dt.timedelta.min, name)
+            high = getattr(
+                self.max_delta if high_bound else dt.timedelta.max, name)
+            val = utils.centered_integer_range(data, low, high, 0)
+            result[name] = val
+            low_bound = low_bound and val == low
+            high_bound = high_bound and val == high
+        return dt.timedelta(**result)
