@@ -31,13 +31,14 @@ import pytz
 import hypothesis.strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis._settings import note_deprecation
+from hypothesis.extra.pytz import timezones as timezones_strategy
 
 __all__ = ['datetimes', 'dates', 'times']
 
 
 def tz_args_strat(allow_naive, tz_list, name):
     if tz_list is None:
-        tz_strat = st.sampled_from(list(pytz.all_timezones))
+        tz_strat = timezones_strategy()
     else:
         tz_strat = st.sampled_from([
             tz if isinstance(tz, dt.tzinfo) else pytz.timezone(tz)

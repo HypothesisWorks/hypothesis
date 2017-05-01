@@ -17,6 +17,14 @@ compatible version and each package will note the expected compatibility range. 
 you run into a bug with any of these please specify the dependency version.
 
 --------------------
+hypothesis[pytz]
+--------------------
+
+.. automodule:: hypothesis.extra.pytz
+   :members:
+
+
+--------------------
 hypothesis[datetime]
 --------------------
 
