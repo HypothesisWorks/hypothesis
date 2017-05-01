@@ -42,6 +42,13 @@ def test_can_get_descriptions_of_nested_lambdas_with_different_names():
     assert get_pretty_function_description(ordered_pair) == \
         'lambda right: [].map(lambda length: ())'
 
+def test_does_not_error_on_unparsable_source():
+    t = [
+        lambda x: \
+        # This will break ast.parse, but the brackets are needed for the real
+        # parser to accept this lambda
+        x][0]
+    assert get_pretty_function_description(t) == 'lambda x: <unknown>'
 
 def test_source_of_lambda_is_pretty():
     assert get_pretty_function_description(
