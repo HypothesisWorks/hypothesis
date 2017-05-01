@@ -22,7 +22,6 @@ from __future__ import division, print_function, absolute_import
 import os
 import sys
 import json
-import math
 import zlib
 import base64
 import random
@@ -35,7 +34,6 @@ import attr
 import click
 import hypothesis.strategies as st
 from hypothesis import settings
-from scipy.stats import wilcoxon
 from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner
@@ -371,6 +369,40 @@ class Report(object):
 DEFAULT_RUNS = 200
 
 
+def test_for_differing_means(seed, xs, ys):
+    """Bootstrap based test. We work on the null hypothesis that paired values
+    have identical marginal distributions, and different values are independent
+    random variables. This means that the distribution under this null
+    hypothesis should be the same as the one obtained by randomly swapping the
+    values.
+
+    We then look at the probability that the difference between the sample
+    means is at least this large under the null hypothesis using an empirical
+    bootstrap, which gives us an estimated p-value.
+
+    This is a non-parametric test so should be resilient against our data
+    distributions being a bit odd. It's a bit imprecise, but it should do.
+    """
+    assert len(xs) == len(ys)
+    random.seed(seed)
+    base_difference = abs(sum(xs) - sum(ys))
+
+    n_runs = 1000
+    greater = 0
+
+    for _ in range(n_runs):
+        l = 0
+        r = 0
+        for t in zip(xs, ys):
+            t = list(t)
+            random.shuffle(t)
+            l += t[0]
+            r += t[1]
+        if abs(l - r) >= base_difference:
+            greater += 1
+    return greater / n_runs
+
+
 @click.command()
 @click.option(
     '--nruns', default=None, type=int, help="""
@@ -455,16 +487,15 @@ def cli(
                         old_values.append(v_old)
                         new_values.append(v_new)
                 assert len(old_values) == len(new_values)
-                differences = sum(
-                    u != v for u, v in zip(old_values, new_values))
-                if differences <= 20:
+                if old_values == new_values:
                     click.echo((
-                        'Skipping %s in %s due to %d < 20 '
-                        'different examples') % (target, name, differences))
+                        'Skipping %s in %s due to trivial benchmark') % (
+                        target, name,))
                     continue
 
-                pp = wilcoxon(old_values, new_values)[1]
-                assert not math.isnan(pp)
+                pp = test_for_differing_means(
+                    new_data.seed, old_values, new_values)
+                assert 0 <= pp <= 1
                 click.echo('p-value for difference in %s %.5f' % (target, pp,))
                 reports.append(Report(
                     name, target, pp, np.mean(old_values), np.mean(new_values),
