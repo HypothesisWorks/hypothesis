@@ -26,6 +26,7 @@ import pytest
 import hypothesis.strategies as ds
 from hypothesis import find, given, settings
 from hypothesis.errors import InvalidArgument
+from hypothesis.internal.compat import float_to_decimal
 from hypothesis.internal.reflection import nicerepr
 
 
@@ -59,11 +60,15 @@ def fn_ktest(*fnkwargs):
     (ds.integers, {'min_value': 2, 'max_value': 1}),
     (ds.decimals, {'min_value': float('nan')}),
     (ds.decimals, {'min_value': 2, 'max_value': 1}),
+    (ds.decimals, {'max_value': '-snan'}),
+    (ds.decimals, {'places': -1}),
     (ds.decimals, {'max_value': 0.0, 'min_value': 1.0}),
-    (ds.decimals, {'min_value': 0.0, 'allow_nan': True}),
-    (ds.decimals, {'max_value': 0.0, 'allow_nan': True}),
     (ds.decimals, {
         'min_value': 0.0, 'max_value': 1.0, 'allow_infinity': True}),
+    (ds.decimals, {'min_value': 'inf'}),
+    (ds.decimals, {'max_value': '-inf'}),
+    (ds.decimals, {'min_value': '-inf', 'allow_infinity': False}),
+    (ds.decimals, {'max_value': 'inf', 'allow_infinity': False}),
     (ds.fractions, {'min_value': float('nan')}),
     (ds.fractions, {'min_value': 2, 'max_value': 1}),
     (ds.fractions, {'max_denominator': 0}),
@@ -104,15 +109,16 @@ def test_validates_keyword_arguments(fn, kwargs):
     (ds.integers, {'min_value': 11, 'max_value': 100}),
     (ds.integers, {'max_value': 0}),
     (ds.integers, {'min_value': decimal.Decimal('1.5')}),
-    (ds.integers, {'min_value': fractions.Fraction(1, 2)}),
     (ds.decimals, {'min_value': 1.0, 'max_value': 1.5}),
+    (ds.decimals, {'min_value': '1.0', 'max_value': '1.5'}),
     (ds.decimals, {'min_value': decimal.Decimal('1.5')}),
-    (ds.decimals, {'min_value': fractions.Fraction(1, 3)}),
     (ds.decimals, {
         'max_value': 1.0, 'min_value': -1.0, 'allow_infinity': False}),
     (ds.decimals, {'min_value': 1.0, 'allow_nan': False}),
     (ds.decimals, {'max_value': 1.0, 'allow_nan': False}),
     (ds.decimals, {'max_value': 1.0, 'min_value': -1.0, 'allow_nan': False}),
+    (ds.decimals, {'min_value': '-inf'}),
+    (ds.decimals, {'max_value': 'inf'}),
     (ds.fractions, {
         'min_value': -1, 'max_value': 1, 'max_denominator': 1000}),
     (ds.fractions, {'min_value': 1.0}),
@@ -212,7 +218,7 @@ def test_fraction_lt_negative(x):
     assert x <= fractions.Fraction(-1, 2)
 
 
-@given(ds.decimals(min_value=-1.5, max_value=1.5))
+@given(ds.decimals(min_value=-1.5, max_value=1.5, allow_nan=False))
 def test_decimal_is_in_bounds(x):
     # decimal.Decimal("-1.5") == -1.5 (not explicitly testable in py2.6)
     assert decimal.Decimal('-1.5') <= x <= decimal.Decimal('1.5')
@@ -246,7 +252,7 @@ def test_decimals():
 
 
 def test_non_float_decimal():
-    find(ds.decimals(), lambda d: ds.float_to_decimal(float(d)) != d)
+    find(ds.decimals(), lambda d: float_to_decimal(float(d)) != d)
 
 
 def test_produces_dictionaries_of_at_least_minimum_size():

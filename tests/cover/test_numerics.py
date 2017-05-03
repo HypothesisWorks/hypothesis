@@ -18,10 +18,14 @@
 from __future__ import division, print_function, absolute_import
 
 import math
+import decimal
+
+import pytest
 
 from hypothesis import given, assume
-from tests.common.utils import fails, fails_with
-from hypothesis.strategies import decimals, fractions, float_to_decimal
+from tests.common.utils import fails
+from hypothesis.strategies import decimals, fractions
+from hypothesis.internal.compat import float_to_decimal
 
 
 @fails
@@ -36,15 +40,16 @@ def test_fraction_addition_is_well_behaved(x, y, z):
     assert x + y + z == y + x + z
 
 
-@fails_with(AssertionError)
+@fails
 @given(decimals())
 def test_decimals_include_nan(x):
     assert not math.isnan(x)
 
 
-@fails_with(AssertionError)
+@fails
 @given(decimals())
 def test_decimals_include_inf(x):
+    assume(not x.is_snan())
     assert not math.isinf(x)
 
 
@@ -55,4 +60,18 @@ def test_decimals_can_disallow_nan(x):
 
 @given(decimals(allow_infinity=False))
 def test_decimals_can_disallow_inf(x):
+    assume(not x.is_snan())
     assert not math.isinf(x)
+
+
+@pytest.mark.parametrize('places', range(10))
+def test_decimals_have_correct_places(places):
+    @given(decimals(0, 10, allow_nan=False, places=places))
+    def inner_tst(n):
+        assert n.as_tuple().exponent == -places
+    inner_tst()
+
+
+@given(decimals(min_value='0.1', max_value='0.2', allow_nan=False, places=1))
+def test_works_with_few_values(dec):
+    assert dec in (decimal.Decimal('0.1'), decimal.Decimal('0.2'))
