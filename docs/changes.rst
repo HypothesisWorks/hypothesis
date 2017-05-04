@@ -22,6 +22,20 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 ------------------
+3.9.0 - 2017-05-19
+------------------
+
+This is feature release, expanding the capabilities of the decimals strategy.
+
+* The new (optional) ``places`` argument allows you to generate decimals with
+  a certain number of places (e.g. cents, thousandths, satoshis).
+* If allow_infinity is None, setting min_bound no longer excludes positive
+  infinity and setting max_value no longer excludes negative infinity.
+* All of ``NaN``, ``-Nan``, ``sNaN``, and ``-sNaN`` may now be drawn if
+  allow_nan is True, or if allow_nan is None and min_value or max_value is None.
+* min_value and max_value may be given as decimal strings, e.g. ``"1.234"``.
+
+------------------
 3.8.5 - 2017-05-16
 ------------------
 
