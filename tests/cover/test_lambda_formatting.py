@@ -80,7 +80,7 @@ def test_is_not_confused_by_tuples():
 
 
 def test_strips_comments_from_the_end():
-    t = lambda x: 1
+    t = lambda x: 1 # A lambda comment
     assert get_pretty_function_description(t) == 'lambda x: 1'
 
 
