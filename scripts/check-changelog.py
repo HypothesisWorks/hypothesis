@@ -34,28 +34,18 @@ if __name__ == '__main__':
         print('No source changes found')
         sys.exit(0)
 
-    changelog = tools.changelog()
-
-    if '\n%s - ' % (tools.__version__,) not in changelog:
-        print(
-            'The current version (%s) isn\'t mentioned in the changelog' % (
-                tools.__version__,))
-        sys.exit(1)
-
     now = datetime.utcnow()
-
     hour = timedelta(hours=1)
-
-    acceptable_dates = {
-        d.strftime('%Y-%m-%d')
+    acceptable_lines = sorted(set(
+        '{} - {}'.format(tools.__version__, d.strftime('%Y-%m-%d'))
         for d in (now, now + hour, now - hour)
-    }
+    ))
 
-    when = ' or '.join(sorted(acceptable_dates))
-
-    if not any(d in changelog for d in acceptable_dates):
-        print((
-            'The current date (%s) isn\'t mentioned in the changelog. '
-            'Remember this will be released as soon as you merge to master!'
-        ) % (when,))
+    for line in tools.changelog().split('\n'):
+        if line.strip() in acceptable_lines:
+            break
+    else:
+        print('No line with version and current date (%s) in the changelog. '
+              'Remember this will be released as soon as you merge to master!'
+              % ' or '.join(repr(line) for line in acceptable_lines))
         sys.exit(1)
