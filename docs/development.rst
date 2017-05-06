@@ -2,7 +2,7 @@
 Ongoing Hypothesis Development
 ==============================
 
-Hypothesis releases and development are managed by me, `David R. MacIver <http://www.drmaciver.com>`_.
+Hypothesis development is managed by me, `David R. MacIver <http://www.drmaciver.com>`_.
 I am the primary author of Hypothesis.
 
 *However*, I no longer do unpaid feature development on Hypothesis. My roles as leader of the project are:
@@ -14,17 +14,40 @@ I am the primary author of Hypothesis.
 5. Planning the general roadmap of the project
 6. Doing sponsored development on tasks that are too large or in depth for other people to take on
 
-So all new features must either be sponsored or implemented by someone else. That being said, I take a fairly active
-role in shepherding pull requests and helping people write a new feature (see `the
-contributing guidelines <https://github.com/HypothesisWorks/hypothesis-python/blob/master/CONTRIBUTING.rst>`_ for
-details and `this pull request
-<https://github.com/HypothesisWorks/hypothesis-python/pull/154>`_ for an example of how the process goes). This isn't
-"patches welcome", it's "I will help you write a patch".
+So all new features must either be sponsored or implemented by someone else.
+That being said, the maintenance team takes an active role in shepherding pull requests and
+helping people write a new feature (see :gh-file:`CONTRIBUTING.rst` for
+details and :pull:`154` for an example of how the process goes). This isn't
+"patches welcome", it's "we will help you write a patch".
 
-All enhancement tickets on GitHub are tagged with either `help-wanted <https://github.com/HypothesisWorks/hypothesis-python/labels/help-wanted>`_
-if I think they're viable for someone else to pick up or `for-a-modest-fee <https://github.com/HypothesisWorks/hypothesis-python/labels/for-a-modest-fee>`_ if
-I think they are not and that if you want them you should probably talk to me about paid development.
 
-You are of course entirely welcome to ask for paid development on something that is marked help-wanted,
-or indeed to try to tackle something marked for-a-modest-fee yourself if you're feeling ambitious. These labels
-are very much intended as guidelines rather than rules.
+.. _release-policy:
+
+Release Policy
+==============
+
+Hypothesis releases follow `semantic versioning <http://semver.org/>`_.
+
+We maintain backwards-compatibility wherever possible, and use deprecation
+warnings to mark features that have been superseded by a newer alternative.
+If you want to detect this, the :py:meth:`strict setting <hypothesis.settings.strict>`
+upgrades all Hypothesis warnings to errors.
+
+We use continuous deployment to ensure that you can always use our newest and
+shiniest features - every change to the source tree is automatically built and
+published on PyPI as soon as it's merged onto master, after code review and
+passing our extensive test suite.
+
+
+Project Roadmap
+===============
+
+Hypothesis does not have a long-term release plan.  However some visibility
+into our plans for future :doc:`compatibility <supported>` may be useful:
+
+- We value compatibility, and maintain it as far as practical.  This generally
+  excludes things which are end-of-life upstream, or have an unstable API.
+- We would like to drop Python 2 support when it it reaches end of life in
+  2020.  Ongoing support is likely to depend on commercial funding.
+- We intend to support PyPy3 as soon as it supports a recent enough version of
+  Python 3.  See :issue:`602`.

@@ -37,6 +37,7 @@ autodoc_member_order = 'bysource'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.doctest',
+    'sphinx.ext.extlinks',
     'sphinx.ext.viewcode',
     'sphinx.ext.intersphinx',
 ]
@@ -79,6 +80,16 @@ import random
 random.seed(0)
 '''
 
+# This config value must be a dictionary of external sites, mapping unique
+# short alias names to a base URL and a prefix.
+# See http://sphinx-doc.org/ext/extlinks.html
+extlinks = {
+    'commit': ('https://github.com/HypothesisWorks/hypothesis-python/commit/%s', 'commit '),
+    'gh-file': ('https://github.com/HypothesisWorks/hypothesis-python/blob/master/%s', ''),
+    'gh-link': ('https://github.com/HypothesisWorks/hypothesis-python/%s', ''),
+    'issue': ('https://github.com/HypothesisWorks/hypothesis-python/issues/%s', 'issue #'),
+    'pull': ('https://github.com/HypothesisWorks/hypothesis-python/pulls/%s', 'pull request #'),
+}
 
 # -- Options for HTML output ----------------------------------------------
 
