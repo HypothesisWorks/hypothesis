@@ -5,7 +5,7 @@ autoflake==0.7
 autopep8==1.3.1
 Babel==2.4.0
 clint==0.5.1
-Django==1.11
+Django==1.11.1
 docformatter==0.8
 docutils==0.13.1
 Faker==0.7.11
