@@ -22,12 +22,11 @@ import pytz
 import hypothesis._settings as hs
 from hypothesis import given, assume
 from tests.common.debug import minimal
-from hypothesis.strategytests import strategy_test_suite
+from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.extra.datetime import times
 
-TestStandardDescriptorFeatures1 = strategy_test_suite(times())
 
-
+@checks_deprecated_behaviour
 def test_can_find_midnight():
     minimal(
         times(),
@@ -35,18 +34,22 @@ def test_can_find_midnight():
     )
 
 
+@checks_deprecated_behaviour
 def test_can_find_non_midnight():
     assert minimal(times(), lambda x: x.hour != 0).hour == 1
 
 
+@checks_deprecated_behaviour
 def test_can_find_off_the_minute():
     minimal(times(), lambda x: x.second == 0)
 
 
+@checks_deprecated_behaviour
 def test_can_find_on_the_minute():
     minimal(times(), lambda x: x.second != 0)
 
 
+@checks_deprecated_behaviour
 def test_simplifies_towards_midnight():
     d = minimal(times())
     assert d.hour == 0
@@ -55,22 +58,25 @@ def test_simplifies_towards_midnight():
     assert d.microsecond == 0
 
 
+@checks_deprecated_behaviour
 def test_can_generate_naive_time():
     minimal(times(allow_naive=True), lambda d: not d.tzinfo)
 
 
+@checks_deprecated_behaviour
 def test_can_generate_non_naive_time():
     assert minimal(
         times(allow_naive=True), lambda d: d.tzinfo).tzinfo == pytz.UTC
 
 
+@checks_deprecated_behaviour
 def test_can_generate_non_utc():
     minimal(
         times(),
         lambda d: assume(d.tzinfo) and d.tzinfo.zone != u'UTC')
 
 
-with hs.settings(max_examples=1000):
+with hs.settings(strict=False):
     @given(times(timezones=[]))
     def test_naive_times_are_naive(dt):
         assert not dt.tzinfo
@@ -80,6 +86,7 @@ with hs.settings(max_examples=1000):
         assert dt.tzinfo
 
 
+@checks_deprecated_behaviour
 def test_restricts_to_allowed_set_of_timezones():
     timezones = list(map(pytz.timezone, list(pytz.all_timezones)[:3]))
     x = minimal(times(timezones=timezones))

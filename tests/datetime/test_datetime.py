@@ -27,31 +27,28 @@ import hypothesis._settings as hs
 from hypothesis import find, given, assume, settings
 from hypothesis.errors import InvalidArgument
 from tests.common.debug import minimal
-from hypothesis.strategytests import strategy_test_suite
+from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.extra.datetime import datetimes
 from hypothesis.internal.compat import hrange
 
-TestStandardDescriptorFeatures1 = strategy_test_suite(datetimes())
-TestStandardDescriptorFeatures2 = strategy_test_suite(
-    datetimes(allow_naive=False))
-TestStandardDescriptorFeatures3 = strategy_test_suite(
-    datetimes(timezones=[]),
-)
 
-
+@checks_deprecated_behaviour
 def test_can_find_after_the_year_2000():
     assert minimal(datetimes(), lambda x: x.year > 2000).year == 2001
 
 
+@checks_deprecated_behaviour
 def test_can_find_before_the_year_2000():
     assert minimal(datetimes(), lambda x: x.year < 2000).year == 1999
 
 
+@checks_deprecated_behaviour
 def test_can_find_each_month():
     for i in hrange(1, 12):
         minimal(datetimes(), lambda x: x.month == i)
 
 
+@checks_deprecated_behaviour
 def test_can_find_midnight():
     minimal(
         datetimes(),
@@ -59,18 +56,22 @@ def test_can_find_midnight():
     )
 
 
+@checks_deprecated_behaviour
 def test_can_find_non_midnight():
     assert minimal(datetimes(), lambda x: x.hour != 0).hour == 1
 
 
+@checks_deprecated_behaviour
 def test_can_find_off_the_minute():
     minimal(datetimes(), lambda x: x.second == 0)
 
 
+@checks_deprecated_behaviour
 def test_can_find_on_the_minute():
     minimal(datetimes(), lambda x: x.second != 0)
 
 
+@checks_deprecated_behaviour
 def test_simplifies_towards_midnight():
     d = minimal(datetimes())
     assert d.hour == 0
@@ -79,22 +80,25 @@ def test_simplifies_towards_midnight():
     assert d.microsecond == 0
 
 
+@checks_deprecated_behaviour
 def test_can_generate_naive_datetime():
     minimal(datetimes(allow_naive=True), lambda d: not d.tzinfo)
 
 
+@checks_deprecated_behaviour
 def test_can_generate_non_naive_datetime():
     assert minimal(
         datetimes(allow_naive=True), lambda d: d.tzinfo).tzinfo == pytz.UTC
 
 
+@checks_deprecated_behaviour
 def test_can_generate_non_utc():
     minimal(
         datetimes(),
         lambda d: assume(d.tzinfo) and d.tzinfo.zone != u'UTC')
 
 
-with hs.settings(max_examples=1000):
+with hs.settings(strict=False):
     @given(datetimes(timezones=[]))
     def test_naive_datetimes_are_naive(dt):
         assert not dt.tzinfo
@@ -104,20 +108,24 @@ with hs.settings(max_examples=1000):
         assert dt.tzinfo
 
 
+@checks_deprecated_behaviour
 def test_restricts_to_allowed_set_of_timezones():
     timezones = list(map(pytz.timezone, list(pytz.all_timezones)[:3]))
     x = minimal(datetimes(timezones=timezones))
     assert any(tz.zone == x.tzinfo.zone for tz in timezones)
 
 
+@checks_deprecated_behaviour
 def test_min_year_is_respected():
     assert minimal(datetimes(min_year=2003)).year == 2003
 
 
+@checks_deprecated_behaviour
 def test_max_year_is_respected():
     assert minimal(datetimes(max_year=1998)).year == 1998
 
 
+@checks_deprecated_behaviour
 def test_validates_year_arguments_in_range():
     with pytest.raises(InvalidArgument):
         datetimes(min_year=-10 ** 6).example()
@@ -129,11 +137,13 @@ def test_validates_year_arguments_in_range():
         datetimes(max_year=10 ** 6).example()
 
 
+@checks_deprecated_behaviour
 def test_needs_permission_for_no_timezones():
     with pytest.raises(InvalidArgument):
         datetimes(allow_naive=False, timezones=[]).example()
 
 
+@checks_deprecated_behaviour
 @flaky(max_runs=3, min_passes=1)
 def test_bordering_on_a_leap_year():
     x = find(
@@ -144,6 +154,7 @@ def test_bordering_on_a_leap_year():
     assert x.year == 2004
 
 
+@checks_deprecated_behaviour
 def test_overflow_in_simplify():
     """This is a test that we don't trigger a pytz bug when we're simplifying
     around MINYEAR where valid dates can produce an overflow error."""
