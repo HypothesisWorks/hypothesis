@@ -68,6 +68,8 @@ class Benchmark(object):
 STRATEGIES = OrderedDict([
     ('ints', st.integers()),
     ('intlists', st.lists(st.integers())),
+    ('sizedintlists', st.integers(0, 10).flatmap(
+        lambda n: st.lists(st.integers(), min_size=n, max_size=n))),
 ])
 
 
@@ -85,6 +87,10 @@ def always(seed, testdata, value):
 
 def never(seed, testdata, value):
     return False
+
+
+def nontrivial(seed, testdata, value):
+    return sum(testdata.buffer) >= 255
 
 
 def sometimes(p, name=None):
@@ -112,6 +118,8 @@ for k in STRATEGIES:
     define_benchmark(k, always, never)
     define_benchmark(k, always, always)
     define_benchmark(k, always, usually)
+    define_benchmark(k, always, nontrivial)
+    define_benchmark(k, usually, nontrivial)
 
 
 define_benchmark('intlists', always, minsum)
