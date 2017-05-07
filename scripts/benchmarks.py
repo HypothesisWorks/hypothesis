@@ -22,7 +22,6 @@ from __future__ import division, print_function, absolute_import
 import os
 import sys
 import json
-import math
 import zlib
 import base64
 import random
@@ -32,7 +31,6 @@ from collections import OrderedDict
 import attr
 import click
 import numpy as np
-from scipy.stats import ttest_ind
 
 import hypothesis.strategies as st
 from hypothesis import settings
@@ -191,7 +189,35 @@ def run_benchmark_for_sizes(benchmark, n_runs):
 
 
 def benchmark_difference_p_value(existing, recent):
-    return ttest_ind(existing, recent, equal_var=False)[1]
+    """This is a bootstrapped permutation test for the difference of means.
+
+    Under the null hypothesis that the two sides come from the same
+    distribution, we can randomly reassign values to different populations and
+    see how large a difference in mean we get. This gives us a p-value for our
+    actual observed difference in mean by counting the fraction of times our
+    resampling got a value that large.
+
+    See https://en.wikipedia.org/wiki/Resampling_(statistics)#Permutation_tests
+    for details.
+
+    """
+    rnd = random.Random(0)
+
+    threshold = abs(np.mean(existing) - np.mean(recent))
+    n = len(existing)
+
+    n_runs = 1000
+    greater = 0
+
+    all_values = existing + recent
+    for _ in range(n_runs):
+        rnd.shuffle(all_values)
+        l = all_values[:n]
+        r = all_values[n:]
+        score = abs(np.mean(l) - np.mean(r))
+        if score >= threshold:
+            greater += 1
+    return greater / n_runs
 
 
 def benchmark_file(name):
@@ -435,18 +461,6 @@ def cli(
             new_data = run_benchmark_for_sizes(BENCHMARKS[name], nruns)
 
             pp = benchmark_difference_p_value(old_data.sizes, new_data)
-
-            if math.isnan(pp):
-                # Sometimes we have benchmarks which are very consistent in
-                # their behaviour and always produce the unique minimal
-                # failing example immediately. These should be excluded from
-                # the test because they're not meaningful for comparison.
-                assert len(set(new_data)) == len(set(old_data.sizes)) == 1
-                assert new_data[0] == old_data.sizes[0]
-                click.echo('Skipping %s due to trivial benchmark' % (
-                    name,
-                ))
-                continue
 
             click.echo('p-value for difference %.5f' % (pp,))
             reports.append(Report(
