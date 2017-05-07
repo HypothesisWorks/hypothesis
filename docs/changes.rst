@@ -22,6 +22,24 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 ------------------
+3.9.0 - 2017-04-28
+------------------
+
+This is a feature release, allowing you to bound the ``datetimes`` and
+``dates`` strategies (from ``hypothesis.extra.datetime``) by datetime or date
+objects instead of year.  This means that you can generate dates bounded by a
+single day (i.e. a single date), or datetimes constrained down to the
+microsecond level.  Optional bounds have also been added to the ``times``
+strategy.
+
+If ``datetimes`` is bounded by a timezone-aware datetime, the bounds are
+interpreted as exact moments in time, and any moment in this interval may be
+drawn from the strategy, including where a naive comparison would put it out
+of range.
+
+The ``min_year`` and ``max_year`` arguments have therefore been deprecated.
+
+------------------
 3.8.2 - 2017-04-26
 ------------------
 

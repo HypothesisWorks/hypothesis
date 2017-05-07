@@ -17,7 +17,14 @@
 
 from __future__ import division, print_function, absolute_import
 
+import datetime as dt
+
+import pytest
+
+from hypothesis import given
+from hypothesis.errors import InvalidArgument
 from tests.common.debug import minimal
+from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.strategytests import strategy_test_suite
 from hypothesis.extra.datetime import dates
 from hypothesis.internal.compat import hrange
@@ -38,9 +45,50 @@ def test_can_find_each_month():
         minimal(dates(), lambda x: x.month == i)
 
 
+@checks_deprecated_behaviour
 def test_min_year_is_respected():
     assert minimal(dates(min_year=2003)).year == 2003
 
 
+@checks_deprecated_behaviour
 def test_max_year_is_respected():
     assert minimal(dates(max_year=1998)).year == 1998
+
+
+def test_min_date_is_respected():
+    d = dt.date(2003, 7, 12)
+    assert minimal(dates(min_date=d)) == d
+
+
+def test_max_date_is_respected():
+    d = dt.date(1998, 5, 17)
+    assert minimal(dates(max_date=d)) == dt.date.min.replace(year=d.year)
+
+
+def test_can_give_datetime_bounds():
+    dates(min_date=dt.datetime.min, max_date=dt.datetime.max).example()
+
+
+@given(x=dates(), y=dates())
+def test_bounds(x, y):
+    min_date, max_date = sorted([x, y])
+    strat = dates(min_date=min_date, max_date=max_date)
+    assert min_date <= strat.example() <= max_date
+
+
+def test_cannot_mix_old_new_arguments():
+    with pytest.raises(InvalidArgument):
+        dates(min_year=2000, max_date=dt.date(2001, 1, 1)).example()
+
+
+def test_validate_min_max_date_arg_types():
+    with pytest.raises(InvalidArgument):
+        dates(min_date=2000).example()
+    with pytest.raises(InvalidArgument):
+        dates(max_date=2000).example()
+
+
+def test_handles_identical_bounds():
+    # Equivalent to just(day).example()
+    day = dt.date(2001, 1, 1)
+    assert dates(min_date=day, max_date=day).example() == day
