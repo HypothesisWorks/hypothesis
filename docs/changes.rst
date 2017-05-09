@@ -21,6 +21,21 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+
+------------------
+3.8.3 - 2017-05-09
+------------------
+
+This release removes a version check for older versions of pytest when using
+the Hypothesis pytest plugin. The pytest plugin will now run unconditionally
+on all versions of pytest. This breaks compatibility with any version of pytest
+prior to 2.7.0 (which is more than two years old).
+
+The primary reason for this change is that the version check was a frequent
+source of breakage when pytest change their versioning scheme. If you are not
+working on pytest itself and are not running a very old version of it, this
+release probably doesn't affect you.
+
 ------------------
 3.8.2 - 2017-04-26
 ------------------
