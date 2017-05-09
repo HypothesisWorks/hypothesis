@@ -82,8 +82,7 @@ install-tools: $(TOOLS)
 
 format: $(PYFORMAT) $(ISORT)
 	$(FILES_TO_FORMAT) | xargs $(TOOL_PYTHON) scripts/enforce_header.py
-	# isort will sort packages differently depending on whether they're installed
-	$(FILES_TO_FORMAT) | xargs env -i PATH="$(PATH)" $(ISORT) -p hypothesis -ls -m 2 -w 75 \
+	$(FILES_TO_FORMAT) | xargs $(ISORT) -p hypothesis -ls -m 2 -w 75 \
 			-a "from __future__ import absolute_import, print_function, division" \
 			-rc src tests examples
 	$(FILES_TO_FORMAT) | xargs $(PYFORMAT) -i
