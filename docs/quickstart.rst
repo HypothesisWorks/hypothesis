@@ -177,18 +177,12 @@ Hypothesis is `available on pypi as "hypothesis"
 
   pip install hypothesis
 
-or
-
-.. code:: bash
-
-  easy_install hypothesis
-
 If you want to install directly from the source code (e.g. because you want to
 make changes and install the changed version) you can do this with:
 
 .. code:: bash
 
-  python setup.py install
+  pip install -e .
 
 You should probably run the tests first to make sure nothing is broken. You can
 do this with:

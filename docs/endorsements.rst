@@ -1,6 +1,6 @@
-========================
-Who is using Hypothesis?
-========================
+============
+Testimonials
+============
 
 This is a page for listing people who are using Hypothesis and how excited they
 are about that. If that's you and your name is not on the list, `this file is in
