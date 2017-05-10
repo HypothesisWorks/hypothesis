@@ -851,9 +851,9 @@ Bug fixes:
 
 Fix support for fixtures on Django 1.7.
 
------------------------------------------------------------------------
-`1.10.4 <https://hypothesis.readthedocs.io/en/1.10.4/>`_ - 2015-08-21
------------------------------------------------------------------------
+-------------------
+1.10.4 - 2015-08-21
+-------------------
 
 Tiny bug fix release:
 
@@ -982,9 +982,9 @@ Another small bugfix release:
   default alphabet. In particular produces a better distribution of ascii and
   whitespace in the alphabet.
 
----------------------------------------------------------------------
-`1.8.1 <https://hypothesis.readthedocs.io/en/1.8.1/>`_ - 2015-07-17
----------------------------------------------------------------------
+------------------
+1.8.1 - 2015-07-17
+------------------
 
 This is a small release that contains a workaround for people who have
 bad reprs returning non ascii text on Python 2.7. This is not a bug fix
@@ -1074,9 +1074,9 @@ Bug fixes:
   than min\_satisfying\_examples.
 
 
----------------------------------------------------------------------
-`1.6.2 <https://hypothesis.readthedocs.io/en/1.6.2/>`_ - 2015-06-08
----------------------------------------------------------------------
+------------------
+1.6.2 - 2015-06-08
+------------------
 
 This is just a few small bug fixes:
 
@@ -1089,9 +1089,9 @@ This is just a few small bug fixes:
   floating point interval so narrow there are only a handful of values in it,
   this will no longer cause an error when Hypothesis runs out of values.
 
----------------------------------------------------------------------
-`1.6.1 <https://hypothesis.readthedocs.io/en/1.6.1/>`_ - 2015-05-21
----------------------------------------------------------------------
+------------------
+1.6.1 - 2015-05-21
+------------------
 
 This is a small patch release that fixes a bug where 1.6.0 broke the use
 of flatmap with the deprecated API and assumed the passed in function returned

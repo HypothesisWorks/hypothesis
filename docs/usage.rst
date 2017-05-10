@@ -18,7 +18,7 @@ then it should be available on pypi.
 * `fastnumbers <https://github.com/SethMMorton/fastnumbers>`_
 * `flocker <https://github.com/ClusterHQ/flocker>`_
 * `flownetpy <https://github.com/debsankha/flownetpy>`_
-* `funsize <https://github.com/mozilla/funsize>`_
+* `funsize <https://github.com/mozilla-releng/funsize>`_
 * `fusion-index <https://github.com/fusionapp/fusion-index>`_
 * `hyper-h2 <https://github.com/python-hyper/hyper-h2>`_
 * `into-dbus-python <https://github.com/stratis-storage/into-dbus-python>`_
@@ -33,13 +33,13 @@ then it should be available on pypi.
 * `PyPy <http://pypy.org>`_
 * `pyrsistent <https://github.com/tobgu/pyrsistent>`_
 * `pyudev <https://github.com/pyudev/pyudev>`_
-* `qutebrowser <https://github.com/The-Compiler/qutebrowser>`_
+* `qutebrowser <https://github.com/qutebrowser/qutebrowser>`_
 * `RubyMarshal <https://github.com/d9pouces/RubyMarshal>`_
 * `Segpy <https://github.com/sixty-north/segpy>`_
 * `simoa <https://github.com/andsor/pysimoa>`_
 * `srt <https://github.com/cdown/srt>`_
 * `tchannel <https://github.com/uber/tchannel-python>`_
-* `vdirsyncer <https://github.com/untitaker/vdirsyncer>`_
+* `vdirsyncer <https://github.com/pimutils/vdirsyncer>`_
 * `wcag-contrast-ratio <https://github.com/gsnedders/wcag-contrast-ratio>`_
 * `yacluster <https://github.com/KrzysiekJ/yacluster>`_
 * `yturl <https://github.com/cdown/yturl>`_

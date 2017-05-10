@@ -10,7 +10,7 @@ An example
 ----------
 
 Suppose we've written a `run length encoding
-<http://en.wikipedia.org/wiki/Run-length_encoding>`_ system and we want to test
+<https://en.wikipedia.org/wiki/Run-length_encoding>`_ system and we want to test
 it out.
 
 We have the following code which I took straight from the
