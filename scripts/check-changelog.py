@@ -20,6 +20,7 @@
 from __future__ import division, print_function, absolute_import
 
 import os
+import re
 import sys
 from datetime import datetime, timedelta
 
@@ -34,6 +35,8 @@ if __name__ == '__main__':
         print('No source changes found')
         sys.exit(0)
 
+    found_problem = False
+
     now = datetime.utcnow()
     hour = timedelta(hours=1)
     acceptable_lines = sorted(set(
@@ -41,11 +44,47 @@ if __name__ == '__main__':
         for d in (now, now + hour, now - hour)
     ))
 
-    for line in tools.changelog().split('\n'):
-        if line.strip() in acceptable_lines:
+    pattern = r'\n\d+\.\d+\.\d+ - \d{4}-\d{2}-\d{2}\n'
+    all_versions = list(map(str.strip, re.findall(pattern, tools.changelog())))
+
+    for line in acceptable_lines:
+        if line == all_versions[0]:
+            break
+        elif line in all_versions:
+            print('Changelog entry %r is not the first entry!  Check for '
+                  'merge errors.' % line)
+            found_problem = True
             break
     else:
         print('No line with version and current date (%s) in the changelog. '
               'Remember this will be released as soon as you merge to master!'
               % ' or '.join(repr(line) for line in acceptable_lines))
-        sys.exit(1)
+        found_problem = True
+
+    if all_versions != sorted(all_versions, reverse=True):
+        print('You edited old release notes and changed the ordering!')
+        found_problem = True
+
+    v_nums = [v.split(' - ')[0] for v in all_versions]
+    duplicates = sorted(set(v for v in v_nums if v_nums.count(v) > 1))
+    if duplicates:
+        plural = 's have' if len(duplicates) > 1 else ' has'
+        print('The following version%s multiple entries in the '
+              'changelog: %s' % (plural, ', '.join(map(repr, duplicates))))
+        found_problem = True
+
+    skipped = []
+    for this, last in zip(v_nums, v_nums[1:]):
+        maj, minor, patch = map(int, last.split('.'))
+        if maj <= 1:
+            break
+        next_patch, next_minor, next_major = ['%s.%s.%s' % v for v in [
+            (maj, minor, patch + 1), (maj, minor + 1, 0), (maj + 1, 0, 0)]]
+        if this not in (next_patch, next_minor, next_major):
+            skipped.append('Version %r found after %r, expected %r or %r'
+                           % (this, last, next_patch, next_minor))
+            found_problem = True
+    if skipped:
+        print('\n'.join(skipped))
+
+    sys.exit(int(found_problem))
