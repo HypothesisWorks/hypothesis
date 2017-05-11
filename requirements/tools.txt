@@ -8,7 +8,7 @@ clint==0.5.1
 Django==1.11.1
 docformatter==0.8
 docutils==0.13.1
-Faker==0.7.11
+Faker==0.7.12
 flake8==3.3.0
 flaky==3.3.0
 imagesize==0.7.1
