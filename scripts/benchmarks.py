@@ -21,9 +21,9 @@ from __future__ import division, print_function, absolute_import
 
 import os
 import sys
-import gzip
 import json
 import math
+import zlib
 import base64
 import random
 import hashlib
@@ -63,6 +63,12 @@ class Benchmark(object):
     strategy = attr.ib()
     valid = attr.ib()
     interesting = attr.ib()
+
+
+@attr.s()
+class BenchmarkData(object):
+    sizes = attr.ib()
+    seed = attr.ib(default=0)
 
 
 STRATEGIES = OrderedDict([
@@ -212,16 +218,17 @@ def existing_data(name):
 
 
 def data_to_blob(data):
-    as_json = json.dumps(data).encode('utf-8')
-    compressed = gzip.compress(as_json)
+    as_json = json.dumps(attr.asdict(data)).encode('utf-8')
+    compressed = zlib.compress(as_json)
     as_base64 = base64.b32encode(compressed)
     return as_base64.decode('ascii')
 
 
 def blob_to_data(blob):
     from_base64 = base64.b32decode(blob.encode('ascii'))
-    decompressed = gzip.decompress(from_base64)
-    return json.loads(decompressed)
+    decompressed = zlib.decompress(from_base64)
+    parsed = json.loads(decompressed)
+    return BenchmarkData(**parsed)
 
 
 BENCHMARK_HEADER = """
@@ -235,6 +242,8 @@ BENCHMARK_HEADER = """
 # This benchmark is for %(strategy_name)s [%(strategy)r], with the validity
 # condition "%(valid)s" and the interestingness condition "%(interesting)s".
 # See the script for the exact definitions of these criteria.
+#
+# This benchmark was generated with seed %(seed)d
 #
 # Key statistics for this benchmark:
 #
@@ -266,26 +275,28 @@ def write_data(name, new_data):
     strategy_name = [
         k for k, v in STRATEGIES.items() if v == benchmark.strategy
     ][0]
+    sizes = new_data.sizes
     with open(benchmark_file(name), 'w') as o:
         o.write(BENCHMARK_HEADER % {
             'strategy_name': strategy_name,
             'strategy': benchmark.strategy,
             'valid': benchmark.valid.__name__,
             'interesting': benchmark.interesting.__name__,
-            'count': len(new_data),
-            'min': min(new_data),
-            'nmin': times(new_data.count(min(new_data))),
-            'nmax': times(new_data.count(max(new_data))),
-            'max': max(new_data),
-            'mean': np.mean(new_data),
-            'sd': np.std(new_data),
-            'median': int(np.percentile(new_data, 50, interpolation='lower')),
-            'lo': int(np.percentile(new_data, 1, interpolation='lower')),
-            'hi': int(np.percentile(new_data, 99, interpolation='higher')),
+            'seed': new_data.seed,
+            'count': len(sizes),
+            'min': min(sizes),
+            'nmin': times(sizes.count(min(sizes))),
+            'nmax': times(sizes.count(max(sizes))),
+            'max': max(sizes),
+            'mean': np.mean(sizes),
+            'sd': np.std(sizes),
+            'median': int(np.percentile(sizes, 50, interpolation='lower')),
+            'lo': int(np.percentile(sizes, 1, interpolation='lower')),
+            'hi': int(np.percentile(sizes, 99, interpolation='higher')),
         })
         o.write('\n')
         o.write('\n')
-        blob = data_to_blob(sorted(new_data))
+        blob = data_to_blob(new_data)
         assert '\n' not in blob
         o.write('Data %d: ' % (len(blob),))
         o.write(BLOBSTART)
@@ -308,12 +319,19 @@ class Report(object):
     old_mean = attr.ib()
     new_mean = attr.ib()
     new_data = attr.ib()
+    new_seed = attr.ib()
+
+
+def seed_by_int(i):
+    # Get an actually good seed from an integer, as Random() doesn't guarantee
+    # similar but distinct seeds giving different distributions.
+    as_bytes = i.to_bytes(i.bit_length() // 8 + 1, 'big')
+    digest = hashlib.sha1(as_bytes).digest()
+    seedint = int.from_bytes(digest, 'big')
+    random.seed(seedint)
 
 
 @click.command()
-@click.option(
-    '--seed', default=0, help='Set a different random seed for the run'
-)
 @click.option(
     '--nruns', default=200, type=int, help="""
 Specify the number of runs of each benchmark to perform. If this is larger than
@@ -329,7 +347,7 @@ if it were non-existing. If it is smaller, the existing data will be sampled.
 ]), default=NEW)
 @click.option('--only-update-headers/--full-run', default=False)
 def cli(
-    seed, benchmarks, nruns, check, update, fdr, skip_existing,
+    benchmarks, nruns, check, update, fdr, skip_existing,
     only_update_headers,
 ):
     """This is the benchmark runner script for Hypothesis.
@@ -362,11 +380,17 @@ def cli(
         if name not in BENCHMARKS:
             raise click.UsageError('Invalid benchmark name %s' % (name,))
 
-    random.seed(seed)
     try:
         os.mkdir(DATA_DIR)
     except FileExistsError:
         pass
+
+    last_seed = 0
+    for name in BENCHMARKS:
+        if have_existing_data(name):
+            last_seed = max(existing_data(name).seed, last_seed)
+
+    next_seed = last_seed + 1
 
     reports = []
     if check:
@@ -378,22 +402,24 @@ def cli(
                 sys.exit(1)
 
     for name in benchmarks or BENCHMARKS:
+        new_seed = next_seed
+        next_seed += 1
+        seed_by_int(new_seed)
         if have_existing_data(name):
             if skip_existing:
                 continue
+            old_data = existing_data(name)
             new_data = run_benchmark_for_sizes(BENCHMARKS[name], nruns)
 
-            old_data = existing_data(name)
-
-            pp = benchmark_difference_p_value(old_data, new_data)
+            pp = benchmark_difference_p_value(old_data.sizes, new_data)
 
             if math.isnan(pp):
                 # Sometimes we have benchmarks which are very consistent in
                 # their behaviour and always produce the unique minimal
                 # failing example immediately. These should be excluded from
                 # the test because they're not meaningful for comparison.
-                assert len(set(new_data)) == len(set(old_data)) == 1
-                assert new_data[0] == old_data[0]
+                assert len(set(new_data)) == len(set(old_data.sizes)) == 1
+                assert new_data[0] == old_data.sizes[0]
                 click.echo('Skipping %s due to trivial benchmark' % (
                     name,
                 ))
@@ -401,14 +427,14 @@ def cli(
 
             click.echo('p-value for difference %.5f' % (pp,))
             reports.append(Report(
-                name, pp, np.mean(old_data), np.mean(new_data), new_data
+                name, pp, np.mean(old_data.sizes), np.mean(new_data), new_data,
+                new_seed=new_seed,
             ))
             if update == ALL:
-                write_data(name, new_data)
+                write_data(name, BenchmarkData(sizes=new_data, seed=next_seed))
         elif update != NONE:
             new_data = run_benchmark_for_sizes(BENCHMARKS[name], nruns)
-
-            write_data(name, new_data)
+            write_data(name, BenchmarkData(sizes=new_data, seed=next_seed))
 
     if not reports:
         sys.exit(0)

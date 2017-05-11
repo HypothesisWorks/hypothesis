@@ -9,6 +9,8 @@
 # condition "always" and the interestingness condition "never".
 # See the script for the exact definitions of these criteria.
 #
+# This benchmark was generated with seed 2
+#
 # Key statistics for this benchmark:
 #
 # * 1000 examples
@@ -24,4 +26,4 @@
 # All data after this point is an opaque binary blob. You are not expected
 # to understand it.
 
-Data 88: STARTD6FQQAGCR77VQAX75XCDCDIAGAEAAMBLBDQCBGY4QJ7RW6HAN2H7M72VDG3G3W5WNXN3M3P37YWPHGOVPVYBOAAAEND
+Data 104: STARTPCOO3RFBBWADAEAAYBKT5LZLTLRLUCWBKGAX4B3BO53EBX4JPOZK462VZ3MLPUL3BPN3M3O3WZW5XNX576RULVS2M7HBR3YHFRMDDEQ=END
