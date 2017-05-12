@@ -14,10 +14,10 @@ Python versions
 Hypothesis is supported and tested on CPython 2.7 and CPython 3.4+.
 
 Hypothesis also supports PyPy2, and will support PyPy3 when there is a stable
-release supporting Python 3.4+.  Hypothesis does not currently work on Jython
-(it requires sqlite), though could feasibly be made to do so. IronPython might
-work but hasn't been tested.  32-bit and narrow builds should work, though
-this is currently only tested on Windows.
+release supporting Python 3.4+.  Hypothesis does not currently work on Jython,
+though could feasibly be made to do so. IronPython might work but hasn't been
+tested.  32-bit and narrow builds should work, though this is currently only
+tested on Windows.
 
 In general Hypothesis does not officially support anything except the latest
 patch release of any version of Python it supports. Earlier releases should work
@@ -30,9 +30,7 @@ Operating systems
 
 In theory Hypothesis should work anywhere that Python does. In practice it is
 only known to work and regularly tested on OS X, Windows and Linux, and you may
-experience issues running it elsewhere. For example a known issue is that FreeBSD
-splits out the python-sqlite package from the main python package, and you will
-need to install that in order for it to work.
+experience issues running it elsewhere.
 
 If you're using something else and it doesn't work, do get in touch and I'll try
 to help, but unless you can come up with a way for me to run a CI server on that

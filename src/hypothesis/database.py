@@ -19,7 +19,6 @@ from __future__ import division, print_function, absolute_import
 
 import os
 import re
-import sqlite3
 import binascii
 import threading
 from contextlib import contextmanager
@@ -27,6 +26,7 @@ from contextlib import contextmanager
 from hypothesis.internal.compat import FileNotFoundError, sha1, \
     b64decode, b64encode
 
+sqlite3 = None
 SQLITE_PATH = re.compile(r"\.\(db|sqlite|sqlite3\)$")
 
 
@@ -115,6 +115,8 @@ class SQLiteExampleDatabase(ExampleDatabase):
         self.path = path
         self.db_created = False
         self.current_connection = threading.local()
+        global sqlite3
+        import sqlite3
 
     def connection(self):
         if not hasattr(self.current_connection, 'connection'):
