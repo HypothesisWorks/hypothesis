@@ -7,6 +7,24 @@ are about that. If that's you and your name is not on the list, `this file is in
 Git <https://github.com/HypothesisWorks/hypothesis-python/blob/master/docs/endorsements.rst>`_
 and I'd love it if you sent me a pull request to fix that.
 
+---------------------------------------------------------------------------------------
+`Stripe <https://stripe.com>`_
+---------------------------------------------------------------------------------------
+
+At Stripe we use Hypothesis to test every piece of our machine
+learning model training pipeline (powered by scikit). Before we
+migrated, our tests were filled with hand-crafted pandas Dataframes
+that weren't representative at all of our actual very complex
+data. Because we needed to craft examples for each test, we took the
+easy way out and lived with extremely low test coverage.
+
+Hypothesis changed all that. Once we had our strategies for generating
+Dataframes of features it became trivial to slightly customize each
+strategy for new tests. Our coverage is now close to 90%.
+
+Full-stop, property-based testing is profoundly more powerful - and
+has caught or prevented far more bugs - than our old style of
+example-based testing.
 
 ---------------------------------------------------------------------------------------
 Kristian Glass - Director of Technology at `LaterPay GmbH <https://www.laterpay.net/>`_
