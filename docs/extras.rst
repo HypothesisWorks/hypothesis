@@ -21,8 +21,8 @@ hypothesis[datetime]
 --------------------
 
 As might be expected, this provides strategies for which generating instances
-of objects from the ``datetime`` module: ``datetime``\s, ``date``\s, and
-``time``\s. It depends on ``pytz`` to work.
+of objects from the ``datetime`` module: ``datetime``\s, ``date``\s, ``time``\s
+and ``timedelta``\s. It depends on ``pytz`` to work.
 
 It should work with just about any version of ``pytz``. ``pytz`` has a very
 stable API and Hypothesis works around a bug or two in older versions.
@@ -115,6 +115,24 @@ It lives in the ``hypothesis.extra.datetime`` package.
 
     The ``allow_naive`` and ``timezones`` arguments act the same as the datetimes strategy.
 
+.. method:: timedeltas(min_value=timedelta.min, max_value=timedelta.max)
+
+    This strategy generates ``timedelta`` objects with values between `min_value` and `max_value`.
+
+    .. code-block:: pycon
+
+        >>> from hypothesis.extra.datetime import timedeltas
+        >>> from datetime import timedelta
+        >>> timedeltas().example()
+        datetime.timedelta(312117758, 82438, 23822)
+        >>> timedeltas().example()
+        datetime.timedelta(-385392744, 62116, 995342)
+        >>> timedeltas(min_value=timedelta(hours=1), max_value=timedelta(days=1)).example()
+        datetime.timedelta(0, 56116, 149715)
+
+    The ``min_value`` and ``max_value`` parameters must both be ``timedelta``s
+    themselves, though both are optional, defaulting to the corresponding
+    ``min`` and ``max`` values declared on the ``timedelta`` class.
 
 -----------------------
 hypothesis[fakefactory]
