@@ -22,6 +22,30 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.11.0 - 2017-05-23
+-------------------
+
+This is a feature release, adding datetime-related strategies to the core strategies.
+
+``extra.pytz.timezones`` allows you to sample pytz timezones from
+the Olsen database.  Use directly in a recipe for tz-aware datetimes, or
+compose with `st.none()` to allow a mix of aware and naive output.
+
+The new ``dates``, ``times``, ``datetimes``, and ``timedeltas`` strategies
+in ``hypothesis.strategies`` are all constrained by objects of their type.
+This means that you can generate dates bounded by a single day
+(i.e. a single date), or datetimes constrained to the microsecond.
+
+``times`` and ``datetimes`` take an optional ``timezones=`` argument, which
+defaults to ``none()`` for naive times.  You can use our extra strategy
+based on pytz, or roll your own timezones strategy with dateutil or even
+the standard library.
+
+The old ``dates``, ``times``, and ``datetimes`` strategies in
+``hypothesis.extra.datetimes`` are deprecated in favor of the new
+core strategies, which are more flexible and have no dependencies.
+
+-------------------
 3.10.0 - 2017-05-22
 -------------------
 
