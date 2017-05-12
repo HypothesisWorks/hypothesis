@@ -11,19 +11,13 @@ for the details.
 Python versions
 ---------------
 
-Hypothesis is supported and tested on python 2.7
-and python 3.3+. Python 3.0 through 3.2 are unsupported and definitely don't work.
-It's not infeasible to make them work but would need a very good reason.
+Hypothesis is supported and tested on CPython 2.7 and CPython 3.4+.
 
-Python 2.6 and 3.3 are supported on a "best effort" basis. They probably work,
-and bugs that affect them *might* get fixed.
-
-Hypothesis also supports PyPy (PyPy3 does not work because it only runs 3.2 compatible
-code, but if and when there's a 3.3 compatible version it will be supported), and
-should support 32-bit and narrow builds, though this is currently only tested on Windows.
-
-Hypothesis does not currently work on Jython (it requires sqlite), though could feasibly
-be made to do so. IronPython might work but hasn't been tested.
+Hypothesis also supports PyPy2, and will support PyPy3 when there is a stable
+release supporting Python 3.4+.  Hypothesis does not currently work on Jython
+(it requires sqlite), though could feasibly be made to do so. IronPython might
+work but hasn't been tested.  32-bit and narrow builds should work, though
+this is currently only tested on Windows.
 
 In general Hypothesis does not officially support anything except the latest
 patch release of any version of Python it supports. Earlier releases should work
@@ -93,3 +87,11 @@ with `Travis <https://travis-ci.org/HypothesisWorks/hypothesis-python>`_ and
 `Appveyor <https://ci.appveyor.com/project/DRMacIver/hypothesis-python/>`_
 and goes green before a release happens, so when I say they're supported I
 really mean it.
+
+-------------------
+Hypothesis versions
+-------------------
+
+Backwards compatibility is better than backporting fixes, so we use
+:ref:`semantic versioning <release-policy>` and only support the most recent
+version of Hypothesis.  See :doc:`support` for more information.

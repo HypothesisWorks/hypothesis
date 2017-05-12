@@ -21,8 +21,8 @@ some information you might find useful.
 Release tarballs
 ----------------
 
-These are available from `the GitHub releases page <https://github.com/HypothesisWorks/hypothesis-python/releases>`_. The
-tarballs on pypi are intended for installation from a Python tool such as pip or easy_install and should not
+These are available from :gh-link:`the GitHub releases page <releases>`. The
+tarballs on pypi are intended for installation from a Python tool such as pip and should not
 be considered complete releases. Requests to include additional files in them will not be granted. Their absence
 is not a bug.
 
@@ -53,9 +53,9 @@ Other Python libraries
 Hypothesis has *optional* dependencies on the following libraries:
 
 * pytz (almost any version should work)
-* fake-factory (0.5.2 or 0.5.3)
-* Django, 1.7 through 1.9 (This requires fake-factory to be installed)
-* numpy, 1.10.x (earlier versions will probably work fine)
+* faker, version 0.7
+* Django, all supported versions
+* numpy, 1.10 or later (earlier versions will probably work fine)
 * py.test (2.7.0 or greater). This is a mandatory dependency for testing Hypothesis itself but optional for users.
 
 The way this works when installing Hypothesis normally is that these features become available if the relevant
@@ -88,7 +88,7 @@ An example invocation for running the coverage subset of these tests:
 
 .. code-block:: bash
 
-  python setup.py install
+  pip install -e .
   pip install pytest # you will probably want to use your own packaging here
   python -m pytest tests/cover
 

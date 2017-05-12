@@ -1,6 +1,6 @@
-========================
-Who is using Hypothesis?
-========================
+============
+Testimonials
+============
 
 This is a page for listing people who are using Hypothesis and how excited they
 are about that. If that's you and your name is not on the list, `this file is in
@@ -8,9 +8,9 @@ Git <https://github.com/HypothesisWorks/hypothesis-python/blob/master/docs/endor
 and I'd love it if you sent me a pull request to fix that.
 
 
---------------------------------------------------------------------------------------
-Kristian Glass - Director of Technology at `LaterPay GmbH <http://www.laterpay.net/>`_
---------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------
+Kristian Glass - Director of Technology at `LaterPay GmbH <https://www.laterpay.net/>`_
+---------------------------------------------------------------------------------------
 
 Hypothesis has been brilliant for expanding the coverage of our test cases,
 and also for making them much easier to read and understand,
@@ -98,7 +98,7 @@ Thank you, David, for the great testing tool.
 Hypothesis is the single most powerful tool in my toolbox for working with
 algorithmic code, or any software that produces predictable output from a wide
 range of sources. When using it with
-`Priority <http://python-hyper.org/priority/>`_, Hypothesis consistently found
+`Priority <https://python-hyper.org/priority/en/latest/>`_, Hypothesis consistently found
 errors in my assumptions and extremely subtle bugs that would have taken months
 of real-world use to locate. In some cases, Hypothesis found subtle deviations
 from the correct output of the algorithm that may never have been noticed at

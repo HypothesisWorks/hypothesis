@@ -480,5 +480,5 @@ then use the result and go on to do other things are definitely also possible.
     if __name__ == '__main__':
         unittest.main()
 
-.. _py.test: http://pytest.org/
-.. _nose: https://nose.readthedocs.io/
+.. _py.test: https://docs.pytest.org/en/latest/
+.. _nose: https://nose.readthedocs.io/en/latest/
