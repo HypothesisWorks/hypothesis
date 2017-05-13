@@ -23,6 +23,14 @@ information to the contrary.
 
 
 ------------------
+3.8.4 - 2017-05-14
+------------------
+
+This is a compatibility bugfix release.  ``sampled_from`` no longer raises
+a deprecation warning when sampling from an ``Enum``, as all enums have a
+reliable iteration order.
+
+------------------
 3.8.3 - 2017-05-09
 ------------------
 
