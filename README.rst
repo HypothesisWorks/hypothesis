@@ -1,3 +1,8 @@
+|Build Status|
+
+.. |Build Status| image:: https://travis-ci.org/DRMacIver/hypothesis.svg
+   :target: https://travis-ci.org/DRMacIver/hypothesis
+
 ==========
 Hypothesis
 ==========
