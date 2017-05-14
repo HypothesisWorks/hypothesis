@@ -1,5 +1,6 @@
 flake8
 isort
+pip-tools
 pyformat
 pytest
 restructuredtext-lint
