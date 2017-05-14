@@ -22,6 +22,7 @@ from __future__ import division, print_function, absolute_import
 # on_rtd is whether we are on readthedocs.org
 import os
 import sys
+import datetime
 
 from hypothesis import __version__
 
@@ -51,7 +52,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Hypothesis'
-copyright = u'2015, David R. MacIver'
+copyright = u'2013-%s, David R. MacIver' % datetime.datetime.utcnow().year
 author = u'David R. MacIver'
 
 version = __version__
