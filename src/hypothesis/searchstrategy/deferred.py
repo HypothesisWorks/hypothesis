@@ -18,7 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 from hypothesis import settings
-from hypothesis.internal.compat import hrange, getargspec
+from hypothesis.internal.compat import hrange, getfullargspec
 from hypothesis.internal.reflection import arg_string, \
     convert_keyword_arguments, convert_positional_arguments
 from hypothesis.searchstrategy.strategies import SearchStrategy
@@ -91,8 +91,8 @@ class DeferredStrategy(SearchStrategy):
         if self.__representation is None:
             _args = self.__args
             _kwargs = self.__kwargs
-            argspec = getargspec(self.__function)
-            defaults = {}
+            argspec = getfullargspec(self.__function)
+            defaults = dict(argspec.kwonlydefaults or {})
             if argspec.defaults is not None:
                 for k in hrange(1, len(argspec.defaults) + 1):
                     defaults[argspec.args[-k]] = argspec.defaults[-k]

@@ -25,8 +25,8 @@ from fractions import Fraction
 from hypothesis.errors import InvalidArgument
 from hypothesis.control import assume
 from hypothesis.searchstrategy import SearchStrategy
-from hypothesis.internal.compat import ArgSpec, hrange, text_type, \
-    getargspec, integer_types, implements_iterator
+from hypothesis.internal.compat import hrange, text_type, integer_types, \
+    getfullargspec, implements_iterator
 from hypothesis.internal.floats import is_negative, float_to_int, \
     int_to_float, count_between_floats
 from hypothesis.utils.conventions import not_set
@@ -975,7 +975,7 @@ def composite(f):
     """
 
     from hypothesis.internal.reflection import define_function_signature
-    argspec = getargspec(f)
+    argspec = getfullargspec(f)
 
     if (
         argspec.defaults is not None and
@@ -989,10 +989,9 @@ def composite(f):
             'positional argument.'
         )
 
-    new_argspec = ArgSpec(
-        args=argspec.args[1:], varargs=argspec.varargs,
-        keywords=argspec.keywords, defaults=argspec.defaults
-    )
+    annots = {k: v for k, v in argspec.annotations.items()
+              if k in (argspec.args + argspec.kwonlyargs + ['return'])}
+    new_argspec = argspec._replace(args=argspec.args[1:], annotations=annots)
 
     @defines_strategy
     @define_function_signature(f.__name__, f.__doc__, new_argspec)

@@ -24,7 +24,7 @@ from functools import partial
 import pytest
 
 from tests.common.utils import raises
-from hypothesis.internal.compat import PY3, ArgSpec, getargspec
+from hypothesis.internal.compat import PY3, FullArgSpec, getfullargspec
 from hypothesis.internal.reflection import proxies, arg_string, \
     unbind_method, eval_directory, function_digest, fully_qualified_name, \
     source_exec_as_module, convert_keyword_arguments, \
@@ -345,21 +345,23 @@ def has_kwargs(**kwargs):
     has_kwargs,
 ])
 def test_copying_preserves_argspec(f):
-    af = getargspec(f)
-    t = define_function_signature(
-        'foo', 'docstring', getargspec(f))(universal_acceptor)
-    at = getargspec(t)
+    af = getfullargspec(f)
+    t = define_function_signature('foo', 'docstring', af)(universal_acceptor)
+    at = getfullargspec(t)
     assert af.args == at.args
     assert af.varargs == at.varargs
-    assert af.keywords == at.keywords
+    assert af.varkw == at.varkw
     assert len(af.defaults or ()) == len(at.defaults or ())
+    assert af.kwonlyargs == at.kwonlyargs
+    assert af.kwonlydefaults == at.kwonlydefaults
+    assert af.annotations == at.annotations
 
 
 def test_name_does_not_clash_with_function_names():
     def f():
         pass
 
-    @define_function_signature('f', 'A docstring for f', getargspec(f))
+    @define_function_signature('f', 'A docstring for f', getfullargspec(f))
     def g():
         pass
     g()
@@ -368,28 +370,28 @@ def test_name_does_not_clash_with_function_names():
 def test_copying_sets_name():
     f = define_function_signature(
         'hello_world', 'A docstring for hello_world',
-        getargspec(has_two_args))(universal_acceptor)
+        getfullargspec(has_two_args))(universal_acceptor)
     assert f.__name__ == 'hello_world'
 
 
 def test_copying_sets_docstring():
     f = define_function_signature(
         'foo', 'A docstring for foo',
-        getargspec(has_two_args))(universal_acceptor)
+        getfullargspec(has_two_args))(universal_acceptor)
     assert f.__doc__ == 'A docstring for foo'
 
 
 def test_uses_defaults():
     f = define_function_signature(
         'foo', 'A docstring for foo',
-        getargspec(has_a_default))(universal_acceptor)
+        getfullargspec(has_a_default))(universal_acceptor)
     assert f(3, 2) == ((3, 2, 1), {})
 
 
 def test_uses_varargs():
     f = define_function_signature(
         'foo', 'A docstring for foo',
-        getargspec(has_varargs))(universal_acceptor)
+        getfullargspec(has_varargs))(universal_acceptor)
     assert f(1, 2) == ((1, 2), {})
 
 
@@ -421,33 +423,39 @@ def test_define_function_signature_works_with_conflicts():
     def accepts_everything(*args, **kwargs):
         pass
 
-    define_function_signature('hello', 'A docstring for hello', ArgSpec(
-        args=('f',), varargs=None, keywords=None, defaults=None
+    define_function_signature('hello', 'A docstring for hello', FullArgSpec(
+        args=('f',), varargs=None, varkw=None, defaults=None,
+        kwonlyargs=[], kwonlydefaults=None, annotations={}
     ))(accepts_everything)(1)
 
-    define_function_signature('hello', 'A docstring for hello', ArgSpec(
-        args=(), varargs='f', keywords=None, defaults=None
+    define_function_signature('hello', 'A docstring for hello', FullArgSpec(
+        args=(), varargs='f', varkw=None, defaults=None,
+        kwonlyargs=[], kwonlydefaults=None, annotations={}
     ))(accepts_everything)(1)
 
-    define_function_signature('hello', 'A docstring for hello', ArgSpec(
-        args=(), varargs=None, keywords='f', defaults=None
+    define_function_signature('hello', 'A docstring for hello', FullArgSpec(
+        args=(), varargs=None, varkw='f', defaults=None,
+        kwonlyargs=[], kwonlydefaults=None, annotations={}
     ))(accepts_everything)()
 
-    define_function_signature('hello', 'A docstring for hello', ArgSpec(
-        args=('f', 'f_3'), varargs='f_1', keywords='f_2', defaults=None
+    define_function_signature('hello', 'A docstring for hello', FullArgSpec(
+        args=('f', 'f_3'), varargs='f_1', varkw='f_2', defaults=None,
+        kwonlyargs=[], kwonlydefaults=None, annotations={}
     ))(accepts_everything)(1, 2)
 
 
 def test_define_function_signature_validates_arguments():
     with raises(ValueError):
-        define_function_signature('hello_world', None, ArgSpec(
-            args=['a b'], varargs=None, keywords=None, defaults=None))
+        define_function_signature('hello_world', None, FullArgSpec(
+            args=['a b'], varargs=None, varkw=None, defaults=None,
+            kwonlyargs=[], kwonlydefaults=None, annotations={}))
 
 
 def test_define_function_signature_validates_function_name():
     with raises(ValueError):
-        define_function_signature('hello world', None, ArgSpec(
-            args=['a', 'b'], varargs=None, keywords=None, defaults=None))
+        define_function_signature('hello world', None, FullArgSpec(
+            args=['a', 'b'], varargs=None, varkw=None, defaults=None,
+            kwonlyargs=[], kwonlydefaults=None, annotations={}))
 
 
 class Container(object):
