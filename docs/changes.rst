@@ -23,7 +23,7 @@ information to the contrary.
 
 
 ------------------
-3.8.4 - 2017-05-14
+3.8.4 - 2017-05-15
 ------------------
 
 This is a compatibility bugfix release.  ``sampled_from`` no longer raises
