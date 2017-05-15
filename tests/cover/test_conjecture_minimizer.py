@@ -19,13 +19,15 @@ from __future__ import division, print_function, absolute_import
 
 from hypothesis.internal.compat import hbytes
 from hypothesis.internal.conjecture.minimizer import minimize
+from random import Random
 
 
 def test_shrink_to_zero():
-    assert minimize(hbytes([255] * 8), lambda x: True) == hbytes(8)
+    assert minimize(
+        hbytes([255] * 8), lambda x: True, random=Random(0)) == hbytes(8)
 
 
 def test_shrink_to_smallest():
     assert minimize(
-        hbytes([255] * 8), lambda x: sum(x) > 10
+        hbytes([255] * 8), lambda x: sum(x) > 10, random=Random(0),
     ) == hbytes([0] * 7 + [11])
