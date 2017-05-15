@@ -17,6 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import enum
 import math
 from collections import Sequence
 
@@ -104,7 +105,7 @@ def centered_integer_range(data, lower, upper, center):
 
 
 def check_sample(values):
-    if not isinstance(values, Sequence):
+    if not isinstance(values, (Sequence, enum.EnumMeta)):
         note_deprecation(
             ('Cannot sample from %r, not a sequence.  ' % (values,)) +
             'Hypothesis goes to some length to ensure that sampling an '
