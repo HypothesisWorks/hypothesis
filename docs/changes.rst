@@ -107,6 +107,16 @@ This is feature release, expanding the capabilities of the decimals strategy.
 * min_value and max_value may be given as decimal strings, e.g. ``"1.234"``.
 
 ------------------
+3.8.6 - TBD
+------------------
+
+This contains a number of improvements to test case reduction. Failing test
+cases should now in some cases complete much faster.
+
+This may also result in some changes to the quality of the final examples - it
+may sometimes be better, but is more likely to get slightly worse. If you have
+
+------------------
 3.8.5 - 2017-05-16
 ------------------
 
