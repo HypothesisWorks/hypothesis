@@ -202,9 +202,9 @@ All such changes should:
 4. If appropriate, come with a test in test_shrink_quality.py showing how they
    improve the shrinker.
 
-~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 Non-Blocking Questions
-~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 These questions should *not* block merge, but may result in additional
 issues or changes being opened, either by the original author or by the
