@@ -201,6 +201,7 @@ check-fast: lint $(PYPY) $(PY36) $(TOX)
 
 check-rst: $(RSTLINT) $(FLAKE8)
 	$(RSTLINT) *.rst
+	$(RSTLINT) guides/*.rst
 	$(FLAKE8) --select=W191,W291,W292,W293,W391 *.rst docs/*.rst
 
 secret.tar.enc: deploy_key .pypirc
