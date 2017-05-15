@@ -144,7 +144,7 @@ Public API changes must satisfy the following:
    current Hypothesis internals should be avoided.
 8. `DRMacIver <https://github.com/DRMacIver>`_ must approve the changes
    though other maintainers are welcome and likely to chip in to review as
-   well).
+   well.
 
 ~~~~~~~~~
 Bug Fixes
