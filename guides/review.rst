@@ -144,7 +144,7 @@ Public API changes must satisfy the following:
    current Hypothesis internals should be avoided.
 8. `DRMacIver <https://github.com/DRMacIver>`_ must approve the changes
    though other maintainers are welcome and likely to chip in to review as
-   well).
+   well.
 
 ~~~~~~~~~
 Bug Fixes
@@ -202,9 +202,9 @@ All such changes should:
 4. If appropriate, come with a test in test_shrink_quality.py showing how they
    improve the shrinker.
 
-~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 Non-Blocking Questions
-~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 These questions should *not* block merge, but may result in additional
 issues or changes being opened, either by the original author or by the
