@@ -1,5 +1,5 @@
 appdirs==1.4.3
-attrs==16.3.0
+attrs==17.1.0
 click==6.7
 numpy==1.12.1
 packaging==16.8
