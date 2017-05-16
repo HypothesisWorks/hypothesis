@@ -246,8 +246,8 @@ class settings(settingsMeta('settings', (object,), {})):
         If this was explicitly set at settings instantiation then that
         value will be used (even if it was None). If not and the
         database_file setting is not None this will be lazily loaded as
-        an SQLite backed ExampleDatabase using that file the first time
-        this property is accessed on a particular thread.
+        an ExampleDatabase using that file the first time this property
+        is accessed on a particular thread.
 
         """
         if self._database is not_set and self.database_file is not None:

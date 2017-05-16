@@ -21,6 +21,13 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+------------------
+3.8.5 - 2017-05-16
+------------------
+
+Hypothesis now imports ``sqlite3`` when a SQLite database is used, rather
+than at module load, improving compatibility with Python implementations
+compiled without SQLite support (such as BSD or Jython).
 
 ------------------
 3.8.4 - 2017-05-16
