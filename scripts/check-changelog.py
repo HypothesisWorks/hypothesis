@@ -29,6 +29,15 @@ import hypothesistooling as tools
 sys.path.append(os.path.dirname(__file__))  # noqa
 
 
+def version_string(nums):
+    return '.'.join(str(s) for s in nums)
+
+
+def version_nums(string):
+    string = string.strip().split()[0]
+    return tuple(int(n) for n in string.split('.'))
+
+
 if __name__ == '__main__':
 
     if not tools.has_source_changes():
@@ -46,6 +55,7 @@ if __name__ == '__main__':
 
     pattern = r'\n\d+\.\d+\.\d+ - \d{4}-\d{2}-\d{2}\n'
     all_versions = list(map(str.strip, re.findall(pattern, tools.changelog())))
+    v_nums = [version_nums(v) for v in all_versions]
 
     for line in acceptable_lines:
         if line == all_versions[0]:
@@ -61,28 +71,29 @@ if __name__ == '__main__':
               % ' or '.join(repr(line) for line in acceptable_lines))
         found_problem = True
 
-    if all_versions != sorted(all_versions, reverse=True):
-        print('You edited old release notes and changed the ordering!')
-        found_problem = True
+    for actual, expected in zip(v_nums, sorted(v_nums, reverse=True)):
+        if actual != expected:
+            print('Version order: expected %s, got %s' % (expected, actual))
+            found_problem = True
 
-    v_nums = [v.split(' - ')[0] for v in all_versions]
     duplicates = sorted(set(v for v in v_nums if v_nums.count(v) > 1))
     if duplicates:
         plural = 's have' if len(duplicates) > 1 else ' has'
+        entries = ', '.join(repr(version_string(v)) for v in duplicates)
         print('The following version%s multiple entries in the '
-              'changelog: %s' % (plural, ', '.join(map(repr, duplicates))))
+              'changelog: %s' % (plural, entries))
         found_problem = True
 
     skipped = []
     for this, last in zip(v_nums, v_nums[1:]):
-        maj, minor, patch = map(int, last.split('.'))
+        maj, minor, patch = last
         if maj <= 1:
             break
-        next_patch, next_minor, next_major = ['%s.%s.%s' % v for v in [
-            (maj, minor, patch + 1), (maj, minor + 1, 0), (maj + 1, 0, 0)]]
-        if this not in (next_patch, next_minor, next_major):
+        next_patch, next_minor = (maj, minor, patch + 1), (maj, minor + 1, 0)
+        if this not in (next_patch, next_minor, (maj + 1, 0, 0)):
             skipped.append('Version %r found after %r, expected %r or %r'
-                           % (this, last, next_patch, next_minor))
+                           % tuple(version_string(v) for v in
+                                   (this, last, next_patch, next_minor)))
             found_problem = True
     if skipped:
         print('\n'.join(skipped))
