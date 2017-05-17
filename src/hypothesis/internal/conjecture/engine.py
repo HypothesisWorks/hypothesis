@@ -512,7 +512,7 @@ class ConjectureRunner(object):
         # all blocks >= lo with zero.
         lo = 0
         hi = len(self.last_data.blocks)
-        while lo + hi < 1:
+        while lo + 1 < hi:
             mid = (lo + hi) // 2
             u = self.last_data.blocks[mid][0]
             if self.incorporate_new_buffer(
