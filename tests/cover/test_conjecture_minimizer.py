@@ -17,9 +17,10 @@
 
 from __future__ import division, print_function, absolute_import
 
+from random import Random
+
 from hypothesis.internal.compat import hbytes
 from hypothesis.internal.conjecture.minimizer import minimize
-from random import Random
 
 
 def test_shrink_to_zero():

@@ -482,9 +482,8 @@ class ConjectureRunner(object):
         self.shrink()
 
     def zero_blocks(self):
-        """
-        Try replacing blocks with zero blocks, starting from the right
-        and proceeding leftwards.
+        """Try replacing blocks with zero blocks, starting from the right and
+        proceeding leftwards.
 
         Normally we would proceed from left to right, in keeping with
         our policy of lexicographic minimization - making shrinks to the
@@ -501,6 +500,7 @@ class ConjectureRunner(object):
         left then what we'll find is we replace all the early values with
         zero, leave the later values as the ones that matter, and then we
         can't shrink the length parameter.
+
         """
 
         self.debug('Zeroing individual blocks')
@@ -721,7 +721,6 @@ class ConjectureRunner(object):
                     random=self.random,
                 )
                 b += 1
-
 
         self.exit_reason = ExitReason.finished
 

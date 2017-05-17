@@ -52,7 +52,11 @@ class Minimizer(object):
 
     def incorporate(self, buffer):
         """Consider this buffer as a possible replacement for the current best
-        buffer. Return True if it succeeds as such."""
+        buffer.
+
+        Return True if it succeeds as such.
+
+        """
         assert isinstance(buffer, hbytes)
         assert len(buffer) == self.size
         assert buffer <= self.current
@@ -106,7 +110,7 @@ class Minimizer(object):
             if self.current[i] == 0:
                 continue
             prefix = self.current[:i]
-            original_suffix = self.current[i+1:]
+            original_suffix = self.current[i + 1:]
 
             # If we're being cautious we can't every raise the future bytes,
             # so we have to take the more conservative option of
@@ -118,8 +122,8 @@ class Minimizer(object):
                 suffix = hbytes([255] * (self.size - i - 1))
 
             def suitable(c):
-                """Does the lexicographically largest value starting with
-                our prefix and having c at i satisfy the condition?"""
+                """Does the lexicographically largest value starting with our
+                prefix and having c at i satisfy the condition?"""
 
                 return self.incorporate(prefix + bytes([c]) + suffix)
 
@@ -232,8 +236,12 @@ def minimize(initial, condition, random, cautious=False):
 
 def binsearch(_lo, _hi):
     """Run a binary search to find the point at which a function changes value
-    between two bounds. This function is used purely for its side effects and
-    returns nothing."""
+    between two bounds.
+
+    This function is used purely for its side effects and returns
+    nothing.
+
+    """
     def accept(f):
         lo = _lo
         hi = _hi
