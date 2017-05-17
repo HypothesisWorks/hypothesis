@@ -125,7 +125,7 @@ class Minimizer(object):
                 """Does the lexicographically largest value starting with our
                 prefix and having c at i satisfy the condition?"""
 
-                return self.incorporate(prefix + bytes([c]) + suffix)
+                return self.incorporate(prefix + hbytes([c]) + suffix)
 
             c = self.current[i]
 
