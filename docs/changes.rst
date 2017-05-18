@@ -22,6 +22,13 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 ------------------
+3.9.1 - 2017-05-22
+------------------
+
+This is a bugfix release: the default field mapping for a DateTimeField in the
+Django extra now respects the ``USE_TZ`` setting when choosing a strategy.
+
+------------------
 3.9.0 - 2017-05-19
 ------------------
 

@@ -22,6 +22,7 @@ from decimal import Decimal
 
 import django.db.models as dm
 from django.db import IntegrityError
+from django.conf import settings as django_settings
 from django.core.exceptions import ValidationError
 
 import hypothesis.strategies as st
@@ -47,6 +48,12 @@ def referenced_models(model, seen=None):
     return seen
 
 
+def get_datetime_strat():
+    if getattr(django_settings, 'USE_TZ', False):
+        return datetimes(allow_naive=False)
+    return datetimes(timezones=[])
+
+
 __default_field_mappings = None
 
 
@@ -63,7 +70,7 @@ def field_mappings():
             dm.PositiveSmallIntegerField: st.integers(0, 32767),
             dm.BinaryField: st.binary(),
             dm.BooleanField: st.booleans(),
-            dm.DateTimeField: datetimes(allow_naive=False),
+            dm.DateTimeField: get_datetime_strat(),
             dm.FloatField: st.floats(),
             dm.NullBooleanField: st.one_of(st.none(), st.booleans()),
         }
