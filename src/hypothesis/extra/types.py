@@ -13,13 +13,11 @@ __email__       = "msirabel@gmail.com"
 __module__      = "Hypothesis"
 
 
-type2strat = {
-        int: st.integers(),
-        float: st.floats(),
-        str: st.text(),
-        bytes: st.binary(),
-        bool: st.booleans(),
-}
+type2strat = {}
+ez_strategies = (st.integers(), st.floats(), st.text(), st.binary(),
+st.booleans())
+for strat in ez_strategies:
+    type2strat[type(strat.example())] = strat
 
 def infer(func):
     types = func.__annotations__
