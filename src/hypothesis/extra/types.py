@@ -27,7 +27,7 @@ class Type2Strat(dict):
                             strat,
                             hypothesis.searchstrategy.strategies.SearchStrategy
                     ):
-                        self[type(strat.example())] = strat
+                        self.append(strat)
                 except (TypeError, hypothesis.errors.NoExamples):
                     pass
 
@@ -36,6 +36,9 @@ class Type2Strat(dict):
             both = item.__args__
             return self[both[0]] | self[both[1]]
         return super().__getitem__(item)
+
+    def append(self, strategy):
+        self[type(strategy.example())] = strategy
 
 
 type2strat = Type2Strat()
