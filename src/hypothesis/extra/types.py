@@ -16,6 +16,20 @@ __module__      = "Hypothesis"
 
 
 class Type2Strat(dict):
+    def __init__(self):
+        for strat_name in dir(st):
+            strat = getattr(st, strat_name)
+            del strat_name
+            if inspect.isfunction(strat):
+                try:
+                    strat = strat()
+                    if isinstance(
+                            strat,
+                            hypothesis.searchstrategy.strategies.SearchStrategy
+                            ):
+                        self[type(strat.example())] = strat
+                except (TypeError, hypothesis.errors.NoExamples):
+                    pass
     def __getitem__(self, item):
         if isinstance(item, typing._Union):
             both = item.__args__
@@ -23,19 +37,6 @@ class Type2Strat(dict):
         return super().__getitem__(item)
 
 type2strat = Type2Strat()
-for strat_name in dir(st):
-    strat = getattr(st, strat_name)
-    del strat_name
-    if inspect.isfunction(strat):
-        try:
-            strat = strat()
-            if isinstance(
-                    strat,
-                    hypothesis.searchstrategy.strategies.SearchStrategy
-                    ):
-                type2strat[type(strat.example())] = strat
-        except (TypeError, hypothesis.errors.NoExamples):
-            pass
 
 
 def infer(func):
