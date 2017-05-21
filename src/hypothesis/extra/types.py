@@ -15,7 +15,14 @@ __email__       = "msirabel@gmail.com"
 __module__      = "Hypothesis"
 
 
-type2strat = {}
+class Type2Strat(dict):
+    def __getitem__(self, item):
+        if isinstance(item, typing._Union):
+            both = item.__args__
+            return self[both[0]] | self[both[1]]
+        return super().__getitem__(item)
+
+type2strat = Type2Strat()
 for strat_name in dir(st):
     strat = getattr(st, strat_name)
     del strat_name
@@ -46,7 +53,7 @@ def infer(func):
 def test_int(i: int):
     assert abs(i) >= 0
 
-@hypothesis.given(st.integers() | st.floats())
+@infer
 def oneorother(i: typing.Union[int, float]):
     if isinstance(i, int):
         assert type(i) == int
