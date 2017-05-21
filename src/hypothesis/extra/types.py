@@ -51,22 +51,3 @@ def infer(func):
         kwargs[key] = type2strat[value]
     func = hypothesis.given(**kwargs)(func)
     return func
-
-
-# Testing quickly
-
-@infer
-def test_int(i: int):
-    assert abs(i) >= 0
-
-
-@infer
-def oneorother(i: typing.Union[int, float]):
-    if isinstance(i, int):
-        assert type(i) == int
-    else:
-        assert isinstance(i, float)
-
-
-test_int()
-oneorother()
