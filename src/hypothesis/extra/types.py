@@ -7,6 +7,7 @@ Infer types of test function arguments using type annotations
 import hypothesis
 import hypothesis.strategies as st
 import inspect
+import typing
 
 __author__      = "Marco Sirabella"
 __credits__     = ["Marco Sirabella"]  # Authors and bug reporters
@@ -42,7 +43,15 @@ def infer(func):
 # Testing quickly
 
 @infer
-def test(i: int):
-    print(i)
+def test_int(i: int):
+    assert abs(i) >= 0
 
-test()
+@hypothesis.given(st.integers() | st.floats())
+def oneorother(i: typing.Union[int, float]):
+    if isinstance(i, int):
+        assert type(i) == int
+    else:
+        assert isinstance(i, float)
+
+test_int()
+oneorother()
