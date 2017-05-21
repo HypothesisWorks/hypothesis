@@ -58,7 +58,8 @@ def infer(func):
     annotations of wrapped function
     """
 
-    types = func.__annotations__
+    # types = func.__annotations__
+    types = typing.get_type_hints(func)  # It's longer but I guess?
     kwargs = {}
     for key, value in types.items():
         kwargs[key] = type2strat[value]
