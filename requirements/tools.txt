@@ -31,7 +31,7 @@ pytest==3.0.7
 python-dateutil==2.6.0
 pytz==2017.2
 requests==2.14.2
-requests-toolbelt==0.7.1
+requests-toolbelt==0.8.0
 restructuredtext-lint==1.0.1
 setuptools==35.0.2
 six==1.10.0
