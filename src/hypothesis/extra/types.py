@@ -26,15 +26,17 @@ class Type2Strat(dict):
                     if isinstance(
                             strat,
                             hypothesis.searchstrategy.strategies.SearchStrategy
-                            ):
+                    ):
                         self[type(strat.example())] = strat
                 except (TypeError, hypothesis.errors.NoExamples):
                     pass
+
     def __getitem__(self, item):
         if isinstance(item, typing._Union):
             both = item.__args__
             return self[both[0]] | self[both[1]]
         return super().__getitem__(item)
+
 
 type2strat = Type2Strat()
 
@@ -54,12 +56,14 @@ def infer(func):
 def test_int(i: int):
     assert abs(i) >= 0
 
+
 @infer
 def oneorother(i: typing.Union[int, float]):
     if isinstance(i, int):
         assert type(i) == int
     else:
         assert isinstance(i, float)
+
 
 test_int()
 oneorother()
