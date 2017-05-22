@@ -9,10 +9,10 @@ import hypothesis.strategies as st
 import inspect
 import typing
 
-__author__      = "Marco Sirabella"
-__credits__     = ["Marco Sirabella"]  # Authors and bug reporters
-__email__       = "msirabel@gmail.com"
-__module__      = "Hypothesis"
+__author__      = "Marco Sirabella"     # noqa E221
+__credits__     = ["Marco Sirabella"]   # noqa E221
+__email__       = "msirabel@gmail.com"  # noqa E221
+__module__      = "Hypothesis"          # noqa E221
 
 
 class Type2Strat(dict):
