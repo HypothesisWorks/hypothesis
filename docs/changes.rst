@@ -21,6 +21,18 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+-------------------
+3.10.0 - 2017-05-22
+-------------------
+
+Hypothesis now uses ``inspect.getfullargspec`` internally.
+On Python 2, there are no visible changes.
+
+On Python 3 ``@given`` and ``@composite`` now preserve annotations on the
+decorated function.  Keyword-only arguments are now either handled correctly
+(e.g. ``@composite``), or caught in validation instead of silently discarded
+or raising an unrelated error later (e.g. ``@given``).
+
 ------------------
 3.9.1 - 2017-05-22
 ------------------

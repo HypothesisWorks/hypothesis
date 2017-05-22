@@ -17,12 +17,15 @@
 
 from __future__ import division, print_function, absolute_import
 
+import sys
+import inspect
+
 import pytest
 
 from hypothesis import strategies as st
 from hypothesis import given
-from hypothesis.internal.compat import HAS_SIGNATURE, hrange, qualname, \
-    int_to_bytes, int_from_bytes, signature_argspec
+from hypothesis.internal.compat import FullArgSpec, hrange, qualname, \
+    int_to_bytes, getfullargspec, int_from_bytes
 
 
 def test_small_hrange():
@@ -52,12 +55,6 @@ def test_qualname():
     assert qualname(qualname) == u'qualname'
 
 
-try:
-    from inspect import getargspec
-except ImportError:
-    getargspec = None
-
-
 def a(b, c, d):
     pass
 
@@ -74,16 +71,14 @@ def d(a1, a2=1, a3=2, a4=None):
     pass
 
 
-if getargspec is not None and HAS_SIGNATURE:
-    @pytest.mark.parametrize('f', [
-        a, b, c, d
-    ])
-    def test_agrees_on_argspec(f):
-        real = getargspec(f)
-        fake = signature_argspec(f)
-        assert tuple(real) == tuple(fake)
-        for f in real._fields:
-            assert getattr(real, f) == getattr(fake, f)
+@pytest.mark.parametrize('f', [a, b, c, d])
+def test_agrees_on_argspec(f):
+    basic = inspect.getargspec(f)
+    full = getfullargspec(f)
+    assert basic.args == full.args
+    assert basic.varargs == full.varargs
+    assert basic.keywords == full.varkw
+    assert basic.defaults == full.defaults
 
 
 @given(st.binary())
@@ -108,3 +103,15 @@ ints8 = st.integers(min_value=0, max_value=2 ** 63 - 1)
 def test_to_bytes_in_big_endian_order(x, y):
     x, y = sorted((x, y))
     assert int_to_bytes(x, 8) <= int_to_bytes(y, 8)
+
+
+@pytest.mark.skipif(sys.version_info[0] != 3 or sys.version_info[:2] == (3, 5),
+                    reason='getfullargspec was deprecated, so we wrap it')
+def test_inspection_compat():
+    assert getfullargspec is inspect.getfullargspec
+
+
+@pytest.mark.skipif(sys.version_info[0] != 3,
+                    reason='inspect.FullArgSpec only exists under Python 3')
+def test_inspection_result_compat():
+    assert FullArgSpec is inspect.FullArgSpec

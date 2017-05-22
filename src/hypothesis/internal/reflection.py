@@ -32,8 +32,8 @@ from functools import wraps
 from hypothesis.configuration import storage_directory
 from hypothesis.vendor.pretty import pretty
 from hypothesis.internal.compat import ARG_NAME_ATTRIBUTE, hrange, \
-    to_str, qualname, getargspec, to_unicode, isidentifier, str_to_bytes, \
-    update_code_location
+    to_str, qualname, to_unicode, isidentifier, str_to_bytes, \
+    getfullargspec, update_code_location
 
 
 def fully_qualified_name(f):
@@ -68,7 +68,7 @@ def function_digest(function):
     except AttributeError:
         pass
     try:
-        hasher.update(str_to_bytes(repr(getargspec(function))))
+        hasher.update(str_to_bytes(repr(getfullargspec(function))))
     except TypeError:
         pass
     return hasher.digest()
@@ -81,11 +81,11 @@ def convert_keyword_arguments(function, args, kwargs):
     **kwargs the dictionary will always be empty.
 
     """
-    argspec = getargspec(function)
+    argspec = getfullargspec(function)
     new_args = []
     kwargs = dict(kwargs)
 
-    defaults = {}
+    defaults = dict(argspec.kwonlydefaults or {})
 
     if argspec.defaults:
         for name, value in zip(
@@ -110,7 +110,7 @@ def convert_keyword_arguments(function, args, kwargs):
                     arg_name
                 ))
 
-    if kwargs and not argspec.keywords:
+    if kwargs and not argspec.varkw:
         if len(kwargs) > 1:
             raise TypeError('%s() got unexpected keyword arguments %s' % (
                 function.__name__, ', '.join(map(repr, kwargs))
@@ -130,11 +130,12 @@ def convert_positional_arguments(function, args, kwargs):
     new_args will only be non-empty if function has a variadic argument.
 
     """
-    argspec = getargspec(function)
-    new_kwargs = dict(kwargs)
-    if not argspec.keywords:
+    argspec = getfullargspec(function)
+    new_kwargs = dict(argspec.kwonlydefaults or {})
+    new_kwargs.update(kwargs)
+    if not argspec.varkw:
         for k in new_kwargs.keys():
-            if k not in argspec.args:
+            if k not in argspec.args and k not in argspec.kwonlyargs:
                 raise TypeError(
                     '%s() got an unexpected keyword argument %r' % (
                         function.__name__, k
@@ -147,6 +148,9 @@ def convert_positional_arguments(function, args, kwargs):
                 raise TypeError('No value provided for argument %s' % (
                     argspec.args[i],
                 ))
+    for kw in argspec.kwonlyargs:
+        if kw not in new_kwargs:
+            raise TypeError('No value provided for argument %s' % kw)
 
     if len(args) > len(argspec.args) and not argspec.varargs:
         raise TypeError(
@@ -201,18 +205,28 @@ def extract_lambda_source(f):
     sins, oh lord
 
     """
-    args = getargspec(f).args
+    argspec = getfullargspec(f)
     arg_strings = []
     # In Python 2 you can have destructuring arguments to functions. This
     # results in an argspec with non-string values. I'm not very interested in
     # handling these properly, but it's important to not crash on them.
     bad_lambda = False
-    for a in args:
+    for a in argspec.args:
         if isinstance(a, (tuple, list)):  # pragma: no cover
             arg_strings.append('(%s)' % (', '.join(a),))
             bad_lambda = True
         else:
             assert isinstance(a, str)
+            arg_strings.append(a)
+    if argspec.varargs:
+        arg_strings.append('*' + argspec.varargs)
+    elif argspec.kwonlyargs:
+        arg_strings.append('*')
+    for a in (argspec.kwonlyargs or []):
+        default = (argspec.kwonlydefaults or {}).get(a)
+        if default:
+            arg_strings.append('{}={}'.format(a, default))
+        else:
             arg_strings.append(a)
 
     if_confused = 'lambda %s: <unknown>' % (', '.join(arg_strings),)
@@ -246,7 +260,7 @@ def extract_lambda_source(f):
     all_lambdas = extract_all_lambdas(tree)
     aligned_lambdas = [
         l for l in all_lambdas
-        if args_for_lambda_ast(l) == args
+        if args_for_lambda_ast(l) == argspec.args
     ]
     if len(aligned_lambdas) != 1:
         return if_confused
@@ -304,7 +318,7 @@ def arg_string(f, args, kwargs, reorder=True):
     if reorder:
         args, kwargs = convert_positional_arguments(f, args, kwargs)
 
-    argspec = getargspec(f)
+    argspec = getfullargspec(f)
 
     bits = []
 
@@ -315,10 +329,7 @@ def arg_string(f, args, kwargs, reorder=True):
         for a in sorted(kwargs):
             bits.append('%s=%s' % (a, nicerepr(kwargs[a])))
 
-    return ', '.join(
-        [nicerepr(x) for x in args] +
-        bits
-    )
+    return ', '.join([nicerepr(x) for x in args] + bits)
 
 
 def unbind_method(f):
@@ -373,8 +384,8 @@ def define_function_signature(name, docstring, argspec):
         check_valid_identifier(a)
     if argspec.varargs is not None:
         check_valid_identifier(argspec.varargs)
-    if argspec.keywords is not None:
-        check_valid_identifier(argspec.keywords)
+    if argspec.varkw is not None:
+        check_valid_identifier(argspec.varkw)
     n_defaults = len(argspec.defaults or ())
     if n_defaults:
         parts = []
@@ -384,11 +395,14 @@ def define_function_signature(name, docstring, argspec):
             parts.append('%s=not_set' % (a,))
     else:
         parts = list(argspec.args)
-    used_names = list(argspec.args)
+    used_names = list(argspec.args) + list(argspec.kwonlyargs)
     used_names.append(name)
 
+    for a in argspec.kwonlyargs:
+        check_valid_identifier(a)
+
     def accept(f):
-        fargspec = getargspec(f)
+        fargspec = getfullargspec(f)
         must_pass_as_kwargs = []
         invocation_parts = []
         for a in argspec.args:
@@ -400,13 +414,21 @@ def define_function_signature(name, docstring, argspec):
             used_names.append(argspec.varargs)
             parts.append('*' + argspec.varargs)
             invocation_parts.append('*' + argspec.varargs)
+        elif argspec.kwonlyargs:
+            parts.append('*')
         for k in must_pass_as_kwargs:
             invocation_parts.append('%(k)s=%(k)s' % {'k': k})
 
-        if argspec.keywords:
-            used_names.append(argspec.keywords)
-            parts.append('**' + argspec.keywords)
-            invocation_parts.append('**' + argspec.keywords)
+        for k in argspec.kwonlyargs:
+            invocation_parts.append('%(k)s=%(k)s' % {'k': k})
+            if k in (argspec.kwonlydefaults or []):
+                parts.append('%(k)s=not_set' % {'k': k})
+            else:
+                parts.append(k)
+        if argspec.varkw:
+            used_names.append(argspec.varkw)
+            parts.append('**' + argspec.varkw)
+            invocation_parts.append('**' + argspec.varkw)
 
         candidate_names = ['f'] + [
             'f_%d' % (i,) for i in hrange(1, len(used_names) + 2)
@@ -427,6 +449,10 @@ def define_function_signature(name, docstring, argspec):
         result = base_accept(f)
         result.__doc__ = docstring
         result.__defaults__ = argspec.defaults
+        if argspec.kwonlydefaults:
+            result.__kwdefaults__ = argspec.kwonlydefaults
+        if argspec.annotations:
+            result.__annotations__ = argspec.annotations
         return result
     return accept
 
@@ -453,7 +479,6 @@ def impersonate(target):
 
 def proxies(target):
     def accept(proxy):
-        return impersonate(target)(wraps(target)(
-            define_function_signature(
-                target.__name__, target.__doc__, getargspec(target))(proxy)))
+        return impersonate(target)(wraps(target)(define_function_signature(
+            target.__name__, target.__doc__, getfullargspec(target))(proxy)))
     return accept

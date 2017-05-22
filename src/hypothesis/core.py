@@ -21,7 +21,6 @@
 from __future__ import division, print_function, absolute_import
 
 import time
-import inspect
 import functools
 import traceback
 from random import Random
@@ -37,7 +36,7 @@ from hypothesis.executors import new_style_executor, \
     default_new_style_executor
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.statistics import note_engine_for_statistics
-from hypothesis.internal.compat import getargspec, str_to_bytes
+from hypothesis.internal.compat import str_to_bytes, getfullargspec
 from hypothesis.internal.escalation import \
     escalate_hypothesis_internal_error
 from hypothesis.internal.reflection import nicerepr, arg_string, \
@@ -155,10 +154,8 @@ def is_invalid_test(
         return invalid(
             'given must be called with at least one argument')
 
-    if (
-        generator_arguments and (
-            original_argspec.varargs or original_argspec.keywords)
-    ):
+    if (generator_arguments and (original_argspec.varargs or
+                                 original_argspec.varkw)):
         return invalid(
             'varargs or keywords are not supported with positional '
             'arguments to @given'
@@ -178,8 +175,10 @@ def is_invalid_test(
             'cannot mix positional and keyword arguments to @given'
         )
     extra_kwargs = [
-        k for k in generator_kwargs if k not in original_argspec.args]
-    if extra_kwargs and not original_argspec.keywords:
+        k for k in generator_kwargs
+        if k not in original_argspec.args + original_argspec.kwonlyargs
+    ]
+    if extra_kwargs and not original_argspec.varkw:
         return invalid(
             '%s() got an unexpected keyword argument %r' % (
                 name,
@@ -192,32 +191,36 @@ def is_invalid_test(
                 'destructuring arguments') % (
                     name,
             ))
-    if original_argspec.defaults:
-        return invalid(
-            'Cannot apply @given to a function with defaults.'
-        )
+    if original_argspec.defaults or original_argspec.kwonlydefaults:
+        return invalid('Cannot apply @given to a function with defaults.')
+    missing = [repr(kw) for kw in original_argspec.kwonlyargs
+               if kw not in generator_kwargs]
+    if missing:
+        raise InvalidArgument('Missing required kwarg{}: {}'.format(
+            's' if len(missing) > 1 else '', ', '.join(missing)))
 
 
 def execute_explicit_examples(
     test_runner, test, wrapped_test, settings, arguments, kwargs
 ):
-    original_argspec = getargspec(test)
+    original_argspec = getfullargspec(test)
 
     for example in reversed(getattr(
         wrapped_test, 'hypothesis_explicit_examples', ()
     )):
+        example_kwargs = dict(original_argspec.kwonlydefaults or {})
         if example.args:
             if len(example.args) > len(original_argspec.args):
                 raise InvalidArgument(
                     'example has too many arguments for test. '
                     'Expected at most %d but got %d' % (
                         len(original_argspec.args), len(example.args)))
-            example_kwargs = dict(zip(
+            example_kwargs.update(dict(zip(
                 original_argspec.args[-len(example.args):],
                 example.args
-            ))
+            )))
         else:
-            example_kwargs = example.kwargs
+            example_kwargs.update(example.kwargs)
         if Phase.explicit not in settings.phases:
             continue
         example_kwargs.update(kwargs)
@@ -575,7 +578,7 @@ def given(*given_arguments, **given_kwargs):
         generator_arguments = tuple(given_arguments)
         generator_kwargs = dict(given_kwargs)
 
-        original_argspec = getargspec(test)
+        original_argspec = getfullargspec(test)
 
         check_invalid = is_invalid_test(
             test.__name__, original_argspec,
@@ -586,17 +589,18 @@ def given(*given_arguments, **given_kwargs):
 
         arguments = original_argspec.args
 
-        for name, strategy in zip(
-            arguments[-len(generator_arguments):], generator_arguments
-        ):
+        for name, strategy in zip(arguments[-len(generator_arguments):],
+                                  generator_arguments):
             generator_kwargs[name] = strategy
 
-        argspec = inspect.ArgSpec(
+        argspec = original_argspec._replace(
             args=[a for a in arguments if a not in generator_kwargs],
-            keywords=original_argspec.keywords,
-            varargs=original_argspec.varargs,
-            defaults=None
+            defaults=None,
         )
+        annots = {k: v for k, v in argspec.annotations.items()
+                  if k in (argspec.args + argspec.kwonlyargs)}
+        annots['return'] = None
+        argspec = argspec._replace(annotations=annots)
 
         @impersonate(test)
         @define_function_signature(
