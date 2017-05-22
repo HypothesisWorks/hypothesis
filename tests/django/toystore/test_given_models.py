@@ -17,6 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+from django.conf import settings as django_settings
+
 from hypothesis import given, assume
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import just, lists
@@ -55,6 +57,13 @@ class TestGetsBasicModels(TestCase):
         self.assertIsInstance(customer, Customer)
         self.assertIsNotNone(customer.pk)
         self.assertIsNotNone(customer.email)
+
+    @given(models(Customer))
+    def test_tz_presence(self, customer):
+        if django_settings.USE_TZ:
+            self.assertIsNotNone(customer.birthday.tzinfo)
+        else:
+            self.assertIsNone(customer.birthday.tzinfo)
 
     @given(models(CouldBeCharming))
     def test_is_not_charming(self, not_charming):
