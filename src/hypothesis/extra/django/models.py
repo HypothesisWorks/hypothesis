@@ -27,7 +27,7 @@ from django.core.exceptions import ValidationError
 
 import hypothesis.strategies as st
 from hypothesis.errors import InvalidArgument
-from hypothesis.extra.datetime import datetimes
+from hypothesis.extra.pytz import timezones
 from hypothesis.utils.conventions import UniqueIdentifier
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
@@ -50,8 +50,8 @@ def referenced_models(model, seen=None):
 
 def get_datetime_strat():
     if getattr(django_settings, 'USE_TZ', False):
-        return datetimes(allow_naive=False)
-    return datetimes(timezones=[])
+        return st.datetimes(timezones=timezones())
+    return st.datetimes()
 
 
 __default_field_mappings = None
