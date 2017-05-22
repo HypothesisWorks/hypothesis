@@ -39,7 +39,7 @@ snowballstemmer==1.2.1
 Sphinx==1.6.1
 sphinx-rtd-theme==0.2.4
 tox==2.7.0
-twine==1.8.1
+twine==1.9.0
 unify==0.2
 untokenize==0.1.1
 virtualenv==15.1.0
