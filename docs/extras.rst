@@ -21,8 +21,8 @@ hypothesis[datetime]
 --------------------
 
 As might be expected, this provides strategies for which generating instances
-of objects from the ``datetime`` module: ``datetime``\s, ``date``\s, and
-``time``\s. It depends on ``pytz`` to work.
+of objects from the ``datetime`` module: ``datetime``\s, ``date``\s, ``time``\s
+and ``timedelta``\s. It depends on ``pytz`` to work.
 
 It should work with just about any version of ``pytz``. ``pytz`` has a very
 stable API and Hypothesis works around a bug or two in older versions.
@@ -114,6 +114,28 @@ It lives in the ``hypothesis.extra.datetime`` package.
         datetime.time(9, 0, 47, 959374, tzinfo=<DstTzInfo 'Pacific/Bougainville' BST+11:00:00 STD>)
 
     The ``allow_naive`` and ``timezones`` arguments act the same as the datetimes strategy.
+
+
+.. method:: timedeltas(min_days=None, max_days=None)
+
+    This strategy generates ``timedelta`` objects. For example:
+
+    .. code-block:: python
+
+        >>> from hypothesis.extra.datetime import timedeltas
+        >>> timedeltas().example()
+        datetime.timedelta(23124377, 16012, 75568)
+        >>> timedeltas().example()
+        datetime.timedelta(-365742571, 15070, 395262)
+
+    You can ask for a more specific timedeltas:
+
+    .. code-block:: python
+
+        >>> timedeltas(min_days=10, max_days=20).example()
+        datetime.timedelta(20, 57047, 108762)
+        >>> timedeltas(min_days=10, max_days=20).example()
+        datetime.timedelta(12, 33555, 346361)
 
 
 -----------------------

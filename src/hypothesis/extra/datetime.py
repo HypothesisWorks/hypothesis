@@ -70,6 +70,36 @@ class DatetimeStrategy(SearchStrategy):
                 pass
 
 
+class TimedeltaStrategy(SearchStrategy):
+
+    def __init__(self, min_value=None, max_value=None):
+        MIN = dt.timedelta.min
+        MAX = dt.timedelta.max
+        # timedelta(0) is falsey, so we need to be explicit here
+        if min_value is None:
+            min_value = MIN
+        if max_value is None:
+            max_value = MAX
+        self.min_value = min_value
+        self.max_value = max_value
+
+    def do_draw(self, data):
+        result = dt.timedelta(
+            days=cu.centered_integer_range(
+                data, self.min_value.days, self.max_value.days, 0
+            ),
+            seconds=cu.integer_range(
+                data, self.min_value.seconds, self.max_value.seconds
+            ),
+            microseconds=cu.integer_range(
+                data,
+                self.min_value.microseconds,
+                self.max_value.microseconds
+            ),
+        )
+        return result
+
+
 @defines_strategy
 def datetimes(allow_naive=None, timezones=None, min_year=None, max_year=None):
     """Return a strategy for generating datetimes.
@@ -123,3 +153,9 @@ def times(allow_naive=None, timezones=None):
 
 def datetime_to_time(dt):
     return dt.timetz()
+
+
+@defines_strategy
+def timedeltas(min_value=None, max_value=None):
+    """Return a strategy for generating timedeltas."""
+    return TimedeltaStrategy(min_value=min_value, max_value=max_value)
