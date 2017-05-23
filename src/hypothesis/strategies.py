@@ -18,6 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 import math
+import datetime as dt
 from decimal import Decimal, InvalidOperation
 from numbers import Rational
 from fractions import Fraction
@@ -44,6 +45,7 @@ __all__ = [
     'tuples', 'lists', 'sets', 'frozensets', 'iterables',
     'dictionaries', 'fixed_dictionaries',
     'sampled_from', 'permutations',
+    'datetimes', 'dates', 'times', 'timedeltas',
     'builds',
     'randoms', 'random_module',
     'recursive', 'composite',
@@ -585,7 +587,7 @@ def fixed_dictionaries(mapping):
 
     """
     from hypothesis.searchstrategy.collections import FixedKeysDictStrategy
-    check_type(dict, mapping)
+    check_type(dict, mapping, 'mapping')
     for v in mapping.values():
         check_strategy(v)
     for v in mapping.values():
@@ -964,6 +966,109 @@ def permutations(values):
     return PermutationStrategy()
 
 
+@defines_strategy
+def datetimes(min_datetime=dt.datetime.min, max_datetime=dt.datetime.max,
+              timezones=none()):
+    """A strategy for generating datetimes, which may be timezone-aware.
+
+    This strategy works by drawing a naive datetime between ``min_datetime``
+    and ``max_datetime``, which must both be naive (have no timezone).
+
+    ``timezones`` must be a strategy that generates tzinfo objects (or None,
+    which is valid for naive datetimes).  A value drawn from this strategy
+    will be added to a naive datetime, and the resulting tz-aware datetime
+    returned.
+
+    .. note::
+        tz-aware datetimes from this strategy may be ambiguous or non-existent
+        due to daylight savings, leap seconds, timezone and calendar
+        adjustments, etc.  This is intentional, as malformed timestamps are a
+        common source of bugs.
+
+    :py:func:`hypothesis.extra.timezones` requires the ``pytz`` package, but
+    provides all timezones in the Olsen database.  If you also want to allow
+    naive datetimes, combine strategies like ``none() | timezones()``.
+
+    Alternatively, you can create a list of the timezones you wish to allow
+    (e.g. from the standard library, ``datetutil``, or ``pytz``) and use
+    :py:func:`sampled_from`.  Ensure that simple values such as None or UTC
+    are at the beginning of the list for proper minimisation.
+
+    """
+    # Why must bounds be naive?  In principle, we could also write a strategy
+    # that took aware bounds, but the API and validation is much harder.
+    # If you want to generate datetimes between two particular momements in
+    # time I suggest (a) just filtering out-of-bounds values; (b) if bounds
+    # are very close, draw a value and subtract it's UTC offset, handling
+    # overflows and nonexistent times; or (c) do something customised to
+    # handle datetimes in e.g. a four-microsecond span which is not
+    # representable in UTC.  Handling (d), all of the above, leads to a much
+    # more complex API for all users and a useful feature for very few.
+    from hypothesis.searchstrategy.datetime import DatetimeStrategy
+
+    check_type(dt.datetime, min_datetime, 'min_datetime')
+    check_type(dt.datetime, max_datetime, 'max_datetime')
+    if min_datetime.tzinfo is not None:
+        raise InvalidArgument('min_datetime=%r must not have tzinfo'
+                              % (min_datetime,))
+    if max_datetime.tzinfo is not None:
+        raise InvalidArgument('max_datetime=%r must not have tzinfo'
+                              % (max_datetime,))
+    check_valid_interval(min_datetime, max_datetime,
+                         'min_datetime', 'max_datetime')
+    if not isinstance(timezones, SearchStrategy):
+        raise InvalidArgument(
+            'timezones=%r must be a SearchStrategy that can provide tzinfo '
+            'for datetimes (either None or dt.tzinfo objects)' % (timezones,))
+    return DatetimeStrategy(min_datetime, max_datetime, timezones)
+
+
+@defines_strategy
+def dates(min_date=dt.date.min, max_date=dt.date.max):
+    """A strategy for dates between ``min_date`` and ``max_date``."""
+    from hypothesis.searchstrategy.datetime import DateStrategy
+
+    check_type(dt.date, min_date, 'min_date')
+    check_type(dt.date, max_date, 'max_date')
+    check_valid_interval(min_date, max_date, 'min_date', 'max_date')
+    if min_date == max_date:
+        return just(min_date)
+    return DateStrategy(min_date, max_date)
+
+
+@defines_strategy
+def times(min_time=dt.time.min, max_time=dt.time.max, timezones=none()):
+    """A strategy for times between ``min_time`` and ``max_time``.
+
+    The ``timezones`` argument is handled as for :py:func:`datetimes`.
+
+    """
+    check_type(dt.time, min_time, 'min_time')
+    check_type(dt.time, max_time, 'max_time')
+    if min_time.tzinfo is not None:
+        raise InvalidArgument('min_time=%r must not have tzinfo' % min_time)
+    if max_time.tzinfo is not None:
+        raise InvalidArgument('max_time=%r must not have tzinfo' % max_time)
+    check_valid_interval(min_time, max_time, 'min_time', 'max_time')
+    day = dt.date(2000, 1, 1)
+    return datetimes(min_datetime=dt.datetime.combine(day, min_time),
+                     max_datetime=dt.datetime.combine(day, max_time),
+                     timezones=timezones).map(lambda t: t.timetz())
+
+
+@defines_strategy
+def timedeltas(min_delta=dt.timedelta.min, max_delta=dt.timedelta.max):
+    """A strategy for timedeltas between ``min_delta`` and ``max_delta``."""
+    from hypothesis.searchstrategy.datetime import TimedeltaStrategy
+
+    check_type(dt.timedelta, min_delta, 'min_delta')
+    check_type(dt.timedelta, max_delta, 'max_delta')
+    check_valid_interval(min_delta, max_delta, 'min_delta', 'max_delta')
+    if min_delta == max_delta:
+        return just(min_delta)
+    return TimedeltaStrategy(min_delta=min_delta, max_delta=max_delta)
+
+
 @cacheable
 def composite(f):
     """Defines a strategy that is built out of potentially arbitrarily many
@@ -1183,15 +1288,17 @@ def data():
 # Private API below here
 
 
-def check_type(typ, arg):
+def check_type(typ, arg, name=''):
+    if name:
+        name += '='
     if not isinstance(arg, typ):
         if isinstance(typ, type):
             typ_string = typ.__name__
         else:
             typ_string = 'one of %s' % (
                 ', '.join(t.__name__ for t in typ))
-        raise InvalidArgument(
-            'Expected %s but got %r' % (typ_string, arg,))
+        raise InvalidArgument('Expected %s but got %s%r (type=%s)'
+                              % (typ_string, name, arg, type(arg).__name__))
 
 
 def check_strategy(arg):

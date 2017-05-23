@@ -15,111 +15,102 @@
 #
 # END HEADER
 
+"""This module provides deprecated time and date related strategies.
+
+It depends on the ``pytz`` package, which is stable enough that almost any
+version should be compatible - most updates are for the timezone database.
+
+"""
+
 from __future__ import division, print_function, absolute_import
 
 import datetime as dt
 
 import pytz
 
-import hypothesis.internal.conjecture.utils as cu
+import hypothesis.strategies as st
 from hypothesis.errors import InvalidArgument
-from hypothesis.strategies import defines_strategy
-from hypothesis.searchstrategy.strategies import SearchStrategy
+from hypothesis._settings import note_deprecation
+from hypothesis.extra.pytz import timezones as timezones_strategy
+
+__all__ = ['datetimes', 'dates', 'times']
 
 
-class DatetimeStrategy(SearchStrategy):
-
-    def __init__(self, allow_naive, timezones, min_year=None, max_year=None):
-        self.allow_naive = allow_naive
-        self.timezones = timezones
-        self.min_year = min_year or dt.MINYEAR
-        self.max_year = max_year or dt.MAXYEAR
-        for a in ['min_year', 'max_year']:
-            year = getattr(self, a)
-            if year < dt.MINYEAR:
-                raise InvalidArgument(u'%s out of range: %d < %d' % (
-                    a, year, dt.MINYEAR
-                ))
-            if year > dt.MAXYEAR:
-                raise InvalidArgument(u'%s out of range: %d > %d' % (
-                    a, year, dt.MAXYEAR
-                ))
-
-    def do_draw(self, data):
-        while True:
-            try:
-                result = dt.datetime(
-                    year=cu.centered_integer_range(
-                        data, self.min_year, self.max_year, 2000
-                    ),
-                    month=cu.integer_range(data, 1, 12),
-                    day=cu.integer_range(data, 1, 31),
-                    hour=cu.integer_range(data, 0, 24),
-                    minute=cu.integer_range(data, 0, 59),
-                    second=cu.integer_range(data, 0, 59),
-                    microsecond=cu.integer_range(data, 0, 999999)
-                )
-                if (
-                    not self.allow_naive or
-                    (self.timezones and cu.boolean(data))
-                ):
-                    result = cu.choice(data, self.timezones).localize(result)
-                return result
-
-            except (OverflowError, ValueError):
-                pass
+def tz_args_strat(allow_naive, tz_list, name):
+    if tz_list is None:
+        tz_strat = timezones_strategy()
+    else:
+        tz_strat = st.sampled_from([
+            tz if isinstance(tz, dt.tzinfo) else pytz.timezone(tz)
+            for tz in tz_list
+        ])
+    if allow_naive or (allow_naive is None and tz_strat.is_empty):
+        tz_strat = st.none() | tz_strat
+    if tz_strat.is_empty:
+        raise InvalidArgument(
+            'Cannot create non-naive %s with no timezones allowed.' % name)
+    return tz_strat
 
 
-@defines_strategy
+def convert_year_bound(val, default):
+    if val is None:
+        return default
+    try:
+        return default.replace(val)
+    except ValueError:
+        raise InvalidArgument('Invalid year=%r' % (val,))
+
+
+@st.defines_strategy
 def datetimes(allow_naive=None, timezones=None, min_year=None, max_year=None):
     """Return a strategy for generating datetimes.
 
+    .. deprecated:: 3.9.0
+        use :py:func:`hypothesis.strategies.datetimes` instead.
+
     allow_naive=True will cause the values to sometimes be naive.
     timezones is the set of permissible timezones. If set to an empty
-    collection all timezones must be naive. If set to None all available
-    timezones will be used.
+    collection all datetimes will be naive. If set to None all timezones
+    available via pytz will be used.
+
+    All generated datetimes will be between min_year and max_year, inclusive.
 
     """
-    if timezones is None:
-        timezones = list(pytz.all_timezones)
-        timezones.remove(u'UTC')
-        timezones.insert(0, u'UTC')
-    timezones = [
-        tz if isinstance(tz, dt.tzinfo) else pytz.timezone(tz)
-        for tz in timezones
-    ]
-    if allow_naive is None:
-        allow_naive = not timezones
-    if not (timezones or allow_naive):
-        raise InvalidArgument(
-            u'Cannot create non-naive datetimes with no timezones allowed'
-        )
-    return DatetimeStrategy(
-        allow_naive=allow_naive, timezones=timezones,
-        min_year=min_year, max_year=max_year,
-    )
+    note_deprecation('Use hypothesis.strategies.datetimes, which supports '
+                     'full-precision bounds and has a simpler API.')
+    min_dt = convert_year_bound(min_year, dt.datetime.min)
+    max_dt = convert_year_bound(max_year, dt.datetime.max)
+    tzs = tz_args_strat(allow_naive, timezones, 'datetimes')
+    return st.datetimes(min_dt, max_dt, tzs)
 
 
-@defines_strategy
+@st.defines_strategy
 def dates(min_year=None, max_year=None):
-    """Return a strategy for generating dates."""
-    return datetimes(
-        allow_naive=True, timezones=[],
-        min_year=min_year, max_year=max_year,
-    ).map(datetime_to_date)
+    """Return a strategy for generating dates.
+
+    .. deprecated:: 3.9.0
+        use :py:func:`hypothesis.strategies.dates` instead.
+
+    All generated dates will be between min_year and max_year, inclusive.
+
+    """
+    note_deprecation('Use hypothesis.strategies.dates, which supports bounds '
+                     'given as date objects for single-day resolution.')
+    return st.dates(convert_year_bound(min_year, dt.date.min),
+                    convert_year_bound(max_year, dt.date.max))
 
 
-def datetime_to_date(dt):
-    return dt.date()
-
-
-@defines_strategy
+@st.defines_strategy
 def times(allow_naive=None, timezones=None):
-    """Return a strategy for generating times."""
-    return datetimes(
-        allow_naive=allow_naive, timezones=timezones,
-    ).map(datetime_to_time)
+    """Return a strategy for generating times.
 
+    .. deprecated:: 3.9.0
+        use :py:func:`hypothesis.strategies.times` instead.
 
-def datetime_to_time(dt):
-    return dt.timetz()
+    The allow_naive and timezones arguments act the same as the datetimes
+    strategy above.
+
+    """
+    note_deprecation('Use hypothesis.strategies.times, which supports '
+                     'min_time and max_time arguments.')
+    return st.times(timezones=tz_args_strat(allow_naive, timezones, 'times'))

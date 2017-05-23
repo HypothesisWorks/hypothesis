@@ -18,29 +18,32 @@
 from __future__ import division, print_function, absolute_import
 
 from tests.common.debug import minimal
-from hypothesis.strategytests import strategy_test_suite
+from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.extra.datetime import dates
 from hypothesis.internal.compat import hrange
 
-TestStandardDescriptorFeatures1 = strategy_test_suite(dates())
 
-
+@checks_deprecated_behaviour
 def test_can_find_after_the_year_2000():
     assert minimal(dates(), lambda x: x.year > 2000).year == 2001
 
 
+@checks_deprecated_behaviour
 def test_can_find_before_the_year_2000():
     assert minimal(dates(), lambda x: x.year < 2000).year == 1999
 
 
+@checks_deprecated_behaviour
 def test_can_find_each_month():
     for i in hrange(1, 12):
         minimal(dates(), lambda x: x.month == i)
 
 
+@checks_deprecated_behaviour
 def test_min_year_is_respected():
     assert minimal(dates(min_year=2003)).year == 2003
 
 
+@checks_deprecated_behaviour
 def test_max_year_is_respected():
     assert minimal(dates(max_year=1998)).year == 1998
