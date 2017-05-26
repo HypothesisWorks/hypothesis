@@ -50,6 +50,7 @@ env:
         - TASK=check-py273
         - TASK=check-py34
         - TASK=check-py35
+        - TASK=check-pypy57
         - TASK=check-nose
         - TASK=check-pytest28
         - TASK=check-faker070

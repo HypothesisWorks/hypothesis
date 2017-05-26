@@ -65,6 +65,9 @@ $(PY36):
 $(PYPY):
 	scripts/retry.sh scripts/install.sh pypy
 
+$(PYPY57):
+	scripts/retry.sh scripts/install.sh pypy5.7
+
 $(TOOL_VIRTUALENV): $(BEST_PY3)
 	rm -rf $(BUILD_RUNTIMES)/virtualenvs/tools-*
 	$(BEST_PY3) -m virtualenv $(TOOL_VIRTUALENV)
@@ -142,6 +145,9 @@ check-py36: $(BEST_PY3) $(TOX)
 	$(TOX) -e py36-full
 
 check-pypy: $(PYPY) $(TOX)
+	$(TOX) -e pypy-full
+
+check-pypy57: $(PYPY5.7) $(TOX)
 	$(TOX) -e pypy-full
 
 check-nose: $(TOX)
