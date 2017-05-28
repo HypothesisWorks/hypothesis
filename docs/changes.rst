@@ -22,6 +22,13 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.11.1 - 2017-05-28
+-------------------
+
+This is a minor ergonomics release.  Tracebacks shown by pytest no longer
+include Hypothesis internals for test functions decorated with ``@given``.
+
+-------------------
 3.11.0 - 2017-05-23
 -------------------
 
