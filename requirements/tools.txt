@@ -30,7 +30,7 @@ pyparsing==2.2.0
 pytest==3.1.0
 python-dateutil==2.6.0
 pytz==2017.2
-requests==2.16.4
+requests==2.16.5
 requests-toolbelt==0.8.0
 restructuredtext-lint==1.0.1
 setuptools==35.0.2
