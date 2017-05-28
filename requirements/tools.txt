@@ -36,7 +36,7 @@ restructuredtext-lint==1.0.1
 setuptools==35.0.2
 six==1.10.0
 snowballstemmer==1.2.1
-Sphinx==1.6.1
+Sphinx==1.6.2
 sphinx-rtd-theme==0.2.4
 tox==2.7.0
 twine==1.9.1
