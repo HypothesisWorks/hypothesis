@@ -139,7 +139,7 @@ else:
         i = 0
         while i + 4 <= len(data):
             result <<= 32
-            result |= struct.unpack('>I', unpackable_data[i:i + 4])[0]
+            result |= struct.unpack('>I', str(unpackable_data[i:i + 4]))[0]
             i += 4
         while i < len(data):
             result <<= 8
