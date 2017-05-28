@@ -1,0 +1,9 @@
+include LICENSE.txt
+include CONTRIBUTING.rst
+include README.rst
+
+recursive-include docs *
+recursive-include notebooks *.ipynb
+recursive-include examples *.py
+prune docs/_build
+recursive-include tests *.py
