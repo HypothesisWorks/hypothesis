@@ -29,13 +29,13 @@ import random
 import hashlib
 from collections import OrderedDict
 
-import numpy as np
-
 import attr
 import click
+import numpy as np
+from scipy.stats import ttest_ind
+
 import hypothesis.strategies as st
 from hypothesis import settings
-from scipy.stats import ttest_ind
 from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 
