@@ -97,6 +97,5 @@ Examples
 --------
 
 * `arch linux <https://www.archlinux.org/packages/community/any/python-hypothesis/>`_
+* `fedora <https://admin.fedoraproject.org/pkgdb/package/rpms/python-hypothesis/>`_
 * `gentoo <https://packages.gentoo.org/packages/dev-python/hypothesis>`_ (slightly behind at the time of this writing)
-
-Other distros appear to really like Hypothesis 1.11. I do not encourage following their example.
