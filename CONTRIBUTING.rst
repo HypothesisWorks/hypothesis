@@ -4,8 +4,32 @@ Contributing
 
 First off: It's great that you want to contribute to Hypothesis! Thanks!
 
-The process is a little involved (don't worry, we'll help you through it), so
-do read this document first.
+------------------
+Ways to Contribute
+------------------
+
+Hypothesis is a mature yet active project. This means that there are many
+ways in which you can contribute.
+
+For example, it's super useful and highly appreciated if you do any of:
+
+* Submit bug reports
+* Submit feature requests
+* Write about Hypothesis
+* Give a talk about Hypothesis
+* Build libraries and tools on top of Hypothesis outside the main repo
+* Submit PRs
+
+If you build a Hypothesis strategy that you would like to be more widely known
+please add it to the list of external strategies by preparing a PR against
+the docs/strategies.rst file.
+
+If you find an error in the documentation, please feel free to submit a PR that
+fixes the error. Spot a tyop? Fix it up and send us a PR!
+
+The process for submitting source code PRs is generally more involved
+(don't worry, we'll help you through it), so do read the rest of this document
+first.
 
 -----------------------
 Copyright and Licensing
@@ -38,7 +62,7 @@ or open an issue. If it's really small feel free to open a work in progress pull
 out the idea, but it's best to get feedback from the Hypothesis maintainers
 before sinking a bunch of work into it.
 
-In general work in progress pull requests are totally welcome if you want early feedback
+In general work-in-progress pull requests are totally welcome if you want early feedback
 or help with some of the tricky details. Don't be afraid to ask for help.
 
 In order to get merged, a pull request will have to have a green build (naturally) and
@@ -105,25 +129,6 @@ You can also run a number of finer grained make tasks:
 Note: The build requires a lot of different versions of python, so rather than have you install them yourself,
 the makefile will install them itself in a local directory. This means that the first time you run a task you
 may have to wait a while as the build downloads and installs the right version of python for you.
-
-----------------------------
-If Pull Requests put you off
-----------------------------
-
-If you don't feel able to contribute code to Hypothesis that's *100% OK*. There
-are lots of other things you can do to help too!
-
-For example, it's super useful and highly appreciated if you do any of:
-
-* Submit bug reports
-* Submit feature requests
-* Write about Hypothesis
-* Build libraries and tools on top of Hypothesis outside the main repo
-
-Or, if you're OK with the pull request but don't feel quite ready to touch the code, you can always
-help to improve the documentation. Spot a tyop? Fix it up and send us a pull request!
-
-If you need any help with any of these, get in touch and we'll be extremely happy to provide it.
 
 --------------------
 List of Contributors
