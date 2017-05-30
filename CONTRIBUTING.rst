@@ -38,7 +38,7 @@ or open an issue. If it's really small feel free to open a work in progress pull
 out the idea, but it's best to get feedback from the Hypothesis maintainers
 before sinking a bunch of work into it.
 
-In general work in progress pull requests are totally welcome if you want early feedback
+In general work-in-progress pull requests are totally welcome if you want early feedback
 or help with some of the tricky details. Don't be afraid to ask for help.
 
 In order to get merged, a pull request will have to have a green build (naturally) and
