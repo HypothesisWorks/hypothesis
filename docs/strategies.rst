@@ -8,3 +8,6 @@ the list!  The only inclusion criterion right now is that if it's a Python
 library then it should be available on pypi.
 
 * `hs-dbus-signature <https://github.com/stratis-storage/hs-dbus-signature>`_
+* `lollipop-hypothesis <https://github.com/maximkulkin/lollipop-hypothesis>`_ -
+  strategy to generate data based on
+  `Lollipop <https://github.com/maximkulkin/lollipop>`_ schema definitions.
