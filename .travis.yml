@@ -37,6 +37,7 @@ env:
         - TASK=check-format
         - TASK=check-benchmark
         - TASK=check-coverage
+        - TASK=check-requirements
         - TASK=check-pypy
         - TASK=check-py27
         - TASK=check-py36

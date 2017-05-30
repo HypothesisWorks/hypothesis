@@ -28,6 +28,7 @@ ISORT=$(TOOLS)/isort
 FLAKE8=$(TOOLS)/flake8
 PYFORMAT=$(TOOLS)/pyformat
 RSTLINT=$(TOOLS)/rst-lint
+PIPCOMPILE=$(TOOLS)/pip-compile
 
 TOOL_VIRTUALENV:=$(BUILD_RUNTIMES)/virtualenvs/tools-$(shell scripts/tool-hash.py tools)
 
@@ -204,6 +205,14 @@ check-rst: $(RSTLINT) $(FLAKE8)
 	$(RSTLINT) guides/*.rst
 	$(FLAKE8) --select=W191,W291,W292,W293,W391 *.rst docs/*.rst
 
+compile-requirements: $(PIPCOMPILE)
+	$(PIPCOMPILE) requirements/benchmark.in --output-file requirements/benchmark.txt
+	$(PIPCOMPILE) requirements/test.in --output-file requirements/test.txt
+	$(PIPCOMPILE) requirements/tools.in --output-file requirements/tools.txt
+
+check-requirements: compile-requirements
+	git diff --exit-code
+
 secret.tar.enc: deploy_key .pypirc
 	rm -f secrets.tar secrets.tar.enc
 	tar -cf secrets.tar deploy_key .pypirc
@@ -244,6 +253,9 @@ $(RSTLINT): $(TOOLS)
 
 $(FLAKE8): $(TOOLS)
 	ln -sf $(TOOL_VIRTUALENV)/bin/flake8 $(FLAKE8)
+
+$(PIPCOMPILE): $(TOOLS)
+	ln -sf $(TOOL_VIRTUALENV)/bin/pip-compile $(PIPCOMPILE)
 
 
 clean:
