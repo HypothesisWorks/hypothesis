@@ -40,7 +40,7 @@ sphinx-rtd-theme==0.2.4
 sphinx==1.6.2
 sphinxcontrib-websupport==1.0.1  # via sphinx
 tox==2.7.0
-tqdm==4.11.2              # via twine
+tqdm==4.14.0              # via twine
 twine==1.9.1
 unify==0.2                # via pyformat
 untokenize==0.1.1         # via docformatter, unify
