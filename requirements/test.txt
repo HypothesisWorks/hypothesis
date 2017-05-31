@@ -9,4 +9,4 @@ execnet==1.4.1            # via pytest-xdist
 flaky==3.3.0
 py==1.4.33                # via pytest, pytest-xdist
 pytest-xdist==1.16.0
-pytest==3.1.0
+pytest==3.1.1
