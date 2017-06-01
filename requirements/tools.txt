@@ -17,7 +17,7 @@ first==2.0.1              # via pip-tools
 flake8==3.3.0
 idna==2.5                 # via requests
 imagesize==0.7.1          # via sphinx
-isort==4.2.5
+isort==4.2.12
 jinja2==2.9.6             # via sphinx
 markupsafe==1.0           # via jinja2
 mccabe==0.6.1             # via flake8
