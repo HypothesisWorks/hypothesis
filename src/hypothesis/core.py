@@ -37,8 +37,7 @@ from hypothesis.executors import new_style_executor, \
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.statistics import note_engine_for_statistics
 from hypothesis.internal.compat import str_to_bytes, getfullargspec
-from hypothesis.internal.escalation import \
-    escalate_hypothesis_internal_error
+from hypothesis.internal.escalation import escalate_hypothesis_internal_error
 from hypothesis.internal.reflection import nicerepr, arg_string, \
     impersonate, function_digest, fully_qualified_name, \
     define_function_signature, convert_positional_arguments, \
