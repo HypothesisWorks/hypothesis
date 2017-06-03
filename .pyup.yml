@@ -1,10 +1,7 @@
 requirements:
   - requirements/tools.txt
-      updates: all
-      pin: True
   - requirements/test.txt
-      updates: all
-      pin: True
   - requirements/benchmark.txt
-      updates: all
-      pin: True
+updates: all
+pin: True
+schedule: "every day"
