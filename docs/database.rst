@@ -46,15 +46,22 @@ that generates an argument sometimes gives you data from the old strategy.
 Sharing your example database
 -----------------------------
 
-The only currently supported workflow for this (though it would be easy enough to add new ones)
-is via checking the examples directory into version control.
+.. note::
+    If specific examples are important for correctness you should use the
+    ``@example`` decorator, as the example database may discard entries due to
+    changes in your code or dependencies.  For most users, we therefore
+    recommend using the example database locally and possibly persisting it
+    between CI builds, but not tracking it under version control.
 
-The directory structure is designed so that it is entirely suitable for checking
-in to git, mercurial, or any similar version control system. It will be updated
-reasonably often, so you might not want to do that in the course of normal
-development, but it will correctly handle merges, deletes, etc without a
-problem if you just add the directory into version control.
+The examples database can be shared simply by checking the directory into
+version control, for example with the following ``.gitignore``::
 
-Note: There are other files in .hypothesis but everything other than the examples will be
-transparently created on demand. You don't need to and probably shouldn't check those into git.
-Adding .hypothesis/eval_source to your .gitignore or equivalent is probably a good idea.
+    # Ignore files cached by Hypothesis...
+    .hypothesis/
+    # except for the examples directory
+    !.hypothesis/examples/
+
+Like everything under ``.hypothesis/``, the examples directory will be
+transparently created on demand.  Unlike the other subdirectories,
+``examples/`` is designed to handle merges, deletes, etc if you just add the
+directory into git, mercurial, or any similar version control system.
