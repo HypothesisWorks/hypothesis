@@ -24,7 +24,7 @@ mccabe==0.6.1             # via flake8
 pip-tools==1.9.0
 pkginfo==1.4.1            # via twine
 pluggy==0.4.0             # via tox
-py==1.4.33                # via pytest, tox
+py==1.4.34                # via pytest, tox
 pycodestyle==2.3.1        # via autopep8, flake8
 pyflakes==1.5.0           # via autoflake, flake8
 pyformat==0.7
