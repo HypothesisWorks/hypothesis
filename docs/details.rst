@@ -22,7 +22,7 @@ Sometimes this isn't enough, either because you have values with a ``repr`` that
 isn't very descriptive or because you need to see the output of some
 intermediate steps of your test. That's where the ``note`` function comes in:
 
-.. code:: pycon
+.. doctest::
 
     >>> from hypothesis import given, note, strategies as st
     >>> @given(st.lists(st.integers()), st.randoms())
@@ -32,12 +32,13 @@ intermediate steps of your test. That's where the ``note`` function comes in:
     ...     note("Shuffle: %r" % (ls2))
     ...     assert ls == ls2
     ...
-    >>> test_shuffle_is_noop()
+    >>> try:
+    ...     test_shuffle_is_noop()
+    ... except AssertionError:
+    ...     print('ls != ls2')
     Falsifying example: test_shuffle_is_noop(ls=[0, 0, 1], r=RandomWithSeed(0))
     Shuffle: [0, 1, 0]
-    Traceback (most recent call last):
-        ...
-    AssertionError
+    ls != ls2
 
 The note is printed in the final run of the test in order to include any
 additional information you might need in your test.
@@ -291,33 +292,22 @@ exposed in the :mod:`hypothesis.strategies` module.
 
 Many of these strategies expose a variety of arguments you can use to customize
 generation. For example for integers you can specify ``min`` and ``max`` values of
-integers you want:
-
-.. code:: python
-
-  >>> from hypothesis.strategies import integers
-  >>> integers()
-  RandomGeometricIntStrategy() | WideRangeIntStrategy()
-  >>> integers(min_value=0)
-  IntegersFromStrategy(0)
-  >>> integers(min_value=0, max_value=10)
-  BoundedIntStrategy(0, 10)
-
+integers you want.
 If you want to see exactly what a strategy produces you can ask for an example:
 
-.. code:: python
+.. doctest::
 
   >>> integers(min_value=0, max_value=10).example()
-  7
+  5
 
 Many strategies are build out of other strategies. For example, if you want
 to define a tuple you need to say what goes in each element:
 
-.. code:: python
+.. doctest::
 
   >>> from hypothesis.strategies import tuples
   >>> tuples(integers(), integers()).example()
-  (-1953, 85733644253897814191482551773726674360154905303788466954)
+  (50, 15)
 
 Further details are :doc:`available in a separate document <data>`.
 
@@ -482,7 +472,7 @@ Using Hypothesis to find values
 You can use Hypothesis's data exploration features to find values satisfying
 some predicate:
 
-.. code:: python
+.. doctest::
 
   >>> from hypothesis import find
   >>> from hypothesis.strategies import sets, lists, integers
@@ -501,7 +491,7 @@ Of course not all conditions are satisfiable. If you ask Hypothesis for an
 example to a condition that is always false it will raise an error:
 
 
-.. code:: python
+.. doctest::
 
   >>> find(integers(), lambda x: False)
   Traceback (most recent call last):
