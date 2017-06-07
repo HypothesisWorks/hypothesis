@@ -278,8 +278,8 @@ As you can see, Hypothesis doesn't find *many* examples here, but it finds some 
 keep it happy.
 
 In general if you *can* shape your strategies better to your tests you should - for example
-``integers_in_range(1, 1000)`` is a lot better than ``assume(1 <= x <= 1000)``, but assume will take
-you a long way if you can't.
+:py:func:`integers(1, 1000) <hypothesis.strategies.integers>` is a lot better than
+``assume(1 <= x <= 1000)``, but assume will take you a long way if you can't.
 
 ---------------------
 Defining strategies
@@ -415,7 +415,6 @@ test methods on that class with :func:`@given <hypothesis.core.given>` used on t
 ``self.execute_example`` as an executor with which to run tests. For example,
 the following executor runs all its code twice:
 
-
 .. code:: python
 
     from unittest import TestCase
@@ -444,9 +443,7 @@ executor is invalid:
         def execute_example(self, f):
             return f()()
 
-
 and should be rewritten as:
-
 
 .. code:: python
 
@@ -460,10 +457,6 @@ and should be rewritten as:
                 result = result()
             return result
 
-
-Methods of a BasicStrategy however will typically be called whenever. This may
-happen inside your executor or outside. This is why they have a "Warning you
-have no control over the lifecycle of these values" attached.
 
 -------------------------------
 Using Hypothesis to find values
@@ -490,28 +483,16 @@ predicate it must satisfy.
 Of course not all conditions are satisfiable. If you ask Hypothesis for an
 example to a condition that is always false it will raise an error:
 
-
 .. doctest::
 
   >>> find(integers(), lambda x: False)
   Traceback (most recent call last):
   ...
   hypothesis.errors.NoSuchExample: No examples of condition lambda x: <unknown>
-  >>> from hypothesis.strategies import booleans
-  >>> find(booleans(), lambda x: False)
-  Traceback (most recent call last):
-  ...
-  hypothesis.errors.NoSuchExample: No examples of condition lambda x: <unknown>
 
-
-
-(The "lambda x: unknown" is because Hypothesis can't retrieve the source code
+(The ``lambda x: unknown`` is because Hypothesis can't retrieve the source code
 of lambdas from the interactive python console. It gives a better error message
 most of the time which contains the actual condition)
-
-The reason for the two different types of errors is that there are only a small
-number of booleans, so it is feasible for Hypothesis to enumerate all of them
-and simply check that your condition is never true.
 
 
 .. _providing-explicit-examples:
