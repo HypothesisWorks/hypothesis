@@ -30,11 +30,11 @@ def reject():
 
 
 def assume(condition):
-    """Assert a precondition for this test.
+    """``assume()`` is like an :ref:`assert <python:assert>` that marks the
+    example as bad, rather than failing the test.
 
-    If this is not truthy then the test will abort but not fail and
-    Hypothesis will make a "best effort" attempt to avoid similar
-    examples in future.
+    This allows you to specify properties that you *assume* will be
+    true, and let Hypothesis try to avoid similar examples in future.
 
     """
     if not condition:

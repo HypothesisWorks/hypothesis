@@ -147,18 +147,12 @@ accidentally testing a lot less than you think you are. Also it would be nice to
 less time on bad examples - if you're running 200 examples per test (the default) and
 it turns out 150 of those examples don't match your needs, that's a lot of wasted time.
 
-The way Hypothesis handles this is to let you specify things which you *assume* to be
-true. This lets you abort a test in a way that marks the example as bad rather than
-failing the test. Hypothesis will use this information to try to avoid similar examples
-in future.
+.. autofunction:: hypothesis.assume
 
 For example suppose had the following test:
 
 
 .. code:: python
-
-  from hypothesis import given
-  from hypothesis.strategies import floats
 
   @given(floats())
   def test_negation_is_self_inverse(x):
@@ -180,8 +174,6 @@ So lets block off this particular example:
 
 .. code:: python
 
-  from hypothesis import given, assume
-  from hypothesis.strategies import floats
   from math import isnan
 
   @given(floats())
@@ -191,12 +183,6 @@ So lets block off this particular example:
 
 And this passes without a problem.
 
-:func:`~hypothesis.core.assume` throws an exception which
-terminates the test when provided with a false argument.
-It's essentially an :ref:`assert <python:assert>`, except that
-the exception it throws is one that Hypothesis
-identifies as meaning that this is a bad example, not a failing test.
-
 In order to avoid the easy trap where you assume a lot more than you intended, Hypothesis
 will fail a test when it can't find enough examples passing the assumption.
 
@@ -204,20 +190,16 @@ If we'd written:
 
 .. code:: python
 
-  from hypothesis import given, assume
-  from hypothesis.strategies import floats
-
   @given(floats())
   def test_negation_is_self_inverse_for_non_nan(x):
       assume(False)
       assert x == -(-x)
 
-
 Then on running we'd have got the exception:
 
 .. code::
 
-  Unsatisfiable: Unable to satisfy assumptions of hypothesis test_negation_is_self_inverse_for_non_nan. Only 0 examples found after 0.0791318 seconds
+  Unsatisfiable: Unable to satisfy assumptions of hypothesis test_negation_is_self_inverse_for_non_nan. Only 0 examples considered satisfied assumptions
 
 ~~~~~~~~~~~~~~~~~~~
 How good is assume?
@@ -315,6 +297,8 @@ Further details are :doc:`available in a separate document <data>`.
 The gory details of given parameters
 ------------------------------------
 
+.. autofunction:: hypothesis.given
+
 The :func:`@given <hypothesis.core.given>` decorator may be used
 to specify what arguments of a function should
 be parametrized over. You can use either positional or keyword arguments or a mixture
@@ -385,7 +369,7 @@ The rules for determining what are valid uses of given are as follows:
 4. Functions tested with given may not have any defaults.
 
 The reason for the "rightmost named arguments" behaviour is so that
-using :func:`@given <hypothesis.core.given>` with instance methods works: self
+using :func:`@given <hypothesis.given>` with instance methods works: ``self``
 will be passed to the function as normal and not be parametrized over.
 
 The function returned by given has all the arguments that the original test did
@@ -411,7 +395,7 @@ executor is:
         return function()
 
 You define executors by defining a method execute_example on a class. Any
-test methods on that class with :func:`@given <hypothesis.core.given>` used on them will use
+test methods on that class with :func:`@given <hypothesis.given>` used on them will use
 ``self.execute_example`` as an executor with which to run tests. For example,
 the following executor runs all its code twice:
 
@@ -463,7 +447,11 @@ Using Hypothesis to find values
 -------------------------------
 
 You can use Hypothesis's data exploration features to find values satisfying
-some predicate:
+some predicate.  This is generally useful for exploring custom strategies
+defined with :func:`@composite <hypothesis.strategies.composite>`, or
+experimenting with conditions for filtering data.
+
+.. autofunction:: hypothesis.find
 
 .. doctest::
 
@@ -501,18 +489,9 @@ most of the time which contains the actual condition)
 Providing explicit examples
 ---------------------------
 
-You can explicitly ask Hypothesis to try a particular example as follows:
+You can explicitly ask Hypothesis to try a particular example, using
 
-.. code:: python
-
-  from hypothesis import given, example
-  from hypothesis.strategies import text
-
-  @given(text())
-  @example("Hello world")
-  @example(x="Some very long string")
-  def test_some_code(x):
-      assert True
+.. autofunction:: hypothesis.example
 
 Hypothesis will run all examples you've asked for first. If any of them fail it
 will not go on to look for more examples.
@@ -521,15 +500,18 @@ It doesn't matter whether you put the example decorator before or after given.
 Any permutation of the decorators in the above will do the same thing.
 
 Note that examples can be positional or keyword based. If they're positional then
-they will be filled in from the right when calling, so things like the following
-will also work:
+they will be filled in from the right when calling, so either of the following
+styles will work as expected:
 
 .. code:: python
 
-  from unittest import TestCase
-  from hypothesis import given, example
-  from hypothesis.strategies import text
+  @given(text())
+  @example("Hello world")
+  @example(x="Some very long string")
+  def test_some_code(x):
+      assert True
 
+  from unittest import TestCase
 
   class TestThings(TestCase):
       @given(text())
