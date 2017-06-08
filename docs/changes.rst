@@ -22,6 +22,13 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.11.2 - 2017-06-10
+-------------------
+
+This is a documentation release.  Several outdated snippets have been updated
+or removed, and many cross-references are now hyperlinks.
+
+-------------------
 3.11.1 - 2017-05-28
 -------------------
 
