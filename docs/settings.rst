@@ -8,7 +8,7 @@ not enough and you need to tweak it.
 The mechanism for doing this is the :class:`~hypothesis.settings` object.
 You can set up a @given based test to use this using a settings decorator:
 
-:func:`@given <hypothesis.core.given>` invocation as follows:
+:func:`@given <hypothesis.given>` invocation as follows:
 
 .. code:: python
 
@@ -53,7 +53,7 @@ Seeing intermediate result
 
 To see what's going on while Hypothesis runs your tests, you can turn
 up the verbosity setting. This works with both :func:`~hypothesis.core.find`
-and :func:`@given <hypothesis.core.given>`.
+and :func:`@given <hypothesis.given>`.
 
 .. doctest::
 

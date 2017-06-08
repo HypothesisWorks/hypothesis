@@ -48,7 +48,7 @@ Sharing your example database
 
 .. note::
     If specific examples are important for correctness you should use the
-    ``@example`` decorator, as the example database may discard entries due to
+    :func:`@example <hypothesis.example>` decorator, as the example database may discard entries due to
     changes in your code or dependencies.  For most users, we therefore
     recommend using the example database locally and possibly persisting it
     between CI builds, but not tracking it under version control.

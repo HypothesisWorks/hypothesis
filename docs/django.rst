@@ -12,13 +12,13 @@ if you're still getting security patches, you can test with Hypothesis.
 Using it is quite straightforward: All you need to do is subclass
 :class:`hypothesis.extra.django.TestCase` or
 :class:`hypothesis.extra.django.TransactionTestCase`
-and you can use :func:`@given <hypothesis.core.given>` as normal,
+and you can use :func:`@given <hypothesis.given>` as normal,
 and the transactions will be per example
 rather than per test function as they would be if you used @given with a normal
 django test suite (this is important because your test function will be called
 multiple times and you don't want them to interfere with each other). Test cases
 on these classes that do not use
-:func:`@given <hypothesis.core.given>` will be run as normal.
+:func:`@given <hypothesis.given>` will be run as normal.
 
 I strongly recommend not using
 :class:`~hypothesis.extra.django.TransactionTestCase`

@@ -246,7 +246,7 @@ Writing tests
 
 A test in Hypothesis consists of two parts: A function that looks like a normal
 test in your test framework of choice but with some additional arguments, and
-a :func:`@given <hypothesis.core.given>` decorator that specifies
+a :func:`@given <hypothesis.given>` decorator that specifies
 how to provide those arguments.
 
 Here are some other examples of how you could use that:
@@ -283,7 +283,7 @@ Here are some other examples of how you could use that:
         assert isinstance(t[1], str)
 
 
-Note that as we saw in the above example you can pass arguments to :func:`@given <hypothesis.core.given>`
+Note that as we saw in the above example you can pass arguments to :func:`@given <hypothesis.given>`
 either as positional or as keywords.
 
 --------------
