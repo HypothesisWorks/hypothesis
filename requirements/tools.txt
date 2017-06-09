@@ -29,7 +29,7 @@ pycodestyle==2.3.1        # via autopep8, flake8
 pyflakes==1.5.0           # via autoflake, flake8
 pyformat==0.7
 pygments==2.2.0           # via sphinx
-pytest==3.1.1
+pytest==3.1.2
 pytz==2017.2              # via babel
 requests-toolbelt==0.8.0  # via twine
 requests==2.17.3          # via requests-toolbelt, sphinx, twine
