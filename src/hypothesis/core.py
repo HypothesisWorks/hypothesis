@@ -15,7 +15,7 @@
 #
 # END HEADER
 
-"""This module provides the core primitives of Hypothesis, assume and given."""
+"""This module provides the core primitives of Hypothesis, such as given."""
 
 
 from __future__ import division, print_function, absolute_import
@@ -71,8 +71,7 @@ Example = namedtuple('Example', ('args', 'kwargs'))
 
 
 def example(*args, **kwargs):
-    """Add an explicit example called with these args and kwargs to the
-    test."""
+    """A decorator to that ensures a specific example is always tested."""
     if args and kwargs:
         raise InvalidArgument(
             'Cannot mix positional and keyword arguments for examples'
@@ -577,8 +576,7 @@ def given(*given_arguments, **given_kwargs):
     """A decorator for turning a test function that accepts arguments into a
     randomized test.
 
-    This is the main entry point to Hypothesis. See the full tutorial
-    for details of its behaviour.
+    This is the main entry point to Hypothesis.
 
     """
     def run_test_with_generator(test):
@@ -662,6 +660,8 @@ def given(*given_arguments, **given_kwargs):
 
 
 def find(specifier, condition, settings=None, random=None, database_key=None):
+    """Returns the minimal example from the given strategy ``specifier`` that
+    matches the predicate function ``condition``."""
     settings = settings or Settings(
         max_examples=2000,
         min_satisfying_examples=0,

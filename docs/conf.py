@@ -79,6 +79,9 @@ from hypothesis.strategies import *
 # Ensure that output (including from strategies) is deterministic
 import random
 random.seed(0)
+# don't save examples
+settings.register_profile('doctests', settings(database=None))
+settings.load_profile('doctests')
 '''
 
 # This config value must be a dictionary of external sites, mapping unique

@@ -23,9 +23,9 @@ module. The salient functions from it are as follows:
 Choices
 ~~~~~~~~~~~~~~~~
 
-Sometimes you need an input to be from a known set of items. hypothesis gives you 2 ways to do this, choice() and sampled_from().
-
-Examples on how to use them both are below. First up choice:
+Sometimes you need an input to be from a known set of items.
+Hypothesis gives you two ways to do this.  First up,
+:func:`choice() <hypothesis.strategies.choice>`:
 
 .. code:: python
 
@@ -36,9 +36,11 @@ Examples on how to use them both are below. First up choice:
         t=choice(('ST', 'LT', 'TG', 'CT'))
         # asserts go here.
 
-This means t will randomly be one of the items in the list ('ST', 'LT', 'TG', 'CT'). just like if you were calling random.choice() on the list.
+This means ``t`` will randomly be one of the items in the list ('ST', 'LT', 'TG', 'CT'),
+as if you were calling :func:`python:random.choice` on the list.
 
-A different, and probably better way to do this, is to use sampled_from:
+A different, and probably better way to do this, is to use
+:func:`sampled_from() <hypothesis.strategies.sampled_from>`:
 
 .. code:: python
 
@@ -50,7 +52,9 @@ A different, and probably better way to do this, is to use sampled_from:
     def test_tickets(user, service, t):
         # asserts and test code go here.
 
-Values from sampled_from will not be copied and thus you should be careful of using mutable data. Which makes it great for the above use case, but may not always work out.
+Values from :func:`sampled_from() <hypothesis.strategies.sampled_from>` will
+not be copied and thus you should be careful of using mutable data.
+This is great for the above use case, but may not always work out.
 
 ~~~~~~~~~~~~~~~~
 Infinite streams
@@ -59,7 +63,6 @@ Infinite streams
 Sometimes you need examples of a particular type to keep your test going but
 you're not sure how many you'll need in advance. For this, we have streaming
 types.
-
 
 .. doctest::
 
@@ -153,8 +156,8 @@ Mapping
 -------
 
 Map is probably the easiest and most useful of these to use. If you have a
-strategy s and a function f, then an example s.map(f).example() is
-f(s.example()). i.e. we draw an example from s and then apply f to it.
+strategy ``s`` and a function ``f``, then an example ``s.map(f).example()`` is
+``f(s.example())``, i.e. we draw an example from ``s`` and then apply ``f`` to it.
 
 e.g.:
 
@@ -163,15 +166,15 @@ e.g.:
   >>> lists(integers()).map(sorted).example()
   [-224, -222, 16, 159, 120699286316048]
 
-Note that many things that you might use mapping for can also be done with the
-builds function in hypothesis.strategies.
+Note that many things that you might use mapping for can also be done with
+:func:`hypothesis.strategies.builds`.
 
 ---------
 Filtering
 ---------
 
-filter lets you reject some examples. s.filter(f).example() is some example
-of s such that f(s) is truthy.
+filter lets you reject some examples. ``s.filter(f).example()`` is some example
+of ``s`` such that ``f(example)`` is truthy.
 
 .. doctest::
 
@@ -260,7 +263,7 @@ The problem is that you cannot call a strategy recursively and expect it to not 
 blow up and eat all your memory.  The other problem here is that not all unicode strings
 display consistently on different machines, so we'll restrict them in our doctest.
 
-The way Hypothesis handles this is with the ':py:func:`recursive` function
+The way Hypothesis handles this is with the :py:func:`recursive` function
 which you pass in a base case and a function that given a strategy for your data type
 returns a new strategy for it. So for example:
 
@@ -304,11 +307,13 @@ we wanted to only generate really small JSON we could do this as:
   >>> small_lists.example()
   True
 
+.. _composite-strategies:
+
 ~~~~~~~~~~~~~~~~~~~~
 Composite strategies
 ~~~~~~~~~~~~~~~~~~~~
 
-The @composite decorator lets you combine other strategies in more or less
+The :func:`@composite <hypothesis.strategies.composite>` decorator lets you combine other strategies in more or less
 arbitrary ways. It's probably the main thing you'll want to use for
 complicated custom strategies.
 
@@ -345,7 +350,7 @@ Note that the repr will work exactly like it does for all the built-in
 strategies: It will be a function that you can call to get the strategy in
 question, with values provided only if they do not match the defaults.
 
-You can use assume inside composite functions:
+You can use :func:`assume <hypothesis.assume>` inside composite functions:
 
 .. code-block:: python
 
@@ -368,7 +373,7 @@ Drawing interactively in tests
 
 There is also the ``data()`` strategy, which gives you a means of using
 strategies interactively. Rather than having to specify everything up front in
-``@given`` you can draw from strategies in the body of your test:
+:func:`@given <hypothesis.given>` you can draw from strategies in the body of your test:
 
 .. code-block:: python
 
@@ -388,6 +393,11 @@ the above is wrong (it has a boundary condition error), so will print:
     Draw 2: 0
 
 As you can see, data drawn this way is simplified as usual.
+
+Test functions using the ``data()`` strategy do not support explicit
+:func:`@example(...) <hypothesis.example>`\ s.  In this case, the best option is usually to construct
+your data with :func:`@composite <hypothesis.strategies.composite>` or the explicit example, and unpack this within
+the body of the test.
 
 Optionally, you can provide a label to identify values generated by each call
 to ``data.draw()``.  These labels can be used to identify values in the output

@@ -8,7 +8,7 @@ not enough and you need to tweak it.
 The mechanism for doing this is the :class:`~hypothesis.settings` object.
 You can set up a @given based test to use this using a settings decorator:
 
-:func:`@given <hypothesis.core.given>` invocation as follows:
+:func:`@given <hypothesis.given>` invocation as follows:
 
 .. code:: python
 
@@ -52,47 +52,25 @@ Seeing intermediate result
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To see what's going on while Hypothesis runs your tests, you can turn
-up the verbosity setting. This works with both :func:`~hypothesis.core.find` and :func:`@given <hypothesis.core.given>`.
+up the verbosity setting. This works with both :func:`~hypothesis.core.find`
+and :func:`@given <hypothesis.given>`.
 
-(The following examples are somewhat manually truncated because the results
-of verbose output are, well, verbose, but they should convey the idea).
-
-.. code:: pycon
+.. doctest::
 
     >>> from hypothesis import find, settings, Verbosity
     >>> from hypothesis.strategies import lists, booleans
-    >>> find(lists(booleans()), any, settings=settings(verbosity=Verbosity.verbose))
-    Found satisfying example [True, True, ...
-    Shrunk example to [False, False, False, True, ...
-    Shrunk example to [False, False, True, False, False, ...
-    Shrunk example to [False, True, False, True, True, ...
-    Shrunk example to [True, True, True]
-    Shrunk example to [True, True]
-    Shrunk example to [True]
-    [True]
-    >>> from hypothesis import given
-    >>> from hypothesis.strategies import integers
-    >>> @given(integers())
-    ... @settings(verbosity=Verbosity.verbose)
-    ... def test_foo(x):
-    ...     assert x > 0
-    ...
-    >>> test_foo()
-    Trying example: test_foo(x=-565872324465712963891750807252490657219)
-    Traceback (most recent call last):
-        ...
-        File "<stdin>", line 3, in test_foo
-    AssertionError
-    Trying example: test_foo(x=565872324465712963891750807252490657219)
-    Trying example: test_foo(x=0)
-    Traceback (most recent call last):
-        ...
-        File "<stdin>", line 3, in test_foo
-    AssertionError
-    Falsifying example: test_foo(x=0)
-    Traceback (most recent call last):
-        ...
-    AssertionError
+    >>> find(lists(integers()), any, settings=settings(verbosity=Verbosity.verbose))
+    Found satisfying example [-208]
+    Shrunk example to [-208]
+    Shrunk example to [208]
+    Shrunk example to [104]
+    Shrunk example to [52]
+    Shrunk example to [26]
+    Shrunk example to [13]
+    Shrunk example to [6]
+    Shrunk example to [3]
+    Shrunk example to [1]
+    [1]
 
 The four levels are quiet, normal, verbose and debug. normal is the default,
 while in quiet Hypothesis will not print anything out, even the final
@@ -111,11 +89,15 @@ Building settings objects
 settings can be created by calling settings with any of the available settings
 values. Any absent ones will be set to defaults:
 
-.. code:: pycon
+.. doctest::
 
     >>> from hypothesis import settings
-    >>> settings()
-    settings(average_list_length=25.0, database_file='/home/david/projects/hypothesis/.hypothesis/examples.db', derandomize=False, max_examples=200, max_iterations=1000, max_shrinks=500, min_satisfying_examples=5, stateful_step_count=50, strict=False, timeout=60, verbosity=Verbosity.normal)
+    >>> settings()  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    settings(buffer_size=8192, database_file='...', derandomize=False,
+             max_examples=200, max_iterations=1000, max_mutations=10,
+             max_shrinks=500, min_satisfying_examples=5, perform_health_check=True,
+             phases=..., report_statistics=..., stateful_step_count=50, strict=False,
+             suppress_health_check=[], timeout=60, verbosity=Verbosity.normal)
     >>> settings().max_examples
     200
     >>> settings(max_examples=10).max_examples
@@ -124,7 +106,7 @@ values. Any absent ones will be set to defaults:
 
 You can also copy settings off other settings:
 
-.. code:: pycon
+.. doctest::
 
     >>> s = settings(max_examples=10)
     >>> t = settings(s, max_iterations=20)
@@ -153,7 +135,7 @@ You can change the defaults by using profiles (see next section), but you can
 also override them locally by using a settings object as a :ref:`context manager <python:context-managers>`
 
 
-.. code:: pycon
+.. doctest::
 
   >>> with settings(max_examples=150):
   ...     print(settings.default.max_examples)
@@ -202,7 +184,7 @@ can be loaded at any time.
 Loading a profile changes the default settings but will not change the behavior
 of tests that explicitly change the settings.
 
-.. code:: pycon
+.. doctest::
 
     >>> from hypothesis import settings
     >>> settings.register_profile("ci", settings(max_examples=1000))
@@ -215,7 +197,7 @@ of tests that explicitly change the settings.
 Instead of loading the profile and overriding the defaults you can retrieve profiles for
 specific tests.
 
-.. code:: pycon
+.. doctest::
 
   >>> with settings.get_profile("ci"):
   ...     print(settings().max_examples)
@@ -227,8 +209,9 @@ This is the suggested pattern for running your tests on CI.
 The code below should run in a `conftest.py` or any setup/initialization section of your test suite.
 If this variable is not defined the Hypothesis defined defaults will be loaded.
 
-.. code:: pycon
+.. doctest::
 
+    >>> import os
     >>> from hypothesis import settings
     >>> settings.register_profile("ci", settings(max_examples=1000))
     >>> settings.register_profile("dev", settings(max_examples=10))

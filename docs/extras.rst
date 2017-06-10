@@ -49,7 +49,6 @@ strategy for producing text data from any FakeFactory provider.
 
 So for example the following will parametrize a test by an email address:
 
-
 .. code-block:: pycon
 
     >>> fake_factory('email').example()
@@ -85,8 +84,7 @@ in as a providers argument:
 
 Generally you probably shouldn't do this unless you're reusing a provider you
 already have - Hypothesis's facilities for strategy generation are much more
-powerful and easier to use. Consider using something like BasicStrategy instead
-if you want to write a strategy from scratch. This is only here to provide easy
+powerful and easier to use. This is only here to provide easy
 reuse of things you already have.
 
 ------------------

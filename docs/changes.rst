@@ -22,11 +22,18 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.11.2 - 2017-06-10
+-------------------
+
+This is a documentation release.  Several outdated snippets have been updated
+or removed, and many cross-references are now hyperlinks.
+
+-------------------
 3.11.1 - 2017-05-28
 -------------------
 
 This is a minor ergonomics release.  Tracebacks shown by pytest no longer
-include Hypothesis internals for test functions decorated with ``@given``.
+include Hypothesis internals for test functions decorated with :func:`@given <hypothesis.given>`.
 
 -------------------
 3.11.0 - 2017-05-23
@@ -56,13 +63,13 @@ core strategies, which are more flexible and have no dependencies.
 3.10.0 - 2017-05-22
 -------------------
 
-Hypothesis now uses ``inspect.getfullargspec`` internally.
+Hypothesis now uses :func:`python:inspect.getfullargspec` internally.
 On Python 2, there are no visible changes.
 
-On Python 3 ``@given`` and ``@composite`` now preserve annotations on the
+On Python 3 :func:`@given <hypothesis.given>` and :func:`@composite <hypothesis.strategies.composite>` now preserve annotations on the
 decorated function.  Keyword-only arguments are now either handled correctly
-(e.g. ``@composite``), or caught in validation instead of silently discarded
-or raising an unrelated error later (e.g. ``@given``).
+(e.g. :func:`@composite <hypothesis.strategies.composite>`), or caught in validation instead of silently discarded
+or raising an unrelated error later (e.g. :func:`@given <hypothesis.given>`).
 
 ------------------
 3.9.1 - 2017-05-22
@@ -145,7 +152,7 @@ properties such as indexing support or repeated iteration.
 
 This is a bug fix release for a single bug:
 
-* In 3.7.3, using ``@example`` and a pytest fixture in the same test could
+* In 3.7.3, using :func:`@example <hypothesis.example>` and a pytest fixture in the same test could
   cause the test to fail to fill the arguments, and throw a TypeError.
 
 ------------------

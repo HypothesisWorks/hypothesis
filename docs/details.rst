@@ -22,7 +22,7 @@ Sometimes this isn't enough, either because you have values with a ``repr`` that
 isn't very descriptive or because you need to see the output of some
 intermediate steps of your test. That's where the ``note`` function comes in:
 
-.. code:: pycon
+.. doctest::
 
     >>> from hypothesis import given, note, strategies as st
     >>> @given(st.lists(st.integers()), st.randoms())
@@ -32,12 +32,13 @@ intermediate steps of your test. That's where the ``note`` function comes in:
     ...     note("Shuffle: %r" % (ls2))
     ...     assert ls == ls2
     ...
-    >>> test_shuffle_is_noop()
+    >>> try:
+    ...     test_shuffle_is_noop()
+    ... except AssertionError:
+    ...     print('ls != ls2')
     Falsifying example: test_shuffle_is_noop(ls=[0, 0, 1], r=RandomWithSeed(0))
     Shuffle: [0, 1, 0]
-    Traceback (most recent call last):
-        ...
-    AssertionError
+    ls != ls2
 
 The note is printed in the final run of the test in order to include any
 additional information you might need in your test.
@@ -146,18 +147,12 @@ accidentally testing a lot less than you think you are. Also it would be nice to
 less time on bad examples - if you're running 200 examples per test (the default) and
 it turns out 150 of those examples don't match your needs, that's a lot of wasted time.
 
-The way Hypothesis handles this is to let you specify things which you *assume* to be
-true. This lets you abort a test in a way that marks the example as bad rather than
-failing the test. Hypothesis will use this information to try to avoid similar examples
-in future.
+.. autofunction:: hypothesis.assume
 
 For example suppose had the following test:
 
 
 .. code:: python
-
-  from hypothesis import given
-  from hypothesis.strategies import floats
 
   @given(floats())
   def test_negation_is_self_inverse(x):
@@ -179,8 +174,6 @@ So lets block off this particular example:
 
 .. code:: python
 
-  from hypothesis import given, assume
-  from hypothesis.strategies import floats
   from math import isnan
 
   @given(floats())
@@ -190,12 +183,6 @@ So lets block off this particular example:
 
 And this passes without a problem.
 
-:func:`~hypothesis.core.assume` throws an exception which
-terminates the test when provided with a false argument.
-It's essentially an :ref:`assert <python:assert>`, except that
-the exception it throws is one that Hypothesis
-identifies as meaning that this is a bad example, not a failing test.
-
 In order to avoid the easy trap where you assume a lot more than you intended, Hypothesis
 will fail a test when it can't find enough examples passing the assumption.
 
@@ -203,20 +190,16 @@ If we'd written:
 
 .. code:: python
 
-  from hypothesis import given, assume
-  from hypothesis.strategies import floats
-
   @given(floats())
   def test_negation_is_self_inverse_for_non_nan(x):
       assume(False)
       assert x == -(-x)
 
-
 Then on running we'd have got the exception:
 
 .. code::
 
-  Unsatisfiable: Unable to satisfy assumptions of hypothesis test_negation_is_self_inverse_for_non_nan. Only 0 examples found after 0.0791318 seconds
+  Unsatisfiable: Unable to satisfy assumptions of hypothesis test_negation_is_self_inverse_for_non_nan. Only 0 examples considered satisfied assumptions
 
 ~~~~~~~~~~~~~~~~~~~
 How good is assume?
@@ -277,8 +260,8 @@ As you can see, Hypothesis doesn't find *many* examples here, but it finds some 
 keep it happy.
 
 In general if you *can* shape your strategies better to your tests you should - for example
-``integers_in_range(1, 1000)`` is a lot better than ``assume(1 <= x <= 1000)``, but assume will take
-you a long way if you can't.
+:py:func:`integers(1, 1000) <hypothesis.strategies.integers>` is a lot better than
+``assume(1 <= x <= 1000)``, but assume will take you a long way if you can't.
 
 ---------------------
 Defining strategies
@@ -291,33 +274,22 @@ exposed in the :mod:`hypothesis.strategies` module.
 
 Many of these strategies expose a variety of arguments you can use to customize
 generation. For example for integers you can specify ``min`` and ``max`` values of
-integers you want:
-
-.. code:: python
-
-  >>> from hypothesis.strategies import integers
-  >>> integers()
-  RandomGeometricIntStrategy() | WideRangeIntStrategy()
-  >>> integers(min_value=0)
-  IntegersFromStrategy(0)
-  >>> integers(min_value=0, max_value=10)
-  BoundedIntStrategy(0, 10)
-
+integers you want.
 If you want to see exactly what a strategy produces you can ask for an example:
 
-.. code:: python
+.. doctest::
 
   >>> integers(min_value=0, max_value=10).example()
-  7
+  5
 
 Many strategies are build out of other strategies. For example, if you want
 to define a tuple you need to say what goes in each element:
 
-.. code:: python
+.. doctest::
 
   >>> from hypothesis.strategies import tuples
   >>> tuples(integers(), integers()).example()
-  (-1953, 85733644253897814191482551773726674360154905303788466954)
+  (50, 15)
 
 Further details are :doc:`available in a separate document <data>`.
 
@@ -325,7 +297,9 @@ Further details are :doc:`available in a separate document <data>`.
 The gory details of given parameters
 ------------------------------------
 
-The :func:`@given <hypothesis.core.given>` decorator may be used
+.. autofunction:: hypothesis.given
+
+The :func:`@given <hypothesis.given>` decorator may be used
 to specify what arguments of a function should
 be parametrized over. You can use either positional or keyword arguments or a mixture
 of the two.
@@ -395,7 +369,7 @@ The rules for determining what are valid uses of given are as follows:
 4. Functions tested with given may not have any defaults.
 
 The reason for the "rightmost named arguments" behaviour is so that
-using :func:`@given <hypothesis.core.given>` with instance methods works: self
+using :func:`@given <hypothesis.given>` with instance methods works: ``self``
 will be passed to the function as normal and not be parametrized over.
 
 The function returned by given has all the arguments that the original test did
@@ -421,10 +395,9 @@ executor is:
         return function()
 
 You define executors by defining a method execute_example on a class. Any
-test methods on that class with :func:`@given <hypothesis.core.given>` used on them will use
+test methods on that class with :func:`@given <hypothesis.given>` used on them will use
 ``self.execute_example`` as an executor with which to run tests. For example,
 the following executor runs all its code twice:
-
 
 .. code:: python
 
@@ -454,9 +427,7 @@ executor is invalid:
         def execute_example(self, f):
             return f()()
 
-
 and should be rewritten as:
-
 
 .. code:: python
 
@@ -471,18 +442,18 @@ and should be rewritten as:
             return result
 
 
-Methods of a BasicStrategy however will typically be called whenever. This may
-happen inside your executor or outside. This is why they have a "Warning you
-have no control over the lifecycle of these values" attached.
-
 -------------------------------
 Using Hypothesis to find values
 -------------------------------
 
 You can use Hypothesis's data exploration features to find values satisfying
-some predicate:
+some predicate.  This is generally useful for exploring custom strategies
+defined with :func:`@composite <hypothesis.strategies.composite>`, or
+experimenting with conditions for filtering data.
 
-.. code:: python
+.. autofunction:: hypothesis.find
+
+.. doctest::
 
   >>> from hypothesis import find
   >>> from hypothesis.strategies import sets, lists, integers
@@ -500,28 +471,16 @@ predicate it must satisfy.
 Of course not all conditions are satisfiable. If you ask Hypothesis for an
 example to a condition that is always false it will raise an error:
 
-
-.. code:: python
+.. doctest::
 
   >>> find(integers(), lambda x: False)
   Traceback (most recent call last):
   ...
   hypothesis.errors.NoSuchExample: No examples of condition lambda x: <unknown>
-  >>> from hypothesis.strategies import booleans
-  >>> find(booleans(), lambda x: False)
-  Traceback (most recent call last):
-  ...
-  hypothesis.errors.NoSuchExample: No examples of condition lambda x: <unknown>
 
-
-
-(The "lambda x: unknown" is because Hypothesis can't retrieve the source code
+(The ``lambda x: unknown`` is because Hypothesis can't retrieve the source code
 of lambdas from the interactive python console. It gives a better error message
 most of the time which contains the actual condition)
-
-The reason for the two different types of errors is that there are only a small
-number of booleans, so it is feasible for Hypothesis to enumerate all of them
-and simply check that your condition is never true.
 
 
 .. _providing-explicit-examples:
@@ -530,18 +489,9 @@ and simply check that your condition is never true.
 Providing explicit examples
 ---------------------------
 
-You can explicitly ask Hypothesis to try a particular example as follows:
+You can explicitly ask Hypothesis to try a particular example, using
 
-.. code:: python
-
-  from hypothesis import given, example
-  from hypothesis.strategies import text
-
-  @given(text())
-  @example("Hello world")
-  @example(x="Some very long string")
-  def test_some_code(x):
-      assert True
+.. autofunction:: hypothesis.example
 
 Hypothesis will run all examples you've asked for first. If any of them fail it
 will not go on to look for more examples.
@@ -550,15 +500,18 @@ It doesn't matter whether you put the example decorator before or after given.
 Any permutation of the decorators in the above will do the same thing.
 
 Note that examples can be positional or keyword based. If they're positional then
-they will be filled in from the right when calling, so things like the following
-will also work:
+they will be filled in from the right when calling, so either of the following
+styles will work as expected:
 
 .. code:: python
 
-  from unittest import TestCase
-  from hypothesis import given, example
-  from hypothesis.strategies import text
+  @given(text())
+  @example("Hello world")
+  @example(x="Some very long string")
+  def test_some_code(x):
+      assert True
 
+  from unittest import TestCase
 
   class TestThings(TestCase):
       @given(text())

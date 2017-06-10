@@ -1074,8 +1074,9 @@ def composite(f):
     """Defines a strategy that is built out of potentially arbitrarily many
     other strategies.
 
-    This is intended to be used as a decorator. See the full
-    documentation for more details about how to use this function.
+    This is intended to be used as a decorator. See
+    :ref:`the full documentation for more details <composite-strategies>`
+    about how to use this function.
 
     """
 
@@ -1227,7 +1228,8 @@ def data():
     """This isn't really a normal strategy, but instead gives you an object
     which can be used to draw data interactively from other strategies.
 
-    It can only be used within @given, not find. This is because the lifetime
+    It can only be used within :func:`@given <hypothesis.given>`, not
+    :func:`find() <hypothesis.find>`. This is because the lifetime
     of the object cannot outlast the test body.
 
     See :ref:`the rest of the documentation <interactive-draw>` for more
