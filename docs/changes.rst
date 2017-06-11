@@ -22,6 +22,13 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.11.3 - 2017-06-11
+-------------------
+
+This is a bugfix release: Hypothesis no longer emits a warning if you try to
+use ``sampled_from`` with ``collections.OrderedDict``.  (:issue:`688`)
+
+-------------------
 3.11.2 - 2017-06-10
 -------------------
 
