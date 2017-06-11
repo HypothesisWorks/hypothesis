@@ -17,6 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import collections
 import enum
 
 from hypothesis import given, settings
@@ -25,6 +26,8 @@ from tests.common.utils import fails_with
 from hypothesis.strategies import sampled_from
 
 an_enum = enum.Enum('A', 'a b c')
+
+an_ordereddict = collections.OrderedDict([('a', 1), ('b', 2), ('c', 3)])
 
 
 @given(sampled_from((1, 2)))
@@ -42,6 +45,16 @@ def test_cannot_sample_sets_in_strict_mode():
 def test_can_sample_sets_while_deprecated():
     with settings(strict=False):
         assert sampled_from(set('abc')).example() in 'abc'
+
+
+def test_can_sample_sequence_without_warning():
+    with settings(strict=True):
+        sampled_from([1, 2, 3]).example()
+
+
+def test_can_sample_ordereddict_without_warning():
+    with settings(strict=True):
+        sampled_from(an_ordereddict).example()
 
 
 @given(sampled_from(an_enum))
