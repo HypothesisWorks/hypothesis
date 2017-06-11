@@ -19,7 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import enum
 import math
-from collections import Sequence
+from collections import OrderedDict, Sequence
 
 from hypothesis._settings import note_deprecation
 from hypothesis.internal.compat import hbytes, bit_length, int_to_bytes, \
@@ -105,7 +105,7 @@ def centered_integer_range(data, lower, upper, center):
 
 
 def check_sample(values):
-    if not isinstance(values, (Sequence, enum.EnumMeta)):
+    if not isinstance(values, (OrderedDict, Sequence, enum.EnumMeta)):
         note_deprecation(
             ('Cannot sample from %r, not a sequence.  ' % (values,)) +
             'Hypothesis goes to some length to ensure that sampling an '
