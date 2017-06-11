@@ -19,7 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import enum
 import math
-from collections import OrderedDict, Sequence
+from collections import Sequence, OrderedDict
 
 from hypothesis._settings import note_deprecation
 from hypothesis.internal.compat import hbytes, bit_length, int_to_bytes, \

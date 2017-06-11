@@ -17,8 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
-import collections
 import enum
+import collections
 
 from hypothesis import given, settings
 from hypothesis.errors import HypothesisDeprecationWarning
