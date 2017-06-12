@@ -76,7 +76,7 @@ def test_can_minimize_large_arrays():
     assert minimal(arrays(u'uint32', 500), np.any, timeout_after=60).sum() == 1
 
 
-@flaky(max_runs=5, min_passes=1)
+@flaky(max_runs=50, min_passes=1)
 def test_can_minimize_float_arrays():
     x = minimal(arrays(float, 50), lambda t: t.sum() >= 1.0)
     assert 1.0 <= x.sum() <= 1.1
