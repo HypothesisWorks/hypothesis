@@ -45,11 +45,11 @@ def test_can_find_negative_delta():
 
 
 def test_can_find_on_the_second():
-    minimal(timedeltas(), lambda x: x.seconds == 0)
+    timedeltas().filter(lambda x: x.seconds == 0).example()
 
 
 def test_can_find_off_the_second():
-    minimal(timedeltas(), lambda x: x.seconds != 0)
+    timedeltas().filter(lambda x: x.seconds != 0).example()
 
 
 def test_simplifies_towards_zero_delta():
@@ -122,8 +122,8 @@ def test_can_find_before_the_year_2000():
 
 
 def test_can_find_each_month():
-    for i in hrange(1, 12):
-        minimal(dates(), lambda x: x.month == i)
+    for month in hrange(1, 13):
+        dates().filter(lambda x: x.month == month).example()
 
 
 def test_min_year_is_respected():
@@ -143,7 +143,7 @@ TestStandardDescriptorFeatures_times1 = strategy_test_suite(times())
 
 
 def test_can_find_midnight():
-    minimal(times(), lambda x: x.hour == x.minute == x.second == 0)
+    times().filter(lambda x: x.hour == x.minute == x.second == 0).example()
 
 
 def test_can_find_non_midnight():
@@ -151,11 +151,11 @@ def test_can_find_non_midnight():
 
 
 def test_can_find_on_the_minute():
-    minimal(times(), lambda x: x.second == 0)
+    times().filter(lambda x: x.second == 0).example()
 
 
 def test_can_find_off_the_minute():
-    minimal(times(), lambda x: x.second != 0)
+    times().filter(lambda x: x.second != 0).example()
 
 
 def test_simplifies_towards_midnight():
@@ -164,7 +164,7 @@ def test_simplifies_towards_midnight():
 
 
 def test_can_generate_naive_time():
-    minimal(times(), lambda d: not d.tzinfo)
+    times().filter(lambda d: not d.tzinfo).example()
 
 
 @given(times())

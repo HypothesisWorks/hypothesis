@@ -28,10 +28,7 @@ from hypothesis.extra.datetime import times
 
 @checks_deprecated_behaviour
 def test_can_find_midnight():
-    minimal(
-        times(),
-        lambda x: (x.hour == 0 and x.minute == 0 and x.second == 0),
-    )
+    times().filter(lambda x: x.hour == x.minute == x.second == 0).example()
 
 
 @checks_deprecated_behaviour
@@ -41,12 +38,12 @@ def test_can_find_non_midnight():
 
 @checks_deprecated_behaviour
 def test_can_find_off_the_minute():
-    minimal(times(), lambda x: x.second == 0)
+    times().filter(lambda x: x.second != 0).example()
 
 
 @checks_deprecated_behaviour
 def test_can_find_on_the_minute():
-    minimal(times(), lambda x: x.second != 0)
+    times().filter(lambda x: x.second == 0).example()
 
 
 @checks_deprecated_behaviour
@@ -60,7 +57,7 @@ def test_simplifies_towards_midnight():
 
 @checks_deprecated_behaviour
 def test_can_generate_naive_time():
-    minimal(times(allow_naive=True), lambda d: not d.tzinfo)
+    times(allow_naive=True).filter(lambda d: d.tzinfo is not None).example()
 
 
 @checks_deprecated_behaviour
@@ -71,9 +68,9 @@ def test_can_generate_non_naive_time():
 
 @checks_deprecated_behaviour
 def test_can_generate_non_utc():
-    minimal(
-        times(),
-        lambda d: assume(d.tzinfo) and d.tzinfo.zone != u'UTC')
+    times().filter(
+        lambda d: assume(d.tzinfo) and d.tzinfo.zone != u'UTC'
+    ).example()
 
 
 with hs.settings(strict=False):

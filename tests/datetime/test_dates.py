@@ -35,8 +35,8 @@ def test_can_find_before_the_year_2000():
 
 @checks_deprecated_behaviour
 def test_can_find_each_month():
-    for i in hrange(1, 12):
-        minimal(dates(), lambda x: x.month == i)
+    for month in hrange(1, 13):
+        dates().filter(lambda x: x.month == month).example()
 
 
 @checks_deprecated_behaviour

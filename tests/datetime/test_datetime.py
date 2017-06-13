@@ -44,16 +44,15 @@ def test_can_find_before_the_year_2000():
 
 @checks_deprecated_behaviour
 def test_can_find_each_month():
-    for i in hrange(1, 12):
-        minimal(datetimes(), lambda x: x.month == i)
+    for month in hrange(1, 13):
+        datetimes().filter(lambda x: x.month == month).example()
 
 
 @checks_deprecated_behaviour
 def test_can_find_midnight():
-    minimal(
-        datetimes(),
-        lambda x: (x.hour == 0 and x.minute == 0 and x.second == 0),
-    )
+    datetimes().filter(
+        lambda x: x.hour == x.minute == x.second == 0
+    ).example()
 
 
 @checks_deprecated_behaviour
@@ -63,12 +62,12 @@ def test_can_find_non_midnight():
 
 @checks_deprecated_behaviour
 def test_can_find_off_the_minute():
-    minimal(datetimes(), lambda x: x.second == 0)
+    datetimes().filter(lambda x: x.second != 0).example()
 
 
 @checks_deprecated_behaviour
 def test_can_find_on_the_minute():
-    minimal(datetimes(), lambda x: x.second != 0)
+    datetimes().filter(lambda x: x.second == 0).example()
 
 
 @checks_deprecated_behaviour
@@ -82,7 +81,7 @@ def test_simplifies_towards_midnight():
 
 @checks_deprecated_behaviour
 def test_can_generate_naive_datetime():
-    minimal(datetimes(allow_naive=True), lambda d: not d.tzinfo)
+    datetimes(allow_naive=True).filter(lambda d: d.tzinfo is None).example()
 
 
 @checks_deprecated_behaviour
@@ -93,9 +92,9 @@ def test_can_generate_non_naive_datetime():
 
 @checks_deprecated_behaviour
 def test_can_generate_non_utc():
-    minimal(
-        datetimes(),
-        lambda d: assume(d.tzinfo) and d.tzinfo.zone != u'UTC')
+    datetimes().filter(
+        lambda d: assume(d.tzinfo) and d.tzinfo.zone != u'UTC'
+    ).example()
 
 
 with hs.settings(strict=False):

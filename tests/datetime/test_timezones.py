@@ -88,8 +88,9 @@ def test_timezone_aware_times_are_timezone_aware(dt):
 
 
 def test_can_generate_non_utc():
-    minimal(times(timezones=timezones()),
-            lambda d: assume(d.tzinfo) and d.tzinfo.zone != u'UTC')
+    times(timezones=timezones()).filter(
+        lambda d: assume(d.tzinfo) and d.tzinfo.zone != u'UTC'
+    ).example()
 
 
 @given(sampled_from(['min_time', 'max_time']), times(timezones=timezones()))
