@@ -32,7 +32,7 @@ pygments==2.2.0           # via sphinx
 pytest==3.1.2
 pytz==2017.2              # via babel
 requests-toolbelt==0.8.0  # via twine
-requests==2.17.3          # via requests-toolbelt, sphinx, twine
+requests==2.18.1          # via requests-toolbelt, sphinx, twine
 restructuredtext-lint==1.0.1
 six==1.10.0               # via pip-tools, sphinx
 snowballstemmer==1.2.1    # via sphinx
