@@ -5,8 +5,14 @@
 #    pip-compile --output-file requirements/test.txt requirements/test.in
 #
 apipkg==1.4               # via execnet
+argparse==1.4.0           # via unittest2
 execnet==1.4.1            # via pytest-xdist
 flaky==3.3.0
+linecache2==1.0.0         # via traceback2
+nose==1.3.7
 py==1.4.34                # via pytest, pytest-xdist
 pytest-xdist==1.17.1
 pytest==3.1.2
+six==1.10.0               # via unittest2
+traceback2==1.4.0         # via unittest2
+unittest2==1.1.0

@@ -1,3 +1,5 @@
 flaky
+nose
 pytest
 pytest-xdist
+unittest2
