@@ -21,7 +21,7 @@ from unittest import TestCase
 
 import pytest
 
-from hypothesis import note, given, example, settings, reporting
+from hypothesis import Verbosity, note, given, example, settings, reporting
 from hypothesis.errors import InvalidArgument
 from tests.common.utils import capture_out
 from hypothesis.strategies import text, integers
@@ -160,6 +160,20 @@ def test_prints_output_for_explicit_examples():
                 test_positive()
     out = out.getvalue()
     assert u'Falsifying example: test_positive(x=-1)' in out
+
+
+def test_prints_verbose_output_for_explicit_examples():
+    @settings(verbosity=Verbosity.verbose)
+    @example('NOT AN INTEGER')
+    @given(integers())
+    def test_always_passes(x):
+        pass
+
+    with reporting.with_reporter(reporting.default):
+        with capture_out() as out:
+            test_always_passes()
+    out = out.getvalue()
+    assert u"Trying example: test_always_passes(x='NOT AN INTEGER')" in out
 
 
 def test_captures_original_repr_of_example():
