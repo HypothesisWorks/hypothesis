@@ -226,18 +226,20 @@ def execute_explicit_examples(
         # Note: Test may mutate arguments and we can't rerun explicit
         # examples, so we have to calculate the failure message at this
         # point rather than than later.
-        message_on_failure = 'Falsifying example: %s(%s)' % (
+        example_string = '%s(%s)' % (
             test.__name__, arg_string(test, arguments, example_kwargs)
         )
         try:
             with BuildContext(None) as b:
+                if settings.verbosity >= Verbosity.verbose:
+                    report('Trying example: ' + example_string)
                 test_runner(
                     None,
                     lambda data: test(*arguments, **example_kwargs)
                 )
         except BaseException:
             traceback.print_exc()
-            report(message_on_failure)
+            report('Falsifying example: ' + example_string)
             for n in b.notes:
                 report(n)
             raise

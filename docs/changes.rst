@@ -22,6 +22,13 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.11.4 - 2017-06-17
+-------------------
+
+This is a bugfix release: Hypothesis now prints explicit examples when
+running in verbose mode.  (:issue:`313`)
+
+-------------------
 3.11.3 - 2017-06-11
 -------------------
 
