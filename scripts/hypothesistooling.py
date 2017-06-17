@@ -184,4 +184,4 @@ def modified_files():
 
 def all_files():
     return subprocess.check_output(['git', 'ls-files']).decode(
-        'ascii').split('\n')
+        'ascii').splitlines()
