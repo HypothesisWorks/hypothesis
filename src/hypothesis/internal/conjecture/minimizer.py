@@ -109,55 +109,56 @@ class Minimizer(object):
         for i in hrange(self.size):
             if self.current[i] == 0:
                 continue
+
+            if self.incorporate(
+                self.current[:i] + hbytes([0]) + self.current[i + 1:]
+            ):
+                continue
+
             prefix = self.current[:i]
             original_suffix = self.current[i + 1:]
 
-            # If we're being cautious we can't every raise the future bytes,
-            # so we have to take the more conservative option of
-            # just using the existing prefix. This is still worth trying
-            # though.
-            if timid:
-                suffix = original_suffix
-            else:
-                suffix = hbytes([255] * (self.size - i - 1))
+            suffixes = [original_suffix]
 
-            def suitable(c):
-                """Does the lexicographically largest value starting with our
-                prefix and having c at i satisfy the condition?"""
+            if not timid:
+                suffixes.append(hbytes([255] * (self.size - i - 1)))
 
-                return self.incorporate(prefix + hbytes([c]) + suffix)
+            for suffix in suffixes:
 
-            c = self.current[i]
+                def suitable(c):
+                    """Does the lexicographically largest value starting with
+                    our prefix and having c at i satisfy the condition?"""
 
-            if (
-                # We first see if replacing the byte with zero and the rest
-                # with 255 is enough to trigger the condition. If this
-                # succeeds we've successfully zeroed the byte here and the
-                # rest of this search isn't useful.
-                not suitable(0) and
+                    return self.incorporate(prefix + hbytes([c]) + suffix)
 
-                # We now check if the lexicographic predecessor (where this
-                # element is reduced by 1 and all subsequent elements are
-                # raised to 255) is valid here. If it's not then there's
-                # no point in trying the search and we can break out early.
-                suitable(c - 1)
-            ):
-                # We now do a binary search to find a small value
-                # where the large suffix works. Again, the property is not
-                # necessarily monotonic, so this doesn't actually guarantee
-                # the smallest value.
-                @binsearch(0, self.current[i])
-                def _(m):
-                    # We have to manually check the end point because we
-                    # already incorporated this.
-                    if m == self.current[i]:
-                        return True
-                    return suitable(m)
+                c = self.current[i]
 
-            # We may have replaced the suffix with a block of 255s. See if
-            # we can replace it with our old suffix, which might be a lot
-            # more friendly.
-            self.incorporate(self.current[:i + 1] + original_suffix)
+                if (
+                    # We first see if replacing the byte with zero and the rest
+                    # is enough to trigger the condition. If this succeeds
+                    # we've successfully zeroed the byte here and the rest of
+                    # this search isn't useful. Note that we've already checked
+                    # this for the existing suffix, but the caching makes that
+                    # harmlesss.
+                    not suitable(0) and
+
+                    # We now check if the lexicographic predecessor (where this
+                    # element is reduced by 1 and all subsequent elements are
+                    # raised to 255) is valid here. If it's not then there's
+                    # no point in trying the search and we can break out early.
+                    suitable(c - 1)
+                ):
+                    # We now do a binary search to find a small value
+                    # where the large suffix works. Again, the property is not
+                    # necessarily monotonic, so this doesn't actually guarantee
+                    # the smallest value.
+                    @binsearch(0, self.current[i])
+                    def _(m):
+                        # We have to manually check the end point because we
+                        # already incorporated this.
+                        if m == self.current[i]:
+                            return True
+                        return suitable(m)
 
     def run(self):
         if not any(self.current):
