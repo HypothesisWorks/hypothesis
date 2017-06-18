@@ -191,19 +191,25 @@ class Minimizer(object):
         while self.current[canzero] == 0:
             canzero += 1
 
+        base = self.current
+
         @binsearch(canzero, nonzero)
         def zero_prefix(mid):
             return self.incorporate(
-                self.current[:mid] + hbytes(len(self.current) - mid)
+                hbytes(mid) +
+                base[mid:]
             )
 
-        @binsearch(0, self.size)
-        def shift_right(mid):
-            if mid == 0:
-                return True
-            if mid == self.size:
-                return False
-            return self.incorporate(self.current[:-mid] + hbytes(mid))
+        base = self.current
+
+        if not self.cautious:
+            @binsearch(0, self.size)
+            def shift_right(mid):
+                if mid == 0:
+                    return True
+                if mid == self.size:
+                    return False
+                return self.incorporate(hbytes(mid) + base[:-mid])
 
         change_counter = -1
         while self.current and change_counter < self.changes:
