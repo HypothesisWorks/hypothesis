@@ -109,6 +109,28 @@ def sometimes(p, name=None):
     return accept
 
 
+def lower_bound(seed, testdata, value):
+    """Benchmarking condition for testing the lexicographic minimization aspect
+    of test case reduction.
+
+    This lets us test for the sort of behaviour that happens when we
+    e.g. have a lower bound on an integer, but in more generality.
+
+    """
+
+    # We implicitly define an infinite stream of bytes, and compare the buffer
+    # of the testdata object with the prefix of the stream of the same length.
+    # If it is >= that prefix we accept the testdata, if not we reject it.
+    rnd = random.Random(seed)
+    for b in testdata.buffer:
+        c = rnd.randint(0, 255)
+        if c < b:
+            return True
+        if c > b:
+            return False
+    return True
+
+
 usually = sometimes(0.9, 'usually')
 
 
@@ -126,6 +148,7 @@ for k in STRATEGIES:
     define_benchmark(k, always, usually)
     define_benchmark(k, always, nontrivial)
     define_benchmark(k, usually, nontrivial)
+    define_benchmark(k, always, lower_bound)
 
 
 define_benchmark('intlists', always, minsum)
