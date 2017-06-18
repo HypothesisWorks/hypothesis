@@ -63,12 +63,6 @@ and :func:`@given <hypothesis.given>`.
     Found satisfying example [-208]
     Shrunk example to [-208]
     Shrunk example to [208]
-    Shrunk example to [104]
-    Shrunk example to [52]
-    Shrunk example to [26]
-    Shrunk example to [13]
-    Shrunk example to [6]
-    Shrunk example to [3]
     Shrunk example to [1]
     [1]
 
