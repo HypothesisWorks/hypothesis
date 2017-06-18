@@ -22,6 +22,20 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.11.5 - 2017-06-18
+-------------------
+
+This release provides a performance improvement to shrinking. For cases where
+there is some no-trivial "boundary" value (e.g. the bug happens for all values
+greater than some other value), shrinking should now be substantially faster.
+Other types of bug will likely see improvements too.
+
+This may also result in some changes to the quality of the final examples - it
+may sometimes be better, but is more likely to get slightly worse in some edge
+cases. If you see any examples where this happens in practice, please report
+them.
+
+-------------------
 3.11.4 - 2017-06-17
 -------------------
 
@@ -106,15 +120,6 @@ This is feature release, expanding the capabilities of the decimals strategy.
   allow_nan is True, or if allow_nan is None and min_value or max_value is None.
 * min_value and max_value may be given as decimal strings, e.g. ``"1.234"``.
 
-------------------
-3.8.6 - TBD
-------------------
-
-This contains a number of improvements to test case reduction. Failing test
-cases should now in some cases complete much faster.
-
-This may also result in some changes to the quality of the final examples - it
-may sometimes be better, but is more likely to get slightly worse. If you have
 
 ------------------
 3.8.5 - 2017-05-16
