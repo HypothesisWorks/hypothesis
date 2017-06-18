@@ -26,7 +26,7 @@ information to the contrary.
 -------------------
 
 This release provides a performance improvement to shrinking. For cases where
-there is some no-trivial "boundary" value (e.g. the bug happens for all values
+there is some non-trivial "boundary" value (e.g. the bug happens for all values
 greater than some other value), shrinking should now be substantially faster.
 Other types of bug will likely see improvements too.
 
