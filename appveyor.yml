@@ -25,6 +25,8 @@ environment:
 branches:
   only:
     - master
+    - /\d+\.\d+\.\d+/
+
 
 install:
   - ECHO "Filesystem root:"
