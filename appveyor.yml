@@ -68,7 +68,7 @@ install:
   - "%CMD_IN_ENV% python setup.py bdist_wheel --dist-dir dist"
 
 deploy_script:
-  - ps: if ($env:APPVEYOR_REPO_TAG -eq $TRUE) { %CMD_IN_ENV% python -m twine upload dist/* }
+  - ps: "if ($env:APPVEYOR_REPO_TAG -eq $TRUE) { python -m twine upload dist/* }"
 
 build: false  # Not a C# project, build stuff at the test step instead.
 
