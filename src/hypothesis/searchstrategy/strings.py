@@ -17,6 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import string
 import math
 
 from hypothesis.errors import InvalidArgument
@@ -133,3 +134,43 @@ class FixedSizeBytes(SearchStrategy):
 
     def do_draw(self, data):
         return binary_type(data.draw_bytes(self.size))
+
+
+class EmailStrategy(MappedSearchStrategy):
+    VALID_CHARACTERS = one_of(
+        sampled_from((string.ascii_letters, string.digits, "!#$%&'*+-/=?^_`{|}~")),
+        characters(min_codepoint=0x007F)
+    )
+
+    def __init__(self, domains, min_size, average_size, max_size):
+        super(EmailStrategy, self).__init__(
+            strategy=fixed_dictionaries({
+                'local-part': builds(
+                    intersperse_dots,
+                    randoms(),
+                    text(
+                        LOCAL_PART,
+                        min_size=min_size, average_size=average_size, max_size=max_size
+                    )),
+                'domain': domains
+            })
+        )
+
+
+    def pack(self, value):
+        return "%s@%s" % (
+            value['local-part'], value['domain']
+        )
+
+
+def intersperse_dots(random, string):
+    chars = list(string)
+
+    index = 1
+    while index < len(chars) < 64:
+        if chars[index-1] != "." and chars[index+1] != ".":
+            chars.insert(index, ".")
+
+        index = random.randrange(index + 1, len(chars) - 2)
+
+    return u''.join(chars)

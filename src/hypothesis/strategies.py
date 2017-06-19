@@ -42,7 +42,7 @@ __all__ = [
     'booleans', 'integers', 'floats', 'complex_numbers', 'fractions',
     'decimals',
     'characters', 'text', 'binary', 'uuids',
-    'domains',
+    'domains', 'emails',
     'tuples', 'lists', 'sets', 'frozensets', 'iterables',
     'dictionaries', 'fixed_dictionaries',
     'sampled_from', 'permutations',
@@ -794,6 +794,29 @@ def domains(
             min_size=min_size, average_size=average_size, max_size=max_size
         ),
         min_subdomains=min_subdomains, max_subdomains=max_subdomains
+    )
+
+
+@cacheable
+@defines_strategy
+def emails(
+    domain_names=None,
+    min_size=None, average_size=None, max_size=None
+):
+    """Generates unicode text type (unicode on python 2, str on python 3)
+    characters that are valid email addresses.
+
+    This strategy accepts a domain names strategy, if None it will default to
+    the whole range of syntactically valid domain names.
+
+    min_size, average_size and max_size are used for the local part of the
+    email address, the part before the at sign.
+
+    """
+    from hypothesis.searchstrategy.strings import EmailStrategy
+    return EmailStrategy(
+        domains(alphabet=domain_names),
+        min_size, average_size, max_size
     )
 
 
