@@ -73,10 +73,10 @@ install:
   - "%CMD_IN_ENV% python -m pip.__main__ install --upgrade setuptools pip wheel twine"
   - "%CMD_IN_ENV% python -m pip.__main__ install setuptools -rrequirements/test.txt"
   - "%CMD_IN_ENV% python -m pip.__main__ install .[all]"
-  - "%CMD_IN_ENV% python -W setup.py -q bdist_wheel --dist-dir dist
+  - "%CMD_IN_ENV% python -W setup.py -q bdist_wheel --dist-dir dist"
 
 deploy_script:
-  - ps: if ($env:APPVEYOR_REPO_TAG -eq $TRUE) { "%CMD_IN_ENV% python -m twine upload dist/* }
+  - ps: if ($env:APPVEYOR_REPO_TAG -eq $TRUE) { %CMD_IN_ENV% python -m twine upload dist/* }
 
 build: false  # Not a C# project, build stuff at the test step instead.
 
