@@ -22,6 +22,13 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.11.6 - 2017-06-19
+-------------------
+
+This release involves no functionality changes, but is the first to ship wheels
+as well as an sdist.
+
+-------------------
 3.11.5 - 2017-06-18
 -------------------
 
