@@ -90,7 +90,7 @@ format: $(PYFORMAT) $(ISORT)
 	$(FILES_TO_FORMAT) | xargs $(PYFORMAT) -i
 
 lint: $(FLAKE8)
-	$(FLAKE8) src tests --exclude=compat.py,test_reflection.py,test_imports.py,tests/py2,test_lambda_formatting.py --ignore=E731,E721
+	$(FLAKE8) src tests --exclude=compat.py,_domains.py,test_reflection.py,test_imports.py,tests/py2,test_lambda_formatting.py --ignore=E731,E721
 
 check-untagged: $(BEST_PY3)
 	$(BEST_PY3) scripts/check-untagged.py
