@@ -24,42 +24,62 @@ from encodings import idna
 
 import hypothesis.strategies as st
 from hypothesis.internal.compat import to_unicode
-from hypothesis.searchstrategy.strategies import MappedSearchStrategy
+from hypothesis.searchstrategy.strategies import SearchStrategy
 
-class DomainStrategy(MappedSearchStrategy):
+MAX_LABEL_SIZE = 63
+MAX_LABEL_COUNT = 127
+MAX_DOMAIN_SIZE = 253
+
+# Each label must be 1 < 63 octets/bytes long,
+# the number of labels must be 0 < 127 and
+# the total length must be < 253
+
+class DomainStrategy(SearchStrategy):
 
     """A strategy for domain name strings, defined in terms of lists of text
     strings."""
 
 
     def __init__(self, alphabet, unsafe, min_subdomains, max_subdomains):
-        super(DomainStrategy, self).__init__(
-            strategy=fixed_dictionaries({
-                'labels': lists(
-                    # Behöver generera denna on-the-fly för att inte slå i alla begränsningar.
-                    # Typ en label i taget, koll längd, generera en till osv.
-                    # Lättast baklänges, top domän, subdomän, subdoän, ...
-                    # Dessutom behöver jag idna alla strängar, och så vidare.
-                    alphabet.filter(lambda label: "." not in label),
-                    min_value=min_subdomains, max_value=max_subdomains
-                ),
-                'top-level': st.one_of(SUFFIX_LIST if unsafe else SAFE_DOMAINS)
-            })
+        SearchStrategy.__init__(self)
+        self.alphabet = alphabet
+        self.unsafe = unsafe
+        self.min_subdomains = min_subdomains
+        self.max_subdomains = max_subdomains
+        self.subdomain_count = st.integers(
+            min_value=self.min_subdomain, max_value=self.max_subdomain
         )
 
     @staticmethod
     def canonicalize(string):
         return idna.ToASCII(idna.nameprep(to_unicode(string)))
 
-    def pack(self, labels, top_level):
-        return "%s.%s" % (
-            u'.'.join(value['labels']), value['top-level']
-        )
+    def do_draw(self, data):
+        subdomain_count = data.draw(self.subdomain_count)
+        labels = [] # RFC term for subdomains
+        total = len(top_level) + 1 # One extra for the dot
 
-    # Probably use do_draw to ensure min/max bounds better.
-    # Each label must be 1 < 63 octets/bytes long,
-    # the number of labels must be 0 < 127 and
-    # the total length must be < 253
+        while total < MAX_DOMAIN_SIZE and len(labels) < subdomain_count:
+            try:
+                label = self.canonicalize(data.draw(st.text(
+                    min_size=1, max_size=MAX_LABEL_SIZE, alphabet=self.alphabet
+                )))
+            except UnicodeError:
+                continue
+
+            total += len(label) + 1 # One extra for the dot
+            labels.append(label)
+
+        while total > MAX_DOMAIN_SIZE or len(labels) > subdomain_count:
+            total -= len(labels.pop())
+            total -= 1
+
+        # Append the top domain
+        labels.append(data.draw(st.sampled_from(SUFFIX_LIST)))
+        domain = ".".join(labels)
+
+        assert len(domain) < MAX_DOMAIN_SIZE
+        return domain
 
 
 suffix_list_path = Path(inspect.getfile(inspect.currentframe()))
