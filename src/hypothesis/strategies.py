@@ -1329,6 +1329,27 @@ def check_valid_bound(value, name):
     if math.isnan(value):
         raise InvalidArgument(u'Invalid end point %s %r' % (value, name))
 
+def check_valid_bounds(lower_bound, value, upper_bound, name):
+    """Checks that value is either unspecified, or within lower_bound and
+    upper_bound expressed as an integer/float.
+
+    Otherwise raises InvalidArgument.
+
+    """
+    if value is None:
+        return
+    check_type(integer_types, value)
+
+    if value < lower_bound:
+        raise InvalidArgument(u'Cannot have %s=%r < %r' % (
+            name, value, lower_bound
+        ))
+
+    if value > upper_bound:
+        raise InvalidArgument(u'Cannot have %s=%r > %r' % (
+            name, value, upper_bound
+        ))
+
 
 def check_valid_size(value, name):
     """Checks that value is either unspecified, or a valid non-negative size
