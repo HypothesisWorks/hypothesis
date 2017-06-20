@@ -139,17 +139,17 @@ class FixedSizeBytes(SearchStrategy):
 
 class EmailStrategy(MappedSearchStrategy):
     VALID_CHARACTERS = st.one_of(
-        sampled_from((string.ascii_letters, string.digits, "!#$%&'*+-/=?^_`{|}~")),
-        characters(min_codepoint=0x007F)
+        st.sampled_from((string.ascii_letters, string.digits, "!#$%&'*+-/=?^_`{|}~")),
+        st.characters(min_codepoint=0x007F)
     )
 
     def __init__(self, domains, min_size, average_size, max_size):
         super(EmailStrategy, self).__init__(
             strategy=fixed_dictionaries({
-                'local-part': builds(
+                'local-part': st.builds(
                     intersperse_dots,
-                    randoms(),
-                    text(
+                    st.randoms(),
+                    st.text(
                         LOCAL_PART,
                         min_size=min_size, average_size=average_size, max_size=max_size
                     )),
