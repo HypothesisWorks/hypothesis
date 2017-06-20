@@ -40,47 +40,52 @@ class DomainStrategy(SearchStrategy):
     strings."""
 
 
-    def __init__(self, alphabet, unsafe, min_subdomains, max_subdomains):
+    def __init__(self, alphabet, example_domains_only):
         SearchStrategy.__init__(self)
-        self.alphabet = alphabet
-        self.unsafe = unsafe
-        self.min_subdomains = min_subdomains
-        self.max_subdomains = max_subdomains
-        self.subdomain_count = st.integers(
-            min_value=self.min_subdomain, max_value=self.max_subdomain
+        self.label_text = st.text(
+            min_size=1, max_size=MAX_LABEL_SIZE, alphabet=self.alphabet
         )
+
+        if example_domains_only:
+            self.top_level = st.sampled_from(EXAMPLE_DOMAINS)
+        else:
+            self.top_level = st.sampled_from(SUFFIX_LIST)
 
     @staticmethod
     def canonicalize(string):
         return idna.ToASCII(idna.nameprep(to_unicode(string)))
 
     def do_draw(self, data):
-        subdomain_count = data.draw(self.subdomain_count)
-        labels = [] # RFC term for subdomains
+        top_level = data.draw(self.top_level)
         total = len(top_level) + 1 # One extra for the dot
 
-        while total < MAX_DOMAIN_SIZE and len(labels) < subdomain_count:
+        labels = [] # RFC term for subdomains
+        label_count = data.draw(
+            st.integers(min_value=1, max_value=MAX_LABEL_COUNT)
+        ) - top_level.count(".")
+
+
+        while total < MAX_DOMAIN_SIZE and len(labels) < label_count:
             try:
-                label = self.canonicalize(data.draw(st.text(
-                    min_size=1, max_size=MAX_LABEL_SIZE, alphabet=self.alphabet
-                )))
+                label = self.canonicalize(data.draw(self.label_text))
             except UnicodeError:
                 continue
 
             total += len(label) + 1 # One extra for the dot
             labels.append(label)
 
-        while total > MAX_DOMAIN_SIZE or len(labels) > subdomain_count:
+        while total > MAX_DOMAIN_SIZE or len(labels) > label_count:
             total -= len(labels.pop())
             total -= 1
 
-        # Append the top domain
-        labels.append(data.draw(st.sampled_from(SUFFIX_LIST)))
+        labels.append(top_level)
         domain = ".".join(labels)
 
         assert len(domain) < MAX_DOMAIN_SIZE
         return domain
 
+
+EXAMPLE_DOMAINS = {"example", "example.com", "example.org"}
 
 suffix_list_path = Path(inspect.getfile(inspect.currentframe()))
 suffix_list_path = suffix_list_path / ".." / ".." / ".." / ".." / "public_suffix_list.dat"

@@ -736,64 +736,23 @@ def binary(
 
 @cacheable
 @defines_strategy
-def domains(
-    alphabet=None, unsafe=None, min_subdomains=None, max_subdomains=None,
-    min_size=None, average_size=None, max_size=None
-):
+def domains(alphabet=None, example_domains_only=False):
     """Generates unicode text type (unicode on python 2, str on python 3)
     characters that are valid domain names.
 
     This strategy accepts an alphabet for the domain labels, if None it will
-    default to generating the full unicode range while taking min/max/average
-    size into consideration
+    default to generating the full unicode range.
 
-    It also accepts a limitation to the number of subdomains generated, but no
-    more then 127 per the standard.
-
-    Finally it be force to just generate safe domains. The safe ones are
-    example.{com,net,org,edu}, *.example and *.test, since they are defined to
-    be used purely for technical reasons, see RFC 2606. But this is in general
-    to restrictive and by default the whole range of syntactically valid
-    domains are generated.
-
-    One thing to note is that while the generated domains are syntactically
-    valid, not all are accepted by the respective top-level domain authourity.
-    For example many top-level domains place a minimum length of 2, and not all
-    accept internationalized domains.
-
-    min_size, average_size and max_size are used for the alphabet, that is, for
-    each domain label. This is further limted to between 1 and 63 octets,
-    bytes, which means international domain names will be shorter in terms of
-    characters.
+    It also accepts an option for only using safe top level domains, those that
+    can't be owned by a real company, e.g. `example.com`. By default it will
+    generate domain names using all top level domains recognized by IANA.
 
     """
     from hypothesis.searchstrategy.domains import DomainStrategy
-    check_valid_sizes(min_size, average_size, max_size)
-    check_valid_sizes(min_subdomain, None, max_subdomain)
-    check_valid_bound(1, min_size, 63, 'min_size')
-    check_valid_bound(1, max_size, 63, 'max_size')
-    check_valid_bound(1, min_subdomain, 127, 'min_subdomain')
-    check_valid_bound(1, max_subdomain, 127, 'max_subdomain')
-
-    if min_size is None:
-        min_size = 1
-
-    if max_size is None:
-        max_size = 63
-
-    if min_subdomain is None:
-        min_subdomain = 1
-
-    if min_subdomain is None:
-        min_subdomain = 127
 
     return DomainStrategy(
-        unsafe=bool(unsafe),
-        alphabet=text(
-            alphabet=alphabet,
-            min_size=min_size, average_size=average_size, max_size=max_size
-        ),
-        min_subdomains=min_subdomains, max_subdomains=max_subdomains
+        alphabet=alphabet,
+        example_domains_only=bool(example_domains_only)
     )
 
 
