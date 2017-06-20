@@ -20,6 +20,7 @@ from __future__ import division, print_function, absolute_import
 import string
 import math
 
+import hypothesis.strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal import charmap
 from hypothesis.internal.compat import hunichr, text_type, binary_type
@@ -137,7 +138,7 @@ class FixedSizeBytes(SearchStrategy):
 
 
 class EmailStrategy(MappedSearchStrategy):
-    VALID_CHARACTERS = one_of(
+    VALID_CHARACTERS = st.one_of(
         sampled_from((string.ascii_letters, string.digits, "!#$%&'*+-/=?^_`{|}~")),
         characters(min_codepoint=0x007F)
     )
