@@ -744,7 +744,7 @@ def domains(alphabet=None, example_domains_only=False):
     default to generating the full unicode range.
 
     It also accepts an option for only using safe top level domains, those that
-    can't be owned by a real company, e.g. `example.com`. By default it will
+    can't be owned by a real company, e.g. ``example.com``. By default it will
     generate domain names using all top level domains recognized by IANA.
 
     """

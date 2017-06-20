@@ -23,16 +23,17 @@ from pathlib import Path
 from encodings import idna
 
 import hypothesis.strategies as st
+from hypothesis import assume
 from hypothesis.internal.compat import to_unicode
 from hypothesis.searchstrategy.strategies import SearchStrategy
-
-MAX_LABEL_SIZE = 63
-MAX_LABEL_COUNT = 127
-MAX_DOMAIN_SIZE = 253
 
 # Each label must be 1 < 63 octets/bytes long,
 # the number of labels must be 0 < 127 and
 # the total length must be < 253
+
+MAX_LABEL_SIZE = 63
+MAX_LABEL_COUNT = 127
+MAX_DOMAIN_SIZE = 253
 
 class DomainStrategy(SearchStrategy):
 
@@ -44,7 +45,7 @@ class DomainStrategy(SearchStrategy):
         SearchStrategy.__init__(self)
         self.label_text = st.text(
             min_size=1, max_size=MAX_LABEL_SIZE, alphabet=self.alphabet
-        )
+        ).map(DomainStrategy.canonicalize)
 
         if example_domains_only:
             self.top_level = st.sampled_from(EXAMPLE_DOMAINS)
@@ -53,7 +54,11 @@ class DomainStrategy(SearchStrategy):
 
     @staticmethod
     def canonicalize(string):
-        return idna.ToASCII(idna.nameprep(to_unicode(string)))
+        try:
+            return idna.ToASCII(idna.nameprep(to_unicode(string)))
+        except UnicodeError:
+            assume(False)
+
 
     def do_draw(self, data):
         top_level = data.draw(self.top_level)
@@ -64,15 +69,10 @@ class DomainStrategy(SearchStrategy):
             st.integers(min_value=1, max_value=MAX_LABEL_COUNT)
         ) - top_level.count(".")
 
-
         while total < MAX_DOMAIN_SIZE and len(labels) < label_count:
-            try:
-                label = self.canonicalize(data.draw(self.label_text))
-            except UnicodeError:
-                continue
-
-            total += len(label) + 1 # One extra for the dot
+            label = data.draw(self.label_text)
             labels.append(label)
+            total += len(label) + 1
 
         while total > MAX_DOMAIN_SIZE or len(labels) > label_count:
             total -= len(labels.pop())
@@ -81,14 +81,14 @@ class DomainStrategy(SearchStrategy):
         labels.append(top_level)
         domain = ".".join(labels)
 
-        assert len(domain) < MAX_DOMAIN_SIZE
+        assume(len(domain) < MAX_DOMAIN_SIZE)
         return domain
 
 
 EXAMPLE_DOMAINS = {"example", "example.com", "example.org"}
 
 suffix_list_path = Path(inspect.getfile(inspect.currentframe()))
-suffix_list_path = suffix_list_path / ".." / ".." / ".." / ".." / "public_suffix_list.dat"
+suffix_list_path = suffix_list_path / "../../../../public_suffix_list.dat"
 suffix_list_path = suffix_list_path.resolve()
 
 SUFFIX_LIST = set((
