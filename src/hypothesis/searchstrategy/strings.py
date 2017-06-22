@@ -17,10 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
-import string
 import math
 
-import hypothesis.strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal import charmap
 from hypothesis.internal.compat import hunichr, text_type, binary_type
@@ -135,43 +133,3 @@ class FixedSizeBytes(SearchStrategy):
 
     def do_draw(self, data):
         return binary_type(data.draw_bytes(self.size))
-
-
-class EmailStrategy(MappedSearchStrategy):
-    VALID_CHARACTERS = st.one_of(
-        st.sampled_from((string.ascii_letters, string.digits, "!#$%&'*+-/=?^_`{|}~")),
-        st.characters(min_codepoint=0x007F)
-    )
-
-    def __init__(self, domains, min_size, average_size, max_size):
-        super(EmailStrategy, self).__init__(
-            strategy=fixed_dictionaries({
-                'local-part': st.builds(
-                    intersperse_dots,
-                    st.randoms(),
-                    st.text(
-                        LOCAL_PART,
-                        min_size=min_size, average_size=average_size, max_size=max_size
-                    )),
-                'domain': domains
-            })
-        )
-
-
-    def pack(self, value):
-        return "%s@%s" % (
-            value['local-part'], value['domain']
-        )
-
-
-def intersperse_dots(random, string):
-    chars = list(string)
-
-    index = 1
-    while index < len(chars) < 64:
-        if chars[index-1] != "." and chars[index+1] != ".":
-            chars.insert(index, ".")
-
-        index = random.randrange(index + 1, len(chars) - 2)
-
-    return u''.join(chars)
