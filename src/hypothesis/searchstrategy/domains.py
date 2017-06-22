@@ -62,21 +62,21 @@ class DomainStrategy(SearchStrategy):
 
     def do_draw(self, data):
         top_level = data.draw(self.top_level)
-        total = len(top_level) + 1 # One extra for the dot
+        total_length = len(top_level) + 1 # One extra for the dot
 
         labels = [] # RFC term for subdomains
-        label_count = data.draw(
+        count = data.draw(
             st.integers(min_value=1, max_value=MAX_LABEL_COUNT)
         ) - top_level.count(".")
 
-        while total < MAX_DOMAIN_SIZE and len(labels) < label_count:
+        while total_length < MAX_DOMAIN_SIZE and len(labels) < count:
             label = data.draw(self.label_text)
             labels.append(label)
-            total += len(label) + 1
+            total_length += len(label) + 1
 
-        while total > MAX_DOMAIN_SIZE or len(labels) > label_count:
-            total -= len(labels.pop())
-            total -= 1
+        while total_length > MAX_DOMAIN_SIZE or len(labels) > count:
+            total_length -= len(labels.pop())
+            total_length -= 1
 
         labels.append(top_level)
         domain = ".".join(labels)
