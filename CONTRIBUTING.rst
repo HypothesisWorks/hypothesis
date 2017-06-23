@@ -155,6 +155,7 @@ their individual contributions.
 * `JP Viljoen <https://github.com/froztbyte>`_ (`froztbyte@froztbyte.net <mailto:froztbyte@froztbyte.net>`_)
 * `Jonty Wareing <https://www.github.com/Jonty>`_ (`jonty@jonty.co.uk <mailto:jonty@jonty.co.uk>`_)
 * `kbara <https://www.github.com/kbara>`_
+* `kurofuneparry <https://www.github.com/kurofuneparry>`_
 * `Lee Begg <https://www.github.com/llnz2>`_
 * `marekventur <https://www.github.com/marekventur>`_
 * `Marius Gedminas <https://www.github.com/mgedmin>`_ (`marius@gedmin.as <mailto:marius@gedmin.as>`_)
