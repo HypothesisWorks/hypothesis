@@ -1,6 +1,6 @@
-=======================================================
-Open Source Projects contributing Hypothesis Strategies
-=======================================================
+=============================
+Projects extending Hypothesis
+=============================
 
 The following is a non-exhaustive list of open source projects that make
 Hypothesis strategies available. If you're aware of any others please add them
