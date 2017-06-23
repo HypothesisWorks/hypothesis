@@ -21,6 +21,8 @@ who stole it from https://bitbucket.org/leapfrogdevelopment/rstr/
 who stole it from http://code.google.com/p/xeger/
 """
 
+from __future__ import division, print_function, absolute_import
+
 import re
 import sys
 import string
