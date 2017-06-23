@@ -25,8 +25,7 @@ import re
 import sys
 import string
 from itertools import chain
-from hypothesis.strategies import just, sampled_from, one_of, lists
-from hypothesis.strategies import composite, shared
+from hypothesis import strategies as st
 
 # Python 2/3 compatibility
 if sys.version_info[0] >= 3:
@@ -35,17 +34,17 @@ if sys.version_info[0] >= 3:
     basestring = str
 
 # Strategy producing a character from the provided string
-from_string = lambda x: sampled_from(list(x))
+from_string = lambda x: st.sampled_from(list(x))
 
 # Strategy joining strings produced by the provided strategies
-@composite
+@st.composite
 def join(draw, strategies):
     return ''.join(draw(s) for s in strategies)
 
 # Strategy drawing multiple repeat strings from one strategy
-@composite
+@st.composite
 def repeat(draw, strategy, mn, mx):
-    return ''.join(draw(lists(elements=strategy, min_size=mn, max_size=mx)))
+    return ''.join(draw(st.lists(elements=strategy, min_size=mn, max_size=mx)))
 
 class Xeger(object):
     """
@@ -77,14 +76,14 @@ class Xeger(object):
         # Lookup table to implement SRE Tokens
         self._cases = {
             # These return a strategy producing strings
-            "at": lambda x: just(''),
-            "assert_not": lambda x: just(''),
-            "literal": lambda x: just(unichr(x)),
+            "at": lambda x: st.just(''),
+            "assert_not": lambda x: st.just(''),
+            "literal": lambda x: st.just(unichr(x)),
             "not_literal": lambda x: from_string(
                 string.printable.replace(unichr(x), '')),
             "any": lambda x: from_string(self._categories["category_any"]),
             "assert": lambda x: self._build(x[1]),
-            'branch': lambda x: one_of(self._build(sub) for sub in x[1]),
+            'branch': lambda x: st.one_of(self._build(sub) for sub in x[1]),
 
             # These call functions returning a strategy producing strings
             "in": lambda x: self._handle_in(x),
@@ -158,7 +157,7 @@ class Xeger(object):
             # Negated candidates (e.g. [^abc])
             candidates = list(set(string.printable).difference(candidates))
 
-        return sampled_from(candidates)
+        return st.sampled_from(candidates)
 
     def _handle_repeat(self, start_range, end_range, value):
         # Handles a regex with a required range of repeats
@@ -169,7 +168,7 @@ class Xeger(object):
 
     def _handle_group(self, value):
         # Groups return the same value throughout and are stored
-        result = shared(self._build(value[1]))
+        result = st.shared(self._build(value[1]))
         if value[0]:
             self._cache[value[0]] = result
         return result
