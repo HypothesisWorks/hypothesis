@@ -25,7 +25,7 @@ import re
 import sys
 import string
 from itertools import chain
-from hypothesis import strategies as st
+import hypothesis.strategies as st
 
 # Python 2/3 compatibility
 if sys.version_info[0] >= 3:
