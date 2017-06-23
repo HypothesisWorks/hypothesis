@@ -89,8 +89,8 @@ def test_searches(pattern):
     def search(string):
         note("Failure on the following regular expression: %s" % pattern)
         note("The incorrect string produced was: '%s'" % string)
-        note("The match object produced was: %s" % re.match(pattern, string))
-        assert re.match(pattern, string)
+        note("The match object produced was: %s" % re.search(pattern, string))
+        assert re.search(pattern, string)
 
     search()
 
@@ -103,6 +103,6 @@ def test_errors(pattern, error):
     except Exception as e:
         if not isinstance(e, NotImplementedError):
             raise e
-        if not e.args[0] == message:
+        if not e.args[0] == error:
             raise e
 
