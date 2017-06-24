@@ -94,7 +94,7 @@ def test_searches(pattern):
 
     search()
 
-@pytest.mark.parametrize('pattern,error', zip(errors.items))
+@pytest.mark.parametrize('pattern,error', zip(errors.items()))
 def test_errors(pattern, error):
     """Covers cases requiring search"""
     try:
