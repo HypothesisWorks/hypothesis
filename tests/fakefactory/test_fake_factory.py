@@ -39,7 +39,7 @@ def test_kittens_meow(kitten):
 
 @given(fake_factory(u'email'))
 def test_email(email):
-    assert u'@' in email
+    assert email[email.find(u'@')+1:].find(u'.') > 0
 
 
 @given(fake_factory(u'name', locale=u'en_US'))
