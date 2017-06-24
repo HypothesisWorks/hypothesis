@@ -241,12 +241,14 @@ runs relative to the example. settings.timeout will also be respected as usual.
 Preconditions
 -------------
 
-While it's possible to use ``assume`` in RuleBasedStateMachine rules, if you
+While it's possible to use :func:`~hypothesis.assume` in RuleBasedStateMachine rules, if you
 use it in only a few rules you can quickly run into a situation where few or
 none of your rules pass their assumptions. Thus, Hypothesis provides a
-``precondition`` decorator to avoid this problem. The ``precondition``
+:func:`~hypothesis.stateful.precondition` decorator to avoid this problem. The :func:`~hypothesis.stateful.precondition`
 decorator is used on ``rule``-decorated functions, and must be given a function
 that returns True or False based on the RuleBasedStateMachine instance.
+
+.. autofunction:: hypothesis.stateful.precondition
 
 .. code:: python
 
@@ -266,7 +268,7 @@ that returns True or False based on the RuleBasedStateMachine instance.
             self.num = 1 / self.num
 
 
-By using ``precondition`` here instead of ``assume``, Hypothesis can filter the
+By using :func:`~hypothesis.stateful.precondition` here instead of :func:`~hypothesis.assume`, Hypothesis can filter the
 inapplicable rules before running them. This makes it much more likely that a
 useful sequence of steps will be generated.
 
@@ -278,9 +280,10 @@ Invariant
 
 Often there are invariants that you want to ensure are met after every step in
 a process.  It would be possible to add these as rules that are run, but they
-would be run zero or multiple times between other rules. Hypothesis provides an
-``invariant`` decorator, that marks a function to be run after every step. The
-function can raise an exception to indicate an error has been detected.
+would be run zero or multiple times between other rules. Hypothesis provides a
+decorator that marks a function to be run after every step.
+
+.. autofunction:: hypothesis.stateful.invariant
 
 .. code:: python
 
@@ -302,7 +305,7 @@ function can raise an exception to indicate an error has been detected.
 
     NumberTest = NumberModifier.TestCase
 
-Invariants can also have ``precondition``\ s applied to them, in which case
+Invariants can also have :func:`~hypothesis.stateful.precondition`\ s applied to them, in which case
 they will only be run if the precondition function returns true.
 
 Note that currently invariants can't access bundles; if you need to use
