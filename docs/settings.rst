@@ -90,7 +90,7 @@ values. Any absent ones will be set to defaults:
     settings(buffer_size=8192, database_file='...', derandomize=False,
              max_examples=200, max_iterations=1000, max_mutations=10,
              max_shrinks=500, min_satisfying_examples=5, perform_health_check=True,
-             phases=..., report_statistics=..., stateful_step_count=50, strict=False,
+             phases=..., report_statistics=..., stateful_step_count=50, strict=...,
              suppress_health_check=[], timeout=60, verbosity=Verbosity.normal)
     >>> settings().max_examples
     200
@@ -134,7 +134,6 @@ also override them locally by using a settings object as a :ref:`context manager
   >>> with settings(max_examples=150):
   ...     print(settings.default.max_examples)
   ...     print(settings().max_examples)
-  ...
   150
   150
   >>> settings().max_examples

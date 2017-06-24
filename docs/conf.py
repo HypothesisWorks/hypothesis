@@ -80,7 +80,7 @@ from hypothesis.strategies import *
 import random
 random.seed(0)
 # don't save examples
-settings.register_profile('doctests', settings(database=None))
+settings.register_profile('doctests', settings(database=None, strict=True))
 settings.load_profile('doctests')
 '''
 
