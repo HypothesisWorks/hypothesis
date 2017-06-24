@@ -33,7 +33,6 @@ from hypothesis.internal.floats import is_negative, float_to_int, \
 from hypothesis.utils.conventions import not_set
 from hypothesis.internal.reflection import proxies
 from hypothesis.searchstrategy.reprwrapper import ReprWrapperStrategy
-from hypothesis.searchstrategy.regex import Xeger
 
 __all__ = [
     'nothing',
@@ -1210,6 +1209,7 @@ def regex(pattern, limit=10):
     specifically, with the addition of allowing the '.' character and other
     python regular expression features (e.g. named groups).
     """
+    from hypothesis.searchstrategy.regex import Xeger
     return Xeger(limit=limit).xeger(pattern)
 
 @defines_strategy
