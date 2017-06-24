@@ -31,4 +31,4 @@ class TestBasicValidation(TestCase):
 
     @given(emails)
     def test_is_valid_email(self, e):
-        assert '@' in e
+        assert e[e.find('@')+1:].find('.') > 0
