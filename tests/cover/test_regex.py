@@ -66,9 +66,9 @@ searches = [
     r'(?<=foo)bar',
     ]
 
-errors = {
-    r'(<)?(\w+@\w+(?:\.\w+)+)(?(1)>|$)': "Conditionals not supported",
-    }
+errors = [
+    (r'(<)?(\w+@\w+(?:\.\w+)+)(?(1)>|$)', "Conditionals not supported"),
+    ]
 
 @pytest.mark.parametrize('pattern', matches)
 def test_matches(pattern):
@@ -94,7 +94,7 @@ def test_searches(pattern):
 
     search()
 
-@pytest.mark.parametrize('pattern,error', zip(errors.items()))
+@pytest.mark.parametrize('pattern,error', errors)
 def test_errors(pattern, error):
     """Covers cases requiring search"""
     try:
