@@ -44,7 +44,7 @@ __all__ = [
     'choices', 'streaming',
     'booleans', 'integers', 'floats', 'complex_numbers', 'fractions',
     'decimals',
-    'characters', 'text', 'binary', 'uuids',
+    'characters', 'text', 'strings_matching_regex', 'binary', 'uuids',
     'tuples', 'lists', 'sets', 'frozensets', 'iterables',
     'dictionaries', 'fixed_dictionaries',
     'sampled_from', 'permutations',
@@ -737,6 +737,32 @@ def text(
         char_strategy, average_size=average_size, min_size=min_size,
         max_size=max_size
     ))
+
+
+@cacheable
+@defines_strategy
+def strings_matching_regex(regex):
+    """Return strategy that generates strings that match given regex.
+
+    Regex can be either a string or compiled regex (through
+    :func:`re.compile`).
+
+    You can use regex flags (such as :const:`python:re.IGNORECASE`,
+    :const:`python:re.DOTALL` or :const:`python:re.UNICODE`) to control
+    generation. Flags can be passed either in compiled regex (specify flags in
+    call to :func:`re.compile`) or inside pattern with (?iLmsux) group.
+
+    Some tricky regular expressions are partly supported or not supported at
+    all. "^" and "$" do not affect generation. Positive lookahead/lookbehind
+    groups are considered normal groups. Negative lookahead/lookbehind groups
+    do not do anything. Ternary regex groups
+    ('(?(name)yes-pattern|no-pattern)') generate variants regardless of
+    presence of named group and rely on filtering to produce correct results
+    (therefore can be slower than straightforward generation).
+
+    """
+    from hypothesis.searchstrategy.regex import regex_strategy
+    return regex_strategy(regex)
 
 
 @cacheable
