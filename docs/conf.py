@@ -67,7 +67,7 @@ pygments_style = 'sphinx'
 todo_include_todos = False
 
 intersphinx_mapping = {
-    'python': ('http://docs.python.org/', None),
+    'python': ('http://docs.python.org/3/', None),
 }
 
 autodoc_mock_imports = ['numpy']
