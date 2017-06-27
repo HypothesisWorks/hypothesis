@@ -17,27 +17,35 @@
 
 from __future__ import division, print_function, absolute_import
 
-import math
-import decimal
+import string
 
 import pytest
 
 import hypothesis.strategies as st
 from hypothesis import find, given
-from tests.common.utils import fails
 from hypothesis.searchstrategy import domains
 
 
-@given(st.domains())
-def test_all_domains_are_valid(domain):
-    labels = domain.split(".")
-    top_level = labels.pop()
+@pytest.mark.parametrize('strat', [
+    st.domains(),
+    st.domains(alphabet=string.ascii_letters),
+    st.domains(example_domains_only=True)
+])
+def test_all_domains_are_valid(strat):
+    @given(strat)
+    def inner(domain):
+        labels = domain.split('.')
+        top_level = labels.pop()
 
-    assert len(domain) <= domains.MAX_DOMAIN_SIZE
-    assert len(labels) <= domains.MAX_LABEL_COUNT
-    assert max(map(len, labels)) <= domains.MAX_LABEL_SIZE
-    assert top_level in domains.SUFFIX_LIST
+        assert len(domain) <= domains.MAX_DOMAIN_SIZE
+        assert len(labels) <= domains.MAX_LABEL_COUNT
+        assert max(map(len, labels)) <= domains.MAX_LABEL_SIZE
+        assert top_level in domains.SUFFIX_LIST
+
+    inner()
+
 
 def test_minimizes_to_second_level_domain():
-    domain = find(st.domains(), lambda d: d.count(".") == 1)
-    assert domain.count(".") == 1
+    # len("x.yy") == 4
+    domain = find(st.domains(), lambda d: len(d) == 4)
+    assert domain.count('.') == 1
