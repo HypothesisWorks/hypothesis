@@ -47,5 +47,5 @@ def test_all_domains_are_valid(strat):
 
 def test_minimizes_to_second_level_domain():
     # len("x.yy") == 4
-    domain = find(st.domains(), lambda d: len(d) == 4)
+    domain = find(st.domains(), lambda: True)
     assert domain.count('.') == 1
