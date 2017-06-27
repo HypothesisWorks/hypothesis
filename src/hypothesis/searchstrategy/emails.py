@@ -20,19 +20,22 @@ from __future__ import division, print_function, absolute_import
 import string
 
 import hypothesis.strategies as st
-from hypothesis.internal.compat import to_unicode
+from hypothesis import assume
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
 MAX_ADDRESS_SIZE = 254
 MAX_LOCAL_PART_SIZE = 64
 LOCAL_PART_TEXT = st.text(
-    "!#$%&'*+-/=?^_`{|}~;",
-    string.digits,
-    string.ascii_letters,
-    st.characters(min_codepoint=0x007F),
+    alphabet=(
+        "!#$%&'*+-/=?^_`{|}~;",
+        string.digits,
+        string.ascii_letters,
+        st.characters(min_codepoint=0x007E)
+    ),
     min_size=1,
     max_size=MAX_LOCAL_PART_SIZE
 )
+
 
 class EmailStrategy(SearchStrategy):
 
@@ -62,6 +65,6 @@ class EmailStrategy(SearchStrategy):
             total_length -= len(local_parts.pop())
             total_length -= 1
 
-        email_address = ".".join(local_parts) + "@" + domain
+        email_address = '.'.join(local_parts) + '@' + domain
         assume(len(email_address) < MAX_ADDRESS_SIZE)
         return email_address

@@ -767,10 +767,7 @@ def emails(domain_names=domains()):
 
     """
     from hypothesis.searchstrategy.emails import EmailStrategy
-    return EmailStrategy(
-        domains(alphabet=domain_names),
-        min_size, average_size, max_size
-    )
+    return EmailStrategy(domains=domain_names)
 
 
 @cacheable
