@@ -69,12 +69,13 @@ and PyPy together. Because Hypothesis does quite a lot of CPU heavy work compare
 to normal tests, it really exacerbates the performance problems the two normally
 have working together.
 
----------------
-Django Versions
----------------
+-----------------
+Optional Packages
+-----------------
 
-The Hypothesis Django integration is supported on 1.7 and 1.8. It will probably
-not work on versions prior to that.
+The supported versions of optional packages, for strategies in ``hypothesis.extra``,
+are listed in the documentation for that extra.  Our general goal is to support
+all versions that are supported upstream.
 
 ------------------------
 Regularly verifying this

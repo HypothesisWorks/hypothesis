@@ -26,6 +26,7 @@ the docs/strategies.rst file.
 
 If you find an error in the documentation, please feel free to submit a PR that
 fixes the error. Spot a tyop? Fix it up and send us a PR!
+You can read more about how we document Hypothesis in ``guides/documentation.rst``
 
 The process for submitting source code PRs is generally more involved
 (don't worry, we'll help you through it), so do read the rest of this document

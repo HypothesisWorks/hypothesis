@@ -103,6 +103,7 @@ You would see something like:
       * 30.56%, Retried draw from integers().filter(lambda x: x % 2 == 0) to satisfy filter
       * 7.41%, Aborted test because unable to satisfy integers().filter(lambda x: x % 2 == 0)
 
+.. autofunction:: hypothesis.event
 
 You can also mark custom events in a test using the 'event' function:
 

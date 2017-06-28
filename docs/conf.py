@@ -67,7 +67,7 @@ pygments_style = 'sphinx'
 todo_include_todos = False
 
 intersphinx_mapping = {
-    'python': ('http://docs.python.org/', None),
+    'python': ('http://docs.python.org/3/', None),
 }
 
 autodoc_mock_imports = ['numpy']
@@ -80,7 +80,7 @@ from hypothesis.strategies import *
 import random
 random.seed(0)
 # don't save examples
-settings.register_profile('doctests', settings(database=None))
+settings.register_profile('doctests', settings(database=None, strict=True))
 settings.load_profile('doctests')
 '''
 

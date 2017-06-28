@@ -54,7 +54,8 @@ running in verbose mode.  (:issue:`313`)
 -------------------
 
 This is a bugfix release: Hypothesis no longer emits a warning if you try to
-use ``sampled_from`` with ``collections.OrderedDict``.  (:issue:`688`)
+use :func:`~hypothesis.strategies.sampled_from` with
+:class:`python:collections.OrderedDict`.  (:issue:`688`)
 
 -------------------
 3.11.2 - 2017-06-10
@@ -76,17 +77,19 @@ include Hypothesis internals for test functions decorated with :func:`@given <hy
 
 This is a feature release, adding datetime-related strategies to the core strategies.
 
-``extra.pytz.timezones`` allows you to sample pytz timezones from
+:func:`~hypotheses.extra.pytz.timezones` allows you to sample pytz timezones from
 the Olsen database.  Use directly in a recipe for tz-aware datetimes, or
-compose with `st.none()` to allow a mix of aware and naive output.
+compose with :func:`~hypothesis.strategies.none` to allow a mix of aware and naive output.
 
-The new ``dates``, ``times``, ``datetimes``, and ``timedeltas`` strategies
-in ``hypothesis.strategies`` are all constrained by objects of their type.
+The new :func:`~hypothesis.strategies.dates`, :func:`~hypothesis.strategies.times`,
+:func:`~hypothesis.strategies.datetimes`, and :func:`~hypothesis.strategies.timedeltas`
+strategies are all constrained by objects of their type.
 This means that you can generate dates bounded by a single day
 (i.e. a single date), or datetimes constrained to the microsecond.
 
-``times`` and ``datetimes`` take an optional ``timezones=`` argument, which
-defaults to ``none()`` for naive times.  You can use our extra strategy
+:func:`~hypothesis.strategies.times` and :func:`~hypothesis.strategies.datetimes`
+take an optional ``timezones=`` argument, which
+defaults to :func:`~hypothesis.strategies.none` for naive times.  You can use our extra strategy
 based on pytz, or roll your own timezones strategy with dateutil or even
 the standard library.
 
@@ -101,7 +104,8 @@ core strategies, which are more flexible and have no dependencies.
 Hypothesis now uses :func:`python:inspect.getfullargspec` internally.
 On Python 2, there are no visible changes.
 
-On Python 3 :func:`@given <hypothesis.given>` and :func:`@composite <hypothesis.strategies.composite>` now preserve annotations on the
+On Python 3 :func:`@given <hypothesis.given>` and :func:`@composite <hypothesis.strategies.composite>`
+now preserve :pep:`3107` annotations on the
 decorated function.  Keyword-only arguments are now either handled correctly
 (e.g. :func:`@composite <hypothesis.strategies.composite>`), or caught in validation instead of silently discarded
 or raising an unrelated error later (e.g. :func:`@given <hypothesis.given>`).
@@ -117,7 +121,8 @@ Django extra now respects the ``USE_TZ`` setting when choosing a strategy.
 3.9.0 - 2017-05-19
 ------------------
 
-This is feature release, expanding the capabilities of the decimals strategy.
+This is feature release, expanding the capabilities of the
+:func:`~hypothesis.strategies.decimals` strategy.
 
 * The new (optional) ``places`` argument allows you to generate decimals with
   a certain number of places (e.g. cents, thousandths, satoshis).
@@ -132,7 +137,7 @@ This is feature release, expanding the capabilities of the decimals strategy.
 3.8.5 - 2017-05-16
 ------------------
 
-Hypothesis now imports ``sqlite3`` when a SQLite database is used, rather
+Hypothesis now imports :mod:`python:sqlite3` when a SQLite database is used, rather
 than at module load, improving compatibility with Python implementations
 compiled without SQLite support (such as BSD or Jython).
 
@@ -177,7 +182,7 @@ checked in CI, eliminating stale examples.
 3.8.0 - 2017-04-23
 ------------------
 
-This is a feature release, adding the ``iterables`` strategy, equivalent
+This is a feature release, adding the :func:`~hypothesis.strategies.iterables` strategy, equivalent
 to ``lists(...).map(iter)`` but with a much more useful repr.  You can use
 this strategy to check that code doesn't accidentally depend on sequence
 properties such as indexing support or repeated iteration.
@@ -196,7 +201,7 @@ This is a bug fix release for a single bug:
 ------------------
 
 This release should include no user visible changes and is purely a refactoring
-release. This modularises the behaviour of the core "given" function, breaking
+release. This modularises the behaviour of the core :func:`~hypothesis.given` function, breaking
 it up into smaller and more accessible parts, but its actual behaviour should
 remain unchanged.
 
@@ -219,7 +224,7 @@ This is a bug fix and internal improvements release.
   improves the performance of shrinking failing examples by allowing it to
   skip some shrinks that it can determine can't possibly work.
 * Hypothesis will no longer seed the global random arbitrarily unless you have
-  asked it to using :py:meth:`random_module() <hypothesis.strategies.random_module>`
+  asked it to using :py:meth:`~hypothesis.strategies.random_module`
 * Shrinking would previously have not worked correctly in some special cases
   on Python 2, and would have resulted in suboptimal examples.
 
@@ -231,21 +236,21 @@ This is a feature release.
 
 New features:
 
-* Rule based stateful testing now has an @invariant decorator that specifies
+* Rule based stateful testing now has an :func:`@invariant <hypothesis.stateful.invariant>` decorator that specifies
   methods that are run after init and after every step, allowing you to
   encode properties that should be true at all times. Thanks to Tom Prince for
   this feature.
-* The decimals strategy now supports allow\_nan and allow\_infinity flags.
-* There are significantly more strategies available for numpy, including for
+* The :func:`~hypothesis.strategies.decimals` strategy now supports ``allow_nan`` and ``allow_infinity`` flags.
+* There are :ref:`significantly more strategies available for numpy <hypothesis-numpy>`, including for
   generating arbitrary data types. Thanks to Zac Hatfield Dodds for this
   feature.
-* When using the data() strategy you can now add a label as an argument to
-  draw(), which will be printed along with the value when an example fails.
+* When using the :func:`~hypothesis.strategies.data` strategy you can now add a label as an argument to
+  ``draw()``, which will be printed along with the value when an example fails.
   Thanks to Peter Inglesby for this feature.
 
 Bug fixes:
 
-* Bug fix: @composite now preserves functions' docstrings.
+* Bug fix: :func:`~hypothesis.strategies.composite` now preserves functions' docstrings.
 * The build is now reproducible and doesn't depend on the path you build it
   from. Thanks to Chris Lamb for this feature.
 * numpy strategies for the void data type did not work correctly. Thanks to
@@ -253,7 +258,7 @@ Bug fixes:
 
 There have also been a number of performance optimizations:
 
-* The permutations() strategy is now significantly faster to use for large
+* The :func:`~hypothesis.strategies.permutations` strategy is now significantly faster to use for large
   lists (the underlying algorithm has gone from O(n^2) to O(n)).
 * Shrinking of failing test cases should have got significantly faster in
   some circumstances where it was previously struggling for a long time.
@@ -279,10 +284,10 @@ improvements.
   a custom strategy that isn't from fakefactory. As a result you should also
   see performance improvements of tests which generated User objects or other
   things with email fields, as well as better shrinking of email addresses.
-* The distribution of code using nested calls to one_of or the | operator for
+* The distribution of code using nested calls to :func:`~hypothesis.strategies.one_of` or the ``|`` operator for
   combining strategies has been improved, as branches are now flattened to give
   a more uniform distribution.
-* Examples using composite or flatmap should now shrink better. In particular
+* Examples using :func:`~hypothesis.strategies.composite` or ``.flatmap`` should now shrink better. In particular
   this will affect things which work by first generating a length and then
   generating that many items, which have historically not shrunk very well.
 
@@ -293,7 +298,7 @@ improvements.
 This release reverts Hypothesis to its old pretty printing of lambda functions
 based on attempting to extract the source code rather than decompile the bytecode.
 This is unfortunately slightly inferior in some cases and may result in you
-occasionally seeing things like lambda x: <unknown> in statistics reports and
+occasionally seeing things like ``lambda x: <unknown>`` in statistics reports and
 strategy reprs.
 
 This removes the dependencies on uncompyle6, xdis and spark-parser.
@@ -324,12 +329,10 @@ Bugs fixed:
 * If the same test was running concurrently in two processes and there were
   examples already in the test database which no longer failed, Hypothesis
   would sometimes fail with a FileNotFoundError (IOError on Python 2) because
-  an example it was trying to read was deleted before it was read. (Issue
-  `#372 <https://github.com/HypothesisWorks/hypothesis-python/issues/372>`_).
-* Drawing from an integers() strategy with both a min_value and a max_value
+  an example it was trying to read was deleted before it was read. (:issue:`372`).
+* Drawing from an :func:`~hypothesis.strategies.integers` strategy with both a min_value and a max_value
   would reject too many examples needlessly. Now it repeatedly redraws until
-  satisfied. (Pull request `#366 <https://github.com/HypothesisWorks/hypothesis-python/pull/366>`_.
-  Thanks to Calen Pennington for the contribution).
+  satisfied. (:pull:`366`.  Thanks to Calen Pennington for the contribution).
 
 ------------------
 3.5.2 - 2016-09-24
@@ -346,7 +349,7 @@ This is a bug fix release.
 This is a bug fix release.
 
 * Hypothesis now runs cleanly in -B and -BB modes, avoiding mixing bytes and unicode.
-* unittest.TestCase tests would now have shown up in the new statistics mode. Now they
+* :class:`python:unittest.TestCase` tests would not have shown up in the new statistics mode. Now they
   do.
 * Similarly, stateful tests would not have shown up in statistics and now they do.
 * Statistics now print with pytest node IDs (the names you'd get in pytest verbose mode).
@@ -357,12 +360,12 @@ This is a bug fix release.
 
 This is a feature release.
 
-* fractions() and decimals() strategies now support min_value and max_value
+* :func:`~hypothesis.strategies.fractions` and :func:`~hypothesis.strategies.decimals` strategies now support min_value and max_value
   parameters. Thanks go to Anne Mulhern for the development of this feature.
 * The Hypothesis pytest plugin now supports a --hypothesis-show-statistics parameter
   that gives detailed statistics about the tests that were run. Huge thanks to
   Jean-Louis Fuchs and Adfinis-SyGroup for funding the development of this feature.
-* There is a new event() function that can be used to add custom statistics.
+* There is a new :func:`~hypothesis.event` function that can be used to add custom statistics.
 
 Additionally there have been some minor bug fixes:
 
@@ -370,7 +373,7 @@ Additionally there have been some minor bug fixes:
   only affect cases with a single parameter).
 * py.test command line parameters are now under an option group for Hypothesis (thanks
   to David Keijser for fixing this)
-* Hypothesis would previously error if you used function annotations on your tests under
+* Hypothesis would previously error if you used :pep:`3107` function annotations on your tests under
   Python 3.4.
 * The repr of many strategies using lambdas has been improved to include the lambda body
   (this was previously supported in many but not all cases).
@@ -381,8 +384,8 @@ Additionally there have been some minor bug fixes:
 
 This is a bug fix release, fixing a number of problems with the settings system:
 
-* Test functions defined using @given can now be called from other threads
-  (Issue #337)
+* Test functions defined using :func:`@given <hypothesis.given>` can now be called from other threads
+  (:issue:`337`)
 * Attempting to delete a settings property would previously have silently done
   the wrong thing. Now it raises an AttributeError.
 * Creating a settings object with a custom database_file parameter was silently
@@ -405,7 +408,7 @@ This is a bug fix release for a single bug:
 
 This release is entirely provided by `Lucas Wiman <https://github.com/lucaswiman>`_:
 
-models() strategies from hypothesis.extra.django will now respect much more of
+Strategies constructed by :func:`~hypothesis.extra.django.models` will now respect much more of
 Django's validations out of the box. Wherever possible full_clean() should
 succeed.
 
@@ -427,11 +430,11 @@ This release went wrong and is functionally equivalent to 3.2.0. Ignore it.
 
 This is a small single-feature release:
 
-* All tests using @given now fix the global random seed. This removes the health
+* All tests using :func:`@given <hypothesis.given>` now fix the global random seed. This removes the health
   check for that. If a non-zero seed is required for the final falsifying
   example, it will be reported. Otherwise Hypothesis will assume randomization
   was not a significant factor for the test and be silent on the subject. If you
-  use the random_module() strategy this will continue to work and will always
+  use :func:`~hypothesis.strategies.random_module` this will continue to work and will always
   display the seed.
 
 ------------------
@@ -440,8 +443,9 @@ This is a small single-feature release:
 
 Single bug fix release
 
-* Another charmap problem. In 3.1.2 text/characters would break on systems
-  which had /tmp/ mounted on a different partition than the Hypothesis storage
+* Another charmap problem. In 3.1.2 :func:`~hypothesis.strategies.text` and
+  :func:`~hypothesis.strategies.characters` would break on systems
+  which had ``/tmp`` mounted on a different partition than the Hypothesis storage
   directory (usually in home). This fixes that.
 
 ------------------
@@ -450,7 +454,8 @@ Single bug fix release
 
 Single bug fix release:
 
-* Anything which used a text() or characters() strategy was broken on Windows
+* Anything which used a :func:`~hypothesis.strategies.text` or
+  :func:`~hypothesis.strategies.characters` strategy was broken on Windows
   and I hadn't updated appveyor to use the new repository location so I didn't
   notice. This is now fixed and windows support should work correctly.
 
@@ -460,29 +465,30 @@ Single bug fix release:
 
 Minor bug fix release.
 
-* Fix concurrency issue when running tests that use text() from multiple
-  processes at once (Bug #302, thanks to Alex Chan).
-* Improve performance of code using lists with max_size (thanks to
+* Fix concurrency issue when running tests that use :func:`~hypothesis.strategies.text` from multiple
+  processes at once (:issue:`302`, thanks to Alex Chan).
+* Improve performance of code using :func:`~hypothesis.strategies.lists` with max_size (thanks to
   Cristi Cobzarenco).
 * Fix install on Python 2 with ancient versions of pip so that it installs the
   enum34 backport (thanks to Donald Stufft for telling me how to do this).
 * Remove duplicated __all__ exports from hypothesis.strategies (thanks to
   Piët Delport).
 * Update headers to point to new repository location.
-* Allow use of strategies that can't be used in find() (e.g. choices) in
-  stateful testing.
+* Allow use of strategies that can't be used in :func:`~hypothesis.find`
+  (e.g. :func:`~hypothesis.strategies.choices`) in stateful testing.
 
 
 ------------------
 3.1.0 - 2016-03-06
 ------------------
 
-* Add a 'nothing' strategy that never successfully generates values.
-* sampled_from() and one_of() can both now be called with an empty argument
+* Add a :func:`~hypothesis.strategies.nothing` strategy that never successfully generates values.
+* :func:`~hypothesis.strategies.sampled_from` and :func:`~hypothesis.strategies.one_of`
+  can both now be called with an empty argument
   list, in which case they also never generate any values.
-* one_of may now be called with a single argument that is a collection of strategies
+* :func:`~hypothesis.strategies.one_of` may now be called with a single argument that is a collection of strategies
   as well as as varargs.
-* Add a 'runner' strategy which returns the instance of the current test object
+* Add a :func:`~hypothesis.strategies.runner` strategy which returns the instance of the current test object
   if there is one.
 * 'Bundle' for RuleBasedStateMachine is now a normal(ish) strategy and can be used
   as such.
@@ -511,8 +517,8 @@ Minor bug fix release.
 ------------------
 
 * Fix a bug where Hypothesis would error when running on Python 2.7.3 or
-  earlier because it was trying to pass a bytearray object to struct.unpack (
-  which is only supported since 2.7.4).
+  earlier because it was trying to pass a :class:`python:bytearray` object
+  to :func:`python:struct.unpack` (which is only supported since 2.7.4).
 
 ------------------
 3.0.3 - 2016-02-23
@@ -527,11 +533,11 @@ Minor bug fix release.
 3.0.2 - 2016-02-18
 ------------------
 
-* Under certain circumstances, strategies involving text() buried inside some
-  other strategy (e.g. text().filter(...) or recursive(text(), ...)) would cause
+* Under certain circumstances, strategies involving :func:`~hypothesis.strategies.text` buried inside some
+  other strategy (e.g. ``text().filter(...)`` or ``recursive(text(), ...))`` would cause
   a test to fail its health checks the first time it ran. This was caused by having
   to compute some related data and cache it to disk. On travis or anywhere else
-  where the .hypothesis directory was recreated this would have caused the tests
+  where the ``.hypothesis`` directory was recreated this would have caused the tests
   to fail their health check on every run. This is now fixed for all the known cases,
   although there could be others lurking.
 
@@ -543,7 +549,7 @@ Minor bug fix release.
   running certain flaky stateful tests.
 * Improve shrinking of large stateful tests by eliminating a case where it was
   hard to delete early steps.
-* Improve efficiency of drawing binary(min_size=n, max_size=n) significantly by
+* Improve efficiency of drawing :func:`binary(min_size=n, max_size=n) <hypothesis.strategies.binary>` significantly by
   provide a custom implementation for fixed size blocks that can bypass a lot
   of machinery.
 * Set default home directory based on the current working directory at the
@@ -566,7 +572,7 @@ the same.
 
 New features:
 
-* Addition of data() strategy which allows you to draw arbitrary data interactively
+* Addition of :func:`~hypothesis.strategies.data` strategy which allows you to draw arbitrary data interactively
   within the test.
 * New "exploded" database format which allows you to more easily check the example
   database into a source repository while supporting merging.
@@ -576,8 +582,9 @@ New features:
 
 New limitations:
 
-* choices and streaming strategies may no longer be used with find(). Neither may
-  data() (this is the change that necessitated a major version bump).
+* :func:`~hypothesis.strategies.choices` and :func:`~hypothesis.strategies.streaming`
+  strategies may no longer be used with :func:`~hypothesis.find`. Neither may
+  :func:`~hypothesis.strategies.data` (this is the change that necessitated a major version bump).
 
 Feature removal:
 

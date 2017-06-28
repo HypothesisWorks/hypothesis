@@ -198,65 +198,50 @@ conversions behave as you would expect them to. These tests should all pass,
 and are mostly a demonstration of some useful sorts of thing to test with
 Hypothesis, and how the hypothesis-datetime extra package works.
 
-.. code:: python
+.. doctest::
 
-    from hypothesis import given, settings
-    from hypothesis.extra.datetime import datetimes
-    from hypothesis.strategies import sampled_from
-    import pytz
-    from datetime import timedelta
+    >>> from datetime import timedelta
+    >>> from hypothesis.extra.pytz import timezones
 
-    ALL_TIMEZONES = list(map(pytz.timezone, pytz.all_timezones))
+    >>> # The datetimes strategy is naive by default, so tell it to use timezones
+    >>> aware_datetimes = datetimes(timezones=timezones())
 
-    # There are a lot of fiddly edge cases in dates, so we run a larger number of
-    # examples just to be sure
-    with settings(max_examples=1000):
-        @given(
-            datetimes(),  # datetimes generated are non-naive by default
-            sampled_from(ALL_TIMEZONES), sampled_from(ALL_TIMEZONES),
-        )
-        def test_convert_via_intermediary(dt, tz1, tz2):
-            """
-            Test that converting between timezones is not affected by a detour via
-            another timezone.
-            """
-            assert dt.astimezone(tz1).astimezone(tz2) == dt.astimezone(tz2)
+    >>> @given(aware_datetimes, timezones(), timezones())
+    ... def test_convert_via_intermediary(dt, tz1, tz2):
+    ...     """Test that converting between timezones is not affected
+    ...     by a detour via another timezone.
+    ...     """
+    ...     assert dt.astimezone(tz1).astimezone(tz2) == dt.astimezone(tz2)
 
-        @given(
-            datetimes(timezones=[]),  # Now generate naive datetimes
-            sampled_from(ALL_TIMEZONES), sampled_from(ALL_TIMEZONES),
-        )
-        def test_convert_to_and_fro(dt, tz1, tz2):
-            """
-            If we convert to a new timezone and back to the old one this should
-            leave the result unchanged.
-            """
-            dt = tz1.localize(dt)
-            assert dt == dt.astimezone(tz2).astimezone(tz1)
+    >>> @given(aware_datetimes, timezones())
+    ... def test_convert_to_and_fro(dt, tz2):
+    ...     """If we convert to a new timezone and back to the old one
+    ...     this should leave the result unchanged.
+    ...     """
+    ...     tz1 = dt.tzinfo
+    ...     assert dt == dt.astimezone(tz2).astimezone(tz1)
 
-        @given(
-            datetimes(),
-            sampled_from(ALL_TIMEZONES),
-        )
-        def test_adding_an_hour_commutes(dt, tz):
-            """
-            When converting between timezones it shouldn't matter if we add an hour
-            here or add an hour there.
-            """
-            an_hour = timedelta(hours=1)
-            assert (dt + an_hour).astimezone(tz) == dt.astimezone(tz) + an_hour
+    >>> @given(aware_datetimes, timezones())
+    ... def test_adding_an_hour_commutes(dt, tz):
+    ...     """When converting between timezones it shouldn't matter
+    ...     if we add an hour here or add an hour there.
+    ...     """
+    ...     an_hour = timedelta(hours=1)
+    ...     assert (dt + an_hour).astimezone(tz) == dt.astimezone(tz) + an_hour
 
-        @given(
-            datetimes(),
-            sampled_from(ALL_TIMEZONES),
-        )
-        def test_adding_a_day_commutes(dt, tz):
-            """
-            When converting between timezones it shouldn't matter if we add a day
-            here or add a day there.
-            """
-            a_day = timedelta(days=1)
-            assert (dt + a_day).astimezone(tz) == dt.astimezone(tz) + a_day
+    >>> @given(aware_datetimes, timezones())
+    ... def test_adding_a_day_commutes(dt, tz):
+    ...     """When converting between timezones it shouldn't matter
+    ...     if we add a day here or add a day there.
+    ...     """
+    ...     a_day = timedelta(days=1)
+    ...     assert (dt + a_day).astimezone(tz) == dt.astimezone(tz) + a_day
+
+    >>> # And we can check that our tests pass
+    >>> test_convert_via_intermediary()
+    >>> test_convert_to_and_fro()
+    >>> test_adding_an_hour_commutes()
+    >>> test_adding_a_day_commutes()
 
 -------------------
 Condorcet's Paradox
