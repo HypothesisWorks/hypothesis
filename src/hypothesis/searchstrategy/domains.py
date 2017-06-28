@@ -59,13 +59,15 @@ class DomainStrategy(SearchStrategy):
             assume(False)
 
     def do_draw(self, data):
-        top_level = data.draw(self.top_level)
+        top_level = to_unicode(data.draw(self.top_level))
+        subdomains = top_level.count('.')
         total_length = len(top_level) + 1  # One extra for the dot
 
         labels = []  # RFC term for subdomains
-        count = data.draw(
-            st.integers(min_value=1, max_value=MAX_LABEL_COUNT)
-        ) - top_level.count('.')
+        count = data.draw(st.integers(
+            min_value=(1 + subdomains),
+            max_value=(MAX_LABEL_COUNT - subdomains)
+        ))
 
         while total_length < MAX_DOMAIN_SIZE and len(labels) < count:
             label = data.draw(self.label_text)
