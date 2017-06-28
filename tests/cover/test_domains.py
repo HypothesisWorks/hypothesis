@@ -40,12 +40,12 @@ def test_all_domains_are_valid(strat):
         assert len(domain) <= domains.MAX_DOMAIN_SIZE
         assert len(labels) <= domains.MAX_LABEL_COUNT
         assert max(map(len, labels)) <= domains.MAX_LABEL_SIZE
-        assert top_level in domains.SUFFIX_LIST
+        assert any(top_level in line for line in domains.SUFFIX_LIST)
 
     inner()
 
 
 def test_minimizes_to_second_level_domain():
     # len("x.yy") == 4
-    domain = find(st.domains(), lambda: True)
+    domain = find(st.domains(), lambda _: True)
     assert domain.count('.') == 1
