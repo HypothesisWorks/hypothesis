@@ -70,7 +70,7 @@ class DomainStrategy(SearchStrategy):
         ))
 
         while total_length < MAX_DOMAIN_SIZE and len(labels) < count:
-            label = data.draw(self.label_text)
+            label = to_unicode(data.draw(self.label_text))
             labels.append(label)
             total_length += len(label) + 1
 
@@ -86,7 +86,18 @@ class DomainStrategy(SearchStrategy):
 
 
 EXAMPLE_DOMAINS = ['example', 'example.com', 'example.org']
-SUFFIX_LIST = set((
+
+_SUFFIX_REGEXP = re.compile(r"^[^!/]\S+")
+_STRIP_WILDCARD = re.compile('^[*.]*([^*]+)$')
+def _safe_canonicalize(match):
+    domain = _STRIP_WILDCARD.search(match.group(0)).group(1)
+    try:
+        return to_unicode(idna.ToASCII(idna.nameprep(to_unicode(domain))))
+    except UnicodeError:
+        # Ignore unicode errors for the domains mentioned below.
+        return None
+
+SUFFIX_LIST = {
     # These arabic domain chokes on canonicalization, so just hardcode them.
     # 'ایران.ir'
     # 'ايران.ir'
@@ -95,16 +106,11 @@ SUFFIX_LIST = set((
     # This hebrew one for Jerusalem also chokes, but I didn't find the idna
     # encoded version
     # 'ירושלים.museum'
-))
-
-_SUFFIX_REGEXP = re.compile(r"^[^!/]\S+")
-_STRIP_WILDCARD = re.compile('^[*.]*(.*)$')
-for line in raw_data:
-    match = _SUFFIX_REGEXP.search(line)
-    if match:
-        line = _STRIP_WILDCARD.search(match.group(0)).group(0)
-        try:
-            SUFFIX_LIST.add(DomainStrategy.canonicalize(line))
-        except UnicodeError:
-            # Ignore unicode errors for the domains mentioned above.
-            pass
+}
+SUFFIX_LIST.update(
+    _safe_canonicalize(match)
+    for match in map(_SUFFIX_REGEXP.search, raw_data.splitlines())
+    if match
+)
+SUFFIX_LIST.remove(None)
+SUFFIX_LIST = sorted(list(SUFFIX_LIST))
