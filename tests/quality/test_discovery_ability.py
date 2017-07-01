@@ -92,7 +92,7 @@ def define_test(specifier, predicate, condition=None):
                 successes += 1
                 if successes >= REQUIRED_RUNS:
                     return
-        event = condition_string
+        event = reflection.get_pretty_function_description(predicate)
         if condition is not None:
             event += '|'
             event += condition_string
