@@ -393,14 +393,16 @@ def test_has_ascii(x):
 
 def test_uses_provided_seed():
     import random
+    random.seed(0)
     initial = random.getstate()
 
     @given(integers())
     @seed(42)
     def test_foo(x):
         pass
+
     test_foo()
-    assert random.getstate() == initial
+    assert hash(repr(random.getstate())) == hash(repr(initial))
 
 
 def test_can_derandomize():

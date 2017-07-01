@@ -51,11 +51,14 @@ def test_clears_out_database_as_things_get_boring():
     assert len(set(database.fetch(key))) > 1
     do_we_care = False
     stuff()
-    assert len(set(database.fetch(key))) > 0
+    initial = len(set(database.fetch(key)))
+    assert initial > 0
 
-    for _ in range(100):
+    for _ in range(initial):
         stuff()
-        if not set(database.fetch(key)):
+        keys = set(database.fetch(key))
+        print(len(keys))
+        if not keys:
             break
     else:
         assert False

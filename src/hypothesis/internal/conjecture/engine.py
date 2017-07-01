@@ -283,6 +283,9 @@ class ConjectureRunner(object):
         def draw_zero(data, n, distribution):
             return hbytes(b'\0' * n)
 
+        def draw_max(data, n, distribution):
+            return hbytes([255]) * n
+
         def draw_constant(data, n, distribution):
             return bytes_from_list([
                 self.random.randint(0, 255)
@@ -292,7 +295,9 @@ class ConjectureRunner(object):
             draw_new,
             reuse_existing, reuse_existing,
             draw_existing, draw_smaller, draw_larger,
-            flip_bit, draw_zero, draw_constant,
+            flip_bit,
+            draw_zero, draw_max, draw_zero, draw_max,
+            draw_constant,
         ]
 
         bits = [
@@ -513,7 +518,7 @@ class ConjectureRunner(object):
         lo = 0
         hi = len(self.last_data.blocks)
         while lo + 1 < hi:
-            mid = (lo + hi) // 2
+            mid = min((lo + hi) // 2, len(self.last_data.blocks) - 1)
             u = self.last_data.blocks[mid][0]
             if self.incorporate_new_buffer(
                 self.last_data.buffer[:u] +

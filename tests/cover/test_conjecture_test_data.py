@@ -27,14 +27,10 @@ from hypothesis.internal.conjecture.data import Status, StopTest, \
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
-def bogus_dist(dist, n):
-    assert False
-
-
 @given(st.binary())
 def test_buffer_draws_as_self(buf):
     x = ConjectureData.for_buffer(buf)
-    assert x.draw_bytes(len(buf), bogus_dist) == buf
+    assert x.draw_bytes(len(buf)) == buf
 
 
 def test_cannot_draw_after_freeze():

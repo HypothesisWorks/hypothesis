@@ -19,6 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import math
 import datetime as dt
+import operator
 from decimal import Decimal, InvalidOperation
 from numbers import Rational
 from fractions import Fraction
@@ -312,26 +313,17 @@ def floats(
     elif min_value is not None and max_value is not None:
         if min_value == max_value:
             return just(min_value)
-        elif math.isinf(max_value - min_value):
-            assert min_value < 0 and max_value > 0
-            return floats(min_value=0, max_value=max_value) | floats(
-                min_value=min_value, max_value=0
-            )
+        elif is_negative(min_value):
+            if is_negative(max_value):
+                return floats(min_value=-max_value, max_value=-min_value).map(
+                    operator.neg
+                )
+            else:
+                return floats(min_value=0.0, max_value=max_value) | floats(
+                    min_value=0.0, max_value=-min_value).map(operator.neg)
         elif count_between_floats(min_value, max_value) > 1000:
             return FixedBoundedFloatStrategy(
                 lower_bound=min_value, upper_bound=max_value
-            )
-        elif is_negative(max_value):
-            assert is_negative(min_value)
-            ub_int = float_to_int(max_value)
-            lb_int = float_to_int(min_value)
-            assert ub_int <= lb_int
-            return integers(min_value=ub_int, max_value=lb_int).map(
-                int_to_float
-            )
-        elif is_negative(min_value):
-            return floats(min_value=min_value, max_value=-0.0) | floats(
-                min_value=0, max_value=max_value
             )
         else:
             ub_int = float_to_int(max_value)
@@ -344,7 +336,7 @@ def floats(
         if min_value < 0:
             result = floats(
                 min_value=0.0
-            ) | floats(min_value=min_value, max_value=0.0)
+            ) | floats(min_value=min_value, max_value=-0.0)
         else:
             result = (
                 floats(allow_infinity=allow_infinity, allow_nan=False).map(
@@ -360,7 +352,7 @@ def floats(
             result = floats(
                 min_value=0.0,
                 max_value=max_value,
-            ) | floats(max_value=0.0)
+            ) | floats(max_value=-0.0)
         else:
             result = (
                 floats(allow_infinity=allow_infinity, allow_nan=False).map(

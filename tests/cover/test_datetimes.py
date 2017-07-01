@@ -90,7 +90,8 @@ def test_bordering_on_a_leap_year():
     with settings(database=None, max_examples=10 ** 7, timeout=-1):
         x = minimal(datetimes(dt.datetime.min.replace(year=2003),
                               dt.datetime.max.replace(year=2005)),
-                    lambda x: x.month == 2 and x.day == 29)
+                    lambda x: x.month == 2 and x.day == 29,
+                    timeout_after=60)
     assert x.year == 2004
 
 

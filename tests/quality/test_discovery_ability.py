@@ -260,11 +260,6 @@ test_mixes_not_too_often = define_test(
     condition=bool,
 )
 
-test_float_lists_have_non_reversible_sum = define_test(
-    lists(floats(), min_size=2), lambda x: sum(x) != sum(reversed(x)),
-    condition=lambda x: not math.isnan(sum(x))
-)
-
 test_integers_are_usually_non_zero = define_test(
     integers(), lambda x: x != 0
 )

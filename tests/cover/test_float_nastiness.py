@@ -25,6 +25,7 @@ import pytest
 import hypothesis.strategies as st
 from hypothesis import find, given, assume, settings
 from hypothesis.internal.compat import WINDOWS
+from hypothesis.internal.floats import float_to_int, int_to_float
 
 
 @pytest.mark.parametrize((u'l', u'r'), [
@@ -55,8 +56,13 @@ def test_can_generate_both_zeros():
 ])
 def test_can_generate_both_zeros_when_in_interval(l, r):
     interval = st.floats(l, r)
-    find(interval, lambda x: assume(x == 0) and math.copysign(1, x) == 1)
-    find(interval, lambda x: assume(x == 0) and math.copysign(1, x) == -1)
+    find(
+        interval,
+        lambda x: assume(x == 0) and math.copysign(1, x) == 1,
+        settings=settings(max_examples=10000))
+    find(
+        interval, lambda x: assume(x == 0) and math.copysign(1, x) == -1,
+        settings=settings(max_examples=10000))
 
 
 @given(st.floats(0.0, 1.0))
@@ -76,13 +82,15 @@ def test_does_not_generate_positive_if_right_boundary_is_negative(x):
 ])
 def test_can_generate_interval_endpoints(l, r):
     interval = st.floats(l, r)
-    find(interval, lambda x: x == l)
-    find(interval, lambda x: x == r)
+    find(interval, lambda x: x == l, settings=settings(max_examples=10000))
+    find(interval, lambda x: x == r, settings=settings(max_examples=10000))
 
 
 def test_half_bounded_generates_endpoint():
-    find(st.floats(min_value=-1.0), lambda x: x == -1.0)
-    find(st.floats(max_value=-1.0), lambda x: x == -1.0)
+    find(st.floats(min_value=-1.0), lambda x: x == -1.0,
+         settings=settings(max_examples=10000))
+    find(st.floats(max_value=-1.0), lambda x: x == -1.0,
+         settings=settings(max_examples=10000))
 
 
 def test_half_bounded_generates_zero():
@@ -112,3 +120,36 @@ def test_filter_nan(x):
 @given(st.floats(allow_infinity=False))
 def test_filter_infinity(x):
     assert not math.isinf(x)
+
+
+def test_can_guard_against_draws_of_nan():
+    """In this test we create a NaN value that naturally "tries" to shrink into
+    the first strategy, where it is not permitted. This tests a case that is
+    very unlikely to happen in random generation: When the unconstrained first
+    branch of generating a float just happens to produce a NaN value.
+
+    Here what happens is that we get a NaN from the *second* strategy,
+    but this then shrinks into its unconstrained branch. The natural
+    thing to happen is then to try to zero the branch parameter of the
+    one_of, but that will put an illegal value there, so it's not
+    allowed to happen.
+
+    """
+    tagged_floats = st.one_of(
+        st.tuples(st.just(0), st.floats(allow_nan=False)),
+        st.tuples(st.just(1), st.floats(allow_nan=True)),
+    )
+
+    tag, f = find(tagged_floats, lambda x: math.isnan(x[1]))
+    assert tag == 1
+
+
+def test_very_narrow_interval():
+    upper_bound = -1.0
+    lower_bound = int_to_float(float_to_int(upper_bound) + 10)
+    assert lower_bound < upper_bound
+
+    @given(st.floats(lower_bound, upper_bound))
+    def test(f):
+        assert lower_bound <= f <= upper_bound
+    test()

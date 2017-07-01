@@ -17,8 +17,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import math
-
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal import charmap
 from hypothesis.internal.compat import hunichr, text_type, binary_type
@@ -62,33 +60,12 @@ class OneCharStringStrategy(SearchStrategy):
         else:
             self.blacklist_characters = set()
         self.zero_point = self.intervals.index_above(ord('0'))
-        self.special = []
-        if '\n' not in self.blacklist_characters:
-            n = ord('\n')
-            try:
-                self.special.append(self.intervals.index(n))
-            except ValueError:
-                pass
 
     def do_draw(self, data):
-        denom = math.log1p(-1 / 127)
-
-        def d(random):
-            if self.special and random.randint(0, 10) == 0:
-                return random.choice(self.special)
-            if len(self.intervals) <= 256 or random.randint(0, 1):
-                i = random.randint(0, len(self.intervals.offsets) - 1)
-                u, v = self.intervals.intervals[i]
-                return self.intervals.offsets[i] + random.randint(0, v - u + 1)
-            else:
-                return min(
-                    len(self.intervals) - 1,
-                    int(math.log(random.random()) / denom))
-
         while True:
             i = integer_range(
                 data, 0, len(self.intervals) - 1,
-                center=self.zero_point, distribution=d
+                center=self.zero_point,
             )
             c = hunichr(self.intervals[i])
             if c not in self.blacklist_characters:

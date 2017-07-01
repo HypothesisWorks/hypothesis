@@ -111,15 +111,6 @@ def zero_dist(random, n):
     return hbytes(n)
 
 
-def test_distribution_may_be_ignored():
-    @run_to_buffer
-    def x(data):
-        t = data.draw_bytes(5, zero_dist)
-        if all(t) and 255 in t:
-            data.mark_interesting()
-    assert x == hbytes([1] * 4 + [255])
-
-
 def test_can_load_data_from_a_corpus():
     key = b'hi there'
     db = ExampleDatabase()
@@ -472,6 +463,7 @@ def test_garbage_collects_the_database():
 
 
 @given(st.randoms(), st.random_module())
+@settings(max_shrinks=0)
 def test_maliciously_bad_generator(rnd, seed):
     @run_to_buffer
     def x(data):
@@ -521,7 +513,7 @@ def test_fully_exhaust_base():
         seen.add(data.draw_bytes(2))
 
     runner = ConjectureRunner(f, settings=settings(
-        max_examples=5000, max_iterations=10000, max_shrinks=MAX_SHRINKS,
+        max_examples=10000, max_iterations=10000, max_shrinks=MAX_SHRINKS,
         buffer_size=1024,
         database=None,
     ))
