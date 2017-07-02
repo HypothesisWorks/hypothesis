@@ -518,8 +518,16 @@ class ConjectureRunner(object):
         lo = 0
         hi = len(self.last_data.blocks)
         while lo + 1 < hi:
-            mid = min((lo + hi) // 2, len(self.last_data.blocks) - 1)
-            u = self.last_data.blocks[mid][0]
+            mid = (lo + hi) // 2
+            try:
+                u = self.last_data.blocks[mid][0]
+            except IndexError:
+                # This shouldn't really happen, but may in the presence of a
+                # bad test function whose block structure varies based on some
+                # sort of external data. We could possibly detect this better
+                # and signal an error, but it's hard to do so reliably so
+                # instead we just try to be robust in the face of it.
+                break
             if self.incorporate_new_buffer(
                 self.last_data.buffer[:u] +
                 hbytes(len(self.last_data.buffer) - u),
