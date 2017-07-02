@@ -141,8 +141,7 @@ test_can_produce_ascii_strings = define_test(
 )
 
 test_can_produce_long_strings_with_no_ascii = define_test(
-    text(), lambda x: all(ord(c) > 127 for c in x),
-    condition=lambda x: len(x) >= 10
+    text(min_size=10), lambda x: all(ord(c) > 127 for c in x),
 )
 
 test_can_produce_short_strings_with_some_non_ascii = define_test(
