@@ -616,25 +616,6 @@ class ConjectureRunner(object):
                 self.incorporate_new_buffer(hbytes(buffer))
                 i += 1
 
-            self.debug('Replacing individual blocks with simpler blocks')
-            i = 0
-            while i < len(self.last_data.blocks):
-                u, v = self.last_data.blocks[i]
-                buf = self.last_data.buffer
-                block = buf[u:v]
-                n = v - u
-                all_blocks = sorted(set([hbytes(n)] + [
-                    buf[a:a + n]
-                    for a in self.last_data.block_starts[n]
-                ]))
-                better_blocks = all_blocks[:all_blocks.index(block)]
-                for b in better_blocks:
-                    if self.incorporate_new_buffer(
-                        buf[:u] + b + buf[v:]
-                    ):
-                        break
-                i += 1
-
             self.debug('Simultaneous shrinking of duplicated blocks')
             block_counter = -1
             while block_counter < self.changed:
