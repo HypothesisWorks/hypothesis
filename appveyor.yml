@@ -34,10 +34,13 @@ environment:
       PYTHON_VERSION: "3.6.1"
       PYTHON_ARCH: "64"
 
+# This matches both branches and tags (no, I don't know why either).
+# We need a match both for pushes to master, and our release tags which
+# trigger wheel builds.
 branches:
   only:
     - master
-    - /\d+\.\d+\.\d+/
+    - /^\d+\.\d+\.\d+$/
 
 artifacts:
   - path: 'dist\*.whl'
