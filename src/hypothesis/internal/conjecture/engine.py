@@ -537,7 +537,10 @@ class ConjectureRunner(object):
                 lo = mid
 
         for i in hrange(len(self.last_data.blocks) - 1, -1, -1):
-            if i < len(self.last_data.blocks):
+            # The case where this is not true is hard to hit reliably, and only
+            # exists for similar reasons to the above: It guards against
+            # invalid data generation.
+            if i < len(self.last_data.blocks):  # pragma: no branch
                 u, v = self.last_data.blocks[i]
                 self.incorporate_new_buffer(
                     self.last_data.buffer[:u] + hbytes(v - u) +
