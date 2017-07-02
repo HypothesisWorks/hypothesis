@@ -22,6 +22,30 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.12.0 - 2017-07-03
+-------------------
+
+This release makes some major internal changes to how Hypothesis represents
+data internally, as a prelude to some major engine changes that should improve
+data quality. There are no API changes, but it's a significant enough internal
+change that a minor version bump seemed warranted.
+
+User facing impact should be fairly mild, but includes:
+
+* All existing examples in the database will probably be invalidated. Hypothesis
+  handles this automatically, so you don't need to do anything, but if you see
+  all your examples disappear that's why.
+* Almost all data distributions have changed significantly. Possibly for the better,
+  possibly for the worse. This may result in new bugs being found, but it may
+  also result in Hypothesis being unable to find bugs it previously did.
+* Data generation may be somewhat faster if your existing bottleneck was in
+  draw_bytes (which is often the case for large examples).
+* Shrinking will probably be slower, possibly significantly.
+
+If you notice any effects you consider to be a significant regression, please
+open an issue about them.
+
+-------------------
 3.11.6 - 2017-06-19
 -------------------
 
