@@ -270,4 +270,3 @@ clean:
 
 documentation: $(SPHINX_BUILD) docs/*.rst
 	PYTHONPATH=src $(SPHINX_BUILD) -W -b html -d docs/_build/doctrees docs docs/_build/html
-	PYTHONPATH=src $(SPHINX_BUILD) -W -b doctest -d docs/_build/doctrees docs docs/_build/html
