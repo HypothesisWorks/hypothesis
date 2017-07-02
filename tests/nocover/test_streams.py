@@ -20,11 +20,15 @@ from __future__ import division, print_function, absolute_import
 from itertools import islice
 
 from hypothesis import given
+from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.strategies import integers, streaming
 from hypothesis.internal.compat import integer_types
 
 
-@given(streaming(integers()))
-def test_streams_are_arbitrarily_long(ss):
-    for i in islice(ss, 100):
-        assert isinstance(i, integer_types)
+@checks_deprecated_behaviour
+def test_streams_are_arbitrarily_long():
+    @given(streaming(integers()))
+    def test(ss):
+        for i in islice(ss, 100):
+            assert isinstance(i, integer_types)
+    test()

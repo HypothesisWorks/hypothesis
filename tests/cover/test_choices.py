@@ -22,8 +22,10 @@ import pytest
 import hypothesis.strategies as st
 from hypothesis import find, given
 from hypothesis.errors import InvalidArgument
+from tests.common.utils import checks_deprecated_behaviour
 
 
+@checks_deprecated_behaviour
 def test_exhaustion():
     @given(st.lists(st.text(), min_size=10), st.choices())
     def test(ls, choice):
@@ -34,16 +36,21 @@ def test_exhaustion():
     test()
 
 
-@given(st.choices(), st.choices())
-def test_choice_is_shared(choice1, choice2):
-    assert choice1 is choice2
+@checks_deprecated_behaviour
+def test_choice_is_shared():
+    @given(st.choices(), st.choices())
+    def test(choice1, choice2):
+        assert choice1 is choice2
+    test()
 
 
+@checks_deprecated_behaviour
 def test_cannot_use_choices_within_find():
     with pytest.raises(InvalidArgument):
         find(st.choices(), lambda c: True)
 
 
+@checks_deprecated_behaviour
 def test_fails_to_draw_from_empty_sequence():
     @given(st.choices())
     def test(choice):

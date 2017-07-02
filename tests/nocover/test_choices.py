@@ -19,11 +19,13 @@ from __future__ import division, print_function, absolute_import
 
 import hypothesis.strategies as st
 from hypothesis import given, settings
-from tests.common.utils import raises, capture_out
+from tests.common.utils import raises, capture_out, \
+    checks_deprecated_behaviour
 from hypothesis.database import ExampleDatabase
 from hypothesis.internal.compat import hrange
 
 
+@checks_deprecated_behaviour
 def test_stability():
     @given(
         st.lists(st.text(min_size=1, max_size=1), unique=True, min_size=5),

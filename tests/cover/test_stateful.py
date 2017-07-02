@@ -26,7 +26,8 @@ from hypothesis import settings as Settings
 from hypothesis import assume
 from hypothesis.errors import Flaky, InvalidDefinition
 from hypothesis.control import current_build_context
-from tests.common.utils import raises, capture_out
+from tests.common.utils import raises, capture_out, \
+    checks_deprecated_behaviour
 from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import Bundle, GenericStateMachine, \
     RuleBasedStateMachine, rule, invariant, precondition, \
@@ -378,17 +379,20 @@ IntAdder.define_rule(
 )
 
 
-class ChoosingMachine(GenericStateMachine):
+@checks_deprecated_behaviour
+def test_can_choose_in_a_machine():
+    class ChoosingMachine(GenericStateMachine):
 
-    def steps(self):
-        return choices()
+        def steps(self):
+            return choices()
 
-    def execute_step(self, choices):
-        choices([1, 2, 3])
+        def execute_step(self, choices):
+            choices([1, 2, 3])
+
+    run_state_machine_as_test(ChoosingMachine)
 
 
 with Settings(max_examples=10):
-    TestChoosingMachine = ChoosingMachine.TestCase
     TestGoodSets = GoodSet.TestCase
     TestGivenLike = GivenLikeStateMachine.TestCase
     TestDynamicMachine = DynamicMachine.TestCase
