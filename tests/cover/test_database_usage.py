@@ -57,7 +57,6 @@ def test_clears_out_database_as_things_get_boring():
     for _ in range(initial):
         stuff()
         keys = set(database.fetch(key))
-        print(len(keys))
         if not keys:
             break
     else:
