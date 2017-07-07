@@ -22,8 +22,8 @@ from collections import namedtuple
 
 import hypothesis.internal.conjecture.utils as d
 from hypothesis.control import assume
-from hypothesis.internal.compat import hbytes, struct_pack, int_to_bytes, \
-    struct_unpack, int_from_bytes, bytes_from_list
+from hypothesis.internal.compat import hbytes, struct_pack, \
+    struct_unpack, int_from_bytes
 from hypothesis.internal.floats import sign
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
     MappedSearchStrategy
@@ -63,21 +63,7 @@ class WideRangeIntStrategy(IntStrategy):
         size = 16
         sign_mask = 2 ** (size * 8 - 1)
 
-        def distribution(random, n):
-            assert n == size
-            if random.randint(0, 2) > 0:
-                k = 1
-            elif random.randint(0, 2) > 0:
-                k = 2
-            else:
-                k = random.randint(1, size)
-            r = random.getrandbits(k * 8)
-            if random.randint(0, 1):
-                r |= sign_mask
-            else:
-                r &= (~sign_mask)
-            return int_to_bytes(r, n)
-        byt = data.draw_bytes(size, distribution=distribution)
+        byt = data.draw_bytes(size)
         r = int_from_bytes(byt)
         negative = r & sign_mask
         r &= (~sign_mask)
@@ -110,6 +96,7 @@ NASTY_FLOATS = [
 
 ] + [float('inf'), float('nan')] * 5
 NASTY_FLOATS.extend([-x for x in NASTY_FLOATS])
+NASTY_FLOATS = list(map(float, NASTY_FLOATS))
 
 
 class FloatStrategy(SearchStrategy):
@@ -123,10 +110,17 @@ class FloatStrategy(SearchStrategy):
         self.allow_infinity = allow_infinity
         self.allow_nan = allow_nan
 
+        self.nasty_floats = [f for f in NASTY_FLOATS if self.permitted(f)]
+        weights = [
+            0.6 * len(self.nasty_floats)
+        ] + [0.4] * len(self.nasty_floats)
+        self.sampler = d.Sampler(weights)
+
     def __repr__(self):
         return '%s()' % (self.__class__.__name__,)
 
     def permitted(self, f):
+        assert isinstance(f, float)
         if not self.allow_infinity and math.isinf(f):
             return False
         if not self.allow_nan and math.isnan(f):
@@ -134,33 +128,20 @@ class FloatStrategy(SearchStrategy):
         return True
 
     def do_draw(self, data):
-        def draw_float_bytes(random, n):
-            assert n == 8
-            while True:
-                i = random.randint(1, 10)
-                if i <= 4:
-                    f = random.choice(NASTY_FLOATS)
-                elif i == 5:
-                    return bytes_from_list(
-                        random.randint(0, 255) for _ in range(8))
-                elif i == 6:
-                    f = random.random() * (
-                        random.randint(0, 1) * 2 - 1
-                    )
-                elif i == 7:
-                    f = random.gauss(0, 1)
-                elif i == 8:
-                    f = float(random.randint(-2 ** 63, 2 ** 63))
-                else:
-                    f = random.gauss(
-                        random.randint(-2 ** 63, 2 ** 63), 1
-                    )
-                if self.permitted(f):
-                    return struct_pack(b'!d', f)
-        result = struct_unpack(b'!d', hbytes(
-            data.draw_bytes(8, draw_float_bytes)))[0]
-        assume(self.permitted(result))
-        return result
+        while True:
+            data.start_example()
+            i = self.sampler.sample(data)
+            if i == 0:
+                result = struct_unpack(b'!d', hbytes(
+                    data.draw_bytes(8)))[0]
+            else:
+                result = self.nasty_floats[i - 1]
+                data.write(
+                    struct_pack(b'!d', result)
+                )
+            data.stop_example()
+            if self.permitted(result):
+                return result
 
 
 def float_order_key(k):
@@ -184,6 +165,7 @@ class FixedBoundedFloatStrategy(SearchStrategy):
         SearchStrategy.__init__(self)
         self.lower_bound = float(lower_bound)
         self.upper_bound = float(upper_bound)
+        assert not math.isinf(self.upper_bound - self.lower_bound)
         lb = float_order_key(self.lower_bound)
         ub = float_order_key(self.upper_bound)
 
@@ -200,20 +182,14 @@ class FixedBoundedFloatStrategy(SearchStrategy):
         )
 
     def do_draw(self, data):
-        def draw_float_bytes(random, n):
-            assert n == 8
-            i = random.randint(0, 20)
-            if i <= 2:
-                f = random.choice(self.critical)
-            else:
-                f = random.random() * (
-                    self.upper_bound - self.lower_bound
-                ) + self.lower_bound
-            return struct_pack(b'!d', f)
-        f = struct_unpack(b'!d', hbytes(
-            data.draw_bytes(8, draw_float_bytes)))[0]
+        f = self.lower_bound + (
+            self.upper_bound - self.lower_bound) * d.fractional_float(data)
         assume(self.lower_bound <= f <= self.upper_bound)
         assume(sign(self.lower_bound) <= sign(f) <= sign(self.upper_bound))
+        # Special handling for bounds of -0.0
+        for g in [self.lower_bound, self.upper_bound]:
+            if f == g:
+                f = math.copysign(f, g)
         return f
 
 

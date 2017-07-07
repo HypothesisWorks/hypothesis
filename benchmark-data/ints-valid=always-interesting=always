@@ -9,16 +9,16 @@
 # condition "always" and the interestingness condition "always".
 # See the script for the exact definitions of these criteria.
 #
-# This benchmark was generated with seed 25
+# This benchmark was generated with seed 69
 #
 # Key statistics for this benchmark:
 #
 # * 1000 examples
-# * Mean size: 47.98 bytes, standard deviation: 0.51 bytes
+# * Mean size: 48.00 bytes, standard deviation: 0.00 bytes
 #
 # Additional interesting statistics:
 #
-# * Ranging from 32 [once] to 48 [999 times] bytes.
+# * Ranging from 48 [1000 times] to 48 [1000 times] bytes.
 # * Median size: 48
 # * 99% of examples had at least 48 bytes
 # * 99% of examples had at most 48 bytes
@@ -26,4 +26,4 @@
 # All data after this point is an opaque binary blob. You are not expected
 # to understand it.
 
-Data 112: STARTPCOO3V5BBXADADAAYFKSYYZDW6K2FLASSXK2BWFMKV3E7NRQPFYPZ2P7TLXRPKK5Y3MUYAAAWUHK63YAAAAEBJO3IQZ6FWNH53LVYFYG2X5A====END
+Data 96: STARTPCOO3V5RBUABAECA2FKS4VZLIWYIV2C4UG7I5WE5FU2L66CDXSWT5F5ZKZUTCBYBAAAAAAAAH72SB2TG4NGT3FLTAFO7JVQJEND

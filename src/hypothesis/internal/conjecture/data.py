@@ -52,7 +52,7 @@ class ConjectureData(object):
         return ConjectureData(
             max_length=len(buffer),
             draw_bytes=lambda data, n, distribution:
-            buffer[data.index:data.index + n]
+            hbytes(buffer[data.index:data.index + n])
         )
 
     def __init__(self, max_length, draw_bytes):
@@ -158,7 +158,22 @@ class ConjectureData(object):
         self.events = frozenset(self.events)
         del self._draw_bytes
 
-    def draw_bytes(self, n, distribution=uniform):
+    def draw_bytes(self, n):
+        return self.draw_bytes_internal(n, uniform)
+
+    def write(self, string):
+        assert isinstance(string, hbytes)
+
+        def distribution(random, n):
+            assert n == len(string)
+            return string
+
+        while True:
+            x = self.draw_bytes_internal(len(string), distribution)
+            if x == string:
+                return
+
+    def draw_bytes_internal(self, n, distribution):
         if n == 0:
             return hbytes(b'')
         self.__assert_not_frozen('draw_bytes')

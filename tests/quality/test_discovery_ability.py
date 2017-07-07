@@ -92,7 +92,7 @@ def define_test(specifier, predicate, condition=None):
                 successes += 1
                 if successes >= REQUIRED_RUNS:
                     return
-        event = condition_string
+        event = reflection.get_pretty_function_description(predicate)
         if condition is not None:
             event += '|'
             event += condition_string
@@ -141,8 +141,7 @@ test_can_produce_ascii_strings = define_test(
 )
 
 test_can_produce_long_strings_with_no_ascii = define_test(
-    text(), lambda x: all(ord(c) > 127 for c in x),
-    condition=lambda x: len(x) >= 10
+    text(min_size=10), lambda x: all(ord(c) > 127 for c in x),
 )
 
 test_can_produce_short_strings_with_some_non_ascii = define_test(
@@ -258,11 +257,6 @@ test_mixes_not_too_often = define_test(
     lists(booleans() | tuples(), average_size=25.0),
     lambda x: len(set(map(type, x))) == 1,
     condition=bool,
-)
-
-test_float_lists_have_non_reversible_sum = define_test(
-    lists(floats(), min_size=2), lambda x: sum(x) != sum(reversed(x)),
-    condition=lambda x: not math.isnan(sum(x))
 )
 
 test_integers_are_usually_non_zero = define_test(

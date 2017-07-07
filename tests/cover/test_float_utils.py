@@ -17,5 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
-__version_info__ = (3, 12, 0)
-__version__ = '.'.join(map(str, __version_info__))
+from hypothesis.internal.floats import count_between_floats
+
+
+def test_can_handle_straddling_zero():
+    assert count_between_floats(-0.0, 0.0) == 2

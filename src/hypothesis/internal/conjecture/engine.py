@@ -283,6 +283,9 @@ class ConjectureRunner(object):
         def draw_zero(data, n, distribution):
             return hbytes(b'\0' * n)
 
+        def draw_max(data, n, distribution):
+            return hbytes([255]) * n
+
         def draw_constant(data, n, distribution):
             return bytes_from_list([
                 self.random.randint(0, 255)
@@ -292,7 +295,9 @@ class ConjectureRunner(object):
             draw_new,
             reuse_existing, reuse_existing,
             draw_existing, draw_smaller, draw_larger,
-            flip_bit, draw_zero, draw_constant,
+            flip_bit,
+            draw_zero, draw_max, draw_zero, draw_max,
+            draw_constant,
         ]
 
         bits = [
@@ -514,7 +519,15 @@ class ConjectureRunner(object):
         hi = len(self.last_data.blocks)
         while lo + 1 < hi:
             mid = (lo + hi) // 2
-            u = self.last_data.blocks[mid][0]
+            try:
+                u = self.last_data.blocks[mid][0]
+            except IndexError:
+                # This shouldn't really happen, but may in the presence of a
+                # bad test function whose block structure varies based on some
+                # sort of external data. We could possibly detect this better
+                # and signal an error, but it's hard to do so reliably so
+                # instead we just try to be robust in the face of it.
+                break
             if self.incorporate_new_buffer(
                 self.last_data.buffer[:u] +
                 hbytes(len(self.last_data.buffer) - u),
@@ -524,7 +537,10 @@ class ConjectureRunner(object):
                 lo = mid
 
         for i in hrange(len(self.last_data.blocks) - 1, -1, -1):
-            if i < len(self.last_data.blocks):
+            # The case where this is not true is hard to hit reliably, and only
+            # exists for similar reasons to the above: It guards against
+            # invalid data generation.
+            if i < len(self.last_data.blocks):  # pragma: no branch
                 u, v = self.last_data.blocks[i]
                 self.incorporate_new_buffer(
                     self.last_data.buffer[:u] + hbytes(v - u) +
@@ -598,25 +614,6 @@ class ConjectureRunner(object):
                     else:
                         buffer.extend(self.last_data.buffer[r:s])
                 self.incorporate_new_buffer(hbytes(buffer))
-                i += 1
-
-            self.debug('Replacing individual blocks with simpler blocks')
-            i = 0
-            while i < len(self.last_data.blocks):
-                u, v = self.last_data.blocks[i]
-                buf = self.last_data.buffer
-                block = buf[u:v]
-                n = v - u
-                all_blocks = sorted(set([hbytes(n)] + [
-                    buf[a:a + n]
-                    for a in self.last_data.block_starts[n]
-                ]))
-                better_blocks = all_blocks[:all_blocks.index(block)]
-                for b in better_blocks:
-                    if self.incorporate_new_buffer(
-                        buf[:u] + b + buf[v:]
-                    ):
-                        break
                 i += 1
 
             self.debug('Simultaneous shrinking of duplicated blocks')

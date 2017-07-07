@@ -478,3 +478,10 @@ else:
     # the x flag because it's Python 2, so there are no places where this can
     # be thrown.
     FileExistsError = None
+
+
+if PY2:
+    def floor(x):
+        return int(math.floor(x))
+else:
+    floor = math.floor

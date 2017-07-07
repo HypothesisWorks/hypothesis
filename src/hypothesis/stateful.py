@@ -233,19 +233,18 @@ class StateMachineRunner(object):
 
             steps = 0
             while True:
-                if steps == self.n_steps:
+                if steps >= self.n_steps:
                     stopping_value = 0
                 self.data.start_example()
                 if not cu.biased_coin(self.data, stopping_value):
                     self.data.stop_example()
                     break
-
+                assert steps < self.n_steps
                 value = self.data.draw(state_machine.steps())
                 steps += 1
-                if steps <= self.n_steps:
-                    if print_steps:
-                        state_machine.print_step(value)
-                    state_machine.execute_step(value)
+                if print_steps:
+                    state_machine.print_step(value)
+                state_machine.execute_step(value)
                 self.data.stop_example()
                 state_machine.check_invariants()
         finally:
