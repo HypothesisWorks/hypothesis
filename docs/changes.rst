@@ -22,7 +22,7 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
-3.12.0 - 2017-07-03
+3.12.0 - 2017-07-07
 -------------------
 
 This release makes some major internal changes to how Hypothesis represents
