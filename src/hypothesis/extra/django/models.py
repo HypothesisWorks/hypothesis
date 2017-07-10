@@ -17,7 +17,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import string
 from decimal import Decimal
 
 import django.db.models as dm
@@ -28,6 +27,7 @@ from django.core.exceptions import ValidationError
 import hypothesis.strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.pytz import timezones
+from hypothesis.provisional import emails
 from hypothesis.utils.conventions import UniqueIdentifier
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
@@ -71,6 +71,7 @@ def field_mappings():
             dm.BinaryField: st.binary(),
             dm.BooleanField: st.booleans(),
             dm.DateTimeField: get_datetime_strat(),
+            dm.EmailField: emails(),
             dm.FloatField: st.floats(),
             dm.NullBooleanField: st.one_of(st.none(), st.booleans()),
         }
@@ -102,33 +103,6 @@ def validator_to_filter(f):
     return validate
 
 
-safe_letters = string.ascii_letters + string.digits + '_-'
-
-domains = st.builds(
-    lambda x, y: '.'.join(x + [y]),
-    st.lists(st.text(safe_letters, min_size=1), min_size=1), st.sampled_from([
-        'com', 'net', 'org', 'biz', 'info',
-    ])
-)
-
-
-email_domains = st.one_of(
-    domains,
-    st.sampled_from(['gmail.com', 'yahoo.com', 'hotmail.com'])
-)
-
-base_emails = st.text(safe_letters, min_size=1)
-
-emails_with_plus = st.builds(
-    lambda x, y: '%s+%s' % (x, y), base_emails, base_emails
-)
-
-emails = st.builds(
-    lambda x, y: '%s@%s' % (x, y),
-    st.one_of(base_emails, emails_with_plus), email_domains
-)
-
-
 def _get_strategy_for_field(f):
     if isinstance(f, dm.AutoField):
         return default_value
@@ -137,8 +111,6 @@ def _get_strategy_for_field(f):
         if isinstance(f, (dm.CharField, dm.TextField)) and f.blank:
             choices.append(u'')
         strategy = st.sampled_from(choices)
-    elif isinstance(f, dm.EmailField):
-        return emails
     elif type(f) in (dm.TextField, dm.CharField):
         strategy = st.text(min_size=(None if f.blank else 1),
                            max_size=f.max_length)
