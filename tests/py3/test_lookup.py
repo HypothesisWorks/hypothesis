@@ -286,3 +286,16 @@ def test_raises_for_arg_with_unresolvable_annotation():
         st.builds(unknown_annotated_func).example()
     with pytest.raises(ResolutionFailed):
         st.builds(unknown_annotated_func, a=st.none(), c=infer).example()
+
+
+@given(a=infer, b=infer)
+def test_can_use_type_hints(a: int, b: float):
+    assert isinstance(a, int) and isinstance(b, float)
+
+
+def test_error_if_has_unresolvable_hints():
+    @given(a=infer)
+    def inner(a: UnknownType):
+        pass
+    with pytest.raises(InvalidArgument):
+        inner()

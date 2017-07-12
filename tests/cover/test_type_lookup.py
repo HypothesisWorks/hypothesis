@@ -140,3 +140,11 @@ def test_pulic_interface_works():
     fails = st.from_type('not a type or annotated function')
     with pytest.raises(InvalidArgument):
         fails.example()
+
+
+def test_given_can_infer_on_py2():
+    # Editing annotations before decorating is hilariously awkward, but works!
+    def inner(a):
+        pass
+    inner.__annotations__ = {'a': int}
+    given(a=infer)(inner)()
