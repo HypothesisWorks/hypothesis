@@ -268,7 +268,8 @@ if PY2:
     def getfullargspec(func):
         import inspect
         args, varargs, varkw, defaults = inspect.getargspec(func)
-        return FullArgSpec(args, varargs, varkw, defaults, [], None, {})
+        return FullArgSpec(args, varargs, varkw, defaults, [], None,
+                           getattr(func, '__annotations__', {}))
 else:
     from inspect import getfullargspec, FullArgSpec
 
