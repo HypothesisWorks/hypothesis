@@ -23,7 +23,6 @@ import warnings
 class HypothesisException(Exception):
 
     """Generic parent class for exceptions thrown by Hypothesis."""
-    pass
 
 
 class CleanupFailed(HypothesisException):
@@ -83,7 +82,6 @@ class NoExamples(HypothesisException):
     """Raised when example() is called on a strategy but we cannot find any
     examples after enough tries that we really should have been able to if this
     was ever going to work."""
-    pass
 
 
 class Unsatisfiable(HypothesisException):
