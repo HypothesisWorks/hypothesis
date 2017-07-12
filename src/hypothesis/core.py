@@ -26,6 +26,7 @@ import traceback
 from random import Random
 from collections import namedtuple
 
+import hypothesis.strategies as st
 from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
     Unsatisfiable, InvalidArgument, FailedHealthCheck, \
     UnsatisfiedAssumption, HypothesisDeprecationWarning
@@ -36,7 +37,9 @@ from hypothesis.executors import new_style_executor, \
     default_new_style_executor
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.statistics import note_engine_for_statistics
-from hypothesis.internal.compat import str_to_bytes, getfullargspec
+from hypothesis.internal.compat import str_to_bytes, get_type_hints, \
+    getfullargspec
+from hypothesis.utils.conventions import infer
 from hypothesis.internal.escalation import \
     escalate_hypothesis_internal_error
 from hypothesis.internal.reflection import nicerepr, arg_string, \
@@ -167,6 +170,10 @@ def is_invalid_test(
             ' expected at most %d') % (
                 name, len(generator_arguments),
                 len(original_argspec.args)))
+
+    if infer in generator_arguments:
+        return invalid('infer was passed as a positional argument to @given, '
+                       'but may only be passed as a keyword argument')
 
     if generator_arguments and generator_kwargs:
         return invalid(
@@ -404,8 +411,6 @@ def process_arguments_to_given(
     wrapped_test, arguments, kwargs, generator_arguments, generator_kwargs,
     argspec, test, settings
 ):
-    import hypothesis.strategies as sd
-
     selfy = None
     arguments, kwargs = convert_positional_arguments(
         wrapped_test, arguments, kwargs)
@@ -421,14 +426,13 @@ def process_arguments_to_given(
 
     arguments = tuple(arguments)
 
-    given_specifier = sd.tuples(
-        sd.just(arguments),
-        sd.fixed_dictionaries(generator_kwargs).map(
+    search_strategy = st.tuples(
+        st.just(arguments),
+        st.fixed_dictionaries(generator_kwargs).map(
             lambda args: dict(args, **kwargs)
         )
     )
 
-    search_strategy = given_specifier
     if selfy is not None:
         search_strategy = WithRunner(search_strategy, selfy)
 
@@ -657,6 +661,16 @@ def given(*given_arguments, **given_kwargs):
             settings = wrapped_test._hypothesis_internal_use_settings
 
             random = get_random_for_wrapped_test(test, wrapped_test)
+
+            if infer in generator_kwargs.values():
+                hints = get_type_hints(test)
+            for name in [name for name, value in generator_kwargs.items()
+                         if value is infer]:
+                if name not in hints:
+                    raise InvalidArgument(
+                        'passed %s=infer for %s, but %s has no type annotation'
+                        % (name, test.__name__, name))
+                generator_kwargs[name] = st.from_type(hints[name])
 
             processed_args = process_arguments_to_given(
                 wrapped_test, arguments, kwargs, generator_arguments,
