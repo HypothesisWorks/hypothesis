@@ -22,6 +22,29 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.14.0 - 2017-07-23
+-------------------
+
+Hypothesis now understands inline type annotations (:issue:`293`):
+
+- If the target of :func:`~hypothesis.strategies.builds` has type annotations,
+  a default strategy for missing required arguments is selected based on the
+  type.  Type-based strategy selection will only override a default if you
+  pass :const:`hypothesis.infer` as a keyword argument.
+
+- If :func:`@given <hypothesis.given>` wraps a function with type annotations,
+  you can pass :const:`~hypothesis.infer` as a keyword argument and the
+  appropriate strategy will be substituted.
+
+- You can check what strategy will be inferred for a type with the new
+  :func:`~hypothesis.strategies.from_type` function.
+
+- :func:`~hypothesis.strategies.register_type_strategy` teaches Hypothesis
+  which strategy to infer for custom or unknown types.  You can provide a
+  strategy, or for more complex cases a function which takes the type and
+  returns a strategy.
+
+-------------------
 3.13.1 - 2017-07-20
 -------------------
 
