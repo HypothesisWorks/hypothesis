@@ -153,16 +153,15 @@ def is_invalid_test(
         return invalid(
             'given must be called with at least one argument')
 
-    if (generator_arguments and (original_argspec.varargs or
-                                 original_argspec.varkw)):
+    if generator_arguments and any([original_argspec.varargs,
+                                    original_argspec.varkw,
+                                    original_argspec.kwonlyargs]):
         return invalid(
-            'varargs or keywords are not supported with positional '
-            'arguments to @given'
+            'positional arguments to @given are not supported with varargs, '
+            'varkeywords, or keyword-only arguments'
         )
 
-    if (
-        len(generator_arguments) > len(original_argspec.args)
-    ):
+    if len(generator_arguments) > len(original_argspec.args):
         return invalid((
             'Too many positional arguments for %s() (got %d but'
             ' expected at most %d') % (
@@ -473,6 +472,18 @@ def skip_exceptions_to_reraise():
 exceptions_to_reraise = skip_exceptions_to_reraise()
 
 
+def new_given_argspec(original_argspec, generator_kwargs):
+    """Make an updated argspec for the wrapped test."""
+    new_args = [a for a in original_argspec.args if a not in generator_kwargs]
+    new_kwonlyargs = [a for a in original_argspec.kwonlyargs
+                      if a not in generator_kwargs]
+    annots = {k: v for k, v in original_argspec.annotations.items()
+              if k in new_args + new_kwonlyargs}
+    annots['return'] = None
+    return original_argspec._replace(
+        args=new_args, kwonlyargs=new_kwonlyargs, annotations=annots)
+
+
 class StateForActualGivenExecution(object):
 
     def __init__(self, test_runner, search_strategy, test, settings, random):
@@ -629,20 +640,11 @@ def given(*given_arguments, **given_kwargs):
         if check_invalid is not None:
             return check_invalid
 
-        arguments = original_argspec.args
-
-        for name, strategy in zip(arguments[-len(generator_arguments):],
-                                  generator_arguments):
+        for name, strategy in zip(reversed(original_argspec.args),
+                                  reversed(generator_arguments)):
             generator_kwargs[name] = strategy
 
-        argspec = original_argspec._replace(
-            args=[a for a in arguments if a not in generator_kwargs],
-            defaults=None,
-        )
-        annots = {k: v for k, v in argspec.annotations.items()
-                  if k in (argspec.args + argspec.kwonlyargs)}
-        annots['return'] = None
-        argspec = argspec._replace(annotations=annots)
+        argspec = new_given_argspec(original_argspec, generator_kwargs)
 
         @impersonate(test)
         @define_function_signature(

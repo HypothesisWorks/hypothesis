@@ -365,16 +365,16 @@ The rules for determining what are valid uses of given are as follows:
 1. You may pass any keyword argument to given.
 2. Positional arguments to given are equivalent to the rightmost named
    arguments for the test function.
-3. positional arguments may not be used if the underlying test function has
-   varargs or arbitrary keywords.
+3. Positional arguments may not be used if the underlying test function has
+   varargs, arbitrary keywords, or keyword-only arguments.
 4. Functions tested with given may not have any defaults.
 
 The reason for the "rightmost named arguments" behaviour is so that
 using :func:`@given <hypothesis.given>` with instance methods works: ``self``
 will be passed to the function as normal and not be parametrized over.
 
-The function returned by given has all the arguments that the original test did
-, minus the ones that are being filled in by given.
+The function returned by given has all the same arguments as the original
+test, minus those that are filled in by given.
 
 -------------------------
 Custom function execution
