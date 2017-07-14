@@ -640,16 +640,31 @@ def characters(whitelist_categories=None, blacklist_categories=None,
     """Generates unicode text type (unicode on python 2, str on python 3)
     characters following specified filtering rules.
 
-    This strategy accepts lists of Unicode categories, characters of which
-    should (`whitelist_categories`) or should not (`blacklist_categories`)
-    be produced.
+    When no filtering rules are specifed, any character can be produced.
 
-    Also there could be applied limitation by minimal and maximal produced
-    code point of the characters.
+    If `min_codepoint` or `max_codepoint` is specifed, then only characters
+    having a codepoint in that range will be produced.
 
-    If you know what exactly characters you don't want to be produced,
-    pass them with `blacklist_characters` argument.
+    If `whitelist_categories` is specified, then only characters from those
+    Unicode categories will be produced. This is a further restriction,
+    characters must also satisfy `min_codepoint` and `max_codepoint`.
 
+    If `blacklist_categories` is specified, then any character from those
+    categories will not be produced. This is a further restriction,
+    characters matching both `whitelist_categories` and `blacklist_categories`
+    will not be produced.
+
+    If `whitelist_characters` is specified and no range or category
+    restrictions are specified, then only characters in that list will be
+    produced.
+
+    If `whitelist_characters` is specified as well as other arguments, then
+    any characters on that list will be produced as well as characters
+    matching category or codepoint restrictions.
+
+    If `blacklist_characters` is specified then any characters in that list
+    will be not be produced. Characters in both `whitelist_characters` and
+    `blacklist_characters` will not be produced.
     """
     if (
         min_codepoint is not None and max_codepoint is not None and
