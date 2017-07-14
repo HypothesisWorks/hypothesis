@@ -33,11 +33,12 @@ class OneCharStringStrategy(SearchStrategy):
     zero_point = ord('0')
 
     def __init__(self,
+                 min_codepoint=None,
+                 max_codepoint=None,
                  whitelist_categories=None,
                  blacklist_categories=None,
-                 blacklist_characters=None,
-                 min_codepoint=None,
-                 max_codepoint=None):
+                 whitelist_characters=None,
+                 blacklist_characters=None):
         intervals = charmap.query(
             include_categories=whitelist_categories,
             exclude_categories=blacklist_categories,
