@@ -634,9 +634,9 @@ def streaming(elements):
 
 @cacheable
 @defines_strategy
-def characters(min_codepoint=None, max_codepoint=None,
-               whitelist_categories=None, blacklist_categories=None,
-               whitelist_characters=None, blacklist_characters=None):
+def characters(whitelist_categories=None, blacklist_categories=None,
+               blacklist_characters=None, min_codepoint=None,
+               max_codepoint=None):
     """Generates unicode text type (unicode on python 2, str on python 3)
     characters following specified filtering rules.
 
@@ -677,12 +677,11 @@ def characters(min_codepoint=None, max_codepoint=None,
         )
 
     from hypothesis.searchstrategy.strings import OneCharStringStrategy
-    return OneCharStringStrategy(min_codepoint=min_codepoint,
-                                 max_codepoint=max_codepoint,
-                                 whitelist_categories=whitelist_categories,
+    return OneCharStringStrategy(whitelist_categories=whitelist_categories,
                                  blacklist_categories=blacklist_categories,
-                                 whitelist_characters=whitelist_characters,
-                                 blacklist_characters=blacklist_characters)
+                                 blacklist_characters=blacklist_characters,
+                                 min_codepoint=min_codepoint,
+                                 max_codepoint=max_codepoint)
 
 
 @cacheable
