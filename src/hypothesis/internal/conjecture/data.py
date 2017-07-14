@@ -45,6 +45,9 @@ class StopTest(BaseException):
 global_test_counter = 0
 
 
+MAX_DEPTH = 50
+
+
 class ConjectureData(object):
 
     @classmethod
@@ -84,6 +87,10 @@ class ConjectureData(object):
                     name,))
 
     @property
+    def depth(self):
+        return len(self.interval_stack)
+
+    @property
     def index(self):
         return len(self.buffer)
 
@@ -94,6 +101,9 @@ class ConjectureData(object):
         self.output += value
 
     def draw(self, strategy):
+        if self.depth >= MAX_DEPTH:
+            self.mark_invalid()
+
         if self.is_find and not strategy.supports_find:
             raise InvalidArgument((
                 'Cannot use strategy %r within a call to find (presumably '

@@ -20,7 +20,7 @@ from __future__ import division, print_function, absolute_import
 import math
 import datetime as dt
 import operator
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 from numbers import Rational
 from fractions import Fraction
 
@@ -51,6 +51,7 @@ __all__ = [
     'randoms', 'random_module',
     'recursive', 'composite',
     'shared', 'runner', 'data',
+    'deferred',
 ]
 
 _strategies = set()
@@ -176,19 +177,8 @@ def one_of(*args):
             args = tuple(args[0])
         except TypeError:
             pass
-
-    strategies = []
-    for arg in args:
-        check_strategy(arg)
-        if not arg.is_empty:
-            strategies.extend([s for s in arg.branches if not s.is_empty])
-
-    if not strategies:
-        return nothing()
-    if len(strategies) == 1:
-        return strategies[0]
     from hypothesis.searchstrategy.strategies import OneOfStrategy
-    return OneOfStrategy(strategies)
+    return OneOfStrategy(args)
 
 
 @cacheable
@@ -885,7 +875,6 @@ def decimals(min_value=None, max_value=None,
         # Fixed-point decimals are basically integers with a scale factor
 
         def try_quantize(d):
-            print(d, factor)
             return d.quantize(factor)
         factor = Decimal(10) ** -places
         max_num = max_value / factor if max_value is not None else None
@@ -1372,4 +1361,45 @@ def check_valid_sizes(min_size, average_size, max_size):
 
 
 _AVERAGE_LIST_LENGTH = 5.0
+
+
+def deferred():
+    """A deferred strategy allows you to use a strategy before it is defined so
+    as to define recursive or mutally recursive strategies.
+
+    The returned strategy exposes a method define() which takes another
+    strategy.  Once define has been called on a deferred strategy it will
+    behave identically to the strategy it has been defined as.
+
+    It is an error to try to use a deferred strategy in a test or in @given
+    before it has been defined.
+
+    The advantage of using a deferred strategy is that it is in scope before
+    its definition, so you can use it in its own definition. This allows for
+    naturally defining recursive strategies:
+
+    >>> import hypothesis.strategies as st
+    >>> x = st.deferred()
+    >>> x.define(st.booleans() | st.tuples(x, x))
+    >>> x.example()
+    (False, (False, True))
+    >>> x.example()
+    True
+
+    Mutual recursion also works fine:
+
+    >>> a = st.deferred()
+    >>> b = st.deferred()
+    >>> a.define(st.booleans() | b)
+    >>> b.define(st.tuples(a, a))
+    >>> a.example()
+    (((True, True), False), True)
+    >>> b.example()
+    (((( False, ((True, False), (True, True))), True), False), True)
+
+    """
+    from hypothesis.searchstrategy.deferred import DeferredStrategy
+    return DeferredStrategy()
+
+
 assert _strategies.issubset(set(__all__)), _strategies - set(__all__)

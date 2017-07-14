@@ -22,8 +22,8 @@ from hypothesis.errors import NoExamples, NoSuchExample, Unsatisfiable, \
     UnsatisfiedAssumption
 from hypothesis.control import assume, reject
 from hypothesis.internal.compat import hrange
-from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.internal.lazyformat import lazyformat
+from hypothesis.internal.reflection import get_pretty_function_description
 
 
 def one_of_strategies(xs):
@@ -31,8 +31,7 @@ def one_of_strategies(xs):
     xs = tuple(xs)
     if not xs:
         raise ValueError('Cannot join an empty list of strategies')
-    from hypothesis.strategies import one_of
-    return one_of(xs)
+    return OneOfStrategy(xs)
 
 
 class SearchStrategy(object):
@@ -170,8 +169,6 @@ class SearchStrategy(object):
         """
         if not isinstance(other, SearchStrategy):
             raise ValueError('Cannot | a SearchStrategy with %r' % (other,))
-        if other.is_empty:
-            return self
         return one_of_strategies((self, other))
 
     def validate(self):
@@ -203,7 +200,8 @@ class OneOfStrategy(SearchStrategy):
     def __init__(self, strategies, bias=None):
         SearchStrategy.__init__(self)
         strategies = tuple(strategies)
-        self.element_strategies = list(strategies)
+        self.original_strategies = list(strategies)
+        self.__element_strategies = None
         self.bias = bias
         if bias is not None:
             assert 0 < bias < 1
@@ -212,9 +210,26 @@ class OneOfStrategy(SearchStrategy):
         else:
             self.sampler = None
 
+    @property
+    def element_strategies(self):
+        from hypothesis.strategies import check_strategy
+        if self.__element_strategies is None:
+            strategies = []
+            for arg in self.original_strategies:
+                check_strategy(arg)
+                if not arg.is_empty:
+                    strategies.extend(
+                        [s for s in arg.branches if not s.is_empty])
+            self.__element_strategies = strategies
+        return self.__element_strategies
+
     def do_draw(self, data):
         n = len(self.element_strategies)
-        if self.sampler is None:
+        if n == 0:
+            data.mark_invalid()
+        elif n == 1:
+            return self.element_strategies[0].do_draw(data)
+        elif self.sampler is None:
             i = cu.integer_range(data, 0, n - 1)
         else:
             i = self.sampler.sample(data)
@@ -222,7 +237,7 @@ class OneOfStrategy(SearchStrategy):
         return data.draw(self.element_strategies[i])
 
     def __repr__(self):
-        return ' | '.join(map(repr, self.element_strategies))
+        return ' | '.join(map(repr, self.original_strategies))
 
     def validate(self):
         for e in self.element_strategies:

@@ -28,8 +28,8 @@ from hypothesis.reporting import debug_report
 from hypothesis.internal.compat import EMPTY_BYTES, Counter, hbytes, \
     hrange, text_type, bytes_from_list, to_bytes_sequence, \
     unicode_safe_repr
-from hypothesis.internal.conjecture.data import Status, StopTest, \
-    ConjectureData
+from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
+    StopTest, ConjectureData
 from hypothesis.internal.conjecture.minimizer import minimize
 
 
@@ -83,10 +83,15 @@ class ConjectureRunner(object):
 
     def new_buffer(self):
         assert not self.__tree_is_exhausted()
+
+        def draw_bytes(data, n, distribution):
+            return self.__rewrite_for_novelty(
+                data, self.__zero_bound(data, distribution(self.random, n))
+            )
+
         self.last_data = ConjectureData(
             max_length=self.settings.buffer_size,
-            draw_bytes=lambda data, n, distribution:
-            self.__rewrite_for_novelty(data, distribution(self.random, n))
+            draw_bytes=draw_bytes
         )
         self.test_function(self.last_data)
         self.last_data.freeze()
@@ -312,9 +317,26 @@ class ConjectureRunner(object):
             else:
                 result = self.random.choice(bits)(data, n, distribution)
 
-            return self.__rewrite_for_novelty(data, result)
+            return self.__rewrite_for_novelty(
+                data, self.__zero_bound(data, result))
 
         return draw_mutated
+
+    def __rewrite(self, data, result):
+        return self.__rewrite_for_novelty(
+            data, self.__zero_bound(data, result)
+        )
+
+    def __zero_bound(self, data, result):
+        if (
+            data.depth * 2 >= MAX_DEPTH or
+            (data.index + len(result)) * 2 >= self.settings.buffer_size
+        ):
+            if any(result):
+                data.hit_zero_bound = True
+            return hbytes(len(result))
+        else:
+            return result
 
     def __rewrite_for_novelty(self, data, result):
         assert isinstance(result, hbytes)
@@ -421,6 +443,9 @@ class ConjectureRunner(object):
                 self.new_buffer()
 
             mutator = self._new_mutator()
+
+            zero_bound_queue = []
+
             while (
                 self.last_data.status != Status.INTERESTING and
                 not self.__tree_is_exhausted()
@@ -439,9 +464,28 @@ class ConjectureRunner(object):
                 ):
                     self.exit_reason = ExitReason.timeout
                     return
-                if mutations >= self.settings.max_mutations:
+                if zero_bound_queue:
+                    overdrawn = zero_bound_queue.pop()
+                    buffer = bytearray(overdrawn.buffer)
+                    self.random.shuffle(buffer)
+                    buffer = hbytes(buffer)
+
+                    if buffer == overdrawn.buffer:
+                        continue
+
+                    def draw_bytes(data, n, distribution):
+                        return self.__rewrite(
+                            data, buffer[data.index:data.index + n])
+
+                    data = ConjectureData(
+                        draw_bytes=draw_bytes,
+                        max_length=len(buffer),
+                    )
+                    self.test_function(data)
+                    data.freeze()
+                elif mutations >= self.settings.max_mutations:
                     mutations = 0
-                    self.new_buffer()
+                    data = self.new_buffer()
                     mutator = self._new_mutator()
                 else:
                     data = ConjectureData(
@@ -457,7 +501,8 @@ class ConjectureRunner(object):
                             mutations = 0
                     else:
                         mutator = self._new_mutator()
-
+                if getattr(data, 'hit_zero_bound', False):
+                    zero_bound_queue.append(data)
                 mutations += 1
 
         if self.__tree_is_exhausted():
