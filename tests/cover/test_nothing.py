@@ -47,12 +47,6 @@ def test_validates_min_size():
         st.lists(st.nothing(), min_size=1).validate()
 
 
-def test_one_of_is_or_identity():
-    x = st.integers()
-    assert (x | st.nothing()) is x
-    assert (st.nothing() | x) is x
-
-
 def test_function_composition():
     assert st.nothing().map(lambda x: 'hi').is_empty
     assert st.nothing().filter(lambda x: True).is_empty
@@ -68,7 +62,7 @@ def test_fixed_dictionaries_detect_empty_values():
 
 
 def test_one_of_empty():
-    assert st.one_of() is st.nothing()
+    assert st.one_of().is_empty
 
 
 def test_no_examples():

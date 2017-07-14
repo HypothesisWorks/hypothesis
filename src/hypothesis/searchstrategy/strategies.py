@@ -202,6 +202,7 @@ class OneOfStrategy(SearchStrategy):
         strategies = tuple(strategies)
         self.original_strategies = list(strategies)
         self.__element_strategies = None
+        self.__is_empty = None
         self.bias = bias
         if bias is not None:
             assert 0 < bias < 1
@@ -209,6 +210,10 @@ class OneOfStrategy(SearchStrategy):
                 [bias ** i for i in range(len(strategies))])
         else:
             self.sampler = None
+
+    @property
+    def is_empty(self):
+        return len(self.element_strategies) == 0
 
     @property
     def element_strategies(self):
