@@ -43,7 +43,7 @@ def unwrap_strategies(s):
         return s
 
 
-class DeferredStrategy(SearchStrategy):
+class LazyStrategy(SearchStrategy):
 
     """A strategy which is defined purely by conversion to and from another
     strategy.

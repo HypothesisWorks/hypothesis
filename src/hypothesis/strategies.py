@@ -104,12 +104,12 @@ def cacheable(fn):
 
 
 def defines_strategy(strategy_definition):
-    from hypothesis.searchstrategy.deferred import DeferredStrategy
+    from hypothesis.searchstrategy.lazy import LazyStrategy
     _strategies.add(strategy_definition.__name__)
 
     @proxies(strategy_definition)
     def accept(*args, **kwargs):
-        return DeferredStrategy(strategy_definition, args, kwargs)
+        return LazyStrategy(strategy_definition, args, kwargs)
     return accept
 
 
@@ -885,10 +885,8 @@ def decimals(min_value=None, max_value=None,
         # Fixed-point decimals are basically integers with a scale factor
 
         def try_quantize(d):
-            try:
-                return d.quantize(factor)
-            except InvalidOperation:  # pragma: no cover
-                return None
+            print(d, factor)
+            return d.quantize(factor)
         factor = Decimal(10) ** -places
         max_num = max_value / factor if max_value is not None else None
         min_num = min_value / factor if min_value is not None else None

@@ -18,7 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 
-class deferredformat(object):
+class lazyformat(object):
     """A format string that isn't evaluated until it's needed."""
 
     def __init__(self, format_string, *args):
@@ -30,7 +30,7 @@ class deferredformat(object):
 
     def __eq__(self, other):
         return (
-            isinstance(other, deferredformat) and
+            isinstance(other, lazyformat) and
             self.__format_string == other.__format_string and
             self.__args == other.__args
         )
