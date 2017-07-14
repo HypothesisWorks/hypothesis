@@ -84,6 +84,28 @@ def test_find_something_rare():
         find(st, lambda c: unicodedata.category(c) != 'Zs')
 
 
+def test_whitelisted_characters_alone():
+    good_characters = u'te02тест49st'
+    st = characters(whitelist_characters=good_characters)
+
+    find(st, lambda c: c in good_characters)
+
+    with pytest.raises(NoSuchExample):
+        find(st, lambda c: c not in good_characters)
+
+
+def test_whitelisted_characters_override():
+    good_characters = u'te02тест49st'
+    st = characters(min_codepoint=ord('0'), max_codepoint=ord('9'),
+                    whitelist_characters=good_characters)
+
+    find(st, lambda c: c in good_characters)
+    find(st, lambda c: c in '0123456789')
+
+    with pytest.raises(NoSuchExample):
+        find(st, lambda c: c not in good_characters + '0123456789')
+
+
 def test_blacklisted_characters():
     bad_chars = u'te02тест49st'
     st = characters(min_codepoint=ord('0'), max_codepoint=ord('9'),
