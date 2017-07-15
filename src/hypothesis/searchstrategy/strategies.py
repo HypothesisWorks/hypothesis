@@ -245,12 +245,19 @@ class OneOfStrategy(SearchStrategy):
             strategies = []
             for arg in self.original_strategies:
                 check_strategy(arg)
-                if arg is self:
-                    continue
                 if not arg.is_empty:
                     strategies.extend(
                         [s for s in arg.branches if not s.is_empty])
-            self.__element_strategies = strategies
+            pruned = []
+            seen = set()
+            for s in strategies:
+                if s is self:
+                    continue
+                if s in seen:
+                    continue
+                seen.add(s)
+                pruned.append(s)
+            self.__element_strategies = pruned
         return self.__element_strategies
 
     def do_draw(self, data):

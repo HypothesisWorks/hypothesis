@@ -20,7 +20,8 @@ from __future__ import division, print_function, absolute_import
 import pytest
 
 from hypothesis import strategies as st
-from hypothesis.errors import InvalidArgument
+from hypothesis import find
+from hypothesis.errors import NoSuchExample, InvalidArgument
 from tests.common.debug import minimal
 
 
@@ -108,3 +109,15 @@ def test_branches_pass_through_deferred():
 def test_can_draw_one_of_self():
     x = st.deferred(lambda: st.one_of(st.booleans(), x))
     assert minimal(x) is False
+    assert len(x.branches) == 1
+
+
+def test_hidden_self_references_just_result_in_no_example():
+    bad = st.deferred(lambda: st.none().flatmap(lambda _: bad))
+    with pytest.raises(NoSuchExample):
+        find(bad, lambda x: True)
+
+
+def test_self_reference_through_one_of_can_detect_emptiness():
+    bad = st.deferred(lambda: st.one_of(bad, bad))
+    assert bad.is_empty
