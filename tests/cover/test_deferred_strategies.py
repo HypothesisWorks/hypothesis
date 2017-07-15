@@ -20,6 +20,7 @@ from __future__ import division, print_function, absolute_import
 import pytest
 
 from hypothesis import strategies as st
+from hypothesis import find, given
 from hypothesis.errors import InvalidArgument
 from tests.common.debug import minimal
 
@@ -104,3 +105,18 @@ def test_errors_on_definition_as_self():
     x = st.deferred()
     with pytest.raises(InvalidArgument):
         x.define(x)
+
+
+def test_cannot_use_find_on_undefined():
+    x = st.deferred()
+    with pytest.raises(InvalidArgument):
+        find(x, lambda x: True)
+
+
+def test_cannot_use_undefined_in_given():
+    @given(st.deferred())
+    def test(x):
+        pass
+
+    with pytest.raises(InvalidArgument):
+        test()
