@@ -92,7 +92,20 @@ class SearchStrategy(object):
 
     @property
     def is_empty(self):
+        """Returns True if this strategy can never draw a value and will always
+        result in the data being marked invalid.
+
+        The fact that this returns False does not guarantee that a valid value
+        can be drawn - this is not intended to be perfect, and is primarily
+        intended to be an optimisation for some cases.
+        """
         if self.cached_is_empty is None:
+            # This isn't an error, but instead is to deal with recursive
+            # strategy definitions that refer to themselves. This ensures that
+            # in a recursive call we will return False. This results in us
+            # returning False in some cases where it would be valid to return
+            # True, but is_empty only needs to be a conservative approximation
+            # anyway, so that's fine.
             self.cached_is_empty = False
             self.cached_is_empty = self.calc_is_empty()
         return self.cached_is_empty
