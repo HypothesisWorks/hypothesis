@@ -50,7 +50,7 @@ class DeferredStrategy(SearchStrategy):
             # in_empty is always intended to be a conservative approximation
             # so that's fine.
             self.__in_empty = False
-            self.__in_empty = self.wrapped_strategy.in_empty
+            self.__in_empty = self.__wrapped_strategy.in_empty
         return self.__in_empty
 
     def __repr__(self):
