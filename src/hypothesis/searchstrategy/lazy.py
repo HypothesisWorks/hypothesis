@@ -31,16 +31,35 @@ def tupleize(x):
         return x
 
 
+unwrap_cache = {}
+unwrap_depth = 0
+
+
 def unwrap_strategies(s):
-    if isinstance(s, SearchStrategy):
-        while True:
-            assert isinstance(s, SearchStrategy)
-            try:
-                s = s.wrapped_strategy
-            except AttributeError:
-                return s
-    else:
+    global unwrap_depth
+
+    if not isinstance(s, SearchStrategy):
         return s
+    try:
+        return unwrap_cache[s]
+    except KeyError:
+        pass
+
+    unwrap_cache[s] = s
+
+    try:
+        unwrap_depth += 1
+        try:
+            result = unwrap_strategies(s.wrapped_strategy)
+            unwrap_cache[s] = result
+            return result
+        except AttributeError:
+            return s
+    finally:
+        unwrap_depth -= 1
+        if unwrap_depth <= 0:
+            unwrap_cache.clear()
+        assert unwrap_depth >= 0
 
 
 class LazyStrategy(SearchStrategy):

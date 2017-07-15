@@ -63,6 +63,9 @@ class TupleStrategy(SearchStrategy):
             data.draw(e) for e in self.element_strategies
         )
 
+    def calc_is_empty(self):
+        return any(e.is_empty for e in self.element_strategies)
+
 
 TERMINATOR = hbytes(b'\0')
 

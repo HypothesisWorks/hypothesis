@@ -19,10 +19,12 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
+from hypothesis import note
 from hypothesis import strategies as st
-from hypothesis import find
-from hypothesis.errors import NoSuchExample, InvalidArgument
+from hypothesis import find, given, settings
+from hypothesis.errors import NoSuchExample, InvalidArgument, NoExamples
 from tests.common.debug import minimal
+from hypothesis.internal.compat import hrange
 
 
 def test_binary_tree():
@@ -121,3 +123,64 @@ def test_hidden_self_references_just_result_in_no_example():
 def test_self_reference_through_one_of_can_detect_emptiness():
     bad = st.deferred(lambda: st.one_of(bad, bad))
     assert bad.is_empty
+
+
+def assert_actually_empty(s):
+    with pytest.raises(NoSuchExample):
+        find(s, lambda x: True, settings=settings(max_shrinks=0))
+
+
+def test_self_tuple_draws_nothing():
+    x = st.deferred(lambda: st.tuples(x))
+    assert_actually_empty(x)
+
+
+def test_mutually_recursive_tuples_draw_nothing():
+    x = st.deferred(lambda: st.tuples(y))
+    y = st.tuples(x)
+
+    assert_actually_empty(x)
+    assert_actually_empty(y)
+
+
+@st.composite
+def mutually_recursive_strategies(draw):
+    strategies = [st.none()]
+
+    def build_strategy_for_indices(base, ixs, deferred):
+        def f():
+            return base(*[strategies[i] for i in ixs])
+        f.__name__ = '%s([%s])' % (
+            base.__name__, ', '.join(
+                "strategies[%d]" % (i,) for i in ixs
+            ))
+        if deferred:
+            return st.deferred(f)
+        else:
+            return f()
+
+    n_strategies = draw(st.integers(1, 10))
+
+    for i in hrange(n_strategies):
+        base = draw(st.sampled_from((st.one_of, st.tuples)))
+        indices = st.lists(st.integers(0, n_strategies))
+        if all(j <= i for j in indices):
+            deferred = draw(st.booleans())
+        else:
+            deferred = True
+        strategies.append(build_strategy_for_indices(base, indices, deferred))
+    return strategies
+
+
+@given(mutually_recursive_strategies())
+def test_arbitrary_recursion(strategies):
+    for i, s in enumerate(strategies):
+        if i > 0:
+            note("strategies[%d]=%r" % (i, s))
+
+            s.validate()
+
+            try:
+                s.example()
+            except NoExamples:
+                pass
