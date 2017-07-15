@@ -328,6 +328,14 @@ class ConjectureRunner(object):
         )
 
     def __zero_bound(self, data, result):
+        """This tries to get the size of the generated data under control by
+        replacing the result with zero if we are too deep or have already
+        generated too much data.
+
+        This causes us to enter "shrinking mode" there and thus reduce
+        the size of the generated data.
+
+        """
         if (
             data.depth * 2 >= MAX_DEPTH or
             (data.index + len(result)) * 2 >= self.settings.buffer_size
@@ -339,6 +347,15 @@ class ConjectureRunner(object):
             return result
 
     def __rewrite_for_novelty(self, data, result):
+        """Take a block that is about to be added to data as the result of a
+        draw_bytes call and rewrite it a small amount to ensure that the result
+        will be novel: that is, not hit a part of the tree that we have fully
+        explored.
+
+        This is mostly useful for test functions which draw a small
+        number of blocks.
+
+        """
         assert isinstance(result, hbytes)
         try:
             node_index = data.__current_node_index
@@ -465,6 +482,17 @@ class ConjectureRunner(object):
                     self.exit_reason = ExitReason.timeout
                     return
                 if zero_bound_queue:
+                    # Whenever we generated an example and it hits a bound
+                    # which forces zero blocks into it, this creates a weird
+                    # distortion effect by making certain parts of the data
+                    # stream (especially ones to the right) much more likely
+                    # to be zero. We fix this by redistributing the generated
+                    # data by shuffling it randomly. This results in the
+                    # zero data being spread evenly throughout the buffer.
+                    # Hopefully the shrinking this causes will cause us to
+                    # naturally fail to hit the bound.
+                    # If it doesn't then we will queue the new version up again
+                    # (now with more zeros) and try again.
                     overdrawn = zero_bound_queue.pop()
                     buffer = bytearray(overdrawn.buffer)
                     self.random.shuffle(buffer)
