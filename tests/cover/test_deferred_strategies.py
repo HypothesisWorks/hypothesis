@@ -97,3 +97,14 @@ def test_errors_on_definition_as_self():
     x = st.deferred(lambda: x)
     with pytest.raises(InvalidArgument):
         x.example()
+
+
+def test_branches_pass_through_deferred():
+    x = st.one_of(st.booleans(), st.integers())
+    y = st.deferred(lambda: x)
+    assert x.branches == y.branches
+
+
+def test_can_draw_one_of_self():
+    x = st.deferred(lambda: st.one_of(st.booleans(), x))
+    assert minimal(x) is False

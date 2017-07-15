@@ -98,6 +98,7 @@ class SearchStrategy(object):
         The fact that this returns False does not guarantee that a valid value
         can be drawn - this is not intended to be perfect, and is primarily
         intended to be an optimisation for some cases.
+
         """
         if self.cached_is_empty is None:
             # This isn't an error, but instead is to deal with recursive
@@ -226,6 +227,7 @@ class OneOfStrategy(SearchStrategy):
         self.original_strategies = list(strategies)
         self.__element_strategies = None
         self.bias = bias
+        self.__in_branches = False
         if bias is not None:
             assert 0 < bias < 1
             self.sampler = cu.Sampler(
@@ -243,6 +245,8 @@ class OneOfStrategy(SearchStrategy):
             strategies = []
             for arg in self.original_strategies:
                 check_strategy(arg)
+                if arg is self:
+                    continue
                 if not arg.is_empty:
                     strategies.extend(
                         [s for s in arg.branches if not s.is_empty])
@@ -271,8 +275,12 @@ class OneOfStrategy(SearchStrategy):
 
     @property
     def branches(self):
-        if self.bias is None:
-            return self.element_strategies
+        if self.bias is None and not self.__in_branches:
+            try:
+                self.__in_branches = True
+                return self.element_strategies
+            finally:
+                self.__in_branches = False
         else:
             return [self]
 
