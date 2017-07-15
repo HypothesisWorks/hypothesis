@@ -20,62 +20,55 @@ from __future__ import division, print_function, absolute_import
 import pytest
 
 from hypothesis import strategies as st
-from hypothesis import find, given
 from hypothesis.errors import InvalidArgument
 from tests.common.debug import minimal
 
 
 def test_binary_tree():
-    tree = st.deferred()
-    tree.define(st.integers() | st.tuples(tree, tree))
+    tree = st.deferred(lambda: st.integers() | st.tuples(tree, tree))
 
     assert minimal(tree) == 0
     assert minimal(tree, lambda x: isinstance(x, tuple)) == (0, 0)
 
 
 def test_bad_binary_tree():
-    tree = st.deferred()
-    tree.define(st.tuples(tree, tree) | st.integers())
+    tree = st.deferred(lambda: st.tuples(tree, tree) | st.integers())
 
     assert minimal(tree) == 0
     assert minimal(tree, lambda x: isinstance(x, tuple)) == (0, 0)
 
 
 def test_large_branching_tree():
-    tree = st.deferred()
-    tree.define(st.integers() | st.tuples(tree, tree, tree, tree, tree))
+    tree = st.deferred(
+        lambda: st.integers() | st.tuples(tree, tree, tree, tree, tree))
     assert minimal(tree) == 0
     assert minimal(tree, lambda x: isinstance(x, tuple)) == (0,) * 5
 
 
 def test_bad_branching_tree():
-    tree = st.deferred()
-    tree.define(st.tuples(tree, tree, tree, tree, tree) | st.integers())
+    tree = st.deferred(
+        lambda: st.tuples(tree, tree, tree, tree, tree) | st.integers())
     assert minimal(tree) == 0
     assert minimal(tree, lambda x: isinstance(x, tuple)) == (0,) * 5
 
 
 def test_mutual_recursion():
-    a = st.deferred()
-    b = st.deferred()
-
-    a.define(st.none() | st.tuples(st.just('a'), b))
-    b.define(st.none() | st.tuples(st.just('b'), a))
+    t = st.deferred(lambda: a | b)
+    a = st.deferred(lambda: st.none() | st.tuples(st.just('a'), b))
+    b = st.deferred(lambda: st.none() | st.tuples(st.just('b'), a))
 
     for c in ('a', 'b'):
         assert minimal(
-            a | b, lambda x: x is not None and x[0] == c) == (c, None)
+            t, lambda x: x is not None and x[0] == c) == (c, None)
 
 
 def test_non_trivial_json():
-    json = st.deferred()
+    json = st.deferred(
+        lambda: st.none() | st.floats() | st.text() | lists | objects
+    )
 
     lists = st.lists(json)
     objects = st.dictionaries(st.text(), json)
-
-    json.define(
-        st.none() | st.floats() | st.text() | lists | objects
-    )
 
     assert minimal(json) is None
 
@@ -88,35 +81,19 @@ def test_non_trivial_json():
     assert x == {'': []}
 
 
-def test_errors_on_non_strategy_define():
-    x = st.deferred()
+def test_errors_on_non_function_define():
+    x = st.deferred(1)
     with pytest.raises(InvalidArgument):
-        x.define(1)
+        x.example()
 
 
-def test_errors_on_double_define():
-    x = st.deferred()
-    x.define(st.integers())
+def test_errors_if_define_does_not_return_search_strategy():
+    x = st.deferred(lambda: 1)
     with pytest.raises(InvalidArgument):
-        x.define(st.integers())
+        x.example()
 
 
 def test_errors_on_definition_as_self():
-    x = st.deferred()
+    x = st.deferred(lambda: x)
     with pytest.raises(InvalidArgument):
-        x.define(x)
-
-
-def test_cannot_use_find_on_undefined():
-    x = st.deferred()
-    with pytest.raises(InvalidArgument):
-        find(x, lambda x: True)
-
-
-def test_cannot_use_undefined_in_given():
-    @given(st.deferred())
-    def test(x):
-        pass
-
-    with pytest.raises(InvalidArgument):
-        test()
+        x.example()

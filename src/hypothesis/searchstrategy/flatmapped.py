@@ -29,7 +29,9 @@ class FlatMapStrategy(SearchStrategy):
         super(FlatMapStrategy, self).__init__()
         self.flatmapped_strategy = strategy
         self.expand = expand
-        self.is_empty = strategy.is_empty
+
+    def calc_is_empty(self):
+        return self.flatmapped_strategy.is_empty
 
     def __repr__(self):
         if not hasattr(self, u'_cached_repr'):

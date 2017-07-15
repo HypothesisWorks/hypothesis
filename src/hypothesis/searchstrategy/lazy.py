@@ -67,8 +67,7 @@ class LazyStrategy(SearchStrategy):
     def supports_find(self):
         return self.wrapped_strategy.supports_find
 
-    @property
-    def is_empty(self):
+    def calc_is_empty(self):
         return self.wrapped_strategy.is_empty
 
     @property

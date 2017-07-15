@@ -115,7 +115,9 @@ def defines_strategy(strategy_definition):
 
 
 class Nothing(SearchStrategy):
-    is_empty = True
+    @property
+    def is_empty(self):
+        return True
 
     def do_draw(self, data):
         data.mark_invalid()
@@ -1366,24 +1368,19 @@ def check_valid_sizes(min_size, average_size, max_size):
 _AVERAGE_LIST_LENGTH = 5.0
 
 
-def deferred():
-    """A deferred strategy allows you to use a strategy before it is defined so
-    as to define recursive or mutally recursive strategies.
+def deferred(definition):
+    """A deferred strategy allows you to write a strategy that references other
+    strategies that have not yet been defined. This allows for the easy
+    definition of recursive and mutually recursive strategies.
 
-    The returned strategy exposes a method define() which takes another
-    strategy.  Once define has been called on a deferred strategy it will
-    behave identically to the strategy it has been defined as.
+    The definition argument should be a zero-argument function that returns a
+    strategy. It will be evaluated the first time the strategy is used to
+    produce an example.
 
-    It is an error to try to use a deferred strategy in a test or in @given
-    before it has been defined.
-
-    The advantage of using a deferred strategy is that it is in scope before
-    its definition, so you can use it in its own definition. This allows for
-    naturally defining recursive strategies:
+    Example usage:
 
     >>> import hypothesis.strategies as st
-    >>> x = st.deferred()
-    >>> x.define(st.booleans() | st.tuples(x, x))
+    >>> x = st.deferred(lambda: st.booleans() | st.tuples(x, x))
     >>> x.example()
     (False, (False, True))
     >>> x.example()
@@ -1391,10 +1388,8 @@ def deferred():
 
     Mutual recursion also works fine:
 
-    >>> a = st.deferred()
-    >>> b = st.deferred()
-    >>> a.define(st.booleans() | b)
-    >>> b.define(st.tuples(a, a))
+    >>> a = st.deferred(lambda: st.booleans() | b)
+    >>> b = st.deferred(lambda: st.tuples(a, a))
     >>> a.example()
     (((True, True), False), True)
     >>> b.example()
@@ -1402,7 +1397,7 @@ def deferred():
 
     """
     from hypothesis.searchstrategy.deferred import DeferredStrategy
-    return DeferredStrategy()
+    return DeferredStrategy(definition)
 
 
 assert _strategies.issubset(set(__all__)), _strategies - set(__all__)

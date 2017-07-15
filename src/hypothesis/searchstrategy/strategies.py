@@ -88,7 +88,17 @@ class SearchStrategy(object):
     """
 
     supports_find = True
-    is_empty = False
+    cached_is_empty = None
+
+    @property
+    def is_empty(self):
+        if self.cached_is_empty is None:
+            self.cached_is_empty = False
+            self.cached_is_empty = self.calc_is_empty()
+        return self.cached_is_empty
+
+    def calc_is_empty(self):
+        return False
 
     def example(self, random=None):
         """Provide an example of the sort of value that this strategy
@@ -210,8 +220,7 @@ class OneOfStrategy(SearchStrategy):
         else:
             self.sampler = None
 
-    @property
-    def is_empty(self):
+    def calc_is_empty(self):
         return len(self.element_strategies) == 0
 
     @property
@@ -269,7 +278,9 @@ class MappedSearchStrategy(SearchStrategy):
         self.mapped_strategy = strategy
         if pack is not None:
             self.pack = pack
-        self.is_empty = strategy.is_empty
+
+    def calc_is_empty(self):
+        return self.mapped_strategy.is_empty
 
     def __repr__(self):
         if not hasattr(self, '_cached_repr'):
@@ -312,7 +323,9 @@ class FilteredStrategy(SearchStrategy):
         super(FilteredStrategy, self).__init__()
         self.condition = condition
         self.filtered_strategy = strategy
-        self.is_empty = strategy.is_empty
+
+    def calc_is_empty(self):
+        return self.filtered_strategy.is_empty
 
     def __repr__(self):
         if not hasattr(self, '_cached_repr'):
