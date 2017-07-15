@@ -202,7 +202,6 @@ class OneOfStrategy(SearchStrategy):
         strategies = tuple(strategies)
         self.original_strategies = list(strategies)
         self.__element_strategies = None
-        self.__is_empty = None
         self.bias = bias
         if bias is not None:
             assert 0 < bias < 1
