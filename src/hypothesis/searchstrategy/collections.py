@@ -41,7 +41,7 @@ class TupleStrategy(SearchStrategy):
         strategies = tuple(strategies)
         self.element_strategies = strategies
 
-    def validate(self):
+    def do_validate(self):
         for s in self.element_strategies:
             s.validate()
 
@@ -99,7 +99,7 @@ class ListStrategy(SearchStrategy):
         self.max_size = max_size or float('inf')
         self.element_strategy = one_of_strategies(strategies)
 
-    def validate(self):
+    def do_validate(self):
         self.element_strategy.validate()
 
     def do_draw(self, data):
@@ -151,7 +151,7 @@ class UniqueListStrategy(SearchStrategy):
         self.element_strategy = elements
         self.key = key
 
-    def validate(self):
+    def do_validate(self):
         self.element_strategy.validate()
 
     Parameter = namedtuple(

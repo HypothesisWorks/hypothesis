@@ -38,7 +38,7 @@ class LimitedStrategy(SearchStrategy):
         self.marker = 0
         self.currently_capped = False
 
-    def validate(self):
+    def do_validate(self):
         self.base_strategy.validate()
 
     def do_draw(self, data):
@@ -81,7 +81,7 @@ class RecursiveStrategy(SearchStrategy):
             )
         return self._cached_repr
 
-    def validate(self):
+    def do_validate(self):
         if not isinstance(self.base, SearchStrategy):
             raise InvalidArgument(
                 'Expected base to be SearchStrategy but got %r' % (self.base,)

@@ -89,6 +89,7 @@ class SearchStrategy(object):
 
     supports_find = True
     cached_is_empty = None
+    validate_called = False
 
     @property
     def is_empty(self):
@@ -196,11 +197,21 @@ class SearchStrategy(object):
         return one_of_strategies((self, other))
 
     def validate(self):
-        """Through an exception if the strategy is not valid.
+        """Throw an exception if the strategy is not valid.
 
         This can happen due to lazy construction
 
         """
+        if self.validate_called:
+            return
+        try:
+            self.validate_called = True
+            self.do_validate()
+        except:
+            self.validate_called = False
+            raise
+
+    def do_validate(self):
         pass
 
     def do_draw(self, data):
@@ -276,7 +287,7 @@ class OneOfStrategy(SearchStrategy):
     def __repr__(self):
         return ' | '.join(map(repr, self.original_strategies))
 
-    def validate(self):
+    def do_validate(self):
         for e in self.element_strategies:
             e.validate()
 
@@ -318,7 +329,7 @@ class MappedSearchStrategy(SearchStrategy):
             )
         return self._cached_repr
 
-    def validate(self):
+    def do_validate(self):
         self.mapped_strategy.validate()
 
     def pack(self, x):
@@ -363,7 +374,7 @@ class FilteredStrategy(SearchStrategy):
             )
         return self._cached_repr
 
-    def validate(self):
+    def do_validate(self):
         self.filtered_strategy.validate()
 
     def do_draw(self, data):

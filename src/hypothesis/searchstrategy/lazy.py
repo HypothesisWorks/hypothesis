@@ -99,7 +99,7 @@ class LazyStrategy(SearchStrategy):
                        for k, v in self.__kwargs.items()})
         return self.__wrapped_strategy
 
-    def validate(self):
+    def do_validate(self):
         w = self.wrapped_strategy
         assert isinstance(w, SearchStrategy), \
             '%r returned non-strategy %r' % (self, w)

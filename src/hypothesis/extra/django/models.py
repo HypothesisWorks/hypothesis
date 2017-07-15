@@ -92,7 +92,7 @@ def validator_to_filter(f):
     """Converts the field run_validators method to something suitable for use
     in filter."""
 
-    def validate(value):
+    def do_validate(value):
         try:
             f.run_validators(value)
             return True
