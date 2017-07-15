@@ -17,7 +17,10 @@
 
 from __future__ import division, print_function, absolute_import
 
+import pytest
+
 from hypothesis import strategies as st
+from hypothesis.errors import InvalidArgument
 from tests.common.debug import minimal
 
 
@@ -82,3 +85,22 @@ def test_non_trivial_json():
         json, lambda x: isinstance(x, dict) and isinstance(x.get(''), list))
 
     assert x == {'': []}
+
+
+def test_errors_on_non_strategy_define():
+    x = st.deferred()
+    with pytest.raises(InvalidArgument):
+        x.define(1)
+
+
+def test_errors_on_double_define():
+    x = st.deferred()
+    x.define(st.integers())
+    with pytest.raises(InvalidArgument):
+        x.define(st.integers())
+
+
+def test_errors_on_definition_as_self():
+    x = st.deferred()
+    with pytest.raises(InvalidArgument):
+        x.define(x)

@@ -63,8 +63,15 @@ class DeferredStrategy(SearchStrategy):
         else:
             return 'deferred()'
 
-    def define(self, strategy):
-        if strategy is self:
+    def define(self, definition):
+        if not isinstance(definition, SearchStrategy):
+            raise InvalidArgument((
+                'Expected definition to be SearchStrategy but got %r of '
+                'type %s') % (
+                definition, type(definition).__name__
+            ))
+
+        if definition is self:
             raise InvalidArgument(
                 'Cannot define a deferred strategy to be itself!'
             )
@@ -72,9 +79,9 @@ class DeferredStrategy(SearchStrategy):
             raise InvalidArgument((
                 'Deferred strategy has already been defined as %r. Cannot '
                 'redefine it as %r.'
-            ) % (self.__wrapped_strategy, strategy))
+            ) % (self.__wrapped_strategy, definition))
         else:
-            self.__wrapped_strategy = strategy
+            self.__wrapped_strategy = definition
 
     def do_draw(self, data):
         if self.__wrapped_strategy is None:
