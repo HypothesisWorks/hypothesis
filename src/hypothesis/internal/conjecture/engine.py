@@ -474,12 +474,14 @@ class ConjectureRunner(object):
                         continue
 
                     def draw_bytes(data, n, distribution):
-                        return self.__rewrite(
-                            data, buffer[data.index:data.index + n])
+                        result = buffer[data.index:data.index + n]
+                        if len(result) < n:
+                            result += hbytes(n - len(result))
+                        return self.__rewrite(data, result)
 
                     data = ConjectureData(
                         draw_bytes=draw_bytes,
-                        max_length=len(buffer),
+                        max_length=self.settings.buffer_size,
                     )
                     self.test_function(data)
                     data.freeze()
