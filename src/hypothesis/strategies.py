@@ -20,7 +20,7 @@ from __future__ import division, print_function, absolute_import
 import math
 import datetime as dt
 import operator
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from numbers import Rational
 from fractions import Fraction
 
@@ -875,7 +875,10 @@ def decimals(min_value=None, max_value=None,
         # Fixed-point decimals are basically integers with a scale factor
 
         def try_quantize(d):
-            return d.quantize(factor)
+            try:
+                return d.quantize(factor)
+            except InvalidOperation:  # pragma: no cover
+                return None
         factor = Decimal(10) ** -places
         max_num = max_value / factor if max_value is not None else None
         min_num = min_value / factor if min_value is not None else None
