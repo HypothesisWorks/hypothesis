@@ -29,7 +29,7 @@ class DeferredStrategy(SearchStrategy):
         SearchStrategy.__init__(self)
         self.__wrapped_strategy = None
         self.__in_repr = False
-        self.__in_empty = None
+        self.__is_empty = None
 
     @property
     def supports_find(self):
@@ -42,16 +42,16 @@ class DeferredStrategy(SearchStrategy):
     def is_empty(self):
         if self.__wrapped_strategy is None:
             return False
-        if self.__in_empty is None:
-            # This is not an error. We set __in_empty to be False so that we
+        if self.__is_empty is None:
+            # This is not an error. We set __is_empty to be False so that we
             # if the wrapped strategy ends up calling in_empty here recursively
             # then we don't recurse. We then set it to a more accurate answer
             # afterwards. There are a bunch of cases this won't detect, but
             # in_empty is always intended to be a conservative approximation
             # so that's fine.
-            self.__in_empty = False
-            self.__in_empty = self.__wrapped_strategy.in_empty
-        return self.__in_empty
+            self.__is_empty = False
+            self.__is_empty = self.__wrapped_strategy.is_empty
+        return self.__is_empty
 
     def __repr__(self):
         if self.__wrapped_strategy is not None and not self.__in_repr:
