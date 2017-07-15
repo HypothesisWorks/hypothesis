@@ -114,8 +114,12 @@ def test_can_draw_one_of_self():
 
 def test_hidden_self_references_just_result_in_no_example():
     bad = st.deferred(lambda: st.none().flatmap(lambda _: bad))
-    with pytest.raises(NoSuchExample):
-        find(bad, lambda x: True)
+    assert_actually_empty(bad)
+
+
+def test_self_recursive_flatmap():
+    bad = st.deferred(lambda: bad.flatmap(lambda x: st.none()))
+    assert_actually_empty(bad)
 
 
 def test_self_reference_through_one_of_can_detect_emptiness():
