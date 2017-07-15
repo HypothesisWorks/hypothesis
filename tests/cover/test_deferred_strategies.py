@@ -139,3 +139,10 @@ def test_mutually_recursive_tuples_draw_nothing():
 
     assert_actually_empty(x)
     assert_actually_empty(y)
+
+
+def test_self_recursive_lists():
+    x = st.deferred(lambda: st.lists(x))
+    assert minimal(x) == []
+    assert minimal(x, bool) == [[]]
+    assert minimal(x, lambda x: len(x) > 1) == [[], []]
