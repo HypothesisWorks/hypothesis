@@ -126,7 +126,7 @@ class SearchStrategy(object):
         This method is part of the public API.
 
         """
-        from hypothesis import find, settings
+        from hypothesis import find, settings, Verbosity
         try:
             return find(
                 self,
@@ -135,7 +135,8 @@ class SearchStrategy(object):
                 settings=settings(
                     max_shrinks=0,
                     max_iterations=1000,
-                    database=None
+                    database=None,
+                    verbosity=Verbosity.quiet,
                 )
             )
         except (NoSuchExample, Unsatisfiable):
