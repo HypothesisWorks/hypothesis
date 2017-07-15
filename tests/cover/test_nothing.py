@@ -61,10 +61,6 @@ def test_fixed_dictionaries_detect_empty_values():
     assert st.fixed_dictionaries({'a': st.nothing()}).is_empty
 
 
-def test_one_of_empty():
-    assert st.one_of().is_empty
-
-
 def test_no_examples():
     with pytest.raises(NoExamples):
         st.nothing().example()
