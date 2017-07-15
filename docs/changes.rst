@@ -22,6 +22,19 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.13.0 - 2017-07-15
+-------------------
+
+This release has two major aspects to it: The first is the introduction of
+:func:`~hypothesis.strategies.deferred`, which allows more natural definition
+of recursive (including mutually recursive) strategies.
+
+The second is a number of engine changes designed to support this sort of
+strategy better. These should have a knock-on effect of also improving the
+performance of any existing strategies that currently generate a lot of data
+or involve heavy nesting by reducing their typical example size.
+
+-------------------
 3.12.0 - 2017-07-07
 -------------------
 
