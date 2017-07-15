@@ -68,7 +68,7 @@ def test_minimizes_ints_from_down_to_boundary(boundary):
 
 
 def test_minimizes_negative_integer_range_upwards():
-    assert minimal(integers(max_value=-1)) == -1
+    assert minimal(integers(min_value=-10, max_value=-1)) == -1
 
 
 @boundaries
