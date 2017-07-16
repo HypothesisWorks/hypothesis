@@ -17,5 +17,14 @@
 
 from __future__ import division, print_function, absolute_import
 
-__version_info__ = (3, 13, 0)
-__version__ = '.'.join(map(str, __version_info__))
+import pytest
+
+import hypothesis.strategies as st
+from hypothesis.errors import NoExamples
+
+
+def test_one_of_empty():
+    e = st.one_of()
+    assert e.is_empty
+    with pytest.raises(NoExamples):
+        e.example()

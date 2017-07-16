@@ -51,6 +51,7 @@ __all__ = [
     'randoms', 'random_module',
     'recursive', 'composite',
     'shared', 'runner', 'data',
+    'deferred',
 ]
 
 _strategies = set()
@@ -104,17 +105,19 @@ def cacheable(fn):
 
 
 def defines_strategy(strategy_definition):
-    from hypothesis.searchstrategy.deferred import DeferredStrategy
+    from hypothesis.searchstrategy.lazy import LazyStrategy
     _strategies.add(strategy_definition.__name__)
 
     @proxies(strategy_definition)
     def accept(*args, **kwargs):
-        return DeferredStrategy(strategy_definition, args, kwargs)
+        return LazyStrategy(strategy_definition, args, kwargs)
     return accept
 
 
 class Nothing(SearchStrategy):
-    is_empty = True
+    @property
+    def is_empty(self):
+        return True
 
     def do_draw(self, data):
         data.mark_invalid()
@@ -176,19 +179,8 @@ def one_of(*args):
             args = tuple(args[0])
         except TypeError:
             pass
-
-    strategies = []
-    for arg in args:
-        check_strategy(arg)
-        if not arg.is_empty:
-            strategies.extend([s for s in arg.branches if not s.is_empty])
-
-    if not strategies:
-        return nothing()
-    if len(strategies) == 1:
-        return strategies[0]
     from hypothesis.searchstrategy.strategies import OneOfStrategy
-    return OneOfStrategy(strategies)
+    return OneOfStrategy(args)
 
 
 @cacheable
@@ -1374,4 +1366,40 @@ def check_valid_sizes(min_size, average_size, max_size):
 
 
 _AVERAGE_LIST_LENGTH = 5.0
+
+
+def deferred(definition):
+    """A deferred strategy allows you to write a strategy that references other
+    strategies that have not yet been defined. This allows for the easy
+    definition of recursive and mutually recursive strategies.
+
+    The definition argument should be a zero-argument function that returns a
+    strategy. It will be evaluated the first time the strategy is used to
+    produce an example.
+
+    Example usage:
+
+    .. doctest::
+        >>> import hypothesis.strategies as st
+        >>> x = st.deferred(lambda: st.booleans() | st.tuples(x, x))
+        >>> x.example()
+        (False, (False, True))
+        >>> x.example()
+        True
+
+    Mutual recursion also works fine:
+
+    .. doctest::
+        >>> a = st.deferred(lambda: st.booleans() | b)
+        >>> b = st.deferred(lambda: st.tuples(a, a))
+        >>> a.example()
+        (((True, True), False), True)
+        >>> b.example()
+        (((( False, ((True, False), (True, True))), True), False), True)
+
+    """
+    from hypothesis.searchstrategy.deferred import DeferredStrategy
+    return DeferredStrategy(definition)
+
+
 assert _strategies.issubset(set(__all__)), _strategies - set(__all__)

@@ -28,8 +28,8 @@ from hypothesis.reporting import debug_report
 from hypothesis.internal.compat import EMPTY_BYTES, Counter, hbytes, \
     hrange, text_type, bytes_from_list, to_bytes_sequence, \
     unicode_safe_repr
-from hypothesis.internal.conjecture.data import Status, StopTest, \
-    ConjectureData
+from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
+    StopTest, ConjectureData
 from hypothesis.internal.conjecture.minimizer import minimize
 
 
@@ -83,10 +83,15 @@ class ConjectureRunner(object):
 
     def new_buffer(self):
         assert not self.__tree_is_exhausted()
+
+        def draw_bytes(data, n, distribution):
+            return self.__rewrite_for_novelty(
+                data, self.__zero_bound(data, distribution(self.random, n))
+            )
+
         self.last_data = ConjectureData(
             max_length=self.settings.buffer_size,
-            draw_bytes=lambda data, n, distribution:
-            self.__rewrite_for_novelty(data, distribution(self.random, n))
+            draw_bytes=draw_bytes
         )
         self.test_function(self.last_data)
         self.last_data.freeze()
@@ -312,11 +317,45 @@ class ConjectureRunner(object):
             else:
                 result = self.random.choice(bits)(data, n, distribution)
 
-            return self.__rewrite_for_novelty(data, result)
+            return self.__rewrite_for_novelty(
+                data, self.__zero_bound(data, result))
 
         return draw_mutated
 
+    def __rewrite(self, data, result):
+        return self.__rewrite_for_novelty(
+            data, self.__zero_bound(data, result)
+        )
+
+    def __zero_bound(self, data, result):
+        """This tries to get the size of the generated data under control by
+        replacing the result with zero if we are too deep or have already
+        generated too much data.
+
+        This causes us to enter "shrinking mode" there and thus reduce
+        the size of the generated data.
+
+        """
+        if (
+            data.depth * 2 >= MAX_DEPTH or
+            (data.index + len(result)) * 2 >= self.settings.buffer_size
+        ):
+            if any(result):
+                data.hit_zero_bound = True
+            return hbytes(len(result))
+        else:
+            return result
+
     def __rewrite_for_novelty(self, data, result):
+        """Take a block that is about to be added to data as the result of a
+        draw_bytes call and rewrite it a small amount to ensure that the result
+        will be novel: that is, not hit a part of the tree that we have fully
+        explored.
+
+        This is mostly useful for test functions which draw a small
+        number of blocks.
+
+        """
         assert isinstance(result, hbytes)
         try:
             node_index = data.__current_node_index
@@ -421,6 +460,9 @@ class ConjectureRunner(object):
                 self.new_buffer()
 
             mutator = self._new_mutator()
+
+            zero_bound_queue = []
+
             while (
                 self.last_data.status != Status.INTERESTING and
                 not self.__tree_is_exhausted()
@@ -439,9 +481,41 @@ class ConjectureRunner(object):
                 ):
                     self.exit_reason = ExitReason.timeout
                     return
-                if mutations >= self.settings.max_mutations:
+                if zero_bound_queue:
+                    # Whenever we generated an example and it hits a bound
+                    # which forces zero blocks into it, this creates a weird
+                    # distortion effect by making certain parts of the data
+                    # stream (especially ones to the right) much more likely
+                    # to be zero. We fix this by redistributing the generated
+                    # data by shuffling it randomly. This results in the
+                    # zero data being spread evenly throughout the buffer.
+                    # Hopefully the shrinking this causes will cause us to
+                    # naturally fail to hit the bound.
+                    # If it doesn't then we will queue the new version up again
+                    # (now with more zeros) and try again.
+                    overdrawn = zero_bound_queue.pop()
+                    buffer = bytearray(overdrawn.buffer)
+                    self.random.shuffle(buffer)
+                    buffer = hbytes(buffer)
+
+                    if buffer == overdrawn.buffer:
+                        continue
+
+                    def draw_bytes(data, n, distribution):
+                        result = buffer[data.index:data.index + n]
+                        if len(result) < n:
+                            result += hbytes(n - len(result))
+                        return self.__rewrite(data, result)
+
+                    data = ConjectureData(
+                        draw_bytes=draw_bytes,
+                        max_length=self.settings.buffer_size,
+                    )
+                    self.test_function(data)
+                    data.freeze()
+                elif mutations >= self.settings.max_mutations:
                     mutations = 0
-                    self.new_buffer()
+                    data = self.new_buffer()
                     mutator = self._new_mutator()
                 else:
                     data = ConjectureData(
@@ -457,7 +531,8 @@ class ConjectureRunner(object):
                             mutations = 0
                     else:
                         mutator = self._new_mutator()
-
+                if getattr(data, 'hit_zero_bound', False):
+                    zero_bound_queue.append(data)
                 mutations += 1
 
         if self.__tree_is_exhausted():

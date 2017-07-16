@@ -20,8 +20,8 @@ from __future__ import division, print_function, absolute_import
 from contextlib import contextmanager
 
 from hypothesis.errors import InvalidArgument
+from hypothesis.internal.lazyformat import lazyformat
 from hypothesis.internal.reflection import get_pretty_function_description
-from hypothesis.internal.deferredformat import deferredformat
 from hypothesis.searchstrategy.strategies import OneOfStrategy, \
     SearchStrategy
 
@@ -38,7 +38,7 @@ class LimitedStrategy(SearchStrategy):
         self.marker = 0
         self.currently_capped = False
 
-    def validate(self):
+    def do_validate(self):
         self.base_strategy.validate()
 
     def do_draw(self, data):
@@ -81,7 +81,7 @@ class RecursiveStrategy(SearchStrategy):
             )
         return self._cached_repr
 
-    def validate(self):
+    def do_validate(self):
         if not isinstance(self.base, SearchStrategy):
             raise InvalidArgument(
                 'Expected base to be SearchStrategy but got %r' % (self.base,)
@@ -103,7 +103,7 @@ class RecursiveStrategy(SearchStrategy):
                     return data.draw(self.strategy)
             except LimitReached:
                 if count == 0:
-                    data.note_event(deferredformat(
+                    data.note_event(lazyformat(
                         'Draw for %r exceeded max_leaves '
                         'and had to be retried', self,))
                 count += 1

@@ -17,101 +17,70 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis import settings
-from hypothesis.internal.compat import hrange, getfullargspec
-from hypothesis.internal.reflection import arg_string, \
-    convert_keyword_arguments, convert_positional_arguments
+import inspect
+
+from hypothesis.errors import InvalidArgument
+from hypothesis.internal.reflection import get_pretty_function_description
 from hypothesis.searchstrategy.strategies import SearchStrategy
-
-
-def tupleize(x):
-    if isinstance(x, (tuple, list)):
-        return tuple(x)
-    else:
-        return x
-
-
-def unwrap_strategies(s):
-    if isinstance(s, SearchStrategy):
-        while True:
-            assert isinstance(s, SearchStrategy)
-            try:
-                s = s.wrapped_strategy
-            except AttributeError:
-                return s
-    else:
-        return s
 
 
 class DeferredStrategy(SearchStrategy):
 
-    """A strategy which is defined purely by conversion to and from another
-    strategy.
+    """A strategy which may be used before it is fully defined."""
 
-    Its parameter and distribution come from that other strategy.
-
-    """
-
-    def __init__(self, function, args, kwargs):
+    def __init__(self, definition):
         SearchStrategy.__init__(self)
         self.__wrapped_strategy = None
-        self.__representation = None
-        self.__function = function
-        self.__args = tuple(map(tupleize, args))
-        self.__kwargs = dict(
-            (k, tupleize(v)) for k, v in kwargs.items()
-        )
-        self.__settings = settings.default or settings()
+        self.__in_repr = False
+        self.__is_empty = None
+        self.__definition = definition
+
+    @property
+    def wrapped_strategy(self):
+        if self.__wrapped_strategy is None:
+            if not inspect.isfunction(self.__definition):
+                raise InvalidArgument((
+                    'Excepted a definition to be a function but got %r of type'
+                    ' %s instead.') % (
+                        self.__definition, type(self.__definition).__name__))
+            result = self.__definition()
+            if result is self:
+                raise InvalidArgument(
+                    'Cannot define a deferred strategy to be itself')
+            if not isinstance(result, SearchStrategy):
+                raise InvalidArgument((
+                    'Expected definition to return a SearchStrategy but '
+                    'returned %r of type %s') % (
+                        result, type(result).__name__
+                ))
+            self.__wrapped_strategy = result
+            del self.__definition
+        return self.__wrapped_strategy
+
+    @property
+    def branches(self):
+        return self.wrapped_strategy.branches
 
     @property
     def supports_find(self):
         return self.wrapped_strategy.supports_find
 
-    @property
-    def is_empty(self):
+    def calc_is_empty(self):
         return self.wrapped_strategy.is_empty
 
-    @property
-    def wrapped_strategy(self):
-        if self.__wrapped_strategy is None:
-            with self.__settings:
-                self.__wrapped_strategy = self.__function(
-                    *[unwrap_strategies(s) for s in self.__args],
-                    **{k: unwrap_strategies(v)
-                       for k, v in self.__kwargs.items()})
-        return self.__wrapped_strategy
-
-    def validate(self):
-        w = self.wrapped_strategy
-        assert isinstance(w, SearchStrategy), \
-            '%r returned non-strategy %r' % (self, w)
-        w.validate()
-
     def __repr__(self):
-        if self.__representation is None:
-            _args = self.__args
-            _kwargs = self.__kwargs
-            argspec = getfullargspec(self.__function)
-            defaults = dict(argspec.kwonlydefaults or {})
-            if argspec.defaults is not None:
-                for k in hrange(1, len(argspec.defaults) + 1):
-                    defaults[argspec.args[-k]] = argspec.defaults[-k]
-            if len(argspec.args) > 1 or argspec.defaults:
-                _args, _kwargs = convert_positional_arguments(
-                    self.__function, _args, _kwargs)
-            else:
-                _args, _kwargs = convert_keyword_arguments(
-                    self.__function, _args, _kwargs)
-            kwargs_for_repr = dict(_kwargs)
-            for k, v in defaults.items():
-                if k in kwargs_for_repr and kwargs_for_repr[k] is defaults[k]:
-                    del kwargs_for_repr[k]
-            self.__representation = '%s(%s)' % (
-                self.__function.__name__,
-                arg_string(
-                    self.__function, _args, kwargs_for_repr, reorder=False),
+        if self.__wrapped_strategy is not None:
+            if self.__in_repr:
+                return '(...)'
+            try:
+                self.__in_repr = True
+                return repr(self.__wrapped_strategy)
+            finally:
+                self.__in_repr = False
+        else:
+            return 'deferred(%s)' % (
+                get_pretty_function_description(self.__definition)
             )
-        return self.__representation
 
     def do_draw(self, data):
-        return data.draw(self.wrapped_strategy)
+        return self.wrapped_strategy.do_draw(data)

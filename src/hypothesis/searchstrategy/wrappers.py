@@ -37,14 +37,13 @@ class WrapperStrategy(SearchStrategy):
     def supports_find(self):
         return self.wrapped_strategy.supports_find
 
-    @property
-    def is_empty(self):
+    def calc_is_empty(self):
         return self.wrapped_strategy.is_empty
 
     def __repr__(self):
         return u'%s(%r)' % (type(self).__name__, self.wrapped_strategy)
 
-    def validate(self):
+    def do_validate(self):
         self.wrapped_strategy.validate()
 
     def do_draw(self, data):

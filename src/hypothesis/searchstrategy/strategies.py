@@ -22,8 +22,8 @@ from hypothesis.errors import NoExamples, NoSuchExample, Unsatisfiable, \
     UnsatisfiedAssumption
 from hypothesis.control import assume, reject
 from hypothesis.internal.compat import hrange
+from hypothesis.internal.lazyformat import lazyformat
 from hypothesis.internal.reflection import get_pretty_function_description
-from hypothesis.internal.deferredformat import deferredformat
 
 
 def one_of_strategies(xs):
@@ -31,8 +31,7 @@ def one_of_strategies(xs):
     xs = tuple(xs)
     if not xs:
         raise ValueError('Cannot join an empty list of strategies')
-    from hypothesis.strategies import one_of
-    return one_of(xs)
+    return OneOfStrategy(xs)
 
 
 class SearchStrategy(object):
@@ -89,7 +88,32 @@ class SearchStrategy(object):
     """
 
     supports_find = True
-    is_empty = False
+    cached_is_empty = None
+    validate_called = False
+
+    @property
+    def is_empty(self):
+        """Returns True if this strategy can never draw a value and will always
+        result in the data being marked invalid.
+
+        The fact that this returns False does not guarantee that a valid value
+        can be drawn - this is not intended to be perfect, and is primarily
+        intended to be an optimisation for some cases.
+
+        """
+        if self.cached_is_empty is None:
+            # This isn't an error, but instead is to deal with recursive
+            # strategy definitions that refer to themselves. This ensures that
+            # in a recursive call we will return False. This results in us
+            # returning False in some cases where it would be valid to return
+            # True, but is_empty only needs to be a conservative approximation
+            # anyway, so that's fine.
+            self.cached_is_empty = False
+            self.cached_is_empty = self.calc_is_empty()
+        return self.cached_is_empty
+
+    def calc_is_empty(self):
+        return False
 
     def example(self, random=None):
         """Provide an example of the sort of value that this strategy
@@ -102,7 +126,7 @@ class SearchStrategy(object):
         This method is part of the public API.
 
         """
-        from hypothesis import find, settings
+        from hypothesis import find, settings, Verbosity
         try:
             return find(
                 self,
@@ -111,7 +135,8 @@ class SearchStrategy(object):
                 settings=settings(
                     max_shrinks=0,
                     max_iterations=1000,
-                    database=None
+                    database=None,
+                    verbosity=Verbosity.quiet,
                 )
             )
         except (NoSuchExample, Unsatisfiable):
@@ -170,16 +195,24 @@ class SearchStrategy(object):
         """
         if not isinstance(other, SearchStrategy):
             raise ValueError('Cannot | a SearchStrategy with %r' % (other,))
-        if other.is_empty:
-            return self
         return one_of_strategies((self, other))
 
     def validate(self):
-        """Through an exception if the strategy is not valid.
+        """Throw an exception if the strategy is not valid.
 
         This can happen due to lazy construction
 
         """
+        if self.validate_called:
+            return
+        try:
+            self.validate_called = True
+            self.do_validate()
+        except:
+            self.validate_called = False
+            raise
+
+    def do_validate(self):
         pass
 
     def do_draw(self, data):
@@ -203,8 +236,10 @@ class OneOfStrategy(SearchStrategy):
     def __init__(self, strategies, bias=None):
         SearchStrategy.__init__(self)
         strategies = tuple(strategies)
-        self.element_strategies = list(strategies)
+        self.original_strategies = list(strategies)
+        self.__element_strategies = None
         self.bias = bias
+        self.__in_branches = False
         if bias is not None:
             assert 0 < bias < 1
             self.sampler = cu.Sampler(
@@ -212,9 +247,38 @@ class OneOfStrategy(SearchStrategy):
         else:
             self.sampler = None
 
+    def calc_is_empty(self):
+        return len(self.element_strategies) == 0
+
+    @property
+    def element_strategies(self):
+        from hypothesis.strategies import check_strategy
+        if self.__element_strategies is None:
+            strategies = []
+            for arg in self.original_strategies:
+                check_strategy(arg)
+                if not arg.is_empty:
+                    strategies.extend(
+                        [s for s in arg.branches if not s.is_empty])
+            pruned = []
+            seen = set()
+            for s in strategies:
+                if s is self:
+                    continue
+                if s in seen:
+                    continue
+                seen.add(s)
+                pruned.append(s)
+            self.__element_strategies = pruned
+        return self.__element_strategies
+
     def do_draw(self, data):
         n = len(self.element_strategies)
-        if self.sampler is None:
+        if n == 0:
+            data.mark_invalid()
+        elif n == 1:
+            return self.element_strategies[0].do_draw(data)
+        elif self.sampler is None:
             i = cu.integer_range(data, 0, n - 1)
         else:
             i = self.sampler.sample(data)
@@ -222,16 +286,20 @@ class OneOfStrategy(SearchStrategy):
         return data.draw(self.element_strategies[i])
 
     def __repr__(self):
-        return ' | '.join(map(repr, self.element_strategies))
+        return ' | '.join(map(repr, self.original_strategies))
 
-    def validate(self):
+    def do_validate(self):
         for e in self.element_strategies:
             e.validate()
 
     @property
     def branches(self):
-        if self.bias is None:
-            return self.element_strategies
+        if self.bias is None and not self.__in_branches:
+            try:
+                self.__in_branches = True
+                return self.element_strategies
+            finally:
+                self.__in_branches = False
         else:
             return [self]
 
@@ -250,7 +318,9 @@ class MappedSearchStrategy(SearchStrategy):
         self.mapped_strategy = strategy
         if pack is not None:
             self.pack = pack
-        self.is_empty = strategy.is_empty
+
+    def calc_is_empty(self):
+        return self.mapped_strategy.is_empty
 
     def __repr__(self):
         if not hasattr(self, '_cached_repr'):
@@ -260,7 +330,7 @@ class MappedSearchStrategy(SearchStrategy):
             )
         return self._cached_repr
 
-    def validate(self):
+    def do_validate(self):
         self.mapped_strategy.validate()
 
     def pack(self, x):
@@ -293,7 +363,9 @@ class FilteredStrategy(SearchStrategy):
         super(FilteredStrategy, self).__init__()
         self.condition = condition
         self.filtered_strategy = strategy
-        self.is_empty = strategy.is_empty
+
+    def calc_is_empty(self):
+        return self.filtered_strategy.is_empty
 
     def __repr__(self):
         if not hasattr(self, '_cached_repr'):
@@ -303,7 +375,7 @@ class FilteredStrategy(SearchStrategy):
             )
         return self._cached_repr
 
-    def validate(self):
+    def do_validate(self):
         self.filtered_strategy.validate()
 
     def do_draw(self, data):
@@ -314,7 +386,7 @@ class FilteredStrategy(SearchStrategy):
                 return value
             else:
                 if i == 0:
-                    data.note_event(deferredformat(
+                    data.note_event(lazyformat(
                         'Retried draw from %r to satisfy filter', self,))
                 # This is to guard against the case where we consume no data.
                 # As long as we consume data, we'll eventually pass or raise.
