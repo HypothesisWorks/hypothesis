@@ -22,7 +22,7 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
-3.13.0 - 2017-07-15
+3.13.0 - 2017-07-16
 -------------------
 
 This release has two major aspects to it: The first is the introduction of
