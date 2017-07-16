@@ -25,9 +25,11 @@ from tempfile import mkdtemp
 
 import unicodenazi
 from hypothesis import settings, unlimited
+from hypothesis.errors import HypothesisDeprecationWarning
 from hypothesis.configuration import set_hypothesis_home_dir
 
 warnings.filterwarnings('error', category=UnicodeWarning)
+warnings.filterwarnings('error', category=HypothesisDeprecationWarning)
 unicodenazi.enable()
 
 
@@ -36,7 +38,7 @@ set_hypothesis_home_dir(mkdtemp())
 assert isinstance(settings, type)
 
 settings.register_profile(
-    'default', settings(timeout=unlimited, strict=True)
+    'default', settings(timeout=unlimited)
 )
 settings.load_profile('default')
 

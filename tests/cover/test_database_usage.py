@@ -83,7 +83,7 @@ def test_trashes_invalid_examples():
                 st.binary(min_size=100),
                 lambda x: assume(not finicky) and has_a_non_zero_byte(x),
                 settings=settings(
-                    database=database, strict=False,
+                    database=database,
                     max_shrinks=10,
                 ),
                 database_key=key

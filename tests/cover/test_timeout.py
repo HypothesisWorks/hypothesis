@@ -19,24 +19,32 @@ from __future__ import division, print_function, absolute_import
 
 import time
 
+import pytest
+
 from hypothesis import given, settings
 from hypothesis.errors import Unsatisfiable
-from tests.common.utils import fails, fails_with
+from tests.common.utils import fails, fails_with, validate_deprecation
 from hypothesis.strategies import integers
 
 
-@fails_with(Unsatisfiable)
-@settings(timeout=0.1, strict=False)
-@given(integers())
-def test_slow_test_times_out(x):
-    time.sleep(0.05)
+def test_hitting_timeout_is_deprecated():
+    with validate_deprecation():
+        @settings(timeout=0.1)
+        @given(integers())
+        def test_slow_test_times_out(x):
+            time.sleep(0.05)
+
+    with validate_deprecation():
+        with pytest.raises(Unsatisfiable):
+            test_slow_test_times_out()
 
 
 # Cheap hack to make test functions which fail on their second invocation
 calls = [0, 0, 0, 0]
 
-timeout_settings = settings(
-    timeout=0.2, min_satisfying_examples=2, strict=False)
+
+with validate_deprecation():
+    timeout_settings = settings(timeout=0.2, min_satisfying_examples=2)
 
 
 # The following tests exist to test that verifiers start their timeout
@@ -77,8 +85,11 @@ def test_slow_failing_test_4(x):
     calls[3] = 1
 
 
-default_timeout_settings = settings(strict=False, timeout=60)
-strict_timeout_settings = settings(default_timeout_settings, strict=True)
+with validate_deprecation():
+    default_timeout_settings = settings(timeout=60)
+
+
+strict_timeout_settings = default_timeout_settings
 
 
 @fails_with(DeprecationWarning)

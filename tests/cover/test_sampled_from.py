@@ -21,8 +21,7 @@ import enum
 import collections
 
 from hypothesis import given, settings
-from hypothesis.errors import HypothesisDeprecationWarning
-from tests.common.utils import fails_with
+from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.strategies import sampled_from
 
 an_enum = enum.Enum('A', 'a b c')
@@ -36,28 +35,19 @@ def test_can_handle_sampling_from_fewer_than_min_satisfying(v):
     pass
 
 
-@fails_with(HypothesisDeprecationWarning)
-def test_cannot_sample_sets_in_strict_mode():
-    with settings(strict=True):
-        sampled_from(set('abc')).example()
-
-
+@checks_deprecated_behaviour
 def test_can_sample_sets_while_deprecated():
-    with settings(strict=False):
-        assert sampled_from(set('abc')).example() in 'abc'
+    assert sampled_from(set('abc')).example() in 'abc'
 
 
 def test_can_sample_sequence_without_warning():
-    with settings(strict=True):
-        sampled_from([1, 2, 3]).example()
+    sampled_from([1, 2, 3]).example()
 
 
 def test_can_sample_ordereddict_without_warning():
-    with settings(strict=True):
-        sampled_from(an_ordereddict).example()
+    sampled_from(an_ordereddict).example()
 
 
 @given(sampled_from(an_enum))
 def test_can_sample_enums(member):
-    with settings(strict=True):
-        assert isinstance(member, an_enum)
+    assert isinstance(member, an_enum)

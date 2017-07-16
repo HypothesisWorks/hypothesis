@@ -25,6 +25,7 @@ from flaky import flaky
 import hypothesis.strategies as s
 from hypothesis import find, given, reject, settings
 from hypothesis.errors import NoSuchExample, Unsatisfiable
+from tests.common.utils import checks_deprecated_behaviour
 
 
 def test_stops_after_max_examples_if_satisfying():
@@ -64,6 +65,7 @@ def test_stops_after_max_iterations_if_not_satisfying():
     assert len(tracker) <= max_iterations
 
 
+@checks_deprecated_behaviour
 @flaky(min_passes=1, max_runs=2)
 def test_can_time_out_in_simplify():
     def slow_always_true(x):
@@ -72,7 +74,7 @@ def test_can_time_out_in_simplify():
     start = time.time()
     find(
         s.lists(s.booleans()), slow_always_true,
-        settings=settings(timeout=0.1, database=None, strict=False)
+        settings=settings(timeout=0.1, database=None)
     )
     finish = time.time()
     run_time = finish - start

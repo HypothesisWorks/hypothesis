@@ -22,12 +22,14 @@ import warnings
 from tempfile import mkdtemp
 
 from hypothesis import settings, unlimited
+from hypothesis.errors import HypothesisDeprecationWarning
 from hypothesis.configuration import set_hypothesis_home_dir
 from hypothesis.internal.charmap import charmap, charmap_file
 
 
 def run():
-    warnings.filterwarnings(u'error', category=UnicodeWarning)
+    warnings.filterwarnings('error', category=UnicodeWarning)
+    warnings.filterwarnings('error', category=HypothesisDeprecationWarning)
 
     set_hypothesis_home_dir(mkdtemp())
 
@@ -49,17 +51,11 @@ def run():
                 v, s.name, s.name, s.default,
             )
 
-    settings.register_profile(
-        'default', settings(timeout=unlimited, strict=True)
-    )
+    settings.register_profile('default', settings(timeout=unlimited))
 
     settings.register_profile(
         'speedy', settings(
             max_examples=5,
         ))
-
-    settings.register_profile(
-        'nonstrict', settings(strict=False)
-    )
 
     settings.load_profile(os.getenv('HYPOTHESIS_PROFILE', 'default'))

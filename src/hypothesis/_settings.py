@@ -455,7 +455,14 @@ break your code.
 
 You can enable this setting temporarily by setting the HYPOTHESIS_STRICT_MODE
 environment variable to the string 'true'.
-"""
+""",
+    deprecation_message="""
+Strict mode is deprecated and will go away in a future version of Hypothesis.
+
+To get the same behaviour, use
+warnings.simplefilter('error', HypothesisDeprecationWarning).
+""",
+    future_default=False,
 )
 
 settings.define_setting(
