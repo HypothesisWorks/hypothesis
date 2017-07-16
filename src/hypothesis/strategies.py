@@ -1379,21 +1379,23 @@ def deferred(definition):
 
     Example usage:
 
-    >>> import hypothesis.strategies as st
-    >>> x = st.deferred(lambda: st.booleans() | st.tuples(x, x))
-    >>> x.example()
-    (False, (False, True))
-    >>> x.example()
-    True
+    .. doctest::
+        >>> import hypothesis.strategies as st
+        >>> x = st.deferred(lambda: st.booleans() | st.tuples(x, x))
+        >>> x.example()
+        (False, (False, True))
+        >>> x.example()
+        True
 
     Mutual recursion also works fine:
 
-    >>> a = st.deferred(lambda: st.booleans() | b)
-    >>> b = st.deferred(lambda: st.tuples(a, a))
-    >>> a.example()
-    (((True, True), False), True)
-    >>> b.example()
-    (((( False, ((True, False), (True, True))), True), False), True)
+    .. doctest::
+        >>> a = st.deferred(lambda: st.booleans() | b)
+        >>> b = st.deferred(lambda: st.tuples(a, a))
+        >>> a.example()
+        (((True, True), False), True)
+        >>> b.example()
+        (((( False, ((True, False), (True, True))), True), False), True)
 
     """
     from hypothesis.searchstrategy.deferred import DeferredStrategy
