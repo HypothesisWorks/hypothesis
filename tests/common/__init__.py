@@ -24,7 +24,6 @@ except ImportError:
     pytest = None
 
 from tests.common.debug import TIME_INCREMENT
-from hypothesis._settings import settings
 from hypothesis.strategies import integers, floats, just, one_of, \
     sampled_from, lists, booleans, dictionaries, tuples, \
     frozensets, complex_numbers, sets, text, binary, decimals, fractions, \

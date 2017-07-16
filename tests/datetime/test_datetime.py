@@ -23,7 +23,6 @@ import pytz
 import pytest
 from flaky import flaky
 
-import hypothesis._settings as hs
 from hypothesis import find, given, assume, settings, unlimited
 from hypothesis.errors import InvalidArgument
 from tests.common.debug import minimal
