@@ -115,6 +115,14 @@ a generator for a type automatically you need to basically invert the predicate)
 approaches here  will leave you with a bunch of sharp edges, but I would be interested to see
 experiments in this direction.
 
+That being said, I don't think it's that useful to do. Where stronger types are naturally
+present in the program, taking advantage of them to get better testing is certainly worth
+doing, but creating a specific type to represent the exact range of valid inputs to a
+specific test isn't because for tests the impact of a run time error that you could have caught at
+compile time is substantially reduced (all it causes is a spurious test failure - where your
+tests are long running or non-deterministic as in property-based testing this *does* matter,
+but it still doesn't cause a problem in production).
+
 But this is creating hard problems where none need exist, and beside which it's not the situation
 with most of the current generation of languages and property based libraries for them.
 Here, using explicit data generators is a clear improvement, and just as well-typed
@@ -132,8 +140,8 @@ data generation to be non-awkward, starting from data generators needs to become
 And experience suggests that when you make customising the data generation easy, people do
 it. It's nice to be able to be more specific in your testing, but if you make it too high
 effort people either don't do it, or do it using less effective methods like adding
-preconditions to tests (assume in Hypothesis, or `==>` in QuickCheck) which reduce
-the quality of your testing.
+preconditions to tests (assume in Hypothesis, or `==>` in QuickCheck), either of which reduces
+the quality of your testing and causes more bugs to slip through as a result.
 
 Fortunately, it already *is* the default in most of the newer implementations of
 property-based testing. The only holdouts are ones that directly copied Haskell QuickCheck. 
