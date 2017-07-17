@@ -657,7 +657,7 @@ def characters(whitelist_categories=None, blacklist_categories=None,
     If `whitelist_characters` is specified, then any additional characters in
     that list will also be produced.
 
-    If `blacklist_characters` is specified then any characters in that list
+    If `blacklist_characters` is specified, then any characters in that list
     will be not be produced. Characters in both `whitelist_characters` and
     `blacklist_characters` will not be produced.
     """
