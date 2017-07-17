@@ -117,7 +117,7 @@ But it's not the situation with any of the current generation of languages and p
 testing libraries. Here, using data generators for this is a clear improvement, and just as well-typed
 (in a statically typed language each data generator has a return type after all).
 
-You *can* use dta generators directly in Haskell QuickCheck too, with an explicit
+You *can* use data generators directly in Haskell QuickCheck too, with an explicit
 [forAll](https://hackage.haskell.org/package/QuickCheck-2.10.0.1/docs/Test-QuickCheck-Property.html#v:forAll)
 but it's almost as awkward as the newtype approach, particularly if you want more than one
 data generator (it's even more awkward if you want shrinking - you have to use forAllWithShrink and
