@@ -38,6 +38,12 @@ _charmap = None
 
 
 def charmap():
+    """Return a dict that maps a Unicode category, to a tuple of 2-tuples
+    covering the codepoint intervals for characters in that category.
+
+    >>> charmap()['Co']
+    ((57344, 63743), (983040, 1048573), (1048576, 1114109))
+    """
     global _charmap
     if _charmap is None:
         f = charmap_file()
@@ -77,20 +83,32 @@ _categories = None
 
 
 def categories():
+    """Return a list of Unicode categories in a normalised order.
+
+    >>> categories() # doctest: +ELLIPSIS
+    ['Zl', 'Zp', 'Co', 'Me', 'Pc', ..., 'Cc', 'Cs']
+    """
     global _categories
     if _categories is None:
         cm = charmap()
         _categories = sorted(
             cm.keys(), key=lambda c: len(cm[c])
         )
-        _categories.remove('Cc')
-        _categories.remove('Cs')
+        _categories.remove('Cc')  # Other, Control
+        _categories.remove('Cs')  # Other, Surrogate
         _categories.append('Cc')
         _categories.append('Cs')
     return _categories
 
 
 def _union_interval_lists(x, y):
+    """Merge two sequnces of intervals into one tuple of intervals.
+
+    Any integer bounded by `x` or `y` is also bounded by the result.
+
+    >>> _union_interval_lists([(3, 10)], [(1, 2), (5, 17)])
+    ((1, 17),)
+    """
     if not x:
         return y
     if not y:
@@ -113,6 +131,15 @@ category_index_cache = {
 
 
 def _category_key(exclude, include):
+    """Return a normalised tuple of all Unicode categories that are in
+    `include`, but not in `exclude`.
+
+    If include is None then default to including all categories.
+    Any item in include that is not a unicode character will be excluded.
+
+    >>> _category_key(exclude=['So'], include=['Lu', 'Me', 'Cs', 'So', 'Xx'])
+    ('Me', 'Lu', 'Cs')
+    """
     cs = categories()
     if include is None:
         include = set(cs)
@@ -125,6 +152,15 @@ def _category_key(exclude, include):
 
 
 def _query_for_key(key):
+    """Return a tuple of codepoint intervals covering characters that match
+    one or more categories in the tuple of categories `key`.
+
+    >>> all_categories = tuple(categories())
+    >>> _query_for_key(all_categories)
+    ((0, 1114111),)
+    >>> _query_for_key(('Zl', 'Zp', 'Co'))
+    ((8232, 8233), (57344, 63743), (983040, 1048573), (1048576, 1114109))
+    """
     try:
         return category_index_cache[key]
     except KeyError:
@@ -148,6 +184,21 @@ def query(
     exclude_categories=(), include_categories=None,
     min_codepoint=None, max_codepoint=None
 ):
+    """Return a tuple of intervals covering the codepoints for all characters
+    that meet the critera
+        (   min_codepoint <= codepoint(c) <= max_codepoint and
+            any(cat in include_categories for cat in categories(c)) and
+            all(cat not in exclude_categories for cat in categories(c)
+        )
+
+    >>> query()
+    ((0, 1114111),)
+    >>> query(min_codepoint=0, max_codepoint=128)
+    ((0, 128),)
+    >>> query(min_codepoint=0, max_codepoint=128, include_categories=['Lu'])
+    ((65, 90),)
+    >>> query(min_codepoint=0, max_codepoint=128, include_categories=['Lu'],
+    """
     if min_codepoint is None:
         min_codepoint = 0
     if max_codepoint is None:
