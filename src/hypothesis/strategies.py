@@ -654,13 +654,8 @@ def characters(whitelist_categories=None, blacklist_categories=None,
     characters matching both `whitelist_categories` and `blacklist_categories`
     will not be produced.
 
-    If `whitelist_characters` is specified and no range or category
-    restrictions are specified, then only characters in that list will be
-    produced.
-
-    If `whitelist_characters` is specified as well as other arguments, then
-    any characters on that list will be produced as well as characters
-    matching category or codepoint restrictions.
+    If `whitelist_characters` is specified, then any additional characters in
+    that list will also be produced.
 
     If `blacklist_characters` is specified then any characters in that list
     will be not be produced. Characters in both `whitelist_characters` and
