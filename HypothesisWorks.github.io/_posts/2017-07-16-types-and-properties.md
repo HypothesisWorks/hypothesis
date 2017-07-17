@@ -15,7 +15,7 @@ This is a bad idea.
 
 <!--more-->
 
-The first part of why I've talked about already.
+The first part of why
 [I've talked about already]({{site.url}}{% post_url 2016-12-05-integrated-shrinking %}) -
 you don't want to tie the shrinking of the data to its type, because it makes testing
 significantly more brittle.
