@@ -147,4 +147,4 @@ or a bit more template Haskell)
 
 So this approach doesn't have to be generator-only, even if it's generator first,
 but if you're going to pick one the flexibility of the generator based test specification
-is hard to beat, regardless of how good your type system is..
+is hard to beat, regardless of how good your type system is.
