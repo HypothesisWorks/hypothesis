@@ -106,15 +106,18 @@ could just pass the data generators directly. Defining new types for the data yo
 is purely a workaround for a limitation of the API.
 
 If you were working in a dependently typed language where you could already naturally express
-this in the type system it *might* be OK (I don't believe such a language currently
-exists - you can certainly express the non-emptiness in the type system of some
-languages, but the constraints on the floats not so much). I'm sceptical of being able to
-make it work well - you're unlikely to be able to automatically derive data generators in the
-general case, which I suspect will leave you with a bunch of sharp edges. I would be interested
-to see experiments in this direction though.
+this in the type system it *might* be OK (I don't have any direct experience of working in
+type systems that strong), but I'm sceptical of being able to make it work well - you're unlikely
+to be able to automatically derive data generators in the general case, because the needs of
+data generation "go in the opposite direction" from types (a type is effectively a predicate which
+consumes a value, where a data generator is a function that produces a value, so in order to produce
+a generator for a type automatically you need to basically invert the predicate). I suspect most
+approaches here  will leave you with a bunch of sharp edges, but I would be interested to see
+experiments in this direction.
 
-But it's not the situation with any of the current generation of languages and property based
-testing libraries. Here, using data generators for this is a clear improvement, and just as well-typed
+But this is creating hard problems where none need exist, and beside which it's not the situation
+with most of the current generation of languages and property based libraries for them.
+Here, using explicit data generators is a clear improvement, and just as well-typed
 (in a statically typed language each data generator has a return type after all).
 
 You *can* use data generators directly in Haskell QuickCheck too, with an explicit
