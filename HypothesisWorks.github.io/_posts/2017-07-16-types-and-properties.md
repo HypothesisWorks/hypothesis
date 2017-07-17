@@ -43,7 +43,7 @@ def test_mean_is_in_bounds(ls):
 ```
 
 In this test we've restricted the domain we're testing on so we can focus on a property
-that doesn't hold in generality. This often happens: The mean of an empty list is an
+that doesn't hold in generality:  The mean of an empty list is an
 error, so that needs a special case test for it, and calculations with `NaN` or infinity
 are special cases that don't always have a well-defined result and even when they do
 don't necessarily satisfy this property.
