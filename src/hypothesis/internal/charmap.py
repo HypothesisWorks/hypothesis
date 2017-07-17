@@ -116,11 +116,21 @@ def _union_interval_lists(x, y):
     intervals = sorted(x + y, reverse=True)
     result = [intervals.pop()]
     while intervals:
+        # 1. intervals is in descending order
+        # 2. pop() takes from the RHS.
+        # 3. (a, b) was popped 1st, then (u, v) was popped 2nd
+        # 4. Therefore: a <= u
+        # 5. We assume that u <= v and a <= b
+        # 6. So we need to handle 2 cases of overlap, and one disjoint case
+        #    |   u--v     |   u----v   |       u--v  |
+        #    |   a----b   |   a--b     |  a--b       |
         u, v = intervals.pop()
         a, b = result[-1]
         if u <= b + 1:
-            result[-1] = (a, v)
+            # Overlap cases
+            result[-1] = (a, max(v, b))
         else:
+            # Disjoint case
             result.append((u, v))
     return tuple(result)
 
