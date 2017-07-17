@@ -53,7 +53,7 @@ domain, and so you want more specific tests for that domain to complement your o
 tests for the larger range of data.
 
 When this happens you need tools to generate something more specific, and those requirements
-don't match naturally to types.
+don't map naturally to types.
 
 Consider writing this code based on types instead:
 
