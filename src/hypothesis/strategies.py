@@ -802,7 +802,30 @@ def builds(target, *args, **kwargs):
     )
 
 
+def delay_error(func):
+    """A decorator to make exceptions lazy but success immediate.
+
+    We want from_type to resolve to a strategy immediately if possible,
+    for a useful repr and interactive use, but delay errors until a
+    value would be drawn to localise them to a particular test.
+
+    """
+    @proxies(func)
+    def inner(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            error = e
+
+            def lazy_error():
+                raise error
+
+            return builds(lazy_error)
+    return inner
+
+
 @cacheable
+@delay_error
 def from_type(thing):
     """Looks up the appropriate search strategy for the given type.
 
