@@ -85,13 +85,8 @@ def test_find_something_rare():
 
 
 def test_whitelisted_characters_alone():
-    good_characters = u'te02тест49st'
-    st = characters(whitelist_characters=good_characters)
-
-    find(st, lambda c: c in good_characters)
-
-    with pytest.raises(NoSuchExample):
-        find(st, lambda c: c not in good_characters)
+    with pytest.raises(InvalidArgument):
+        characters(whitelist_characters=u'te02тест49st').example()
 
 
 def test_whitelisted_characters_override():

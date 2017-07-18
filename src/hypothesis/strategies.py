@@ -670,6 +670,15 @@ def characters(whitelist_categories=None, blacklist_categories=None,
                 min_codepoint, max_codepoint
             )
         )
+    if (
+        whitelist_characters is not None and
+        min_codepoint is None and max_codepoint is None and
+        whitelist_categories is None and blacklist_categories is None
+    ):
+        raise InvalidArgument(
+            'Cannot have just whitelist_characters="%s" alone, '
+            'it would have no effect' % (whitelist_characters,)
+        )
 
     from hypothesis.searchstrategy.strings import OneCharStringStrategy
     return OneCharStringStrategy(whitelist_categories=whitelist_categories,
