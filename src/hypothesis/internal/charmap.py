@@ -135,6 +135,17 @@ def _union_interval_lists(x, y):
     return tuple(result)
 
 
+def _intervals(s):
+    """Return a tuple of intervals, covering the codepoints of characters in
+    `s`.
+
+    >>> _intervals('abcdef0123456789')
+    ((48, 57), (97, 102))
+    """
+    intervals = [(ord(c), ord(c)) for c in sorted(s)]
+    return tuple(_union_interval_lists(intervals, intervals))
+
+
 category_index_cache = {
     (): (),
 }
@@ -192,7 +203,9 @@ limited_category_index_cache = {}
 
 def query(
     exclude_categories=(), include_categories=None,
-    min_codepoint=None, max_codepoint=None
+    min_codepoint=None,
+    max_codepoint=None,
+    include_characters=''
 ):
     """Return a tuple of intervals covering the codepoints for all characters
     that meet the critera
@@ -200,6 +213,7 @@ def query(
             any(cat in include_categories for cat in categories(c)) and
             all(cat not in exclude_categories for cat in categories(c)
         )
+        or (c in include_characters)
 
     >>> query()
     ((0, 1114111),)
@@ -208,13 +222,16 @@ def query(
     >>> query(min_codepoint=0, max_codepoint=128, include_categories=['Lu'])
     ((65, 90),)
     >>> query(min_codepoint=0, max_codepoint=128, include_categories=['Lu'],
+    ...       include_characters=u'☃')
+    ((65, 90), (9731, 9731))
     """
     if min_codepoint is None:
         min_codepoint = 0
     if max_codepoint is None:
         max_codepoint = sys.maxunicode
     catkey = _category_key(exclude_categories, include_categories)
-    qkey = (catkey, min_codepoint, max_codepoint)
+    character_intervals = _intervals(include_characters or '')
+    qkey = (catkey, min_codepoint, max_codepoint, character_intervals)
     try:
         return limited_category_index_cache[qkey]
     except KeyError:
@@ -227,5 +244,6 @@ def query(
                 max(u, min_codepoint), min(v, max_codepoint)
             ))
     result = tuple(result)
+    result = _union_interval_lists(result, character_intervals)
     limited_category_index_cache[qkey] = result
     return result
