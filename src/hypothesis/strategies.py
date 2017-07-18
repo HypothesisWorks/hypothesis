@@ -660,6 +660,7 @@ def characters(whitelist_categories=None, blacklist_categories=None,
     If `blacklist_characters` is specified, then any characters in that list
     will be not be produced. Characters in both `whitelist_characters` and
     `blacklist_characters` will not be produced.
+
     """
     if (
         min_codepoint is not None and max_codepoint is not None and

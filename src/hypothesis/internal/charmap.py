@@ -43,6 +43,7 @@ def charmap():
 
     >>> charmap()['Co']
     ((57344, 63743), (983040, 1048573), (1048576, 1114109))
+
     """
     global _charmap
     if _charmap is None:
@@ -87,6 +88,7 @@ def categories():
 
     >>> categories() # doctest: +ELLIPSIS
     ['Zl', 'Zp', 'Co', 'Me', 'Pc', ..., 'Cc', 'Cs']
+
     """
     global _categories
     if _categories is None:
@@ -108,6 +110,7 @@ def _union_interval_lists(x, y):
 
     >>> _union_interval_lists([(3, 10)], [(1, 2), (5, 17)])
     ((1, 17),)
+
     """
     if not x:
         return y
@@ -141,6 +144,7 @@ def _intervals(s):
 
     >>> _intervals('abcdef0123456789')
     ((48, 57), (97, 102))
+
     """
     intervals = [(ord(c), ord(c)) for c in sorted(s)]
     return tuple(_union_interval_lists(intervals, intervals))
@@ -160,6 +164,7 @@ def _category_key(exclude, include):
 
     >>> _category_key(exclude=['So'], include=['Lu', 'Me', 'Cs', 'So', 'Xx'])
     ('Me', 'Lu', 'Cs')
+
     """
     cs = categories()
     if include is None:
@@ -173,14 +178,15 @@ def _category_key(exclude, include):
 
 
 def _query_for_key(key):
-    """Return a tuple of codepoint intervals covering characters that match
-    one or more categories in the tuple of categories `key`.
+    """Return a tuple of codepoint intervals covering characters that match one
+    or more categories in the tuple of categories `key`.
 
     >>> all_categories = tuple(categories())
     >>> _query_for_key(all_categories)
     ((0, 1114111),)
     >>> _query_for_key(('Zl', 'Zp', 'Co'))
     ((8232, 8233), (57344, 63743), (983040, 1048573), (1048576, 1114109))
+
     """
     try:
         return category_index_cache[key]
@@ -208,12 +214,9 @@ def query(
     include_characters=''
 ):
     """Return a tuple of intervals covering the codepoints for all characters
-    that meet the critera
-        (   min_codepoint <= codepoint(c) <= max_codepoint and
-            any(cat in include_categories for cat in categories(c)) and
-            all(cat not in exclude_categories for cat in categories(c)
-        )
-        or (c in include_characters)
+    that meet the critera (min_codepoint <= codepoint(c) <= max_codepoint and
+    any(cat in include_categories for cat in categories(c)) and all(cat not in
+    exclude_categories for cat in categories(c)) or (c in include_characters)
 
     >>> query()
     ((0, 1114111),)
@@ -224,6 +227,7 @@ def query(
     >>> query(min_codepoint=0, max_codepoint=128, include_categories=['Lu'],
     ...       include_characters=u'☃')
     ((65, 90), (9731, 9731))
+
     """
     if min_codepoint is None:
         min_codepoint = 0
