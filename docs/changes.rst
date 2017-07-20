@@ -22,6 +22,16 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.13.1 - 2017-07-20
+-------------------
+
+This is a bug fix release for :issue:`514` - Hypothesis would continue running
+examples after a :class:`~python:unittest.SkipTest` exception was raised,
+including printing a falsifying example.  Skip exceptions from the standard
+:mod:`python:unittest` module, and ``pytest``, ``nose``, or ``unittest2``
+modules now abort the test immediately without printing output.
+
+-------------------
 3.13.0 - 2017-07-16
 -------------------
 
