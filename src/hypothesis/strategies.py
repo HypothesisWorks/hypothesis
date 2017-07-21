@@ -671,11 +671,12 @@ def characters(whitelist_categories=None, blacklist_categories=None,
                 min_codepoint, max_codepoint
             )
         )
-    if (
-        whitelist_characters is not None and
-        min_codepoint is None and max_codepoint is None and
-        whitelist_categories is None and blacklist_categories is None
-    ):
+    if all((whitelist_characters is not None,
+            min_codepoint is None,
+            max_codepoint is None,
+            whitelist_categories is None,
+            blacklist_categories is None,
+    )):
         raise InvalidArgument(
             'Cannot have just whitelist_characters="%s" alone, '
             'it would have no effect' % (whitelist_characters,)
