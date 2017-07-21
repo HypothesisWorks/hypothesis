@@ -90,7 +90,7 @@ def test_whitelisted_characters_alone():
 
 
 def test_whitelisted_characters_override():
-    good_characters = u'te02тест49st'
+    good_characters = u'teтестst'
     st = characters(min_codepoint=ord('0'), max_codepoint=ord('9'),
                     whitelist_characters=good_characters)
 
