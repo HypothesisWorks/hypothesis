@@ -94,8 +94,8 @@ def test_whitelisted_characters_override():
     st = characters(min_codepoint=ord('0'), max_codepoint=ord('9'),
                     whitelist_characters=good_characters)
 
-    find(st, lambda c: c in good_characters)
-    find(st, lambda c: c in '0123456789')
+    st.filter(lambda c: c in good_characters).example()
+    st.filter(lambda c: c in '0123456789').example()
 
     with pytest.raises(NoSuchExample):
         find(st, lambda c: c not in good_characters + '0123456789')
