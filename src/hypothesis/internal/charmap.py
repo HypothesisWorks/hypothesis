@@ -103,19 +103,19 @@ def categories():
     return _categories
 
 
-def _union_interval_lists(x, y):
+def _union_intervals(x, y):
     """Merge two sequences of intervals into a single tuple of intervals.
 
     Any integer bounded by `x` or `y` is also bounded by the result.
 
-    >>> _union_interval_lists([(3, 10)], [(1, 2), (5, 17)])
+    >>> _union_intervals([(3, 10)], [(1, 2), (5, 17)])
     ((1, 17),)
 
     """
     if not x:
-        return y
+        return tuple((u, v) for u, v in y)
     if not y:
-        return x
+        return tuple((u, v) for u, v in x)
     intervals = sorted(x + y, reverse=True)
     result = [intervals.pop()]
     while intervals:
@@ -147,7 +147,7 @@ def _intervals(s):
 
     """
     intervals = [(ord(c), ord(c)) for c in sorted(s)]
-    return tuple(_union_interval_lists(intervals, intervals))
+    return _union_intervals(intervals, intervals)
 
 
 category_index_cache = {
@@ -197,7 +197,7 @@ def _query_for_key(key):
     if len(key) == len(cs):
         result = ((0, sys.maxunicode),)
     else:
-        result = _union_interval_lists(
+        result = _union_intervals(
             _query_for_key(key[:-1]), charmap()[key[-1]]
         )
     category_index_cache[key] = result
@@ -248,6 +248,6 @@ def query(
                 max(u, min_codepoint), min(v, max_codepoint)
             ))
     result = tuple(result)
-    result = _union_interval_lists(result, character_intervals)
+    result = _union_intervals(result, character_intervals)
     limited_category_index_cache[qkey] = result
     return result

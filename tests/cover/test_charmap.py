@@ -111,30 +111,28 @@ def test_recreate_charmap():
 
 
 def test_union_empty():
-    assert cm._union_interval_lists([], [[1, 2]]) == [[1, 2]]
-    assert cm._union_interval_lists([[1, 2]], []) == [[1, 2]]
+    assert cm._union_intervals([], [[1, 2]]) == ((1, 2),)
+    assert cm._union_intervals([[1, 2]], []) == ((1, 2),)
 
 
 def test_union_handles_totally_overlapped_gap():
     #    < xx  >
     # || <yy yy>
     # == <zzzzz>
-    assert cm._union_interval_lists([[2, 3]],
-                                    [[1, 2], [4, 5]]) == ((1, 5),)
+    assert cm._union_intervals([[2, 3]], [[1, 2], [4, 5]]) == ((1, 5),)
 
 
 def test_union_handles_partially_overlapped_gap():
     #    <  x  >
     # || <yy  y>
     # == <zzz z>
-    assert cm._union_interval_lists([[3, 3]],
-                                    [[1, 2], [5, 5]]) == ((1, 3), (5, 5))
+    assert cm._union_intervals([[3, 3]], [[1, 2], [5, 5]]) == ((1, 3), (5, 5))
 
 
 def test_successive_union():
     x = []
     for v in cm.charmap().values():
-        x = cm._union_interval_lists(x, v)
+        x = cm._union_intervals(x, v)
     assert x == ((0, sys.maxunicode),)
 
 
