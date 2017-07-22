@@ -115,7 +115,7 @@ def test_union_empty():
     assert cm._union_interval_lists([[1, 2]], []) == [[1, 2]]
 
 
-def test_union_handles_totally_ovelapped_gap():
+def test_union_handles_totally_overlapped_gap():
     #    < xx  >
     # || <yy yy>
     # == <zzzzz>

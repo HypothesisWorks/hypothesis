@@ -104,7 +104,7 @@ def categories():
 
 
 def _union_interval_lists(x, y):
-    """Merge two sequnces of intervals into one tuple of intervals.
+    """Merge two sequences of intervals into a single tuple of intervals.
 
     Any integer bounded by `x` or `y` is also bounded by the result.
 
