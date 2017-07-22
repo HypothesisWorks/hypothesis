@@ -22,7 +22,7 @@ import unicodedata
 import pytest
 
 from hypothesis import find
-from hypothesis.errors import NoSuchExample, InvalidArgument
+from hypothesis.errors import NoExamples, NoSuchExample, InvalidArgument
 from hypothesis.strategies import characters
 
 
@@ -97,8 +97,8 @@ def test_whitelisted_characters_override():
     st.filter(lambda c: c in good_characters).example()
     st.filter(lambda c: c in '0123456789').example()
 
-    with pytest.raises(NoSuchExample):
-        find(st, lambda c: c not in good_characters + '0123456789')
+    with pytest.raises(NoExamples):
+        st.filter(lambda c: c not in good_characters + '0123456789').example()
 
 
 def test_blacklisted_characters():
