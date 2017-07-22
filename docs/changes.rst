@@ -22,6 +22,16 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.14.0 - 2017-07-20
+-------------------
+
+This release introduces a new strategy -
+:func:`~hypothesis.strategies.strings_matching_regex` - that generates strings that
+match given regular expression. Thanks to Maxim Kulkin for creating the
+`hypothesis-regex <https://github.com/maximkulkin/hypothesis-regex>`_ package and
+then merging it upstream! (:issue:`662`)
+
+-------------------
 3.13.1 - 2017-07-20
 -------------------
 
