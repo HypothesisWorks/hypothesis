@@ -676,7 +676,7 @@ def characters(whitelist_categories=None, blacklist_categories=None,
             max_codepoint is None,
             whitelist_categories is None,
             blacklist_categories is None,
-    )):
+            )):
         raise InvalidArgument(
             'Cannot have just whitelist_characters="%s" alone, '
             'it would have no effect' % (whitelist_characters,)
