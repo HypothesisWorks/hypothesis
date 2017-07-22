@@ -642,24 +642,24 @@ def characters(whitelist_categories=None, blacklist_categories=None,
 
     When no filtering rules are specifed, any character can be produced.
 
-    If `min_codepoint` or `max_codepoint` is specifed, then only characters
-    having a codepoint in that range will be produced.
+    If ``min_codepoint`` or ``max_codepoint`` is specifed, then only
+    characters having a codepoint in that range will be produced.
 
-    If `whitelist_categories` is specified, then only characters from those
+    If ``whitelist_categories`` is specified, then only characters from those
     Unicode categories will be produced. This is a further restriction,
     characters must also satisfy `min_codepoint` and `max_codepoint`.
 
-    If `blacklist_categories` is specified, then any character from those
+    If ``blacklist_categories`` is specified, then any character from those
     categories will not be produced. This is a further restriction,
-    characters matching both `whitelist_categories` and `blacklist_categories`
-    will not be produced.
+    characters that match both ``whitelist_categories`` and
+    ``blacklist_categories`` will not be produced.
 
-    If `whitelist_characters` is specified, then any additional characters in
-    that list will also be produced.
+    If ``whitelist_characters`` is specified, then any additional characters
+    in that list will also be produced.
 
-    If `blacklist_characters` is specified, then any characters in that list
-    will be not be produced. Characters in both `whitelist_characters` and
-    `blacklist_characters` will not be produced.
+    If ``blacklist_characters`` is specified, then any characters in that list
+    will be not be produced. Characters in both ``whitelist_characters`` and
+    ``blacklist_characters`` will not be produced.
 
     """
     if (
