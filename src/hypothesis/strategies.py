@@ -21,18 +21,19 @@ import math
 import datetime as dt
 import operator
 from decimal import Decimal, InvalidOperation
+from inspect import isclass
 from numbers import Rational
 from fractions import Fraction
 
-from hypothesis.errors import InvalidArgument
+from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.control import assume
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import hrange, text_type, integer_types, \
-    getfullargspec, implements_iterator
+    get_type_hints, getfullargspec, implements_iterator
 from hypothesis.internal.floats import is_negative, float_to_int, \
     int_to_float, count_between_floats
-from hypothesis.utils.conventions import not_set
-from hypothesis.internal.reflection import proxies
+from hypothesis.utils.conventions import infer, not_set
+from hypothesis.internal.reflection import proxies, required_args
 from hypothesis.searchstrategy.reprwrapper import ReprWrapperStrategy
 
 __all__ = [
@@ -52,6 +53,7 @@ __all__ = [
     'recursive', 'composite',
     'shared', 'runner', 'data',
     'deferred',
+    'from_type', 'register_type_strategy',
 ]
 
 _strategies = set()
@@ -101,6 +103,7 @@ def cacheable(fn):
             result = fn(*args, **kwargs)
             cache[cache_key] = result
             return result
+    cached_strategy.__clear_cache = cache.clear
     return cached_strategy
 
 
@@ -767,16 +770,159 @@ def random_module():
 @cacheable
 @defines_strategy
 def builds(target, *args, **kwargs):
-    """Generates values by drawing from args and kwargs and passing them to
-    target in the appropriate argument position.
+    """Generates values by drawing from ``args`` and ``kwargs`` and passing
+    them to ``target`` in the appropriate argument position.
 
-    e.g. builds(target, integers(), flag=booleans()) would draw an
-    integer i and a boolean b and call target(i, flag=b).
+    e.g. ``builds(target, integers(), flag=booleans())`` would draw an
+    integer ``i`` and a boolean ``b`` and call ``target(i, flag=b)``.
+
+    If ``target`` has type annotations, they will be used to infer a strategy
+    for required arguments that were not passed to builds.  You can also tell
+    builds to infer a strategy for an optional argument by passing the special
+    value :const:`hypothesis.infer` as a keyword argument to
+    builds, instead of a strategy for that argument to ``target``.
 
     """
+    if infer in args:
+        # Avoid an implementation nightmare juggling tuples and worse things
+        raise InvalidArgument('infer was passed as a positional argument to '
+                              'builds(), but is only allowed as a keyword arg')
+    hints = get_type_hints(target.__init__ if isclass(target) else target)
+    for kw in [k for k, v in kwargs.items() if v is infer]:
+        if kw not in hints:
+            raise InvalidArgument(
+                'passed %s=infer for %s, but %s has no type annotation'
+                % (kw, target.__name__, kw))
+        kwargs[kw] = from_type(hints[kw])
+    required = required_args(target, args, kwargs)
+    for ms in set(hints) & (required or set()):
+        kwargs[ms] = from_type(hints[ms])
     return tuples(tuples(*args), fixed_dictionaries(kwargs)).map(
         lambda value: target(*value[0], **value[1])
     )
+
+
+def delay_error(func):
+    """A decorator to make exceptions lazy but success immediate.
+
+    We want from_type to resolve to a strategy immediately if possible,
+    for a useful repr and interactive use, but delay errors until a
+    value would be drawn to localise them to a particular test.
+
+    """
+    @proxies(func)
+    def inner(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            error = e
+
+            def lazy_error():
+                raise error
+
+            return builds(lazy_error)
+    return inner
+
+
+@cacheable
+@delay_error
+def from_type(thing):
+    """Looks up the appropriate search strategy for the given type.
+
+    ``from_type`` is used internally to fill in missing arguments to
+    :func:`~hypothesis.strategies.builds` and can be used interactively
+    to explore what strategies are available or to debug type resolution.
+
+    You can use :func:`~hypothesis.strategies.register_type_strategy` to
+    handle your custom types, or to globally redefine certain strategies -
+    for example excluding NaN from floats, or use timezone-aware instead of
+    naive time and datetime strategies.
+
+    The resolution logic may be changed in a future version, but currently
+    tries these four options:
+
+    1. If ``thing`` is in the default lookup mapping or user-registered lookup,
+       return the corresponding strategy.  The default lookup covers all types
+       with Hypothesis strategies, including extras where possible.
+    2. If ``thing`` is from the :mod:`python:typing` module, return the
+       corresponding strategy (special logic).
+    3. If ``thing`` has one or more subtypes in the merged lookup, return
+       the union of the strategies for those types that are not subtypes of
+       other elements in the lookup.
+    4. Finally, if ``thing`` has type annotations for all required arguments,
+       it is resolved via :func:`~hypothesis.strategies.builds`.
+
+    """
+    from hypothesis.searchstrategy import types
+    if not isinstance(thing, type):
+        # Under Python 3.6, Unions are not instances of `type` - but we still
+        # want to resolve them!  This __origin__ check only passes if thing is
+        # a Union with parameters; if it doesn't we can't resolve it anyway.
+        try:
+            import typing
+            if getattr(thing, '__origin__', None) is typing.Union:
+                args = sorted(thing.__args__, key=types.type_sorting_key)
+                return one_of([from_type(t) for t in args])
+        except ImportError:  # pragma: no cover
+            pass
+        raise InvalidArgument('thing=%s must be a type' % (thing,))
+    # Now that we know `thing` is a type, the first step is to check for an
+    # explicitly registered strategy.  This is the best (and hopefully most
+    # common) way to resolve a type to a strategy.  Note that the value in the
+    # lookup may be a strategy or a function from type -> strategy; and we
+    # convert empty results into an explicit error.
+    if thing in types._global_type_lookup:
+        strategy = types._global_type_lookup[thing]
+        if not isinstance(strategy, SearchStrategy):
+            strategy = strategy(thing)
+        if strategy.is_empty:
+            raise ResolutionFailed(
+                'Error: %r resolved to an empty strategy' % (thing,))
+        return strategy
+    # If there's no explicitly registered strategy, maybe a subtype of thing
+    # is registered - if so, we can resolve it to the subclass strategy.
+    # We'll start by checking if thing is from from the typing module,
+    # because there are several special cases that don't play well with
+    # subclass and instance checks.
+    try:
+        import typing
+        if isinstance(thing, typing.TypingMeta):
+            return types.from_typing_type(thing)
+    except ImportError:  # pragma: no cover
+        pass
+    # If it's not from the typing module, we get all registered types that are
+    # a subclass of `thing` and are not themselves a subtype of any other such
+    # type.  For example, `Number -> integers() | floats()`, but bools() is
+    # not included because bool is a subclass of int as well as Number.
+    strategies = [
+        v if isinstance(v, SearchStrategy) else v(thing)
+        for k, v in types._global_type_lookup.items()
+        if issubclass(k, thing) and
+        sum(types.try_issubclass(k, T) for T in types._global_type_lookup) == 1
+    ]
+    empty = ', '.join(repr(s) for s in strategies if s.is_empty)
+    if empty:
+        raise ResolutionFailed(
+            'Could not resolve %s to a strategy; consider using '
+            'register_type_strategy' % empty)
+    elif strategies:
+        return one_of(strategies)
+    # If we don't have a strategy registered for this type or any subtype, we
+    # may be able to fall back on type annotations.
+    # Types created via typing.NamedTuple use a custom attribute instead -
+    # but we can still use builds(), if we work out the right kwargs.
+    if issubclass(thing, tuple) and hasattr(thing, '_fields') \
+            and hasattr(thing, '_field_types'):
+        kwargs = {k: from_type(thing._field_types[k]) for k in thing._fields}
+        return builds(thing, **kwargs)
+    # If the constructor has an annotation for every required argument,
+    # we can (and do) use builds() without supplying additional arguments.
+    required = required_args(thing)
+    if not required or required.issubset(get_type_hints(thing.__init__)):
+        return builds(thing)
+    # We have utterly failed, and might as well say so now.
+    raise ResolutionFailed('Could not resolve %r to a strategy; consider '
+                           'using register_type_strategy' % (thing,))
 
 
 @cacheable
@@ -1270,6 +1416,35 @@ def data():
                 "using @composite for whatever it is you're trying to do."
             ) % (name,))
     return DataStrategy()
+
+
+def register_type_strategy(custom_type, strategy):
+    """Add an entry to the global type-to-strategy lookup.
+
+    This lookup is used in :func:`~hypothesis.strategies.builds` and
+    :func:`@given <hypothesis.given>`.
+
+    :func:`~hypothesis.strategies.builds` will be used automatically for
+    classes with type annotations on ``__init__`` , so you only need to
+    register a strategy if one or more arguments need to be more tightly
+    defined than their type-based default, or if you want to supply a strategy
+    for an argument with a default value.
+
+    ``strategy`` may be a search strategy, or a function that takes a type and
+    returns a strategy (useful for generic types).
+
+    """
+    from hypothesis.searchstrategy import types
+    if not isinstance(custom_type, type):
+        raise InvalidArgument('custom_type=%r must be a type')
+    elif not (isinstance(strategy, SearchStrategy) or callable(strategy)):
+        raise InvalidArgument(
+            'strategy=%r must be a SearchStrategy, or a function that takes '
+            'a generic type and returns a specific SearchStrategy')
+    elif isinstance(strategy, SearchStrategy) and strategy.is_empty:
+        raise InvalidArgument('strategy=%r must not be empty')
+    types._global_type_lookup[custom_type] = strategy
+    from_type.__clear_cache()
 
 # Private API below here
 

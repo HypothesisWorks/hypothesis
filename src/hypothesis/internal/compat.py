@@ -268,7 +268,8 @@ if PY2:
     def getfullargspec(func):
         import inspect
         args, varargs, varkw, defaults = inspect.getargspec(func)
-        return FullArgSpec(args, varargs, varkw, defaults, [], None, {})
+        return FullArgSpec(args, varargs, varkw, defaults, [], None,
+                           getattr(func, '__annotations__', {}))
 else:
     from inspect import getfullargspec, FullArgSpec
 
@@ -287,6 +288,26 @@ else:
             return inner
 
         getfullargspec = silence_warnings(getfullargspec)
+
+
+def get_type_hints(thing):
+    """Try to return any type hints for ``thing``."""
+    try:
+        import typing
+        return typing.get_type_hints(thing)
+    except TypeError:
+        # `thing` is not a module, class, method, or function
+        return {}
+    except (ImportError, AttributeError):  # pragma: no cover
+        # This is a fallback for Python <3.6, where get_type_hints may fail
+        try:
+            spec = getfullargspec(thing)
+            return {
+                k: v for k, v in spec.annotations.items()
+                if k in (spec.args + spec.kwonlyargs) and isinstance(v, type)
+            }
+        except TypeError:
+            return {}
 
 
 importlib_invalidate_caches = getattr(

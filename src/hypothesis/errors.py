@@ -23,7 +23,6 @@ import warnings
 class HypothesisException(Exception):
 
     """Generic parent class for exceptions thrown by Hypothesis."""
-    pass
 
 
 class CleanupFailed(HypothesisException):
@@ -83,7 +82,6 @@ class NoExamples(HypothesisException):
     """Raised when example() is called on a strategy but we cannot find any
     examples after enough tries that we really should have been able to if this
     was ever going to work."""
-    pass
 
 
 class Unsatisfiable(HypothesisException):
@@ -142,6 +140,17 @@ class InvalidArgument(HypothesisException, TypeError):
 
     """Used to indicate that the arguments to a Hypothesis function were in
     some manner incorrect."""
+
+
+class ResolutionFailed(InvalidArgument):
+
+    """Hypothesis had to resolve a type to a strategy, but this failed.
+
+    Type inference is best-effort, so this only happens when an
+    annotation exists but could not be resolved for a required argument
+    to the target of ``builds()``, or where the user passed ``infer``.
+
+    """
 
 
 class InvalidState(HypothesisException):

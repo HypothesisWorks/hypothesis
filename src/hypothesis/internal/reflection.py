@@ -74,6 +74,20 @@ def function_digest(function):
     return hasher.digest()
 
 
+def required_args(target, args=(), kwargs=()):
+    """Return a set of required args to target."""
+    try:
+        spec = getfullargspec(
+            target.__init__ if inspect.isclass(target) else target)
+    except TypeError:  # pragma: no cover
+        return None
+    # For classes, self is present in the argspec but not really required
+    posargs = spec.args[1:] if inspect.isclass(target) else spec.args
+    return set(posargs + spec.kwonlyargs) \
+        - set(spec.args[len(spec.args) - len(spec.defaults or ()):]) \
+        - set(spec.kwonlydefaults or ()) - set(args) - set(kwargs)
+
+
 def convert_keyword_arguments(function, args, kwargs):
     """Returns a pair of a tuple and a dictionary which would be equivalent
     passed as positional and keyword args to the function. Unless function has.

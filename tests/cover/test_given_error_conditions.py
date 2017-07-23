@@ -21,8 +21,8 @@ import time
 
 import pytest
 
-from hypothesis import given, assume, reject, settings
-from hypothesis.errors import Timeout, Unsatisfiable
+from hypothesis import given, infer, assume, reject, settings
+from hypothesis.errors import Timeout, Unsatisfiable, InvalidArgument
 from hypothesis.strategies import booleans, integers
 
 
@@ -61,3 +61,19 @@ def test_does_not_raise_unsatisfiable_if_some_false_in_finite_set():
         assume(x)
 
     test_assume_x()
+
+
+def test_error_if_has_no_hints():
+    @given(a=infer)
+    def inner(a):
+        pass
+    with pytest.raises(InvalidArgument):
+        inner()
+
+
+def test_error_if_infer_is_posarg():
+    @given(infer)
+    def inner(ex):
+        pass
+    with pytest.raises(InvalidArgument):
+        inner()

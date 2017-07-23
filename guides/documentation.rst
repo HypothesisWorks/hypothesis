@@ -7,7 +7,7 @@ and Hypothesis is written to be used, as widely as possible.
 
 This is a working document-in-progress with some tips for how we try to write
 our docs, with a little of the what and a bigger chunk of the how.
-If you have ideas about how to improve these suggests, meta issues or pull
+If you have ideas about how to improve these suggestions, meta issues or pull
 requests are just as welcome as for docs or code :D
 
 ----------------------------
@@ -36,7 +36,7 @@ cross-references.  Without repeating the docs for Sphinx, here are some tips:
   (eg) ``:func:`hypothesis.given`\ ``, which will appear as
   ``hypothesis.given()`` with a hyperlink to the apropriate docs.  You can
   show only the last part (unqualified name) by adding a tilde at the start,
-  like ``:func:`hypothesis.given`\ `` -> ``given()``.  Finally, you can give
+  like ``:func:`~hypothesis.given`\ `` -> ``given()``.  Finally, you can give
   it alternative link text in the usual way:
   ``:func:`other text <hypothesis.given>`\ `` -> ``other text``.
 

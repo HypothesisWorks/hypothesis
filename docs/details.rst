@@ -365,16 +365,16 @@ The rules for determining what are valid uses of given are as follows:
 1. You may pass any keyword argument to given.
 2. Positional arguments to given are equivalent to the rightmost named
    arguments for the test function.
-3. positional arguments may not be used if the underlying test function has
-   varargs or arbitrary keywords.
+3. Positional arguments may not be used if the underlying test function has
+   varargs, arbitrary keywords, or keyword-only arguments.
 4. Functions tested with given may not have any defaults.
 
 The reason for the "rightmost named arguments" behaviour is so that
 using :func:`@given <hypothesis.given>` with instance methods works: ``self``
 will be passed to the function as normal and not be parametrized over.
 
-The function returned by given has all the arguments that the original test did
-, minus the ones that are being filled in by given.
+The function returned by given has all the same arguments as the original
+test, minus those that are filled in by given.
 
 -------------------------
 Custom function execution
@@ -525,3 +525,61 @@ It is *not* permitted for a single example to be a mix of positional and
 keyword arguments. Either are fine, and you can use one in one example and the
 other in another example if for some reason you really want to, but a single
 example must be consistent.
+
+
+.. _type-inference:
+
+-------------------
+Inferred Strategies
+-------------------
+
+In some cases, Hypothesis can work out what to do when you omit arguments.
+This is based on introspection, *not* magic, and therefore has well-defined
+limits.
+
+:func:`~hypothesis.strategies.builds` will check the signature of the
+``target`` (using :func:`~python:inspect.getfullargspec`).
+If there are required arguments with type annotations and
+no strategy was passed to :func:`~hypothesis.strategies.builds`,
+:func:`~hypothesis.strategies.from_type` is used to fill them in.
+You can also pass the special value :const:`hypothesis.infer` as a keyword
+argument, to force this inference for arguments with a default value.
+
+.. doctest::
+
+    >>> def func(a: int, b: str):
+    ...     return [a, b]
+    >>> builds(func).example()
+    [2132, 'jZFN;']
+
+:func:`@given <hypothesis.given>` does not perform any implicit inference
+for required arguments, as this would break compatibility with pytest fixtures.
+:const:`~hypothesis.infer` can be used as a keyword argument to explicitly
+fill in an argument from its type annotation.
+
+.. code:: python
+
+    @given(a=infer)
+    def test(a: int): pass
+    # is equivalent to
+    @given(a=integers())
+    def test(a): pass
+
+~~~~~~~~~~~
+Limitations
+~~~~~~~~~~~
+
+:pep:`3107` type annotations are not supported on Python 2, and Hypothesis
+does not inspect :pep:`484` type comments at runtime.  While
+:func:`~hypothesis.strategies.from_type` will work as usual, inference in
+:func:`~hypothesis.strategies.builds` and :func:`@given <hypothesis.given>`
+will only work if you manually create the ``__annotations__`` attribute
+(e.g. by using ``@annotations(...)`` and ``@returns(...)`` decorators).
+The :mod:`python:typing` module is fully supported on Python 2 if you have
+the backport installed.
+
+The :mod:`python:typing` module is provisional and has a number of internal
+changes between Python 3.5.0 and 3.6.1, including at minor versions.  These
+are all supported on a best-effort basis, but you may encounter problems with
+an old version of the module.  Please report them to us, and consider
+updating to a newer version of Python as a workaround.
