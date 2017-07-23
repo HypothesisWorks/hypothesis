@@ -2,11 +2,11 @@
 What you can generate and how
 =============================
 
-The general philosophy of Hypothesis data generation is that everything
-should be possible to generate and most things should be easy. Most things in
-the standard library
-is more aspirational than achieved, the state of the art is already pretty
-good.
+*Most things should be easy to generate and everything should be possible.*
+
+To support this principle Hypothesis provides strategies for most of built-in
+types with arguments to constrain or adjust the output, as well as higher-order
+strategies that can be composed to generate more complex types.
 
 This document is a guide to what strategies are available for generating data
 and how to build them. Strategies have a variety of other important internal
@@ -84,7 +84,7 @@ Think of a Stream as an infinite list where we've only evaluated as much as
 we need to. As per above, you can index into it and the stream will be evaluated up to
 that index and no further.
 
-You can iterate over it too (warning: iter on a stream given to you
+You can iterate over it too (warning: :func:`python:iter` on a stream given to you
 by Hypothesis in this way will never terminate):
 
 .. doctest::
@@ -133,7 +133,7 @@ map creates a new stream where each element of the stream is the function
 applied to the corresponding element of the original stream. Evaluating the
 new stream will force evaluating the original stream up to that index.
 
-(Warning: This isn't the map builtin. In Python 3 the builtin map should do
+(Warning: This isn't the map builtin. In Python 3 the builtin :func:`python:map` should do
 more or less the right thing, but in Python 2 it will never terminate and
 will just eat up all your memory as it tries to build an infinitely long list)
 
@@ -167,7 +167,7 @@ e.g.:
   [-224, -222, 16, 159, 120699286316048]
 
 Note that many things that you might use mapping for can also be done with
-:func:`hypothesis.strategies.builds`.
+:func:`~hypothesis.strategies.builds`.
 
 ---------
 Filtering
@@ -329,7 +329,7 @@ following gives you a list and an index into it:
     ...     i = draw(integers(min_value=0, max_value=len(xs) - 1))
     ...     return (xs, i)
 
-'draw(s)' is a function that should be thought of as returning s.example(),
+``draw(s)`` is a function that should be thought of as returning ``s.example()``,
 except that the result is reproducible and will minimize correctly. The
 decorated function has the initial argument removed from the list, but will
 accept all the others in the expected order. Defaults are preserved.
@@ -361,7 +361,7 @@ You can use :func:`assume <hypothesis.assume>` inside composite functions:
         assume(x != y)
         return (x, y)
 
-This works as assume normally would, filtering out any examples for which the
+This works as :func:`assume <hypothesis.assume>` normally would, filtering out any examples for which the
 passed in argument is falsey.
 
 
@@ -371,7 +371,7 @@ passed in argument is falsey.
 Drawing interactively in tests
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-There is also the ``data()`` strategy, which gives you a means of using
+There is also the :func:`~hypothesis.strategies.data` strategy, which gives you a means of using
 strategies interactively. Rather than having to specify everything up front in
 :func:`@given <hypothesis.given>` you can draw from strategies in the body of your test:
 
@@ -394,7 +394,7 @@ the above is wrong (it has a boundary condition error), so will print:
 
 As you can see, data drawn this way is simplified as usual.
 
-Test functions using the ``data()`` strategy do not support explicit
+Test functions using the :func:`~hypothesis.strategies.data` strategy do not support explicit
 :func:`@example(...) <hypothesis.example>`\ s.  In this case, the best option is usually to construct
 your data with :func:`@composite <hypothesis.strategies.composite>` or the explicit example, and unpack this within
 the body of the test.
