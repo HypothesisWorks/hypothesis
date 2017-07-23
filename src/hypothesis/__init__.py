@@ -28,6 +28,7 @@ from hypothesis._settings import settings, Verbosity, Phase, HealthCheck
 from hypothesis.version import __version_info__, __version__
 from hypothesis.control import assume, note, reject, event
 from hypothesis.core import given, find, example, seed
+from hypothesis.utils.conventions import infer
 
 
 __all__ = [
@@ -43,6 +44,7 @@ __all__ = [
     'example',
     'note',
     'event',
+    'infer',
     '__version__',
     '__version_info__',
 ]

@@ -142,6 +142,17 @@ class InvalidArgument(HypothesisException, TypeError):
     some manner incorrect."""
 
 
+class ResolutionFailed(InvalidArgument):
+
+    """Hypothesis had to resolve a type to a strategy, but this failed.
+
+    Type inference is best-effort, so this only happens when an
+    annotation exists but could not be resolved for a required argument
+    to the target of ``builds()``, or where the user passed ``infer``.
+
+    """
+
+
 class InvalidState(HypothesisException):
 
     """The system is not in a state where you were allowed to do that."""

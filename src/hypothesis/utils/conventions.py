@@ -27,4 +27,5 @@ class UniqueIdentifier(object):
         return self.identifier
 
 
+infer = UniqueIdentifier(u'infer')
 not_set = UniqueIdentifier(u'not_set')
