@@ -831,28 +831,51 @@ def from_type(thing):
 
     """
     from hypothesis.searchstrategy import types
-    # Look for a known concrete type or user-defined mapping
-    lookup = dict(types.type_strategy_mapping())
-    lookup.update(types.generic_type_strategy_mapping())
-    lookup.update(types._global_type_to_strategy_lookup)
-    if thing in lookup:
-        strategy = lookup[thing]
-        if not isinstance(lookup[thing], SearchStrategy):
-            strategy = lookup[thing](thing)
+    if not isinstance(thing, type):
+        # Under Python 3.6, Unions are not instances of `type` - but we still
+        # want to resolve them!  This __origin__ check only passes if thing is
+        # a Union with parameters; if it doesn't we can't resolve it anyway.
+        try:
+            import typing
+            if getattr(thing, '__origin__', None) is typing.Union:
+                args = sorted(thing.__args__, key=types.type_sorting_key)
+                return one_of([from_type(t) for t in args])
+        except ImportError:  # pragma: no cover
+            pass
+        raise InvalidArgument('thing=%s must be a type' % (thing,))
+    # Now that we know `thing` is a type, the first step is to check for an
+    # explicitly registered strategy.  This is the best (and hopefully most
+    # common) way to resolve a type to a strategy.  Note that the value in the
+    # lookup may be a strategy or a function from type -> strategy; and we
+    # convert empty results into an explicit error.
+    if thing in types._global_type_lookup:
+        strategy = types._global_type_lookup[thing]
+        if not isinstance(strategy, SearchStrategy):
+            strategy = strategy(thing)
         if strategy.is_empty:
             raise ResolutionFailed(
                 'Error: %r resolved to an empty strategy' % (thing,))
         return strategy
-    # I tried many more elegant checks, but `typing` tends to treat the type
-    # system as a loose guideline at best so they were all unreliable.
-    if getattr(thing, '__module__', None) == 'typing':
-        return types.from_typing_type(thing)
-    # If there's no exact match above, use similar subtype resolution logic
-    strategies = [  # pragma: no cover
+    # If there's no explicitly registered strategy, maybe a subtype of thing
+    # is registered - if so, we can resolve it to the subclass strategy.
+    # We'll start by checking if thing is from from the typing module,
+    # because there are several special cases that don't play well with
+    # subclass and instance checks.
+    try:
+        import typing
+        if isinstance(thing, typing.TypingMeta):
+            return types.from_typing_type(thing)
+    except ImportError:  # pragma: no cover
+        pass
+    # If it's not from the typing module, we get all registered types that are
+    # a subclass of `thing` and are not themselves a subtype of any other such
+    # type.  For example, `Number -> integers() | floats()`, but bools() is
+    # not included because bool is a subclass of int as well as Number.
+    strategies = [
         v if isinstance(v, SearchStrategy) else v(thing)
-        for k, v in lookup.items()
-        if isclass(k) and isclass(thing) and types.try_issubclass(k, thing) and
-        sum(types.try_issubclass(k, T) for T in lookup) == 1
+        for k, v in types._global_type_lookup.items()
+        if issubclass(k, thing) and
+        sum(types.try_issubclass(k, T) for T in types._global_type_lookup) == 1
     ]
     empty = ', '.join(repr(s) for s in strategies if s.is_empty)
     if empty:
