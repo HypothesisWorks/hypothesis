@@ -27,7 +27,7 @@ def test_saves_incremental_steps_in_database():
     key = b"a database key"
     database = SQLiteExampleDatabase(':memory:')
     find(
-        st.binary(min_size=10), lambda x: any(x),
+        st.binary(min_size=10), any,
         settings=settings(database=database), database_key=key
     )
     assert len(set(database.fetch(key))) > 1
