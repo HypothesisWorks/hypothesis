@@ -974,7 +974,7 @@ def decimals(min_value=None, max_value=None,
 
     - A finite rational number, between ``min_value`` and ``max_value``.
     - Not a Number, if ``allow_nan`` is True.  None means "allow NaN, unless
-      ``min__value`` and ``max_value`` are not None".
+      ``min_value`` and ``max_value`` are not None".
     - Positive or negative infinity, if ``max_value`` and ``min_value``
       respectively are None, and ``allow_infinity`` is not False.  None means
       "allow infinity, unless excluded by the min and max values".
