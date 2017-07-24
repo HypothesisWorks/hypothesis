@@ -146,8 +146,6 @@ for k in STRATEGIES:
     define_benchmark(k, always, never)
     define_benchmark(k, always, always)
     define_benchmark(k, always, usually)
-    define_benchmark(k, always, nontrivial)
-    define_benchmark(k, usually, nontrivial)
     define_benchmark(k, always, lower_bound)
 
 
@@ -464,7 +462,9 @@ def cli(
 
             pp = benchmark_difference_p_value(old_data.sizes, new_data)
 
-            click.echo('p-value for difference %.5f' % (pp,))
+            click.echo(
+                '%r -> %r. p-value for difference %.5f' % (
+                    np.mean(old_data.sizes), np.mean(new_data), pp,))
             reports.append(Report(
                 name, pp, np.mean(old_data.sizes), np.mean(new_data), new_data,
                 new_seed=new_seed,
