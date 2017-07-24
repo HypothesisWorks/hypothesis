@@ -452,6 +452,12 @@ some predicate.  This is generally useful for exploring custom strategies
 defined with :func:`@composite <hypothesis.strategies.composite>`, or
 experimenting with conditions for filtering data.
 
+To get an arbitary example value matching a predicate from the strategy, or
+raise :class:`~hypothesis.errors.NoExamples` if no such value exists, use
+``strategy.filter(predicate).example()``.  This avoids the expensive shrinking
+logic used by :func:`~hypothesis.find` to return the *minimal* value matching
+the predicate.
+
 .. autofunction:: hypothesis.find
 
 .. doctest::

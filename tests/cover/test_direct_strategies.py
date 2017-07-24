@@ -233,10 +233,9 @@ def test_float_can_find_max_value_inf():
 
 
 def test_float_can_find_min_value_inf():
-    find(ds.floats(), lambda x: x < 0 and math.isinf(x))
-    find(
-        ds.floats(min_value=float('-inf'), max_value=0.0),
-        lambda x: math.isinf(x))
+    ds.floats().filter(lambda x: x < 0 and math.isinf(x)).example()
+    ds.floats(min_value=float('-inf'), max_value=0.0).filter(
+        lambda x: math.isinf(x)).example()
 
 
 def test_can_find_none_list():
@@ -252,7 +251,8 @@ def test_decimals():
 
 
 def test_non_float_decimal():
-    find(ds.decimals(), lambda d: float_to_decimal(float(d)) != d)
+    ds.decimals(allow_nan=False).filter(
+        lambda d: float_to_decimal(float(d)) != d).example()
 
 
 def test_produces_dictionaries_of_at_least_minimum_size():

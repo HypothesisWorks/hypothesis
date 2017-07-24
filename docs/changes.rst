@@ -22,6 +22,14 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.14.1 - 2017-07-31
+-------------------
+
+This is a documentation update, recommending ``strategy.filter(predicate).example()``
+as a more efficient way to check that such an example exists than
+:func:`find(strategy, predicate) <hypothesis.find>` and fixing a few typos.
+
+-------------------
 3.14.0 - 2017-07-23
 -------------------
 
