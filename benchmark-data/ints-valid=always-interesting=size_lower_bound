@@ -1,0 +1,29 @@
+# This is an automatically generated file from Hypothesis's benchmarking
+# script (scripts/benchmarks.py).
+#
+# Lines like this starting with a # are designed to be useful for human
+# consumption when reviewing, specifically with a goal of producing
+# useful diffs so that you can get a sense of the impact of a change.
+#
+# This benchmark is for ints [integers()], with the validity
+# condition "always" and the interestingness condition "size_lower_bound".
+# See the script for the exact definitions of these criteria.
+#
+# This benchmark was generated with seed 125
+#
+# Key statistics for this benchmark:
+#
+# * 1000 examples
+# * Mean size: 2150.38 bytes, standard deviation: 1485.50 bytes
+#
+# Additional interesting statistics:
+#
+# * Ranging from 48 [333 times] to 3200 [667 times] bytes.
+# * Median size: 3200
+# * 99% of examples had at least 48 bytes
+# * 99% of examples had at most 3200 bytes
+#
+# All data after this point is an opaque binary blob. You are not expected
+# to understand it.
+
+Data 504: STARTPCOL2VJRB3BEADH3ZLU6MDVFQCCPUFOEIYD6NW2A7QOTDN6J3FHNVIMVUB3YSE63ZGT3NV33NF2S556LNUUP7ZZ4RWR733U76DXGB4NXSCQP7WO7267VB3FRTKHXTL7LWSI67QNUTXE6PGFZC7JVUPZLRLM6663WW5KDMFGHIQK6Q63M5OFX3BVL33TUNLP6BA7PG65B26CEYU6GK5ULZCHHNSDNLKEIWPY33A3AMH6ML65CU67JQJ7SKRVLDB7PFP6XNLD65PMSOG5PENOOW6MK64RUKVMPXA6FPRZ5PZK753IMXW4FUX3RD2IR3ZKXUKVZ3W4PO3LXARLFXIGMLAJQQDUNFVYDV5CL4NYRI3MLUIXK47VWKHEQSE2ZMCM5W64ZUUDCUCTVDP5S6NOOWDPOFEDLPAR7Y7ORQ6Q7D47BOMY5QOZ2UTJQQT5YZXSHOFVLVV4ZMD3SZOUJSWO5S46DMMULKLOLWPHOKNC5X47UWF56EQ======END

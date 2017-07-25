@@ -131,6 +131,11 @@ def lower_bound(seed, testdata, value):
     return True
 
 
+def size_lower_bound(seed, testdata, value):
+    rnd = random.Random(seed)
+    return len(testdata.buffer) >= rnd.randint(1, 50)
+
+
 usually = sometimes(0.9, 'usually')
 
 
@@ -147,6 +152,9 @@ for k in STRATEGIES:
     define_benchmark(k, always, always)
     define_benchmark(k, always, usually)
     define_benchmark(k, always, lower_bound)
+
+    define_benchmark(k, always, size_lower_bound)
+    define_benchmark(k, usually, size_lower_bound)
 
 
 define_benchmark('intlists', always, minsum)
