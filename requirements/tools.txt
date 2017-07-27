@@ -8,7 +8,7 @@ alabaster==0.7.10         # via sphinx
 autoflake==0.7            # via pyformat
 autopep8==1.3.2           # via pyformat
 babel==2.4.0              # via sphinx
-certifi==2017.4.17        # via requests
+certifi==2017.7.27.1        # via requests
 chardet==3.0.4            # via requests
 click==6.7                # via pip-tools
 docformatter==0.8         # via pyformat
