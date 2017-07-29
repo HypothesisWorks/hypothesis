@@ -13,6 +13,8 @@ library then it should be available on pypi.
 * `lollipop-hypothesis <https://github.com/maximkulkin/lollipop-hypothesis>`_ -
   strategy to generate data based on
   `Lollipop <https://github.com/maximkulkin/lollipop>`_ schema definitions.
+* `hypothesis-fspaths <https://github.com/lazka/hypothesis-fspaths>`_ -
+  strategy to generate filesystem paths.
 
 If you're thinking about writing an extension, consider naming it
 ``hypothesis-{something}`` - a standard prefix makes the community more
