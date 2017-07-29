@@ -424,12 +424,26 @@ class ConjectureRunner(object):
         data.__evaluated_to = data.index + len(result)
         return hbytes(result)
 
-    def reuse_existing_examples(self):
-        if (
+    def has_existing_examples(self):
+        return (
             self.settings.database is not None and
             self.database_key is not None and
             Phase.reuse in self.settings.phases
-        ):
+        )
+
+    def reuse_existing_examples(self):
+        """If appropriate (we have a database and have been told to use it),
+        try to reload existing examples from the database.
+
+        If there are a lot we don't try all of them. We always try the
+        smallest example in the database (which is guaranteed to be the
+        last failure) and the largest (which is usually the seed example
+        which the last failure came from but we don't enforce that). We
+        then take a random sampling of the remainder and try those. Any
+        examples that are no longer interesting are cleared out.
+
+        """
+        if self.has_existing_examples():
             corpus = sorted(
                 self.settings.database.fetch(self.database_key),
                 key=sort_key
@@ -663,6 +677,22 @@ class ConjectureRunner(object):
         ):
             self.exit_reason = ExitReason.finished
             return
+
+        if self.has_existing_examples():
+            corpus = sorted(
+                self.settings.database.fetch(self.database_key),
+                key=sort_key
+            )
+            # We always have self.last_data.buffer in the database because
+            # we save every interesting example. This means we will always
+            # trigger the first break and thus never exit the loop normally.
+            for c in corpus:  # pragma: no branch
+                if sort_key(c) >= sort_key(self.last_data.buffer):
+                    break
+                elif self.incorporate_new_buffer(c):
+                    break
+                else:
+                    self.settings.database.delete(self.database_key, c)
 
         change_counter = -1
 
