@@ -17,6 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import math
 import time
 from enum import Enum
 from random import Random, getrandbits
@@ -174,9 +175,7 @@ class ConjectureRunner(object):
             self.settings.database is not None and
             self.database_key is not None
         ):
-            self.settings.database.save(
-                self.database_key, hbytes(buffer)
-            )
+            self.settings.database.save(self.database_key, hbytes(buffer))
 
     def note_details(self, data):
         if data.status == Status.INTERESTING:
@@ -425,11 +424,7 @@ class ConjectureRunner(object):
         data.__evaluated_to = data.index + len(result)
         return hbytes(result)
 
-    def _run(self):
-        self.last_data = None
-        mutations = 0
-        start_time = time.time()
-
+    def reuse_existing_examples(self):
         if (
             self.settings.database is not None and
             self.database_key is not None and
@@ -437,38 +432,48 @@ class ConjectureRunner(object):
         ):
             corpus = sorted(
                 self.settings.database.fetch(self.database_key),
-                key=lambda d: (len(d), d)
+                key=sort_key
             )
+
+            desired_size = max(2, math.ceil(0.1 * self.settings.max_examples))
+
+            if desired_size < len(corpus):
+                new_corpus = [corpus[0], corpus[-1]]
+                n_boost = max(desired_size - 2, 0)
+                new_corpus.extend(self.random.sample(corpus[1:-1], n_boost))
+                corpus = new_corpus
+                corpus.sort(key=sort_key)
+
             for existing in corpus:
                 if self.valid_examples >= self.settings.max_examples:
-                    self.exit_reason = ExitReason.max_examples
-                    return
+                    self.exit_with(ExitReason.max_examples)
                 if self.call_count >= max(
                     self.settings.max_iterations, self.settings.max_examples
                 ):
-                    self.exit_reason = ExitReason.max_iterations
-                    return
+                    self.exit_with(ExitReason.max_iterations)
                 data = ConjectureData.for_buffer(existing)
                 self.test_function(data)
                 data.freeze()
                 self.last_data = data
                 self.consider_new_test_data(data)
-                if data.status < Status.VALID:
-                    self.settings.database.delete(
-                        self.database_key, existing)
-                elif data.status == Status.VALID:
-                    # Incremental garbage collection! we store a lot of
-                    # examples in the DB as we shrink: Those that stay
-                    # interesting get kept, those that become invalid get
-                    # dropped, but those that are merely valid gradually go
-                    # away over time.
-                    if self.random.randint(0, 2) == 0:
-                        self.settings.database.delete(
-                            self.database_key, existing)
-                else:
+                if data.status == Status.INTERESTING:
                     assert data.status == Status.INTERESTING
                     self.last_data = data
                     break
+                else:
+                    self.settings.database.delete(
+                        self.database_key, existing)
+
+    def exit_with(self, reason):
+        self.exit_reason = reason
+        raise RunIsComplete()
+
+    def _run(self):
+        self.last_data = None
+        mutations = 0
+        start_time = time.time()
+
+        self.reuse_existing_examples()
 
         if (
             Phase.generate in self.settings.phases and not
