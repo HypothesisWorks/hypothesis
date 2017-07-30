@@ -44,5 +44,5 @@ tqdm==4.15.0              # via twine
 twine==1.9.1
 unify==0.2                # via pyformat
 untokenize==0.1.1         # via docformatter, unify
-urllib3==1.21.1           # via requests
+urllib3==1.22           # via requests
 virtualenv==15.1.0        # via tox
