@@ -17,6 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+import os
+
 import pytest
 
 import hypothesis.strategies as st
@@ -25,10 +27,16 @@ from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.searchstrategy import types
 from hypothesis.internal.compat import PY2, integer_types
 
+try:
+    import pathlib
+except ImportError:
+    pathlib = None
+
+
 # Build a set of all types output by core strategies
 blacklist = [
     'builds', 'iterables', 'permutations', 'random_module', 'randoms',
-    'runner', 'sampled_from', 'streaming',
+    'runner', 'sampled_from', 'streaming', 'fspaths',
 ]
 types_with_core_strat = set(integer_types)
 for thing in (getattr(st, name) for name in sorted(st._strategies)
@@ -148,3 +156,35 @@ def test_given_can_infer_on_py2():
         pass
     inner.__annotations__ = {'a': int}
     given(a=infer)(inner)()
+
+
+@pytest.mark.skipif(not hasattr(os, 'PathLike'), reason='No os.PathLike')
+@given(st.from_type(getattr(os, 'PathLike', None)))
+def test_registered_for_pathlike(path):
+    assert isinstance(path, os.PathLike)
+
+
+pathlib_types = ['Path', 'PurePath']
+if os.name == 'nt':
+    pathlib_types.extend(['WindowsPath', 'PureWindowsPath'])
+else:
+    pathlib_types.extend(['PosixPath', 'PurePosixPath'])
+
+
+@pytest.mark.skipif(PY2 or not pathlib, reason='No pathlib')
+@pytest.mark.parametrize(
+    'typ', [getattr(pathlib, n, None) for n in pathlib_types])
+def test_pathlib_types(typ):
+
+    @given(st.from_type(typ))
+    def inner(ex):
+        if hasattr(os, 'PathLike'):
+            assert isinstance(ex, os.PathLike)
+        platform_type = type(typ())
+        assert type(ex) is platform_type
+        assert isinstance(ex, typ)
+
+    inner()
+
+    # Make sure we don't get the builds(typ) fallback
+    st.from_type(typ).filter(lambda p: len(str(p)) > 10).example()
