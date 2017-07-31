@@ -86,7 +86,7 @@ def test_given_twice_is_same():
 
 def test_errors_when_used_in_find():
     with raises(InvalidArgument):
-        find(st.data(), lambda x: x.draw(st.booleans()))
+        find(st.data(), lambda _: True)
 
 
 @pytest.mark.parametrize('f', [

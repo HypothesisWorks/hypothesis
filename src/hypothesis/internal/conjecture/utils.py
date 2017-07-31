@@ -188,8 +188,7 @@ def biased_coin(data, p):
                 # Every other partition is truthy, so the result is true
                 result = True
             elif truthy == 0:
-                # Every other partition is falsey, so the result is true
-                result = True
+                # Every other partition is falsey, so the result is false
                 result = False
             elif i <= 1:
                 # We special case so that zero is always false and 1 is always
