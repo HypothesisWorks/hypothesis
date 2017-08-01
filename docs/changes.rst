@@ -22,6 +22,17 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.14.1 - 2017-08-01
+-------------------
+
+This raises the maximum depth at which Hypothesis starts cutting off data
+generation to a more reasonable value which it is harder to hit by accident.
+
+This resolves (:issue:`751`), in which some examples which previously worked
+would start timing out, but it will also likely improve the data generation
+quality for complex data types.
+
+-------------------
 3.14.0 - 2017-07-23
 -------------------
 
