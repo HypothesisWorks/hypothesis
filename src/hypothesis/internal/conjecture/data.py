@@ -45,7 +45,7 @@ class StopTest(BaseException):
 global_test_counter = 0
 
 
-MAX_DEPTH = 50
+MAX_DEPTH = 100
 
 
 class ConjectureData(object):
