@@ -17,8 +17,10 @@
 
 from __future__ import division, print_function, absolute_import
 
+import pytest
+
 from hypothesis import strategies as st
-from hypothesis import given
+from hypothesis import Verbosity, given, settings
 
 
 def strat():
@@ -38,3 +40,18 @@ def strat_two(draw):
 @given(strat())
 def test_issue751(v):
     pass
+
+
+def test_can_find_non_zero():
+    # This future proofs against a possible failure mode where the depth bound
+    # is triggered but we've fixed the behaviour of min_size so that it can
+    # handle that: We want to make sure that we're really not depth bounding
+    # the text in the leaf nodes.
+
+    @settings(verbosity=Verbosity.quiet)
+    @given(strat())
+    def test(v):
+        assert '0' in v['one']['val']['two']['some_text']
+
+    with pytest.raises(AssertionError):
+        test()
