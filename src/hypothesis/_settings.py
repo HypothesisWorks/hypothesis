@@ -576,7 +576,10 @@ def _validate_phases(phases):
 settings.define_setting(
     'phases',
     default=tuple(Phase),
-    description='Control which phases should be run',
+    description=(
+        'Control which phases should be run. ' +
+        'See :ref:`the full documentation for more details <phases>`'
+    ),
     validator=_validate_phases,
 )
 

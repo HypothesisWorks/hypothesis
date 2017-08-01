@@ -43,7 +43,36 @@ Available settings
 .. autoclass:: settings
     :members: max_examples, max_iterations, min_satisfying_examples,
         max_shrinks, timeout, strict, database_file, stateful_step_count,
-        database, perform_health_check, suppress_health_check, buffer_size
+        database, perform_health_check, suppress_health_check, buffer_size,
+        phases
+
+.. _phases:
+
+~~~~~~~~~~~~~~~~~~~~~
+Controlling What Runs
+~~~~~~~~~~~~~~~~~~~~~
+
+Hypothesis divides tests into four logically distinct phases:
+
+1. Running explicit examples :ref:`provided with the @example decorator <providing-explicit-examples>`.
+2. Rerunning a selection of previously failing examples to reproduce a previously seen error
+3. Generating new examples.
+4. Attempting to shrink an example found in phases 2 or 3 to a more manageable
+   one (explicit examples cannot be shrunk).
+
+The phases setting provides you fine grained control over which of these run,
+with each phase corresponding to a value on the Phase enum:
+
+1. ``Phase.explicit`` controls whether explicit examples are run.
+2. ``Phase.reuse`` controls whether previous examples will be reused.
+3. ``Phase.generate`` controls whether new examples will be generated.
+4. ``Phase.shrink`` controls whether examples will be shrunk.
+
+The phases argument accepts a collection with any subset of these. e.g.
+``settings(phases=[Phase.generate, Phase.shrink])`` will generate new examples
+and shrink them, but will not run explicit examples or reuse previous failures,
+while ``settings(phases=[Phase.explicit])`` will only run the explicit
+examples.
 
 .. _verbose-output:
 
