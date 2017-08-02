@@ -1,6 +1,4 @@
 =========
-Changelog
-=========
 
 This is a record of all past Hypothesis releases and what went into them,
 in reverse chronological order. All previous releases should still be available
@@ -22,7 +20,7 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
-3.14.1 - 2017-08-01
+3.14.1 - 2017-08-02
 -------------------
 
 This raises the maximum depth at which Hypothesis starts cutting off data
