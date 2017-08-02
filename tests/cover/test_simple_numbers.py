@@ -156,12 +156,6 @@ def test_can_minimal_float_far_from_integral():
     ))
 
 
-def test_can_minimal_integrish():
-    minimal(floats(), lambda x: (
-        is_integral(x * (2 ** 32)) and not is_integral(x * 16)
-    ))
-
-
 def test_list_of_fractional_float():
     assert set(minimal(
         lists(floats(), average_size=20),
