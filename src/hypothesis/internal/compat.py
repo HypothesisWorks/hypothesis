@@ -294,7 +294,7 @@ def get_type_hints(thing):
     """Try to return any type hints for ``thing``."""
     try:
         import typing
-        return typing.get_type_hints(thing)
+        return typing.get_type_hints(thing) or {}
     except TypeError:
         # `thing` is not a module, class, method, or function
         return {}
