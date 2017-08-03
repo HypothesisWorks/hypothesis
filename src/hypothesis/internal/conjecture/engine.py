@@ -17,7 +17,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import math
 import time
 from enum import Enum
 from random import Random, getrandbits
@@ -26,8 +25,8 @@ from weakref import WeakKeyDictionary
 from hypothesis import settings as Settings
 from hypothesis import Phase
 from hypothesis.reporting import debug_report
-from hypothesis.internal.compat import EMPTY_BYTES, Counter, hbytes, \
-    hrange, text_type, bytes_from_list, to_bytes_sequence, \
+from hypothesis.internal.compat import EMPTY_BYTES, Counter, ceil, \
+    hbytes, hrange, text_type, bytes_from_list, to_bytes_sequence, \
     unicode_safe_repr
 from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
     StopTest, ConjectureData
@@ -449,7 +448,7 @@ class ConjectureRunner(object):
                 key=sort_key
             )
 
-            desired_size = max(2, math.ceil(0.1 * self.settings.max_examples))
+            desired_size = max(2, ceil(0.1 * self.settings.max_examples))
 
             if desired_size < len(corpus):
                 new_corpus = [corpus[0], corpus[-1]]
