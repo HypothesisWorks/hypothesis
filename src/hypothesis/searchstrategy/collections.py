@@ -82,10 +82,6 @@ class ListStrategy(SearchStrategy):
 
     """
 
-    Parameter = namedtuple(
-        'Parameter', ('child_parameter', 'average_length')
-    )
-
     def __init__(
         self,
         strategies, average_length=50.0, min_size=0, max_size=float('inf')
@@ -103,28 +99,14 @@ class ListStrategy(SearchStrategy):
         self.element_strategy.validate()
 
     def do_draw(self, data):
-        if self.max_size == self.min_size:
-            return [
-                data.draw(self.element_strategy)
-                for _ in range(self.min_size)
-            ]
-
-        stopping_value = 1 - 1.0 / (1 + self.average_length)
+        elements = cu.many(
+            data,
+            min_size=self.min_size, max_size=self.max_size,
+            average_size=self.average_length
+        )
         result = []
-        while len(result) < self.max_size:
-            data.start_example()
-            more = cu.biased_coin(data, stopping_value)
-            if not more:
-                data.stop_example()
-                if len(result) < self.min_size:
-                    continue
-                else:
-                    break
-            value = data.draw(self.element_strategy)
-            data.stop_example()
-            result.append(value)
-        else:
-            cu.write(data, TERMINATOR)
+        while elements.more():
+            result.append(data.draw(self.element_strategy))
         return result
 
     def __repr__(self):
@@ -159,38 +141,23 @@ class UniqueListStrategy(SearchStrategy):
     )
 
     def do_draw(self, data):
+        elements = cu.many(
+            data,
+            min_size=self.min_size, max_size=self.max_size,
+            average_size=self.average_size
+        )
         seen = set()
         result = []
-        if self.max_size == self.min_size:
-            while len(result) < self.max_size:
-                v = data.draw(self.element_strategy)
-                k = self.key(v)
-                if k not in seen:
-                    result.append(v)
-                    seen.add(k)
-            return result
 
-        stopping_value = 1 - 1.0 / (1 + self.average_size)
-        duplicates = 0
-        while len(result) < self.max_size:
-            data.start_example()
-            if len(result) >= self.min_size:
-                more = cu.biased_coin(data, stopping_value)
-            else:
-                more = True
-            if not more:
-                data.stop_example()
-                break
+        while elements.more():
             value = data.draw(self.element_strategy)
-            data.stop_example()
             k = self.key(value)
             if k in seen:
-                duplicates += 1
-                assume(duplicates <= len(result))
-                continue
-            seen.add(k)
-            result.append(value)
-        assume(len(result) >= self.min_size)
+                elements.reject()
+            else:
+                seen.add(k)
+                result.append(value)
+        assert self.max_size >= len(result) >= self.min_size
         return result
 
 

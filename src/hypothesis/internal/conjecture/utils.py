@@ -276,3 +276,44 @@ class Sampler(object):
                 data.stop_example()
                 if accept:
                     return result
+
+
+class many(object):
+    def __init__(self, data, min_size, max_size, average_size):
+        self.min_size = min_size
+        self.max_size = max_size
+        self.data = data
+        self.stopping_value = 1 - 1.0 / (1 + average_size)
+        self.count = 0
+        self.rejections = 0
+        self.drawn = False
+
+    def more(self):
+        if self.drawn:
+            self.data.stop_example()
+
+        self.drawn = True
+
+        if self.min_size == self.max_size:
+            should_continue = True
+        else:
+            if self.count < self.min_size:
+                p_continue = 1.0
+            elif self.count >= self.max_size:
+                p_continue = 0.0
+            else:
+                p_continue = self.stopping_value
+            should_continue = biased_coin(self.data, p_continue)
+
+        if should_continue:
+            self.data.start_example()
+            self.count += 1
+            return True
+        else:
+            return False
+
+    def reject(self):
+        self.count -= 1
+        self.rejections += 1
+        if self.rejections > self.count:
+            self.data.mark_invalid()
