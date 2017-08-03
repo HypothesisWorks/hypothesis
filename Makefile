@@ -130,6 +130,9 @@ check-py27: $(PY27) $(TOX)
 check-py273: $(PY273) $(TOX)
 	$(TOX) -e oldpy27
 
+check-py27-typing: $(PY27) $(TOX)
+	$(TOX) -e py27typing
+
 check-py33: $(PY33) $(TOX)
 	$(TOX) -e py33-full
 
@@ -209,6 +212,7 @@ compile-requirements: $(PIPCOMPILE)
 	$(PIPCOMPILE) requirements/benchmark.in --output-file requirements/benchmark.txt
 	$(PIPCOMPILE) requirements/test.in --output-file requirements/test.txt
 	$(PIPCOMPILE) requirements/tools.in --output-file requirements/tools.txt
+	$(PIPCOMPILE) requirements/typing.in --output-file requirements/typing.txt
 
 check-requirements: compile-requirements
 	git diff --exit-code

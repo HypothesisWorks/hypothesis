@@ -17,6 +17,14 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+
+-------------------
+3.14.2 - 2017-08-03
+-------------------
+
+This fixes a bug where Hypothesis would not work correctly on Python 2.7 if you
+had the typing module backport installed.
+
 -------------------
 3.14.1 - 2017-08-02
 -------------------

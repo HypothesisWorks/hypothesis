@@ -155,13 +155,18 @@ else:
         typing.io.BinaryIO: st.builds(io.BytesIO, st.binary()),
         typing.io.TextIO: st.builds(io.StringIO, st.text()),
         typing.Reversible: st.lists(st.integers()),
-        typing.SupportsBytes: st.binary(),
         typing.SupportsAbs: st.complex_numbers(),
         typing.SupportsComplex: st.complex_numbers(),
         typing.SupportsFloat: st.complex_numbers(),
         typing.SupportsInt: st.complex_numbers(),
-        typing.SupportsRound: st.complex_numbers(),
     })
+
+    try:
+        # These aren't present in the typing module backport.
+        _global_type_lookup[typing.SupportsBytes] = st.binary()
+        _global_type_lookup[typing.SupportsRound] = st.complex_numbers()
+    except AttributeError:  # pragma: no cover
+        pass
 
     def register(type_, fallback=None):
         if isinstance(type_, str):

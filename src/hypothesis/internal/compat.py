@@ -290,22 +290,21 @@ else:
         getfullargspec = silence_warnings(getfullargspec)
 
 
-def get_type_hints(thing):
-    """Try to return any type hints for ``thing``."""
-    try:
-        import typing
-        return typing.get_type_hints(thing)
-    except TypeError:
-        # `thing` is not a module, class, method, or function
-        return {}
-    except (ImportError, AttributeError):  # pragma: no cover
-        # This is a fallback for Python <3.6, where get_type_hints may fail
+if sys.version_info[:2] < (3, 6):
+    def get_type_hints(thing):
         try:
             spec = getfullargspec(thing)
             return {
                 k: v for k, v in spec.annotations.items()
                 if k in (spec.args + spec.kwonlyargs) and isinstance(v, type)
             }
+        except TypeError:
+            return {}
+else:
+    def get_type_hints(thing):
+        try:
+            import typing
+            return typing.get_type_hints(thing)
         except TypeError:
             return {}
 
