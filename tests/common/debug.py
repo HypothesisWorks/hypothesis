@@ -56,3 +56,27 @@ def minimal(
         settings=settings,
         random=random,
     )
+
+
+def find_any(
+        definition, condition=None,
+        settings=None, random=None
+):
+    settings = Settings(
+        settings,
+        max_examples=1000,
+        max_iterations=1000,
+        max_shrinks=0000,
+        database=None,
+    )
+
+    if condition is None:
+        def condition(x):
+            return True
+
+    return find(
+        definition,
+        condition,
+        settings=settings,
+        random=random,
+    )
