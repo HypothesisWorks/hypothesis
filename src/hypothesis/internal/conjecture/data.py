@@ -78,6 +78,7 @@ class ConjectureData(object):
         global_test_counter += 1
         self.start_time = benchmark_time()
         self.events = set()
+        self.forced_indices = set()
         self.bind_points = set()
 
     def __assert_not_frozen(self, name):
@@ -172,34 +173,39 @@ class ConjectureData(object):
         return self.draw_bytes_internal(n, uniform)
 
     def write(self, string):
+        self.__assert_not_frozen('write')
+        self.__check_capacity(len(string))
         assert isinstance(string, hbytes)
+        original = self.index
+        self.__write(string)
+        self.forced_indices.update(hrange(original, self.index))
+        return string
 
-        def distribution(random, n):
-            assert n == len(string)
-            return string
-
-        while True:
-            x = self.draw_bytes_internal(len(string), distribution)
-            if x == string:
-                return
-
-    def draw_bytes_internal(self, n, distribution):
-        if n == 0:
-            return hbytes(b'')
-        self.__assert_not_frozen('draw_bytes')
-        initial = self.index
+    def __check_capacity(self, n):
         if self.index + n > self.max_length:
             self.overdraw = self.index + n - self.max_length
             self.status = Status.OVERRUN
             self.freeze()
             raise StopTest(self.testcounter)
-        result = self._draw_bytes(self, n, distribution)
+
+    def __write(self, result):
+        initial = self.index
+        n = len(result)
         self.block_starts.setdefault(n, []).append(initial)
         self.blocks.append((initial, initial + n))
         assert len(result) == n
         assert self.index == initial
         self.buffer.extend(result)
         self.intervals.append((initial, self.index))
+
+    def draw_bytes_internal(self, n, distribution):
+        self.__assert_not_frozen('draw_bytes')
+        if n == 0:
+            return hbytes(b'')
+        self.__check_capacity(n)
+        result = self._draw_bytes(self, n, distribution)
+        assert len(result) == n
+        self.__write(result)
         return hbytes(result)
 
     def mark_interesting(self):

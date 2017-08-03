@@ -188,8 +188,7 @@ def biased_coin(data, p):
                 # Every other partition is truthy, so the result is true
                 result = True
             elif truthy == 0:
-                # Every other partition is falsey, so the result is true
-                result = True
+                # Every other partition is falsey, so the result is false
                 result = False
             elif i <= 1:
                 # We special case so that zero is always false and 1 is always
@@ -279,6 +278,18 @@ class Sampler(object):
 
 
 class many(object):
+    """Utility class for collections. Bundles up the logic we use for "should I
+    keep drawing more values?" and handles starting and stopping examples in
+    the right place.
+
+    Intended usage is something like:
+
+    elements = many(data, ...)
+    while elements.more():
+        add_stuff_to_result()
+
+    """
+
     def __init__(self, data, min_size, max_size, average_size):
         self.min_size = min_size
         self.max_size = max_size
@@ -289,13 +300,14 @@ class many(object):
         self.drawn = False
 
     def more(self):
+        """Should I draw another element to add to the collection?"""
         if self.drawn:
             self.data.stop_example()
 
         self.drawn = True
 
         if self.min_size == self.max_size:
-            should_continue = True
+            should_continue = self.count < self.min_size
         else:
             if self.count < self.min_size:
                 p_continue = 1.0
@@ -313,6 +325,9 @@ class many(object):
             return False
 
     def reject(self):
+        """Reject the last example (i.e. don't count it towards our budget of
+        elements because it's not going to go in the final collection)"""
+        assert self.count > 0
         self.count -= 1
         self.rejections += 1
         if self.rejections > self.count:

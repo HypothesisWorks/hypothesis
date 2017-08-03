@@ -20,7 +20,6 @@ from __future__ import division, print_function, absolute_import
 from collections import namedtuple
 
 import hypothesis.internal.conjecture.utils as cu
-from hypothesis.control import assume
 from hypothesis.internal.compat import OrderedDict, hbytes
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
     MappedSearchStrategy, one_of_strategies

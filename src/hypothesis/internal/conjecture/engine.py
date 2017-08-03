@@ -77,6 +77,7 @@ class ConjectureRunner(object):
         # Recursively, a node is dead if either it is a leaf or every byte
         # leads to a dead node when starting from here.
         self.dead = set()
+        self.forced = {}
 
     def __tree_is_exhausted(self):
         return 0 in self.dead
@@ -118,25 +119,27 @@ class ConjectureRunner(object):
 
         tree_node = self.tree[0]
         indices = []
-        i = 0
-        for b in data.buffer:
-            indices.append(i)
+        node_index = 0
+        for i, b in enumerate(data.buffer):
+            indices.append(node_index)
+            if i in data.forced_indices:
+                self.forced[node_index] = b
             try:
-                i = tree_node[b]
+                node_index = tree_node[b]
             except KeyError:
-                i = len(self.tree)
+                node_index = len(self.tree)
                 self.tree.append({})
-                tree_node[b] = i
-            tree_node = self.tree[i]
-            if i in self.dead:
+                tree_node[b] = node_index
+            tree_node = self.tree[node_index]
+            if node_index in self.dead:
                 break
 
-        if data.status != Status.OVERRUN and i not in self.dead:
-            self.dead.add(i)
-            self.tree[i] = data
+        if data.status != Status.OVERRUN and node_index not in self.dead:
+            self.dead.add(node_index)
+            self.tree[node_index] = data
 
             for j in reversed(indices):
-                if len(self.tree[j]) < 256:
+                if len(self.tree[j]) < 256 and j not in self.forced:
                     break
                 if set(self.tree[j].values()).issubset(self.dead):
                     self.dead.add(j)
@@ -162,7 +165,7 @@ class ConjectureRunner(object):
         if data.status == Status.INTERESTING:
             assert len(data.buffer) <= len(self.last_data.buffer)
             if len(data.buffer) == len(self.last_data.buffer):
-                assert data.buffer < self.last_data.buffer
+                return data.buffer < self.last_data.buffer
             return True
         return True
 
@@ -196,6 +199,22 @@ class ConjectureRunner(object):
             data.output,
         ))
 
+    def prescreen_buffer(self, buffer):
+        i = 0
+        for b in buffer:
+            if i in self.dead:
+                return False
+            try:
+                b = self.forced[i]
+            except KeyError:
+                pass
+            try:
+                i = self.tree[i][b]
+            except KeyError:
+                return True
+        else:
+            return False
+
     def incorporate_new_buffer(self, buffer):
         assert self.last_data.status == Status.INTERESTING
         if (
@@ -205,19 +224,11 @@ class ConjectureRunner(object):
             self.exit_reason = ExitReason.timeout
             raise RunIsComplete()
 
-        buffer = buffer[:self.last_data.index]
+        buffer = hbytes(buffer[:self.last_data.index])
         if sort_key(buffer) >= sort_key(self.last_data.buffer):
             return False
 
-        i = 0
-        for b in buffer:
-            if i in self.dead:
-                return False
-            try:
-                i = self.tree[i][b]
-            except KeyError:
-                break
-        else:
+        if not self.prescreen_buffer(buffer):
             return False
 
         assert sort_key(buffer) <= sort_key(self.last_data.buffer)
@@ -360,19 +371,35 @@ class ConjectureRunner(object):
         try:
             node_index = data.__current_node_index
         except AttributeError:
-            assert len(data.buffer) == 0
             node_index = 0
             data.__current_node_index = node_index
             data.__hit_novelty = False
+            data.__evaluated_to = 0
 
         if data.__hit_novelty:
             return result
 
         node = self.tree[node_index]
-        assert node_index not in self.dead
+
+        for i in hrange(data.__evaluated_to, len(data.buffer)):
+            node = self.tree[node_index]
+            try:
+                node_index = node[data.buffer[i]]
+                node = self.tree[node_index]
+                if node_index in self.dead:
+                    data.__hit_novelty = True
+                    return result
+            except KeyError:
+                data.__hit_novelty = True
+                return result
 
         for i, b in enumerate(result):
             assert isinstance(b, int)
+            if node_index in self.forced:
+                if isinstance(result, hbytes):
+                    result = bytearray(result)
+                b = self.forced[node_index]
+                result[i] = b
             try:
                 new_node_index = node[b]
             except KeyError:
@@ -403,6 +430,7 @@ class ConjectureRunner(object):
             node = new_node
         assert node_index not in self.dead
         data.__current_node_index = node_index
+        data.__evaluated_to = data.index + len(result)
         return hbytes(result)
 
     def _run(self):
