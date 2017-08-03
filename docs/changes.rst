@@ -21,6 +21,12 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+-------------------
+3.15.0 - 2017-08-03
+-------------------
+
+- New :func:`~hypothesis.strategies.fspaths` strategy for generating
+  filesystem path values.
 
 -------------------
 3.14.2 - 2017-08-03

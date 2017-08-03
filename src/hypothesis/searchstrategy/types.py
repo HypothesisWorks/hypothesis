@@ -18,6 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 import io
+import os
 import uuid
 import decimal
 import datetime
@@ -27,7 +28,12 @@ import collections
 
 import hypothesis.strategies as st
 from hypothesis.errors import ResolutionFailed
-from hypothesis.internal.compat import text_type, integer_types
+from hypothesis.internal.compat import PY3, text_type, integer_types
+
+try:
+    import pathlib
+except ImportError:  # pragma: no cover
+    pathlib = None
 
 
 def type_sorting_key(t):
@@ -128,6 +134,25 @@ _global_type_lookup = {
 }
 for t in integer_types:
     _global_type_lookup[t] = st.integers()
+
+if hasattr(os, 'PathLike'):  # pragma: no branch
+    _global_type_lookup[os.PathLike] = \
+        st.fspaths(allow_pathlike=False).map(st._PathLike)
+
+# Also check for PY3 because there is a Python 2 pathlib port on pypi
+# which wont work
+_pathlib_types = []
+if PY3 and pathlib is not None:  # pragma: no branch
+    _pathlib_types = [pathlib.Path, pathlib.PurePath]
+    if os.name == 'nt':  # pragma: no cover
+        _pathlib_types.extend([pathlib.WindowsPath, pathlib.PureWindowsPath])
+    else:
+        _pathlib_types.extend([pathlib.PosixPath, pathlib.PurePosixPath])
+
+    _global_type_lookup.update({
+        t: st.fspaths(allow_pathlike=False).map(
+            os.fsdecode).map(t) for t in _pathlib_types
+    })
 
 try:
     from hypothesis.extra.pytz import timezones
