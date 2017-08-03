@@ -26,11 +26,36 @@ import tempfile
 import pytest
 
 from hypothesis import given
+from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import fspaths
 from hypothesis.internal.compat import PY3, text_type
 
 encoding = sys.getfilesystemencoding()
 is_win = (os.name == 'nt')
+
+
+def test_path_property_examples():
+    if is_win:
+        fspaths(allow_pathlike=False).filter(
+            lambda p: os.path.normcase(p) != p).example()
+
+        fspaths(allow_pathlike=False).filter(
+            lambda p: (os.path.splitdrive(p)[0] and
+                       not os.path.splitunc(p)[0])).example()
+
+        fspaths(allow_pathlike=False).filter(
+            lambda p: os.path.splitunc(p)[0]).example()
+
+    fspaths(allow_pathlike=False).filter(
+        lambda p: p and os.path.normpath(p) != p).example()
+    fspaths(allow_pathlike=False).filter(
+        lambda p: os.path.splitext(p)[1]).example()
+    fspaths(allow_pathlike=False).filter(
+        lambda p: os.path.basename(p) == p).example()
+    fspaths(allow_pathlike=False).filter(os.path.isabs).example()
+    fspaths(allow_pathlike=False).filter(os.path.dirname).example()
+    fspaths(allow_pathlike=False).filter(os.path.basename).example()
+    fspaths(allow_pathlike=False).filter(os.path.abspath).example()
 
 
 def norm_encoding(name):
@@ -103,6 +128,22 @@ def test_open(tempdir_path, path):
 @given(fspaths(allow_pathlike=False))
 def test_allow_pathlike_false(path):
     assert isinstance(path, (bytes, text_type))
+
+
+def test_allow_pathlike_fail_when_not_available():
+    if not hasattr(os, 'PathLike'):
+        with pytest.raises(InvalidArgument):
+            fspaths(allow_pathlike=True).example()
+
+
+@given(fspaths(allow_existing=False))
+def test_no_allow_existing(path):
+    try:
+        os.lstat(path)
+    except OSError:
+        pass
+    else:
+        assert False
 
 
 def test_example_basic():

@@ -144,7 +144,7 @@ if hasattr(os, 'PathLike'):  # pragma: no branch
 _pathlib_types = []
 if PY3 and pathlib is not None:  # pragma: no branch
     _pathlib_types = [pathlib.Path, pathlib.PurePath]
-    if os.name == 'nt':  # pragma: no branch
+    if os.name == 'nt':  # pragma: no cover
         _pathlib_types.extend([pathlib.WindowsPath, pathlib.PureWindowsPath])
     else:
         _pathlib_types.extend([pathlib.PosixPath, pathlib.PurePosixPath])
