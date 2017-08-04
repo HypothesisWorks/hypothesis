@@ -28,7 +28,7 @@ from hypothesis.internal.compat import PY2, integer_types
 # Build a set of all types output by core strategies
 blacklist = [
     'builds', 'iterables', 'permutations', 'random_module', 'randoms',
-    'runner', 'sampled_from', 'streaming',
+    'runner', 'sampled_from', 'streaming', 'choices',
 ]
 types_with_core_strat = set(integer_types)
 for thing in (getattr(st, name) for name in sorted(st._strategies)

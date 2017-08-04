@@ -21,6 +21,17 @@ Hypothesis APIs come in three flavours:
 You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
+-------------------
+3.15.0 - 2017-08-04
+-------------------
+
+This release deprecates two strategies, :func:`~hypothesis.strategies.choices` and
+:func:`~hypothesis.strategies.streaming`.
+
+Both of these are somewhat confusing to use and are entirely redundant since the
+introduction of the :func:`~hypothesis.strategies.data` strategy for interactive
+drawing in tests, and their use should be replaced with direct use of
+:func:`~hypothesis.strategies.data` instead.
 
 -------------------
 3.14.2 - 2017-08-03

@@ -27,6 +27,7 @@ from fractions import Fraction
 
 from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.control import assume
+from hypothesis._settings import note_deprecation
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import hrange, text_type, integer_types, \
     get_type_hints, getfullargspec, implements_iterator
@@ -608,7 +609,6 @@ def dictionaries(
     ).map(dict_class)
 
 
-@cacheable
 @defines_strategy
 def streaming(elements):
     """Generates an infinite stream of values where each value is drawn from
@@ -617,8 +617,17 @@ def streaming(elements):
     The result is iterable (the iterator will never terminate) and
     indexable.
 
+    .. deprecated:: 3.15.0
+        Use :func:`data() <hypothesis.strategies.data>` instead.
+
     """
     check_strategy(elements)
+
+    note_deprecation(
+        'streaming() has been deprecated. Use the data() strategy instead and '
+        'replace stream iteration with data.draw() calls.'
+    )
+
     from hypothesis.searchstrategy.streams import StreamStrategy
     return StreamStrategy(elements)
 
@@ -1269,15 +1278,25 @@ def shared(base, key=None):
     return SharedStrategy(base, key)
 
 
-@cacheable
+@defines_strategy
 def choices():
     """Strategy that generates a function that behaves like random.choice.
 
     Will note choices made for reproducibility.
 
+    .. deprecated:: 3.15.0
+
+        Use :func:`data() <hypothesis.strategies.data>` with
+        :func:`sampled_from() <hypothesis.strategies.sampled_from>` instead.
+
     """
     from hypothesis.control import note, current_build_context
     from hypothesis.internal.conjecture.utils import choice, check_sample
+
+    note_deprecation(
+        'choices() has been deprecated. Use the data() strategy instead and '
+        'replace its usage with data.draw(sampled_from(elements))) calls.'
+    )
 
     class Chooser(object):
 
@@ -1304,11 +1323,10 @@ def choices():
         def do_draw(self, data):
             return Chooser(current_build_context(), data)
 
-    return ReprWrapperStrategy(
-        shared(
-            ChoiceStrategy(),
-            key='hypothesis.strategies.chooser.choice_function'
-        ), 'choices()')
+    return shared(
+        ChoiceStrategy(),
+        key='hypothesis.strategies.chooser.choice_function'
+    )
 
 
 @cacheable
