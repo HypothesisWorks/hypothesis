@@ -17,7 +17,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import time
 import functools
 import threading
 from collections import namedtuple
@@ -122,57 +121,6 @@ class TestCases(object):
 def test_can_be_given_keyword_args(x, name):
     assume(x > 0)
     assert len(name) < x
-
-
-@fails_with(Unsatisfiable)
-@settings(timeout=0.1)
-@given(integers())
-def test_slow_test_times_out(x):
-    time.sleep(0.05)
-
-
-# Cheap hack to make test functions which fail on their second invocation
-calls = [0, 0, 0, 0]
-
-timeout_settings = settings(timeout=0.2, min_satisfying_examples=2)
-
-
-# The following tests exist to test that verifiers start their timeout
-# from when the test first executes, not from when it is defined.
-@fails
-@given(integers())
-@timeout_settings
-def test_slow_failing_test_1(x):
-    time.sleep(0.05)
-    assert not calls[0]
-    calls[0] = 1
-
-
-@fails
-@timeout_settings
-@given(integers())
-def test_slow_failing_test_2(x):
-    time.sleep(0.05)
-    assert not calls[1]
-    calls[1] = 1
-
-
-@fails
-@given(integers())
-@timeout_settings
-def test_slow_failing_test_3(x):
-    time.sleep(0.05)
-    assert not calls[2]
-    calls[2] = 1
-
-
-@fails
-@timeout_settings
-@given(integers())
-def test_slow_failing_test_4(x):
-    time.sleep(0.05)
-    assert not calls[3]
-    calls[3] = 1
 
 
 @fails
@@ -298,7 +246,7 @@ def test_can_find_large_sum_frozenset(xs):
 
 def test_prints_on_failure_by_default():
     @given(integers(), integers())
-    @settings(max_examples=200, timeout=-1)
+    @settings(max_examples=200)
     def test_ints_are_sorted(balthazar, evans):
         assume(evans >= 0)
         assert balthazar <= evans

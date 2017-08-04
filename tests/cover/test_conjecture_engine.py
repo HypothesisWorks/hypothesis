@@ -22,7 +22,7 @@ from random import seed as seed_random
 from random import Random
 
 from hypothesis import strategies as st
-from hypothesis import Phase, given, settings
+from hypothesis import Phase, given, settings, unlimited
 from hypothesis.database import ExampleDatabase
 from hypothesis.internal.compat import hbytes, int_from_bytes, \
     bytes_from_list
@@ -138,7 +138,7 @@ def test_terminates_shrinks():
             data.mark_interesting()
     runner = ConjectureRunner(tf, settings=settings(
         max_examples=5000, max_iterations=10000, max_shrinks=10,
-        database=None, timeout=-1
+        database=None, timeout=unlimited,
     ))
     runner.run()
     assert runner.last_data.status == Status.INTERESTING
@@ -289,7 +289,7 @@ def test_stops_after_max_examples_when_generating():
 
 
 @given(st.random_module())
-@settings(max_shrinks=0, timeout=120, min_satisfying_examples=1)
+@settings(max_shrinks=0, min_satisfying_examples=1, max_examples=2)
 def test_interleaving_engines(rnd):
     @run_to_buffer
     def x(data):
@@ -318,7 +318,7 @@ def test_run_with_timeout_while_shrinking():
             data.mark_interesting()
 
     runner = ConjectureRunner(
-        f, settings=settings(database=None, timeout=0.2,))
+        f, settings=settings(database=None, timeout=0.2, strict=False))
     start = time.time()
     runner.run()
     assert time.time() <= start + 1
@@ -330,7 +330,7 @@ def test_run_with_timeout_while_boring():
         time.sleep(0.1)
 
     runner = ConjectureRunner(
-        f, settings=settings(database=None, timeout=0.2,))
+        f, settings=settings(database=None, timeout=0.2, strict=False))
     start = time.time()
     runner.run()
     assert time.time() <= start + 1
@@ -449,7 +449,8 @@ def test_garbage_collects_the_database():
         if x in seen:
             data.mark_interesting()
 
-    local_settings = settings(database=db, max_shrinks=2 * n, timeout=-1)
+    local_settings = settings(
+        database=db, max_shrinks=2 * n, timeout=unlimited)
 
     runner = ConjectureRunner(f, settings=local_settings, database_key=key)
     runner.run()

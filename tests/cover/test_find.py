@@ -92,6 +92,6 @@ def test_times_out():
         find(
             integers(),
             lambda x: time.sleep(0.05) or False,
-            settings=Settings(timeout=0.01))
+            settings=Settings(timeout=0.01, strict=False))
 
     e.value.args[0]

@@ -24,7 +24,7 @@ import warnings
 from tempfile import mkdtemp
 
 import unicodenazi
-from hypothesis import settings
+from hypothesis import settings, unlimited
 from hypothesis.configuration import set_hypothesis_home_dir
 
 warnings.filterwarnings('error', category=UnicodeWarning)
@@ -36,7 +36,7 @@ set_hypothesis_home_dir(mkdtemp())
 assert isinstance(settings, type)
 
 settings.register_profile(
-    'default', settings(timeout=-1, strict=True)
+    'default', settings(timeout=unlimited, strict=True)
 )
 settings.load_profile('default')
 

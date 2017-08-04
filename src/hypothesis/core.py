@@ -32,7 +32,8 @@ from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
     UnsatisfiedAssumption, HypothesisDeprecationWarning
 from hypothesis.control import BuildContext
 from hypothesis._settings import settings as Settings
-from hypothesis._settings import Phase, Verbosity, HealthCheck
+from hypothesis._settings import Phase, Verbosity, HealthCheck, \
+    note_deprecation
 from hypothesis.executors import new_style_executor, \
     default_new_style_executor
 from hypothesis.reporting import report, verbose_report, current_verbosity
@@ -255,7 +256,10 @@ def fail_health_check(settings, message, label):
     # Tell pytest to omit the body of this function from tracebacks
     # http://doc.pytest.org/en/latest/example/simple.html#writing-well-integrated-assertion-helpers
     __tracebackhide__ = True
+
     if label in settings.suppress_health_check:
+        return
+    if not settings.perform_health_check:
         return
     message += (
         '\nSee https://hypothesis.readthedocs.io/en/latest/health'
@@ -488,6 +492,9 @@ def new_given_argspec(original_argspec, generator_kwargs):
         args=new_args, kwonlyargs=new_kwonlyargs, annotations=annots)
 
 
+HUNG_TEST_TIME_LIMIT = 5 * 60
+
+
 class StateForActualGivenExecution(object):
 
     def __init__(self, test_runner, search_strategy, test, settings, random):
@@ -502,6 +509,15 @@ class StateForActualGivenExecution(object):
         self.random = random
 
     def evaluate_test_data(self, data):
+        if (
+            time.time() - self.start_time >= HUNG_TEST_TIME_LIMIT
+        ):
+            fail_health_check(self.settings, (
+                'Your test has been running for at least five minutes. This '
+                'is probably not what you intended, so by default Hypothesis '
+                'turns it into an error.'
+            ), HealthCheck.hung_test)
+
         try:
             result = self.test_runner(data, reify_and_execute(
                 self.search_strategy, self.test,
@@ -530,7 +546,7 @@ class StateForActualGivenExecution(object):
         # Tell pytest to omit the body of this function from tracebacks
         __tracebackhide__ = True
         database_key = str_to_bytes(fully_qualified_name(self.test))
-        start_time = time.time()
+        self.start_time = time.time()
         runner = ConjectureRunner(
             self.evaluate_test_data,
             settings=self.settings, random=self.random,
@@ -538,11 +554,8 @@ class StateForActualGivenExecution(object):
         )
         runner.run()
         note_engine_for_statistics(runner)
-        run_time = time.time() - start_time
-        timed_out = (
-            self.settings.timeout > 0 and
-            run_time >= self.settings.timeout
-        )
+        run_time = time.time() - self.start_time
+        timed_out = runner.exit_reason == ExitReason.timeout
         if runner.last_data is None:
             return
         if runner.last_data.status == Status.INTERESTING:
@@ -552,6 +565,19 @@ class StateForActualGivenExecution(object):
                     database_key, self.falsifying_example
                 )
         else:
+            if timed_out:
+                note_deprecation((
+                    'Your tests are hitting the settings timeout (%.2fs). '
+                    'This functionality will go away in a future release '
+                    'and you should not rely on it. Instead, try setting '
+                    'max_examples to be some value lower than %d (the number '
+                    'of examples your test successfully ran here). Or, if you '
+                    'would prefer your tests to run to completion, regardless '
+                    'of how long they take, you can set the timeout value to '
+                    'hypothesis.unlimited.'
+                ) % (
+                    self.settings.timeout, runner.valid_examples),
+                    self.settings)
             if runner.valid_examples < min(
                 self.settings.min_satisfying_examples,
                 self.settings.max_examples,

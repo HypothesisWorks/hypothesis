@@ -23,7 +23,8 @@ from tempfile import mkdtemp
 import pytest
 
 import hypothesis
-from hypothesis.errors import InvalidState, InvalidArgument
+from hypothesis.errors import InvalidState, InvalidArgument, \
+    HypothesisDeprecationWarning
 from hypothesis.database import ExampleDatabase, \
     DirectoryBasedExampleDatabase
 from hypothesis._settings import Verbosity, settings, note_deprecation
@@ -183,8 +184,40 @@ def test_deprecate_uses_default():
         note_deprecation('Hi')
 
     with settings(strict=True):
-        with pytest.raises(DeprecationWarning):
+        with pytest.raises(HypothesisDeprecationWarning):
             note_deprecation('Hi')
+
+
+def test_cannot_set_deprecated_settings_with_strict():
+    with pytest.raises(HypothesisDeprecationWarning):
+        settings(timeout=3)
+
+
+def test_will_emit_warning_when_non_strict():
+    with pytest.warns(HypothesisDeprecationWarning):
+        settings(strict=False, timeout=3)
+
+
+def test_can_set_deprecated_settings_on_non_strict():
+    has_timeout = settings(timeout=3, strict=False)
+    assert has_timeout.timeout == 3
+
+
+def test_set_deprecated_settings_if_nonstrict():
+    with settings(strict=False):
+        assert settings(timeout=3).timeout == 3
+
+
+def test_can_inherit_from_deprecated_settings_even_while_strict():
+    with settings(strict=False):
+        parent = settings(timeout=3)
+
+    child = settings(parent, strict=True)
+    assert child.timeout == 3
+
+
+def test_setting_to_future_value_gives_future_value_and_no_error():
+    assert settings(timeout=hypothesis.unlimited).timeout == -1
 
 
 def test_cannot_set_settings():

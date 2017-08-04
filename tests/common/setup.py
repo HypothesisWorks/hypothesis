@@ -21,7 +21,7 @@ import os
 import warnings
 from tempfile import mkdtemp
 
-from hypothesis import settings
+from hypothesis import settings, unlimited
 from hypothesis.configuration import set_hypothesis_home_dir
 from hypothesis.internal.charmap import charmap, charmap_file
 
@@ -35,13 +35,27 @@ def run():
     assert os.path.exists(charmap_file())
     assert isinstance(settings, type)
 
+    # We do a smoke test here before we mess around with settings.
+    x = settings()
+
+    import hypothesis._settings as settings_module
+
+    for s in settings_module.all_settings.values():
+        v = getattr(x, s.name)
+        # Check if it has a dynamically defined default and if so skip
+        # comparison.
+        if getattr(settings, s.name).show_default:
+            assert v == s.default, '%r == x.%s != s.%s == %r' % (
+                v, s.name, s.name, s.default,
+            )
+
     settings.register_profile(
-        'default', settings(timeout=-1, strict=True)
+        'default', settings(timeout=unlimited, strict=True)
     )
 
     settings.register_profile(
         'speedy', settings(
-            timeout=1, max_examples=5,
+            max_examples=5,
         ))
 
     settings.register_profile(

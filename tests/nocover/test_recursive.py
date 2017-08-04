@@ -122,7 +122,7 @@ def test_can_form_sets_of_recursive_data():
         lambda x: st.lists(x, min_size=5).map(tuple),
         max_leaves=20))
     xs = find(trees, lambda x: len(x) >= 5, settings=settings(
-        database=None, timeout=20, max_shrinks=1000, max_examples=1000
+        database=None, max_shrinks=1000, max_examples=1000
     ))
     assert len(xs) == 5
 
@@ -146,7 +146,6 @@ def test_can_flatmap_to_recursive_data(rnd):
         stuff, lambda x: sum(flatten(x)) >= 100,
         settings=settings(
             database=None, max_shrinks=2000, max_examples=1000,
-            timeout=20,
         ),
         random=rnd
     )
