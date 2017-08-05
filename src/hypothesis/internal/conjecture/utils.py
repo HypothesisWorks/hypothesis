@@ -210,10 +210,6 @@ def biased_coin(data, p):
     return result
 
 
-def write(data, string):
-    data.write(string)
-
-
 class Sampler(object):
     """Sampler based on "Succinct Sampling from Discrete Distributions" by
     Bringmann and Larsen. In general it has some advantages and disadvantages
