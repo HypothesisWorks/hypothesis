@@ -21,13 +21,18 @@ import hypothesis.strategies as st
 from hypothesis import find, assume, settings
 from hypothesis.errors import NoSuchExample, Unsatisfiable
 from hypothesis.database import SQLiteExampleDatabase
+from hypothesis.internal.compat import hbytes
+
+
+def has_a_non_zero_byte(x):
+    return any(hbytes(x))
 
 
 def test_saves_incremental_steps_in_database():
     key = b"a database key"
     database = SQLiteExampleDatabase(':memory:')
     find(
-        st.binary(min_size=10), lambda x: any(x),
+        st.binary(min_size=10), lambda x: has_a_non_zero_byte(x),
         settings=settings(database=database), database_key=key
     )
     assert len(set(database.fetch(key))) > 1
@@ -41,7 +46,8 @@ def test_clears_out_database_as_things_get_boring():
     def stuff():
         try:
             find(
-                st.binary(min_size=50), lambda x: do_we_care and any(x),
+                st.binary(min_size=50),
+                lambda x: do_we_care and has_a_non_zero_byte(x),
                 settings=settings(database=database, max_examples=10),
                 database_key=key
             )
@@ -72,7 +78,7 @@ def test_trashes_all_invalid_examples():
         try:
             find(
                 st.binary(min_size=100),
-                lambda x: assume(not finicky) and any(x),
+                lambda x: assume(not finicky) and has_a_non_zero_byte(x),
                 settings=settings(database=database, timeout=5, strict=False),
                 database_key=key
             )
@@ -93,7 +99,7 @@ def test_respects_max_examples_in_database_usage():
 
     def check(x):
         counter[0] += 1
-        return do_we_care and any(x)
+        return do_we_care and has_a_non_zero_byte(x)
 
     def stuff():
         try:
