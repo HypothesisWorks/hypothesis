@@ -395,11 +395,6 @@ class ConjectureRunner(object):
 
         for i, b in enumerate(result):
             assert isinstance(b, int)
-            if node_index in self.forced:
-                if isinstance(result, hbytes):
-                    result = bytearray(result)
-                b = self.forced[node_index]
-                result[i] = b
             try:
                 new_node_index = node[b]
             except KeyError:
