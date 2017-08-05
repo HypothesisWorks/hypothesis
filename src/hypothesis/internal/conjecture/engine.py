@@ -385,10 +385,8 @@ class ConjectureRunner(object):
             node = self.tree[node_index]
             try:
                 node_index = node[data.buffer[i]]
+                assert node_index not in self.dead
                 node = self.tree[node_index]
-                if node_index in self.dead:
-                    data.__hit_novelty = True
-                    return result
             except KeyError:
                 data.__hit_novelty = True
                 return result
