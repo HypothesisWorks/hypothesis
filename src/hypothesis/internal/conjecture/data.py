@@ -52,6 +52,7 @@ class ConjectureData(object):
 
     @classmethod
     def for_buffer(self, buffer):
+        bytes = hbytes(buffer)
         return ConjectureData(
             max_length=len(buffer),
             draw_bytes=lambda data, n, distribution:

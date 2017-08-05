@@ -27,7 +27,7 @@ import codecs
 import platform
 import importlib
 from gzip import GzipFile
-from base64 import b64decode, b64encode
+from base64 import b64encode
 from decimal import Context, Decimal, Inexact
 from hashlib import sha1
 from collections import namedtuple
@@ -505,3 +505,11 @@ if PY2:
         return int(math.floor(x))
 else:
     floor = math.floor
+
+
+if PY2:
+    def b64decode(s):
+        from base64 import b64decode as base
+        return hbytes(base(s))
+else:
+    from base64 import b64decode

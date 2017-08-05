@@ -23,7 +23,7 @@ import binascii
 import threading
 from contextlib import contextmanager
 
-from hypothesis.internal.compat import FileNotFoundError, sha1, \
+from hypothesis.internal.compat import FileNotFoundError, sha1, hbytes, \
     b64decode, b64encode
 
 sqlite3 = None
@@ -100,10 +100,10 @@ class InMemoryExampleDatabase(ExampleDatabase):
             yield v
 
     def save(self, key, value):
-        self.data.setdefault(key, set()).add(value)
+        self.data.setdefault(key, set()).add(hbytes(value))
 
     def delete(self, key, value):
-        self.data.get(key, set()).discard(value)
+        self.data.get(key, set()).discard(hbytes(value))
 
     def close(self):
         pass
@@ -239,7 +239,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
         for path in os.listdir(kp):
             try:
                 with open(os.path.join(kp, path), 'rb') as i:
-                    yield i.read()
+                    yield hbytes(i.read())
             except FileNotFoundError:
                 pass
 
