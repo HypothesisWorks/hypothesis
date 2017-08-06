@@ -678,8 +678,10 @@ def characters(whitelist_categories=None, blacklist_categories=None,
             blacklist_categories is None,
             )):
         raise InvalidArgument(
-            'Cannot have just whitelist_characters="%s" alone, '
-            'it would have no effect' % (whitelist_characters,)
+            'Cannot have just whitelist_characters=%r alone, '
+            'it would have no effect. Perhaps you want sampled_from()' % (
+                whitelist_characters,
+            )
         )
 
     from hypothesis.searchstrategy.strings import OneCharStringStrategy
