@@ -117,16 +117,16 @@ def test_union_empty():
 
 
 def test_union_handles_totally_overlapped_gap():
-    #    < xx  >
-    # || <yy yy>
-    # == <zzzzz>
+    #   < xx  >  Imagine the intervals x and y as bit strings.
+    # | <yy yy>  The bit at position n is set if n falls inside that interval.
+    # = <zzzzz>  In this model _union_intervals() performs bit-wise or.
     assert cm._union_intervals([[2, 3]], [[1, 2], [4, 5]]) == ((1, 5),)
 
 
 def test_union_handles_partially_overlapped_gap():
-    #    <  x  >
-    # || <yy  y>
-    # == <zzz z>
+    #   <  x  >  Imagine the intervals x and y as bit strings.
+    # | <yy  y>  The bit at position n is set if n falls inside that interval.
+    # = <zzz z>  In this model _union_intervals() performs bit-wise or.
     assert cm._union_intervals([[3, 3]], [[1, 2], [5, 5]]) == ((1, 3), (5, 5))
 
 
