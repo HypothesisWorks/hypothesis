@@ -155,9 +155,9 @@ error-prone work to do in identifying edge cases. Test coverage is nice but
 test depth is even nicer, and it's much easier to get meaningful test depth
 using Hypothesis.
 
--------------------------------------------
+--------------------------------------------------
 `Cody Kochmann <https://github.com/CodyKochmann>`_
--------------------------------------------
+--------------------------------------------------
 
 Hypothesis is being used as the engine for random object generation with my 
 open source function fuzzer 
