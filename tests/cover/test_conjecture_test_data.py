@@ -78,6 +78,11 @@ def test_can_mark_interesting():
     assert x.status == Status.INTERESTING
 
 
+def test_drawing_zero_bits_is_free():
+    x = ConjectureData.for_buffer(bytes())
+    assert x.draw_bits(0) == 0
+
+
 def test_can_mark_invalid():
     x = ConjectureData.for_buffer(bytes())
     with pytest.raises(StopTest):

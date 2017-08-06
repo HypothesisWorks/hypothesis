@@ -78,6 +78,7 @@ class ConjectureRunner(object):
         # leads to a dead node when starting from here.
         self.dead = set()
         self.forced = {}
+        self.capped = {}
 
     def __tree_is_exhausted(self):
         return 0 in self.dead
@@ -125,6 +126,10 @@ class ConjectureRunner(object):
             if i in data.forced_indices:
                 self.forced[node_index] = b
             try:
+                self.capped[node_index] = data.capped_indices[i]
+            except KeyError:
+                pass
+            try:
                 node_index = tree_node[b]
             except KeyError:
                 node_index = len(self.tree)
@@ -139,7 +144,10 @@ class ConjectureRunner(object):
             self.tree[node_index] = data
 
             for j in reversed(indices):
-                if len(self.tree[j]) < 256 and j not in self.forced:
+                if (
+                    len(self.tree[j]) < self.capped.get(j, 255) + 1
+                    and j not in self.forced
+                ):
                     break
                 if set(self.tree[j].values()).issubset(self.dead):
                     self.dead.add(j)
@@ -211,6 +219,10 @@ class ConjectureRunner(object):
                 return False
             try:
                 b = self.forced[i]
+            except KeyError:
+                pass
+            try:
+                b = min(b, self.capped[i])
             except KeyError:
                 pass
             try:
@@ -411,6 +423,7 @@ class ConjectureRunner(object):
                     result = bytearray(result)
                 for c in range(256):
                     if c not in node:
+                        assert c <= self.capped.get(node_index, c)
                         result[i] = c
                         data.__hit_novelty = True
                         return hbytes(result)

@@ -80,13 +80,16 @@ def test_coin_biased_towards_falsehood():
 
 
 def test_unbiased_coin_has_no_second_order():
-    flips = [
-        cu.biased_coin(ConjectureData.for_buffer([i]), 0.5)
-        for i in range(256)
-    ]
+    counts = Counter()
 
-    counts = Counter(flips)
-    assert counts[True] == counts[False] == 128
+    for i in range(256):
+        buf = hbytes([i])
+        data = ConjectureData.for_buffer(buf)
+        result = cu.biased_coin(data, 0.5)
+        if data.buffer == buf:
+            counts[result] += 1
+
+    assert counts[False] == counts[True] > 0
 
 
 def test_can_get_odd_number_of_bits():
