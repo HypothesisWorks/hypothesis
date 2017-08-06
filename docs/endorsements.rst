@@ -156,6 +156,24 @@ test depth is even nicer, and it's much easier to get meaningful test depth
 using Hypothesis.
 
 -------------------------------------------
+`Cody Kochmann <https://github.com/CodyKochmann>`_
+-------------------------------------------
+
+Hypothesis is being used as the engine for random object generation with my 
+open source function fuzzer 
+`battle_tested <https://github.com/CodyKochmann/battle_tested>`_
+which maps all behaviors of a function allowing you to minimize the chance of 
+unexpected crashes when running code in production.
+
+With how efficient Hypothesis is at generating the edge cases that cause 
+unexpected behavior occur, 
+`battle_tested <https://github.com/CodyKochmann/battle_tested>`_
+is able to map out the entire behavior of most functions in less than a few 
+seconds.
+
+Hypothesis truly is a masterpiece. I can't thank you enough for building it.
+
+-------------------------------------------
 `Your name goes here <http://example.com>`_
 -------------------------------------------
 
