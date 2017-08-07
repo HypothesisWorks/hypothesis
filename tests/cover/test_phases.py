@@ -22,6 +22,7 @@ import pytest
 import hypothesis.strategies as st
 from hypothesis import Phase, given, example, settings
 from hypothesis.errors import InvalidArgument
+from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 
 
 @example(11)
@@ -46,6 +47,45 @@ def test_this_would_fail_if_you_ran_it(b):
 
 def test_phases_default_to_all():
     assert settings(phases=None).phases == tuple(Phase)
+
+
+def test_does_not_reuse_saved_examples_if_reuse_not_in_phases():
+    class BadDatabase(ExampleDatabase):
+        def save(self, key, value):
+            pass
+
+        def delete(self, key, value):
+            pass
+
+        def fetch(self, key):
+            raise ValueError()
+
+        def close(self):
+            pass
+
+    @settings(database=BadDatabase(), phases=(Phase.generate,))
+    @given(st.integers())
+    def test_usage(i):
+        pass
+
+    test_usage()
+
+
+def test_will_save_when_reuse_not_in_phases():
+    database = InMemoryExampleDatabase()
+
+    assert not database.data
+
+    @settings(database=database, phases=(Phase.generate,))
+    @given(st.integers())
+    def test_usage(i):
+        raise ValueError()
+
+    with pytest.raises(ValueError):
+        test_usage()
+
+    saved, = database.data.values()
+    assert len(saved) == 1
 
 
 def test_rejects_non_phases():

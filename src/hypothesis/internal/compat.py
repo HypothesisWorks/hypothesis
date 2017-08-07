@@ -503,8 +503,12 @@ else:
 if PY2:
     def floor(x):
         return int(math.floor(x))
+
+    def ceil(x):
+        return int(math.ceil(x))
 else:
     floor = math.floor
+    ceil = math.ceil
 
 
 if PY2:

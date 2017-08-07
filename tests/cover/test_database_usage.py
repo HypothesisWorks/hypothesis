@@ -17,10 +17,13 @@
 
 from __future__ import division, print_function, absolute_import
 
+import pytest
+
 import hypothesis.strategies as st
-from hypothesis import find, assume, settings
+from hypothesis import Verbosity, find, given, assume, settings
 from hypothesis.errors import NoSuchExample, Unsatisfiable
-from hypothesis.database import SQLiteExampleDatabase
+from hypothesis.database import SQLiteExampleDatabase, \
+    InMemoryExampleDatabase
 from hypothesis.internal.compat import hbytes
 
 
@@ -69,7 +72,7 @@ def test_clears_out_database_as_things_get_boring():
         assert False
 
 
-def test_trashes_all_invalid_examples():
+def test_trashes_invalid_examples():
     key = b"a database key"
     database = SQLiteExampleDatabase(':memory:')
     finicky = False
@@ -88,10 +91,11 @@ def test_trashes_all_invalid_examples():
         except Unsatisfiable:
             pass
     stuff()
-    assert len(set(database.fetch(key))) > 1
+    original = len(set(database.fetch(key)))
+    assert original > 1
     finicky = True
     stuff()
-    assert len(set(database.fetch(key))) == 0
+    assert len(set(database.fetch(key))) < original
 
 
 def test_respects_max_examples_in_database_usage():
@@ -119,3 +123,51 @@ def test_respects_max_examples_in_database_usage():
     counter[0] = 0
     stuff()
     assert counter == [10]
+
+
+def test_clears_out_everything_smaller_than_the_interesting_example():
+    in_clearing = False
+    target = [None]
+
+    for _ in range(5):
+        # We retry the test run a few times to get a large enough initial
+        # set of examples that we're not going to explore them all in the
+        # initial run.
+        cache = {}
+        seen = set()
+
+        database = InMemoryExampleDatabase()
+
+        @settings(
+            database=database, verbosity=Verbosity.quiet, max_examples=100)
+        @given(st.binary(min_size=10, max_size=10))
+        def test(i):
+            if not in_clearing:
+                if len([b for b in i if b > 1]) >= 8:
+                    assert cache.setdefault(i, len(cache) % 10 != 9)
+            elif len(seen) <= 20:
+                seen.add(i)
+            else:
+                if target[0] is None:
+                    remainder = sorted([s for s in saved if s not in seen])
+                    target[0] = remainder[len(remainder) // 2]
+                assert i in seen or i < target[0]
+
+        with pytest.raises(AssertionError):
+            test()
+
+        saved, = database.data.values()
+        if len(saved) > 30:
+            break
+    else:
+        assert False, 'Never generated enough examples while shrinking'
+
+    in_clearing = True
+
+    with pytest.raises(AssertionError):
+        test()
+
+    saved, = database.data.values()
+
+    for s in saved:
+        assert s >= target[0]

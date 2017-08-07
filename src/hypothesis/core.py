@@ -560,10 +560,6 @@ class StateForActualGivenExecution(object):
             return
         if runner.last_data.status == Status.INTERESTING:
             self.falsifying_example = runner.last_data.buffer
-            if self.settings.database is not None:
-                self.settings.database.save(
-                    database_key, self.falsifying_example
-                )
         else:
             if timed_out:
                 note_deprecation((
