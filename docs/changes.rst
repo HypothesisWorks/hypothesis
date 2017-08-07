@@ -22,6 +22,18 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.16.1 - 2017-08-07
+-------------------
+
+This release makes an implementation change to how Hypothesis handles certain
+internal constructs.
+
+The main effect you should see is improvement to the behaviour and performance
+of collection types, especially ones with a ``min_size`` parameter. Many cases
+that would previously fail due to being unable to generate enough valid
+examples will now succeed, and other cases should run slightly faster.
+
+-------------------
 3.16.0 - 2017-08-04
 -------------------
 

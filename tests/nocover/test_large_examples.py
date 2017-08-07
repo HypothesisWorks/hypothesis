@@ -17,5 +17,9 @@
 
 from __future__ import division, print_function, absolute_import
 
-__version_info__ = (3, 16, 1)
-__version__ = '.'.join(map(str, __version_info__))
+import hypothesis.strategies as st
+from tests.common.debug import find_any
+
+
+def test_can_generate_large_lists_with_min_size():
+    find_any(st.lists(st.integers(), min_size=400))

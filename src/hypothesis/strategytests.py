@@ -42,7 +42,7 @@ def strategy_test_suite(
     settings = Settings(
         database=None,
         max_examples=max_examples,
-        max_iterations=max_examples * 2,
+        max_iterations=max_examples * 10,
         min_satisfying_examples=2,
     )
     random = random or Random()
