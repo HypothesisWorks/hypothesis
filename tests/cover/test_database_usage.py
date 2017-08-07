@@ -72,7 +72,7 @@ def test_clears_out_database_as_things_get_boring():
         assert False
 
 
-def test_trashes_all_invalid_examples():
+def test_trashes_invalid_examples():
     key = b"a database key"
     database = SQLiteExampleDatabase(':memory:')
     finicky = False
@@ -91,10 +91,11 @@ def test_trashes_all_invalid_examples():
         except Unsatisfiable:
             pass
     stuff()
-    assert len(set(database.fetch(key))) > 1
+    original = len(set(database.fetch(key)))
+    assert original > 1
     finicky = True
     stuff()
-    assert len(set(database.fetch(key))) == 0
+    assert len(set(database.fetch(key))) < original
 
 
 def test_respects_max_examples_in_database_usage():
