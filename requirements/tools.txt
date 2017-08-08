@@ -15,7 +15,7 @@ docformatter==0.8         # via pyformat
 docutils==0.13.1          # via restructuredtext-lint, sphinx
 first==2.0.1              # via pip-tools
 flake8==3.4.1
-idna==2.5                 # via requests
+idna==2.6                 # via requests
 imagesize==0.7.1          # via sphinx
 isort==4.2.15
 jinja2==2.9.6             # via sphinx
