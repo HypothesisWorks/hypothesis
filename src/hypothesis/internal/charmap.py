@@ -24,7 +24,7 @@ import tempfile
 import unicodedata
 
 from hypothesis.configuration import tmpdir, storage_directory
-from hypothesis.internal.compat import GzipFile, FileExistsError, hunichr
+from hypothesis.internal.compat import GzipFile, hunichr
 
 
 def charmap_file():
@@ -41,7 +41,11 @@ def charmap():
     global _charmap
     if _charmap is None:
         f = charmap_file()
-        if not os.path.exists(f):
+        try:
+            with GzipFile(f, 'rb') as i:
+                _charmap = dict(pickle.loads(i.read()))
+
+        except Exception:
             tmp_charmap = {}
             for i in range(0, sys.maxunicode + 1):
                 cat = unicodedata.category(hunichr(i))
@@ -50,25 +54,25 @@ def charmap():
                     rs[-1][-1] += 1
                 else:
                     rs.append([i, i])
-            # We explicitly set the mtime to an arbitrary value so as to get
-            # a stable format for our charmap.
             data = sorted(
                 (k, tuple((map(tuple, v))))
                 for k, v in tmp_charmap.items())
 
-            # Write the Unicode table atomically
-            fd, tmpfile = tempfile.mkstemp(dir=tmpdir())
-            os.close(fd)
-            with GzipFile(tmpfile, 'wb', mtime=1) as o:
-                o.write(pickle.dumps(data, pickle.HIGHEST_PROTOCOL))
+            _charmap = dict(data)
+
             try:
+                # Cache the result of this operation, to speed up startup
+                # Write the Unicode table atomically
+                fd, tmpfile = tempfile.mkstemp(dir=tmpdir())
+                os.close(fd)
+                # We explicitly set the mtime to an arbitrary value so as to
+                # get a stable format for our charmap.
+                with GzipFile(tmpfile, 'wb', mtime=1) as o:
+                    o.write(pickle.dumps(data, pickle.HIGHEST_PROTOCOL))
                 os.rename(tmpfile, f)
-            except FileExistsError:  # pragma: no cover
-                # This exception is only raised on Windows, and coverage is
-                # measured on Linux.
+
+            except Exception:
                 pass
-        with GzipFile(f, 'rb') as i:
-            _charmap = dict(pickle.loads(i.read()))
     assert _charmap is not None
     return _charmap
 

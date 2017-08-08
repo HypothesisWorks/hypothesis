@@ -138,8 +138,17 @@ def test_exception_in_write_does_not_lead_to_broken_charmap(monkeypatch):
     cm._charmap = None
     monkeypatch.setattr(os.path, 'exists', lambda p: False)
     monkeypatch.setattr(os, 'rename', broken)
-    with pytest.raises(ValueError):
-        cm.charmap()
 
-    with pytest.raises(ValueError):
-        cm.charmap()
+    cm.charmap()
+    cm.charmap()
+
+
+def test_regenerate_broken_charmap_file():
+    cm.charmap()
+    file_loc = cm.charmap_file()
+
+    with open(file_loc, 'wb'):
+        pass
+
+    cm._charmap = None
+    cm.charmap()
