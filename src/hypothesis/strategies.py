@@ -658,8 +658,8 @@ def characters(whitelist_categories=None, blacklist_categories=None,
     in that list will also be produced.
 
     If ``blacklist_characters`` is specified, then any characters in that list
-    will be not be produced. Characters in both ``whitelist_characters`` and
-    ``blacklist_characters`` will not be produced.
+    will be not be produced. Any overlap between ``whitelist_characters`` and
+    ``blacklist_characters`` will raise an exception.
 
     """
     if (
@@ -681,6 +681,17 @@ def characters(whitelist_categories=None, blacklist_categories=None,
             'Cannot have just whitelist_characters=%r alone, '
             'it would have no effect. Perhaps you want sampled_from()' % (
                 whitelist_characters,
+            )
+        )
+    if (
+        whitelist_characters is not None and
+        blacklist_characters is not None and
+        set(whitelist_characters).intersection(set(whitelist_characters))
+    ):
+        raise InvalidArgument(
+            'Cannot have characters in both whitelist_characters=%r, '
+            'and blacklist_characters=%r' % (
+                whitelist_characters, blacklist_categories,
             )
         )
 

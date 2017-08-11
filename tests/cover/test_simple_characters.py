@@ -89,6 +89,13 @@ def test_whitelisted_characters_alone():
         characters(whitelist_characters=u'te02тест49st').example()
 
 
+def test_whitelisted_characters_overlap_blacklisted_characters():
+    with pytest.raises(InvalidArgument):
+        characters(min_codepoint=ord('0'), max_codepoint=ord('9'),
+                   whitelist_characters=u'te02тест49st',
+                   blacklist_characters=u't').example()
+
+
 def test_whitelisted_characters_override():
     good_characters = u'teтестst'
     st = characters(min_codepoint=ord('0'), max_codepoint=ord('9'),
