@@ -23,9 +23,9 @@ import unicodedata
 
 import pytest
 
-from hypothesis import given, settings
-from hypothesis.errors import NoExamples
-from hypothesis.strategies import strings_matching_regex
+from hypothesis import given, reject
+from hypothesis.errors import NoExamples, FailedHealthCheck
+from hypothesis.strategies import text, binary, from_regex
 from hypothesis.internal.compat import PY3, hrange, hunichr
 from hypothesis.searchstrategy.regex import SPACE_CHARS, \
     UNICODE_SPACE_CHARS, HAS_WEIRD_WORD_CHARS, UNICODE_WORD_CATEGORIES, \
@@ -91,53 +91,22 @@ def _test_matching_pattern(pattern, isvalidchar, is_unicode=False):
             )
 
 
-def test_matching_ascii_word_chars():
-    _test_matching_pattern(r'\w', is_word)
+@pytest.mark.parametrize('category,predicate', [
+    (r'\w', is_word), (r'\d', is_digit), (r'\s', None)])
+@pytest.mark.parametrize('invert', [False, True])
+@pytest.mark.parametrize('is_unicode', [False, True])
+def test_matching(category, predicate, invert, is_unicode):
+    if predicate is None:
+        # Special behaviour due to \x1c, INFORMATION SEPARATOR FOUR
+        predicate = is_unicode_space if is_unicode else is_space
+    pred = predicate
+    if invert:
+        category = category.swapcase()
 
+        def pred(s):
+            return not predicate(s)
 
-def test_matching_unicode_word_chars():
-    _test_matching_pattern(r'\w', is_word, is_unicode=True)
-
-
-def test_matching_ascii_non_word_chars():
-    _test_matching_pattern(r'\W', lambda s: not is_word(s))
-
-
-def test_matching_unicode_non_word_chars():
-    _test_matching_pattern(r'\W', lambda s: not is_word(s), is_unicode=True)
-
-
-def test_matching_ascii_digits():
-    _test_matching_pattern(r'\d', is_digit)
-
-
-def test_matching_unicode_digits():
-    _test_matching_pattern(r'\d', is_digit, is_unicode=True)
-
-
-def test_matching_ascii_non_digits():
-    _test_matching_pattern(r'\D', lambda s: not is_digit(s))
-
-
-def test_matching_unicode_non_digits():
-    _test_matching_pattern(r'\D', lambda s: not is_digit(s), is_unicode=True)
-
-
-def test_matching_ascii_spaces():
-    _test_matching_pattern(r'\s', is_space)
-
-
-def test_matching_unicode_spaces():
-    _test_matching_pattern(r'\s', is_unicode_space, is_unicode=True)
-
-
-def test_matching_ascii_non_spaces():
-    _test_matching_pattern(r'\S', lambda s: not is_space(s))
-
-
-def test_matching_unicode_non_spaces():
-    _test_matching_pattern(r'\S', lambda s: not is_unicode_space(s),
-                           is_unicode=True)
+    _test_matching_pattern(category, pred, is_unicode)
 
 
 def assert_all_examples(strategy, predicate):
@@ -149,7 +118,6 @@ def assert_all_examples(strategy, predicate):
         returns bool
 
     """
-    @settings(max_examples=1000, max_iterations=5000)
     @given(strategy)
     def assert_examples(s):
         assert predicate(s), \
@@ -158,280 +126,175 @@ def assert_all_examples(strategy, predicate):
     assert_examples()
 
 
-def assert_can_generate(pattern):
-    """Checks that regex strategy for given pattern generates examples that
-    match that regex pattern."""
-    compiled_pattern = re.compile(pattern)
-    strategy = strings_matching_regex(pattern)
-
-    assert_all_examples(strategy, compiled_pattern.match)
-
-
-@pytest.mark.parametrize('pattern', ['a', 'abc', '[a][b][c]'])
-def test_literals(pattern):
-    assert_can_generate(pattern)
+@pytest.mark.parametrize('pattern', [
+    u'.',  # anything
+    u'a', u'abc', u'[a][b][c]', u'[^a][^b][^c]',  # literals
+    u'[a-z0-9_]', u'[^a-z0-9_]',  # range and negative range
+    u'ab?', u'ab*', u'ab+',  # quantifiers
+    u'ab{5}', u'ab{5,10}', u'ab{,10}', u'ab{5,}',  # repeaters
+    u'ab|cd|ef',  # branch
+    u'(foo)+', u'([\'"])[a-z]+\\1',
+    u'(?:[a-z])([\'"])[a-z]+\\1', u'(?P<foo>[\'"])[a-z]+(?P=foo)',  # groups
+    u'^abc',  # beginning
+    u'\d', u'[\d]', u'[^\D]', u'\w', u'[\w]', u'[^\W]',
+    u'\s', u'[\s]', u'[^\S]',  # categories
+])
+@pytest.mark.parametrize('encode', [False, True])
+def test_can_generate(pattern, encode):
+    if encode:
+        pattern = pattern.encode('ascii')
+    assert_all_examples(from_regex(pattern), re.compile(pattern).match)
 
 
 @pytest.mark.parametrize('pattern', [
-    re.compile('a', re.IGNORECASE),
-    '(?i)a',
-    re.compile('[ab]', re.IGNORECASE),
-    '(?i)[ab]',
+    re.compile(u'a', re.IGNORECASE),
+    u'(?i)a',
+    re.compile(u'[ab]', re.IGNORECASE),
+    u'(?i)[ab]',
 ])
 def test_literals_with_ignorecase(pattern):
-    strategy = strings_matching_regex(pattern)
+    strategy = from_regex(pattern)
 
-    strategy.filter(lambda s: s == 'a').example()
-    strategy.filter(lambda s: s == 'A').example()
-
-
-def test_not_literal():
-    assert_can_generate('[^a][^b][^c]')
+    strategy.filter(lambda s: s == u'a').example()
+    strategy.filter(lambda s: s == u'A').example()
 
 
 @pytest.mark.parametrize('pattern', [
-    re.compile('[^a][^b]', re.IGNORECASE),
-    '(?i)[^a][^b]'
+    re.compile(u'[^a][^b]', re.IGNORECASE),
+    u'(?i)[^a][^b]'
 ])
 def test_not_literal_with_ignorecase(pattern):
     assert_all_examples(
-        strings_matching_regex(pattern),
-        lambda s: s[0] not in ('a', 'A') and s[1] not in ('b', 'B')
+        from_regex(pattern),
+        lambda s: s[0] not in (u'a', u'A') and s[1] not in (u'b', u'B')
     )
 
 
-def test_any():
-    assert_can_generate('.')
-
-
 def test_any_doesnt_generate_newline():
-    assert_all_examples(strings_matching_regex('.'), lambda s: s != '\n')
+    assert_all_examples(from_regex(u'.'), lambda s: s != u'\n')
 
 
-@pytest.mark.parametrize('pattern', [re.compile('.', re.DOTALL), '(?s).'])
+@pytest.mark.parametrize('pattern', [re.compile(u'.', re.DOTALL), u'(?s).'])
 def test_any_with_dotall_generate_newline(pattern):
-    strings_matching_regex(pattern).filter(lambda s: s == '\n').example()
-
-
-def test_range():
-    assert_can_generate('[a-z0-9_]')
-
-
-def test_negative_range():
-    assert_can_generate('[^a-z0-9_]')
-
-
-@pytest.mark.parametrize('pattern', [r'\d', '[\d]', '[^\D]'])
-def test_ascii_digits(pattern):
-    strategy = strings_matching_regex(ascii_regex(pattern))
-
-    assert_all_examples(strategy, lambda s: is_digit(s) and is_ascii(s))
-
-
-@pytest.mark.parametrize('pattern', [r'\d', '[\d]', '[^\D]'])
-def test_unicode_digits(pattern):
-    strategy = strings_matching_regex(unicode_regex(pattern))
-
-    strategy.filter(lambda s: is_digit(s) and is_ascii(s)).example()
-    strategy.filter(lambda s: is_digit(s) and not is_ascii(s)).example()
-
-    assert_all_examples(strategy, is_digit)
-
-
-@pytest.mark.parametrize('pattern', [r'\D', '[\D]', '[^\d]'])
-def test_ascii_non_digits(pattern):
-    strategy = strings_matching_regex(ascii_regex(pattern))
-
-    assert_all_examples(strategy, lambda s: not is_digit(s) and is_ascii(s))
-
-
-@pytest.mark.parametrize('pattern', [r'\D', '[\D]', '[^\d]'])
-def test_unicode_non_digits(pattern):
-    strategy = strings_matching_regex(unicode_regex(pattern))
-
-    strategy.filter(lambda s: not is_digit(s) and is_ascii(s)).example()
-    strategy.filter(lambda s: not is_digit(s) and not is_ascii(s)).example()
-
-    assert_all_examples(strategy, lambda s: not is_digit(s))
-
-
-@pytest.mark.parametrize('pattern', [r'\s', '[\s]', '[^\S]'])
-def test_ascii_whitespace(pattern):
-    strategy = strings_matching_regex(ascii_regex(pattern))
-
-    assert_all_examples(strategy, lambda s: is_space(s) and is_ascii(s))
-
-
-@pytest.mark.parametrize('pattern', [r'\s', '[\s]', '[^\S]'])
-def test_unicode_whitespace(pattern):
-    strategy = strings_matching_regex(unicode_regex(pattern))
-
-    strategy.filter(lambda s: is_unicode_space(s) and is_ascii(s)).example()
-    strategy.filter(lambda s: is_unicode_space(s) and not is_ascii(s))\
-        .example()
-
-    assert_all_examples(strategy, is_unicode_space)
-
-
-@pytest.mark.parametrize('pattern', [r'\S', '[\S]', '[^\s]'])
-def test_ascii_non_whitespace(pattern):
-    strategy = strings_matching_regex(ascii_regex(pattern))
-
-    assert_all_examples(strategy, lambda s: not is_space(s) and is_ascii(s))
-
-
-@pytest.mark.parametrize('pattern', [r'\S', '[\S]', '[^\s]'])
-def test_unicode_non_whitespace(pattern):
-    strategy = strings_matching_regex(unicode_regex(pattern))
-
-    strategy.filter(lambda s: not is_unicode_space(s) and is_ascii(s))\
-        .example()
-    strategy.filter(lambda s: not is_unicode_space(s) and not is_ascii(s))\
-        .example()
-
-    assert_all_examples(strategy, lambda s: not is_unicode_space(s))
-
-
-@pytest.mark.parametrize('pattern', [r'\w', '[\w]', '[^\W]'])
-def test_ascii_word(pattern):
-    strategy = strings_matching_regex(ascii_regex(pattern))
-
-    assert_all_examples(strategy, lambda s: is_word(s) and is_ascii(s))
-
-
-@pytest.mark.parametrize('pattern', [r'\w', '[\w]', '[^\W]'])
-def test_unicode_word(pattern):
-    strategy = strings_matching_regex(unicode_regex(pattern))
-
-    strategy.filter(lambda s: is_word(s) and is_ascii(s)).example()
-    strategy.filter(lambda s: is_word(s) and not is_ascii(s)).example()
-
-    assert_all_examples(strategy, is_word)
-
-
-@pytest.mark.parametrize('pattern', [r'\W', '[\W]', '[^\w]'])
-def test_ascii_non_word(pattern):
-    strategy = strings_matching_regex(ascii_regex(pattern))
-
-    assert_all_examples(strategy, lambda s: not is_word(s) and is_ascii(s))
-
-
-@pytest.mark.parametrize('pattern', [r'\W', '[\W]', '[^\w]'])
-def test_unicode_non_word(pattern):
-    strategy = strings_matching_regex(unicode_regex(pattern))
-
-    strategy.filter(lambda s: not is_word(s) and is_ascii(s)).example()
-    strategy.filter(lambda s: not is_word(s) and not is_ascii(s)).example()
-
-    assert_all_examples(strategy, lambda s: not is_word(s))
-
-
-def test_question_mark_quantifier():
-    assert_can_generate('ab?')
-
-
-def test_asterisk_quantifier():
-    assert_can_generate('ab*')
-
-
-def test_plus_quantifier():
-    assert_can_generate('ab+')
-
-
-def test_repeater():
-    assert_can_generate('ab{5}')
-    assert_can_generate('ab{5,10}')
-    assert_can_generate('ab{,10}')
-    assert_can_generate('ab{5,}')
-
-
-def test_branch():
-    assert_can_generate('ab|cd|ef')
-
-
-def test_group():
-    assert_can_generate('(foo)+')
-
-
-def test_group_backreference():
-    assert_can_generate('([\'"])[a-z]+\\1')
-
-
-def test_non_capturing_group():
-    assert_can_generate('(?:[a-z])([\'"])[a-z]+\\1')
-
-
-def test_named_groups():
-    assert_can_generate('(?P<foo>[\'"])[a-z]+(?P=foo)')
-
-
-def test_begining():
-    assert_can_generate('^abc')
+    from_regex(pattern).filter(lambda s: s == u'\n').example()
+
+
+@pytest.mark.parametrize('pattern', [re.compile(b'.', re.DOTALL), b'(?s).'])
+def test_any_with_dotall_generate_newline_binary(pattern):
+    from_regex(pattern).filter(lambda s: s == b'\n').example()
+
+
+@pytest.mark.parametrize('pattern', [
+    u'\d', u'[\d]', u'[^\D]',
+    u'\w', u'[\w]', u'[^\W]',
+    u'\s', u'[\s]', u'[^\S]',
+])
+@pytest.mark.parametrize('is_unicode', [False, True])
+@pytest.mark.parametrize('invert', [False, True])
+def test_groups(pattern, is_unicode, invert):
+    if u'd' in pattern.lower():
+        group_pred = is_digit
+    elif u'w' in pattern.lower():
+        group_pred = is_word
+    else:
+        # Special behaviour due to \x1c, INFORMATION SEPARATOR FOUR
+        group_pred = is_unicode_space if is_unicode else is_space
+
+    if invert:
+        pattern = pattern.swapcase()
+        _p = group_pred
+
+        def group_pred(s):
+            return not _p(s)
+
+    compiler = unicode_regex if is_unicode else ascii_regex
+    strategy = from_regex(compiler(pattern))
+
+    strategy.filter(group_pred).filter(is_ascii).example()
+    if is_unicode:
+        strategy.filter(lambda s: group_pred(s) and not is_ascii(s)).example()
+
+    assert_all_examples(strategy, group_pred)
 
 
 def test_caret_in_the_middle_does_not_generate_anything():
-    r = re.compile('a^b')
+    r = re.compile(u'a^b')
 
     with pytest.raises(NoExamples):
-        strings_matching_regex(r).filter(r.match).example()
+        from_regex(r).filter(r.match).example()
 
 
 def test_end():
-    strategy = strings_matching_regex('abc$')
+    strategy = from_regex(u'abc$')
 
-    strategy.filter(lambda s: s == 'abc').example()
-    strategy.filter(lambda s: s == 'abc\n').example()
+    strategy.filter(lambda s: s == u'abc').example()
+    strategy.filter(lambda s: s == u'abc\n').example()
 
 
 def test_groupref_exists():
     assert_all_examples(
-        strings_matching_regex('^(<)?a(?(1)>)$'),
-        lambda s: s in ('a', 'a\n', '<a>', '<a>\n')
+        from_regex(u'^(<)?a(?(1)>)$'),
+        lambda s: s in (u'a', u'a\n', u'<a>', u'<a>\n')
     )
     assert_all_examples(
-        strings_matching_regex('^(a)?(?(1)b|c)$'),
-        lambda s: s in ('ab', 'ab\n', 'c', 'c\n')
+        from_regex(u'^(a)?(?(1)b|c)$'),
+        lambda s: s in (u'ab', u'ab\n', u'c', u'c\n')
     )
 
 
 def test_positive_lookbehind():
-    strings_matching_regex('.*(?<=ab)c').filter(lambda s: s.endswith('abc'))\
-        .example()
+    from_regex(u'.*(?<=ab)c').filter(lambda s: s.endswith(u'abc')).example()
 
 
 def test_positive_lookahead():
-    strings_matching_regex('a(?=bc).*').filter(lambda s: s.startswith('abc'))\
-        .example()
+    from_regex(u'a(?=bc).*').filter(lambda s: s.startswith(u'abc')).example()
 
 
 def test_negative_lookbehind():
     # no efficient support
-    strategy = strings_matching_regex('[abc]*(?<!abc)d')
+    strategy = from_regex(u'[abc]*(?<!abc)d')
 
-    assert_all_examples
+    assert_all_examples(strategy, lambda s: not s.endswith(u'abcd'))
     with pytest.raises(NoExamples):
-        strategy.filter(lambda s: s.endswith('abcd')).example()
+        strategy.filter(lambda s: s.endswith(u'abcd')).example()
 
 
 def test_negative_lookahead():
     # no efficient support
-    strategy = strings_matching_regex('ab(?!cd)[abcd]*')
+    strategy = from_regex(u'ab(?!cd)[abcd]*')
 
-    assert_all_examples
+    assert_all_examples(strategy, lambda s: not s.startswith(u'abcd'))
     with pytest.raises(NoExamples):
-        strategy.filter(lambda s: s.startswith('abcd')).example()
+        strategy.filter(lambda s: s.startswith(u'abcd')).example()
 
 
 @pytest.mark.skipif(sys.version_info[:2] < (3, 6),
                     reason='requires Python 3.6')
 def test_subpattern_flags():
-    strategy = strings_matching_regex('(?i)a(?-i:b)')
+    strategy = from_regex(u'(?i)a(?-i:b)')
 
     # "a" is case insensitive
-    strategy.filter(lambda s: s[0] == 'a').example()
-    strategy.filter(lambda s: s[0] == 'A').example()
+    strategy.filter(lambda s: s[0] == u'a').example()
+    strategy.filter(lambda s: s[0] == u'A').example()
     # "b" is case sensitive
-    strategy.filter(lambda s: s[1] == 'b').example()
+    strategy.filter(lambda s: s[1] == u'b').example()
 
     with pytest.raises(NoExamples):
-        strategy.filter(lambda s: s[1] == 'B').example()
+        strategy.filter(lambda s: s[1] == u'B').example()
+
+
+@given(text(max_size=100) | binary(max_size=100))
+def test_fuzz_stuff(pattern):
+    try:
+        regex = re.compile(pattern)
+    except re.error:
+        reject()
+
+    @given(from_regex(regex))
+    def inner(ex):
+        assert regex.match(ex)
+
+    try:
+        inner()
+    except (NoExamples, FailedHealthCheck):
+        reject()
