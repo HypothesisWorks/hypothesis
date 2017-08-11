@@ -44,7 +44,7 @@ __all__ = [
     'choices', 'streaming',
     'booleans', 'integers', 'floats', 'complex_numbers', 'fractions',
     'decimals',
-    'characters', 'text', 'strings_matching_regex', 'binary', 'uuids',
+    'characters', 'text', 'from_regex', 'binary', 'uuids',
     'tuples', 'lists', 'sets', 'frozensets', 'iterables',
     'dictionaries', 'fixed_dictionaries',
     'sampled_from', 'permutations',
@@ -741,24 +741,29 @@ def text(
 
 @cacheable
 @defines_strategy
-def strings_matching_regex(regex):
-    """Return strategy that generates strings that match given regex.
+def from_regex(regex):
+    """Generates strings that match the given regex.
 
-    Regex can be either a string or compiled regex (through
-    :func:`re.compile`).
+    ``regex`` may be a pattern or :func:`compiled regex <python:re.compile>`.
+    Both byte-strings and unicode strings are supported, and will generate
+    examples of the given type.
 
     You can use regex flags (such as :const:`python:re.IGNORECASE`,
     :const:`python:re.DOTALL` or :const:`python:re.UNICODE`) to control
-    generation. Flags can be passed either in compiled regex (specify flags in
-    call to :func:`re.compile`) or inside pattern with (?iLmsux) group.
+    generation. Flags can be passed either in compiled regex or inside the
+    pattern with a ``(?iLmsux)`` group.
 
-    Some tricky regular expressions are partly supported or not supported at
-    all. "^" and "$" do not affect generation. Positive lookahead/lookbehind
-    groups are considered normal groups. Negative lookahead/lookbehind groups
-    do not do anything. Ternary regex groups
-    ('(?(name)yes-pattern|no-pattern)') generate variants regardless of
-    presence of named group and rely on filtering to produce correct results
-    (therefore can be slower than straightforward generation).
+    Some regular expressions are only partly supported - the underlying
+    strategy checks local matching and relies on filtering to resolve
+    context-dependent expressions.  Using too many of these constructs may
+    cause health-check errors as too many examples are filtered out.
+
+    - Position markers - ``^``, ``\b``, ``\B`` - generate the empty string
+      but defer matching to the filter.  ``$`` may also generate a newline.
+    - Positive lookahead and lookbehind groups are considered normal groups.
+    - Negative lookahead and lookbehind groups do not do anything.
+    - Ternary regex groups - ``(?(name)yes-pattern|no-pattern)`` - rely on
+      filtering to produce the right group.
 
     """
     from hypothesis.searchstrategy.regex import regex_strategy

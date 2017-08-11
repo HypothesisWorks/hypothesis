@@ -21,9 +21,9 @@ import re
 import sys
 import sre_parse as sre
 
-import hypothesis.strategies as hs
-from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import PY3, hrange, hunichr
+import hypothesis.strategies as st
+from hypothesis.internal.compat import PY3, hrange, hunichr, text_type, \
+    int_to_byte
 
 HAS_SUBPATTERN_FLAGS = sys.version_info[:2] >= (3, 6)
 
@@ -43,9 +43,24 @@ UNICODE_SPACE_CATEGORIES = set(['Zs', 'Zl', 'Zp'])
 UNICODE_LETTER_CATEGORIES = set(['LC', 'Ll', 'Lm', 'Lo', 'Lt', 'Lu'])
 UNICODE_WORD_CATEGORIES = UNICODE_LETTER_CATEGORIES | set(['Nd', 'Nl', 'No'])
 
-# On Python >= 3.0 and < 3.4 particular unicode word chars are not
-# considered as word chars, thus not matched by "\w" category in regex
-HAS_WEIRD_WORD_CHARS = (2, 7) <= sys.version_info[:2] < (3, 4)
+# This is verbose, but correct on all versions of Python
+BYTES_ALL = set(int_to_byte(i) for i in range(256))
+BYTES_DIGIT = set(b for b in BYTES_ALL if re.match(b'\\d', b))
+BYTES_SPACE = set(b for b in BYTES_ALL if re.match(b'\\s', b))
+BYTES_WORD = set(b for b in BYTES_ALL if re.match(b'\\w', b))
+BYTES_LOOKUP = {
+    sre.CATEGORY_DIGIT: BYTES_DIGIT,
+    sre.CATEGORY_SPACE: BYTES_SPACE,
+    sre.CATEGORY_WORD: BYTES_WORD,
+    sre.CATEGORY_NOT_DIGIT: BYTES_ALL - BYTES_DIGIT,
+    sre.CATEGORY_NOT_SPACE: BYTES_ALL - BYTES_SPACE,
+    sre.CATEGORY_NOT_WORD: BYTES_ALL - BYTES_WORD,
+}
+
+# On Python < 3.4 (including 2.7), the following unicode chars are weird.
+# They are matched by the \W, meaning 'not word', but unicodedata.category(c)
+# returns one of the word categories above.  There's special handling below.
+HAS_WEIRD_WORD_CHARS = sys.version_info[:2] < (3, 4)
 UNICODE_WEIRD_NONWORD_CHARS = set(u'\U00012432\U00012433\U00012456\U00012457')
 
 
@@ -76,54 +91,30 @@ class CharactersBuilder(object):
         self._ignorecase = flags & re.IGNORECASE
         self._unicode = not bool(flags & re.ASCII) \
             if PY3 else bool(flags & re.UNICODE)
+        self.code_to_char = hunichr
 
     @property
     def strategy(self):
         """Returns resulting strategy that generates configured char set."""
         max_codepoint = None if self._unicode else 127
-
-        strategies = []
         if self._negate:
-            if self._categories or self._whitelist_chars:  # pragma: no branch
-                strategies.append(
-                    hs.characters(
-                        blacklist_categories=self._categories | set(
-                            ['Cc', 'Cs']),
-                        blacklist_characters=self._whitelist_chars,
-                        max_codepoint=max_codepoint,
-                    )
-                )
-            if self._blacklist_chars:
-                strategies.append(
-                    hs.sampled_from(
-                        sorted(self._blacklist_chars - self._whitelist_chars)
-                    )
-                )
-        else:
-            if self._categories or self._blacklist_chars:
-                strategies.append(
-                    hs.characters(
-                        whitelist_categories=self._categories,
-                        blacklist_characters=self._blacklist_chars,
-                        max_codepoint=max_codepoint,
-                    )
-                )
-            if self._whitelist_chars:
-                strategies.append(
-                    hs.sampled_from(
-                        sorted(self._whitelist_chars - self._blacklist_chars)
-                    )
-                )
-
-        return hs.one_of(*strategies) if strategies else hs.just(u'')
+            black_chars = self._blacklist_chars - self._whitelist_chars
+            return st.characters(
+                blacklist_categories=self._categories | {'Cc', 'Cs'},
+                blacklist_characters=self._whitelist_chars,
+                whitelist_characters=black_chars,
+                max_codepoint=max_codepoint,
+            )
+        white_chars = self._whitelist_chars - self._blacklist_chars
+        return st.characters(
+            whitelist_categories=self._categories,
+            blacklist_characters=self._blacklist_chars,
+            whitelist_characters=white_chars,
+            max_codepoint=max_codepoint,
+        )
 
     def add_category(self, category):
-        """Add unicode category to set.
-
-        Unicode categories are strings like 'Ll', 'Lu', 'Nd', etc. See
-        `unicodedata.category()`
-
-        """
+        """Update unicode state to match sre_parse object ``category``."""
         if category == sre.CATEGORY_DIGIT:
             self._categories |= UNICODE_DIGIT_CATEGORIES
         elif category == sre.CATEGORY_NOT_DIGIT:
@@ -143,7 +134,7 @@ class CharactersBuilder(object):
                 # This code is workaround of weird behavior in
                 # specific Python versions and run only on those versions
                 self._blacklist_chars |= UNICODE_WEIRD_NONWORD_CHARS
-        elif category == sre.CATEGORY_NOT_WORD:  # pragma: no branch
+        elif category == sre.CATEGORY_NOT_WORD:
             self._categories |= UNICODE_CATEGORIES - UNICODE_WORD_CATEGORIES
             self._blacklist_chars.add(u'_')
             if HAS_WEIRD_WORD_CHARS and self._unicode:  # pragma: no cover
@@ -151,33 +142,50 @@ class CharactersBuilder(object):
                 # specific Python versions and run only on those versions
                 self._whitelist_chars |= UNICODE_WEIRD_NONWORD_CHARS
         else:  # pragma: no cover
-            raise InvalidArgument(
-                'Unknown character category: %s' % category
-            )
+            raise AssertionError('Unknown character category: %s' % category)
 
-    def add_chars(self, chars):
-        """Add given chars to char set."""
-        for c in chars:
-            if self._ignorecase:
-                self._whitelist_chars.add(c.lower())
-                self._whitelist_chars.add(c.upper())
-            else:
-                self._whitelist_chars.add(c)
+    def add_char(self, char):
+        """Add given char to the whitelist."""
+        c = self.code_to_char(char)
+        self._whitelist_chars.add(c)
+        if self._ignorecase and \
+                re.match(c, c.swapcase(), re.IGNORECASE) is not None:
+            self._whitelist_chars.add(c.swapcase())
+
+
+class BytesBuilder(CharactersBuilder):
+
+    def __init__(self, negate=False, flags=0):
+        self._whitelist_chars = set()
+        self._blacklist_chars = set()
+        self._negate = negate
+        self._ignorecase = flags & re.IGNORECASE
+        self.code_to_char = int_to_byte
+
+    @property
+    def strategy(self):
+        """Returns resulting strategy that generates configured char set."""
+        allowed = self._whitelist_chars
+        if self._negate:
+            allowed = BYTES_ALL - allowed
+        return st.sampled_from(sorted(allowed))
+
+    def add_category(self, category):
+        """Update characters state to match sre_parse object ``category``."""
+        self._whitelist_chars |= BYTES_LOOKUP[category]
 
 
 def regex_strategy(regex):
     if not hasattr(regex, 'pattern'):
         regex = re.compile(regex)
-
-    pattern = regex.pattern
-    flags = regex.flags
-
-    codes = sre.parse(pattern)
-
-    return _strategy(codes, Context(flags=flags)).filter(regex.match)
+    return _strategy(
+        sre.parse(regex.pattern),
+        Context(flags=regex.flags),
+        isinstance(regex.pattern, text_type)
+    ).filter(regex.match)
 
 
-def _strategy(codes, context):
+def _strategy(codes, context, is_text):
     """Convert SRE regex parse tree to strategy that generates strings matching
     that regex represented by that parse tree.
 
@@ -187,11 +195,11 @@ def _strategy(codes, context):
     elements:
 
         [
-            ('literal', 97),
-            ('literal', 98),
-            ('max_repeat', (1, 4294967295, [
-                ('in', [
-                    ('range', (48, 57))
+            (LITERAL, 97),
+            (LITERAL, 98),
+            (MAX_REPEAT, (1, 4294967295, [
+                (IN, [
+                    (RANGE, (48, 57))
                 ])
             ]))
         ]
@@ -205,6 +213,17 @@ def _strategy(codes, context):
        behavior of various inner strategies)
 
     """
+    def recurse(codes):
+        return _strategy(codes, context, is_text)
+
+    if is_text:
+        empty = u''
+        to_char = hunichr
+    else:
+        empty = b''
+        to_char = int_to_byte
+        binary_char = st.binary(min_size=1, max_size=1)
+
     if not isinstance(codes, tuple):
         # List of codes
         strategies = []
@@ -220,79 +239,96 @@ def _strategy(codes, context):
                     j += 1
 
                 if i + 1 < j:
-                    strategies.append(hs.just(
-                        u''.join([hunichr(charcode)
-                                  for (_, charcode) in codes[i:j]])
+                    strategies.append(st.just(
+                        empty.join([to_char(charcode)
+                                    for (_, charcode) in codes[i:j]])
                     ))
 
                     i = j
                     continue
 
-            strategies.append(_strategy(codes[i], context))
+            strategies.append(recurse(codes[i]))
             i += 1
 
-        return hs.tuples(*strategies).map(u''.join)
+        if not strategies:
+            return st.just(empty)
+        if len(strategies) == 1:
+            return strategies[0]
+        return st.tuples(*strategies).map(empty.join)
     else:
         # Single code
         code, value = codes
         if code == sre.LITERAL:
             # Regex 'a' (single char)
-            c = hunichr(value)
-            if context.flags & re.IGNORECASE:
-                return hs.sampled_from([c.lower(), c.upper()])
-
-            return hs.just(c)
+            c = to_char(value)
+            if context.flags & re.IGNORECASE and \
+                    re.match(c, c.swapcase(), re.IGNORECASE) is not None:
+                # We do the explicit check for swapped-case matching because
+                # eg 'ß'.upper() == 'SS' and ignorecase doesn't match it.
+                return st.sampled_from([c, c.swapcase()])
+            return st.just(c)
 
         elif code == sre.NOT_LITERAL:
             # Regex '[^a]' (negation of a single char)
-            c = hunichr(value)
-            blacklist = set([c.lower(), c.upper()]) \
-                if context.flags & re.IGNORECASE else [c]
-            return hs.characters(blacklist_characters=blacklist)
+            c = to_char(value)
+            blacklist = set(c)
+            if context.flags & re.IGNORECASE and \
+                    re.match(c, c.swapcase(), re.IGNORECASE) is not None:
+                blacklist |= set(c.swapcase())
+            if is_text:
+                return st.characters(blacklist_characters=blacklist)
+            else:
+                return binary_char.filter(lambda c: c not in blacklist)
 
         elif code == sre.IN:
             # Regex '[abc0-9]' (set of characters)
-            charsets = value
+            negate = value[0][0] == sre.NEGATE
+            if is_text:
+                builder = CharactersBuilder(negate, context.flags)
+            else:
+                builder = BytesBuilder(negate, context.flags)
 
-            builder = CharactersBuilder(negate=charsets[0][0] == sre.NEGATE,
-                                        flags=context.flags)
-
-            for charset_code, charset_value in charsets:
+            for charset_code, charset_value in value:
                 if charset_code == sre.NEGATE:
                     # Regex '[^...]' (negation)
+                    # handled by builder = CharactersBuilder(...) above
                     pass
                 elif charset_code == sre.LITERAL:
                     # Regex '[a]' (single char)
-                    builder.add_chars(hunichr(charset_value))
+                    builder.add_char(charset_value)
                 elif charset_code == sre.RANGE:
                     # Regex '[a-z]' (char range)
                     low, high = charset_value
                     for char_code in hrange(low, high + 1):
-                        builder.add_chars(hunichr(char_code))
+                        builder.add_char(char_code)
                 elif charset_code == sre.CATEGORY:
                     # Regex '[\w]' (char category)
                     builder.add_category(charset_value)
                 else:  # pragma: no cover
                     # Currently there are no known code points other than
                     # handled here. This code is just future proofing
-                    raise InvalidArgument(
-                        'Unknown charset code: %s' % charset_code
-                    )
-
+                    raise AssertionError('Unknown charset code: %s'
+                                         % charset_code)
             return builder.strategy
 
         elif code == sre.ANY:
             # Regex '.' (any char)
-            if context.flags & re.DOTALL:
-                return hs.characters()
-
-            return hs.characters(blacklist_characters='\n')
+            if is_text:
+                if context.flags & re.DOTALL:
+                    return st.characters()
+                return st.characters(blacklist_characters=u'\n')
+            else:
+                if context.flags & re.DOTALL:
+                    return binary_char
+                return binary_char.filter(lambda c: c != b'\n')
 
         elif code == sre.AT:
             # Regexes like '^...', '...$', '\bfoo', '\Bfoo'
+            # An empty string (or newline) will match the token itself, but
+            # we don't and can't check the position (eg '%' at the end)
             if value == sre.AT_END:
-                return hs.one_of(hs.just(u''), hs.just(u'\n'))
-            return hs.just('')
+                return st.just(empty) | st.just(u'\n' if is_text else b'\n')
+            return st.just(empty)
 
         elif code == sre.SUBPATTERN:
             # Various groups: '(...)', '(:...)' or '(?P<name>...)'
@@ -301,32 +337,31 @@ def _strategy(codes, context):
                 # This feature is available only in specific Python versions
                 context.flags = (context.flags | value[1]) & ~value[2]
 
-            strat = _strategy(value[-1], context)
+            strat = _strategy(value[-1], context, is_text)
 
             context.flags = old_flags
 
             if value[0]:
                 context.groups[value[0]] = strat
-                strat = hs.shared(strat, key=value[0])
+                strat = st.shared(strat, key=value[0])
 
             return strat
 
         elif code == sre.GROUPREF:
             # Regex '\\1' or '(?P=name)' (group reference)
-            return hs.shared(context.groups[value], key=value)
+            return st.shared(context.groups[value], key=value)
 
         elif code == sre.ASSERT:
             # Regex '(?=...)' or '(?<=...)' (positive lookahead/lookbehind)
-            return _strategy(value[1], context)
+            return recurse(value[1])
 
         elif code == sre.ASSERT_NOT:
             # Regex '(?!...)' or '(?<!...)' (negative lookahead/lookbehind)
-            return hs.just('')
+            return st.just(empty)
 
         elif code == sre.BRANCH:
             # Regex 'a|b|c' (branch)
-            return hs.one_of([_strategy(branch, context)
-                              for branch in value[1]])
+            return st.one_of([recurse(branch) for branch in value[1]])
 
         elif code in [sre.MIN_REPEAT, sre.MAX_REPEAT]:
             # Regexes 'a?', 'a*', 'a+' and their non-greedy variants
@@ -334,19 +369,21 @@ def _strategy(codes, context):
             at_least, at_most, subregex = value
             if at_most == sre.MAXREPEAT:
                 at_most = None
-            return hs.lists(_strategy(subregex, context),
+            if at_least == 0 and at_most == 1:
+                return st.just(empty) | recurse(subregex)
+            return st.lists(recurse(subregex),
                             min_size=at_least,
-                            max_size=at_most).map(''.join)
+                            max_size=at_most).map(empty.join)
 
         elif code == sre.GROUPREF_EXISTS:
             # Regex '(?(id/name)yes-pattern|no-pattern)'
             # (if group exists choice)
-            return hs.one_of(
-                _strategy(value[1], context),
-                _strategy(value[2], context) if value[2] else hs.just(u''),
+            return st.one_of(
+                recurse(value[1]),
+                recurse(value[2]) if value[2] else st.just(empty),
             )
 
         else:  # pragma: no cover
             # Currently there are no known code points other than handled here.
             # This code is just future proofing
-            raise InvalidArgument('Unknown code point: %s' % repr(code))
+            raise AssertionError('Unknown code point: %s' % repr(code))
