@@ -17,11 +17,9 @@
 
 from __future__ import division, print_function, absolute_import
 
-from unittest.mock import Mock, MagicMock, NonCallableMock, \
-    NonCallableMagicMock
-
 import pytest
 
+from mock import Mock, MagicMock, NonCallableMock, NonCallableMagicMock
 from hypothesis import given, example
 from tests.common.utils import fails
 from hypothesis.strategies import integers

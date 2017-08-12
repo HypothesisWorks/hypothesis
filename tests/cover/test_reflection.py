@@ -20,11 +20,10 @@ from __future__ import division, print_function, absolute_import
 import sys
 from copy import deepcopy
 from functools import partial
-from unittest.mock import Mock, MagicMock, NonCallableMock, \
-    NonCallableMagicMock
 
 import pytest
 
+from mock import Mock, MagicMock, NonCallableMock, NonCallableMagicMock
 from tests.common.utils import raises
 from hypothesis.internal.compat import PY3, FullArgSpec, getfullargspec
 from hypothesis.internal.reflection import is_mock, proxies, arg_string, \
