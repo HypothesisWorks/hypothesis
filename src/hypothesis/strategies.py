@@ -980,31 +980,65 @@ def fractions(min_value=None, max_value=None, max_denominator=None):
     """Returns a strategy which generates Fractions.
 
     If min_value is not None then all generated values are no less than
-    min_value.
+    min_value.  If max_value is not None then all generated values are no
+    greater than max_value.  min_value and max_value may be anything accepted
+    by the `python:`~fractions.Fraction` constructor.
 
-    If max_value is not None then all generated values are no greater than
-    max_value.
+    If max_denominator is not None then the denominator of any generated
+    values is no greater than max_denominator. Note that max_denominator must
+    be None or a positive integer.
 
-    If max_denominator is not None then the absolute value of the denominator
-    of any generated values is no greater than max_denominator. Note that
-    max_denominator must be at least 1.
+    Note that while it is possible to pick value and denominator bounds such
+    that no fraction of max_denominator is allowed but fractions of smaller
+    numbers are, such combinations are not supported by this strategy.
 
     """
+    # For example: `fractions('2/7', '3/7', 4)` could in principle
+    # generate 1/3, but instead errors because there's no way to do it
+    # quickly for very large and relatively prime numbers.  However,
+    # `fractions('1/2', '1/2', 3)` works by returning `just(Fraction(1, 2))`
+
+    if min_value is not None:
+        min_value = Fraction(min_value)
+    if max_value is not None:
+        max_value = Fraction(max_value)
+
     check_valid_bound(min_value, 'min_value')
     check_valid_bound(max_value, 'max_value')
     check_valid_interval(min_value, max_value, 'min_value', 'max_value')
-
     check_valid_integer(max_denominator)
     if max_denominator is not None and max_denominator < 1:
-        raise InvalidArgument(
-            u'Invalid denominator bound %s' % max_denominator
-        )
+        raise InvalidArgument('Denominator=%r must be >= 1' % max_denominator)
 
-    denominator_strategy = integers(min_value=1, max_value=max_denominator)
+    if min_value is not None and min_value == max_value and \
+            not (max_denominator and min_value.denominator > max_denominator):
+        return just(min_value)
+
+    if min_value is not None and max_value is not None and \
+            max_denominator is not None:
+        x = ((max_value - min_value) / 2).limit_denominator(max_denominator)
+        if not (min_value <= x <= max_value):
+            raise InvalidArgument(
+                'Bounds are too close for given precision: there are no '
+                'fractions of max_denominator=%r between min_value=%r and '
+                'max_value=%r' % (max_denominator, min_value, max_value))
 
     def dm_func(denom):
-        max_num = max_value * denom if max_value is not None else None
-        min_num = min_value * denom if min_value is not None else None
+        """Take denom, construct numerator strategy, and build fraction."""
+        # Four cases of algebra to get integer bounds and scale factor.
+        min_num, max_num = None, None
+        if max_value is None and min_value is None:
+            pass
+        elif min_value is None:
+            max_num = denom * max_value.numerator
+            denom *= max_value.denominator
+        elif max_value is None:
+            min_num = denom * min_value.numerator
+            denom *= min_value.denominator
+        else:
+            min_num = min_value.numerator * denom * max_value.denominator
+            max_num = max_value.numerator * denom * min_value.denominator
+            denom *= min_value.denominator * max_value.denominator
 
         return builds(
             Fraction,
@@ -1012,7 +1046,21 @@ def fractions(min_value=None, max_value=None, max_denominator=None):
             just(denom)
         )
 
-    return denominator_strategy.flatmap(dm_func)
+    if max_denominator is None:
+        return integers(min_value=1).flatmap(dm_func)
+
+    def limit_precision(frac):
+        val = frac.limit_denominator(max_denominator)
+        # This is safe, becuause val can be out of bounds by at most half of
+        # 1/max_denom, and we know there is at least one legal fraction of
+        # max_denom from our bounds validation above.
+        if min_value is not None and min_value >= val:
+            return val + Fraction(1, max_denominator)
+        if max_value is not None and max_value <= val:
+            return val - Fraction(1, max_denominator)
+        return val
+
+    return integers(1, max_denominator).flatmap(dm_func).map(limit_precision)
 
 
 @cacheable
