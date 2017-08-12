@@ -22,6 +22,21 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.18.2 - 2017-08-16
+-------------------
+
+This is a bugfix release for the :func:`~hypothesis.strategies.fractions`
+and :func:`~hypothesis.strategies.decimals` strategies.
+
+* Fixed-point decimals would often fail with health check errors due to changes
+  in the underlying distribution of integers.  Calculating the correct default
+  when no bound is given fixes :issue:`725`.
+* Non-integer bounds for fractions and decimals were incorrectly handled
+  when both bounds lay between two integers.  (:issue:`739`)
+* If the ``max_denominator`` argument to fractions is given but there is no
+  valid output between the bounds, InvalidArgument is raised.
+
+-------------------
 3.18.1 - 2017-08-14
 -------------------
 
