@@ -17,15 +17,39 @@
 
 from __future__ import division, print_function, absolute_import
 
+from unittest.mock import Mock, MagicMock, NonCallableMock, \
+    NonCallableMagicMock
+
 import pytest
 
 from hypothesis import given, example
+from tests.common.utils import fails
 from hypothesis.strategies import integers
 
 
 @pytest.fixture
 def infinity():
     return float('inf')
+
+
+@pytest.fixture
+def m_fixture():
+    return Mock()
+
+
+@pytest.fixture
+def mm_fixture():
+    return MagicMock()
+
+
+@pytest.fixture
+def ncmm_fixture():
+    return NonCallableMagicMock()
+
+
+@pytest.fixture
+def ncm_fixture():
+    return NonCallableMock()
 
 
 @given(integers())
@@ -44,3 +68,27 @@ def test_can_mix_fixture_and_keyword_strategy(xs, infinity):
 @given(xs=integers())
 def test_can_mix_fixture_example_and_keyword_strategy(xs, infinity):
     assert xs <= infinity
+
+
+@fails
+@given(integers())
+def test_can_inject_mock_via_fixture(m_fixture, x):
+    assert False
+
+
+@fails
+@given(integers())
+def test_can_inject_magicmock_via_fixture(mm_fixture, x):
+    assert False
+
+
+@fails
+@given(integers())
+def test_can_inject_nc_mock_via_fixture(ncm_fixture, x):
+    assert False
+
+
+@fails
+@given(integers())
+def test_can_inject_nc_magicmock_via_fixture(ncmm_fixture, x):
+    assert False

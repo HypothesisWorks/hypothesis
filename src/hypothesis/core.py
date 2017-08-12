@@ -43,7 +43,7 @@ from hypothesis.internal.compat import str_to_bytes, get_type_hints, \
 from hypothesis.utils.conventions import infer
 from hypothesis.internal.escalation import \
     escalate_hypothesis_internal_error
-from hypothesis.internal.reflection import nicerepr, arg_string, \
+from hypothesis.internal.reflection import is_mock, nicerepr, arg_string, \
     impersonate, function_digest, fully_qualified_name, \
     define_function_signature, convert_positional_arguments, \
     get_pretty_function_description
@@ -426,6 +426,12 @@ def process_arguments_to_given(
         selfy = kwargs.get(argspec.args[0])
     elif arguments:
         selfy = arguments[0]
+
+    # Ensure that we don't mistake mocks for self here.
+    # This can cause the mock to be used as the test runner.
+    if is_mock(selfy):
+        selfy = None
+
     test_runner = new_style_executor(selfy)
 
     arguments = tuple(arguments)
