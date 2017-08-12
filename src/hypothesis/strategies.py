@@ -20,7 +20,7 @@ from __future__ import division, print_function, absolute_import
 import math
 import datetime as dt
 import operator
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, getcontext
 from inspect import isclass
 from numbers import Rational
 from fractions import Fraction
@@ -1023,7 +1023,7 @@ def decimals(min_value=None, max_value=None,
 
     - A finite rational number, between ``min_value`` and ``max_value``.
     - Not a Number, if ``allow_nan`` is True.  None means "allow NaN, unless
-      ``min__value`` and ``max_value`` are not None".
+      ``min_value`` and ``max_value`` are not None".
     - Positive or negative infinity, if ``max_value`` and ``min_value``
       respectively are None, and ``allow_infinity`` is not False.  None means
       "allow infinity, unless excluded by the min and max values".
@@ -1068,25 +1068,24 @@ def decimals(min_value=None, max_value=None,
     if allow_infinity and (None not in (min_value, max_value)):
         raise InvalidArgument('Cannot allow infinity between finite bounds')
     # Set up a strategy for finite decimals
-    if places is not None:
-        # Fixed-point decimals are basically integers with a scale factor
-
-        def try_quantize(d):
-            try:
-                return d.quantize(factor)
-            except InvalidOperation:  # pragma: no cover
-                return None
-        factor = Decimal(10) ** -places
-        max_num = max_value / factor if max_value is not None else None
-        min_num = min_value / factor if min_value is not None else None
-        strat = integers(min_value=min_num, max_value=max_num)\
-            .map(lambda d: try_quantize(d * factor))\
-            .filter(lambda d: d is not None)
-    else:
-        # Otherwise, they're like fractions featuring a power of ten
+    if places is None:
+        # Like fractions featuring a power of ten
         strat = fractions(
             min_value=min_value, max_value=max_value
         ).map(lambda f: Decimal(f.numerator) / f.denominator)
+    else:
+        # Fixed-point decimals are basically integers with a scale factor,
+        # plus complicated issues about context and precision
+        factor = Decimal(10) ** -places
+        default = Decimal(10) ** (getcontext().prec - places) - factor
+        if min_value is None or min_value < -default:
+            min_value = -default
+        if max_value is None or max_value > default:
+            max_value = default
+        strat = integers(min_value=(min_value / factor).to_integral_exact(),
+                         max_value=(max_value / factor).to_integral_exact())\
+            .map(lambda d: (d * factor).quantize(factor))
+
     # Compose with sampled_from for infinities and NaNs as appropriate
     special = []
     if allow_nan or (allow_nan is None and (None in (min_value, max_value))):
