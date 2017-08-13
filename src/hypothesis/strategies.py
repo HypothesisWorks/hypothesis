@@ -1312,8 +1312,6 @@ def composite(f):
                 first_draw = [True]
 
                 def draw(strategy):
-                    if not first_draw[0]:
-                        data.mark_bind()
                     first_draw[0] = False
                     return data.draw(strategy)
 
@@ -1461,7 +1459,6 @@ def data():
             return 'data(...)'
 
         def draw(self, strategy, label=None):
-            self.data.mark_bind()
             result = self.data.draw(strategy)
             self.count += 1
             if label is not None:

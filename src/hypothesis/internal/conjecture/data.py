@@ -80,7 +80,6 @@ class ConjectureData(object):
         self.start_time = benchmark_time()
         self.events = set()
         self.forced_indices = set()
-        self.bind_points = set()
 
     def __assert_not_frozen(self, name):
         if self.frozen:
@@ -117,19 +116,6 @@ class ConjectureData(object):
         finally:
             if not self.frozen:
                 self.stop_example()
-
-    def mark_bind(self):
-        """Marks a point as somewhere that a bind occurs - that is, data
-        drawn after this point may depend significantly on data drawn prior
-        to this point.
-
-        Having points like this explicitly marked allows for better shrinking,
-        as we run a pass which tries to shrink the byte stream prior to a bind
-        point while rearranging what comes after somewhat to allow for more
-        flexibility. Trying that at every point in the data stream is
-        prohibitively expensive, but trying it at a couple dozen is basically
-        fine."""
-        self.bind_points.add(self.index)
 
     def start_example(self):
         self.__assert_not_frozen('start_example')
