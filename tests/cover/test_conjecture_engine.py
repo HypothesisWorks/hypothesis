@@ -24,7 +24,7 @@ from random import Random
 from hypothesis import strategies as st
 from hypothesis import Phase, given, settings, unlimited
 from hypothesis.database import ExampleDatabase
-from hypothesis.internal.compat import hbytes, int_from_bytes, \
+from hypothesis.internal.compat import hbytes, hrange, int_from_bytes, \
     bytes_from_list
 from hypothesis.internal.conjecture.data import Status, ConjectureData
 from hypothesis.internal.conjecture.engine import ConjectureRunner
@@ -128,23 +128,37 @@ def test_can_load_data_from_a_corpus():
     assert len(list(db.fetch(key))) == 1
 
 
-def test_terminates_shrinks():
-    shrinks = [-1]
+def slow_shrinker():
+    last = [None]
 
-    def tf(data):
-        x = hbytes(data.draw_bytes(100))
-        if sum(x) >= 5000:
-            shrinks[0] += 1
+    def accept(data):
+        x = data.draw_bytes(100)
+        if x == last[0]:
             data.mark_interesting()
-    runner = ConjectureRunner(tf, settings=settings(
+        l = last[0]
+        if l is None:
+            if all(x):
+                last[0] = x
+                data.mark_interesting()
+            else:
+                return
+        diffs = [i for i in hrange(len(x)) if x[i] != l[i]]
+        if len(diffs) == 1:
+            i = diffs[0]
+            if x[i] + 1 == l[i]:
+                last[0] = x
+                data.mark_interesting()
+    return accept
+
+
+def test_terminates_shrinks():
+    runner = ConjectureRunner(slow_shrinker(), settings=settings(
         max_examples=5000, max_iterations=10000, max_shrinks=10,
         database=None, timeout=unlimited,
     ))
     runner.run()
     assert runner.last_data.status == Status.INTERESTING
-    # There's an extra non-shrinking check step to abort in the presence of
-    # flakiness
-    assert shrinks[0] == 11
+    assert runner.shrinks == 10
 
 
 def test_detects_flakiness():
