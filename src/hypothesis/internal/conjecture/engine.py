@@ -89,6 +89,7 @@ class ConjectureRunner(object):
         # Currently this is only used inside draw_bits, but it potentially
         # could get used elsewhere.
         self.capped = {}
+        self.block_sizes = {}
 
     def __tree_is_exhausted(self):
         return 0 in self.dead
@@ -148,6 +149,13 @@ class ConjectureRunner(object):
             tree_node = self.tree[node_index]
             if node_index in self.dead:
                 break
+
+        for u, v in data.blocks:
+            # This can happen if we hit a dead node when walking the buffer.
+            # In that case we alrady have this section of the tree mapped.
+            if u >= len(indices):
+                break
+            self.block_sizes[indices[u]] = v - u
 
         if data.status != Status.OVERRUN and node_index not in self.dead:
             self.dead.add(node_index)
@@ -237,20 +245,40 @@ class ConjectureRunner(object):
         ))
 
     def prescreen_buffer(self, buffer):
-        i = 0
-        for b in buffer:
-            if i in self.dead:
+        """Attempt to rule out buffer as a possible interesting candidate.
+
+        Returns False if we know for sure that running this buffer will not
+        produce an interesting result. Returns True if it might (because it
+        explores territory we have not previously tried).
+
+        This is purely an optimisation to try to reduce the number of tests we
+        run. "return True" would be a valid but inefficient implementation.
+
+        """
+        node_index = 0
+        n = len(buffer)
+        for k, b in enumerate(buffer):
+            if node_index in self.dead:
                 return False
             try:
-                b = self.forced[i]
+                # The block size at that point provides a lower bound on how
+                # many more bytes are required. If the buffer does not have
+                # enough bytes to fulfill that block size then we can rule out
+                # this buffer.
+                if k + self.block_sizes[node_index] > n:
+                    return False
             except KeyError:
                 pass
             try:
-                b = min(b, self.capped[i])
+                b = self.forced[node_index]
             except KeyError:
                 pass
             try:
-                i = self.tree[i][b]
+                b = min(b, self.capped[node_index])
+            except KeyError:
+                pass
+            try:
+                node_index = self.tree[node_index][b]
             except KeyError:
                 return True
         else:
@@ -266,8 +294,7 @@ class ConjectureRunner(object):
             raise RunIsComplete()
 
         buffer = hbytes(buffer[:self.last_data.index])
-        if sort_key(buffer) >= sort_key(self.last_data.buffer):
-            return False
+        assert sort_key(buffer) < sort_key(self.last_data.buffer)
 
         if not self.prescreen_buffer(buffer):
             return False
