@@ -37,23 +37,30 @@ class OneCharStringStrategy(SearchStrategy):
                  blacklist_categories=None,
                  blacklist_characters=None,
                  min_codepoint=None,
-                 max_codepoint=None):
+                 max_codepoint=None,
+                 whitelist_characters=None):
         intervals = charmap.query(
             include_categories=whitelist_categories,
             exclude_categories=blacklist_categories,
             min_codepoint=min_codepoint,
             max_codepoint=max_codepoint,
+            include_characters=whitelist_characters,
         )
         if not intervals:
             raise InvalidArgument(
                 'No valid characters in set'
             )
         self.intervals = IntervalSet(intervals)
+        if whitelist_characters:
+            self.whitelist_characters = set(whitelist_characters)
+        else:
+            self.whitelist_characters = set()
         if blacklist_characters:
             self.blacklist_characters = set(
                 b for b in blacklist_characters if ord(b) in self.intervals
             )
-            if len(self.blacklist_characters) == len(self.intervals):
+            if (len(self.whitelist_characters) == 0 and
+                    len(self.blacklist_characters) == len(self.intervals)):
                 raise InvalidArgument(
                     'No valid characters in set'
                 )

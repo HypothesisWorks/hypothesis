@@ -22,6 +22,21 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.18.0 - 2017-08-13
+-------------------
+
+This is a feature release:
+
+* :func:`~hypothesis.strategies.characters` now accepts
+  ``whitelist_characters``, particular characters which will be added to those
+  it produces. (:issue:`668`)
+* A bug fix for the internal function ``_union_interval_lists()``, and a rename
+  to ``_union_intervals()``. It now correctly handles all cases where intervals
+  overlap, and it always returns the result as a tuple for tuples.
+
+Thanks to Alex Willmer for these.
+
+-------------------
 3.17.0 - 2017-08-07
 -------------------
 

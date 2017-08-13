@@ -38,6 +38,13 @@ _charmap = None
 
 
 def charmap():
+    """Return a dict that maps a Unicode category, to a tuple of 2-tuples
+    covering the codepoint intervals for characters in that category.
+
+    >>> charmap()['Co']
+    ((57344, 63743), (983040, 1048573), (1048576, 1114109))
+
+    """
     global _charmap
     if _charmap is None:
         f = charmap_file()
@@ -77,34 +84,70 @@ _categories = None
 
 
 def categories():
+    """Return a list of Unicode categories in a normalised order.
+
+    >>> categories() # doctest: +ELLIPSIS
+    ['Zl', 'Zp', 'Co', 'Me', 'Pc', ..., 'Cc', 'Cs']
+
+    """
     global _categories
     if _categories is None:
         cm = charmap()
         _categories = sorted(
             cm.keys(), key=lambda c: len(cm[c])
         )
-        _categories.remove('Cc')
-        _categories.remove('Cs')
+        _categories.remove('Cc')  # Other, Control
+        _categories.remove('Cs')  # Other, Surrogate
         _categories.append('Cc')
         _categories.append('Cs')
     return _categories
 
 
-def _union_interval_lists(x, y):
+def _union_intervals(x, y):
+    """Merge two sequences of intervals into a single tuple of intervals.
+
+    Any integer bounded by `x` or `y` is also bounded by the result.
+
+    >>> _union_intervals([(3, 10)], [(1, 2), (5, 17)])
+    ((1, 17),)
+
+    """
     if not x:
-        return y
+        return tuple((u, v) for u, v in y)
     if not y:
-        return x
+        return tuple((u, v) for u, v in x)
     intervals = sorted(x + y, reverse=True)
     result = [intervals.pop()]
     while intervals:
+        # 1. intervals is in descending order
+        # 2. pop() takes from the RHS.
+        # 3. (a, b) was popped 1st, then (u, v) was popped 2nd
+        # 4. Therefore: a <= u
+        # 5. We assume that u <= v and a <= b
+        # 6. So we need to handle 2 cases of overlap, and one disjoint case
+        #    |   u--v     |   u----v   |       u--v  |
+        #    |   a----b   |   a--b     |  a--b       |
         u, v = intervals.pop()
         a, b = result[-1]
         if u <= b + 1:
-            result[-1] = (a, v)
+            # Overlap cases
+            result[-1] = (a, max(v, b))
         else:
+            # Disjoint case
             result.append((u, v))
     return tuple(result)
+
+
+def _intervals(s):
+    """Return a tuple of intervals, covering the codepoints of characters in
+    `s`.
+
+    >>> _intervals('abcdef0123456789')
+    ((48, 57), (97, 102))
+
+    """
+    intervals = [(ord(c), ord(c)) for c in sorted(s)]
+    return _union_intervals(intervals, intervals)
 
 
 category_index_cache = {
@@ -113,6 +156,16 @@ category_index_cache = {
 
 
 def _category_key(exclude, include):
+    """Return a normalised tuple of all Unicode categories that are in
+    `include`, but not in `exclude`.
+
+    If include is None then default to including all categories.
+    Any item in include that is not a unicode character will be excluded.
+
+    >>> _category_key(exclude=['So'], include=['Lu', 'Me', 'Cs', 'So', 'Xx'])
+    ('Me', 'Lu', 'Cs')
+
+    """
     cs = categories()
     if include is None:
         include = set(cs)
@@ -125,6 +178,16 @@ def _category_key(exclude, include):
 
 
 def _query_for_key(key):
+    """Return a tuple of codepoint intervals covering characters that match one
+    or more categories in the tuple of categories `key`.
+
+    >>> all_categories = tuple(categories())
+    >>> _query_for_key(all_categories)
+    ((0, 1114111),)
+    >>> _query_for_key(('Zl', 'Zp', 'Co'))
+    ((8232, 8233), (57344, 63743), (983040, 1048573), (1048576, 1114109))
+
+    """
     try:
         return category_index_cache[key]
     except KeyError:
@@ -134,7 +197,7 @@ def _query_for_key(key):
     if len(key) == len(cs):
         result = ((0, sys.maxunicode),)
     else:
-        result = _union_interval_lists(
+        result = _union_intervals(
             _query_for_key(key[:-1]), charmap()[key[-1]]
         )
     category_index_cache[key] = result
@@ -146,14 +209,33 @@ limited_category_index_cache = {}
 
 def query(
     exclude_categories=(), include_categories=None,
-    min_codepoint=None, max_codepoint=None
+    min_codepoint=None,
+    max_codepoint=None,
+    include_characters=''
 ):
+    """Return a tuple of intervals covering the codepoints for all characters
+    that meet the critera (min_codepoint <= codepoint(c) <= max_codepoint and
+    any(cat in include_categories for cat in categories(c)) and all(cat not in
+    exclude_categories for cat in categories(c)) or (c in include_characters)
+
+    >>> query()
+    ((0, 1114111),)
+    >>> query(min_codepoint=0, max_codepoint=128)
+    ((0, 128),)
+    >>> query(min_codepoint=0, max_codepoint=128, include_categories=['Lu'])
+    ((65, 90),)
+    >>> query(min_codepoint=0, max_codepoint=128, include_categories=['Lu'],
+    ...       include_characters=u'☃')
+    ((65, 90), (9731, 9731))
+
+    """
     if min_codepoint is None:
         min_codepoint = 0
     if max_codepoint is None:
         max_codepoint = sys.maxunicode
     catkey = _category_key(exclude_categories, include_categories)
-    qkey = (catkey, min_codepoint, max_codepoint)
+    character_intervals = _intervals(include_characters or '')
+    qkey = (catkey, min_codepoint, max_codepoint, character_intervals)
     try:
         return limited_category_index_cache[qkey]
     except KeyError:
@@ -166,5 +248,6 @@ def query(
                 max(u, min_codepoint), min(v, max_codepoint)
             ))
     result = tuple(result)
+    result = _union_intervals(result, character_intervals)
     limited_category_index_cache[qkey] = result
     return result

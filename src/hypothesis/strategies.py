@@ -636,19 +636,30 @@ def streaming(elements):
 @defines_strategy
 def characters(whitelist_categories=None, blacklist_categories=None,
                blacklist_characters=None, min_codepoint=None,
-               max_codepoint=None):
+               max_codepoint=None, whitelist_characters=None):
     """Generates unicode text type (unicode on python 2, str on python 3)
     characters following specified filtering rules.
 
-    This strategy accepts lists of Unicode categories, characters of which
-    should (`whitelist_categories`) or should not (`blacklist_categories`)
-    be produced.
+    When no filtering rules are specifed, any character can be produced.
 
-    Also there could be applied limitation by minimal and maximal produced
-    code point of the characters.
+    If ``min_codepoint`` or ``max_codepoint`` is specifed, then only
+    characters having a codepoint in that range will be produced.
 
-    If you know what exactly characters you don't want to be produced,
-    pass them with `blacklist_characters` argument.
+    If ``whitelist_categories`` is specified, then only characters from those
+    Unicode categories will be produced. This is a further restriction,
+    characters must also satisfy `min_codepoint` and `max_codepoint`.
+
+    If ``blacklist_categories`` is specified, then any character from those
+    categories will not be produced. This is a further restriction,
+    characters that match both ``whitelist_categories`` and
+    ``blacklist_categories`` will not be produced.
+
+    If ``whitelist_characters`` is specified, then any additional characters
+    in that list will also be produced.
+
+    If ``blacklist_characters`` is specified, then any characters in that list
+    will be not be produced. Any overlap between ``whitelist_characters`` and
+    ``blacklist_characters`` will raise an exception.
 
     """
     if (
@@ -660,13 +671,37 @@ def characters(whitelist_categories=None, blacklist_categories=None,
                 min_codepoint, max_codepoint
             )
         )
+    if all((whitelist_characters is not None,
+            min_codepoint is None,
+            max_codepoint is None,
+            whitelist_categories is None,
+            blacklist_categories is None,
+            )):
+        raise InvalidArgument(
+            'Cannot have just whitelist_characters=%r alone, '
+            'it would have no effect. Perhaps you want sampled_from()' % (
+                whitelist_characters,
+            )
+        )
+    if (
+        whitelist_characters is not None and
+        blacklist_characters is not None and
+        set(whitelist_characters).intersection(set(whitelist_characters))
+    ):
+        raise InvalidArgument(
+            'Cannot have characters in both whitelist_characters=%r, '
+            'and blacklist_characters=%r' % (
+                whitelist_characters, blacklist_categories,
+            )
+        )
 
     from hypothesis.searchstrategy.strings import OneCharStringStrategy
     return OneCharStringStrategy(whitelist_categories=whitelist_categories,
                                  blacklist_categories=blacklist_categories,
                                  blacklist_characters=blacklist_characters,
                                  min_codepoint=min_codepoint,
-                                 max_codepoint=max_codepoint)
+                                 max_codepoint=max_codepoint,
+                                 whitelist_characters=whitelist_characters)
 
 
 @cacheable

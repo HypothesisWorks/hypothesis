@@ -22,7 +22,7 @@ import unicodedata
 import pytest
 
 from hypothesis import find
-from hypothesis.errors import NoSuchExample, InvalidArgument
+from hypothesis.errors import NoExamples, NoSuchExample, InvalidArgument
 from hypothesis.strategies import characters
 
 
@@ -82,6 +82,30 @@ def test_find_something_rare():
 
     with pytest.raises(NoSuchExample):
         find(st, lambda c: unicodedata.category(c) != 'Zs')
+
+
+def test_whitelisted_characters_alone():
+    with pytest.raises(InvalidArgument):
+        characters(whitelist_characters=u'te02тест49st').example()
+
+
+def test_whitelisted_characters_overlap_blacklisted_characters():
+    with pytest.raises(InvalidArgument):
+        characters(min_codepoint=ord('0'), max_codepoint=ord('9'),
+                   whitelist_characters=u'te02тест49st',
+                   blacklist_characters=u't').example()
+
+
+def test_whitelisted_characters_override():
+    good_characters = u'teтестst'
+    st = characters(min_codepoint=ord('0'), max_codepoint=ord('9'),
+                    whitelist_characters=good_characters)
+
+    st.filter(lambda c: c in good_characters).example()
+    st.filter(lambda c: c in '0123456789').example()
+
+    with pytest.raises(NoExamples):
+        st.filter(lambda c: c not in good_characters + '0123456789').example()
 
 
 def test_blacklisted_characters():
