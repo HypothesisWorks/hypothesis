@@ -750,11 +750,6 @@ class ConjectureRunner(object):
 
             self.zero_blocks()
 
-            minimize(
-                self.last_data.buffer, self.incorporate_new_buffer,
-                cautious=True, random=self.random,
-            )
-
             if change_counter != self.changed:
                 self.debug('Restarting')
                 continue
