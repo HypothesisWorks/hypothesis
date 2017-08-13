@@ -19,7 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
-from mock import Mock, MagicMock, create_autospec
+from mock import Mock, create_autospec
 from hypothesis import given, example
 from tests.common.utils import fails
 from hypothesis.strategies import integers
@@ -67,9 +67,10 @@ def test_can_mix_fixture_example_and_keyword_strategy(xs, infinity):
 @fails
 @given(integers())
 def test_can_inject_mock_via_fixture(mock_fixture, xs):
-    """A negative test is better for this one - this condition uncovers a bug whereby
-    the mock fixture is executed instead of the test body and always succeeds.
-    If this test fails, then we know we've run the test body instead of the mock.
+    """A negative test is better for this one - this condition uncovers a bug
+    whereby the mock fixture is executed instead of the test body and always
+    succeeds. If this test fails, then we know we've run the test body instead
+    of the mock.
     """
     assert False
 

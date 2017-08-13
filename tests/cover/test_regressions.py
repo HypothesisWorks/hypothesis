@@ -55,3 +55,26 @@ def test_can_find_non_zero():
 
     with pytest.raises(AssertionError):
         test()
+
+
+def test_mock_injection():
+    """Ensure that it's possible for mechanisms like `pytest.fixture` and
+    `patch` to inject mocks into hypothesis test functions without side
+    effects.
+
+    (covers https://github.com/HypothesisWorks/hypothesis-
+    python/issues/491)
+
+    """
+    from mock import Mock
+
+    class Bar():
+        pass
+
+    @given(inp=st.integers())
+    def test_foo_spec(bar, inp):
+        pass
+
+    test_foo_spec(Bar())
+    test_foo_spec(Mock(Bar))
+    test_foo_spec(Mock())

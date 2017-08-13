@@ -170,6 +170,7 @@ their individual contributions.
 * `Adam Sven Johnson <https://www.github.com/pkqk>`_
 * `Alex Stapleton <https://www.github.com/public>`_
 * `Alex Willmer <https://github.com/moreati>`_ (`alex@moreati.org.uk <mailto:alex@moreati.org.uk>`_)
+* `Ben Peterson <https://github.com/killthrush>`_ (`killthrush@hotmail.com <mailto:killthrush@hotmail.com>`_)
 * `Charles O'Farrell <https://www.github.com/charleso>`_
 * `Chris Down  <https://chrisdown.name>`_
 * `Christopher Martin <https://www.github.com/chris-martin>`_ (`ch.martin@gmail.com <mailto:ch.martin@gmail.com>`_)

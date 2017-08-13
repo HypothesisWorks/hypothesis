@@ -55,10 +55,10 @@ def is_mock(obj):
     robust than looking for types.
 
     """
-    if obj is None:
-        return False
-    random_attributes = [uuid.uuid4()] * 10
-    return all([getattr(obj, str(attr), None) for attr in random_attributes])
+    for _ in range(10):
+        if not hasattr(obj, str(uuid.uuid4())):
+            return False
+    return True
 
 
 def function_digest(function):
