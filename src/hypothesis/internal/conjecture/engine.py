@@ -26,8 +26,8 @@ from hypothesis import settings as Settings
 from hypothesis import Phase
 from hypothesis.reporting import debug_report
 from hypothesis.internal.compat import EMPTY_BYTES, Counter, ceil, \
-    hbytes, hrange, text_type, bytes_from_list, to_bytes_sequence, \
-    unicode_safe_repr
+    hbytes, hrange, text_type, int_to_text, bytes_from_list, \
+    to_bytes_sequence, unicode_safe_repr
 from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
     StopTest, ConjectureData
 from hypothesis.internal.conjecture.minimizer import minimize
@@ -189,9 +189,17 @@ class ConjectureRunner(object):
             debug_report(message)
 
     def debug_data(self, data):
+        buffer_parts = [u"["]
+        for i, (u, v) in enumerate(data.blocks):
+            if i > 0:
+                buffer_parts.append(u" || ")
+            buffer_parts.append(
+                u', '.join(int_to_text(int(i)) for i in data.buffer[u:v]))
+        buffer_parts.append(u']')
+
         self.debug(u'%d bytes %s -> %s, %s' % (
             data.index,
-            unicode_safe_repr(list(data.buffer[:data.index])),
+            u''.join(buffer_parts),
             unicode_safe_repr(data.status),
             data.output,
         ))
