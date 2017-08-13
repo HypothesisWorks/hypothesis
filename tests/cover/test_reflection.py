@@ -569,6 +569,8 @@ def test_is_mock_with_negative_cases():
     assert not is_mock(is_mock)
     assert not is_mock(BittySnowman())
     assert not is_mock('foobar')
+    assert not is_mock(Mock(spec=BittySnowman))
+    assert not is_mock(MagicMock(spec=BittySnowman))
 
 
 def test_is_mock_with_positive_cases():

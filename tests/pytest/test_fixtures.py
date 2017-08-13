@@ -19,7 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
-from mock import Mock, MagicMock, NonCallableMock, NonCallableMagicMock
+from mock import Mock, MagicMock, create_autospec
 from hypothesis import given, example
 from tests.common.utils import fails
 from hypothesis.strategies import integers
@@ -31,23 +31,19 @@ def infinity():
 
 
 @pytest.fixture
-def m_fixture():
+def mock_fixture():
     return Mock()
 
 
 @pytest.fixture
-def mm_fixture():
-    return MagicMock()
+def spec_fixture():
+    class Foo():
+        def __init__(self):
+            pass
 
-
-@pytest.fixture
-def ncmm_fixture():
-    return NonCallableMagicMock()
-
-
-@pytest.fixture
-def ncm_fixture():
-    return NonCallableMock()
+        def bar(self):
+            return 'baz'
+    return create_autospec(Foo)
 
 
 @given(integers())
@@ -70,23 +66,15 @@ def test_can_mix_fixture_example_and_keyword_strategy(xs, infinity):
 
 @fails
 @given(integers())
-def test_can_inject_mock_via_fixture(m_fixture, x):
+def test_can_inject_mock_via_fixture(mock_fixture, xs):
+    """A negative test is better for this one - this condition uncovers a bug whereby
+    the mock fixture is executed instead of the test body and always succeeds.
+    If this test fails, then we know we've run the test body instead of the mock.
+    """
     assert False
 
 
-@fails
 @given(integers())
-def test_can_inject_magicmock_via_fixture(mm_fixture, x):
-    assert False
-
-
-@fails
-@given(integers())
-def test_can_inject_nc_mock_via_fixture(ncm_fixture, x):
-    assert False
-
-
-@fails
-@given(integers())
-def test_can_inject_nc_magicmock_via_fixture(ncmm_fixture, x):
-    assert False
+def test_can_inject_autospecced_mock_via_fixture(spec_fixture, xs):
+    spec_fixture.bar.return_value = infinity()
+    assert xs <= spec_fixture.bar()
