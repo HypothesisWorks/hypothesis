@@ -205,6 +205,9 @@ def integers(min_value=None, max_value=None):
     from hypothesis.searchstrategy.numbers import IntegersFromStrategy, \
         BoundedIntStrategy, WideRangeIntStrategy
 
+    # Why not a simpler implmentation?  eg:
+    #   `min_int_value = None if min_value is None else ceil(min_value)`
+    # Large values then misbehave under Python 2, so we're inelegant for now
     min_int_value = None
     if min_value is not None:
         min_int_value = int(min_value)
@@ -217,6 +220,9 @@ def integers(min_value=None, max_value=None):
         if max_int_value != max_value and max_value < 0:
             max_int_value -= 1
 
+    check_valid_interval(min_int_value, max_int_value,
+                         'min_int_value', 'max_int_value')
+
     if min_int_value is None:
         if max_int_value is None:
             return (
@@ -228,7 +234,6 @@ def integers(min_value=None, max_value=None):
         if max_int_value is None:
             return IntegersFromStrategy(min_int_value)
         else:
-            assert min_int_value <= max_int_value
             if min_int_value == max_int_value:
                 return just(min_int_value)
             elif min_int_value >= 0:

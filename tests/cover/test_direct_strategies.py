@@ -110,6 +110,7 @@ def test_validates_keyword_arguments(fn, kwargs):
     (ds.integers, {'max_value': 0}),
     (ds.integers, {'min_value': decimal.Decimal('1.5')}),
     (ds.decimals, {'min_value': 1.0, 'max_value': 1.5}),
+    (ds.integers, {'min_value': -1.5, 'max_value': -0.5}),
     (ds.decimals, {'min_value': '1.0', 'max_value': '1.5'}),
     (ds.decimals, {'min_value': decimal.Decimal('1.5')}),
     (ds.decimals, {
