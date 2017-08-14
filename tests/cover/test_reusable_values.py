@@ -20,17 +20,19 @@ from __future__ import division, print_function, absolute_import
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import given, reject
+from hypothesis import given, reject, example
 from hypothesis.errors import InvalidArgument
+
+base_reusable_strategies = (
+    st.integers(), st.floats(), st.text(), st.binary(), st.dates(),
+    st.times(), st.timedeltas(), st.booleans(), st.complex_numbers()
+)
 
 
 @st.deferred
 def reusable():
     return st.one_of(
-        st.sampled_from((
-            st.integers(), st.floats(), st.text(), st.binary(), st.dates(),
-            st.times(), st.timedeltas(), st.booleans(),
-        )),
+        st.sampled_from(base_reusable_strategies),
 
         st.builds(
             st.floats, min_value=st.none() | st.floats(),
@@ -54,6 +56,12 @@ def test_reusable_strategies_are_all_reusable(s):
         reject()
 
     assert s.has_reusable_values
+
+
+for s in base_reusable_strategies:
+    test_reusable_strategies_are_all_reusable = example(s)(
+        test_reusable_strategies_are_all_reusable
+    )
 
 
 def test_composing_breaks_reusability():
