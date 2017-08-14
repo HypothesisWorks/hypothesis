@@ -686,7 +686,7 @@ def characters(whitelist_categories=None, blacklist_categories=None,
     if (
         whitelist_characters is not None and
         blacklist_characters is not None and
-        set(whitelist_characters).intersection(set(whitelist_characters))
+        set(blacklist_characters).intersection(set(whitelist_characters))
     ):
         raise InvalidArgument(
             'Cannot have characters in both whitelist_characters=%r, '
