@@ -97,8 +97,8 @@ def test_whitelisted_characters_overlap_blacklisted_characters():
         characters(min_codepoint=ord('0'), max_codepoint=ord('9'),
                    whitelist_characters=good_chars,
                    blacklist_characters=bad_chars).example()
-        assert good_chars in text_type(exc)
-        assert bad_chars in text_type(exc)
+        assert repr(good_chars) in text_type(exc)
+        assert repr(bad_chars) in text_type(exc)
 
 
 def test_whitelisted_characters_override():
