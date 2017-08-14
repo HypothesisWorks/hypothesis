@@ -368,7 +368,7 @@ def floats(
 
 
 @cacheable
-@defines_strategy
+@defines_strategy_with_reusable_values
 def complex_numbers():
     """Returns a strategy that generates complex numbers."""
     from hypothesis.searchstrategy.numbers import ComplexStrategy
