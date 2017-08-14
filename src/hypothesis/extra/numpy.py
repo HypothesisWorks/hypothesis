@@ -17,10 +17,13 @@
 
 from __future__ import division, print_function, absolute_import
 
+import math
+from collections import Iterable
+
 import numpy as np
 
 import hypothesis.strategies as st
-from hypothesis import settings
+import hypothesis.internal.conjecture.utils as cu
 from hypothesis.errors import InvalidArgument
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import hrange, text_type
@@ -97,23 +100,56 @@ class ArrayStrategy(SearchStrategy):
                        u'Array shape must be integer in each dimension, '
                        u'provided shape was {}', shape)
         self.array_size = np.prod(shape)
-        buff_size = settings.default.buffer_size
-        check_argument(
-            self.array_size * dtype.itemsize <= buff_size,
-            u'Insufficient bytes of entropy to draw requested array.  '
-            u'shape={}, dtype={}.  Can you reduce the size or dimensions '
-            u'of the array?  What about using a smaller dtype?  If slow '
-            u'test runs and minimisation are acceptable, you  could '
-            u'increase settings().buffer_size from {} to at least {}.',
-            shape, dtype, buff_size, self.array_size * buff_size)
         self.dtype = dtype
         self.element_strategy = element_strategy
 
+    def __create_base_array(self, base):
+        """Create an array of the right size which is just a copy of base."""
+
+        if isinstance(base, Iterable):
+            result = np.zeros(shape=self.array_size, dtype=self.dtype)
+            for i in hrange(len(result)):
+                result[i] = base
+            return result.reshape(self.shape)
+        else:
+            return np.full(
+                shape=self.shape, dtype=self.dtype, fill_value=base
+            )
+
     def do_draw(self, data):
-        result = np.empty(dtype=self.dtype, shape=self.array_size)
-        for i in hrange(self.array_size):
-            result[i] = self.element_strategy.do_draw(data)
-        return result.reshape(self.shape)
+        if 0 in self.shape:
+            return np.zeros(dtype=self.dtype, shape=self.shape)
+
+        # We draw numpy arrays as "sparse with an offset". We draw a single
+        # value that is the background value of the array that everything is
+        # set to by default (we can't use zero because zero might not be a
+        # valid value in the element strategy), and we then draw a collection
+        # of index assignments within the array and assign fresh values for
+        # them.
+
+        result = self.__create_base_array(data.draw(self.element_strategy))
+
+        elements = cu.many(
+            data,
+            min_size=0, max_size=self.array_size,
+            # sqrt isn't chosen for any particularly principled reason. It just
+            # grows reasonably quickly but sublinearly, and for small arrays it
+            # represents a decent fraction of the array size.
+            average_size=math.sqrt(self.array_size),
+        )
+
+        seen = set()
+
+        while elements.more():
+            key = tuple(
+                cu.integer_range(data, 0, k - 1) for k in self.shape
+            )
+            if key in seen:
+                elements.reject()
+                continue
+            seen.add(key)
+            result[key] = data.draw(self.element_strategy)
+        return result
 
 
 @st.composite
