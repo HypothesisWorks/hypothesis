@@ -88,31 +88,44 @@ class SearchStrategy(object):
     """
 
     supports_find = True
-    cached_is_empty = None
     validate_called = False
 
-    @property
-    def is_empty(self):
-        """Returns True if this strategy can never draw a value and will always
-        result in the data being marked invalid.
+    def recursive_property(name, default):
+        cache_key = 'cached_' + name
+        calculation = 'calc_' + name
+        force_key = 'force_' + name
 
-        The fact that this returns False does not guarantee that a valid value
-        can be drawn - this is not intended to be perfect, and is primarily
-        intended to be an optimisation for some cases.
+        def accept(self):
+            if not hasattr(self, cache_key):
+                try:
+                    setattr(self, cache_key, getattr(self, force_key))
+                except AttributeError:
+                    # This isn't an error, but instead is to deal with
+                    # recursive strategy definitions that refer to themselves.
+                    # This ensures in a recursive call we will return the
+                    # default value.
+                    setattr(self, cache_key, default)
+                    setattr(self, cache_key, getattr(self, calculation)())
+            return getattr(self, cache_key)
 
-        """
-        if self.cached_is_empty is None:
-            # This isn't an error, but instead is to deal with recursive
-            # strategy definitions that refer to themselves. This ensures that
-            # in a recursive call we will return False. This results in us
-            # returning False in some cases where it would be valid to return
-            # True, but is_empty only needs to be a conservative approximation
-            # anyway, so that's fine.
-            self.cached_is_empty = False
-            self.cached_is_empty = self.calc_is_empty()
-        return self.cached_is_empty
+        accept.__name__ = name
+        return property(accept)
+
+    # Returns True if this strategy can never draw a value and will always
+    # result in the data being marked invalid.
+    # The fact that this returns False does not guarantee that a valid value
+    # can be drawn - this is not intended to be perfect, and is primarily
+    # intended to be an optimisation for some cases.
+    is_empty = recursive_property('is_empty', False)
+
+    # Returns True if values from this strategy can safely be reused without
+    # this causing unexpected behaviour.
+    has_reusable_values = recursive_property('has_reusable_values', True)
 
     def calc_is_empty(self):
+        return False
+
+    def calc_has_reusable_values(self):
         return False
 
     def example(self, random=None):
@@ -249,6 +262,9 @@ class OneOfStrategy(SearchStrategy):
 
     def calc_is_empty(self):
         return len(self.element_strategies) == 0
+
+    def calc_has_reusable_values(self):
+        return all(e.has_reusable_values for e in self.element_strategies)
 
     @property
     def element_strategies(self):

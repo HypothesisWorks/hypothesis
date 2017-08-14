@@ -1,0 +1,77 @@
+# coding=utf-8
+#
+# This file is part of Hypothesis, which may be found at
+# https://github.com/HypothesisWorks/hypothesis-python
+#
+# Most of this work is copyright (C) 2013-2017 David R. MacIver
+# (david@drmaciver.com), but it contains contributions by others. See
+# CONTRIBUTING.rst for a full list of people who may hold copyright, and
+# consult the git log if you need to determine who owns an individual
+# contribution.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file, You can
+# obtain one at http://mozilla.org/MPL/2.0/.
+#
+# END HEADER
+
+from __future__ import division, print_function, absolute_import
+
+import pytest
+
+import hypothesis.strategies as st
+from hypothesis import given, reject
+from hypothesis.errors import InvalidArgument
+
+
+@st.deferred
+def reusable():
+    return st.one_of(
+        st.sampled_from((
+            st.integers(), st.floats(), st.text(), st.binary(), st.dates(),
+            st.times(), st.timedeltas(), st.booleans(),
+        )),
+
+        st.builds(
+            st.floats, min_value=st.none() | st.floats(),
+            max_value=st.none() | st.floats(), allow_infinity=st.booleans(),
+            allow_nan=st.booleans()
+        ),
+
+        st.builds(st.just, st.lists(max_size=0)),
+        st.builds(st.sampled_from, st.lists(st.lists(max_size=0))),
+
+        st.lists(reusable).map(lambda ls: st.one_of(*ls)),
+        st.lists(reusable).map(lambda ls: st.one_of(*ls)),
+    )
+
+
+@given(reusable)
+def test_reusable_strategies_are_all_reusable(s):
+    try:
+        s.validate()
+    except InvalidArgument:
+        reject()
+
+    assert s.has_reusable_values
+
+
+def test_composing_breaks_reusability():
+    s = st.integers()
+    assert s.has_reusable_values
+    assert not s.filter(lambda x: True).has_reusable_values
+    assert not s.map(lambda x: x).has_reusable_values
+    assert not s.flatmap(lambda x: st.just(x)).has_reusable_values
+
+
+@pytest.mark.parametrize('strat', [
+    st.lists(st.booleans()), st.sets(st.booleans()),
+    st.dictionaries(st.booleans(), st.booleans()),
+])
+def test_mutable_collections_do_not_have_reusable_values(strat):
+    assert not strat.has_reusable_values
+
+
+def test_recursion_does_not_break_reusability():
+    x = st.deferred(lambda: st.none() | st.tuples(x))
+    assert x.has_reusable_values

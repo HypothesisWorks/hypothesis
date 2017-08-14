@@ -38,8 +38,11 @@ class IntStrategy(SearchStrategy):
 
     """
 
+    def calc_has_reusable_values(self):
+        return True
 
-class IntegersFromStrategy(SearchStrategy):
+
+class IntegersFromStrategy(IntStrategy):
 
     def __init__(self, lower_bound, average_size=100000.0):
         super(IntegersFromStrategy, self).__init__()
@@ -72,7 +75,7 @@ class WideRangeIntStrategy(IntStrategy):
         return int(r)
 
 
-class BoundedIntStrategy(SearchStrategy):
+class BoundedIntStrategy(IntStrategy):
 
     """A strategy for providing integers in some interval with inclusive
     endpoints."""
@@ -118,6 +121,9 @@ class FloatStrategy(SearchStrategy):
 
     def __repr__(self):
         return '%s()' % (self.__class__.__name__,)
+
+    def calc_has_reusable_values(self):
+        return True
 
     def permitted(self, f):
         assert isinstance(f, float)
@@ -181,6 +187,9 @@ class FixedBoundedFloatStrategy(SearchStrategy):
             self.lower_bound, self.upper_bound,
         )
 
+    def calc_has_reusable_values(self):
+        return True
+
     def do_draw(self, data):
         f = self.lower_bound + (
             self.upper_bound - self.lower_bound) * d.fractional_float(data)
@@ -204,3 +213,6 @@ class ComplexStrategy(MappedSearchStrategy):
 
     def pack(self, value):
         return complex(*value)
+
+    def calc_has_reusable_values(self):
+        return True

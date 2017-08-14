@@ -33,6 +33,7 @@ from hypothesis.internal.branchcheck import check_function
 TIME_RESOLUTIONS = tuple('Y  M  D  h  m  s  ms  us  ns  ps  fs  as'.split())
 
 
+@st.defines_strategy_with_reusable_values
 def from_dtype(dtype):
     # Compound datatypes, eg 'f4,f4,f4'
     if dtype.names is not None:
@@ -120,36 +121,46 @@ class ArrayStrategy(SearchStrategy):
         if 0 in self.shape:
             return np.zeros(dtype=self.dtype, shape=self.shape)
 
-        # We draw numpy arrays as "sparse with an offset". We draw a single
-        # value that is the background value of the array that everything is
-        # set to by default (we can't use zero because zero might not be a
-        # valid value in the element strategy), and we then draw a collection
-        # of index assignments within the array and assign fresh values for
-        # them.
+        if self.element_strategy.has_reusable_values:
+            # We draw numpy arrays as "sparse with an offset". We draw a single
+            # value that is the background value of the array that everything
+            # set to by default (we can't use zero because zero might not be a
+            # valid value in the element strategy), and we then draw a
+            # collection of index assignments within the array and assign
+            # fresh values to those indices.
 
-        result = self.__create_base_array(data.draw(self.element_strategy))
+            result = self.__create_base_array(data.draw(self.element_strategy))
 
-        elements = cu.many(
-            data,
-            min_size=0, max_size=self.array_size,
-            # sqrt isn't chosen for any particularly principled reason. It just
-            # grows reasonably quickly but sublinearly, and for small arrays it
-            # represents a decent fraction of the array size.
-            average_size=math.sqrt(self.array_size),
-        )
-
-        seen = set()
-
-        while elements.more():
-            key = tuple(
-                cu.integer_range(data, 0, k - 1) for k in self.shape
+            elements = cu.many(
+                data,
+                min_size=0, max_size=self.array_size,
+                # sqrt isn't chosen for any particularly principled reason. It
+                # just grows reasonably quickly but sublinearly, and for small
+                # arrays it represents a decent fraction of the array size.
+                average_size=math.sqrt(self.array_size),
             )
-            if key in seen:
-                elements.reject()
-                continue
-            seen.add(key)
-            result[key] = data.draw(self.element_strategy)
-        return result
+
+            seen = set()
+
+            while elements.more():
+                key = tuple(
+                    cu.integer_range(data, 0, k - 1) for k in self.shape
+                )
+                if key in seen:
+                    elements.reject()
+                    continue
+                seen.add(key)
+                result[key] = data.draw(self.element_strategy)
+            return result
+        else:
+            # The values produced by our element strategy can not be reused
+            # (either because they are mutable or because drawing them in
+            # some way depends on things that have happened previusly), so we
+            # have to fall back to the slow method.
+            result = np.zeros(shape=self.array_size, dtype=self.dtype)
+            for i in hrange(len(result)):
+                result[i] = data.draw(self.element_strategy)
+            return result.reshape(self.shape)
 
 
 @st.composite

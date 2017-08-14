@@ -43,6 +43,11 @@ STANDARD_TYPES = list(map(np.dtype, [
 ]))
 
 
+@given(nps.nested_dtypes())
+def test_strategies_for_standard_dtypes_have_reusable_values(dtype):
+    assert nps.from_dtype(dtype).has_reusable_values
+
+
 @pytest.mark.parametrize(u't', STANDARD_TYPES)
 def test_produces_instances(t):
     @given(nps.from_dtype(t))
@@ -126,6 +131,19 @@ def test_does_not_flatten_arrays_of_lists(arr):
 @given(nps.arrays(object, 100, st.lists(max_size=0)))
 def test_generated_lists_are_distinct(ls):
     assert len({id(x) for x in ls}) == len(ls)
+
+
+@st.composite
+def distinct_integers(draw):
+    used = draw(st.shared(st.builds(set)))
+    i = draw(st.integers(0, 2 ** 64 - 1).filter(lambda x: x not in used))
+    used.add(i)
+    return i
+
+
+@given(nps.arrays('uint64', 10, distinct_integers()))
+def test_does_not_reuse_distinct_integers(arr):
+    assert len(set(arr)) == len(arr)
 
 
 @given(nps.array_shapes())
