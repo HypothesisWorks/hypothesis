@@ -24,6 +24,7 @@ import pytest
 from hypothesis import find
 from hypothesis.errors import NoExamples, NoSuchExample, InvalidArgument
 from hypothesis.strategies import characters
+from hypothesis.internal.compat import text_type
 
 
 def test_bad_category_arguments():
@@ -90,10 +91,14 @@ def test_whitelisted_characters_alone():
 
 
 def test_whitelisted_characters_overlap_blacklisted_characters():
-    with pytest.raises(InvalidArgument):
+    good_chars = u'te02тест49st'
+    bad_chars = u'ts94тсет'
+    with pytest.raises(InvalidArgument) as exc:
         characters(min_codepoint=ord('0'), max_codepoint=ord('9'),
-                   whitelist_characters=u'te02тест49st',
-                   blacklist_characters=u't').example()
+                   whitelist_characters=good_chars,
+                   blacklist_characters=bad_chars).example()
+        assert good_chars in text_type(exc)
+        assert bad_chars in text_type(exc)
 
 
 def test_whitelisted_characters_override():
