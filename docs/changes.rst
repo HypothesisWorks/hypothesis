@@ -22,6 +22,17 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.18.2 - 2017-08-15
+-------------------
+
+This release fixes a bug introduced in 3.18.0. If the arguments
+``whitelist_characters`` and ``blacklist_characters`` to
+:func:`~hypothesis.strategies.characters` both contained elements, then an
+``InvalidArgument`` exception would be raised.
+
+Thanks to Zac Hatfield Dodds for reporting and fixing this.
+
+-------------------
 3.18.1 - 2017-08-14
 -------------------
 
