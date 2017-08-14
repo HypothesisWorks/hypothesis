@@ -117,3 +117,14 @@ def test_blacklisted_characters():
 
     with pytest.raises(NoSuchExample):
         find(st, lambda c: c in bad_chars)
+
+
+def test_whitelist_characters_disjoint_blacklist_characters():
+    good_chars = u'👍✔️'
+    bad_chars = u'👎✘'
+    st = characters(min_codepoint=ord('0'), max_codepoint=ord('9'),
+                    blacklist_characters=bad_chars,
+                    whitelist_characters=good_chars)
+
+    with pytest.raises(NoSuchExample):
+        find(st, lambda c: c in bad_chars)
