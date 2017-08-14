@@ -125,7 +125,7 @@ def test_blacklisted_characters():
 
 
 def test_whitelist_characters_disjoint_blacklist_characters():
-    good_chars = u'👍✔️'
+    good_chars = u'👍✔'
     bad_chars = u'👎✘'
     st = characters(min_codepoint=ord('0'), max_codepoint=ord('9'),
                     blacklist_characters=bad_chars,
