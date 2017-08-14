@@ -30,7 +30,7 @@ This release fixes a bug introduced in 3.18.0. If the arguments
 :func:`~hypothesis.strategies.characters` both contained elements, then an
 ``InvalidArgument`` exception would be raised.
 
-Thanks to Zac Hatfield Dodds for reporting and fixing this.
+Thanks to Zac Hatfield-Dodds for reporting and fixing this.
 
 -------------------
 3.18.1 - 2017-08-14
