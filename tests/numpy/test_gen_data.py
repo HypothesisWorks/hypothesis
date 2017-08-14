@@ -77,12 +77,19 @@ def test_generates_and_minimizes():
 
 
 def test_can_minimize_large_arrays():
+<<<<<<< HEAD
     x = minimal(
         nps.arrays(u'uint32', 100), lambda x: np.any(x) and not np.all(x),
         timeout_after=60
     )
     assert np.logical_or(x == 0, x == 1).all()
     assert np.count_nonzero(x) in (1, len(x) - 1)
+=======
+    assert minimal(
+        arrays(u'uint32', 500), lambda x: np.any(x) and not np.all(x),
+        timeout_after=60
+    ).sum() == 1
+>>>>>>> Additional testing of some numpy edge cases
 
 
 @flaky(max_runs=50, min_passes=1)
@@ -111,19 +118,31 @@ def test_can_create_arrays_of_tuples():
     assert all(a in ((1, 0), (0, 1)) for a in arr)
 
 
+<<<<<<< HEAD
 @given(nps.arrays(object, (2, 2), st.tuples(st.integers())))
+=======
+@given(arrays(object, (2, 2), st.tuples(st.integers())))
+>>>>>>> Additional testing of some numpy edge cases
 def test_does_not_flatten_arrays_of_tuples(arr):
     assert isinstance(arr[0][0], tuple)
 
 
+<<<<<<< HEAD
 @given(
     nps.arrays(object, (2, 2), st.lists(st.integers(), min_size=1, max_size=1))
 )
+=======
+@given(arrays(object, (2, 2), st.lists(st.integers(), min_size=1, max_size=1)))
+>>>>>>> Additional testing of some numpy edge cases
 def test_does_not_flatten_arrays_of_lists(arr):
     assert isinstance(arr[0][0], list)
 
 
+<<<<<<< HEAD
 @given(nps.array_shapes())
+=======
+@given(array_shapes())
+>>>>>>> Additional testing of some numpy edge cases
 def test_can_generate_array_shapes(shape):
     assert isinstance(shape, tuple)
     assert all(isinstance(i, int) for i in shape)
