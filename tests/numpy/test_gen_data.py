@@ -123,6 +123,11 @@ def test_does_not_flatten_arrays_of_lists(arr):
     assert isinstance(arr[0][0], list)
 
 
+@given(nps.arrays(object, 100, st.lists(max_size=0)))
+def test_generated_lists_are_distinct(ls):
+    assert len({id(x) for x in ls}) == len(ls)
+
+
 @given(nps.array_shapes())
 def test_can_generate_array_shapes(shape):
     assert isinstance(shape, tuple)
