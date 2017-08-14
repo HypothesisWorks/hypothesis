@@ -691,7 +691,7 @@ def characters(whitelist_categories=None, blacklist_categories=None,
         raise InvalidArgument(
             'Cannot have characters in both whitelist_characters=%r, '
             'and blacklist_characters=%r' % (
-                whitelist_characters, blacklist_categories,
+                whitelist_characters, blacklist_characters,
             )
         )
 
