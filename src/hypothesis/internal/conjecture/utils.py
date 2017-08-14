@@ -294,6 +294,7 @@ class many(object):
         self.count = 0
         self.rejections = 0
         self.drawn = False
+        self.force_stop = False
 
     def more(self):
         """Should I draw another element to add to the collection?"""
@@ -304,6 +305,8 @@ class many(object):
 
         if self.min_size == self.max_size:
             should_continue = self.count < self.min_size
+        elif self.force_stop:
+            should_continue = False
         else:
             if self.count < self.min_size:
                 p_continue = 1.0
@@ -326,5 +329,8 @@ class many(object):
         assert self.count > 0
         self.count -= 1
         self.rejections += 1
-        if self.rejections > self.count:
-            self.data.mark_invalid()
+        if self.rejections > 2 * self.count:
+            if self.count < self.min_size:
+                self.data.mark_invalid()
+            else:
+                self.force_stop = True

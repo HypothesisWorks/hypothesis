@@ -25,8 +25,9 @@ from flaky import flaky
 
 from hypothesis import find, given, settings
 from tests.common.debug import minimal
-from hypothesis.strategies import sets, text, lists, builds, tuples, \
-    booleans, integers, frozensets, dictionaries, fixed_dictionaries
+from hypothesis.strategies import none, sets, text, lists, builds, \
+    tuples, booleans, integers, frozensets, dictionaries, \
+    fixed_dictionaries
 from hypothesis.internal.compat import OrderedDict
 
 
@@ -253,3 +254,11 @@ def test_can_draw_empty_list_from_unsatisfiable_strategy():
 
 def test_can_draw_empty_set_from_unsatisfiable_strategy():
     assert sets(integers().filter(lambda s: False)).example() == set()
+
+
+small_set = sets(none())
+
+
+@given(lists(small_set, min_size=10))
+def test_small_sized_sets(x):
+    pass
