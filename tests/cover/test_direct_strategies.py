@@ -58,6 +58,7 @@ def fn_ktest(*fnkwargs):
 @fn_ktest(
     (ds.integers, {'min_value': float('nan')}),
     (ds.integers, {'min_value': 2, 'max_value': 1}),
+    (ds.integers, {'min_value': 0.1, 'max_value': 0.2}),
     (ds.decimals, {'min_value': float('nan')}),
     (ds.decimals, {'min_value': 2, 'max_value': 1}),
     (ds.decimals, {'max_value': '-snan'}),
@@ -109,6 +110,7 @@ def test_validates_keyword_arguments(fn, kwargs):
     (ds.integers, {'min_value': 11, 'max_value': 100}),
     (ds.integers, {'max_value': 0}),
     (ds.integers, {'min_value': decimal.Decimal('1.5')}),
+    (ds.integers, {'min_value': -1.5, 'max_value': -0.5}),
     (ds.decimals, {'min_value': 1.0, 'max_value': 1.5}),
     (ds.decimals, {'min_value': '1.0', 'max_value': '1.5'}),
     (ds.decimals, {'min_value': decimal.Decimal('1.5')}),

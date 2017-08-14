@@ -24,8 +24,9 @@ import pytest
 
 from hypothesis import strategies as st
 from hypothesis import given
-from hypothesis.internal.compat import FullArgSpec, hrange, qualname, \
-    int_to_bytes, getfullargspec, int_from_bytes
+from hypothesis.internal.compat import FullArgSpec, ceil, floor, hrange, \
+    qualname, int_to_bytes, integer_types, getfullargspec, \
+    int_from_bytes
 
 
 def test_small_hrange():
@@ -115,3 +116,22 @@ def test_inspection_compat():
                     reason='inspect.FullArgSpec only exists under Python 3')
 def test_inspection_result_compat():
     assert FullArgSpec is inspect.FullArgSpec
+
+
+@given(st.fractions())
+def test_ceil(x):
+    """The compat ceil function always has the Python 3 semantics.
+
+    Under Python 2, math.ceil returns a float, which cannot represent large
+    integers - for example, `float(2**53) == float(2**53 + 1)` - and this
+    is obviously incorrect for unlimited-precision integer operations.
+
+    """
+    assert isinstance(ceil(x), integer_types)
+    assert x <= ceil(x) < x + 1
+
+
+@given(st.fractions())
+def test_floor(x):
+    assert isinstance(floor(x), integer_types)
+    assert x - 1 < floor(x) <= x
