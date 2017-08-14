@@ -33,6 +33,7 @@ import click
 import numpy as np
 
 import hypothesis.strategies as st
+import hypothesis.extra.numpy as npst
 from hypothesis import settings, unlimited
 from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.internal.conjecture.engine import ConjectureRunner
@@ -76,6 +77,8 @@ STRATEGIES = OrderedDict([
         lambda n: st.lists(st.integers(), min_size=n, max_size=n))),
     ('text', st.text()),
     ('text5', st.text(min_size=5)),
+    ('arrays10', npst.arrays('int8', 10)),
+    ('arraysvar', npst.arrays('int8', st.integers(0, 10))),
 ])
 
 
@@ -107,6 +110,13 @@ def sometimes(p, name=None):
         return random.Random(hasher.digest()).random() <= p
     accept.__name__ = name or 'sometimes(%r)' % (p,)
     return accept
+
+
+def array_average(seed, testdata, value):
+    if np.prod(value.shape) == 0:
+        return False
+    avg = random.Random(seed).randint(0, 255)
+    return value.mean() >= avg
 
 
 def lower_bound(seed, testdata, value):
@@ -160,6 +170,10 @@ for k in STRATEGIES:
 define_benchmark('intlists', always, minsum)
 define_benchmark('intlists', always, has_duplicates)
 define_benchmark('intlists', has_duplicates, minsum)
+
+for p in [always, usually]:
+    define_benchmark('arrays10', p, array_average)
+    define_benchmark('arraysvar', p, array_average)
 
 
 def run_benchmark_for_sizes(benchmark, n_runs):
