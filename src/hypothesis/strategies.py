@@ -44,7 +44,7 @@ __all__ = [
     'choices', 'streaming',
     'booleans', 'integers', 'floats', 'complex_numbers', 'fractions',
     'decimals',
-    'characters', 'text', 'binary', 'uuids',
+    'characters', 'text', 'binary', 'uuids', 'regex',
     'tuples', 'lists', 'sets', 'frozensets', 'iterables',
     'dictionaries', 'fixed_dictionaries',
     'sampled_from', 'permutations',
@@ -1378,6 +1378,22 @@ def uuids():
             lambda r: UUID(int=r.getrandbits(128))
         ), 'uuids()')
 
+@defines_strategy
+def regex(pattern, limit=10):
+    r"""Generates strings matching the provided regular expression.
+    ``pattern`` can be a string or regex object.
+    ``limit`` is the maximum number of repetitions to be generated. If the
+    specified maximum repetitions exceeds ``limit``, then the specified maximum
+    is used (e.g. 'A{3,12}' with limit=10 may produce string of 11 or 12 'A's).
+
+    Does not support flags, assertions, or conditionals.
+
+    Compliant with javascript standard regular expressions, ECMA 262
+    specifically, with the addition of allowing the '.' character and other
+    python regular expression features (e.g. named groups).
+    """
+    from hypothesis.searchstrategy.regex import Xeger
+    return Xeger(limit=limit).xeger(pattern)
 
 @defines_strategy
 def runner(default=not_set):
