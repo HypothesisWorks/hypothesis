@@ -22,6 +22,15 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.18.1 - 2017-08-14
+-------------------
+
+This is a bug fix release to fix :issue:`780`, where
+:func:`~hypothesis.strategies.sets` and similar would trigger health check
+errors if their element strategy could only produce one element (e.g.
+if it was :func:`~hypothesis.strategies.just`).
+
+-------------------
 3.18.0 - 2017-08-13
 -------------------
 
