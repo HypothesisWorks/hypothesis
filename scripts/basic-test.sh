@@ -60,12 +60,14 @@ if [ "$(python -c 'import platform; print(platform.python_implementation())')" !
     pip uninstall -y django
   fi
 
-  if [ "$(python -c 'import sys; print(sys.version_info[:2] < (3, 5))')" = "True" ] ; then
-    pushd "$HOME"
-      pip wheel numpy==1.9.2
-    popd
-    pip install --find-links="$HOME/wheelhouse" numpy==1.9.2
+  if [ "$(python -c 'import sys; print(sys.version_info[:2] in ((2, 7), (3, 6)))')" = "True" ] ; then
+    pip install numpy
     $PYTEST tests/numpy
-    pip uninstall -y numpy
+
+    pip install pandas
+
+    $PYTEST tests/pandas
+
+    pip uninstall -y numpy pandas
   fi
 fi
