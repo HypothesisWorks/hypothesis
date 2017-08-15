@@ -29,6 +29,32 @@ def is_sequence(c):
     return hasattr(c, '__len__') and hasattr(c, '__getitem__')
 
 
+PANDAS_TIME_DTYPES = tuple(
+    pandas.Series(np.array([], dtype=d)).dtype
+    for d in ('datetime64', 'timedelta64')
+)
+
+
+def supported_by_pandas(dtype):
+    """ Checks whether the dtype is one that can be correctly handled by Pandas
+
+    We only use this where we choose the dtype. If the user chooses the dtype
+    to be one that pandas doesn't fully support, they are in for an exciting
+    journey of discovery.
+    """
+
+    # Pandas only supports a limited range of timedelta and datetime dtypes
+    # compared to the full range that numpy supports and will convert
+    # everything to those types (possibly increasing precision in the course of
+    # doing so, which can cause problems if this results in something which
+    # does not fit into the desired word type. As a result we want to filter
+    # out any timedelta or datetime dtypes that are not of the desired types.
+
+    if dtype.kind in ('m', 'M'):
+        return dtype in PANDAS_TIME_DTYPES
+    return True
+
+
 def validate_index_and_bounds(draw, index, min_size, max_size):
     st.check_valid_interval(
         min_size, max_size, 'min_size', 'max_size'
@@ -191,7 +217,10 @@ def data_frames(
 
     if columns is None:
         columns = st.lists(
-            st.builds(Column, st.text(), st.none() | npst.scalar_dtypes()),
+            st.builds(
+                Column, st.text(),
+                st.none() | npst.scalar_dtypes().filter(supported_by_pandas)
+            ),
             unique_by=lambda x: x.name)
 
     columns = convert(columns)

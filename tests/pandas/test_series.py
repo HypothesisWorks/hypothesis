@@ -20,9 +20,31 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 
 import hypothesis.strategies as st
+import hypothesis.extra.numpy as npst
 import hypothesis.extra.pandas as pdst
-from hypothesis import given
+from hypothesis import given, assume, reject
 from tests.common.debug import find_any
+
+
+@given(st.data())
+def test_can_create_a_series_of_any_dtype(data):
+    dtype = np.dtype(data.draw(npst.scalar_dtypes()))
+    assume(pdst.supported_by_pandas(dtype))
+    series = data.draw(pdst.series(dtype=dtype))
+    assert series.dtype == dtype
+
+
+@given(st.data())
+def test_buggy_dtype_identification_is_precise(data):
+    dtype = np.dtype(data.draw(npst.scalar_dtypes()))
+    assume(not pdst.supported_by_pandas(dtype))
+    try:
+        series = data.draw(pdst.series(dtype=dtype))
+    except Exception as e:
+        if type(e).__name__ != 'OutOfBoundsDatetime':
+            raise
+        reject()
+    assert series.dtype != dtype
 
 
 @given(pdst.series(min_size=2, max_size=5))
