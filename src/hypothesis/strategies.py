@@ -689,8 +689,11 @@ def characters(whitelist_categories=None, blacklist_categories=None,
         set(blacklist_characters).intersection(set(whitelist_characters))
     ):
         raise InvalidArgument(
-            'Cannot have characters in both whitelist_characters=%r, '
-            'and blacklist_characters=%r' % (
+            'Characters %r are present in both whitelist_characters=%r, and '
+            'blacklist_characters=%r' % (
+                set(blacklist_characters).intersection(
+                    set(whitelist_characters)
+                ),
                 whitelist_characters, blacklist_characters,
             )
         )
