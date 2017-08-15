@@ -103,22 +103,27 @@ def series(
 
     Arguments:
 
-    -- elements:  a strategy that will be used to generate the individual
-       values in the series. If None, we will attempt to infer a suitable
-       default from the dtype.
-    -- dtype: the numpy.dtype of the resulting series and may be any value
-       that can be passed to numpy.dtype. It may also be a strategy. If so, a
-       value will be drawn from it before converting to a dtype.
-    -- index: a sequence or a strategy for generating a sequence. It will
-       be used as the index for the resulting series. When it is longer than
-       the result it will be truncated to the right side. If None, no index
-       will be passed when creating the Series and the default behaviour of
-       pandas.Series will be used.
-    -- min_size: the minimum number of entries in the resulting Series.
-    -- max_size: the maximum number of entries in the resulting Series.
-       If an explicit index is provided then max_size may be at most the
-       length of the index. If an index strategy is provided then whenever the
-       drawn index is too short max_size will merely be reduced.
+        elements: a strategy that will be used to generate the individual
+            values in the series. If None, we will attempt to infer a suitable
+            default from the dtype.
+
+        dtype: the numpy.dtype of the resulting series and may be any value
+            that can be passed to numpy.dtype. It may also be a strategy. If so
+            a value will be drawn from it before converting to a dtype.
+
+        index: a sequence or a strategy for generating a sequence. It will
+            be used as the index for the resulting series. When it is longer
+            than
+            the result it will be truncated to the right side. If None, no
+            index will be passed when creating the Series and the default
+            behaviour of pandas.Series will be used.
+
+        min_size: the minimum number of entries in the resulting Series.
+
+        max_size: the maximum number of entries in the resulting Series.
+            If an explicit index is provided then max_size may be at most the
+            length of the index. If an index strategy is provided then whenever
+            the drawn index is too short max_size will merely be reduced.
 
     """
 
@@ -180,29 +185,32 @@ def data_frames(
 ):
     """Provides a strategy for producing a pandas.DataFrame.
 
-    -- columns: An iterable of objects that describes the columns of the
-        generated DataFrame. May also be a strategy generating such, and
-        individual elements may also be strategies which will be implicitly
-        drawn from.
+    Arguments:
+        columns: An iterable of objects that describes the columns of the
+            generated DataFrame. May also be a strategy generating such, and
+            individual elements may also be strategies which will be implicitly
+            drawn from.
 
-        If an entry is a Column object then the name, dtype, and elements
-        strategy will be used for generating the corresponding column.
-        Otherwise it is treated as a column name and a default type of floats
-        will be inferred.
+            If an entry is a Column object then the name, dtype, and elements
+            strategy will be used for generating the corresponding column.
+            Otherwise it is treated as a column name and a default type of
+            floats will be used.
 
-        The names of columns must be distinct.
+            The names of columns must be distinct.
 
-        If columns is None then random column names and datatypes will be used.
+            If columns is None then random column names and datatypes will be
+            used.
 
-    -- index: a sequence or a strategy for generating a sequence. It will
-        be used as the index for the resulting series. When it is longer than
-        the result it will be truncated to the right side.
-    -- min_size: the minimum number of entries in the resulting DataFrame.
-    -- max_size: the maximum number of entries in the resulting DataFrame.
-       If an explicit index is provided then max_size may be at most the
-       length of the index. If an index strategy is provided then whenever the
-       drawn index is too short max_size will merely be reduced.
+        index: a sequence or a strategy for generating a sequence. It will
+            be used as the index for the resulting series. When it is longer
+            than the result it will be truncated to the right side.
 
+        min_size: the minimum number of entries in the resulting DataFrame.
+
+        max_size: the maximum number of entries in the resulting DataFrame.
+            If an explicit index is provided then max_size may be at most the
+            length of the index. If an index strategy is provided then whenever
+            the drawn index is too short max_size will merely be reduced.
     """
 
     index, min_size, max_size = validate_index_and_bounds(
