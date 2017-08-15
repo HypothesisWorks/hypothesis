@@ -181,11 +181,11 @@ def regex_strategy(regex):
     return _strategy(
         sre.parse(regex.pattern),
         Context(flags=regex.flags),
-        isinstance(regex.pattern, text_type)
+        regex.pattern
     ).filter(regex.match)
 
 
-def _strategy(codes, context, is_text):
+def _strategy(codes, context, pattern):
     """Convert SRE regex parse tree to strategy that generates strings matching
     that regex represented by that parse tree.
 
@@ -214,9 +214,9 @@ def _strategy(codes, context, is_text):
 
     """
     def recurse(codes):
-        return _strategy(codes, context, is_text)
+        return _strategy(codes, context, pattern)
 
-    if is_text:
+    if isinstance(pattern, text_type):
         empty = u''
         to_char = hunichr
     else:
@@ -275,7 +275,7 @@ def _strategy(codes, context, is_text):
             if context.flags & re.IGNORECASE and \
                     re.match(c, c.swapcase(), re.IGNORECASE) is not None:
                 blacklist |= set(c.swapcase())
-            if is_text:
+            if isinstance(pattern, text_type):
                 return st.characters(blacklist_characters=blacklist)
             else:
                 return binary_char.filter(lambda c: c not in blacklist)
@@ -283,7 +283,7 @@ def _strategy(codes, context, is_text):
         elif code == sre.IN:
             # Regex '[abc0-9]' (set of characters)
             negate = value[0][0] == sre.NEGATE
-            if is_text:
+            if isinstance(pattern, text_type):
                 builder = CharactersBuilder(negate, context.flags)
             else:
                 builder = BytesBuilder(negate, context.flags)
@@ -313,7 +313,7 @@ def _strategy(codes, context, is_text):
 
         elif code == sre.ANY:
             # Regex '.' (any char)
-            if is_text:
+            if isinstance(pattern, text_type):
                 if context.flags & re.DOTALL:
                     return st.characters()
                 return st.characters(blacklist_characters=u'\n')
@@ -327,7 +327,8 @@ def _strategy(codes, context, is_text):
             # An empty string (or newline) will match the token itself, but
             # we don't and can't check the position (eg '%' at the end)
             if value == sre.AT_END:
-                return st.just(empty) | st.just(u'\n' if is_text else b'\n')
+                newline = u'\n' if isinstance(pattern, text_type) else b'\n'
+                return st.sampled_from([empty, newline])
             return st.just(empty)
 
         elif code == sre.SUBPATTERN:
@@ -337,19 +338,19 @@ def _strategy(codes, context, is_text):
                 # This feature is available only in specific Python versions
                 context.flags = (context.flags | value[1]) & ~value[2]
 
-            strat = _strategy(value[-1], context, is_text)
+            strat = _strategy(value[-1], context, pattern)
 
             context.flags = old_flags
 
             if value[0]:
                 context.groups[value[0]] = strat
-                strat = st.shared(strat, key=value[0])
+                strat = st.shared(strat, key=(pattern, value[0]))
 
             return strat
 
         elif code == sre.GROUPREF:
             # Regex '\\1' or '(?P=name)' (group reference)
-            return st.shared(context.groups[value], key=value)
+            return st.shared(context.groups[value], key=(pattern, value))
 
         elif code == sre.ASSERT:
             # Regex '(?=...)' or '(?<=...)' (positive lookahead/lookbehind)
