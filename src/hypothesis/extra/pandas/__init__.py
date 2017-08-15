@@ -35,7 +35,7 @@ def is_category_dtype(dtype):
     # numpy dtype and error if it can't.
     if isinstance(dtype, np.dtype):
         return False
-    return dtype == "category"
+    return dtype == 'category'
 
 
 PANDAS_TIME_DTYPES = tuple(
@@ -190,11 +190,6 @@ class Column(object):
         )
 
 
-def columns(names, dtype=None, elements=None):
-    """Convenience function for specifying many columns of the same type."""
-    return [Column(name, dtype, elements) for name in names]
-
-
 @st.composite
 def data_frames(
     draw, columns=None, index=None, min_size=0, max_size=None
@@ -273,7 +268,7 @@ def data_frames(
             elements = None
 
             if dtype is INFER_CATEGORY:
-                dtype = "category"
+                dtype = 'category'
                 categories = draw(st.lists(
                     st.text(min_size=1), min_size=1, unique=True))
                 elements = st.sampled_from(categories)
@@ -281,8 +276,8 @@ def data_frames(
             if is_category_dtype(dtype):
                 if elements is None:
                     raise InvalidArgument((
-                        "categorical column %r requires an explicit strategy "
-                        "but none was provided.") % (name,))
+                        'categorical column %r requires an explicit strategy '
+                        'but none was provided.') % (name,))
                 dtype = np.dtype(object)
                 categorical_columns.append(name)
             else:

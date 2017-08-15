@@ -18,12 +18,15 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
+import pytest
 
 import hypothesis.strategies as st
 import hypothesis.extra.numpy as npst
 import hypothesis.extra.pandas as pdst
 from hypothesis import given, assume, reject
+from hypothesis.errors import InvalidArgument
 from tests.common.debug import find_any
+from hypothesis.internal.compat import text_type
 
 
 @given(st.data())
@@ -89,3 +92,35 @@ LABELS = ['A', 'B', 'C', 'D', 'E']
 def test_categorical_series(s):
     assert set(s).issubset(set(LABELS))
     assert s.dtype == 'category'
+
+
+@given(pdst.series(dtype=st.sampled_from((np.int64, str)), min_size=1))
+def test_can_specify_dtype_as_strategy(s):
+    assert isinstance(s[0], (np.int64, str))
+
+
+@given(pdst.series(index=st.lists(st.text(min_size=1), unique=True)))
+def test_index_can_be_a_strategy(df):
+    assert all(isinstance(i, text_type) for i in df.index)
+
+
+@given(pdst.series(
+    index=st.lists(st.text(min_size=1), unique=True), max_size=1))
+def test_index_strategy_respects_max_size(df):
+    assert all(isinstance(i, text_type) for i in df.index)
+    assert len(df) <= 1
+
+
+def test_will_error_on_bad_index():
+    with pytest.raises(InvalidArgument):
+        pdst.series(index=1).example()
+
+
+@given(pdst.series(min_size=3, index=[0, 1, 2]))
+def test_will_pick_up_max_size_from_index(s):
+    assert len(s) == 3
+
+
+def test_too_short_index_is_an_error():
+    with pytest.raises(InvalidArgument):
+        pdst.series(index=[1], max_size=2).example()
