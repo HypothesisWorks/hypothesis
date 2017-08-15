@@ -17,9 +17,10 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis import given
-import hypothesis.extra.pandas as pdst
 import numpy as np
+
+import hypothesis.extra.pandas as pdst
+from hypothesis import given
 
 
 @given(pdst.data_frames([
@@ -27,8 +28,8 @@ import numpy as np
     pdst.Column('b', dtype=float),
 ]))
 def test_can_have_columns_of_distinct_types(df):
-    assert df["a"].dtype == np.dtype(int)
-    assert df["b"].dtype == np.dtype(float)
+    assert df['a'].dtype == np.dtype(int)
+    assert df['b'].dtype == np.dtype(float)
 
 
 @given(pdst.data_frames(min_size=1, max_size=5))

@@ -43,9 +43,9 @@ def validate_index_and_bounds(draw, index, min_size, max_size):
     if index is not None:
         if not is_sequence(index):
             raise InvalidArgument(
-                "%s was %r of type %s, but expected a sequence" % (
-                    "Result of index strategy" if index_from_strategy
-                    else "index argument",
+                '%s was %r of type %s, but expected a sequence' % (
+                    'Result of index strategy' if index_from_strategy
+                    else 'index argument',
                     index, type(index).__name__
                 )
             )
@@ -56,12 +56,12 @@ def validate_index_and_bounds(draw, index, min_size, max_size):
             max_size = min(max_size, max_size)
         else:
             raise InvalidArgument((
-                "Provided index %r only has %d elements, which is not "
-                "enough for the provided max_size of %d. Either increase "
-                "the number of elements in the index or reduce or remove "
-                "the max_size argument.") % (
+                'Provided index %r only has %d elements, which is not '
+                'enough for the provided max_size of %d. Either increase '
+                'the number of elements in the index or reduce or remove '
+                'the max_size argument.') % (
                     index, len(index), max_size
-                ))
+            ))
 
     if max_size is None:
         max_size = 10
@@ -73,8 +73,7 @@ def validate_index_and_bounds(draw, index, min_size, max_size):
 def series(
     draw, elements=None, dtype=None, index=None, min_size=0, max_size=None
 ):
-    """
-    Provides a strategy for producing a pandas.Series.
+    """Provides a strategy for producing a pandas.Series.
 
     Arguments:
 
@@ -94,6 +93,7 @@ def series(
        If an explicit index is provided then max_size may be at most the
        length of the index. If an index strategy is provided then whenever the
        drawn index is too short max_size will merely be reduced.
+
     """
 
     index, min_size, max_size = validate_index_and_bounds(
@@ -124,27 +124,27 @@ class Column(object):
     """Simple data object for describing a column in a DataFrame."""
 
     def __init__(self, name, dtype=None, elements=None):
-        """
-        Arguments:
+        """Arguments:
 
         -- name: the column name
         -- dtype: the dtype of the column, or None to default to float. May
             also be a strategy which will be used to generate the dtype.
         -- elements: the strategy for generating values in this column, or None
             to infer it from the dtype.
+
         """
         self.name = name
         self.dtype = dtype
         self.elements = elements
 
     def __repr__(self):
-        return "Column(%r, dtype=%r, elements=%r)" % (
+        return 'Column(%r, dtype=%r, elements=%r)' % (
             self.name, self.dtype, self.elements,
         )
 
 
 def columns(names, dtype=None, elements=None):
-    """Convenience function for specifying many columns of the same type"""
+    """Convenience function for specifying many columns of the same type."""
     return [Column(name, dtype, elements) for name in names]
 
 
@@ -152,8 +152,7 @@ def columns(names, dtype=None, elements=None):
 def data_frames(
     draw, columns=None, index=None, min_size=0, max_size=None
 ):
-    """
-    Provides a strategy for producing a pandas.DataFrame.
+    """Provides a strategy for producing a pandas.DataFrame.
 
     -- columns: An iterable of objects that describes the columns of the
         generated DataFrame. May also be a strategy generating such, and
@@ -177,6 +176,7 @@ def data_frames(
        If an explicit index is provided then max_size may be at most the
        length of the index. If an index strategy is provided then whenever the
        drawn index is too short max_size will merely be reduced.
+
     """
 
     index, min_size, max_size = validate_index_and_bounds(
@@ -218,7 +218,7 @@ def data_frames(
     if len(set(column_names)) < len(column_names):
         counts = Counter(column_names)
         raise InvalidArgument(
-            "columns definition contains duplicate column names: %s" % (
+            'columns definition contains duplicate column names: %s' % (
                 sorted(c for c, n in counts.items() if n > 1)))
 
     structured_dtype = np.dtype(datatype_elements)

@@ -17,11 +17,12 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis import given
-import hypothesis.extra.pandas as pdst
-from tests.common.debug import find_any
 import numpy as np
+
 import hypothesis.strategies as st
+import hypothesis.extra.pandas as pdst
+from hypothesis import given
+from tests.common.debug import find_any
 
 
 @given(pdst.series(min_size=2, max_size=5))
