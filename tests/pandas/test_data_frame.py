@@ -18,9 +18,16 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
+import pandas as pd
 
 import hypothesis.extra.pandas as pdst
-from hypothesis import given
+from hypothesis import given, settings, HealthCheck
+
+
+@settings(suppress_health_check=[HealthCheck.exception_in_generation])
+@given(pdst.data_frames())
+def test_can_leave_everything_unspecified(df):
+    assert isinstance(df, pd.DataFrame)
 
 
 @given(pdst.data_frames([

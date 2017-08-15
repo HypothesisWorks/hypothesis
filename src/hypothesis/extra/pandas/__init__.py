@@ -29,6 +29,15 @@ def is_sequence(c):
     return hasattr(c, '__len__') and hasattr(c, '__getitem__')
 
 
+def is_category_dtype(dtype):
+    # We need to explicitly check that this is not a dtype because a
+    # numpy dtype compared to a string will try to convert it to an
+    # numpy dtype and error if it can't.
+    if isinstance(dtype, np.dtype):
+        return False
+    return dtype == "category"
+
+
 PANDAS_TIME_DTYPES = tuple(
     pandas.Series(np.array([], dtype=d)).dtype
     for d in ('datetime64', 'timedelta64')
@@ -36,11 +45,12 @@ PANDAS_TIME_DTYPES = tuple(
 
 
 def supported_by_pandas(dtype):
-    """ Checks whether the dtype is one that can be correctly handled by Pandas
+    """Checks whether the dtype is one that can be correctly handled by Pandas.
 
-    We only use this where we choose the dtype. If the user chooses the dtype
-    to be one that pandas doesn't fully support, they are in for an exciting
-    journey of discovery.
+    We only use this where we choose the dtype. If the user chooses the
+    dtype to be one that pandas doesn't fully support, they are in for
+    an exciting journey of discovery.
+
     """
 
     # Pandas only supports a limited range of timedelta and datetime dtypes
@@ -134,20 +144,26 @@ def series(
     if isinstance(dtype, st.SearchStrategy):
         dtype = draw(dtype)
 
-    dtype = np.dtype(dtype)
+    if is_category_dtype(dtype):
+        numpy_dtype = np.dtype(object)
+        pandas_dtype = dtype
+    else:
+        numpy_dtype = np.dtype(dtype)
+        pandas_dtype = None
 
     if elements is None:
-        elements = npst.from_dtype(dtype)
+        elements = npst.from_dtype(numpy_dtype)
 
     result_data = draw(npst.arrays(
         elements=elements,
-        dtype=dtype,
+        dtype=numpy_dtype,
         shape=draw(st.integers(min_size, max_size))
     ))
 
     return pandas.Series(
         result_data,
-        None if index is None else index[:len(result_data)]
+        None if index is None else index[:len(result_data)],
+        dtype=pandas_dtype,
     )
 
 
@@ -211,6 +227,7 @@ def data_frames(
             If an explicit index is provided then max_size may be at most the
             length of the index. If an index strategy is provided then whenever
             the drawn index is too short max_size will merely be reduced.
+
     """
 
     index, min_size, max_size = validate_index_and_bounds(
@@ -223,19 +240,26 @@ def data_frames(
         else:
             return s
 
+    INFER_CATEGORY = object()
+
     if columns is None:
         columns = st.lists(
             st.builds(
-                Column, st.text(),
-                st.none() | npst.scalar_dtypes().filter(supported_by_pandas)
+                Column, st.text(min_size=1),
+                st.one_of(
+                    st.none(), st.just(INFER_CATEGORY),
+                    npst.scalar_dtypes().filter(supported_by_pandas))
             ),
-            unique_by=lambda x: x.name)
+            unique_by=lambda x: x.name,
+            min_size=1,
+        )
 
     columns = convert(columns)
 
     column_names = []
     datatype_elements = []
     strategies = []
+    categorical_columns = []
 
     for column in columns:
         column = convert(column)
@@ -245,8 +269,25 @@ def data_frames(
             elements = st.floats()
         else:
             name = column.name
-            dtype = np.dtype(convert(column.dtype))
-            elements = column.elements or npst.from_dtype(dtype)
+            dtype = convert(column.dtype)
+            elements = None
+
+            if dtype is INFER_CATEGORY:
+                dtype = "category"
+                categories = draw(st.lists(
+                    st.text(min_size=1), min_size=1, unique=True))
+                elements = st.sampled_from(categories)
+
+            if is_category_dtype(dtype):
+                if elements is None:
+                    raise InvalidArgument((
+                        "categorical column %r requires an explicit strategy "
+                        "but none was provided.") % (name,))
+                dtype = np.dtype(object)
+                categorical_columns.append(name)
+            else:
+                dtype = np.dtype(dtype)
+            elements = elements or npst.from_dtype(dtype)
 
         column_names.append(name)
         strategies.append(elements)
@@ -271,6 +312,12 @@ def data_frames(
     if index is not None:
         index = index[:len(result_data)]
 
-    return pandas.DataFrame(
+    result = pandas.DataFrame(
         result_data, index=index
     )
+
+    assert len(result.columns) == len(column_names)
+
+    for c in categorical_columns:
+        result[c] = result[c].astype('category')
+    return result

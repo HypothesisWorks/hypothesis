@@ -80,3 +80,12 @@ def test_does_not_have_to_use_the_full_index():
     find_any(
         pdst.series(index=REVERSE_INDEX), lambda x: len(x) < len(REVERSE_INDEX)
     )
+
+
+LABELS = ['A', 'B', 'C', 'D', 'E']
+
+
+@given(pdst.series(st.sampled_from(LABELS), dtype='category'))
+def test_categorical_series(s):
+    assert set(s).issubset(set(LABELS))
+    assert s.dtype == 'category'
