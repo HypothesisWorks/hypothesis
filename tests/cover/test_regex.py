@@ -25,7 +25,7 @@ import pytest
 
 from hypothesis import given, reject
 from hypothesis.errors import NoExamples, FailedHealthCheck
-from hypothesis.strategies import text, binary, from_regex
+from hypothesis.strategies import text, binary, tuples, from_regex
 from hypothesis.internal.compat import PY3, hrange, hunichr
 from hypothesis.searchstrategy.regex import SPACE_CHARS, \
     UNICODE_SPACE_CHARS, HAS_WEIRD_WORD_CHARS, UNICODE_WORD_CATEGORIES, \
@@ -240,6 +240,13 @@ def test_groupref_exists():
         from_regex(u'^(a)?(?(1)b|c)$'),
         lambda s: s in (u'ab', u'ab\n', u'c', u'c\n')
     )
+
+
+def test_groupref_not_shared_between_regex():
+    # If group references are (incorrectly!) shared between regex, this would
+    # fail as the would only be one reference.  Instead, we use a tuple of
+    # (pattern, group) as the key - it's OK to share if pattern is identical!
+    tuples(from_regex('(a)\\1'), from_regex('(b)\\1')).example()
 
 
 def test_positive_lookbehind():
