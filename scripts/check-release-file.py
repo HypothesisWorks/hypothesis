@@ -31,8 +31,8 @@ if __name__ == '__main__':
     if tools.has_source_changes():
         if not tools.has_release():
             print(
-                "There are source changes but no RELEASE.rst. Please create "
-                "one to describe your changes."
+                'There are source changes but no RELEASE.rst. Please create '
+                'one to describe your changes.'
             )
             sys.exit(1)
         tools.parse_release_file()
