@@ -148,7 +148,7 @@ if __name__ == '__main__':
 
     print('Now uploading to pypi.')
 
-    subprocess.check_output([
+    subprocess.check_call([
         sys.executable, '-m', 'twine', 'upload',
         '--config-file', './.pypirc',
         os.path.join(DIST, '*'),
