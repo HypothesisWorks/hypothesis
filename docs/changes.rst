@@ -22,7 +22,7 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
-3.18.2 - 2017-08-15
+3.18.2 - 2017-08-16
 -------------------
 
 This release fixes a bug introduced in 3.18.0. If the arguments
