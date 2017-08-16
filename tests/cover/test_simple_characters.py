@@ -24,6 +24,7 @@ import pytest
 from hypothesis import find
 from hypothesis.errors import NoExamples, NoSuchExample, InvalidArgument
 from hypothesis.strategies import characters
+from hypothesis.internal.compat import text_type
 
 
 def test_bad_category_arguments():
@@ -90,10 +91,14 @@ def test_whitelisted_characters_alone():
 
 
 def test_whitelisted_characters_overlap_blacklisted_characters():
-    with pytest.raises(InvalidArgument):
+    good_chars = u'te02тест49st'
+    bad_chars = u'ts94тсет'
+    with pytest.raises(InvalidArgument) as exc:
         characters(min_codepoint=ord('0'), max_codepoint=ord('9'),
-                   whitelist_characters=u'te02тест49st',
-                   blacklist_characters=u't').example()
+                   whitelist_characters=good_chars,
+                   blacklist_characters=bad_chars).example()
+        assert repr(good_chars) in text_type(exc)
+        assert repr(bad_chars) in text_type(exc)
 
 
 def test_whitelisted_characters_override():
@@ -114,6 +119,17 @@ def test_blacklisted_characters():
                     blacklist_characters=bad_chars)
 
     assert '1' == find(st, lambda c: True)
+
+    with pytest.raises(NoSuchExample):
+        find(st, lambda c: c in bad_chars)
+
+
+def test_whitelist_characters_disjoint_blacklist_characters():
+    good_chars = u'123abc'
+    bad_chars = u'456def'
+    st = characters(min_codepoint=ord('0'), max_codepoint=ord('9'),
+                    blacklist_characters=bad_chars,
+                    whitelist_characters=good_chars)
 
     with pytest.raises(NoSuchExample):
         find(st, lambda c: c in bad_chars)
