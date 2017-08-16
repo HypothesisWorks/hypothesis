@@ -92,11 +92,8 @@ format: $(PYFORMAT) $(ISORT)
 lint: $(FLAKE8)
 	$(FLAKE8) src tests --exclude=compat.py,test_reflection.py,test_imports.py,tests/py2,test_lambda_formatting.py --ignore=E731,E721
 
-check-untagged: $(BEST_PY3)
-	$(BEST_PY3) scripts/check-untagged.py
-
-check-changelog: $(BEST_PY3)
-	$(BEST_PY3) scripts/check-changelog.py
+check-release-file: $(BEST_PY3)
+	$(BEST_PY3) scripts/check-release-file.py
 
 deploy: $(TOOL_VIRTUALENV)
 	$(TOOL_PYTHON) scripts/deploy.py
