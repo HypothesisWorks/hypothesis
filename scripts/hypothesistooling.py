@@ -220,23 +220,7 @@ PATCH = 'patch'
 VALID_RELEASE_TYPES = (MAJOR, MINOR, PATCH)
 
 
-def update_for_pending_release():
-    global __version_info__
-
-    with open(CHANGELOG_FILE) as i:
-        contents = i.read()
-    assert '\r' not in contents
-    lines = contents.split('\n')
-    assert contents == '\n'.join(lines)
-    for i, l in enumerate(lines):
-        if CHANGELOG_BORDER.match(l):
-            assert CHANGELOG_HEADER.match(lines[i + 1]), repr(lines[i + 1])
-            assert CHANGELOG_BORDER.match(lines[i + 2]), repr(lines[i + 2])
-            beginning = '\n'.join(lines[:i])
-            rest = '\n'.join(lines[i:])
-            assert '\n'.join((beginning, rest)) == contents
-            break
-
+def parse_release_file():
     with open(RELEASE_FILE) as i:
         release_contents = i.read()
 
@@ -260,6 +244,28 @@ def update_for_pending_release():
             'this is (i.e. which version number to increment)'
         )
         sys.exit(1)
+
+    return release_type, release_contents
+
+
+def update_for_pending_release():
+    global __version_info__
+
+    with open(CHANGELOG_FILE) as i:
+        contents = i.read()
+    assert '\r' not in contents
+    lines = contents.split('\n')
+    assert contents == '\n'.join(lines)
+    for i, l in enumerate(lines):
+        if CHANGELOG_BORDER.match(l):
+            assert CHANGELOG_HEADER.match(lines[i + 1]), repr(lines[i + 1])
+            assert CHANGELOG_BORDER.match(lines[i + 2]), repr(lines[i + 2])
+            beginning = '\n'.join(lines[:i])
+            rest = '\n'.join(lines[i:])
+            assert '\n'.join((beginning, rest)) == contents
+            break
+
+    release_type, release_contents = parse_release_file()
 
     new_version = list(__version_info__)
     bump = VALID_RELEASE_TYPES.index(release_type)

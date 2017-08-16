@@ -28,8 +28,7 @@ env:
 
     matrix:
         # Core tests that we want to run first.
-        - TASK=check-untagged
-        - TASK=check-changelog
+        - TASK=check-release-file
         - TASK=check-shellcheck
         - TASK=documentation
         - TASK=lint
