@@ -72,6 +72,8 @@ if __name__ == '__main__':
     if os.path.exists(DIST):
         shutil.rmtree(DIST)
 
+    tools.update_for_pending_release()
+
     subprocess.check_output([
         sys.executable, 'setup.py', 'sdist', '--dist-dir', DIST,
     ])
@@ -143,8 +145,6 @@ if __name__ == '__main__':
         sys.exit(1)
 
     print('Looks good to release!')
-
-    tools.update_for_pending_release()
 
     print('Now uploading to pypi.')
 
