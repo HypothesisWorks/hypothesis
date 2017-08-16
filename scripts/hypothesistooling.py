@@ -226,22 +226,21 @@ def parse_release_file():
 
     release_lines = release_contents.split('\n')
 
-    for i, l in enumerate(release_lines):
-        m = RELEASE_TYPE.match(l)
-        if m is not None:
-            release_type = m.group(1)
-            if release_type not in VALID_RELEASE_TYPES:
-                print('Unrecognised release type %r' % (release_type,))
-                sys.exit(1)
-            del release_lines[i]
-            release_contents = '\n'.join(release_lines).strip()
-            break
+    m = RELEASE_TYPE.match(release_lines[0])
+    if m is not None:
+        release_type = m.group(1)
+        if release_type not in VALID_RELEASE_TYPES:
+            print('Unrecognised release type %r' % (release_type,))
+            sys.exit(1)
+        del release_lines[0]
+        release_contents = '\n'.join(release_lines).strip()
     else:
         print(
-            'RELEASE.rst does not specify a release type. Add a comment block '
-            'somewhere that contains a line with RELEASE_TYPE: followed by one'
-            ' of major, minor, or patch, to specify the type of release that '
-            'this is (i.e. which version number to increment)'
+            'RELEASE.rst does not start by specifying release type. The first '
+            'line of the file should be RELEASE_TYPE: followed by one of '
+            'major, minor, or patch, to specify the type of release that '
+            'this is (i.e. which version number to increment). Instead the '
+            'first line was %r' % (release_lines[0],)
         )
         sys.exit(1)
 
