@@ -143,6 +143,9 @@ if __name__ == '__main__':
         sys.exit(1)
 
     print('Looks good to release!')
+
+    tools.update_for_pending_release()
+
     print('Now uploading to pypi.')
 
     subprocess.check_output([
@@ -151,7 +154,7 @@ if __name__ == '__main__':
         os.path.join(DIST, '*'),
     ])
 
-    print('Release seems good. Pushing the tag now.')
+    print('Release seems good. Pushing to github now.')
 
-    tools.create_tag()
+    tools.create_tag_and_push()
     sys.exit(0)
