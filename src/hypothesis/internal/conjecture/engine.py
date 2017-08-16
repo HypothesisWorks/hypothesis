@@ -534,6 +534,15 @@ class ConjectureRunner(object):
                     # (now with more zeros) and try again.
                     overdrawn = zero_bound_queue.pop()
                     buffer = bytearray(overdrawn.buffer)
+
+                    # These will have values written to them that are different
+                    # from what's in them anyway, so the value there doesn't
+                    # really "count" for distributional purposes, and if we
+                    # leave them in then they can cause the fraction of non
+                    # zero bytes to increase on redraw instead of decrease.
+                    for i in overdrawn.forced_indices:
+                        buffer[i] = 0
+
                     self.random.shuffle(buffer)
                     buffer = hbytes(buffer)
 
