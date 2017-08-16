@@ -20,7 +20,7 @@ from __future__ import division, print_function, absolute_import
 import math
 import datetime as dt
 import operator
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, getcontext
 from inspect import isclass
 from numbers import Rational
 from fractions import Fraction
@@ -205,6 +205,9 @@ def integers(min_value=None, max_value=None):
     from hypothesis.searchstrategy.numbers import IntegersFromStrategy, \
         BoundedIntStrategy, WideRangeIntStrategy
 
+    # Why not a simpler implmentation?  eg:
+    #   `min_int_value = None if min_value is None else ceil(min_value)`
+    # Large values then misbehave under Python 2, so we're inelegant for now
     min_int_value = None
     if min_value is not None:
         min_int_value = int(min_value)
@@ -217,6 +220,9 @@ def integers(min_value=None, max_value=None):
         if max_int_value != max_value and max_value < 0:
             max_int_value -= 1
 
+    check_valid_interval(min_int_value, max_int_value,
+                         'min_int_value', 'max_int_value')
+
     if min_int_value is None:
         if max_int_value is None:
             return (
@@ -228,7 +234,6 @@ def integers(min_value=None, max_value=None):
         if max_int_value is None:
             return IntegersFromStrategy(min_int_value)
         else:
-            assert min_int_value <= max_int_value
             if min_int_value == max_int_value:
                 return just(min_int_value)
             elif min_int_value >= 0:
@@ -975,31 +980,65 @@ def fractions(min_value=None, max_value=None, max_denominator=None):
     """Returns a strategy which generates Fractions.
 
     If min_value is not None then all generated values are no less than
-    min_value.
+    min_value.  If max_value is not None then all generated values are no
+    greater than max_value.  min_value and max_value may be anything accepted
+    by the `python:`~fractions.Fraction` constructor.
 
-    If max_value is not None then all generated values are no greater than
-    max_value.
+    If max_denominator is not None then the denominator of any generated
+    values is no greater than max_denominator. Note that max_denominator must
+    be None or a positive integer.
 
-    If max_denominator is not None then the absolute value of the denominator
-    of any generated values is no greater than max_denominator. Note that
-    max_denominator must be at least 1.
+    Note that while it is possible to pick value and denominator bounds such
+    that no fraction of max_denominator is allowed but fractions of smaller
+    numbers are, such combinations are not supported by this strategy.
 
     """
+    # For example: `fractions('2/7', '3/7', 4)` could in principle
+    # generate 1/3, but instead errors because there's no way to do it
+    # quickly for very large and relatively prime numbers.  However,
+    # `fractions('1/2', '1/2', 3)` works by returning `just(Fraction(1, 2))`
+
+    if min_value is not None:
+        min_value = Fraction(min_value)
+    if max_value is not None:
+        max_value = Fraction(max_value)
+
     check_valid_bound(min_value, 'min_value')
     check_valid_bound(max_value, 'max_value')
     check_valid_interval(min_value, max_value, 'min_value', 'max_value')
-
     check_valid_integer(max_denominator)
     if max_denominator is not None and max_denominator < 1:
-        raise InvalidArgument(
-            u'Invalid denominator bound %s' % max_denominator
-        )
+        raise InvalidArgument('Denominator=%r must be >= 1' % max_denominator)
 
-    denominator_strategy = integers(min_value=1, max_value=max_denominator)
+    if min_value is not None and min_value == max_value and \
+            not (max_denominator and min_value.denominator > max_denominator):
+        return just(min_value)
+
+    if min_value is not None and max_value is not None and \
+            max_denominator is not None:
+        x = ((max_value - min_value) / 2).limit_denominator(max_denominator)
+        if not (min_value <= x <= max_value):
+            raise InvalidArgument(
+                'Bounds are too close for given precision: there are no '
+                'fractions of max_denominator=%r between min_value=%r and '
+                'max_value=%r' % (max_denominator, min_value, max_value))
 
     def dm_func(denom):
-        max_num = max_value * denom if max_value is not None else None
-        min_num = min_value * denom if min_value is not None else None
+        """Take denom, construct numerator strategy, and build fraction."""
+        # Four cases of algebra to get integer bounds and scale factor.
+        min_num, max_num = None, None
+        if max_value is None and min_value is None:
+            pass
+        elif min_value is None:
+            max_num = denom * max_value.numerator
+            denom *= max_value.denominator
+        elif max_value is None:
+            min_num = denom * min_value.numerator
+            denom *= min_value.denominator
+        else:
+            min_num = min_value.numerator * denom * max_value.denominator
+            max_num = max_value.numerator * denom * min_value.denominator
+            denom *= min_value.denominator * max_value.denominator
 
         return builds(
             Fraction,
@@ -1007,7 +1046,21 @@ def fractions(min_value=None, max_value=None, max_denominator=None):
             just(denom)
         )
 
-    return denominator_strategy.flatmap(dm_func)
+    if max_denominator is None:
+        return integers(min_value=1).flatmap(dm_func)
+
+    def limit_precision(frac):
+        val = frac.limit_denominator(max_denominator)
+        # This is safe, becuause val can be out of bounds by at most half of
+        # 1/max_denom, and we know there is at least one legal fraction of
+        # max_denom from our bounds validation above.
+        if min_value is not None and min_value >= val:
+            return val + Fraction(1, max_denominator)
+        if max_value is not None and max_value <= val:
+            return val - Fraction(1, max_denominator)
+        return val
+
+    return integers(1, max_denominator).flatmap(dm_func).map(limit_precision)
 
 
 @cacheable
@@ -1018,7 +1071,7 @@ def decimals(min_value=None, max_value=None,
 
     - A finite rational number, between ``min_value`` and ``max_value``.
     - Not a Number, if ``allow_nan`` is True.  None means "allow NaN, unless
-      ``min__value`` and ``max_value`` are not None".
+      ``min_value`` and ``max_value`` are not None".
     - Positive or negative infinity, if ``max_value`` and ``min_value``
       respectively are None, and ``allow_infinity`` is not False.  None means
       "allow infinity, unless excluded by the min and max values".
@@ -1063,25 +1116,24 @@ def decimals(min_value=None, max_value=None,
     if allow_infinity and (None not in (min_value, max_value)):
         raise InvalidArgument('Cannot allow infinity between finite bounds')
     # Set up a strategy for finite decimals
-    if places is not None:
-        # Fixed-point decimals are basically integers with a scale factor
-
-        def try_quantize(d):
-            try:
-                return d.quantize(factor)
-            except InvalidOperation:  # pragma: no cover
-                return None
-        factor = Decimal(10) ** -places
-        max_num = max_value / factor if max_value is not None else None
-        min_num = min_value / factor if min_value is not None else None
-        strat = integers(min_value=min_num, max_value=max_num)\
-            .map(lambda d: try_quantize(d * factor))\
-            .filter(lambda d: d is not None)
-    else:
-        # Otherwise, they're like fractions featuring a power of ten
+    if places is None:
+        # Like fractions featuring a power of ten
         strat = fractions(
             min_value=min_value, max_value=max_value
         ).map(lambda f: Decimal(f.numerator) / f.denominator)
+    else:
+        # Fixed-point decimals are basically integers with a scale factor,
+        # plus complicated issues about context and precision
+        factor = Decimal(10) ** -places
+        default = Decimal(10) ** (getcontext().prec - places) - factor
+        if min_value is None or min_value < -default:
+            min_value = -default
+        if max_value is None or max_value > default:
+            max_value = default
+        strat = integers(min_value=(min_value / factor).to_integral_exact(),
+                         max_value=(max_value / factor).to_integral_exact())\
+            .map(lambda d: (d * factor).quantize(factor))
+
     # Compose with sampled_from for infinities and NaNs as appropriate
     special = []
     if allow_nan or (allow_nan is None and (None in (min_value, max_value))):
