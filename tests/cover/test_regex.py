@@ -249,6 +249,16 @@ def test_groupref_exists():
     )
 
 
+def test_impossible_negative_lookahead():
+    with pytest.raises(NoExamples):
+        st.from_regex(u'(?!foo)foo').example()
+
+
+@given(st.from_regex(u"(\\Afoo\\Z)"))
+def test_can_handle_boundaries_nested(s):
+    assert s == u"foo"
+
+
 def test_groupref_not_shared_between_regex():
     # If group references are (incorrectly!) shared between regex, this would
     # fail as the would only be one reference.
@@ -375,4 +385,8 @@ def test_does_not_left_pad_beginning_of_string_marker():
 
 
 def test_bare_caret_can_produce():
-    find_any(st.from_regex(u'^', bool))
+    find_any(st.from_regex(u'^'), bool)
+
+
+def test_bare_dollar_can_produce():
+    find_any(st.from_regex(u'$'), bool)
