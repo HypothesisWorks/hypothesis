@@ -24,8 +24,8 @@ import unicodedata
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import given, assume, reject
-from hypothesis.errors import NoExamples, FailedHealthCheck
+from hypothesis import given, assume
+from hypothesis.errors import NoExamples
 from hypothesis.internal.compat import PY3, hrange, hunichr
 from hypothesis.searchstrategy.regex import SPACE_CHARS, \
     UNICODE_SPACE_CHARS, HAS_WEIRD_WORD_CHARS, UNICODE_WORD_CATEGORIES, \
@@ -298,23 +298,6 @@ def test_subpattern_flags():
 
     with pytest.raises(NoExamples):
         strategy.filter(lambda s: s[1] == u'B').example()
-
-
-@given(st.text(max_size=100) | st.binary(max_size=100))
-def test_fuzz_stuff(pattern):
-    try:
-        regex = re.compile(pattern)
-    except re.error:
-        reject()
-
-    @given(st.from_regex(regex))
-    def inner(ex):
-        assert regex.match(ex)
-
-    try:
-        inner()
-    except (NoExamples, FailedHealthCheck):
-        reject()
 
 
 @pytest.mark.parametrize('pattern', [b'.', u'.'])
