@@ -249,6 +249,7 @@ def parse_release_file():
 
 def update_for_pending_release():
     global __version_info__
+    global __version__
 
     with open(CHANGELOG_FILE) as i:
         contents = i.read()
@@ -272,8 +273,10 @@ def update_for_pending_release():
     for i in range(bump + 1, len(new_version)):
         new_version[i] = 0
     new_version = tuple(new_version)
+    new_version_string = '.'.join(map(str, new_version))
 
     __version_info__ = new_version
+    __version__ = new_version_string
 
     with open(VERSION_FILE) as i:
         version_lines = i.read().split('\n')
@@ -285,8 +288,6 @@ def update_for_pending_release():
 
     with open(VERSION_FILE, 'w') as o:
         o.write('\n'.join(version_lines))
-
-    new_version_string = '.'.join(map(str, new_version))
 
     now = datetime.utcnow()
 
