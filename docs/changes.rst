@@ -22,6 +22,17 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.18.3 - 2017-08-17
+-------------------
+
+This release should improve the performance of some tests which
+experienced a slow down as a result of the 3.13.0 release.
+
+Tests most likely to benefit from this are ones that make extensive
+use of `min_size` parameters, but others may see some improvement
+as well.
+
+-------------------
 3.18.2 - 2017-08-16
 -------------------
 
