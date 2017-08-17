@@ -250,12 +250,12 @@ def test_groupref_not_shared_between_regex():
 
 @given(data())
 def test_group_ref_is_not_shared_between_identical_regex(data):
-    pattern = re.compile(r"(.+)\1", re.UNICODE)
+    pattern = re.compile(u"(.+)\\1", re.UNICODE)
     x = data.draw(base_regex_strategy(pattern))
     y = data.draw(base_regex_strategy(pattern))
     assume(x != y)
-    assert re.match(x)
-    assert re.match(y)
+    assert pattern.match(x).end() == len(x)
+    assert pattern.match(y).end() == len(y)
 
 
 def test_positive_lookbehind():

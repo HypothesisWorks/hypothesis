@@ -22,6 +22,7 @@ import sys
 import sre_parse as sre
 
 import hypothesis.strategies as st
+from hypothesis import reject
 from hypothesis.internal.compat import PY3, hrange, hunichr, text_type, \
     int_to_byte
 
@@ -64,11 +65,32 @@ HAS_WEIRD_WORD_CHARS = sys.version_info[:2] < (3, 4)
 UNICODE_WEIRD_NONWORD_CHARS = set(u'\U00012432\U00012433\U00012456\U00012457')
 
 
+GROUP_CACHE_STRATEGY = st.shared(
+    st.builds(dict), key='hypothesis.regex.group_cache'
+)
+
+
+@st.composite
+def update_group(draw, group_name, strategy):
+    cache = draw(GROUP_CACHE_STRATEGY)
+    result = draw(strategy)
+    cache[group_name] = result
+    return result
+
+
+@st.composite
+def reuse_group(draw, group_name):
+    cache = draw(GROUP_CACHE_STRATEGY)
+    try:
+        return cache[group_name]
+    except KeyError:
+        reject()
+
+
 class Context(object):
-    __slots__ = ['groups', 'flags']
+    __slots__ = ['flags']
 
     def __init__(self, groups=None, flags=0):
-        self.groups = groups or {}
         self.flags = flags
 
 
@@ -175,12 +197,13 @@ class BytesBuilder(CharactersBuilder):
         self._whitelist_chars |= BYTES_LOOKUP[category]
 
 
-def base_regex_strategy(regex):
-    return _strategy(
+@st.composite
+def base_regex_strategy(draw, regex):
+    return draw(_strategy(
         sre.parse(regex.pattern),
         Context(flags=regex.flags),
         regex.pattern
-    )
+    ))
 
 
 def regex_strategy(regex):
@@ -347,14 +370,13 @@ def _strategy(codes, context, pattern):
             context.flags = old_flags
 
             if value[0]:
-                context.groups[value[0]] = strat
-                strat = st.shared(strat, key=(pattern, value[0]))
+                strat = update_group(value[0], strat)
 
             return strat
 
         elif code == sre.GROUPREF:
             # Regex '\\1' or '(?P=name)' (group reference)
-            return st.shared(context.groups[value], key=(pattern, value))
+            return reuse_group(value)
 
         elif code == sre.ASSERT:
             # Regex '(?=...)' or '(?<=...)' (positive lookahead/lookbehind)
