@@ -1005,31 +1005,45 @@ def fractions(min_value=None, max_value=None, max_denominator=None):
     """Returns a strategy which generates Fractions.
 
     If min_value is not None then all generated values are no less than
-    min_value.
+    min_value.  If max_value is not None then all generated values are no
+    greater than max_value.  min_value and max_value may be anything accepted
+    by the `python:`~fractions.Fraction` constructor.
 
-    If max_value is not None then all generated values are no greater than
-    max_value.
-
-    If max_denominator is not None then the absolute value of the denominator
-    of any generated values is no greater than max_denominator. Note that
-    max_denominator must be at least 1.
+    If max_denominator is not None then the denominator of any generated
+    values is no greater than max_denominator. Note that max_denominator must
+    be None or a positive integer.
 
     """
+    if min_value is not None:
+        min_value = Fraction(min_value)
+    if max_value is not None:
+        max_value = Fraction(max_value)
+
     check_valid_bound(min_value, 'min_value')
     check_valid_bound(max_value, 'max_value')
     check_valid_interval(min_value, max_value, 'min_value', 'max_value')
-
     check_valid_integer(max_denominator)
     if max_denominator is not None and max_denominator < 1:
-        raise InvalidArgument(
-            u'Invalid denominator bound %s' % max_denominator
-        )
+        raise InvalidArgument('denominator=%r must be >= 1' % max_denominator)
 
     denominator_strategy = integers(min_value=1, max_value=max_denominator)
 
     def dm_func(denom):
-        max_num = max_value * denom if max_value is not None else None
-        min_num = min_value * denom if min_value is not None else None
+        """Take denom, construct numerator strategy, and build fraction."""
+        # Four cases of algebra to get integer bounds and scale factor.
+        min_num, max_num = None, None
+        if max_value is None and min_value is None:
+            pass
+        elif min_value is None:
+            max_num = denom * max_value.numerator
+            denom *= max_value.denominator
+        elif max_value is None:
+            min_num = denom * min_value.numerator
+            denom *= min_value.denominator
+        else:
+            min_num = min_value.numerator * denom * max_value.denominator
+            max_num = max_value.numerator * denom * min_value.denominator
+            denom *= min_value.denominator * max_value.denominator
 
         return builds(
             Fraction,
