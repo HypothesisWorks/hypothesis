@@ -23,14 +23,14 @@ import unicodedata
 
 import pytest
 
-from hypothesis import given, reject
+from hypothesis import given, assume, reject
 from hypothesis.errors import NoExamples, FailedHealthCheck
-from hypothesis.strategies import text, binary, tuples, from_regex
+from hypothesis.strategies import data, text, binary, tuples, from_regex
 from hypothesis.internal.compat import PY3, hrange, hunichr
 from hypothesis.searchstrategy.regex import SPACE_CHARS, \
     UNICODE_SPACE_CHARS, HAS_WEIRD_WORD_CHARS, UNICODE_WORD_CATEGORIES, \
     UNICODE_DIGIT_CATEGORIES, UNICODE_SPACE_CATEGORIES, \
-    UNICODE_WEIRD_NONWORD_CHARS
+    UNICODE_WEIRD_NONWORD_CHARS, base_regex_strategy
 
 
 def is_ascii(s):
@@ -244,9 +244,18 @@ def test_groupref_exists():
 
 def test_groupref_not_shared_between_regex():
     # If group references are (incorrectly!) shared between regex, this would
-    # fail as the would only be one reference.  Instead, we use a tuple of
-    # (pattern, group) as the key - it's OK to share if pattern is identical!
+    # fail as the would only be one reference.
     tuples(from_regex('(a)\\1'), from_regex('(b)\\1')).example()
+
+
+@given(data())
+def test_group_ref_is_not_shared_between_identical_regex(data):
+    pattern = re.compile(r"(.+)\1", re.UNICODE)
+    x = data.draw(base_regex_strategy(pattern))
+    y = data.draw(base_regex_strategy(pattern))
+    assume(x != y)
+    assert re.match(x)
+    assert re.match(y)
 
 
 def test_positive_lookbehind():

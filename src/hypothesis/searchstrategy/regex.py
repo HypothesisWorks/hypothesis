@@ -175,14 +175,18 @@ class BytesBuilder(CharactersBuilder):
         self._whitelist_chars |= BYTES_LOOKUP[category]
 
 
-def regex_strategy(regex):
-    if not hasattr(regex, 'pattern'):
-        regex = re.compile(regex)
+def base_regex_strategy(regex):
     return _strategy(
         sre.parse(regex.pattern),
         Context(flags=regex.flags),
         regex.pattern
-    ).filter(regex.match)
+    )
+
+
+def regex_strategy(regex):
+    if not hasattr(regex, 'pattern'):
+        regex = re.compile(regex)
+    return base_regex_strategy(regex).filter(regex.match)
 
 
 def _strategy(codes, context, pattern):
