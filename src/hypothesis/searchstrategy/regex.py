@@ -226,7 +226,9 @@ def maybe_pad(draw, regex, strategy):
 
     result = draw(strategy)
 
-    if isinstance(regex.pattern, text_type):
+    is_unicode = isinstance(regex.pattern, text_type)
+
+    if is_unicode:
         padding_strategy = st.text(average_size=1)
     else:
         padding_strategy = st.binary(average_size=1)
@@ -243,15 +245,20 @@ def maybe_pad(draw, regex, strategy):
     # Correctness is not affected, but we draw less data this way. It is
     # possible to defeat this check quite easily, but it optimises for the
     # happy case.
-    if check_string(regex.pattern[:1], u'^'):
+    if not check_string(regex.pattern[:1], u'^'):
         pad_left = draw(padding_strategy)
         if regex.search(pad_left + result):
             result = pad_left + result
 
     # Similarly to above, we check if the pattern obviously ends with a $ and
     # skip the right padding if it does.
-    if check_string(regex.pattern[-1:], u'$'):
-        pad_right = draw(padding_strategy)
+    if not check_string(regex.pattern[-2:], u'\\Z'):
+        if check_string(regex.pattern[-1:], u'$'):
+            pad_right = u'\n' if is_unicode else b'\n'
+            if not draw(st.booleans()):
+                pad_right = pad_right[:0]
+        else:
+            pad_right = draw(padding_strategy)
         if regex.search(result + pad_right):
             result += pad_right
 

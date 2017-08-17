@@ -761,8 +761,9 @@ def from_regex(regex):
     mainly includes (positive or negative) lookahead and lookbehind groups.
 
     If you want the generated string to match the whole regex you should use
-    boundary markers. So e.g. "^.$" will return a single character string,
-    while "." will return any string.
+    boundary markers. So e.g. r"^.\Z" will return a single character string,
+    while "." will return any string, and r"^.$" will return a single character
+    optionally followed by a \n.
 
     """
     from hypothesis.searchstrategy.regex import regex_strategy

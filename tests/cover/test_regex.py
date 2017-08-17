@@ -193,7 +193,7 @@ def test_any_with_dotall_generate_newline_binary(pattern):
 @pytest.mark.parametrize('is_unicode', [False, True])
 @pytest.mark.parametrize('invert', [False, True])
 def test_groups(pattern, is_unicode, invert):
-    pattern = '^%s$' % (pattern,)
+    pattern = u'^%s\\Z' % (pattern,)
 
     if u'd' in pattern.lower():
         group_pred = is_digit
@@ -227,10 +227,15 @@ def test_caret_in_the_middle_does_not_generate_anything():
         st.from_regex(r).filter(r.search).example()
 
 
+def test_end_with_terminator_does_not_pad():
+    assert_all_examples(st.from_regex(u'abc\Z'), lambda x: x[-3:] == u"abc")
+
+
 def test_end():
     strategy = st.from_regex(u'abc$')
 
     strategy.filter(lambda s: s == u'abc').example()
+    strategy.filter(lambda s: s == u'abc\n').example()
 
 
 def test_groupref_exists():
@@ -252,7 +257,7 @@ def test_groupref_not_shared_between_regex():
 
 @given(st.data())
 def test_group_ref_is_not_shared_between_identical_regex(data):
-    pattern = re.compile(u"^(.+)\\1$", re.UNICODE)
+    pattern = re.compile(u"^(.+)\\1\\Z", re.UNICODE)
     x = data.draw(base_regex_strategy(pattern))
     y = data.draw(base_regex_strategy(pattern))
     assume(x != y)
@@ -262,9 +267,9 @@ def test_group_ref_is_not_shared_between_identical_regex(data):
 
 @given(st.data())
 def test_does_not_leak_groups(data):
-    a = data.draw(base_regex_strategy(re.compile(u"^(a)$")))
+    a = data.draw(base_regex_strategy(re.compile(u"^(a)\\Z")))
     assert a == 'a'
-    b = data.draw(base_regex_strategy(re.compile(u"^(?(1)a|b)(.)$")))
+    b = data.draw(base_regex_strategy(re.compile(u"^(?(1)a|b)(.)\\Z")))
     assert b[0] == 'b'
 
 
@@ -295,12 +300,12 @@ def test_negative_lookahead():
         strategy.filter(lambda s: s.startswith(u'abcd')).example()
 
 
-@given(st.from_regex(u"^a+$"))
+@given(st.from_regex(u"^a+\\Z"))
 def test_generates_only_the_provided_characters_given_boundaries(xs):
     assert set(xs) == {u"a"}
 
 
-@given(st.from_regex(u"^(.)?\\1$"))
+@given(st.from_regex(u"^(.)?\\1\\Z"))
 def test_group_backref_may_not_be_present(s):
     assert len(s) == 2
     assert s[0] == s[1]
@@ -343,3 +348,8 @@ def test_can_pad_strings_arbitrarily():
 def test_can_pad_empty_strings():
     find_any(st.from_regex(u''), bool)
     find_any(st.from_regex(b''), bool)
+
+
+def test_can_pad_strings_with_newlines():
+    find_any(st.from_regex(u'^$'), bool)
+    find_any(st.from_regex(b'^$'), bool)
