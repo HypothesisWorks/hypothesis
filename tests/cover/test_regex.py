@@ -26,7 +26,7 @@ import pytest
 from hypothesis import given, assume, reject
 from hypothesis.errors import NoExamples, FailedHealthCheck
 from hypothesis.strategies import data, text, binary, tuples, from_regex
-from hypothesis.internal.compat import PY3, hrange, hunichr
+from hypothesis.internal.compat import PY3, hrange, hunichr, text_type
 from hypothesis.searchstrategy.regex import SPACE_CHARS, \
     UNICODE_SPACE_CHARS, HAS_WEIRD_WORD_CHARS, UNICODE_WORD_CATEGORIES, \
     UNICODE_DIGIT_CATEGORIES, UNICODE_SPACE_CATEGORIES, \
@@ -314,3 +314,12 @@ def test_fuzz_stuff(pattern):
         inner()
     except (NoExamples, FailedHealthCheck):
         reject()
+
+
+@pytest.mark.parametrize('pattern', [b'.', u'.'])
+def test_regex_have_same_type_as_pattern(pattern):
+    @given(from_regex(pattern))
+    def test_result_type(s):
+        assert type(s) == type(pattern)
+
+    test_result_type()
