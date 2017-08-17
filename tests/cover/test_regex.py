@@ -367,3 +367,8 @@ def test_given_multiline_regex_can_insert_before_caret():
         st.from_regex(re.compile(u"^hi\Z", re.MULTILINE)),
         lambda x: '\n' in x and x.split(u"\n")[0]
     )
+
+
+def test_does_not_left_pad_beginning_of_string_marker():
+    assert_all_examples(
+        st.from_regex(u'\\Afoo'), lambda x: x.startswith(u'foo'))

@@ -245,7 +245,9 @@ def regex_strategy(regex):
 
     is_unicode = isinstance(regex.pattern, text_type)
 
-    if not regex.pattern:
+    parsed = sre.parse(regex.pattern)
+
+    if not parsed:
         if is_unicode:
             return st.text()
         else:
@@ -263,18 +265,6 @@ def regex_strategy(regex):
     right_pad = base_padding_strategy
     left_pad = base_padding_strategy
 
-    def check_string(s, c):
-        if isinstance(s, binary_type):
-            try:
-                s = s.decode('ascii')
-            except UnicodeDecodeError:
-                return False
-        return s == c
-
-    parsed = sre.parse(regex.pattern)
-
-    assert parsed
-
     if parsed[-1][0] == sre.AT:
         if parsed[-1][1] == sre.AT_END_STRING:
             right_pad = empty
@@ -286,10 +276,10 @@ def regex_strategy(regex):
                 )
             else:
                 right_pad = st.one_of(empty, newline)
-    elif parsed[0][0] == sre.AT:
+    if parsed[0][0] == sre.AT:
         if parsed[0][1] == sre.AT_BEGINNING_STRING:
             left_pad = empty
-        elif parsed[-1][1] == sre.AT_BEGINNING:
+        elif parsed[0][1] == sre.AT_BEGINNING:
             if regex.flags & re.MULTILINE:
                 left_pad = st.one_of(
                     empty,
@@ -368,8 +358,8 @@ def _strategy(codes, context, pattern):
             strategies.append(recurse(codes[i]))
             i += 1
 
-        if not strategies:
-            return st.just(empty)
+        assert strategies
+
         if len(strategies) == 1:
             return strategies[0]
         return st.tuples(*strategies).map(empty.join)
