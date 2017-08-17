@@ -372,3 +372,7 @@ def test_given_multiline_regex_can_insert_before_caret():
 def test_does_not_left_pad_beginning_of_string_marker():
     assert_all_examples(
         st.from_regex(u'\\Afoo'), lambda x: x.startswith(u'foo'))
+
+
+def test_bare_caret_can_produce():
+    find_any(st.from_regex(u'^', bool))

@@ -45,9 +45,9 @@ def conservative_regex(draw):
         st.just(u"."),
         charset(),
         CONSERVATIVE_REGEX.map(lambda s: u"(%s)" % (s,)),
-        CONSERVATIVE_REGEX.map(lambda s: s + '+'),
-        CONSERVATIVE_REGEX.map(lambda s: s + '?'),
-        CONSERVATIVE_REGEX.map(lambda s: s + '*'),
+        CONSERVATIVE_REGEX.map(lambda s: s + u'+'),
+        CONSERVATIVE_REGEX.map(lambda s: s + u'?'),
+        CONSERVATIVE_REGEX.map(lambda s: s + u'*'),
         st.lists(CONSERVATIVE_REGEX, min_size=1).map(u"|".join),
         st.lists(CONSERVATIVE_REGEX, min_size=1).map(u"".join),
     ))
