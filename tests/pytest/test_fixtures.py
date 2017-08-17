@@ -19,13 +19,31 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
+from mock import Mock, create_autospec
 from hypothesis import given, example
+from tests.common.utils import fails
 from hypothesis.strategies import integers
 
 
 @pytest.fixture
 def infinity():
     return float('inf')
+
+
+@pytest.fixture
+def mock_fixture():
+    return Mock()
+
+
+@pytest.fixture
+def spec_fixture():
+    class Foo():
+        def __init__(self):
+            pass
+
+        def bar(self):
+            return 'baz'
+    return create_autospec(Foo)
 
 
 @given(integers())
@@ -44,3 +62,20 @@ def test_can_mix_fixture_and_keyword_strategy(xs, infinity):
 @given(xs=integers())
 def test_can_mix_fixture_example_and_keyword_strategy(xs, infinity):
     assert xs <= infinity
+
+
+@fails
+@given(integers())
+def test_can_inject_mock_via_fixture(mock_fixture, xs):
+    """A negative test is better for this one - this condition uncovers a bug
+    whereby the mock fixture is executed instead of the test body and always
+    succeeds. If this test fails, then we know we've run the test body instead
+    of the mock.
+    """
+    assert False
+
+
+@given(integers())
+def test_can_inject_autospecced_mock_via_fixture(spec_fixture, xs):
+    spec_fixture.bar.return_value = infinity()
+    assert xs <= spec_fixture.bar()

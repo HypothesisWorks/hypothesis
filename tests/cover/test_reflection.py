@@ -23,9 +23,10 @@ from functools import partial
 
 import pytest
 
+from mock import Mock, MagicMock, NonCallableMock, NonCallableMagicMock
 from tests.common.utils import raises
 from hypothesis.internal.compat import PY3, FullArgSpec, getfullargspec
-from hypothesis.internal.reflection import proxies, arg_string, \
+from hypothesis.internal.reflection import is_mock, proxies, arg_string, \
     unbind_method, eval_directory, function_digest, fully_qualified_name, \
     source_exec_as_module, convert_keyword_arguments, \
     define_function_signature, convert_positional_arguments, \
@@ -556,9 +557,24 @@ def test_does_not_put_eval_directory_on_path():
     assert eval_directory() not in sys.path
 
 
-def varargs(*args, **kwargs):
-    pass
-
-
 def test_kwargs_appear_in_arg_string():
+    def varargs(*args, **kwargs):
+        pass
     assert 'x=1' in arg_string(varargs, (), {'x': 1})
+
+
+def test_is_mock_with_negative_cases():
+    assert not is_mock(None)
+    assert not is_mock(1234)
+    assert not is_mock(is_mock)
+    assert not is_mock(BittySnowman())
+    assert not is_mock('foobar')
+    assert not is_mock(Mock(spec=BittySnowman))
+    assert not is_mock(MagicMock(spec=BittySnowman))
+
+
+def test_is_mock_with_positive_cases():
+    assert is_mock(Mock())
+    assert is_mock(MagicMock())
+    assert is_mock(NonCallableMock())
+    assert is_mock(NonCallableMagicMock())

@@ -23,6 +23,7 @@ from __future__ import division, print_function, absolute_import
 
 import re
 import ast
+import uuid
 import types
 import hashlib
 import inspect
@@ -43,6 +44,21 @@ def fully_qualified_name(f):
         return f.__module__ + '.' + qualname(f)
     else:
         return qualname(f)
+
+
+def is_mock(obj):
+    """Determine if the given argument is a mock type.
+
+    We want to be able to detect these when dealing with various test
+    args. As they are sneaky and can look like almost anything else,
+    we'll check this by looking for random attributes.  This is more
+    robust than looking for types.
+
+    """
+    for _ in range(10):
+        if not hasattr(obj, str(uuid.uuid4())):
+            return False
+    return True
 
 
 def function_digest(function):

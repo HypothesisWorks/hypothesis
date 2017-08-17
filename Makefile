@@ -122,40 +122,40 @@ check-shellcheck: $(SHELLCHECK)
 	shellcheck scripts/*.sh
 
 check-py27: $(PY27) $(TOX)
-	$(TOX) -e py27-full
+	$(TOX) --recreate -e py27-full
 
 check-py273: $(PY273) $(TOX)
-	$(TOX) -e oldpy27
+	$(TOX) --recreate -e oldpy27
 
 check-py27-typing: $(PY27) $(TOX)
-	$(TOX) -e py27typing
+	$(TOX) --recreate -e py27typing
 
 check-py33: $(PY33) $(TOX)
-	$(TOX) -e py33-full
+	$(TOX) --recreate -e py33-full
 
 check-py34: $(PY34) $(TOX)
-	$(TOX) -e py34-full
+	$(TOX) --recreate -e py34-full
 
 check-py35: $(PY35) $(TOX)
-	$(TOX) -e py35-full
+	$(TOX) --recreate -e py35-full
 
 check-py36: $(BEST_PY3) $(TOX)
-	$(TOX) -e py36-full
+	$(TOX) --recreate -e py36-full
 
 check-pypy: $(PYPY) $(TOX)
-	$(TOX) -e pypy-full
+	$(TOX) --recreate -e pypy-full
 
 check-nose: $(TOX)
-	$(TOX) -e nose
+	$(TOX) --recreate -e nose
 
 check-pytest30: $(TOX)
-	$(TOX) -e pytest30
+	$(TOX) --recreate -e pytest30
 
 check-pytest28: $(TOX)
-	$(TOX) -e pytest28
+	$(TOX) --recreate -e pytest28
 
 check-quality: $(TOX)
-	$(TOX) -e quality
+	$(TOX) --recreate -e quality
 
 check-ancient-pip: $(PY273)
 	scripts/check-ancient-pip.sh $(PY273)
@@ -164,41 +164,41 @@ check-ancient-pip: $(PY273)
 check-pytest: check-pytest28 check-pytest30
 
 check-faker070: $(TOX)
-	$(TOX) -e faker070
+	$(TOX) --recreate -e faker070
 
 check-faker071: $(TOX)
-	$(TOX) -e faker071
+	$(TOX) --recreate -e faker071
 
 check-django18: $(TOX)
-	$(TOX) -e django18
+	$(TOX) --recreate -e django18
 
 check-django110: $(TOX)
-	$(TOX) -e django110
+	$(TOX) --recreate -e django110
 
 check-django111: $(TOX)
-	$(TOX) -e django111
+	$(TOX) --recreate -e django111
 
 check-django: check-django18 check-django110 check-django111
 
 check-examples2: $(TOX) $(PY27)
-	$(TOX) -e examples2
+	$(TOX) --recreate -e examples2
 
 check-examples3: $(TOX)
-	$(TOX) -e examples3
+	$(TOX) --recreate -e examples3
 
 check-coverage: $(TOX)
-	$(TOX) -e coverage
+	$(TOX) --recreate -e coverage
 
 check-unicode: $(TOX) $(PY27)
-	$(TOX) -e unicode
+	$(TOX) --recreate -e unicode
 
 check-noformat: check-coverage check-py26 check-py27 check-py33 check-py34 check-py35 check-pypy check-django check-pytest
 
 check: check-format check-noformat
 
 check-fast: lint $(PYPY) $(PY36) $(TOX)
-	$(TOX) -e pypy-brief
-	$(TOX) -e py36-prettyquick
+	$(TOX) --recreate -e pypy-brief
+	$(TOX) --recreate -e py36-prettyquick
 
 check-rst: $(RSTLINT) $(FLAKE8)
 	$(RSTLINT) *.rst
