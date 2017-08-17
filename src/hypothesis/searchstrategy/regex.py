@@ -251,17 +251,19 @@ def maybe_pad(draw, regex, strategy):
 
 
 def base_regex_strategy(regex):
-    return maybe_pad(regex, clear_cache_after_draw(_strategy(
+    return clear_cache_after_draw(_strategy(
         sre.parse(regex.pattern),
         Context(flags=regex.flags),
         regex.pattern
-    )))
+    ))
 
 
 def regex_strategy(regex):
     if not hasattr(regex, 'pattern'):
         regex = re.compile(regex)
-    return base_regex_strategy(regex).filter(regex.search)
+    return maybe_pad(
+        regex,
+        base_regex_strategy(regex).filter(regex.search))
 
 
 def _strategy(codes, context, pattern):
