@@ -26,7 +26,7 @@ import pytest
 from hypothesis import given, assume, reject
 from hypothesis.errors import NoExamples, FailedHealthCheck
 from hypothesis.strategies import data, text, binary, tuples, from_regex
-from hypothesis.internal.compat import PY3, hrange, hunichr, text_type
+from hypothesis.internal.compat import PY3, hrange, hunichr
 from hypothesis.searchstrategy.regex import SPACE_CHARS, \
     UNICODE_SPACE_CHARS, HAS_WEIRD_WORD_CHARS, UNICODE_WORD_CATEGORIES, \
     UNICODE_DIGIT_CATEGORIES, UNICODE_SPACE_CATEGORIES, \
