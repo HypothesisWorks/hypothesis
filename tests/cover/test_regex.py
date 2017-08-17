@@ -193,8 +193,6 @@ def test_any_with_dotall_generate_newline_binary(pattern):
 @pytest.mark.parametrize('is_unicode', [False, True])
 @pytest.mark.parametrize('invert', [False, True])
 def test_groups(pattern, is_unicode, invert):
-    pattern = u'^%s\\Z' % (pattern,)
-
     if u'd' in pattern.lower():
         group_pred = is_digit
     elif u'w' in pattern.lower():
@@ -209,6 +207,8 @@ def test_groups(pattern, is_unicode, invert):
 
         def group_pred(s):
             return not _p(s)
+
+    pattern = u'^%s\\Z' % (pattern,)
 
     compiler = unicode_regex if is_unicode else ascii_regex
     strategy = st.from_regex(compiler(pattern))
