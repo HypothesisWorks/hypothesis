@@ -23,9 +23,9 @@ import unicodedata
 
 import pytest
 
+import hypothesis.strategies as st
 from hypothesis import given, assume, reject
 from hypothesis.errors import NoExamples, FailedHealthCheck
-from hypothesis.strategies import data, text, binary, tuples, from_regex
 from hypothesis.internal.compat import PY3, hrange, hunichr
 from hypothesis.searchstrategy.regex import SPACE_CHARS, \
     UNICODE_SPACE_CHARS, HAS_WEIRD_WORD_CHARS, UNICODE_WORD_CATEGORIES, \
@@ -143,7 +143,7 @@ def assert_all_examples(strategy, predicate):
 def test_can_generate(pattern, encode):
     if encode:
         pattern = pattern.encode('ascii')
-    assert_all_examples(from_regex(pattern), re.compile(pattern).match)
+    assert_all_examples(st.from_regex(pattern), re.compile(pattern).match)
 
 
 @pytest.mark.parametrize('pattern', [
@@ -153,7 +153,7 @@ def test_can_generate(pattern, encode):
     u'(?i)[ab]',
 ])
 def test_literals_with_ignorecase(pattern):
-    strategy = from_regex(pattern)
+    strategy = st.from_regex(pattern)
 
     strategy.filter(lambda s: s == u'a').example()
     strategy.filter(lambda s: s == u'A').example()
@@ -165,23 +165,23 @@ def test_literals_with_ignorecase(pattern):
 ])
 def test_not_literal_with_ignorecase(pattern):
     assert_all_examples(
-        from_regex(pattern),
+        st.from_regex(pattern),
         lambda s: s[0] not in (u'a', u'A') and s[1] not in (u'b', u'B')
     )
 
 
 def test_any_doesnt_generate_newline():
-    assert_all_examples(from_regex(u'.'), lambda s: s != u'\n')
+    assert_all_examples(st.from_regex(u'.'), lambda s: s != u'\n')
 
 
 @pytest.mark.parametrize('pattern', [re.compile(u'.', re.DOTALL), u'(?s).'])
 def test_any_with_dotall_generate_newline(pattern):
-    from_regex(pattern).filter(lambda s: s == u'\n').example()
+    st.from_regex(pattern).filter(lambda s: s == u'\n').example()
 
 
 @pytest.mark.parametrize('pattern', [re.compile(b'.', re.DOTALL), b'(?s).'])
 def test_any_with_dotall_generate_newline_binary(pattern):
-    from_regex(pattern).filter(lambda s: s == b'\n').example()
+    st.from_regex(pattern).filter(lambda s: s == b'\n').example()
 
 
 @pytest.mark.parametrize('pattern', [
@@ -208,7 +208,7 @@ def test_groups(pattern, is_unicode, invert):
             return not _p(s)
 
     compiler = unicode_regex if is_unicode else ascii_regex
-    strategy = from_regex(compiler(pattern))
+    strategy = st.from_regex(compiler(pattern))
 
     strategy.filter(group_pred).filter(is_ascii).example()
     if is_unicode:
@@ -221,11 +221,11 @@ def test_caret_in_the_middle_does_not_generate_anything():
     r = re.compile(u'a^b')
 
     with pytest.raises(NoExamples):
-        from_regex(r).filter(r.match).example()
+        st.from_regex(r).filter(r.match).example()
 
 
 def test_end():
-    strategy = from_regex(u'abc$')
+    strategy = st.from_regex(u'abc$')
 
     strategy.filter(lambda s: s == u'abc').example()
     strategy.filter(lambda s: s == u'abc\n').example()
@@ -233,11 +233,11 @@ def test_end():
 
 def test_groupref_exists():
     assert_all_examples(
-        from_regex(u'^(<)?a(?(1)>)$'),
+        st.from_regex(u'^(<)?a(?(1)>)$'),
         lambda s: s in (u'a', u'a\n', u'<a>', u'<a>\n')
     )
     assert_all_examples(
-        from_regex(u'^(a)?(?(1)b|c)$'),
+        st.from_regex(u'^(a)?(?(1)b|c)$'),
         lambda s: s in (u'ab', u'ab\n', u'c', u'c\n')
     )
 
@@ -245,10 +245,10 @@ def test_groupref_exists():
 def test_groupref_not_shared_between_regex():
     # If group references are (incorrectly!) shared between regex, this would
     # fail as the would only be one reference.
-    tuples(from_regex('(a)\\1'), from_regex('(b)\\1')).example()
+    st.tuples(st.from_regex('(a)\\1'), st.from_regex('(b)\\1')).example()
 
 
-@given(data())
+@given(st.data())
 def test_group_ref_is_not_shared_between_identical_regex(data):
     pattern = re.compile(u"(.+)\\1", re.UNICODE)
     x = data.draw(base_regex_strategy(pattern))
@@ -259,16 +259,17 @@ def test_group_ref_is_not_shared_between_identical_regex(data):
 
 
 def test_positive_lookbehind():
-    from_regex(u'.*(?<=ab)c').filter(lambda s: s.endswith(u'abc')).example()
+    st.from_regex(u'.*(?<=ab)c').filter(lambda s: s.endswith(u'abc')).example()
 
 
 def test_positive_lookahead():
-    from_regex(u'a(?=bc).*').filter(lambda s: s.startswith(u'abc')).example()
+    st.from_regex(u'a(?=bc).*').filter(
+        lambda s: s.startswith(u'abc')).example()
 
 
 def test_negative_lookbehind():
     # no efficient support
-    strategy = from_regex(u'[abc]*(?<!abc)d')
+    strategy = st.from_regex(u'[abc]*(?<!abc)d')
 
     assert_all_examples(strategy, lambda s: not s.endswith(u'abcd'))
     with pytest.raises(NoExamples):
@@ -277,7 +278,7 @@ def test_negative_lookbehind():
 
 def test_negative_lookahead():
     # no efficient support
-    strategy = from_regex(u'ab(?!cd)[abcd]*')
+    strategy = st.from_regex(u'ab(?!cd)[abcd]*')
 
     assert_all_examples(strategy, lambda s: not s.startswith(u'abcd'))
     with pytest.raises(NoExamples):
@@ -287,7 +288,7 @@ def test_negative_lookahead():
 @pytest.mark.skipif(sys.version_info[:2] < (3, 6),
                     reason='requires Python 3.6')
 def test_subpattern_flags():
-    strategy = from_regex(u'(?i)a(?-i:b)')
+    strategy = st.from_regex(u'(?i)a(?-i:b)')
 
     # "a" is case insensitive
     strategy.filter(lambda s: s[0] == u'a').example()
@@ -299,14 +300,14 @@ def test_subpattern_flags():
         strategy.filter(lambda s: s[1] == u'B').example()
 
 
-@given(text(max_size=100) | binary(max_size=100))
+@given(st.text(max_size=100) | st.binary(max_size=100))
 def test_fuzz_stuff(pattern):
     try:
         regex = re.compile(pattern)
     except re.error:
         reject()
 
-    @given(from_regex(regex))
+    @given(st.from_regex(regex))
     def inner(ex):
         assert regex.match(ex)
 
@@ -318,7 +319,7 @@ def test_fuzz_stuff(pattern):
 
 @pytest.mark.parametrize('pattern', [b'.', u'.'])
 def test_regex_have_same_type_as_pattern(pattern):
-    @given(from_regex(pattern))
+    @given(st.from_regex(pattern))
     def test_result_type(s):
         assert type(s) == type(pattern)
 
