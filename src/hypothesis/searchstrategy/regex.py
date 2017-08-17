@@ -369,9 +369,6 @@ def _strategy(codes, context, pattern):
             # Regexes like '^...', '...$', '\bfoo', '\Bfoo'
             # An empty string (or newline) will match the token itself, but
             # we don't and can't check the position (eg '%' at the end)
-            if value == sre.AT_END:
-                newline = u'\n' if isinstance(pattern, text_type) else b'\n'
-                return st.sampled_from([empty, newline])
             return st.just(empty)
 
         elif code == sre.SUBPATTERN:

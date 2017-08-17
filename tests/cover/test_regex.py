@@ -228,7 +228,6 @@ def test_end():
     strategy = st.from_regex(u'abc$')
 
     strategy.filter(lambda s: s == u'abc').example()
-    strategy.filter(lambda s: s == u'abc\n').example()
 
 
 def test_groupref_exists():
@@ -291,6 +290,11 @@ def test_negative_lookahead():
     assert_all_examples(strategy, lambda s: not s.startswith(u'abcd'))
     with pytest.raises(NoExamples):
         strategy.filter(lambda s: s.startswith(u'abcd')).example()
+
+
+@given(st.from_regex(u"^a+$"))
+def test_generates_only_the_provided_characters_given_boundaries(xs):
+    assert set(xs) == {u"a"}
 
 
 @pytest.mark.skipif(sys.version_info[:2] < (3, 6),
