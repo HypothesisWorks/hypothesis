@@ -321,6 +321,11 @@ def test_subpattern_flags():
         strategy.filter(lambda s: s[1] == u'B').example()
 
 
+def test_can_handle_binary_regex_which_is_not_ascii():
+    bad = b'\xad'
+    assert_all_examples(st.from_regex(bad), lambda x: bad in x)
+
+
 @pytest.mark.parametrize('pattern', [b'.', u'.'])
 def test_regex_have_same_type_as_pattern(pattern):
     @given(st.from_regex(pattern))

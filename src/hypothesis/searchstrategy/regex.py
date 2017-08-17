@@ -24,7 +24,7 @@ import sre_parse as sre
 import hypothesis.strategies as st
 from hypothesis import reject
 from hypothesis.internal.compat import PY3, hrange, hunichr, text_type, \
-    int_to_byte
+    binary_type, int_to_byte
 
 HAS_SUBPATTERN_FLAGS = sys.version_info[:2] >= (3, 6)
 
@@ -231,18 +231,26 @@ def maybe_pad(draw, regex, strategy):
     else:
         padding_strategy = st.binary(average_size=1)
 
+    def check_string(s, c):
+        if isinstance(s, binary_type):
+            try:
+                s = s.decode('ascii')
+            except UnicodeDecodeError:
+                return False
+        return s == c
+
     # We check the pattern for starting with ^ as a simple optimisation.
     # Correctness is not affected, but we draw less data this way. It is
     # possible to defeat this check quite easily, but it optimises for the
     # happy case.
-    if regex.pattern[0] not in (b'^', u'^'):
+    if check_string(regex.pattern[:1], u'^'):
         pad_left = draw(padding_strategy)
         if regex.search(pad_left + result):
             result = pad_left + result
 
     # Similarly to above, we check if the pattern obviously ends with a $ and
     # skip the right padding if it does.
-    if regex.pattern[-1] not in (b'$', u'$'):
+    if check_string(regex.pattern[-1:], u'$'):
         pad_right = draw(padding_strategy)
         if regex.search(result + pad_right):
             result += pad_right
