@@ -218,6 +218,12 @@ class BytesBuilder(CharactersBuilder):
 def maybe_pad(draw, regex, strategy):
     """Attempt to insert padding around the result of a regex draw while
     preserving the match."""
+    if not regex.pattern:
+        if isinstance(regex.pattern, text_type):
+            return draw(st.text())
+        else:
+            return draw(st.binary())
+
     result = draw(strategy)
 
     if isinstance(regex.pattern, text_type):

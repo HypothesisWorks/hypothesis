@@ -333,3 +333,4 @@ def test_regex_have_same_type_as_pattern(pattern):
 def test_can_pad_strings_arbitrarily():
     find_any(st.from_regex('a'), lambda x: x[0] != 'a')
     find_any(st.from_regex('a'), lambda x: x[-1] != 'a')
+    find_any(st.from_regex(''), bool)
