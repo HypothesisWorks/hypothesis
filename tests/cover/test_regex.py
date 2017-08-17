@@ -26,6 +26,7 @@ import pytest
 import hypothesis.strategies as st
 from hypothesis import given, assume
 from hypothesis.errors import NoExamples
+from tests.common.debug import find_any
 from hypothesis.internal.compat import PY3, hrange, hunichr
 from hypothesis.searchstrategy.regex import SPACE_CHARS, \
     UNICODE_SPACE_CHARS, HAS_WEIRD_WORD_CHARS, UNICODE_WORD_CATEGORIES, \
@@ -80,12 +81,12 @@ def _test_matching_pattern(pattern, isvalidchar, is_unicode=False):
         if is_unicode else hrange(1, 128)
     for c in [hunichr(x) for x in codepoints]:
         if isvalidchar(c):
-            assert r.match(c), (
+            assert r.search(c), (
                 '"%s" supposed to match "%s" (%r, category "%s"), '
                 'but it doesnt' % (pattern, c, c, unicodedata.category(c))
             )
         else:
-            assert not r.match(c), (
+            assert not r.search(c), (
                 '"%s" supposed not to match "%s" (%r, category "%s"), '
                 'but it does' % (pattern, c, c, unicodedata.category(c))
             )
@@ -143,7 +144,7 @@ def assert_all_examples(strategy, predicate):
 def test_can_generate(pattern, encode):
     if encode:
         pattern = pattern.encode('ascii')
-    assert_all_examples(st.from_regex(pattern), re.compile(pattern).match)
+    assert_all_examples(st.from_regex(pattern), re.compile(pattern).search)
 
 
 @pytest.mark.parametrize('pattern', [
@@ -192,6 +193,8 @@ def test_any_with_dotall_generate_newline_binary(pattern):
 @pytest.mark.parametrize('is_unicode', [False, True])
 @pytest.mark.parametrize('invert', [False, True])
 def test_groups(pattern, is_unicode, invert):
+    pattern = '^%s$' % (pattern,)
+
     if u'd' in pattern.lower():
         group_pred = is_digit
     elif u'w' in pattern.lower():
@@ -221,7 +224,7 @@ def test_caret_in_the_middle_does_not_generate_anything():
     r = re.compile(u'a^b')
 
     with pytest.raises(NoExamples):
-        st.from_regex(r).filter(r.match).example()
+        st.from_regex(r).filter(r.search).example()
 
 
 def test_end():
@@ -249,7 +252,7 @@ def test_groupref_not_shared_between_regex():
 
 @given(st.data())
 def test_group_ref_is_not_shared_between_identical_regex(data):
-    pattern = re.compile(u"(.+)\\1", re.UNICODE)
+    pattern = re.compile(u"^(.+)\\1$", re.UNICODE)
     x = data.draw(base_regex_strategy(pattern))
     y = data.draw(base_regex_strategy(pattern))
     assume(x != y)
@@ -259,9 +262,9 @@ def test_group_ref_is_not_shared_between_identical_regex(data):
 
 @given(st.data())
 def test_does_not_leak_groups(data):
-    a = data.draw(base_regex_strategy(re.compile(u"(a)")))
+    a = data.draw(base_regex_strategy(re.compile(u"^(a)$")))
     assert a == 'a'
-    b = data.draw(base_regex_strategy(re.compile(u"(?(1)a|b)(.)")))
+    b = data.draw(base_regex_strategy(re.compile(u"^(?(1)a|b)(.)$")))
     assert b[0] == 'b'
 
 
@@ -285,7 +288,7 @@ def test_negative_lookbehind():
 
 def test_negative_lookahead():
     # no efficient support
-    strategy = st.from_regex(u'ab(?!cd)[abcd]*')
+    strategy = st.from_regex(u'^ab(?!cd)[abcd]*')
 
     assert_all_examples(strategy, lambda s: not s.startswith(u'abcd'))
     with pytest.raises(NoExamples):
@@ -319,3 +322,8 @@ def test_regex_have_same_type_as_pattern(pattern):
         assert type(s) == type(pattern)
 
     test_result_type()
+
+
+def test_can_pad_strings_arbitrarily():
+    find_any(st.from_regex('a'), lambda x: x[0] != 'a')
+    find_any(st.from_regex('a'), lambda x: x[-1] != 'a')

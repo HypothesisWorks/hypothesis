@@ -214,18 +214,48 @@ class BytesBuilder(CharactersBuilder):
         self._whitelist_chars |= BYTES_LOOKUP[category]
 
 
+@st.composite
+def maybe_pad(draw, regex, strategy):
+    """Attempt to insert padding around the result of a regex draw while
+    preserving the match."""
+    result = draw(strategy)
+
+    if isinstance(regex.pattern, text_type):
+        padding_strategy = st.text(average_size=1)
+    else:
+        padding_strategy = st.binary(average_size=1)
+
+    # We check the pattern for starting with ^ as a simple optimisation.
+    # Correctness is not affected, but we draw less data this way. It is
+    # possible to defeat this check quite easily, but it optimises for the
+    # happy case.
+    if regex.pattern[0] not in (b'^', u'^'):
+        pad_left = draw(padding_strategy)
+        if regex.search(pad_left + result):
+            result = pad_left + result
+
+    # Similarly to above, we check if the pattern obviously ends with a $ and
+    # skip the right padding if it does.
+    if regex.pattern[-1] not in (b'$', u'$'):
+        pad_right = draw(padding_strategy)
+        if regex.search(result + pad_right):
+            result += pad_right
+
+    return result
+
+
 def base_regex_strategy(regex):
-    return clear_cache_after_draw(_strategy(
+    return maybe_pad(regex, clear_cache_after_draw(_strategy(
         sre.parse(regex.pattern),
         Context(flags=regex.flags),
         regex.pattern
-    ))
+    )))
 
 
 def regex_strategy(regex):
     if not hasattr(regex, 'pattern'):
         regex = re.compile(regex)
-    return base_regex_strategy(regex).filter(regex.match)
+    return base_regex_strategy(regex).filter(regex.search)
 
 
 def _strategy(codes, context, pattern):

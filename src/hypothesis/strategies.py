@@ -742,11 +742,12 @@ def text(
 @cacheable
 @defines_strategy
 def from_regex(regex):
-    """Generates strings that match the given regex.
+    """Generates strings that contain a match for the given regex (i.e. ones
+    for which re.search will return a non-None result).
 
     ``regex`` may be a pattern or :func:`compiled regex <python:re.compile>`.
     Both byte-strings and unicode strings are supported, and will generate
-    examples of the given type.
+    examples of the same type.
 
     You can use regex flags (such as :const:`python:re.IGNORECASE`,
     :const:`python:re.DOTALL` or :const:`python:re.UNICODE`) to control
@@ -756,14 +757,12 @@ def from_regex(regex):
     Some regular expressions are only partly supported - the underlying
     strategy checks local matching and relies on filtering to resolve
     context-dependent expressions.  Using too many of these constructs may
-    cause health-check errors as too many examples are filtered out.
+    cause health-check errors as too many examples are filtered out. This
+    mainly includes (positive or negative) lookahead and lookbehind groups.
 
-    - Position markers - ``^``, ``\b``, ``\B`` - generate the empty string
-      but defer matching to the filter.  ``$`` may also generate a newline.
-    - Positive lookahead and lookbehind groups are considered normal groups.
-    - Negative lookahead and lookbehind groups do not do anything.
-    - Ternary regex groups - ``(?(name)yes-pattern|no-pattern)`` - rely on
-      filtering to produce the right group.
+    If you want the generated string to match the whole regex you should use
+    boundary markers. So e.g. "^.$" will return a single character string,
+    while "." will return any string.
 
     """
     from hypothesis.searchstrategy.regex import regex_strategy
