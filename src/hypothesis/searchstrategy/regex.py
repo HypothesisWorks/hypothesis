@@ -19,6 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import re
 import sys
+import operator
 import sre_parse as sre
 
 import hypothesis.strategies as st
@@ -215,23 +216,52 @@ class BytesBuilder(CharactersBuilder):
 
 
 @st.composite
-def maybe_pad(draw, regex, strategy):
+def maybe_pad(draw, regex, strategy, left_pad_strategy, right_pad_strategy):
     """Attempt to insert padding around the result of a regex draw while
     preserving the match."""
-    if not regex.pattern:
-        if isinstance(regex.pattern, text_type):
-            return draw(st.text())
-        else:
-            return draw(st.binary())
-
     result = draw(strategy)
+    left_padded = draw(left_pad_strategy) + result
+    if regex.search(left_padded):
+        result = left_padded
+    right_padded = result + draw(right_pad_strategy)
+    if regex.search(right_padded):
+        result = right_padded
+    return result
+
+
+def base_regex_strategy(regex, parsed=None):
+    if parsed is None:
+        parsed = sre.parse(regex.pattern)
+    return clear_cache_after_draw(_strategy(
+        parsed,
+        Context(flags=regex.flags),
+        regex.pattern
+    ))
+
+
+def regex_strategy(regex):
+    if not hasattr(regex, 'pattern'):
+        regex = re.compile(regex)
 
     is_unicode = isinstance(regex.pattern, text_type)
 
+    if not regex.pattern:
+        if is_unicode:
+            return st.text()
+        else:
+            return st.binary()
+
     if is_unicode:
-        padding_strategy = st.text(average_size=1)
+        base_padding_strategy = st.text(average_size=1)
+        empty = st.just(u'')
+        newline = st.just(u'\n')
     else:
-        padding_strategy = st.binary(average_size=1)
+        base_padding_strategy = st.binary(average_size=1)
+        empty = st.just(b'')
+        newline = st.just(b'\n')
+
+    right_pad = base_padding_strategy
+    left_pad = base_padding_strategy
 
     def check_string(s, c):
         if isinstance(s, binary_type):
@@ -241,44 +271,36 @@ def maybe_pad(draw, regex, strategy):
                 return False
         return s == c
 
-    # We check the pattern for starting with ^ as a simple optimisation.
-    # Correctness is not affected, but we draw less data this way. It is
-    # possible to defeat this check quite easily, but it optimises for the
-    # happy case.
-    if not check_string(regex.pattern[:1], u'^'):
-        pad_left = draw(padding_strategy)
-        if regex.search(pad_left + result):
-            result = pad_left + result
+    parsed = sre.parse(regex.pattern)
 
-    # Similarly to above, we check if the pattern obviously ends with a $ and
-    # skip the right padding if it does.
-    if not check_string(regex.pattern[-2:], u'\\Z'):
-        if check_string(regex.pattern[-1:], u'$'):
-            pad_right = u'\n' if is_unicode else b'\n'
-            if not draw(st.booleans()):
-                pad_right = pad_right[:0]
-        else:
-            pad_right = draw(padding_strategy)
-        if regex.search(result + pad_right):
-            result += pad_right
+    assert parsed
 
-    return result
+    if parsed[-1][0] == sre.AT:
+        if parsed[-1][1] == sre.AT_END_STRING:
+            right_pad = empty
+        elif parsed[-1][1] == sre.AT_END:
+            if regex.flags & re.MULTILINE:
+                right_pad = st.one_of(
+                    empty,
+                    st.builds(operator.add, newline, right_pad)
+                )
+            else:
+                right_pad = st.one_of(empty, newline)
+    elif parsed[0][0] == sre.AT:
+        if parsed[0][1] == sre.AT_BEGINNING_STRING:
+            left_pad = empty
+        elif parsed[-1][1] == sre.AT_BEGINNING:
+            if regex.flags & re.MULTILINE:
+                left_pad = st.one_of(
+                    empty,
+                    st.builds(operator.add, left_pad, newline),
+                )
+            else:
+                left_pad = empty
 
+    base = base_regex_strategy(regex, parsed).filter(regex.search)
 
-def base_regex_strategy(regex):
-    return clear_cache_after_draw(_strategy(
-        sre.parse(regex.pattern),
-        Context(flags=regex.flags),
-        regex.pattern
-    ))
-
-
-def regex_strategy(regex):
-    if not hasattr(regex, 'pattern'):
-        regex = re.compile(regex)
-    return maybe_pad(
-        regex,
-        base_regex_strategy(regex).filter(regex.search))
+    return maybe_pad(regex, base, left_pad, right_pad)
 
 
 def _strategy(codes, context, pattern):

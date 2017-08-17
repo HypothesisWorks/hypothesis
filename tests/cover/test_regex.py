@@ -353,3 +353,17 @@ def test_can_pad_empty_strings():
 def test_can_pad_strings_with_newlines():
     find_any(st.from_regex(u'^$'), bool)
     find_any(st.from_regex(b'^$'), bool)
+
+
+def test_given_multiline_regex_can_insert_after_dollar():
+    find_any(
+        st.from_regex(re.compile(u"\Ahi$", re.MULTILINE)),
+        lambda x: '\n' in x and x.split(u"\n")[1]
+    )
+
+
+def test_given_multiline_regex_can_insert_before_caret():
+    find_any(
+        st.from_regex(re.compile(u"^hi\Z", re.MULTILINE)),
+        lambda x: '\n' in x and x.split(u"\n")[0]
+    )
