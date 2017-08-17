@@ -224,7 +224,7 @@ def test_caret_in_the_middle_does_not_generate_anything():
     r = re.compile(u'a^b')
 
     with pytest.raises(NoExamples):
-        st.from_regex(r).filter(r.search).example()
+        st.from_regex(r).example()
 
 
 def test_end_with_terminator_does_not_pad():
