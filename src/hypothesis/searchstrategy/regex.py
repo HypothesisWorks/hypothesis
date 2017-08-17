@@ -87,6 +87,23 @@ def reuse_group(draw, group_name):
         reject()
 
 
+@st.composite
+def group_conditional(draw, group_name, if_yes, if_no):
+    cache = draw(GROUP_CACHE_STRATEGY)
+    if group_name in cache:
+        return draw(if_yes)
+    else:
+        return draw(if_no)
+
+
+@st.composite
+def clear_cache_after_draw(draw, base_strategy):
+    cache = draw(GROUP_CACHE_STRATEGY)
+    result = draw(base_strategy)
+    cache.clear()
+    return result
+
+
 class Context(object):
     __slots__ = ['flags']
 
@@ -197,9 +214,8 @@ class BytesBuilder(CharactersBuilder):
         self._whitelist_chars |= BYTES_LOOKUP[category]
 
 
-@st.composite
-def base_regex_strategy(draw, regex):
-    return draw(_strategy(
+def base_regex_strategy(regex):
+    return clear_cache_after_draw(_strategy(
         sre.parse(regex.pattern),
         Context(flags=regex.flags),
         regex.pattern
@@ -405,7 +421,8 @@ def _strategy(codes, context, pattern):
         elif code == sre.GROUPREF_EXISTS:
             # Regex '(?(id/name)yes-pattern|no-pattern)'
             # (if group exists choice)
-            return st.one_of(
+            return group_conditional(
+                value[0],
                 recurse(value[1]),
                 recurse(value[2]) if value[2] else st.just(empty),
             )

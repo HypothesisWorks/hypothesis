@@ -258,6 +258,14 @@ def test_group_ref_is_not_shared_between_identical_regex(data):
     assert pattern.match(y).end() == len(y)
 
 
+@given(st.data())
+def test_does_not_leak_groups(data):
+    a = data.draw(base_regex_strategy(re.compile(u"(a)")))
+    assert a == 'a'
+    b = data.draw(base_regex_strategy(re.compile(u"(?(1)a|b)(.)")))
+    assert b[0] == 'b'
+
+
 def test_positive_lookbehind():
     st.from_regex(u'.*(?<=ab)c').filter(lambda s: s.endswith(u'abc')).example()
 
