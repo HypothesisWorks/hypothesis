@@ -22,7 +22,6 @@ import string
 
 import hypothesis.strategies as st
 from hypothesis import given, assume, reject
-from hypothesis.errors import NoExamples, FailedHealthCheck
 from hypothesis.searchstrategy.regex import base_regex_strategy
 
 
@@ -63,21 +62,19 @@ def test_conservative_regex_are_correct_by_construction(data):
     pattern = re.compile(data.draw(CONSERVATIVE_REGEX))
     pattern = re.compile(pattern)
     result = data.draw(base_regex_strategy(pattern))
-    assert pattern.match(result) is not None
+    assert pattern.search(result) is not None
 
 
-@given(st.text(max_size=100) | st.binary(max_size=100) | CONSERVATIVE_REGEX)
-def test_fuzz_stuff(pattern):
+@given(st.data())
+def test_fuzz_stuff(data):
+    pattern = data.draw(
+        st.text(max_size=5) | st.binary(max_size=5) | CONSERVATIVE_REGEX
+    )
+
     try:
         regex = re.compile(pattern)
     except re.error:
         reject()
 
-    @given(st.from_regex(regex))
-    def inner(ex):
-        assert regex.match(ex)
-
-    try:
-        inner()
-    except (NoExamples, FailedHealthCheck):
-        reject()
+    ex = data.draw(st.from_regex(regex))
+    assert regex.search(ex)
