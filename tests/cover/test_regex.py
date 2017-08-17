@@ -390,3 +390,10 @@ def test_bare_caret_can_produce():
 
 def test_bare_dollar_can_produce():
     find_any(st.from_regex(u'$'), bool)
+
+
+def test_shared_union():
+    # This gets parsed as [(ANY, None), (BRANCH, (None, [[], []]))], the
+    # interesting feature of which is that it contains empty sub-expressions
+    # in the branch.
+    st.from_regex('.|.').example()

@@ -27,6 +27,7 @@ FILE_CACHE = {}
 
 
 def is_hypothesis_file(filepath):
+    return False
     try:
         return FILE_CACHE[filepath]
     except KeyError:

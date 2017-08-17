@@ -358,7 +358,10 @@ def _strategy(codes, context, pattern):
             strategies.append(recurse(codes[i]))
             i += 1
 
-        assert strategies
+        # We handle this separately at the top level, but some regex can
+        # contain empty lists internally, so we need to handle this here too.
+        if not strategies:
+            return st.just(empty)
 
         if len(strategies) == 1:
             return strategies[0]
