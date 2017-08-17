@@ -44,28 +44,33 @@ if __name__ == '__main__':
         tools.__version__, last_release
     ))
 
-    print('Building an sdist...')
-
-    if os.path.exists(DIST):
-        shutil.rmtree(DIST)
-
-    tools.update_for_pending_release()
-
-    subprocess.check_output([
-        sys.executable, 'setup.py', 'sdist', '--dist-dir', DIST,
-    ])
-
     HEAD = tools.hash_for_name('HEAD')
     MASTER = tools.hash_for_name('origin/master')
     print('Current head:', HEAD)
     print('Current master:', MASTER)
 
-    if not tools.is_ancestor(HEAD, MASTER):
+    on_master = tools.is_ancestor(HEAD, MASTER)
+    has_release = tools.has_release()
+
+    if has_release:
+        print('Updating changelog and version')
+        tools.update_for_pending_release()
+
+    print('Building an sdist...')
+
+    if os.path.exists(DIST):
+        shutil.rmtree(DIST)
+
+    subprocess.check_output([
+        sys.executable, 'setup.py', 'sdist', '--dist-dir', DIST,
+    ])
+
+    if not on_master:
         print('Not deploying due to not being on master')
         sys.exit(0)
 
-    if not tools.has_source_changes(last_release):
-        print('Not deploying due to no source changes')
+    if not has_release:
+        print('Not deploying due to no release')
         sys.exit(0)
 
     start_time = time()
