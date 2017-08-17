@@ -44,7 +44,7 @@ __all__ = [
     'choices', 'streaming',
     'booleans', 'integers', 'floats', 'complex_numbers', 'fractions',
     'decimals',
-    'characters', 'text', 'binary', 'uuids',
+    'characters', 'text', 'from_regex', 'binary', 'uuids',
     'tuples', 'lists', 'sets', 'frozensets', 'iterables',
     'dictionaries', 'fixed_dictionaries',
     'sampled_from', 'permutations',
@@ -741,6 +741,37 @@ def text(
         char_strategy, average_size=average_size, min_size=min_size,
         max_size=max_size
     ))
+
+
+@cacheable
+@defines_strategy
+def from_regex(regex):
+    """Generates strings that match the given regex.
+
+    ``regex`` may be a pattern or :func:`compiled regex <python:re.compile>`.
+    Both byte-strings and unicode strings are supported, and will generate
+    examples of the given type.
+
+    You can use regex flags (such as :const:`python:re.IGNORECASE`,
+    :const:`python:re.DOTALL` or :const:`python:re.UNICODE`) to control
+    generation. Flags can be passed either in compiled regex or inside the
+    pattern with a ``(?iLmsux)`` group.
+
+    Some regular expressions are only partly supported - the underlying
+    strategy checks local matching and relies on filtering to resolve
+    context-dependent expressions.  Using too many of these constructs may
+    cause health-check errors as too many examples are filtered out.
+
+    - Position markers - ``^``, ``\b``, ``\B`` - generate the empty string
+      but defer matching to the filter.  ``$`` may also generate a newline.
+    - Positive lookahead and lookbehind groups are considered normal groups.
+    - Negative lookahead and lookbehind groups do not do anything.
+    - Ternary regex groups - ``(?(name)yes-pattern|no-pattern)`` - rely on
+      filtering to produce the right group.
+
+    """
+    from hypothesis.searchstrategy.regex import regex_strategy
+    return regex_strategy(regex)
 
 
 @cacheable

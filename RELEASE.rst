@@ -1,8 +1,7 @@
-RELEASE_TYPE: patch
+RELEASE_TYPE: minor
 
-This release should improve the performance of some tests which
-experienced a slow down as a result of the 3.13.0 release.
-
-Tests most likely to benefit from this are ones that make extensive
-use of `min_size` parameters, but others may see some improvement
-as well.
+This release adds the :func:`~hypothesis.strategies.from_regex` strategy,
+which generates strings that match a regular expression.
+Thanks to Maxim Kulkin for creating the
+`hypothesis-regex <https://github.com/maximkulkin/hypothesis-regex>`_
+package and then merging it upstream! (:issue:`662`)

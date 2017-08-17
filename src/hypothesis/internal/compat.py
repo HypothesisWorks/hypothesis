@@ -107,6 +107,9 @@ def quiet_raise(exc):
     def zero_byte_sequence(n):
         return bytes(n)
 
+    def int_to_byte(i):
+        return bytes([i])
+
     import struct
 
     struct_pack = struct.pack
@@ -158,6 +161,8 @@ else:
         if i:
             raise OverflowError('int too big to convert')
         return hbytes(result)
+
+    int_to_byte = chr
 
     def bytes_from_list(ls):
         return hbytes(bytearray(ls))
