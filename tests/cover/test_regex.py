@@ -300,6 +300,12 @@ def test_generates_only_the_provided_characters_given_boundaries(xs):
     assert set(xs) == {u"a"}
 
 
+@given(st.from_regex(u"^(.)?\\1$"))
+def test_group_backref_may_not_be_present(s):
+    assert len(s) == 2
+    assert s[0] == s[1]
+
+
 @pytest.mark.skipif(sys.version_info[:2] < (3, 6),
                     reason='requires Python 3.6')
 def test_subpattern_flags():
