@@ -762,8 +762,8 @@ def from_regex(regex):
 
     If you want the generated string to match the whole regex you should use
     boundary markers. So e.g. ``r"\\A.\\Z"`` will return a single character
-    string, while ``"."`` will return any string, and ``r"\\A.$"`` will return a
-    single character optionally followed by a ``"\\n"``.
+    string, while ``"."`` will return any string, and ``r"\\A.$"`` will return
+    a single character optionally followed by a ``"\\n"``.
 
     """
     from hypothesis.searchstrategy.regex import regex_strategy
