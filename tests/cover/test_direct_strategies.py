@@ -88,6 +88,7 @@ def fn_ktest(*fnkwargs):
     (ds.decimals, {'min_value': '-inf', 'allow_infinity': False}),
     (ds.decimals, {'max_value': 'inf', 'allow_infinity': False}),
     (ds.decimals, {'min_value': complex(1, 2)}),
+    (ds.decimals, {'min_value': '0.1', 'max_value': '0.9', 'places': 0}),
     (ds.dictionaries, {
         'keys': ds.booleans(), 'values': ds.booleans(),
         'min_size': 10, 'max_size': 1}),

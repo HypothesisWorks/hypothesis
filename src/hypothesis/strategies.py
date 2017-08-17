@@ -20,7 +20,7 @@ from __future__ import division, print_function, absolute_import
 import math
 import datetime as dt
 import operator
-from decimal import Decimal, InvalidOperation
+from decimal import Context, Decimal
 from inspect import isclass
 from numbers import Rational
 from fractions import Fraction
@@ -1110,7 +1110,7 @@ def decimals(min_value=None, max_value=None,
 
     - A finite rational number, between ``min_value`` and ``max_value``.
     - Not a Number, if ``allow_nan`` is True.  None means "allow NaN, unless
-      ``min__value`` and ``max_value`` are not None".
+      ``min_value`` and ``max_value`` are not None".
     - Positive or negative infinity, if ``max_value`` and ``min_value``
       respectively are None, and ``allow_infinity`` is not False.  None means
       "allow infinity, unless excluded by the min and max values".
@@ -1152,26 +1152,41 @@ def decimals(min_value=None, max_value=None,
 
     if allow_infinity and (None not in (min_value, max_value)):
         raise InvalidArgument('Cannot allow infinity between finite bounds')
-    # Set up a strategy for finite decimals
+    # Set up a strategy for finite decimals.  Note that both floating and
+    # fixed-point decimals require careful handling to remain isolated from
+    # any external precision context - in short, we always work out the
+    # required precision for lossless operation and use context methods.
     if places is not None:
         # Fixed-point decimals are basically integers with a scale factor
+        def ctx(val):
+            """Return a context in which this value is lossless."""
+            precision = ceil(math.log10(abs(val) or 1)) + places + 1
+            return Context(prec=max([precision, 1]))
 
-        def try_quantize(d):
-            try:
-                return d.quantize(factor)
-            except InvalidOperation:  # pragma: no cover
-                return None
+        def int_to_decimal(val):
+            context = ctx(val)
+            return context.quantize(context.multiply(val, factor), factor)
+
         factor = Decimal(10) ** -places
-        max_num = max_value / factor if max_value is not None else None
-        min_num = min_value / factor if min_value is not None else None
-        strat = integers(min_value=min_num, max_value=max_num)\
-            .map(lambda d: try_quantize(d * factor))\
-            .filter(lambda d: d is not None)
+        min_num, max_num = None, None
+        if min_value is not None:
+            min_num = ceil(ctx(min_value).divide(min_value, factor))
+        if max_value is not None:
+            max_num = floor(ctx(max_value).divide(max_value, factor))
+        if None not in (min_num, max_num) and min_num > max_num:
+            raise InvalidArgument(
+                'There are no decimals with %d places between min_value=%r '
+                'and max_value=%r ' % (places, min_value, max_value))
+        strat = integers(min_num, max_num).map(int_to_decimal)
     else:
         # Otherwise, they're like fractions featuring a power of ten
-        strat = fractions(
-            min_value=min_value, max_value=max_value
-        ).map(lambda f: Decimal(f.numerator) / f.denominator)
+        def fraction_to_decimal(val):
+            precision = ceil(math.log10(abs(val.numerator) or 1) +
+                             math.log10(val.denominator)) + 1
+            return Context(prec=precision or 1).divide(
+                Decimal(val.numerator), val.denominator)
+
+        strat = fractions(min_value, max_value).map(fraction_to_decimal)
     # Compose with sampled_from for infinities and NaNs as appropriate
     special = []
     if allow_nan or (allow_nan is None and (None in (min_value, max_value))):
