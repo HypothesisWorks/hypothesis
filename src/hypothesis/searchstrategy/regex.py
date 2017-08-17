@@ -25,7 +25,7 @@ import sre_parse as sre
 import hypothesis.strategies as st
 from hypothesis import reject
 from hypothesis.internal.compat import PY3, hrange, hunichr, text_type, \
-    binary_type, int_to_byte
+    int_to_byte
 
 HAS_SUBPATTERN_FLAGS = sys.version_info[:2] >= (3, 6)
 
@@ -220,12 +220,12 @@ def maybe_pad(draw, regex, strategy, left_pad_strategy, right_pad_strategy):
     """Attempt to insert padding around the result of a regex draw while
     preserving the match."""
     result = draw(strategy)
-    left_padded = draw(left_pad_strategy) + result
-    if regex.search(left_padded):
-        result = left_padded
-    right_padded = result + draw(right_pad_strategy)
-    if regex.search(right_padded):
-        result = right_padded
+    left_pad = draw(left_pad_strategy)
+    if left_pad and regex.search(left_pad + result):
+        result = left_pad + result
+    right_pad = draw(right_pad_strategy)
+    if right_pad and regex.search(result + right_pad):
+        result += right_pad
     return result
 
 
