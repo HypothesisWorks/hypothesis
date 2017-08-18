@@ -141,7 +141,7 @@ def create_tag_and_push():
 
     for command in [
         'git push ssh-origin --tags',
-        'git push ssh-origin master',
+        'git push ssh-origin HEAD:master',
     ]:
         subprocess.check_call([
             'ssh-agent', 'sh', '-c',
