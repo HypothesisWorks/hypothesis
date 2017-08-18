@@ -147,7 +147,7 @@ def create_tag_and_push():
             'ssh-agent', 'sh', '-c',
             'chmod 0600 deploy_key && ' +
             'ssh-add deploy_key && ' +
-            'command',
+            command
         ])
 
 
