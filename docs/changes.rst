@@ -22,6 +22,15 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.18.5 - 2017-08-18
+-------------------
+
+This is a bugfix release for `~hypothesis.strategies.integers`.
+Previously the strategy would hit an internal assertion if passed non-integer
+bounds for ``min_value`` and ``max_value`` that had no integers between them.
+The strategy now raises InvalidArgument instead.
+
+-------------------
 3.18.4 - 2017-08-18
 -------------------
 
