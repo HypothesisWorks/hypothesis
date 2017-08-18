@@ -81,7 +81,6 @@ class LazyStrategy(SearchStrategy):
             (k, tupleize(v)) for k, v in kwargs.items()
         )
         self.__settings = settings.default or settings()
-        self.force_reusable = None
 
     @property
     def supports_find(self):
@@ -97,10 +96,17 @@ class LazyStrategy(SearchStrategy):
     def wrapped_strategy(self):
         if self.__wrapped_strategy is None:
             with self.__settings:
+                base = self.__function(
+                    *self.__args, **self.__kwargs
+                )
                 self.__wrapped_strategy = self.__function(
                     *[unwrap_strategies(s) for s in self.__args],
                     **{k: unwrap_strategies(v)
                        for k, v in self.__kwargs.items()})
+                self.__wrapped_strategy.force_has_reusable_values = \
+                    base.has_reusable_values
+                assert self.__wrapped_strategy.has_reusable_values == \
+                    base.has_reusable_values
         return self.__wrapped_strategy
 
     def do_validate(self):

@@ -24,8 +24,10 @@ from hypothesis import given, reject, example
 from hypothesis.errors import InvalidArgument
 
 base_reusable_strategies = (
-    st.integers(), st.floats(), st.text(), st.binary(), st.dates(),
-    st.times(), st.timedeltas(), st.booleans(), st.complex_numbers()
+    st.text(), st.binary(), st.dates(),
+    st.times(), st.timedeltas(), st.booleans(), st.complex_numbers(),
+    st.floats(), st.floats(-1.0, 1.0),
+    st.integers(), st.integers(1, 10), st.integers(1),
 )
 
 
@@ -43,8 +45,8 @@ def reusable():
         st.builds(st.just, st.lists(max_size=0)),
         st.builds(st.sampled_from, st.lists(st.lists(max_size=0))),
 
-        st.lists(reusable).map(lambda ls: st.one_of(*ls)),
-        st.lists(reusable).map(lambda ls: st.one_of(*ls)),
+        st.lists(reusable).map(st.one_of),
+        st.lists(reusable).map(lambda ls: st.tuples(*ls)),
     )
 
 
@@ -60,6 +62,9 @@ def test_reusable_strategies_are_all_reusable(s):
 
 for s in base_reusable_strategies:
     test_reusable_strategies_are_all_reusable = example(s)(
+        test_reusable_strategies_are_all_reusable
+    )
+    test_reusable_strategies_are_all_reusable = example(st.tuples(s))(
         test_reusable_strategies_are_all_reusable
     )
 
