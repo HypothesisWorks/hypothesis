@@ -152,6 +152,10 @@ if __name__ == '__main__':
         'tar', '-xvf', 'secrets.tar',
     ])
 
+    print('Release seems good. Pushing to github now.')
+
+    tools.create_tag_and_push()
+
     print('Now uploading to pypi.')
 
     subprocess.check_call([
@@ -160,7 +164,4 @@ if __name__ == '__main__':
         os.path.join(DIST, '*'),
     ])
 
-    print('Release seems good. Pushing to github now.')
-
-    tools.create_tag_and_push()
     sys.exit(0)
