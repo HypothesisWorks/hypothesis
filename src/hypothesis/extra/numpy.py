@@ -90,10 +90,24 @@ def order_check(name, floor, small, large):
     )
 
 
+class FillValue(object):
+    """A FillValue specifies how to provide the base value that is used to fill
+    a generated array.
+
+    See :func:`~hypothesis.extra.numpy.arrays` for details.
+
+    """
+
+    infer = 1
+    draw = 2
+    no_fill = 3
+
+
 class ArrayStrategy(SearchStrategy):
 
-    def __init__(self, element_strategy, shape, dtype):
+    def __init__(self, element_strategy, shape, dtype, fill_value):
         self.shape = tuple(shape)
+        self.fill_value = fill_value
         check_argument(shape,
                        u'Array shape must have at least one dimension, '
                        u'provided shape was {}', shape)
@@ -121,7 +135,22 @@ class ArrayStrategy(SearchStrategy):
         if 0 in self.shape:
             return np.zeros(dtype=self.dtype, shape=self.shape)
 
-        if self.element_strategy.has_reusable_values:
+        fill_value = self.fill_value
+
+        if (
+            fill_value is FillValue.infer
+        ):
+            if self.element_strategy.has_reusable_values:
+                fill_value = FillValue.draw
+            else:
+                fill_value = FillValue.no_fill
+
+        if fill_value is FillValue.draw:
+            fill_value = data.draw(self.element_strategy)
+
+        if fill_value is not FillValue.no_fill:
+            assert not isinstance(fill_value, FillValue)
+
             # We draw numpy arrays as "sparse with an offset". We draw a single
             # value that is the background value of the array that everything
             # set to by default (we can't use zero because zero might not be a
@@ -129,7 +158,7 @@ class ArrayStrategy(SearchStrategy):
             # collection of index assignments within the array and assign
             # fresh values to those indices.
 
-            result = self.__create_base_array(data.draw(self.element_strategy))
+            result = self.__create_base_array(fill_value)
 
             elements = cu.many(
                 data,
@@ -164,7 +193,9 @@ class ArrayStrategy(SearchStrategy):
 
 
 @st.composite
-def arrays(draw, dtype, shape, elements=None):
+def arrays(
+    draw, dtype, shape, elements=None, fill_value=FillValue.infer
+):
     """`dtype` may be any valid input to ``np.dtype`` (this includes
     ``np.dtype`` objects), or a strategy that generates such values.  `shape`
     may be an integer >= 0, a tuple of length >= of such integers, or a
@@ -192,14 +223,31 @@ def arrays(draw, dtype, shape, elements=None):
       >>> arrays(np.float, 3, elements=floats(0, 1)).example()
       array([ 0.88974794,  0.77387938,  0.1977879 ])
 
-    .. warning::
-        Hypothesis works really well with NumPy, but is designed for small
-        data.  The default entropy is 8192 bytes - it is impossible to draw
-        an example where ``example_array.nbytes`` is greater than
-        ``settings.default.buffer_size``.
-        See the :doc:`settings documentation <settings>` if you need to
-        increase this value, but be aware that Hypothesis may take much
-        longer to produce a minimal failure case.
+    fill_value specifies a default element to be used for "most" of the
+    elements in the array when the array is large. It may either be set to a
+    value to use, or one of FillValue.infer, FillValue.draw or
+    FillValue.no_fill.
+
+    When it is set to one of these special values it has the following
+    behaviour:
+
+    1. If it is set to FillValue.draw then a single value will be drawn from
+       the element strategy for the array and used for the fill value.
+    2. If it is set to no_fill then no fill value will be used and every
+       element of the array will be drawn from the elements strategy.
+    3. If it is set to FillValue.infer (the default), Hypothesis will attempt
+       to use FillValue.draw if it can tell for sure that it is appropriate,
+       and if not will use FillValue.no_fill. This will result in using
+       FillValue.draw for most built-in strategies and dtypes that return
+       immutable types, but e.g. strategies defined using composite, flatmap,
+       map or filter, or strategies that return mutable types, will default to
+       FillValue.no_fill and must explicitly opt in to having a FillValue.
+
+    Having a fill_value helps Hypothesis craft high quality examples, but its
+    main importance is when the array generated is large: Hypothesis is
+    primarily designed around testing small examples. If you have arrays with
+    hundreds or more elements, having a fill value is essential if you want
+    your tests to run in reasonable time.
 
     """
     if isinstance(dtype, SearchStrategy):
@@ -215,7 +263,7 @@ def arrays(draw, dtype, shape, elements=None):
     if not shape:
         if dtype.kind != u'O':
             return draw(elements)
-    return draw(ArrayStrategy(elements, shape, dtype))
+    return draw(ArrayStrategy(elements, shape, dtype, fill_value))
 
 
 @st.defines_strategy
