@@ -7,7 +7,7 @@ set -x
 SPHINX_BUILD=$1
 PYTHON=$2
 
-HERE="$(dirname $0)"
+HERE="$(dirname "$0")"
 
 cd "$HERE"/..
 
