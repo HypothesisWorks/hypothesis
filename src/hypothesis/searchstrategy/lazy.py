@@ -96,17 +96,29 @@ class LazyStrategy(SearchStrategy):
     def wrapped_strategy(self):
         if self.__wrapped_strategy is None:
             with self.__settings:
+                unwrapped_args = tuple(
+                    unwrap_strategies(s) for s in self.__args)
+                unwrapped_kwargs = {
+                    k: unwrap_strategies(v)
+                    for k, v in self.__kwargs.items()
+                }
+
                 base = self.__function(
                     *self.__args, **self.__kwargs
                 )
-                self.__wrapped_strategy = self.__function(
-                    *[unwrap_strategies(s) for s in self.__args],
-                    **{k: unwrap_strategies(v)
-                       for k, v in self.__kwargs.items()})
-                self.__wrapped_strategy.force_has_reusable_values = \
-                    base.has_reusable_values
-                assert self.__wrapped_strategy.has_reusable_values == \
-                    base.has_reusable_values
+                if (
+                    unwrapped_args == self.__args and
+                    unwrapped_kwargs == self.__kwargs
+                ):
+                    self.__wrapped_strategy = base
+                else:
+                    self.__wrapped_strategy = self.__function(
+                        *unwrapped_args,
+                        **unwrapped_kwargs)
+                    self.__wrapped_strategy.force_has_reusable_values = \
+                        base.has_reusable_values
+                    assert self.__wrapped_strategy.has_reusable_values == \
+                        base.has_reusable_values
         return self.__wrapped_strategy
 
     def do_validate(self):
