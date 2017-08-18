@@ -501,11 +501,18 @@ else:
 
 
 if PY2:
+    # Under Python 2, math.floor and math.ceil return floats, which cannot
+    # represent large integers - eg `float(2**53) == float(2**53 + 1)`.
+    # We therefore implement them entirely in (long) integer operations.
     def floor(x):
-        return int(math.floor(x))
+        if int(x) != x and x < 0:
+            return int(x) - 1
+        return int(x)
 
     def ceil(x):
-        return int(math.ceil(x))
+        if int(x) != x and x > 0:
+            return int(x) + 1
+        return int(x)
 else:
     floor = math.floor
     ceil = math.ceil

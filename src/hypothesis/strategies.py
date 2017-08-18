@@ -29,8 +29,8 @@ from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.control import assume
 from hypothesis._settings import note_deprecation
 from hypothesis.searchstrategy import SearchStrategy
-from hypothesis.internal.compat import hrange, text_type, integer_types, \
-    get_type_hints, getfullargspec, implements_iterator
+from hypothesis.internal.compat import ceil, floor, hrange, text_type, \
+    integer_types, get_type_hints, getfullargspec, implements_iterator
 from hypothesis.internal.floats import is_negative, float_to_int, \
     int_to_float, count_between_floats
 from hypothesis.utils.conventions import infer, not_set
@@ -205,17 +205,13 @@ def integers(min_value=None, max_value=None):
     from hypothesis.searchstrategy.numbers import IntegersFromStrategy, \
         BoundedIntStrategy, WideRangeIntStrategy
 
-    min_int_value = None
-    if min_value is not None:
-        min_int_value = int(min_value)
-        if min_int_value != min_value and min_value > 0:
-            min_int_value += 1
+    min_int_value = None if min_value is None else ceil(min_value)
+    max_int_value = None if max_value is None else floor(max_value)
 
-    max_int_value = None
-    if max_value is not None:
-        max_int_value = int(max_value)
-        if max_int_value != max_value and max_value < 0:
-            max_int_value -= 1
+    if min_int_value is not None and max_int_value is not None and \
+            min_int_value > max_int_value:
+        raise InvalidArgument('No integers between min_value=%r and '
+                              'max_value=%r' % (min_value, max_value))
 
     if min_int_value is None:
         if max_int_value is None:
