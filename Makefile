@@ -201,7 +201,7 @@ check-fast: lint $(PYPY) $(PY36) $(TOX)
 	$(TOX) --recreate -e py36-prettyquick
 
 check-rst: $(RSTLINT) $(FLAKE8)
-	$(RSTLINT) *.rst
+	$(RSTLINT) CONTRIBUTING.rst README.rst
 	$(RSTLINT) guides/*.rst
 	$(FLAKE8) --select=W191,W291,W292,W293,W391 *.rst docs/*.rst
 
