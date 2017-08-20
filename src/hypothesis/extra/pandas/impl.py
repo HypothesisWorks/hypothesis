@@ -17,7 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-from collections import Counter
+from collections import Counter, Iterable
 
 import numpy as np
 
@@ -25,6 +25,7 @@ import pandas
 import hypothesis.strategies as st
 import hypothesis.extra.numpy as npst
 from hypothesis.errors import InvalidArgument
+from hypothesis.internal.compat import hrange, int_to_text, integer_types
 
 
 def is_sequence(c):
@@ -67,7 +68,7 @@ def supported_by_pandas(dtype):
     return True
 
 
-def validate_index_and_bounds(draw, index, min_size, max_size):
+def build_index(draw, index, min_size, max_size):
     st.check_valid_interval(
         min_size, max_size, 'min_size', 'max_size'
     )
@@ -91,7 +92,7 @@ def validate_index_and_bounds(draw, index, min_size, max_size):
         if max_size is None:
             max_size = len(index)
         elif index_from_strategy:
-            max_size = min(max_size, max_size)
+            max_size = min(max_size, len(index))
         else:
             raise InvalidArgument((
                 'Provided index %r only has %d elements, which is not '
@@ -102,9 +103,17 @@ def validate_index_and_bounds(draw, index, min_size, max_size):
             ))
 
     if max_size is None:
-        max_size = 10
+        max_size = max(10, min_size + 1)
 
-    return index, min_size, max_size
+    size = draw(st.integers(min_size, max_size))
+
+    if index is None:
+        index = hrange(size)
+    else:
+        assert len(index) >= size
+        index = index[:size]
+
+    return index
 
 
 def dtype_for_elements_strategy(s):
@@ -129,7 +138,9 @@ def series(
         dtype: the numpy.dtype of the resulting series and may be any value
             that can be passed to numpy.dtype. If None, will use pandas'
             standard behaviour to infer it from the type of the elements
-            values. At least one of elements and dtype must not be None.
+            values.
+
+        At least one of elements and dtype must not be None.
 
         index: a sequence or a strategy for generating a sequence. It will
             be used as the index for the resulting series. When it is longer
@@ -147,7 +158,7 @@ def series(
 
     """
 
-    index, min_size, max_size = validate_index_and_bounds(
+    index = build_index(
         draw, index, min_size, max_size
     )
 
@@ -156,7 +167,7 @@ def series(
             'series require either an elements strategy or a dtype.'
         )
 
-    size = draw(st.integers(min_size, max_size))
+    size = len(index)
 
     if dtype is not None:
         if is_category_dtype(dtype):
@@ -185,17 +196,13 @@ def series(
         else:
             pandas_dtype = None
 
-    return pandas.Series(
-        result_data,
-        None if index is None else index[:len(result_data)],
-        dtype=pandas_dtype,
-    )
+    return pandas.Series(result_data, index, dtype=pandas_dtype)
 
 
-class Column(object):
+class column(object):
     """Simple data object for describing a column in a DataFrame."""
 
-    def __init__(self, name, dtype=None, elements=None):
+    def __init__(self, name=None, dtype=None, elements=None):
         """Arguments:
 
         -- name: the column name
@@ -208,34 +215,55 @@ class Column(object):
         self.name = name
         self.dtype = dtype
         self.elements = elements
+        if dtype is None and elements is None:
+            raise InvalidArgument(
+                'At least one of dtype and elements must not be provided'
+            )
+        if is_category_dtype(dtype) and elements is None:
+            raise InvalidArgument(
+                'Must provide an elements strategy for category dtypes'
+            )
 
     def __repr__(self):
-        return 'Column(%r, dtype=%r, elements=%r)' % (
+        return 'column(%r, dtype=%r, elements=%r)' % (
             self.name, self.dtype, self.elements,
         )
 
 
+def columns(names_or_number, dtype=None, elements=None):
+    st.check_type(
+        (Iterable,) + integer_types, names_or_number, 'names_or_number'
+    )
+    try:
+        names = list(names_or_number)
+    except TypeError:
+        names = [None] * names_or_number
+    return [
+        column(name=n, dtype=dtype, elements=elements) for n in names
+    ]
+
+
 @st.composite
 def data_frames(
-    draw, columns=None, index=None, min_size=0, max_size=None
+    draw, columns=None, rows=None, index=None, min_size=0, max_size=None
 ):
     """Provides a strategy for producing a pandas.DataFrame.
 
     Arguments:
-        columns: An iterable of objects that describes the columns of the
-            generated DataFrame. May also be a strategy generating such, and
-            individual elements may also be strategies which will be implicitly
-            drawn from.
+        columns: An iterable of column objects describing the shape of the
+            generated DataFrame.
 
-            If an entry is a Column object then the name, dtype, and elements
-            strategy will be used for generating the corresponding column.
-            Otherwise it is treated as a column name and a default type of
-            floats will be used.
+        rows: A strategy for generating a row object. Should generate anything
+            that could be passed to pandas as a list - e.g. dicts, tuples.
 
-            The names of columns must be distinct.
+        At least one of rows and columns must be provided. If both are
+        provided then the generated rows will be validated against the
+        columns and an error will be raised if they don't match.
 
-            If columns is None then random column names and datatypes will be
-            used.
+        In general you should prefer using columns to rows, and only use rows
+        if the columns interface is insufficiently flexible to describe what
+        you need - you will get better performance and example quality that
+        way.
 
         index: a sequence or a strategy for generating a sequence. It will
             be used as the index for the resulting series. When it is longer
@@ -250,64 +278,44 @@ def data_frames(
 
     """
 
-    index, min_size, max_size = validate_index_and_bounds(
+    index = build_index(
         draw, index, min_size, max_size
     )
 
-    def convert(s):
-        if isinstance(s, st.SearchStrategy):
-            return draw(s)
-        else:
-            return s
-
-    INFER_CATEGORY = object()
-
     if columns is None:
-        columns = st.lists(
-            st.builds(
-                Column, st.text(min_size=1),
-                st.one_of(
-                    st.none(), st.just(INFER_CATEGORY),
-                    npst.scalar_dtypes().filter(supported_by_pandas))
-            ),
-            unique_by=lambda x: x.name,
-            min_size=1,
-        )
+        if rows is None:
+            raise InvalidArgument(
+                'At least one of rows and columns must be provided'
+            )
 
-    columns = convert(columns)
+        return pandas.DataFrame(
+            [draw(rows) for _ in index],
+            index=index
+        )
 
     column_names = []
     datatype_elements = []
     strategies = []
     categorical_columns = []
 
-    for column in columns:
-        column = convert(column)
-        if not isinstance(column, Column):
-            name = column
-            dtype = np.dtype(None)
-            elements = st.floats()
+    for i, c in enumerate(columns):
+        st.check_type(column, c, 'columns[%d]' % (i,))
+        name = c.name
+        if name is None:
+            # FIXME: Need a plan for properly handling non-string column names.
+            name = int_to_text(i)
+        dtype = c.dtype
+        elements = c.elements
+        if dtype is None:
+            dtype = draw(dtype_for_elements_strategy(elements))
+        if is_category_dtype(dtype):
+            dtype = np.dtype(object)
+            categorical_columns.append(name)
         else:
-            name = column.name
-            dtype = convert(column.dtype)
-            elements = None
+            dtype = np.dtype(dtype)
 
-            if dtype is INFER_CATEGORY:
-                dtype = 'category'
-                categories = draw(st.lists(
-                    st.text(min_size=1), min_size=1, unique=True))
-                elements = st.sampled_from(categories)
-
-            if is_category_dtype(dtype):
-                if elements is None:
-                    raise InvalidArgument((
-                        'categorical column %r requires an explicit strategy '
-                        'but none was provided.') % (name,))
-                dtype = np.dtype(object)
-                categorical_columns.append(name)
-            else:
-                dtype = np.dtype(dtype)
-            elements = elements or npst.from_dtype(dtype)
+        if elements is None:
+            elements = npst.from_dtype(dtype)
 
         column_names.append(name)
         strategies.append(elements)
@@ -316,25 +324,30 @@ def data_frames(
     if len(set(column_names)) < len(column_names):
         counts = Counter(column_names)
         raise InvalidArgument(
-            'columns definition contains duplicate column names: %s' % (
+            'columns definition contains duplicate column names: %r' % (
                 sorted(c for c, n in counts.items() if n > 1)))
 
     structured_dtype = np.dtype(datatype_elements)
 
-    result_data = draw(npst.arrays(
-        elements=st.tuples(*strategies),
-        dtype=structured_dtype,
-        shape=draw(st.integers(min_size, max_size)),
-    ))
+    if rows is None:
+        result_data = draw(npst.arrays(
+            elements=st.tuples(*strategies),
+            dtype=structured_dtype,
+            shape=len(index),
+        ))
 
-    assert result_data.dtype == structured_dtype
+        assert result_data.dtype == structured_dtype
 
-    if index is not None:
-        index = index[:len(result_data)]
+        result = pandas.DataFrame(
+            result_data, index=index
+        )
+    else:
+        result = pandas.DataFrame(np.zeros(
+            dtype=structured_dtype,
+            shape=len(index)), index=index)
 
-    result = pandas.DataFrame(
-        result_data, index=index
-    )
+        for i in hrange(len(index)):
+            result.iloc[i] = draw(rows)
 
     assert len(result.columns) == len(column_names)
 

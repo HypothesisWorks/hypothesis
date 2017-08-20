@@ -17,10 +17,10 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis.extra.pandas.impl import series, data_frames, Column
+from hypothesis.extra.pandas.impl import series, data_frames, column, columns
 
 __all__ = [
     'series',
     'data_frames',
-    'Column',
+    'column', 'columns',
 ]
