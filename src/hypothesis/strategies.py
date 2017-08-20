@@ -44,7 +44,7 @@ __all__ = [
     'choices', 'streaming',
     'booleans', 'integers', 'floats', 'complex_numbers', 'fractions',
     'decimals',
-    'characters', 'text', 'binary', 'uuids',
+    'characters', 'text', 'from_regex', 'binary', 'uuids',
     'tuples', 'lists', 'sets', 'frozensets', 'iterables',
     'dictionaries', 'fixed_dictionaries',
     'sampled_from', 'permutations',
@@ -737,6 +737,37 @@ def text(
         char_strategy, average_size=average_size, min_size=min_size,
         max_size=max_size
     ))
+
+
+@cacheable
+@defines_strategy
+def from_regex(regex):
+    """Generates strings that contain a match for the given regex (i.e. ones
+    for which re.search will return a non-None result).
+
+    ``regex`` may be a pattern or :func:`compiled regex <python:re.compile>`.
+    Both byte-strings and unicode strings are supported, and will generate
+    examples of the same type.
+
+    You can use regex flags (such as :const:`python:re.IGNORECASE`,
+    :const:`python:re.DOTALL` or :const:`python:re.UNICODE`) to control
+    generation. Flags can be passed either in compiled regex or inside the
+    pattern with a ``(?iLmsux)`` group.
+
+    Some regular expressions are only partly supported - the underlying
+    strategy checks local matching and relies on filtering to resolve
+    context-dependent expressions.  Using too many of these constructs may
+    cause health-check errors as too many examples are filtered out. This
+    mainly includes (positive or negative) lookahead and lookbehind groups.
+
+    If you want the generated string to match the whole regex you should use
+    boundary markers. So e.g. ``r"\\A.\\Z"`` will return a single character
+    string, while ``"."`` will return any string, and ``r"\\A.$"`` will return
+    a single character optionally followed by a ``"\\n"``.
+
+    """
+    from hypothesis.searchstrategy.regex import regex_strategy
+    return regex_strategy(regex)
 
 
 @cacheable
