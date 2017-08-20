@@ -1,3 +1,5 @@
+RELEASE_TYPE: patch
+
 This release provides a major overhaul to the internals of how Hypothesis
 handles shrinking.
 
