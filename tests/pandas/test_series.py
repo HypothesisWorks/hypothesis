@@ -27,12 +27,13 @@ from hypothesis import given, assume, reject
 from hypothesis.errors import InvalidArgument
 from tests.common.debug import find_any
 from hypothesis.internal.compat import text_type
+from hypothesis.extra.pandas.impl import supported_by_pandas
 
 
 @given(st.data())
 def test_can_create_a_series_of_any_dtype(data):
     dtype = np.dtype(data.draw(npst.scalar_dtypes()))
-    assume(pdst.supported_by_pandas(dtype))
+    assume(supported_by_pandas(dtype))
     series = data.draw(pdst.series(dtype=dtype))
     assert series.dtype == dtype
 
@@ -40,7 +41,7 @@ def test_can_create_a_series_of_any_dtype(data):
 @given(st.data())
 def test_buggy_dtype_identification_is_precise(data):
     dtype = np.dtype(data.draw(npst.scalar_dtypes()))
-    assume(not pdst.supported_by_pandas(dtype))
+    assume(not supported_by_pandas(dtype))
     try:
         series = data.draw(pdst.series(dtype=dtype))
     except Exception as e:
