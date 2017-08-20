@@ -18,7 +18,6 @@
 from __future__ import division, print_function, absolute_import
 
 import math
-from collections import Iterable
 
 import numpy as np
 
@@ -90,75 +89,41 @@ def order_check(name, floor, small, large):
     )
 
 
-class FillValue(object):
-    """A FillValue specifies how to provide the base value that is used to fill
-    a generated array.
-
-    See :func:`~hypothesis.extra.numpy.arrays` for details.
-
-    """
-
-    infer = 1
-    draw = 2
-    no_fill = 3
-
-
 class ArrayStrategy(SearchStrategy):
 
-    def __init__(self, element_strategy, shape, dtype, fill_value):
+    def __init__(self, element_strategy, shape, dtype, fill):
         self.shape = tuple(shape)
-        self.fill_value = fill_value
+        self.fill = fill
         check_argument(shape,
                        u'Array shape must have at least one dimension, '
                        u'provided shape was {}', shape)
         check_argument(all(isinstance(s, int) for s in shape),
                        u'Array shape must be integer in each dimension, '
                        u'provided shape was {}', shape)
-        self.array_size = np.prod(shape)
+        self.array_size = int(np.prod(shape))
         self.dtype = dtype
         self.element_strategy = element_strategy
-
-    def __create_base_array(self, base):
-        """Create an array of the right size which is just a copy of base."""
-
-        if isinstance(base, Iterable):
-            result = np.zeros(shape=self.array_size, dtype=self.dtype)
-            for i in hrange(len(result)):
-                result[i] = base
-            return result.reshape(self.shape)
-        else:
-            return np.full(
-                shape=self.shape, dtype=self.dtype, fill_value=base
-            )
 
     def do_draw(self, data):
         if 0 in self.shape:
             return np.zeros(dtype=self.dtype, shape=self.shape)
 
-        fill_value = self.fill_value
+        result = np.zeros(shape=self.array_size, dtype=self.dtype)
 
-        if (
-            fill_value is FillValue.infer
-        ):
-            if self.element_strategy.has_reusable_values:
-                fill_value = FillValue.draw
-            else:
-                fill_value = FillValue.no_fill
-
-        if fill_value is FillValue.draw:
-            fill_value = data.draw(self.element_strategy)
-
-        if fill_value is not FillValue.no_fill:
-            assert not isinstance(fill_value, FillValue)
-
+        if self.fill.is_empty:
+            # The values produced by our element strategy can not be reused
+            # (either because they are mutable or because drawing them in
+            # some way depends on things that have happened previusly), so we
+            # have to fall back to the slow method.
+            for i in hrange(len(result)):
+                result[i] = data.draw(self.element_strategy)
+        else:
             # We draw numpy arrays as "sparse with an offset". We draw a single
             # value that is the background value of the array that everything
             # set to by default (we can't use zero because zero might not be a
             # valid value in the element strategy), and we then draw a
             # collection of index assignments within the array and assign
             # fresh values to those indices.
-
-            result = self.__create_base_array(fill_value)
 
             elements = cu.many(
                 data,
@@ -172,29 +137,24 @@ class ArrayStrategy(SearchStrategy):
             seen = set()
 
             while elements.more():
-                key = tuple(
-                    cu.integer_range(data, 0, k - 1) for k in self.shape
-                )
-                if key in seen:
+                i = cu.integer_range(data, 0, self.array_size - 1)
+                if i in seen:
                     elements.reject()
                     continue
-                seen.add(key)
-                result[key] = data.draw(self.element_strategy)
-            return result
-        else:
-            # The values produced by our element strategy can not be reused
-            # (either because they are mutable or because drawing them in
-            # some way depends on things that have happened previusly), so we
-            # have to fall back to the slow method.
-            result = np.zeros(shape=self.array_size, dtype=self.dtype)
-            for i in hrange(len(result)):
+                seen.add(i)
                 result[i] = data.draw(self.element_strategy)
-            return result.reshape(self.shape)
+            if len(seen) < self.array_size:
+                fill = data.draw(self.fill)
+                for i in hrange(len(result)):
+                    if i not in seen:
+                        result[i] = fill
+
+        return result.reshape(self.shape)
 
 
 @st.composite
 def arrays(
-    draw, dtype, shape, elements=None, fill_value=FillValue.infer
+    draw, dtype, shape, elements=None, fill=None
 ):
     """`dtype` may be any valid input to ``np.dtype`` (this includes
     ``np.dtype`` objects), or a strategy that generates such values.  `shape`
@@ -223,27 +183,26 @@ def arrays(
       >>> arrays(np.float, 3, elements=floats(0, 1)).example()
       array([ 0.88974794,  0.77387938,  0.1977879 ])
 
-    fill_value specifies a default element to be used for "most" of the
-    elements in the array when the array is large. It may either be set to a
-    value to use, or one of FillValue.infer, FillValue.draw or
-    FillValue.no_fill.
+    The fill argument provides a 'background noise' value for the array. Array
+    values are generated in two parts:
 
-    When it is set to one of these special values it has the following
-    behaviour:
+    1. Some subset of the coordinates of the array are populated with a value
+       drawn from the elements strategy (or its inferred form).
+    2. If any coordinates were not assigned in the previous step, a single
+       value is drawn from the fill strategy and is assigned to all remaining
+       places.
 
-    1. If it is set to FillValue.draw then a single value will be drawn from
-       the element strategy for the array and used for the fill value.
-    2. If it is set to no_fill then no fill value will be used and every
-       element of the array will be drawn from the elements strategy.
-    3. If it is set to FillValue.infer (the default), Hypothesis will attempt
-       to use FillValue.draw if it can tell for sure that it is appropriate,
-       and if not will use FillValue.no_fill. This will result in using
-       FillValue.draw for most built-in strategies and dtypes that return
-       immutable types, but e.g. strategies defined using composite, flatmap,
-       map or filter, or strategies that return mutable types, will default to
-       FillValue.no_fill and must explicitly opt in to having a FillValue.
+    You can set fill to :func:`~hypothesis.strategies.nothing` if you want to
+    disable this behaviour and draw a value for every element.
 
-    Having a fill_value helps Hypothesis craft high quality examples, but its
+    If fill is set to None then it will attempt to infer the correct behaviour
+    automatically: If it looks safe to reuse the values of elements across
+    multiple coordinates (this will be the case for any inferred strategy, and
+    for most of the builtins, but is not the case for mutable values or
+    strategies built with flatmap, map, composite, etc) then it will use the
+    elements strategy as the fill, else it will default to having no fill.
+
+    Having a fill helps Hypothesis craft high quality examples, but its
     main importance is when the array generated is large: Hypothesis is
     primarily designed around testing small examples. If you have arrays with
     hundreds or more elements, having a fill value is essential if you want
@@ -263,7 +222,14 @@ def arrays(
     if not shape:
         if dtype.kind != u'O':
             return draw(elements)
-    return draw(ArrayStrategy(elements, shape, dtype, fill_value))
+    if fill is None:
+        if elements.has_reusable_values:
+            fill = elements
+        else:
+            fill = st.nothing()
+    else:
+        st.check_strategy(fill, 'fill')
+    return draw(ArrayStrategy(elements, shape, dtype, fill))
 
 
 @st.defines_strategy

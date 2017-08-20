@@ -412,7 +412,7 @@ if it were non-existing. If it is smaller, the existing data will be sampled.
 @click.argument('benchmarks', nargs=-1)
 @click.option('--check/--no-check', default=False)
 @click.option('--skip-existing/--no-skip-existing', default=False)
-@click.option('--fdr', default=0.001)
+@click.option('--fdr', default=0.0001)
 @click.option('--update', type=click.Choice([
     NONE, NEW, ALL, CHANGED, IMPROVED
 ]), default=NEW)

@@ -20,7 +20,7 @@ from __future__ import division, print_function, absolute_import
 import hypothesis.strategies as st
 from hypothesis import given
 from tests.common.debug import minimal, find_any
-from hypothesis.extra.numpy import FillValue, arrays
+from hypothesis.extra.numpy import arrays
 
 
 @given(arrays(object, 100, st.lists(max_size=0)))
@@ -43,11 +43,19 @@ def test_does_not_reuse_distinct_integers(arr):
 
 def test_may_reuse_distinct_integers_if_asked():
     find_any(
-        arrays('uint64', 10, distinct_integers(), fill_value=FillValue.draw),
+        arrays('uint64', 10, distinct_integers(), fill=distinct_integers()),
         lambda x: len(set(x)) < len(x)
     )
 
 
 def test_minimizes_to_fill():
-    result = minimal(arrays(float, 10, fill_value=3.0))
+    result = minimal(arrays(float, 10, fill=st.just(3.0)))
     assert (result == 3.0).all()
+
+
+@given(arrays(
+    dtype=float,
+    elements=st.floats().filter(bool), shape=(3, 3, 3,), fill=st.just(1.0))
+)
+def test_fills_everything(x):
+    assert x.all()
