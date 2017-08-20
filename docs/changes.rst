@@ -22,6 +22,17 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.19.0 - 2017-08-20
+-------------------
+
+This release adds the :func:`~hypothesis.strategies.from_regex` strategy,
+which generates strings that contain a match of a regular expression.
+
+Thanks to Maxim Kulkin for creating the
+`hypothesis-regex <https://github.com/maximkulkin/hypothesis-regex>`_
+package and then helping to upstream it! (:issue:`662`)
+
+-------------------
 3.18.5 - 2017-08-18
 -------------------
 
