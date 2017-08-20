@@ -21,7 +21,7 @@ import re
 import string
 
 import hypothesis.strategies as st
-from hypothesis import given, assume, reject
+from hypothesis import given, assume, reject, settings
 from hypothesis.searchstrategy.regex import base_regex_strategy
 
 
@@ -47,10 +47,14 @@ def conservative_regex(draw):
         CONSERVATIVE_REGEX.map(lambda s: s + u'+'),
         CONSERVATIVE_REGEX.map(lambda s: s + u'?'),
         CONSERVATIVE_REGEX.map(lambda s: s + u'*'),
-        st.lists(CONSERVATIVE_REGEX, min_size=1).map(u"|".join),
-        st.lists(CONSERVATIVE_REGEX, min_size=1).map(u"".join),
+        st.lists(CONSERVATIVE_REGEX, min_size=1, max_size=3).map(u"|".join),
+        st.lists(CONSERVATIVE_REGEX, min_size=1, max_size=3).map(u"".join),
     ))
     assume(COMBINED_MATCHER.search(result) is None)
+    control = sum(
+        result.count(c) for c in '?+*'
+    )
+    assume(control <= 3)
     return result
 
 
@@ -65,10 +69,13 @@ def test_conservative_regex_are_correct_by_construction(data):
     assert pattern.search(result) is not None
 
 
+@settings(max_examples=10**6)
 @given(st.data())
 def test_fuzz_stuff(data):
     pattern = data.draw(
-        st.text(max_size=5) | st.binary(max_size=5) | CONSERVATIVE_REGEX
+        st.text(min_size=1, max_size=5) |
+        st.binary(min_size=1, max_size=5) |
+        CONSERVATIVE_REGEX.filter(bool)
     )
 
     try:
