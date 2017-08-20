@@ -5,4 +5,4 @@ which generates strings that contain a match of a regular expression.
 
 Thanks to Maxim Kulkin for creating the
 `hypothesis-regex <https://github.com/maximkulkin/hypothesis-regex>`_
-package and then merging it upstream! (:issue:`662`)
+package and then helping to upstream it! (:issue:`662`)
