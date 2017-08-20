@@ -124,6 +124,12 @@ def has_source_changes(version=None):
     ]) != 0
 
 
+def has_uncommitted_changes(filename):
+    return subprocess.call([
+        'git', 'diff', '--exit-code', filename
+    ]) != 0
+
+
 def git(*args):
     subprocess.check_call(('git',) + args)
 
@@ -247,7 +253,7 @@ def parse_release_file():
     return release_type, release_contents
 
 
-def update_for_pending_release():
+def update_changelog_and_version():
     global __version_info__
     global __version__
 
@@ -313,10 +319,14 @@ def update_for_pending_release():
     with open(CHANGELOG_FILE, 'w') as o:
         o.write('\n'.join(new_changelog_parts))
 
+
+def update_for_pending_release():
+    update_changelog_and_version()
+
     git('rm', RELEASE_FILE)
     git('add', CHANGELOG_FILE, VERSION_FILE)
 
     git(
         'commit',
-        '-m', 'Bump version to %s and update changelog' % (new_version_string,)
+        '-m', 'Bump version to %s and update changelog' % (__version__,)
     )

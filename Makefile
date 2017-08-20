@@ -275,8 +275,11 @@ clean:
 	find src tests -name "*.pyc" -delete
 	find src tests -name "__pycache__" -delete
 
-documentation: $(SPHINX_BUILD) docs/*.rst
-	PYTHONPATH=src $(SPHINX_BUILD) -W -b html -d docs/_build/doctrees docs docs/_build/html
+.PHONY: RELEASE.rst
+RELEASE.rst:
+
+documentation: $(SPHINX_BUILD) docs/*.rst RELEASE.rst
+	scripts/build-documentation.sh $(SPHINX_BUILD) $(PY36)
 
 doctest: $(SPHINX_BUILD) docs/*.rst
 	PYTHONPATH=src $(SPHINX_BUILD) -W -b doctest -d docs/_build/doctrees docs docs/_build/html
