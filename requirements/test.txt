@@ -10,6 +10,7 @@ flaky==3.4.0
 mock==2.0.0
 pbr==3.1.1                # via mock
 py==1.4.34                # via pytest
-pytest-xdist==1.18.2
+pytest-forked==0.2        # via pytest-xdist
+pytest-xdist==1.20.0
 pytest==3.2.1
 six==1.10.0               # via mock
