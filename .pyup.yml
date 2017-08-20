@@ -2,9 +2,12 @@ requirements:
   - requirements/tools.txt
       updates: all
       pin: True
+      schedule: "every week on monday"
   - requirements/test.txt
       updates: all
       pin: True
+      schedule: "every week on monday"
   - requirements/benchmark.txt
       updates: all
       pin: True
+      schedule: "every week on monday"
