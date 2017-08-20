@@ -45,6 +45,7 @@ __all__ = [
     'booleans', 'integers', 'floats', 'complex_numbers', 'fractions',
     'decimals',
     'characters', 'text', 'binary', 'uuids',
+    'domains', 'emails',
     'tuples', 'lists', 'sets', 'frozensets', 'iterables',
     'dictionaries', 'fixed_dictionaries',
     'sampled_from', 'permutations',
@@ -761,6 +762,42 @@ def binary(
             average_size=average_size, min_size=min_size, max_size=max_size
         )
     )
+
+
+@cacheable
+@defines_strategy
+def domains(alphabet=None, example_domains_only=False):
+    """Generates unicode text type (unicode on python 2, str on python 3)
+    characters that are valid domain names.
+
+    This strategy accepts an alphabet for the domain labels, if None it will
+    default to generating the full unicode range.
+
+    It also accepts an option for only using safe top level domains, those that
+    can't be owned by a real company, e.g. ``example.com``. By default it will
+    generate domain names using all top level domains recognized by IANA.
+
+    """
+    from hypothesis.searchstrategy.domains import DomainStrategy
+
+    return DomainStrategy(
+        alphabet=alphabet,
+        example_domains_only=bool(example_domains_only)
+    )
+
+
+@cacheable
+@defines_strategy
+def emails(domain_names=domains()):
+    """Generates unicode text type (unicode on python 2, str on python 3)
+    characters that are valid email addresses.
+
+    This strategy accepts a domain names strategy, if None it will default to
+    the whole range of valid domain names.
+
+    """
+    from hypothesis.searchstrategy.emails import EmailStrategy
+    return EmailStrategy(domains=domain_names)
 
 
 @cacheable
@@ -1540,6 +1577,27 @@ def check_valid_bound(value, name):
     if math.isnan(value):
         raise InvalidArgument(u'Invalid end point %s %r' % (value, name))
 
+def check_valid_bounds(lower_bound, value, upper_bound, name):
+    """Checks that value is either unspecified, or within lower_bound and
+    upper_bound expressed as an integer/float.
+
+    Otherwise raises InvalidArgument.
+
+    """
+    if value is None:
+        return
+    check_type(integer_types, value)
+
+    if value < lower_bound:
+        raise InvalidArgument(u'Cannot have %s=%r < %r' % (
+            name, value, lower_bound
+        ))
+
+    if value > upper_bound:
+        raise InvalidArgument(u'Cannot have %s=%r > %r' % (
+            name, value, upper_bound
+        ))
+
 
 def check_valid_size(value, name):
     """Checks that value is either unspecified, or a valid non-negative size
@@ -1558,7 +1616,7 @@ def check_valid_size(value, name):
 
 
 def check_valid_interval(lower_bound, upper_bound, lower_name, upper_name):
-    """Checks that lower_bound and upper_bound are either unspecified, or they
+    """Checks that lower_bound or upper_bound are either unspecified, or they
     define a valid interval on the number line.
 
     Otherwise raises InvalidArgument.
