@@ -211,6 +211,12 @@ compile-requirements: $(PIPCOMPILE)
 	$(PIPCOMPILE) requirements/tools.in --output-file requirements/tools.txt
 	$(PIPCOMPILE) requirements/typing.in --output-file requirements/typing.txt
 
+upgrade-requirements:
+	$(PIPCOMPILE) --upgrade requirements/benchmark.in --output-file requirements/benchmark.txt
+	$(PIPCOMPILE) --upgrade requirements/test.in --output-file requirements/test.txt
+	$(PIPCOMPILE) --upgrade requirements/tools.in --output-file requirements/tools.txt
+	$(PIPCOMPILE) --upgrade requirements/typing.in --output-file requirements/typing.txt
+
 check-requirements: compile-requirements
 	git diff --exit-code
 
