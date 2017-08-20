@@ -21,7 +21,7 @@ import re
 import string
 
 import hypothesis.strategies as st
-from hypothesis import given, assume, reject, settings
+from hypothesis import given, assume, reject
 from hypothesis.searchstrategy.regex import base_regex_strategy
 
 
@@ -69,7 +69,6 @@ def test_conservative_regex_are_correct_by_construction(data):
     assert pattern.search(result) is not None
 
 
-@settings(max_examples=10**6)
 @given(st.data())
 def test_fuzz_stuff(data):
     pattern = data.draw(
