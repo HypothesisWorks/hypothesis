@@ -107,9 +107,16 @@ def validate_index_and_bounds(draw, index, min_size, max_size):
     return index, min_size, max_size
 
 
+def dtype_for_elements_strategy(s):
+    return st.shared(
+        s.map(lambda x: pandas.Series([x]).dtype),
+        key=('hypothesis.extra.pandas.dtype_for_elements_strategy', s),
+    )
+
+
 @st.composite
 def series(
-    draw, elements=None, dtype=None, index=None, min_size=0, max_size=None
+    draw, elements=None, dtype=None, index=None, min_size=0, max_size=None,
 ):
     """Provides a strategy for producing a pandas.Series.
 
@@ -120,8 +127,9 @@ def series(
             default from the dtype.
 
         dtype: the numpy.dtype of the resulting series and may be any value
-            that can be passed to numpy.dtype. It may also be a strategy. If so
-            a value will be drawn from it before converting to a dtype.
+            that can be passed to numpy.dtype. If None, will use pandas'
+            standard behaviour to infer it from the type of the elements
+            values. At least one of elements and dtype must not be None.
 
         index: a sequence or a strategy for generating a sequence. It will
             be used as the index for the resulting series. When it is longer
@@ -143,24 +151,39 @@ def series(
         draw, index, min_size, max_size
     )
 
-    if isinstance(dtype, st.SearchStrategy):
-        dtype = draw(dtype)
+    if elements is None and dtype is None:
+        raise InvalidArgument(
+            'series require either an elements strategy or a dtype.'
+        )
 
-    if is_category_dtype(dtype):
-        numpy_dtype = np.dtype(object)
-        pandas_dtype = dtype
+    size = draw(st.integers(min_size, max_size))
+
+    if dtype is not None:
+        if is_category_dtype(dtype):
+            numpy_dtype = np.dtype(object)
+            pandas_dtype = dtype
+        else:
+            numpy_dtype = np.dtype(dtype)
+            pandas_dtype = None
+
+        if elements is None:
+            elements = npst.from_dtype(numpy_dtype)
+
+        result_data = draw(npst.arrays(
+            elements=elements,
+            dtype=numpy_dtype,
+            shape=size
+        ))
     else:
-        numpy_dtype = np.dtype(dtype)
-        pandas_dtype = None
-
-    if elements is None:
-        elements = npst.from_dtype(numpy_dtype)
-
-    result_data = draw(npst.arrays(
-        elements=elements,
-        dtype=numpy_dtype,
-        shape=draw(st.integers(min_size, max_size))
-    ))
+        result_data = draw(
+            st.lists(elements, min_size=size, max_size=size)
+        )
+        if not result_data:
+            pandas_dtype = draw(
+                dtype_for_elements_strategy(elements),
+            )
+        else:
+            pandas_dtype = None
 
     return pandas.Series(
         result_data,

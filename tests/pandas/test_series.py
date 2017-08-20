@@ -51,7 +51,7 @@ def test_buggy_dtype_identification_is_precise(data):
     assert series.dtype != dtype
 
 
-@given(pdst.series(min_size=2, max_size=5))
+@given(pdst.series(dtype=float, min_size=2, max_size=5))
 def test_series_respects_size_bounds(s):
     assert 2 <= len(s) <= 5
 
@@ -61,9 +61,9 @@ def test_can_generate_integral_series(s):
     assert s.dtype == np.dtype(int)
 
 
-@given(pdst.series(elements=st.integers(0, 1000)))
-def test_will_use_default_dtype_regardless_of_elements(s):
-    assert s.dtype == np.dtype(float)
+@given(pdst.series(elements=st.integers(0, 10)))
+def test_will_use_dtype_of_elements(s):
+    assert s.dtype == np.dtype(int)
 
 
 @given(pdst.series(elements=st.floats(allow_nan=False)))
@@ -74,7 +74,7 @@ def test_will_use_a_provided_elements_strategy(s):
 REVERSE_INDEX = list(range(5, 0, -1))
 
 
-@given(pdst.series(index=REVERSE_INDEX))
+@given(pdst.series(dtype=float, index=REVERSE_INDEX))
 def test_can_use_index_to_bound_size(s):
     assert len(s) <= len(REVERSE_INDEX)
     assert list(s.index) == REVERSE_INDEX[:len(s)]
@@ -82,7 +82,8 @@ def test_can_use_index_to_bound_size(s):
 
 def test_does_not_have_to_use_the_full_index():
     find_any(
-        pdst.series(index=REVERSE_INDEX), lambda x: len(x) < len(REVERSE_INDEX)
+        pdst.series(index=REVERSE_INDEX, dtype=float),
+        lambda x: len(x) < len(REVERSE_INDEX)
     )
 
 
@@ -95,17 +96,14 @@ def test_categorical_series(s):
     assert s.dtype == 'category'
 
 
-@given(pdst.series(dtype=st.sampled_from((np.int64, str)), min_size=1))
-def test_can_specify_dtype_as_strategy(s):
-    assert isinstance(s[0], (np.int64, str))
-
-
-@given(pdst.series(index=st.lists(st.text(min_size=1), unique=True)))
+@given(
+    pdst.series(dtype=float, index=st.lists(st.text(min_size=1), unique=True)))
 def test_index_can_be_a_strategy(df):
     assert all(isinstance(i, text_type) for i in df.index)
 
 
 @given(pdst.series(
+    dtype=float,
     index=st.lists(st.text(min_size=1), unique=True), max_size=1))
 def test_index_strategy_respects_max_size(df):
     assert all(isinstance(i, text_type) for i in df.index)
@@ -117,7 +115,7 @@ def test_will_error_on_bad_index():
         pdst.series(index=1).example()
 
 
-@given(pdst.series(min_size=3, index=[0, 1, 2]))
+@given(pdst.series(dtype=float, min_size=3, index=[0, 1, 2]))
 def test_will_pick_up_max_size_from_index(s):
     assert len(s) == 3
 
