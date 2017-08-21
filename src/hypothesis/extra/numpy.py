@@ -23,7 +23,7 @@ import hypothesis.strategies as st
 from hypothesis import settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.searchstrategy import SearchStrategy
-from hypothesis.internal.compat import hrange, text_type, binary_type
+from hypothesis.internal.compat import hrange, text_type
 from hypothesis.internal.reflection import proxies
 
 TIME_RESOLUTIONS = tuple('Y  M  D  h  m  s  ms  us  ns  ps  fs  as'.split())
@@ -73,11 +73,14 @@ def check_argument(condition, fail_message, *f_args, **f_kwargs):
 
 
 def order_check(name, floor, small, large):
-    if (floor > small) or (small > large):
-        check_argument(
-            False, u'min_{name} was {}, must be at least {} and not more '
-                   u'than max_{name} (was {})', small, floor, large,
-                   name=name)
+    check_argument(
+        floor <= small, u'min_{name} must be at least {} but was {}',
+        floor, small, name=name
+    )
+    check_argument(
+        small <= large, u'min_{name}={} is larger than max_name={}',
+        small, large, name=name
+    )
 
 
 class ArrayStrategy(SearchStrategy):
