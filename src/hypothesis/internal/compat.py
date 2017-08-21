@@ -523,6 +523,12 @@ else:
     ceil = math.ceil
 
 
+try:
+    from math import gcd
+except ImportError:
+    from fractions import gcd
+
+
 if PY2:
     def b64decode(s):
         from base64 import b64decode as base
