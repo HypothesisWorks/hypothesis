@@ -280,8 +280,8 @@ def data_frames(
         if rows is not None:
             if columns is not None:
                 raise InvalidArgument(
-                    'At most two of rows, columns, and rows_or_columns can be '
-                    'provided.'
+                    "At most two of rows, columns, and rows_or_columns can be "
+                    "provided."
                 )
             else:
                 columns = rows_or_columns
@@ -291,6 +291,9 @@ def data_frames(
             rows = rows_or_columns
         else:
             columns = rows_or_columns
+
+    if isinstance(columns, column):
+        columns = (columns,)
 
     if columns is None:
         if rows is None:
