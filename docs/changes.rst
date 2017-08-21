@@ -36,7 +36,7 @@ package and then helping to upstream it! (:issue:`662`)
 3.18.5 - 2017-08-18
 -------------------
 
-This is a bugfix release for `~hypothesis.strategies.integers`.
+This is a bugfix release for :func:`~hypothesis.strategies.integers`.
 Previously the strategy would hit an internal assertion if passed non-integer
 bounds for ``min_value`` and ``max_value`` that had no integers between them.
 The strategy now raises InvalidArgument instead.
@@ -53,9 +53,7 @@ into a test runner.  If this happens, the affected test always passes
 because the mock is executed instead of the test body. Sometimes, it
 will also fail health checks.
 
-Related to a section of issue 198 and fixes issue 491
-(a partial duplicate of 198).
-
+Fixes :issue:`491` and a section of :issue:`198`.
 Thanks to Ben Peterson for this bug fix.
 
 -------------------
