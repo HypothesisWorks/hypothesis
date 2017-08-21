@@ -218,11 +218,25 @@ def columns(names_or_number, dtype=None, elements=None):
 
 @st.composite
 def data_frames(
-    draw, columns=None, rows=None, index=None, min_size=0, max_size=None
+    draw,
+    rows_or_columns=None,
+    columns=None, rows=None, index=None, min_size=0, max_size=None
 ):
     """Provides a strategy for producing a pandas.DataFrame.
 
     Arguments:
+        rows_or_columns: A special argument designed for convenient use as a
+        positional argument. It will be passed as one of the rows or columns
+        arguments according to the following rules:
+
+        * An error is raised if all three of rows_or_columns, rows and columns
+          are not None.
+        * If rows_or_columns is not None and one of rows or columns is not None
+          then rows_or_columns will be passed as the other.
+        * If rows_or_columns is not None and rows and columns are both None
+          then the type of the value passed will be used. If it is a strategy
+          then it will be passed as rows, else it will be passed as columns.
+
         columns: An iterable of column objects describing the shape of the
             generated DataFrame.
 
@@ -261,6 +275,22 @@ def data_frames(
     index = build_index(
         draw, index, min_size, max_size
     )
+
+    if rows_or_columns is not None:
+        if rows is not None:
+            if columns is not None:
+                raise InvalidArgument(
+                    'At most two of rows, columns, and rows_or_columns can be '
+                    'provided.'
+                )
+            else:
+                columns = rows_or_columns
+        elif columns is not None or isinstance(
+            rows_or_columns, st.SearchStrategy
+        ):
+            rows = rows_or_columns
+        else:
+            columns = rows_or_columns
 
     if columns is None:
         if rows is None:
