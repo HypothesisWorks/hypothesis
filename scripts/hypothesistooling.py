@@ -158,6 +158,7 @@ def create_tag_and_push():
                     'ssh-add deploy_key && ' +
                     command
                 ])
+                break
             except subprocess.CalledProcessError:
                 if retries_left == 0:
                     raise
