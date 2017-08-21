@@ -317,7 +317,7 @@ def unicode_string_dtypes(endianness='?', min_len=0, max_len=16):
     """Return a strategy for generating unicode string dtypes, of various
     lengths and byteorder."""
     order_check('len', 0, min_len, max_len)
-    return dtype_factory('u', list(range(min_len, max_len + 1)),
+    return dtype_factory('U', list(range(min_len, max_len + 1)),
                          None, endianness)
 
 
