@@ -1632,8 +1632,8 @@ def check_type(typ, arg, name=''):
 
 
 @check_function
-def check_strategy(arg):
-    check_type(SearchStrategy, arg)
+def check_strategy(arg, name=''):
+    check_type(SearchStrategy, arg, name)
 
 
 @check_function
