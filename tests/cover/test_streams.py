@@ -107,3 +107,9 @@ def test_default_stream_is_empty():
 
 def test_can_slice_streams():
     assert list(Stream([1, 2, 3])[:2]) == [1, 2]
+
+
+@checks_deprecated_behaviour
+def test_validates_argument():
+    with pytest.raises(InvalidArgument):
+        streaming(bool).example()

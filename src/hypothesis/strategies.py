@@ -37,9 +37,8 @@ from hypothesis.internal.floats import is_negative, float_to_int, \
 from hypothesis.internal.renaming import renamed_arguments
 from hypothesis.utils.conventions import infer, not_set
 from hypothesis.internal.reflection import proxies, required_args
-from hypothesis.searchstrategy.reprwrapper import ReprWrapperStrategy
 from hypothesis.internal.branchcheck import check_function
-
+from hypothesis.searchstrategy.reprwrapper import ReprWrapperStrategy
 
 __all__ = [
     'nothing',
@@ -463,7 +462,6 @@ def lists(
 
     if unique_by is not None:
         from hypothesis.searchstrategy.collections import UniqueListStrategy
-        check_strategy(elements)
         min_size = min_size or 0
         max_size = max_size or float(u'inf')
         if average_size is None:
@@ -477,7 +475,6 @@ def lists(
                     _AVERAGE_LIST_LENGTH,
                     min_size * 2
                 )
-        check_valid_sizes(min_size, average_size, max_size)
         result = UniqueListStrategy(
             elements=elements,
             average_size=average_size,
@@ -487,7 +484,6 @@ def lists(
         )
         return result
 
-    check_valid_sizes(min_size, average_size, max_size)
     from hypothesis.searchstrategy.collections import ListStrategy
     if min_size is None:
         min_size = 0
@@ -497,7 +493,6 @@ def lists(
         else:
             average_size = (min_size + max_size) * 0.5
 
-    check_strategy(elements)
     return ListStrategy(
         (elements,), average_length=average_size,
         min_size=min_size, max_size=max_size,
@@ -1149,8 +1144,6 @@ def decimals(min_value=None, max_value=None,
             max_value = None
         elif not max_value.is_finite():
             raise InvalidArgument(u'Invalid max_value=%r' % max_value)
-    check_valid_bound(min_value, 'min_value')
-    check_valid_bound(max_value, 'max_value')
     check_valid_interval(min_value, max_value, 'min_value', 'max_value')
 
     if allow_infinity and (None not in (min_value, max_value)):
