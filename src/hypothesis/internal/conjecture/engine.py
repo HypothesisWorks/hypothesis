@@ -79,7 +79,10 @@ class ConjectureRunner(object):
 
         # We rewrite the byte stream at various points during parsing, to one
         # that will produce an equivalent result but is in some sense more
-        # canonical. We keep track of these so that
+        # canonical. We keep track of these so that when walking the tree we
+        # can identify nodes where the exact byte value doesn't matter and
+        # treat all bytes there as equivalent. This significantly reduces the
+        # size of the search space and removes a lot of redundant examples.
 
         # Maps tree indices where to the unique byte that is valid at that
         # point. Corresponds to data.write() calls.
@@ -89,6 +92,13 @@ class ConjectureRunner(object):
         # Currently this is only used inside draw_bits, but it potentially
         # could get used elsewhere.
         self.capped = {}
+
+        # Where a tree node consists of the beginning of a block we track the
+        # size of said block. This allows us to tell when an example is too
+        # short even if it goes off the unexplored region of the tree - if it
+        # is at the beginning of a block of size 4 but only has 3 bytes left,
+        # it's going to overrun the end of the buffer regardless of the
+        # buffer contents.
         self.block_sizes = {}
 
     def __tree_is_exhausted(self):
