@@ -111,9 +111,9 @@ def series(
         dtype: the numpy.dtype of the resulting series and may be any value
             that can be passed to numpy.dtype. If None, will use pandas'
             standard behaviour to infer it from the type of the elements
-            values.
-
-        At least one of elements and dtype must not be None.
+            values. Note that if the type of values that comes out of your
+            elements strategy varies, then so will the resulting dtype of the
+            series.
 
         index: a sequence or a strategy for generating a sequence. It will
             be used as the index for the resulting series. When it is longer
@@ -229,14 +229,21 @@ def data_frames(
         rows: A strategy for generating a row object. Should generate anything
             that could be passed to pandas as a list - e.g. dicts, tuples.
 
-        At least one of rows and columns must be provided. If both are
-        provided then the generated rows will be validated against the
-        columns and an error will be raised if they don't match.
+            At least one of rows and columns must be provided. If both are
+            provided then the generated rows will be validated against the
+            columns and an error will be raised if they don't match.
 
-        In general you should prefer using columns to rows, and only use rows
-        if the columns interface is insufficiently flexible to describe what
-        you need - you will get better performance and example quality that
-        way.
+            Caveats on using rows:
+
+            * In general you should prefer using columns to rows, and only use
+              rows if the columns interface is insufficiently flexible to
+              describe what you need - you will get better performance and
+              example quality that way.
+            * If you provide rows and not columns, then the shape and dtype of
+              the resulting DataFrame may vary. e.g. if you have a mix of int
+              and float in the values for one column in your row entries, the
+              resulting DataFrame will sometimes have an integral dtype and
+              sometimes a float.
 
         index: a sequence or a strategy for generating a sequence. It will
             be used as the index for the resulting series. When it is longer
@@ -261,10 +268,20 @@ def data_frames(
                 'At least one of rows and columns must be provided'
             )
 
-        return pandas.DataFrame(
-            [draw(rows) for _ in index],
-            index=index
-        )
+        if len(index) > 0:
+            return pandas.DataFrame(
+                [draw(rows) for _ in index],
+                index=index
+            )
+        else:
+            # If we haven't drawn any rows we need to draw one row and then
+            # discard it so that we get a consistent shape for the the
+            # DataFrame.
+            base = draw(st.shared(
+                rows.map(lambda x: pandas.DataFrame([x])),
+                key=('hypothesis.extra.pandas.row_shape', rows),
+            ))
+            return base.drop(0)
 
     column_names = []
     datatype_elements = []
