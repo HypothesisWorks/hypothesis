@@ -110,12 +110,6 @@ class ArrayStrategy(SearchStrategy):
         return result.reshape(self.shape)
 
 
-def is_scalar(spec):
-    return spec in (
-        int, bool, text_type, binary_type, float, complex
-    )
-
-
 @st.composite
 def arrays(draw, dtype, shape, elements=None):
     """`dtype` may be any valid input to ``np.dtype`` (this includes
