@@ -38,6 +38,8 @@ from hypothesis.internal.renaming import renamed_arguments
 from hypothesis.utils.conventions import infer, not_set
 from hypothesis.internal.reflection import proxies, required_args
 from hypothesis.searchstrategy.reprwrapper import ReprWrapperStrategy
+from hypothesis.internal.branchcheck import check_function
+
 
 __all__ = [
     'nothing',
@@ -1618,6 +1620,7 @@ def register_type_strategy(custom_type, strategy):
 # Private API below here
 
 
+@check_function
 def check_type(typ, arg, name=''):
     if name:
         name += '='
@@ -1631,10 +1634,12 @@ def check_type(typ, arg, name=''):
                               % (typ_string, name, arg, type(arg).__name__))
 
 
+@check_function
 def check_strategy(arg):
     check_type(SearchStrategy, arg)
 
 
+@check_function
 def check_valid_integer(value):
     """Checks that value is either unspecified, or a valid integer.
 
@@ -1646,6 +1651,7 @@ def check_valid_integer(value):
     check_type(integer_types, value)
 
 
+@check_function
 def check_valid_bound(value, name):
     """Checks that value is either unspecified, or a valid interval bound.
 
@@ -1658,6 +1664,7 @@ def check_valid_bound(value, name):
         raise InvalidArgument(u'Invalid end point %s %r' % (value, name))
 
 
+@check_function
 def check_valid_size(value, name):
     """Checks that value is either unspecified, or a valid non-negative size
     expressed as an integer/float.
@@ -1674,6 +1681,7 @@ def check_valid_size(value, name):
         raise InvalidArgument(u'Invalid size %s %r' % (value, name))
 
 
+@check_function
 def check_valid_interval(lower_bound, upper_bound, lower_name, upper_name):
     """Checks that lower_bound and upper_bound are either unspecified, or they
     define a valid interval on the number line.
@@ -1690,6 +1698,7 @@ def check_valid_interval(lower_bound, upper_bound, lower_name, upper_name):
             ))
 
 
+@check_function
 def check_valid_sizes(min_size, average_size, max_size):
     check_valid_size(min_size, 'min_size')
     check_valid_size(max_size, 'max_size')
