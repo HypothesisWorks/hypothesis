@@ -17,7 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-from collections import Counter, Iterable
+from collections import Counter, Iterable, OrderedDict
 
 import numpy as np
 
@@ -25,7 +25,7 @@ import pandas
 import hypothesis.strategies as st
 import hypothesis.extra.numpy as npst
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import hrange, int_to_text, integer_types
+from hypothesis.internal.compat import hrange, integer_types
 
 
 def is_sequence(c):
@@ -280,8 +280,8 @@ def data_frames(
         if rows is not None:
             if columns is not None:
                 raise InvalidArgument(
-                    "At most two of rows, columns, and rows_or_columns can be "
-                    "provided."
+                    'At most two of rows, columns, and rows_or_columns can be '
+                    'provided.'
                 )
             else:
                 columns = rows_or_columns
@@ -317,7 +317,7 @@ def data_frames(
             return base.drop(0)
 
     column_names = []
-    datatype_elements = []
+    dtypes = []
     strategies = []
     categorical_columns = []
 
@@ -325,8 +325,7 @@ def data_frames(
         st.check_type(column, c, 'columns[%d]' % (i,))
         name = c.name
         if name is None:
-            # FIXME: Need a plan for properly handling non-string column names.
-            name = int_to_text(i)
+            name = i
         dtype = c.dtype
         elements = c.elements
         if dtype is None:
@@ -342,7 +341,7 @@ def data_frames(
 
         column_names.append(name)
         strategies.append(elements)
-        datatype_elements.append((name, dtype))
+        dtypes.append(dtype)
 
     if len(set(column_names)) < len(column_names):
         counts = Counter(column_names)
@@ -350,25 +349,29 @@ def data_frames(
             'columns definition contains duplicate column names: %r' % (
                 sorted(c for c, n in counts.items() if n > 1)))
 
-    structured_dtype = np.dtype(datatype_elements)
+    zeroes = [0] * len(index)
 
+    series = [
+        pandas.Series(zeroes, dtype=dtype)
+        for dtype in dtypes
+    ]
+
+    # FIXME: When we have the fill argument for arrays pull request merged we
+    # should use np.arrays for columns where we can be sparse and only pack
+    # together the rest like this.
     if rows is None:
-        result_data = draw(npst.arrays(
-            elements=st.tuples(*strategies),
-            dtype=structured_dtype,
-            shape=len(index),
-        ))
+        for i in hrange(len(index)):
+            # Note: We draw one row at a time. This is important because it
+            # means we can delete rows (once the new shrinker has been
+            # merged).
+            for j in hrange(len(series)):
+                series[j][i] = draw(strategies[j])
 
-        assert result_data.dtype == structured_dtype
+    result = pandas.DataFrame(
+        OrderedDict(zip(column_names, series)), index=index
+    )
 
-        result = pandas.DataFrame(
-            result_data, index=index
-        )
-    else:
-        result = pandas.DataFrame(np.zeros(
-            dtype=structured_dtype,
-            shape=len(index)), index=index)
-
+    if rows is not None:
         for i in hrange(len(index)):
             result.iloc[i] = draw(rows)
 
