@@ -164,10 +164,10 @@ def _get_strategy_for_field(f):
     return strategy
 
 
-def models(model, **extra):
+def models(django_model_cls, **extra):
     result = {}
     mandatory = set()
-    for f in model._meta.concrete_fields:
+    for f in django_model_cls._meta.concrete_fields:
         try:
             strategy = _get_strategy_for_field(f)
         except UnmappedFieldError:
@@ -181,12 +181,12 @@ def models(model, **extra):
             u'Missing arguments for mandatory field%s %s for model %s' % (
                 u's' if len(missed) > 1 else u'',
                 u', '.join(missed),
-                model.__name__,
+                django_model_cls.__name__,
             )))
     result.update(extra)
     # Remove default_values so we don't try to generate anything for those.
     result = {k: v for k, v in result.items() if v is not default_value}
-    return ModelStrategy(model, result)
+    return ModelStrategy(django_model_cls, result)
 
 
 class ModelStrategy(SearchStrategy):
