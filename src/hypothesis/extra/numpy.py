@@ -25,6 +25,7 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.internal.reflection import proxies
+from hypothesis.internal.branchcheck import check_function
 
 TIME_RESOLUTIONS = tuple('Y  M  D  h  m  s  ms  us  ns  ps  fs  as'.split())
 
@@ -67,11 +68,13 @@ def from_dtype(dtype):
     return result.map(dtype.type)
 
 
+@check_function
 def check_argument(condition, fail_message, *f_args, **f_kwargs):
     if not condition:
         raise InvalidArgument(fail_message.format(*f_args, **f_kwargs))
 
 
+@check_function
 def order_check(name, floor, small, large):
     check_argument(
         floor <= small, u'min_{name} must be at least {} but was {}',
