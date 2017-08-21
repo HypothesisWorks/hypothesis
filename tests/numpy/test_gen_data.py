@@ -205,16 +205,6 @@ def test_can_draw_shapeless_from_scalars(data):
     assert isinstance(result, dt.type)
 
 
-def test_object_dtypes_must_have_a_shape():
-    with pytest.raises(InvalidArgument):
-        nps.arrays(dtype=object, shape=(), elements=st.none()).example()
-
-
-def test_objects_require_strategy():
-    with pytest.raises(InvalidArgument):
-        nps.arrays(dtype=object, shape=1).example()
-
-
 @given(st.data())
 def test_unicode_string_dtypes_generate_unicode_strings(data):
     dt = data.draw(nps.unicode_string_dtypes())
@@ -227,8 +217,3 @@ def test_byte_string_dtypes_generate_unicode_strings(data):
     dt = data.draw(nps.byte_string_dtypes())
     result = data.draw(nps.from_dtype(dt))
     assert isinstance(result, binary_type)
-
-
-def test_array_shapes_are_validated():
-    with pytest.raises(InvalidArgument):
-        nps.array_shapes(min_dims=3, max_dims=2).example()
