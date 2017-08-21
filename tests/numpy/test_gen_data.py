@@ -22,17 +22,17 @@ import pytest
 from flaky import flaky
 
 import hypothesis.strategies as st
+import hypothesis.extra.numpy as nps
 from hypothesis import given, settings
+from hypothesis.errors import InvalidArgument
 from tests.common.debug import minimal
-from hypothesis.extra.numpy import arrays, from_dtype, array_shapes, \
-    nested_dtypes, scalar_dtypes
 from hypothesis.strategytests import strategy_test_suite
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import text_type, binary_type
 
-TestFloats = strategy_test_suite(arrays(float, ()))
-TestIntMatrix = strategy_test_suite(arrays(int, (3, 2)))
-TestBoolTensor = strategy_test_suite(arrays(bool, (2, 2, 2)))
+TestFloats = strategy_test_suite(nps.arrays(float, ()))
+TestIntMatrix = strategy_test_suite(nps.arrays(int, (3, 2)))
+TestBoolTensor = strategy_test_suite(nps.arrays(bool, (2, 2, 2)))
 
 
 STANDARD_TYPES = list(map(np.dtype, [
@@ -46,39 +46,49 @@ STANDARD_TYPES = list(map(np.dtype, [
 
 @pytest.mark.parametrize(u't', STANDARD_TYPES)
 def test_produces_instances(t):
-    @given(from_dtype(t))
+    @given(nps.from_dtype(t))
     def test_is_t(x):
         assert isinstance(x, t.type)
         assert x.dtype.kind == t.kind
     test_is_t()
 
 
-@given(arrays(float, ()))
+@given(nps.arrays(float, ()))
 def test_empty_dimensions_are_scalars(x):
     assert isinstance(x, np.dtype(float).type)
 
 
-@given(arrays(u'uint32', (5, 5)))
+@given(nps.arrays(float, (1, 0, 1)))
+def test_can_handle_zero_dimensions(x):
+    assert x.shape == (1, 0, 1)
+
+
+@given(nps.arrays(u'uint32', (5, 5)))
 def test_generates_unsigned_ints(x):
     assert (x >= 0).all()
 
 
-@given(arrays(int, (1,)))
+@given(nps.arrays(int, (1,)))
 def test_assert_fits_in_machine_size(x):
     pass
 
 
 def test_generates_and_minimizes():
-    assert (minimal(arrays(float, (2, 2))) == np.zeros(shape=(2, 2))).all()
+    assert (minimal(nps.arrays(float, (2, 2))) == np.zeros(shape=(2, 2))).all()
 
 
 def test_can_minimize_large_arrays():
-    assert minimal(arrays(u'uint32', 500), np.any, timeout_after=60).sum() == 1
+    x = minimal(
+        nps.arrays(u'uint32', 100), lambda x: np.any(x) and not np.all(x),
+        timeout_after=60
+    )
+    assert np.logical_or(x == 0, x == 1).all()
+    assert np.count_nonzero(x) in (1, len(x) - 1)
 
 
 @flaky(max_runs=50, min_passes=1)
 def test_can_minimize_float_arrays():
-    x = minimal(arrays(float, 50), lambda t: t.sum() >= 1.0)
+    x = minimal(nps.arrays(float, 50), lambda t: t.sum() >= 1.0)
     assert 1.0 <= x.sum() <= 1.1
 
 
@@ -90,18 +100,31 @@ foos = st.tuples().map(lambda _: Foo())
 
 
 def test_can_create_arrays_of_composite_types():
-    arr = minimal(arrays(object, 100, foos))
+    arr = minimal(nps.arrays(object, 100, foos))
     for x in arr:
         assert isinstance(x, Foo)
 
 
 def test_can_create_arrays_of_tuples():
-    arr = minimal(arrays(object, 10, st.tuples(st.integers(), st.integers())),
-                  lambda x: all(t0 != t1 for t0, t1 in x))
+    arr = minimal(
+        nps.arrays(object, 10, st.tuples(st.integers(), st.integers())),
+        lambda x: all(t0 != t1 for t0, t1 in x))
     assert all(a in ((1, 0), (0, 1)) for a in arr)
 
 
-@given(array_shapes())
+@given(nps.arrays(object, (2, 2), st.tuples(st.integers())))
+def test_does_not_flatten_arrays_of_tuples(arr):
+    assert isinstance(arr[0][0], tuple)
+
+
+@given(
+    nps.arrays(object, (2, 2), st.lists(st.integers(), min_size=1, max_size=1))
+)
+def test_does_not_flatten_arrays_of_lists(arr):
+    assert isinstance(arr[0][0], list)
+
+
+@given(nps.array_shapes())
 def test_can_generate_array_shapes(shape):
     assert isinstance(shape, tuple)
     assert all(isinstance(i, int) for i in shape)
@@ -109,48 +132,103 @@ def test_can_generate_array_shapes(shape):
 
 @given(st.integers(1, 10), st.integers(0, 9), st.integers(1), st.integers(0))
 def test_minimise_array_shapes(min_dims, dim_range, min_side, side_range):
-    smallest = minimal(array_shapes(min_dims, min_dims + dim_range,
-                                    min_side, min_side + side_range))
+    smallest = minimal(nps.array_shapes(min_dims, min_dims + dim_range,
+                                        min_side, min_side + side_range))
     assert len(smallest) == min_dims and all(k == min_side for k in smallest)
 
 
-@given(scalar_dtypes())
+@given(nps.scalar_dtypes())
 def test_can_generate_scalar_dtypes(dtype):
     assert isinstance(dtype, np.dtype)
 
 
-@given(nested_dtypes())
+@given(nps.nested_dtypes())
 def test_can_generate_compound_dtypes(dtype):
     assert isinstance(dtype, np.dtype)
 
 
-@given(nested_dtypes(max_itemsize=settings.default.buffer_size // 10),
+@given(nps.nested_dtypes(max_itemsize=settings.default.buffer_size // 10),
        st.data())
 def test_infer_strategy_from_dtype(dtype, data):
     # Given a dtype
     assert isinstance(dtype, np.dtype)
     # We can infer a strategy
-    strat = from_dtype(dtype)
+    strat = nps.from_dtype(dtype)
     assert isinstance(strat, SearchStrategy)
     # And use it to fill an array of that dtype
-    data.draw(arrays(dtype, 10, strat))
+    data.draw(nps.arrays(dtype, 10, strat))
 
 
-@given(nested_dtypes())
+@given(nps.nested_dtypes())
 def test_np_dtype_is_idempotent(dtype):
     assert dtype == np.dtype(dtype)
 
 
 def test_minimise_scalar_dtypes():
-    assert minimal(scalar_dtypes()) == np.dtype(u'bool')
+    assert minimal(nps.scalar_dtypes()) == np.dtype(u'bool')
 
 
 def test_minimise_nested_types():
-    assert minimal(nested_dtypes()) == np.dtype(u'bool')
+    assert minimal(nps.nested_dtypes()) == np.dtype(u'bool')
 
 
 def test_minimise_array_strategy():
-    smallest = minimal(arrays(
-        nested_dtypes(max_itemsize=settings.default.buffer_size // 3**3),
-        array_shapes(max_dims=3, max_side=3)))
+    smallest = minimal(nps.arrays(
+        nps.nested_dtypes(max_itemsize=settings.default.buffer_size // 3**3),
+        nps.array_shapes(max_dims=3, max_side=3)))
     assert smallest.dtype == np.dtype(u'bool') and not smallest.any()
+
+
+@given(nps.array_dtypes(allow_subarrays=False))
+def test_can_turn_off_subarrays(dt):
+    for field, _ in dt.fields.values():
+        assert field.shape == ()
+
+
+@given(nps.integer_dtypes(endianness='>'))
+def test_can_restrict_endianness(dt):
+    if dt.itemsize == 1:
+        assert dt.byteorder == '|'
+    else:
+        assert dt.byteorder == '>'
+
+
+@given(nps.integer_dtypes(sizes=8))
+def test_can_specify_size_as_an_int(dt):
+    assert dt.itemsize == 1
+
+
+@given(st.data())
+def test_can_draw_shapeless_from_scalars(data):
+    dt = data.draw(nps.scalar_dtypes())
+    result = data.draw(nps.arrays(dtype=dt, shape=()))
+    assert isinstance(result, dt.type)
+
+
+def test_object_dtypes_must_have_a_shape():
+    with pytest.raises(InvalidArgument):
+        nps.arrays(dtype=object, shape=(), elements=st.none()).example()
+
+
+def test_objects_require_strategy():
+    with pytest.raises(InvalidArgument):
+        nps.arrays(dtype=object, shape=1).example()
+
+
+@given(st.data())
+def test_unicode_string_dtypes_generate_unicode_strings(data):
+    dt = data.draw(nps.unicode_string_dtypes())
+    result = data.draw(nps.from_dtype(dt))
+    assert isinstance(result, text_type)
+
+
+@given(st.data())
+def test_byte_string_dtypes_generate_unicode_strings(data):
+    dt = data.draw(nps.byte_string_dtypes())
+    result = data.draw(nps.from_dtype(dt))
+    assert isinstance(result, binary_type)
+
+
+def test_array_shapes_are_validated():
+    with pytest.raises(InvalidArgument):
+        nps.array_shapes(min_dims=3, max_dims=2).example()

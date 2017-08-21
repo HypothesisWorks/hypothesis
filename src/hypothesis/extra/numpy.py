@@ -23,7 +23,7 @@ import hypothesis.strategies as st
 from hypothesis import settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.searchstrategy import SearchStrategy
-from hypothesis.internal.compat import hrange, text_type, binary_type
+from hypothesis.internal.compat import hrange, text_type
 from hypothesis.internal.reflection import proxies
 
 TIME_RESOLUTIONS = tuple('Y  M  D  h  m  s  ms  us  ns  ps  fs  as'.split())
@@ -73,12 +73,14 @@ def check_argument(condition, fail_message, *f_args, **f_kwargs):
 
 
 def order_check(name, floor, small, large):
-    if floor is None:
-        floor = -np.inf
-    if floor > small > large:
-        check_argument(u'min_{name} was {}, must be at least {} and not more '
-                       u'than max_{name} (was {})', small, floor, large,
-                       name=name, condition=False)
+    check_argument(
+        floor <= small, u'min_{name} must be at least {} but was {}',
+        floor, small, name=name
+    )
+    check_argument(
+        small <= large, u'min_{name}={} is larger than max_name={}',
+        small, large, name=name
+    )
 
 
 class ArrayStrategy(SearchStrategy):
@@ -109,12 +111,6 @@ class ArrayStrategy(SearchStrategy):
         for i in hrange(self.array_size):
             result[i] = self.element_strategy.do_draw(data)
         return result.reshape(self.shape)
-
-
-def is_scalar(spec):
-    return spec in (
-        int, bool, text_type, binary_type, float, complex
-    )
 
 
 @st.composite
@@ -324,7 +320,7 @@ def unicode_string_dtypes(endianness='?', min_len=0, max_len=16):
     """Return a strategy for generating unicode string dtypes, of various
     lengths and byteorder."""
     order_check('len', 0, min_len, max_len)
-    return dtype_factory('u', list(range(min_len, max_len + 1)),
+    return dtype_factory('U', list(range(min_len, max_len + 1)),
                          None, endianness)
 
 

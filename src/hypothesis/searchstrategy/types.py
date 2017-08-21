@@ -142,7 +142,7 @@ try:  # pragma: no cover
         np.dtype: nested_dtypes(),
         np.ndarray: arrays(scalar_dtypes(), array_shapes(max_dims=2)),
     })
-except ImportError:
+except ImportError:  # pragma: no cover
     pass
 
 try:
