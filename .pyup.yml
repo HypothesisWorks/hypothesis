@@ -11,3 +11,7 @@ requirements:
       updates: all
       pin: True
       schedule: "every week on monday"
+  - requirements/coverage.txt
+      updates: all
+      pin: True
+      schedule: "every week on monday"
