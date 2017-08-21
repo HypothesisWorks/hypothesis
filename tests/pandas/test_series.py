@@ -26,8 +26,8 @@ import hypothesis.extra.pandas as pdst
 from hypothesis import given, assume, reject
 from hypothesis.errors import InvalidArgument
 from tests.common.debug import find_any
+from tests.pandas.helpers import supported_by_pandas
 from hypothesis.internal.compat import text_type
-from hypothesis.extra.pandas.impl import supported_by_pandas
 
 
 @given(st.data())
