@@ -73,12 +73,11 @@ def check_argument(condition, fail_message, *f_args, **f_kwargs):
 
 
 def order_check(name, floor, small, large):
-    if floor is None:
-        floor = -np.inf
-    if floor > small > large:
-        check_argument(u'min_{name} was {}, must be at least {} and not more '
-                       u'than max_{name} (was {})', small, floor, large,
-                       name=name, condition=False)
+    if (floor > small) or (small > large):
+        check_argument(
+            False, u'min_{name} was {}, must be at least {} and not more '
+                   u'than max_{name} (was {})', small, floor, large,
+                   name=name)
 
 
 class ArrayStrategy(SearchStrategy):
