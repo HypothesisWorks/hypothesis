@@ -206,7 +206,8 @@ def dtype_factory(kind, sizes, valid_sizes, endianness):
     # Utility function, shared logic for most integer and string types
     valid_endian = ('?', '<', '=', '>')
     check_argument(endianness in valid_endian,
-                   u'Unknown endianness: was {}, must be in {}', valid_endian)
+                   u'Unknown endianness: was {}, must be in {}',
+                   endianness, valid_endian)
     if valid_sizes is not None:
         if isinstance(sizes, int):
             sizes = (sizes,)
