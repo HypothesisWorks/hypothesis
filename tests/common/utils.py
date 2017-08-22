@@ -75,8 +75,8 @@ def validate_deprecation():
     import warnings
 
     try:
+        warnings.simplefilter('always', HypothesisDeprecationWarning)
         with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter('always', HypothesisDeprecationWarning)
             yield
             assert any(
                 e.category == HypothesisDeprecationWarning for e in w
@@ -87,15 +87,7 @@ def validate_deprecation():
 
 
 def checks_deprecated_behaviour(func):
-    """A decorator for testing deprecated behaviour.
-
-    It will run the function once in non-strict mode (checking existing
-    test constraints), then once in strict mode (checking that a
-    deprecation exception is thrown).  This allows the pre-deprecation
-    tests to be retained with no change beyond the addition of a
-    decorator.
-
-    """
+    """A decorator for testing deprecated behaviour."""
     @functools.wraps(func)
     def _inner(*args, **kwargs):
         with validate_deprecation():

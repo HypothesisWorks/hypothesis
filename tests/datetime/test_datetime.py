@@ -26,8 +26,7 @@ from flaky import flaky
 from hypothesis import find, given, assume, settings, unlimited
 from hypothesis.errors import InvalidArgument
 from tests.common.debug import minimal
-from tests.common.utils import validate_deprecation, \
-    checks_deprecated_behaviour
+from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.extra.datetime import datetimes
 from hypothesis.internal.compat import hrange
 
@@ -97,14 +96,16 @@ def test_can_generate_non_utc():
     ).example()
 
 
-with validate_deprecation():
-    @given(datetimes(timezones=[]))
-    def test_naive_datetimes_are_naive(dt):
-        assert not dt.tzinfo
+@checks_deprecated_behaviour
+@given(datetimes(timezones=[]))
+def test_naive_datetimes_are_naive(dt):
+    assert not dt.tzinfo
 
-    @given(datetimes(allow_naive=False))
-    def test_timezone_aware_datetimes_are_timezone_aware(dt):
-        assert dt.tzinfo
+
+@checks_deprecated_behaviour
+@given(datetimes(allow_naive=False))
+def test_timezone_aware_datetimes_are_timezone_aware(dt):
+    assert dt.tzinfo
 
 
 @checks_deprecated_behaviour

@@ -21,8 +21,7 @@ import pytz
 
 from hypothesis import given, assume
 from tests.common.debug import minimal
-from tests.common.utils import validate_deprecation, \
-    checks_deprecated_behaviour
+from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.extra.datetime import times
 
 
@@ -73,14 +72,16 @@ def test_can_generate_non_utc():
     ).example()
 
 
-with validate_deprecation():
-    @given(times(timezones=[]))
-    def test_naive_times_are_naive(dt):
-        assert not dt.tzinfo
+@checks_deprecated_behaviour
+@given(times(timezones=[]))
+def test_naive_times_are_naive(dt):
+    assert not dt.tzinfo
 
-    @given(times(allow_naive=False))
-    def test_timezone_aware_times_are_timezone_aware(dt):
-        assert dt.tzinfo
+
+@checks_deprecated_behaviour
+@given(times(allow_naive=False))
+def test_timezone_aware_times_are_timezone_aware(dt):
+    assert dt.tzinfo
 
 
 @checks_deprecated_behaviour
