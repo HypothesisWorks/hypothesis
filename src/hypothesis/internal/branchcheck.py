@@ -23,6 +23,19 @@ import json
 
 from hypothesis.internal.reflection import proxies
 
+"""
+This module implements a custom coverage system that records conditions and
+then validates that every condition has been seen to be both True and False
+during the execution of our tests.
+
+The only thing we use it for at present is our argument validation functions,
+where we assert that every validation function has been seen to both pass and
+fail in the course of testing.
+
+When not running with a magic environment variable set, this module disables
+itself and has essentially no overhead.
+"""
+
 pretty_file_name_cache = {}
 
 
@@ -37,26 +50,6 @@ def pretty_file_name(f):
     result = os.path.sep.join(parts)
     pretty_file_name_cache[f] = result
     return result
-
-
-def check_function_impl(f):
-    @proxies(f)
-    def accept(*args, **kwargs):
-        # 0 is here, 1 is the proxy function, 2 is where we were actually
-        # called from.
-        caller = sys._getframe(2)
-        description = '%s:%d, %s passed' % (
-            pretty_file_name(caller.f_code.co_filename),
-            caller.f_lineno, f.__name__,
-        )
-        try:
-            result = f(*args, **kwargs)
-            record_branch(description, True)
-            return result
-        except:
-            record_branch(description, False)
-            raise
-    return accept
 
 
 if os.getenv('HYPOTHESIS_INTERNAL_BRANCH_CHECK') == 'true':
@@ -74,11 +67,24 @@ if os.getenv('HYPOTHESIS_INTERNAL_BRANCH_CHECK') == 'true':
         log.write('\n')
         log.flush()
 
-    check_function = check_function_impl
-
+    def check_function_impl(f):
+        @proxies(f)
+        def accept(*args, **kwargs):
+            # 0 is here, 1 is the proxy function, 2 is where we were actually
+            # called from.
+            caller = sys._getframe(2)
+            description = '%s:%d, %s passed' % (
+                pretty_file_name(caller.f_code.co_filename),
+                caller.f_lineno, f.__name__,
+            )
+            try:
+                result = f(*args, **kwargs)
+                record_branch(description, True)
+                return result
+            except:
+                record_branch(description, False)
+                raise
+        return accept
 else:
-    def record_branch(name, value):
-        pass
-
     def check_function(f):
         return f
