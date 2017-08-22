@@ -18,8 +18,8 @@
 from __future__ import division, print_function, absolute_import
 
 import os
+import sys
 import json
-import traceback
 
 from hypothesis.internal.reflection import proxies
 
@@ -42,16 +42,17 @@ def pretty_file_name(f):
 def check_function_impl(f):
     @proxies(f)
     def accept(*args, **kwargs):
-        # -1 is here, -2 is the proxy function, -3 is where we were actually
+        # 0 is here, 1 is the proxy function, 2 is where we were actually
         # called from.
-        caller = traceback.extract_stack()[-3]
-        description = '%s at %s:%d passed' % (
-            f.__name__, pretty_file_name(caller.filename), caller.lineno
+        caller = sys._getframe(2)
+        description = '%s:%d, %s passed' % (
+            pretty_file_name(caller.f_code.co_filename),
+            caller.f_lineno, f.__name__,
         )
         try:
             result = f(*args, **kwargs)
             record_branch(description, True)
-            assert result is None
+            return result
         except:
             record_branch(description, False)
             raise
