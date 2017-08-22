@@ -24,7 +24,7 @@ General Guidelines
   much but is less weird.
 * Code which adds a dependency on a third party package should be put in a
   hypothesis.extra module.
-* Complexity should not be pushed onto the user. An easy to use API is more]
+* Complexity should not be pushed onto the user. An easy to use API is more
   important than a simple implementation.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -57,6 +57,9 @@ We have a reasonably distinctive style when it comes to handling arguments:
   of the other) are fine, but when this happens the behaviour of defaults
   should automatically be adjusted. e.g. if the normal default of an argument
   would become invalid, the function should still do the right thing if that
+  default is used.
+* Where the actual default used depends on other arguments, the default parameter
+  should be None.
 * It's worth thinking about the order of arguments: the first one or two
   arguments are likely to be passed positionally, so try to put values there
   where this is useful and not too confusing.
