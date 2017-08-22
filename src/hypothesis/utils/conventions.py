@@ -29,4 +29,3 @@ class UniqueIdentifier(object):
 
 infer = UniqueIdentifier(u'infer')
 not_set = UniqueIdentifier(u'not_set')
-no_default = UniqueIdentifier(u'no_default')
