@@ -630,18 +630,10 @@ assert settings.default is not None
 
 
 def note_deprecation(message, s=None):
-    # If *either* self or the current default are non-strict
-    # then this should be an error. This is to handle e.g. the case
-    # where defining a new setting while non-strict updates a
-    # profile which is strict. This should not be an error, but
-    # using the profile here would cause it to be one.
     if s is None:
         s = settings.default
     assert s is not None
-    strict = settings.default.strict and s.strict
     verbosity = s.verbosity
     warning = HypothesisDeprecationWarning(message)
-    if strict:
-        raise warning
-    elif verbosity > Verbosity.quiet:
+    if verbosity > Verbosity.quiet:
         warnings.warn(warning, stacklevel=3)
