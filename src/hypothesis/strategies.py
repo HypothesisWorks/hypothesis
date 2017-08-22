@@ -34,6 +34,7 @@ from hypothesis.internal.compat import gcd, ceil, floor, hrange, \
     implements_iterator
 from hypothesis.internal.floats import is_negative, float_to_int, \
     int_to_float, count_between_floats
+from hypothesis.internal.renaming import renamed_arguments
 from hypothesis.utils.conventions import infer, not_set
 from hypothesis.internal.reflection import proxies, required_args
 from hypothesis.searchstrategy.reprwrapper import ReprWrapperStrategy
@@ -1231,8 +1232,15 @@ def permutations(values):
 
 
 @defines_strategy
-def datetimes(min_datetime=dt.datetime.min, max_datetime=dt.datetime.max,
-              timezones=none()):
+@renamed_arguments(
+    min_datetime='min_value',
+    max_datetime='max_value',
+)
+def datetimes(
+    min_value=dt.datetime.min, max_value=dt.datetime.max,
+    timezones=none(),
+    min_datetime=None, max_datetime=None,
+):
     """A strategy for generating datetimes, which may be timezone-aware.
 
     This strategy works by drawing a naive datetime between ``min_datetime``
@@ -1270,67 +1278,88 @@ def datetimes(min_datetime=dt.datetime.min, max_datetime=dt.datetime.max,
     # more complex API for all users and a useful feature for very few.
     from hypothesis.searchstrategy.datetime import DatetimeStrategy
 
-    check_type(dt.datetime, min_datetime, 'min_datetime')
-    check_type(dt.datetime, max_datetime, 'max_datetime')
-    if min_datetime.tzinfo is not None:
-        raise InvalidArgument('min_datetime=%r must not have tzinfo'
-                              % (min_datetime,))
-    if max_datetime.tzinfo is not None:
-        raise InvalidArgument('max_datetime=%r must not have tzinfo'
-                              % (max_datetime,))
-    check_valid_interval(min_datetime, max_datetime,
-                         'min_datetime', 'max_datetime')
+    check_type(dt.datetime, min_value, 'min_value')
+    check_type(dt.datetime, max_value, 'max_value')
+    if min_value.tzinfo is not None:
+        raise InvalidArgument('min_value=%r must not have tzinfo'
+                              % (min_value,))
+    if max_value.tzinfo is not None:
+        raise InvalidArgument('max_value=%r must not have tzinfo'
+                              % (max_value,))
+    check_valid_interval(min_value, max_value,
+                         'min_value', 'max_value')
     if not isinstance(timezones, SearchStrategy):
         raise InvalidArgument(
             'timezones=%r must be a SearchStrategy that can provide tzinfo '
             'for datetimes (either None or dt.tzinfo objects)' % (timezones,))
-    return DatetimeStrategy(min_datetime, max_datetime, timezones)
+    return DatetimeStrategy(min_value, max_value, timezones)
 
 
 @defines_strategy
-def dates(min_date=dt.date.min, max_date=dt.date.max):
+@renamed_arguments(
+    min_date='min_value',
+    max_date='max_value',
+)
+def dates(
+    min_value=dt.date.min, max_value=dt.date.max,
+    min_date=None, max_date=None,
+):
     """A strategy for dates between ``min_date`` and ``max_date``."""
     from hypothesis.searchstrategy.datetime import DateStrategy
 
-    check_type(dt.date, min_date, 'min_date')
-    check_type(dt.date, max_date, 'max_date')
-    check_valid_interval(min_date, max_date, 'min_date', 'max_date')
-    if min_date == max_date:
-        return just(min_date)
-    return DateStrategy(min_date, max_date)
+    check_type(dt.date, min_value, 'min_value')
+    check_type(dt.date, max_value, 'max_value')
+    check_valid_interval(min_value, max_value, 'min_value', 'max_value')
+    if min_value == max_value:
+        return just(min_value)
+    return DateStrategy(min_value, max_value)
 
 
 @defines_strategy
-def times(min_time=dt.time.min, max_time=dt.time.max, timezones=none()):
+@renamed_arguments(
+    min_time='min_value',
+    max_time='max_value',
+)
+def times(
+    min_value=dt.time.min, max_value=dt.time.max, timezones=none(),
+    min_time=None, max_time=None,
+):
     """A strategy for times between ``min_time`` and ``max_time``.
 
     The ``timezones`` argument is handled as for :py:func:`datetimes`.
 
     """
-    check_type(dt.time, min_time, 'min_time')
-    check_type(dt.time, max_time, 'max_time')
-    if min_time.tzinfo is not None:
-        raise InvalidArgument('min_time=%r must not have tzinfo' % min_time)
-    if max_time.tzinfo is not None:
-        raise InvalidArgument('max_time=%r must not have tzinfo' % max_time)
-    check_valid_interval(min_time, max_time, 'min_time', 'max_time')
+    check_type(dt.time, min_value, 'min_value')
+    check_type(dt.time, max_value, 'max_value')
+    if min_value.tzinfo is not None:
+        raise InvalidArgument('min_value=%r must not have tzinfo' % min_value)
+    if max_value.tzinfo is not None:
+        raise InvalidArgument('max_value=%r must not have tzinfo' % max_value)
+    check_valid_interval(min_value, max_value, 'min_value', 'max_value')
     day = dt.date(2000, 1, 1)
-    return datetimes(min_datetime=dt.datetime.combine(day, min_time),
-                     max_datetime=dt.datetime.combine(day, max_time),
+    return datetimes(min_value=dt.datetime.combine(day, min_value),
+                     max_value=dt.datetime.combine(day, max_value),
                      timezones=timezones).map(lambda t: t.timetz())
 
 
 @defines_strategy
-def timedeltas(min_delta=dt.timedelta.min, max_delta=dt.timedelta.max):
-    """A strategy for timedeltas between ``min_delta`` and ``max_delta``."""
+@renamed_arguments(
+    min_delta='min_value',
+    max_delta='max_value',
+)
+def timedeltas(
+    min_value=dt.timedelta.min, max_value=dt.timedelta.max,
+    min_delta=None, max_delta=None
+):
+    """A strategy for timedeltas between ``min_value`` and ``max_value``."""
     from hypothesis.searchstrategy.datetime import TimedeltaStrategy
 
-    check_type(dt.timedelta, min_delta, 'min_delta')
-    check_type(dt.timedelta, max_delta, 'max_delta')
-    check_valid_interval(min_delta, max_delta, 'min_delta', 'max_delta')
-    if min_delta == max_delta:
-        return just(min_delta)
-    return TimedeltaStrategy(min_delta=min_delta, max_delta=max_delta)
+    check_type(dt.timedelta, min_value, 'min_value')
+    check_type(dt.timedelta, max_value, 'max_value')
+    check_valid_interval(min_value, max_value, 'min_value', 'max_value')
+    if min_value == max_value:
+        return just(min_value)
+    return TimedeltaStrategy(min_value=min_value, max_value=max_value)
 
 
 @cacheable

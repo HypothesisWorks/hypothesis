@@ -24,6 +24,7 @@ from flaky import flaky
 
 from hypothesis import find, given, settings, unlimited
 from tests.common.debug import minimal
+from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.strategies import none, dates, times, binary, datetimes, \
     timedeltas
 from hypothesis.strategytests import strategy_test_suite
@@ -40,7 +41,7 @@ def test_can_find_positive_delta():
 
 
 def test_can_find_negative_delta():
-    assert minimal(timedeltas(max_delta=dt.timedelta(10**6)),
+    assert minimal(timedeltas(max_value=dt.timedelta(10**6)),
                    lambda x: x.days < 0) == dt.timedelta(-1)
 
 
@@ -58,11 +59,11 @@ def test_simplifies_towards_zero_delta():
 
 
 def test_min_value_is_respected():
-    assert minimal(timedeltas(min_delta=dt.timedelta(days=10))).days == 10
+    assert minimal(timedeltas(min_value=dt.timedelta(days=10))).days == 10
 
 
 def test_max_value_is_respected():
-    assert minimal(timedeltas(max_delta=dt.timedelta(days=-10))).days == -10
+    assert minimal(timedeltas(max_value=dt.timedelta(days=-10))).days == -10
 
 
 @given(timedeltas())
@@ -128,11 +129,11 @@ def test_can_find_each_month():
 
 
 def test_min_year_is_respected():
-    assert minimal(dates(min_date=dt.date.min.replace(2003))).year == 2003
+    assert minimal(dates(min_value=dt.date.min.replace(2003))).year == 2003
 
 
 def test_max_year_is_respected():
-    assert minimal(dates(max_date=dt.date.min.replace(1998))).year == 1998
+    assert minimal(dates(max_value=dt.date.min.replace(1998))).year == 1998
 
 
 @given(dates())
@@ -171,3 +172,8 @@ def test_can_generate_naive_time():
 @given(times())
 def test_naive_times_are_naive(dt):
     assert dt.tzinfo is None
+
+
+@checks_deprecated_behaviour
+def test_deprecated_min_date_is_respected():
+    assert minimal(dates(min_date=dt.date.min.replace(2003))).year == 2003

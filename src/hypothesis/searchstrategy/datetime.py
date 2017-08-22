@@ -34,15 +34,15 @@ def is_pytz_timezone(tz):
 
 class DatetimeStrategy(SearchStrategy):
 
-    def __init__(self, min_datetime, max_datetime, timezones_strat):
-        assert isinstance(min_datetime, dt.datetime)
-        assert isinstance(max_datetime, dt.datetime)
-        assert min_datetime.tzinfo is None
-        assert max_datetime.tzinfo is None
-        assert min_datetime <= max_datetime
+    def __init__(self, min_value, max_value, timezones_strat):
+        assert isinstance(min_value, dt.datetime)
+        assert isinstance(max_value, dt.datetime)
+        assert min_value.tzinfo is None
+        assert max_value.tzinfo is None
+        assert min_value <= max_value
         assert isinstance(timezones_strat, SearchStrategy)
-        self.min_dt = min_datetime
-        self.max_dt = max_datetime
+        self.min_dt = min_value
+        self.max_dt = max_value
         self.tz_strat = timezones_strat
 
     def _attempt_one_draw(self, data):
@@ -82,27 +82,27 @@ class DatetimeStrategy(SearchStrategy):
 
 class DateStrategy(SearchStrategy):
 
-    def __init__(self, min_date, max_date):
-        assert isinstance(min_date, dt.date)
-        assert isinstance(max_date, dt.date)
-        assert min_date < max_date
-        self.min_date = min_date
-        self.days_apart = (max_date - min_date).days
-        self.center = (dt.date(2000, 1, 1) - min_date).days
+    def __init__(self, min_value, max_value):
+        assert isinstance(min_value, dt.date)
+        assert isinstance(max_value, dt.date)
+        assert min_value < max_value
+        self.min_value = min_value
+        self.days_apart = (max_value - min_value).days
+        self.center = (dt.date(2000, 1, 1) - min_value).days
 
     def do_draw(self, data):
-        return self.min_date + dt.timedelta(days=utils.centered_integer_range(
+        return self.min_value + dt.timedelta(days=utils.centered_integer_range(
             data, 0, self.days_apart, center=self.center))
 
 
 class TimedeltaStrategy(SearchStrategy):
 
-    def __init__(self, min_delta, max_delta):
-        assert isinstance(min_delta, dt.timedelta)
-        assert isinstance(max_delta, dt.timedelta)
-        assert min_delta < max_delta
-        self.min_delta = min_delta
-        self.max_delta = max_delta
+    def __init__(self, min_value, max_value):
+        assert isinstance(min_value, dt.timedelta)
+        assert isinstance(max_value, dt.timedelta)
+        assert min_value < max_value
+        self.min_value = min_value
+        self.max_value = max_value
 
     def do_draw(self, data):
         result = dict()
@@ -110,9 +110,9 @@ class TimedeltaStrategy(SearchStrategy):
         high_bound = True
         for name in ('days', 'seconds', 'microseconds'):
             low = getattr(
-                self.min_delta if low_bound else dt.timedelta.min, name)
+                self.min_value if low_bound else dt.timedelta.min, name)
             high = getattr(
-                self.max_delta if high_bound else dt.timedelta.max, name)
+                self.max_value if high_bound else dt.timedelta.max, name)
             val = utils.centered_integer_range(data, low, high, 0)
             result[name] = val
             low_bound = low_bound and val == low
