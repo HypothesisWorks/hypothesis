@@ -20,6 +20,7 @@ from __future__ import division, print_function, absolute_import
 import os
 import re
 import sys
+import time
 import subprocess
 from datetime import datetime, timedelta
 
@@ -149,12 +150,19 @@ def create_tag_and_push():
         'git push ssh-origin --tags',
         'git push ssh-origin HEAD:master',
     ]:
-        subprocess.check_call([
-            'ssh-agent', 'sh', '-c',
-            'chmod 0600 deploy_key && ' +
-            'ssh-add deploy_key && ' +
-            command
-        ])
+        for retries_left in range(2, -1, -1):
+            try:
+                subprocess.check_call([
+                    'ssh-agent', 'sh', '-c',
+                    'chmod 0600 deploy_key && ' +
+                    'ssh-add deploy_key && ' +
+                    command
+                ])
+                break
+            except subprocess.CalledProcessError:
+                if retries_left == 0:
+                    raise
+                time.sleep(5)
 
 
 def build_jobs():
