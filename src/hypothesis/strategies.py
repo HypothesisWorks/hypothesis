@@ -616,12 +616,12 @@ def streaming(elements):
         Use :func:`data() <hypothesis.strategies.data>` instead.
 
     """
-    check_strategy(elements)
-
     note_deprecation(
         'streaming() has been deprecated. Use the data() strategy instead and '
         'replace stream iteration with data.draw() calls.'
     )
+
+    check_strategy(elements)
 
     from hypothesis.searchstrategy.streams import StreamStrategy
     return StreamStrategy(elements)

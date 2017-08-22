@@ -9,3 +9,5 @@ This release fixes some minor bugs in argument validation:
       if passed ``float("nan")`` as one of its bounds.
     * The error message for passing ``float("nan")`` as a bound to various
       strategies has been improved.
+    * :func:`~hypothesis.strategies.streaming` would not have emitted a
+      deprecation warning when called with an invalid argument.
