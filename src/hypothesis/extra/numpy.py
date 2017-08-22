@@ -144,6 +144,13 @@ class ArrayStrategy(SearchStrategy):
                 seen.add(i)
                 result[i] = data.draw(self.element_strategy)
             if len(seen) < self.array_size:
+                # We didn't fill all of the indices in the early loop, so we
+                # put a fill value into the rest.
+                # Note that this sort of manual loop is necessary (even if we
+                # were to reorder the assignment so we wrote the other values
+                # afterwards), because the element result might be iterable if
+                # we had an object or structured dtype, and numpy special cases
+                # bulk assignment of those to mean something else.
                 fill = data.draw(self.fill)
                 for i in hrange(len(result)):
                     if i not in seen:
