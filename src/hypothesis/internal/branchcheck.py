@@ -67,7 +67,7 @@ if os.getenv('HYPOTHESIS_INTERNAL_BRANCH_CHECK') == 'true':
         log.write('\n')
         log.flush()
 
-    def check_function_impl(f):
+    def check_function(f):
         @proxies(f)
         def accept(*args, **kwargs):
             # 0 is here, 1 is the proxy function, 2 is where we were actually
