@@ -1013,13 +1013,14 @@ def fractions(min_value=None, max_value=None, max_denominator=None):
     be None or a positive integer.
 
     """
+    check_valid_bound(min_value, 'min_value')
+    check_valid_bound(max_value, 'max_value')
+
     if min_value is not None:
         min_value = Fraction(min_value)
     if max_value is not None:
         max_value = Fraction(max_value)
 
-    check_valid_bound(min_value, 'min_value')
-    check_valid_bound(max_value, 'max_value')
     check_valid_interval(min_value, max_value, 'min_value', 'max_value')
     check_valid_integer(max_denominator)
 
@@ -1653,8 +1654,13 @@ def check_valid_bound(value, name):
     """
     if value is None or isinstance(value, integer_types + (Rational,)):
         return
-    if math.isnan(value):
-        raise InvalidArgument(u'Invalid end point %s %r' % (value, name))
+    is_nan = False
+    try:
+        is_nan = math.isnan(value)
+    except TypeError:
+        pass
+    if is_nan:
+        raise InvalidArgument(u'Invalid end point %s=%r' % (name, value))
 
 
 @check_function
