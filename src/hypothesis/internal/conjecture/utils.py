@@ -27,19 +27,6 @@ from hypothesis.internal.compat import floor, hbytes, bit_length, \
 from hypothesis.internal.floats import int_to_float
 
 
-def n_byte_unsigned(data, n):
-    return int_from_bytes(data.draw_bytes(n))
-
-
-def saturate(n):
-    bits = bit_length(n)
-    k = 1
-    while k < bits:
-        n |= (n >> k)
-        k *= 2
-    return n
-
-
 def integer_range(data, lower, upper, center=None):
     assert lower <= upper
     if lower == upper:
@@ -48,10 +35,6 @@ def integer_range(data, lower, upper, center=None):
     if center is None:
         center = lower
     center = min(max(center, lower), upper)
-
-    bits = bit_length(max(upper - center, center - lower))
-
-    nbytes = bits // 8 + int(bits % 8 != 0)
 
     if center == upper:
         above = False
@@ -67,11 +50,11 @@ def integer_range(data, lower, upper, center=None):
 
     assert gap > 0
 
-    mask = saturate(gap)
+    bits = bit_length(gap)
     probe = gap + 1
 
     while probe > gap:
-        probe = int_from_bytes(data.draw_bytes(nbytes)) & mask
+        probe = data.draw_bits(bits)
 
     if above:
         result = center + probe
@@ -139,7 +122,7 @@ def geometric(data, p):
 
 
 def boolean(data):
-    return bool(n_byte_unsigned(data, 1) & 1)
+    return bool(data.draw_bits(1))
 
 
 def biased_coin(data, p):
@@ -176,12 +159,24 @@ def biased_coin(data, p):
             truthy = floor(256 * p)
             remainder = 256 * p - truthy
 
-            i = data.draw_bytes(1)[0]
+            if falsey + truthy == 256:
+                m, n = p.as_integer_ratio()
+                assert n & (n - 1) == 0, n  # n is a power of 2
+                assert n > m > 0
+                truthy = m
+                falsey = n - m
+                bits = bit_length(n) - 1
+                partial = False
+            else:
+                bits = 8
+                partial = True
+
+            i = data.draw_bits(bits)
 
             # We always label the region that causes us to repeat the loop as
             # 255 so that shrinking this byte never causes us to need to draw
             # more data.
-            if falsey + truthy < 256 and i == 255:
+            if partial and i == 255:
                 p = remainder
                 continue
             if falsey == 0:

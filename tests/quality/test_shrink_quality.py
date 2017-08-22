@@ -22,6 +22,7 @@ import operator
 from fractions import Fraction
 
 import pytest
+from flaky import flaky
 
 from hypothesis import find, assume, settings
 from tests.common import parametrize
@@ -116,6 +117,7 @@ def test_can_simplify_on_right_hand_strategy_of_flatmap():
     assert minimal(integers().flatmap(lambda x: lists(just(x)))) == []
 
 
+@flaky(min_passes=5, max_runs=5)
 def test_can_ignore_left_hand_side_of_flatmap():
     assert minimal(
         integers().flatmap(lambda x: lists(integers())),
@@ -143,6 +145,7 @@ def test_flatmap_rectangles():
     assert xs == [['a', 'b']]
 
 
+@flaky(min_passes=5, max_runs=5)
 @parametrize(u'dict_class', [dict, OrderedDict])
 def test_dictionary(dict_class):
     assert minimal(dictionaries(

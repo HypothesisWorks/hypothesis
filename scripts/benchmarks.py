@@ -33,7 +33,7 @@ import click
 import numpy as np
 
 import hypothesis.strategies as st
-from hypothesis import settings
+from hypothesis import settings, unlimited
 from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 
@@ -48,7 +48,7 @@ DATA_DIR = os.path.join(
 
 BENCHMARK_SETTINGS = settings(
     max_examples=200, max_iterations=1000, max_shrinks=1000,
-    database=None, timeout=-1,
+    database=None, timeout=unlimited,
 )
 
 
@@ -74,6 +74,8 @@ STRATEGIES = OrderedDict([
     ('intlists', st.lists(st.integers())),
     ('sizedintlists', st.integers(0, 10).flatmap(
         lambda n: st.lists(st.integers(), min_size=n, max_size=n))),
+    ('text', st.text()),
+    ('text5', st.text(min_size=5)),
 ])
 
 
@@ -129,6 +131,11 @@ def lower_bound(seed, testdata, value):
     return True
 
 
+def size_lower_bound(seed, testdata, value):
+    rnd = random.Random(seed)
+    return len(testdata.buffer) >= rnd.randint(1, 50)
+
+
 usually = sometimes(0.9, 'usually')
 
 
@@ -144,9 +151,10 @@ for k in STRATEGIES:
     define_benchmark(k, always, never)
     define_benchmark(k, always, always)
     define_benchmark(k, always, usually)
-    define_benchmark(k, always, nontrivial)
-    define_benchmark(k, usually, nontrivial)
     define_benchmark(k, always, lower_bound)
+
+    define_benchmark(k, always, size_lower_bound)
+    define_benchmark(k, usually, size_lower_bound)
 
 
 define_benchmark('intlists', always, minsum)
@@ -462,7 +470,9 @@ def cli(
 
             pp = benchmark_difference_p_value(old_data.sizes, new_data)
 
-            click.echo('p-value for difference %.5f' % (pp,))
+            click.echo(
+                '%r -> %r. p-value for difference %.5f' % (
+                    np.mean(old_data.sizes), np.mean(new_data), pp,))
             reports.append(Report(
                 name, pp, np.mean(old_data.sizes), np.mean(new_data), new_data,
                 new_seed=new_seed,

@@ -23,6 +23,7 @@ from flaky import flaky
 import hypothesis.strategies as st
 from hypothesis import find, given, assume
 from hypothesis.errors import InvalidArgument
+from tests.common.debug import minimal
 from hypothesis.internal.compat import hrange
 
 
@@ -124,7 +125,7 @@ def test_can_shrink_matrices_with_length_param():
     def is_square(m):
         return len(m) == len(m[0])
 
-    value = find(matrix(), lambda m: is_square(m) and transpose(m) != m)
+    value = minimal(matrix(), lambda m: is_square(m) and transpose(m) != m)
     assert len(value) == 2
     assert len(value[0]) == 2
     assert sorted(value[0] + value[1]) == [0, 0, 0, 1]

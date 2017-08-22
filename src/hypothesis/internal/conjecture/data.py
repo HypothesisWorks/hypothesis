@@ -21,7 +21,8 @@ from enum import IntEnum
 
 from hypothesis.errors import Frozen, InvalidArgument
 from hypothesis.internal.compat import hbytes, hrange, text_type, \
-    int_to_bytes, benchmark_time, unicode_safe_repr
+    bit_length, int_to_bytes, benchmark_time, int_from_bytes, \
+    unicode_safe_repr
 
 
 def uniform(random, n):
@@ -80,7 +81,7 @@ class ConjectureData(object):
         self.start_time = benchmark_time()
         self.events = set()
         self.forced_indices = set()
-        self.bind_points = set()
+        self.capped_indices = {}
 
     def __assert_not_frozen(self, name):
         if self.frozen:
@@ -117,19 +118,6 @@ class ConjectureData(object):
         finally:
             if not self.frozen:
                 self.stop_example()
-
-    def mark_bind(self):
-        """Marks a point as somewhere that a bind occurs - that is, data
-        drawn after this point may depend significantly on data drawn prior
-        to this point.
-
-        Having points like this explicitly marked allows for better shrinking,
-        as we run a pass which tries to shrink the byte stream prior to a bind
-        point while rearranging what comes after somewhat to allow for more
-        flexibility. Trying that at every point in the data stream is
-        prohibitively expensive, but trying it at a couple dozen is basically
-        fine."""
-        self.bind_points.add(self.index)
 
     def start_example(self):
         self.__assert_not_frozen('start_example')
@@ -172,6 +160,26 @@ class ConjectureData(object):
 
     def draw_bytes(self, n):
         return self.draw_bytes_internal(n, uniform)
+
+    def draw_bits(self, n):
+        self.__assert_not_frozen('draw_bits')
+        if n == 0:
+            result = 0
+        elif n % 8 == 0:
+            return int_from_bytes(self.draw_bytes(n // 8))
+        else:
+            n_bytes = (n // 8) + 1
+            self.__check_capacity(n_bytes)
+            buf = bytearray(self._draw_bytes(self, n_bytes, uniform))
+            assert len(buf) == n_bytes
+            mask = (1 << (n % 8)) - 1
+            buf[0] &= mask
+            self.capped_indices[self.index] = mask
+            buf = hbytes(buf)
+            self.__write(buf)
+            result = int_from_bytes(buf)
+        assert bit_length(result) <= n
+        return result
 
     def write(self, string):
         self.__assert_not_frozen('write')
