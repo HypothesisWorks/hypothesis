@@ -277,6 +277,7 @@ def complex_number_dtypes(endianness='?', sizes=(64, 128)):
     return dtype_factory('c', sizes, (64, 128, 192, 256), endianness)
 
 
+@check_function
 def validate_time_slice(max_period, min_period):
     check_argument(max_period in TIME_RESOLUTIONS,
                    u'max_period {} must be a valid resolution in {}',
