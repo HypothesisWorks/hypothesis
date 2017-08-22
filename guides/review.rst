@@ -145,6 +145,8 @@ Public API changes must satisfy the following:
 8. `DRMacIver <https://github.com/DRMacIver>`_ must approve the changes
    though other maintainers are welcome and likely to chip in to review as
    well.
+9. We have a separate guide for `house API style <api-style.rst>`_ which should
+   be followed.
 
 ~~~~~~~~~
 Bug Fixes
