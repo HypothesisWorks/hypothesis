@@ -145,16 +145,13 @@ def create_tag_and_push():
     )
     git('tag', __version__)
 
-    for command in [
-        'git push ssh-origin --tags',
-        'git push ssh-origin HEAD:master',
-    ]:
-        subprocess.check_call([
-            'ssh-agent', 'sh', '-c',
-            'chmod 0600 deploy_key && ' +
-            'ssh-add deploy_key && ' +
-            command
-        ])
+    subprocess.check_call([
+        'ssh-agent', 'sh', '-c',
+        'chmod 0600 deploy_key && ' +
+        'ssh-add deploy_key && ' +
+        'git push ssh-origin HEAD:master &&'
+        'git push ssh-origin --tags'
+    ])
 
 
 def build_jobs():
