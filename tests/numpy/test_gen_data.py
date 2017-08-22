@@ -24,7 +24,6 @@ from flaky import flaky
 import hypothesis.strategies as st
 import hypothesis.extra.numpy as nps
 from hypothesis import given, settings
-from hypothesis.errors import InvalidArgument
 from tests.common.debug import minimal
 from hypothesis.strategytests import strategy_test_suite
 from hypothesis.searchstrategy import SearchStrategy
