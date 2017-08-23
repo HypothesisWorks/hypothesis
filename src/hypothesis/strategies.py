@@ -277,13 +277,12 @@ def floats(
                     allow_nan
                 ))
 
+    min_value = try_convert(float, min_value, 'min_value')
+    max_value = try_convert(float, max_value, 'max_value')
+
     check_valid_bound(min_value, 'min_value')
     check_valid_bound(max_value, 'max_value')
     check_valid_interval(min_value, max_value, 'min_value', 'max_value')
-    if min_value is not None:
-        min_value = float(min_value)
-    if max_value is not None:
-        max_value = float(max_value)
     if min_value == float(u'-inf'):
         min_value = None
     if max_value == float(u'inf'):
@@ -1122,7 +1121,7 @@ def decimals(min_value=None, max_value=None,
         raise InvalidArgument('places=%r may not be negative' % places)
 
     if min_value is not None:
-        min_value = Decimal(min_value)
+        min_value = try_convert(Decimal, min_value, 'min_value')
         if min_value.is_infinite() and min_value < 0:
             if not (allow_infinity or allow_infinity is None):
                 raise InvalidArgument('allow_infinity=%r, but min_value=%r'
@@ -1132,7 +1131,7 @@ def decimals(min_value=None, max_value=None,
             # This could be positive infinity, quiet NaN, or signalling NaN
             raise InvalidArgument(u'Invalid min_value=%r' % min_value)
     if max_value is not None:
-        max_value = Decimal(max_value)
+        max_value = try_convert(Decimal, max_value, 'max_value')
         if max_value.is_infinite() and max_value > 0:
             if not (allow_infinity or allow_infinity is None):
                 raise InvalidArgument('allow_infinity=%r, but max_value=%r'
@@ -1667,13 +1666,13 @@ def try_convert(typ, value, name):
         return typ(value)
     except TypeError:
         raise InvalidArgument(
-            "Cannot convert %s=%r of type %s to type %s" % (
+            'Cannot convert %s=%r of type %s to type %s' % (
                 name, value, type(value).__name__, typ.__name__
             )
         )
     except ValueError:
         raise InvalidArgument(
-            "Cannot convert %s=%r to type %s" % (
+            'Cannot convert %s=%r to type %s' % (
                 name, value, typ.__name__
             )
         )
