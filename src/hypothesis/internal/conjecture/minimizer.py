@@ -243,5 +243,10 @@ def minimize_byte(c, f):
             else:
                 lo = mid
         return hi
+    elif f(c >> 1):
+        c >>= 1
+        while f(c >> 1):
+            c >>= 1
+        return c
     else:
         return c
