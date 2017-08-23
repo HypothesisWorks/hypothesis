@@ -1013,13 +1013,8 @@ def fractions(min_value=None, max_value=None, max_denominator=None):
     be None or a positive integer.
 
     """
-    check_valid_bound(min_value, 'min_value')
-    check_valid_bound(max_value, 'max_value')
-
-    if min_value is not None:
-        min_value = Fraction(min_value)
-    if max_value is not None:
-        max_value = Fraction(max_value)
+    min_value = try_convert(Fraction, min_value, 'min_value')
+    max_value = try_convert(Fraction, max_value, 'max_value')
 
     check_valid_interval(min_value, max_value, 'min_value', 'max_value')
     check_valid_integer(max_denominator)
@@ -1661,6 +1656,27 @@ def check_valid_bound(value, name):
         pass
     if is_nan:
         raise InvalidArgument(u'Invalid end point %s=%r' % (name, value))
+
+
+@check_function
+def try_convert(typ, value, name):
+    if value is None:
+        return None
+
+    try:
+        return typ(value)
+    except TypeError:
+        raise InvalidArgument(
+            "Cannot convert %s=%r of type %s to type %s" % (
+                name, value, type(value).__name__, typ.__name__
+            )
+        )
+    except ValueError:
+        raise InvalidArgument(
+            "Cannot convert %s=%r to type %s" % (
+                name, value, typ.__name__
+            )
+        )
 
 
 @check_function
