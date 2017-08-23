@@ -1648,12 +1648,7 @@ def check_valid_bound(value, name):
     """
     if value is None or isinstance(value, integer_types + (Rational,)):
         return
-    is_nan = False
-    try:
-        is_nan = math.isnan(value)
-    except TypeError:
-        pass
-    if is_nan:
+    if math.isnan(value):
         raise InvalidArgument(u'Invalid end point %s=%r' % (name, value))
 
 
