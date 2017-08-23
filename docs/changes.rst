@@ -22,6 +22,14 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.21.0 - 2017-08-23
+-------------------
+
+This release deprecates Hypothesis's strict mode, which turned Hypothesis's
+deprecation warnings into errors. Similar functionality can be achieved
+by using :func:`simplefilter('error', HypothesisDeprecationWarning) <python:warnings.simplefilter>`.
+
+-------------------
 3.20.0 - 2017-08-22
 -------------------
 
