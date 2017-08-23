@@ -80,8 +80,10 @@ from hypothesis.strategies import *
 import random
 random.seed(0)
 # don't save examples
-settings.register_profile('doctests', settings(database=None, strict=True))
+settings.register_profile('doctests', settings(database=None))
 settings.load_profile('doctests')
+import warnings
+warnings.filterwarnings('error', category=HypothesisDeprecationWarning)
 '''
 
 # This config value must be a dictionary of external sites, mapping unique

@@ -19,7 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
-from hypothesis import find, given, settings
+from hypothesis import find, given
 from hypothesis.errors import InvalidArgument
 from tests.common.utils import fails_with
 from hypothesis.strategies import sets, lists, floats, booleans, \
@@ -190,7 +190,6 @@ def test_too_many_positional(x):
 
 def test_given_warns_on_use_of_non_strategies():
     @given(bool)
-    @settings(strict=False)
     def test(x):
         pass
     with pytest.raises(InvalidArgument):
@@ -199,7 +198,6 @@ def test_given_warns_on_use_of_non_strategies():
 
 def test_given_warns_when_mixing_positional_with_keyword():
     @given(booleans(), y=booleans())
-    @settings(strict=False)
     def test(x, y):
         pass
     with pytest.raises(InvalidArgument):

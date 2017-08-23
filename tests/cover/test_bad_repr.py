@@ -17,31 +17,12 @@
 
 from __future__ import division, print_function, absolute_import
 
-import warnings
-
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import given, settings
-from hypothesis.errors import HypothesisDeprecationWarning
+from hypothesis import given
 from hypothesis.internal.compat import PY3
 from hypothesis.internal.reflection import arg_string
-
-original_profile = settings.default
-
-settings.register_profile(
-    'nonstrict', settings(strict=False)
-)
-
-
-def setup_function(fn):
-    settings.load_profile('nonstrict')
-    warnings.simplefilter('always', HypothesisDeprecationWarning)
-
-
-def teardown_function(fn):
-    settings.load_profile('default')
-    warnings.simplefilter('once', HypothesisDeprecationWarning)
 
 
 class BadRepr(object):

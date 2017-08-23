@@ -23,7 +23,6 @@ import pytz
 import pytest
 from flaky import flaky
 
-import hypothesis._settings as hs
 from hypothesis import find, given, assume, settings, unlimited
 from hypothesis.errors import InvalidArgument
 from tests.common.debug import minimal
@@ -97,14 +96,16 @@ def test_can_generate_non_utc():
     ).example()
 
 
-with hs.settings(strict=False):
-    @given(datetimes(timezones=[]))
-    def test_naive_datetimes_are_naive(dt):
-        assert not dt.tzinfo
+@checks_deprecated_behaviour
+@given(datetimes(timezones=[]))
+def test_naive_datetimes_are_naive(dt):
+    assert not dt.tzinfo
 
-    @given(datetimes(allow_naive=False))
-    def test_timezone_aware_datetimes_are_timezone_aware(dt):
-        assert dt.tzinfo
+
+@checks_deprecated_behaviour
+@given(datetimes(allow_naive=False))
+def test_timezone_aware_datetimes_are_timezone_aware(dt):
+    assert dt.tzinfo
 
 
 @checks_deprecated_behaviour

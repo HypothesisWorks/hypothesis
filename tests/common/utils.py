@@ -24,7 +24,6 @@ import contextlib
 from io import BytesIO, StringIO
 
 from hypothesis.errors import HypothesisDeprecationWarning
-from hypothesis._settings import settings
 from hypothesis.reporting import default, with_reporter
 from hypothesis.internal.compat import PY2
 from hypothesis.internal.reflection import proxies
@@ -71,20 +70,26 @@ def fails_with(e):
 fails = fails_with(AssertionError)
 
 
+@contextlib.contextmanager
+def validate_deprecation():
+    import warnings
+
+    try:
+        warnings.simplefilter('always', HypothesisDeprecationWarning)
+        with warnings.catch_warnings(record=True) as w:
+            yield
+            assert any(
+                e.category == HypothesisDeprecationWarning for e in w
+            ), 'Expected to get a deprecation warning but got %r' % (
+                [e.category for e in w],)
+    finally:
+        warnings.simplefilter('error', HypothesisDeprecationWarning)
+
+
 def checks_deprecated_behaviour(func):
-    """A decorator for testing deprecated behaviour.
-
-    It will run the function once in non-strict mode (checking existing
-    test constraints), then once in strict mode (checking that a
-    deprecation exception is thrown).  This allows the pre-deprecation
-    tests to be retained with no change beyond the addition of a
-    decorator.
-
-    """
+    """A decorator for testing deprecated behaviour."""
     @functools.wraps(func)
     def _inner(*args, **kwargs):
-        with settings(strict=True):
-            fails_with(HypothesisDeprecationWarning)(func)(*args, **kwargs)
-        with settings(strict=False):
-            func(*args, **kwargs)
+        with validate_deprecation():
+            return func(*args, **kwargs)
     return _inner

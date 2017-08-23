@@ -236,7 +236,6 @@ TestHypothesis.settings = settings(
     min_satisfying_examples=0,
     verbosity=max(TestHypothesis.settings.verbosity, Verbosity.verbose),
     max_examples=10000 if MAIN else 200,
-    strict=True
 )
 
 if MAIN:

@@ -26,6 +26,10 @@ TESTSUITE = """
 from hypothesis import given, settings, assume
 from hypothesis.strategies import integers
 import time
+import warnings
+from hypothesis.errors import HypothesisDeprecationWarning
+
+warnings.simplefilter('always', HypothesisDeprecationWarning)
 
 
 @given(integers())
@@ -33,7 +37,7 @@ def test_all_valid(x):
     pass
 
 
-@settings(timeout=0.2, min_satisfying_examples=1, strict=False)
+@settings(timeout=0.2, min_satisfying_examples=1)
 @given(integers())
 def test_slow(x):
     time.sleep(0.1)
@@ -61,6 +65,7 @@ def test_prints_statistics_given_option(testdir):
     assert 'timeout=0.2' in out
     assert 'max_examples=200' in out
     assert 'max_iterations=1000' in out
+    assert 'HypothesisDeprecationWarning' in out
 
 
 UNITTEST_TESTSUITE = """

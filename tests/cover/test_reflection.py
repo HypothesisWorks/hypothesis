@@ -24,7 +24,7 @@ from functools import partial
 import pytest
 
 from mock import Mock, MagicMock, NonCallableMock, NonCallableMagicMock
-from tests.common.utils import raises
+from tests.common.utils import raises, validate_deprecation
 from hypothesis.internal.compat import PY3, FullArgSpec, getfullargspec
 from hypothesis.internal.reflection import is_mock, proxies, arg_string, \
     unbind_method, eval_directory, function_digest, fully_qualified_name, \
@@ -518,10 +518,8 @@ class BittySnowman(object):
 def test_can_handle_unicode_repr():
     def foo(x):
         pass
-    from hypothesis import settings
-    with settings(strict=False):
-        assert arg_string(foo, [Snowman()], {}) == 'x=☃'
-        assert arg_string(foo, [], {'x': Snowman()}) == 'x=☃'
+    assert arg_string(foo, [Snowman()], {}) == 'x=☃'
+    assert arg_string(foo, [], {'x': Snowman()}) == 'x=☃'
 
 
 class NoRepr(object):

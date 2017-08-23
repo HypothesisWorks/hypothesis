@@ -25,6 +25,7 @@ import pytest
 import hypothesis
 from hypothesis.errors import InvalidState, InvalidArgument, \
     HypothesisDeprecationWarning
+from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.database import ExampleDatabase, \
     DirectoryBasedExampleDatabase
 from hypothesis._settings import Verbosity, settings, note_deprecation
@@ -164,7 +165,6 @@ def test_load_non_existent_profile():
     os.getenv('HYPOTHESIS_PROFILE') not in (None, 'default'),
     reason='Defaults have been overridden')
 def test_runs_tests_with_defaults_from_conftest():
-    assert settings.default.strict
     assert settings.default.timeout == -1
 
 
@@ -179,41 +179,14 @@ def test_cannot_delete_a_setting():
         del x.foo
 
 
-def test_deprecate_uses_default():
-    with settings(strict=False):
-        note_deprecation('Hi')
-
-    with settings(strict=True):
-        with pytest.raises(HypothesisDeprecationWarning):
-            note_deprecation('Hi')
-
-
-def test_cannot_set_deprecated_settings_with_strict():
+def test_cannot_set_strict():
     with pytest.raises(HypothesisDeprecationWarning):
-        settings(timeout=3)
+        settings(strict=True)
 
 
-def test_will_emit_warning_when_non_strict():
-    with pytest.warns(HypothesisDeprecationWarning):
-        settings(strict=False, timeout=3)
-
-
-def test_can_set_deprecated_settings_on_non_strict():
-    has_timeout = settings(timeout=3, strict=False)
-    assert has_timeout.timeout == 3
-
-
-def test_set_deprecated_settings_if_nonstrict():
-    with settings(strict=False):
-        assert settings(timeout=3).timeout == 3
-
-
-def test_can_inherit_from_deprecated_settings_even_while_strict():
-    with settings(strict=False):
-        parent = settings(timeout=3)
-
-    child = settings(parent, strict=True)
-    assert child.timeout == 3
+@checks_deprecated_behaviour
+def test_set_deprecated_settings():
+    assert settings(timeout=3).timeout == 3
 
 
 def test_setting_to_future_value_gives_future_value_and_no_error():
@@ -258,6 +231,5 @@ def test_cannot_assign_default():
 
 def test_does_not_warn_if_quiet():
     with pytest.warns(None) as rec:
-        note_deprecation('This is bad', settings(
-            strict=False, verbosity=Verbosity.quiet))
+        note_deprecation('This is bad', settings(verbosity=Verbosity.quiet))
     assert len(rec) == 0
