@@ -82,10 +82,7 @@ def test_trashes_invalid_examples():
             find(
                 st.binary(min_size=100),
                 lambda x: assume(not finicky) and has_a_non_zero_byte(x),
-                settings=settings(
-                    database=database,
-                    max_shrinks=10,
-                ),
+                settings=settings(database=database, max_shrinks=10),
                 database_key=key
             )
         except Unsatisfiable:
