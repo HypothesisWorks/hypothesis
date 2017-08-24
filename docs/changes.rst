@@ -22,6 +22,14 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.21.1 - 2017-08-24
+-------------------
+
+This release fixes a bug where test failures that were the result of
+an @example would print an extra stack trace before re-raising the
+exception.
+
+-------------------
 3.21.0 - 2017-08-23
 -------------------
 
