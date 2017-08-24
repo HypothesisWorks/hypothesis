@@ -249,4 +249,10 @@ def minimize_byte(c, f):
             c >>= 1
         return c
     else:
+        for i in range(7, -1, -1):
+            k = 1 << i
+            if c & k:
+                d = c ^ k
+                if f(d):
+                    c = d
         return c
