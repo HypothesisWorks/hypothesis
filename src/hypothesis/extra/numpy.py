@@ -134,27 +134,19 @@ class ArrayStrategy(SearchStrategy):
                 average_size=math.sqrt(self.array_size),
             )
 
-            seen = set()
+            needs_fill = np.full(self.array_size, True)
 
             while elements.more():
                 i = cu.integer_range(data, 0, self.array_size - 1)
-                if i in seen:
+                if not needs_fill[i]:
                     elements.reject()
                     continue
-                seen.add(i)
+                needs_fill[i] = False
                 result[i] = data.draw(self.element_strategy)
-            if len(seen) < self.array_size:
+            if needs_fill.any():
                 # We didn't fill all of the indices in the early loop, so we
                 # put a fill value into the rest.
-                # Note that this sort of manual loop is necessary (even if we
-                # were to reorder the assignment so we wrote the other values
-                # afterwards), because the element result might be iterable if
-                # we had an object or structured dtype, and numpy special cases
-                # bulk assignment of those to mean something else.
-                fill = data.draw(self.fill)
-                for i in hrange(len(result)):
-                    if i not in seen:
-                        result[i] = fill
+                np.putmask(result, needs_fill, data.draw(self.fill))
 
         return result.reshape(self.shape)
 
