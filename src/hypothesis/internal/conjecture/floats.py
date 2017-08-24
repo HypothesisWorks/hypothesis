@@ -1,0 +1,192 @@
+# coding=utf-8
+#
+# This file is part of Hypothesis, which may be found at
+# https://github.com/HypothesisWorks/hypothesis-python
+#
+# Most of this work is copyright (C) 2013-2017 David R. MacIver
+# (david@drmaciver.com), but it contains contributions by others. See
+# CONTRIBUTING.rst for a full list of people who may hold copyright, and
+# consult the git log if you need to determine who owns an individual
+# contribution.
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file, You can
+# obtain one at http://mozilla.org/MPL/2.0/.
+#
+# END HEADER
+
+from __future__ import division, print_function, absolute_import
+
+from array import array
+
+from hypothesis.internal.compat import ceil, hbytes, hrange, int_to_bytes
+from hypothesis.internal.floats import sign as sgn
+from hypothesis.internal.floats import float_to_int, int_to_float
+
+MAX_EXPONENT = 0x7ff
+
+SPECIAL_EXPONENTS = (0, MAX_EXPONENT)
+
+BIAS = 1023
+MAX_POSITIVE_EXPONENT = (MAX_EXPONENT - 1 - BIAS)
+
+
+MANTISSA_BYTES = ceil(52 / 8)
+
+
+def exponent_key(e):
+    if e == MAX_EXPONENT:
+        return float('inf')
+    unbiased = e - BIAS
+    if unbiased < 0:
+        return 10000 - unbiased
+    else:
+        return unbiased
+
+    return -e
+
+
+ENCODING_TABLE = array('H', sorted(hrange(MAX_EXPONENT + 1), key=exponent_key))
+DECODING_TABLE = array('H', [0]) * len(ENCODING_TABLE)
+
+for i, b in enumerate(ENCODING_TABLE):
+    DECODING_TABLE[b] = i
+
+del i, b
+
+
+def decode_exponent(e):
+    """Take draw_bits(11) and turn it into a suitable floating point exponent
+    such that lexicographically simpler leads to simpler floats."""
+    assert 0 <= e <= MAX_EXPONENT
+    return ENCODING_TABLE[e]
+
+
+def encode_exponent(e):
+    """Take a floating point exponent and turn it back into the equivalent
+    result from conjecture."""
+    assert 0 <= e <= MAX_EXPONENT
+    return DECODING_TABLE[e]
+
+
+REVERSE_BITS_TABLE = bytearray([
+    0x00, 0x80, 0x40, 0xc0, 0x20, 0xa0, 0x60, 0xe0, 0x10, 0x90, 0x50, 0xd0,
+    0x30, 0xb0, 0x70, 0xf0, 0x08, 0x88, 0x48, 0xc8, 0x28, 0xa8, 0x68, 0xe8,
+    0x18, 0x98, 0x58, 0xd8, 0x38, 0xb8, 0x78, 0xf8, 0x04, 0x84, 0x44, 0xc4,
+    0x24, 0xa4, 0x64, 0xe4, 0x14, 0x94, 0x54, 0xd4, 0x34, 0xb4, 0x74, 0xf4,
+    0x0c, 0x8c, 0x4c, 0xcc, 0x2c, 0xac, 0x6c, 0xec, 0x1c, 0x9c, 0x5c, 0xdc,
+    0x3c, 0xbc, 0x7c, 0xfc, 0x02, 0x82, 0x42, 0xc2, 0x22, 0xa2, 0x62, 0xe2,
+    0x12, 0x92, 0x52, 0xd2, 0x32, 0xb2, 0x72, 0xf2, 0x0a, 0x8a, 0x4a, 0xca,
+    0x2a, 0xaa, 0x6a, 0xea, 0x1a, 0x9a, 0x5a, 0xda, 0x3a, 0xba, 0x7a, 0xfa,
+    0x06, 0x86, 0x46, 0xc6, 0x26, 0xa6, 0x66, 0xe6, 0x16, 0x96, 0x56, 0xd6,
+    0x36, 0xb6, 0x76, 0xf6, 0x0e, 0x8e, 0x4e, 0xce, 0x2e, 0xae, 0x6e, 0xee,
+    0x1e, 0x9e, 0x5e, 0xde, 0x3e, 0xbe, 0x7e, 0xfe, 0x01, 0x81, 0x41, 0xc1,
+    0x21, 0xa1, 0x61, 0xe1, 0x11, 0x91, 0x51, 0xd1, 0x31, 0xb1, 0x71, 0xf1,
+    0x09, 0x89, 0x49, 0xc9, 0x29, 0xa9, 0x69, 0xe9, 0x19, 0x99, 0x59, 0xd9,
+    0x39, 0xb9, 0x79, 0xf9, 0x05, 0x85, 0x45, 0xc5, 0x25, 0xa5, 0x65, 0xe5,
+    0x15, 0x95, 0x55, 0xd5, 0x35, 0xb5, 0x75, 0xf5, 0x0d, 0x8d, 0x4d, 0xcd,
+    0x2d, 0xad, 0x6d, 0xed, 0x1d, 0x9d, 0x5d, 0xdd, 0x3d, 0xbd, 0x7d, 0xfd,
+    0x03, 0x83, 0x43, 0xc3, 0x23, 0xa3, 0x63, 0xe3, 0x13, 0x93, 0x53, 0xd3,
+    0x33, 0xb3, 0x73, 0xf3, 0x0b, 0x8b, 0x4b, 0xcb, 0x2b, 0xab, 0x6b, 0xeb,
+    0x1b, 0x9b, 0x5b, 0xdb, 0x3b, 0xbb, 0x7b, 0xfb, 0x07, 0x87, 0x47, 0xc7,
+    0x27, 0xa7, 0x67, 0xe7, 0x17, 0x97, 0x57, 0xd7, 0x37, 0xb7, 0x77, 0xf7,
+    0x0f, 0x8f, 0x4f, 0xcf, 0x2f, 0xaf, 0x6f, 0xef, 0x1f, 0x9f, 0x5f, 0xdf,
+    0x3f, 0xbf, 0x7f, 0xff,
+])
+
+assert len(REVERSE_BITS_TABLE) == 256
+
+
+def reverse64(v):
+    return (
+        (REVERSE_BITS_TABLE[(v >> 0) & 0xff] << 56) |
+        (REVERSE_BITS_TABLE[(v >> 8) & 0xff] << 48) |
+        (REVERSE_BITS_TABLE[(v >> 16) & 0xff] << 40) |
+        (REVERSE_BITS_TABLE[(v >> 24) & 0xff] << 32) |
+        (REVERSE_BITS_TABLE[(v >> 32) & 0xff] << 24) |
+        (REVERSE_BITS_TABLE[(v >> 40) & 0xff] << 16) |
+        (REVERSE_BITS_TABLE[(v >> 48) & 0xff] << 8) |
+        (REVERSE_BITS_TABLE[(v >> 56) & 0xff] << 0)
+    )
+
+
+MANTISSA_MASK = ((1 << 52) - 1)
+
+
+def reverse_bits(x, n):
+    assert x.bit_length() <= n <= 64
+    x = reverse64(x)
+    x >>= (64 - n)
+    return x
+
+
+def update_mantissa(unbiased_exponent, mantissa):
+    if unbiased_exponent <= 0:
+        mantissa = reverse_bits(mantissa, 52)
+    elif unbiased_exponent <= 51:
+        n_fractional_bits = (52 - unbiased_exponent)
+        fractional_part = mantissa & ((1 << n_fractional_bits) - 1)
+        mantissa ^= fractional_part
+        mantissa |= reverse_bits(fractional_part, n_fractional_bits)
+    return mantissa
+
+
+def lex_to_float(i):
+    assert i.bit_length() <= 64
+    sign = i & 1
+    i >>= 1
+    exponent = i >> 52
+    exponent = decode_exponent(exponent)
+    mantissa = i & MANTISSA_MASK
+    mantissa = update_mantissa(exponent - BIAS, mantissa)
+
+    assert mantissa.bit_length() <= 52
+
+    return int_to_float(
+        (sign << 63) | (exponent << 52) | mantissa
+    )
+
+
+def float_to_lex(f):
+    i = float_to_int(f)
+    sign = i >> 63
+    i &= ((1 << 63) - 1)
+    exponent = i >> 52
+    mantissa = i & MANTISSA_MASK
+    mantissa = update_mantissa(exponent - BIAS, mantissa)
+    exponent = encode_exponent(exponent)
+
+    assert mantissa.bit_length() <= 52
+
+    return (
+        (exponent << 53) | (mantissa << 1) | sign
+    )
+
+
+def draw_float(data):
+    try:
+        data.start_example()
+        non_zero = data.draw_bits(1)
+        if non_zero:
+            return lex_to_float(data.draw_bits(64))
+        else:
+            data.write(hbytes(7))
+            sign = data.draw_bits(1)
+            if sign:
+                return -0.0
+            else:
+                return 0.0
+    finally:
+        data.stop_example()
+
+
+def write_float(data, f):
+    if f == 0.0:
+        data.write(hbytes([0]))
+        if sgn(f) < 0:
+            data.write(hbytes(7) + hbytes([1]))
+        else:
+            data.write(hbytes(7) + hbytes([0]))
+        return
+    data.write(hbytes([1]))
+    data.write(int_to_bytes(float_to_lex(f), 8))
