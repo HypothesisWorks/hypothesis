@@ -24,7 +24,6 @@ import hypothesis.strategies as st
 import hypothesis.extra.pandas as pdst
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import text_type
 
 
 @given(pdst.data_frames([
@@ -44,15 +43,7 @@ def test_respects_size_bounds(df):
 @given(pdst.data_frames([pdst.column(dtype=int)], index=['A']))
 def test_bounds_size_with_index(df):
     assert len(df) <= 1
-    if len(df) == 1:
-        assert df.index[0] == 'A'
-
-
-@given(pdst.data_frames(
-    [pdst.column(dtype=int)],
-    index=st.lists(st.text(min_size=1), unique=True)))
-def test_index_can_be_a_strategy(df):
-    assert all(isinstance(i, text_type) for i in df.index)
+    assert df.index[0] == 'A'
 
 
 @given(pdst.data_frames(pdst.columns(['A', 'B'], dtype=float)))

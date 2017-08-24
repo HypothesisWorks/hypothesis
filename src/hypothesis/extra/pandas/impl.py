@@ -46,47 +46,29 @@ def build_index(draw, index, min_size, max_size):
         min_size, max_size, 'min_size', 'max_size'
     )
 
-    index_from_strategy = False
-
-    if isinstance(index, st.SearchStrategy):
-        index = draw(index)
-        index_from_strategy = True
-
     if index is not None:
         if not is_sequence(index):
             raise InvalidArgument(
-                '%s was %r of type %s, but expected a sequence' % (
-                    'Result of index strategy' if index_from_strategy
-                    else 'index argument',
+                'index=%r was of type %s, but expected a sequence' % (
                     index, type(index).__name__
                 )
             )
 
-        if max_size is None:
+        if max_size is not None and max_size < len(index):
+            raise InvalidArgument(
+                'Provided index=%r has %d items < max_size=%d' % (
+                    index, len(index), max_size))
             max_size = len(index)
-        elif index_from_strategy:
-            max_size = min(max_size, len(index))
-        else:
-            raise InvalidArgument((
-                'Provided index %r only has %d elements, which is not '
-                'enough for the provided max_size of %d. Either increase '
-                'the number of elements in the index or reduce or remove '
-                'the max_size argument.') % (
-                    index, len(index), max_size
-            ))
+        if min_size is not None and min_size > len(index):
+            raise InvalidArgument(
+                'Provided index=%r has %d items > min_size=%d' % (
+                    index, len(index), min_size))
+        return index
 
     if max_size is None:
-        max_size = max(10, min_size + 1)
+        max_size = min_size + 10
 
-    size = draw(st.integers(min_size, max_size))
-
-    if index is None:
-        index = hrange(size)
-    else:
-        assert len(index) >= size
-        index = index[:size]
-
-    return index
+    return hrange(draw(st.integers(min_size, max_size)))
 
 
 def dtype_for_elements_strategy(s):
@@ -98,7 +80,7 @@ def dtype_for_elements_strategy(s):
 
 @st.composite
 def series(
-    draw, elements=None, dtype=None, index=None, min_size=0, max_size=None,
+    draw, elements=None, dtype=None, min_size=0, max_size=None, index=None,
 ):
     """Provides a strategy for producing a pandas.Series.
 
@@ -115,19 +97,16 @@ def series(
             elements strategy varies, then so will the resulting dtype of the
             series.
 
-        index: a sequence or a strategy for generating a sequence. It will
-            be used as the index for the resulting series. When it is longer
-            than
-            the result it will be truncated to the right side. If None, no
-            index will be passed when creating the Series and the default
-            behaviour of pandas.Series will be used.
-
         min_size: the minimum number of entries in the resulting Series.
 
         max_size: the maximum number of entries in the resulting Series.
             If an explicit index is provided then max_size may be at most the
             length of the index. If an index strategy is provided then whenever
             the drawn index is too short max_size will merely be reduced.
+
+        index: If not None, an index for the resulting series. If provided,
+            the min_size and max_size must be compatible with the index size
+            but will otherwise be ignored.
 
     """
 
@@ -220,7 +199,7 @@ def columns(names_or_number, dtype=None, elements=None):
 def data_frames(
     draw,
     rows_or_columns=None,
-    columns=None, rows=None, index=None, min_size=0, max_size=None
+    columns=None, rows=None, min_size=0, max_size=None, index=None
 ):
     """Provides a strategy for producing a pandas.DataFrame.
 
@@ -259,16 +238,16 @@ def data_frames(
               resulting DataFrame will sometimes have an integral dtype and
               sometimes a float.
 
-        index: a sequence or a strategy for generating a sequence. It will
-            be used as the index for the resulting series. When it is longer
-            than the result it will be truncated to the right side.
-
         min_size: the minimum number of entries in the resulting DataFrame.
 
         max_size: the maximum number of entries in the resulting DataFrame.
             If an explicit index is provided then max_size may be at most the
             length of the index. If an index strategy is provided then whenever
             the drawn index is too short max_size will merely be reduced.
+
+        index: If not None, an index for the resulting DataFrame. If provided,
+            the min_size and max_size must be compatible with the index size
+            but will otherwise be ignored.
 
     """
 

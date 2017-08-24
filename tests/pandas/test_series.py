@@ -25,9 +25,7 @@ import hypothesis.extra.numpy as npst
 import hypothesis.extra.pandas as pdst
 from hypothesis import given, assume, reject
 from hypothesis.errors import InvalidArgument
-from tests.common.debug import find_any
 from tests.pandas.helpers import supported_by_pandas
-from hypothesis.internal.compat import text_type
 
 
 @given(st.data())
@@ -80,13 +78,6 @@ def test_can_use_index_to_bound_size(s):
     assert list(s.index) == REVERSE_INDEX[:len(s)]
 
 
-def test_does_not_have_to_use_the_full_index():
-    find_any(
-        pdst.series(index=REVERSE_INDEX, dtype=float),
-        lambda x: len(x) < len(REVERSE_INDEX)
-    )
-
-
 LABELS = ['A', 'B', 'C', 'D', 'E']
 
 
@@ -94,20 +85,6 @@ LABELS = ['A', 'B', 'C', 'D', 'E']
 def test_categorical_series(s):
     assert set(s).issubset(set(LABELS))
     assert s.dtype == 'category'
-
-
-@given(
-    pdst.series(dtype=float, index=st.lists(st.text(min_size=1), unique=True)))
-def test_index_can_be_a_strategy(df):
-    assert all(isinstance(i, text_type) for i in df.index)
-
-
-@given(pdst.series(
-    dtype=float,
-    index=st.lists(st.text(min_size=1), unique=True), max_size=1))
-def test_index_strategy_respects_max_size(df):
-    assert all(isinstance(i, text_type) for i in df.index)
-    assert len(df) <= 1
 
 
 def test_will_error_on_bad_index():
