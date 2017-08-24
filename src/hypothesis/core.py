@@ -245,7 +245,6 @@ def execute_explicit_examples(
                     lambda data: test(*arguments, **example_kwargs)
                 )
         except BaseException:
-            traceback.print_exc()
             report('Falsifying example: ' + example_string)
             for n in b.notes:
                 report(n)
