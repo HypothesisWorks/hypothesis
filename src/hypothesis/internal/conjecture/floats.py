@@ -19,9 +19,61 @@ from __future__ import division, print_function, absolute_import
 
 from array import array
 
-from hypothesis.internal.compat import ceil, hbytes, hrange, int_to_bytes
+from hypothesis.internal.compat import hbytes, hrange, int_to_bytes
 from hypothesis.internal.floats import sign as sgn
 from hypothesis.internal.floats import float_to_int, int_to_float
+
+"""
+This module implements support for arbitrary floating point numbers in
+Conjecture. It doesn't make any attempt to get a good distribution, only to
+get a format that will shrink well.
+
+We define an encoding of floating point numbers as 64-bit unsigned integers
+which has the following properties:
+
+1. NaNs are ordered after everything else.
+2. Infinity is ordered after every finite number.
+3. The sign is ignored unless two floating point numbers are identical in
+   absolute magnitude. In that case, the positive is ordered before the
+   negative.
+4. Positive floating point numbers are ordered first by int(x) where
+   encoding(x) < encoding(y) if int(x) < int(y).
+5. If int(x) == int(y) then x and y are sorted towards lower denominators of
+   their fractional parts.
+
+
+Unfortunately it's not quite so simple. There is a complication around zero,
+which is that we want to treat 0 as if it were a normal integer, but its
+representation in IEEE floating point gives it a high negative exponent. So
+we then have a separate layer on top of our encoding for handling zero.
+
+The format of our encoding of floating point goes as follows:
+
+    [exponent] [mantissa] [sign]
+
+Each of these is the same size their equivalent in IEEE floating point, but are
+in a different format.
+
+We translate exponents as follows:
+
+    1. The maximum exponent (2 ** 11 - 1) is left unchanged.
+    2. We reorder the remaining exponents so that all of the positive exponents
+       are first, in increasing order, followed by all of the negative
+       exponents in decreasing order (where positive/negative is done by the
+       unbiased exponent e - 1023).
+
+We translate the mantissa as follows:
+
+    1. If the unbiased exponent is <= 0 we reverse it bitwise.
+    2. If the unbiased exponent is >= 52 we leave it alone.
+    3. If the unbiased exponent is in the range [1, 51] then we reverse the
+       low k bits, where k is 52 - unbiased exponen.
+
+The low bits correspond to the fractional part of the floating point number.
+Reversing it bitwise means that we try to minimize the low bits, which kills
+off the higher powers of 2 in the fraction first.
+"""
+
 
 MAX_EXPONENT = 0x7ff
 
@@ -29,9 +81,6 @@ SPECIAL_EXPONENTS = (0, MAX_EXPONENT)
 
 BIAS = 1023
 MAX_POSITIVE_EXPONENT = (MAX_EXPONENT - 1 - BIAS)
-
-
-MANTISSA_BYTES = ceil(52 / 8)
 
 
 def exponent_key(e):
@@ -142,9 +191,7 @@ def lex_to_float(i):
 
     assert mantissa.bit_length() <= 52
 
-    return int_to_float(
-        (sign << 63) | (exponent << 52) | mantissa
-    )
+    return int_to_float((sign << 63) | (exponent << 52) | mantissa)
 
 
 def float_to_lex(f):
@@ -158,9 +205,7 @@ def float_to_lex(f):
 
     assert mantissa.bit_length() <= 52
 
-    return (
-        (exponent << 53) | (mantissa << 1) | sign
-    )
+    return (exponent << 53) | (mantissa << 1) | sign
 
 
 def draw_float(data):
