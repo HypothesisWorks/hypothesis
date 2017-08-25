@@ -22,6 +22,25 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.21.2 - 2017-08-25
+-------------------
+
+This release fixes some minor bugs in argument validation:
+
+    * `hypothesis.extra.numpy <hypothesis-numpy>` dtype strategies would raise an internal error
+      instead of an InvalidArgument exception when passed an invalid
+      endianness specification.
+    * :func:`~hypothesis.strategies.fractions` would raise an internal error instead of an InvalidArgument
+      if passed ``float("nan")`` as one of its bounds.
+    * The error message for passing ``float("nan")`` as a bound to various
+      strategies has been improved.
+    * Various bound arguments will now raise InvalidArgument in cases where
+      they would previously have raised an internal TypeError or
+      ValueError from the relevant conversion function.
+    * :func:`~hypothesis.strategies.streaming` would not have emitted a
+      deprecation warning when called with an invalid argument.
+
+-------------------
 3.21.1 - 2017-08-24
 -------------------
 
