@@ -32,7 +32,7 @@ def test_stability():
         st.choices(),
     )
     @settings(
-        database=ExampleDatabase(),
+        database=ExampleDatabase(), max_shrinks=10**6,
     )
     def test_choose_and_then_fail(ls, choice):
         for _ in hrange(100):
