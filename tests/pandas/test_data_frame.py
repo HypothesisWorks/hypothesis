@@ -35,15 +35,11 @@ def test_can_have_columns_of_distinct_types(df):
     assert df['b'].dtype == np.dtype(float)
 
 
-@given(pdst.data_frames([pdst.column(dtype=int)], min_size=1, max_size=5))
+@given(pdst.data_frames(
+    [pdst.column(dtype=int)],
+    index=pdst.indexes(min_size=1, max_size=5)))
 def test_respects_size_bounds(df):
     assert 1 <= len(df) <= 5
-
-
-@given(pdst.data_frames([pdst.column(dtype=int)], index=['A']))
-def test_bounds_size_with_index(df):
-    assert len(df) <= 1
-    assert df.index[0] == 'A'
 
 
 @given(pdst.data_frames(pdst.columns(['A', 'B'], dtype=float)))

@@ -236,7 +236,7 @@ def indexes(
 
 @st.composite
 def series(
-    draw, elements=None, dtype=None, min_size=0, max_size=None, index=None,
+    draw, elements=None, dtype=None, index=None,
 ):
     """Provides a strategy for producing a pandas.Series.
 
@@ -253,28 +253,27 @@ def series(
             elements strategy varies, then so will the resulting dtype of the
             series.
 
-        min_size: the minimum number of entries in the resulting Series.
+        index: If not None, a strategy for generating indexes for the resulting
+            Series. This can generate either pandas.Index objects or any
+            sequence of values (which will be passed to the pandas.Index)
+            constructors.
 
-        max_size: the maximum number of entries in the resulting Series.
-            If an explicit index is provided then max_size may be at most the
-            length of the index. If an index strategy is provided then whenever
-            the drawn index is too short max_size will merely be reduced.
-
-        index: If not None, an index for the resulting series. If provided,
-            the min_size and max_size must be compatible with the index size
-            but will otherwise be ignored.
+            You will probably find it most convenient to use the
+            :func:`~hypothesis.extra.pandas.indexes` function to pass as values
+            for this argument.
 
     """
-
-    index = build_index(
-        draw, index, min_size, max_size
-    )
+    if index is None:
+        index = indexes()
+    else:
+        st.check_strategy(index)
 
     if elements is None and dtype is None:
         raise InvalidArgument(
             'series require either an elements strategy or a dtype.'
         )
 
+    index = draw(index)
     size = len(index)
 
     if dtype is not None:
@@ -354,7 +353,7 @@ def columns(names_or_number, dtype=None, elements=None):
 @st.composite
 def data_frames(
     draw,
-    columns=None, rows=None, min_size=0, max_size=None, index=None
+    columns=None, rows=None, index=None
 ):
     """Provides a strategy for producing a pandas.DataFrame.
 
@@ -381,22 +380,23 @@ def data_frames(
               resulting DataFrame will sometimes have an integral dtype and
               sometimes a float.
 
-        min_size: the minimum number of entries in the resulting DataFrame.
+        index: If not None, a strategy for generating indexes for the resulting
+            DataFrame. This can generate either pandas.Index objects or any
+            sequence of values (which will be passed to the pandas.Index)
+            constructors.
 
-        max_size: the maximum number of entries in the resulting DataFrame.
-            If an explicit index is provided then max_size may be at most the
-            length of the index. If an index strategy is provided then whenever
-            the drawn index is too short max_size will merely be reduced.
-
-        index: If not None, an index for the resulting DataFrame. If provided,
-            the min_size and max_size must be compatible with the index size
-            but will otherwise be ignored.
+            You will probably find it most convenient to use the
+            :func:`~hypothesis.extra.pandas.indexes` function to pass as values
+            for this argument.
 
     """
 
-    index = build_index(
-        draw, index, min_size, max_size
-    )
+    if index is None:
+        index = indexes()
+    else:
+        st.check_strategy(index)
+
+    index = draw(index)
 
     if isinstance(columns, column):
         columns = (columns,)
@@ -455,7 +455,7 @@ def data_frames(
             'columns definition contains duplicate column names: %r' % (
                 sorted(c for c, n in counts.items() if n > 1)))
 
-    zeroes = [0] * len(index)
+    zeroes = np.zeros(len(index))
 
     series = [
         pandas.Series(zeroes, dtype=dtype)

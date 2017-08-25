@@ -48,7 +48,7 @@ def test_unique_indexes_of_small_values(ix):
 def test_generate_arbitrary_indices(data):
     min_size = data.draw(st.integers(0, 10), 'min_size')
     max_size = data.draw(
-        st.none() | st.integers(min_size, min_size+10), 'max_size')
+        st.none() | st.integers(min_size, min_size + 10), 'max_size')
     unique = data.draw(st.booleans(), 'unique')
     allow_nan = data.draw(st.booleans(), 'allow_nan')
     order = data.draw(st.sampled_from((0, 1, -1)), 'order')

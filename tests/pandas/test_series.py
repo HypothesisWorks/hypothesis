@@ -49,7 +49,7 @@ def test_buggy_dtype_identification_is_precise(data):
     assert series.dtype != dtype
 
 
-@given(pdst.series(dtype=float, min_size=2, max_size=5))
+@given(pdst.series(dtype=float, index=pdst.indexes(min_size=2, max_size=5)))
 def test_series_respects_size_bounds(s):
     assert 2 <= len(s) <= 5
 
@@ -69,15 +69,6 @@ def test_will_use_a_provided_elements_strategy(s):
     assert all(x == x for x in s)
 
 
-REVERSE_INDEX = list(range(5, 0, -1))
-
-
-@given(pdst.series(dtype=float, index=REVERSE_INDEX))
-def test_can_use_index_to_bound_size(s):
-    assert len(s) <= len(REVERSE_INDEX)
-    assert list(s.index) == REVERSE_INDEX[:len(s)]
-
-
 LABELS = ['A', 'B', 'C', 'D', 'E']
 
 
@@ -90,13 +81,3 @@ def test_categorical_series(s):
 def test_will_error_on_bad_index():
     with pytest.raises(InvalidArgument):
         pdst.series(index=1).example()
-
-
-@given(pdst.series(dtype=float, min_size=3, index=[0, 1, 2]))
-def test_will_pick_up_max_size_from_index(s):
-    assert len(s) == 3
-
-
-def test_too_short_index_is_an_error():
-    with pytest.raises(InvalidArgument):
-        pdst.series(index=[1], max_size=2).example()
