@@ -28,7 +28,7 @@ from hypothesis.internal.compat import hrange
 @checks_deprecated_behaviour
 def test_stability():
     @given(
-        st.lists(st.text(min_size=1, max_size=1), unique=True, min_size=5),
+        st.lists(st.integers(0, 1000), unique=True, min_size=5),
         st.choices(),
     )
     @settings(
