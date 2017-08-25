@@ -70,11 +70,6 @@ def test_requires_elements_for_category():
         pdst.data_frames([pdst.column('A', dtype='category')]).example()
 
 
-@given(pdst.data_frames(st.integers(1, 10 ** 6)))
-def test_can_create_data_frames_from_positional_rows(df):
-    assert df[0].dtype == np.dtype(int)
-
-
 @given(pdst.data_frames(pdst.column(dtype=int)))
 def test_can_create_data_frames_from_positional_column(df):
     assert df[0].dtype == np.dtype(int)
