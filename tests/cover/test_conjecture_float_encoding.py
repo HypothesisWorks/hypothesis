@@ -130,3 +130,16 @@ def test_integral_floats_order_as_integers(x, y):
 def test_fractional_floats_are_worse_than_one(f):
     assume(0 < f < 1)
     assert flt.float_to_lex(f) > flt.float_to_lex(1)
+
+
+def test_reverse_bits_table_reverses_bits():
+    def bits(x):
+        result = []
+        for _ in range(8):
+            result.append(x & 1)
+            x >>= 1
+        result.reverse()
+        return result
+
+    for i, b in enumerate(flt.REVERSE_BITS_TABLE):
+        assert bits(i) == list(reversed(bits(b)))

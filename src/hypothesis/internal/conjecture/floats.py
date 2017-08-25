@@ -118,6 +118,10 @@ def encode_exponent(e):
     return DECODING_TABLE[e]
 
 
+# Table mapping individual bytes to the equivalent byte with the bits of the
+# byte reversed. e.g. 1=0b1 is mapped to 0xb10000000=0x80=128. We use this
+# precalculated table to simplify calculating the bitwise reversal of a longer
+# integer.
 REVERSE_BITS_TABLE = bytearray([
     0x00, 0x80, 0x40, 0xc0, 0x20, 0xa0, 0x60, 0xe0, 0x10, 0x90, 0x50, 0xd0,
     0x30, 0xb0, 0x70, 0xf0, 0x08, 0x88, 0x48, 0xc8, 0x28, 0xa8, 0x68, 0xe8,
@@ -147,6 +151,18 @@ assert len(REVERSE_BITS_TABLE) == 256
 
 
 def reverse64(v):
+    """Reverse a 64-bit integer bitwise.
+
+    We do this by breaking it up into 8 bytes. The 64-bit integer is then the
+    concatenation of each of these bytes. We reverse it by reversing each byte
+    on its own using the REVERSE_BITS_TABLE above, and then concatenating the
+    reversed bytes.
+
+    In this case concatenating consists of shifting them into the right
+    position for the word and then oring the bits together.
+
+    """
+    assert v.bit_length() <= 64
     return (
         (REVERSE_BITS_TABLE[(v >> 0) & 0xff] << 56) |
         (REVERSE_BITS_TABLE[(v >> 8) & 0xff] << 48) |
