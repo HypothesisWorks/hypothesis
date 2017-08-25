@@ -26,19 +26,11 @@ import hypothesis.strategies as st
 import hypothesis.extra.numpy as npst
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import hrange, integer_types
+from pandas.api.types import is_categorical_dtype
 
 
 def is_sequence(c):
     return hasattr(c, '__len__') and hasattr(c, '__getitem__')
-
-
-def is_category_dtype(dtype):
-    # We need to explicitly check that this is not a dtype because a
-    # numpy dtype compared to a string will try to convert it to an
-    # numpy dtype and error if it can't.
-    if isinstance(dtype, np.dtype):
-        return False
-    return dtype == 'category'
 
 
 def build_index(draw, index, min_size, max_size):
@@ -122,7 +114,7 @@ def series(
     size = len(index)
 
     if dtype is not None:
-        if is_category_dtype(dtype):
+        if is_categorical_dtype(dtype):
             numpy_dtype = np.dtype(object)
             pandas_dtype = dtype
         else:
@@ -171,7 +163,7 @@ class column(object):
             raise InvalidArgument(
                 'At least one of dtype and elements must not be provided'
             )
-        if is_category_dtype(dtype) and elements is None:
+        if is_categorical_dtype(dtype) and elements is None:
             raise InvalidArgument(
                 'Must provide an elements strategy for category dtypes'
             )
@@ -280,7 +272,7 @@ def data_frames(
         elements = c.elements
         if dtype is None:
             dtype = draw(dtype_for_elements_strategy(elements))
-        if is_category_dtype(dtype):
+        if is_categorical_dtype(dtype):
             dtype = np.dtype(object)
             categorical_columns.append(name)
         else:
