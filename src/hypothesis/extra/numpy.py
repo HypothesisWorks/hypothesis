@@ -108,22 +108,26 @@ class ArrayStrategy(SearchStrategy):
         if 0 in self.shape:
             return np.zeros(dtype=self.dtype, shape=self.shape)
 
+        # This could legitimately be a np.empty, but the performance gains for
+        # that would be so marginal that there's really not much point risking
+        # undefined behaviour shenanigans.
         result = np.zeros(shape=self.array_size, dtype=self.dtype)
 
         if self.fill.is_empty:
-            # The values produced by our element strategy can not be reused
-            # (either because they are mutable or because drawing them in
-            # some way depends on things that have happened previusly), so we
-            # have to fall back to the slow method.
+            # We have no fill value (either because the user explicitly
+            # disabled it or because the default behaviour was used and our
+            # elements strategy does not produce reusable values), so we must
+            # generate a fully dense array with a freshly drawn value for each
+            # entry.
             for i in hrange(len(result)):
                 result[i] = data.draw(self.element_strategy)
         else:
-            # We draw numpy arrays as "sparse with an offset". We draw a single
-            # value that is the background value of the array that everything
-            # set to by default (we can't use zero because zero might not be a
-            # valid value in the element strategy), and we then draw a
+            # We draw numpy arrays as "sparse with an offset". We draw a
             # collection of index assignments within the array and assign
-            # fresh values to those indices.
+            # fresh values from our elements strategy to those indices. If at
+            # the end we have not assigned every element then we draw a single
+            # value from our fill strategy and use that to populate the
+            # remaining positions with that strategy.
 
             elements = cu.many(
                 data,
