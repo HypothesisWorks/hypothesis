@@ -277,7 +277,7 @@ class OneOfStrategy(SearchStrategy):
         if n == 0:
             data.mark_invalid()
         elif n == 1:
-            return self.element_strategies[0].do_draw(data)
+            return data.draw(self.element_strategies[0])
         elif self.sampler is None:
             i = cu.integer_range(data, 0, n - 1)
         else:
@@ -343,7 +343,7 @@ class MappedSearchStrategy(SearchStrategy):
         for _ in range(3):
             i = data.index
             try:
-                return self.pack(self.mapped_strategy.do_draw(data))
+                return self.pack(data.draw(self.mapped_strategy))
             except UnsatisfiedAssumption:
                 if data.index == i:
                     raise

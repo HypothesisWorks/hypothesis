@@ -83,4 +83,4 @@ class DeferredStrategy(SearchStrategy):
             )
 
     def do_draw(self, data):
-        return self.wrapped_strategy.do_draw(data)
+        return data.draw(self.wrapped_strategy)

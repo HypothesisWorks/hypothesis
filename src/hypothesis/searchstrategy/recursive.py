@@ -46,7 +46,7 @@ class LimitedStrategy(SearchStrategy):
         if self.marker <= 0:
             raise LimitReached()
         self.marker -= 1
-        return self.base_strategy.do_draw(data)
+        return data.draw(self.base_strategy)
 
     @contextmanager
     def capped(self, max_templates):
