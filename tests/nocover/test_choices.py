@@ -18,7 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 import hypothesis.strategies as st
-from hypothesis import given, settings
+from hypothesis import given, settings, unlimited
 from tests.common.utils import raises, capture_out, \
     checks_deprecated_behaviour
 from hypothesis.database import ExampleDatabase
@@ -32,7 +32,7 @@ def test_stability():
         st.choices(),
     )
     @settings(
-        database=ExampleDatabase(), max_shrinks=10**6,
+        database=ExampleDatabase(), max_shrinks=10**6, timeout=unlimited,
     )
     def test_choose_and_then_fail(ls, choice):
         for _ in hrange(100):
