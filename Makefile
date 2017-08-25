@@ -222,7 +222,7 @@ upgrade-requirements:
 check-requirements: compile-requirements
 	git diff --exit-code
 
-secret.tar.enc: deploy_key .pypirc
+secrets.tar.enc: deploy_key .pypirc
 	rm -f secrets.tar secrets.tar.enc
 	tar -cf secrets.tar deploy_key .pypirc
 	travis encrypt-file secrets.tar
