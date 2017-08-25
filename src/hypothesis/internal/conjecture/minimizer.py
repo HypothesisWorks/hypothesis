@@ -17,7 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis.internal.compat import hbytes, hrange
+from hypothesis.internal.compat import hbytes, hrange, int_to_bytes, \
+    int_from_bytes
 
 
 """
@@ -166,13 +167,16 @@ class Minimizer(object):
 
         base = self.current
 
-        @binsearch(0, self.size)
+        @binsearch(0, self.size * 8)
         def shift_right(mid):
             if mid == 0:
                 return True
             if mid == self.size:
                 return False
-            return self.incorporate(hbytes(mid) + base[:-mid])
+
+            i = int_from_bytes(self.current)
+            i >>= mid
+            return self.incorporate(int_to_bytes(i, self.size))
 
         change_counter = -1
         first = True
