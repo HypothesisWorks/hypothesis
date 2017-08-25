@@ -92,8 +92,6 @@ def exponent_key(e):
     else:
         return unbiased
 
-    return -e
-
 
 ENCODING_TABLE = array('H', sorted(hrange(MAX_EXPONENT + 1), key=exponent_key))
 DECODING_TABLE = array('H', [0]) * len(ENCODING_TABLE)
