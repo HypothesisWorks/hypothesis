@@ -150,7 +150,18 @@ class ArrayStrategy(SearchStrategy):
             if needs_fill.any():
                 # We didn't fill all of the indices in the early loop, so we
                 # put a fill value into the rest.
-                np.putmask(result, needs_fill, data.draw(self.fill))
+
+                # We have to do this hilarious little song and dance to work
+                # around numpy's special handling of iterable values. If the
+                # value here were e.g. a tuple then neither array creation
+                # nor putmask would do the right thing. But by creating an
+                # array of size one and then assigning the fill value as a
+                # single element, we both get an array with the right value in
+                # it and putmask will do the right thing by repeating the
+                # values of the array across the mask.
+                one_element = np.zeros(shape=1, dtype=self.dtype)
+                one_element[0] = data.draw(self.fill)
+                np.putmask(result, needs_fill, one_element)
 
         return result.reshape(self.shape)
 
