@@ -37,6 +37,7 @@ from hypothesis.internal.floats import is_negative, float_to_int, \
 from hypothesis.internal.renaming import renamed_arguments
 from hypothesis.utils.conventions import infer, not_set
 from hypothesis.internal.reflection import proxies, required_args
+from hypothesis.internal.branchcheck import check_function
 from hypothesis.searchstrategy.reprwrapper import ReprWrapperStrategy
 
 __all__ = [
@@ -276,13 +277,12 @@ def floats(
                     allow_nan
                 ))
 
+    min_value = try_convert(float, min_value, 'min_value')
+    max_value = try_convert(float, max_value, 'max_value')
+
     check_valid_bound(min_value, 'min_value')
     check_valid_bound(max_value, 'max_value')
     check_valid_interval(min_value, max_value, 'min_value', 'max_value')
-    if min_value is not None:
-        min_value = float(min_value)
-    if max_value is not None:
-        max_value = float(max_value)
     if min_value == float(u'-inf'):
         min_value = None
     if max_value == float(u'inf'):
@@ -461,7 +461,6 @@ def lists(
 
     if unique_by is not None:
         from hypothesis.searchstrategy.collections import UniqueListStrategy
-        check_strategy(elements)
         min_size = min_size or 0
         max_size = max_size or float(u'inf')
         if average_size is None:
@@ -475,7 +474,6 @@ def lists(
                     _AVERAGE_LIST_LENGTH,
                     min_size * 2
                 )
-        check_valid_sizes(min_size, average_size, max_size)
         result = UniqueListStrategy(
             elements=elements,
             average_size=average_size,
@@ -485,7 +483,6 @@ def lists(
         )
         return result
 
-    check_valid_sizes(min_size, average_size, max_size)
     from hypothesis.searchstrategy.collections import ListStrategy
     if min_size is None:
         min_size = 0
@@ -495,7 +492,6 @@ def lists(
         else:
             average_size = (min_size + max_size) * 0.5
 
-    check_strategy(elements)
     return ListStrategy(
         (elements,), average_length=average_size,
         min_size=min_size, max_size=max_size,
@@ -619,12 +615,12 @@ def streaming(elements):
         Use :func:`data() <hypothesis.strategies.data>` instead.
 
     """
-    check_strategy(elements)
-
     note_deprecation(
         'streaming() has been deprecated. Use the data() strategy instead and '
         'replace stream iteration with data.draw() calls.'
     )
+
+    check_strategy(elements)
 
     from hypothesis.searchstrategy.streams import StreamStrategy
     return StreamStrategy(elements)
@@ -1016,13 +1012,9 @@ def fractions(min_value=None, max_value=None, max_denominator=None):
     be None or a positive integer.
 
     """
-    if min_value is not None:
-        min_value = Fraction(min_value)
-    if max_value is not None:
-        max_value = Fraction(max_value)
+    min_value = try_convert(Fraction, min_value, 'min_value')
+    max_value = try_convert(Fraction, max_value, 'max_value')
 
-    check_valid_bound(min_value, 'min_value')
-    check_valid_bound(max_value, 'max_value')
     check_valid_interval(min_value, max_value, 'min_value', 'max_value')
     check_valid_integer(max_denominator)
 
@@ -1129,7 +1121,7 @@ def decimals(min_value=None, max_value=None,
         raise InvalidArgument('places=%r may not be negative' % places)
 
     if min_value is not None:
-        min_value = Decimal(min_value)
+        min_value = try_convert(Decimal, min_value, 'min_value')
         if min_value.is_infinite() and min_value < 0:
             if not (allow_infinity or allow_infinity is None):
                 raise InvalidArgument('allow_infinity=%r, but min_value=%r'
@@ -1139,7 +1131,7 @@ def decimals(min_value=None, max_value=None,
             # This could be positive infinity, quiet NaN, or signalling NaN
             raise InvalidArgument(u'Invalid min_value=%r' % min_value)
     if max_value is not None:
-        max_value = Decimal(max_value)
+        max_value = try_convert(Decimal, max_value, 'max_value')
         if max_value.is_infinite() and max_value > 0:
             if not (allow_infinity or allow_infinity is None):
                 raise InvalidArgument('allow_infinity=%r, but max_value=%r'
@@ -1147,8 +1139,6 @@ def decimals(min_value=None, max_value=None,
             max_value = None
         elif not max_value.is_finite():
             raise InvalidArgument(u'Invalid max_value=%r' % max_value)
-    check_valid_bound(min_value, 'min_value')
-    check_valid_bound(max_value, 'max_value')
     check_valid_interval(min_value, max_value, 'min_value', 'max_value')
 
     if allow_infinity and (None not in (min_value, max_value)):
@@ -1618,6 +1608,7 @@ def register_type_strategy(custom_type, strategy):
 # Private API below here
 
 
+@check_function
 def check_type(typ, arg, name=''):
     if name:
         name += '='
@@ -1631,10 +1622,12 @@ def check_type(typ, arg, name=''):
                               % (typ_string, name, arg, type(arg).__name__))
 
 
+@check_function
 def check_strategy(arg):
     check_type(SearchStrategy, arg)
 
 
+@check_function
 def check_valid_integer(value):
     """Checks that value is either unspecified, or a valid integer.
 
@@ -1646,6 +1639,7 @@ def check_valid_integer(value):
     check_type(integer_types, value)
 
 
+@check_function
 def check_valid_bound(value, name):
     """Checks that value is either unspecified, or a valid interval bound.
 
@@ -1655,9 +1649,31 @@ def check_valid_bound(value, name):
     if value is None or isinstance(value, integer_types + (Rational,)):
         return
     if math.isnan(value):
-        raise InvalidArgument(u'Invalid end point %s %r' % (value, name))
+        raise InvalidArgument(u'Invalid end point %s=%r' % (name, value))
 
 
+@check_function
+def try_convert(typ, value, name):
+    if value is None:
+        return None
+
+    try:
+        return typ(value)
+    except TypeError:
+        raise InvalidArgument(
+            'Cannot convert %s=%r of type %s to type %s' % (
+                name, value, type(value).__name__, typ.__name__
+            )
+        )
+    except ValueError:
+        raise InvalidArgument(
+            'Cannot convert %s=%r to type %s' % (
+                name, value, typ.__name__
+            )
+        )
+
+
+@check_function
 def check_valid_size(value, name):
     """Checks that value is either unspecified, or a valid non-negative size
     expressed as an integer/float.
@@ -1674,6 +1690,7 @@ def check_valid_size(value, name):
         raise InvalidArgument(u'Invalid size %s %r' % (value, name))
 
 
+@check_function
 def check_valid_interval(lower_bound, upper_bound, lower_name, upper_name):
     """Checks that lower_bound and upper_bound are either unspecified, or they
     define a valid interval on the number line.
@@ -1690,6 +1707,7 @@ def check_valid_interval(lower_bound, upper_bound, lower_name, upper_name):
             ))
 
 
+@check_function
 def check_valid_sizes(min_size, average_size, max_size):
     check_valid_size(min_size, 'min_size')
     check_valid_size(max_size, 'max_size')

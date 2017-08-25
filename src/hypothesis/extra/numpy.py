@@ -25,6 +25,7 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import hrange, text_type
 from hypothesis.internal.reflection import proxies
+from hypothesis.internal.branchcheck import check_function
 
 TIME_RESOLUTIONS = tuple('Y  M  D  h  m  s  ms  us  ns  ps  fs  as'.split())
 
@@ -67,11 +68,13 @@ def from_dtype(dtype):
     return result.map(dtype.type)
 
 
+@check_function
 def check_argument(condition, fail_message, *f_args, **f_kwargs):
     if not condition:
         raise InvalidArgument(fail_message.format(*f_args, **f_kwargs))
 
 
+@check_function
 def order_check(name, floor, small, large):
     check_argument(
         floor <= small, u'min_{name} must be at least {} but was {}',
@@ -203,7 +206,8 @@ def dtype_factory(kind, sizes, valid_sizes, endianness):
     # Utility function, shared logic for most integer and string types
     valid_endian = ('?', '<', '=', '>')
     check_argument(endianness in valid_endian,
-                   u'Unknown endianness: was {}, must be in {}', valid_endian)
+                   u'Unknown endianness: was {}, must be in {}',
+                   endianness, valid_endian)
     if valid_sizes is not None:
         if isinstance(sizes, int):
             sizes = (sizes,)
@@ -273,6 +277,7 @@ def complex_number_dtypes(endianness='?', sizes=(64, 128)):
     return dtype_factory('c', sizes, (64, 128, 192, 256), endianness)
 
 
+@check_function
 def validate_time_slice(max_period, min_period):
     check_argument(max_period in TIME_RESOLUTIONS,
                    u'max_period {} must be a valid resolution in {}',

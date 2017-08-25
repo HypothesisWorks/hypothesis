@@ -20,6 +20,7 @@ from __future__ import division, print_function, absolute_import
 import math
 import decimal
 import fractions
+from datetime import date, time, datetime, timedelta
 
 import pytest
 
@@ -59,21 +60,49 @@ def fn_ktest(*fnkwargs):
     (ds.integers, {'min_value': float('nan')}),
     (ds.integers, {'min_value': 2, 'max_value': 1}),
     (ds.integers, {'min_value': 0.1, 'max_value': 0.2}),
+    (ds.integers, {'min_value': float('nan')}),
+    (ds.integers, {'max_value': float('nan')}),
+    (ds.dates, {'min_value': 'fish'}),
+    (ds.dates, {'max_value': 'fish'}),
+    (ds.dates, {
+        'min_value': date(2017, 8, 22),
+        'max_value': date(2017, 8, 21)}),
+    (ds.datetimes, {'min_value': 'fish'}),
+    (ds.datetimes, {'max_value': 'fish'}),
+    (ds.datetimes, {
+        'min_value': datetime(2017, 8, 22),
+        'max_value': datetime(2017, 8, 21)}),
     (ds.decimals, {'min_value': float('nan')}),
+    (ds.decimals, {'max_value': float('nan')}),
     (ds.decimals, {'min_value': 2, 'max_value': 1}),
     (ds.decimals, {'max_value': '-snan'}),
+    (ds.decimals, {'max_value': complex(1, 2)}),
     (ds.decimals, {'places': -1}),
+    (ds.decimals, {'places': 0.5}),
     (ds.decimals, {'max_value': 0.0, 'min_value': 1.0}),
+    (ds.decimals, {'min_value': 1.0, 'max_value': 0.0}),
     (ds.decimals, {
         'min_value': 0.0, 'max_value': 1.0, 'allow_infinity': True}),
     (ds.decimals, {'min_value': 'inf'}),
     (ds.decimals, {'max_value': '-inf'}),
     (ds.decimals, {'min_value': '-inf', 'allow_infinity': False}),
     (ds.decimals, {'max_value': 'inf', 'allow_infinity': False}),
+    (ds.decimals, {'min_value': complex(1, 2)}),
+    (ds.dictionaries, {
+        'keys': ds.booleans(), 'values': ds.booleans(),
+        'min_size': 10, 'max_size': 1}),
+    (ds.floats, {'min_value': float('nan')}),
+    (ds.floats, {'max_value': float('nan')}),
+    (ds.floats, {'min_value': complex(1, 2)}),
+    (ds.floats, {'max_value': complex(1, 2)}),
     (ds.fractions, {'min_value': 2, 'max_value': 1}),
-    (ds.fractions, {'max_denominator': 0}),
     (ds.fractions, {'min_value': '1/3', 'max_value': '1/3',
                     'max_denominator': 2}),
+    (ds.fractions, {'min_value': float('nan')}),
+    (ds.fractions, {'max_value': float('nan')}),
+    (ds.fractions, {'max_denominator': 0}),
+    (ds.fractions, {'max_denominator': 1.5}),
+    (ds.fractions, {'min_value': complex(1, 2)}),
     (ds.lists, {}),
     (ds.lists, {'average_size': '5'}),
     (ds.lists, {'average_size': float('nan')}),
@@ -99,6 +128,16 @@ def fn_ktest(*fnkwargs):
     (ds.dictionaries, {'keys': ds.integers(), 'values': 1}),
     (ds.dictionaries, {'keys': 1, 'values': ds.integers()}),
     (ds.text, {'alphabet': '', 'min_size': 1}),
+    (ds.timedeltas, {'min_value': 'fish'}),
+    (ds.timedeltas, {'max_value': 'fish'}),
+    (ds.timedeltas, {
+        'min_value': timedelta(hours=1),
+        'max_value': timedelta(minutes=1)}),
+    (ds.times, {'min_value': 'fish'}),
+    (ds.times, {'max_value': 'fish'}),
+    (ds.times, {
+        'min_value': time(2, 0),
+        'max_value': time(1, 0)}),
 )
 def test_validates_keyword_arguments(fn, kwargs):
     with pytest.raises(InvalidArgument):
@@ -166,7 +205,8 @@ def test_produces_valid_examples_from_keyword(fn, kwargs):
 
 
 @fn_test(
-    (ds.one_of, (1,))
+    (ds.one_of, (1,)),
+    (ds.tuples, (1,)),
 )
 def test_validates_args(fn, args):
     with pytest.raises(InvalidArgument):
