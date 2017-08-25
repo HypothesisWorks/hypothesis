@@ -24,13 +24,47 @@ import numpy as np
 import pandas
 import hypothesis.strategies as st
 import hypothesis.extra.numpy as npst
+import hypothesis.internal.conjecture.utils as cu
+from pandas.api.types import is_categorical_dtype
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import hrange, integer_types
-from pandas.api.types import is_categorical_dtype
 
 
 def is_sequence(c):
     return hasattr(c, '__len__') and hasattr(c, '__getitem__')
+
+
+is_ordered_dtype_cache = {}
+
+
+def is_ordered_dtype_for_index(dt):
+    """We calculate whether when generating an Index a given dtype is suitable
+    for ordering.
+
+    This is is made more complicated than it needs to be by the fact
+    that pandas does a whole bunch of value conversion for indexes, and
+    the behaviour is not always the same as the corresponding numpy
+    dtype. For example, complex128, which is np.dtype(complex), is
+    orderable but complex is not. If you create an Index from an array
+    of the former, its values will get converted into an array of
+    standard library complex numbers with dtype equal to object. So the
+    array has elements that are orderable but the corresponding index
+    doesn't.
+
+    """
+    try:
+        return is_ordered_dtype_cache[dt]
+    except KeyError:
+        pass
+
+    ix = pandas.Index(np.array([0, 1], dtype=dt), dtype=dt)
+    try:
+        bool(ix.values[0] < ix.values[1])
+        result = True
+    except TypeError:
+        result = False
+    is_ordered_dtype_cache[dt] = result
+    return result
 
 
 def build_index(draw, index, min_size, max_size):
@@ -68,6 +102,136 @@ def dtype_for_elements_strategy(s):
         s.map(lambda x: pandas.Series([x]).dtype),
         key=('hypothesis.extra.pandas.dtype_for_elements_strategy', s),
     )
+
+
+class IndexStrategy(st.SearchStrategy):
+    def __init__(
+        self, elements, dtype, min_size, max_size, unique, order,
+        allow_nan
+    ):
+        super(IndexStrategy, self).__init__()
+        self.elements = elements
+        self.dtype = dtype
+        self.min_size = min_size
+        self.max_size = max_size
+        self.unique = unique
+        self.order = order
+        self.allow_nan = allow_nan
+
+    def do_draw(self, data):
+        result = []
+        seen = set()
+
+        iterator = cu.many(
+            data, min_size=self.min_size, max_size=self.max_size,
+            average_size=(self.min_size + self.max_size) / 2
+        )
+
+        if self.dtype is None:
+            def convert(x): return x
+        else:
+            convert = self.dtype.type
+
+        while iterator.more():
+            elt = convert(data.draw(self.elements(len(result))))
+
+            if not self.allow_nan:
+                try:
+                    if np.isnan(float(elt)):
+                        iterator.reject()
+                        continue
+                except TypeError:
+                    pass
+
+            if self.order != 0 and result:
+                if (
+                    (elt > result[-1] and self.order < 0) or
+                    (elt < result[-1] and self.order > 0)
+                ):
+                    iterator.reject()
+                    continue
+
+            if self.unique:
+                if elt in seen:
+                    iterator.reject()
+                    continue
+                seen.add(elt)
+            result.append(elt)
+
+        if not result and self.dtype is None:
+            dtype = data.draw(dtype_for_elements_strategy(self.elements(0)))
+            return pandas.Index([], dtype=dtype)
+        return pandas.Index(result, dtype=self.dtype)
+
+
+@st.cacheable
+@st.defines_strategy
+def indexes(
+    elements=st.just, dtype=None, min_size=0, max_size=None, unique=True,
+    order=0, allow_nan=False
+):
+    """Provides a strategy for generating values of type pandas.Index.
+
+    * elements is a function which takes an integer position in the index and
+      returns a strategy for generating values. The default will simply
+      generate the current position, converted to the passed dtype if one is
+      provided.
+    * dtype is the dtype of the resulting index. If None, it will be inferred
+      from the elements strategy (and so will default to int64 if neither are
+      passed).
+    * min_size is the minimum number of elements in the index.
+    * max_size is the maximum number of elements in the index. If None then it
+      will default to a fairly small size (currently min_size + 10, but that
+      may change arbitrarily). If you want larger indexes you should pass a
+      max_size explicitly.
+    * unique specifies whether all of the elements in the resulting index
+      should be distinct.
+    * order is an integer which specifies a required order for the index. If it
+      is zero, the index is not required to be in any particular order. If it
+      is > 0, the index must be monotonic increasing. If it is < 0 the index
+      must be monotonic decreasing.
+    * allow_nan if set to True restricts nan from appearing in the index even
+      if it is a valid value for the element/dtype. If allow_nan is set to
+      true, the uniqueness and ordering properties may not be satisfied for
+      NaN values.
+
+    """
+    st.check_valid_interval(min_size, max_size, 'min_size', 'max_size')
+    st.check_type(integer_types, order, 'order')
+    st.check_type(bool, unique, 'unique')
+
+    if elements is not None:
+        try:
+            element_result = elements(0)
+        except TypeError:
+            raise InvalidArgument((
+                'elements should be a function that takes an integer position'
+                'and returns a strategy. Instead got non-callable %r of type '
+                '%s.') % (elements, type(elements).__name__,)
+            )
+        else:
+            if not isinstance(element_result, st.SearchStrategy):
+                raise InvalidArgument((
+                    'The elements function should return a strategy, but '
+                    'elements(0) = %r of type %s instead.') % (
+                        element_result, type(element_result).__name__
+                ))
+
+    if dtype is not None:
+        dtype = np.dtype(dtype)
+
+    if (
+        dtype is not None and order != 0 and
+        not is_ordered_dtype_for_index(dtype)
+    ):
+        raise InvalidArgument(
+            'dtype %r is not orderable' % (dtype,)
+        )
+
+    if max_size is None:
+        max_size = min_size + 10
+    return IndexStrategy(
+        elements, dtype, min_size, max_size, unique, order, allow_nan)
 
 
 @st.composite
