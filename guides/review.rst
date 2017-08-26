@@ -107,9 +107,11 @@ src then it counts.
    the second (minor) for things that do but are backwards compatible, and
    the first (major) changes for things that aren't backwards compatible.
    See the section on API changes for the latter two.
-5. The changelog should be kept up to date, clearly describing the change
-   and including the current date (remember: This will be released as soon
-   as it's merged).
+5. The changelog should be kept up to date by creating a RELEASE.rst file in
+   the root of the repository. Make sure you build the documentation and
+   manually inspect the resulting changelog to see that it looks good - there
+   are a lot of syntax mistakes possible in RST that don't result in a
+   compilation error.
 
 ~~~~~~~~~~~
 API Changes

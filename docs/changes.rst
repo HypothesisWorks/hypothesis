@@ -27,7 +27,7 @@ information to the contrary.
 
 This release fixes some minor bugs in argument validation:
 
-    * `hypothesis.extra.numpy <hypothesis-numpy>` dtype strategies would raise an internal error
+    * :ref:`hypothesis.extra.numpy <hypothesis-numpy>` dtype strategies would raise an internal error
       instead of an InvalidArgument exception when passed an invalid
       endianness specification.
     * :func:`~hypothesis.strategies.fractions` would raise an internal error instead of an InvalidArgument
@@ -61,7 +61,7 @@ by using :func:`simplefilter('error', HypothesisDeprecationWarning) <python:warn
 -------------------
 
 This release renames the relevant arguments on the
-:func:`~hypothesis.strategies.datetimes`, func:`~hypothesis.strategies.dates`,
+:func:`~hypothesis.strategies.datetimes`, :func:`~hypothesis.strategies.dates`,
 func:`~hypothesis.strategies.times`, and func:`~hypothesis.strategies.timedeltas`
 strategies to ``min_value`` and ``max_value``, to make them consistent with the
 other strategies in the module.
@@ -79,7 +79,7 @@ handles shrinking.
 
 This should mostly be visible in terms of getting better examples for tests
 which make heavy use of :func:`~hypothesis.strategies.composite`,
-:ref`data <interactive-draw>` or :ref`flatmap <flatmap>` where the data
+:ref:`data <interactive-draw>` or :ref:`flatmap <flatmap>` where the data
 drawn depends a lot on previous choices, especially where size parameters are
 affected. Previously Hypothesis would have struggled to reliably produce
 good examples here. Now it should do much better. Performance should also be

@@ -86,6 +86,8 @@ wanted pairs of integers (x,y) such that x < y you could do the following:
   ... lambda x: tuple(sorted(x))).filter(lambda x: x[0] != x[1]).example()
   (180, 241)
 
+.. _flatmap:
+
 ----------------------------
 Chaining strategies together
 ----------------------------
