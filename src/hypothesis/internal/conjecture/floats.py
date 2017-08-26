@@ -17,9 +17,10 @@
 
 from __future__ import division, print_function, absolute_import
 
+import math
 from array import array
 
-from hypothesis.internal.compat import hbytes, hrange, int_to_bytes
+from hypothesis.internal.compat import ceil, hbytes, hrange, int_to_bytes
 from hypothesis.internal.floats import sign as sgn
 from hypothesis.internal.floats import float_to_int, int_to_float
 
@@ -225,9 +226,18 @@ def float_to_lex(f):
 def draw_float(data):
     try:
         data.start_example()
-        non_zero = data.draw_bits(1)
+        header = data.draw_bits(2)
+        non_zero = header & 2
+        needs_round = 1 - (header & 1)
         if non_zero:
-            return lex_to_float(data.draw_bits(64))
+            result = lex_to_float(data.draw_bits(64))
+            if needs_round:
+                try:
+                    result = math.copysign(
+                        float(ceil(abs(result))), result)
+                except (ValueError, OverflowError):
+                    pass
+            return result
         else:
             data.write(hbytes(7))
             sign = data.draw_bits(1)
@@ -247,5 +257,14 @@ def write_float(data, f):
         else:
             data.write(hbytes(7) + hbytes([0]))
         return
-    data.write(hbytes([1]))
+
+    try:
+        is_integral = int(f) == f
+    except (ValueError, OverflowError):
+        is_integral = False
+
+    if is_integral:
+        data.write(hbytes([2]))
+    else:
+        data.write(hbytes([3]))
     data.write(int_to_bytes(float_to_lex(f), 8))
