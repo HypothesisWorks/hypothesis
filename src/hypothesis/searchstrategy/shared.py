@@ -44,5 +44,5 @@ class SharedStrategy(SearchStrategy):
         sharing = getattr(data, SHARED_STRATEGY_ATTRIBUTE)
         key = self.key or self
         if key not in sharing:
-            sharing[key] = self.base.do_draw(data)
+            sharing[key] = data.draw(self.base)
         return sharing[key]
