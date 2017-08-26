@@ -11,9 +11,10 @@ HERE="$(dirname "$0")"
 
 cd "$HERE"/..
 
-trap "git checkout docs/changes.rst src/hypothesis/version.py" EXIT
-
-$PYTHON scripts/update-changelog-for-docs.py
+if [ -e RELEASE.rst ] ; then
+    trap "git checkout docs/changes.rst src/hypothesis/version.py" EXIT
+    $PYTHON scripts/update-changelog-for-docs.py
+fi
 
 export PYTHONPATH=src 
 
