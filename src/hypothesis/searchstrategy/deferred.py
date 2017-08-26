@@ -68,6 +68,9 @@ class DeferredStrategy(SearchStrategy):
     def calc_is_empty(self):
         return self.wrapped_strategy.is_empty
 
+    def calc_has_reusable_values(self):
+        return self.wrapped_strategy.has_reusable_values
+
     def __repr__(self):
         if self.__wrapped_strategy is not None:
             if self.__in_repr:

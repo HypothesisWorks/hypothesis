@@ -43,6 +43,11 @@ STANDARD_TYPES = list(map(np.dtype, [
 ]))
 
 
+@given(nps.nested_dtypes())
+def test_strategies_for_standard_dtypes_have_reusable_values(dtype):
+    assert nps.from_dtype(dtype).has_reusable_values
+
+
 @pytest.mark.parametrize(u't', STANDARD_TYPES)
 def test_produces_instances(t):
     @given(nps.from_dtype(t))

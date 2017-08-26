@@ -72,7 +72,7 @@ by using :func:`simplefilter('error', HypothesisDeprecationWarning) <python:warn
 
 This release renames the relevant arguments on the
 :func:`~hypothesis.strategies.datetimes`, :func:`~hypothesis.strategies.dates`,
-func:`~hypothesis.strategies.times`, and func:`~hypothesis.strategies.timedeltas`
+:func:`~hypothesis.strategies.times`, and :func:`~hypothesis.strategies.timedeltas`
 strategies to ``min_value`` and ``max_value``, to make them consistent with the
 other strategies in the module.
 

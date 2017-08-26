@@ -31,6 +31,9 @@ class BoolStrategy(SearchStrategy):
     def __repr__(self):
         return u'BoolStrategy()'
 
+    def calc_has_reusable_values(self):
+        return True
+
     def do_draw(self, data):
         return d.boolean(data)
 
@@ -45,7 +48,10 @@ class JustStrategy(SearchStrategy):
         self.value = value
 
     def __repr__(self):
-        return 'JustStrategy(value=%r)' % (self.value,)
+        return 'just(%r)' % (self.value,)
+
+    def calc_has_reusable_values(self):
+        return True
 
     def do_draw(self, data):
         return self.value
@@ -79,6 +85,9 @@ class SampledFromStrategy(SearchStrategy):
         SearchStrategy.__init__(self)
         self.elements = d.check_sample(elements)
         assert self.elements
+
+    def calc_has_reusable_values(self):
+        return True
 
     def do_draw(self, data):
         return d.choice(data, self.elements)

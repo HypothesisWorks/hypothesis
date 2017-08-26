@@ -17,10 +17,12 @@
 
 from __future__ import division, print_function, absolute_import
 
+import math
+
 import numpy as np
 
 import hypothesis.strategies as st
-from hypothesis import settings
+import hypothesis.internal.conjecture.utils as cu
 from hypothesis.errors import InvalidArgument
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import hrange, text_type
@@ -30,6 +32,7 @@ from hypothesis.internal.branchcheck import check_function
 TIME_RESOLUTIONS = tuple('Y  M  D  h  m  s  ms  us  ns  ps  fs  as'.split())
 
 
+@st.defines_strategy_with_reusable_values
 def from_dtype(dtype):
     # Compound datatypes, eg 'f4,f4,f4'
     if dtype.names is not None:
@@ -88,36 +91,85 @@ def order_check(name, floor, small, large):
 
 class ArrayStrategy(SearchStrategy):
 
-    def __init__(self, element_strategy, shape, dtype):
+    def __init__(self, element_strategy, shape, dtype, fill):
         self.shape = tuple(shape)
+        self.fill = fill
         check_argument(shape,
                        u'Array shape must have at least one dimension, '
                        u'provided shape was {}', shape)
         check_argument(all(isinstance(s, int) for s in shape),
                        u'Array shape must be integer in each dimension, '
                        u'provided shape was {}', shape)
-        self.array_size = np.prod(shape)
-        buff_size = settings.default.buffer_size
-        check_argument(
-            self.array_size * dtype.itemsize <= buff_size,
-            u'Insufficient bytes of entropy to draw requested array.  '
-            u'shape={}, dtype={}.  Can you reduce the size or dimensions '
-            u'of the array?  What about using a smaller dtype?  If slow '
-            u'test runs and minimisation are acceptable, you  could '
-            u'increase settings().buffer_size from {} to at least {}.',
-            shape, dtype, buff_size, self.array_size * buff_size)
+        self.array_size = int(np.prod(shape))
         self.dtype = dtype
         self.element_strategy = element_strategy
 
     def do_draw(self, data):
-        result = np.empty(dtype=self.dtype, shape=self.array_size)
-        for i in hrange(self.array_size):
-            result[i] = self.element_strategy.do_draw(data)
+        if 0 in self.shape:
+            return np.zeros(dtype=self.dtype, shape=self.shape)
+
+        # This could legitimately be a np.empty, but the performance gains for
+        # that would be so marginal that there's really not much point risking
+        # undefined behaviour shenanigans.
+        result = np.zeros(shape=self.array_size, dtype=self.dtype)
+
+        if self.fill.is_empty:
+            # We have no fill value (either because the user explicitly
+            # disabled it or because the default behaviour was used and our
+            # elements strategy does not produce reusable values), so we must
+            # generate a fully dense array with a freshly drawn value for each
+            # entry.
+            for i in hrange(len(result)):
+                result[i] = data.draw(self.element_strategy)
+        else:
+            # We draw numpy arrays as "sparse with an offset". We draw a
+            # collection of index assignments within the array and assign
+            # fresh values from our elements strategy to those indices. If at
+            # the end we have not assigned every element then we draw a single
+            # value from our fill strategy and use that to populate the
+            # remaining positions with that strategy.
+
+            elements = cu.many(
+                data,
+                min_size=0, max_size=self.array_size,
+                # sqrt isn't chosen for any particularly principled reason. It
+                # just grows reasonably quickly but sublinearly, and for small
+                # arrays it represents a decent fraction of the array size.
+                average_size=math.sqrt(self.array_size),
+            )
+
+            needs_fill = np.full(self.array_size, True)
+
+            while elements.more():
+                i = cu.integer_range(data, 0, self.array_size - 1)
+                if not needs_fill[i]:
+                    elements.reject()
+                    continue
+                needs_fill[i] = False
+                result[i] = data.draw(self.element_strategy)
+            if needs_fill.any():
+                # We didn't fill all of the indices in the early loop, so we
+                # put a fill value into the rest.
+
+                # We have to do this hilarious little song and dance to work
+                # around numpy's special handling of iterable values. If the
+                # value here were e.g. a tuple then neither array creation
+                # nor putmask would do the right thing. But by creating an
+                # array of size one and then assigning the fill value as a
+                # single element, we both get an array with the right value in
+                # it and putmask will do the right thing by repeating the
+                # values of the array across the mask.
+                one_element = np.zeros(shape=1, dtype=self.dtype)
+                one_element[0] = data.draw(self.fill)
+                np.putmask(result, needs_fill, one_element)
+
         return result.reshape(self.shape)
 
 
 @st.composite
-def arrays(draw, dtype, shape, elements=None):
+def arrays(
+    draw, dtype, shape, elements=None, fill=None
+):
     """`dtype` may be any valid input to ``np.dtype`` (this includes
     ``np.dtype`` objects), or a strategy that generates such values.  `shape`
     may be an integer >= 0, a tuple of length >= of such integers, or a
@@ -145,14 +197,30 @@ def arrays(draw, dtype, shape, elements=None):
       >>> arrays(np.float, 3, elements=floats(0, 1)).example()
       array([ 0.88974794,  0.77387938,  0.1977879 ])
 
-    .. warning::
-        Hypothesis works really well with NumPy, but is designed for small
-        data.  The default entropy is 8192 bytes - it is impossible to draw
-        an example where ``example_array.nbytes`` is greater than
-        ``settings.default.buffer_size``.
-        See the :doc:`settings documentation <settings>` if you need to
-        increase this value, but be aware that Hypothesis may take much
-        longer to produce a minimal failure case.
+    The fill argument provides a 'background noise' value for the array. Array
+    values are generated in two parts:
+
+    1. Some subset of the coordinates of the array are populated with a value
+       drawn from the elements strategy (or its inferred form).
+    2. If any coordinates were not assigned in the previous step, a single
+       value is drawn from the fill strategy and is assigned to all remaining
+       places.
+
+    You can set fill to :func:`~hypothesis.strategies.nothing` if you want to
+    disable this behaviour and draw a value for every element.
+
+    If fill is set to None then it will attempt to infer the correct behaviour
+    automatically: If it looks safe to reuse the values of elements across
+    multiple coordinates (this will be the case for any inferred strategy, and
+    for most of the builtins, but is not the case for mutable values or
+    strategies built with flatmap, map, composite, etc) then it will use the
+    elements strategy as the fill, else it will default to having no fill.
+
+    Having a fill helps Hypothesis craft high quality examples, but its
+    main importance is when the array generated is large: Hypothesis is
+    primarily designed around testing small examples. If you have arrays with
+    hundreds or more elements, having a fill value is essential if you want
+    your tests to run in reasonable time.
 
     """
     if isinstance(dtype, SearchStrategy):
@@ -168,7 +236,14 @@ def arrays(draw, dtype, shape, elements=None):
     if not shape:
         if dtype.kind != u'O':
             return draw(elements)
-    return draw(ArrayStrategy(elements, shape, dtype))
+    if fill is None:
+        if elements.has_reusable_values:
+            fill = elements
+        else:
+            fill = st.nothing()
+    else:
+        st.check_strategy(fill, 'fill')
+    return draw(ArrayStrategy(elements, shape, dtype, fill))
 
 
 @st.defines_strategy

@@ -17,7 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis.searchstrategy.wrappers import SearchStrategy
+from hypothesis.searchstrategy import SearchStrategy
 
 SHARED_STRATEGY_ATTRIBUTE = '_hypothesis_shared_strategies'
 

@@ -53,6 +53,9 @@ class TupleStrategy(SearchStrategy):
             tuple_string,
         )
 
+    def calc_has_reusable_values(self):
+        return all(e.has_reusable_values for e in self.element_strategies)
+
     def newtuple(self, xs):
         """Produce a new tuple of the correct type."""
         return tuple(xs)
