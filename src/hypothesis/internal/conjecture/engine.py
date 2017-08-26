@@ -320,6 +320,8 @@ class ConjectureRunner(object):
                 self._run()
             except RunIsComplete:
                 pass
+            if self.last_data is not None:
+                self.debug_data(self.last_data)
             self.debug(
                 u'Run complete after %d examples (%d valid) and %d shrinks' % (
                     self.call_count, self.valid_examples, self.shrinks,
