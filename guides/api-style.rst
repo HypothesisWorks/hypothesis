@@ -6,6 +6,8 @@ Here are some guidelines for how to write strategies so that they "feel" like
 a Hypothesis API. This is particularly focused on writing new strategies, as
 that's the major place where we add APIs, but also applies more generally.
 
+Note that it is not a guide to *code* style, only API design.
+
 The Hypothesis style evolves over time, and earlier strategies in particular
 may not be consistent with this style, and we've tried some experiments
 that didn't work out, so this style guide is more normative than descriptive
@@ -63,10 +65,15 @@ We have a reasonably distinctive style when it comes to handling arguments:
 * It's worth thinking about the order of arguments: the first one or two
   arguments are likely to be passed positionally, so try to put values there
   where this is useful and not too confusing.
-* Arguments should not be "a value or a strategy for generating that value"
-  unless there is some highly compelling reason for that. Hypothesis has good
-  composition mechanisms and people should use them instead of adding them on
-  an ad hoc basis to individual API functions.
+* Arguments should not be "a value or a strategy for generating that value".
+  If you find yourself inclined to write something like that, instead make it
+  take a strategy. If a user wants to pass a value they can wrap it in a call
+  to ``just``.
+* When adding arguments to strategies, think carefully about whether the user
+  is likely to want that value to vary often. If so, make it a strategy instead
+  of a value. In particular if it's likely to be common that they would want to
+  write ``some_strategy.flatmap(lambda x: my_new_strategy(argument=x))`` then
+  it should be a strategy.
 
 ~~~~~~~~~~~~~~
 Function Names
