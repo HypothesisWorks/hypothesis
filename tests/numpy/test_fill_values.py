@@ -25,7 +25,7 @@ from hypothesis.extra.numpy import arrays
 
 @given(arrays(object, 100, st.lists(max_size=0)))
 def test_generated_lists_are_distinct(ls):
-    assert len({id(x) for x in ls}) == len(ls)
+    assert len(set(map(id, ls))) == len(ls)
 
 
 @st.composite
