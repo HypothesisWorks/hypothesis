@@ -22,6 +22,17 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.22.0 - 2017-08-26
+-------------------
+
+This release provides what should be a substantial performance improvement to
+numpy arrays generated using :ref:`provided numpy support <hypothesis-numpy>`,
+and adds a new ``fill_value`` argument to :func:`~hypothesis.extra.numpy.arrays`
+to control this behaviour.
+
+This work was funded by `Stripe <https://stripe.com/>`_.
+
+-------------------
 3.21.3 - 2017-08-26
 -------------------
 
