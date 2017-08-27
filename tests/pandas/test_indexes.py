@@ -50,8 +50,8 @@ def test_generate_arbitrary_indices(data):
     max_size = data.draw(
         st.none() | st.integers(min_size, min_size + 10), 'max_size')
     unique = data.draw(st.booleans(), 'unique')
-    allow_nan = data.draw(st.booleans(), 'allow_nan')
     order = data.draw(st.sampled_from((0, 1, -1)), 'order')
+    allow_nan = order == 0
     dtype = data.draw(st.none() | npst.scalar_dtypes(), 'dtype')
 
     if dtype is not None:
@@ -69,7 +69,7 @@ def test_generate_arbitrary_indices(data):
 
     index = data.draw(pdst.indexes(
         elements=elements, dtype=dtype, min_size=min_size, max_size=max_size,
-        unique=unique, order=order, allow_nan=allow_nan
+        unique=unique, order=order,
     ))
 
     if dtype is not None:

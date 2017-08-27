@@ -106,8 +106,7 @@ def dtype_for_elements_strategy(s):
 
 class IndexStrategy(st.SearchStrategy):
     def __init__(
-        self, elements, dtype, min_size, max_size, unique, order,
-        allow_nan
+        self, elements, dtype, min_size, max_size, unique, order
     ):
         super(IndexStrategy, self).__init__()
         self.elements = elements
@@ -116,7 +115,7 @@ class IndexStrategy(st.SearchStrategy):
         self.max_size = max_size
         self.unique = unique
         self.order = order
-        self.allow_nan = allow_nan
+        self.allow_nan = order == 0
 
     def do_draw(self, data):
         result = []
@@ -168,7 +167,7 @@ class IndexStrategy(st.SearchStrategy):
 @st.defines_strategy
 def indexes(
     elements=st.just, dtype=None, min_size=0, max_size=None, unique=True,
-    order=0, allow_nan=False
+    order=0,
 ):
     """Provides a strategy for generating values of type pandas.Index.
 
@@ -190,11 +189,6 @@ def indexes(
       is zero, the index is not required to be in any particular order. If it
       is > 0, the index must be monotonic increasing. If it is < 0 the index
       must be monotonic decreasing.
-    * allow_nan if set to True restricts nan from appearing in the index even
-      if it is a valid value for the element/dtype. If allow_nan is set to
-      true, the uniqueness and ordering properties may not be satisfied for
-      NaN values.
-
     """
     st.check_valid_interval(min_size, max_size, 'min_size', 'max_size')
     st.check_type(integer_types, order, 'order')
@@ -231,7 +225,7 @@ def indexes(
     if max_size is None:
         max_size = min_size + 10
     return IndexStrategy(
-        elements, dtype, min_size, max_size, unique, order, allow_nan)
+        elements, dtype, min_size, max_size, unique, order)
 
 
 @st.composite
