@@ -33,7 +33,6 @@ from hypothesis.extra.pandas.impl import is_ordered_dtype_for_index
 def test_does_not_generate_impossible_conditions():
     with pytest.raises(NoExamples):
         pdst.indexes(
-            elements=st.just,
             min_size=3, max_size=3, dtype=bool
         ).example()
 
@@ -52,30 +51,24 @@ def test_generate_arbitrary_indices(data):
     unique = data.draw(st.booleans(), 'unique')
     order = data.draw(st.sampled_from((0, 1, -1)), 'order')
     allow_nan = order == 0
-    dtype = data.draw(st.none() | npst.scalar_dtypes(), 'dtype')
+    dtype = data.draw(npst.scalar_dtypes(), 'dtype')
+    assume(supported_by_pandas(dtype))
+    assume(order == 0 or is_ordered_dtype_for_index(dtype))
 
-    if dtype is not None:
-        assume(supported_by_pandas(dtype))
-        assume(order == 0 or is_ordered_dtype_for_index(dtype))
+    pass_elements = data.draw(st.booleans(), 'pass_elements')
 
-    base_dtype = np.dtype(int) if dtype is None else dtype
+    inferred_dtype = pandas.Index([], dtype=dtype).dtype
 
-    non_default_elements = data.draw(st.booleans(), 'non_default_elements')
-
-    if non_default_elements:
-        def elements(i): return npst.from_dtype(base_dtype)
+    if pass_elements:
+        elements = npst.from_dtype(dtype)
+        dtype = None
     else:
-        elements = st.just
+        elements = None
 
     index = data.draw(pdst.indexes(
         elements=elements, dtype=dtype, min_size=min_size, max_size=max_size,
         unique=unique, order=order,
     ))
-
-    if dtype is not None:
-        inferred_dtype = pandas.Index([], dtype=dtype).dtype
-    else:
-        inferred_dtype = np.dtype(int)
 
     assert index.dtype == inferred_dtype
 

@@ -18,10 +18,11 @@
 from __future__ import division, print_function, absolute_import
 
 from hypothesis.extra.pandas.impl import series, data_frames, column, columns,\
-    indexes
+    indexes, range_indexes
 
 __all__ = [
     'series',
-    'data_frames', 'indexes',
+    'data_frames',
+    'indexes', 'range_indexes',
     'column', 'columns',
 ]

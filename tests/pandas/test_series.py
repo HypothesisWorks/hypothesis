@@ -49,7 +49,8 @@ def test_buggy_dtype_identification_is_precise(data):
     assert series.dtype != dtype
 
 
-@given(pdst.series(dtype=float, index=pdst.indexes(min_size=2, max_size=5)))
+@given(pdst.series(
+    dtype=float, index=pdst.range_indexes(min_size=2, max_size=5)))
 def test_series_respects_size_bounds(s):
     assert 2 <= len(s) <= 5
 

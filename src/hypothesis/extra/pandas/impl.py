@@ -104,11 +104,11 @@ def dtype_for_elements_strategy(s):
     )
 
 
-class IndexStrategy(st.SearchStrategy):
+class ValueIndexStrategy(st.SearchStrategy):
     def __init__(
         self, elements, dtype, min_size, max_size, unique, order
     ):
-        super(IndexStrategy, self).__init__()
+        super(ValueIndexStrategy, self).__init__()
         self.elements = elements
         self.dtype = dtype
         self.min_size = min_size
@@ -132,7 +132,7 @@ class IndexStrategy(st.SearchStrategy):
             convert = self.dtype.type
 
         while iterator.more():
-            elt = convert(data.draw(self.elements(len(result))))
+            elt = convert(data.draw(self.elements))
 
             if not self.allow_nan:
                 try:
@@ -158,61 +158,67 @@ class IndexStrategy(st.SearchStrategy):
             result.append(elt)
 
         if not result and self.dtype is None:
-            dtype = data.draw(dtype_for_elements_strategy(self.elements(0)))
+            dtype = data.draw(dtype_for_elements_strategy(self.elements))
             return pandas.Index([], dtype=dtype)
         return pandas.Index(result, dtype=self.dtype)
+
+
+DEFAULT_MAX_SIZE = 10
+
+
+@st.cacheable
+@st.defines_strategy
+def range_indexes(min_size=0, max_size=None):
+    st.check_valid_interval(min_size, max_size, 'min_size', 'max_size')
+    if max_size is None:
+        max_size = min_size + DEFAULT_MAX_SIZE
+    return st.integers(min_size, max_size).map(
+        lambda i: pandas.Index(hrange(i), dtype=int)
+    )
 
 
 @st.cacheable
 @st.defines_strategy
 def indexes(
-    elements=st.just, dtype=None, min_size=0, max_size=None, unique=True,
+    elements=None, dtype=None, min_size=0, max_size=None, unique=True,
     order=0,
 ):
     """Provides a strategy for generating values of type pandas.Index.
 
-    * elements is a function which takes an integer position in the index and
-      returns a strategy for generating values. The default will simply
-      generate the current position, converted to the passed dtype if one is
-      provided.
+    * elements is a strategy which will be used to generate the individual
+      values of the index. If None, it will be inferred from the dtype.
     * dtype is the dtype of the resulting index. If None, it will be inferred
-      from the elements strategy (and so will default to int64 if neither are
-      passed).
+      from the elements strategy. At least one of dtype or elements must be
+      provided.
     * min_size is the minimum number of elements in the index.
     * max_size is the maximum number of elements in the index. If None then it
-      will default to a fairly small size (currently min_size + 10, but that
-      may change arbitrarily). If you want larger indexes you should pass a
-      max_size explicitly.
+      will default to a suitable small size. If you want larger indexes you
+      should pass a max_size explicitly.
     * unique specifies whether all of the elements in the resulting index
       should be distinct.
     * order is an integer which specifies a required order for the index. If it
       is zero, the index is not required to be in any particular order. If it
       is > 0, the index must be monotonic increasing. If it is < 0 the index
       must be monotonic decreasing.
+
     """
     st.check_valid_interval(min_size, max_size, 'min_size', 'max_size')
     st.check_type(integer_types, order, 'order')
     st.check_type(bool, unique, 'unique')
-
     if elements is not None:
-        try:
-            element_result = elements(0)
-        except TypeError:
-            raise InvalidArgument((
-                'elements should be a function that takes an integer position'
-                'and returns a strategy. Instead got non-callable %r of type '
-                '%s.') % (elements, type(elements).__name__,)
-            )
-        else:
-            if not isinstance(element_result, st.SearchStrategy):
-                raise InvalidArgument((
-                    'The elements function should return a strategy, but '
-                    'elements(0) = %r of type %s instead.') % (
-                        element_result, type(element_result).__name__
-                ))
+        st.check_strategy(elements, 'elements')
 
     if dtype is not None:
-        dtype = np.dtype(dtype)
+        dtype = st.try_convert(np.dtype, dtype, 'dtype')
+
+    if elements is not None:
+        pass
+    elif dtype is not None:
+        elements = npst.from_dtype(dtype)
+    else:
+        raise InvalidArgument(
+            'At least one of elements or dtype must be provided.'
+        )
 
     if (
         dtype is not None and order != 0 and
@@ -223,8 +229,8 @@ def indexes(
         )
 
     if max_size is None:
-        max_size = min_size + 10
-    return IndexStrategy(
+        max_size = min_size + DEFAULT_MAX_SIZE
+    return ValueIndexStrategy(
         elements, dtype, min_size, max_size, unique, order)
 
 
@@ -258,7 +264,7 @@ def series(
 
     """
     if index is None:
-        index = indexes()
+        index = range_indexes()
     else:
         st.check_strategy(index)
 
@@ -386,7 +392,7 @@ def data_frames(
     """
 
     if index is None:
-        index = indexes()
+        index = range_indexes()
     else:
         st.check_strategy(index)
 

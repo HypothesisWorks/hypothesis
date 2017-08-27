@@ -37,7 +37,7 @@ def test_can_have_columns_of_distinct_types(df):
 
 @given(pdst.data_frames(
     [pdst.column(dtype=int)],
-    index=pdst.indexes(min_size=1, max_size=5)))
+    index=pdst.range_indexes(min_size=1, max_size=5)))
 def test_respects_size_bounds(df):
     assert 1 <= len(df) <= 5
 
