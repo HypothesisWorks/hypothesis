@@ -57,7 +57,8 @@ def test_generate_arbitrary_indices(data):
 
     pass_elements = data.draw(st.booleans(), 'pass_elements')
 
-    inferred_dtype = pandas.Index([], dtype=dtype).dtype
+    converted_dtype = pandas.Index([], dtype=dtype).dtype
+    inferred_dtype = pandas.Index([data.draw(npst.from_dtype(dtype))]).dtype
 
     if pass_elements:
         elements = npst.from_dtype(dtype)
@@ -70,7 +71,10 @@ def test_generate_arbitrary_indices(data):
         unique=unique, order=order,
     ))
 
-    assert index.dtype == inferred_dtype
+    if dtype is None:
+        assert index.dtype == inferred_dtype
+    else:
+        assert index.dtype == converted_dtype
 
     has_nan = False
     for v in index.values:
