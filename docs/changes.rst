@@ -22,6 +22,14 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.22.1 - 2017-08-28
+-------------------
+
+Hypothesis now transparently handles problems with an internal unicode cache,
+including file truncation or read-only filesystems (:issue:`767`).
+Thanks to Sam Hames for the patch.
+
+-------------------
 3.22.0 - 2017-08-26
 -------------------
 
