@@ -130,6 +130,9 @@ check-py273: $(PY273) $(TOX)
 check-py27-typing: $(PY27) $(TOX)
 	$(TOX) --recreate -e py27typing
 
+check-py27-optimize: $(PY27) $(TOX)
+	PYTHONOPTIMIZE=2 env $(TOX) --recreate -e py27-brief
+
 check-py33: $(PY33) $(TOX)
 	$(TOX) --recreate -e py33-full
 
@@ -141,6 +144,9 @@ check-py35: $(PY35) $(TOX)
 
 check-py36: $(BEST_PY3) $(TOX)
 	$(TOX) --recreate -e py36-full
+
+check-py36-optimize: $(BEST_PY3) $(TOX)
+	PYTHONOPTIMIZE=2 env $(TOX) --recreate -e py36-brief
 
 check-pypy: $(PYPY) $(TOX)
 	$(TOX) --recreate -e pypy-full

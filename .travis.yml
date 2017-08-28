@@ -49,8 +49,10 @@ env:
         - TASK=check-ancient-pip
         - TASK=check-py273
         - TASK=check-py27-typing
+        - TASK=check-py27-optimize
         - TASK=check-py34
         - TASK=check-py35
+        - TASK=check-py36-optimize
         - TASK=check-nose
         - TASK=check-pytest28
         - TASK=check-faker070
