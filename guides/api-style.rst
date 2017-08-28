@@ -65,15 +65,15 @@ We have a reasonably distinctive style when it comes to handling arguments:
 * It's worth thinking about the order of arguments: the first one or two
   arguments are likely to be passed positionally, so try to put values there
   where this is useful and not too confusing.
-* Arguments should not be "a value or a strategy for generating that value".
-  If you find yourself inclined to write something like that, instead make it
-  take a strategy. If a user wants to pass a value they can wrap it in a call
-  to ``just``.
 * When adding arguments to strategies, think carefully about whether the user
   is likely to want that value to vary often. If so, make it a strategy instead
   of a value. In particular if it's likely to be common that they would want to
   write ``some_strategy.flatmap(lambda x: my_new_strategy(argument=x))`` then
   it should be a strategy.
+* Arguments should not be "a value or a strategy for generating that value".
+  If you find yourself inclined to write something like that, instead make it
+  take a strategy. If a user wants to pass a value they can wrap it in a call
+  to ``just``.
 
 ~~~~~~~~~~~~~~
 Function Names
@@ -95,7 +95,9 @@ We should try to use the same argument names and orders across different
 strategies wherever possible. In particular:
 
 * For collection types, the element strategy (or strategies) should always be
-  the first argument. It does not have a specific common name.
+  the first arguments. Where there is only one element strategy it should be
+  called ``elements`` (but e.g. ``dictionaries`` has element strategies named
+  ``keys`` and ``values`` and that's fine).
 * For ordered types, the first two arguments should be a lower and an upper
   bound. They should be called ``min_value`` and ``max_value``.
 * Collection types should have a ``min_size`` and a ``max_size`` parameter that
@@ -115,11 +117,9 @@ these should be considered targets for deprecation and/or improvement.
 * many of the collections in ``hypothesis.strategies`` allow a default of
   ``None`` for their elements strategy (meaning only generate empty
   collections).
-* the date and time handling strategies in ``hypothesis.strategies`` has
-  bound names that match the strategy name rather than being ``min_value`` and
-  ``max_value``
-* ``hypothesis.extra.numpy`` has a lot of arguments which can be either
+* ``hypothesis.extra.numpy`` has some arguments which can be either
   strategies or values.
 * ``hypothesis.extra.numpy`` assumes arrays are fixed size and doesn't have
-  ``min_size`` and ``max_size`` arguments.
+  ``min_size`` and ``max_size`` arguments (but this is probably OK because of
+  more complicated shapes of array).
 * ``hypothesis.stateful`` is a great big subclassing based train wreck.
