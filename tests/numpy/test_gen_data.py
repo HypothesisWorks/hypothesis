@@ -24,7 +24,8 @@ from flaky import flaky
 import hypothesis.strategies as st
 import hypothesis.extra.numpy as nps
 from hypothesis import given, settings
-from tests.common.debug import minimal
+from hypothesis.errors import InvalidArgument
+from tests.common.debug import minimal, find_any
 from hypothesis.strategytests import strategy_test_suite
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import text_type, binary_type
@@ -221,3 +222,28 @@ def test_byte_string_dtypes_generate_unicode_strings(data):
     dt = data.draw(nps.byte_string_dtypes())
     result = data.draw(nps.from_dtype(dt))
     assert isinstance(result, binary_type)
+
+
+@given(nps.arrays(dtype='int8', shape=st.integers(0, 20), unique=True))
+def test_array_values_are_unique(arr):
+    assert len(set(arr)) == len(arr)
+
+
+def test_may_fill_with_nan_when_unique_is_set():
+    find_any(
+        nps.arrays(
+            dtype=float, elements=st.floats(allow_nan=False), shape=10,
+            unique=True, fill=st.just(float('nan'))),
+        lambda x: np.isnan(x).any()
+    )
+
+
+def test_may_not_fill_with_non_nan_when_unique_is_set():
+    @given(nps.arrays(
+        dtype=float, elements=st.floats(allow_nan=False), shape=10,
+        unique=True, fill=st.just(0.0)))
+    def test(arr):
+        pass
+
+    with pytest.raises(InvalidArgument):
+        test()

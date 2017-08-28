@@ -91,7 +91,7 @@ def order_check(name, floor, small, large):
 
 class ArrayStrategy(SearchStrategy):
 
-    def __init__(self, element_strategy, shape, dtype, fill):
+    def __init__(self, element_strategy, shape, dtype, fill, unique):
         self.shape = tuple(shape)
         self.fill = fill
         check_argument(shape,
@@ -103,6 +103,7 @@ class ArrayStrategy(SearchStrategy):
         self.array_size = int(np.prod(shape))
         self.dtype = dtype
         self.element_strategy = element_strategy
+        self.unique = unique
 
     def do_draw(self, data):
         if 0 in self.shape:
@@ -119,8 +120,28 @@ class ArrayStrategy(SearchStrategy):
             # elements strategy does not produce reusable values), so we must
             # generate a fully dense array with a freshly drawn value for each
             # entry.
-            for i in hrange(len(result)):
-                result[i] = data.draw(self.element_strategy)
+            if self.unique:
+                seen = set()
+                elements = cu.many(
+                    data,
+                    min_size=self.array_size, max_size=self.array_size,
+                    average_size=self.array_size
+                )
+                i = 0
+                while elements.more():
+                    # We assign first because this means we check for
+                    # uniqueness after numpy has converted it to the relevant
+                    # type for us. Because we don't increment the counter on
+                    # a duplicate we will overwrite it on the next draw.
+                    result[i] = data.draw(self.element_strategy)
+                    if result[i] not in seen:
+                        seen.add(result[i])
+                        i += 1
+                    else:
+                        elements.reject()
+            else:
+                for i in hrange(len(result)):
+                    result[i] = data.draw(self.element_strategy)
         else:
             # We draw numpy arrays as "sparse with an offset". We draw a
             # collection of index assignments within the array and assign
@@ -139,14 +160,21 @@ class ArrayStrategy(SearchStrategy):
             )
 
             needs_fill = np.full(self.array_size, True)
+            seen = set()
 
             while elements.more():
                 i = cu.integer_range(data, 0, self.array_size - 1)
                 if not needs_fill[i]:
                     elements.reject()
                     continue
-                needs_fill[i] = False
                 result[i] = data.draw(self.element_strategy)
+                if self.unique:
+                    if result[i] in seen:
+                        elements.reject()
+                        continue
+                    else:
+                        seen.add(result[i])
+                needs_fill[i] = False
             if needs_fill.any():
                 # We didn't fill all of the indices in the early loop, so we
                 # put a fill value into the rest.
@@ -161,6 +189,18 @@ class ArrayStrategy(SearchStrategy):
                 # values of the array across the mask.
                 one_element = np.zeros(shape=1, dtype=self.dtype)
                 one_element[0] = data.draw(self.fill)
+                fill_value = one_element[0]
+                if self.unique:
+                    try:
+                        is_nan = np.isnan(fill_value)
+                    except TypeError:
+                        is_nan = False
+
+                    if not is_nan:
+                        raise InvalidArgument(
+                            'Cannot fill unique array with non-NaN '
+                            'value %r' % (fill_value,))
+
                 np.putmask(result, needs_fill, one_element)
 
         return result.reshape(self.shape)
@@ -168,12 +208,29 @@ class ArrayStrategy(SearchStrategy):
 
 @st.composite
 def arrays(
-    draw, dtype, shape, elements=None, fill=None
+    draw, dtype, shape, elements=None, fill=None, unique=False
 ):
-    """`dtype` may be any valid input to ``np.dtype`` (this includes
-    ``np.dtype`` objects), or a strategy that generates such values.  `shape`
-    may be an integer >= 0, a tuple of length >= of such integers, or a
-    strategy that generates such values.
+    """
+
+        * `dtype` may be any valid input to ``np.dtype`` (this includes
+          ``np.dtype`` objects), or a strategy that generates such values.
+        * `shape` may be an integer >= 0, a tuple of length >= of such integers
+          or a strategy that generates such values.
+        * `elements` is a strategy for generating values to put in the array.
+          If it is None a suitable value will be inferred based on the dtype,
+          which may give any legal value (including eg ``NaN`` for floats).
+          If you have more specific requirements, you should supply your own
+          elements strategy.
+        * `fill` is a strategy that may be used to generate a single background
+          value for the array. If None a suitable default will be inferred
+          based on the other arguments. If set to ``st.nothing()`` the fill
+          behaviour will be disabled entirely.
+        * `unique` specifies if the elements of the array should all be
+          distinct from one another. Note that in this case multiple NaN values
+          may still be allowed. If fill is also set, the only valid values for
+          it to return are NaN values (anything for which np.isnan returns
+          True. So e.g. for complex numbers (nan+1j) is a valid fill). Note
+          that if unique is set to True the generated values must be hashable
 
     Arrays of specified `dtype` and `shape` are generated for example
     like this:
@@ -185,9 +242,6 @@ def arrays(
       array([[-8,  6,  3],
              [-6,  4,  6]], dtype=int8)
 
-    If elements is None, Hypothesis infers a strategy based on the dtype,
-    which may give any legal value (including eg ``NaN`` for floats).  If you
-    have more specific requirements, you can supply your own elements strategy
     - see :doc:`What you can generate and how <data>`.
 
     .. code-block:: pycon
@@ -197,8 +251,7 @@ def arrays(
       >>> arrays(np.float, 3, elements=floats(0, 1)).example()
       array([ 0.88974794,  0.77387938,  0.1977879 ])
 
-    The fill argument provides a 'background noise' value for the array. Array
-    values are generated in two parts:
+    Array values are generated in two parts:
 
     1. Some subset of the coordinates of the array are populated with a value
        drawn from the elements strategy (or its inferred form).
@@ -210,7 +263,8 @@ def arrays(
     disable this behaviour and draw a value for every element.
 
     If fill is set to None then it will attempt to infer the correct behaviour
-    automatically: If it looks safe to reuse the values of elements across
+    automatically: If unique is True, no filling will occur by default.
+    Otherwise, if it looks safe to reuse the values of elements across
     multiple coordinates (this will be the case for any inferred strategy, and
     for most of the builtins, but is not the case for mutable values or
     strategies built with flatmap, map, composite, etc) then it will use the
@@ -237,13 +291,13 @@ def arrays(
         if dtype.kind != u'O':
             return draw(elements)
     if fill is None:
-        if elements.has_reusable_values:
-            fill = elements
-        else:
+        if unique or not elements.has_reusable_values:
             fill = st.nothing()
+        else:
+            fill = elements
     else:
         st.check_strategy(fill, 'fill')
-    return draw(ArrayStrategy(elements, shape, dtype, fill))
+    return draw(ArrayStrategy(elements, shape, dtype, fill, unique))
 
 
 @st.defines_strategy
