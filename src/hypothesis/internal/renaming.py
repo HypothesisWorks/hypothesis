@@ -39,21 +39,28 @@ def renamed_arguments(**rename_mapping):
                     kwargs[t] = kwargs.pop(k)
             return f(**kwargs)
 
-        if with_name_check.__doc__ is None:
-            with_name_check.__doc__ = ''
+        # This decorates things in the public API, which all have docstrings.
+        # (If they're not in the public API, we don't need a deprecation path.)
+        # But docstrings are stripped when running with PYTHONOPTIMIZE=2.
+        #
+        # If somebody's running with that flag, they don't expect any
+        # docstrings to be present, so this message isn't useful.  Absence of
+        # a docstring is a strong indicator that they're running in this mode,
+        # so skip adding this message if that's the case.
+        if with_name_check.__doc__ is not None:
+            with_name_check.__doc__ += '\n'.join((
+                '', '',
+                'The following arguments have been renamed:',
+                '',
+            ) + tuple(
+                '  * %s has been renamed to %s' % s
+                for s in rename_mapping.items()
+            ) + (
+                '',
+                'Use of the old names has been deprecated and will be removed',
+                'in a future version of Hypothesis.'
+            )
+            )
 
-        with_name_check.__doc__ += '\n'.join((
-            '', '',
-            'The following arguments have been renamed:',
-            '',
-        ) + tuple(
-            '  * %s has been renamed to %s' % s
-            for s in rename_mapping.items()
-        ) + (
-            '',
-            'Use of the old names has been deprecated and will be removed',
-            'in a future version of Hypothesis.'
-        )
-        )
         return with_name_check
     return accept

@@ -23,6 +23,8 @@ from hypothesis.internal.renaming import renamed_arguments
 def test_can_rename_arguments_in_a_function_with_no_docstring():
     @renamed_arguments(old_arg='new_arg')
     def f(new_arg):
-        print('The value of new_arg is %r' % new_arg)
+        return new_arg
 
-    f('Hello world')
+    new_arg = 'Hello world'
+    assert f(new_arg=new_arg) == new_arg
+    assert f.__doc__ is None

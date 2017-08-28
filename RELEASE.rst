@@ -1,6 +1,5 @@
 RELEASE_TYPE: patch
 
-This release fixes an issue where the decorator used to rename arguments could
-throw a ``TypeError`` if used on a function without a docstring.  This was
-causing issues in the pytest build system (see :issue:`822`), but in practice
-most users should see no change.
+This release fixes an issue where Hypothesis would raise a ``TypeError`` when
+using the datetime-related strategies if running with ``PYTHONOPTIMIZE=2``.
+This bug was introduced in v3.20.0.  (See :issue:`822`)
