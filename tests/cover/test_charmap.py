@@ -21,8 +21,6 @@ import os
 import sys
 import unicodedata
 
-import pytest
-
 import hypothesis.strategies as st
 import hypothesis.internal.charmap as cm
 from hypothesis import given, assume
