@@ -26,7 +26,6 @@ import math
 import codecs
 import platform
 import importlib
-from gzip import GzipFile
 from base64 import b64encode
 from decimal import Context, Decimal, Inexact
 from hashlib import sha1

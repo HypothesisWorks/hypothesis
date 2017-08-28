@@ -19,12 +19,13 @@ from __future__ import division, print_function, absolute_import
 
 import os
 import sys
+import gzip
 import pickle
 import tempfile
 import unicodedata
 
 from hypothesis.configuration import tmpdir, storage_directory
-from hypothesis.internal.compat import GzipFile, FileExistsError, hunichr
+from hypothesis.internal.compat import hunichr
 
 
 def charmap_file():
@@ -46,9 +47,16 @@ def charmap():
 
     """
     global _charmap
+    # Best-effort caching in the face of missing files and/or unwritable
+    # filesystems is fairly simple: check if loaded, else try loading,
+    # else calculate and try writing the cache.
     if _charmap is None:
         f = charmap_file()
-        if not os.path.exists(f):
+        try:
+            with gzip.GzipFile(f, 'rb') as i:
+                _charmap = dict(pickle.load(i))
+
+        except Exception:
             tmp_charmap = {}
             for i in range(0, sys.maxunicode + 1):
                 cat = unicodedata.category(hunichr(i))
@@ -57,25 +65,20 @@ def charmap():
                     rs[-1][-1] += 1
                 else:
                     rs.append([i, i])
-            # We explicitly set the mtime to an arbitrary value so as to get
-            # a stable format for our charmap.
-            data = sorted(
-                (k, tuple((map(tuple, v))))
-                for k, v in tmp_charmap.items())
+            _charmap = {k: tuple((map(tuple, v)))
+                        for k, v in tmp_charmap.items()}
 
-            # Write the Unicode table atomically
-            fd, tmpfile = tempfile.mkstemp(dir=tmpdir())
-            os.close(fd)
-            with GzipFile(tmpfile, 'wb', mtime=1) as o:
-                o.write(pickle.dumps(data, pickle.HIGHEST_PROTOCOL))
             try:
+                # Write the Unicode table atomically
+                fd, tmpfile = tempfile.mkstemp(dir=tmpdir())
+                os.close(fd)
+                # Explicitly set the mtime to get reproducible output
+                with gzip.GzipFile(tmpfile, 'wb', mtime=1) as o:
+                    pickle.dump(sorted(_charmap.items()), o,
+                                pickle.HIGHEST_PROTOCOL)
                 os.rename(tmpfile, f)
-            except FileExistsError:  # pragma: no cover
-                # This exception is only raised on Windows, and coverage is
-                # measured on Linux.
+            except Exception:  # pragma: no cover
                 pass
-        with GzipFile(f, 'rb') as i:
-            _charmap = dict(pickle.loads(i.read()))
     assert _charmap is not None
     return _charmap
 
