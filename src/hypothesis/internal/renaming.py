@@ -39,6 +39,9 @@ def renamed_arguments(**rename_mapping):
                     kwargs[t] = kwargs.pop(k)
             return f(**kwargs)
 
+        if with_name_check.__doc__ is None:
+            with_name_check.__doc__ = ''
+
         with_name_check.__doc__ += '\n'.join((
             '', '',
             'The following arguments have been renamed:',
