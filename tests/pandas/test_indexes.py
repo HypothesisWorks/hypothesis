@@ -17,7 +17,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import numpy as np
 import pytest
 
 import pandas
@@ -27,7 +26,6 @@ import hypothesis.extra.pandas as pdst
 from hypothesis import given, assume
 from hypothesis.errors import NoExamples
 from tests.pandas.helpers import supported_by_pandas
-from hypothesis.extra.pandas.impl import is_ordered_dtype_for_index
 
 
 def test_does_not_generate_impossible_conditions():
@@ -49,11 +47,8 @@ def test_generate_arbitrary_indices(data):
     max_size = data.draw(
         st.none() | st.integers(min_size, min_size + 10), 'max_size')
     unique = data.draw(st.booleans(), 'unique')
-    order = data.draw(st.sampled_from((0, 1, -1)), 'order')
-    allow_nan = order == 0
     dtype = data.draw(npst.scalar_dtypes(), 'dtype')
     assume(supported_by_pandas(dtype))
-    assume(order == 0 or is_ordered_dtype_for_index(dtype))
 
     pass_elements = data.draw(st.booleans(), 'pass_elements')
 
@@ -68,7 +63,7 @@ def test_generate_arbitrary_indices(data):
 
     index = data.draw(pdst.indexes(
         elements=elements, dtype=dtype, min_size=min_size, max_size=max_size,
-        unique=unique, order=order,
+        unique=unique,
     ))
 
     if dtype is None:
@@ -76,21 +71,5 @@ def test_generate_arbitrary_indices(data):
     else:
         assert index.dtype == converted_dtype
 
-    has_nan = False
-    for v in index.values:
-        try:
-            has_nan = np.isnan(float(v))
-        except TypeError:
-            pass
-        if has_nan:
-            break
-
-    if has_nan:
-        assert allow_nan
-    else:
-        if unique:
-            assert len(set(index.values)) == len(index)
-        if order > 0:
-            assert list(index.values) == sorted(index.values)
-        if order < 0:
-            assert list(index.values) == sorted(index.values, reverse=True)
+    if unique:
+        assert len(set(index.values)) == len(index)

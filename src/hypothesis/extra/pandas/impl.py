@@ -34,39 +34,6 @@ def is_sequence(c):
     return hasattr(c, '__len__') and hasattr(c, '__getitem__')
 
 
-is_ordered_dtype_cache = {}
-
-
-def is_ordered_dtype_for_index(dt):
-    """We calculate whether when generating an Index a given dtype is suitable
-    for ordering.
-
-    This is is made more complicated than it needs to be by the fact
-    that pandas does a whole bunch of value conversion for indexes, and
-    the behaviour is not always the same as the corresponding numpy
-    dtype. For example, complex128, which is np.dtype(complex), is
-    orderable but complex is not. If you create an Index from an array
-    of the former, its values will get converted into an array of
-    standard library complex numbers with dtype equal to object. So the
-    array has elements that are orderable but the corresponding index
-    doesn't.
-
-    """
-    try:
-        return is_ordered_dtype_cache[dt]
-    except KeyError:
-        pass
-
-    ix = pandas.Index(np.array([0, 1], dtype=dt), dtype=dt)
-    try:
-        bool(ix.values[0] < ix.values[1])
-        result = True
-    except TypeError:
-        result = False
-    is_ordered_dtype_cache[dt] = result
-    return result
-
-
 def build_index(draw, index, min_size, max_size):
     st.check_valid_interval(
         min_size, max_size, 'min_size', 'max_size'
@@ -105,17 +72,13 @@ def dtype_for_elements_strategy(s):
 
 
 class ValueIndexStrategy(st.SearchStrategy):
-    def __init__(
-        self, elements, dtype, min_size, max_size, unique, order
-    ):
+    def __init__(self, elements, dtype, min_size, max_size, unique):
         super(ValueIndexStrategy, self).__init__()
         self.elements = elements
         self.dtype = dtype
         self.min_size = min_size
         self.max_size = max_size
         self.unique = unique
-        self.order = order
-        self.allow_nan = order == 0
 
     def do_draw(self, data):
         result = []
@@ -133,22 +96,6 @@ class ValueIndexStrategy(st.SearchStrategy):
 
         while iterator.more():
             elt = convert(data.draw(self.elements))
-
-            if not self.allow_nan:
-                try:
-                    if np.isnan(float(elt)):
-                        iterator.reject()
-                        continue
-                except TypeError:
-                    pass
-
-            if self.order != 0 and result:
-                if (
-                    (elt > result[-1] and self.order < 0) or
-                    (elt < result[-1] and self.order > 0)
-                ):
-                    iterator.reject()
-                    continue
 
             if self.unique:
                 if elt in seen:
@@ -181,7 +128,6 @@ def range_indexes(min_size=0, max_size=None):
 @st.defines_strategy
 def indexes(
     elements=None, dtype=None, min_size=0, max_size=None, unique=True,
-    order=0,
 ):
     """Provides a strategy for generating values of type pandas.Index.
 
@@ -196,14 +142,9 @@ def indexes(
       should pass a max_size explicitly.
     * unique specifies whether all of the elements in the resulting index
       should be distinct.
-    * order is an integer which specifies a required order for the index. If it
-      is zero, the index is not required to be in any particular order. If it
-      is > 0, the index must be monotonic increasing. If it is < 0 the index
-      must be monotonic decreasing.
 
     """
     st.check_valid_interval(min_size, max_size, 'min_size', 'max_size')
-    st.check_type(integer_types, order, 'order')
     st.check_type(bool, unique, 'unique')
     if elements is not None:
         st.check_strategy(elements, 'elements')
@@ -220,18 +161,10 @@ def indexes(
             'At least one of elements or dtype must be provided.'
         )
 
-    if (
-        dtype is not None and order != 0 and
-        not is_ordered_dtype_for_index(dtype)
-    ):
-        raise InvalidArgument(
-            'dtype %r is not orderable' % (dtype,)
-        )
-
     if max_size is None:
         max_size = min_size + DEFAULT_MAX_SIZE
     return ValueIndexStrategy(
-        elements, dtype, min_size, max_size, unique, order)
+        elements, dtype, min_size, max_size, unique)
 
 
 @st.composite
