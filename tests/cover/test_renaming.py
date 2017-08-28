@@ -22,7 +22,7 @@ from hypothesis.internal.renaming import renamed_arguments
 
 def test_can_rename_arguments_in_a_function_with_no_docstring():
     @renamed_arguments(old_arg='new_arg')
-    def f(old_arg, new_arg):
+    def f(new_arg, old_arg):
         return new_arg
 
     new_arg = 'Hello world'
