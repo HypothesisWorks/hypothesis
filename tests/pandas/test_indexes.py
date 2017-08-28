@@ -17,6 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import numpy as np
 import pytest
 
 import pandas
@@ -26,6 +27,11 @@ import hypothesis.extra.pandas as pdst
 from hypothesis import given, assume
 from hypothesis.errors import NoExamples
 from tests.pandas.helpers import supported_by_pandas
+
+
+@given(pdst.indexes(dtype=int, max_size=0))
+def test_gets_right_dtype_for_empty_indices(ix):
+    assert ix.dtype == np.dtype('int64')
 
 
 def test_does_not_generate_impossible_conditions():

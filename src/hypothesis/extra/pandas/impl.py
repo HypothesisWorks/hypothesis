@@ -28,6 +28,7 @@ import hypothesis.internal.conjecture.utils as cu
 from pandas.api.types import is_categorical_dtype
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import hrange, integer_types
+from hypothesis.internal.branchcheck import check_function
 
 
 def is_sequence(c):
@@ -71,6 +72,35 @@ def dtype_for_elements_strategy(s):
     )
 
 
+@check_function
+def elements_and_dtype(elements, dtype):
+    if elements is None and dtype is None:
+        raise InvalidArgument(
+            'At least one of elements or dtype must be provided.'
+        )
+
+    if elements is not None:
+        st.check_strategy(elements, 'elements')
+
+    dtype = st.try_convert(np.dtype, dtype, 'dtype')
+
+    if elements is None:
+        elements = npst.from_dtype(dtype)
+        dtype_strategy = st.just(dtype)
+    else:
+        if dtype is None:
+            dtype_strategy = dtype_for_elements_strategy(elements)
+        else:
+            def convert_element(e):
+                return st.try_convert(
+                    dtype.type, e, 'draw(elements)'
+                )
+            elements = elements.map(convert_element)
+    assert elements is not None
+
+    return elements, dtype_strategy
+
+
 class ValueIndexStrategy(st.SearchStrategy):
     def __init__(self, elements, dtype, min_size, max_size, unique):
         super(ValueIndexStrategy, self).__init__()
@@ -89,13 +119,10 @@ class ValueIndexStrategy(st.SearchStrategy):
             average_size=(self.min_size + self.max_size) / 2
         )
 
-        if self.dtype is None:
-            def convert(x): return x
-        else:
-            convert = self.dtype.type
+        dtype = data.draw(self.dtype)
 
         while iterator.more():
-            elt = convert(data.draw(self.elements))
+            elt = data.draw(self.elements)
 
             if self.unique:
                 if elt in seen:
@@ -104,10 +131,7 @@ class ValueIndexStrategy(st.SearchStrategy):
                 seen.add(elt)
             result.append(elt)
 
-        if not result and self.dtype is None:
-            dtype = data.draw(dtype_for_elements_strategy(self.elements))
-            return pandas.Index([], dtype=dtype)
-        return pandas.Index(result, dtype=self.dtype)
+        return pandas.Index(result, dtype=dtype)
 
 
 DEFAULT_MAX_SIZE = 10
@@ -146,20 +170,8 @@ def indexes(
     """
     st.check_valid_interval(min_size, max_size, 'min_size', 'max_size')
     st.check_type(bool, unique, 'unique')
-    if elements is not None:
-        st.check_strategy(elements, 'elements')
 
-    if dtype is not None:
-        dtype = st.try_convert(np.dtype, dtype, 'dtype')
-
-    if elements is not None:
-        pass
-    elif dtype is not None:
-        elements = npst.from_dtype(dtype)
-    else:
-        raise InvalidArgument(
-            'At least one of elements or dtype must be provided.'
-        )
+    elements, dtype = elements_and_dtype(elements, dtype)
 
     if max_size is None:
         max_size = min_size + DEFAULT_MAX_SIZE
