@@ -22,6 +22,14 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.22.2 - 2017-08-29
+-------------------
+
+This release fixes an issue where Hypothesis would raise a ``TypeError`` when
+using the datetime-related strategies if running with ``PYTHONOPTIMIZE=2``.
+This bug was introduced in v3.20.0.  (See :issue:`822`)
+
+-------------------
 3.22.1 - 2017-08-28
 -------------------
 
