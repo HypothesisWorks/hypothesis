@@ -210,8 +210,8 @@ class ArrayStrategy(SearchStrategy):
 def arrays(
     draw, dtype, shape, elements=None, fill=None, unique=False
 ):
-    """
-    Returns a strategy for generating
+    """Returns a strategy for generating.
+
     :class:`numpy's ndarrays <numpy.ndarray>`.
 
     * ``dtype`` may be any valid input to :class:`numpy.dtype <numpy.dtype>`

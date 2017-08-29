@@ -238,10 +238,31 @@ def test_may_fill_with_nan_when_unique_is_set():
     )
 
 
+def test_is_still_unique_with_nan_fill():
+    @given(nps.arrays(
+           dtype=float, elements=st.floats(allow_nan=False), shape=10,
+           unique=True, fill=st.just(float('nan'))))
+    def test(xs):
+        assert len(set(xs)) == len(xs)
+
+    test()
+
+
 def test_may_not_fill_with_non_nan_when_unique_is_set():
     @given(nps.arrays(
         dtype=float, elements=st.floats(allow_nan=False), shape=10,
         unique=True, fill=st.just(0.0)))
+    def test(arr):
+        pass
+
+    with pytest.raises(InvalidArgument):
+        test()
+
+
+def test_may_not_fill_with_non_nan_when_unique_is_set_and_type_is_not_number():
+    @given(nps.arrays(
+        dtype=bytes, shape=10,
+        unique=True, fill=st.just(b'')))
     def test(arr):
         pass
 
