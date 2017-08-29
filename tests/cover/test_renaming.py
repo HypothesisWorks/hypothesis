@@ -17,15 +17,23 @@
 
 from __future__ import division, print_function, absolute_import
 
+from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.internal.renaming import renamed_arguments
 
 
-def test_can_rename_arguments_in_a_function_with_no_docstring():
-    @renamed_arguments(old_arg='new_arg')
-    def f(new_arg=None, old_arg=None):
-        return new_arg
+@renamed_arguments(old_arg='new_arg')
+def f(new_arg=None, old_arg=None):
+    return new_arg
 
-    new_arg = 'Hello world'
-    assert f(old_arg=new_arg) == new_arg
+
+def test_using_new_args():
+    new_arg = 'A number of numbats at night'
     assert f(new_arg=new_arg) == new_arg
+    assert f.__doc__ is None
+
+
+@checks_deprecated_behaviour
+def test_using_old_args():
+    old_arg = 'An order of otters on the Ouse'
+    assert f(old_arg=old_arg) == old_arg
     assert f.__doc__ is None
