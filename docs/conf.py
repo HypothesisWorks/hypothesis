@@ -68,6 +68,7 @@ todo_include_todos = False
 
 intersphinx_mapping = {
     'python': ('http://docs.python.org/3/', None),
+    'numpy': ('http://docs.scipy.org/doc/numpy/', None),
 }
 
 autodoc_mock_imports = ['numpy']

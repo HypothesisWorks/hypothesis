@@ -211,26 +211,31 @@ def arrays(
     draw, dtype, shape, elements=None, fill=None, unique=False
 ):
     """
+    Returns a strategy for generating
+    :class:`numpy's ndarrays <numpy.ndarray>`.
 
-        * `dtype` may be any valid input to ``np.dtype`` (this includes
-          ``np.dtype`` objects), or a strategy that generates such values.
-        * `shape` may be an integer >= 0, a tuple of length >= of such integers
-          or a strategy that generates such values.
-        * `elements` is a strategy for generating values to put in the array.
-          If it is None a suitable value will be inferred based on the dtype,
-          which may give any legal value (including eg ``NaN`` for floats).
-          If you have more specific requirements, you should supply your own
-          elements strategy.
-        * `fill` is a strategy that may be used to generate a single background
-          value for the array. If None a suitable default will be inferred
-          based on the other arguments. If set to ``st.nothing()`` the fill
-          behaviour will be disabled entirely.
-        * `unique` specifies if the elements of the array should all be
-          distinct from one another. Note that in this case multiple NaN values
-          may still be allowed. If fill is also set, the only valid values for
-          it to return are NaN values (anything for which np.isnan returns
-          True. So e.g. for complex numbers (nan+1j) is a valid fill). Note
-          that if unique is set to True the generated values must be hashable
+    * ``dtype`` may be any valid input to :class:`numpy.dtype <numpy.dtype>`
+      (this includes ``dtype`` objects), or a strategy that generates such
+      values.
+    * `shape` may be an integer >= 0, a tuple of length >= 0 of such
+      integers, or a strategy that generates such values.
+    * `elements` is a strategy for generating values to put in the array.
+      If it is None a suitable value will be inferred based on the dtype,
+      which may give any legal value (including eg ``NaN`` for floats).
+      If you have more specific requirements, you should supply your own
+      elements strategy.
+    * `fill` is a strategy that may be used to generate a single background
+      value for the array. If None, a suitable default will be inferred
+      based on the other arguments. If set to
+      :func:`st.nothing() <hypothesis.strategies.nothing>` behaviour will be
+      disabled entirely.
+    * `unique` specifies if the elements of the array should all be
+      distinct from one another. Note that in this case multiple NaN values
+      may still be allowed. If fill is also set, the only valid values for
+      it to return are NaN values (anything for which
+      :func:`numpy.isnan <numpy.isnan>` returns True. So e.g. for complex
+      numbers (nan+1j) is also a valid fill). Note that if unique is set to
+      True the generated values must be hashable.
 
     Arrays of specified `dtype` and `shape` are generated for example
     like this:
