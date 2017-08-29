@@ -26,5 +26,6 @@ def test_can_rename_arguments_in_a_function_with_no_docstring():
         return new_arg
 
     new_arg = 'Hello world'
+    assert f(old_arg=new_arg) == new_arg
     assert f(new_arg=new_arg) == new_arg
     assert f.__doc__ is None
