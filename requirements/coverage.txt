@@ -6,4 +6,7 @@
 #
 coverage==4.4.1
 numpy==1.13.1
+pandas==0.20.3
+python-dateutil==2.6.1    # via pandas
 pytz==2017.2
+six==1.10.0               # via python-dateutil
