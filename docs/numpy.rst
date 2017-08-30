@@ -20,3 +20,11 @@ shapes and generate all kinds of fixed-size or compound dtypes.
 
 .. automodule:: hypothesis.extra.numpy
    :members:
+
+
+------
+pandas
+------
+
+.. automodule:: hypothesis.extra.pandas
+   :members:

@@ -21,8 +21,8 @@ from hypothesis.extra.pandas.impl import series, data_frames, column, columns,\
     indexes, range_indexes
 
 __all__ = [
-    'series',
-    'data_frames',
     'indexes', 'range_indexes',
+    'series',
     'column', 'columns',
+    'data_frames',
 ]

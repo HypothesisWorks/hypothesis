@@ -240,11 +240,11 @@ class column(object):
       be hashable, but can otherwise be any value supported as a pandas column
       name.
     * elements: the strategy for generating values in this column, or None
-        to infer it from the dtype.
+      to infer it from the dtype.
     * dtype: the dtype of the column, or None to infer it from the element
       strategy. At least one of dtype or elements must be provided.
     * fill: A default value for elements of the column. See
-     :func:`~hypothesis.extra.numpy.arrays` for a full explanation.
+      :func:`~hypothesis.extra.numpy.arrays` for a full explanation.
     * unique: If all values in this column should be distinct.
 
     """
