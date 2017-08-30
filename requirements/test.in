@@ -2,3 +2,4 @@ flaky
 pytest
 pytest-xdist
 mock
+attrs

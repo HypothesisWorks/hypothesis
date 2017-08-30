@@ -23,7 +23,7 @@ import pytest
 import hypothesis.strategies as st
 import hypothesis.extra.numpy as npst
 import hypothesis.extra.pandas as pdst
-from hypothesis import given, assume, reject
+from hypothesis import given, assume
 from hypothesis.errors import InvalidArgument
 from tests.pandas.helpers import supported_by_pandas
 
@@ -43,9 +43,7 @@ def test_buggy_dtype_identification_is_precise(data):
     try:
         series = data.draw(pdst.series(dtype=dtype))
     except Exception as e:
-        if type(e).__name__ != 'OutOfBoundsDatetime':
-            raise
-        reject()
+        return
     assert series.dtype != dtype
 
 
@@ -73,10 +71,9 @@ def test_will_use_a_provided_elements_strategy(s):
 LABELS = ['A', 'B', 'C', 'D', 'E']
 
 
-@given(pdst.series(st.sampled_from(LABELS), dtype='category'))
-def test_categorical_series(s):
-    assert set(s).issubset(set(LABELS))
-    assert s.dtype == 'category'
+def test_categorical_is_unsupported():
+    with pytest.raises(InvalidArgument):
+        pdst.series(st.sampled_from(LABELS), dtype='category').example()
 
 
 def test_will_error_on_bad_index():

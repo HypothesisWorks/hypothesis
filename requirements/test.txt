@@ -5,6 +5,7 @@
 #    pip-compile --output-file requirements/test.txt requirements/test.in
 #
 apipkg==1.4               # via execnet
+attrs==17.2.0
 execnet==1.4.1            # via pytest-xdist
 flaky==3.4.0
 mock==2.0.0

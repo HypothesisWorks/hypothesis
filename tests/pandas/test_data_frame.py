@@ -64,8 +64,3 @@ def test_validates_against_duplicate_columns():
 def test_requires_elements_for_category():
     with pytest.raises(InvalidArgument):
         pdst.data_frames([pdst.column('A', dtype='category')]).example()
-
-
-@given(pdst.data_frames(pdst.column(dtype=int)))
-def test_can_create_data_frames_from_positional_column(df):
-    assert df[0].dtype == np.dtype(int)

@@ -19,12 +19,10 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 
-import pandas
-
-PANDAS_TIME_DTYPES = tuple(
-    pandas.Series(np.array([], dtype=d)).dtype
-    for d in ('datetime64', 'timedelta64')
-)
+PANDAS_TIME_DTYPES = tuple(map(np.dtype, [
+    '<M8[ns]', '<m8[ns]',
+    '>M8[ns]', '>m8[ns]',
+]))
 
 
 def supported_by_pandas(dtype):

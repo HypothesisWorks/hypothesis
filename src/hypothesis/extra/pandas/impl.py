@@ -17,8 +17,10 @@
 
 from __future__ import division, print_function, absolute_import
 
-from collections import Counter, Iterable, OrderedDict
+from copy import copy
+from collections import Iterable, OrderedDict
 
+import attr
 import numpy as np
 
 import pandas
@@ -72,33 +74,49 @@ def dtype_for_elements_strategy(s):
     )
 
 
+def infer_dtype_if_necessary(dtype, values, elements, draw):
+    if dtype is None and not values:
+        return draw(dtype_for_elements_strategy(elements))
+    return dtype
+
+
 @check_function
-def elements_and_dtype(elements, dtype):
-    if elements is None and dtype is None:
-        raise InvalidArgument(
-            'At least one of elements or dtype must be provided.'
-        )
+def elements_and_dtype(elements, dtype, source=None):
+
+    if source is None:
+        prefix = ''
+    else:
+        prefix = '%s.' % (source,)
 
     if elements is not None:
-        st.check_strategy(elements, 'elements')
+        st.check_strategy(elements, '%selements' % (prefix,))
+    if elements is None and dtype is None:
+        raise InvalidArgument((
+            'At least one of %(prefix)selements or %(prefix)dtype must be '
+            'provided.') % {'prefix': prefix})
+
+    if elements is not None:
+        st.check_strategy(elements, '%selements' % (prefix,))
+
+    if is_categorical_dtype(dtype):
+        raise InvalidArgument(
+            '%sdtype is categorical, which is currently unsupported' % (
+                prefix,
+            ))
 
     dtype = st.try_convert(np.dtype, dtype, 'dtype')
 
     if elements is None:
         elements = npst.from_dtype(dtype)
-        dtype_strategy = st.just(dtype)
-    else:
-        if dtype is None:
-            dtype_strategy = dtype_for_elements_strategy(elements)
-        else:
-            def convert_element(e):
-                return st.try_convert(
-                    dtype.type, e, 'draw(elements)'
-                )
-            elements = elements.map(convert_element)
+    elif dtype is not None:
+        def convert_element(e):
+            return st.try_convert(
+                dtype.type, e, 'draw(elements)'
+            )
+        elements = elements.map(convert_element)
     assert elements is not None
 
-    return elements, dtype_strategy
+    return elements, dtype
 
 
 class ValueIndexStrategy(st.SearchStrategy):
@@ -119,8 +137,6 @@ class ValueIndexStrategy(st.SearchStrategy):
             average_size=(self.min_size + self.max_size) / 2
         )
 
-        dtype = data.draw(self.dtype)
-
         while iterator.more():
             elt = data.draw(self.elements)
 
@@ -131,6 +147,10 @@ class ValueIndexStrategy(st.SearchStrategy):
                 seen.add(elt)
             result.append(elt)
 
+        dtype = infer_dtype_if_necessary(
+            dtype=self.dtype, values=result, elements=self.elements,
+            draw=data.draw
+        )
         return pandas.Index(result, dtype=dtype)
 
 
@@ -179,10 +199,8 @@ def indexes(
         elements, dtype, min_size, max_size, unique)
 
 
-@st.composite
-def series(
-    draw, elements=None, dtype=None, index=None,
-):
+@st.defines_strategy
+def series(elements=None, dtype=None, index=None, fill=None, unique=False):
     """Provides a strategy for producing a pandas.Series.
 
     Arguments:
@@ -208,81 +226,83 @@ def series(
             for this argument.
 
     """
+    # FIXME: Implement these.
+    assert not unique
     if index is None:
         index = range_indexes()
     else:
         st.check_strategy(index)
 
-    if elements is None and dtype is None:
-        raise InvalidArgument(
-            'series require either an elements strategy or a dtype.'
-        )
+    elements, dtype = elements_and_dtype(elements, dtype)
+    index_strategy = index
 
-    index = draw(index)
-    size = len(index)
+    @st.composite
+    def result(draw):
+        index = draw(index_strategy)
 
-    if dtype is not None:
-        if is_categorical_dtype(dtype):
-            numpy_dtype = np.dtype(object)
-            pandas_dtype = dtype
-        else:
-            numpy_dtype = np.dtype(dtype)
-            pandas_dtype = None
+        if len(index) > 0:
+            if dtype is not None:
+                result_data = draw(npst.arrays(
+                    dtype=dtype, elements=elements, shape=len(index),
+                    fill=fill,
+                ))
+            else:
+                result_data = list(draw(npst.arrays(
+                    dtype=object, elements=elements, shape=len(index),
+                    fill=fill,
+                )))
 
-        if elements is None:
-            elements = npst.from_dtype(numpy_dtype)
-
-        result_data = draw(npst.arrays(
-            elements=elements,
-            dtype=numpy_dtype,
-            shape=size
-        ))
-    else:
-        result_data = draw(
-            st.lists(elements, min_size=size, max_size=size)
-        )
-        if not result_data:
-            pandas_dtype = draw(
-                dtype_for_elements_strategy(elements),
+            return pandas.Series(
+                result_data, index=index, dtype=dtype
             )
         else:
-            pandas_dtype = None
+            return pandas.Series(
+                (), index=index,
+                dtype=dtype if dtype is not None else draw(
+                    dtype_for_elements_strategy(elements)))
 
-    return pandas.Series(result_data, index, dtype=pandas_dtype)
+    return result()
 
 
+@attr.s(slots=True)
 class column(object):
-    """Simple data object for describing a column in a DataFrame."""
+    """Simple data object for describing a column in a DataFrame.
 
-    def __init__(self, name=None, dtype=None, elements=None):
-        """Arguments:
+    Arguments:
 
-        -- name: the column name
-        -- dtype: the dtype of the column, or None to default to float. May
-            also be a strategy which will be used to generate the dtype.
-        -- elements: the strategy for generating values in this column, or None
-            to infer it from the dtype.
+    * name: the column name, or None to default to the column position. Must
+      be hashable, but can otherwise be any value supported as a pandas column
+      name.
+    * elements: the strategy for generating values in this column, or None
+        to infer it from the dtype.
+    * dtype: the dtype of the column, or None to infer it from the element
+      strategy. At least one of dtype or elements must be provided.
+    * fill: A default value for elements of the column. See
+     :func:`~hypothesis.extra.numpy.arrays` for a full explanation.
+    * unique: If all values in this column should be distinct.
 
-        """
-        self.name = name
-        self.dtype = dtype
-        self.elements = elements
-        if dtype is None and elements is None:
-            raise InvalidArgument(
-                'At least one of dtype and elements must not be provided'
-            )
-        if is_categorical_dtype(dtype) and elements is None:
-            raise InvalidArgument(
-                'Must provide an elements strategy for category dtypes'
-            )
+    """
 
-    def __repr__(self):
-        return 'column(%r, dtype=%r, elements=%r)' % (
-            self.name, self.dtype, self.elements,
-        )
+    name = attr.ib(default=None)
+    elements = attr.ib(default=None)
+    dtype = attr.ib(default=None)
+    fill = attr.ib(default=None)
+    unique = attr.ib(default=False)
 
 
-def columns(names_or_number, dtype=None, elements=None):
+def columns(
+    names_or_number, dtype=None, elements=None, fill=None, unique=False
+):
+    """A convenience function for producing a list of :class:`column` objects
+    of the same general shape.
+
+    The names_or_number argument is either a sequence of values, the
+    elements of which will be used as the name for individual column
+    objects, or a number, in which case that many unnamed columns will
+    be created. All other arguments are passed through verbatim to
+    create the columns.
+
+    """
     st.check_type(
         (Iterable,) + integer_types, names_or_number, 'names_or_number'
     )
@@ -295,9 +315,8 @@ def columns(names_or_number, dtype=None, elements=None):
     ]
 
 
-@st.composite
+@st.defines_strategy
 def data_frames(
-    draw,
     columns=None, rows=None, index=None
 ):
     """Provides a strategy for producing a pandas.DataFrame.
@@ -341,93 +360,97 @@ def data_frames(
     else:
         st.check_strategy(index)
 
-    index = draw(index)
-
-    if isinstance(columns, column):
-        columns = (columns,)
+    index_strategy = index
 
     if columns is None:
         if rows is None:
             raise InvalidArgument(
                 'At least one of rows and columns must be provided'
             )
-
-        if len(index) > 0:
-            return pandas.DataFrame(
-                [draw(rows) for _ in index],
-                index=index
-            )
         else:
-            # If we haven't drawn any rows we need to draw one row and then
-            # discard it so that we get a consistent shape for the the
-            # DataFrame.
-            base = draw(st.shared(
-                rows.map(lambda x: pandas.DataFrame([x])),
-                key=('hypothesis.extra.pandas.row_shape', rows),
-            ))
-            return base.drop(0)
+            @st.composite
+            def rows_only(draw):
+                index = draw(index_strategy)
+                if len(index) > 0:
+                    return pandas.DataFrame(
+                        [draw(rows) for _ in index],
+                        index=index
+                    )
+                else:
+                    # If we haven't drawn any rows we need to draw one row and
+                    # then discard it so that we get a consistent shape for the
+                    # DataFrame.
+                    base = draw(st.shared(
+                        rows.map(lambda x: pandas.DataFrame([x])),
+                        key=('hypothesis.extra.pandas.row_shape', rows),
+                    ))
+                    return base.drop(0)
+            return rows_only()
 
-    column_names = []
-    dtypes = []
-    strategies = []
-    categorical_columns = []
+    assert columns is not None
+    st.check_type(Iterable, columns, 'columns')
+
+    rewritten_columns = []
+    column_names = set()
 
     for i, c in enumerate(columns):
         st.check_type(column, c, 'columns[%d]' % (i,))
-        name = c.name
-        if name is None:
-            name = i
-        dtype = c.dtype
-        elements = c.elements
-        if dtype is None:
-            dtype = draw(dtype_for_elements_strategy(elements))
-        if is_categorical_dtype(dtype):
-            dtype = np.dtype(object)
-            categorical_columns.append(name)
+
+        c = copy(c)
+        if c.name is None:
+            label = 'columns[%d]' % (i,)
+            c.name = i
         else:
-            dtype = np.dtype(dtype)
+            label = c.name
+            try:
+                hash(c.name)
+            except TypeError:
+                raise InvalidArgument(
+                    'Column names must be hashable, but columns[%d].name was '
+                    '%r of type %s, which cannot be hashed.' % (
+                        i, c.name, type(c.name).__name__,))
 
-        if elements is None:
-            elements = npst.from_dtype(dtype)
+        if c.name in column_names:
+            raise InvalidArgument(
+                'duplicate definition of column name %r' % (c.name,))
 
-        column_names.append(name)
-        strategies.append(elements)
-        dtypes.append(dtype)
+        column_names.add(c.name)
 
-    if len(set(column_names)) < len(column_names):
-        counts = Counter(column_names)
-        raise InvalidArgument(
-            'columns definition contains duplicate column names: %r' % (
-                sorted(c for c, n in counts.items() if n > 1)))
+        if c.fill is not None:
+            st.check_type(st.SearchStrategy, c.fill, '%s.fill' % (label,))
 
-    zeroes = np.zeros(len(index))
+        c.elements, c.dtype = elements_and_dtype(
+            c.elements, c.dtype, label
+        )
 
-    series = [
-        pandas.Series(zeroes, dtype=dtype)
-        for dtype in dtypes
-    ]
+        rewritten_columns.append(c)
 
-    # FIXME: When we have the fill argument for arrays pull request merged we
-    # should use np.arrays for columns where we can be sparse and only pack
-    # together the rest like this.
     if rows is None:
-        for i in hrange(len(index)):
-            # Note: We draw one row at a time. This is important because it
-            # means we can delete rows (once the new shrinker has been
-            # merged).
-            for j in hrange(len(series)):
-                series[j][i] = draw(strategies[j])
+        @st.composite
+        def just_draw_columns(draw):
+            index = draw(index_strategy)
+            local_index_strategy = st.just(index)
 
-    result = pandas.DataFrame(
-        OrderedDict(zip(column_names, series)), index=index
-    )
+            # FIXME: For columns without fill, do this bit differently.
+            data = OrderedDict(
+                (c.name, draw(series(
+                    index=local_index_strategy, dtype=c.dtype,
+                    elements=c.elements, fill=c.fill, unique=c.unique)))
+                for c in rewritten_columns
+            )
+            return pandas.DataFrame(data, index=index)
+        return just_draw_columns()
+    else:
+        @st.composite
+        def assign_rows(draw):
+            index = draw(index_strategy)
 
-    if rows is not None:
-        for i in hrange(len(index)):
-            result.iloc[i] = draw(rows)
-
-    assert len(result.columns) == len(column_names)
-
-    for c in categorical_columns:
-        result[c] = result[c].astype('category')
-    return result
+            result = pandas.DataFrame(OrderedDict(
+                (c.name, pandas.Series(
+                    np.zeros(dtype=c.dtype, shape=len(index)), dtype=c.dtype))
+                for c in rewritten_columns
+            ), index=index)
+            for i in hrange(len(index)):
+                result.iloc[i] = draw(rows)
+            return result
+        return assign_rows()
