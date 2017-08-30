@@ -419,7 +419,6 @@ def data_frames(
                 for c in rewritten_columns
             ), index=index)
             for i in hrange(len(index)):
-                row = draw(rows)
-                result.iloc[i] = row
+                result.iloc[i] = draw(rows)
             return result
         return assign_rows()

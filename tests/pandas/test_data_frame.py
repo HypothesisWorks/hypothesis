@@ -64,9 +64,33 @@ def test_gets_the_correct_data_shape_for_just_rows(table):
 
 @given(pdst.data_frames(
     columns=pdst.columns(['A', 'B'], dtype=int),
-    rows=st.lists(st.integers(), min_size=2, max_size=2).map(sorted),
+    rows=st.lists(st.integers(0, 1000), min_size=2, max_size=2).map(sorted),
 ))
-def test_can_specify_both_rows_and_columns(d):
+def test_can_specify_both_rows_and_columns_list(d):
+    assert d['A'].dtype == np.dtype(int)
+    assert d['B'].dtype == np.dtype(int)
+    for _, r in d.iterrows():
+        assert r['A'] <= r['B']
+
+
+@given(pdst.data_frames(
+    columns=pdst.columns(['A', 'B'], dtype=int),
+    rows=st.lists(
+        st.integers(0, 1000), min_size=2, max_size=2).map(sorted).map(tuple),
+))
+def test_can_specify_both_rows_and_columns_tuple(d):
+    assert d['A'].dtype == np.dtype(int)
+    assert d['B'].dtype == np.dtype(int)
+    for _, r in d.iterrows():
+        assert r['A'] <= r['B']
+
+
+@given(pdst.data_frames(
+    columns=pdst.columns(['A', 'B'], dtype=int),
+    rows=st.lists(st.integers(0, 1000), min_size=2, max_size=2).map(
+        lambda x: {'A': min(x), 'B': max(x)}),
+))
+def test_can_specify_both_rows_and_columns_dict(d):
     assert d['A'].dtype == np.dtype(int)
     assert d['B'].dtype == np.dtype(int)
     for _, r in d.iterrows():
