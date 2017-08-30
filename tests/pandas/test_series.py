@@ -20,6 +20,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 import pytest
 
+import pandas
 import hypothesis.strategies as st
 import hypothesis.extra.numpy as npst
 import hypothesis.extra.pandas as pdst
@@ -33,7 +34,7 @@ def test_can_create_a_series_of_any_dtype(data):
     dtype = np.dtype(data.draw(npst.scalar_dtypes()))
     assume(supported_by_pandas(dtype))
     series = data.draw(pdst.series(dtype=dtype))
-    assert series.dtype == dtype
+    assert series.dtype == pandas.Series([], dtype=dtype).dtype
 
 
 @given(st.data())
