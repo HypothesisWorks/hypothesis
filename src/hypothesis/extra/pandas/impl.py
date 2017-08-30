@@ -418,7 +418,31 @@ def data_frames(
                     np.zeros(dtype=c.dtype, shape=len(index)), dtype=c.dtype))
                 for c in rewritten_columns
             ), index=index)
-            for i in hrange(len(index)):
-                result.iloc[i] = draw(rows)
+
+            fills = {}
+
+            for row_index in hrange(len(index)):
+                row = draw(rows)
+                if isinstance(row, dict):
+                    as_list = [None] * len(rewritten_columns)
+                    for i, c in enumerate(rewritten_columns):
+                        try:
+                            as_list[i] = row[c.name]
+                        except KeyError:
+                            try:
+                                as_list[i] = fills[i]
+                            except KeyError:
+                                fills[i] = draw(c.fill)
+                                as_list[i] = fills[i]
+                    for k in row:
+                        if k not in column_names:
+                            raise InvalidArgument((
+                                'Row %r contains column %r not in '
+                                'columns %r)' % (
+                                    row, k, [
+                                        c.name for c in rewritten_columns
+                                    ])))
+                    row = as_list
+                result.iloc[row_index] = row
             return result
         return assign_rows()
