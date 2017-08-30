@@ -33,40 +33,6 @@ from hypothesis.internal.compat import hrange, integer_types
 from hypothesis.internal.branchcheck import check_function
 
 
-def is_sequence(c):
-    return hasattr(c, '__len__') and hasattr(c, '__getitem__')
-
-
-def build_index(draw, index, min_size, max_size):
-    st.check_valid_interval(
-        min_size, max_size, 'min_size', 'max_size'
-    )
-
-    if index is not None:
-        if not is_sequence(index):
-            raise InvalidArgument(
-                'index=%r was of type %s, but expected a sequence' % (
-                    index, type(index).__name__
-                )
-            )
-
-        if max_size is not None and max_size < len(index):
-            raise InvalidArgument(
-                'Provided index=%r has %d items < max_size=%d' % (
-                    index, len(index), max_size))
-            max_size = len(index)
-        if min_size is not None and min_size > len(index):
-            raise InvalidArgument(
-                'Provided index=%r has %d items > min_size=%d' % (
-                    index, len(index), min_size))
-        return index
-
-    if max_size is None:
-        max_size = min_size + 10
-
-    return hrange(draw(st.integers(min_size, max_size)))
-
-
 def dtype_for_elements_strategy(s):
     return st.shared(
         s.map(lambda x: pandas.Series([x]).dtype),
@@ -92,7 +58,7 @@ def elements_and_dtype(elements, dtype, source=None):
         st.check_strategy(elements, '%selements' % (prefix,))
     if elements is None and dtype is None:
         raise InvalidArgument((
-            'At least one of %(prefix)selements or %(prefix)dtype must be '
+            'At least one of %(prefix)selements or %(prefix)sdtype must be '
             'provided.') % {'prefix': prefix})
 
     if elements is not None:
@@ -311,7 +277,9 @@ def columns(
     except TypeError:
         names = [None] * names_or_number
     return [
-        column(name=n, dtype=dtype, elements=elements) for n in names
+        column(
+            name=n, dtype=dtype, elements=elements, fill=fill, unique=unique
+        ) for n in names
     ]
 
 
@@ -388,7 +356,7 @@ def data_frames(
             return rows_only()
 
     assert columns is not None
-    st.check_type(Iterable, columns, 'columns')
+    columns = st.try_convert(tuple, columns, 'columns')
 
     rewritten_columns = []
     column_names = set()
@@ -451,6 +419,7 @@ def data_frames(
                 for c in rewritten_columns
             ), index=index)
             for i in hrange(len(index)):
-                result.iloc[i] = draw(rows)
+                row = draw(rows)
+                result.iloc[i] = row
             return result
         return assign_rows()

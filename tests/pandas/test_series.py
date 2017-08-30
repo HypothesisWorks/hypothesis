@@ -26,6 +26,7 @@ import hypothesis.extra.numpy as npst
 import hypothesis.extra.pandas as pdst
 from hypothesis import given, assume
 from hypothesis.errors import InvalidArgument
+from tests.common.debug import find_any
 from tests.pandas.helpers import supported_by_pandas
 
 
@@ -52,6 +53,14 @@ def test_buggy_dtype_identification_is_precise(data):
     dtype=float, index=pdst.range_indexes(min_size=2, max_size=5)))
 def test_series_respects_size_bounds(s):
     assert 2 <= len(s) <= 5
+
+
+def test_can_fill_series():
+    nan_backed = pdst.series(
+        elements=st.floats(allow_nan=False), fill=st.just(float('nan')))
+    find_any(
+        nan_backed, lambda x: np.isnan(x).any()
+    )
 
 
 @given(pdst.series(dtype=int))

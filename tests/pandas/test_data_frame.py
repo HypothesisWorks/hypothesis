@@ -48,12 +48,29 @@ def test_can_specify_just_column_names(df):
     df['B']
 
 
+@given(pdst.data_frames(pdst.columns(2, dtype=float)))
+def test_can_specify_just_column_count(df):
+    df[0]
+    df[1]
+
+
 @given(pdst.data_frames(
     rows=st.fixed_dictionaries({'A': st.integers(1, 10), 'B': st.floats()}))
 )
 def test_gets_the_correct_data_shape_for_just_rows(table):
     assert table['A'].dtype == np.dtype(int)
     assert table['B'].dtype == np.dtype(float)
+
+
+@given(pdst.data_frames(
+    columns=pdst.columns(['A', 'B'], dtype=int),
+    rows=st.lists(st.integers(), min_size=2, max_size=2).map(sorted),
+))
+def test_can_specify_both_rows_and_columns(d):
+    assert d['A'].dtype == np.dtype(int)
+    assert d['B'].dtype == np.dtype(int)
+    for _, r in d.iterrows():
+        assert r['A'] <= r['B']
 
 
 def test_validates_against_duplicate_columns():
