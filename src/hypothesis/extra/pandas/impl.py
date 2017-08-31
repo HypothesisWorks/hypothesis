@@ -29,6 +29,7 @@ import hypothesis.extra.numpy as npst
 import hypothesis.internal.conjecture.utils as cu
 from pandas.api.types import is_categorical_dtype
 from hypothesis.errors import InvalidArgument
+from hypothesis.control import reject
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.branchcheck import check, check_function
 
@@ -75,8 +76,22 @@ def elements_and_dtype(elements, dtype, source=None):
     if elements is None:
         elements = npst.from_dtype(dtype)
     elif dtype is not None:
-        def convert_element(e):
-            return np.array([e], dtype=dtype)[0]
+        def convert_element(value):
+            name = 'draw(%selements)' % (prefix,)
+            try:
+                return np.array([value], dtype=dtype)[0]
+            except TypeError:
+                raise InvalidArgument(
+                    'Cannot convert %s=%r of type %s to dtype %s' % (
+                        name, value, type(value).__name__, dtype.str
+                    )
+                )
+            except ValueError:
+                raise InvalidArgument(
+                    'Cannot convert %s=%r to type %s' % (
+                        name, value, dtype.str,
+                    )
+                )
         elements = elements.map(convert_element)
     assert elements is not None
 
@@ -190,8 +205,6 @@ def series(elements=None, dtype=None, index=None, fill=None, unique=False):
             for this argument.
 
     """
-    # FIXME: Implement these.
-    assert not unique
     if index is None:
         index = range_indexes()
     else:
@@ -208,12 +221,12 @@ def series(elements=None, dtype=None, index=None, fill=None, unique=False):
             if dtype is not None:
                 result_data = draw(npst.arrays(
                     dtype=dtype, elements=elements, shape=len(index),
-                    fill=fill,
+                    fill=fill, unique=unique,
                 ))
             else:
                 result_data = list(draw(npst.arrays(
                     dtype=object, elements=elements, shape=len(index),
-                    fill=fill,
+                    fill=fill, unique=unique,
                 )))
 
             return pandas.Series(
@@ -433,9 +446,21 @@ def data_frames(
                         np.zeros(shape=len(index), dtype=c.dtype),
                         index=index,
                     )
+                seen = {
+                    c.name: set() for c in columns_without_fill if c.unique}
+
                 for i in hrange(len(index)):
                     for c in columns_without_fill:
-                        value = draw(c.elements)
+                        if c.unique:
+                            for _ in range(5):
+                                value = draw(c.elements)
+                                if value not in seen[c.name]:
+                                    seen[c.name].add(value)
+                                    break
+                            else:
+                                reject()
+                        else:
+                            value = draw(c.elements)
                         data[c.name][i] = value
 
             for c in rewritten_columns:
