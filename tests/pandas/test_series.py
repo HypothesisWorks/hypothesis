@@ -23,7 +23,8 @@ import pandas
 import hypothesis.strategies as st
 import hypothesis.extra.numpy as npst
 import hypothesis.extra.pandas as pdst
-from hypothesis import given, assume
+from hypothesis import given, assume, settings
+from hypothesis.core import cached
 from tests.common.debug import find_any
 from tests.pandas.helpers import supported_by_pandas
 

@@ -38,4 +38,6 @@ def supported_by_pandas(dtype):
 
     if dtype.kind in ('m', 'M'):
         return dtype in PANDAS_TIME_DTYPES
+    if dtype.byteorder == '>':
+        return False
     return True

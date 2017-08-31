@@ -20,11 +20,14 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 import pytest
 
+import pandas
 import hypothesis.strategies as st
+import hypothesis.extra.numpy as npst
 import hypothesis.extra.pandas as pdst
-from hypothesis import given, example
+from hypothesis import given, reject, settings, unlimited
 from hypothesis.types import RandomWithSeed as Random
 from tests.common.debug import minimal
+from tests.pandas.helpers import supported_by_pandas
 
 
 @given(pdst.data_frames([
@@ -111,7 +114,6 @@ subsets = ['', 'A', 'B', 'C', 'AB', 'AC', 'BC', 'ABC']
 
 @pytest.mark.parametrize('disable_fill', subsets)
 @pytest.mark.parametrize('non_standard_index', [True, False])
-@example(True, False)
 def test_can_minimize_based_on_two_columns_independently(
     disable_fill, non_standard_index
 ):
@@ -135,3 +137,59 @@ def test_can_minimize_based_on_two_columns_independently(
     assert x['A'][0] == 1
     assert x['B'][0] == 1
     assert x['C'][0] == 1
+
+
+@st.composite
+def column_strategy(draw):
+    name = draw(st.none() | st.text())
+    dtype = draw(npst.scalar_dtypes().filter(supported_by_pandas))
+    pass_dtype = not draw(st.booleans())
+    if pass_dtype:
+        pass_elements = not draw(st.booleans())
+    else:
+        pass_elements = True
+    if pass_elements:
+        elements = npst.from_dtype(dtype)
+    else:
+        elements = None
+
+    unique = draw(st.booleans())
+    fill = st.nothing() if draw(st.booleans()) else None
+
+    return pdst.column(
+        name=name, dtype=dtype, unique=unique, fill=fill, elements=elements)
+
+
+@given(pdst.data_frames(pdst.columns(1, dtype=np.dtype('<M8[ns]'))))
+def test_data_frames_with_timestamp_columns(df):
+    pass
+
+
+@settings(max_examples=10**4, timeout=unlimited, perform_health_check=False)
+@given(st.data())
+def test_arbitrary_data_frames(data):
+    columns = data.draw(st.lists(
+        column_strategy(),
+        unique_by=lambda c: c.name if c.name is not None else float('nan')
+    ))
+
+    try:
+        df = data.draw(pdst.data_frames(columns))
+    except pandas._libs.tslib.OutOfBoundsDatetime:
+        # See https://github.com/HypothesisWorks/hypothesis-python/pull/826
+        reject()
+    data_frame_columns = list(df)
+
+    assert len(data_frame_columns) == len(columns)
+
+    for i, (c, n) in enumerate(zip(columns, df)):
+        if c.name is None:
+            assert n == i
+        else:
+            assert c.name == n
+
+    for i, c in enumerate(columns):
+        column_name = data_frame_columns[i]
+        values = df[column_name]
+        if c.unique:
+            assert len(set(values)) == len(values)

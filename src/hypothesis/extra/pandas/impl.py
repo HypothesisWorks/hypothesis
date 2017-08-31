@@ -76,9 +76,7 @@ def elements_and_dtype(elements, dtype, source=None):
         elements = npst.from_dtype(dtype)
     elif dtype is not None:
         def convert_element(e):
-            return st.try_convert(
-                dtype.type, e, 'draw(elements)'
-            )
+            return np.array([e], dtype=dtype)[0]
         elements = elements.map(convert_element)
     assert elements is not None
 
@@ -437,7 +435,8 @@ def data_frames(
                     )
                 for i in hrange(len(index)):
                     for c in columns_without_fill:
-                        data[c.name][i] = draw(c.elements)
+                        value = draw(c.elements)
+                        data[c.name][i] = value
 
             for c in rewritten_columns:
                 if not c.fill.is_empty:
