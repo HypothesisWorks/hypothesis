@@ -291,19 +291,6 @@ def columns(
     ]
 
 
-@check_function
-def fill_for(elements, unique, fill, name=''):
-    # FIXME: Move to hypothesis.extra.numpy
-    if fill is None:
-        if unique or not elements.has_reusable_values:
-            fill = st.nothing()
-        else:
-            fill = elements
-    else:
-        st.check_strategy(fill, '%s.fill' % (name,) if name else 'fill')
-    return fill
-
-
 @st.defines_strategy
 def data_frames(
     columns=None, rows=None, index=None
@@ -409,7 +396,7 @@ def data_frames(
             c.elements, c.dtype, label
         )
 
-        c.fill = fill_for(
+        c.fill = npst.fill_for(
             fill=c.fill, elements=c.elements, unique=c.unique,
             name=label
         )

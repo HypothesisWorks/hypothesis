@@ -208,6 +208,18 @@ class ArrayStrategy(SearchStrategy):
         return result.reshape(self.shape)
 
 
+@check_function
+def fill_for(elements, unique, fill, name=''):
+    if fill is None:
+        if unique or not elements.has_reusable_values:
+            fill = st.nothing()
+        else:
+            fill = elements
+    else:
+        st.check_strategy(fill, '%s.fill' % (name,) if name else 'fill')
+    return fill
+
+
 @st.composite
 def arrays(
     draw, dtype, shape, elements=None, fill=None, unique=False
@@ -296,13 +308,9 @@ def arrays(
     if not shape:
         if dtype.kind != u'O':
             return draw(elements)
-    if fill is None:
-        if unique or not elements.has_reusable_values:
-            fill = st.nothing()
-        else:
-            fill = elements
-    else:
-        st.check_strategy(fill, 'fill')
+    fill = fill_for(
+        elements=elements, unique=unique, fill=fill
+    )
     return draw(ArrayStrategy(elements, shape, dtype, fill, unique))
 
 
