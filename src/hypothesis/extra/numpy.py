@@ -210,9 +210,8 @@ class ArrayStrategy(SearchStrategy):
 def arrays(
     draw, dtype, shape, elements=None, fill=None, unique=False
 ):
-    """Returns a strategy for generating.
-
-    :class:`numpy's ndarrays <numpy.ndarray>`.
+    """Returns a strategy for generating :class:`numpy's
+    ndarrays<numpy.ndarray>`.
 
     * ``dtype`` may be any valid input to :class:`numpy.dtype <numpy.dtype>`
       (this includes ``dtype`` objects), or a strategy that generates such
@@ -227,8 +226,9 @@ def arrays(
     * `fill` is a strategy that may be used to generate a single background
       value for the array. If None, a suitable default will be inferred
       based on the other arguments. If set to
-      :func:`st.nothing() <hypothesis.strategies.nothing>` behaviour will be
-      disabled entirely.
+      :func:`st.nothing() <hypothesis.strategies.nothing>` then filling
+      behaviour will be disabled entirely and every element will be generated
+      independently.
     * `unique` specifies if the elements of the array should all be
       distinct from one another. Note that in this case multiple NaN values
       may still be allowed. If fill is also set, the only valid values for
