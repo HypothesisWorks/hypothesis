@@ -76,13 +76,14 @@ if os.getenv('HYPOTHESIS_INTERNAL_BRANCH_CHECK') == 'true':
         # function, one for our actual caller, so we want to go two extra
         # stack frames up.
         caller = sys._getframe(depth + 2)
-        local_description = '%s:%d, %s passed' % (
+        local_description = '%s at %s:%d' % (
+            name,
             pretty_file_name(caller.f_code.co_filename),
-            caller.f_lineno, name,
+            caller.f_lineno,
         )
         try:
             description_stack.append(local_description)
-            description = ' in '.join(reversed(description_stack))
+            description = ' in '.join(reversed(description_stack)) + ' passed'
             yield
             record_branch(description, True)
         except:
