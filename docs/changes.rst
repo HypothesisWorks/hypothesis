@@ -22,6 +22,15 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.23.0 - 2017-08-31
+-------------------
+
+This release adds a ``unique`` argument to :func:`~hypothesis.extra.numpy.arrays`
+which behaves the same ways as the corresponding one for
+:func:`~hypothesis.strategies.lists`, requiring all of the elements in the
+generated array to be distinct.
+
+-------------------
 3.22.2 - 2017-08-29
 -------------------
 
