@@ -2,7 +2,7 @@
 House API Style
 ===============
 
-Here are some guidelines for how to write strategies so that they "feel" like
+Here are some guidelines for how to write APIs so that they "feel" like
 a Hypothesis API. This is particularly focused on writing new strategies, as
 that's the major place where we add APIs, but also applies more generally.
 
