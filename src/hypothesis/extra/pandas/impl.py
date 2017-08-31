@@ -29,9 +29,9 @@ import hypothesis.extra.numpy as npst
 import hypothesis.internal.conjecture.utils as cu
 from pandas.api.types import is_categorical_dtype
 from hypothesis.errors import InvalidArgument
+from hypothesis.control import reject
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.branchcheck import check, check_function
-from hypothesis.control import reject
 
 
 def dtype_for_elements_strategy(s):
