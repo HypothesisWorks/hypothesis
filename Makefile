@@ -67,7 +67,6 @@ $(PYPY):
 	scripts/retry.sh scripts/install.sh pypy
 
 $(TOOL_VIRTUALENV): $(BEST_PY3)
-	rm -rf $(BUILD_RUNTIMES)/virtualenvs/tools-*
 	$(BEST_PY3) -m virtualenv $(TOOL_VIRTUALENV)
 	$(TOOL_PIP) install -r requirements/tools.txt
 
