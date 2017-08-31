@@ -18,7 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 from copy import copy
-from collections import Iterable, OrderedDict
+from collections import OrderedDict
 
 import attr
 import numpy as np
@@ -29,7 +29,7 @@ import hypothesis.extra.numpy as npst
 import hypothesis.internal.conjecture.utils as cu
 from pandas.api.types import is_categorical_dtype
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import hrange, integer_types
+from hypothesis.internal.compat import hrange
 from hypothesis.internal.branchcheck import check_function
 
 
@@ -56,13 +56,10 @@ def elements_and_dtype(elements, dtype, source=None):
 
     if elements is not None:
         st.check_strategy(elements, '%selements' % (prefix,))
-    if elements is None and dtype is None:
+    elif dtype is None:
         raise InvalidArgument((
             'At least one of %(prefix)selements or %(prefix)sdtype must be '
             'provided.') % {'prefix': prefix})
-
-    if elements is not None:
-        st.check_strategy(elements, '%selements' % (prefix,))
 
     if is_categorical_dtype(dtype):
         raise InvalidArgument(
@@ -269,9 +266,6 @@ def columns(
     create the columns.
 
     """
-    st.check_type(
-        (Iterable,) + integer_types, names_or_number, 'names_or_number'
-    )
     try:
         names = list(names_or_number)
     except TypeError:
@@ -284,7 +278,7 @@ def columns(
 
 
 @check_function
-def fill_for(elements, unique, fill):
+def fill_for(elements, unique, fill, name=''):
     # FIXME: Move to hypothesis.extra.numpy
     if fill is None:
         if unique or not elements.has_reusable_values:
@@ -292,7 +286,7 @@ def fill_for(elements, unique, fill):
         else:
             fill = elements
     else:
-        st.check_strategy(fill, 'fill')
+        st.check_strategy(fill, '%s.fill' % (name,) if name else 'fill')
     return fill
 
 
@@ -397,15 +391,13 @@ def data_frames(
 
         column_names.add(c.name)
 
-        if c.fill is not None:
-            st.check_type(st.SearchStrategy, c.fill, '%s.fill' % (label,))
-
         c.elements, c.dtype = elements_and_dtype(
             c.elements, c.dtype, label
         )
 
         c.fill = fill_for(
             fill=c.fill, elements=c.elements, unique=c.unique,
+            name=label
         )
 
         rewritten_columns.append(c)
