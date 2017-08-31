@@ -283,6 +283,19 @@ def columns(
     ]
 
 
+@check_function
+def fill_for(elements, unique, fill):
+    # FIXME: Move to hypothesis.extra.numpy
+    if fill is None:
+        if unique or not elements.has_reusable_values:
+            fill = st.nothing()
+        else:
+            fill = elements
+    else:
+        st.check_strategy(fill, 'fill')
+    return fill
+
+
 @st.defines_strategy
 def data_frames(
     columns=None, rows=None, index=None
@@ -391,6 +404,10 @@ def data_frames(
             c.elements, c.dtype, label
         )
 
+        c.fill = fill_for(
+            fill=c.fill, elements=c.elements, unique=c.unique,
+        )
+
         rewritten_columns.append(c)
 
     if rows is None:
@@ -399,13 +416,40 @@ def data_frames(
             index = draw(index_strategy)
             local_index_strategy = st.just(index)
 
-            # FIXME: For columns without fill, do this bit differently.
-            data = OrderedDict(
-                (c.name, draw(series(
-                    index=local_index_strategy, dtype=c.dtype,
-                    elements=c.elements, fill=c.fill, unique=c.unique)))
-                for c in rewritten_columns
-            )
+            data = OrderedDict((c.name, None) for c in rewritten_columns)
+
+            # Depending on how the columns are going to be generated we group
+            # them differently to get better shrinking. For columns with fill
+            # enabled, the elements can be shrunk independently of the size,
+            # so we can just shrink by shrinking the index then shrinking the
+            # length and are generally much more free to move data around.
+
+            # For columns with no filling the problem is harder, and drawing
+            # them like that would result in rows being very far apart from
+            # eachother in the underlying data stream, which gets in the way
+            # of shrinking. So what we do is reorder and draw those columns
+            # row wise, so that the values of each row are next to each other.
+            # This makes life easier for the shrinker when deleting blocks of
+            # data.
+            columns_without_fill = [
+                c for c in rewritten_columns if c.fill.is_empty]
+
+            if columns_without_fill:
+                for c in columns_without_fill:
+                    data[c.name] = pandas.Series(
+                        np.zeros(shape=len(index), dtype=c.dtype),
+                        index=index,
+                    )
+                for i in hrange(len(index)):
+                    for c in columns_without_fill:
+                        data[c.name][i] = draw(c.elements)
+
+            for c in rewritten_columns:
+                if not c.fill.is_empty:
+                    data[c.name] = draw(series(
+                        index=local_index_strategy, dtype=c.dtype,
+                        elements=c.elements, fill=c.fill, unique=c.unique))
+
             return pandas.DataFrame(data, index=index)
         return just_draw_columns()
     else:
