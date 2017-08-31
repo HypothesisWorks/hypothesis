@@ -23,8 +23,7 @@ import pandas
 import hypothesis.strategies as st
 import hypothesis.extra.numpy as npst
 import hypothesis.extra.pandas as pdst
-from hypothesis import given, assume, settings
-from hypothesis.core import cached
+from hypothesis import given, assume
 from tests.common.debug import find_any
 from tests.pandas.helpers import supported_by_pandas
 
@@ -35,17 +34,6 @@ def test_can_create_a_series_of_any_dtype(data):
     assume(supported_by_pandas(dtype))
     series = data.draw(pdst.series(dtype=dtype))
     assert series.dtype == pandas.Series([], dtype=dtype).dtype
-
-
-@given(st.data())
-def test_buggy_dtype_identification_is_precise(data):
-    dtype = np.dtype(data.draw(npst.scalar_dtypes()))
-    assume(not supported_by_pandas(dtype))
-    try:
-        series = data.draw(pdst.series(dtype=dtype))
-    except Exception as e:
-        return
-    assert series.dtype != dtype
 
 
 @given(pdst.series(
@@ -75,3 +63,8 @@ def test_will_use_dtype_of_elements(s):
 @given(pdst.series(elements=st.floats(allow_nan=False)))
 def test_will_use_a_provided_elements_strategy(s):
     assert all(x == x for x in s)
+
+
+@given(pdst.series(dtype='int8', unique=True))
+def test_unique_series_are_unique(s):
+    assert len(s) == len(set(s))

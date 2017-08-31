@@ -165,7 +165,13 @@ def test_data_frames_with_timestamp_columns(df):
     pass
 
 
-@settings(max_examples=10**4, timeout=unlimited, perform_health_check=False)
+@given(pdst.data_frames(pdst.columns(
+    ['A'], dtype=float, fill=st.just(float('nan')), unique=True
+)))
+def test_unique_column_with_fill(df):
+    assert len(set(df['A'])) == len(df['A'])
+
+
 @given(st.data())
 def test_arbitrary_data_frames(data):
     columns = data.draw(st.lists(
