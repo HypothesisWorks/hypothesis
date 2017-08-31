@@ -17,17 +17,9 @@
 
 from __future__ import division, print_function, absolute_import
 
-import pytest
-
 import hypothesis.strategies as st
 import hypothesis.extra.pandas as pdst
-from hypothesis import given
-from hypothesis.errors import InvalidArgument
-
-
-def e(a, *args, **kwargs):
-    return (a, args, kwargs)
-
+from tests.common.arguments import e, argument_validation_test
 
 BAD_ARGS = [
     e(pdst.data_frames),
@@ -63,21 +55,4 @@ BAD_ARGS = [
 ]
 
 
-def e_to_str(elt):
-    f, args, kwargs = elt
-    bits = list(map(repr, args))
-    bits.extend(sorted('%s=%r' % (k, v) for k, v in kwargs.items()))
-    return '%s(%s)' % (f.__name__, ', '.join(bits))
-
-
-@pytest.mark.parametrize(
-    ('function', 'args', 'kwargs'), BAD_ARGS,
-    ids=list(map(e_to_str, BAD_ARGS))
-)
-def test_raise_invalid_argument(function, args, kwargs):
-    @given(function(*args, **kwargs))
-    def test(x):
-        pass
-
-    with pytest.raises(InvalidArgument):
-        test()
+test_raise_invalid_argument = argument_validation_test(BAD_ARGS)
