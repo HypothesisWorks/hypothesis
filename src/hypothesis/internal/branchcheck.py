@@ -67,23 +67,29 @@ if os.getenv('HYPOTHESIS_INTERNAL_BRANCH_CHECK') == 'true':
         log.write('\n')
         log.flush()
 
+    description_stack = []
+
     def check_function(f):
         @proxies(f)
         def accept(*args, **kwargs):
             # 0 is here, 1 is the proxy function, 2 is where we were actually
             # called from.
             caller = sys._getframe(2)
-            description = '%s:%d, %s passed' % (
+            local_description = '%s:%d, %s passed' % (
                 pretty_file_name(caller.f_code.co_filename),
                 caller.f_lineno, f.__name__,
             )
             try:
+                description_stack.append(local_description)
+                description = ' in '.join(reversed(description_stack))
                 result = f(*args, **kwargs)
                 record_branch(description, True)
                 return result
             except:
                 record_branch(description, False)
                 raise
+            finally:
+                description_stack.pop()
         return accept
 else:
     def check_function(f):
