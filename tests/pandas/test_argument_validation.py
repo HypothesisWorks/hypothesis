@@ -30,8 +30,8 @@ def e(a, *args, **kwargs):
 
 
 BAD_ARGS = [
-    e(pdst.indexes, dtype="not a dtype"),
-    e(pdst.indexes, elements="not a strategy"),
+    e(pdst.indexes, dtype='not a dtype'),
+    e(pdst.indexes, elements='not a strategy'),
     e(pdst.indexes, elements=st.text(), dtype=float),
     e(pdst.indexes),
     e(pdst.series),
@@ -47,15 +47,15 @@ BAD_ARGS = [
     e(pdst.data_frames, [1]),
     e(pdst.range_indexes, 1, 0),
     e(pdst.indexes, dtype=int, max_size=0, min_size=1),
-    e(pdst.indexes, dtype=int, unique="true"),
+    e(pdst.indexes, dtype=int, unique='true'),
 ]
 
 
 def e_to_str(elt):
     f, args, kwargs = elt
     bits = list(map(repr, args))
-    bits.extend(sorted("%s=%r" % (k, v) for k, v in kwargs.items()))
-    return "%s(%s)" % (f.__name__, ', '.join(bits))
+    bits.extend(sorted('%s=%r' % (k, v) for k, v in kwargs.items()))
+    return '%s(%s)' % (f.__name__, ', '.join(bits))
 
 
 @pytest.mark.parametrize(
