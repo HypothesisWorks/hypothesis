@@ -24,7 +24,6 @@ import hypothesis.strategies as st
 import hypothesis.extra.pandas as pdst
 from hypothesis import given, example
 from hypothesis.types import RandomWithSeed as Random
-from hypothesis.errors import InvalidArgument
 from tests.common.debug import minimal
 
 
@@ -97,16 +96,6 @@ def test_can_specify_both_rows_and_columns_dict(d):
     assert d['B'].dtype == np.dtype(int)
     for _, r in d.iterrows():
         assert r['A'] <= r['B']
-
-
-def test_validates_against_duplicate_columns():
-    with pytest.raises(InvalidArgument):
-        pdst.data_frames(['A', 'A']).example()
-
-
-def test_requires_elements_for_category():
-    with pytest.raises(InvalidArgument):
-        pdst.data_frames([pdst.column('A', dtype='category')]).example()
 
 
 @given(

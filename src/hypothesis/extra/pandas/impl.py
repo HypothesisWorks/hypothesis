@@ -30,7 +30,7 @@ import hypothesis.internal.conjecture.utils as cu
 from pandas.api.types import is_categorical_dtype
 from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import hrange
-from hypothesis.internal.branchcheck import check_function
+from hypothesis.internal.branchcheck import check, check_function
 
 
 def dtype_for_elements_strategy(s):
@@ -56,16 +56,19 @@ def elements_and_dtype(elements, dtype, source=None):
 
     if elements is not None:
         st.check_strategy(elements, '%selements' % (prefix,))
-    elif dtype is None:
-        raise InvalidArgument((
-            'At least one of %(prefix)selements or %(prefix)sdtype must be '
-            'provided.') % {'prefix': prefix})
+    else:
+        with check('dtype is not None'):
+            if dtype is None:
+                raise InvalidArgument((
+                    'At least one of %(prefix)selements or %(prefix)sdtype '
+                    'must be provided.') % {'prefix': prefix})
 
-    if is_categorical_dtype(dtype):
-        raise InvalidArgument(
-            '%sdtype is categorical, which is currently unsupported' % (
-                prefix,
-            ))
+    with check('is_categorical_dtype'):
+        if is_categorical_dtype(dtype):
+            raise InvalidArgument(
+                '%sdtype is categorical, which is currently unsupported' % (
+                    prefix,
+                ))
 
     dtype = st.try_convert(np.dtype, dtype, 'dtype')
 

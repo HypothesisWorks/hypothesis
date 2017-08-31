@@ -20,6 +20,7 @@ from __future__ import division, print_function, absolute_import
 import os
 import sys
 import json
+from contextlib import contextmanager
 
 from hypothesis.internal.reflection import proxies
 
@@ -69,28 +70,43 @@ if os.getenv('HYPOTHESIS_INTERNAL_BRANCH_CHECK') == 'true':
 
     description_stack = []
 
+    @contextmanager
+    def check_block(name, depth):
+        # We add an extra two callers to the stack: One for the contextmanager
+        # function, one for our actual caller, so we want to go two extra
+        # stack frames up.
+        caller = sys._getframe(depth + 2)
+        local_description = '%s:%d, %s passed' % (
+            pretty_file_name(caller.f_code.co_filename),
+            caller.f_lineno, name,
+        )
+        try:
+            description_stack.append(local_description)
+            description = ' in '.join(reversed(description_stack))
+            yield
+            record_branch(description, True)
+        except:
+            record_branch(description, False)
+            raise
+        finally:
+            description_stack.pop()
+
+    @contextmanager
+    def check(name):
+        with check_block(name, 2):
+            yield
+
     def check_function(f):
         @proxies(f)
         def accept(*args, **kwargs):
-            # 0 is here, 1 is the proxy function, 2 is where we were actually
-            # called from.
-            caller = sys._getframe(2)
-            local_description = '%s:%d, %s passed' % (
-                pretty_file_name(caller.f_code.co_filename),
-                caller.f_lineno, f.__name__,
-            )
-            try:
-                description_stack.append(local_description)
-                description = ' in '.join(reversed(description_stack))
-                result = f(*args, **kwargs)
-                record_branch(description, True)
-                return result
-            except:
-                record_branch(description, False)
-                raise
-            finally:
-                description_stack.pop()
+            # depth of 2 because of the proxy function calling us.
+            with check_block(f.__name__, 2):
+                return f(*args, **kwargs)
         return accept
 else:
     def check_function(f):
         return f
+
+    @contextmanager
+    def check(name):
+        yield

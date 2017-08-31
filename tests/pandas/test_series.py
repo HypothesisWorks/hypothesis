@@ -18,14 +18,12 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-import pytest
 
 import pandas
 import hypothesis.strategies as st
 import hypothesis.extra.numpy as npst
 import hypothesis.extra.pandas as pdst
 from hypothesis import given, assume
-from hypothesis.errors import InvalidArgument
 from tests.common.debug import find_any
 from tests.pandas.helpers import supported_by_pandas
 
@@ -76,16 +74,3 @@ def test_will_use_dtype_of_elements(s):
 @given(pdst.series(elements=st.floats(allow_nan=False)))
 def test_will_use_a_provided_elements_strategy(s):
     assert all(x == x for x in s)
-
-
-LABELS = ['A', 'B', 'C', 'D', 'E']
-
-
-def test_categorical_is_unsupported():
-    with pytest.raises(InvalidArgument):
-        pdst.series(st.sampled_from(LABELS), dtype='category').example()
-
-
-def test_will_error_on_bad_index():
-    with pytest.raises(InvalidArgument):
-        pdst.series(index=1).example()
