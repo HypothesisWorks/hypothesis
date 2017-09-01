@@ -26,8 +26,8 @@ from hypothesis import settings as Settings
 from hypothesis import Phase
 from hypothesis.reporting import debug_report
 from hypothesis.internal.compat import EMPTY_BYTES, Counter, ceil, \
-    hbytes, hrange, text_type, int_to_text, bytes_from_list, \
-    to_bytes_sequence, unicode_safe_repr
+    hbytes, hrange, text_type, int_to_text, int_to_bytes, \
+    bytes_from_list, to_bytes_sequence, unicode_safe_repr
 from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
     StopTest, ConjectureData
 from hypothesis.internal.conjecture.minimizer import minimize
@@ -107,9 +107,9 @@ class ConjectureRunner(object):
     def new_buffer(self):
         assert not self.__tree_is_exhausted()
 
-        def draw_bytes(data, n, distribution):
+        def draw_bytes(data, n):
             return self.__rewrite_for_novelty(
-                data, self.__zero_bound(data, distribution(self.random, n))
+                data, self.__zero_bound(data, uniform(self.random, n))
             )
 
         self.last_data = ConjectureData(
@@ -326,38 +326,38 @@ class ConjectureRunner(object):
                 ))
 
     def _new_mutator(self):
-        def draw_new(data, n, distribution):
-            return distribution(self.random, n)
+        def draw_new(data, n):
+            return uniform(self.random, n)
 
-        def draw_existing(data, n, distribution):
+        def draw_existing(data, n):
             return self.last_data.buffer[data.index:data.index + n]
 
-        def draw_smaller(data, n, distribution):
+        def draw_smaller(data, n):
             existing = self.last_data.buffer[data.index:data.index + n]
-            r = distribution(self.random, n)
+            r = uniform(self.random, n)
             if r <= existing:
                 return r
             return _draw_predecessor(self.random, existing)
 
-        def draw_larger(data, n, distribution):
+        def draw_larger(data, n):
             existing = self.last_data.buffer[data.index:data.index + n]
-            r = distribution(self.random, n)
+            r = uniform(self.random, n)
             if r >= existing:
                 return r
             return _draw_successor(self.random, existing)
 
-        def reuse_existing(data, n, distribution):
+        def reuse_existing(data, n):
             choices = data.block_starts.get(n, []) or \
                 self.last_data.block_starts.get(n, [])
             if choices:
                 i = self.random.choice(choices)
                 return self.last_data.buffer[i:i + n]
             else:
-                result = distribution(self.random, n)
+                result = uniform(self.random, n)
                 assert isinstance(result, hbytes)
                 return result
 
-        def flip_bit(data, n, distribution):
+        def flip_bit(data, n):
             buf = bytearray(
                 self.last_data.buffer[data.index:data.index + n])
             i = self.random.randint(0, n - 1)
@@ -365,13 +365,13 @@ class ConjectureRunner(object):
             buf[i] ^= (1 << k)
             return hbytes(buf)
 
-        def draw_zero(data, n, distribution):
+        def draw_zero(data, n):
             return hbytes(b'\0' * n)
 
-        def draw_max(data, n, distribution):
+        def draw_max(data, n):
             return hbytes([255]) * n
 
-        def draw_constant(data, n, distribution):
+        def draw_constant(data, n):
             return bytes_from_list([
                 self.random.randint(0, 255)
             ] * n)
@@ -389,13 +389,13 @@ class ConjectureRunner(object):
             self.random.choice(options) for _ in hrange(3)
         ]
 
-        def draw_mutated(data, n, distribution):
+        def draw_mutated(data, n):
             if (
                 data.index + n > len(self.last_data.buffer)
             ):
-                result = distribution(self.random, n)
+                result = uniform(self.random, n)
             else:
-                result = self.random.choice(bits)(data, n, distribution)
+                result = self.random.choice(bits)(data, n)
 
             return self.__rewrite_for_novelty(
                 data, self.__zero_bound(data, result))
@@ -622,7 +622,7 @@ class ConjectureRunner(object):
                     if buffer == overdrawn.buffer:
                         continue
 
-                    def draw_bytes(data, n, distribution):
+                    def draw_bytes(data, n):
                         result = buffer[data.index:data.index + n]
                         if len(result) < n:
                             result += hbytes(n - len(result))
@@ -979,3 +979,7 @@ def _draw_successor(rnd, xs):
 
 def sort_key(buffer):
     return (len(buffer), buffer)
+
+
+def uniform(random, n):
+    return int_to_bytes(random.getrandbits(n * 8), n)
