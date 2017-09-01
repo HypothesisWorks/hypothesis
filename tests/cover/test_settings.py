@@ -22,7 +22,8 @@ from tempfile import mkdtemp
 
 import pytest
 
-import hypothesis
+import hypothesis.strategies as st
+from hypothesis import given, unlimited
 from hypothesis.errors import InvalidState, InvalidArgument, \
     HypothesisDeprecationWarning
 from tests.common.utils import checks_deprecated_behaviour
@@ -157,7 +158,7 @@ def test_loading_profile_keeps_expected_behaviour():
 
 
 def test_load_non_existent_profile():
-    with pytest.raises(hypothesis.errors.InvalidArgument):
+    with pytest.raises(InvalidArgument):
         settings.get_profile('nonsense')
 
 
@@ -190,7 +191,7 @@ def test_set_deprecated_settings():
 
 
 def test_setting_to_future_value_gives_future_value_and_no_error():
-    assert settings(timeout=hypothesis.unlimited).timeout == -1
+    assert settings(timeout=unlimited).timeout == -1
 
 
 def test_cannot_set_settings():
@@ -233,3 +234,9 @@ def test_does_not_warn_if_quiet():
     with pytest.warns(None) as rec:
         note_deprecation('This is bad', settings(verbosity=Verbosity.quiet))
     assert len(rec) == 0
+
+
+@settings(max_examples=7)
+@given(st.builds(lambda: settings.default))
+def test_settings_in_strategies_are_from_test_scope(s):
+    assert s.max_examples == 7
