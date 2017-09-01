@@ -51,7 +51,7 @@ from hypothesis.internal.conjecture.data import Status, StopTest, \
     ConjectureData
 from hypothesis.searchstrategy.strategies import SearchStrategy
 from hypothesis.internal.conjecture.engine import ExitReason, \
-    ConjectureRunner
+    ConjectureRunner, uniform
 
 
 def new_random():
@@ -286,8 +286,7 @@ def perform_health_checks(random, settings, test_runner, search_strategy):
     # of loading unicode data the first time.
     data = ConjectureData(
         max_length=settings.buffer_size,
-        draw_bytes=lambda data, n, distribution:
-        distribution(health_check_random, n)
+        draw_bytes=lambda data, n: uniform(health_check_random, n)
     )
     with Settings(settings, verbosity=Verbosity.quiet):
         try:
@@ -308,8 +307,7 @@ def perform_health_checks(random, settings, test_runner, search_strategy):
         try:
             data = ConjectureData(
                 max_length=settings.buffer_size,
-                draw_bytes=lambda data, n, distribution:
-                distribution(health_check_random, n)
+                draw_bytes=lambda data, n: uniform(health_check_random, n)
             )
             with Settings(settings, verbosity=Verbosity.quiet):
                 test_runner(data, reify_and_execute(

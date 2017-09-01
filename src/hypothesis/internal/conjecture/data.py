@@ -21,12 +21,7 @@ from enum import IntEnum
 
 from hypothesis.errors import Frozen, InvalidArgument
 from hypothesis.internal.compat import hbytes, hrange, text_type, \
-    bit_length, int_to_bytes, benchmark_time, int_from_bytes, \
-    unicode_safe_repr
-
-
-def uniform(random, n):
-    return int_to_bytes(random.getrandbits(n * 8), n)
+    bit_length, benchmark_time, int_from_bytes, unicode_safe_repr
 
 
 class Status(IntEnum):
@@ -56,7 +51,7 @@ class ConjectureData(object):
         buffer = hbytes(buffer)
         return ConjectureData(
             max_length=len(buffer),
-            draw_bytes=lambda data, n, distribution:
+            draw_bytes=lambda data, n:
             hbytes(buffer[data.index:data.index + n])
         )
 
@@ -158,9 +153,6 @@ class ConjectureData(object):
         self.events = frozenset(self.events)
         del self._draw_bytes
 
-    def draw_bytes(self, n):
-        return self.draw_bytes_internal(n, uniform)
-
     def draw_bits(self, n):
         self.__assert_not_frozen('draw_bits')
         if n == 0:
@@ -170,7 +162,7 @@ class ConjectureData(object):
         else:
             n_bytes = (n // 8) + 1
             self.__check_capacity(n_bytes)
-            buf = bytearray(self._draw_bytes(self, n_bytes, uniform))
+            buf = bytearray(self._draw_bytes(self, n_bytes))
             assert len(buf) == n_bytes
             mask = (1 << (n % 8)) - 1
             buf[0] &= mask
@@ -207,12 +199,12 @@ class ConjectureData(object):
         self.buffer.extend(result)
         self.intervals.append((initial, self.index))
 
-    def draw_bytes_internal(self, n, distribution):
+    def draw_bytes(self, n):
         self.__assert_not_frozen('draw_bytes')
         if n == 0:
             return hbytes(b'')
         self.__check_capacity(n)
-        result = self._draw_bytes(self, n, distribution)
+        result = self._draw_bytes(self, n)
         assert len(result) == n
         self.__write(result)
         return hbytes(result)
