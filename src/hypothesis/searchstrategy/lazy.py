@@ -17,7 +17,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis import settings
 from hypothesis.internal.compat import hrange, getfullargspec
 from hypothesis.internal.reflection import arg_string, \
     convert_keyword_arguments, convert_positional_arguments
@@ -80,7 +79,6 @@ class LazyStrategy(SearchStrategy):
         self.__kwargs = dict(
             (k, tupleize(v)) for k, v in kwargs.items()
         )
-        self.__settings = settings.default or settings()
 
     @property
     def supports_find(self):
@@ -95,30 +93,29 @@ class LazyStrategy(SearchStrategy):
     @property
     def wrapped_strategy(self):
         if self.__wrapped_strategy is None:
-            with self.__settings:
-                unwrapped_args = tuple(
-                    unwrap_strategies(s) for s in self.__args)
-                unwrapped_kwargs = {
-                    k: unwrap_strategies(v)
-                    for k, v in self.__kwargs.items()
-                }
+            unwrapped_args = tuple(
+                unwrap_strategies(s) for s in self.__args)
+            unwrapped_kwargs = {
+                k: unwrap_strategies(v)
+                for k, v in self.__kwargs.items()
+            }
 
-                base = self.__function(
-                    *self.__args, **self.__kwargs
-                )
-                if (
-                    unwrapped_args == self.__args and
-                    unwrapped_kwargs == self.__kwargs
-                ):
-                    self.__wrapped_strategy = base
-                else:
-                    self.__wrapped_strategy = self.__function(
-                        *unwrapped_args,
-                        **unwrapped_kwargs)
-                    self.__wrapped_strategy.force_has_reusable_values = \
-                        base.has_reusable_values
-                    assert self.__wrapped_strategy.has_reusable_values == \
-                        base.has_reusable_values
+            base = self.__function(
+                *self.__args, **self.__kwargs
+            )
+            if (
+                unwrapped_args == self.__args and
+                unwrapped_kwargs == self.__kwargs
+            ):
+                self.__wrapped_strategy = base
+            else:
+                self.__wrapped_strategy = self.__function(
+                    *unwrapped_args,
+                    **unwrapped_kwargs)
+                self.__wrapped_strategy.force_has_reusable_values = \
+                    base.has_reusable_values
+                assert self.__wrapped_strategy.has_reusable_values == \
+                    base.has_reusable_values
         return self.__wrapped_strategy
 
     def do_validate(self):
