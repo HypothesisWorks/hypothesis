@@ -22,6 +22,13 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.23.2 - 2017-09-01
+-------------------
+
+This is a small refactoring release that removes a now-unused parameter to an
+internal API. It shouldn't have any user visible effect.
+
+-------------------
 3.23.1 - 2017-09-01
 -------------------
 
