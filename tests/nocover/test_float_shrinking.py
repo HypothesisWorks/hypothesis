@@ -17,14 +17,18 @@
 
 from __future__ import division, print_function, absolute_import
 
+from random import Random
+
 import pytest
 
 import hypothesis.strategies as st
+from hypothesis import Verbosity, given, assume, example, settings
 from tests.common.debug import minimal
+from hypothesis.internal.compat import ceil
 
 
 def test_shrinks_to_simple_floats():
-    assert minimal(st.floats(), lambda x: x > 1) == 1.5
+    assert minimal(st.floats(), lambda x: x > 1) == 2.0
     assert minimal(st.floats(), lambda x: x > 0) == 1.0
 
 
@@ -34,3 +38,26 @@ def test_can_shrink_in_variable_sized_context(n):
     assert len(x) == n
     assert x.count(0.0) == n - 1
     assert 1 in x
+
+
+@example(1.5)
+@given(st.floats(min_value=0, allow_infinity=False, allow_nan=False))
+def test_shrinks_downwards_to_integers(f):
+    g = minimal(
+        st.floats(), lambda x: x >= f, random=Random(0),
+        settings=settings(verbosity=Verbosity.quiet),
+    )
+    assert g == ceil(f)
+
+
+@example(1)
+@given(st.integers(1, 2 ** 16 - 1))
+@settings(verbosity=Verbosity.debug)
+def test_shrinks_downwards_to_integers_when_fractional(b):
+    g = minimal(
+        st.floats(),
+        lambda x: assume((0 < x < (2 ** 53)) and int(x) != x) and x >= b,
+        random=Random(0),
+        settings=settings(verbosity=Verbosity.quiet),
+    )
+    assert g == b + 0.5

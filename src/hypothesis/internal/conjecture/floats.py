@@ -17,11 +17,9 @@
 
 from __future__ import division, print_function, absolute_import
 
-import math
 from array import array
 
 from hypothesis.internal.compat import ceil, hbytes, hrange, int_to_bytes
-from hypothesis.internal.floats import sign as sgn
 from hypothesis.internal.floats import float_to_int, int_to_float
 
 """
@@ -29,8 +27,23 @@ This module implements support for arbitrary floating point numbers in
 Conjecture. It doesn't make any attempt to get a good distribution, only to
 get a format that will shrink well.
 
-We define an encoding of floating point numbers as 64-bit unsigned integers
-which has the following properties:
+It works by defining an encoding of non-negative floating point numbers
+(including NaN values with a zero sign bit) that has good lexical shrinking
+properties.
+
+This encoding is a tagged union of two separate encodings for floating point
+numbers, with the tag being the first bit of 64 and the remaining 63-bits being
+the payload.
+
+If the tag bit is 0, the next 7 bits are ignored, and the remaining 7 bytes are
+interpreted as a 7 byte integer in big-endian order and then converted to a
+float (there is some redundancy here, as 7 * 8 = 56, which is larger than the
+largest integer that floating point numbers can represent exactly, so multiple
+encodings may map to the same float).
+
+If the tag bit is 1, we instead use somemthing that is closer to the normal
+representation of floats (and can represent every non-negative float exactly)
+but has a better ordering:
 
 1. NaNs are ordered after everything else.
 2. Infinity is ordered after every finite number.
@@ -42,15 +55,9 @@ which has the following properties:
 5. If int(x) == int(y) then x and y are sorted towards lower denominators of
    their fractional parts.
 
+The format of this encoding of floating point goes as follows:
 
-Unfortunately it's not quite so simple. There is a complication around zero,
-which is that we want to treat 0 as if it were a normal integer, but its
-representation in IEEE floating point gives it a high negative exponent. So
-we then have a separate layer on top of our encoding for handling zero.
-
-The format of our encoding of floating point goes as follows:
-
-    [exponent] [mantissa] [sign]
+    [exponent] [mantissa]
 
 Each of these is the same size their equivalent in IEEE floating point, but are
 in a different format.
@@ -197,21 +204,34 @@ def update_mantissa(unbiased_exponent, mantissa):
 
 def lex_to_float(i):
     assert i.bit_length() <= 64
-    sign = i & 1
-    i >>= 1
-    exponent = i >> 52
-    exponent = decode_exponent(exponent)
-    mantissa = i & MANTISSA_MASK
-    mantissa = update_mantissa(exponent - BIAS, mantissa)
+    has_fractional_part = i >> 63
+    if has_fractional_part:
+        exponent = (i >> 52) & ((1 << 11) - 1)
+        exponent = decode_exponent(exponent)
+        mantissa = i & MANTISSA_MASK
+        mantissa = update_mantissa(exponent - BIAS, mantissa)
 
-    assert mantissa.bit_length() <= 52
+        assert mantissa.bit_length() <= 52
 
-    return int_to_float((sign << 63) | (exponent << 52) | mantissa)
+        result = int_to_float((exponent << 52) | mantissa)
+
+        if not has_fractional_part:
+            try:
+                result = float(ceil(result)) - 1
+            except ValueError:
+                pass
+        return result
+    else:
+        integral_part = i & ((1 << 56) - 1)
+        return float(integral_part)
 
 
 def float_to_lex(f):
+    if is_simple(f):
+        assert f >= 0
+        return int(f)
+
     i = float_to_int(f)
-    sign = i >> 63
     i &= ((1 << 63) - 1)
     exponent = i >> 52
     mantissa = i & MANTISSA_MASK
@@ -219,52 +239,31 @@ def float_to_lex(f):
     exponent = encode_exponent(exponent)
 
     assert mantissa.bit_length() <= 52
+    return (1 << 63) | (exponent << 52) | mantissa
 
-    return (exponent << 53) | (mantissa << 1) | sign
+
+def is_simple(f):
+    try:
+        i = int(f)
+    except (ValueError, OverflowError):
+        return False
+    if i != f:
+        return False
+    return i.bit_length() <= 56
 
 
 def draw_float(data):
     try:
         data.start_example()
-        header = data.draw_bits(2)
-        non_zero = header & 2
-        needs_round = 1 - (header & 1)
-        if non_zero:
-            result = lex_to_float(data.draw_bits(64))
-            if needs_round:
-                try:
-                    result = math.copysign(
-                        float(ceil(abs(result))), result)
-                except (ValueError, OverflowError):
-                    pass
-            return result
-        else:
-            data.write(hbytes(7))
-            sign = data.draw_bits(1)
-            if sign:
-                return -0.0
-            else:
-                return 0.0
+        f = lex_to_float(data.draw_bits(64))
+        if data.draw_bits(1):
+            f = -f
+        return f
     finally:
         data.stop_example()
 
 
 def write_float(data, f):
-    if f == 0.0:
-        data.write(hbytes([0]))
-        if sgn(f) < 0:
-            data.write(hbytes(7) + hbytes([1]))
-        else:
-            data.write(hbytes(7) + hbytes([0]))
-        return
-
-    try:
-        is_integral = int(f) == f
-    except (ValueError, OverflowError):
-        is_integral = False
-
-    if is_integral:
-        data.write(hbytes([2]))
-    else:
-        data.write(hbytes([3]))
-    data.write(int_to_bytes(float_to_lex(f), 8))
+    data.write(int_to_bytes(float_to_lex(abs(f)), 8))
+    sign = float_to_int(f) >> 63
+    data.write(hbytes([sign]))

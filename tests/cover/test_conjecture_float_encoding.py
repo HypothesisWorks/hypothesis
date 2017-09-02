@@ -68,26 +68,33 @@ def test_double_reverse(i):
     assert flt.reverse64(j) == i
 
 
+@example(1.25)
+@example(1.0)
 @given(st.floats())
 def test_draw_write_round_trip(f):
     d = ConjectureData.for_buffer(hbytes(10))
     flt.write_float(d, f)
     d2 = ConjectureData.for_buffer(d.buffer)
     g = flt.draw_float(d2)
-    assert d.buffer == d2.buffer
+
+    if f == f:
+        assert f == g
+
     assert float_to_int(f) == float_to_int(g)
+
+    d3 = ConjectureData.for_buffer(d2.buffer)
+    flt.draw_float(d3)
+    assert d3.buffer == d2.buffer
 
 
 @example(0.0)
-@example(-0.0)
 @example(2.5)
 @example(8.000000000000007)
-@example(-1.0)
 @example(3.0)
 @example(2.0)
 @example(1.9999999999999998)
 @example(1.0)
-@given(st.floats())
+@given(st.floats(min_value=0.0))
 def test_floats_round_trip(f):
     i = flt.float_to_lex(f)
     g = flt.lex_to_float(i)
@@ -95,7 +102,7 @@ def test_floats_round_trip(f):
     assert float_to_int(f) == float_to_int(g)
 
 
-finite_floats = st.floats(allow_infinity=False, allow_nan=False)
+finite_floats = st.floats(allow_infinity=False, allow_nan=False, min_value=0.0)
 
 
 @example(1.5)

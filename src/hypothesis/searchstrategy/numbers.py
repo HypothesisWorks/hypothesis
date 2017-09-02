@@ -89,17 +89,15 @@ class BoundedIntStrategy(SearchStrategy):
         return d.integer_range(data, self.start, self.end)
 
 
-NASTY_FLOATS = [
+NASTY_FLOATS = sorted([
     0.0, 0.5, 1.1, 1.5, 1.9, 1.0 / 3, 10e6, 10e-6, 1.175494351e-38,
     2.2250738585072014e-308,
     1.7976931348623157e+308, 3.402823466e+38, 9007199254740992, 1 - 10e-6,
     2 + 10e-6, 1.192092896e-07, 2.2204460492503131e-016,
 
-] + [float('inf'), float('nan')] * 5
-NASTY_FLOATS.extend([-x for x in NASTY_FLOATS])
+] + [float('inf'), float('nan')] * 5, key=flt.float_to_lex)
 NASTY_FLOATS = list(map(float, NASTY_FLOATS))
-
-NASTY_FLOATS.sort(key=flt.float_to_lex)
+NASTY_FLOATS.extend([-x for x in NASTY_FLOATS])
 
 
 class FloatStrategy(SearchStrategy):
