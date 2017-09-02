@@ -94,7 +94,7 @@ def test_can_minimize_large_arrays():
 @flaky(max_runs=50, min_passes=1)
 def test_can_minimize_float_arrays():
     x = minimal(nps.arrays(float, 50), lambda t: t.sum() >= 1.0)
-    assert 1.0 <= x.sum() <= 1.1
+    assert x.sum() in (1, 50)
 
 
 class Foo(object):
