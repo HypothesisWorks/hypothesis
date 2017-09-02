@@ -245,16 +245,13 @@ class Minimizer(object):
 
         base = self.current
 
-        @binsearch(0, self.size * 8)
+        @binsearch(0, self.size)
         def shift_right(mid):
             if mid == 0:
                 return True
             if mid == self.size:
                 return False
-
-            i = int_from_bytes(self.current)
-            i >>= mid
-            return self.incorporate(int_to_bytes(i, self.size))
+            return self.incorporate(hbytes(mid) + base[:-mid])
 
         change_counter = -1
         first = True
@@ -326,16 +323,5 @@ def minimize_byte(c, f):
             else:
                 lo = mid
         return hi
-    elif f(c >> 1):
-        c >>= 1
-        while f(c >> 1):
-            c >>= 1
-        return c
     else:
-        for i in range(7, -1, -1):
-            k = 1 << i
-            if c & k:
-                d = c ^ k
-                if f(d):
-                    c = d
         return c
