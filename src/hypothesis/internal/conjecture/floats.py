@@ -19,7 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 from array import array
 
-from hypothesis.internal.compat import ceil, hbytes, hrange, int_to_bytes
+from hypothesis.internal.compat import hbytes, hrange, int_to_bytes
 from hypothesis.internal.floats import float_to_int, int_to_float
 
 """
@@ -213,14 +213,7 @@ def lex_to_float(i):
 
         assert mantissa.bit_length() <= 52
 
-        result = int_to_float((exponent << 52) | mantissa)
-
-        if not has_fractional_part:
-            try:
-                result = float(ceil(result)) - 1
-            except ValueError:
-                pass
-        return result
+        return int_to_float((exponent << 52) | mantissa)
     else:
         integral_part = i & ((1 << 56) - 1)
         return float(integral_part)

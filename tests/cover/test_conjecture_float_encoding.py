@@ -17,12 +17,19 @@
 
 from __future__ import division, print_function, absolute_import
 
+import sys
+from random import Random
+
+import pytest
+
 import hypothesis.internal.conjecture.floats as flt
 from hypothesis import strategies as st
 from hypothesis import given, assume, example
-from hypothesis.internal.compat import ceil, floor, hbytes
+from hypothesis.internal.compat import ceil, floor, hbytes, int_to_bytes, \
+    int_from_bytes
 from hypothesis.internal.floats import float_to_int
 from hypothesis.internal.conjecture.data import ConjectureData
+from hypothesis.internal.conjecture.minimizer import minimize
 
 EXPONENTS = list(range(0, flt.MAX_EXPONENT + 1))
 assert len(EXPONENTS) == 2 ** 11
@@ -150,3 +157,40 @@ def test_reverse_bits_table_reverses_bits():
 
     for i, b in enumerate(flt.REVERSE_BITS_TABLE):
         assert bits(i) == list(reversed(bits(b)))
+
+
+def minimal_from(start, condition):
+    buf = int_to_bytes(flt.float_to_lex(start), 8)
+
+    def parse_buf(b): return flt.lex_to_float(int_from_bytes(b))
+    shrunk = minimize(
+        buf, lambda b: condition(parse_buf(b)),
+        full=True, random=Random(0)
+    )
+    return parse_buf(shrunk)
+
+
+INTERESTING_FLOATS = [
+    0.0, 1.0, 2.0, sys.float_info.max, float('inf'), float('nan')
+]
+
+
+@pytest.mark.parametrize(('start', 'end'), [
+    (a, b)
+    for a in INTERESTING_FLOATS
+    for b in INTERESTING_FLOATS
+    if flt.float_to_lex(a) > flt.float_to_lex(b)
+])
+def test_can_shrink_downwards(start, end):
+    assert minimal_from(start, lambda x: not (x < end)) == end
+
+
+@pytest.mark.parametrize(
+    'f', [1, 2, 4, 8, 10, 16, 32, 64, 100, 128, 256, 500, 512, 1000, 1024]
+)
+@pytest.mark.parametrize(
+    'mul', [1.1, 1.5, 9.99, 10]
+)
+def test_shrinks_downwards_to_integers(f, mul):
+    g = minimal_from(f * mul, lambda x: x >= f)
+    assert g == f

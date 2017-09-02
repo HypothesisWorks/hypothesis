@@ -26,6 +26,7 @@ import hypothesis.strategies as st
 from hypothesis import find, given, assume, settings
 from hypothesis.internal.compat import WINDOWS
 from hypothesis.internal.floats import float_to_int, int_to_float
+from hypothesis.internal.conjecture.minimizer import minimize
 
 
 @pytest.mark.parametrize((u'l', u'r'), [
@@ -120,6 +121,23 @@ def test_filter_nan(x):
 @given(st.floats(allow_infinity=False))
 def test_filter_infinity(x):
     assert not math.isinf(x)
+
+
+def minimal_from(start, condition):
+    buf = int_to_bytes(float_to_lex(start), 8)
+
+    def parse_buf(b): return lex_to_float(int_from_bytes(b))
+    shrunk = minimize(
+        buf, lambda b: condition(parse_buf(b)),
+        full=True, random=Random(0)
+    )
+    return parse_buf(shrunk)
+
+
+def test_shrinks_nan_to_finite():
+    m = sys.float_info.max
+
+    assert minimal_from(float('nan'), lambda x: not (x < m)) == m
 
 
 def test_can_guard_against_draws_of_nan():
