@@ -20,7 +20,7 @@ from __future__ import division, print_function, absolute_import
 from random import Random
 
 import hypothesis.strategies as st
-from hypothesis import find, given
+from hypothesis import find, given, example
 from hypothesis.control import _current_build_context
 from tests.common.utils import checks_deprecated_behaviour
 
@@ -40,6 +40,7 @@ def test_does_not_always_give_the_same_example():
 
 
 @checks_deprecated_behaviour
+@example(False)
 @given(st.booleans())
 def test_example_inside_given(b):
     st.integers().example()

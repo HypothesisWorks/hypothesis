@@ -142,7 +142,7 @@ class SearchStrategy(object):
         """
         context = _current_build_context.value
         if context is not None:
-            if context.data.depth > 0:
+            if context.data is not None and context.data.depth > 0:
                 note_deprecation(
                     'Using example() inside a strategy definition is a bad '
                     'idea. It will become an error in a future version of '

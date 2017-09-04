@@ -57,7 +57,7 @@ def test_timezone_aware_datetimes_are_timezone_aware(dt):
        datetimes(timezones=timezones()))
 def test_datetime_bounds_must_be_naive(name, val):
     with pytest.raises(InvalidArgument):
-        datetimes(**{name: val}).example()
+        datetimes(**{name: val}).validate()
 
 
 def test_underflow_in_simplify():
@@ -76,10 +76,10 @@ def test_overflow_in_simplify():
 
 def test_timezones_arg_to_datetimes_must_be_search_strategy():
     with pytest.raises(InvalidArgument):
-        datetimes(timezones=pytz.all_timezones).example()
+        datetimes(timezones=pytz.all_timezones).validate()
     with pytest.raises(InvalidArgument):
         tz = [pytz.timezone(t) for t in pytz.all_timezones]
-        datetimes(timezones=tz).example()
+        datetimes(timezones=tz).validate()
 
 
 @given(times(timezones=timezones()))
@@ -90,10 +90,10 @@ def test_timezone_aware_times_are_timezone_aware(dt):
 def test_can_generate_non_utc():
     times(timezones=timezones()).filter(
         lambda d: assume(d.tzinfo) and d.tzinfo.zone != u'UTC'
-    ).example()
+    ).validate()
 
 
 @given(sampled_from(['min_value', 'max_value']), times(timezones=timezones()))
 def test_time_bounds_must_be_naive(name, val):
     with pytest.raises(InvalidArgument):
-        times(**{name: val}).example()
+        times(**{name: val}).validate()

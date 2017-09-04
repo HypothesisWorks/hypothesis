@@ -23,7 +23,7 @@ import pytest
 from flaky import flaky
 
 from hypothesis import find, given, settings, unlimited
-from tests.common.debug import minimal
+from tests.common.debug import minimal, find_any
 from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.strategies import none, dates, times, binary, datetimes, \
     timedeltas
@@ -46,11 +46,11 @@ def test_can_find_negative_delta():
 
 
 def test_can_find_on_the_second():
-    timedeltas().filter(lambda x: x.seconds == 0).example()
+    find_any(timedeltas(), lambda x: x.seconds == 0)
 
 
 def test_can_find_off_the_second():
-    timedeltas().filter(lambda x: x.seconds != 0).example()
+    find_any(timedeltas(), lambda x: x.seconds != 0)
 
 
 def test_simplifies_towards_zero_delta():
@@ -68,7 +68,7 @@ def test_max_value_is_respected():
 
 @given(timedeltas())
 def test_single_timedelta(val):
-    assert timedeltas(val, val).example() is val
+    assert find_any(timedeltas(val, val)) is val
 
 
 TestStandardDescriptorFeatures_datetimes1 = strategy_test_suite(datetimes())
@@ -125,7 +125,7 @@ def test_can_find_before_the_year_2000():
 
 def test_can_find_each_month():
     for month in hrange(1, 13):
-        dates().filter(lambda x: x.month == month).example()
+        find_any(dates(), lambda x: x.month == month)
 
 
 def test_min_year_is_respected():
@@ -138,14 +138,14 @@ def test_max_year_is_respected():
 
 @given(dates())
 def test_single_date(val):
-    assert dates(val, val).example() is val
+    assert find_any(dates(val, val)) is val
 
 
 TestStandardDescriptorFeatures_times1 = strategy_test_suite(times())
 
 
 def test_can_find_midnight():
-    times().filter(lambda x: x.hour == x.minute == x.second == 0).example()
+    find_any(times(), lambda x: x.hour == x.minute == x.second == 0)
 
 
 def test_can_find_non_midnight():
@@ -153,11 +153,11 @@ def test_can_find_non_midnight():
 
 
 def test_can_find_on_the_minute():
-    times().filter(lambda x: x.second == 0).example()
+    find_any(times(), lambda x: x.second == 0)
 
 
 def test_can_find_off_the_minute():
-    times().filter(lambda x: x.second != 0).example()
+    find_any(times(), lambda x: x.second != 0)
 
 
 def test_simplifies_towards_midnight():
@@ -166,7 +166,7 @@ def test_simplifies_towards_midnight():
 
 
 def test_can_generate_naive_time():
-    times().filter(lambda d: not d.tzinfo).example()
+    find_any(times(), lambda d: not d.tzinfo)
 
 
 @given(times())

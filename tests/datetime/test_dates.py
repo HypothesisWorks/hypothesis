@@ -17,7 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-from tests.common.debug import minimal
+from tests.common.debug import minimal, find_any
 from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.extra.datetime import dates
 from hypothesis.internal.compat import hrange
@@ -36,7 +36,7 @@ def test_can_find_before_the_year_2000():
 @checks_deprecated_behaviour
 def test_can_find_each_month():
     for month in hrange(1, 13):
-        dates().filter(lambda x: x.month == month).example()
+        find_any(dates(), lambda x: x.month == month)
 
 
 @checks_deprecated_behaviour
