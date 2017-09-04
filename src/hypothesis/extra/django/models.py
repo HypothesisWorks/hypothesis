@@ -120,12 +120,9 @@ def _get_strategy_for_field(f):
         strategy = st.text(min_size=(None if f.blank else 1),
                            max_size=f.max_length)
     elif type(f) == dm.DecimalField:
-        m = 10 ** f.max_digits - 1
-        div = 10 ** f.decimal_places
-        q = Decimal('1.' + ('0' * f.decimal_places))
-        strategy = (
-            st.integers(min_value=-m, max_value=m)
-            .map(lambda n: (Decimal(n) / div).quantize(q)))
+        bound = Decimal(10 ** f.max_digits - 1) / (10 ** f.decimal_places)
+        strategy = st.decimals(min_value=-bound, max_value=bound,
+                               places=f.decimal_places)
     else:
         try:
             strategy = field_mappings()[type(f)]
