@@ -17,7 +17,9 @@
 
 from __future__ import division, print_function, absolute_import
 
+import string
 from decimal import Decimal
+from datetime import timedelta
 
 import django.db.models as dm
 from django.db import IntegrityError
@@ -27,7 +29,8 @@ from django.core.exceptions import ValidationError
 import hypothesis.strategies as st
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.pytz import timezones
-from hypothesis.provisional import emails
+from hypothesis.provisional import IP4_addr_strings, IP6_addr_strings, \
+    emails
 from hypothesis.utils.conventions import UniqueIdentifier
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
@@ -48,10 +51,10 @@ def referenced_models(model, seen=None):
     return seen
 
 
-def get_datetime_strat():
+def get_tz_strat():
     if getattr(django_settings, 'USE_TZ', False):
-        return st.datetimes(timezones=timezones())
-    return st.datetimes()
+        return timezones()
+    return st.none()
 
 
 __default_field_mappings = None
@@ -61,6 +64,8 @@ def field_mappings():
     global __default_field_mappings
 
     if __default_field_mappings is None:
+        # Sized fields are handled in _get_strategy_for_field()
+        # URL fields are not yet handled
         __default_field_mappings = {
             dm.SmallIntegerField: st.integers(-32768, 32767),
             dm.IntegerField: st.integers(-2147483648, 2147483647),
@@ -70,11 +75,26 @@ def field_mappings():
             dm.PositiveSmallIntegerField: st.integers(0, 32767),
             dm.BinaryField: st.binary(),
             dm.BooleanField: st.booleans(),
-            dm.DateTimeField: get_datetime_strat(),
+            dm.DateField: st.dates(),
+            dm.DateTimeField: st.datetimes(timezones=get_tz_strat()),
+            dm.DurationField: st.timedeltas(),
             dm.EmailField: emails(),
             dm.FloatField: st.floats(),
             dm.NullBooleanField: st.one_of(st.none(), st.booleans()),
+            dm.TimeField: st.times(timezones=get_tz_strat()),
+            dm.UUIDField: st.uuids(),
         }
+
+        # SQLite does not support timezone-aware times, or timedeltas that
+        # don't fit in six bytes of microseconds, so we override those
+        db = getattr(django_settings, 'DATABASES', {}).get('default', {})
+        if db.get('ENGINE', '').endswith('.sqlite3'):  # pragma: no branch
+            sqlite_delta = timedelta(microseconds=2 ** 47 - 1)
+            __default_field_mappings.update({
+                dm.TimeField: st.times(),
+                dm.DurationField: st.timedeltas(-sqlite_delta, sqlite_delta),
+            })
+
     return __default_field_mappings
 
 
@@ -116,6 +136,14 @@ def _get_strategy_for_field(f):
         if isinstance(f, (dm.CharField, dm.TextField)) and f.blank:
             choices.insert(0, u'')
         strategy = st.sampled_from(choices)
+    elif type(f) == dm.SlugField:
+        strategy = st.text(alphabet=string.ascii_letters + string.digits,
+                           min_size=(None if f.blank else 1),
+                           max_size=f.max_length)
+    elif type(f) == dm.GenericIPAddressField:
+        lookup = {'both': IP4_addr_strings() | IP6_addr_strings(),
+                  'ipv4': IP4_addr_strings(), 'ipv6': IP6_addr_strings()}
+        strategy = lookup[f.protocol.lower()]
     elif type(f) in (dm.TextField, dm.CharField):
         strategy = st.text(min_size=(None if f.blank else 1),
                            max_size=f.max_length)

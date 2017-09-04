@@ -85,6 +85,17 @@ class ManyNumerics(models.Model):
     d = models.DecimalField(decimal_places=2, max_digits=5)
 
 
+class ManyTimes(models.Model):
+    time = models.TimeField()
+    date = models.DateField()
+    duration = models.DurationField()
+
+
+class OddFields(models.Model):
+    uuid = models.UUIDField()
+    slug = models.SlugField()
+
+
 class CustomishDefault(models.Model):
     customish = CustomishField(default=u'b')
 
