@@ -198,11 +198,13 @@ class Minimizer(object):
         # change that would require shifting the exponent while not changing
         # the float value much.
         for g in [
-            floor(f), ceil(f), f - 1,
+            floor(f), ceil(f),
         ]:
-            if g > 0:
-                if self.incorporate_float(g):
-                    return
+            if self.incorporate_float(g):
+                return
+
+        if f > 2:
+            self.incorporate_float(f - 1)
 
     def run(self):
         if not any(self.current):

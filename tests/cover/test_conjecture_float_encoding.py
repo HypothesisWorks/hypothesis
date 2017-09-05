@@ -208,3 +208,14 @@ def test_shrink_up_to_one():
 
 def test_shrink_down_to_half():
     assert minimal_from(0.75, lambda x: 0 < x < 1) == 0.5
+
+
+def test_does_not_shrink_across_one():
+    # This is something of an odd special case. Because of our encoding we
+    # prefer all numbers >= 1 to all numbers in 0 < x < 1. For the most part
+    # this is the correct thing to do, but there are some low negative exponent
+    # cases where we get odd behaviour like this.
+
+    # This test primarily exists to validate that we don't try to subtract one
+    # from the starting point and trigger an internal exception.
+    assert minimal_from(1.1, lambda x: x == 1.1 or 0 < x < 1) == 1.1
