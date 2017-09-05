@@ -103,6 +103,7 @@ def test_can_specify_both_rows_and_columns_dict(d):
 
 @given(
     pdst.data_frames([pdst.column('A', fill=st.just(float('nan')),
+                                  dtype=float,
                                   elements=st.floats(allow_nan=False))],
                      rows=st.builds(dict)))
 def test_can_fill_in_missing_elements_from_dict(df):
