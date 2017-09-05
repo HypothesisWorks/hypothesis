@@ -32,14 +32,13 @@ from hypothesis.internal.compat import float_to_decimal
 
 @given(data())
 def test_fuzz_fractions_bounds(data):
-    denom = data.draw(none() | integers(1, 100))
-    fracs = none() | fractions(max_denominator=denom) \
-        | fractions('1/99', '1/2', denom)
+    denom = data.draw(none() | integers(1, 100), label='denominator')
+    fracs = none() | fractions(max_denominator=denom)
+    low, high = data.draw(tuples(fracs, fracs), label='low, high')
+    if low is not None and high is not None and low > high:
+        low, high = high, low
     try:
-        low, high = data.draw(tuples(fracs, fracs))
-        if low is not None and high is not None and low > high:
-            low, high = high, low
-        val = data.draw(fractions(low, high, denom))
+        val = data.draw(fractions(low, high, denom), label='value')
     except InvalidArgument:
         reject()  # fractions too close for given max_denominator
     if low is not None:
@@ -48,6 +47,30 @@ def test_fuzz_fractions_bounds(data):
         assert val <= high
     if denom is not None:
         assert 1 <= val.denominator <= denom
+
+
+@given(data())
+def test_fuzz_decimals_bounds(data):
+    places = data.draw(none() | integers(0, 20), label='places')
+    finite_decs = decimals(allow_nan=False, allow_infinity=False,
+                           places=places) | none()
+    low, high = data.draw(tuples(finite_decs, finite_decs), label='low, high')
+    if low is not None and high is not None and low > high:
+        low, high = high, low
+    ctx = decimal.Context(prec=data.draw(integers(1, 100), label='precision'))
+    try:
+        with decimal.localcontext(ctx):
+            strat = decimals(low, high, allow_nan=False,
+                             allow_infinity=False, places=places)
+            val = data.draw(strat, label='value')
+    except InvalidArgument:
+        reject()  # decimals too close for given places
+    if low is not None:
+        assert low <= val
+    if high is not None:
+        assert val <= high
+    if places is not None:
+        assert val.as_tuple().exponent == -places
 
 
 @fails
@@ -97,6 +120,11 @@ def test_decimals_have_correct_places(places):
 @given(decimals(min_value='0.1', max_value='0.2', allow_nan=False, places=1))
 def test_works_with_few_values(dec):
     assert dec in (decimal.Decimal('0.1'), decimal.Decimal('0.2'))
+
+
+@given(decimals(places=3, allow_nan=False, allow_infinity=False))
+def test_issue_725_regression(x):
+    pass
 
 
 @given(decimals(min_value='0.1', max_value='0.3'))
