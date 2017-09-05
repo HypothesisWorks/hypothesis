@@ -243,7 +243,7 @@ def series(elements=None, dtype=None, index=None, fill=None, unique=False):
 
 @attr.s(slots=True)
 class column(object):
-    """Simple data object for describing a column in a DataFrame.
+    """Data object for describing a column in a DataFrame.
 
     Arguments:
 
@@ -299,8 +299,8 @@ def data_frames(
 
     Arguments:
 
-        * columns: An iterable of column objects describing the shape of the
-          generated DataFrame.
+        * columns: An iterable of :class:`column` objects describing the shape
+          of the generated DataFrame.
 
         * rows: A strategy for generating a row object. Should generate
           either dicts mapping column names to values or a sequence mapping
@@ -333,6 +333,69 @@ def data_frames(
           You will probably find it most convenient to use the
           :func:`~hypothesis.extra.pandas.indexes` function to pass as values
           for this argument.
+
+    Usage:
+
+    The expected usage pattern is that you use :class:`column` and
+    :func:`columns` to specify a fixed shape of the DataFrame you want as
+    follows. For example the following gives a two column data frame:
+
+    ..code-block:: pycon
+
+        >>> from hypothesis.extra.pandas import column, data_frames
+        >>> data_frames([
+        ... column('A', dtype=int), column('B', dtype=float)]).example()
+                    A              B
+        0  2021915903  1.793898e+232
+        1  1146643993            inf
+        2 -2096165693   1.000000e+07
+
+    If you want the values in different columns to interact in some way you
+    can use the rows argument. For example the following gives a two column
+    DataFrame where the value in the first column is always at most the value
+    in the second:
+
+    ..code-block:: pycon
+
+        >>> from hypothesis.extra.pandas import column, data_frames
+        >>> import hypothesis.strategies as st
+        >>> data_frames(
+        ...     rows=st.tuples(st.floats(allow_nan=False),
+        ...                    st.floats(allow_nan=False)).map(sorted)
+        ... ).example()
+                       0             1
+        0  -3.402823e+38  9.007199e+15
+        1 -1.562796e-298  5.000000e-01
+
+    You can also combine the two:
+
+    ..code-block:: pycon
+
+        >>> from hypothesis.extra.pandas import column, data_frames
+        >>> import hypothesis.strategies as st
+        >>> data_frames(
+        ...     columns=columns(["lo", "hi"], dtype=float),
+        ...     rows=st.tuples(st.floats(allow_nan=False),
+        ...                    st.floats(allow_nan=False)).map(sorted)
+        ... ).example()
+                 lo            hi
+        0   9.314723e-49  4.353037e+45
+        1  -9.999900e-01  1.000000e+07
+        2 -2.152861e+134 -1.069317e-73
+
+    (Note that the column dtype must still be specified and will not be
+    inferred from the rows. This restriction may be lifted in future).
+
+    Combining rows and columns has the following behaviour:
+
+    * The column names and dtypes will be used.
+    * If the column is required to be unique, this will be enforced.
+    * Any values missing from the generated rows will be provided using the
+      column's fill.
+    * Any values in the row not present in the column specification (if
+      dicts are passed, if there are keys with no corresponding column name,
+      if sequences are passed if there are too many items) will result in
+      InvalidArgument being raised.
 
     """
 
