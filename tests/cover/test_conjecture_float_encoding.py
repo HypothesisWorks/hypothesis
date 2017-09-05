@@ -162,7 +162,9 @@ def test_reverse_bits_table_reverses_bits():
 def minimal_from(start, condition):
     buf = int_to_bytes(flt.float_to_lex(start), 8)
 
-    def parse_buf(b): return flt.lex_to_float(int_from_bytes(b))
+    def parse_buf(b):
+        return flt.lex_to_float(int_from_bytes(b))
+
     shrunk = minimize(
         buf, lambda b: condition(parse_buf(b)),
         full=True, random=Random(0)
