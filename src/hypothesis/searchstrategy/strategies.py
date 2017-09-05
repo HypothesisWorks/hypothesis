@@ -20,7 +20,8 @@ from __future__ import division, print_function, absolute_import
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis.errors import NoExamples, NoSuchExample, Unsatisfiable, \
     UnsatisfiedAssumption
-from hypothesis.control import assume, reject
+from hypothesis.control import assume, reject, _current_build_context
+from hypothesis._settings import note_deprecation
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.lazyformat import lazyformat
 from hypothesis.internal.reflection import get_pretty_function_description
@@ -139,6 +140,34 @@ class SearchStrategy(object):
         This method is part of the public API.
 
         """
+        context = _current_build_context.value
+        if context is not None:
+            if context.data is not None and context.data.depth > 0:
+                note_deprecation(
+                    'Using example() inside a strategy definition is a bad '
+                    'idea. It will become an error in a future version of '
+                    "Hypothesis, but it's unlikely that it's doing what you "
+                    'intend even now. Instead consider using '
+                    'hypothesis.strategies.builds() or '
+                    '@hypothesis.strategies.composite to define your strategy.'
+                    ' See '
+                    'https://hypothesis.readthedocs.io/en/latest/data.html'
+                    '#hypothesis.strategies.builds or '
+                    'https://hypothesis.readthedocs.io/en/latest/data.html'
+                    '#composite-strategies for more details.'
+                )
+            else:
+                note_deprecation(
+                    'Using example() inside a test function is a bad '
+                    'idea. It will become an error in a future version of '
+                    "Hypothesis, but it's unlikely that it's doing what you "
+                    'intend even now. Instead consider using '
+                    'hypothesis.strategies.data() to draw '
+                    'more examples during testing. See '
+                    'https://hypothesis.readthedocs.io/en/latest/data.html'
+                    '#drawing-interactively-in-tests for more details.'
+                )
+
         from hypothesis import find, settings, Verbosity
         try:
             return find(

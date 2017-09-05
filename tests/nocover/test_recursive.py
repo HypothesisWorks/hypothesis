@@ -23,6 +23,7 @@ from flaky import flaky
 
 import hypothesis.strategies as st
 from hypothesis import find, given, example, settings
+from tests.common.debug import find_any
 from hypothesis.internal.compat import integer_types
 
 
@@ -92,7 +93,7 @@ def test_can_use_recursive_data_in_sets(rnd):
         lambda js: st.frozensets(js, average_size=2.0),
         max_leaves=10
     )
-    nested_sets.example(rnd)
+    find_any(nested_sets, random=rnd)
 
     def flatten(x):
         if isinstance(x, bool):

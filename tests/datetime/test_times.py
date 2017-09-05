@@ -20,14 +20,14 @@ from __future__ import division, print_function, absolute_import
 import pytz
 
 from hypothesis import given, assume
-from tests.common.debug import minimal
+from tests.common.debug import minimal, find_any
 from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.extra.datetime import times
 
 
 @checks_deprecated_behaviour
 def test_can_find_midnight():
-    times().filter(lambda x: x.hour == x.minute == x.second == 0).example()
+    find_any(times(), lambda x: x.hour == x.minute == x.second == 0)
 
 
 @checks_deprecated_behaviour
@@ -37,12 +37,12 @@ def test_can_find_non_midnight():
 
 @checks_deprecated_behaviour
 def test_can_find_off_the_minute():
-    times().filter(lambda x: x.second != 0).example()
+    find_any(times(), lambda x: x.second != 0)
 
 
 @checks_deprecated_behaviour
 def test_can_find_on_the_minute():
-    times().filter(lambda x: x.second == 0).example()
+    find_any(times(), lambda x: x.second == 0)
 
 
 @checks_deprecated_behaviour
@@ -56,7 +56,7 @@ def test_simplifies_towards_midnight():
 
 @checks_deprecated_behaviour
 def test_can_generate_naive_time():
-    times(allow_naive=True).filter(lambda d: d.tzinfo is not None).example()
+    find_any(times(allow_naive=True), lambda d: d.tzinfo is not None)
 
 
 @checks_deprecated_behaviour

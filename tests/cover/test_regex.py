@@ -25,7 +25,7 @@ import pytest
 
 import hypothesis.strategies as st
 from hypothesis import given, assume
-from hypothesis.errors import NoExamples
+from hypothesis.errors import NoExamples, NoSuchExample
 from tests.common.debug import find_any
 from hypothesis.internal.compat import PY3, hrange, hunichr
 from hypothesis.searchstrategy.regex import SPACE_CHARS, \
@@ -156,8 +156,8 @@ def test_can_generate(pattern, encode):
 def test_literals_with_ignorecase(pattern):
     strategy = st.from_regex(pattern)
 
-    strategy.filter(lambda s: s == u'a').example()
-    strategy.filter(lambda s: s == u'A').example()
+    find_any(strategy, lambda s: s == u'a')
+    find_any(strategy, lambda s: s == u'A')
 
 
 @pytest.mark.parametrize('pattern', [
@@ -177,12 +177,12 @@ def test_any_doesnt_generate_newline():
 
 @pytest.mark.parametrize('pattern', [re.compile(u'.', re.DOTALL), u'(?s).'])
 def test_any_with_dotall_generate_newline(pattern):
-    st.from_regex(pattern).filter(lambda s: s == u'\n').example()
+    find_any(st.from_regex(pattern), lambda s: s == u'\n')
 
 
 @pytest.mark.parametrize('pattern', [re.compile(b'.', re.DOTALL), b'(?s).'])
 def test_any_with_dotall_generate_newline_binary(pattern):
-    st.from_regex(pattern).filter(lambda s: s == b'\n').example()
+    find_any(st.from_regex(pattern), lambda s: s == b'\n')
 
 
 @pytest.mark.parametrize('pattern', [
@@ -213,9 +213,9 @@ def test_groups(pattern, is_unicode, invert):
     compiler = unicode_regex if is_unicode else ascii_regex
     strategy = st.from_regex(compiler(pattern))
 
-    strategy.filter(group_pred).filter(is_ascii).example()
+    find_any(strategy.filter(group_pred), is_ascii)
     if is_unicode:
-        strategy.filter(lambda s: group_pred(s) and not is_ascii(s)).example()
+        find_any(strategy, lambda s: group_pred(s) and not is_ascii(s))
 
     assert_all_examples(strategy, group_pred)
 
@@ -234,8 +234,8 @@ def test_end_with_terminator_does_not_pad():
 def test_end():
     strategy = st.from_regex(u'abc$')
 
-    strategy.filter(lambda s: s == u'abc').example()
-    strategy.filter(lambda s: s == u'abc\n').example()
+    find_any(strategy, lambda s: s == u'abc')
+    find_any(strategy, lambda s: s == u'abc\n')
 
 
 def test_groupref_exists():
@@ -284,7 +284,7 @@ def test_does_not_leak_groups(data):
 
 
 def test_positive_lookbehind():
-    st.from_regex(u'.*(?<=ab)c').filter(lambda s: s.endswith(u'abc')).example()
+    find_any(st.from_regex(u'.*(?<=ab)c'), lambda s: s.endswith(u'abc'))
 
 
 def test_positive_lookahead():
@@ -297,8 +297,8 @@ def test_negative_lookbehind():
     strategy = st.from_regex(u'[abc]*(?<!abc)d')
 
     assert_all_examples(strategy, lambda s: not s.endswith(u'abcd'))
-    with pytest.raises(NoExamples):
-        strategy.filter(lambda s: s.endswith(u'abcd')).example()
+    with pytest.raises(NoSuchExample):
+        find_any(strategy, lambda s: s.endswith(u'abcd'))
 
 
 def test_negative_lookahead():
@@ -306,8 +306,8 @@ def test_negative_lookahead():
     strategy = st.from_regex(u'^ab(?!cd)[abcd]*')
 
     assert_all_examples(strategy, lambda s: not s.startswith(u'abcd'))
-    with pytest.raises(NoExamples):
-        strategy.filter(lambda s: s.startswith(u'abcd')).example()
+    with pytest.raises(NoSuchExample):
+        find_any(strategy, lambda s: s.startswith(u'abcd'))
 
 
 @given(st.from_regex(u"^a+\\Z"))
@@ -327,13 +327,13 @@ def test_subpattern_flags():
     strategy = st.from_regex(u'(?i)a(?-i:b)')
 
     # "a" is case insensitive
-    strategy.filter(lambda s: s[0] == u'a').example()
-    strategy.filter(lambda s: s[0] == u'A').example()
+    find_any(strategy, lambda s: s[0] == u'a')
+    find_any(strategy, lambda s: s[0] == u'A')
     # "b" is case sensitive
-    strategy.filter(lambda s: s[1] == u'b').example()
+    find_any(strategy, lambda s: s[1] == u'b')
 
-    with pytest.raises(NoExamples):
-        strategy.filter(lambda s: s[1] == u'B').example()
+    with pytest.raises(NoSuchExample):
+        find_any(strategy, lambda s: s[1] == u'B')
 
 
 def test_can_handle_binary_regex_which_is_not_ascii():

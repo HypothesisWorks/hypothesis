@@ -24,7 +24,7 @@ import pytest
 from flaky import flaky
 
 from hypothesis import find, given, settings
-from tests.common.debug import minimal
+from tests.common.debug import minimal, find_any
 from hypothesis.strategies import none, sets, text, lists, builds, \
     tuples, booleans, integers, frozensets, dictionaries, \
     fixed_dictionaries
@@ -249,11 +249,11 @@ def test_can_find_sets_unique_by_incomplete_data():
 
 
 def test_can_draw_empty_list_from_unsatisfiable_strategy():
-    assert lists(integers().filter(lambda s: False)).example() == []
+    assert find_any(lists(integers().filter(lambda s: False))) == []
 
 
 def test_can_draw_empty_set_from_unsatisfiable_strategy():
-    assert sets(integers().filter(lambda s: False)).example() == set()
+    assert find_any(sets(integers().filter(lambda s: False))) == set()
 
 
 small_set = sets(none())

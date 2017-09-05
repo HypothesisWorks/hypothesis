@@ -25,7 +25,7 @@ from flaky import flaky
 
 from hypothesis import find, given, assume, settings, unlimited
 from hypothesis.errors import InvalidArgument
-from tests.common.debug import minimal
+from tests.common.debug import minimal, find_any
 from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.extra.datetime import datetimes
 from hypothesis.internal.compat import hrange
@@ -44,7 +44,7 @@ def test_can_find_before_the_year_2000():
 @checks_deprecated_behaviour
 def test_can_find_each_month():
     for month in hrange(1, 13):
-        datetimes().filter(lambda x: x.month == month).example()
+        find_any(datetimes(), lambda x: x.month == month)
 
 
 @checks_deprecated_behaviour
@@ -61,12 +61,12 @@ def test_can_find_non_midnight():
 
 @checks_deprecated_behaviour
 def test_can_find_off_the_minute():
-    datetimes().filter(lambda x: x.second != 0).example()
+    find_any(datetimes(), lambda x: x.second != 0)
 
 
 @checks_deprecated_behaviour
 def test_can_find_on_the_minute():
-    datetimes().filter(lambda x: x.second == 0).example()
+    find_any(datetimes(), lambda x: x.second == 0)
 
 
 @checks_deprecated_behaviour
@@ -80,7 +80,7 @@ def test_simplifies_towards_midnight():
 
 @checks_deprecated_behaviour
 def test_can_generate_naive_datetime():
-    datetimes(allow_naive=True).filter(lambda d: d.tzinfo is None).example()
+    find_any(datetimes(allow_naive=True), lambda d: d.tzinfo is None)
 
 
 @checks_deprecated_behaviour

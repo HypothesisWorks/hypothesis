@@ -20,13 +20,16 @@ from __future__ import division, print_function, absolute_import
 from random import Random
 
 import hypothesis.strategies as st
-from hypothesis import given
+from hypothesis import find, given, example
+from hypothesis.control import _current_build_context
+from tests.common.utils import checks_deprecated_behaviour
 
 
 @given(st.integers())
 def test_deterministic_examples_are_deterministic(seed):
-    assert st.lists(st.integers()).example(Random(seed)) == \
-        st.lists(st.integers()).example(Random(seed))
+    with _current_build_context.with_value(None):
+        assert st.lists(st.integers()).example(Random(seed)) == \
+            st.lists(st.integers()).example(Random(seed))
 
 
 def test_does_not_always_give_the_same_example():
@@ -34,3 +37,20 @@ def test_does_not_always_give_the_same_example():
     assert len(set(
         s.example() for _ in range(100)
     )) >= 10
+
+
+@checks_deprecated_behaviour
+@example(False)
+@given(st.booleans())
+def test_example_inside_given(b):
+    st.integers().example()
+
+
+@checks_deprecated_behaviour
+def test_example_inside_find():
+    find(st.integers(0, 100), lambda x: st.integers().example())
+
+
+@checks_deprecated_behaviour
+def test_example_inside_strategy():
+    st.booleans().map(lambda x: st.integers().example()).example()

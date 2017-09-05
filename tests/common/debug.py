@@ -69,8 +69,8 @@ def find_any(
 ):
     settings = Settings(
         settings,
-        max_examples=1000,
-        max_iterations=1000,
+        max_examples=10000,
+        max_iterations=10000,
         max_shrinks=0000,
         database=None,
     )

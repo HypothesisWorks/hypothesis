@@ -22,10 +22,10 @@ import hashlib
 from random import Random
 
 from hypothesis import Verbosity, seed, given, assume, settings, unlimited
-from hypothesis.errors import NoExamples, FailedHealthCheck
+from hypothesis.errors import FailedHealthCheck
 from hypothesis.database import ExampleDatabase
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
-from hypothesis.strategies import just, none, text, lists, binary, \
+from hypothesis.strategies import data, just, none, text, lists, binary, \
     floats, tuples, booleans, decimals, integers, fractions, \
     float_to_int, int_to_float, sampled_from, complex_numbers
 from hypothesis.internal.compat import PYPY
@@ -205,14 +205,9 @@ class HypothesisSpec(RuleBasedStateMachine):
     def cat_tuples(self, l, r):
         return l + r
 
-    @rule(target=objects, strat=strategies)
-    def get_example(self, strat):
-        try:
-            strat.example()
-        except NoExamples:
-            # Because of filtering some strategies we look for don't actually
-            # have any examples.
-            pass
+    @rule(target=objects, strat=strategies, data=data())
+    def get_example(self, strat, data):
+        data.draw(strat)
 
     @rule(target=strategies, left=integers(), right=integers())
     def integer_range(self, left, right):

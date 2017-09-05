@@ -22,7 +22,8 @@ import unicodedata
 import pytest
 
 from hypothesis import find
-from hypothesis.errors import NoExamples, NoSuchExample, InvalidArgument
+from hypothesis.errors import NoSuchExample, InvalidArgument
+from tests.common.debug import find_any
 from hypothesis.strategies import characters
 from hypothesis.internal.compat import text_type
 
@@ -106,11 +107,11 @@ def test_whitelisted_characters_override():
     st = characters(min_codepoint=ord('0'), max_codepoint=ord('9'),
                     whitelist_characters=good_characters)
 
-    st.filter(lambda c: c in good_characters).example()
-    st.filter(lambda c: c in '0123456789').example()
+    find_any(st, lambda c: c in good_characters)
+    find_any(st, lambda c: c in '0123456789')
 
-    with pytest.raises(NoExamples):
-        st.filter(lambda c: c not in good_characters + '0123456789').example()
+    with pytest.raises(NoSuchExample):
+        find_any(st, lambda c: c not in good_characters + '0123456789')
 
 
 def test_blacklisted_characters():
