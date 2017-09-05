@@ -303,8 +303,11 @@ def data_frames(
           generated DataFrame.
 
         * rows: A strategy for generating a row object. Should generate
-          anything that could be passed to pandas in a list - e.g. dicts,
-          tuples.
+          either dicts mapping column names to values or a sequence mapping
+          column position to the value in that position (note that unlike the
+          pandas.DataFrame constructor, single values are not allowed here.
+          Passing e.g. an integer is an error, even if there is only one
+          column)..
 
           At least one of rows and columns must be provided. If both are
           provided then the generated rows will be validated against the
@@ -473,28 +476,62 @@ def data_frames(
 
             fills = {}
 
+            any_unique = any(c.unique for c in rewritten_columns)
+
+            if any_unique:
+                all_seen = [
+                    set() if c.unique else None for c in rewritten_columns]
+                while all_seen[-1] is None:
+                    all_seen.pop()
+
             for row_index in hrange(len(index)):
-                row = draw(rows)
-                if isinstance(row, dict):
-                    as_list = [None] * len(rewritten_columns)
-                    for i, c in enumerate(rewritten_columns):
-                        try:
-                            as_list[i] = row[c.name]
-                        except KeyError:
+                for _ in hrange(5):
+                    original_row = draw(rows)
+                    row = original_row
+                    if isinstance(row, dict):
+                        as_list = [None] * len(rewritten_columns)
+                        for i, c in enumerate(rewritten_columns):
                             try:
-                                as_list[i] = fills[i]
+                                as_list[i] = row[c.name]
                             except KeyError:
-                                fills[i] = draw(c.fill)
-                                as_list[i] = fills[i]
-                    for k in row:
-                        if k not in column_names:
-                            raise InvalidArgument((
-                                'Row %r contains column %r not in '
-                                'columns %r)' % (
-                                    row, k, [
-                                        c.name for c in rewritten_columns
-                                    ])))
-                    row = as_list
-                result.iloc[row_index] = row
+                                try:
+                                    as_list[i] = fills[i]
+                                except KeyError:
+                                    fills[i] = draw(c.fill)
+                                    as_list[i] = fills[i]
+                        for k in row:
+                            if k not in column_names:
+                                raise InvalidArgument((
+                                    'Row %r contains column %r not in '
+                                    'columns %r)' % (
+                                        row, k, [
+                                            c.name for c in rewritten_columns
+                                        ])))
+                        row = as_list
+                    if any_unique:
+                        has_duplicate = False
+                        for seen, value in zip(all_seen, row):
+                            if seen is None:
+                                continue
+                            if value in seen:
+                                has_duplicate = True
+                                break
+                            seen.add(value)
+                        if has_duplicate:
+                            continue
+                    row = list(st.try_convert(tuple, row, 'draw(rows)'))
+
+                    if len(row) > len(rewritten_columns):
+                        raise InvalidArgument((
+                            'Row %r contains too many entries. Has %d but '
+                            'expected at most %d') % (
+                                original_row, len(row), len(rewritten_columns)
+                        ))
+                    while len(row) < len(rewritten_columns):
+                        row.append(draw(rewritten_columns[len(row)].fill))
+                    result.iloc[row_index] = row
+                    break
+                else:
+                    reject()
             return result
         return assign_rows()
