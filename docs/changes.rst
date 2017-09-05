@@ -22,6 +22,14 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.24.0 - 2017-09-05
+-------------------
+
+Hypothesis now emits deprecation warnings if you use example() inside a
+test function or strategy definition (this was never intended to be supported,
+but is sufficiently widespread that it warrants a deprecation path).
+
+-------------------
 3.23.3 - 2017-09-05
 -------------------
 
