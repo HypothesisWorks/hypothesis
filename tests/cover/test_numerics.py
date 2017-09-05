@@ -32,14 +32,13 @@ from hypothesis.internal.compat import float_to_decimal
 
 @given(data())
 def test_fuzz_fractions_bounds(data):
-    denom = data.draw(none() | integers(1, 100))
-    fracs = none() | fractions(max_denominator=denom) \
-        | fractions('1/99', '1/2', denom)
+    denom = data.draw(none() | integers(1, 100), label='denominator')
+    fracs = none() | fractions(max_denominator=denom)
+    low, high = data.draw(tuples(fracs, fracs), label='low, high')
+    if low is not None and high is not None and low > high:
+        low, high = high, low
     try:
-        low, high = data.draw(tuples(fracs, fracs))
-        if low is not None and high is not None and low > high:
-            low, high = high, low
-        val = data.draw(fractions(low, high, denom))
+        val = data.draw(fractions(low, high, denom), label='value')
     except InvalidArgument:
         reject()  # fractions too close for given max_denominator
     if low is not None:
