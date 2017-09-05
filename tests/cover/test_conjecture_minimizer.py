@@ -32,3 +32,9 @@ def test_shrink_to_smallest():
     assert minimize(
         hbytes([255] * 8), lambda x: sum(x) > 10, random=Random(0),
     ) == hbytes([0] * 7 + [11])
+
+
+def test_float_hack_fails():
+    assert minimize(
+        hbytes([255] * 8), lambda x: x[0] >> 7, random=Random(0),
+    ) == hbytes([128] + [0] * 7)

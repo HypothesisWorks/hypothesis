@@ -18,6 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 import sys
+import math
 
 from hypothesis.internal.compat import ceil, floor, hbytes, hrange, \
     int_to_bytes, int_from_bytes
@@ -179,14 +180,15 @@ class Minimizer(object):
         # because there's not much useful we can do here.
         for g in [
             float('nan'), float('inf'), sys.float_info.max,
-            2 ** 53, 2 ** 53 - 1
         ]:
             j = float_to_lex(g)
             if j < i:
                 if self.incorporate_int(j):
+                    f = g
                     i = j
-                else:
-                    return
+
+        if math.isinf(f) or math.isnan(f):
+            return
 
         # Finally we get to the important bit: Each of these is a small change
         # to the floating point number that corresponds to a large change in

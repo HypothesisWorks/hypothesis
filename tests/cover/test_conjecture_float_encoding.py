@@ -196,3 +196,15 @@ def test_can_shrink_downwards(start, end):
 def test_shrinks_downwards_to_integers(f, mul):
     g = minimal_from(f * mul, lambda x: x >= f)
     assert g == f
+
+
+def test_shrink_to_integer_upper_bound():
+    assert minimal_from(1.1, lambda x: 1 < x <= 2) == 2
+
+
+def test_shrink_up_to_one():
+    assert minimal_from(0.5, lambda x: 0.5 <= x <= 1.5) == 1
+
+
+def test_shrink_down_to_half():
+    assert minimal_from(0.75, lambda x: 0 < x < 1) == 0.5
