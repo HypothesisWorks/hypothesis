@@ -184,25 +184,25 @@ def series(elements=None, dtype=None, index=None, fill=None, unique=False):
 
     Arguments:
 
-        elements: a strategy that will be used to generate the individual
-            values in the series. If None, we will attempt to infer a suitable
-            default from the dtype.
+        * elements: a strategy that will be used to generate the individual
+          values in the series. If None, we will attempt to infer a suitable
+          default from the dtype.
 
-        dtype: the numpy.dtype of the resulting series and may be any value
-            that can be passed to numpy.dtype. If None, will use pandas'
-            standard behaviour to infer it from the type of the elements
-            values. Note that if the type of values that comes out of your
-            elements strategy varies, then so will the resulting dtype of the
-            series.
+        * dtype: the numpy.dtype of the resulting series and may be any value
+          that can be passed to numpy.dtype. If None, will use pandas'
+          standard behaviour to infer it from the type of the elements
+          values. Note that if the type of values that comes out of your
+          elements strategy varies, then so will the resulting dtype of the
+          series.
 
-        index: If not None, a strategy for generating indexes for the resulting
-            Series. This can generate either pandas.Index objects or any
-            sequence of values (which will be passed to the pandas.Index)
-            constructors.
+        * index: If not None, a strategy for generating indexes for the
+          resulting Series. This can generate either pandas.Index objects or
+          any sequence of values (which will be passed to the pandas.Index
+          constructor).
 
-            You will probably find it most convenient to use the
-            :func:`~hypothesis.extra.pandas.indexes` function to pass as values
-            for this argument.
+          You will probably find it most convenient to use the
+          :func:`~hypothesis.extra.pandas.indexes` function to pass as values
+          for this argument.
 
     """
     if index is None:
@@ -298,36 +298,38 @@ def data_frames(
     """Provides a strategy for producing a pandas.DataFrame.
 
     Arguments:
-        columns: An iterable of column objects describing the shape of the
-            generated DataFrame.
 
-        rows: A strategy for generating a row object. Should generate anything
-            that could be passed to pandas as a list - e.g. dicts, tuples.
+        * columns: An iterable of column objects describing the shape of the
+          generated DataFrame.
 
-            At least one of rows and columns must be provided. If both are
-            provided then the generated rows will be validated against the
-            columns and an error will be raised if they don't match.
+        * rows: A strategy for generating a row object. Should generate
+          anything that could be passed to pandas in a list - e.g. dicts,
+          tuples.
 
-            Caveats on using rows:
+          At least one of rows and columns must be provided. If both are
+          provided then the generated rows will be validated against the
+          columns and an error will be raised if they don't match.
 
-            * In general you should prefer using columns to rows, and only use
-              rows if the columns interface is insufficiently flexible to
-              describe what you need - you will get better performance and
-              example quality that way.
-            * If you provide rows and not columns, then the shape and dtype of
-              the resulting DataFrame may vary. e.g. if you have a mix of int
-              and float in the values for one column in your row entries, the
-              resulting DataFrame will sometimes have an integral dtype and
-              sometimes a float.
+          Caveats on using rows:
 
-        index: If not None, a strategy for generating indexes for the resulting
-            DataFrame. This can generate either pandas.Index objects or any
-            sequence of values (which will be passed to the pandas.Index)
-            constructors.
+          * In general you should prefer using columns to rows, and only use
+            rows if the columns interface is insufficiently flexible to
+            describe what you need - you will get better performance and
+            example quality that way.
+          * If you provide rows and not columns, then the shape and dtype of
+            the resulting DataFrame may vary. e.g. if you have a mix of int
+            and float in the values for one column in your row entries, the
+            resulting DataFrame will sometimes have an integral dtype and
+            sometimes a float.
 
-            You will probably find it most convenient to use the
-            :func:`~hypothesis.extra.pandas.indexes` function to pass as values
-            for this argument.
+        * index: If not None, a strategy for generating indexes for the
+          resulting DataFrame. This can generate either pandas.Index objects
+          or any sequence of values (which will be passed to the pandas.Index
+          constructor).
+
+          You will probably find it most convenient to use the
+          :func:`~hypothesis.extra.pandas.indexes` function to pass as values
+          for this argument.
 
     """
 
