@@ -26,7 +26,6 @@ import hypothesis.extra.numpy as npst
 import hypothesis.extra.pandas as pdst
 from hypothesis import given, reject
 from hypothesis.types import RandomWithSeed as Random
-from hypothesis.errors import InvalidArgument
 from tests.common.debug import minimal
 from tests.pandas.helpers import supported_by_pandas
 
@@ -209,14 +208,6 @@ def test_arbitrary_data_frames(data):
 def test_can_specify_unique_with_rows(df):
     column = df['A']
     assert len(set(column)) == len(column)
-
-
-def test_too_many_columns_in_row_is_an_error():
-    with pytest.raises(InvalidArgument):
-        pdst.data_frames(
-            pdst.columns(['A'], dtype=bool),
-            rows=st.tuples(st.booleans(), st.booleans())
-        ).example()
 
 
 @given(pdst.data_frames(

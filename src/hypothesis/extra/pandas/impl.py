@@ -401,6 +401,12 @@ def data_frames(
             c.elements, c.dtype, label
         )
 
+        if c.dtype is None and rows is not None:
+            raise InvalidArgument(
+                'Must specify a dtype for all columns when combining rows with'
+                ' columns.'
+            )
+
         c.fill = npst.fill_for(
             fill=c.fill, elements=c.elements, unique=c.unique,
             name=label
