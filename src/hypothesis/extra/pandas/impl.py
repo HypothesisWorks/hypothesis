@@ -18,7 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 from copy import copy
-from collections import OrderedDict
+from collections import Iterable, OrderedDict
 
 import attr
 import numpy as np
@@ -315,7 +315,7 @@ def data_frames(
           column position to the value in that position (note that unlike the
           pandas.DataFrame constructor, single values are not allowed here.
           Passing e.g. an integer is an error, even if there is only one
-          column)..
+          column).
 
           At least one of rows and columns must be provided. If both are
           provided then the generated rows will be validated against the
@@ -423,19 +423,23 @@ def data_frames(
             @st.composite
             def rows_only(draw):
                 index = draw(index_strategy)
+
+                @check_function
+                def row():
+                    result = draw(rows)
+                    st.check_type(Iterable, result, 'draw(row)')
+                    return result
+
                 if len(index) > 0:
                     return pandas.DataFrame(
-                        [draw(rows) for _ in index],
+                        [row() for _ in index],
                         index=index
                     )
                 else:
                     # If we haven't drawn any rows we need to draw one row and
                     # then discard it so that we get a consistent shape for the
                     # DataFrame.
-                    base = draw(st.shared(
-                        rows.map(lambda x: pandas.DataFrame([x])),
-                        key=('hypothesis.extra.pandas.row_shape', rows),
-                    ))
+                    base = pandas.DataFrame([row()])
                     return base.drop(0)
             return rows_only()
 
