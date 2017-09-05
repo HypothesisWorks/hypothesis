@@ -21,10 +21,14 @@ shapes and generate all kinds of fixed-size or compound dtypes.
 .. automodule:: hypothesis.extra.numpy
    :members:
 
+.. _hypothesis-pandas:
 
 ------
 pandas
 ------
+
+Hypothesis provides strategies for several of the core pandas data types:
+:py:class:`pandas.Index`, :class:`pandas.Series` and :class:`pandas.DataFrame`.
 
 .. automodule:: hypothesis.extra.pandas
    :members:
