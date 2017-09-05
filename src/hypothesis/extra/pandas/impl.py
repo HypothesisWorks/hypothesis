@@ -204,6 +204,14 @@ def series(elements=None, dtype=None, index=None, fill=None, unique=False):
           :func:`~hypothesis.extra.pandas.indexes` function to pass as values
           for this argument.
 
+    Usage:
+
+    .. code-block:: pycon
+
+        >>> series(dtype=int).example()
+        0   -2001747478
+        1    1153062837
+
     """
     if index is None:
         index = range_indexes()
