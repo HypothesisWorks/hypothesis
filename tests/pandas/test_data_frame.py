@@ -26,7 +26,7 @@ import hypothesis.extra.numpy as npst
 import hypothesis.extra.pandas as pdst
 from hypothesis import given, reject
 from hypothesis.types import RandomWithSeed as Random
-from tests.common.debug import minimal
+from tests.common.debug import minimal, find_any
 from tests.pandas.helpers import supported_by_pandas
 
 
@@ -209,6 +209,26 @@ def test_arbitrary_data_frames(data):
 def test_can_specify_unique_with_rows(df):
     column = df['A']
     assert len(set(column)) == len(column)
+
+
+def test_uniqueness_does_not_affect_other_rows_1():
+    data_frames = pdst.data_frames([
+        pdst.column('A', dtype=int, unique=True),
+        pdst.column('B', dtype=int, unique=False)],
+        rows=st.tuples(st.integers(0, 10), st.integers(0, 10)),
+        index=pdst.range_indexes(2, 2)
+    )
+    find_any(data_frames, lambda x: x['B'][0] == x['B'][1])
+
+
+def test_uniqueness_does_not_affect_other_rows_2():
+    data_frames = pdst.data_frames([
+        pdst.column('A', dtype=int, unique=False),
+        pdst.column('B', dtype=int, unique=True)],
+        rows=st.tuples(st.integers(0, 10), st.integers(0, 10)),
+        index=pdst.range_indexes(2, 2)
+    )
+    find_any(data_frames, lambda x: x['A'][0] == x['A'][1])
 
 
 @given(pdst.data_frames(
