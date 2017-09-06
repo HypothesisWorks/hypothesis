@@ -606,6 +606,8 @@ class ConjectureRunner(object):
                 else:
                     self.settings.database.delete(
                         self.database_key, existing)
+                    self.settings.database.delete(
+                        self.secondary_key, existing)
 
     def exit_with(self, reason):
         self.exit_reason = reason

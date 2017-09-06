@@ -106,3 +106,41 @@ def test_replays_slipped_examples_once_initial_bug_is_fixed():
 
     with pytest.raises(ValueError):
         test()
+
+
+def test_garbage_collects_the_secondary_key():
+    target = []
+    bug_fixed = False
+
+    db = InMemoryExampleDatabase()
+
+    @settings(database=db)
+    @given(st.integers())
+    def test(i):
+        if bug_fixed:
+            return
+        if abs(i) < 1000:
+            return
+        if not target:
+            target.append(i)
+        if i == target[0]:
+            raise TypeError()
+        if len(target) == 1:
+            target.append(i)
+        if i == target[1]:
+            raise ValueError()
+
+    with pytest.raises(TypeError):
+        test()
+
+    bug_fixed = True
+
+    def count():
+        return sum(len(v) for v in db.data.values())
+
+    prev = count()
+    while prev > 0:
+        test()
+        current = count()
+        assert current < prev
+        prev = current
