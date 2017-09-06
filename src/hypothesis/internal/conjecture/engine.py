@@ -189,8 +189,11 @@ class ConjectureRunner(object):
 
         if (
             data.status == Status.INTERESTING and (
-                not last_data_is_interesting or
-                sort_key(data.buffer) < sort_key(self.last_data.buffer)
+                not last_data_is_interesting or (
+                    sort_key(data.buffer) < sort_key(self.last_data.buffer) and
+                    data.interesting_origin ==
+                    self.last_data.interesting_origin
+                )
             )
         ):
             self.last_data = data
@@ -247,10 +250,15 @@ class ConjectureRunner(object):
                 u', '.join(int_to_text(int(i)) for i in data.buffer[u:v]))
         buffer_parts.append(u']')
 
+        status = unicode_safe_repr(data.status)
+
+        if data.status == Status.INTERESTING:
+            status += " (%r)" % (data.interesting_origin,)
+
         self.debug(u'%d bytes %s -> %s, %s' % (
             data.index,
             u''.join(buffer_parts),
-            unicode_safe_repr(data.status),
+            status,
             data.output,
         ))
 
@@ -541,12 +549,7 @@ class ConjectureRunner(object):
                     self.exit_with(ExitReason.max_iterations)
                 data = ConjectureData.for_buffer(existing)
                 self.test_function(data)
-                data.freeze()
-                self.last_data = data
-                self.consider_new_test_data(data)
                 if data.status == Status.INTERESTING:
-                    assert data.status == Status.INTERESTING
-                    self.last_data = data
                     break
                 else:
                     self.settings.database.delete(
@@ -702,7 +705,6 @@ class ConjectureRunner(object):
             self.test_function(initial_data)
 
         if initial_data.status == Status.INTERESTING:
-            self.last_data = initial_data
             return True
 
         # If this produced something completely invalid we ditch it

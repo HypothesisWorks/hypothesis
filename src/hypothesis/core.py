@@ -20,6 +20,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import sys
 import time
 import functools
 import traceback
@@ -543,7 +544,12 @@ class StateForActualGivenExecution(object):
             escalate_hypothesis_internal_error()
             self.last_exception = traceback.format_exc()
             verbose_report(self.last_exception)
-            data.mark_interesting()
+
+            error_class, _, tb = sys.exc_info()
+
+            origin = traceback.extract_tb(tb)[-1]
+            data.mark_interesting(
+                (error_class, origin.filename, origin.lineno))
 
     def run(self):
         # Tell pytest to omit the body of this function from tracebacks
