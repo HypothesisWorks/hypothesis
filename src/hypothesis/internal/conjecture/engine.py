@@ -222,16 +222,31 @@ class ConjectureRunner(object):
         assert data.status == Status.VALID
         return True
 
-    def save_buffer(self, buffer):
+    def save_buffer(self, buffer, key=None):
         if (
-            self.settings.database is not None and
-            self.database_key is not None
+            self.settings.database is not None
         ):
-            self.settings.database.save(self.database_key, hbytes(buffer))
+            if key is None:
+                key = self.database_key
+            if key is None:
+                return
+            self.settings.database.save(key, hbytes(buffer))
+
+    @property
+    def secondary_key(self):
+        if self.database_key is not None:
+            return b'.'.join((self.database_key, b"secondary"))
 
     def note_details(self, data):
         if data.status == Status.INTERESTING:
-            self.save_buffer(data.buffer)
+            if (
+                self.last_data is None or
+                self.last_data.status != Status.INTERESTING
+                or self.last_data.interesting_origin == data.interesting_origin
+            ):
+                self.save_buffer(data.buffer)
+            else:
+                self.save_buffer(data.buffer, self.secondary_key)
         runtime = max(data.finish_time - data.start_time, 0.0)
         self.status_runtimes.setdefault(data.status, []).append(runtime)
         for event in set(map(self.event_to_string, data.events)):
@@ -253,7 +268,7 @@ class ConjectureRunner(object):
         status = unicode_safe_repr(data.status)
 
         if data.status == Status.INTERESTING:
-            status += " (%r)" % (data.interesting_origin,)
+            status += ' (%r)' % (data.interesting_origin,)
 
         self.debug(u'%d bytes %s -> %s, %s' % (
             data.index,
@@ -513,6 +528,12 @@ class ConjectureRunner(object):
             Phase.reuse in self.settings.phases
         )
 
+    def __downsample(self, collection, n):
+        if len(collection) <= n:
+            return collection
+        else:
+            return self.random.sample(collection, n)
+
     def reuse_existing_examples(self):
         """If appropriate (we have a database and have been told to use it),
         try to reload existing examples from the database.
@@ -526,19 +547,50 @@ class ConjectureRunner(object):
 
         """
         if self.has_existing_examples():
-            corpus = sorted(
+            # We have to do some careful juggling here. We have two database
+            # corpora: The primary and secondary. The primary corpus is the
+            # tests that exhibited the original failure seen in their test run
+            # while the secondary are the ones that exhibited some other
+            # failure. In order to guarantee we always replay the last failure
+            # we must run the minimized example from the primary corpus first,
+            # but if that isn't failing it's likely that the bug found was
+            # fixed, so the secondary corpus is much more likely to contain
+            # examples of interest.
+
+            # So here's what we do: We always take the smallest and largest
+            # examples from the primary corpus (likely the minimized example
+            # and the origin example from a previous test run), but after that
+            # we pad our examples to run from the secondary corpus first. If
+            # that didn't give us enough examples, we fill up the remainder
+            # with samples from the primary corpus instead.
+
+            # However when *running* we then want to try to ensure that we
+            # recreate the last failure if possible, so we try all examples
+            # that were in the primary corpus before we try ones in the
+            # secondary.
+
+            primary_corpus = sorted(
                 self.settings.database.fetch(self.database_key),
                 key=sort_key
+            )
+            secondary_corpus = list(
+                self.settings.database.fetch(self.secondary_key),
             )
 
             desired_size = max(2, ceil(0.1 * self.settings.max_examples))
 
-            if desired_size < len(corpus):
-                new_corpus = [corpus[0], corpus[-1]]
-                n_boost = max(desired_size - 2, 0)
-                new_corpus.extend(self.random.sample(corpus[1:-1], n_boost))
-                corpus = new_corpus
-                corpus.sort(key=sort_key)
+            if not primary_corpus:
+                corpus = self.__downsample(secondary_corpus, desired_size)
+            else:
+                minimal = primary_corpus[0]
+                corpus = {minimal, primary_corpus[-1]}
+
+                for source in [secondary_corpus, primary_corpus[1:-1]]:
+                    shortfall = desired_size - len(corpus)
+                    corpus.update(self.__downsample(source, shortfall))
+                primary_set = set(primary_corpus)
+                corpus = sorted(
+                    corpus, key=lambda c: (c not in primary_set, sort_key(c)))
 
             for existing in corpus:
                 if self.valid_examples >= self.settings.max_examples:

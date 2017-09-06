@@ -17,9 +17,11 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis import given
-import hypothesis.strategies as st
 import pytest
+
+import hypothesis.strategies as st
+from hypothesis import given, settings
+from hypothesis.database import InMemoryExampleDatabase
 
 
 def test_does_not_slip_into_other_exception_type():
@@ -48,10 +50,59 @@ def test_does_not_slip_into_other_exception_location():
         if target[0] is None:
             target[0] = i
         if target[0] == i:
-            raise ValueError("loc 1")
+            raise ValueError('loc 1')
         else:
-            raise ValueError("loc 2")
+            raise ValueError('loc 2')
 
     with pytest.raises(ValueError) as e:
         test()
-    assert e.value.args[0] == "loc 1"
+    assert e.value.args[0] == 'loc 1'
+
+
+def test_does_not_slip_on_replay():
+    target = [None]
+
+    @settings(database=InMemoryExampleDatabase())
+    @given(st.integers())
+    def test(i):
+        if abs(i) < 1000:
+            return
+        if target[0] is None:
+            target[0] = i
+        exc_class = TypeError if target[0] == i else ValueError
+        raise exc_class()
+
+    with pytest.raises(TypeError):
+        test()
+
+    with pytest.raises(TypeError):
+        test()
+
+
+def test_replays_slipped_examples_once_initial_bug_is_fixed():
+    target = []
+    bug_fixed = False
+
+    @settings(database=InMemoryExampleDatabase())
+    @given(st.integers())
+    def test(i):
+        if abs(i) < 1000:
+            return
+        if not target:
+            target.append(i)
+        if i == target[0]:
+            if bug_fixed:
+                return
+            raise TypeError()
+        if len(target) == 1:
+            target.append(i)
+        if i == target[1]:
+            raise ValueError()
+
+    with pytest.raises(TypeError):
+        test()
+
+    bug_fixed = True
+
+    with pytest.raises(ValueError):
+        test()
