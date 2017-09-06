@@ -267,7 +267,8 @@ class ConjectureRunner(object):
         status = unicode_safe_repr(data.status)
 
         if data.status == Status.INTERESTING:
-            status += u' (%r)' % (data.interesting_origin,)
+            status = u'%s (%s)' % (
+                status, unicode_safe_repr(data.interesting_origin,))
 
         self.debug(u'%d bytes %s -> %s, %s' % (
             data.index,
