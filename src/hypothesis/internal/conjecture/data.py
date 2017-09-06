@@ -120,7 +120,8 @@ class ConjectureData(object):
         self.level += 1
 
     def stop_example(self):
-        self.__assert_not_frozen('stop_example')
+        if self.frozen:
+            return
         self.level -= 1
         while self.level >= len(self.intervals_by_level):
             self.intervals_by_level.append([])

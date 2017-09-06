@@ -300,7 +300,9 @@ def test_decimals():
 
 
 def test_non_float_decimal():
-    find(ds.decimals(), lambda d: float_to_decimal(float(d)) != d)
+    find(
+        ds.decimals(),
+        lambda d: d.is_finite() and float_to_decimal(float(d)) != d)
 
 
 def test_produces_dictionaries_of_at_least_minimum_size():

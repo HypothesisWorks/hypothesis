@@ -24,7 +24,8 @@ import pytest
 
 from hypothesis import given
 from tests.common.debug import minimal
-from hypothesis.strategies import lists, floats, integers, complex_numbers
+from hypothesis.strategies import lists, floats, randoms, integers, \
+    complex_numbers
 
 
 def test_minimize_negative_int():
@@ -168,8 +169,10 @@ def test_list_of_fractional_float():
     )
 
 
-def test_minimal_fractional_float():
-    assert minimal(floats(), lambda x: x >= 1.5) in (1.5, 2.0)
+@given(randoms())
+def test_minimal_fractional_float(rnd):
+    assert minimal(
+        floats(), lambda x: x >= 1.5, random=rnd) in (1.5, 2.0)
 
 
 def test_minimizes_lists_of_negative_ints_up_to_boundary():

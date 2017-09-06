@@ -21,9 +21,9 @@ import math
 from collections import namedtuple
 
 import hypothesis.internal.conjecture.utils as d
+import hypothesis.internal.conjecture.floats as flt
 from hypothesis.control import assume
-from hypothesis.internal.compat import hbytes, struct_pack, \
-    struct_unpack, int_from_bytes
+from hypothesis.internal.compat import int_from_bytes
 from hypothesis.internal.floats import sign
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
     MappedSearchStrategy
@@ -89,14 +89,15 @@ class BoundedIntStrategy(SearchStrategy):
         return d.integer_range(data, self.start, self.end)
 
 
-NASTY_FLOATS = [
-    0.0, 0.5, 1.0 / 3, 10e6, 10e-6, 1.175494351e-38, 2.2250738585072014e-308,
+NASTY_FLOATS = sorted([
+    0.0, 0.5, 1.1, 1.5, 1.9, 1.0 / 3, 10e6, 10e-6, 1.175494351e-38,
+    2.2250738585072014e-308,
     1.7976931348623157e+308, 3.402823466e+38, 9007199254740992, 1 - 10e-6,
     2 + 10e-6, 1.192092896e-07, 2.2204460492503131e-016,
 
-] + [float('inf'), float('nan')] * 5
-NASTY_FLOATS.extend([-x for x in NASTY_FLOATS])
+] + [float('inf'), float('nan')] * 5, key=flt.float_to_lex)
 NASTY_FLOATS = list(map(float, NASTY_FLOATS))
+NASTY_FLOATS.extend([-x for x in NASTY_FLOATS])
 
 
 class FloatStrategy(SearchStrategy):
@@ -132,13 +133,10 @@ class FloatStrategy(SearchStrategy):
             data.start_example()
             i = self.sampler.sample(data)
             if i == 0:
-                result = struct_unpack(b'!d', hbytes(
-                    data.draw_bytes(8)))[0]
+                result = flt.draw_float(data)
             else:
                 result = self.nasty_floats[i - 1]
-                data.write(
-                    struct_pack(b'!d', result)
-                )
+                flt.write_float(data, result)
             data.stop_example()
             if self.permitted(result):
                 return result
