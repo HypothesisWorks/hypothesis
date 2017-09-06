@@ -548,8 +548,9 @@ class StateForActualGivenExecution(object):
             error_class, _, tb = sys.exc_info()
 
             origin = traceback.extract_tb(tb)[-1]
-            data.mark_interesting(
-                (error_class, origin.filename, origin.lineno))
+            filename = origin[0]
+            lineno = origin[1]
+            data.mark_interesting((error_class, filename, lineno))
 
     def run(self):
         # Tell pytest to omit the body of this function from tracebacks
