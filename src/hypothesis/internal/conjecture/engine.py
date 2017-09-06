@@ -234,8 +234,7 @@ class ConjectureRunner(object):
 
     @property
     def secondary_key(self):
-        if self.database_key is not None:
-            return b'.'.join((self.database_key, b"secondary"))
+        return b'.'.join((self.database_key, b"secondary"))
 
     def note_details(self, data):
         if data.status == Status.INTERESTING:
