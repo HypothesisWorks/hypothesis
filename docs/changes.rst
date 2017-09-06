@@ -22,6 +22,17 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.24.1 - 2017-09-06
+-------------------
+
+This release improves the reduction of examples involving floating point
+numbers to produce more human readable examples.
+
+It also has some general purpose changes to the way the minimizer works
+internally, which may see some improvement in quality and slow down of test
+case reduction in cases that have nothing to do with floating point numbers.
+
+-------------------
 3.24.0 - 2017-09-05
 -------------------
 
