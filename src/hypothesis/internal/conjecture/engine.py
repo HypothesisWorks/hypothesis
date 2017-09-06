@@ -241,8 +241,8 @@ class ConjectureRunner(object):
         if data.status == Status.INTERESTING:
             if (
                 self.last_data is None or
-                self.last_data.status != Status.INTERESTING
-                or self.last_data.interesting_origin == data.interesting_origin
+                self.last_data.status != Status.INTERESTING or
+                self.last_data.interesting_origin == data.interesting_origin
             ):
                 self.save_buffer(data.buffer)
             else:
