@@ -198,8 +198,6 @@ class ConjectureRunner(object):
             try:
                 existing = self.interesting_examples[key]
             except KeyError:
-                self.interesting_examples[key] = data
-                self.shrunk_examples.discard(key)
                 changed = True
             else:
                 if sort_key(data.buffer) < sort_key(existing.buffer):
@@ -732,10 +730,6 @@ class ConjectureRunner(object):
             self.exit_reason = ExitReason.finished
             return
         assert isinstance(data.output, text_type)
-
-        if self.settings.max_shrinks <= 0:
-            self.exit_reason = ExitReason.max_shrinks
-            return
 
         if Phase.shrink not in self.settings.phases:
             self.exit_reason = ExitReason.finished
