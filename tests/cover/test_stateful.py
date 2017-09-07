@@ -507,11 +507,11 @@ def test_can_explicitly_pass_settings():
 
 
 def test_saves_failing_example_in_database():
-    db = ExampleDatabase()
+    db = ExampleDatabase(':memory:')
     with raises(AssertionError):
         run_state_machine_as_test(
             SetStateMachine, Settings(database=db))
-    assert len(list(db.data.keys())) == 1
+    assert len(list(db.data.keys())) == 2
 
 
 def test_can_run_with_no_db():

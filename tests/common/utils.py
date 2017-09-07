@@ -93,3 +93,7 @@ def checks_deprecated_behaviour(func):
         with validate_deprecation():
             return func(*args, **kwargs)
     return _inner
+
+
+def all_values(db):
+    return set(v for vs in db.data.values() for v in vs)

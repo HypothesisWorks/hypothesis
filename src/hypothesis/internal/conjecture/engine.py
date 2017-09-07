@@ -191,7 +191,6 @@ class ConjectureRunner(object):
         )
 
         if data.status == Status.INTERESTING:
-            first_example = len(self.interesting_examples) == 0
             key = data.interesting_origin
             changed = False
             try:
@@ -208,7 +207,7 @@ class ConjectureRunner(object):
             if changed:
                 self.interesting_examples[key] = data
                 self.shrunk_examples.discard(key)
-                if last_data_is_interesting and not first_example:
+                if last_data_is_interesting:
                     self.shrinks += 1
 
             if not last_data_is_interesting or (
@@ -252,10 +251,7 @@ class ConjectureRunner(object):
             self.settings.database.save(key, hbytes(buffer))
 
     def downgrade_buffer(self, buffer):
-        if (
-            self.settings.database is not None and
-            self.database_key is not None
-        ):
+        if self.settings.database is not None:
             self.settings.database.move(
                 self.database_key, self.secondary_key, buffer)
 
@@ -611,9 +607,9 @@ class ConjectureRunner(object):
                     self.settings.max_iterations, self.settings.max_examples
                 ):
                     self.exit_with(ExitReason.max_iterations)
-                data = ConjectureData.for_buffer(existing)
-                self.test_function(data)
-                if data.status != Status.INTERESTING:
+                self.last_data = ConjectureData.for_buffer(existing)
+                self.test_function(self.last_data)
+                if self.last_data.status != Status.INTERESTING:
                     self.settings.database.delete(
                         self.database_key, existing)
                     self.settings.database.delete(
