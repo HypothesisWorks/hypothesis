@@ -61,14 +61,21 @@ class DatabaseComparison(RuleBasedStateMachine):
         for db in self.dbs:
             db.delete(k, v)
 
+    @rule(k1=keys, k2=keys, v=values)
+    def move(self, k1, k2, v):
+        for db in self.dbs:
+            db.move(k1, k2, v)
+
     @rule(k=keys)
     def values_agree(self, k):
         last = None
+        last_db = None
         for db in self.dbs:
             keys = set(db.fetch(k))
             if last is not None:
-                assert last == keys
+                assert last == keys, (last_db, db)
             last = keys
+            last_db = db
 
     def teardown(self):
         for d in self.dbs:

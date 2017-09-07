@@ -101,6 +101,9 @@ class ConjectureRunner(object):
         # buffer contents.
         self.block_sizes = {}
 
+        self.interesting_examples = {}
+        self.shrunk_examples = set()
+
     def __tree_is_exhausted(self):
         return 0 in self.dead
 
@@ -187,21 +190,36 @@ class ConjectureRunner(object):
             self.last_data.status == Status.INTERESTING
         )
 
-        if (
-            data.status == Status.INTERESTING and (
-                not last_data_is_interesting or (
-                    sort_key(data.buffer) < sort_key(self.last_data.buffer) and
-                    data.interesting_origin ==
-                    self.last_data.interesting_origin
-                )
-            )
-        ):
-            self.last_data = data
-            if last_data_is_interesting:
-                self.shrinks += 1
-                if self.shrinks >= self.settings.max_shrinks:
-                    self.exit_reason = ExitReason.max_shrinks
-                    raise RunIsComplete()
+        if data.status == Status.INTERESTING:
+            key = data.interesting_origin
+            changed = False
+            try:
+                existing = self.interesting_examples[key]
+            except KeyError:
+                self.interesting_examples[key] = data
+                self.shrunk_examples.discard(key)
+                changed = True
+            else:
+                if sort_key(data.buffer) < sort_key(existing.buffer):
+                    self.downgrade_buffer(existing.buffer)
+                    changed = True
+
+            if changed:
+                self.interesting_examples[key] = data
+                self.shrunk_examples.discard(key)
+                if last_data_is_interesting:
+                    self.shrinks += 1
+
+            if not last_data_is_interesting or (
+                sort_key(data.buffer) < sort_key(self.last_data.buffer) and
+                data.interesting_origin ==
+                self.last_data.interesting_origin
+            ):
+                self.last_data = data
+
+            if self.shrinks >= self.settings.max_shrinks:
+                self.exit_reason = ExitReason.max_shrinks
+                raise RunIsComplete()
 
     def consider_new_test_data(self, data):
         # Transition rules:
@@ -231,6 +249,11 @@ class ConjectureRunner(object):
             if key is None:
                 return
             self.settings.database.save(key, hbytes(buffer))
+
+    def downgrade_buffer(self, buffer):
+        if self.settings.database is not None:
+            self.settings.database.move(
+                self.database_key, self.secondary_key, buffer)
 
     @property
     def secondary_key(self):
@@ -343,6 +366,10 @@ class ConjectureRunner(object):
                 self._run()
             except RunIsComplete:
                 pass
+            if self.interesting_examples:
+                self.last_data = max(
+                    self.interesting_examples.values(),
+                    key=lambda d: sort_key(d.buffer))
             if self.last_data is not None:
                 self.debug_data(self.last_data)
             self.debug(
@@ -528,12 +555,6 @@ class ConjectureRunner(object):
             Phase.reuse in self.settings.phases
         )
 
-    def __downsample(self, collection, n):
-        if len(collection) <= n:
-            return collection
-        else:
-            return self.random.sample(collection, n)
-
     def reuse_existing_examples(self):
         """If appropriate (we have a database and have been told to use it),
         try to reload existing examples from the database.
@@ -548,49 +569,36 @@ class ConjectureRunner(object):
         """
         if self.has_existing_examples():
             # We have to do some careful juggling here. We have two database
-            # corpora: The primary and secondary. The primary corpus is the
-            # tests that exhibited the original failure seen in their test run
-            # while the secondary are the ones that exhibited some other
-            # failure. In order to guarantee we always replay the last failure
-            # we must run the minimized example from the primary corpus first,
-            # but if that isn't failing it's likely that the bug found was
-            # fixed, so the secondary corpus is much more likely to contain
-            # examples of interest.
+            # corpora: The primary and secondary. The primary corpus is a
+            # small set of minimized examples each of which has at one point
+            # demonstrated a distinct bug. We want to retry all of these.
 
-            # So here's what we do: We always take the smallest and largest
-            # examples from the primary corpus (likely the minimized example
-            # and the origin example from a previous test run), but after that
-            # we pad our examples to run from the secondary corpus first. If
-            # that didn't give us enough examples, we fill up the remainder
-            # with samples from the primary corpus instead.
+            # We also have a secondary corpus of examples that have at some
+            # point demonstrated interestingness (currently only ones that
+            # were previously non-minimal examples of a bug, but this will
+            # likely expand in future). These are a good source of potentially
+            # interesting examples, but there are a lot of them, so we down
+            # sample the secondary corpus to a more manageable size.
 
-            # However when *running* we then want to try to ensure that we
-            # recreate the last failure if possible, so we try all examples
-            # that were in the primary corpus before we try ones in the
-            # secondary.
-
-            primary_corpus = sorted(
+            corpus = sorted(
                 self.settings.database.fetch(self.database_key),
                 key=sort_key
             )
-            secondary_corpus = list(
-                self.settings.database.fetch(self.secondary_key),
-            )
-
             desired_size = max(2, ceil(0.1 * self.settings.max_examples))
 
-            if not primary_corpus:
-                corpus = self.__downsample(secondary_corpus, desired_size)
-            else:
-                minimal = primary_corpus[0]
-                corpus = {minimal, primary_corpus[-1]}
+            if len(corpus) < desired_size:
+                secondary_corpus = list(
+                    self.settings.database.fetch(self.secondary_key),
+                )
 
-                for source in [secondary_corpus, primary_corpus[1:-1]]:
-                    shortfall = desired_size - len(corpus)
-                    corpus.update(self.__downsample(source, shortfall))
-                primary_set = set(primary_corpus)
-                corpus = sorted(
-                    corpus, key=lambda c: (c not in primary_set, sort_key(c)))
+                shortfall = desired_size - len(corpus)
+
+                if len(secondary_corpus) <= shortfall:
+                    extra = secondary_corpus
+                else:
+                    extra = self.random.sample(extra, shortfall)
+                extra.sort(key=sort_key)
+                corpus.extend(extra)
 
             for existing in corpus:
                 if self.valid_examples >= self.settings.max_examples:
@@ -601,9 +609,7 @@ class ConjectureRunner(object):
                     self.exit_with(ExitReason.max_iterations)
                 data = ConjectureData.for_buffer(existing)
                 self.test_function(data)
-                if data.status == Status.INTERESTING:
-                    break
-                else:
+                if data.status != Status.INTERESTING:
                     self.settings.database.delete(
                         self.database_key, existing)
                     self.settings.database.delete(
@@ -739,7 +745,15 @@ class ConjectureRunner(object):
             self.exit_reason = ExitReason.flaky
             return
 
-        self.shrink()
+        while len(self.shrunk_examples) < len(self.interesting_examples):
+            target, d = min([
+                (k, v) for k, v in self.interesting_examples.items()
+                if k not in self.shrunk_examples],
+                key=lambda kv: (sort_key(kv[1].buffer), sort_key(repr(kv[0]))),
+            )
+            self.last_data = d
+            self.shrink()
+            self.shrunk_examples.add(target)
 
     def try_buffer_with_rewriting_from(self, initial_attempt, v):
         initial_data = None
@@ -962,20 +976,24 @@ class ConjectureRunner(object):
             return
 
         if self.has_existing_examples():
+            # If we have any smaller examples in the secondary corpus, now is
+            # a good time to try them to see if they work as shrinks. They
+            # probably won't, but it's worth a shot and gives us a good
+            # opportunity to clear out the database.
+
+            # It's not worth trying the primary corpus because we already
+            # tried all of those in the initial phase.
             corpus = sorted(
-                self.settings.database.fetch(self.database_key),
+                self.settings.database.fetch(self.secondary_key),
                 key=sort_key
             )
-            # We always have self.last_data.buffer in the database because
-            # we save every interesting example. This means we will always
-            # trigger the first break and thus never exit the loop normally.
-            for c in corpus:  # pragma: no branch
+            for c in corpus:
                 if sort_key(c) >= sort_key(self.last_data.buffer):
                     break
                 elif self.incorporate_new_buffer(c):
                     break
                 else:
-                    self.settings.database.delete(self.database_key, c)
+                    self.settings.database.delete(self.secondary_key, c)
 
         # Coarse passes that are worth running once when the example is likely
         # to be "far from shrunk" but not worth repeating in a loop because

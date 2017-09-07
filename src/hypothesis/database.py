@@ -78,6 +78,12 @@ class ExampleDatabase(EDMeta('ExampleDatabase', (object,), {})):
         """
         raise NotImplementedError('%s.delete' % (type(self).__name__))
 
+    def move(self, key1, key2, value):
+        if key1 == key2:
+            return
+        self.delete(key1, value)
+        self.save(key2, value)
+
     def fetch(self, key):
         """Return all values matching this key."""
         raise NotImplementedError('%s.fetch' % (type(self).__name__))
@@ -258,6 +264,16 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
             except OSError:  # pragma: no cover
                 os.unlink(tmpname)
             assert not os.path.exists(tmpname)
+
+    def move(self, key1, key2, value):
+        if key1 == key2:
+            return
+        try:
+            os.rename(
+                self._value_path(key1, value), self._value_path(key2, value))
+        except OSError:
+            self.delete(key1, value)
+            self.save(key2, value)
 
     def delete(self, key, value):
         try:
