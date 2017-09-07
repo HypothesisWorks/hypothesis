@@ -191,6 +191,8 @@ class ConjectureRunner(object):
         )
 
         if data.status == Status.INTERESTING:
+            first_call = len(self.interesting_examples) == 0
+
             key = data.interesting_origin
             changed = False
             try:
@@ -207,7 +209,7 @@ class ConjectureRunner(object):
             if changed:
                 self.interesting_examples[key] = data
                 self.shrunk_examples.discard(key)
-                if last_data_is_interesting:
+                if last_data_is_interesting and not first_call:
                     self.shrinks += 1
 
             if not last_data_is_interesting or (
