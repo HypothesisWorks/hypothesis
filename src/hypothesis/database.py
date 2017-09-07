@@ -80,6 +80,7 @@ class ExampleDatabase(EDMeta('ExampleDatabase', (object,), {})):
 
     def move(self, key1, key2, value):
         if key1 == key2:
+            self.save(key1, value)
             return
         self.delete(key1, value)
         self.save(key2, value)
@@ -267,6 +268,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
 
     def move(self, key1, key2, value):
         if key1 == key2:
+            self.save(key1, value)
             return
         try:
             os.rename(
