@@ -186,3 +186,8 @@ class Frozen(HypothesisException):
 
     """Raised when a mutation method has been called on a ConjectureData object
     after freeze() has been called."""
+
+
+class MultipleFailures(HypothesisException):
+    """Indicates that Hypothesis found more than one distinct bug when testing
+    your code."""

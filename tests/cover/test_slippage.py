@@ -21,10 +21,12 @@ import pytest
 
 import hypothesis.strategies as st
 from hypothesis import given, settings
+from hypothesis.errors import MultipleFailures
+from tests.common.utils import capture_out
 from hypothesis.database import InMemoryExampleDatabase
 
 
-def test_does_not_slip_into_other_exception_type():
+def test_raises_multiple_failures_with_varying_type():
     target = [None]
 
     @given(st.integers())
@@ -36,11 +38,15 @@ def test_does_not_slip_into_other_exception_type():
         exc_class = TypeError if target[0] == i else ValueError
         raise exc_class()
 
-    with pytest.raises(TypeError):
-        test()
+    with capture_out() as o:
+        with pytest.raises(MultipleFailures):
+            test()
+
+    assert 'TypeError' in o.getvalue()
+    assert 'ValueError' in o.getvalue()
 
 
-def test_does_not_slip_into_other_exception_location():
+def test_raises_multiple_failures_when_position_varies():
     target = [None]
 
     @given(st.integers())
@@ -54,12 +60,14 @@ def test_does_not_slip_into_other_exception_location():
         else:
             raise ValueError('loc 2')
 
-    with pytest.raises(ValueError) as e:
-        test()
-    assert e.value.args[0] == 'loc 1'
+    with capture_out() as o:
+        with pytest.raises(MultipleFailures):
+            test()
+    assert 'loc 1' in o.getvalue()
+    assert 'loc 2' in o.getvalue()
 
 
-def test_does_not_slip_on_replay():
+def test_replays_both_failing_values():
     target = [None]
 
     @settings(database=InMemoryExampleDatabase())
@@ -72,14 +80,15 @@ def test_does_not_slip_on_replay():
         exc_class = TypeError if target[0] == i else ValueError
         raise exc_class()
 
-    with pytest.raises(TypeError):
+    with pytest.raises(MultipleFailures):
         test()
 
-    with pytest.raises(TypeError):
+    with pytest.raises(MultipleFailures):
         test()
 
 
-def test_replays_slipped_examples_once_initial_bug_is_fixed():
+@pytest.mark.parametrize('fix', [TypeError, ValueError])
+def test_replays_slipped_examples_once_initial_bug_is_fixed(fix):
     target = []
     bug_fixed = False
 
@@ -91,20 +100,22 @@ def test_replays_slipped_examples_once_initial_bug_is_fixed():
         if not target:
             target.append(i)
         if i == target[0]:
-            if bug_fixed:
+            if bug_fixed and fix == TypeError:
                 return
             raise TypeError()
         if len(target) == 1:
             target.append(i)
+        if bug_fixed and fix == ValueError:
+            return
         if i == target[1]:
             raise ValueError()
 
-    with pytest.raises(TypeError):
+    with pytest.raises(MultipleFailures):
         test()
 
     bug_fixed = True
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError if fix == TypeError else TypeError):
         test()
 
 
@@ -130,7 +141,7 @@ def test_garbage_collects_the_secondary_key():
         if i == target[1]:
             raise ValueError()
 
-    with pytest.raises(TypeError):
+    with pytest.raises(MultipleFailures):
         test()
 
     bug_fixed = True
@@ -144,3 +155,31 @@ def test_garbage_collects_the_secondary_key():
         current = count()
         assert current < prev
         prev = current
+
+
+def test_shrinks_both_failures():
+    first_has_failed = [False]
+    duds = set()
+
+    @given(st.integers())
+    def test(i):
+        if i >= 10000:
+            first_has_failed[0] = True
+            assert False
+        assert i < 10000
+        if i % 4 != 0:
+            if first_has_failed[0]:
+                assert False
+            else:
+                duds.add(i)
+
+    with capture_out() as o:
+        with pytest.raises(MultipleFailures):
+            test()
+
+    smallest_non_dud = 0
+    while smallest_non_dud in duds or smallest_non_dud % 4 == 0:
+        smallest_non_dud += 1
+
+    assert 'test(i=10000)' in o.getvalue()
+    assert 'test(i=%d)' % (smallest_non_dud,) in o.getvalue()
