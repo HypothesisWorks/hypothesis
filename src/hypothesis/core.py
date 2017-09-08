@@ -684,12 +684,12 @@ class StateForActualGivenExecution(object):
         if flaky > 0:
             raise Flaky((
                 'Hypothesis found %d distinct failures, but %d of them '
-                'exhibited some sort of flaky behaviour. See above for '
-                'details.') % (len(self.falsifying_examples), flaky))
+                'exhibited some sort of flaky behaviour.') % (
+                    len(self.falsifying_examples), flaky))
         else:
             raise MultipleFailures((
-                'Hypothesis found %d distinct failures '
-                '(see above for details)') % (len(self.falsifying_examples,)))
+                'Hypothesis found %d distinct failures.') % (
+                    len(self.falsifying_examples,)))
 
     def __flaky(self, message):
         if len(self.falsifying_examples) <= 1:
