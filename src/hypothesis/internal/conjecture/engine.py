@@ -342,6 +342,7 @@ class ConjectureRunner(object):
 
     def incorporate_new_buffer(self, buffer):
         assert self.last_data.status == Status.INTERESTING
+        start = self.last_data.interesting_origin
         if (
             self.settings.timeout > 0 and
             time.time() >= self.start_time + self.settings.timeout
@@ -358,6 +359,7 @@ class ConjectureRunner(object):
         assert sort_key(buffer) <= sort_key(self.last_data.buffer)
         data = ConjectureData.for_buffer(buffer)
         self.test_function(data)
+        assert self.last_data.interesting_origin == start
         return data is self.last_data
 
     def run(self):
@@ -747,7 +749,9 @@ class ConjectureRunner(object):
                 if k not in self.shrunk_examples],
                 key=lambda kv: (sort_key(kv[1].buffer), sort_key(repr(kv[0]))),
             )
+            self.debug('Shrinking %r' % (target,))
             self.last_data = d
+            assert self.last_data.interesting_origin == target
             self.shrink()
             self.shrunk_examples.add(target)
 
@@ -769,7 +773,7 @@ class ConjectureRunner(object):
             self.test_function(initial_data)
 
         if initial_data.status == Status.INTERESTING:
-            return True
+            return initial_data is self.last_data
 
         # If this produced something completely invalid we ditch it
         # here rather than trying to persevere.
