@@ -160,6 +160,7 @@ def test_garbage_collects_the_secondary_key():
 def test_shrinks_both_failures():
     first_has_failed = [False]
     duds = set()
+    second_target = [None]
 
     @given(st.integers())
     def test(i):
@@ -167,22 +168,22 @@ def test_shrinks_both_failures():
             first_has_failed[0] = True
             assert False
         assert i < 10000
-        if i % 4 != 0:
-            if first_has_failed[0]:
-                assert False
-            else:
-                duds.add(i)
+        if first_has_failed[0]:
+            if second_target[0] is None:
+                for j in range(10000):
+                    if j not in duds:
+                        second_target[0] = j
+                        break
+            assert i < second_target[0]
+        else:
+            duds.add(i)
 
     with capture_out() as o:
         with pytest.raises(MultipleFailures):
             test()
 
-    smallest_non_dud = 0
-    while smallest_non_dud in duds or smallest_non_dud % 4 == 0:
-        smallest_non_dud += 1
-
     assert 'test(i=10000)' in o.getvalue()
-    assert 'test(i=%d)' % (smallest_non_dud,) in o.getvalue()
+    assert 'test(i=%d)' % (second_target[0],) in o.getvalue()
 
 
 def test_handles_flaky_tests_where_only_one_is_flaky():
