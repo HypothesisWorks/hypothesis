@@ -21,7 +21,7 @@ import pytest
 
 import hypothesis.strategies as st
 from hypothesis import given, settings
-from hypothesis.errors import MultipleFailures
+from hypothesis.errors import Flaky, MultipleFailures
 from tests.common.utils import capture_out
 from hypothesis.database import InMemoryExampleDatabase
 
@@ -183,3 +183,35 @@ def test_shrinks_both_failures():
 
     assert 'test(i=10000)' in o.getvalue()
     assert 'test(i=%d)' % (smallest_non_dud,) in o.getvalue()
+
+
+def test_handles_flaky_tests_where_only_one_is_flaky():
+    flaky_fixed = False
+
+    target = []
+    flaky_failed_once = [False]
+
+    @settings(database=InMemoryExampleDatabase())
+    @given(st.integers())
+    def test(i):
+        if abs(i) < 1000:
+            return
+        if not target:
+            target.append(i)
+        if i == target[0]:
+            raise TypeError()
+        if flaky_failed_once[0] and not flaky_fixed:
+            return
+        if len(target) == 1:
+            target.append(i)
+        if i == target[1]:
+            flaky_failed_once[0] = True
+            raise ValueError()
+
+    with pytest.raises(Flaky):
+        test()
+
+    flaky_fixed = True
+
+    with pytest.raises(MultipleFailures):
+        test()
