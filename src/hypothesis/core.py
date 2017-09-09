@@ -678,7 +678,7 @@ class StateForActualGivenExecution(object):
                 flaky += 1
 
         # If we only have one example then we should have raised an error or
-        # flaky preior to that point.
+        # flaky prior to this point.
         assert len(self.falsifying_examples) > 1
 
         if flaky > 0:
