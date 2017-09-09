@@ -571,8 +571,8 @@ class StateForActualGivenExecution(object):
             return
         if runner.interesting_examples:
             self.falsifying_examples = sorted(
-                [d.buffer for d in runner.interesting_examples.values()],
-                key=sort_key, reverse=True
+                [d for d in runner.interesting_examples.values()],
+                key=lambda d: sort_key(d.buffer), reverse=True
             )
         else:
             if timed_out:
@@ -625,7 +625,7 @@ class StateForActualGivenExecution(object):
             try:
                 with self.settings:
                     self.test_runner(
-                        ConjectureData.for_buffer(falsifying_example),
+                        ConjectureData.for_buffer(falsifying_example.buffer),
                         reify_and_execute(
                             self.search_strategy, self.test,
                             print_example=True, is_final=True
@@ -659,7 +659,7 @@ class StateForActualGivenExecution(object):
 
                 try:
                     self.test_runner(
-                        ConjectureData.for_buffer(self.falsifying_example),
+                        ConjectureData.for_buffer(falsifying_example.buffer),
                         reify_and_execute(
                             self.search_strategy,
                             test_is_flaky(
