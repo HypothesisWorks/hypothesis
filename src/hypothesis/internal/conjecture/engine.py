@@ -241,9 +241,7 @@ class ConjectureRunner(object):
         return True
 
     def save_buffer(self, buffer, key=None):
-        if (
-            self.settings.database is not None
-        ):
+        if self.settings.database is not None:
             if key is None:
                 key = self.database_key
             if key is None:
