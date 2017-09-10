@@ -24,9 +24,9 @@ import pytest
 
 import hypothesis.strategies as st
 from hypothesis import given, settings
-from hypothesis.errors import DeadlineExceeded, \
+from hypothesis.errors import Flaky, DeadlineExceeded, \
     HypothesisDeprecationWarning
-from tests.common.utils import checks_deprecated_behaviour
+from tests.common.utils import capture_out, checks_deprecated_behaviour
 
 
 def test_raises_deadline_on_slow_test():
@@ -62,3 +62,29 @@ def test_slow_tests_are_deprecated_by_default(i):
 @settings(deadline=None)
 def test_slow_with_none_deadline(i):
     time.sleep(1)
+
+
+def test_raises_flaky_if_a_test_becomes_fast_on_rerun():
+    once = [True]
+
+    @settings(deadline=500)
+    @given(st.integers())
+    def test_flaky_slow(i):
+        if once[0]:
+            once[0] = False
+            time.sleep(1)
+    with pytest.raises(Flaky):
+        test_flaky_slow()
+
+
+def test_deadlines_participate_in_shrinking():
+    @settings(deadline=500)
+    @given(st.integers())
+    def slow_if_large(i):
+        if i >= 10000:
+            time.sleep(1)
+
+    with capture_out() as o:
+        with pytest.raises(DeadlineExceeded):
+            slow_if_large()
+    assert 'slow_if_large(i=10000)' in o.getvalue()
