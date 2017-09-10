@@ -79,6 +79,14 @@ class ExampleDatabase(EDMeta('ExampleDatabase', (object,), {})):
         raise NotImplementedError('%s.delete' % (type(self).__name__))
 
     def move(self, src, dest, value):
+        """Move value from key src to key dest. Equivalent to delete(src,
+        value) followed by save(src, value) but may have a more efficient
+        implementation.
+
+        Note that value will be inserted at dest regardless of whether
+        it is currently present at src.
+
+        """
         if src == dest:
             self.save(src, value)
             return
