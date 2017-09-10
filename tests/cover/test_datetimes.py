@@ -27,13 +27,10 @@ from tests.common.debug import minimal, find_any
 from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.strategies import none, dates, times, binary, datetimes, \
     timedeltas
-from hypothesis.strategytests import strategy_test_suite
 from hypothesis.internal.compat import hrange
 from hypothesis.searchstrategy.datetime import DatetimeStrategy
 from hypothesis.internal.conjecture.data import Status, StopTest, \
     ConjectureData
-
-TestStandardDescriptorFeatures_timedeltas1 = strategy_test_suite(timedeltas())
 
 
 def test_can_find_positive_delta():
@@ -69,9 +66,6 @@ def test_max_value_is_respected():
 @given(timedeltas())
 def test_single_timedelta(val):
     assert find_any(timedeltas(val, val)) is val
-
-
-TestStandardDescriptorFeatures_datetimes1 = strategy_test_suite(datetimes())
 
 
 def test_simplifies_towards_millenium():
@@ -112,9 +106,6 @@ def test_DatetimeStrategy_draw_may_fail():
     assert data.status == Status.INVALID
 
 
-TestStandardDescriptorFeatures_dates1 = strategy_test_suite(dates())
-
-
 def test_can_find_after_the_year_2000():
     assert minimal(dates(), lambda x: x.year > 2000).year == 2001
 
@@ -139,9 +130,6 @@ def test_max_year_is_respected():
 @given(dates())
 def test_single_date(val):
     assert find_any(dates(val, val)) is val
-
-
-TestStandardDescriptorFeatures_times1 = strategy_test_suite(times())
 
 
 def test_can_find_midnight():
