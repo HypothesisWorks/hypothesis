@@ -22,6 +22,13 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.24.2 - 2017-09-11
+-------------------
+
+This release removes the (purely internal and no longer useful)
+``strategy_test_suite`` function and the corresponding strategytests module.
+
+-------------------
 3.24.1 - 2017-09-06
 -------------------
 
