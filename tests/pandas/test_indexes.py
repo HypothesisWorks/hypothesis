@@ -24,7 +24,7 @@ import pandas
 import hypothesis.strategies as st
 import hypothesis.extra.numpy as npst
 import hypothesis.extra.pandas as pdst
-from hypothesis import given, assume
+from hypothesis import given, assume, reject
 from hypothesis.errors import NoExamples
 from tests.pandas.helpers import supported_by_pandas
 
@@ -59,19 +59,28 @@ def test_generate_arbitrary_indices(data):
     pass_elements = data.draw(st.booleans(), 'pass_elements')
 
     converted_dtype = pandas.Index([], dtype=dtype).dtype
-    inferred_dtype = pandas.Index([data.draw(npst.from_dtype(dtype))]).dtype
 
-    if pass_elements:
-        elements = npst.from_dtype(dtype)
-        dtype = None
-    else:
-        elements = None
+    try:
+        inferred_dtype = pandas.Index(
+            [data.draw(npst.from_dtype(dtype))]).dtype
 
-    index = data.draw(pdst.indexes(
-        elements=elements, dtype=dtype, min_size=min_size, max_size=max_size,
-        unique=unique,
-    ))
+        if pass_elements:
+            elements = npst.from_dtype(dtype)
+            dtype = None
+        else:
+            elements = None
 
+        index = data.draw(pdst.indexes(
+            elements=elements, dtype=dtype, min_size=min_size,
+            max_size=max_size, unique=unique,
+        ))
+
+    except Exception as e:
+        if type(e).__name__ == 'OutOfBoundsDatetime':
+            # See https://github.com/HypothesisWorks/hypothesis-python/pull/826
+            reject()
+        else:
+            raise
     if dtype is None:
         assert index.dtype == inferred_dtype
     else:

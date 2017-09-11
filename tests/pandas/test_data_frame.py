@@ -182,9 +182,12 @@ def test_arbitrary_data_frames(data):
 
     try:
         df = data.draw(pdst.data_frames(columns))
-    except pandas._libs.tslib.OutOfBoundsDatetime:
-        # See https://github.com/HypothesisWorks/hypothesis-python/pull/826
-        reject()
+    except Exception as e:
+        if type(e).__name__ == 'OutOfBoundsDatetime':
+            # See https://github.com/HypothesisWorks/hypothesis-python/pull/826
+            reject()
+        else:
+            raise
     data_frame_columns = list(df)
 
     assert len(data_frame_columns) == len(columns)
