@@ -152,7 +152,7 @@ def range_indexes(min_size=0, max_size=None):
 def indexes(
     elements=None, dtype=None, min_size=0, max_size=None, unique=True,
 ):
-    """Provides a strategy for generating values of type pandas.Index.
+    """Provides a strategy for producing a :class:`pandas.Index`.
 
     * elements is a strategy which will be used to generate the individual
       values of the index. If None, it will be inferred from the dtype.
@@ -180,7 +180,7 @@ def indexes(
 
 @st.defines_strategy
 def series(elements=None, dtype=None, index=None, fill=None, unique=False):
-    """Provides a strategy for producing a pandas.Series.
+    """Provides a strategy for producing a :class:`pandas.Series`.
 
     Arguments:
 
@@ -189,16 +189,16 @@ def series(elements=None, dtype=None, index=None, fill=None, unique=False):
           default from the dtype.
 
         * dtype: the numpy.dtype of the resulting series and may be any value
-          that can be passed to numpy.dtype. If None, will use pandas'
+          that can be passed to numpy.dtype. If None, will use `pandas'
           standard behaviour to infer it from the type of the elements
           values. Note that if the type of values that comes out of your
           elements strategy varies, then so will the resulting dtype of the
           series.
 
         * index: If not None, a strategy for generating indexes for the
-          resulting Series. This can generate either pandas.Index objects or
-          any sequence of values (which will be passed to the pandas.Index
-          constructor).
+          resulting Series. This can generate either :class:`pandas.Index`
+          objects or any sequence of values (which will be passed to the
+          Index constructor).
 
           You will probably find it most convenient to use the
           :func:`~hypothesis.extra.pandas.indexes` function to pass as values
@@ -303,7 +303,7 @@ def columns(
 def data_frames(
     columns=None, rows=None, index=None
 ):
-    """Provides a strategy for producing a pandas.DataFrame.
+    """Provides a strategy for producing a :class:`pandas.DataFrame`.
 
     Arguments:
 
@@ -313,8 +313,8 @@ def data_frames(
         * rows: A strategy for generating a row object. Should generate
           either dicts mapping column names to values or a sequence mapping
           column position to the value in that position (note that unlike the
-          pandas.DataFrame constructor, single values are not allowed here.
-          Passing e.g. an integer is an error, even if there is only one
+          :class:`pandas.DataFrame` constructor, single values are not allowed
+          here. Passing e.g. an integer is an error, even if there is only one
           column).
 
           At least one of rows and columns must be provided. If both are
@@ -333,9 +333,9 @@ def data_frames(
             column will sometimes have an integral dtype and sometimes a float.
 
         * index: If not None, a strategy for generating indexes for the
-          resulting DataFrame. This can generate either pandas.Index objects
-          or any sequence of values (which will be passed to the pandas.Index
-          constructor).
+          resulting DataFrame. This can generate either :class:`pandas.Index`
+          objects or any sequence of values (which will be passed to the
+          Index constructor).
 
           You will probably find it most convenient to use the
           :func:`~hypothesis.extra.pandas.indexes` function to pass as values
