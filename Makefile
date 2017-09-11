@@ -179,13 +179,13 @@ check-django111: $(TOX)
 
 check-django: check-django18 check-django110 check-django111
 
-check-pandas18:
+check-pandas18: $(TOX)
 	$(TOX) --recreate -e pandas18
 
-check-pandas19:
+check-pandas19: $(TOX)
 	$(TOX) --recreate -e pandas19
 
-check-pandas20:
+check-pandas20: $(TOX)
 	$(TOX) --recreate -e pandas20
 
 check-examples2: $(TOX) $(PY27)
