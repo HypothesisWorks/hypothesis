@@ -62,7 +62,7 @@ def test_will_use_dtype_of_elements(s):
 
 @given(pdst.series(elements=st.floats(allow_nan=False)))
 def test_will_use_a_provided_elements_strategy(s):
-    assert all(x == x for x in s)
+    assert not np.isnan(s).any()
 
 
 @given(pdst.series(dtype='int8', unique=True))
