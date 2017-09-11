@@ -36,7 +36,7 @@ def test_seeds_off_random():
 
 def test_nesting_with_control_passes_health_check():
     @given(st.integers(0, 100), st.random_module())
-    @settings(max_examples=5, database=None)
+    @settings(max_examples=5, database=None, deadline=None)
     def test_blah(x, rnd):
         @given(st.integers())
         @settings(
