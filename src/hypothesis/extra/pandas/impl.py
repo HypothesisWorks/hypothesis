@@ -188,9 +188,9 @@ def series(elements=None, dtype=None, index=None, fill=None, unique=False):
           values in the series. If None, we will attempt to infer a suitable
           default from the dtype.
 
-        * dtype: the numpy.dtype of the resulting series and may be any value
-          that can be passed to numpy.dtype. If None, will use `pandas'
-          standard behaviour to infer it from the type of the elements
+        * dtype: the dtype of the resulting series and may be any value
+          that can be passed to :class:`numpy.dtype`. If None, will use
+          pandas's standard behaviour to infer it from the type of the elements
           values. Note that if the type of values that comes out of your
           elements strategy varies, then so will the resulting dtype of the
           series.
