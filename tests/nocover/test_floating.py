@@ -146,6 +146,7 @@ def test_can_find_floats_that_do_not_round_trip_through_reprs(x):
     assert float(repr(x)) == x
 
 
+@settings(deadline=None)
 @given(floats(), floats(), integers())
 def test_floats_are_in_range(x, y, s):
     assume(not (math.isnan(x) or math.isnan(y)))
