@@ -35,9 +35,12 @@ def supported_by_pandas(dtype):
     # doing so, which can cause problems if this results in something which
     # does not fit into the desired word type. As a result we want to filter
     # out any timedelta or datetime dtypes that are not of the desired types.
-
     if dtype.kind in ('m', 'M'):
         return dtype in PANDAS_TIME_DTYPES
-    if dtype.byteorder == '>':
+
+    # Pandas does not support non-native byte orders and things go amusingly
+    # wrong in weird places if you try to use them. See
+    # https://pandas.pydata.org/pandas-docs/stable/gotchas.html#byte-ordering-issues
+    if dtype.byteorder not in ('|', '='):
         return False
     return True
