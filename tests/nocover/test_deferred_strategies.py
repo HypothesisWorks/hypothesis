@@ -53,6 +53,7 @@ def mutually_recursive_strategies(draw):
     return strategies
 
 
+@settings(deadline=None)
 @given(mutually_recursive_strategies())
 def test_arbitrary_recursion(strategies):
     for i, s in enumerate(strategies):
