@@ -22,6 +22,16 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.25.0 - 2017-09-12
+-------------------
+
+This release changes how Hypothesis shrinks and replays examples to take into
+account that it can encounter new bugs while shrinking the bug it originally
+found. Previously it would end up replacing the originally found bug with the
+new bug and show you only that one. Now it is (often) able to recognise when
+two bugs are distinct and when it finds more than one will show both.
+
+-------------------
 3.24.2 - 2017-09-11
 -------------------
 
