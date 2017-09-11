@@ -22,8 +22,8 @@ import pytest
 import hypothesis.strategies as st
 from hypothesis import Verbosity, find, given, assume, settings
 from hypothesis.errors import NoSuchExample, Unsatisfiable
-from hypothesis.database import SQLiteExampleDatabase, \
-    InMemoryExampleDatabase
+from tests.common.utils import all_values
+from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.compat import hbytes
 
 
@@ -33,17 +33,17 @@ def has_a_non_zero_byte(x):
 
 def test_saves_incremental_steps_in_database():
     key = b"a database key"
-    database = SQLiteExampleDatabase(':memory:')
+    database = InMemoryExampleDatabase()
     find(
         st.binary(min_size=10), lambda x: has_a_non_zero_byte(x),
         settings=settings(database=database), database_key=key
     )
-    assert len(set(database.fetch(key))) > 1
+    assert len(all_values(database)) > 1
 
 
 def test_clears_out_database_as_things_get_boring():
     key = b"a database key"
-    database = SQLiteExampleDatabase(':memory:')
+    database = InMemoryExampleDatabase()
     do_we_care = True
 
     def stuff():
@@ -57,15 +57,15 @@ def test_clears_out_database_as_things_get_boring():
         except NoSuchExample:
             pass
     stuff()
-    assert len(set(database.fetch(key))) > 1
+    assert len(all_values(database)) > 1
     do_we_care = False
     stuff()
-    initial = len(set(database.fetch(key)))
+    initial = len(all_values(database))
     assert initial > 0
 
     for _ in range(initial):
         stuff()
-        keys = set(database.fetch(key))
+        keys = len(all_values(database))
         if not keys:
             break
     else:
@@ -74,7 +74,7 @@ def test_clears_out_database_as_things_get_boring():
 
 def test_trashes_invalid_examples():
     key = b"a database key"
-    database = SQLiteExampleDatabase(':memory:')
+    database = InMemoryExampleDatabase()
     finicky = False
 
     def stuff():
@@ -88,16 +88,16 @@ def test_trashes_invalid_examples():
         except Unsatisfiable:
             pass
     stuff()
-    original = len(set(database.fetch(key)))
+    original = len(all_values(database))
     assert original > 1
     finicky = True
     stuff()
-    assert len(set(database.fetch(key))) < original
+    assert len(all_values(database)) < original
 
 
 def test_respects_max_examples_in_database_usage():
     key = b"a database key"
-    database = SQLiteExampleDatabase(':memory:')
+    database = InMemoryExampleDatabase()
     do_we_care = True
     counter = [0]
 
@@ -115,7 +115,7 @@ def test_respects_max_examples_in_database_usage():
         except NoSuchExample:
             pass
     stuff()
-    assert len(set(database.fetch(key))) > 10
+    assert len(all_values(database)) > 10
     do_we_care = False
     counter[0] = 0
     stuff()
@@ -153,7 +153,7 @@ def test_clears_out_everything_smaller_than_the_interesting_example():
         with pytest.raises(AssertionError):
             test()
 
-        saved, = database.data.values()
+        saved = all_values(database)
         if len(saved) > 30:
             break
     else:
@@ -164,7 +164,7 @@ def test_clears_out_everything_smaller_than_the_interesting_example():
     with pytest.raises(AssertionError):
         test()
 
-    saved, = database.data.values()
+    saved = all_values(database)
 
     for s in saved:
         assert s >= target[0]

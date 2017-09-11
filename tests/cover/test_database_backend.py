@@ -160,6 +160,16 @@ def test_class_name_is_in_repr(exampledatabase):
     exampledatabase.close()
 
 
+def test_an_absent_value_is_present_after_it_moves(exampledatabase):
+    exampledatabase.move(b"a", b"b", b"c")
+    assert next(exampledatabase.fetch(b"b")) == b'c'
+
+
+def test_an_absent_value_is_present_after_it_moves_to_self(exampledatabase):
+    exampledatabase.move(b"a", b"a", b"b")
+    assert next(exampledatabase.fetch(b"a")) == b'b'
+
+
 def test_two_directory_databases_can_interact(tmpdir):
     path = str(tmpdir)
     db1 = DirectoryBasedExampleDatabase(path)

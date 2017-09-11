@@ -20,6 +20,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import sys
 import time
 import functools
 import traceback
@@ -28,7 +29,7 @@ from collections import namedtuple
 
 import hypothesis.strategies as st
 from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
-    Unsatisfiable, InvalidArgument, FailedHealthCheck, \
+    Unsatisfiable, InvalidArgument, MultipleFailures, FailedHealthCheck, \
     UnsatisfiedAssumption, HypothesisDeprecationWarning
 from hypothesis.control import BuildContext
 from hypothesis._settings import settings as Settings
@@ -51,7 +52,7 @@ from hypothesis.internal.conjecture.data import Status, StopTest, \
     ConjectureData
 from hypothesis.searchstrategy.strategies import SearchStrategy
 from hypothesis.internal.conjecture.engine import ExitReason, \
-    ConjectureRunner, uniform
+    ConjectureRunner, uniform, sort_key
 
 
 def new_random():
@@ -508,7 +509,8 @@ class StateForActualGivenExecution(object):
         self.at_least_one_success = False
         self.last_exception = None
         self.repr_for_last_exception = None
-        self.falsifying_example = None
+        self.falsifying_examples = ()
+        self.__was_flaky = False
         self.random = random
 
     def evaluate_test_data(self, data):
@@ -541,9 +543,15 @@ class StateForActualGivenExecution(object):
             raise
         except Exception:
             escalate_hypothesis_internal_error()
-            self.last_exception = traceback.format_exc()
-            verbose_report(self.last_exception)
-            data.mark_interesting()
+            data.__expected_exception = traceback.format_exc()
+            verbose_report(data.__expected_exception)
+
+            error_class, _, tb = sys.exc_info()
+
+            origin = traceback.extract_tb(tb)[-1]
+            filename = origin[0]
+            lineno = origin[1]
+            data.mark_interesting((error_class, filename, lineno))
 
     def run(self):
         # Tell pytest to omit the body of this function from tracebacks
@@ -561,8 +569,11 @@ class StateForActualGivenExecution(object):
         timed_out = runner.exit_reason == ExitReason.timeout
         if runner.last_data is None:
             return
-        if runner.last_data.status == Status.INTERESTING:
-            self.falsifying_example = runner.last_data.buffer
+        if runner.interesting_examples:
+            self.falsifying_examples = sorted(
+                [d for d in runner.interesting_examples.values()],
+                key=lambda d: sort_key(d.buffer), reverse=True
+            )
         else:
             if timed_out:
                 note_deprecation((
@@ -603,50 +614,89 @@ class StateForActualGivenExecution(object):
                         get_pretty_function_description(self.test),
                         runner.valid_examples,))
 
-        if self.falsifying_example is None:
+        if not self.falsifying_examples:
             return
 
-        assert self.last_exception is not None
+        flaky = 0
 
-        try:
-            with self.settings:
-                self.test_runner(
-                    ConjectureData.for_buffer(self.falsifying_example),
-                    reify_and_execute(
-                        self.search_strategy, self.test,
-                        print_example=True, is_final=True
-                    ))
-        except (UnsatisfiedAssumption, StopTest):
-            report(traceback.format_exc())
-            raise Flaky(
-                'Unreliable assumption: An example which satisfied '
-                'assumptions on the first run now fails it.'
-            )
+        for falsifying_example in self.falsifying_examples:
+            self.__was_flaky = False
+            raised_exception = False
+            try:
+                with self.settings:
+                    self.test_runner(
+                        ConjectureData.for_buffer(falsifying_example.buffer),
+                        reify_and_execute(
+                            self.search_strategy, self.test,
+                            print_example=True, is_final=True
+                        ))
+            except (UnsatisfiedAssumption, StopTest):
+                report(traceback.format_exc())
+                self.__flaky(
+                    'Unreliable assumption: An example which satisfied '
+                    'assumptions on the first run now fails it.'
+                )
+            except:
+                if len(self.falsifying_examples) <= 1:
+                    raise
+                raised_exception = True
+                report(traceback.format_exc())
 
-        report(
-            'Failed to reproduce exception. Expected: \n' +
-            self.last_exception,
-        )
+            if not raised_exception:
+                report(
+                    'Failed to reproduce exception. Expected: \n' +
+                    falsifying_example.__expected_exception,
+                )
 
-        filter_message = (
-            'Unreliable test data: Failed to reproduce a failure '
-            'and then when it came to recreating the example in '
-            'order to print the test data with a flaky result '
-            'the example was filtered out (by e.g. a '
-            'call to filter in your strategy) when we didn\'t '
-            'expect it to be.'
-        )
+                filter_message = (
+                    'Unreliable test data: Failed to reproduce a failure '
+                    'and then when it came to recreating the example in '
+                    'order to print the test data with a flaky result '
+                    'the example was filtered out (by e.g. a '
+                    'call to filter in your strategy) when we didn\'t '
+                    'expect it to be.'
+                )
 
-        try:
-            self.test_runner(
-                ConjectureData.for_buffer(self.falsifying_example),
-                reify_and_execute(
-                    self.search_strategy,
-                    test_is_flaky(self.test, self.repr_for_last_exception),
-                    print_example=True, is_final=True
-                ))
-        except (UnsatisfiedAssumption, StopTest):
-            raise Flaky(filter_message)
+                try:
+                    self.test_runner(
+                        ConjectureData.for_buffer(falsifying_example.buffer),
+                        reify_and_execute(
+                            self.search_strategy,
+                            test_is_flaky(
+                                self.test, self.repr_for_last_exception),
+                            print_example=True, is_final=True
+                        ))
+                except (UnsatisfiedAssumption, StopTest):
+                    self.__flaky(filter_message)
+                except Flaky as e:
+                    if len(self.falsifying_examples) > 1:
+                        self.__flaky(e.args[0])
+                    else:
+                        raise
+
+            if self.__was_flaky:
+                flaky += 1
+
+        # If we only have one example then we should have raised an error or
+        # flaky prior to this point.
+        assert len(self.falsifying_examples) > 1
+
+        if flaky > 0:
+            raise Flaky((
+                'Hypothesis found %d distinct failures, but %d of them '
+                'exhibited some sort of flaky behaviour.') % (
+                    len(self.falsifying_examples), flaky))
+        else:
+            raise MultipleFailures((
+                'Hypothesis found %d distinct failures.') % (
+                    len(self.falsifying_examples,)))
+
+    def __flaky(self, message):
+        if len(self.falsifying_examples) <= 1:
+            raise Flaky(message)
+        else:
+            self.__was_flaky = True
+            report('Flaky example! ' + message)
 
 
 def given(*given_arguments, **given_kwargs):

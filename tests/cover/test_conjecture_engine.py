@@ -21,6 +21,8 @@ import time
 from random import seed as seed_random
 from random import Random
 
+import pytest
+
 from hypothesis import strategies as st
 from hypothesis import Phase, given, settings, unlimited
 from tests.common.utils import checks_deprecated_behaviour
@@ -152,14 +154,22 @@ def slow_shrinker():
     return accept
 
 
-def test_terminates_shrinks():
+@pytest.mark.parametrize('n', [1, 10, 100, 200])
+def test_terminates_shrinks(n):
+    db = ExampleDatabase(':memory:')
     runner = ConjectureRunner(slow_shrinker(), settings=settings(
-        max_examples=5000, max_iterations=10000, max_shrinks=10,
-        database=None, timeout=unlimited,
-    ))
+        max_examples=5000, max_iterations=10000, max_shrinks=n,
+        database=db, timeout=unlimited,
+    ), random=Random(0), database_key=b'key')
     runner.run()
     assert runner.last_data.status == Status.INTERESTING
-    assert runner.shrinks == 10
+    assert runner.shrinks == n
+    in_db = set(
+        v
+        for vs in db.data.values()
+        for v in vs
+    )
+    assert len(in_db) == n + 1
 
 
 def test_detects_flakiness():
@@ -399,7 +409,11 @@ def test_saves_data_while_shrinking():
     runner.run()
     assert runner.last_data.status == Status.INTERESTING
     assert len(seen) == n
-    in_db = set(db.fetch(key))
+    in_db = set(
+        v
+        for vs in db.data.values()
+        for v in vs
+    )
     assert in_db.issubset(seen)
     assert in_db == seen
 
@@ -444,40 +458,27 @@ def test_garbage_collects_the_database():
     key = b'hi there'
     n = 200
     db = ExampleDatabase(':memory:')
-    assert list(db.fetch(key)) == []
-    seen = set()
-    go = True
-
-    counter = [0]
-
-    def f(data):
-        """This function is designed to shrink very badly.
-
-        So we only occasionally mark things as interesting, and require
-        a certain amount of complexity to do so.
-
-        """
-        x = hbytes(data.draw_bytes(512))
-        if not go:
-            return
-        if counter[0] % 10 == 0 and len(seen) < n and sum(x) > 1000:
-            seen.add(x)
-        counter[0] += 1
-        if x in seen:
-            data.mark_interesting()
 
     local_settings = settings(
-        database=db, max_shrinks=2 * n, timeout=unlimited)
+        database=db, max_shrinks=n, timeout=unlimited)
 
-    runner = ConjectureRunner(f, settings=local_settings, database_key=key)
+    runner = ConjectureRunner(
+        slow_shrinker(), settings=local_settings, database_key=key)
     runner.run()
     assert runner.last_data.status == Status.INTERESTING
-    assert len(seen) == n
-    assert set(db.fetch(key)) == seen
-    go = False
-    runner = ConjectureRunner(f, settings=local_settings, database_key=key)
+
+    def in_db():
+        return set(
+            v
+            for vs in db.data.values()
+            for v in vs
+        )
+
+    assert len(in_db()) == n + 1
+    runner = ConjectureRunner(
+        lambda data: None, settings=local_settings, database_key=key)
     runner.run()
-    assert 0 < len(set(db.fetch(key))) < n
+    assert 0 < len(in_db()) < n
 
 
 @given(st.randoms(), st.random_module())

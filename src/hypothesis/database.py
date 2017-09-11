@@ -78,6 +78,21 @@ class ExampleDatabase(EDMeta('ExampleDatabase', (object,), {})):
         """
         raise NotImplementedError('%s.delete' % (type(self).__name__))
 
+    def move(self, src, dest, value):
+        """Move value from key src to key dest. Equivalent to delete(src,
+        value) followed by save(src, value) but may have a more efficient
+        implementation.
+
+        Note that value will be inserted at dest regardless of whether
+        it is currently present at src.
+
+        """
+        if src == dest:
+            self.save(src, value)
+            return
+        self.delete(src, value)
+        self.save(dest, value)
+
     def fetch(self, key):
         """Return all values matching this key."""
         raise NotImplementedError('%s.fetch' % (type(self).__name__))
@@ -258,6 +273,17 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
             except OSError:  # pragma: no cover
                 os.unlink(tmpname)
             assert not os.path.exists(tmpname)
+
+    def move(self, src, dest, value):
+        if src == dest:
+            self.save(src, value)
+            return
+        try:
+            os.rename(
+                self._value_path(src, value), self._value_path(dest, value))
+        except OSError:
+            self.delete(src, value)
+            self.save(dest, value)
 
     def delete(self, key, value):
         try:

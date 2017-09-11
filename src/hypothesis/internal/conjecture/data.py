@@ -77,6 +77,7 @@ class ConjectureData(object):
         self.events = set()
         self.forced_indices = set()
         self.capped_indices = {}
+        self.interesting_origin = None
 
     def __assert_not_frozen(self, name):
         if self.frozen:
@@ -210,8 +211,9 @@ class ConjectureData(object):
         self.__write(result)
         return hbytes(result)
 
-    def mark_interesting(self):
+    def mark_interesting(self, interesting_origin=None):
         self.__assert_not_frozen('mark_interesting')
+        self.interesting_origin = interesting_origin
         self.status = Status.INTERESTING
         self.freeze()
         raise StopTest(self.testcounter)

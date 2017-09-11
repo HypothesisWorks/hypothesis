@@ -101,6 +101,9 @@ class ConjectureRunner(object):
         # buffer contents.
         self.block_sizes = {}
 
+        self.interesting_examples = {}
+        self.shrunk_examples = set()
+
     def __tree_is_exhausted(self):
         return 0 in self.dead
 
@@ -187,18 +190,36 @@ class ConjectureRunner(object):
             self.last_data.status == Status.INTERESTING
         )
 
-        if (
-            data.status == Status.INTERESTING and (
-                not last_data_is_interesting or
-                sort_key(data.buffer) < sort_key(self.last_data.buffer)
-            )
-        ):
-            self.last_data = data
-            if last_data_is_interesting:
-                self.shrinks += 1
-                if self.shrinks >= self.settings.max_shrinks:
-                    self.exit_reason = ExitReason.max_shrinks
-                    raise RunIsComplete()
+        if data.status == Status.INTERESTING:
+            first_call = len(self.interesting_examples) == 0
+
+            key = data.interesting_origin
+            changed = False
+            try:
+                existing = self.interesting_examples[key]
+            except KeyError:
+                changed = True
+            else:
+                if sort_key(data.buffer) < sort_key(existing.buffer):
+                    self.downgrade_buffer(existing.buffer)
+                    changed = True
+
+            if changed:
+                self.interesting_examples[key] = data
+                self.shrunk_examples.discard(key)
+                if last_data_is_interesting and not first_call:
+                    self.shrinks += 1
+
+            if not last_data_is_interesting or (
+                sort_key(data.buffer) < sort_key(self.last_data.buffer) and
+                data.interesting_origin ==
+                self.last_data.interesting_origin
+            ):
+                self.last_data = data
+
+            if self.shrinks >= self.settings.max_shrinks:
+                self.exit_reason = ExitReason.max_shrinks
+                raise RunIsComplete()
 
     def consider_new_test_data(self, data):
         # Transition rules:
@@ -219,16 +240,33 @@ class ConjectureRunner(object):
         assert data.status == Status.VALID
         return True
 
-    def save_buffer(self, buffer):
-        if (
-            self.settings.database is not None and
-            self.database_key is not None
-        ):
-            self.settings.database.save(self.database_key, hbytes(buffer))
+    def save_buffer(self, buffer, key=None):
+        if self.settings.database is not None:
+            if key is None:
+                key = self.database_key
+            if key is None:
+                return
+            self.settings.database.save(key, hbytes(buffer))
+
+    def downgrade_buffer(self, buffer):
+        if self.settings.database is not None:
+            self.settings.database.move(
+                self.database_key, self.secondary_key, buffer)
+
+    @property
+    def secondary_key(self):
+        return b'.'.join((self.database_key, b"secondary"))
 
     def note_details(self, data):
         if data.status == Status.INTERESTING:
-            self.save_buffer(data.buffer)
+            if (
+                self.last_data is None or
+                self.last_data.status != Status.INTERESTING or
+                self.last_data.interesting_origin == data.interesting_origin
+            ):
+                self.save_buffer(data.buffer)
+            else:
+                self.save_buffer(data.buffer, self.secondary_key)
         runtime = max(data.finish_time - data.start_time, 0.0)
         self.status_runtimes.setdefault(data.status, []).append(runtime)
         for event in set(map(self.event_to_string, data.events)):
@@ -247,10 +285,16 @@ class ConjectureRunner(object):
                 u', '.join(int_to_text(int(i)) for i in data.buffer[u:v]))
         buffer_parts.append(u']')
 
+        status = unicode_safe_repr(data.status)
+
+        if data.status == Status.INTERESTING:
+            status = u'%s (%s)' % (
+                status, unicode_safe_repr(data.interesting_origin,))
+
         self.debug(u'%d bytes %s -> %s, %s' % (
             data.index,
             u''.join(buffer_parts),
-            unicode_safe_repr(data.status),
+            status,
             data.output,
         ))
 
@@ -296,6 +340,7 @@ class ConjectureRunner(object):
 
     def incorporate_new_buffer(self, buffer):
         assert self.last_data.status == Status.INTERESTING
+        start = self.last_data.interesting_origin
         if (
             self.settings.timeout > 0 and
             time.time() >= self.start_time + self.settings.timeout
@@ -312,6 +357,7 @@ class ConjectureRunner(object):
         assert sort_key(buffer) <= sort_key(self.last_data.buffer)
         data = ConjectureData.for_buffer(buffer)
         self.test_function(data)
+        assert self.last_data.interesting_origin == start
         return data is self.last_data
 
     def run(self):
@@ -320,6 +366,10 @@ class ConjectureRunner(object):
                 self._run()
             except RunIsComplete:
                 pass
+            if self.interesting_examples:
+                self.last_data = max(
+                    self.interesting_examples.values(),
+                    key=lambda d: sort_key(d.buffer))
             if self.last_data is not None:
                 self.debug_data(self.last_data)
             self.debug(
@@ -518,19 +568,37 @@ class ConjectureRunner(object):
 
         """
         if self.has_existing_examples():
+            # We have to do some careful juggling here. We have two database
+            # corpora: The primary and secondary. The primary corpus is a
+            # small set of minimized examples each of which has at one point
+            # demonstrated a distinct bug. We want to retry all of these.
+
+            # We also have a secondary corpus of examples that have at some
+            # point demonstrated interestingness (currently only ones that
+            # were previously non-minimal examples of a bug, but this will
+            # likely expand in future). These are a good source of potentially
+            # interesting examples, but there are a lot of them, so we down
+            # sample the secondary corpus to a more manageable size.
+
             corpus = sorted(
                 self.settings.database.fetch(self.database_key),
                 key=sort_key
             )
-
             desired_size = max(2, ceil(0.1 * self.settings.max_examples))
 
-            if desired_size < len(corpus):
-                new_corpus = [corpus[0], corpus[-1]]
-                n_boost = max(desired_size - 2, 0)
-                new_corpus.extend(self.random.sample(corpus[1:-1], n_boost))
-                corpus = new_corpus
-                corpus.sort(key=sort_key)
+            if len(corpus) < desired_size:
+                secondary_corpus = list(
+                    self.settings.database.fetch(self.secondary_key),
+                )
+
+                shortfall = desired_size - len(corpus)
+
+                if len(secondary_corpus) <= shortfall:
+                    extra = secondary_corpus
+                else:
+                    extra = self.random.sample(secondary_corpus, shortfall)
+                extra.sort(key=sort_key)
+                corpus.extend(extra)
 
             for existing in corpus:
                 if self.valid_examples >= self.settings.max_examples:
@@ -539,18 +607,13 @@ class ConjectureRunner(object):
                     self.settings.max_iterations, self.settings.max_examples
                 ):
                     self.exit_with(ExitReason.max_iterations)
-                data = ConjectureData.for_buffer(existing)
-                self.test_function(data)
-                data.freeze()
-                self.last_data = data
-                self.consider_new_test_data(data)
-                if data.status == Status.INTERESTING:
-                    assert data.status == Status.INTERESTING
-                    self.last_data = data
-                    break
-                else:
+                self.last_data = ConjectureData.for_buffer(existing)
+                self.test_function(self.last_data)
+                if self.last_data.status != Status.INTERESTING:
                     self.settings.database.delete(
                         self.database_key, existing)
+                    self.settings.database.delete(
+                        self.secondary_key, existing)
 
     def exit_with(self, reason):
         self.exit_reason = reason
@@ -668,10 +731,6 @@ class ConjectureRunner(object):
             return
         assert isinstance(data.output, text_type)
 
-        if self.settings.max_shrinks <= 0:
-            self.exit_reason = ExitReason.max_shrinks
-            return
-
         if Phase.shrink not in self.settings.phases:
             self.exit_reason = ExitReason.finished
             return
@@ -682,7 +741,17 @@ class ConjectureRunner(object):
             self.exit_reason = ExitReason.flaky
             return
 
-        self.shrink()
+        while len(self.shrunk_examples) < len(self.interesting_examples):
+            target, d = min([
+                (k, v) for k, v in self.interesting_examples.items()
+                if k not in self.shrunk_examples],
+                key=lambda kv: (sort_key(kv[1].buffer), sort_key(repr(kv[0]))),
+            )
+            self.debug('Shrinking %r' % (target,))
+            self.last_data = d
+            assert self.last_data.interesting_origin == target
+            self.shrink()
+            self.shrunk_examples.add(target)
 
     def try_buffer_with_rewriting_from(self, initial_attempt, v):
         initial_data = None
@@ -702,8 +771,7 @@ class ConjectureRunner(object):
             self.test_function(initial_data)
 
         if initial_data.status == Status.INTERESTING:
-            self.last_data = initial_data
-            return True
+            return initial_data is self.last_data
 
         # If this produced something completely invalid we ditch it
         # here rather than trying to persevere.
@@ -906,20 +974,24 @@ class ConjectureRunner(object):
             return
 
         if self.has_existing_examples():
+            # If we have any smaller examples in the secondary corpus, now is
+            # a good time to try them to see if they work as shrinks. They
+            # probably won't, but it's worth a shot and gives us a good
+            # opportunity to clear out the database.
+
+            # It's not worth trying the primary corpus because we already
+            # tried all of those in the initial phase.
             corpus = sorted(
-                self.settings.database.fetch(self.database_key),
+                self.settings.database.fetch(self.secondary_key),
                 key=sort_key
             )
-            # We always have self.last_data.buffer in the database because
-            # we save every interesting example. This means we will always
-            # trigger the first break and thus never exit the loop normally.
-            for c in corpus:  # pragma: no branch
+            for c in corpus:
                 if sort_key(c) >= sort_key(self.last_data.buffer):
                     break
                 elif self.incorporate_new_buffer(c):
                     break
                 else:
-                    self.settings.database.delete(self.database_key, c)
+                    self.settings.database.delete(self.secondary_key, c)
 
         # Coarse passes that are worth running once when the example is likely
         # to be "far from shrunk" but not worth repeating in a loop because
