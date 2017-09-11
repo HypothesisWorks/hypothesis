@@ -347,7 +347,7 @@ def data_frames(
     :func:`columns` to specify a fixed shape of the DataFrame you want as
     follows. For example the following gives a two column data frame:
 
-    ..code-block:: pycon
+    .. code-block:: pycon
 
         >>> from hypothesis.extra.pandas import column, data_frames
         >>> data_frames([
@@ -362,7 +362,7 @@ def data_frames(
     DataFrame where the value in the first column is always at most the value
     in the second:
 
-    ..code-block:: pycon
+    .. code-block:: pycon
 
         >>> from hypothesis.extra.pandas import column, data_frames
         >>> import hypothesis.strategies as st
@@ -376,7 +376,7 @@ def data_frames(
 
     You can also combine the two:
 
-    ..code-block:: pycon
+    .. code-block:: pycon
 
         >>> from hypothesis.extra.pandas import column, data_frames
         >>> import hypothesis.strategies as st
