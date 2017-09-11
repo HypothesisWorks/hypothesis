@@ -330,8 +330,7 @@ def data_frames(
           * If you provide rows and not columns, then the shape and dtype of
             the resulting DataFrame may vary. e.g. if you have a mix of int
             and float in the values for one column in your row entries, the
-            resulting DataFrame will sometimes have an integral dtype and
-            sometimes a float.
+            column will sometimes have an integral dtype and sometimes a float.
 
         * index: If not None, a strategy for generating indexes for the
           resulting DataFrame. This can generate either pandas.Index objects
