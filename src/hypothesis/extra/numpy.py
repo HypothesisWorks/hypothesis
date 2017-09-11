@@ -218,28 +218,27 @@ def arrays(
     * ``dtype`` may be any valid input to :class:`numpy.dtype <numpy.dtype>`
       (this includes ``dtype`` objects), or a strategy that generates such
       values.
-    * `shape` may be an integer >= 0, a tuple of length >= 0 of such
+    * ``shape`` may be an integer >= 0, a tuple of length >= 0 of such
       integers, or a strategy that generates such values.
-    * `elements` is a strategy for generating values to put in the array.
+    * ``elements`` is a strategy for generating values to put in the array.
       If it is None a suitable value will be inferred based on the dtype,
       which may give any legal value (including eg ``NaN`` for floats).
       If you have more specific requirements, you should supply your own
       elements strategy.
-    * `fill` is a strategy that may be used to generate a single background
+    * ``fill`` is a strategy that may be used to generate a single background
       value for the array. If None, a suitable default will be inferred
       based on the other arguments. If set to
       :func:`st.nothing() <hypothesis.strategies.nothing>` then filling
       behaviour will be disabled entirely and every element will be generated
       independently.
-    * `unique` specifies if the elements of the array should all be
+    * ``unique`` specifies if the elements of the array should all be
       distinct from one another. Note that in this case multiple NaN values
       may still be allowed. If fill is also set, the only valid values for
-      it to return are NaN values (anything for which
-      :func:`numpy.isnan <numpy.isnan>` returns True. So e.g. for complex
-      numbers (nan+1j) is also a valid fill). Note that if unique is set to
-      True the generated values must be hashable.
+      it to return are NaN values (anything for which :func:`numpy.isnan`
+      returns True. So e.g. for complex numbers (nan+1j) is also a valid fill).
+      Note that if unique is set to True the generated values must be hashable.
 
-    Arrays of specified `dtype` and `shape` are generated for example
+    Arrays of specified ``dtype`` and ``shape`` are generated for example
     like this:
 
     .. code-block:: pycon
@@ -249,7 +248,7 @@ def arrays(
       array([[-8,  6,  3],
              [-6,  4,  6]], dtype=int8)
 
-    - see :doc:`What you can generate and how <data>`.
+    - See :doc:`What you can generate and how <data>`.
 
     .. code-block:: pycon
 
@@ -380,7 +379,7 @@ def unsigned_integer_dtypes(endianness='?', sizes=(8, 16, 32, 64)):
 def integer_dtypes(endianness='?', sizes=(8, 16, 32, 64)):
     """Return a strategy for signed integer dtypes.
 
-    endianness and sizes are treated as for `unsigned_integer_dtypes`.
+    endianness and sizes are treated as for :func:`unsigned_integer_dtypes`.
 
     """
     return dtype_factory('i', sizes, (8, 16, 32, 64), endianness)
@@ -403,7 +402,7 @@ def floating_dtypes(endianness='?', sizes=(16, 32, 64)):
 
 @defines_dtype_strategy
 def complex_number_dtypes(endianness='?', sizes=(64, 128)):
-    """Return a strategy complex-number dtypes.
+    """Return a strategy for complex-number dtypes.
 
     sizes is the total size in bits of a complex number, which consists
     of two floats.  Complex halfs (a 16-bit real part) are not supported
@@ -486,7 +485,7 @@ def nested_dtypes(subtype_strategy=scalar_dtypes(),
     """Return the most-general dtype strategy.
 
     Elements drawn from this strategy may be simple (from the
-    subtype_strategy), or several such values drawn from `array_dtypes`
+    subtype_strategy), or several such values drawn from :func:`array_dtypes`
     with ``allow_subarrays=True``. Subdtypes in an array dtype may be
     nested to any depth, subject to the max_leaves argument.
 
