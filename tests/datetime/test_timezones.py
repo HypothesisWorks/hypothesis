@@ -27,11 +27,6 @@ from hypothesis.errors import InvalidArgument
 from tests.common.debug import minimal
 from hypothesis.extra.pytz import timezones
 from hypothesis.strategies import times, datetimes, sampled_from
-from hypothesis.strategytests import strategy_test_suite
-
-TestStandardDescriptorFeatures1 = strategy_test_suite(timezones())
-TestStandardDescriptorFeatures_datetimes2 = strategy_test_suite(
-    datetimes(timezones=timezones()))
 
 
 def test_utc_is_minimal():

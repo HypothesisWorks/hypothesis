@@ -22,7 +22,6 @@ from faker.providers import BaseProvider
 
 from hypothesis import given
 from tests.common.debug import minimal
-from hypothesis.strategytests import strategy_test_suite
 from hypothesis.extra.fakefactory import fake_factory
 
 
@@ -88,20 +87,3 @@ def test_fake_factory_errors_if_unsupported_method():
 def test_fake_factory_errors_if_private_ish_method():
     with pytest.raises(ValueError):
         fake_factory(u'_Generator__config')
-
-
-TestFakeEmail = strategy_test_suite(
-    fake_factory(u'email')
-)
-
-TestFakeNames = strategy_test_suite(
-    fake_factory(u'name')
-)
-
-TestFakeEnglishNames = strategy_test_suite(
-    fake_factory(u'name', locale=u'en_US')
-)
-
-TestStates = strategy_test_suite(
-    fake_factory(u'state')
-)

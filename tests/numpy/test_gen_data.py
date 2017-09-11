@@ -26,14 +26,8 @@ import hypothesis.extra.numpy as nps
 from hypothesis import given, settings
 from hypothesis.errors import InvalidArgument
 from tests.common.debug import minimal, find_any
-from hypothesis.strategytests import strategy_test_suite
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import text_type, binary_type
-
-TestFloats = strategy_test_suite(nps.arrays(float, ()))
-TestIntMatrix = strategy_test_suite(nps.arrays(int, (3, 2)))
-TestBoolTensor = strategy_test_suite(nps.arrays(bool, (2, 2, 2)))
-
 
 STANDARD_TYPES = list(map(np.dtype, [
     u'int8', u'int32', u'int64',
