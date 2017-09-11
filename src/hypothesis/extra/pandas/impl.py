@@ -32,7 +32,6 @@ from hypothesis.control import reject
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.branchcheck import check, check_function
 
-
 try:
     from pandas.api.types import is_categorical_dtype
 except ImportError:  # pragma: no cover
