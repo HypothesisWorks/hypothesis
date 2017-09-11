@@ -524,12 +524,12 @@ class StateForActualGivenExecution(object):
                 if self.settings.deadline is not_set:
                     if (
                         not self.__warned_deadline and
-                        runtime >= 500
+                        runtime >= 200
                     ):
                         self.__warned_deadline = True
                         note_deprecation((
                             'Test took %.2fms to run. In future the default '
-                            'deadline setting will be 500ms, which will '
+                            'deadline setting will be 200ms, which will '
                             'make this an error. You can set deadline to '
                             'an explicit value of e.g. %d to turn tests '
                             'slower than this into an error, or you can set '
