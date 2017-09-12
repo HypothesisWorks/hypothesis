@@ -47,6 +47,16 @@ def test_unique_indexes_of_small_values(ix):
     assert len(set(ix)) == len(ix)
 
 
+int64s = npst.from_dtype(np.dtype(int))
+
+
+@given(int64s, int64s | st.none(), st.data())
+def test_arbitrary_range_index(i, j, data):
+    if j is not None:
+        i, j = sorted((i, j))
+    data.draw(pdst.range_indexes(i, j))
+
+
 @given(st.data())
 def test_generate_arbitrary_indices(data):
     min_size = data.draw(st.integers(0, 10), 'min_size')
