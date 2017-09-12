@@ -133,7 +133,7 @@ def main():
 
     print(
         u'The SQLite Hypothesis database format has been deprecated and will '
-        u'Go away in a future version of Hypothesis. Please switch to the '
+        u'go away in a future version of Hypothesis. Please switch to the '
         u'directory based format, which handles merging correctly '
         u'automatically.', file=sys.stderr)
 
