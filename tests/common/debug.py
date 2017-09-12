@@ -20,8 +20,8 @@ from __future__ import division, print_function, absolute_import
 import pytest
 
 from hypothesis import settings as Settings
-from hypothesis import find, given
-from hypothesis.errors import NoSuchExample
+from hypothesis import find, given, assume, reject
+from hypothesis.errors import Unsatisfiable
 
 TIME_INCREMENT = 0.01
 
@@ -91,9 +91,14 @@ def find_any(
 
 
 def assert_no_examples(strategy, condition=None):
-    with pytest.raises(NoSuchExample):
+    if condition is None:
+        def predicate(x): reject()
+    else:
+        def predicate(x): assume(condition(x))
+
+    with pytest.raises(Unsatisfiable):
         find(
-            strategy, condition or (lambda x: True),
+            strategy, predicate,
             settings=Settings(max_iterations=100, max_shrinks=1)
         )
 
