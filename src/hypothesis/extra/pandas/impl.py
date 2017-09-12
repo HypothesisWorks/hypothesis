@@ -137,7 +137,7 @@ class ValueIndexStrategy(st.SearchStrategy):
             dtype=self.dtype, values=result, elements=self.elements,
             draw=data.draw
         )
-        return pandas.Index(result, dtype=dtype)
+        return pandas.Index(result, dtype=dtype, tupleize_cols=False)
 
 
 DEFAULT_MAX_SIZE = 10
@@ -174,7 +174,9 @@ def indexes(
     Arguments:
 
     * elements is a strategy which will be used to generate the individual
-      values of the index. If None, it will be inferred from the dtype.
+      values of the index. If None, it will be inferred from the dtype. Note:
+      even if the elements strategy produces tuples, the generated value
+      will not be a MultiIndex.
     * dtype is the dtype of the resulting index. If None, it will be inferred
       from the elements strategy. At least one of dtype or elements must be
       provided.
