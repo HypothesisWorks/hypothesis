@@ -146,6 +146,16 @@ DEFAULT_MAX_SIZE = 10
 @st.cacheable
 @st.defines_strategy
 def range_indexes(min_size=0, max_size=None):
+    """Provides a strategy which generates an :class:`~pandas.Index` whose
+    values are 0, 1, ..., n for some n.
+
+    Arguments:
+
+    * min_size is the smallest number of elements the index can have.
+    * max_size is the largest number of elements the index can have. If None
+      it will default to some suitable value based on min_size.
+
+    """
     st.check_valid_interval(min_size, max_size, 'min_size', 'max_size')
     if max_size is None:
         max_size = min_size + DEFAULT_MAX_SIZE
@@ -160,6 +170,8 @@ def indexes(
     elements=None, dtype=None, min_size=0, max_size=None, unique=True,
 ):
     """Provides a strategy for producing a :class:`pandas.Index`.
+
+    Arguments:
 
     * elements is a strategy which will be used to generate the individual
       values of the index. If None, it will be inferred from the dtype.
