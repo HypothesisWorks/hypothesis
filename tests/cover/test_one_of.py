@@ -17,14 +17,11 @@
 
 from __future__ import division, print_function, absolute_import
 
-import pytest
-
 import hypothesis.strategies as st
-from hypothesis.errors import NoExamples
+from tests.common.debug import assert_no_examples
 
 
 def test_one_of_empty():
     e = st.one_of()
     assert e.is_empty
-    with pytest.raises(NoExamples):
-        e.example()
+    assert_no_examples(e)

@@ -17,8 +17,11 @@
 
 from __future__ import division, print_function, absolute_import
 
+import pytest
+
 from hypothesis import settings as Settings
-from hypothesis import find
+from hypothesis import find, given, assume
+from hypothesis.errors import Unsatisfiable
 
 TIME_INCREMENT = 0.01
 
@@ -85,3 +88,31 @@ def find_any(
         settings=settings,
         random=random,
     )
+
+
+def assert_no_examples(strategy, condition=None):
+    @Settings(perform_health_check=False, max_examples=1, max_iterations=100)
+    @given(strategy)
+    def test(s):
+        if condition is not None:
+            assume(condition(s))
+
+    with pytest.raises(Unsatisfiable):
+        test()
+
+
+def assert_all_examples(strategy, predicate):
+    """Checks that there are no examples with given strategy that do not match
+    predicate.
+
+    :param strategy: Hypothesis strategy to check
+    :param predicate: (callable) Predicate that takes string example and
+        returns bool
+
+    """
+    @given(strategy)
+    def assert_examples(s):
+        assert predicate(s), \
+            'Found %r using strategy %s which does not match' % (s, strategy)
+
+    assert_examples()

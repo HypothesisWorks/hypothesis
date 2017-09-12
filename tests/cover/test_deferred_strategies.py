@@ -20,9 +20,8 @@ from __future__ import division, print_function, absolute_import
 import pytest
 
 from hypothesis import strategies as st
-from hypothesis import find, settings
-from hypothesis.errors import NoSuchExample, InvalidArgument
-from tests.common.debug import minimal
+from hypothesis.errors import InvalidArgument
+from tests.common.debug import minimal, assert_no_examples
 
 
 def test_binary_tree():
@@ -114,12 +113,12 @@ def test_can_draw_one_of_self():
 
 def test_hidden_self_references_just_result_in_no_example():
     bad = st.deferred(lambda: st.none().flatmap(lambda _: bad))
-    assert_actually_empty(bad)
+    assert_no_examples(bad)
 
 
 def test_self_recursive_flatmap():
     bad = st.deferred(lambda: bad.flatmap(lambda x: st.none()))
-    assert_actually_empty(bad)
+    assert_no_examples(bad)
 
 
 def test_self_reference_through_one_of_can_detect_emptiness():
@@ -127,22 +126,17 @@ def test_self_reference_through_one_of_can_detect_emptiness():
     assert bad.is_empty
 
 
-def assert_actually_empty(s):
-    with pytest.raises(NoSuchExample):
-        find(s, lambda x: True, settings=settings(max_shrinks=0))
-
-
 def test_self_tuple_draws_nothing():
     x = st.deferred(lambda: st.tuples(x))
-    assert_actually_empty(x)
+    assert_no_examples(x)
 
 
 def test_mutually_recursive_tuples_draw_nothing():
     x = st.deferred(lambda: st.tuples(y))
     y = st.tuples(x)
 
-    assert_actually_empty(x)
-    assert_actually_empty(y)
+    assert_no_examples(x)
+    assert_no_examples(y)
 
 
 def test_self_recursive_lists():

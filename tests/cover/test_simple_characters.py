@@ -22,8 +22,8 @@ import unicodedata
 import pytest
 
 from hypothesis import find
-from hypothesis.errors import NoSuchExample, InvalidArgument
-from tests.common.debug import find_any
+from hypothesis.errors import InvalidArgument
+from tests.common.debug import find_any, assert_no_examples
 from hypothesis.strategies import characters
 from hypothesis.internal.compat import text_type
 
@@ -58,8 +58,8 @@ def test_characters_of_specific_groups():
     find(st, lambda c: unicodedata.category(c) == 'Lu')
     find(st, lambda c: unicodedata.category(c) == 'Nd')
 
-    with pytest.raises(NoSuchExample):
-        find(st, lambda c: unicodedata.category(c) not in ('Lu', 'Nd'))
+    assert_no_examples(
+        st, lambda c: unicodedata.category(c) not in ('Lu', 'Nd'))
 
 
 def test_exclude_characters_of_specific_groups():
@@ -68,8 +68,7 @@ def test_exclude_characters_of_specific_groups():
     find(st, lambda c: unicodedata.category(c) != 'Lu')
     find(st, lambda c: unicodedata.category(c) != 'Nd')
 
-    with pytest.raises(NoSuchExample):
-        find(st, lambda c: unicodedata.category(c) in ('Lu', 'Nd'))
+    assert_no_examples(st, lambda c: unicodedata.category(c) in ('Lu', 'Nd'))
 
 
 def test_find_one():
@@ -82,8 +81,7 @@ def test_find_something_rare():
 
     find(st, lambda c: unicodedata.category(c) == 'Zs')
 
-    with pytest.raises(NoSuchExample):
-        find(st, lambda c: unicodedata.category(c) != 'Zs')
+    assert_no_examples(st, lambda c: unicodedata.category(c) != 'Zs')
 
 
 def test_whitelisted_characters_alone():
@@ -110,8 +108,7 @@ def test_whitelisted_characters_override():
     find_any(st, lambda c: c in good_characters)
     find_any(st, lambda c: c in '0123456789')
 
-    with pytest.raises(NoSuchExample):
-        find_any(st, lambda c: c not in good_characters + '0123456789')
+    assert_no_examples(st, lambda c: c not in good_characters + '0123456789')
 
 
 def test_blacklisted_characters():
@@ -121,8 +118,7 @@ def test_blacklisted_characters():
 
     assert '1' == find(st, lambda c: True)
 
-    with pytest.raises(NoSuchExample):
-        find(st, lambda c: c in bad_chars)
+    assert_no_examples(st, lambda c: c in bad_chars)
 
 
 def test_whitelist_characters_disjoint_blacklist_characters():
@@ -132,5 +128,4 @@ def test_whitelist_characters_disjoint_blacklist_characters():
                     blacklist_characters=bad_chars,
                     whitelist_characters=good_chars)
 
-    with pytest.raises(NoSuchExample):
-        find(st, lambda c: c in bad_chars)
+    assert_no_examples(st, lambda c: c in bad_chars)

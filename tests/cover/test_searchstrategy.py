@@ -23,7 +23,7 @@ from collections import namedtuple
 import pytest
 
 from hypothesis.types import RandomWithSeed
-from hypothesis.errors import NoExamples
+from tests.common.debug import assert_no_examples
 from hypothesis.strategies import just, tuples, randoms, booleans, integers
 from hypothesis.internal.compat import text_type
 from hypothesis.searchstrategy.strategies import one_of_strategies
@@ -78,8 +78,7 @@ def test_can_map():
 
 
 def test_example_raises_unsatisfiable_when_too_filtered():
-    with pytest.raises(NoExamples):
-        integers().filter(lambda x: False).example()
+    assert_no_examples(integers().filter(lambda x: False))
 
 
 def nameless_const(x):
