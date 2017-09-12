@@ -22,6 +22,7 @@ from collections import namedtuple
 
 import hypothesis.strategies as s
 from hypothesis import settings
+from tests.common.utils import validate_deprecation
 from hypothesis.database import SQLiteExampleDatabase
 from hypothesis.stateful import GenericStateMachine
 from hypothesis.tools.mergedbs import merge_dbs
@@ -34,7 +35,8 @@ Delete = namedtuple(u'Delete', (u'key', u'value', u'target'))
 class BackendForTesting(SQLiteExampleDatabase):
 
     def __init__(self):
-        super(BackendForTesting, self).__init__()
+        with validate_deprecation():
+            super(BackendForTesting, self).__init__()
         self.create_db_if_needed()
         self.mirror = set()
 

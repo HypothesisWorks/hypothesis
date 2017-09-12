@@ -131,6 +131,12 @@ def main():
     print(u'%d new entries and %d deletions from merge' % (
         result.inserts, result.deletions))
 
+    print(
+        u'The SQLite Hypothesis database format has been deprecated and will '
+        u'Go away in a future version of Hypothesis. Please switch to the '
+        u'directory based format, which handles merging correctly '
+        u'automatically.', file=sys.stderr)
+
 
 if __name__ == u'__main__':
     main()

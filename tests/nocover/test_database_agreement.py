@@ -20,6 +20,7 @@ from __future__ import division, print_function, absolute_import
 import os
 import shutil
 import tempfile
+import warnings
 
 import hypothesis.strategies as st
 from hypothesis.database import SQLiteExampleDatabase, \
@@ -36,9 +37,12 @@ class DatabaseComparison(RuleBasedStateMachine):
 
         self.dbs = [
             DirectoryBasedExampleDatabase(exampledir),
-            InMemoryExampleDatabase(), SQLiteExampleDatabase(':memory:'),
+            InMemoryExampleDatabase(),
             DirectoryBasedExampleDatabase(exampledir),
         ]
+
+        with warnings.catch_warnings():
+            self.dbs.append(SQLiteExampleDatabase(':memory:'))
 
     keys = Bundle('keys')
     values = Bundle('values')

@@ -23,6 +23,7 @@ import binascii
 import threading
 from contextlib import contextmanager
 
+from hypothesis._settings import note_deprecation
 from hypothesis.internal.compat import FileNotFoundError, sha1, hbytes, \
     b64decode, b64encode
 
@@ -132,6 +133,20 @@ class SQLiteExampleDatabase(ExampleDatabase):
         self.current_connection = threading.local()
         global sqlite3
         import sqlite3
+
+        if path == u':memory:':
+            note_deprecation(
+                'The SQLite database backend has been deprecated. '
+                'Use InMemoryExampleDatabase or set database_file=":memory:" '
+                'instead.'
+            )
+        else:
+            note_deprecation(
+                'The SQLite database backend has been deprecated. '
+                'Set database_file to some path name not ending in .db, '
+                '.sqlite or .sqlite3 to get the new directory based database '
+                'backend instead.'
+            )
 
     def connection(self):
         if not hasattr(self.current_connection, 'connection'):
