@@ -160,7 +160,7 @@ def range_indexes(min_size=0, max_size=None):
     if max_size is None:
         max_size = min_size + DEFAULT_MAX_SIZE
     return st.integers(min_size, max_size).map(
-        lambda i: pandas.Index(hrange(i), dtype=int)
+        lambda i: pandas.RangeIndex(i),
     )
 
 
