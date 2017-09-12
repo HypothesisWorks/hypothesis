@@ -539,9 +539,7 @@ class StateForActualGivenExecution(object):
                 elif runtime >= self.settings.deadline:
                     raise DeadlineExceeded((
                         'Test took %.2fms, which exceeds the deadline of '
-                        '%.2fms') % (
-                            runtime, self.settings.deadline,
-                    )
+                        '%.2fms') % (runtime, self.settings.deadline)
                     )
                 return result
             self.test = timed_test
