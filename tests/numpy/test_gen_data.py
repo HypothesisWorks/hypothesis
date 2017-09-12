@@ -273,3 +273,13 @@ def test_may_not_fill_with_non_nan_when_unique_is_set_and_type_is_not_number():
 def test_inferring_from_time_dtypes_gives_same_dtype(data, dtype):
     ex = data.draw(nps.from_dtype(dtype))
     assert dtype == ex.dtype
+
+
+@given(st.data(), nps.byte_string_dtypes() | nps.unicode_string_dtypes())
+def test_inferred_string_strategies_roundtrip(data, dtype):
+    # Check that we never generate too-long or nul-terminated strings, which
+    # cannot be read back out of an array.
+    arr = np.zeros(shape=1, dtype=dtype)
+    ex = data.draw(nps.from_dtype(arr.dtype))
+    arr[0] = ex
+    assert arr[0] == ex

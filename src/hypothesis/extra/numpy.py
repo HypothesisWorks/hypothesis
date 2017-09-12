@@ -53,7 +53,10 @@ def from_dtype(dtype):
     elif dtype.kind == u'c':
         result = st.complex_numbers()
     elif dtype.kind in (u'S', u'a'):
-        result = st.binary()
+        # Numpy strings are null-terminated; only allow round-trippable values.
+        # `itemsize == 0` means 'fixed length determined at array creation'
+        result = st.binary(max_size=dtype.itemsize or None
+                           ).filter(lambda b: b[-1:] != b'\0')
     elif dtype.kind == u'u':
         result = st.integers(min_value=0,
                              max_value=2 ** (8 * dtype.itemsize) - 1)
@@ -61,7 +64,9 @@ def from_dtype(dtype):
         overflow = 2 ** (8 * dtype.itemsize - 1)
         result = st.integers(min_value=-overflow, max_value=overflow - 1)
     elif dtype.kind == u'U':
-        result = st.text()
+        # Encoded in UTF-32 (four bytes/codepoint) and null-terminated
+        result = st.text(max_size=(dtype.itemsize or 0) // 4 or None
+                         ).filter(lambda b: b[-1:] != u'\0')
     elif dtype.kind in (u'm', u'M'):
         if '[' in dtype.str:
             res = st.just(dtype.str.split('[')[-1][:-1])
