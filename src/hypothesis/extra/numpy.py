@@ -55,11 +55,11 @@ def from_dtype(dtype):
     elif dtype.kind in (u'S', u'a'):
         result = st.binary()
     elif dtype.kind == u'u':
-        result = st.integers(
-            min_value=0, max_value=1 << (4 * dtype.itemsize) - 1)
+        result = st.integers(min_value=0,
+                             max_value=2 ** (8 * dtype.itemsize) - 1)
     elif dtype.kind == u'i':
-        min_integer = -1 << (4 * dtype.itemsize - 1)
-        result = st.integers(min_value=min_integer, max_value=-min_integer - 1)
+        overflow = 2 ** (8 * dtype.itemsize - 1)
+        result = st.integers(min_value=-overflow, max_value=overflow - 1)
     elif dtype.kind == u'U':
         result = st.text()
     elif dtype.kind in (u'm', u'M'):
@@ -86,7 +86,7 @@ def order_check(name, floor, small, large):
         floor, small, name=name
     )
     check_argument(
-        small <= large, u'min_{name}={} is larger than max_name={}',
+        small <= large, u'min_{name}={} is larger than max_{name}={}',
         small, large, name=name
     )
 
