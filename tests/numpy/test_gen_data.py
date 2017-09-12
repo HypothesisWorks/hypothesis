@@ -23,7 +23,7 @@ from flaky import flaky
 
 import hypothesis.strategies as st
 import hypothesis.extra.numpy as nps
-from hypothesis import given, settings
+from hypothesis import given, assume, settings
 from hypothesis.errors import InvalidArgument
 from tests.common.debug import minimal, find_any
 from hypothesis.searchstrategy import SearchStrategy
@@ -281,5 +281,17 @@ def test_inferred_string_strategies_roundtrip(data, dtype):
     # cannot be read back out of an array.
     arr = np.zeros(shape=1, dtype=dtype)
     ex = data.draw(nps.from_dtype(arr.dtype))
+    arr[0] = ex
+    assert arr[0] == ex
+
+
+@given(st.data(), nps.scalar_dtypes())
+def test_all_inferred_scalar_strategies_roundtrip(data, dtype):
+    # We only check scalars here, because record/compound/nested dtypes always
+    # give an array of np.void objects.  We're interested in whether scalar
+    # values are safe, not known type coercion.
+    arr = np.zeros(shape=1, dtype=dtype)
+    ex = data.draw(nps.from_dtype(arr.dtype))
+    assume(ex == ex)  # NaN is uninteresting for this test
     arr[0] = ex
     assert arr[0] == ex
