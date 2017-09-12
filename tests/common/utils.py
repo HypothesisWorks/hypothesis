@@ -18,7 +18,6 @@
 from __future__ import division, print_function, absolute_import
 
 import sys
-import functools
 import traceback
 import contextlib
 from io import BytesIO, StringIO
@@ -88,7 +87,7 @@ def validate_deprecation():
 
 def checks_deprecated_behaviour(func):
     """A decorator for testing deprecated behaviour."""
-    @functools.wraps(func)
+    @proxies(func)
     def _inner(*args, **kwargs):
         with validate_deprecation():
             return func(*args, **kwargs)
