@@ -57,6 +57,11 @@ def test_arbitrary_range_index(i, j, data):
     data.draw(pdst.range_indexes(i, j))
 
 
+@given(pdst.range_indexes())
+def test_basic_range_indexes(ix):
+    assert isinstance(ix, pandas.RangeIndex)
+
+
 @given(st.data())
 def test_generate_arbitrary_indices(data):
     min_size = data.draw(st.integers(0, 10), 'min_size')
