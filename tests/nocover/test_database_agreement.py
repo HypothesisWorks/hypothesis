@@ -20,9 +20,9 @@ from __future__ import division, print_function, absolute_import
 import os
 import shutil
 import tempfile
-import warnings
 
 import hypothesis.strategies as st
+from tests.common.utils import validate_deprecation
 from hypothesis.database import SQLiteExampleDatabase, \
     InMemoryExampleDatabase, DirectoryBasedExampleDatabase
 from hypothesis.stateful import Bundle, RuleBasedStateMachine, rule
@@ -41,7 +41,7 @@ class DatabaseComparison(RuleBasedStateMachine):
             DirectoryBasedExampleDatabase(exampledir),
         ]
 
-        with warnings.catch_warnings():
+        with validate_deprecation():
             self.dbs.append(SQLiteExampleDatabase(':memory:'))
 
     keys = Bundle('keys')
