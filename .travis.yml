@@ -26,51 +26,46 @@ env:
         - BUILD_RUNTIMES=$HOME/.runtimes
         - FORMAT_ALL=true
 
-    matrix:
-        # Core tests that we want to run first.
-        - TASK=check-pyup-yml
-        - TASK=check-release-file
-        - TASK=check-shellcheck
-        - TASK=documentation
-        - TASK=lint
-        - TASK=doctest
-        - TASK=check-rst
-        - TASK=check-format
-        - TASK=check-coverage
-        - TASK=check-requirements
-        - TASK=check-pypy
-        - TASK=check-py27
-        - TASK=check-py36
-        - TASK=check-quality
+jobs:
+# Only two stages (test & deploy), for maximum throughput
+  include:
+    - stage: tests
+    # Quick, static analysis jobs to run first
+      script: python scripts/run_travis_make_task.py TASK=check-release-file
+    - script: python scripts/run_travis_make_task.py TASK=check-shellcheck
+    - script: python scripts/run_travis_make_task.py TASK=documentation
+    - script: python scripts/run_travis_make_task.py TASK=lint
+    - script: python scripts/run_travis_make_task.py TASK=check-rst
+    - script: python scripts/run_travis_make_task.py TASK=check-format
+    - script: python scripts/run_travis_make_task.py TASK=check-requirements
 
-        # Less important tests that will probably
-        # pass whenever the above do but are still
-        # worth testing.
-        - TASK=check-unicode
-        - TASK=check-ancient-pip
-        - TASK=check-pure-tracer
-        - TASK=check-py273
-        - TASK=check-py27-typing
-        - TASK=check-py34
-        - TASK=check-py35
-        - TASK=check-nose
-        - TASK=check-pytest28
-        - TASK=check-faker070
-        - TASK=check-faker-latest
-        - TASK=check-django20
-        - TASK=check-django18
-        - TASK=check-django111
-        - TASK=check-pandas19
-        - TASK=check-pandas20
-        - TASK=check-pandas21
-        - TASK=check-pandas22
-        - TASK=deploy
+    # Important checks that we want to run on most builds, but skip if the
+    # prechecks failed.
+    - script: python scripts/run_travis_make_task.py TASK=check-coverage
+    - script: python scripts/run_travis_make_task.py TASK=check-pypy
+    - script: python scripts/run_travis_make_task.py TASK=check-py27
+    - script: python scripts/run_travis_make_task.py TASK=check-py36
+    - script: python scripts/run_travis_make_task.py TASK=check-quality
 
-script:
-    - python scripts/run_travis_make_task.py
+    # Less important tests that will probably pass whenever the above do
+    # but are still worth testing.
+    - script: python scripts/run_travis_make_task.py TASK=check-unicode
+    - script: python scripts/run_travis_make_task.py TASK=check-ancient-pip
+    - script: python scripts/run_travis_make_task.py TASK=check-py273
+    - script: python scripts/run_travis_make_task.py TASK=check-py27-typing
+    - script: python scripts/run_travis_make_task.py TASK=check-py34
+    - script: python scripts/run_travis_make_task.py TASK=check-py35
+    - script: python scripts/run_travis_make_task.py TASK=check-nose
+    - script: python scripts/run_travis_make_task.py TASK=check-pytest28
+    - script: python scripts/run_travis_make_task.py TASK=check-faker070
+    - script: python scripts/run_travis_make_task.py TASK=check-faker071
+    - script: python scripts/run_travis_make_task.py TASK=check-django18
+    - script: python scripts/run_travis_make_task.py TASK=check-django110
+    - script: python scripts/run_travis_make_task.py TASK=check-django111
 
-matrix:
-    fast_finish: true
+    # Do the deploy (doesn't do anything if not on master).
+    - stage: deploy
+      script: python scripts/run_travis_make_task.py TASK=deploy
 
 notifications:
   email:
