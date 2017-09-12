@@ -22,6 +22,15 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.26.0 - 2017-09-12
+-------------------
+
+Hypothesis now emits deprecation warnings if you are using the legacy
+SQLite example database format, or the tool for merging them. These were
+already documented as deprecated, so this doesn't change their deprecation
+status, only that we warn about it.
+
+-------------------
 3.25.1 - 2017-09-12
 -------------------
 
