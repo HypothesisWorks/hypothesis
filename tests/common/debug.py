@@ -102,12 +102,10 @@ def assert_no_examples(strategy, condition=None):
 
 
 def assert_all_examples(strategy, predicate):
-    """Checks that there are no examples with given strategy that do not match
-    predicate.
+    """Asserts that all examples of the given strategy match the predicate.
 
     :param strategy: Hypothesis strategy to check
-    :param predicate: (callable) Predicate that takes string example and
-        returns bool
+    :param predicate: (callable) Predicate that takes example and returns bool
 
     """
     @given(strategy)
