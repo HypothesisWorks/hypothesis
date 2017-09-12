@@ -22,6 +22,16 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.25.1 - 2017-09-12
+-------------------
+
+This release fixes a bug with generating numpy datetime and timedelta types:
+When inferring the strategy from the dtype, datetime and timedelta dtypes with
+sub-second precision would always produce examples with one second resolution.
+Inferring a strategy from a time dtype will now always produce example with the
+same precision.
+
+-------------------
 3.25.0 - 2017-09-12
 -------------------
 
