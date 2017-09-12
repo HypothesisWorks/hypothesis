@@ -63,9 +63,11 @@ def from_dtype(dtype):
     elif dtype.kind == u'U':
         result = st.text()
     elif dtype.kind in (u'm', u'M'):
-        res = st.just(dtype.str[-2]) if '[' in dtype.str else \
-            st.sampled_from(TIME_RESOLUTIONS)
-        result = st.builds(dtype.type, st.integers(1 - 2**63, 2**63 - 1), res)
+        if '[' in dtype.str:
+            res = st.just(dtype.str.split('[')[-1][:-1])
+        else:
+            res = st.sampled_from(TIME_RESOLUTIONS)
+        result = st.builds(dtype.type, st.integers(-2**63, 2**63 - 1), res)
     else:
         raise InvalidArgument(u'No strategy inference for {}'.format(dtype))
     return result.map(dtype.type)

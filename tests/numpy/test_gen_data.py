@@ -262,3 +262,14 @@ def test_may_not_fill_with_non_nan_when_unique_is_set_and_type_is_not_number():
 
     with pytest.raises(InvalidArgument):
         test()
+
+
+@given(st.data(),
+       st.builds('{}[{}]'.format,
+                 st.sampled_from(('datetime64', 'timedelta64')),
+                 st.sampled_from(nps.TIME_RESOLUTIONS)
+                 ).map(np.dtype)
+       )
+def test_inferring_from_time_dtypes_gives_same_dtype(data, dtype):
+    ex = data.draw(nps.from_dtype(dtype))
+    assert dtype == ex.dtype
