@@ -19,7 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 from hypothesis import settings as Settings
 from hypothesis import find, given, assume, reject
-from hypothesis.errors import Unsatisfiable
+from hypothesis.errors import Unsatisfiable, NoSuchExample
 
 TIME_INCREMENT = 0.01
 
@@ -102,7 +102,7 @@ def assert_no_examples(strategy, condition=None):
             settings=Settings(max_iterations=100, max_shrinks=1)
         )
         assert False, "Expected no results but found %r" % (result,)
-    except Unsatisfiable:
+    except (Unsatisfiable, NoSuchExample):
         pass
 
 
