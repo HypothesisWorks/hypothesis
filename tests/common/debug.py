@@ -90,9 +90,11 @@ def find_any(
 
 def assert_no_examples(strategy, condition=None):
     if condition is None:
-        def predicate(x): reject()
+        def predicate(x):
+            reject()
     else:
-        def predicate(x): assume(condition(x))
+        def predicate(x):
+            assume(condition(x))
 
     try:
         result = find(
