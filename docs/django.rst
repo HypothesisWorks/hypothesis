@@ -25,6 +25,9 @@ I strongly recommend not using
 unless you really have to.
 Because Hypothesis runs this in a loop the performance problems it normally has
 are significantly exacerbated and your tests will be really slow.
+If you are using :class:`~hypothesis.extra.django.TransactionTestCase`,
+you may need to use ``@settings(suppress_health_check=[HealthCheck.too_slow])``
+to avoid :doc:`errors due to slow example generation </healthchecks>`.
 
 In addition to the above, Hypothesis has some limited support for automatically
 deriving strategies for your model types, which you can then customize further.
