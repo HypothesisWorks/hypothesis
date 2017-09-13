@@ -4,7 +4,7 @@ What you can generate and how
 
 *Most things should be easy to generate and everything should be possible.*
 
-To support this principle Hypothesis provides strategies for most of built-in
+To support this principle Hypothesis provides strategies for most built-in
 types with arguments to constrain or adjust the output, as well as higher-order
 strategies that can be composed to generate more complex types.
 
