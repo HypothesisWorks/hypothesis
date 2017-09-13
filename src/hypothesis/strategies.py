@@ -424,13 +424,13 @@ def lists(
     elements=None, min_size=None, average_size=None, max_size=None,
     unique_by=None, unique=False,
 ):
-    """Returns a list containing values drawn from elements length in the
+    """Returns a list containing values drawn from elements with length in the
     interval [min_size, max_size] (no bounds in that direction if these are
     None). If max_size is 0 then elements may be None and only the empty list
     will be drawn.
 
     average_size may be used as a size hint to roughly control the size
-    of list but it may not be the actual average of sizes you get, due
+    of the list but it may not be the actual average of sizes you get, due
     to a variety of factors.
 
     If unique is True (or something that evaluates to True), we compare direct
