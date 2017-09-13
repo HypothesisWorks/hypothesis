@@ -52,7 +52,7 @@ Note that many things that you might use mapping for can also be done with
 Filtering
 ---------
 
-filter lets you reject some examples. ``s.filter(f).example()`` is some example
+Filter lets you reject some examples. ``s.filter(f).example()`` is some example
 of ``s`` such that ``f(example)`` is truthy.
 
 .. doctest::
