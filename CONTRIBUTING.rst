@@ -183,6 +183,7 @@ their individual contributions.
 * `Jeremy Thurgood <https://github.com/jerith>`_
 * `JP Viljoen <https://github.com/froztbyte>`_ (`froztbyte@froztbyte.net <mailto:froztbyte@froztbyte.net>`_)
 * `Jonty Wareing <https://www.github.com/Jonty>`_ (`jonty@jonty.co.uk <mailto:jonty@jonty.co.uk>`_)
+* `jwg4 <https://www.github.com/jwg4>`_
 * `kbara <https://www.github.com/kbara>`_
 * `Lee Begg <https://www.github.com/llnz2>`_
 * `marekventur <https://www.github.com/marekventur>`_
