@@ -29,8 +29,9 @@ from collections import namedtuple
 
 import hypothesis.strategies as st
 from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
-    Unsatisfiable, InvalidArgument, MultipleFailures, FailedHealthCheck, \
-    UnsatisfiedAssumption, HypothesisDeprecationWarning
+    Unsatisfiable, InvalidArgument, DeadlineExceeded, MultipleFailures, \
+    FailedHealthCheck, UnsatisfiedAssumption, \
+    HypothesisDeprecationWarning
 from hypothesis.control import BuildContext
 from hypothesis._settings import settings as Settings
 from hypothesis._settings import Phase, Verbosity, HealthCheck, \
@@ -39,13 +40,13 @@ from hypothesis.executors import new_style_executor, \
     default_new_style_executor
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.statistics import note_engine_for_statistics
-from hypothesis.internal.compat import str_to_bytes, get_type_hints, \
-    getfullargspec
-from hypothesis.utils.conventions import infer
+from hypothesis.internal.compat import ceil, str_to_bytes, \
+    get_type_hints, getfullargspec
+from hypothesis.utils.conventions import infer, not_set
 from hypothesis.internal.escalation import \
     escalate_hypothesis_internal_error
-from hypothesis.internal.reflection import is_mock, nicerepr, arg_string, \
-    impersonate, function_digest, fully_qualified_name, \
+from hypothesis.internal.reflection import is_mock, proxies, nicerepr, \
+    arg_string, impersonate, function_digest, fully_qualified_name, \
     define_function_signature, convert_positional_arguments, \
     get_pretty_function_description
 from hypothesis.internal.conjecture.data import Status, StopTest, \
@@ -504,7 +505,6 @@ class StateForActualGivenExecution(object):
     def __init__(self, test_runner, search_strategy, test, settings, random):
         self.test_runner = test_runner
         self.search_strategy = search_strategy
-        self.test = test
         self.settings = settings
         self.at_least_one_success = False
         self.last_exception = None
@@ -512,6 +512,37 @@ class StateForActualGivenExecution(object):
         self.falsifying_examples = ()
         self.__was_flaky = False
         self.random = random
+        self.__warned_deadline = False
+        if self.settings.deadline is None:
+            self.test = test
+        else:
+            @proxies(test)
+            def timed_test(*args, **kwargs):
+                start = time.time()
+                result = test(*args, **kwargs)
+                runtime = (time.time() - start) * 1000
+                if self.settings.deadline is not_set:
+                    if (
+                        not self.__warned_deadline and
+                        runtime >= 200
+                    ):
+                        self.__warned_deadline = True
+                        note_deprecation((
+                            'Test took %.2fms to run. In future the default '
+                            'deadline setting will be 200ms, which will '
+                            'make this an error. You can set deadline to '
+                            'an explicit value of e.g. %d to turn tests '
+                            'slower than this into an error, or you can set '
+                            'it to None to disable this check entirely.') % (
+                                runtime, ceil(runtime / 100) * 100,
+                        ))
+                elif runtime >= self.settings.deadline:
+                    raise DeadlineExceeded((
+                        'Test took %.2fms, which exceeds the deadline of '
+                        '%.2fms') % (runtime, self.settings.deadline)
+                    )
+                return result
+            self.test = timed_test
 
     def evaluate_test_data(self, data):
         if (

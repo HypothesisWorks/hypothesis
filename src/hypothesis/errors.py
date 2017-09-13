@@ -191,3 +191,7 @@ class Frozen(HypothesisException):
 class MultipleFailures(HypothesisException):
     """Indicates that Hypothesis found more than one distinct bug when testing
     your code."""
+
+
+class DeadlineExceeded(HypothesisException):
+    """Raised when an individual test body has taken too long to run."""

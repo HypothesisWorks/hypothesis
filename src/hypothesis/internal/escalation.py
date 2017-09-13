@@ -20,6 +20,8 @@ from __future__ import division, print_function, absolute_import
 import os
 import sys
 
+from hypothesis.errors import DeadlineExceeded
+
 INTERNAL_PACKAGE_DIR = os.path.dirname(os.path.abspath(__file__))
 HYPOTHESIS_ROOT = os.path.dirname(INTERNAL_PACKAGE_DIR)
 
@@ -40,5 +42,7 @@ def escalate_hypothesis_internal_error():
     error_type, _, tb = sys.exc_info()
     import traceback
     filepath = traceback.extract_tb(tb)[-1][0]
-    if is_hypothesis_file(filepath):
+    if is_hypothesis_file(filepath) and not issubclass(
+        error_type, DeadlineExceeded
+    ):
         raise

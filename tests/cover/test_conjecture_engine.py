@@ -314,7 +314,9 @@ def test_stops_after_max_examples_when_generating():
 
 
 @given(st.random_module())
-@settings(max_shrinks=0, min_satisfying_examples=1, max_examples=2)
+@settings(
+    max_shrinks=0, min_satisfying_examples=1, max_examples=2, deadline=None
+)
 def test_interleaving_engines(rnd):
     @run_to_buffer
     def x(data):

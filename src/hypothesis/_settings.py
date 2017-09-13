@@ -622,6 +622,21 @@ attempting to actually execute your test.
 """
 )
 
+settings.define_setting(
+    'deadline',
+    default=not_set,
+    description=u"""
+If set, a time in milliseconds (which may be a float to express
+smaller units of time) that a test is not allowed to exceed. Tests which take
+longer than that will be converted into errors. Set this to None to disable
+this behaviour entirely.
+
+In future this will default to 200. For now, a
+HypothesisDeprecationWarning will be emitted if you exceed that default
+deadline and have not explicitly set a deadline yourself.
+"""
+)
+
 settings.lock_further_definitions()
 
 settings.register_profile('default', settings())
