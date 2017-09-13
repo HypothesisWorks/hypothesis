@@ -21,7 +21,8 @@ import pytest
 
 from hypothesis import strategies as st
 from hypothesis import find, given
-from hypothesis.errors import NoExamples, InvalidArgument
+from hypothesis.errors import InvalidArgument
+from tests.common.debug import assert_no_examples
 
 
 def test_resampling():
@@ -62,5 +63,4 @@ def test_fixed_dictionaries_detect_empty_values():
 
 
 def test_no_examples():
-    with pytest.raises(NoExamples):
-        st.nothing().example()
+    assert_no_examples(st.nothing())

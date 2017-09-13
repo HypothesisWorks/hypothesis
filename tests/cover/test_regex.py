@@ -25,8 +25,8 @@ import pytest
 
 import hypothesis.strategies as st
 from hypothesis import given, assume
-from hypothesis.errors import NoExamples, NoSuchExample
-from tests.common.debug import find_any
+from tests.common.debug import find_any, assert_no_examples, \
+    assert_all_examples
 from hypothesis.internal.compat import PY3, hrange, hunichr
 from hypothesis.searchstrategy.regex import SPACE_CHARS, \
     UNICODE_SPACE_CHARS, HAS_WEIRD_WORD_CHARS, UNICODE_WORD_CATEGORIES, \
@@ -108,23 +108,6 @@ def test_matching(category, predicate, invert, is_unicode):
             return not predicate(s)
 
     _test_matching_pattern(category, pred, is_unicode)
-
-
-def assert_all_examples(strategy, predicate):
-    """Checks that there are no examples with given strategy that do not match
-    predicate.
-
-    :param strategy: Hypothesis strategy to check
-    :param predicate: (callable) Predicate that takes string example and
-        returns bool
-
-    """
-    @given(strategy)
-    def assert_examples(s):
-        assert predicate(s), \
-            'Found %r using strategy %s which does not match' % (s, strategy)
-
-    assert_examples()
 
 
 @pytest.mark.parametrize('pattern', [
@@ -223,8 +206,7 @@ def test_groups(pattern, is_unicode, invert):
 def test_caret_in_the_middle_does_not_generate_anything():
     r = re.compile(u'a^b')
 
-    with pytest.raises(NoExamples):
-        st.from_regex(r).example()
+    assert_no_examples(st.from_regex(r))
 
 
 def test_end_with_terminator_does_not_pad():
@@ -250,8 +232,7 @@ def test_groupref_exists():
 
 
 def test_impossible_negative_lookahead():
-    with pytest.raises(NoExamples):
-        st.from_regex(u'(?!foo)foo').example()
+    assert_no_examples(st.from_regex(u'(?!foo)foo'))
 
 
 @given(st.from_regex(u"(\\Afoo\\Z)"))
@@ -297,8 +278,7 @@ def test_negative_lookbehind():
     strategy = st.from_regex(u'[abc]*(?<!abc)d')
 
     assert_all_examples(strategy, lambda s: not s.endswith(u'abcd'))
-    with pytest.raises(NoSuchExample):
-        find_any(strategy, lambda s: s.endswith(u'abcd'))
+    assert_no_examples(strategy, lambda s: s.endswith(u'abcd'))
 
 
 def test_negative_lookahead():
@@ -306,8 +286,7 @@ def test_negative_lookahead():
     strategy = st.from_regex(u'^ab(?!cd)[abcd]*')
 
     assert_all_examples(strategy, lambda s: not s.startswith(u'abcd'))
-    with pytest.raises(NoSuchExample):
-        find_any(strategy, lambda s: s.startswith(u'abcd'))
+    assert_no_examples(strategy, lambda s: s.startswith(u'abcd'))
 
 
 @given(st.from_regex(u"^a+\\Z"))
@@ -332,8 +311,7 @@ def test_subpattern_flags():
     # "b" is case sensitive
     find_any(strategy, lambda s: s[1] == u'b')
 
-    with pytest.raises(NoSuchExample):
-        find_any(strategy, lambda s: s[1] == u'B')
+    assert_no_examples(strategy, lambda s: s[1] == u'B')
 
 
 def test_can_handle_binary_regex_which_is_not_ascii():
@@ -396,4 +374,4 @@ def test_shared_union():
     # This gets parsed as [(ANY, None), (BRANCH, (None, [[], []]))], the
     # interesting feature of which is that it contains empty sub-expressions
     # in the branch.
-    st.from_regex('.|.').example()
+    find_any(st.from_regex('.|.'))

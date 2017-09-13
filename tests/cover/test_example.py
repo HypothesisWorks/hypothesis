@@ -19,8 +19,11 @@ from __future__ import division, print_function, absolute_import
 
 from random import Random
 
+import pytest
+
 import hypothesis.strategies as st
 from hypothesis import find, given, example
+from hypothesis.errors import NoExamples
 from hypothesis.control import _current_build_context
 from tests.common.utils import checks_deprecated_behaviour
 
@@ -37,6 +40,11 @@ def test_does_not_always_give_the_same_example():
     assert len(set(
         s.example() for _ in range(100)
     )) >= 10
+
+
+def test_raises_on_no_examples():
+    with pytest.raises(NoExamples):
+        st.nothing().example()
 
 
 @checks_deprecated_behaviour

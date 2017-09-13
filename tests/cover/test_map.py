@@ -17,11 +17,9 @@
 
 from __future__ import division, print_function, absolute_import
 
-import pytest
-
 from hypothesis import strategies as st
 from hypothesis import given, assume
-from hypothesis.errors import NoExamples
+from tests.common.debug import assert_no_examples
 
 
 @given(st.integers().map(lambda x: assume(x % 3 != 0) and x))
@@ -30,5 +28,4 @@ def test_can_assume_in_map(x):
 
 
 def test_assume_in_just_raises_immediately():
-    with pytest.raises(NoExamples):
-        st.just(1).map(lambda x: assume(x == 2)).example()
+    assert_no_examples(st.just(1).map(lambda x: assume(x == 2)))

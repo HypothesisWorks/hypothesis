@@ -18,7 +18,8 @@
 from __future__ import division, print_function, absolute_import
 
 from hypothesis import settings as Settings
-from hypothesis import find
+from hypothesis import find, given, assume, reject
+from hypothesis.errors import NoSuchExample, Unsatisfiable
 
 TIME_INCREMENT = 0.01
 
@@ -85,3 +86,36 @@ def find_any(
         settings=settings,
         random=random,
     )
+
+
+def assert_no_examples(strategy, condition=None):
+    if condition is None:
+        def predicate(x):
+            reject()
+    else:
+        def predicate(x):
+            assume(condition(x))
+
+    try:
+        result = find(
+            strategy, predicate,
+            settings=Settings(max_iterations=100, max_shrinks=1)
+        )
+        assert False, 'Expected no results but found %r' % (result,)
+    except (Unsatisfiable, NoSuchExample):
+        pass
+
+
+def assert_all_examples(strategy, predicate):
+    """Asserts that all examples of the given strategy match the predicate.
+
+    :param strategy: Hypothesis strategy to check
+    :param predicate: (callable) Predicate that takes example and returns bool
+
+    """
+    @given(strategy)
+    def assert_examples(s):
+        assert predicate(s), \
+            'Found %r using strategy %s which does not match' % (s, strategy)
+
+    assert_examples()
