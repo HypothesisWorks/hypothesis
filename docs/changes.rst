@@ -22,6 +22,19 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.27.0 - 2017-09-13
+-------------------
+
+This release introduces a :attr:`~hypothesis.settings.deadline`
+setting to Hypothesis.
+
+When set this turns slow tests into errors. By default it is unset but will
+warn if you exceed 200ms, which will become the default value in a future
+release.
+
+This work was funded by `Smarkets <https://smarkets.com/>`_.
+
+-------------------
 3.26.0 - 2017-09-12
 -------------------
 
