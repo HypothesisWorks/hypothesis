@@ -1014,7 +1014,7 @@ def fractions(min_value=None, max_value=None, max_denominator=None):
     If min_value is not None then all generated values are no less than
     min_value.  If max_value is not None then all generated values are no
     greater than max_value.  min_value and max_value may be anything accepted
-    by the `python:`~fractions.Fraction` constructor.
+    by the `python:fractions.Fraction` constructor.
 
     If max_denominator is not None then the denominator of any generated
     values is no greater than max_denominator. Note that max_denominator must
