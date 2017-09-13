@@ -756,8 +756,8 @@ def from_regex(regex):
     Both byte-strings and unicode strings are supported, and will generate
     examples of the same type.
 
-    You can use regex flags (such as :const:`python:re.IGNORECASE`,
-    :const:`python:re.DOTALL` or :const:`python:re.UNICODE`) to control
+    You can use regex flags (such as :const:`re.IGNORECASE <python:re.IGNORECASE>`,
+    :const:`re.DOTALL <python:re.DOTALL>` or :const:`re.UNICODE <python:re.UNICODE>` to control
     generation. Flags can be passed either in compiled regex or inside the
     pattern with a ``(?iLmsux)`` group.
 
