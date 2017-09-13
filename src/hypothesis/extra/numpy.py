@@ -379,7 +379,8 @@ def unsigned_integer_dtypes(endianness='?', sizes=(8, 16, 32, 64)):
 def integer_dtypes(endianness='?', sizes=(8, 16, 32, 64)):
     """Return a strategy for signed integer dtypes.
 
-    endianness and sizes are treated as for :func:`unsigned_integer_dtypes`.
+    endianness and sizes are treated as for
+    :func:`unsigned_integer_dtypes`.
 
     """
     return dtype_factory('i', sizes, (8, 16, 32, 64), endianness)
@@ -485,9 +486,10 @@ def nested_dtypes(subtype_strategy=scalar_dtypes(),
     """Return the most-general dtype strategy.
 
     Elements drawn from this strategy may be simple (from the
-    subtype_strategy), or several such values drawn from :func:`array_dtypes`
-    with ``allow_subarrays=True``. Subdtypes in an array dtype may be
-    nested to any depth, subject to the max_leaves argument.
+    subtype_strategy), or several such values drawn from
+    :func:`array_dtypes` with ``allow_subarrays=True``. Subdtypes in an
+    array dtype may be nested to any depth, subject to the max_leaves
+    argument.
 
     """
     return st.recursive(subtype_strategy,
