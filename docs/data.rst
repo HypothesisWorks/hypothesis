@@ -34,7 +34,7 @@ functions for transforming the data.
 Mapping
 -------
 
-Map is probably the easiest and most useful of these to use. If you have a
+``map`` is probably the easiest and most useful of these to use. If you have a
 strategy ``s`` and a function ``f``, then an example ``s.map(f).example()`` is
 ``f(s.example())``, i.e. we draw an example from ``s`` and then apply ``f`` to it.
 
@@ -52,7 +52,7 @@ Note that many things that you might use mapping for can also be done with
 Filtering
 ---------
 
-Filter lets you reject some examples. ``s.filter(f).example()`` is some example
+``filter`` lets you reject some examples. ``s.filter(f).example()`` is some example
 of ``s`` such that ``f(example)`` is truthy.
 
 .. doctest::
@@ -62,7 +62,7 @@ of ``s`` such that ``f(example)`` is truthy.
   >>> integers().filter(lambda x: x > 11).example()
   251
 
-It's important to note that filter isn't magic and if your condition is too
+It's important to note that ``filter`` isn't magic and if your condition is too
 hard to satisfy then this can fail:
 
 .. doctest::
@@ -72,11 +72,11 @@ hard to satisfy then this can fail:
     ...
   hypothesis.errors.NoExamples: Could not find any valid examples in 20 tries
 
-In general you should try to use filter only to avoid corner cases that you
+In general you should try to use ``filter`` only to avoid corner cases that you
 don't want rather than attempting to cut out a large chunk of the search space.
 
 A technique that often works well here is to use map to first transform the data
-and then use filter to remove things that didn't work out. So for example if you
+and then use ``filter`` to remove things that didn't work out. So for example if you
 wanted pairs of integers (x,y) such that x < y you could do the following:
 
 
@@ -92,7 +92,7 @@ wanted pairs of integers (x,y) such that x < y you could do the following:
 Chaining strategies together
 ----------------------------
 
-Finally there is flatmap. Flatmap draws an example, then turns that example
+Finally there is ``flatmap``. ``flatmap`` draws an example, then turns that example
 into a strategy, then draws an example from *that* strategy.
 
 It may not be obvious why you want this at first, but it turns out to be
@@ -119,9 +119,9 @@ In this example we first choose a length for our tuples, then we build a
 strategy which generates lists containing lists precisely of that length. The
 finds show what simple examples for this look like.
 
-Most of the time you probably don't want flatmap, but unlike filter and map
+Most of the time you probably don't want ``flatmap``, but unlike ``filter`` and ``map``
 which are just conveniences for things you could just do in your tests,
-flatmap allows genuinely new data generation that you wouldn't otherwise be
+``flatmap`` allows genuinely new data generation that you wouldn't otherwise be
 able to easily do.
 
 (If you know Haskell: Yes, this is more or less a monadic bind. If you don't
