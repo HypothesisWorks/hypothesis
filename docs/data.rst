@@ -145,7 +145,7 @@ blow up and eat all your memory.  The other problem here is that not all unicode
 display consistently on different machines, so we'll restrict them in our doctest.
 
 The way Hypothesis handles this is with the :py:func:`recursive` function
-which you pass in a base case and a function that given a strategy for your data type
+which you pass in a base case and a function that, given a strategy for your data type,
 returns a new strategy for it. So for example:
 
 .. doctest::
