@@ -21,7 +21,7 @@ from unittest import TestCase as VanillaTestCase
 
 from django.db import IntegrityError
 
-from hypothesis import given, settings
+from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import integers
 from hypothesis.extra.django import TestCase, TransactionTestCase
 from hypothesis.internal.compat import PYPY
@@ -30,6 +30,7 @@ from tests.django.toystore.models import Company
 
 class SomeStuff(object):
 
+    @settings(suppress_health_check=[HealthCheck.too_slow])
     @given(integers())
     def test_is_blank_slate(self, unused):
         Company.objects.create(name=u'MickeyCo')
