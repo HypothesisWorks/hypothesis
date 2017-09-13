@@ -1,2 +1,4 @@
 RELEASE_TYPE: patch
-This release makes some small corrections to the documentation - in the document 'What you can generate and how', and in its transcluded inline documentation.
+
+This release fixes some formatting and broken cross-references in the
+documentation, which includes editing docstrings - and thus a patch release.
