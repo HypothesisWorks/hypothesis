@@ -568,7 +568,7 @@ def iterables(elements=None, min_size=None, average_size=None, max_size=None,
 
 @defines_strategy
 def fixed_dictionaries(mapping):
-    """Generate a dictionary of the same type as mapping with a fixed set of
+    """Generates a dictionary of the same type as mapping with a fixed set of
     keys mapping to strategies. mapping must be a dict subclass.
 
     Generated values have all keys present in mapping, with the
