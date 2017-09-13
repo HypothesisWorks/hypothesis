@@ -650,7 +650,7 @@ def characters(whitelist_categories=None, blacklist_categories=None,
 
     If ``whitelist_categories`` is specified, then only characters from those
     Unicode categories will be produced. This is a further restriction,
-    characters must also satisfy `min_codepoint` and `max_codepoint`.
+    characters must also satisfy ``min_codepoint`` and ``max_codepoint``.
 
     If ``blacklist_categories`` is specified, then any character from those
     categories will not be produced. This is a further restriction,
