@@ -228,7 +228,7 @@ accept all the others in the expected order. Defaults are preserved.
     ([False, False], 1)
 
 Note that the repr will work exactly like it does for all the built-in
-strategies: It will be a function that you can call to get the strategy in
+strategies: it will be a function that you can call to get the strategy in
 question, with values provided only if they do not match the defaults.
 
 You can use :func:`assume <hypothesis.assume>` inside composite functions:
