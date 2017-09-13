@@ -97,7 +97,7 @@ into a strategy, then draws an example from *that* strategy.
 
 It may not be obvious why you want this at first, but it turns out to be
 quite useful because it lets you generate different types of data with
-relationships to eachother.
+relationships to each other.
 
 For example suppose we wanted to generate a list of lists of the same
 length:
