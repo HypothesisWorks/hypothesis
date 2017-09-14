@@ -22,7 +22,7 @@ import pytest
 import hypothesis.strategies as st
 from hypothesis import Verbosity, find, given, assume, settings
 from hypothesis.errors import NoSuchExample, Unsatisfiable
-from tests.common.utils import all_values
+from tests.common.utils import all_values, non_covering_examples
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.compat import hbytes
 
@@ -153,7 +153,7 @@ def test_clears_out_everything_smaller_than_the_interesting_example():
         with pytest.raises(AssertionError):
             test()
 
-        saved = all_values(database)
+        saved = non_covering_examples(database)
         if len(saved) > 30:
             break
     else:
@@ -164,7 +164,7 @@ def test_clears_out_everything_smaller_than_the_interesting_example():
     with pytest.raises(AssertionError):
         test()
 
-    saved = all_values(database)
+    saved = non_covering_examples(database)
 
     for s in saved:
         assert s >= target[0]

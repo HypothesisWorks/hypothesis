@@ -22,7 +22,7 @@ import pytest
 import hypothesis.strategies as st
 from hypothesis import given, settings
 from hypothesis.errors import Flaky, MultipleFailures
-from tests.common.utils import capture_out
+from tests.common.utils import capture_out, non_covering_examples
 from hypothesis.database import InMemoryExampleDatabase
 
 
@@ -147,7 +147,7 @@ def test_garbage_collects_the_secondary_key():
     bug_fixed = True
 
     def count():
-        return sum(len(v) for v in db.data.values())
+        return len(non_covering_examples(db))
 
     prev = count()
     while prev > 0:

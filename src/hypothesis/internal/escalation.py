@@ -20,22 +20,29 @@ from __future__ import division, print_function, absolute_import
 import os
 import sys
 
+import coverage
+import hypothesis
 from hypothesis.errors import DeadlineExceeded
 
-INTERNAL_PACKAGE_DIR = os.path.dirname(os.path.abspath(__file__))
-HYPOTHESIS_ROOT = os.path.dirname(INTERNAL_PACKAGE_DIR)
 
-FILE_CACHE = {}
+def belongs_to(package):
+    root = os.path.dirname(package.__file__)
+    cache = {}
+
+    def accept(filepath):
+        try:
+            return cache[filepath]
+        except KeyError:
+            pass
+        result = os.path.abspath(filepath).startswith(root)
+        cache[filepath] = result
+        return result
+    accept.__name__ = 'is_%s_file' % (package.__name__,)
+    return accept
 
 
-def is_hypothesis_file(filepath):
-    try:
-        return FILE_CACHE[filepath]
-    except KeyError:
-        pass
-    result = os.path.abspath(filepath).startswith(HYPOTHESIS_ROOT)
-    FILE_CACHE[filepath] = result
-    return result
+is_hypothesis_file = belongs_to(hypothesis)
+is_coverage_file = belongs_to(coverage)
 
 
 def escalate_hypothesis_internal_error():
@@ -45,4 +52,6 @@ def escalate_hypothesis_internal_error():
     if is_hypothesis_file(filepath) and not issubclass(
         error_type, DeadlineExceeded
     ):
+        raise
+    if is_coverage_file(filepath) and issubclass(error_type, AssertionError):
         raise

@@ -17,6 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import sys
 from enum import IntEnum
 
 from hypothesis.errors import Frozen, InvalidArgument
@@ -78,12 +79,16 @@ class ConjectureData(object):
         self.forced_indices = set()
         self.capped_indices = {}
         self.interesting_origin = None
+        self.tags = set()
 
     def __assert_not_frozen(self, name):
         if self.frozen:
             raise Frozen(
                 'Cannot call %s on frozen ConjectureData' % (
                     name,))
+
+    def add_tag(self, tag):
+        self.tags.add(tag)
 
     @property
     def depth(self):
@@ -100,16 +105,33 @@ class ConjectureData(object):
         self.output += value
 
     def draw(self, strategy):
-        if self.depth >= MAX_DEPTH:
-            self.mark_invalid()
         if strategy.is_empty:
             self.mark_invalid()
 
+        if self.depth >= MAX_DEPTH:
+            self.mark_invalid()
         if self.is_find and not strategy.supports_find:
             raise InvalidArgument((
                 'Cannot use strategy %r within a call to find (presumably '
                 'because it would be invalid after the call had ended).'
             ) % (strategy,))
+
+        if self.depth >= MAX_DEPTH:
+            self.mark_invalid()
+        if self.depth == 0:
+            original_tracer = sys.gettrace()
+            if original_tracer is None:
+                return self.__draw(strategy)
+            else:
+                try:
+                    sys.settrace(None)
+                    return self.__draw(strategy)
+                finally:
+                    sys.settrace(original_tracer)
+        else:
+            return self.__draw(strategy)
+
+    def __draw(self, strategy):
         self.start_example()
         try:
             return strategy.do_draw(self)

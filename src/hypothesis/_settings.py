@@ -34,6 +34,7 @@ import attr
 
 from hypothesis.errors import InvalidArgument, HypothesisDeprecationWarning
 from hypothesis.configuration import hypothesis_home_dir
+from hypothesis.internal.compat import PYPY
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
@@ -639,6 +640,20 @@ this behaviour entirely.
 In future this will default to 200. For now, a
 HypothesisDeprecationWarning will be emitted if you exceed that default
 deadline and have not explicitly set a deadline yourself.
+"""
+)
+
+settings.define_setting(
+    'use_coverage',
+    default=not PYPY,
+    show_default=False,
+    description="""
+Whether to use coverage information to improve Hypothesis's ability to find
+bugs. You should generally leave this turned on unless your code performs
+poorly when run under coverage.
+
+Note: This is turned on by default except on pypy, where coverage performance
+is sufficiently poor as to make this unusable.
 """
 )
 

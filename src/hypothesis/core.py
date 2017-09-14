@@ -20,6 +20,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import os
 import sys
 import time
 import functools
@@ -29,10 +30,13 @@ from random import Random
 import attr
 
 import hypothesis.strategies as st
+from coverage import CoverageData
+from coverage.files import canonical_filename
 from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
     Unsatisfiable, InvalidArgument, DeadlineExceeded, MultipleFailures, \
     FailedHealthCheck, UnsatisfiedAssumption, \
     HypothesisDeprecationWarning
+from coverage.collector import Collector
 from hypothesis.control import BuildContext
 from hypothesis._settings import settings as Settings
 from hypothesis._settings import Phase, Verbosity, HealthCheck, \
@@ -44,7 +48,7 @@ from hypothesis.statistics import note_engine_for_statistics
 from hypothesis.internal.compat import ceil, str_to_bytes, \
     get_type_hints, getfullargspec
 from hypothesis.utils.conventions import infer, not_set
-from hypothesis.internal.escalation import \
+from hypothesis.internal.escalation import is_hypothesis_file, \
     escalate_hypothesis_internal_error
 from hypothesis.internal.reflection import is_mock, proxies, nicerepr, \
     arg_string, impersonate, function_digest, fully_qualified_name, \
@@ -55,6 +59,11 @@ from hypothesis.internal.conjecture.data import Status, StopTest, \
 from hypothesis.searchstrategy.strategies import SearchStrategy
 from hypothesis.internal.conjecture.engine import ExitReason, \
     ConjectureRunner, uniform, sort_key
+
+try:
+    from coverage.tracer import CFileDisposition as FileDisposition
+except ImportError:
+    from coverage.collector import FileDisposition
 
 
 def new_random():
@@ -106,9 +115,14 @@ def reify_and_execute(
 ):
     def run(data):
         with BuildContext(data, is_final=is_final):
-            import random as rnd_module
-            rnd_module.seed(0)
-            args, kwargs = data.draw(search_strategy)
+            orig = sys.gettrace()
+            try:
+                sys.settrace(None)
+                import random as rnd_module
+                rnd_module.seed(0)
+                args, kwargs = data.draw(search_strategy)
+            finally:
+                sys.settrace(orig)
 
             if print_example:
                 report(
@@ -504,6 +518,50 @@ def new_given_argspec(original_argspec, generator_kwargs):
 HUNG_TEST_TIME_LIMIT = 5 * 60
 
 
+ROOT = os.path.dirname(__file__)
+
+STDLIB = os.path.dirname(os.__file__)
+
+
+def hypothesis_check_include(filename):
+    return filename.endswith('.py')
+
+
+def hypothesis_should_trace(original_filename, frame):
+    disp = FileDisposition()
+    assert original_filename is not None
+    disp.original_filename = original_filename
+    disp.canonical_filename = canonical_filename(original_filename)
+    disp.source_filename = disp.canonical_filename
+    disp.reason = ''
+    disp.file_tracer = None
+    disp.has_dynamic_filename = False
+    disp.trace = hypothesis_check_include(disp.canonical_filename)
+    if not disp.trace:
+        disp.reason = 'hypothesis internal reasons'
+    return disp
+
+
+def escalate_warning(msg):
+    assert False, 'Unexpected warning from coverage: %s' % (msg,)
+
+
+@attr.s(slots=True, frozen=True)
+class Line(object):
+    filename = attr.ib()
+    lineno = attr.ib()
+
+
+@attr.s(slots=True, frozen=True)
+class Arc(object):
+    filename = attr.ib()
+    source = attr.ib()
+    target = attr.ib()
+
+
+in_given = False
+
+
 class StateForActualGivenExecution(object):
 
     def __init__(self, test_runner, search_strategy, test, settings, random):
@@ -548,6 +606,19 @@ class StateForActualGivenExecution(object):
                 return result
             self.test = timed_test
 
+        if settings.use_coverage:
+            self.collector = Collector(
+                branch=True,
+                timid=False,
+                should_trace=hypothesis_should_trace,
+                check_include=hypothesis_check_include,
+                concurrency='thread',
+                warn=escalate_warning,
+            )
+            self.collector.reset()
+        else:
+            self.collector = None
+
     def evaluate_test_data(self, data):
         if (
             time.time() - self.start_time >= HUNG_TEST_TIME_LIMIT
@@ -559,9 +630,29 @@ class StateForActualGivenExecution(object):
             ), HealthCheck.hung_test)
 
         try:
-            result = self.test_runner(data, reify_and_execute(
-                self.search_strategy, self.test,
-            ))
+            if self.collector is None:
+                result = self.test_runner(data, reify_and_execute(
+                    self.search_strategy, self.test,
+                ))
+            else:
+                assert sys.gettrace() is None
+                try:
+                    self.collector.data = {}
+                    self.collector.start()
+                    result = self.test_runner(data, reify_and_execute(
+                        self.search_strategy, self.test,
+                    ))
+                finally:
+                    self.collector.stop()
+                    covdata = CoverageData()
+                    self.collector.save_data(covdata)
+                    for filename in covdata.measured_files():
+                        if is_hypothesis_file(filename):
+                            continue
+                        for lineno in covdata.lines(filename):
+                            data.add_tag(Line(filename, lineno))
+                        for source, target in covdata.arcs(filename):
+                            data.add_tag(Arc(filename, source, target))
             if result is not None and self.settings.perform_health_check:
                 fail_health_check(self.settings, (
                     'Tests run under @given should return None, but '
@@ -586,9 +677,25 @@ class StateForActualGivenExecution(object):
             origin = traceback.extract_tb(tb)[-1]
             filename = origin[0]
             lineno = origin[1]
+            traceback.print_exc()
             data.mark_interesting((error_class, filename, lineno))
 
     def run(self):
+        global in_given
+        if in_given:
+            self.collector = None
+            return self._run()
+
+        try:
+            in_given = True
+            self.original_trace = sys.gettrace()
+            sys.settrace(None)
+            return self._run()
+        finally:
+            sys.settrace(self.original_trace)
+            in_given = False
+
+    def _run(self):
         # Tell pytest to omit the body of this function from tracebacks
         __tracebackhide__ = True
         database_key = str_to_bytes(fully_qualified_name(self.test))
@@ -808,9 +915,9 @@ def given(*given_arguments, **given_kwargs):
                 test_runner, search_strategy, test, settings, random)
             state.run()
 
-        for test_attr in dir(test):
-            if test_attr[0] != '_' and not hasattr(wrapped_test, test_attr):
-                setattr(wrapped_test, test_attr, getattr(test, test_attr))
+        for attrib in dir(test):
+            if attrib[0] != '_' and not hasattr(wrapped_test, attrib):
+                setattr(wrapped_test, attrib, getattr(test, attrib))
         wrapped_test.is_hypothesis_test = True
         wrapped_test._hypothesis_internal_use_seed = getattr(
             test, '_hypothesis_internal_use_seed', None
