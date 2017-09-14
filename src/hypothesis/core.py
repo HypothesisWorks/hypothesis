@@ -423,6 +423,7 @@ def perform_health_checks(random, settings, test_runner, search_strategy):
 
 def get_random_for_wrapped_test(test, wrapped_test):
     settings = wrapped_test._hypothesis_internal_use_settings
+    wrapped_test._hypothesis_internal_use_generated_seed = None
 
     if wrapped_test._hypothesis_internal_use_seed is not None:
         return Random(
@@ -432,7 +433,10 @@ def get_random_for_wrapped_test(test, wrapped_test):
     elif global_force_seed is not None:
         return Random(global_force_seed)
     else:
-        return new_random()
+        import random
+        seed = random.getrandbits(128)
+        wrapped_test._hypothesis_internal_use_generated_seed = seed
+        return Random(seed)
 
 
 def process_arguments_to_given(
@@ -957,12 +961,28 @@ def given(*given_arguments, **given_kwargs):
             ):
                 return
 
-            perform_health_checks(
-                random, settings, test_runner, search_strategy)
+            try:
+                perform_health_checks(
+                    random, settings, test_runner, search_strategy)
 
-            state = StateForActualGivenExecution(
-                test_runner, search_strategy, test, settings, random)
-            state.run()
+                state = StateForActualGivenExecution(
+                    test_runner, search_strategy, test, settings, random)
+                state.run()
+            except:
+                generated_seed = \
+                    wrapped_test._hypothesis_internal_use_generated_seed
+                if generated_seed is not None:
+                    if running_under_pytest:
+                        report((
+                            'You can add @seed(%(seed)d) to this test or run '
+                            'pytest with --hypothesis-seed=%(seed)d to '
+                            'reproduce this failure.') % {
+                                'seed': generated_seed},)
+                    else:
+                        report((
+                            'You can add @seed(%d) to this test to reproduce '
+                            'this failure.') % (generated_seed,))
+                raise
 
         for attrib in dir(test):
             if not (attrib.startswith('_') or hasattr(wrapped_test, attrib)):
