@@ -24,6 +24,9 @@ from contextlib import contextmanager
 
 from hypothesis.internal.reflection import proxies
 
+if False:
+    from typing import Set, Dict, Tuple  # noqa
+
 """
 This module implements a custom coverage system that records conditions and
 then validates that every condition has been seen to be both True and False
@@ -37,7 +40,7 @@ When not running with a magic environment variable set, this module disables
 itself and has essentially no overhead.
 """
 
-pretty_file_name_cache = {}
+pretty_file_name_cache = {}  # type: Dict[str, str]
 
 
 def pretty_file_name(f):
@@ -58,7 +61,7 @@ IN_COVERAGE_TESTS = os.getenv('HYPOTHESIS_INTERNAL_COVERAGE') == 'true'
 
 if IN_COVERAGE_TESTS:
     log = open('branch-check', 'w')
-    written = set()
+    written = set()  # type: Set[Tuple[str, bool]]
 
     def record_branch(name, value):
         key = (name, value)

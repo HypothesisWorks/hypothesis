@@ -27,6 +27,11 @@ import unicodedata
 from hypothesis.configuration import tmpdir, storage_directory
 from hypothesis.internal.compat import hunichr
 
+if False:
+    from typing import Dict, Tuple
+    intervals = Tuple[Tuple[int, int], ...]
+    cache_type = Dict[Tuple[Tuple[str, ...], int, int, intervals], intervals]
+
 
 def charmap_file():
     return os.path.join(
@@ -207,7 +212,7 @@ def _query_for_key(key):
     return result
 
 
-limited_category_index_cache = {}
+limited_category_index_cache = {}  # type: cache_type
 
 
 def query(

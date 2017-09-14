@@ -27,6 +27,9 @@ from hypothesis.errors import DeadlineExceeded
 from hypothesis.internal.compat import text_type, binary_type, \
     encoded_filepath
 
+if False:
+    from typing import Dict  # noqa
+
 
 def belongs_to(package):
     root = os.path.dirname(package.__file__)
@@ -47,7 +50,7 @@ def belongs_to(package):
 
 PREVENT_ESCALATION = os.getenv('HYPOTHESIS_DO_NOT_ESCALATE') == 'true'
 
-FILE_CACHE = {}
+FILE_CACHE = {}  # type: Dict[bytes, bool]
 
 
 is_hypothesis_file = belongs_to(hypothesis)

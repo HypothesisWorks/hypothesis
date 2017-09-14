@@ -22,6 +22,9 @@ from hypothesis.internal.reflection import arg_string, \
     convert_keyword_arguments, convert_positional_arguments
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
+if False:
+    from typing import Dict  # noqa
+
 
 def tupleize(x):
     if isinstance(x, (tuple, list)):
@@ -30,7 +33,7 @@ def tupleize(x):
         return x
 
 
-unwrap_cache = {}
+unwrap_cache = {}  # type: Dict[SearchStrategy, SearchStrategy]
 unwrap_depth = 0
 
 

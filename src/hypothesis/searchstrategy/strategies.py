@@ -142,6 +142,21 @@ class SearchStrategy(object):
             else:
                 needs_update = None
 
+            def recur2(strat):
+                def recur_inner(other):
+                    try:
+                        return forced_value(other)
+                    except AttributeError:
+                        pass
+                    listeners[other].add(strat)
+                    try:
+                        return mapping[other]
+                    except KeyError:
+                        needs_update.add(other)
+                        mapping[other] = default
+                        return default
+                return recur_inner
+
             count = 0
             seen = set()
             while needs_update:
@@ -164,20 +179,7 @@ class SearchStrategy(object):
                 to_update = needs_update
                 needs_update = set()
                 for strat in to_update:
-                    def recur(other):
-                        try:
-                            return forced_value(other)
-                        except AttributeError:
-                            pass
-                        listeners[other].add(strat)
-                        try:
-                            return mapping[other]
-                        except KeyError:
-                            needs_update.add(other)
-                            mapping[other] = default
-                            return default
-
-                    new_value = getattr(strat, calculation)(recur)
+                    new_value = getattr(strat, calculation)(recur2(strat))
                     if new_value != mapping[strat]:
                         needs_update.update(listeners[strat])
                         mapping[strat] = new_value
@@ -494,7 +496,7 @@ class MappedSearchStrategy(SearchStrategy):
     def do_validate(self):
         self.mapped_strategy.validate()
 
-    def pack(self, x):
+    def pack(self, x):  # type: ignore
         """Take a value produced by the underlying mapped_strategy and turn it
         into a value suitable for outputting from this strategy."""
         raise NotImplementedError(

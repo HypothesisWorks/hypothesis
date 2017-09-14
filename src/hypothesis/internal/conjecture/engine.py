@@ -24,8 +24,8 @@ from random import Random, getrandbits
 from weakref import WeakKeyDictionary
 from collections import defaultdict
 
-from hypothesis import settings as Settings
-from hypothesis import Phase
+from hypothesis import settings as Settings  # type: ignore
+from hypothesis import Phase  # type: ignore
 from hypothesis.reporting import debug_report
 from hypothesis.internal.compat import EMPTY_BYTES, Counter, ceil, \
     hbytes, hrange, int_to_text, int_to_bytes, bytes_from_list, \
@@ -34,6 +34,9 @@ from hypothesis.utils.conventions import UniqueIdentifier
 from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
     StopTest, ConjectureData
 from hypothesis.internal.conjecture.minimizer import minimize
+
+if False:
+    from typing import Any, Dict  # noqa
 
 
 class ExitReason(Enum):
@@ -1140,7 +1143,7 @@ class Negated(object):
         self.tag = tag
 
 
-NEGATED_CACHE = {}
+NEGATED_CACHE = {}  # type: Dict[Negated, Any]
 
 
 def negated(tag):

@@ -66,6 +66,9 @@ try:
 except ImportError:  # pragma: no cover
     from coverage.collector import FileDisposition
 
+if False:
+    from typing import Any, Dict  # noqa
+
 
 running_under_pytest = False
 global_force_seed = None
@@ -560,7 +563,7 @@ class Arc(object):
         self.target = target
 
 
-ARC_CACHE = {}
+ARC_CACHE = {}  # type: Dict[str, Dict[Any, Dict[Any, Arc]]]
 
 
 def arc(filename, source, target):

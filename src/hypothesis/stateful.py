@@ -51,6 +51,9 @@ from hypothesis.searchstrategy.strategies import SearchStrategy
 from hypothesis.searchstrategy.collections import TupleStrategy, \
     FixedKeysDictStrategy
 
+if False:
+    from typing import Any, Dict, List, Text  # noqa
+
 
 class TestCaseProperty(object):  # pragma: no cover
 
@@ -138,6 +141,7 @@ class GenericStateMachine(object):
     sequence of example choices demonstrating that.
 
     """
+    find_breaking_runner = None  # type: classmethod
 
     def steps(self):
         """Return a SearchStrategy instance the defines the available next
@@ -170,7 +174,7 @@ class GenericStateMachine(object):
         """Called after initializing and after executing each step."""
         pass
 
-    _test_case_cache = {}
+    _test_case_cache = {}  # type: dict
 
     TestCase = TestCaseProperty()
 
@@ -191,8 +195,8 @@ class GenericStateMachine(object):
         def runTest(self):
             run_state_machine_as_test(state_machine_class)
 
-        runTest.is_hypothesis_test = True
-        StateMachineTestCase.runTest = runTest
+        runTest.is_hypothesis_test = True  # type: ignore
+        StateMachineTestCase.runTest = runTest  # type: ignore
         base_name = state_machine_class.__name__
         StateMachineTestCase.__name__ = str(
             base_name + u'.TestCase'
@@ -441,18 +445,18 @@ class RuleBasedStateMachine(GenericStateMachine):
     executed.
 
     """
-    _rules_per_class = {}
-    _invariants_per_class = {}
-    _base_rules_per_class = {}
+    _rules_per_class = {}  # type: Dict[type, List[classmethod]]
+    _invariants_per_class = {}  # type: Dict[type, List[classmethod]]
+    _base_rules_per_class = {}  # type: Dict[type, List[classmethod]]
 
     def __init__(self):
         if not self.rules():
             raise InvalidDefinition(u'Type %s defines no rules' % (
                 type(self).__name__,
             ))
-        self.bundles = {}
+        self.bundles = {}  # type: Dict[Text, list]
         self.name_counter = 1
-        self.names_to_values = {}
+        self.names_to_values = {}  # type: Dict[Text, Any]
         self.__stream = CUnicodeIO()
         self.__printer = RepresentationPrinter(self.__stream)
 

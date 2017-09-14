@@ -51,12 +51,12 @@ BYTES_DIGIT = set(b for b in BYTES_ALL if re.match(b'\\d', b))
 BYTES_SPACE = set(b for b in BYTES_ALL if re.match(b'\\s', b))
 BYTES_WORD = set(b for b in BYTES_ALL if re.match(b'\\w', b))
 BYTES_LOOKUP = {
-    sre.CATEGORY_DIGIT: BYTES_DIGIT,
-    sre.CATEGORY_SPACE: BYTES_SPACE,
-    sre.CATEGORY_WORD: BYTES_WORD,
-    sre.CATEGORY_NOT_DIGIT: BYTES_ALL - BYTES_DIGIT,
-    sre.CATEGORY_NOT_SPACE: BYTES_ALL - BYTES_SPACE,
-    sre.CATEGORY_NOT_WORD: BYTES_ALL - BYTES_WORD,
+    sre.CATEGORY_DIGIT: BYTES_DIGIT,  # type: ignore
+    sre.CATEGORY_SPACE: BYTES_SPACE,  # type: ignore
+    sre.CATEGORY_WORD: BYTES_WORD,  # type: ignore
+    sre.CATEGORY_NOT_DIGIT: BYTES_ALL - BYTES_DIGIT,  # type: ignore
+    sre.CATEGORY_NOT_SPACE: BYTES_ALL - BYTES_SPACE,  # type: ignore
+    sre.CATEGORY_NOT_WORD: BYTES_ALL - BYTES_WORD,  # type: ignore
 }
 
 # On Python < 3.4 (including 2.7), the following unicode chars are weird.
