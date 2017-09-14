@@ -752,11 +752,12 @@ class ConjectureRunner(object):
         if Phase.shrink not in self.settings.phases:
             self.exit_with(ExitReason.finished)
 
-        data = ConjectureData.for_buffer(self.last_data.buffer)
-        self.test_function(data)
-        if data.status != Status.INTERESTING:
-            self.exit_with(ExitReason.flaky)
-            return
+        for previous in self.interesting_examples.values():
+            data = ConjectureData.for_buffer(previous.buffer)
+            self.test_function(data)
+            if data.status != Status.INTERESTING:
+                self.exit_with(ExitReason.flaky)
+                return
 
         while len(self.shrunk_examples) < len(self.interesting_examples):
             target, d = min([
