@@ -47,13 +47,13 @@ def test_fails_once(some_string):
 CONTAINS_SEED_INSTRUCTION = re.compile(r"--hypothesis-seed=\d+", re.MULTILINE)
 
 
-@pytest.mark.parametrize('seed', [0, 42, "foo"])
+@pytest.mark.parametrize('seed', [0, 42, 'foo'])
 def test_runs_repeatably_when_seed_is_set(seed, testdir):
     script = testdir.makepyfile(TEST_SUITE)
 
     results = [
         testdir.runpytest(
-            script, '--verbose', '--strict', "--hypothesis-seed", str(seed)
+            script, '--verbose', '--strict', '--hypothesis-seed', str(seed)
         )
         for _ in hrange(2)
     ]

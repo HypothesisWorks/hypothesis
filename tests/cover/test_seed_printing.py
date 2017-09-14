@@ -17,14 +17,15 @@
 
 from __future__ import division, print_function, absolute_import
 
-
-from tests.common.utils import capture_out
-from hypothesis import given
-import hypothesis.strategies as st
-import hypothesis.core as core
 import time
-from hypothesis.errors import FailedHealthCheck
+
 import pytest
+
+import hypothesis.core as core
+import hypothesis.strategies as st
+from hypothesis import given
+from hypothesis.errors import FailedHealthCheck
+from tests.common.utils import capture_out
 
 
 @pytest.mark.parametrize('in_pytest', [False, True])
