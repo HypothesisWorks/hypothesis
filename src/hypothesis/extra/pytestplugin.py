@@ -24,6 +24,7 @@ from hypothesis.reporting import with_reporter
 from hypothesis.statistics import collector
 from hypothesis.internal.compat import OrderedDict, text_type
 from hypothesis.internal.detection import is_hypothesis_test
+import hypothesis.core as core
 
 LOAD_PROFILE_OPTION = '--hypothesis-profile'
 PRINT_STATISTICS_OPTION = '--hypothesis-show-statistics'
@@ -59,6 +60,7 @@ def pytest_addoption(parser):
 
 
 def pytest_configure(config):
+    core.running_under_pytest = True
     from hypothesis import settings
     profile = config.getoption(LOAD_PROFILE_OPTION)
     if profile:

@@ -67,6 +67,9 @@ except ImportError:  # pragma: no cover
     from coverage.collector import FileDisposition
 
 
+running_under_pytest = False
+
+
 def new_random():
     import random
     return random.Random(random.getrandbits(128))
