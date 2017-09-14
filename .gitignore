@@ -3,6 +3,7 @@
 *.pyc
 venv*
 .cache
+.mypy_cache
 .hypothesis
 docs/_build
 *.egg-info

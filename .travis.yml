@@ -35,6 +35,7 @@ env:
         - TASK=lint
         - TASK=check-rst
         - TASK=check-format
+        - TASK=check-types
         - TASK=check-benchmark
         - TASK=check-coverage
         - TASK=check-requirements

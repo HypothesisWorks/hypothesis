@@ -101,6 +101,9 @@ check-format: format
 	find src tests -name "*.py" | xargs $(TOOL_PYTHON) scripts/check_encoding_header.py
 	git diff --exit-code
 
+check-types: $(TOOL_VIRTUALENV)
+	$(TOOL_PYTHON) -m mypy src/hypothesis
+
 install-core: $(PY27) $(PYPY) $(BEST_PY3) $(TOX)
 
 STACK=$(HOME)/.local/bin/stack

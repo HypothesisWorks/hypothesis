@@ -1,5 +1,6 @@
 flake8
 isort
+mypy
 pip-tools
 pyformat
 pytest
