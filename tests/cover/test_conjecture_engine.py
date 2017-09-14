@@ -593,3 +593,21 @@ def test_can_cover_without_a_database_key():
     runner = ConjectureRunner(tagged, settings=settings(), database_key=None)
     runner.run()
     assert len(runner.covering_examples) == 1
+
+
+def test_bails_out_quickly_if_not_finding_new_bugs():
+    seen = [None]
+
+    def tf(data):
+        b = data.draw_bytes(4)
+        if seen[0] is None:
+            seen[0] = b
+        if b == seen[0]:
+            data.mark_interesting()
+
+    runner = ConjectureRunner(tf, settings=settings(
+        database=None, phases=(Phase.reuse, Phase.generate),
+        max_examples=10**6,
+    ))
+    runner.run()
+    runner.valid_examples <= 200
