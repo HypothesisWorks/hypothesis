@@ -20,7 +20,7 @@ from __future__ import division, print_function, absolute_import
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import given, settings
+from hypothesis import given, settings, unlimited
 from hypothesis.errors import Flaky, MultipleFailures
 from tests.common.utils import capture_out, non_covering_examples
 from hypothesis.database import InMemoryExampleDatabase
@@ -216,3 +216,27 @@ def test_handles_flaky_tests_where_only_one_is_flaky():
 
     with pytest.raises(MultipleFailures):
         test()
+
+
+def test_can_find_multiple_failures_during_generation():
+    seen = []
+
+    @settings(database=None, timeout=unlimited)
+    @given(st.integers(1))
+    def test(i):
+        if not seen:
+            seen.append(i)
+        base = seen[0]
+        assert i > base, 'loc 0'
+        assert i > base * 2, 'loc 1'
+        assert i > base * 4, 'loc 2'
+        assert i > base * 8, 'loc 3'
+
+    with capture_out() as o:
+        with pytest.raises(MultipleFailures):
+            test()
+    assert 'BAD' not in o.getvalue()
+    assert 'loc 0' in o.getvalue()
+    assert 'loc 1' in o.getvalue()
+    assert 'loc 2' in o.getvalue()
+    assert 'loc 3' in o.getvalue()
