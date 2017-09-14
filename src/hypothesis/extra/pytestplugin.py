@@ -19,15 +19,16 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
+import hypothesis.core as core
 from hypothesis.reporting import default as default_reporter
 from hypothesis.reporting import with_reporter
 from hypothesis.statistics import collector
 from hypothesis.internal.compat import OrderedDict, text_type
 from hypothesis.internal.detection import is_hypothesis_test
-import hypothesis.core as core
 
 LOAD_PROFILE_OPTION = '--hypothesis-profile'
 PRINT_STATISTICS_OPTION = '--hypothesis-show-statistics'
+SEED_OPTION = '--hypothesis-seed'
 
 
 class StoringReporter(object):
@@ -57,6 +58,11 @@ def pytest_addoption(parser):
         help='Configure when statistics are printed',
         default=False
     )
+    group.addoption(
+        SEED_OPTION,
+        action='store',
+        help='Set a seed to use for all Hypothesis tests'
+    )
 
 
 def pytest_configure(config):
@@ -65,6 +71,13 @@ def pytest_configure(config):
     profile = config.getoption(LOAD_PROFILE_OPTION)
     if profile:
         settings.load_profile(profile)
+    seed = config.getoption(SEED_OPTION)
+    if seed is not None:
+        try:
+            seed = int(seed)
+        except ValueError:
+            pass
+        core.global_force_seed = seed
     config.addinivalue_line(
         'markers',
         'hypothesis: Tests which use hypothesis.')
