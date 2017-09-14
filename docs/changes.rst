@@ -22,6 +22,13 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.27.1 - 2017-09-14
+-------------------
+
+This release fixes some formatting and broken cross-references in the
+documentation, which includes editing docstrings - and thus a patch release.
+
+-------------------
 3.27.0 - 2017-09-13
 -------------------
 
