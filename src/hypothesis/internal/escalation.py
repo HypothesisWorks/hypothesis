@@ -53,5 +53,8 @@ def escalate_hypothesis_internal_error():
         error_type, DeadlineExceeded
     ):
         raise
-    if is_coverage_file(filepath) and issubclass(error_type, AssertionError):
+    # This is so that if we do something wrong and trigger an internal Coverage
+    # error we don't try to catch it. It should be impossible to trigger, but
+    # you never know.
+    if is_coverage_file(filepath):  # pragma: no cover
         raise

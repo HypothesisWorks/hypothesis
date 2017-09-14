@@ -25,6 +25,7 @@ from hypothesis import settings, unlimited
 from hypothesis.errors import HypothesisDeprecationWarning
 from hypothesis.configuration import set_hypothesis_home_dir
 from hypothesis.internal.charmap import charmap, charmap_file
+from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 
 
 def run():
@@ -51,7 +52,8 @@ def run():
                 v, s.name, s.name, s.default,
             )
 
-    settings.register_profile('default', settings(timeout=unlimited))
+    settings.register_profile('default', settings(
+        timeout=unlimited, use_coverage=not IN_COVERAGE_TESTS))
 
     settings.register_profile(
         'speedy', settings(

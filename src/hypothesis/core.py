@@ -47,6 +47,7 @@ from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.statistics import note_engine_for_statistics
 from hypothesis.internal.compat import ceil, str_to_bytes, \
     get_type_hints, getfullargspec
+from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 from hypothesis.utils.conventions import infer, not_set
 from hypothesis.internal.escalation import is_hypothesis_file, \
     escalate_hypothesis_internal_error
@@ -62,7 +63,7 @@ from hypothesis.internal.conjecture.engine import ExitReason, \
 
 try:
     from coverage.tracer import CFileDisposition as FileDisposition
-except ImportError:
+except ImportError:  # pragma: no cover
     from coverage.collector import FileDisposition
 
 
@@ -116,13 +117,13 @@ def reify_and_execute(
     def run(data):
         with BuildContext(data, is_final=is_final):
             orig = sys.gettrace()
-            try:
+            try:  # pragma: no cover
                 sys.settrace(None)
                 import random as rnd_module
                 rnd_module.seed(0)
-                args, kwargs = data.draw(search_strategy)
-            finally:
+            finally:  # pragma: no cover
                 sys.settrace(orig)
+            args, kwargs = data.draw(search_strategy)
 
             if print_example:
                 report(
@@ -523,11 +524,11 @@ ROOT = os.path.dirname(__file__)
 STDLIB = os.path.dirname(os.__file__)
 
 
-def hypothesis_check_include(filename):
+def hypothesis_check_include(filename):  # pragma: no cover
     return filename.endswith('.py')
 
 
-def hypothesis_should_trace(original_filename, frame):
+def hypothesis_should_trace(original_filename, frame):  # pragma: no cover
     disp = FileDisposition()
     assert original_filename is not None
     disp.original_filename = original_filename
@@ -542,7 +543,7 @@ def hypothesis_should_trace(original_filename, frame):
     return disp
 
 
-def escalate_warning(msg):
+def escalate_warning(msg):  # pragma: no cover
     assert False, 'Unexpected warning from coverage: %s' % (msg,)
 
 
@@ -606,7 +607,7 @@ class StateForActualGivenExecution(object):
                 return result
             self.test = timed_test
 
-        if settings.use_coverage:
+        if settings.use_coverage and not IN_COVERAGE_TESTS:  # pragma: no cover
             self.collector = Collector(
                 branch=True,
                 timid=False,
@@ -634,8 +635,8 @@ class StateForActualGivenExecution(object):
                 result = self.test_runner(data, reify_and_execute(
                     self.search_strategy, self.test,
                 ))
-            else:
-                assert sys.gettrace() is None
+            else:  # pragma: no cover
+                assert sys.gettrace() is None, sys.gettrace()
                 try:
                     self.collector.data = {}
                     self.collector.start()
@@ -644,6 +645,7 @@ class StateForActualGivenExecution(object):
                     ))
                 finally:
                     self.collector.stop()
+                    sys.settrace(None)
                     covdata = CoverageData()
                     self.collector.save_data(covdata)
                     for filename in covdata.measured_files():
@@ -681,31 +683,28 @@ class StateForActualGivenExecution(object):
             data.mark_interesting((error_class, filename, lineno))
 
     def run(self):
-        global in_given
-        if in_given:
-            self.collector = None
-            return self._run()
-
-        try:
-            in_given = True
-            self.original_trace = sys.gettrace()
-            sys.settrace(None)
-            return self._run()
-        finally:
-            sys.settrace(self.original_trace)
-            in_given = False
-
-    def _run(self):
         # Tell pytest to omit the body of this function from tracebacks
         __tracebackhide__ = True
         database_key = str_to_bytes(fully_qualified_name(self.test))
         self.start_time = time.time()
+        global in_given
         runner = ConjectureRunner(
             self.evaluate_test_data,
             settings=self.settings, random=self.random,
             database_key=database_key,
         )
-        runner.run()
+
+        if in_given or self.collector is None:
+            runner.run()
+        else:  # pragma: no cover
+            in_given = True
+            self.original_trace = sys.gettrace()
+            try:
+                sys.settrace(None)
+                runner.run()
+                in_given = False
+            finally:
+                sys.settrace(self.original_trace)
         note_engine_for_statistics(runner)
         run_time = time.time() - self.start_time
         timed_out = runner.exit_reason == ExitReason.timeout
@@ -757,6 +756,17 @@ class StateForActualGivenExecution(object):
                         runner.valid_examples,))
 
         if not self.falsifying_examples:
+            if runner.covering_examples:  # pragma: no cover
+                for buf in sorted(set(
+                    v.buffer for v in runner.covering_examples.values()
+                ), key=sort_key):
+                    with self.settings:
+                        self.test_runner(
+                            ConjectureData.for_buffer(buf),
+                            reify_and_execute(
+                                self.search_strategy, self.test,
+                                print_example=False, is_final=False
+                            ))
             return
 
         flaky = 0

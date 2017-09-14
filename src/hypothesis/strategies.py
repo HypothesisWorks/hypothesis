@@ -34,10 +34,10 @@ from hypothesis.internal.compat import gcd, ceil, floor, hrange, \
     implements_iterator
 from hypothesis.internal.floats import is_negative, float_to_int, \
     int_to_float, count_between_floats
+from hypothesis.internal.coverage import check_function
 from hypothesis.internal.renaming import renamed_arguments
 from hypothesis.utils.conventions import infer, not_set
 from hypothesis.internal.reflection import proxies, required_args
-from hypothesis.internal.branchcheck import check_function
 
 __all__ = [
     'nothing',

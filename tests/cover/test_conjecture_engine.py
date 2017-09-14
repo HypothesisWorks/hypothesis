@@ -25,8 +25,8 @@ import pytest
 
 from hypothesis import strategies as st
 from hypothesis import Phase, given, settings, unlimited
-from tests.common.utils import checks_deprecated_behaviour
-from hypothesis.database import ExampleDatabase
+from tests.common.utils import all_values, checks_deprecated_behaviour
+from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from hypothesis.internal.compat import hbytes, hrange, int_from_bytes, \
     bytes_from_list
 from hypothesis.internal.conjecture.data import Status, ConjectureData
@@ -541,3 +541,55 @@ def test_fully_exhaust_base():
     runner.run()
     assert len(seen) > 256
     assert len({x[0] for x in seen}) == 256
+
+
+def test_will_save_covering_examples():
+    tags = {}
+
+    def tagged(data):
+        b = hbytes(data.draw_bytes(4))
+        try:
+            tag = tags[b]
+        except KeyError:
+            if len(tags) < 10:
+                tag = len(tags)
+                tags[b] = tag
+            else:
+                tag = None
+        if tag is not None:
+            data.add_tag(tag)
+
+    db = InMemoryExampleDatabase()
+    runner = ConjectureRunner(tagged, settings=settings(
+        max_examples=100, max_iterations=10000, max_shrinks=0,
+        buffer_size=1024,
+        database=db,
+    ),  database_key=b'stuff')
+    runner.run()
+    assert len(all_values(db)) == len(tags)
+
+
+def test_will_shrink_covering_examples():
+    seen = [hbytes([255] * 4)]
+
+    def tagged(data):
+        seen[0] = min(seen[0], hbytes(data.draw_bytes(4)))
+        data.add_tag(0)
+
+    db = InMemoryExampleDatabase()
+    runner = ConjectureRunner(tagged, settings=settings(
+        max_examples=100, max_iterations=10000, max_shrinks=0,
+        buffer_size=1024,
+        database=db,
+    ),  database_key=b'stuff')
+    runner.run()
+    assert all_values(db) == set(seen)
+
+
+def test_can_cover_without_a_database_key():
+    def tagged(data):
+        data.add_tag(0)
+
+    runner = ConjectureRunner(tagged, settings=settings(), database_key=None)
+    runner.run()
+    assert len(runner.covering_examples) == 1

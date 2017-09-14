@@ -23,6 +23,7 @@ from enum import IntEnum
 from hypothesis.errors import Frozen, InvalidArgument
 from hypothesis.internal.compat import hbytes, hrange, text_type, \
     bit_length, benchmark_time, int_from_bytes, unicode_safe_repr
+from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 
 
 class Status(IntEnum):
@@ -118,7 +119,7 @@ class ConjectureData(object):
 
         if self.depth >= MAX_DEPTH:
             self.mark_invalid()
-        if self.depth == 0:
+        if self.depth == 0 and not IN_COVERAGE_TESTS:  # pragma: no cover
             original_tracer = sys.gettrace()
             if original_tracer is None:
                 return self.__draw(strategy)

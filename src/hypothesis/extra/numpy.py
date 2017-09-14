@@ -26,8 +26,8 @@ import hypothesis.internal.conjecture.utils as cu
 from hypothesis.errors import InvalidArgument
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import hrange, text_type
+from hypothesis.internal.coverage import check_function
 from hypothesis.internal.reflection import proxies
-from hypothesis.internal.branchcheck import check_function
 
 TIME_RESOLUTIONS = tuple('Y  M  D  h  m  s  ms  us  ns  ps  fs  as'.split())
 
