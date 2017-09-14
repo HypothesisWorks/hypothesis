@@ -85,6 +85,7 @@ setuptools.setup(
     author_email='david@drmaciver.com',
     packages=setuptools.find_packages(SOURCE),
     package_dir={'': SOURCE},
+    # package_data={'': ['py.typed']},  # un-comment to release type hints
     url=(
         'https://github.com/HypothesisWorks/hypothesis/'
         'tree/master/hypothesis-python'

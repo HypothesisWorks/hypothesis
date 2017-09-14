@@ -28,6 +28,7 @@ jinja2==2.10              # via pyupio, sphinx
 markupsafe==1.0           # via jinja2
 mccabe==0.6.1             # via flake8
 more-itertools==4.1.0     # via pytest
+mypy==0.590
 packaging==17.1           # via dparse, pyupio, safety, sphinx
 pip-tools==2.0.1
 pkginfo==1.4.2            # via twine
@@ -58,6 +59,7 @@ sphinxcontrib-websupport==1.0.1  # via sphinx
 tox==3.0.0
 tqdm==4.23.0              # via pyupio, twine
 twine==1.11.0
+typed-ast==1.1.0          # via mypy
 unify==0.4                # via pyformat
 untokenize==0.1.1         # via docformatter, unify
 urllib3==1.22             # via requests

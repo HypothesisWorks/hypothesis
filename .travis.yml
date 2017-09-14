@@ -37,6 +37,7 @@ env:
         - TASK=doctest
         - TASK=check-rst
         - TASK=check-format
+        - TASK=check-type-hints
         - TASK=check-coverage
         - TASK=check-requirements
         - TASK=check-pypy
@@ -65,7 +66,7 @@ env:
         - TASK=deploy
 
 script:
-    - ./build.sh 
+    - ./build.sh
 
 matrix:
     fast_finish: true

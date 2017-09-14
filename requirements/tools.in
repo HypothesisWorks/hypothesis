@@ -1,6 +1,7 @@
 flake8
 flake8-docstrings
 isort
+mypy
 pip-tools
 pyformat
 pytest
