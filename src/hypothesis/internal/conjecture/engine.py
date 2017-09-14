@@ -240,8 +240,23 @@ class ConjectureRunner(object):
                 self.last_data = data
 
             if self.shrinks >= self.settings.max_shrinks:
-                self.exit_reason = ExitReason.max_shrinks
-                raise RunIsComplete()
+                self.exit_with(ExitReason.max_shrinks)
+        if (
+            self.settings.timeout > 0 and
+            time.time() >= self.start_time + self.settings.timeout
+        ):
+            self.exit_with(ExitReason.timeout)
+
+        if not self.interesting_examples:
+            if self.valid_examples >= self.settings.max_examples:
+                self.exit_with(ExitReason.max_examples)
+            if self.call_count >= max(
+                self.settings.max_iterations, self.settings.max_examples
+            ):
+                self.exit_with(ExitReason.max_iterations)
+
+        if self.__tree_is_exhausted():
+            self.exit_with(ExitReason.finished)
 
     def consider_new_test_data(self, data):
         # Transition rules:
@@ -367,12 +382,6 @@ class ConjectureRunner(object):
     def incorporate_new_buffer(self, buffer):
         assert self.last_data.status == Status.INTERESTING
         start = self.last_data.interesting_origin
-        if (
-            self.settings.timeout > 0 and
-            time.time() >= self.start_time + self.settings.timeout
-        ):
-            self.exit_reason = ExitReason.timeout
-            raise RunIsComplete()
 
         buffer = hbytes(buffer[:self.last_data.index])
         assert sort_key(buffer) < sort_key(self.last_data.buffer)
@@ -599,6 +608,7 @@ class ConjectureRunner(object):
 
         """
         if self.has_existing_examples():
+            self.debug('Reusing examples from database')
             # We have to do some careful juggling here. We have two database
             # corpora: The primary and secondary. The primary corpus is a
             # small set of minimized examples each of which has at one point
@@ -633,144 +643,121 @@ class ConjectureRunner(object):
                     corpus.extend(extra)
 
             for existing in corpus:
-                if self.valid_examples >= self.settings.max_examples:
-                    self.exit_with(ExitReason.max_examples)
-                if self.call_count >= max(
-                    self.settings.max_iterations, self.settings.max_examples
-                ):
-                    self.exit_with(ExitReason.max_iterations)
                 self.last_data = ConjectureData.for_buffer(existing)
-                self.test_function(self.last_data)
-                if self.last_data.status != Status.INTERESTING:
-                    self.settings.database.delete(
-                        self.database_key, existing)
-                    self.settings.database.delete(
-                        self.secondary_key, existing)
+                try:
+                    self.test_function(self.last_data)
+                finally:
+                    if self.last_data.status != Status.INTERESTING:
+                        self.settings.database.delete(
+                            self.database_key, existing)
+                        self.settings.database.delete(
+                            self.secondary_key, existing)
 
     def exit_with(self, reason):
         self.exit_reason = reason
         raise RunIsComplete()
 
-    def _run(self):
-        self.last_data = None
-        mutations = 0
-        start_time = time.time()
-
-        self.reuse_existing_examples()
+    def generate_new_examples(self):
+        if Phase.generate not in self.settings.phases:
+            return
 
         if (
-            Phase.generate in self.settings.phases and not
-            self.__tree_is_exhausted()
+            self.last_data is None or
+            self.last_data.status < Status.INTERESTING
         ):
-            if (
-                self.last_data is None or
-                self.last_data.status < Status.INTERESTING
-            ):
-                self.new_buffer()
+            self.new_buffer()
 
-            mutator = self._new_mutator()
+        self.debug('Generating new examples')
 
-            zero_bound_queue = []
+        mutations = 0
+        mutator = self._new_mutator()
 
-            while (
-                self.last_data.status != Status.INTERESTING and
-                not self.__tree_is_exhausted()
-            ):
-                if self.valid_examples >= self.settings.max_examples:
-                    self.exit_reason = ExitReason.max_examples
-                    return
-                if self.call_count >= max(
-                    self.settings.max_iterations, self.settings.max_examples
-                ):
-                    self.exit_reason = ExitReason.max_iterations
-                    return
-                if (
-                    self.settings.timeout > 0 and
-                    time.time() >= start_time + self.settings.timeout
-                ):
-                    self.exit_reason = ExitReason.timeout
-                    return
-                if zero_bound_queue:
-                    # Whenever we generated an example and it hits a bound
-                    # which forces zero blocks into it, this creates a weird
-                    # distortion effect by making certain parts of the data
-                    # stream (especially ones to the right) much more likely
-                    # to be zero. We fix this by redistributing the generated
-                    # data by shuffling it randomly. This results in the
-                    # zero data being spread evenly throughout the buffer.
-                    # Hopefully the shrinking this causes will cause us to
-                    # naturally fail to hit the bound.
-                    # If it doesn't then we will queue the new version up again
-                    # (now with more zeros) and try again.
-                    overdrawn = zero_bound_queue.pop()
-                    buffer = bytearray(overdrawn.buffer)
+        zero_bound_queue = []
 
-                    # These will have values written to them that are different
-                    # from what's in them anyway, so the value there doesn't
-                    # really "count" for distributional purposes, and if we
-                    # leave them in then they can cause the fraction of non
-                    # zero bytes to increase on redraw instead of decrease.
-                    for i in overdrawn.forced_indices:
-                        buffer[i] = 0
+        while not self.interesting_examples:
+            if zero_bound_queue:
+                # Whenever we generated an example and it hits a bound
+                # which forces zero blocks into it, this creates a weird
+                # distortion effect by making certain parts of the data
+                # stream (especially ones to the right) much more likely
+                # to be zero. We fix this by redistributing the generated
+                # data by shuffling it randomly. This results in the
+                # zero data being spread evenly throughout the buffer.
+                # Hopefully the shrinking this causes will cause us to
+                # naturally fail to hit the bound.
+                # If it doesn't then we will queue the new version up again
+                # (now with more zeros) and try again.
+                overdrawn = zero_bound_queue.pop()
+                buffer = bytearray(overdrawn.buffer)
 
-                    self.random.shuffle(buffer)
-                    buffer = hbytes(buffer)
+                # These will have values written to them that are different
+                # from what's in them anyway, so the value there doesn't
+                # really "count" for distributional purposes, and if we
+                # leave them in then they can cause the fraction of non
+                # zero bytes to increase on redraw instead of decrease.
+                for i in overdrawn.forced_indices:
+                    buffer[i] = 0
 
-                    if buffer == overdrawn.buffer:
-                        continue
+                self.random.shuffle(buffer)
+                buffer = hbytes(buffer)
 
-                    def draw_bytes(data, n):
-                        result = buffer[data.index:data.index + n]
-                        if len(result) < n:
-                            result += hbytes(n - len(result))
-                        return self.__rewrite(data, result)
+                if buffer == overdrawn.buffer:
+                    continue
 
-                    data = ConjectureData(
-                        draw_bytes=draw_bytes,
-                        max_length=self.settings.buffer_size,
-                    )
-                    self.test_function(data)
-                    data.freeze()
-                elif mutations >= self.settings.max_mutations:
-                    mutations = 0
-                    data = self.new_buffer()
-                    mutator = self._new_mutator()
+                def draw_bytes(data, n):
+                    result = buffer[data.index:data.index + n]
+                    if len(result) < n:
+                        result += hbytes(n - len(result))
+                    return self.__rewrite(data, result)
+
+                data = ConjectureData(
+                    draw_bytes=draw_bytes,
+                    max_length=self.settings.buffer_size,
+                )
+                self.test_function(data)
+                data.freeze()
+            elif mutations >= self.settings.max_mutations:
+                mutations = 0
+                data = self.new_buffer()
+                mutator = self._new_mutator()
+            else:
+                data = ConjectureData(
+                    draw_bytes=mutator,
+                    max_length=self.settings.buffer_size
+                )
+                self.test_function(data)
+                data.freeze()
+                prev_data = self.last_data
+                if self.consider_new_test_data(data):
+                    self.last_data = data
+                    if data.status > prev_data.status:
+                        mutations = 0
                 else:
-                    data = ConjectureData(
-                        draw_bytes=mutator,
-                        max_length=self.settings.buffer_size
-                    )
-                    self.test_function(data)
-                    data.freeze()
-                    prev_data = self.last_data
-                    if self.consider_new_test_data(data):
-                        self.last_data = data
-                        if data.status > prev_data.status:
-                            mutations = 0
-                    else:
-                        mutator = self._new_mutator()
-                if getattr(data, 'hit_zero_bound', False):
-                    zero_bound_queue.append(data)
-                mutations += 1
+                    mutator = self._new_mutator()
+            if getattr(data, 'hit_zero_bound', False):
+                zero_bound_queue.append(data)
+            mutations += 1
 
-        if self.__tree_is_exhausted():
-            self.exit_reason = ExitReason.finished
-            return
+    def _run(self):
+        self.last_data = None
+        self.start_time = time.time()
+
+        self.reuse_existing_examples()
+        self.generate_new_examples()
 
         data = self.last_data
         if data is None:
-            self.exit_reason = ExitReason.finished
+            self.exit_with(ExitReason.finished)
             return
         assert isinstance(data.output, text_type)
 
         if Phase.shrink not in self.settings.phases:
-            self.exit_reason = ExitReason.finished
-            return
+            self.exit_with(ExitReason.finished)
 
         data = ConjectureData.for_buffer(self.last_data.buffer)
         self.test_function(data)
         if data.status != Status.INTERESTING:
-            self.exit_reason = ExitReason.flaky
+            self.exit_with(ExitReason.flaky)
             return
 
         while len(self.shrunk_examples) < len(self.interesting_examples):
@@ -784,6 +771,7 @@ class ConjectureRunner(object):
             assert self.last_data.interesting_origin == target
             self.shrink()
             self.shrunk_examples.add(target)
+        self.exit_reason = ExitReason.finished
 
     def try_buffer_with_rewriting_from(self, initial_attempt, v):
         initial_data = None
@@ -1002,7 +990,6 @@ class ConjectureRunner(object):
             not any(self.last_data.buffer) or
             self.incorporate_new_buffer(hbytes(len(self.last_data.buffer)))
         ):
-            self.exit_reason = ExitReason.finished
             return
 
         if self.has_existing_examples():
@@ -1040,8 +1027,6 @@ class ConjectureRunner(object):
             self.minimize_individual_blocks()
             self.reorder_blocks()
             self.greedy_interval_deletion()
-
-        self.exit_reason = ExitReason.finished
 
     def event_to_string(self, event):
         if isinstance(event, str):

@@ -478,7 +478,8 @@ def test_garbage_collects_the_database():
 
     assert len(in_db()) == n + 1
     runner = ConjectureRunner(
-        lambda data: None, settings=local_settings, database_key=key)
+        lambda data: data.draw_bytes(8),
+        settings=local_settings, database_key=key)
     runner.run()
     assert 0 < len(in_db()) < n
 
