@@ -66,6 +66,12 @@ class ConjectureRunner(object):
         self.status_runtimes = {}
         self.events_to_strings = WeakKeyDictionary()
 
+        # We track the point as which we discover interesting examples counted
+        # as the number of valid examples we've found up to that point. This
+        # gives us a useful heuristic for whether we can reasonably expect to
+        # find new interesting bugs by keeping running.
+        self.last_new_discovery = 0
+
         # Tree nodes are stored in an array to prevent heavy nesting of data
         # structures. Branches are dicts mapping bytes to child nodes (which
         # will in general only be partially populated). Leaves are
@@ -220,6 +226,7 @@ class ConjectureRunner(object):
             try:
                 existing = self.interesting_examples[key]
             except KeyError:
+                self.last_new_discovery = self.valid_examples
                 changed = True
             else:
                 if sort_key(data.buffer) < sort_key(existing.buffer):
@@ -257,25 +264,6 @@ class ConjectureRunner(object):
 
         if self.__tree_is_exhausted():
             self.exit_with(ExitReason.finished)
-
-    def consider_new_test_data(self, data):
-        # Transition rules:
-        #   1. Transition cannot decrease the status
-        #   2. Any transition which increases the status is valid
-        #   3. If the previous status was interesting, only shrinking
-        #      transitions are allowed.
-        if data.buffer == self.last_data.buffer:
-            return False
-        if self.last_data.status < data.status:
-            return True
-        if self.last_data.status > data.status:
-            return False
-        if data.status == Status.INVALID:
-            return data.index >= self.last_data.index
-        if data.status == Status.OVERRUN:
-            return data.overdraw <= self.last_data.overdraw
-        assert data.status == Status.VALID
-        return True
 
     def save_buffer(self, buffer, key=None):
         if self.settings.database is not None:
@@ -661,6 +649,9 @@ class ConjectureRunner(object):
         if Phase.generate not in self.settings.phases:
             return
 
+        if self.interesting_examples:
+            return
+
         if (
             self.last_data is None or
             self.last_data.status < Status.INTERESTING
@@ -674,7 +665,14 @@ class ConjectureRunner(object):
 
         zero_bound_queue = []
 
-        while not self.interesting_examples:
+        while (
+            self.valid_examples < min(
+                self.settings.max_examples,
+                max(100, self.last_new_discovery) * 2,
+            ) and self.call_count < max(
+                self.settings.max_iterations, self.settings.max_examples
+            )
+        ):
             if zero_bound_queue:
                 # Whenever we generated an example and it hits a bound
                 # which forces zero blocks into it, this creates a weird
@@ -728,7 +726,7 @@ class ConjectureRunner(object):
                 self.test_function(data)
                 data.freeze()
                 prev_data = self.last_data
-                if self.consider_new_test_data(data):
+                if data.status >= prev_data.status:
                     self.last_data = data
                     if data.status > prev_data.status:
                         mutations = 0
