@@ -424,13 +424,13 @@ def lists(
     elements=None, min_size=None, average_size=None, max_size=None,
     unique_by=None, unique=False,
 ):
-    """Returns a list containing values drawn from elements length in the
+    """Returns a list containing values drawn from elements with length in the
     interval [min_size, max_size] (no bounds in that direction if these are
     None). If max_size is 0 then elements may be None and only the empty list
     will be drawn.
 
     average_size may be used as a size hint to roughly control the size
-    of list but it may not be the actual average of sizes you get, due
+    of the list but it may not be the actual average of sizes you get, due
     to a variety of factors.
 
     If unique is True (or something that evaluates to True), we compare direct
@@ -568,7 +568,7 @@ def iterables(elements=None, min_size=None, average_size=None, max_size=None,
 
 @defines_strategy
 def fixed_dictionaries(mapping):
-    """Generate a dictionary of the same type as mapping with a fixed set of
+    """Generates a dictionary of the same type as mapping with a fixed set of
     keys mapping to strategies. mapping must be a dict subclass.
 
     Generated values have all keys present in mapping, with the
@@ -650,7 +650,7 @@ def characters(whitelist_categories=None, blacklist_categories=None,
 
     If ``whitelist_categories`` is specified, then only characters from those
     Unicode categories will be produced. This is a further restriction,
-    characters must also satisfy `min_codepoint` and `max_codepoint`.
+    characters must also satisfy ``min_codepoint`` and ``max_codepoint``.
 
     If ``blacklist_categories`` is specified, then any character from those
     categories will not be produced. This is a further restriction,
@@ -750,16 +750,15 @@ def text(
 @defines_strategy
 def from_regex(regex):
     """Generates strings that contain a match for the given regex (i.e. ones
-    for which re.search will return a non-None result).
+    for which :func:`re.search` will return a non-None result).
 
     ``regex`` may be a pattern or :func:`compiled regex <python:re.compile>`.
     Both byte-strings and unicode strings are supported, and will generate
     examples of the same type.
 
-    You can use regex flags (such as :const:`python:re.IGNORECASE`,
-    :const:`python:re.DOTALL` or :const:`python:re.UNICODE`) to control
-    generation. Flags can be passed either in compiled regex or inside the
-    pattern with a ``(?iLmsux)`` group.
+    You can use regex flags such as :const:`re.IGNORECASE`, :const:`re.DOTALL`
+    or :const:`re.UNICODE` to control generation. Flags can be passed either
+    in compiled regex or inside the pattern with a ``(?iLmsux)`` group.
 
     Some regular expressions are only partly supported - the underlying
     strategy checks local matching and relies on filtering to resolve
@@ -1014,7 +1013,7 @@ def fractions(min_value=None, max_value=None, max_denominator=None):
     If min_value is not None then all generated values are no less than
     min_value.  If max_value is not None then all generated values are no
     greater than max_value.  min_value and max_value may be anything accepted
-    by the `python:`~fractions.Fraction` constructor.
+    by the :class:`~fractions.Fraction` constructor.
 
     If max_denominator is not None then the denominator of any generated
     values is no greater than max_denominator. Note that max_denominator must
@@ -1106,7 +1105,7 @@ def fractions(min_value=None, max_value=None, max_denominator=None):
 @defines_strategy_with_reusable_values
 def decimals(min_value=None, max_value=None,
              allow_nan=None, allow_infinity=None, places=None):
-    """Generates instances of decimals.Decimal, which may be:
+    """Generates instances of :class:`decimals.Decimal`, which may be:
 
     - A finite rational number, between ``min_value`` and ``max_value``.
     - Not a Number, if ``allow_nan`` is True.  None means "allow NaN, unless
@@ -1115,7 +1114,7 @@ def decimals(min_value=None, max_value=None,
       respectively are None, and ``allow_infinity`` is not False.  None means
       "allow infinity, unless excluded by the min and max values".
 
-    Note that where floats have one `NaN` value, Decimals have four: signed,
+    Note that where floats have one ``NaN`` value, Decimals have four: signed,
     and either *quiet* or *signalling*.  See `the decimal module docs
     <https://docs.python.org/3/library/decimal.html#special-values>`_ for
     more information on special values.
@@ -1206,14 +1205,14 @@ def recursive(base, extend, max_leaves=100):
     max_leaves: The maximum number of elements to be drawn from base on a given
     run.
 
-    This returns a strategy S such that S = extend(base | S). That is, values
-    maybe drawn from base, or from any strategy reachable by mixing
+    This returns a strategy ``S`` such that ``S = extend(base | S)``. That is,
+    values may be drawn from base, or from any strategy reachable by mixing
     applications of | and extend.
 
-    An example may clarify: recursive(booleans(), lists) would return a
+    An example may clarify: ``recursive(booleans(), lists)`` would return a
     strategy that may return arbitrarily nested and mixed lists of booleans.
-    So e.g. False, [True], [False, []], [[[[True]]]], are all valid values to
-    be drawn from that strategy.
+    So e.g. ``False``, ``[True]``, ``[False, []]``, and ``[[[[True]]]]`` are
+    all valid values to be drawn from that strategy.
 
     """
 
@@ -1224,7 +1223,7 @@ def recursive(base, extend, max_leaves=100):
 @defines_strategy
 def permutations(values):
     """Return a strategy which returns permutations of the collection
-    "values"."""
+    ``values``."""
     from hypothesis.internal.conjecture.utils import integer_range
 
     values = list(values)
@@ -1498,10 +1497,10 @@ def choices():
 @cacheable
 @defines_strategy_with_reusable_values
 def uuids():
-    """Returns a strategy that generates UUIDs.
+    """Returns a strategy that generates :class:`UUIDs <uuid.UUID>`.
 
     All returned values from this will be unique, so e.g. if you do
-    lists(uuids()) the resulting list will never contain duplicates.
+    ``lists(uuids())`` the resulting list will never contain duplicates.
 
     """
     from uuid import UUID
