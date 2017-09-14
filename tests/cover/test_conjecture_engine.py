@@ -380,17 +380,16 @@ def test_max_shrinks_can_disable_shrinking():
 
 
 def test_phases_can_disable_shrinking():
-    seen = set()
+    slow = slow_shrinker()
 
-    def f(data):
-        seen.add(hbytes(data.draw_bytes(32)))
-        data.mark_interesting()
+    max_examples = 10
 
-    runner = ConjectureRunner(f, settings=settings(
+    runner = ConjectureRunner(slow, settings=settings(
         database=None, phases=(Phase.reuse, Phase.generate),
+        max_shrinks=10**6, max_examples=max_examples
     ))
     runner.run()
-    assert len(seen) == 1
+    runner.valid_examples <= max_examples
 
 
 def test_saves_data_while_shrinking():
