@@ -47,6 +47,7 @@ env:
         # worth testing.
         - TASK=check-unicode
         - TASK=check-ancient-pip
+        - TASK=check-pure-tracer
         - TASK=check-py273
         - TASK=check-py27-typing
         - TASK=check-py34
