@@ -223,9 +223,11 @@ class ConjectureRunner(object):
 
             key = data.interesting_origin
             changed = False
+            is_new_origin = False
             try:
                 existing = self.interesting_examples[key]
             except KeyError:
+                is_new_origin = True
                 self.last_new_discovery = self.valid_examples
                 changed = True
             else:
@@ -238,6 +240,16 @@ class ConjectureRunner(object):
                 self.shrunk_examples.discard(key)
                 if last_data_is_interesting and not first_call:
                     self.shrinks += 1
+
+            if is_new_origin:
+                # The first time we find any new interesting_origin we
+                # immediately retry it as a fast check for flakiness. If we're
+                # getting unreliable bugs there's no point in continuing on
+                # further.
+                retry = ConjectureData.for_buffer(data.buffer)
+                self.test_function(retry)
+                if retry.status != Status.INTERESTING:
+                    self.exit_with(ExitReason.flaky)
 
             if not last_data_is_interesting or (
                 sort_key(data.buffer) < sort_key(self.last_data.buffer) and
@@ -751,13 +763,6 @@ class ConjectureRunner(object):
 
         if Phase.shrink not in self.settings.phases:
             self.exit_with(ExitReason.finished)
-
-        for previous in self.interesting_examples.values():
-            data = ConjectureData.for_buffer(previous.buffer)
-            self.test_function(data)
-            if data.status != Status.INTERESTING:
-                self.exit_with(ExitReason.flaky)
-                return
 
         while len(self.shrunk_examples) < len(self.interesting_examples):
             target, d = min([
