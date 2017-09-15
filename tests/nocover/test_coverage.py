@@ -25,6 +25,7 @@ from hypothesis import given, settings
 from tests.common.utils import all_values
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.compat import hrange
+from hypothesis.core import escalate_warning
 
 
 def test_tracks_and_saves_coverage():
@@ -78,6 +79,7 @@ def test_achieves_full_coverage(tmpdir, branch, timid):
         config_file=False, data_file=str(tmpdir.join('.coveragerc')),
         branch=branch, timid=timid,
     )
+    cov._warn = escalate_warning
     cov.start()
     test()
     cov.stop()

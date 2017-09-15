@@ -564,7 +564,6 @@ class Arc(object):
 
 in_given = False
 
-
 FORCE_PURE_TRACER = os.getenv('HYPOTHESIS_FORCE_PURE_TRACER') == 'true'
 
 
@@ -627,6 +626,11 @@ class StateForActualGivenExecution(object):
                 warn=escalate_warning,
             )
             self.collector.reset()
+
+            # Hide the other collectors from this one so it doesn't attempt to
+            # pause them (we're doing trace function management ourselves so
+            # this will just cause problems).
+            self.collector._collectors = []
         else:
             self.collector = None
 
@@ -670,16 +674,19 @@ class StateForActualGivenExecution(object):
             else:  # pragma: no cover
                 # This should always be a no-op, but the coverage tracer has
                 # a bad habit of resurrecting itself.
+                original = sys.gettrace()
                 sys.settrace(None)
                 try:
-                    self.collector.data = {}
-                    self.collector.start()
-                    result = self.test_runner(data, reify_and_execute(
-                        self.search_strategy, self.test,
-                    ))
+                    try:
+                        self.collector.data = {}
+                        self.collector.start()
+                        result = self.test_runner(data, reify_and_execute(
+                            self.search_strategy, self.test,
+                        ))
+                    finally:
+                        self.collector.stop()
                 finally:
-                    self.collector.stop()
-                    sys.settrace(None)
+                    sys.settrace(original)
                     covdata = CoverageData()
                     self.collector.save_data(covdata)
                     self.coverage_data.update(covdata)
