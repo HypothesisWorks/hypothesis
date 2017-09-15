@@ -945,7 +945,7 @@ def given(*given_arguments, **given_kwargs):
             state.run()
 
         for attrib in dir(test):
-            if attrib[0] != '_' and not hasattr(wrapped_test, attrib):
+            if not (attrib.startswith('_') or hasattr(wrapped_test, attrib)):
                 setattr(wrapped_test, attrib, getattr(test, attrib))
         wrapped_test.is_hypothesis_test = True
         wrapped_test._hypothesis_internal_use_seed = getattr(
