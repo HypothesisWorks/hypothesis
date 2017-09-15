@@ -28,7 +28,10 @@ from hypothesis.internal.compat import hrange
 def test_tracks_and_saves_coverage():
     db = InMemoryExampleDatabase()
 
-    def do_nothing(): pass
+    def do_nothing():
+        """Use in place of pass for empty branches, which don't show up under
+        coverge."""
+        pass
 
     @settings(database=db)
     @given(st.integers())
