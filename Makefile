@@ -12,7 +12,6 @@ export COVERAGE_FILE=$(BUILD_RUNTIMES)/.coverage
 
 PY27=$(BUILD_RUNTIMES)/snakepit/python2.7
 PY273=$(BUILD_RUNTIMES)/snakepit/python2.7.3
-PY33=$(BUILD_RUNTIMES)/snakepit/python3.3
 PY34=$(BUILD_RUNTIMES)/snakepit/python3.4
 PY35=$(BUILD_RUNTIMES)/snakepit/python3.5
 PY36=$(BUILD_RUNTIMES)/snakepit/python3.6
@@ -49,9 +48,6 @@ $(PY27):
 
 $(PY273):
 	scripts/retry.sh scripts/install.sh 2.7.3
-
-$(PY33):
-	scripts/retry.sh scripts/install.sh 3.3
 
 $(PY34):
 	scripts/retry.sh scripts/install.sh 3.4
@@ -129,9 +125,6 @@ check-py273: $(PY273) $(TOX)
 check-py27-typing: $(PY27) $(TOX)
 	$(TOX) --recreate -e py27typing
 
-check-py33: $(PY33) $(TOX)
-	$(TOX) --recreate -e py33-full
-
 check-py34: $(PY34) $(TOX)
 	$(TOX) --recreate -e py34-full
 
@@ -200,7 +193,7 @@ check-coverage: $(TOX)
 check-unicode: $(TOX) $(PY27)
 	$(TOX) --recreate -e unicode
 
-check-noformat: check-coverage check-py26 check-py27 check-py33 check-py34 check-py35 check-pypy check-django check-pytest
+check-noformat: check-coverage check-py26 check-py27 check-py34 check-py35 check-pypy check-django check-pytest
 
 check: check-format check-noformat
 

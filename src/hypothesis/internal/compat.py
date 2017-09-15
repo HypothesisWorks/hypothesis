@@ -490,8 +490,6 @@ else:
 # an existing file where you're not allowed to. This is rather less consistent
 # between versions than might be hoped.
 if PY3:
-    # Note: This only works on >= 3.3, but we only support >= 3.3 so that's
-    # fine
     FileExistsError = FileExistsError
 
 elif WINDOWS:
