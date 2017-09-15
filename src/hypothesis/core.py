@@ -47,8 +47,7 @@ from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.statistics import note_engine_for_statistics
 from hypothesis.internal.compat import ceil, str_to_bytes, \
     get_type_hints, getfullargspec, encoded_filepath
-from hypothesis.internal.coverage import IN_COVERAGE_TESTS, \
-    suppress_tracing
+from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 from hypothesis.utils.conventions import infer, not_set
 from hypothesis.internal.escalation import is_hypothesis_file, \
     escalate_hypothesis_internal_error
@@ -117,9 +116,13 @@ def reify_and_execute(
 ):
     def run(data):
         with BuildContext(data, is_final=is_final):
-            with suppress_tracing():
+            orig = sys.gettrace()
+            try:  # pragma: no cover
+                sys.settrace(None)
                 import random as rnd_module
                 rnd_module.seed(0)
+            finally:  # pragma: no cover
+                sys.settrace(orig)
             args, kwargs = data.draw(search_strategy)
 
             if print_example:
@@ -669,17 +672,21 @@ class StateForActualGivenExecution(object):
                     self.search_strategy, self.test,
                 ))
             else:  # pragma: no cover
+                # This should always be a no-op, but the coverage tracer has
+                # a bad habit of resurrecting itself.
+                original = sys.gettrace()
+                sys.settrace(None)
                 try:
-                    with suppress_tracing():
-                        try:
-                            self.collector.data = {}
-                            self.collector.start()
-                            result = self.test_runner(data, reify_and_execute(
-                                self.search_strategy, self.test,
-                            ))
-                        finally:
-                            self.collector.stop()
+                    try:
+                        self.collector.data = {}
+                        self.collector.start()
+                        result = self.test_runner(data, reify_and_execute(
+                            self.search_strategy, self.test,
+                        ))
+                    finally:
+                        self.collector.stop()
                 finally:
+                    sys.settrace(original)
                     covdata = CoverageData()
                     self.collector.save_data(covdata)
                     self.coverage_data.update(covdata)
@@ -732,11 +739,13 @@ class StateForActualGivenExecution(object):
             runner.run()
         else:  # pragma: no cover
             in_given = True
+            original_trace = sys.gettrace()
             try:
-                with suppress_tracing():
-                    runner.run()
+                sys.settrace(None)
+                runner.run()
             finally:
                 in_given = False
+                sys.settrace(original_trace)
         note_engine_for_statistics(runner)
         run_time = time.time() - self.start_time
         timed_out = runner.exit_reason == ExitReason.timeout

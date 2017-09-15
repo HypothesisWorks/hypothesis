@@ -16,7 +16,6 @@ exclude_lines =
     @abc.abstractproperty
     NotImplementedError
     pragma: no cover
-    suppress_tracing
     __repr__
     __ne__
     __copy__
