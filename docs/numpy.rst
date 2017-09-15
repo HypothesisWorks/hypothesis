@@ -30,7 +30,7 @@ pandas
 Hypothesis provides strategies for several of the core pandas data types:
 :class:`pandas.Index`, :class:`pandas.Series` and :class:`pandas.DataFrame`.
 
-The general approach taking by the pandas module is that there are multiple
+The general approach taken by the pandas module is that there are multiple
 strategies for generating indexes, and all of the other strategies take the
 number of entries they contain from their index strategy (with sensible defaults).
 So e.g. a Series is specified by specifying its :class:`numpy.dtype` (and/or

@@ -174,7 +174,8 @@ def indexes(
     * elements is a strategy which will be used to generate the individual
       values of the index. If None, it will be inferred from the dtype. Note:
       even if the elements strategy produces tuples, the generated value
-      will not be a MultiIndex.
+      will not be a MultiIndex, but instead be a normal index whose elements
+      are tuples.
     * dtype is the dtype of the resulting index. If None, it will be inferred
       from the elements strategy. At least one of dtype or elements must be
       provided.
