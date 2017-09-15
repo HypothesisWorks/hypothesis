@@ -21,6 +21,9 @@ This also has the following side-effects:
 * Tests that are already running Hypothesis under coverage will likely get
   faster.
 * Tests that are not running under coverage now run their test bodies under
-  coverage by default (unless on pypy, where coverage is too slow for this to
-  be a sensible default. You can still turn the feature on using the setting
-  discussed below).
+  coverage by default.
+
+
+This feature is only partially supported under pypy. It is significantly slower
+than on CPython and is turned off by default as a result, but it should still
+work correctly if you want to use it.
