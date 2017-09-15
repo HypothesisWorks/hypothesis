@@ -27,6 +27,11 @@ from tests.common.utils import all_values
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.compat import hrange
 
+pytestmark = pytest.mark.skipif(
+    not settings.default.use_coverage,
+    reason='Coverage is disabled for this build.'
+)
+
 
 def test_tracks_and_saves_coverage():
     db = InMemoryExampleDatabase()
