@@ -197,6 +197,9 @@ check-examples3: $(TOX)
 check-coverage: $(TOX)
 	$(TOX) --recreate -e coverage
 
+check-pure-tracer: $(TOX)
+	$(TOX) --recreate -e pure-tracer
+
 check-unicode: $(TOX) $(PY27)
 	$(TOX) --recreate -e unicode
 
