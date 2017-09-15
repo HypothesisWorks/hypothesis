@@ -733,8 +733,8 @@ class StateForActualGivenExecution(object):
             try:
                 sys.settrace(None)
                 runner.run()
-                in_given = False
             finally:
+                in_given = False
                 sys.settrace(self.original_trace)
         note_engine_for_statistics(runner)
         run_time = time.time() - self.start_time
