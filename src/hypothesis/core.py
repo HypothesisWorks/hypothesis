@@ -637,7 +637,9 @@ class StateForActualGivenExecution(object):
                     self.search_strategy, self.test,
                 ))
             else:  # pragma: no cover
-                assert sys.gettrace() is None, sys.gettrace()
+                # This should always be a no-op, but the coverage tracer has
+                # a bad habit of resurrecting itself.
+                sys.settrace(None)
                 try:
                     self.collector.data = {}
                     self.collector.start()
