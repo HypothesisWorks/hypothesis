@@ -144,6 +144,9 @@ check-py36: $(BEST_PY3) $(TOX)
 check-pypy: $(PYPY) $(TOX)
 	$(TOX) --recreate -e pypy-full
 
+check-pypy-with-tracer: $(PYPY) $(TOX)
+	$(TOX) --recreate -e pypy-with-tracer
+
 check-nose: $(TOX)
 	$(TOX) --recreate -e nose
 
