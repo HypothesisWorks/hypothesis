@@ -82,11 +82,10 @@ def test_runs_repeatably_when_following_seed_instruction(testdir):
 
     rerun = testdir.runpytest(script, '--verbose', '--strict', match.group(0))
 
-    results = [initial, rerun]
+    for l in rerun.stdout.lines:
+        assert '--hypothesis-seed' not in l
 
-    for r in results:
-        for l in r.stdout.lines:
-            assert '--hypothesis-seed' not in l
+    results = [initial, rerun]
 
     failure_lines = [
         l
