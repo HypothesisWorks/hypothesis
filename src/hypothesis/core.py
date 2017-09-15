@@ -610,10 +610,10 @@ class StateForActualGivenExecution(object):
 
         self.coverage_data = CoverageData()
 
-        if Collector._collectors:
-            self.hijack_collector(Collector._collectors[-1])
-
         if settings.use_coverage and not IN_COVERAGE_TESTS:  # pragma: no cover
+            if Collector._collectors:
+                self.hijack_collector(Collector._collectors[-1])
+
             self.collector = Collector(
                 branch=True,
                 timid=False,
@@ -626,7 +626,7 @@ class StateForActualGivenExecution(object):
         else:
             self.collector = None
 
-    def hijack_collector(self, collector):
+    def hijack_collector(self, collector):  # pragma: no cover
         original_save_data = collector.save_data
 
         def save_data(covdata):
