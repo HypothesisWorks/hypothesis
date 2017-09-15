@@ -26,6 +26,7 @@ import hypothesis.strategies as st
 from hypothesis import given
 from hypothesis.errors import FailedHealthCheck
 from tests.common.utils import capture_out
+from hypothesis.internal.compat import hrange
 
 
 @pytest.mark.parametrize('in_pytest', [False, True])
@@ -58,3 +59,22 @@ def test_prints_seed_on_exception(monkeypatch, in_pytest, fail_healthcheck):
     assert '@seed(%d)' % (seed,) in output
     contains_pytest_instruction = ('--hypothesis-seed=%d' % (seed,)) in output
     assert contains_pytest_instruction == in_pytest
+
+
+def test_uses_global_force(monkeypatch):
+    monkeypatch.setattr(core, 'global_force_seed', 42)
+
+    @given(st.integers())
+    def test(i):
+        raise ValueError()
+
+    output = []
+
+    for _ in hrange(2):
+        with capture_out() as o:
+            with pytest.raises(ValueError):
+                test()
+        output.append(o.getvalue())
+
+    assert output[0] == output[1]
+    assert '@seed' not in output[0]
