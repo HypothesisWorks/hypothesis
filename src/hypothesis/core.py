@@ -710,7 +710,6 @@ class StateForActualGivenExecution(object):
             origin = traceback.extract_tb(tb)[-1]
             filename = origin[0]
             lineno = origin[1]
-            traceback.print_exc()
             data.mark_interesting((error_class, filename, lineno))
 
     def run(self):
