@@ -31,8 +31,11 @@ def e(a, **kwargs):
 @pytest.mark.parametrize(
     ('function', 'kwargs'), [
         e(nps.array_dtypes, min_size=2, max_size=1),
+        e(nps.array_dtypes, min_size=-1),
         e(nps.array_shapes, min_side=2, max_side=1),
         e(nps.array_shapes, min_dims=3, max_dims=2),
+        e(nps.array_shapes, min_dims=0),
+        e(nps.array_shapes, min_side=0),
         e(nps.arrays, dtype=float, shape=(0.5,)),
         e(nps.arrays, dtype=object, shape=1),
         e(nps.arrays, dtype=object, shape=(), elements=st.none()),

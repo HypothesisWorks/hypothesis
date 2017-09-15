@@ -28,6 +28,12 @@ from tests.common.setup import run
 run()
 
 
+def pytest_configure(config):
+    config.addinivalue_line(
+        'markers',
+        'slow: pandas expects this marker to exist.')
+
+
 @pytest.fixture(scope=u'function', autouse=True)
 def gc_before_each_test():
     gc.collect()

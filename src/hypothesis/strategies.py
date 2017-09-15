@@ -1679,7 +1679,8 @@ def check_valid_bound(value, name):
 def try_convert(typ, value, name):
     if value is None:
         return None
-
+    if isinstance(value, typ):
+        return value
     try:
         return typ(value)
     except TypeError:

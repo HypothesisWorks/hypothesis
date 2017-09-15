@@ -72,7 +72,7 @@ intersphinx_mapping = {
     'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None)
 }
 
-autodoc_mock_imports = ['numpy']
+autodoc_mock_imports = ['numpy', 'pandas']
 
 doctest_global_setup = '''
 # Some standard imports
