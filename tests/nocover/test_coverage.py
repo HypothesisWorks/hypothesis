@@ -17,6 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+import pytest
+
 import hypothesis.strategies as st
 from coverage import Coverage
 from hypothesis import given, settings
@@ -65,13 +67,15 @@ with open(__file__) as i:
     LINE_END = LINE_START + lines[LINE_START:].index('')
 
 
-def test_achieves_full_coverage(tmpdir):
+@pytest.mark.parametrize('branch', [False, True])
+def test_achieves_full_coverage(tmpdir, branch):
     @given(st.booleans(), st.booleans(), st.booleans())
     def test(a, b, c):
         some_function_to_test(a, b, c)
 
     cov = Coverage(
-        config_file=False, data_file=tmpdir.join('.coveragerc')
+        config_file=False, data_file=str(tmpdir.join('.coveragerc')),
+        branch=branch,
     )
     cov.start()
     test()

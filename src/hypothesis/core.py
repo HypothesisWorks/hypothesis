@@ -608,6 +608,11 @@ class StateForActualGivenExecution(object):
                 return result
             self.test = timed_test
 
+        self.coverage_data = CoverageData()
+
+        if Collector._collectors:
+            self.hijack_collector(Collector._collectors[-1])
+
         if settings.use_coverage and not IN_COVERAGE_TESTS:  # pragma: no cover
             self.collector = Collector(
                 branch=True,
@@ -620,6 +625,28 @@ class StateForActualGivenExecution(object):
             self.collector.reset()
         else:
             self.collector = None
+
+    def hijack_collector(self, collector):
+        original_save_data = collector.save_data
+
+        def save_data(covdata):
+            original_save_data(covdata)
+            if collector.branch:
+                covdata.add_arcs({
+                    filename: {
+                        arc: None
+                        for arc in self.coverage_data.arcs(filename)}
+                    for filename in self.coverage_data.measured_files()
+                })
+            else:
+                covdata.add_lines({
+                    filename: {
+                        line: None
+                        for line in self.coverage_data.lines(filename)}
+                    for filename in self.coverage_data.measured_files()
+                })
+            collector.save_data = original_save_data
+        collector.save_data = save_data
 
     def evaluate_test_data(self, data):
         if (
@@ -651,6 +678,7 @@ class StateForActualGivenExecution(object):
                     sys.settrace(None)
                     covdata = CoverageData()
                     self.collector.save_data(covdata)
+                    self.coverage_data.update(covdata)
                     for filename in covdata.measured_files():
                         if is_hypothesis_file(filename):
                             continue
@@ -759,17 +787,6 @@ class StateForActualGivenExecution(object):
                         runner.valid_examples,))
 
         if not self.falsifying_examples:
-            if runner.covering_examples:  # pragma: no cover
-                for buf in sorted(set(
-                    v.buffer for v in runner.covering_examples.values()
-                ), key=sort_key):
-                    with self.settings:
-                        self.test_runner(
-                            ConjectureData.for_buffer(buf),
-                            reify_and_execute(
-                                self.search_strategy, self.test,
-                                print_example=False, is_final=False
-                            ))
             return
 
         flaky = 0
