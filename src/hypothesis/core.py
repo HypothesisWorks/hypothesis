@@ -544,8 +544,9 @@ def hypothesis_should_trace(original_filename, frame):  # pragma: no cover
     return disp
 
 
-def escalate_warning(msg):  # pragma: no cover
-    assert False, 'Unexpected warning from coverage: %s' % (msg,)
+def escalate_warning(msg, slug=None):  # pragma: no cover
+    assert False, 'Unexpected warning from coverage: %s, slug=%r' % (
+        msg, slug)
 
 
 @attr.s(slots=True, frozen=True)
