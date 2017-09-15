@@ -729,13 +729,13 @@ class StateForActualGivenExecution(object):
             runner.run()
         else:  # pragma: no cover
             in_given = True
-            self.original_trace = sys.gettrace()
+            original_trace = sys.gettrace()
             try:
                 sys.settrace(None)
                 runner.run()
             finally:
                 in_given = False
-                sys.settrace(self.original_trace)
+                sys.settrace(original_trace)
         note_engine_for_statistics(runner)
         run_time = time.time() - self.start_time
         timed_out = runner.exit_reason == ExitReason.timeout
