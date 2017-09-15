@@ -42,8 +42,8 @@ def run_to_buffer(f):
         database=None,
     ))
     runner.run()
-    assert runner.last_data.status == Status.INTERESTING
-    return hbytes(runner.last_data.buffer)
+    assert len(runner.interesting_examples) == 1
+    return hbytes(runner.interesting_examples[None].buffer)
 
 
 def test_can_index_results():
@@ -389,7 +389,7 @@ def test_phases_can_disable_shrinking():
         max_shrinks=10**6, max_examples=max_examples
     ))
     runner.run()
-    runner.valid_examples <= max_examples
+    assert runner.valid_examples <= max_examples
 
 
 def test_saves_data_while_shrinking():
