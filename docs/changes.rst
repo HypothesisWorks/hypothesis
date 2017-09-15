@@ -22,6 +22,17 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.28.0 - 2017-09-15
+-------------------
+
+This release adds support for testing pandas via the :ref:`hypothesis.extra.pandas <hypothesis-pandas>`
+module.
+
+It also adds a dependency on attrs.
+
+This work was funded by `Stripe <https://stripe.com/>`_.
+
+-------------------
 3.27.1 - 2017-09-14
 -------------------
 
