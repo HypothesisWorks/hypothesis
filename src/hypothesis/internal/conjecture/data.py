@@ -121,6 +121,14 @@ class ConjectureData(object):
             self.mark_invalid()
         if self.depth == 0 and not IN_COVERAGE_TESTS:  # pragma: no cover
             original_tracer = sys.gettrace()
+            # This branch probably doesn't matter much in CPython, where
+            # sys.settrace is if not super-fast at least pretty fast when
+            # called with None, but on pypy sys.settrace() is opaque to the
+            # JIT, so not calling it if we can avoid it is better even when
+            # the argument is trivial.
+
+            # This hasn't been benchmarked at all so it might not be necesssary
+            # but it seems like a good idea.
             if original_tracer is None:
                 return self.__draw(strategy)
             else:
