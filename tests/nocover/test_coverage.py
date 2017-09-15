@@ -18,9 +18,9 @@
 from __future__ import division, print_function, absolute_import
 
 import pytest
+from coverage import Coverage
 
 import hypothesis.strategies as st
-from coverage import Coverage
 from hypothesis import given, settings
 from tests.common.utils import all_values
 from hypothesis.database import InMemoryExampleDatabase
@@ -68,14 +68,15 @@ with open(__file__) as i:
 
 
 @pytest.mark.parametrize('branch', [False, True])
-def test_achieves_full_coverage(tmpdir, branch):
+@pytest.mark.parametrize('timid', [False, True])
+def test_achieves_full_coverage(tmpdir, branch, timid):
     @given(st.booleans(), st.booleans(), st.booleans())
     def test(a, b, c):
         some_function_to_test(a, b, c)
 
     cov = Coverage(
         config_file=False, data_file=str(tmpdir.join('.coveragerc')),
-        branch=branch,
+        branch=branch, timid=timid,
     )
     cov.start()
     test()

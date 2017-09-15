@@ -21,6 +21,7 @@ import os
 import sys
 
 import coverage
+
 import hypothesis
 from hypothesis.errors import DeadlineExceeded
 from hypothesis.internal.compat import text_type, binary_type, \
