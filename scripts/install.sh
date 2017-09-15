@@ -110,7 +110,7 @@ for var in "$@"; do
       install 3.6.1 python3.6
       ;;
     pypy)
-      install pypy-5.3.1 pypy
+      install pypy2.7-portable-5.8.0
       ;;
   esac
 done
