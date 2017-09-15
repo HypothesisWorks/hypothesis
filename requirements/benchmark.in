@@ -2,3 +2,4 @@ attrs
 click
 numpy
 scipy
+coverage
