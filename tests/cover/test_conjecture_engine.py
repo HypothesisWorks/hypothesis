@@ -564,7 +564,7 @@ def test_will_save_covering_examples():
         max_examples=100, max_iterations=10000, max_shrinks=0,
         buffer_size=1024,
         database=db,
-    ),  database_key=b'stuff')
+    ), database_key=b'stuff')
     runner.run()
     assert len(all_values(db)) == len(tags)
 
@@ -581,7 +581,7 @@ def test_will_shrink_covering_examples():
         max_examples=100, max_iterations=10000, max_shrinks=0,
         buffer_size=1024,
         database=db,
-    ),  database_key=b'stuff')
+    ), database_key=b'stuff')
     runner.run()
     assert all_values(db) == set(seen)
 
