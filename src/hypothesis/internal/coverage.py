@@ -114,3 +114,12 @@ else:
     @contextmanager
     def check(name):
         yield
+
+
+class suppress_tracing(object):
+    def __enter__(self):
+        self.__original_trace = sys.gettrace()
+        sys.settrace(None)
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        sys.settrace(self.__original_trace)

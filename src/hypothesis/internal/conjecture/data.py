@@ -17,13 +17,13 @@
 
 from __future__ import division, print_function, absolute_import
 
-import sys
 from enum import IntEnum
 
 from hypothesis.errors import Frozen, InvalidArgument
 from hypothesis.internal.compat import hbytes, hrange, text_type, \
     bit_length, benchmark_time, int_from_bytes, unicode_safe_repr
-from hypothesis.internal.coverage import IN_COVERAGE_TESTS
+from hypothesis.internal.coverage import IN_COVERAGE_TESTS, \
+    suppress_tracing
 
 
 class Status(IntEnum):
@@ -120,12 +120,8 @@ class ConjectureData(object):
         if self.depth >= MAX_DEPTH:
             self.mark_invalid()
         if self.depth == 0 and not IN_COVERAGE_TESTS:  # pragma: no cover
-            original_tracer = sys.gettrace()
-            try:
-                sys.settrace(None)
+            with suppress_tracing():
                 return self.__draw(strategy)
-            finally:
-                sys.settrace(original_tracer)
         else:
             return self.__draw(strategy)
 
