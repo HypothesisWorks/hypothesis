@@ -23,19 +23,22 @@ import sys
 import coverage
 import hypothesis
 from hypothesis.errors import DeadlineExceeded
+from hypothesis.internal.compat import text_type, binary_type, \
+    encoded_filepath
 
 
 def belongs_to(package):
     root = os.path.dirname(package.__file__)
-    cache = {}
+    cache = {text_type: {}, binary_type: {}}
 
     def accept(filepath):
         try:
-            return cache[filepath]
+            return cache[type(filepath)][filepath]
         except KeyError:
             pass
+        filepath = encoded_filepath(filepath)
         result = os.path.abspath(filepath).startswith(root)
-        cache[filepath] = result
+        cache[type(filepath)][filepath] = result
         return result
     accept.__name__ = 'is_%s_file' % (package.__name__,)
     return accept

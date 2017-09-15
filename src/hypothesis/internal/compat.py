@@ -243,6 +243,17 @@ else:
     from time import time as benchmark_time
 
 
+if PY2:
+    def encoded_filepath(filepath):
+        if isinstance(filepath, text_type):
+            return filepath.encode(sys.getfilesystemencoding())
+        else:
+            return filepath
+else:
+    def encoded_filepath(filepath):
+        return filepath
+
+
 def a_good_encoding():
     return 'utf-8'
 

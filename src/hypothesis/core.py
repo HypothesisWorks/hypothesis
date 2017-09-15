@@ -46,7 +46,7 @@ from hypothesis.executors import new_style_executor, \
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.statistics import note_engine_for_statistics
 from hypothesis.internal.compat import ceil, str_to_bytes, \
-    get_type_hints, getfullargspec
+    get_type_hints, getfullargspec, encoded_filepath
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 from hypothesis.utils.conventions import infer, not_set
 from hypothesis.internal.escalation import is_hypothesis_file, \
@@ -525,14 +525,15 @@ STDLIB = os.path.dirname(os.__file__)
 
 
 def hypothesis_check_include(filename):  # pragma: no cover
-    return filename.endswith(u'.py')
+    return filename.endswith('.py')
 
 
 def hypothesis_should_trace(original_filename, frame):  # pragma: no cover
     disp = FileDisposition()
     assert original_filename is not None
     disp.original_filename = original_filename
-    disp.canonical_filename = canonical_filename(original_filename)
+    disp.canonical_filename = encoded_filepath(
+        canonical_filename(original_filename))
     disp.source_filename = disp.canonical_filename
     disp.reason = ''
     disp.file_tracer = None
