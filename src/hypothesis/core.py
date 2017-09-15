@@ -525,7 +525,7 @@ STDLIB = os.path.dirname(os.__file__)
 
 
 def hypothesis_check_include(filename):  # pragma: no cover
-    return filename.endswith('.py')
+    return filename.endswith(u'.py')
 
 
 def hypothesis_should_trace(original_filename, frame):  # pragma: no cover
