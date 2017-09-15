@@ -39,4 +39,4 @@ assert not core.running_under_pytest
 def test_is_not_running_under_pytest(tmpdir):
     pyfile = tmpdir.join('test.py')
     pyfile.write(FILE_TO_RUN)
-    subprocess.check_call([sys.executable, pyfile])
+    subprocess.check_call([sys.executable, str(pyfile)])
