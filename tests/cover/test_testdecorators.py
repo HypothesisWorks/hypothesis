@@ -518,8 +518,7 @@ def test_prints_notes_once_on_failure():
             with raises(ValueError):
                 test()
     lines = out.getvalue().strip().splitlines()
-    assert len(lines) == 2
-    assert 'Hi there' in lines
+    assert lines.count('Hi there') == 1
 
 
 @given(lists(max_size=0))
