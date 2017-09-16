@@ -234,6 +234,10 @@ class ConjectureRunner(object):
             if node_index in self.dead:
                 break
 
+        # We don't use this after this point so we might as well get rid of it
+        # to save some memory.
+        del data.capped_indices
+
         for u, v in data.blocks:
             # This can happen if we hit a dead node when walking the buffer.
             # In that case we alrady have this section of the tree mapped.
