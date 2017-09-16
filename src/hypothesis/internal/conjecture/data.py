@@ -147,6 +147,7 @@ class ConjectureData(object):
             for i in hrange(len(l) - 1):
                 if l[i][1] == l[i + 1][0]:
                     self.intervals.append((l[i][0], l[i + 1][1]))
+        del self.intervals_by_level
         self.intervals = sorted(
             set(self.intervals),
             key=lambda se: (se[0] - se[1], se[0])
