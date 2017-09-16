@@ -40,9 +40,6 @@ def one_of_strategies(xs):
     return OneOfStrategy(xs)
 
 
-in_fixed_point_calculation = False
-
-
 class SearchStrategy(object):
 
     """A SearchStrategy is an object that knows how to explore data of a given
@@ -101,83 +98,77 @@ class SearchStrategy(object):
             except AttributeError:
                 pass
 
-            global in_fixed_point_calculation
-            assert not in_fixed_point_calculation
-            in_fixed_point_calculation = True
-            try:
-                mapping = {}
-                hit_recursion = [False]
+            mapping = {}
+            hit_recursion = [False]
 
-                # For a first pass we do a direct recursive calculation of the
-                # property, but we block recursively visiting a value in the
-                # computation of its property: When that happens, we simply
-                # note that it happened and return the default value.
-                def recur(strat):
-                    try:
-                        return forced_value(strat)
-                    except AttributeError:
-                        pass
-                    try:
-                        result = mapping[strat]
-                        if result is calculating:
-                            hit_recursion[0] = True
+            # For a first pass we do a direct recursive calculation of the
+            # property, but we block recursively visiting a value in the
+            # computation of its property: When that happens, we simply
+            # note that it happened and return the default value.
+            def recur(strat):
+                try:
+                    return forced_value(strat)
+                except AttributeError:
+                    pass
+                try:
+                    result = mapping[strat]
+                    if result is calculating:
+                        hit_recursion[0] = True
+                        return default
+                except KeyError:
+                    mapping[strat] = calculating
+                    mapping[strat] = getattr(strat, calculation)(recur)
+                    return mapping[strat]
+
+            recur(self)
+
+            # If we hit self-recursion in the computation of any strategy
+            # value, our mapping at the end is imprecise - it may or may
+            # not have the right values in it. We now need to proceed with
+            # a more careful fixed point calculation to get the exact
+            # values. Hopefully our mapping is still pretty good and it
+            # won't take a large number of updates to reach a fixed point.
+            if hit_recursion[0]:
+                needs_update = set(mapping)
+
+                # We track which strategies use which in the course of
+                # calculating their property value. If A ever uses B in
+                # the course of calculating its value, then whenveer the
+                # value of B changes we might need to update the value of
+                # A.
+                listeners = defaultdict(set)
+            else:
+                needs_update = None
+
+            while needs_update:
+                to_update = needs_update
+                needs_update = set()
+                for strat in to_update:
+                    def recur(other):
+                        try:
+                            return forced_value(other)
+                        except AttributeError:
+                            pass
+                        listeners[other].add(strat)
+                        try:
+                            return mapping[other]
+                        except KeyError:
+                            needs_update.add(other)
+                            mapping[other] = default
                             return default
-                    except KeyError:
-                        mapping[strat] = calculating
-                        mapping[strat] = getattr(strat, calculation)(recur)
-                        return mapping[strat]
 
-                recur(self)
+                    new_value = getattr(strat, calculation)(recur)
+                    if new_value != mapping[strat]:
+                        needs_update.update(listeners[strat])
+                        mapping[strat] = new_value
 
-                # If we hit self-recursion in the computation of any strategy
-                # value, our mapping at the end is imprecise - it may or may
-                # not have the right values in it. We now need to proceed with
-                # a more careful fixed point calculation to get the exact
-                # values. Hopefully our mapping is still pretty good and it
-                # won't take a large number of updates to reach a fixed point.
-                if hit_recursion[0]:
-                    needs_update = set(mapping)
-
-                    # We track which strategies use which in the course of
-                    # calculating their property value. If A ever uses B in
-                    # the course of calculating its value, then whenveer the
-                    # value of B changes we might need to update the value of
-                    # A.
-                    listeners = defaultdict(set)
-                else:
-                    needs_update = None
-
-                while needs_update:
-                    to_update = needs_update
-                    needs_update = set()
-                    for strat in to_update:
-                        def recur(other):
-                            try:
-                                return forced_value(other)
-                            except AttributeError:
-                                pass
-                            listeners[other].add(strat)
-                            try:
-                                return mapping[other]
-                            except KeyError:
-                                needs_update.add(other)
-                                mapping[other] = default
-                                return default
-
-                        new_value = getattr(strat, calculation)(recur)
-                        if new_value != mapping[strat]:
-                            needs_update.update(listeners[strat])
-                            mapping[strat] = new_value
-
-                # We now have a complete and accurate calculation of the
-                # property values for everything we have seen in the course of
-                # running this calculation. We simultaneously update all of
-                # them (not just the strategy we started out with).
-                for k, v in mapping.items():
-                    setattr(k, cache_key, v)
-                return getattr(self, cache_key)
-            finally:
-                in_fixed_point_calculation = False
+            # We now have a complete and accurate calculation of the
+            # property values for everything we have seen in the course of
+            # running this calculation. We simultaneously update all of
+            # them (not just the strategy we started out with).
+            for k, v in mapping.items():
+                setattr(k, cache_key, v)
+            return getattr(self, cache_key)
 
         accept.__name__ = name
         return property(accept)
