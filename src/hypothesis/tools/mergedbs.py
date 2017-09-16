@@ -48,7 +48,8 @@ from __future__ import division, print_function, absolute_import
 
 import sys
 import sqlite3
-from collections import namedtuple
+
+import attr
 
 
 def get_rows(cursor):
@@ -60,7 +61,10 @@ def get_rows(cursor):
         yield tuple(r)
 
 
-Report = namedtuple(u'Report', (u'inserts', u'deletes'))
+@attr.s()
+class Report(object):
+    inserts = attr.ib()
+    deletes = attr.ib()
 
 
 def merge_paths(ancestor, current, other):

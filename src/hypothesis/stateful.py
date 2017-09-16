@@ -30,7 +30,8 @@ from __future__ import division, print_function, absolute_import
 import inspect
 import traceback
 from unittest import TestCase
-from collections import namedtuple
+
+import attr
 
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis.core import find
@@ -260,10 +261,13 @@ class StateMachineSearchStrategy(SearchStrategy):
         return StateMachineRunner(data, self.program_size)
 
 
-Rule = namedtuple(
-    u'Rule',
-    (u'targets', u'function', u'arguments', u'precondition')
-)
+@attr.s()
+class Rule(object):
+    targets = attr.ib()
+    function = attr.ib()
+    arguments = attr.ib()
+    precondition = attr.ib()
+
 
 self_strategy = runner()
 
@@ -330,7 +334,9 @@ def rule(targets=(), target=None, **kwargs):
     return accept
 
 
-VarReference = namedtuple(u'VarReference', (u'name',))
+@attr.s()
+class VarReference(object):
+    name = attr.ib()
 
 
 def precondition(precond):
@@ -377,10 +383,10 @@ def precondition(precond):
     return decorator
 
 
-Invariant = namedtuple(
-    'Invariant',
-    ('function', 'precondition')
-)
+@attr.s()
+class Invariant(object):
+    function = attr.ib()
+    precondition = attr.ib()
 
 
 def invariant():
@@ -417,7 +423,10 @@ def invariant():
     return accept
 
 
-ShuffleBundle = namedtuple('ShuffleBundle', ('bundle', 'swaps'))
+@attr.s()
+class ShuffleBundle(object):
+    bundle = attr.ib()
+    swaps = attr.ib()
 
 
 class RuleBasedStateMachine(GenericStateMachine):

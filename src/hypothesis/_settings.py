@@ -29,7 +29,8 @@ import inspect
 import warnings
 import threading
 from enum import Enum, IntEnum, unique
-from collections import namedtuple
+
+import attr
 
 from hypothesis.errors import InvalidArgument, HypothesisDeprecationWarning
 from hypothesis.configuration import hypothesis_home_dir
@@ -331,11 +332,15 @@ class settings(settingsMeta('settings', (object,), {})):
         settings._assign_default_internal(settings.get_profile(name))
 
 
-Setting = namedtuple(
-    'Setting', (
-        'name', 'description', 'default', 'options', 'validator',
-        'future_default', 'deprecation_message',
-    ))
+@attr.s()
+class Setting(object):
+    name = attr.ib()
+    description = attr.ib()
+    default = attr.ib()
+    options = attr.ib()
+    validator = attr.ib()
+    future_default = attr.ib()
+    deprecation_message = attr.ib()
 
 
 settings.define_setting(

@@ -25,7 +25,8 @@ import time
 import functools
 import traceback
 from random import Random
-from collections import namedtuple
+
+import attr
 
 import hypothesis.strategies as st
 from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
@@ -73,7 +74,10 @@ def test_is_flaky(test, expected_repr):
     return test_or_flaky
 
 
-Example = namedtuple('Example', ('args', 'kwargs'))
+@attr.s()
+class Example(object):
+    args = attr.ib()
+    kwargs = attr.ib()
 
 
 def example(*args, **kwargs):
@@ -804,9 +808,9 @@ def given(*given_arguments, **given_kwargs):
                 test_runner, search_strategy, test, settings, random)
             state.run()
 
-        for attr in dir(test):
-            if attr[0] != '_' and not hasattr(wrapped_test, attr):
-                setattr(wrapped_test, attr, getattr(test, attr))
+        for test_attr in dir(test):
+            if test_attr[0] != '_' and not hasattr(wrapped_test, test_attr):
+                setattr(wrapped_test, test_attr, getattr(test, test_attr))
         wrapped_test.is_hypothesis_test = True
         wrapped_test._hypothesis_internal_use_seed = getattr(
             test, '_hypothesis_internal_use_seed', None

@@ -17,8 +17,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-from collections import namedtuple
-
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis.internal.compat import OrderedDict, hbytes
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
@@ -28,11 +26,7 @@ from hypothesis.searchstrategy.strategies import SearchStrategy, \
 class TupleStrategy(SearchStrategy):
 
     """A strategy responsible for fixed length tuples based on heterogenous
-    strategies for each of their elements.
-
-    This also handles namedtuples
-
-    """
+    strategies for each of their elements."""
 
     def __init__(self,
                  strategies, tuple_type):
@@ -137,10 +131,6 @@ class UniqueListStrategy(SearchStrategy):
 
     def do_validate(self):
         self.element_strategy.validate()
-
-    Parameter = namedtuple(
-        'Parameter', ('parameter_seed', 'parameter')
-    )
 
     def do_draw(self, data):
         elements = cu.many(

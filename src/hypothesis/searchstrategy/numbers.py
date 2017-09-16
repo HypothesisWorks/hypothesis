@@ -18,7 +18,6 @@
 from __future__ import division, print_function, absolute_import
 
 import math
-from collections import namedtuple
 
 import hypothesis.internal.conjecture.utils as d
 import hypothesis.internal.conjecture.floats as flt
@@ -154,10 +153,6 @@ class FixedBoundedFloatStrategy(SearchStrategy):
     closer to one of the ends.
 
     """
-    Parameter = namedtuple(
-        'Parameter',
-        ('cut', 'leftwards')
-    )
 
     def __init__(self, lower_bound, upper_bound):
         SearchStrategy.__init__(self)
