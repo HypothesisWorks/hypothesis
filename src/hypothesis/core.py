@@ -808,9 +808,9 @@ def given(*given_arguments, **given_kwargs):
                 test_runner, search_strategy, test, settings, random)
             state.run()
 
-        for attr in dir(test):
-            if attr[0] != '_' and not hasattr(wrapped_test, attr):
-                setattr(wrapped_test, attr, getattr(test, attr))
+        for test_attr in dir(test):
+            if test_attr[0] != '_' and not hasattr(wrapped_test, test_attr):
+                setattr(wrapped_test, test_attr, getattr(test, test_attr))
         wrapped_test.is_hypothesis_test = True
         wrapped_test._hypothesis_internal_use_seed = getattr(
             test, '_hypothesis_internal_use_seed', None
