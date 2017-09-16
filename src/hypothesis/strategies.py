@@ -131,12 +131,13 @@ defines_strategy_with_reusable_values = base_defines_strategy(True)
 
 
 class Nothing(SearchStrategy):
-    @property
-    def is_empty(self):
+    def calc_is_empty(self, recur):
         return True
 
     def do_draw(self, data):
-        data.mark_invalid()
+        # This method should never be called because draw() will mark the
+        # data as invalid immediately because is_empty is True.
+        assert False
 
     def calc_has_reusable_values(self, recur):
         return True

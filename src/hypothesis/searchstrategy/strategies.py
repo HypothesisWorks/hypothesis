@@ -25,8 +25,11 @@ from hypothesis.errors import NoExamples, NoSuchExample, Unsatisfiable, \
 from hypothesis.control import assume, reject, _current_build_context
 from hypothesis._settings import note_deprecation
 from hypothesis.internal.compat import hrange
+from hypothesis.utils.conventions import UniqueIdentifier
 from hypothesis.internal.lazyformat import lazyformat
 from hypothesis.internal.reflection import get_pretty_function_description
+
+calculating = UniqueIdentifier('calculating')
 
 
 def one_of_strategies(xs):
@@ -76,9 +79,31 @@ class SearchStrategy(object):
             assert not in_fixed_point_calculation
             in_fixed_point_calculation = True
             try:
-                mapping = {self: default}
-                needs_update = {self}
-                listeners = defaultdict(set)
+                mapping = {}
+                hit_recursion = [False]
+
+                def recur(strat):
+                    try:
+                        return forced_value(strat)
+                    except AttributeError:
+                        pass
+                    try:
+                        result = mapping[strat]
+                        if result is calculating:
+                            hit_recursion[0] = True
+                            return default
+                    except KeyError:
+                        mapping[strat] = calculating
+                        mapping[strat] = getattr(strat, calculation)(recur)
+                        return mapping[strat]
+
+                recur(self)
+
+                if hit_recursion[0]:
+                    needs_update = set(mapping)
+                    listeners = defaultdict(set)
+                else:
+                    needs_update = None
 
                 while needs_update:
                     to_update = needs_update
