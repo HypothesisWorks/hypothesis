@@ -169,7 +169,7 @@ class ConjectureRunner(object):
         self.shrunk_examples = set()
 
     def __tree_is_exhausted(self):
-        return 0 in self.dead
+        return self.__is_dead(0)
 
     def new_buffer(self):
         assert not self.__tree_is_exhausted()
@@ -231,7 +231,7 @@ class ConjectureRunner(object):
                         tree_node[c] for c in hrange(256)
                     ])
             tree_node = self.tree[node_index]
-            if node_index in self.dead:
+            if self.__is_dead(node_index):
                 break
 
         # We don't use this after this point so we might as well get rid of it
@@ -245,8 +245,8 @@ class ConjectureRunner(object):
                 break
             self.block_sizes[indices[u]] = v - u
 
-        if data.status != Status.OVERRUN and node_index not in self.dead:
-            self.dead.add(node_index)
+        if data.status != Status.OVERRUN and not self.__is_dead(node_index):
+            self.__mark_dead(node_index)
             self.tree[node_index] = data
 
             for j in reversed(indices):
@@ -260,8 +260,8 @@ class ConjectureRunner(object):
                     values = jnode
                 else:
                     values = jnode.values()
-                if set(values).issubset(self.dead):
-                    self.dead.add(j)
+                if all(self.__is_dead(v) for v in values):
+                    self.__mark_dead(j)
                 else:
                     break
 
@@ -392,7 +392,7 @@ class ConjectureRunner(object):
         node_index = 0
         n = len(buffer)
         for k, b in enumerate(buffer):
-            if node_index in self.dead:
+            if self.__is_dead(node_index):
                 return False
             try:
                 # The block size at that point provides a lower bound on how
@@ -558,6 +558,12 @@ class ConjectureRunner(object):
         else:
             return result
 
+    def __is_dead(self, node_index):
+        return node_index in self.dead
+
+    def __mark_dead(self, node_index):
+        self.dead.add(node_index)
+
     def __rewrite_for_novelty(self, data, result):
         """Take a block that is about to be added to data as the result of a
         draw_bytes call and rewrite it a small amount to ensure that the result
@@ -586,7 +592,7 @@ class ConjectureRunner(object):
             node = self.tree[node_index]
             try:
                 node_index = node[data.buffer[i]]
-                assert node_index not in self.dead
+                assert self.__is_dead(node_index)
                 node = self.tree[node_index]
             except KeyError:
                 data.hit_novelty = True
@@ -602,7 +608,7 @@ class ConjectureRunner(object):
 
             new_node = self.tree[new_node_index]
 
-            if new_node_index in self.dead:
+            if self.__is_dead(new_node_index):
                 if isinstance(result, hbytes):
                     result = bytearray(result)
                 for c in range(256):
@@ -614,7 +620,7 @@ class ConjectureRunner(object):
                     else:
                         new_node_index = node[c]
                         new_node = self.tree[new_node_index]
-                        if new_node_index not in self.dead:
+                        if not self.__is_dead(new_node_index):
                             result[i] = c
                             break
                 else:  # pragma: no cover
@@ -623,7 +629,7 @@ class ConjectureRunner(object):
                         'children being dead.')
             node_index = new_node_index
             node = new_node
-        assert node_index not in self.dead
+        assert not self.__is_dead(node_index)
         data.current_node_index = node_index
         data.evaluated_to = data.index + len(result)
         return hbytes(result)
