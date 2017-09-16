@@ -63,6 +63,34 @@ class Blocks(object):
 
 
 class ConjectureData(object):
+    __slots__ = (
+        'max_length',
+        'is_find',
+        '_draw_bytes',
+        'overdraw',
+        'level',
+        'block_starts',
+        'blocks',
+        'buffer',
+        'output',
+        'status',
+        'frozen',
+        'intervals_by_level',
+        'intervals',
+        'interval_stack',
+        'testcounter',
+        'start_time',
+        'events',
+        'forced_indices',
+        'capped_indices',
+        'interesting_origin',
+        'finish_time',
+        'current_node_index',
+        'hit_novelty',
+        'evaluated_to',
+        'hit_zero_bound',
+        '_hypothesis_shared_strategies',
+    )
 
     @classmethod
     def for_buffer(self, buffer):

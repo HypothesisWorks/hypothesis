@@ -570,26 +570,26 @@ class ConjectureRunner(object):
         """
         assert isinstance(result, hbytes)
         try:
-            node_index = data.__current_node_index
+            node_index = data.current_node_index
         except AttributeError:
             node_index = 0
-            data.__current_node_index = node_index
-            data.__hit_novelty = False
-            data.__evaluated_to = 0
+            data.current_node_index = node_index
+            data.hit_novelty = False
+            data.evaluated_to = 0
 
-        if data.__hit_novelty:
+        if data.hit_novelty:
             return result
 
         node = self.tree[node_index]
 
-        for i in hrange(data.__evaluated_to, len(data.buffer)):
+        for i in hrange(data.evaluated_to, len(data.buffer)):
             node = self.tree[node_index]
             try:
                 node_index = node[data.buffer[i]]
                 assert node_index not in self.dead
                 node = self.tree[node_index]
             except KeyError:
-                data.__hit_novelty = True
+                data.hit_novelty = True
                 return result
 
         for i, b in enumerate(result):
@@ -597,7 +597,7 @@ class ConjectureRunner(object):
             try:
                 new_node_index = node[b]
             except KeyError:
-                data.__hit_novelty = True
+                data.hit_novelty = True
                 return result
 
             new_node = self.tree[new_node_index]
@@ -609,7 +609,7 @@ class ConjectureRunner(object):
                     if not (len(node) == 256 or c in node):
                         assert c <= self.capped.get(node_index, c)
                         result[i] = c
-                        data.__hit_novelty = True
+                        data.hit_novelty = True
                         return hbytes(result)
                     else:
                         new_node_index = node[c]
@@ -624,8 +624,8 @@ class ConjectureRunner(object):
             node_index = new_node_index
             node = new_node
         assert node_index not in self.dead
-        data.__current_node_index = node_index
-        data.__evaluated_to = data.index + len(result)
+        data.current_node_index = node_index
+        data.evaluated_to = data.index + len(result)
         return hbytes(result)
 
     def has_existing_examples(self):
