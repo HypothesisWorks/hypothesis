@@ -19,6 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import time
 from enum import Enum
+from array import array
 from random import Random, getrandbits
 from weakref import WeakKeyDictionary
 
@@ -46,6 +47,69 @@ class RunIsComplete(Exception):
     pass
 
 
+class Node(object):
+    def __contains__(self, key):
+        try:
+            self[key]
+            return True
+        except KeyError:
+            return False
+
+
+class EmptyNode(Node):
+    __slots__ = ('payload',)
+
+    def __getitem__(self, key):
+        raise KeyError()
+
+    def __setitem__(self, key, value):
+        self.payload = (key, value)
+        self.__class__ = SingleNode
+
+    def __len__(self):
+        return 0
+
+    def values(self):
+        return ()
+
+
+class SingleNode(Node):
+    __slots__ = ('payload',)
+
+    def __getitem__(self, key):
+        if key != self.payload[0]:
+            raise KeyError()
+        return self.payload[1]
+
+    def __setitem__(self, key, value):
+        self.payload = {
+            key: value, self.payload[0]: self.payload[1]
+        }
+        self.__class__ = DictNode
+
+    def __len__(self):
+        return 1
+
+    def values(self):
+        return (self.payload[1],)
+
+
+class DictNode(Node):
+    __slots__ = ('payload',)
+
+    def __getitem__(self, key):
+        return self.payload[key]
+
+    def __setitem__(self, key, value):
+        self.payload[key] = value
+
+    def __len__(self):
+        return len(self.payload)
+
+    def values(self):
+        return self.payload.values()
+
+
 class ConjectureRunner(object):
 
     def __init__(
@@ -70,7 +134,7 @@ class ConjectureRunner(object):
         # will in general only be partially populated). Leaves are
         # ConjectureData objects that have been previously seen as the result
         # of following that path.
-        self.tree = [{}]
+        self.tree = [EmptyNode()]
 
         # A node is dead if there is nothing left to explore past that point.
         # Recursively, a node is dead if either it is a leaf or every byte
@@ -156,9 +220,16 @@ class ConjectureRunner(object):
             try:
                 node_index = tree_node[b]
             except KeyError:
+                old_node_index = node_index
                 node_index = len(self.tree)
-                self.tree.append({})
+                self.tree.append(EmptyNode())
                 tree_node[b] = node_index
+                if isinstance(tree_node, DictNode):
+                    tree_node = self.tree[old_node_index] = tree_node.payload
+                if len(tree_node) == 256:
+                    tree_node = self.tree[old_node_index] = array('I', [
+                        tree_node[c] for c in hrange(256)
+                    ])
             tree_node = self.tree[node_index]
             if node_index in self.dead:
                 break
@@ -180,7 +251,12 @@ class ConjectureRunner(object):
                     j not in self.forced
                 ):
                     break
-                if set(self.tree[j].values()).issubset(self.dead):
+                jnode = self.tree[j]
+                if len(jnode) == 256:
+                    values = jnode
+                else:
+                    values = jnode.values()
+                if set(values).issubset(self.dead):
                     self.dead.add(j)
                 else:
                     break
@@ -526,7 +602,7 @@ class ConjectureRunner(object):
                 if isinstance(result, hbytes):
                     result = bytearray(result)
                 for c in range(256):
-                    if c not in node:
+                    if not (len(node) == 256 or c in node):
                         assert c <= self.capped.get(node_index, c)
                         result[i] = c
                         data.__hit_novelty = True
