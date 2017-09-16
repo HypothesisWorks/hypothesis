@@ -18,6 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 from enum import IntEnum
+from array import array
 
 from hypothesis.errors import Frozen, InvalidArgument
 from hypothesis.internal.compat import hbytes, hrange, text_type, \
@@ -44,6 +45,23 @@ global_test_counter = 0
 MAX_DEPTH = 100
 
 
+class Blocks(object):
+    __slots__ = ('contents',)
+
+    def __init__(self):
+        self.contents = array('H')
+
+    def append(self, v):
+        assert len(v) == 2
+        self.contents.extend(v)
+
+    def __len__(self):
+        return len(self.contents) // 2
+
+    def __getitem__(self, i):
+        return (self.contents[i * 2], self.contents[i * 2 + 1])
+
+
 class ConjectureData(object):
 
     @classmethod
@@ -62,7 +80,7 @@ class ConjectureData(object):
         self.overdraw = 0
         self.level = 0
         self.block_starts = {}
-        self.blocks = []
+        self.blocks = Blocks()
         self.buffer = bytearray()
         self.output = u''
         self.status = Status.VALID
