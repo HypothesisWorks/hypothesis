@@ -45,7 +45,7 @@ def test_set_of_nothing(xs):
 
 def test_validates_min_size():
     with pytest.raises(InvalidArgument):
-        st.lists(st.nothing(), min_size=1).validate()
+        st.lists(st.nothing(), min_size=1).example()
 
 
 def test_function_composition():
