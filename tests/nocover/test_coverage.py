@@ -44,11 +44,11 @@ def test_tracks_and_saves_coverage():
     @settings(database=db)
     @given(st.integers())
     def test_branching(i):
-        if i < 0:
+        if i < -1000:
             do_nothing()
-        if i == 0:
+        elif i > 1000:
             do_nothing()
-        if i > 0:
+        else:
             do_nothing()
 
     test_branching()
