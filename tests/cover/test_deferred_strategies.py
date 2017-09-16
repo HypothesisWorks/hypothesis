@@ -17,9 +17,12 @@
 
 from __future__ import division, print_function, absolute_import
 
+import operator
+
 import pytest
 
 from hypothesis import strategies as st
+from hypothesis import given
 from hypothesis.errors import InvalidArgument
 from tests.common.debug import minimal, assert_no_examples
 
@@ -144,3 +147,18 @@ def test_self_recursive_lists():
     assert minimal(x) == []
     assert minimal(x, bool) == [[]]
     assert minimal(x, lambda x: len(x) > 1) == [[], []]
+
+
+def test_literals_strategy_is_valid():
+    literals = st.deferred(lambda: st.one_of(
+        st.booleans(),
+        st.tuples(literals, literals),
+        literals.map(lambda x: [x]),
+    ))
+
+    @given(literals)
+    def test(e):
+        pass
+    test()
+
+    assert not literals.has_reusable_values

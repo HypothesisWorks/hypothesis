@@ -51,6 +51,16 @@ def unwrap_strategies(s):
         try:
             result = unwrap_strategies(s.wrapped_strategy)
             unwrap_cache[s] = result
+            try:
+                assert result.force_has_reusable_values == \
+                    s.force_has_reusable_values
+            except AttributeError:
+                pass
+
+            try:
+                result.force_has_reusable_values = s.force_has_reusable_values
+            except AttributeError:
+                pass
             return result
         except AttributeError:
             return s
@@ -84,11 +94,11 @@ class LazyStrategy(SearchStrategy):
     def supports_find(self):
         return self.wrapped_strategy.supports_find
 
-    def calc_is_empty(self):
-        return self.wrapped_strategy.is_empty
+    def calc_is_empty(self, recur):
+        return recur(self.wrapped_strategy)
 
-    def calc_has_reusable_values(self):
-        return self.wrapped_strategy.has_reusable_values
+    def calc_has_reusable_values(self, recur):
+        return recur(self.wrapped_strategy)
 
     @property
     def wrapped_strategy(self):
@@ -112,10 +122,6 @@ class LazyStrategy(SearchStrategy):
                 self.__wrapped_strategy = self.__function(
                     *unwrapped_args,
                     **unwrapped_kwargs)
-                self.__wrapped_strategy.force_has_reusable_values = \
-                    base.has_reusable_values
-                assert self.__wrapped_strategy.has_reusable_values == \
-                    base.has_reusable_values
         return self.__wrapped_strategy
 
     def do_validate(self):

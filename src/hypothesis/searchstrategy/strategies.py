@@ -17,6 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+from collections import defaultdict
+
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis.errors import NoExamples, NoSuchExample, Unsatisfiable, \
     UnsatisfiedAssumption
@@ -33,6 +35,9 @@ def one_of_strategies(xs):
     if not xs:
         raise ValueError('Cannot join an empty list of strategies')
     return OneOfStrategy(xs)
+
+
+in_fixed_point_calculation = False
 
 
 class SearchStrategy(object):
@@ -55,18 +60,52 @@ class SearchStrategy(object):
         calculation = 'calc_' + name
         force_key = 'force_' + name
 
+        def forced_value(target):
+            try:
+                return getattr(target, force_key)
+            except AttributeError:
+                return getattr(target, cache_key)
+
         def accept(self):
-            if not hasattr(self, cache_key):
-                try:
-                    setattr(self, cache_key, getattr(self, force_key))
-                except AttributeError:
-                    # This isn't an error, but instead is to deal with
-                    # recursive strategy definitions that refer to themselves.
-                    # This ensures in a recursive call we will return the
-                    # default value.
-                    setattr(self, cache_key, default)
-                    setattr(self, cache_key, getattr(self, calculation)())
-            return getattr(self, cache_key)
+            try:
+                return forced_value(self)
+            except AttributeError:
+                pass
+
+            global in_fixed_point_calculation
+            assert not in_fixed_point_calculation
+            in_fixed_point_calculation = True
+            try:
+                mapping = {self: default}
+                needs_update = {self}
+                listeners = defaultdict(set)
+
+                while needs_update:
+                    to_update = needs_update
+                    needs_update = set()
+                    for strat in to_update:
+                        def recur(other):
+                            try:
+                                return forced_value(other)
+                            except AttributeError:
+                                pass
+                            listeners[other].add(strat)
+                            try:
+                                return mapping[other]
+                            except KeyError:
+                                needs_update.add(other)
+                                mapping[other] = default
+                                return default
+
+                        new_value = getattr(strat, calculation)(recur)
+                        if new_value != mapping[strat]:
+                            needs_update.update(listeners[strat])
+                            mapping[strat] = new_value
+                for k, v in mapping.items():
+                    setattr(k, cache_key, v)
+                return getattr(self, cache_key)
+            finally:
+                in_fixed_point_calculation = False
 
         accept.__name__ = name
         return property(accept)
@@ -76,16 +115,22 @@ class SearchStrategy(object):
     # The fact that this returns False does not guarantee that a valid value
     # can be drawn - this is not intended to be perfect, and is primarily
     # intended to be an optimisation for some cases.
-    is_empty = recursive_property('is_empty', False)
+    is_empty = recursive_property('is_empty', True)
 
     # Returns True if values from this strategy can safely be reused without
     # this causing unexpected behaviour.
     has_reusable_values = recursive_property('has_reusable_values', True)
 
-    def calc_is_empty(self):
+    def calc_is_empty(self, recur):
+        # Note: It is correct and significant that the default return value
+        # from calc_is_empty is False despite the default value for is_empty
+        # being true. The reason for this is that strategies should be treated
+        # as empty absent evidence to the contrary, but most basic strategies
+        # are trivially non-empty and it would be annoying to have to override
+        # this method to show that.
         return False
 
-    def calc_has_reusable_values(self):
+    def calc_has_reusable_values(self, recur):
         return False
 
     def example(self, random=None):
@@ -248,11 +293,11 @@ class OneOfStrategy(SearchStrategy):
         else:
             self.sampler = None
 
-    def calc_is_empty(self):
-        return len(self.element_strategies) == 0
+    def calc_is_empty(self, recur):
+        return all(recur(e) for e in self.original_strategies)
 
-    def calc_has_reusable_values(self):
-        return all(e.has_reusable_values for e in self.element_strategies)
+    def calc_has_reusable_values(self, recur):
+        return all(recur(e) for e in self.original_strategies)
 
     @property
     def element_strategies(self):
@@ -323,8 +368,8 @@ class MappedSearchStrategy(SearchStrategy):
         if pack is not None:
             self.pack = pack
 
-    def calc_is_empty(self):
-        return self.mapped_strategy.is_empty
+    def calc_is_empty(self, recur):
+        return recur(self.mapped_strategy)
 
     def __repr__(self):
         if not hasattr(self, '_cached_repr'):
@@ -368,8 +413,8 @@ class FilteredStrategy(SearchStrategy):
         self.condition = condition
         self.filtered_strategy = strategy
 
-    def calc_is_empty(self):
-        return self.filtered_strategy.is_empty
+    def calc_is_empty(self, recur):
+        return recur(self.filtered_strategy)
 
     def __repr__(self):
         if not hasattr(self, '_cached_repr'):

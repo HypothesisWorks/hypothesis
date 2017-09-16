@@ -50,6 +50,10 @@ def reusable():
     )
 
 
+assert not reusable.is_empty
+
+
+@example(st.integers(min_value=1))
 @given(reusable)
 def test_reusable_strategies_are_all_reusable(s):
     try:

@@ -34,7 +34,7 @@ def run():
     set_hypothesis_home_dir(mkdtemp())
 
     charmap()
-    assert os.path.exists(charmap_file())
+    assert os.path.exists(charmap_file()), charmap_file()
     assert isinstance(settings, type)
 
     # We do a smoke test here before we mess around with settings.

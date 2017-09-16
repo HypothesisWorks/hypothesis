@@ -18,6 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 import hypothesis.internal.conjecture.utils as cu
+from hypothesis.errors import InvalidArgument
 from hypothesis.internal.compat import OrderedDict, hbytes
 from hypothesis.searchstrategy.strategies import SearchStrategy, \
     MappedSearchStrategy, one_of_strategies
@@ -47,8 +48,8 @@ class TupleStrategy(SearchStrategy):
             tuple_string,
         )
 
-    def calc_has_reusable_values(self):
-        return all(e.has_reusable_values for e in self.element_strategies)
+    def calc_has_reusable_values(self, recur):
+        return all(recur(e) for e in self.element_strategies)
 
     def newtuple(self, xs):
         """Produce a new tuple of the correct type."""
@@ -59,8 +60,8 @@ class TupleStrategy(SearchStrategy):
             data.draw(e) for e in self.element_strategies
         )
 
-    def calc_is_empty(self):
-        return any(e.is_empty for e in self.element_strategies)
+    def calc_is_empty(self, recur):
+        return any(recur(e) for e in self.element_strategies)
 
 
 TERMINATOR = hbytes(b'\0')
@@ -94,7 +95,21 @@ class ListStrategy(SearchStrategy):
     def do_validate(self):
         self.element_strategy.validate()
 
+    def calc_is_empty(self, recur):
+        if self.min_size == 0:
+            return False
+        else:
+            return recur(self.element_strategy)
+
     def do_draw(self, data):
+        if self.is_empty:
+            raise InvalidArgument((
+                'Cannot create non-empty lists with elements drawn from '
+                'strategy %r because it has no values.') % (
+                self.element_strategy,))
+        elif self.element_strategy.is_empty:
+            return []
+
         elements = cu.many(
             data,
             min_size=self.min_size, max_size=self.max_size,
@@ -132,7 +147,21 @@ class UniqueListStrategy(SearchStrategy):
     def do_validate(self):
         self.element_strategy.validate()
 
+    def calc_is_empty(self, recur):
+        if self.min_size == 0:
+            return False
+        else:
+            return recur(self.element_strategy)
+
     def do_draw(self, data):
+        if self.is_empty:
+            raise InvalidArgument((
+                'Cannot create non-empty lists with elements drawn from '
+                'strategy %r because it has no values.') % (
+                    self.element_strategy,))
+        elif self.element_strategy.is_empty:
+            return []
+
         elements = cu.many(
             data,
             min_size=self.min_size, max_size=self.max_size,
@@ -182,6 +211,9 @@ class FixedKeysDictStrategy(MappedSearchStrategy):
                 (strategy_dict[k] for k in self.keys), tuple
             )
         )
+
+    def calc_is_empty(self, recur):
+        return recur(self.mapped_strategy)
 
     def __repr__(self):
         return 'FixedKeysDictStrategy(%r, %r)' % (

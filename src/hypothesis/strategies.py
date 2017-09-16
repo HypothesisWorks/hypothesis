@@ -138,7 +138,7 @@ class Nothing(SearchStrategy):
     def do_draw(self, data):
         data.mark_invalid()
 
-    def calc_has_reusable_values(self):
+    def calc_has_reusable_values(self, recur):
         return True
 
     def __repr__(self):
@@ -390,9 +390,6 @@ def tuples(*args):
     for arg in args:
         check_strategy(arg)
 
-    for arg in args:
-        if arg.is_empty:
-            return nothing()
     from hypothesis.searchstrategy.collections import TupleStrategy
     return TupleStrategy(args, tuple)
 
@@ -451,13 +448,6 @@ def lists(
         else:
             return builds(list)
     check_strategy(elements)
-    if elements.is_empty:
-        if (min_size or 0) > 0:
-            raise InvalidArgument((
-                'Cannot create non-empty lists with elements drawn from '
-                'strategy %r because it has no values.') % (elements,))
-        else:
-            return builds(list)
     if unique:
         if unique_by is not None:
             raise InvalidArgument((
@@ -490,21 +480,21 @@ def lists(
             min_size=min_size,
             key=unique_by
         )
-        return result
+    else:
+        from hypothesis.searchstrategy.collections import ListStrategy
+        if min_size is None:
+            min_size = 0
+        if average_size is None:
+            if max_size is None:
+                average_size = _AVERAGE_LIST_LENGTH
+            else:
+                average_size = (min_size + max_size) * 0.5
 
-    from hypothesis.searchstrategy.collections import ListStrategy
-    if min_size is None:
-        min_size = 0
-    if average_size is None:
-        if max_size is None:
-            average_size = _AVERAGE_LIST_LENGTH
-        else:
-            average_size = (min_size + max_size) * 0.5
-
-    return ListStrategy(
-        (elements,), average_length=average_size,
-        min_size=min_size, max_size=max_size,
-    )
+        result = ListStrategy(
+            (elements,), average_length=average_size,
+            min_size=min_size, max_size=max_size,
+        )
+    return result
 
 
 @cacheable
@@ -581,9 +571,6 @@ def fixed_dictionaries(mapping):
     check_type(dict, mapping, 'mapping')
     for v in mapping.values():
         check_strategy(v)
-    for v in mapping.values():
-        if v.is_empty:
-            return nothing()
     return FixedKeysDictStrategy(mapping)
 
 
