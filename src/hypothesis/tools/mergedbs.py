@@ -61,6 +61,7 @@ def get_rows(cursor):
         yield tuple(r)
 
 
+@attr.s()
 class Report(object):
     inserts = attr.ib()
     deletes = attr.ib()
