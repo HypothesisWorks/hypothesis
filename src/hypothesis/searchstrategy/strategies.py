@@ -59,6 +59,32 @@ class SearchStrategy(object):
     validate_called = False
 
     def recursive_property(name, default):
+        """Handle properties which may be mutually recursive among a set of
+        strategies.
+
+        These are essentially lazily cached properties, with the ability to set
+        an override: If the property has not been explicitly set, we calculate
+        it on first access and memoize the result for later.
+
+        The problem is that for properties that depend on eachother, a naive
+        calculation strategy may hit infinite recursion. Consider for example
+        the property is_empty. A strategy defined as x = st.deferred(lambda x)
+        is certainly empty (in order ot draw a value from x we would have to
+        draw a value from x, for which we would have to draw a value from x,
+        ...), but in order to calculate it the naive approach would end up
+        calling x.is_empty in order to calculate x.is_empty in order to etc.
+
+        The solution is one of fixed point calculation. We start with a default
+        value that is the value of the property in the absence of evidence to
+        the contrary, and then update the values of the property for all
+        dependent strategies until we reach a fixed point.
+
+        The approach taken roughly follows that in section 4.2 of Adams,
+        Michael D., Celeste Hollenbeck, and Matthew Might. "On the complexity
+        and performance of parsing with derivatives." ACM SIGPLAN Notices 51.6
+        (2016): 224-236.
+
+        """
         cache_key = 'cached_' + name
         calculation = 'calc_' + name
         force_key = 'force_' + name
@@ -82,6 +108,10 @@ class SearchStrategy(object):
                 mapping = {}
                 hit_recursion = [False]
 
+                # For a first pass we do a direct recursive calculation of the
+                # property, but we block recursively visiting a value in the
+                # computation of its property: When that happens, we simply
+                # note that it happened and return the default value.
                 def recur(strat):
                     try:
                         return forced_value(strat)
@@ -99,8 +129,20 @@ class SearchStrategy(object):
 
                 recur(self)
 
+                # If we hit self-recursion in the computation of any strategy
+                # value, our mapping at the end is imprecise - it may or may
+                # not have the right values in it. We now need to proceed with
+                # a more careful fixed point calculation to get the exact
+                # values. Hopefully our mapping is still pretty good and it
+                # won't take a large number of updates to reach a fixed point.
                 if hit_recursion[0]:
                     needs_update = set(mapping)
+
+                    # We track which strategies use which in the course of
+                    # calculating their property value. If A ever uses B in
+                    # the course of calculating its value, then whenveer the
+                    # value of B changes we might need to update the value of
+                    # A.
                     listeners = defaultdict(set)
                 else:
                     needs_update = None
@@ -126,6 +168,11 @@ class SearchStrategy(object):
                         if new_value != mapping[strat]:
                             needs_update.update(listeners[strat])
                             mapping[strat] = new_value
+
+                # We now have a complete and accurate calculation of the
+                # property values for everything we have seen in the course of
+                # running this calculation. We simultaneously update all of
+                # them (not just the strategy we started out with).
                 for k, v in mapping.items():
                     setattr(k, cache_key, v)
                 return getattr(self, cache_key)
