@@ -40,51 +40,10 @@ class SearchStrategy(object):
     """A SearchStrategy is an object that knows how to explore data of a given
     type.
 
-    Except where noted otherwise, methods on this class are not part of the
-    public API and their behaviour may change significantly between minor
-    version releases. They will generally be stable between patch releases.
-
-    With that in mind, here is how SearchStrategy works.
-
-    A search strategy is responsible for generating, simplifying and
-    serializing examples for saving.
-
-    In order to do this a strategy has three types (where type here is more
-    precise than just the class of the value. For example a tuple of ints
-    should be considered different from a tuple of strings):
-
-    1. The strategy parameter type
-    2. The strategy template type
-    3. The generated type
-
-    Of these, the first two should be considered to be private implementation
-    details of a strategy and the only valid thing to do them is to pass them
-    back to the search strategy. Additionally, templates may be compared for
-    equality and hashed.
-
-    Templates must be of quite a restricted type. A template may be any of the
-    following:
-
-    1. Any instance of the types bool, float, int, str (unicode on 2.7)
-    2. None
-    3. Any tuple or namedtuple of valid template types
-    4. Any frozenset of valid template types
-
-    This may be relaxed a bit in future, but the requirement that templates are
-    hashable probably won't be.
-
-    This may all seem overly complicated but it's for a fairly good reason.
-
-    Given these, data generation happens in three phases:
-
-    1. Draw a parameter value from a random number (defined by
-       draw_parameter)
-    2. Given a parameter value and a Random, draw a random template
-    3. Reify a template value, deterministically turning it into a value of
-       the desired type.
-
-    Data simplification proceeds on template values, taking a template and
-    providing a generator over some examples of similar but simpler templates.
+    Except where noted otherwise, methods on this class are not part of
+    the public API and their behaviour may change significantly between
+    minor version releases. They will generally be stable between patch
+    releases.
 
     """
 

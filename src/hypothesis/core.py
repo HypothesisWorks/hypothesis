@@ -25,7 +25,8 @@ import time
 import functools
 import traceback
 from random import Random
-from collections import namedtuple
+
+import attr
 
 import hypothesis.strategies as st
 from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
@@ -73,7 +74,10 @@ def test_is_flaky(test, expected_repr):
     return test_or_flaky
 
 
-Example = namedtuple('Example', ('args', 'kwargs'))
+@attr.s()
+class Example(object):
+    args = attr.ib()
+    kwargs = attr.ib()
 
 
 def example(*args, **kwargs):
