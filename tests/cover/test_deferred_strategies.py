@@ -17,8 +17,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import operator
-
 import pytest
 
 from hypothesis import strategies as st
