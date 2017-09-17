@@ -64,3 +64,12 @@ def test_fixed_dictionaries_detect_empty_values():
 
 def test_no_examples():
     assert_no_examples(st.nothing())
+
+
+@pytest.mark.parametrize('s', [
+    st.nothing(), st.nothing().map(lambda x: x),
+    st.nothing().filter(lambda x: True),
+    st.nothing().flatmap(lambda x: st.integers())
+])
+def test_empty(s):
+    assert s.is_empty
