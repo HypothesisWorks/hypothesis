@@ -148,7 +148,10 @@ class SearchStrategy(object):
                 count += 1
                 # If we seem to be taking a really long time to stabilize we
                 # start tracking seen values to attempt to detect an infinite
-                # loop.
+                # loop. This should be impossible, and most code will never
+                # hit the count, but having an assertion for it means that
+                # testing is easier to debug and we don't just have a hung
+                # test.
                 if count > 50:
                     key = frozenset(mapping.items())
                     assert key not in seen, (key, name)
