@@ -188,3 +188,15 @@ def test_very_deep_deferral():
 
     assert strategies[0].has_reusable_values
     assert not strategies[0].is_empty
+
+
+def test_recursion_in_middle():
+    # This test is significant because the integers().map(abs) is not checked
+    # in the initial pass - when we recurse into x initially we decide that
+    # x is empty, so the tuple is empty, and don't need to check the third
+    # argument. Then when we do the more refined test we've discovered that x
+    # is non-empty, so we need to check the non-emptiness of the last component
+    # to determine the non-emptiness of the tuples.
+    x = st.deferred(
+        lambda: st.tuples(st.none(), x, st.integers().map(abs)) | st.none())
+    assert not x.is_empty
