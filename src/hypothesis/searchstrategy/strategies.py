@@ -400,9 +400,8 @@ class OneOfStrategy(SearchStrategy):
 
     def do_draw(self, data):
         n = len(self.element_strategies)
-        if n == 0:
-            data.mark_invalid()
-        elif n == 1:
+        assert n > 0
+        if n == 1:
             return data.draw(self.element_strategies[0])
         elif self.sampler is None:
             i = cu.integer_range(data, 0, n - 1)
