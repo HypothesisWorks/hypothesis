@@ -142,7 +142,17 @@ class SearchStrategy(object):
             else:
                 needs_update = None
 
+            count = 0
+            seen = set()
             while needs_update:
+                count += 1
+                # If we seem to be taking a really long time to stabilize we
+                # start tracking seen values to attempt to detect an infinite
+                # loop.
+                if count > 50:
+                    key = frozenset(mapping.items())
+                    assert key not in seen, (key, name)
+                    seen.add(key)
                 to_update = needs_update
                 needs_update = set()
                 for strat in to_update:

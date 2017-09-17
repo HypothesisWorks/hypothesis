@@ -23,6 +23,7 @@ from hypothesis import strategies as st
 from hypothesis import given
 from hypothesis.errors import InvalidArgument
 from tests.common.debug import minimal, assert_no_examples
+from hypothesis.internal.compat import hrange
 
 
 def test_binary_tree():
@@ -166,3 +167,24 @@ def test_impossible_self_recursion():
     x = st.deferred(lambda: st.tuples(st.none(), x))
     assert x.is_empty
     assert x.has_reusable_values
+
+
+def test_very_deep_deferral():
+    # This test is designed so that the recursive properties take a very long
+    # time to converge: Although we can rapidly determine them for the original
+    # value, each round in the fixed point calculation only manages to update
+    # a single value in the related strategies, so it takes 100 rounds to
+    # update everything. Most importantly this triggers our infinite loop
+    # detection heuristic and we start tracking duplicates, but we shouldn't
+    # see any because this loop isn't infinite, just long.
+    def strat(i):
+        if i == 0:
+            return st.deferred(lambda: st.one_of(strategies + [st.none()]))
+        else:
+            return st.deferred(
+                lambda: st.tuples(strategies[(i + 1) % len(strategies)]))
+
+    strategies = list(map(strat, hrange(100)))
+
+    assert strategies[0].has_reusable_values
+    assert not strategies[0].is_empty
