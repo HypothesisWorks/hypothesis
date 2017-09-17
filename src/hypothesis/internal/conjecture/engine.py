@@ -570,25 +570,27 @@ class ConjectureRunner(object):
             self.shrunk_examples.add(target)
 
     def try_buffer_with_rewriting_from(self, initial_attempt, v):
-        initial_data = self.language.cached_answer(initial_attempt)
-
-        if initial_data is None:
+        result = self.language.cached_answer(initial_attempt)
+        if result is None:
             initial_data = ConjectureData.for_buffer(initial_attempt)
             self.test_function(initial_data)
+            status = initial_data.status
+            length = len(initial_data.buffer)
+        else:
+            status, length = result
 
-        if initial_data.status == Status.INTERESTING:
-            return initial_data is self.last_data
+        if status == Status.INTERESTING:
+            return True
 
         # If this produced something completely invalid we ditch it
         # here rather than trying to persevere.
-        if initial_data.status < Status.VALID:
+        if status < Status.VALID:
             return False
 
-        if len(initial_data.buffer) < v:
+        if length < v:
             return False
 
-        lost_data = len(self.last_data.buffer) - \
-            len(initial_data.buffer)
+        lost_data = len(self.last_data.buffer) - length
 
         # If this did not in fact cause the data size to shrink we
         # bail here because it's not worth trying to delete stuff from
@@ -606,7 +608,7 @@ class ConjectureRunner(object):
             if (
                 r >= v and
                 s - r <= lost_data and
-                r < len(initial_data.buffer)
+                r < length
             ):
                 try_with_deleted = bytearray(initial_attempt)
                 del try_with_deleted[r:s]

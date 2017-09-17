@@ -20,7 +20,7 @@ from __future__ import division, print_function, absolute_import
 from array import array
 
 from hypothesis.internal.compat import hbytes, hrange
-from hypothesis.internal.conjecture.data import Status, ConjectureData
+from hypothesis.internal.conjecture.data import Status
 
 
 class Node(object):
@@ -123,6 +123,7 @@ class LanguageCache(object):
         # it's going to overrun the end of the buffer regardless of the
         # buffer contents.
         self.block_sizes = {}
+        self.leaves = []
 
     def __is_dead(self, node_index):
         return node_index in self.dead
@@ -172,7 +173,7 @@ class LanguageCache(object):
 
         if data.status != Status.OVERRUN and not self.__is_dead(node_index):
             self.__mark_dead(node_index)
-            self.tree[node_index] = data
+            self.tree[node_index] = data.status
 
             for j in reversed(indices):
                 if (
@@ -302,14 +303,14 @@ class LanguageCache(object):
 
     def cached_answer(self, initial_attempt):
         node_index = 0
-        for c in initial_attempt:
+        for i, c in enumerate(initial_attempt):
             try:
                 node_index = self.tree[node_index][c]
             except KeyError:
                 break
             node = self.tree[node_index]
-            if isinstance(node, ConjectureData):
-                return node
+            if isinstance(node, Status):
+                return (node, i + 1)
 
     def tree_is_exhausted(self):
         return self.__is_dead(0)
