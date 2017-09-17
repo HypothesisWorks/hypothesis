@@ -317,6 +317,8 @@ class SearchStrategy(object):
         try:
             self.validate_called = True
             self.do_validate()
+            self.is_empty
+            self.has_reusable_values
         except:
             self.validate_called = False
             raise
