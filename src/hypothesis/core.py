@@ -574,8 +574,8 @@ class StateForActualGivenExecution(object):
             raise
         except Exception:
             escalate_hypothesis_internal_error()
-            data.__expected_exception = traceback.format_exc()
-            verbose_report(data.__expected_exception)
+            data.expected_exception = traceback.format_exc()
+            verbose_report(data.expected_exception)
 
             error_class, _, tb = sys.exc_info()
 
@@ -676,7 +676,7 @@ class StateForActualGivenExecution(object):
             if not raised_exception:
                 report(
                     'Failed to reproduce exception. Expected: \n' +
-                    falsifying_example.__expected_exception,
+                    falsifying_example.expected_exception,
                 )
 
                 filter_message = (

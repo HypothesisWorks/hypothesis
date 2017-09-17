@@ -90,6 +90,7 @@ class ConjectureData(object):
         'evaluated_to',
         'hit_zero_bound',
         '_hypothesis_shared_strategies',
+        'expected_exception',
     )
 
     @classmethod
