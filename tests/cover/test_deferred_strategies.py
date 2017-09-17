@@ -160,3 +160,9 @@ def test_literals_strategy_is_valid():
     test()
 
     assert not literals.has_reusable_values
+
+
+def test_impossible_self_recursion():
+    x = st.deferred(lambda: st.tuples(st.none(), x))
+    assert x.is_empty
+    assert x.has_reusable_values

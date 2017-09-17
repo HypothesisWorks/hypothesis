@@ -115,6 +115,8 @@ class SearchStrategy(object):
                     if result is calculating:
                         hit_recursion[0] = True
                         return default
+                    else:
+                        return result
                 except KeyError:
                     mapping[strat] = calculating
                     mapping[strat] = getattr(strat, calculation)(recur)
