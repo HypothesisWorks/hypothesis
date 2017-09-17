@@ -125,6 +125,8 @@ class LanguageCache(object):
         self.block_sizes = {}
         self.leaves = []
 
+        self.origin_cache = {}
+
     def __is_dead(self, node_index):
         return node_index in self.dead
 
@@ -173,7 +175,12 @@ class LanguageCache(object):
 
         if data.status != Status.OVERRUN and not self.__is_dead(node_index):
             self.__mark_dead(node_index)
-            self.tree[node_index] = data.status
+            if data.status == Status.INTERESTING:
+                self.tree[node_index] = (
+                    data.status, self.origin_cache.setdefault(
+                        data.interesting_origin, data.interesting_origin))
+            else:
+                self.tree[node_index] = data.status
 
             for j in reversed(indices):
                 if (
@@ -310,7 +317,11 @@ class LanguageCache(object):
                 break
             node = self.tree[node_index]
             if isinstance(node, Status):
-                return (node, i + 1)
+                return (node, i + 1, None)
+            elif isinstance(node, tuple):
+                assert len(node) == 2
+                assert node[0] == Status.INTERESTING
+                return (node[0], i + 1, node[1])
 
     def tree_is_exhausted(self):
         return self.__is_dead(0)

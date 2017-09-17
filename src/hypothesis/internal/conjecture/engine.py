@@ -30,8 +30,8 @@ from hypothesis.internal.compat import EMPTY_BYTES, Counter, ceil, \
     bytes_from_list, to_bytes_sequence, unicode_safe_repr
 from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
     StopTest, ConjectureData
-from hypothesis.internal.conjecture.tree import LanguageCache
 from hypothesis.internal.conjecture.minimizer import minimize
+from hypothesis.internal.conjecture.tree import LanguageCache
 
 
 class ExitReason(Enum):
@@ -576,11 +576,12 @@ class ConjectureRunner(object):
             self.test_function(initial_data)
             status = initial_data.status
             length = len(initial_data.buffer)
+            origin = initial_data.interesting_origin
         else:
-            status, length = result
+            status, length, origin = result
 
         if status == Status.INTERESTING:
-            return True
+            return origin == self.last_data.interesting_origin
 
         # If this produced something completely invalid we ditch it
         # here rather than trying to persevere.
