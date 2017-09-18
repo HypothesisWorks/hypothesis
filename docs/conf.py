@@ -69,7 +69,8 @@ todo_include_todos = False
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None),
     'numpy': ('https://docs.scipy.org/doc/numpy/', None),
-    'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None)
+    'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
+    'pytest': ('https://docs.pytest.org/en/stable/', None),
 }
 
 autodoc_mock_imports = ['numpy', 'pandas']
@@ -127,6 +128,6 @@ man_pages = [
 
 texinfo_documents = [
     (master_doc, 'Hypothesis', u'Hypothesis Documentation',
-     author, 'Hypothesis', 'One line description of project.',
+     author, 'Hypothesis', 'Advanced property-based testing for Python.',
      'Miscellaneous'),
 ]

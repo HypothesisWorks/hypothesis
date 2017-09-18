@@ -105,6 +105,9 @@ You can also override the default by setting the environment variable
 setting ``HYPOTHESIS_VERBOSITY_LEVEL=verbose`` will run all your tests printing
 intermediate results and errors.
 
+If you are using ``pytest``, you may also need to
+:doc:`disable output capturing for passing tests <pytest:capture>`.
+
 -------------------------
 Building settings objects
 -------------------------
