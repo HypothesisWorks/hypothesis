@@ -27,20 +27,21 @@ pytest_plugins = str('pytester')
 
 
 TEST_SUITE = """
-from hypothesis import given, settings
+from hypothesis import given, settings, assume
 import hypothesis.strategies as st
 
 
 first = None
 
 @settings(database=None)
-@given(st.text(min_size=3))
-def test_fails_once(some_string):
+@given(st.integers())
+def test_fails_once(some_int):
+    assume(abs(some_int) > 10000)
     global first
     if first is None:
-        first = some_string
+        first = some_int
 
-    assert some_string != first
+    assert some_int != first
 """
 
 
@@ -66,7 +67,7 @@ def test_runs_repeatably_when_seed_is_set(seed, testdir):
         l
         for r in results
         for l in r.stdout.lines
-        if 'some_string=' in l
+        if 'some_int=' in l
     ]
 
     assert len(failure_lines) == 2
@@ -91,7 +92,7 @@ def test_runs_repeatably_when_following_seed_instruction(testdir):
         l
         for r in results
         for l in r.stdout.lines
-        if 'some_string=' in l
+        if 'some_int=' in l
     ]
 
     assert len(failure_lines) == 2
