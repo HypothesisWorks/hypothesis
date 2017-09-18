@@ -194,6 +194,7 @@ their individual contributions.
 * `Maxim Kulkin <https://www.github.com/maximkulkin>`_ (`maxim.kulkin@gmail.com <mailto:maxim.kulkin@gmail.com>`_)
 * `mulkieran <https://www.github.com/mulkieran>`_
 * `Nicholas Chammas <https://www.github.com/nchammas>`_
+* `Peadar Coyle` <http://www.github.com/springcoil>`_ (`peadarcoyle@gmail.com <mailto:peadarcoyle@gmail.com>`_)
 * `Richard Boulton <https://www.github.com/rboulton>`_ (`richard@tartarus.org <mailto:richard@tartarus.org>`_)
 * `Sam Hames <https://www.github.com/SamHames>`_
 * `Saul Shanabrook <https://www.github.com/saulshanabrook>`_ (`s.shanabrook@gmail.com <mailto:s.shanabrook@gmail.com>`_)

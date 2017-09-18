@@ -400,7 +400,7 @@ def data_frames(
 
     .. code-block:: pycon
 
-        >>> from hypothesis.extra.pandas import column, data_frames
+        >>> from hypothesis.extra.pandas import columns, data_frames
         >>> import hypothesis.strategies as st
         >>> data_frames(
         ...     columns=columns(["lo", "hi"], dtype=float),
