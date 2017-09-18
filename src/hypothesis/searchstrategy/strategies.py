@@ -152,7 +152,12 @@ class SearchStrategy(object):
                 # hit the count, but having an assertion for it means that
                 # testing is easier to debug and we don't just have a hung
                 # test.
-                if count > 50:
+                # Note: This is actually covered, by test_very_deep_deferral
+                # in tests/cover/test_deferred_strategies.py. Unfortunately it
+                # runs into a coverage bug. See
+                # https://bitbucket.org/ned/coveragepy/issues/605/
+                # for details.
+                if count > 50:  # pragma: no cover
                     key = frozenset(mapping.items())
                     assert key not in seen, (key, name)
                     seen.add(key)
