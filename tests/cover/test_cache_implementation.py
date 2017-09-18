@@ -22,9 +22,9 @@ from random import Random
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import note, given, assume, example
-from hypothesis.internal.cache import LFUCache, LRUCache, GenericCache, \
-    TwoLevelCache
+from hypothesis import note, given, assume, example, settings
+from hypothesis.internal.cache import LFUCache, LRUCache, LFLRUCache, \
+    GenericCache
 
 
 @st.composite
@@ -54,9 +54,10 @@ class RandomCache(GenericCache):
 
 @pytest.mark.parametrize(
     'implementation', [
-        LRUCache, LFUCache, TwoLevelCache, ValueScored, RandomCache
+        LRUCache, LFUCache, LFLRUCache, ValueScored, RandomCache
     ]
 )
+@example(writes=[(0, 0), (3, 0), (1, 0), (2, 0), (2, 0), (1, 0)], size=4)
 @example(writes=[(0, 0)], size=1)
 @example(writes=[(1, 0), (2, 0), (0, -1), (1, 0)], size=3)
 @given(write_pattern(), st.integers(1, 10))
