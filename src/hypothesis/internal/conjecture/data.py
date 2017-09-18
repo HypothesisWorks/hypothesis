@@ -18,6 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 from enum import IntEnum
+from array import array
 
 from hypothesis.errors import Frozen, InvalidArgument
 from hypothesis.internal.compat import hbytes, hrange, text_type, \
@@ -44,7 +45,53 @@ global_test_counter = 0
 MAX_DEPTH = 100
 
 
+class Blocks(object):
+    __slots__ = ('contents',)
+
+    def __init__(self):
+        self.contents = array('H')
+
+    def append(self, v):
+        assert len(v) == 2
+        self.contents.extend(v)
+
+    def __len__(self):
+        return len(self.contents) // 2
+
+    def __getitem__(self, i):
+        return (self.contents[i * 2], self.contents[i * 2 + 1])
+
+
 class ConjectureData(object):
+    __slots__ = (
+        'max_length',
+        'is_find',
+        '_draw_bytes',
+        'overdraw',
+        'level',
+        'block_starts',
+        'blocks',
+        'buffer',
+        'output',
+        'status',
+        'frozen',
+        'intervals_by_level',
+        'intervals',
+        'interval_stack',
+        'testcounter',
+        'start_time',
+        'events',
+        'forced_indices',
+        'capped_indices',
+        'interesting_origin',
+        'finish_time',
+        'current_node_index',
+        'hit_novelty',
+        'evaluated_to',
+        'hit_zero_bound',
+        '_hypothesis_shared_strategies',
+        'expected_exception',
+    )
 
     @classmethod
     def for_buffer(self, buffer):
@@ -62,7 +109,7 @@ class ConjectureData(object):
         self.overdraw = 0
         self.level = 0
         self.block_starts = {}
-        self.blocks = []
+        self.blocks = Blocks()
         self.buffer = bytearray()
         self.output = u''
         self.status = Status.VALID
@@ -149,6 +196,7 @@ class ConjectureData(object):
             for i in hrange(len(l) - 1):
                 if l[i][1] == l[i + 1][0]:
                     self.intervals.append((l[i][0], l[i + 1][1]))
+        del self.intervals_by_level
         self.intervals = sorted(
             set(self.intervals),
             key=lambda se: (se[0] - se[1], se[0])
