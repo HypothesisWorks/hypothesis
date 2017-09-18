@@ -22,7 +22,7 @@ from random import Random
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import note, given, assume, example, settings
+from hypothesis import note, given, assume, example
 from hypothesis.internal.cache import LFUCache, LRUCache, LFLRUCache, \
     GenericCache
 
@@ -72,7 +72,7 @@ def test_behaves_like_a_dict_with_losses(implementation, writes, size):
             pass
         model[k] = v
         target[k] = v
-        target.check_rep()
+        target.check_valid()
         assert target[k] == v
         for r, s in model.items():
             try:
@@ -146,3 +146,18 @@ def test_basic_access():
     assert cache[2] == 0
     assert cache[0] == 1
     assert len(cache) == 2
+
+
+def test_can_clear_a_cache():
+    x = ValueScored(1)
+    x[0] = 1
+    assert len(x) == 1
+    x.clear()
+    assert len(x) == 0
+
+
+def test_max_size_cache_ignores():
+    x = ValueScored(0)
+    x[0] = 1
+    with pytest.raises(KeyError):
+        x[0]

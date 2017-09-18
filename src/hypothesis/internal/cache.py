@@ -46,17 +46,6 @@ class GenericCache(object):
         self.__balance(i)
         return result.value
 
-    def __contains__(self, key):
-        return key in self.keys_to_indices
-
-    def clear(self):
-        self.data.clear()
-        self.keys_to_indices.clear()
-
-    def __repr__(self):
-        return "{%s}" % (', '.join(
-            "%r: %r" % (e.key, e.value) for e in self.data),)
-
     def __setitem__(self, key, value):
         if self.max_size == 0:
             return
@@ -87,20 +76,29 @@ class GenericCache(object):
                 assert evicted.score <= self.data[0].score
             self.on_evict(evicted.key, evicted.value, evicted.score)
 
-    def check_rep(self):
-        for i, e in enumerate(self.data):
-            for j in [i * 2 + 1, i * 2 + 2]:
-                if j < len(self.data):
-                    assert e.score <= self.data[j].score, self.data
+    def clear(self):
+        self.data.clear()
+        self.keys_to_indices.clear()
+
+    def __repr__(self):
+        return '{%s}' % (', '.join(
+            '%r: %r' % (e.key, e.value) for e in self.data),)
 
     def new_entry(self, key, value):
-        return 0
+        raise NotImplementedError()
 
     def on_access(self, key, value, score):
         return score
 
     def on_evict(self, key, value, score):
         pass
+
+    def check_valid(self):
+        for i, e in enumerate(self.data):
+            assert self.keys_to_indices[e.key] == i
+            for j in [i * 2 + 1, i * 2 + 2]:
+                if j < len(self.data):
+                    assert e.score <= self.data[j].score, self.data
 
     def __swap(self, i, j):
         assert i < j
