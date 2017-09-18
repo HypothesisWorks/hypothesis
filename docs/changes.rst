@@ -22,6 +22,12 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.28.2 - 2017-09-18
+-------------------
+
+This is a patch release that fixes a bug in the `hypothesis.extra.pandas` documentation where it incorrectly referred to column instead of columns.
+
+-------------------
 3.28.1 - 2017-09-16
 -------------------
 
