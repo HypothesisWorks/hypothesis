@@ -63,7 +63,7 @@ class SearchStrategy(object):
         an override: If the property has not been explicitly set, we calculate
         it on first access and memoize the result for later.
 
-        The problem is that for properties that depend on eachother, a naive
+        The problem is that for properties that depend on each other, a naive
         calculation strategy may hit infinite recursion. Consider for example
         the property is_empty. A strategy defined as x = st.deferred(lambda x)
         is certainly empty (in order ot draw a value from x we would have to

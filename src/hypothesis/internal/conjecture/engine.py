@@ -853,7 +853,7 @@ class ConjectureRunner(object):
         """Attempts to zero every block. This is a very coarse pass that we
         only run once to attempt to remove some irrelevant detail. The main
         purpose of it is that if we manage to zero a lot of data then many
-        attempted deletes become duplicates of eachother, so we run fewer
+        attempted deletes become duplicates of each other, so we run fewer
         tests.
 
         If more blocks become possible to zero later that will be
