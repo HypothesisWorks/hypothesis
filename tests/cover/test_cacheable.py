@@ -39,3 +39,13 @@ def test_is_cacheable(s):
 ])
 def test_is_not_cacheable(s):
     assert not s.is_cacheable
+
+
+def test_non_cacheable_things_are_not_cached():
+    x = st.just([])
+    assert st.tuples(x) != st.tuples(x)
+
+
+def test_cacheable_things_are_cached():
+    x = st.just(())
+    assert st.tuples(x) == st.tuples(x)
