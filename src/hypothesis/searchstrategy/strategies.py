@@ -17,14 +17,19 @@
 
 from __future__ import division, print_function, absolute_import
 
+from collections import defaultdict
+
 import hypothesis.internal.conjecture.utils as cu
 from hypothesis.errors import NoExamples, NoSuchExample, Unsatisfiable, \
     UnsatisfiedAssumption
 from hypothesis.control import assume, reject, _current_build_context
 from hypothesis._settings import note_deprecation
 from hypothesis.internal.compat import hrange
+from hypothesis.utils.conventions import UniqueIdentifier
 from hypothesis.internal.lazyformat import lazyformat
 from hypothesis.internal.reflection import get_pretty_function_description
+
+calculating = UniqueIdentifier('calculating')
 
 
 def one_of_strategies(xs):
@@ -51,21 +56,138 @@ class SearchStrategy(object):
     validate_called = False
 
     def recursive_property(name, default):
+        """Handle properties which may be mutually recursive among a set of
+        strategies.
+
+        These are essentially lazily cached properties, with the ability to set
+        an override: If the property has not been explicitly set, we calculate
+        it on first access and memoize the result for later.
+
+        The problem is that for properties that depend on each other, a naive
+        calculation strategy may hit infinite recursion. Consider for example
+        the property is_empty. A strategy defined as x = st.deferred(lambda x)
+        is certainly empty (in order ot draw a value from x we would have to
+        draw a value from x, for which we would have to draw a value from x,
+        ...), but in order to calculate it the naive approach would end up
+        calling x.is_empty in order to calculate x.is_empty in order to etc.
+
+        The solution is one of fixed point calculation. We start with a default
+        value that is the value of the property in the absence of evidence to
+        the contrary, and then update the values of the property for all
+        dependent strategies until we reach a fixed point.
+
+        The approach taken roughly follows that in section 4.2 of Adams,
+        Michael D., Celeste Hollenbeck, and Matthew Might. "On the complexity
+        and performance of parsing with derivatives." ACM SIGPLAN Notices 51.6
+        (2016): 224-236.
+
+        """
         cache_key = 'cached_' + name
         calculation = 'calc_' + name
         force_key = 'force_' + name
 
+        def forced_value(target):
+            try:
+                return getattr(target, force_key)
+            except AttributeError:
+                return getattr(target, cache_key)
+
         def accept(self):
-            if not hasattr(self, cache_key):
+            try:
+                return forced_value(self)
+            except AttributeError:
+                pass
+
+            mapping = {}
+            hit_recursion = [False]
+
+            # For a first pass we do a direct recursive calculation of the
+            # property, but we block recursively visiting a value in the
+            # computation of its property: When that happens, we simply
+            # note that it happened and return the default value.
+            def recur(strat):
                 try:
-                    setattr(self, cache_key, getattr(self, force_key))
+                    return forced_value(strat)
                 except AttributeError:
-                    # This isn't an error, but instead is to deal with
-                    # recursive strategy definitions that refer to themselves.
-                    # This ensures in a recursive call we will return the
-                    # default value.
-                    setattr(self, cache_key, default)
-                    setattr(self, cache_key, getattr(self, calculation)())
+                    pass
+                try:
+                    result = mapping[strat]
+                    if result is calculating:
+                        hit_recursion[0] = True
+                        return default
+                    else:
+                        return result
+                except KeyError:
+                    mapping[strat] = calculating
+                    mapping[strat] = getattr(strat, calculation)(recur)
+                    return mapping[strat]
+
+            recur(self)
+
+            # If we hit self-recursion in the computation of any strategy
+            # value, our mapping at the end is imprecise - it may or may
+            # not have the right values in it. We now need to proceed with
+            # a more careful fixed point calculation to get the exact
+            # values. Hopefully our mapping is still pretty good and it
+            # won't take a large number of updates to reach a fixed point.
+            if hit_recursion[0]:
+                needs_update = set(mapping)
+
+                # We track which strategies use which in the course of
+                # calculating their property value. If A ever uses B in
+                # the course of calculating its value, then whenveer the
+                # value of B changes we might need to update the value of
+                # A.
+                listeners = defaultdict(set)
+            else:
+                needs_update = None
+
+            count = 0
+            seen = set()
+            while needs_update:
+                count += 1
+                # If we seem to be taking a really long time to stabilize we
+                # start tracking seen values to attempt to detect an infinite
+                # loop. This should be impossible, and most code will never
+                # hit the count, but having an assertion for it means that
+                # testing is easier to debug and we don't just have a hung
+                # test.
+                # Note: This is actually covered, by test_very_deep_deferral
+                # in tests/cover/test_deferred_strategies.py. Unfortunately it
+                # runs into a coverage bug. See
+                # https://bitbucket.org/ned/coveragepy/issues/605/
+                # for details.
+                if count > 50:  # pragma: no cover
+                    key = frozenset(mapping.items())
+                    assert key not in seen, (key, name)
+                    seen.add(key)
+                to_update = needs_update
+                needs_update = set()
+                for strat in to_update:
+                    def recur(other):
+                        try:
+                            return forced_value(other)
+                        except AttributeError:
+                            pass
+                        listeners[other].add(strat)
+                        try:
+                            return mapping[other]
+                        except KeyError:
+                            needs_update.add(other)
+                            mapping[other] = default
+                            return default
+
+                    new_value = getattr(strat, calculation)(recur)
+                    if new_value != mapping[strat]:
+                        needs_update.update(listeners[strat])
+                        mapping[strat] = new_value
+
+            # We now have a complete and accurate calculation of the
+            # property values for everything we have seen in the course of
+            # running this calculation. We simultaneously update all of
+            # them (not just the strategy we started out with).
+            for k, v in mapping.items():
+                setattr(k, cache_key, v)
             return getattr(self, cache_key)
 
         accept.__name__ = name
@@ -76,16 +198,22 @@ class SearchStrategy(object):
     # The fact that this returns False does not guarantee that a valid value
     # can be drawn - this is not intended to be perfect, and is primarily
     # intended to be an optimisation for some cases.
-    is_empty = recursive_property('is_empty', False)
+    is_empty = recursive_property('is_empty', True)
 
     # Returns True if values from this strategy can safely be reused without
     # this causing unexpected behaviour.
     has_reusable_values = recursive_property('has_reusable_values', True)
 
-    def calc_is_empty(self):
+    def calc_is_empty(self, recur):
+        # Note: It is correct and significant that the default return value
+        # from calc_is_empty is False despite the default value for is_empty
+        # being true. The reason for this is that strategies should be treated
+        # as empty absent evidence to the contrary, but most basic strategies
+        # are trivially non-empty and it would be annoying to have to override
+        # this method to show that.
         return False
 
-    def calc_has_reusable_values(self):
+    def calc_has_reusable_values(self, recur):
         return False
 
     def example(self, random=None):
@@ -209,6 +337,8 @@ class SearchStrategy(object):
         try:
             self.validate_called = True
             self.do_validate()
+            self.is_empty
+            self.has_reusable_values
         except:
             self.validate_called = False
             raise
@@ -248,11 +378,11 @@ class OneOfStrategy(SearchStrategy):
         else:
             self.sampler = None
 
-    def calc_is_empty(self):
-        return len(self.element_strategies) == 0
+    def calc_is_empty(self, recur):
+        return all(recur(e) for e in self.original_strategies)
 
-    def calc_has_reusable_values(self):
-        return all(e.has_reusable_values for e in self.element_strategies)
+    def calc_has_reusable_values(self, recur):
+        return all(recur(e) for e in self.original_strategies)
 
     @property
     def element_strategies(self):
@@ -278,9 +408,8 @@ class OneOfStrategy(SearchStrategy):
 
     def do_draw(self, data):
         n = len(self.element_strategies)
-        if n == 0:
-            data.mark_invalid()
-        elif n == 1:
+        assert n > 0
+        if n == 1:
             return data.draw(self.element_strategies[0])
         elif self.sampler is None:
             i = cu.integer_range(data, 0, n - 1)
@@ -323,8 +452,8 @@ class MappedSearchStrategy(SearchStrategy):
         if pack is not None:
             self.pack = pack
 
-    def calc_is_empty(self):
-        return self.mapped_strategy.is_empty
+    def calc_is_empty(self, recur):
+        return recur(self.mapped_strategy)
 
     def __repr__(self):
         if not hasattr(self, '_cached_repr'):
@@ -368,8 +497,8 @@ class FilteredStrategy(SearchStrategy):
         self.condition = condition
         self.filtered_strategy = strategy
 
-    def calc_is_empty(self):
-        return self.filtered_strategy.is_empty
+    def calc_is_empty(self, recur):
+        return recur(self.filtered_strategy)
 
     def __repr__(self):
         if not hasattr(self, '_cached_repr'):

@@ -49,4 +49,8 @@ for ex in [
     adjust(ex, max_size='no')
 
 
+BAD_ARGS.extend([
+    e(st.lists, st.nothing(), unique=True, min_size=1),
+])
+
 test_raise_invalid_argument = argument_validation_test(BAD_ARGS)

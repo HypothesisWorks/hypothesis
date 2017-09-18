@@ -418,7 +418,7 @@ then use the result and go on to do other things are definitely also possible.
         @given(GoalData)
         def test_create_goal_dry_run(self, data):
             # We want slug to be unique for each run so that multiple test runs
-            # don't interfere with eachother. If for some reason some slugs trigger
+            # don't interfere with each other. If for some reason some slugs trigger
             # an error and others don't we'll get a Flaky error, but that's OK.
             slug = hex(random.getrandbits(32))[2:]
 

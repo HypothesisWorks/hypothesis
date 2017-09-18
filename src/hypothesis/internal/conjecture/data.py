@@ -102,6 +102,8 @@ class ConjectureData(object):
     def draw(self, strategy):
         if self.depth >= MAX_DEPTH:
             self.mark_invalid()
+        if strategy.is_empty:
+            self.mark_invalid()
 
         if self.is_find and not strategy.supports_find:
             raise InvalidArgument((

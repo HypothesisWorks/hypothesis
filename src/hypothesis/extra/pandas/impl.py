@@ -526,7 +526,7 @@ def data_frames(
 
             # For columns with no filling the problem is harder, and drawing
             # them like that would result in rows being very far apart from
-            # eachother in the underlying data stream, which gets in the way
+            # each other in the underlying data stream, which gets in the way
             # of shrinking. So what we do is reorder and draw those columns
             # row wise, so that the values of each row are next to each other.
             # This makes life easier for the shrinker when deleting blocks of

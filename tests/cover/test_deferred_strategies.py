@@ -20,8 +20,10 @@ from __future__ import division, print_function, absolute_import
 import pytest
 
 from hypothesis import strategies as st
+from hypothesis import given
 from hypothesis.errors import InvalidArgument
 from tests.common.debug import minimal, assert_no_examples
+from hypothesis.internal.compat import hrange
 
 
 def test_binary_tree():
@@ -144,3 +146,57 @@ def test_self_recursive_lists():
     assert minimal(x) == []
     assert minimal(x, bool) == [[]]
     assert minimal(x, lambda x: len(x) > 1) == [[], []]
+
+
+def test_literals_strategy_is_valid():
+    literals = st.deferred(lambda: st.one_of(
+        st.booleans(),
+        st.tuples(literals, literals),
+        literals.map(lambda x: [x]),
+    ))
+
+    @given(literals)
+    def test(e):
+        pass
+    test()
+
+    assert not literals.has_reusable_values
+
+
+def test_impossible_self_recursion():
+    x = st.deferred(lambda: st.tuples(st.none(), x))
+    assert x.is_empty
+    assert x.has_reusable_values
+
+
+def test_very_deep_deferral():
+    # This test is designed so that the recursive properties take a very long
+    # time to converge: Although we can rapidly determine them for the original
+    # value, each round in the fixed point calculation only manages to update
+    # a single value in the related strategies, so it takes 100 rounds to
+    # update everything. Most importantly this triggers our infinite loop
+    # detection heuristic and we start tracking duplicates, but we shouldn't
+    # see any because this loop isn't infinite, just long.
+    def strat(i):
+        if i == 0:
+            return st.deferred(lambda: st.one_of(strategies + [st.none()]))
+        else:
+            return st.deferred(
+                lambda: st.tuples(strategies[(i + 1) % len(strategies)]))
+
+    strategies = list(map(strat, hrange(100)))
+
+    assert strategies[0].has_reusable_values
+    assert not strategies[0].is_empty
+
+
+def test_recursion_in_middle():
+    # This test is significant because the integers().map(abs) is not checked
+    # in the initial pass - when we recurse into x initially we decide that
+    # x is empty, so the tuple is empty, and don't need to check the third
+    # argument. Then when we do the more refined test we've discovered that x
+    # is non-empty, so we need to check the non-emptiness of the last component
+    # to determine the non-emptiness of the tuples.
+    x = st.deferred(
+        lambda: st.tuples(st.none(), x, st.integers().map(abs)) | st.none())
+    assert not x.is_empty

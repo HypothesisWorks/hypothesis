@@ -30,8 +30,8 @@ class FlatMapStrategy(SearchStrategy):
         self.flatmapped_strategy = strategy
         self.expand = expand
 
-    def calc_is_empty(self):
-        return self.flatmapped_strategy.is_empty
+    def calc_is_empty(self, recur):
+        return recur(self.flatmapped_strategy)
 
     def __repr__(self):
         if not hasattr(self, u'_cached_repr'):
