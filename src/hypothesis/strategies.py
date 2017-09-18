@@ -104,7 +104,8 @@ def cacheable(fn):
             return fn(*args, **kwargs)
         except KeyError:
             result = fn(*args, **kwargs)
-            cache[cache_key] = result
+            if result.is_cacheable:
+                cache[cache_key] = result
             return result
     cached_strategy.__clear_cache = cache.clear
     return cached_strategy

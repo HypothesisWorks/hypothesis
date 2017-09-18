@@ -38,6 +38,14 @@ class BoolStrategy(SearchStrategy):
         return d.boolean(data)
 
 
+def is_simple_data(value):
+    try:
+        hash(value)
+        return True
+    except TypeError:
+        return False
+
+
 class JustStrategy(SearchStrategy):
 
     """A strategy which simply returns a single fixed value with probability
@@ -52,6 +60,9 @@ class JustStrategy(SearchStrategy):
 
     def calc_has_reusable_values(self, recur):
         return True
+
+    def calc_is_cacheable(self, recur):
+        return is_simple_data(self.value)
 
     def do_draw(self, data):
         return self.value
@@ -88,6 +99,9 @@ class SampledFromStrategy(SearchStrategy):
 
     def calc_has_reusable_values(self, recur):
         return True
+
+    def calc_is_cacheable(self, recur):
+        return is_simple_data(self.elements)
 
     def do_draw(self, data):
         return d.choice(data, self.elements)
