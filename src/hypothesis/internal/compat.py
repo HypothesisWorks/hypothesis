@@ -243,6 +243,12 @@ else:
     from time import time as benchmark_time
 
 
+# coverage mixes unicode and str filepaths on Python 2, which causes us
+# problems if we're running under unicodenazi (it might also cause problems
+# when not running under unicodenazi, but hard to say for sure). This method
+# exists to work around that: If we're given a unicode filepath, we turn it
+# into a string file path using the appropriate encoding. See
+# https://bitbucket.org/ned/coveragepy/issues/602/ for more information.
 if PY2:
     def encoded_filepath(filepath):
         if isinstance(filepath, text_type):
