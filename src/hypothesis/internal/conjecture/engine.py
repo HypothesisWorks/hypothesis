@@ -28,10 +28,10 @@ from hypothesis import settings as Settings
 from hypothesis import Phase
 from hypothesis.reporting import debug_report
 from hypothesis.internal.compat import EMPTY_BYTES, Counter, ceil, \
-    hbytes, hrange, text_type, int_to_text, int_to_bytes, \
-    bytes_from_list, to_bytes_sequence, unicode_safe_repr
+    hbytes, hrange, text_type, int_to_bytes, bytes_from_list, \
+    to_bytes_sequence
 from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
-    StopTest, ConjectureData
+    StopTest, ConjectureData, untagged
 from hypothesis.internal.conjecture.minimizer import minimize
 
 
@@ -150,6 +150,8 @@ class ConjectureRunner(object):
         if data.status >= Status.VALID:
             self.valid_examples += 1
             for t in data.tags:
+                if t is untagged:
+                    continue
                 existing = self.covering_examples.get(t)
                 if (
                     existing is None or
@@ -1113,6 +1115,7 @@ class TargetSelector(object):
     def __init__(self, random):
         self.random = random
         self.best_status = Status.OVERRUN
+        self.reset()
 
     def reset(self):
         self.examples_by_tags = defaultdict(list)
