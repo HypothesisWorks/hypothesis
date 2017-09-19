@@ -36,16 +36,17 @@ hypothesis[datetime]
 hypothesis[fakefactory]
 -----------------------
 
-`Fake-factory <https://pypi.python.org/pypi/fake-factory>`_ is another Python
+:pypi:`faker` is another Python
 library for data generation. hypothesis.extra.fakefactory is a package which
-lets you use fake-factory generators to parametrize tests.
+lets you use Faker generators to parametrize tests.
+(tha name mismatch is because Faker used to be called fake-factory)
 
-The fake-factory API is extremely unstable, even between patch releases, and
+The Faker API is extremely unstable, even between patch releases, and
 Hypothesis's support for it is unlikely to work with anything except the exact
 version it has been tested against.
 
 hypothesis.extra.fakefactory defines a function fake_factory which returns a
-strategy for producing text data from any FakeFactory provider.
+strategy for producing text data from any Faker provider.
 
 So for example the following will parametrize a test by an email address:
 

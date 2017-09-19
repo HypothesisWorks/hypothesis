@@ -7,15 +7,10 @@ Downstream packagers often want to package Hypothesis. Here are some guidelines.
 The primary guideline is this: If you are not prepared to keep up with the Hypothesis release schedule,
 don't. You will annoy me and are doing your users a disservice.
 
-Hypothesis has quite a frequent release schedule. It's very rare that it goes a month without a release,
-and there are often multiple releases in a given month.
+Hypothesis has a very frequent release schedule. It's rare that it goes a week without a release,
+and there are often multiple releases in a given week.
 
-Many people not only fail to follow the release schedule but also seem included to package versions
-which are months out of date even at the point of packaging. This will cause me to be very annoyed with you and
-you will consequently get very little co-operation from me.
-
-If you *are* prepared to keep up with the Hypothesis release schedule, the rest of this document outlines
-some information you might find useful.
+If you *are* prepared to keep up with this schedule, you might find the rest of this document useful.
 
 ----------------
 Release tarballs
@@ -52,11 +47,11 @@ Other Python libraries
 
 Hypothesis has *optional* dependencies on the following libraries:
 
-* pytz (almost any version should work)
-* faker, version 0.7
-* Django, all supported versions
-* numpy, 1.10 or later (earlier versions will probably work fine)
-* py.test (2.7.0 or greater). This is a mandatory dependency for testing Hypothesis itself but optional for users.
+* :pypi:`pytz` (almost any version should work)
+* :pypi:`faker`, version 0.7
+* `Django <https://www.djangoproject.com>`_, all supported versions
+* :pypi:`numpy`, 1.10 or later (earlier versions will probably work fine)
+* :pypi:`py.test <pytest>` (2.8.0 or greater). This is a mandatory dependency for testing Hypothesis itself but optional for users.
 
 The way this works when installing Hypothesis normally is that these features become available if the relevant
 library is installed.
@@ -69,8 +64,8 @@ If you want to test Hypothesis as part of your packaging you will probably not w
 Hypothesis itself uses for running its tests, because it has a lot of logic for installing and testing against
 different versions of Python.
 
-The tests must be run with py.test. A version more recent than 2.7.0 is strongly encouraged, but it may work
-with earlier versions (however py.test specific logic is disabled before 2.7.0).
+The tests must be run with py.test. A version more recent than 2.8.0 is strongly encouraged, but it may work
+with earlier versions (however py.test specific logic is disabled before 2.8.0).
 
 Tests are organised into a number of top level subdirectories of the tests/ directory.
 
@@ -97,5 +92,5 @@ Examples
 --------
 
 * `arch linux <https://www.archlinux.org/packages/community/any/python-hypothesis/>`_
-* `fedora <https://admin.fedoraproject.org/pkgdb/package/rpms/python-hypothesis/>`_
-* `gentoo <https://packages.gentoo.org/packages/dev-python/hypothesis>`_ (slightly behind at the time of this writing)
+* `fedora <https://src.fedoraproject.org/rpms/python-hypothesis>`_
+* `gentoo <https://packages.gentoo.org/packages/dev-python/hypothesis>`_
