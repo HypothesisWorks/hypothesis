@@ -28,8 +28,8 @@ from hypothesis import settings as Settings
 from hypothesis import Phase
 from hypothesis.reporting import debug_report
 from hypothesis.internal.compat import EMPTY_BYTES, Counter, ceil, \
-    hbytes, hrange, text_type, int_to_bytes, bytes_from_list, \
-    to_bytes_sequence
+    hbytes, hrange, text_type, int_to_bytes, \
+    bytes_from_list, to_bytes_sequence
 from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
     StopTest, ConjectureData, untagged
 from hypothesis.internal.conjecture.minimizer import minimize
@@ -112,21 +112,6 @@ class ConjectureRunner(object):
 
     def __tree_is_exhausted(self):
         return 0 in self.dead
-
-    def new_buffer(self):
-        assert not self.__tree_is_exhausted()
-
-        def draw_bytes(data, n):
-            return self.__rewrite_for_novelty(
-                data, self.__zero_bound(data, uniform(self.random, n))
-            )
-
-        self.last_data = ConjectureData(
-            max_length=self.settings.buffer_size,
-            draw_bytes=draw_bytes
-        )
-        self.test_function(self.last_data)
-        self.last_data.freeze()
 
     def test_function(self, data):
         self.call_count += 1
@@ -242,6 +227,15 @@ class ConjectureRunner(object):
             if self.shrinks >= self.settings.max_shrinks:
                 self.exit_reason = ExitReason.max_shrinks
                 raise RunIsComplete()
+        if not self.interesting_examples:
+            if self.valid_examples >= self.settings.max_examples:
+                self.exit_with(ExitReason.max_examples)
+            if self.call_count >= max(
+                self.settings.max_iterations, self.settings.max_examples
+            ):
+                self.exit_with(ExitReason.max_iterations)
+        if self.__tree_is_exhausted():
+            self.exit_with(ExitReason.finished)
 
     def consider_new_test_data(self, data):
         # Transition rules:
@@ -647,32 +641,33 @@ class ConjectureRunner(object):
 
         self.reuse_existing_examples()
 
-        if (
-            Phase.generate in self.settings.phases and not
-            self.__tree_is_exhausted()
-        ):
-            if (
-                self.last_data is None or
-                self.last_data.status < Status.INTERESTING
-            ):
-                self.new_buffer()
+        if Phase.generate in self.settings.phases:
+            count = 0
+            while count < 10 and not self.interesting_examples:
+                def draw_bytes(data, n):
+                    return self.__rewrite_for_novelty(
+                        data, self.__zero_bound(data, uniform(self.random, n))
+                    )
+
+                targets_found = len(self.covering_examples)
+
+                self.last_data = ConjectureData(
+                    max_length=self.settings.buffer_size,
+                    draw_bytes=draw_bytes
+                )
+                self.test_function(self.last_data)
+                self.last_data.freeze()
+
+                if len(self.covering_examples) > targets_found:
+                    count = 0
+                else:
+                    count += 1
 
             mutator = self._new_mutator()
 
             zero_bound_queue = []
 
-            while (
-                self.last_data.status != Status.INTERESTING and
-                not self.__tree_is_exhausted()
-            ):
-                if self.valid_examples >= self.settings.max_examples:
-                    self.exit_reason = ExitReason.max_examples
-                    return
-                if self.call_count >= max(
-                    self.settings.max_iterations, self.settings.max_examples
-                ):
-                    self.exit_reason = ExitReason.max_iterations
-                    return
+            while not self.interesting_examples:
                 if (
                     self.settings.timeout > 0 and
                     time.time() >= start_time + self.settings.timeout
@@ -724,9 +719,9 @@ class ConjectureRunner(object):
                     target, self.last_data = self.target_selector.select()
                     if mutations >= self.settings.max_mutations:
                         mutations = 0
-                        data = self.new_buffer()
                         mutator = self._new_mutator()
                     else:
+                        targets_found = len(self.covering_examples)
                         data = ConjectureData(
                             draw_bytes=mutator,
                             max_length=self.settings.buffer_size
@@ -736,7 +731,10 @@ class ConjectureRunner(object):
                         prev_data = self.last_data
                         if self.consider_new_test_data(data):
                             self.last_data = data
-                            if data.status > prev_data.status:
+                            if (
+                                data.status > prev_data.status or
+                                len(self.covering_examples) > targets_found
+                            ):
                                 mutations = 0
                             elif target not in data.tags:
                                 mutator = self._new_mutator()
@@ -745,10 +743,6 @@ class ConjectureRunner(object):
                 if getattr(data, 'hit_zero_bound', False):
                     zero_bound_queue.append(data)
                 mutations += 1
-
-        if self.__tree_is_exhausted():
-            self.exit_reason = ExitReason.finished
-            return
 
         data = self.last_data
         if data is None:
