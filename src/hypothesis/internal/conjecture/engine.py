@@ -18,6 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 import time
+import heapq
 from enum import Enum
 from random import Random, getrandbits
 from weakref import WeakKeyDictionary
@@ -1092,6 +1093,33 @@ def uniform(random, n):
     return int_to_bytes(random.getrandbits(n * 8), n)
 
 
+class SampleSet(object):
+    __slots__ = ('__values', '__index')
+
+    def __init__(self):
+        self.__values = []
+        self.__index = {}
+
+    def __len__(self):
+        return len(self.__values)
+
+    def add(self, value):
+        if value in self.__index:
+            return
+        self.__index[value] = len(self.__values)
+        self.__values.append(value)
+
+    def remove(self, value):
+        i = self.__index.pop(value)
+        last = self.__values.pop()
+        if i < len(self.__values):
+            self.__values[i] = last
+            self.__index[last] = i
+
+    def choice(self, random):
+        return random.choice(self.__values)
+
+
 class TargetSelector(object):
     def __init__(self, random):
         self.random = random
@@ -1100,6 +1128,9 @@ class TargetSelector(object):
     def reset(self):
         self.examples_by_tags = defaultdict(list)
         self.tag_usage_counts = Counter()
+        self.tags_by_score = defaultdict(SampleSet)
+        self.scores_by_tag = {}
+        self.scores = []
 
     def add(self, data):
         if data.status == Status.INTERESTING:
@@ -1111,16 +1142,37 @@ class TargetSelector(object):
             self.reset()
         for t in data.tags:
             self.examples_by_tags[t].append(data)
+            self.rescore(t)
 
-    def score(self, tag):
-        return (self.tag_usage_counts[tag], len(self.examples_by_tags[tag]))
+    def rescore(self, tag):
+        new_score = (
+            self.tag_usage_counts[tag], len(self.examples_by_tags[tag]))
+        try:
+            old_score = self.scores_by_tag[tag]
+        except KeyError:
+            pass
+        else:
+            self.tags_by_score[old_score].remove(tag)
+        self.scores_by_tag[tag] = new_score
+
+        sample = self.tags_by_score[new_score]
+        if len(sample) == 0:
+            heapq.heappush(self.scores, new_score)
+        sample.add(tag)
+
+    def select_tag(self):
+        while True:
+            peek = self.scores[0]
+            sample = self.tags_by_score[peek]
+            if len(sample) == 0:
+                heapq.heappop(self.scores)
+            else:
+                return sample.choice(self.random)
 
     def select(self):
-        scored_tags = [(t, self.score(t)) for t in self.examples_by_tags]
-        min_score = min([e[1] for e in scored_tags])
-        possible_tags = [t for t, e in scored_tags if e == min_score]
-        t = self.random.choice(possible_tags)
+        t = self.select_tag()
         result = self.random.choice(self.examples_by_tags[t])
         for s in result.tags:
             self.tag_usage_counts[s] += 1
+            self.rescore(s)
         return t, result
