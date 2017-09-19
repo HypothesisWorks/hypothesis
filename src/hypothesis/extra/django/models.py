@@ -27,28 +27,12 @@ from django.conf import settings as django_settings
 from django.core.exceptions import ValidationError
 
 import hypothesis.strategies as st
+from hypothesis import reject
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.pytz import timezones
 from hypothesis.provisional import IP4_addr_strings, IP6_addr_strings, \
     emails
 from hypothesis.utils.conventions import UniqueIdentifier
-from hypothesis.searchstrategy.strategies import SearchStrategy
-
-
-class ModelNotSupported(Exception):
-    pass
-
-
-def referenced_models(model, seen=None):
-    if seen is None:
-        seen = set()
-    for f in model._meta.concrete_fields:
-        if isinstance(f, dm.ForeignKey):
-            t = f.rel.to
-            if t not in seen:
-                seen.add(t)
-                referenced_models(t, seen)
-    return seen
 
 
 def get_tz_strat():
@@ -105,10 +89,6 @@ def add_default_field_mapping(field_type, strategy):
 default_value = UniqueIdentifier(u'default_value')
 
 
-class UnmappedFieldError(Exception):
-    pass
-
-
 def validator_to_filter(f):
     """Converts the field run_validators method to something suitable for use
     in filter."""
@@ -124,9 +104,7 @@ def validator_to_filter(f):
 
 
 def _get_strategy_for_field(f):
-    if isinstance(f, dm.AutoField):
-        return default_value
-    elif f.choices:
+    if f.choices:
         choices = []
         for value, name_or_optgroup in f.choices:
             if isinstance(name_or_optgroup, (list, tuple)):
@@ -152,13 +130,7 @@ def _get_strategy_for_field(f):
         strategy = st.decimals(min_value=-bound, max_value=bound,
                                places=f.decimal_places)
     else:
-        try:
-            strategy = field_mappings()[type(f)]
-        except KeyError:
-            if f.null:
-                return None
-            else:
-                raise UnmappedFieldError(f)
+        strategy = field_mappings().get(type(f), st.nothing())
     if f.validators:
         strategy = strategy.filter(validator_to_filter(f))
     if f.null:
@@ -167,45 +139,25 @@ def _get_strategy_for_field(f):
 
 
 def models(model, **extra):
-    result = {}
-    mandatory = set()
+    """Return a strategy for instances of a model."""
+    result = {k: v for k, v in extra.items() if v is not default_value}
+    missed = []
     for f in model._meta.concrete_fields:
-        try:
-            strategy = _get_strategy_for_field(f)
-        except UnmappedFieldError:
-            mandatory.add(f.name)
-            continue
-        if strategy is not None:
-            result[f.name] = strategy
-    missed = {x for x in mandatory if x not in extra}
+        if not (f.name in extra or isinstance(f, dm.AutoField)):
+            result[f.name] = _get_strategy_for_field(f)
+            if result[f.name].is_empty:
+                missed.append(f.name)
     if missed:
-        raise InvalidArgument((
-            u'Missing arguments for mandatory field%s %s for model %s' % (
-                u's' if len(missed) > 1 else u'',
-                u', '.join(missed),
-                model.__name__,
-            )))
-    result.update(extra)
-    # Remove default_values so we don't try to generate anything for those.
-    result = {k: v for k, v in result.items() if v is not default_value}
-    return ModelStrategy(model, result)
+        raise InvalidArgument(
+            u'Missing arguments for mandatory field%s %s for model %s'
+            % (u's' if missed else u'', u', '.join(missed), model.__name__))
+    return _models_impl(st.builds(model.objects.get_or_create, **result))
 
 
-class ModelStrategy(SearchStrategy):
-
-    def __init__(self, model, mappings):
-        super(ModelStrategy, self).__init__()
-        self.model = model
-        self.arg_strategy = st.fixed_dictionaries(mappings)
-
-    def __repr__(self):
-        return u'ModelStrategy(%s)' % (self.model.__name__,)
-
-    def do_draw(self, data):
-        try:
-            result, _ = self.model.objects.get_or_create(
-                **self.arg_strategy.do_draw(data)
-            )
-            return result
-        except IntegrityError:
-            data.mark_invalid()
+@st.composite
+def _models_impl(draw, strat):
+    """Handle the nasty part of drawing a value for models()"""
+    try:
+        return draw(strat)[0]
+    except IntegrityError:
+        reject()
