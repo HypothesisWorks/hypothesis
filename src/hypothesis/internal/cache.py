@@ -77,7 +77,7 @@ class GenericCache(object):
             self.on_evict(evicted.key, evicted.value, evicted.score)
 
     def clear(self):
-        self.data.clear()
+        del self.data[:]
         self.keys_to_indices.clear()
 
     def __repr__(self):
