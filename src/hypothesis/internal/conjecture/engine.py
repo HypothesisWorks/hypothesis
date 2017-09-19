@@ -21,7 +21,7 @@ import time
 from enum import Enum
 from random import Random, getrandbits
 from weakref import WeakKeyDictionary
-from collections import deque
+from collections import defaultdict
 
 from hypothesis import settings as Settings
 from hypothesis import Phase
@@ -66,6 +66,8 @@ class ConjectureRunner(object):
         self.status_runtimes = {}
         self.events_to_strings = WeakKeyDictionary()
 
+        self.target_selector = TargetSelector(self.random)
+
         # Tree nodes are stored in an array to prevent heavy nesting of data
         # structures. Branches are dicts mapping bytes to child nodes (which
         # will in general only be partially populated). Leaves are
@@ -107,17 +109,11 @@ class ConjectureRunner(object):
 
         self.shrunk_examples = set()
 
-        self.discovery_queue = deque()
-
     def __tree_is_exhausted(self):
         return 0 in self.dead
 
     def new_buffer(self):
         assert not self.__tree_is_exhausted()
-
-        if self.discovery_queue:
-            self.last_data = self.discovery_queue.popleft()
-            return
 
         def draw_bytes(data, n):
             return self.__rewrite_for_novelty(
@@ -147,6 +143,8 @@ class ConjectureRunner(object):
             data.freeze()
             self.note_details(data)
 
+        self.target_selector.add(data)
+
         self.debug_data(data)
         if data.status >= Status.VALID:
             self.valid_examples += 1
@@ -157,7 +155,6 @@ class ConjectureRunner(object):
                     sort_key(data.buffer) < sort_key(existing.buffer)
                 ):
                     self.covering_examples[t] = data
-                    self.discovery_queue.append(data)
                     if self.database is not None:
                         self.database.save(self.covering_key, data.buffer)
                         if existing is not None:
@@ -731,24 +728,28 @@ class ConjectureRunner(object):
                     )
                     self.test_function(data)
                     data.freeze()
-                elif mutations >= self.settings.max_mutations:
-                    mutations = 0
-                    data = self.new_buffer()
-                    mutator = self._new_mutator()
                 else:
-                    data = ConjectureData(
-                        draw_bytes=mutator,
-                        max_length=self.settings.buffer_size
-                    )
-                    self.test_function(data)
-                    data.freeze()
-                    prev_data = self.last_data
-                    if self.consider_new_test_data(data):
-                        self.last_data = data
-                        if data.status > prev_data.status:
-                            mutations = 0
-                    else:
+                    target, self.last_data = self.target_selector.select()
+                    if mutations >= self.settings.max_mutations:
+                        mutations = 0
+                        data = self.new_buffer()
                         mutator = self._new_mutator()
+                    else:
+                        data = ConjectureData(
+                            draw_bytes=mutator,
+                            max_length=self.settings.buffer_size
+                        )
+                        self.test_function(data)
+                        data.freeze()
+                        prev_data = self.last_data
+                        if self.consider_new_test_data(data):
+                            self.last_data = data
+                            if data.status > prev_data.status:
+                                mutations = 0
+                            elif target not in data.tags:
+                                mutator = self._new_mutator()
+                        else:
+                            mutator = self._new_mutator()
                 if getattr(data, 'hit_zero_bound', False):
                     zero_bound_queue.append(data)
                 mutations += 1
@@ -1089,3 +1090,38 @@ def sort_key(buffer):
 
 def uniform(random, n):
     return int_to_bytes(random.getrandbits(n * 8), n)
+
+
+class TargetSelector(object):
+    def __init__(self, random):
+        self.random = random
+        self.best_status = Status.OVERRUN
+
+    def reset(self):
+        self.examples_by_tags = defaultdict(list)
+        self.tag_usage_counts = Counter()
+
+    def add(self, data):
+        if data.status == Status.INTERESTING:
+            return
+        if data.status < self.best_status:
+            return
+        if data.status > self.best_status:
+            self.best_status = data.status
+            self.reset()
+        for t in data.tags:
+            self.examples_by_tags[t].append(data)
+
+    def score(self, tag):
+        return (self.tag_usage_counts[tag], len(self.examples_by_tags[tag]))
+
+    def select(self):
+        scored_tags = [(t, self.score(t)) for t in self.examples_by_tags]
+        min_score = min([e[1] for e in scored_tags])
+        possible_tags = [t for t, e in scored_tags if e == min_score]
+        t = self.random.choice(possible_tags)
+        result = self.random.choice(self.examples_by_tags[t])
+        for s in result.tags:
+            self.tag_usage_counts[s] += 1
+        print(t)
+        return t, result
