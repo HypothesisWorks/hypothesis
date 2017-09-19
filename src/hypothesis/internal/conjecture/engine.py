@@ -1123,5 +1123,4 @@ class TargetSelector(object):
         result = self.random.choice(self.examples_by_tags[t])
         for s in result.tags:
             self.tag_usage_counts[s] += 1
-        print(t)
         return t, result
