@@ -21,6 +21,7 @@ import time
 from enum import Enum
 from random import Random, getrandbits
 from weakref import WeakKeyDictionary
+from collections import deque
 
 from hypothesis import settings as Settings
 from hypothesis import Phase
@@ -102,13 +103,21 @@ class ConjectureRunner(object):
         self.block_sizes = {}
 
         self.interesting_examples = {}
+        self.covering_examples = {}
+
         self.shrunk_examples = set()
+
+        self.discovery_queue = deque()
 
     def __tree_is_exhausted(self):
         return 0 in self.dead
 
     def new_buffer(self):
         assert not self.__tree_is_exhausted()
+
+        if self.discovery_queue:
+            self.last_data = self.discovery_queue.popleft()
+            return
 
         def draw_bytes(data, n):
             return self.__rewrite_for_novelty(
@@ -141,6 +150,19 @@ class ConjectureRunner(object):
         self.debug_data(data)
         if data.status >= Status.VALID:
             self.valid_examples += 1
+            for t in data.tags:
+                existing = self.covering_examples.get(t)
+                if (
+                    existing is None or
+                    sort_key(data.buffer) < sort_key(existing.buffer)
+                ):
+                    self.covering_examples[t] = data
+                    self.discovery_queue.append(data)
+                    if self.database is not None:
+                        self.database.save(self.covering_key, data.buffer)
+                        if existing is not None:
+                            self.database.delete(
+                                self.covering_key, existing.buffer)
 
         tree_node = self.tree[0]
         indices = []
@@ -256,6 +278,10 @@ class ConjectureRunner(object):
     @property
     def secondary_key(self):
         return b'.'.join((self.database_key, b"secondary"))
+
+    @property
+    def covering_key(self):
+        return b'.'.join((self.database_key, b"coverage"))
 
     def note_details(self, data):
         if data.status == Status.INTERESTING:
@@ -548,10 +574,15 @@ class ConjectureRunner(object):
         data.__evaluated_to = data.index + len(result)
         return hbytes(result)
 
+    @property
+    def database(self):
+        if self.database_key is None:
+            return None
+        return self.settings.database
+
     def has_existing_examples(self):
         return (
-            self.settings.database is not None and
-            self.database_key is not None and
+            self.database is not None and
             Phase.reuse in self.settings.phases
         )
 
@@ -586,19 +617,20 @@ class ConjectureRunner(object):
             )
             desired_size = max(2, ceil(0.1 * self.settings.max_examples))
 
-            if len(corpus) < desired_size:
-                secondary_corpus = list(
-                    self.settings.database.fetch(self.secondary_key),
-                )
+            for extra_key in [self.secondary_key, self.covering_key]:
+                if len(corpus) < desired_size:
+                    extra_corpus = list(
+                        self.settings.database.fetch(extra_key),
+                    )
 
-                shortfall = desired_size - len(corpus)
+                    shortfall = desired_size - len(corpus)
 
-                if len(secondary_corpus) <= shortfall:
-                    extra = secondary_corpus
-                else:
-                    extra = self.random.sample(secondary_corpus, shortfall)
-                extra.sort(key=sort_key)
-                corpus.extend(extra)
+                    if len(extra_corpus) <= shortfall:
+                        extra = extra_corpus
+                    else:
+                        extra = self.random.sample(extra_corpus, shortfall)
+                    extra.sort(key=sort_key)
+                    corpus.extend(extra)
 
             for existing in corpus:
                 if self.valid_examples >= self.settings.max_examples:

@@ -96,3 +96,12 @@ def checks_deprecated_behaviour(func):
 
 def all_values(db):
     return set(v for vs in db.data.values() for v in vs)
+
+
+def non_covering_examples(database):
+    return {
+        v
+        for k, vs in database.data.items()
+        if not k.endswith(b'.coverage')
+        for v in vs
+    }

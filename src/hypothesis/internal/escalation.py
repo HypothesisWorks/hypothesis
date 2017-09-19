@@ -20,22 +20,33 @@ from __future__ import division, print_function, absolute_import
 import os
 import sys
 
+import coverage
+
+import hypothesis
 from hypothesis.errors import DeadlineExceeded
-
-INTERNAL_PACKAGE_DIR = os.path.dirname(os.path.abspath(__file__))
-HYPOTHESIS_ROOT = os.path.dirname(INTERNAL_PACKAGE_DIR)
-
-FILE_CACHE = {}
+from hypothesis.internal.compat import text_type, binary_type, \
+    encoded_filepath
 
 
-def is_hypothesis_file(filepath):
-    try:
-        return FILE_CACHE[filepath]
-    except KeyError:
-        pass
-    result = os.path.abspath(filepath).startswith(HYPOTHESIS_ROOT)
-    FILE_CACHE[filepath] = result
-    return result
+def belongs_to(package):
+    root = os.path.dirname(package.__file__)
+    cache = {text_type: {}, binary_type: {}}
+
+    def accept(filepath):
+        try:
+            return cache[type(filepath)][filepath]
+        except KeyError:
+            pass
+        filepath = encoded_filepath(filepath)
+        result = os.path.abspath(filepath).startswith(root)
+        cache[type(filepath)][filepath] = result
+        return result
+    accept.__name__ = 'is_%s_file' % (package.__name__,)
+    return accept
+
+
+is_hypothesis_file = belongs_to(hypothesis)
+is_coverage_file = belongs_to(coverage)
 
 
 def escalate_hypothesis_internal_error():
@@ -45,4 +56,9 @@ def escalate_hypothesis_internal_error():
     if is_hypothesis_file(filepath) and not issubclass(
         error_type, DeadlineExceeded
     ):
+        raise
+    # This is so that if we do something wrong and trigger an internal Coverage
+    # error we don't try to catch it. It should be impossible to trigger, but
+    # you never know.
+    if is_coverage_file(filepath):  # pragma: no cover
         raise

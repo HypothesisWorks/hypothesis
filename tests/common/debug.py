@@ -17,6 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+import sys
+
 from hypothesis import settings as Settings
 from hypothesis import find, given, assume, reject
 from hypothesis.errors import NoSuchExample, Unsatisfiable
@@ -56,12 +58,16 @@ def minimal(
             runtime.append(0.0)
         return result
 
-    return find(
-        definition,
-        wrapped_condition,
-        settings=settings,
-        random=random,
-    )
+    try:
+        orig = sys.gettrace()
+        return find(
+            definition,
+            wrapped_condition,
+            settings=settings,
+            random=random,
+        )
+    finally:
+        sys.settrace(orig)
 
 
 def find_any(

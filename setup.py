@@ -57,7 +57,7 @@ extras['all'] = sorted(sum(extras.values(), []))
 extras[":python_version == '2.7'"] = ['enum34']
 extras[":python_version == '3.3'"] = ['enum34']
 
-install_requires = ['attrs']
+install_requires = ['attrs', 'coverage']
 
 if sys.version_info[0] < 3:
     install_requires.append('enum34')

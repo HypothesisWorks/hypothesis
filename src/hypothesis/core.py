@@ -20,6 +20,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import os
 import sys
 import time
 import functools
@@ -27,6 +28,9 @@ import traceback
 from random import Random
 
 import attr
+from coverage import CoverageData
+from coverage.files import canonical_filename
+from coverage.collector import Collector
 
 import hypothesis.strategies as st
 from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
@@ -42,9 +46,10 @@ from hypothesis.executors import new_style_executor, \
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.statistics import note_engine_for_statistics
 from hypothesis.internal.compat import ceil, str_to_bytes, \
-    get_type_hints, getfullargspec
+    get_type_hints, getfullargspec, encoded_filepath
+from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 from hypothesis.utils.conventions import infer, not_set
-from hypothesis.internal.escalation import \
+from hypothesis.internal.escalation import is_hypothesis_file, \
     escalate_hypothesis_internal_error
 from hypothesis.internal.reflection import is_mock, proxies, nicerepr, \
     arg_string, impersonate, function_digest, fully_qualified_name, \
@@ -55,6 +60,11 @@ from hypothesis.internal.conjecture.data import Status, StopTest, \
 from hypothesis.searchstrategy.strategies import SearchStrategy
 from hypothesis.internal.conjecture.engine import ExitReason, \
     ConjectureRunner, uniform, sort_key
+
+try:
+    from coverage.tracer import CFileDisposition as FileDisposition
+except ImportError:  # pragma: no cover
+    from coverage.collector import FileDisposition
 
 
 def new_random():
@@ -106,8 +116,13 @@ def reify_and_execute(
 ):
     def run(data):
         with BuildContext(data, is_final=is_final):
-            import random as rnd_module
-            rnd_module.seed(0)
+            orig = sys.gettrace()
+            try:  # pragma: no cover
+                sys.settrace(None)
+                import random as rnd_module
+                rnd_module.seed(0)
+            finally:  # pragma: no cover
+                sys.settrace(orig)
             args, kwargs = data.draw(search_strategy)
 
             if print_example:
@@ -504,6 +519,57 @@ def new_given_argspec(original_argspec, generator_kwargs):
 HUNG_TEST_TIME_LIMIT = 5 * 60
 
 
+ROOT = os.path.dirname(__file__)
+
+STDLIB = os.path.dirname(os.__file__)
+
+
+def hypothesis_check_include(filename):  # pragma: no cover
+    return filename.endswith('.py')
+
+
+def hypothesis_should_trace(original_filename, frame):  # pragma: no cover
+    disp = FileDisposition()
+    assert original_filename is not None
+    disp.original_filename = original_filename
+    disp.canonical_filename = encoded_filepath(
+        canonical_filename(original_filename))
+    disp.source_filename = disp.canonical_filename
+    disp.reason = ''
+    disp.file_tracer = None
+    disp.has_dynamic_filename = False
+    disp.trace = hypothesis_check_include(disp.canonical_filename)
+    if not disp.trace:
+        disp.reason = 'hypothesis internal reasons'
+    return disp
+
+
+def escalate_warning(msg, slug=None):  # pragma: no cover
+    if slug is not None:
+        msg = '%s (%s)' % (msg, slug)
+    raise AssertionError(
+        'Unexpected warning from coverage: %s' % (msg,)
+    )
+
+
+@attr.s(slots=True, frozen=True)
+class Line(object):
+    filename = attr.ib()
+    lineno = attr.ib()
+
+
+@attr.s(slots=True, frozen=True)
+class Arc(object):
+    filename = attr.ib()
+    source = attr.ib()
+    target = attr.ib()
+
+
+in_given = False
+
+FORCE_PURE_TRACER = os.getenv('HYPOTHESIS_FORCE_PURE_TRACER') == 'true'
+
+
 class StateForActualGivenExecution(object):
 
     def __init__(self, test_runner, search_strategy, test, settings, random):
@@ -548,6 +614,51 @@ class StateForActualGivenExecution(object):
                 return result
             self.test = timed_test
 
+        self.coverage_data = CoverageData()
+
+        if settings.use_coverage and not IN_COVERAGE_TESTS:  # pragma: no cover
+            if Collector._collectors:
+                self.hijack_collector(Collector._collectors[-1])
+
+            self.collector = Collector(
+                branch=True,
+                timid=FORCE_PURE_TRACER,
+                should_trace=hypothesis_should_trace,
+                check_include=hypothesis_check_include,
+                concurrency='thread',
+                warn=escalate_warning,
+            )
+            self.collector.reset()
+
+            # Hide the other collectors from this one so it doesn't attempt to
+            # pause them (we're doing trace function management ourselves so
+            # this will just cause problems).
+            self.collector._collectors = []
+        else:
+            self.collector = None
+
+    def hijack_collector(self, collector):  # pragma: no cover
+        original_save_data = collector.save_data
+
+        def save_data(covdata):
+            original_save_data(covdata)
+            if collector.branch:
+                covdata.add_arcs({
+                    filename: {
+                        arc: None
+                        for arc in self.coverage_data.arcs(filename)}
+                    for filename in self.coverage_data.measured_files()
+                })
+            else:
+                covdata.add_lines({
+                    filename: {
+                        line: None
+                        for line in self.coverage_data.lines(filename)}
+                    for filename in self.coverage_data.measured_files()
+                })
+            collector.save_data = original_save_data
+        collector.save_data = save_data
+
     def evaluate_test_data(self, data):
         if (
             time.time() - self.start_time >= HUNG_TEST_TIME_LIMIT
@@ -559,9 +670,36 @@ class StateForActualGivenExecution(object):
             ), HealthCheck.hung_test)
 
         try:
-            result = self.test_runner(data, reify_and_execute(
-                self.search_strategy, self.test,
-            ))
+            if self.collector is None:
+                result = self.test_runner(data, reify_and_execute(
+                    self.search_strategy, self.test,
+                ))
+            else:  # pragma: no cover
+                # This should always be a no-op, but the coverage tracer has
+                # a bad habit of resurrecting itself.
+                original = sys.gettrace()
+                sys.settrace(None)
+                try:
+                    try:
+                        self.collector.data = {}
+                        self.collector.start()
+                        result = self.test_runner(data, reify_and_execute(
+                            self.search_strategy, self.test,
+                        ))
+                    finally:
+                        self.collector.stop()
+                finally:
+                    sys.settrace(original)
+                    covdata = CoverageData()
+                    self.collector.save_data(covdata)
+                    self.coverage_data.update(covdata)
+                    for filename in covdata.measured_files():
+                        if is_hypothesis_file(filename):
+                            continue
+                        for lineno in covdata.lines(filename):
+                            data.add_tag(Line(filename, lineno))
+                        for source, target in covdata.arcs(filename):
+                            data.add_tag(Arc(filename, source, target))
             if result is not None and self.settings.perform_health_check:
                 fail_health_check(self.settings, (
                     'Tests run under @given should return None, but '
@@ -593,12 +731,24 @@ class StateForActualGivenExecution(object):
         __tracebackhide__ = True
         database_key = str_to_bytes(fully_qualified_name(self.test))
         self.start_time = time.time()
+        global in_given
         runner = ConjectureRunner(
             self.evaluate_test_data,
             settings=self.settings, random=self.random,
             database_key=database_key,
         )
-        runner.run()
+
+        if in_given or self.collector is None:
+            runner.run()
+        else:  # pragma: no cover
+            in_given = True
+            original_trace = sys.gettrace()
+            try:
+                sys.settrace(None)
+                runner.run()
+            finally:
+                in_given = False
+                sys.settrace(original_trace)
         note_engine_for_statistics(runner)
         run_time = time.time() - self.start_time
         timed_out = runner.exit_reason == ExitReason.timeout
@@ -808,9 +958,9 @@ def given(*given_arguments, **given_kwargs):
                 test_runner, search_strategy, test, settings, random)
             state.run()
 
-        for test_attr in dir(test):
-            if test_attr[0] != '_' and not hasattr(wrapped_test, test_attr):
-                setattr(wrapped_test, test_attr, getattr(test, test_attr))
+        for attrib in dir(test):
+            if not (attrib.startswith('_') or hasattr(wrapped_test, attrib)):
+                setattr(wrapped_test, attrib, getattr(test, attrib))
         wrapped_test.is_hypothesis_test = True
         wrapped_test._hypothesis_internal_use_seed = getattr(
             test, '_hypothesis_internal_use_seed', None

@@ -53,7 +53,10 @@ def pretty_file_name(f):
     return result
 
 
-if os.getenv('HYPOTHESIS_INTERNAL_BRANCH_CHECK') == 'true':
+IN_COVERAGE_TESTS = os.getenv('HYPOTHESIS_INTERNAL_COVERAGE') == 'true'
+
+
+if IN_COVERAGE_TESTS:
     log = open('branch-check', 'w')
     written = set()
 
@@ -111,3 +114,12 @@ else:
     @contextmanager
     def check(name):
         yield
+
+
+class suppress_tracing(object):
+    def __enter__(self):
+        self.__original_trace = sys.gettrace()
+        sys.settrace(None)
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        sys.settrace(self.__original_trace)

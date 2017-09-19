@@ -9,3 +9,4 @@ sphinx-rtd-theme
 tox
 twine
 attrs
+coverage

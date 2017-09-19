@@ -30,7 +30,7 @@ import hypothesis.internal.conjecture.utils as cu
 from hypothesis.errors import InvalidArgument
 from hypothesis.control import reject
 from hypothesis.internal.compat import hrange
-from hypothesis.internal.branchcheck import check, check_function
+from hypothesis.internal.coverage import check, check_function
 
 try:
     from pandas.api.types import is_categorical_dtype

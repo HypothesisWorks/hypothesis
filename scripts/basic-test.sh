@@ -22,6 +22,8 @@ PYTEST="python -m pytest"
 
 $PYTEST tests/cover
 
+COVERAGE_TEST_TRACER=timid $PYTEST tests/cover
+
 if [ "$(python -c 'import sys; print(sys.version_info[0] == 2)')" = "True" ] ; then
     $PYTEST tests/py2
 else

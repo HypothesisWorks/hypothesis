@@ -144,6 +144,9 @@ check-py36: $(BEST_PY3) $(TOX)
 check-pypy: $(PYPY) $(TOX)
 	$(TOX) --recreate -e pypy-full
 
+check-pypy-with-tracer: $(PYPY) $(TOX)
+	$(TOX) --recreate -e pypy-with-tracer
+
 check-nose: $(TOX)
 	$(TOX) --recreate -e nose
 
@@ -196,6 +199,9 @@ check-examples3: $(TOX)
 
 check-coverage: $(TOX)
 	$(TOX) --recreate -e coverage
+
+check-pure-tracer: $(TOX)
+	$(TOX) --recreate -e pure-tracer
 
 check-unicode: $(TOX) $(PY27)
 	$(TOX) --recreate -e unicode
