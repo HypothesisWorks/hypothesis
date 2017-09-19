@@ -106,19 +106,18 @@ class ConjectureData(object):
         self.output += value
 
     def draw(self, strategy):
-        if strategy.is_empty:
-            self.mark_invalid()
-
-        if self.depth >= MAX_DEPTH:
-            self.mark_invalid()
         if self.is_find and not strategy.supports_find:
             raise InvalidArgument((
                 'Cannot use strategy %r within a call to find (presumably '
                 'because it would be invalid after the call had ended).'
             ) % (strategy,))
 
+        if strategy.is_empty:
+            self.mark_invalid()
+
         if self.depth >= MAX_DEPTH:
             self.mark_invalid()
+
         if self.depth == 0 and not IN_COVERAGE_TESTS:  # pragma: no cover
             original_tracer = sys.gettrace()
             try:
