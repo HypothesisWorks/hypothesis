@@ -57,7 +57,7 @@ def test_can_generate_integral_series(s):
 
 @given(pdst.series(elements=st.integers(0, 10)))
 def test_will_use_dtype_of_elements(s):
-    assert s.dtype == np.dtype(int)
+    assert s.dtype == np.dtype('int64')
 
 
 @given(pdst.series(elements=st.floats(allow_nan=False)))
