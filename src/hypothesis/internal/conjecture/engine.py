@@ -452,8 +452,16 @@ class ConjectureRunner(object):
                 self.random.randint(0, 255)
             ] * n)
 
+        def redraw_last(data, n):
+            u = self.last_data.blocks[-1][0]
+            if data.index + n <= u:
+                return self.last_data.buffer[data.index:data.index + n]
+            else:
+                return uniform(self.random, n)
+
         options = [
             draw_new,
+            redraw_last, redraw_last,
             reuse_existing, reuse_existing,
             draw_existing, draw_smaller, draw_larger,
             flip_bit,
