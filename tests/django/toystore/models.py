@@ -94,6 +94,8 @@ class ManyTimes(models.Model):
 class OddFields(models.Model):
     uuid = models.UUIDField()
     slug = models.SlugField()
+    ipv4 = models.GenericIPAddressField(protocol='IPv4')
+    ipv6 = models.GenericIPAddressField(protocol='IPv6')
 
 
 class CustomishDefault(models.Model):

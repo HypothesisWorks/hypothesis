@@ -115,6 +115,11 @@ class TestGetsBasicModels(TestCase):
         assert isinstance(x.uuid, UUID)
         assert isinstance(x.slug, text_type)
         assert u' ' not in x.slug
+        assert isinstance(x.ipv4, str)
+        assert len(x.ipv4.split('.')) == 4
+        assert all(int(i) in range(256) for i in x.ipv4.split('.'))
+        assert isinstance(x.ipv6, text_type)
+        assert set(x.ipv6).issubset(set(u'0123456789abcdefABCDEF:.'))
 
     @given(models(ManyTimes))
     def test_time_fields(self, x):
