@@ -119,6 +119,11 @@ class RestrictedFields(models.Model):
         choices=((1, 'First'), (2, 'Second')),
         null=True, blank=True
     )
+    choice_field_grouped = models.TextField(choices=(
+        ('Audio', (('vinyl', 'Vinyl'), ('cd', 'CD'),)),
+        ('Video', (('vhs', 'VHS Tape'), ('dvd', 'DVD'),)),
+        ('unknown', 'Unknown'),
+    ))
     even_number_field = models.IntegerField(
         validators=[validate_even]
     )

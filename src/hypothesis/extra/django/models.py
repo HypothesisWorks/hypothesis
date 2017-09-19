@@ -107,9 +107,14 @@ def _get_strategy_for_field(f):
     if isinstance(f, dm.AutoField):
         return default_value
     elif f.choices:
-        choices = [value for (value, name) in f.choices]
+        choices = []
+        for value, name_or_optgroup in f.choices:
+            if isinstance(name_or_optgroup, (list, tuple)):
+                choices.extend(key for key, _ in name_or_optgroup)
+            else:
+                choices.append(value)
         if isinstance(f, (dm.CharField, dm.TextField)) and f.blank:
-            choices.append(u'')
+            choices.insert(0, u'')
         strategy = st.sampled_from(choices)
     elif type(f) in (dm.TextField, dm.CharField):
         strategy = st.text(min_size=(None if f.blank else 1),

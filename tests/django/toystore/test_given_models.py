@@ -124,5 +124,7 @@ class TestRestrictedFields(TestCase):
         self.assertIn(instance.choice_field_text, ('foo', 'bar'))
         self.assertIn(instance.choice_field_int, (1, 2))
         self.assertIn(instance.null_choice_field_int, (1, 2, None))
+        self.assertEqual(instance.choice_field_grouped,
+                         instance.choice_field_grouped.lower())
         self.assertEqual(instance.even_number_field % 2, 0)
         self.assertTrue(instance.non_blank_text_field)
