@@ -627,12 +627,6 @@ class ConjectureRunner(object):
                     corpus.extend(extra)
 
             for existing in corpus:
-                if self.valid_examples >= self.settings.max_examples:
-                    self.exit_with(ExitReason.max_examples)
-                if self.call_count >= max(
-                    self.settings.max_iterations, self.settings.max_examples
-                ):
-                    self.exit_with(ExitReason.max_iterations)
                 self.last_data = ConjectureData.for_buffer(existing)
                 try:
                     self.test_function(self.last_data)
@@ -751,9 +745,6 @@ class ConjectureRunner(object):
 
         self.reuse_existing_examples()
         self.generate_new_examples()
-
-        if not self.interesting_examples:
-            self.exit_with(ExitReason.finished)
 
         if Phase.shrink not in self.settings.phases:
             self.exit_with(ExitReason.finished)
@@ -1102,8 +1093,7 @@ class SampleSet(object):
         return 'SampleSet(%r)' % (self.__values,)
 
     def add(self, value):
-        if value in self.__index:
-            return
+        assert value not in self.__index
         # Adding simply consists of adding the value to the end of the array
         # and updating the index.
         self.__index[value] = len(self.__values)
