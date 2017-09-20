@@ -96,28 +96,6 @@ class ConjectureData(object):
     def depth(self):
         return len(self.interval_stack)
 
-    def __repr__(self):
-        buffer_parts = [u"["]
-        for i, (u, v) in enumerate(self.blocks):
-            if i > 0:
-                buffer_parts.append(u" || ")
-            buffer_parts.append(
-                u', '.join(int_to_text(int(i)) for i in self.buffer[u:v]))
-        buffer_parts.append(u']')
-
-        status = unicode_safe_repr(self.status)
-
-        if self.status == Status.INTERESTING:
-            status = u'%s (%s)' % (
-                status, unicode_safe_repr(self.interesting_origin,))
-
-        return u'%d bytes %s -> %s, %s' % (
-            self.index,
-            u''.join(buffer_parts),
-            status,
-            self.output,
-        )
-
     @property
     def index(self):
         return len(self.buffer)
