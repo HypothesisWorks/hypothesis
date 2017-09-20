@@ -114,6 +114,8 @@ class ConjectureRunner(object):
 
         self.shrunk_examples = set()
 
+        self.tag_intern_table = {}
+
     def __tree_is_exhausted(self):
         return 0 in self.dead
 
@@ -136,6 +138,13 @@ class ConjectureRunner(object):
         self.target_selector.add(data)
 
         self.debug_data(data)
+
+        tags = frozenset(
+            self.tag_intern_table.setdefault(t, t)
+            for t in data.tags
+        )
+        data.tags = self.tag_intern_table.setdefault(tags, tags)
+
         if data.status == Status.VALID:
             self.valid_examples += 1
             for t in data.tags:
