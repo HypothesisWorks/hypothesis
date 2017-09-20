@@ -746,7 +746,7 @@ class ConjectureRunner(object):
         self.reuse_existing_examples()
         self.generate_new_examples()
 
-        if Phase.shrink not in self.settings.phases:
+        if Phase.shrink not in self.settings.phases or self.last_data is None:
             self.exit_with(ExitReason.finished)
 
         data = ConjectureData.for_buffer(self.last_data.buffer)
