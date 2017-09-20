@@ -30,7 +30,8 @@ from hypothesis import settings as Settings
 from hypothesis import Phase
 from hypothesis.reporting import debug_report
 from hypothesis.internal.compat import EMPTY_BYTES, Counter, ceil, \
-    hbytes, hrange, int_to_bytes, bytes_from_list, to_bytes_sequence
+    hbytes, hrange, int_to_text, int_to_bytes, bytes_from_list, \
+    to_bytes_sequence, unicode_safe_repr
 from hypothesis.utils.conventions import UniqueIdentifier
 from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
     StopTest, ConjectureData
