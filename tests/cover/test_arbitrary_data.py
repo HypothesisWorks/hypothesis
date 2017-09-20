@@ -73,9 +73,9 @@ def test_given_twice_is_same():
     def test(data1, data2):
         data1.draw(st.integers())
         data2.draw(st.integers())
-        assert False
+        raise ValueError()
 
-    with raises(AssertionError):
+    with raises(ValueError):
         with capture_out() as out:
             with reporting.with_reporter(reporting.default):
                 test()
