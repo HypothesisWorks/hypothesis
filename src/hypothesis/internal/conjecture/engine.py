@@ -1251,7 +1251,6 @@ class TargetSelector(object):
         while True:
             peek = self.scores[0]
             sample = self.tags_by_score[peek]
-            print(peek, sample)
             if len(sample) == 0:
                 heapq.heappop(self.scores)
             else:
