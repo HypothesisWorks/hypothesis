@@ -31,8 +31,12 @@ from hypothesis.internal.compat import EMPTY_BYTES, Counter, ceil, \
     hbytes, hrange, int_to_bytes, \
     bytes_from_list, to_bytes_sequence
 from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
-    StopTest, ConjectureData, untagged
+    StopTest, ConjectureData
 from hypothesis.internal.conjecture.minimizer import minimize
+from hypothesis.utils.conventions import UniqueIdentifier
+
+
+universal = UniqueIdentifier('universal')
 
 
 class ExitReason(Enum):
@@ -135,15 +139,13 @@ class ConjectureRunner(object):
         if data.status == Status.VALID:
             self.valid_examples += 1
             for t in data.tags:
-                if t is untagged:
-                    continue
                 existing = self.covering_examples.get(t)
                 if (
                     existing is None or
                     sort_key(data.buffer) < sort_key(existing.buffer)
                 ):
                     self.covering_examples[t] = data
-                    if self.database is not None:
+                    if self.database is not None and t is not universal:
                         self.database.save(self.covering_key, data.buffer)
                         if existing is not None:
                             self.database.delete(

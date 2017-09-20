@@ -25,9 +25,6 @@ from hypothesis.internal.compat import hbytes, hrange, text_type, \
     bit_length, int_to_text, benchmark_time, int_from_bytes, \
     unicode_safe_repr
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
-from hypothesis.utils.conventions import UniqueIdentifier
-
-untagged = UniqueIdentifier('untagged')
 
 
 class Status(IntEnum):
@@ -189,9 +186,6 @@ class ConjectureData(object):
             return
         self.frozen = True
         self.finish_time = benchmark_time()
-
-        if not self.tags:
-            self.tags = (untagged,)
 
         # Intervals are sorted as longest first, then by interval start.
         for l in self.intervals_by_level:
