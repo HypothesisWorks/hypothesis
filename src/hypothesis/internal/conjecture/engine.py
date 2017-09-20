@@ -1078,6 +1078,9 @@ class SampleSet(object):
     def __len__(self):
         return len(self.__values)
 
+    def __repr__(self):
+        return 'SampleSet(%r)' % (self.__values,)
+
     def add(self, value):
         if value in self.__index:
             return
@@ -1177,28 +1180,41 @@ class TargetSelector(object):
         self.scores = []
         self.mutation_counts = 0
         self.example_counts = 0
-        self.rarely_negated = {}
-        self.tags = set()
+        self.non_universal_tags = set()
+        self.universal_tags = None
 
     def add(self, data):
         if data.status == Status.INTERESTING:
             return
         if data.status < self.best_status:
             return
-
         if data.status > self.best_status:
             self.best_status = data.status
             self.reset()
+
+        if self.universal_tags is None:
+            self.universal_tags = set(data.tags)
+        else:
+            not_actually_universal = self.universal_tags - data.tags
+            for t in not_actually_universal:
+                self.universal_tags.remove(t)
+                self.non_universal_tags.add(t)
+                self.examples_by_tags[t] = list(
+                    self.examples_by_tags[universal]
+                )
+
+        new_tags = data.tags - self.non_universal_tags
+
+        for t in new_tags:
+            self.non_universal_tags.add(t)
+            self.examples_by_tags[Negated(t)] = list(
+                self.examples_by_tags[universal]
+            )
+
         self.example_counts += 1
         for t in self.tags_for(data):
             self.examples_by_tags[t].append(data)
             self.rescore(t)
-
-        self.tags.update(data.tags)
-
-        for s, examples in self.rarely_negated.items():
-            if s not in data.tags:
-                examples.append(data)
 
     def has_tag(self, tag, data):
         if tag is universal:
@@ -1211,7 +1227,7 @@ class TargetSelector(object):
         yield universal
         for t in data.tags:
             yield t
-        for t in self.tags:
+        for t in self.non_universal_tags:
             if t not in data.tags:
                 yield Negated(t)
 
@@ -1235,33 +1251,20 @@ class TargetSelector(object):
         while True:
             peek = self.scores[0]
             sample = self.tags_by_score[peek]
+            print(peek, sample)
             if len(sample) == 0:
                 heapq.heappop(self.scores)
             else:
                 return sample.choice(self.random)
 
     def select_example_for_tag(self, t):
-        if isinstance(t, Negated):
-            t = t.tag
-            assert t is not universal
-            assert not isinstance(t, Negated)
-            if t not in self.rarely_negated:
-                everything = self.examples_by_tags[universal]
-                for _ in hrange(5):
-                    attempt = self.random.choice(everything)
-                    if t not in attempt.tags:
-                        return attempt
-                self.rarely_negated[t] = [
-                    data for data in everything if t not in data.tags
-                ]
-            return self.random.choice(self.rarely_negated[t])
-        else:
-            return self.random.choice(self.examples_by_tags[t])
+        return self.random.choice(self.examples_by_tags[t])
 
     def select(self):
         t = self.select_tag()
         self.mutation_counts += 1
         result = self.select_example_for_tag(t)
+        assert self.has_tag(t, result)
         for s in self.tags_for(result):
             self.tag_usage_counts[s] += 1
             self.rescore(s)
