@@ -1052,6 +1052,13 @@ def uniform(random, n):
 
 
 class SampleSet(object):
+    """Set data type with the ability to sample uniformly at random from it.
+
+    The mechanism is that we store the set in two parts: A mapping of values to
+    their index in an array. Sampling uniformly at random then becomes simply a
+    matter of sampling from the array, but we can use the index for efficient
+    lookup to add and remove values.
+    """
     __slots__ = ('__values', '__index')
 
     def __init__(self):
@@ -1064,10 +1071,22 @@ class SampleSet(object):
     def add(self, value):
         if value in self.__index:
             return
+        # Adding simply consists of adding the value to the end of the array
+        # and updating the index.
         self.__index[value] = len(self.__values)
         self.__values.append(value)
 
     def remove(self, value):
+        # To remove a value we first remove it from the index. But this leaves
+        # us with the value still in the array, so we have to fix that. We
+        # can't simply remove the value from the array, as that would a) Be an
+        # O(n) operation and b) Leave the index completely wrong for every
+        # value after that index.
+        # So what we do is we take the last element of the array and place it
+        # in the position of the value we just deleted (if the value was not
+        # already the last element of the array. If it was then we don't have
+        # to do anything extra). This reorders the array, but that's OK because
+        # we don't care about its order, we just need to sample from it.
         i = self.__index.pop(value)
         last = self.__values.pop()
         if i < len(self.__values):
@@ -1079,6 +1098,52 @@ class SampleSet(object):
 
 
 class TargetSelector(object):
+    """Data structure for selecting targets to use for mutation.
+
+    The goal is to do a good job of exploiting novelty in examples without
+    getting too obsessed with any particular novel factor.
+
+    Roughly speaking what we want to do is give each distinct coverage target
+    equal amounts of time. However some coverage targets may be harder to fuzz
+    than others, or may only appear in a very small minority of examples, so we
+    don't want to let those dominate the testing.
+
+    Targets are selected according to the following rules:
+
+    1. We ideally want valid examples as our starting point. We ignore
+       interesting examples entirely, and other than that we restrict ourselves
+       to the best example status we've seen so far. If we've only seen
+       OVERRUN examples we use those. If we've seen INVALID but not VALID
+       examples we use those. Otherwise we use VALID examples.
+    2. Among the examples we've seen with the right status, when asked to
+       select a target, we select a coverage target and return that along with
+       an example exhibiting that target uniformly at random.
+
+    Coverage target selection proceeds as follows:
+
+    1. Whenever we return an example from select, we update the usage count of
+       each of its tags.
+    2. Whenever we see an example, we add it to the list of examples for all of
+       its tags.
+    3. When selecting a tag, we select one with a minimal usage count. Among
+       those of minimal usage count we select one with the fewest examples.
+       Among those, we select one uniformly at random.
+
+    This has the following desirable properties:
+
+    1. When two coverage targets are intrinsically linked (e.g. when you have
+       multiple lines in a conditional so that either all or none of them will
+       be covered in a conditional) they are naturally deduplicated.
+    2. Popular coverage targets will largely be ignored for considering what
+       test ot run - if every example exhibits a coverage target, picking an
+       example because of that target is rather pointless.
+    3. When we discover new coverage targets we immediately exploit them until
+       we get to the point where we've spent about as much time on them as the
+       existing targets.
+    4. Among the interesting deduplicated coverage targets we essentially
+       round-robin between them, but with a more consistent distribution than
+       uniformly at random, which is important particularly for short runs.
+    """
     def __init__(self, random):
         self.random = random
         self.best_status = Status.OVERRUN
