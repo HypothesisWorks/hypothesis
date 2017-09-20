@@ -1,6 +1,6 @@
 RELEASE_TYPE: patch
 
-This release makes two changes:
+This release makes several changes:
 
 1. It significantly improves Hypothesis's ability to use coverage information
    to find interesting examples.
@@ -9,3 +9,7 @@ This release makes two changes:
    algorithm is sufficiently better at covering interesting behaviour that
    reducing the number of examples should not come with a regression in ability
    to find bugs.
+3. It switches Hypothesis's internal use of coverage away from using branch
+   coverage and over to just using line coverage. This should give a moderate
+   speedup to projects that saw a performance regression from the use of
+   coverage.
