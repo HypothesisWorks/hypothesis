@@ -22,8 +22,7 @@ from enum import IntEnum
 
 from hypothesis.errors import Frozen, InvalidArgument
 from hypothesis.internal.compat import hbytes, hrange, text_type, \
-    bit_length, int_to_text, benchmark_time, int_from_bytes, \
-    unicode_safe_repr
+    bit_length, benchmark_time, int_from_bytes, unicode_safe_repr
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 
 
