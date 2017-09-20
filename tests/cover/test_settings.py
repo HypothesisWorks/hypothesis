@@ -123,7 +123,7 @@ def test_can_assign_database(db):
 
 def test_load_profile():
     settings.load_profile('default')
-    assert settings.default.max_examples == 200
+    assert settings.default.max_examples == 100
     assert settings.default.max_shrinks == 500
     assert settings.default.min_satisfying_examples == 5
 
@@ -143,7 +143,7 @@ def test_load_profile():
 
     settings.load_profile('default')
 
-    assert settings.default.max_examples == 200
+    assert settings.default.max_examples == 100
     assert settings.default.max_shrinks == 500
     assert settings.default.min_satisfying_examples == 5
 
