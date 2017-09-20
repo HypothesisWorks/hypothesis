@@ -24,19 +24,17 @@ from random import Random, getrandbits
 from weakref import WeakKeyDictionary
 from collections import defaultdict
 
+import attr
+
 from hypothesis import settings as Settings
 from hypothesis import Phase
 from hypothesis.reporting import debug_report
 from hypothesis.internal.compat import EMPTY_BYTES, Counter, ceil, \
-    hbytes, hrange, int_to_bytes, \
-    bytes_from_list, to_bytes_sequence
+    hbytes, hrange, int_to_bytes, bytes_from_list, to_bytes_sequence
+from hypothesis.utils.conventions import UniqueIdentifier
 from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
     StopTest, ConjectureData
 from hypothesis.internal.conjecture.minimizer import minimize
-from hypothesis.utils.conventions import UniqueIdentifier
-
-
-universal = UniqueIdentifier('universal')
 
 
 class ExitReason(Enum):
@@ -718,7 +716,7 @@ class ConjectureRunner(object):
                     mutations = 0
                 elif (
                     data.status < prev_data.status or
-                    target not in data.tags or
+                    not self.target_selector.has_tag(target, data) or
                     mutations >= self.settings.max_mutations
                 ):
                     mutations = 0
@@ -1065,10 +1063,11 @@ def uniform(random, n):
 class SampleSet(object):
     """Set data type with the ability to sample uniformly at random from it.
 
-    The mechanism is that we store the set in two parts: A mapping of values to
-    their index in an array. Sampling uniformly at random then becomes simply a
-    matter of sampling from the array, but we can use the index for efficient
-    lookup to add and remove values.
+    The mechanism is that we store the set in two parts: A mapping of
+    values to their index in an array. Sampling uniformly at random then
+    becomes simply a matter of sampling from the array, but we can use
+    the index for efficient lookup to add and remove values.
+
     """
     __slots__ = ('__values', '__index')
 
@@ -1106,6 +1105,14 @@ class SampleSet(object):
 
     def choice(self, random):
         return random.choice(self.__values)
+
+
+@attr.s(slots=True)
+class Negated(object):
+    tag = attr.ib()
+
+
+universal = UniqueIdentifier('universal')
 
 
 class TargetSelector(object):
@@ -1154,7 +1161,9 @@ class TargetSelector(object):
     4. Among the interesting deduplicated coverage targets we essentially
        round-robin between them, but with a more consistent distribution than
        uniformly at random, which is important particularly for short runs.
+
     """
+
     def __init__(self, random):
         self.random = random
         self.best_status = Status.OVERRUN
@@ -1166,24 +1175,45 @@ class TargetSelector(object):
         self.tags_by_score = defaultdict(SampleSet)
         self.scores_by_tag = {}
         self.scores = []
+        self.mutation_counts = 0
+        self.example_counts = 0
+        self.rarely_negated = {}
+        self.tags = set()
 
     def add(self, data):
         if data.status == Status.INTERESTING:
             return
         if data.status < self.best_status:
             return
+
         if data.status > self.best_status:
             self.best_status = data.status
             self.reset()
-        for source in (data.tags, (universal,)):
-            for t in source:
-                self.examples_by_tags[t].append(data)
-                self.rescore(t)
+        self.example_counts += 1
+        for t in self.tags_for(data):
+            self.examples_by_tags[t].append(data)
+            self.rescore(t)
 
-    def has_tag(self, data, tag):
+        self.tags.update(data.tags)
+
+        for s, examples in self.rarely_negated.items():
+            if s not in data.tags:
+                examples.append(data)
+
+    def has_tag(self, tag, data):
         if tag is universal:
             return True
+        if isinstance(tag, Negated):
+            return tag.tag not in data.tags
         return tag in data.tags
+
+    def tags_for(self, data):
+        yield universal
+        for t in data.tags:
+            yield t
+        for t in self.tags:
+            if t not in data.tags:
+                yield Negated(t)
 
     def rescore(self, tag):
         new_score = (
@@ -1210,10 +1240,29 @@ class TargetSelector(object):
             else:
                 return sample.choice(self.random)
 
+    def select_example_for_tag(self, t):
+        if isinstance(t, Negated):
+            t = t.tag
+            assert t is not universal
+            assert not isinstance(t, Negated)
+            if t not in self.rarely_negated:
+                everything = self.examples_by_tags[universal]
+                for _ in hrange(5):
+                    attempt = self.random.choice(everything)
+                    if t not in attempt.tags:
+                        return attempt
+                self.rarely_negated[t] = [
+                    data for data in everything if t not in data.tags
+                ]
+            return self.random.choice(self.rarely_negated[t])
+        else:
+            return self.random.choice(self.examples_by_tags[t])
+
     def select(self):
         t = self.select_tag()
-        result = self.random.choice(self.examples_by_tags[t])
-        for s in result.tags:
+        self.mutation_counts += 1
+        result = self.select_example_for_tag(t)
+        for s in self.tags_for(result):
             self.tag_usage_counts[s] += 1
             self.rescore(s)
         return t, result
