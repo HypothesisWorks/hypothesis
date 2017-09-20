@@ -154,7 +154,7 @@ class ConjectureRunner(object):
                     sort_key(data.buffer) < sort_key(existing.buffer)
                 ):
                     self.covering_examples[t] = data
-                    if self.database is not None and t is not universal:
+                    if self.database is not None:
                         self.database.save(self.covering_key, data.buffer)
                         if existing is not None:
                             self.database.delete(
@@ -1175,9 +1175,15 @@ class TargetSelector(object):
         if data.status > self.best_status:
             self.best_status = data.status
             self.reset()
-        for t in data.tags:
-            self.examples_by_tags[t].append(data)
-            self.rescore(t)
+        for source in (data.tags, (universal,)):
+            for t in source:
+                self.examples_by_tags[t].append(data)
+                self.rescore(t)
+
+    def has_tag(self, data, tag):
+        if tag is universal:
+            return True
+        return tag in data.tags
 
     def rescore(self, tag):
         new_score = (
