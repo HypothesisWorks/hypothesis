@@ -753,7 +753,6 @@ class ConjectureRunner(object):
         self.test_function(data)
         if data.status != Status.INTERESTING:
             self.exit_with(ExitReason.flaky)
-            return
 
         while len(self.shrunk_examples) < len(self.interesting_examples):
             target, d = min([
