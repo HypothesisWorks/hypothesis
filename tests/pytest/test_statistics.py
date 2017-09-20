@@ -63,7 +63,7 @@ def test_prints_statistics_given_option(testdir):
     out = '\n'.join(result.stdout.lines)
     assert 'Hypothesis Statistics' in out
     assert 'timeout=0.2' in out
-    assert 'max_examples=200' in out
+    assert 'max_examples=100' in out
     assert 'max_iterations=1000' in out
     assert 'HypothesisDeprecationWarning' in out
 
@@ -88,7 +88,7 @@ def test_prints_statistics_for_unittest_tests(testdir):
     out = '\n'.join(result.stdout.lines)
     assert 'Hypothesis Statistics' in out
     assert 'TestStuff::test_all_valid' in out
-    assert 'max_examples=200' in out
+    assert 'max_examples=100' in out
 
 
 STATEFUL_TESTSUITE = """
@@ -115,4 +115,4 @@ def test_prints_statistics_for_stateful_tests(testdir):
     out = '\n'.join(result.stdout.lines)
     assert 'Hypothesis Statistics' in out
     assert 'TestStuff::runTest' in out
-    assert 'max_examples=200' in out
+    assert 'max_examples=100' in out
