@@ -31,7 +31,7 @@ OrderedPairs = integers(1, 200).flatmap(
     lambda e: tuples(integers(0, e - 1), just(e))
 )
 
-with settings(max_examples=200):
+with settings(max_examples=100):
     @given(ConstantLists)
     def test_constant_lists_are_constant(x):
         assume(len(x) >= 3)
