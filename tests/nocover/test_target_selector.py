@@ -63,7 +63,8 @@ class TargetSelectorMachine(RuleBasedStateMachine):
     def cycle_through_tags(self):
         seen = set()
         for _ in hrange(
-            (2 * len(self.tags) + 1) * self.target_selector.mutation_counts
+            (2 * len(self.tags) + 1) *
+            (1 + self.target_selector.mutation_counts)
         ):
             _, data = self.target_selector.select()
             seen.update(data.tags)
