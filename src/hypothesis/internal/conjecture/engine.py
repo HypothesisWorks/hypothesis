@@ -1110,7 +1110,7 @@ class SampleSet(object):
         return random.choice(self.__values)
 
 
-@attr.s(slots=True)
+@attr.s(slots=True, hash=True, cmp=True)
 class Negated(object):
     tag = attr.ib()
 
