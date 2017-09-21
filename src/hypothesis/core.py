@@ -552,6 +552,13 @@ class Line(object):
     lineno = attr.ib()
 
 
+@attr.s(slots=True, frozen=True)
+class Arc(object):
+    filename = attr.ib()
+    source = attr.ib()
+    target = attr.ib()
+
+
 in_given = False
 
 FORCE_PURE_TRACER = os.getenv('HYPOTHESIS_FORCE_PURE_TRACER') == 'true'
@@ -611,7 +618,7 @@ class StateForActualGivenExecution(object):
                 self.hijack_collector(Collector._collectors[-1])
 
             self.collector = Collector(
-                branch=False,
+                branch=True,
                 timid=FORCE_PURE_TRACER,
                 should_trace=self.should_trace,
                 check_include=hypothesis_check_include,
@@ -709,6 +716,8 @@ class StateForActualGivenExecution(object):
                             continue
                         for lineno in covdata.lines(filename):
                             data.add_tag(Line(filename, lineno))
+                        for source, target in covdata.arcs(filename):
+                            data.add_tag(Arc(filename, source, target))
             if result is not None and self.settings.perform_health_check:
                 fail_health_check(self.settings, (
                     'Tests run under @given should return None, but '
