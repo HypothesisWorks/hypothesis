@@ -9,7 +9,3 @@ This release makes several changes:
    algorithm is sufficiently better at covering interesting behaviour that
    reducing the number of examples should not come with a regression in ability
    to find bugs.
-3. It switches Hypothesis's internal use of coverage away from using branch
-   coverage and over to just using line coverage. This should give a moderate
-   speedup to projects that saw a performance regression from the use of
-   coverage.
