@@ -18,12 +18,14 @@
 from __future__ import division, print_function, absolute_import
 
 import gc
+import sys
 import time as time_module
 
 import pytest
 
 from tests.common import TIME_INCREMENT
 from tests.common.setup import run
+from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 
 run()
 
@@ -63,3 +65,9 @@ def consistently_increment_time(monkeypatch):
 
     monkeypatch.setattr(time_module, 'time', time)
     monkeypatch.setattr(time_module, 'sleep', sleep)
+
+
+if not IN_COVERAGE_TESTS:
+    @pytest.fixture(scope=u'function', autouse=True)
+    def validate_lack_of_trace_function():
+        assert sys.gettrace() is None
