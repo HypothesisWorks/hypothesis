@@ -46,7 +46,9 @@ class GenericCache(object):
     The cache will be in a valid state in all of these cases.
 
     Implementations are expected to implement new_entry and optionally
-    on_access and on_evict to implement a specific scoring strategy."""
+    on_access and on_evict to implement a specific scoring strategy.
+
+    """
     __slots__ = ('keys_to_indices', 'data', 'max_size')
 
     def __init__(self, max_size):
@@ -111,12 +113,20 @@ class GenericCache(object):
 
     def new_entry(self, key, value):
         """Called when a key is written that does not currently appear in the
-        map. Returns the score to associate with the key."""
+        map.
+
+        Returns the score to associate with the key.
+
+        """
         raise NotImplementedError()
 
     def on_access(self, key, value, score):
         """Called every time a key that is already in the map is read or
-        written. Returns the new score for the key."""
+        written.
+
+        Returns the new score for the key.
+
+        """
         return score
 
     def on_evict(self, key, value, score):
@@ -125,9 +135,12 @@ class GenericCache(object):
         pass
 
     def check_valid(self):
-        """Debugging method for use in tests. Asserts that all of the cache's
-        invariants hold. When everything is working correctly this should be
-        an expensive no-op."""
+        """Debugging method for use in tests.
+
+        Asserts that all of the cache's invariants hold. When everything
+        is working correctly this should be an expensive no-op.
+
+        """
 
         for i, e in enumerate(self.data):
             assert self.keys_to_indices[e.key] == i
@@ -171,8 +184,11 @@ class GenericCache(object):
                 break
 
     def __out_of_order(self, i, j):
-        """Returns True if the indices i, j are in the wrong order. i must be
-        the parent of j."""
+        """Returns True if the indices i, j are in the wrong order.
+
+        i must be the parent of j.
+
+        """
 
         assert i == (j - 1) // 2
         return self.data[j].score < self.data[i].score
@@ -190,7 +206,9 @@ class LRUReusedCache(GenericCache):
     This retains most of the benefits of an LRU cache, but adds an element of
     scan-resistance to the process: If we end up scanning through a large
     number of keys without reusing them, this does not evict the existing
-    entries in preference for the new ones."""
+    entries in preference for the new ones.
+
+    """
     __slots__ = ('__tick',)
 
     def __init__(self, max_size, ):
