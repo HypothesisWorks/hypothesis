@@ -28,7 +28,7 @@ from fractions import Fraction
 from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.control import assume
 from hypothesis._settings import note_deprecation
-from hypothesis.internal.cache import LFLRUCache
+from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import gcd, ceil, floor, hrange, \
     text_type, integer_types, get_type_hints, getfullargspec, \
@@ -86,7 +86,7 @@ def convert_value(v):
     return (type(v), v)
 
 
-STRATEGY_CACHE = LFLRUCache(1024)
+STRATEGY_CACHE = LRUReusedCache(1024)
 
 
 def cacheable(fn):

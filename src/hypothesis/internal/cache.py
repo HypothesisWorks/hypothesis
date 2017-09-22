@@ -28,12 +28,37 @@ class Entry(object):
 
 
 class GenericCache(object):
+    """Generic supertype for cache implementations.
+
+    Defines a dict-like mapping with a maximum size, where as well as mapping
+    to a value, each key also maps to a score. When a write would cause the
+    dict to exceed its maximum size, it first evicts the existing key with
+    the smallest score, then adds the new key to the map.
+
+    A key has the following lifecycle:
+
+    1. key is written for the first time, the key is given the score
+       self.new_entry(key, value)
+    2. whenever an existing key is read or written, self.on_access(key, value,
+       score) is called. This returns a new score for the key.
+    3. When a key is evicted, self.on_evict(key, value, score) is called.
+
+    The cache will be in a valid state in all of these cases.
+
+    Implementations are expected to implement new_entry and optionally
+    on_access and on_evict to implement a specific scoring strategy."""
     __slots__ = ('keys_to_indices', 'data', 'max_size')
 
     def __init__(self, max_size):
+        self.max_size = max_size
+
+        # Implementation: We store a binary heap of Entry objects in self.data,
+        # with the heap property requirnig that a parent's score is <= that of
+        # its children. keys_to_index then maps keys to their index in the
+        # heap. We keep these two in sync automatically - the heap is never
+        # reordered without updating the index.
         self.keys_to_indices = {}
         self.data = []
-        self.max_size = max_size
 
     def __len__(self):
         assert len(self.keys_to_indices) == len(self.data)
@@ -85,15 +110,25 @@ class GenericCache(object):
             '%r: %r' % (e.key, e.value) for e in self.data),)
 
     def new_entry(self, key, value):
+        """Called when a key is written that does not currently appear in the
+        map. Returns the score to associate with the key."""
         raise NotImplementedError()
 
     def on_access(self, key, value, score):
+        """Called every time a key that is already in the map is read or
+        written. Returns the new score for the key."""
         return score
 
     def on_evict(self, key, value, score):
+        """Called after a key has been evicted, with the score it had had at
+        the point of eviction."""
         pass
 
     def check_valid(self):
+        """Debugging method for use in tests. Asserts that all of the cache's
+        invariants hold. When everything is working correctly this should be
+        an expensive no-op."""
+
         for i, e in enumerate(self.data):
             assert self.keys_to_indices[e.key] == i
             for j in [i * 2 + 1, i * 2 + 2]:
@@ -108,6 +143,11 @@ class GenericCache(object):
         self.keys_to_indices[self.data[j].key] = j
 
     def __balance(self, i):
+        """When we have made a modification to the heap such that means that
+        the heap property has been violated locally around i but previously
+        held for all other indexes (and no other values have been modified),
+        this fixes the heap so that the heap property holds everywhere."""
+
         while i > 0:
             parent = (i - 1) // 2
             if self.__out_of_order(parent, i):
@@ -131,41 +171,30 @@ class GenericCache(object):
                 break
 
     def __out_of_order(self, i, j):
+        """Returns True if the indices i, j are in the wrong order. i must be
+        the parent of j."""
+
         assert i == (j - 1) // 2
         return self.data[j].score < self.data[i].score
 
 
-class LRUCache(GenericCache):
-    __slots__ = ('__tick',)
+class LRUReusedCache(GenericCache):
+    """The only concrete implementation of GenericCache we use outside of tests
+    currently.
 
-    def __init__(self, max_size):
-        super(LRUCache, self).__init__(max_size)
-        self.__tick = 0
+    Adopts a modified least-frequently used eviction policy: It evicts the key
+    that has been used least recently, but it will always preferentially evict
+    keys that have only ever been accessed once. Among keys that have been
+    accessed more than once, it ignores the number of accesses.
 
-    def new_entry(self, key, value):
-        return self.tick()
-
-    def on_access(self, key, value, score):
-        return self.tick()
-
-    def tick(self):
-        self.__tick += 1
-        return self.__tick
-
-
-class LFUCache(GenericCache):
-    def new_entry(self, key, value):
-        return 1
-
-    def on_access(self, key, value, score):
-        return score + 1
-
-
-class LFLRUCache(GenericCache):
+    This retains most of the benefits of an LRU cache, but adds an element of
+    scan-resistance to the process: If we end up scanning through a large
+    number of keys without reusing them, this does not evict the existing
+    entries in preference for the new ones."""
     __slots__ = ('__tick',)
 
     def __init__(self, max_size, ):
-        super(LFLRUCache, self).__init__(max_size)
+        super(LRUReusedCache, self).__init__(max_size)
         self.__tick = 0
 
     def tick(self):
@@ -176,6 +205,6 @@ class LFLRUCache(GenericCache):
         return [1, self.tick()]
 
     def on_access(self, key, value, score):
-        score[0] += 1
+        score[0] = 2
         score[1] = self.tick()
         return score

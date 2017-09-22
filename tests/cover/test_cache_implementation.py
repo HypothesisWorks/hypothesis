@@ -23,8 +23,33 @@ import pytest
 
 import hypothesis.strategies as st
 from hypothesis import note, given, assume, example
-from hypothesis.internal.cache import LFUCache, LRUCache, LFLRUCache, \
-    GenericCache
+from hypothesis.internal.cache import LRUReusedCache, GenericCache
+
+
+class LRUCache(GenericCache):
+    __slots__ = ('__tick',)
+
+    def __init__(self, max_size):
+        super(LRUCache, self).__init__(max_size)
+        self.__tick = 0
+
+    def new_entry(self, key, value):
+        return self.tick()
+
+    def on_access(self, key, value, score):
+        return self.tick()
+
+    def tick(self):
+        self.__tick += 1
+        return self.__tick
+
+
+class LFUCache(GenericCache):
+    def new_entry(self, key, value):
+        return 1
+
+    def on_access(self, key, value, score):
+        return score + 1
 
 
 @st.composite
@@ -54,7 +79,7 @@ class RandomCache(GenericCache):
 
 @pytest.mark.parametrize(
     'implementation', [
-        LRUCache, LFUCache, LFLRUCache, ValueScored, RandomCache
+        LRUCache, LFUCache, LRUReusedCache, ValueScored, RandomCache
     ]
 )
 @example(writes=[(0, 0), (3, 0), (1, 0), (2, 0), (2, 0), (1, 0)], size=4)
