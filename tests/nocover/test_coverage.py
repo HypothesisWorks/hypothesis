@@ -81,7 +81,7 @@ def test_achieves_full_coverage(tmpdir, branch, timid):
         some_function_to_test(a, b, c)
 
     cov = Coverage(
-        config_file=False, data_file=str(tmpdir.join('.coveragerc')),
+        config_file=False, data_file=str(tmpdir.join('.coverage')),
         branch=branch, timid=timid,
     )
     cov._warn = escalate_warning
@@ -93,3 +93,28 @@ def test_achieves_full_coverage(tmpdir, branch, timid):
     lines = data.lines(__file__)
     for i in hrange(LINE_START + 1, LINE_END + 1):
         assert i in lines
+
+
+def rnd():
+    import random
+    return random.gauss(0, 1)
+
+
+@pytest.mark.parametrize('branch', [False, True])
+@pytest.mark.parametrize('timid', [False, True])
+def test_does_not_trace_files_outside_inclusion(tmpdir, branch, timid):
+    @given(st.booleans())
+    def test(a):
+        rnd()
+
+    cov = Coverage(
+        config_file=False, data_file=str(tmpdir.join('.coverage')),
+        branch=branch, timid=timid, include=[__file__],
+    )
+    cov._warn = escalate_warning
+    cov.start()
+    test()
+    cov.stop()
+
+    data = cov.get_data()
+    assert len(list(data.measured_files())) == 1

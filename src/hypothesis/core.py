@@ -538,22 +538,6 @@ def hypothesis_check_include(filename):  # pragma: no cover
     return filename.endswith('.py')
 
 
-def hypothesis_should_trace(original_filename, frame):  # pragma: no cover
-    disp = FileDisposition()
-    assert original_filename is not None
-    disp.original_filename = original_filename
-    disp.canonical_filename = encoded_filepath(
-        canonical_filename(original_filename))
-    disp.source_filename = disp.canonical_filename
-    disp.reason = ''
-    disp.file_tracer = None
-    disp.has_dynamic_filename = False
-    disp.trace = hypothesis_check_include(disp.canonical_filename)
-    if not disp.trace:
-        disp.reason = 'hypothesis internal reasons'
-    return disp
-
-
 def escalate_warning(msg, slug=None):  # pragma: no cover
     if slug is not None:
         msg = '%s (%s)' % (msg, slug)
@@ -593,6 +577,8 @@ class StateForActualGivenExecution(object):
         self.__was_flaky = False
         self.random = random
         self.__warned_deadline = False
+        self.__existing_collector = None
+
         if self.settings.deadline is None:
             self.test = test
         else:
@@ -625,6 +611,7 @@ class StateForActualGivenExecution(object):
             self.test = timed_test
 
         self.coverage_data = CoverageData()
+        self.files_to_propagate = set()
 
         if settings.use_coverage and not IN_COVERAGE_TESTS:  # pragma: no cover
             if Collector._collectors:
@@ -633,7 +620,7 @@ class StateForActualGivenExecution(object):
             self.collector = Collector(
                 branch=True,
                 timid=FORCE_PURE_TRACER,
-                should_trace=hypothesis_should_trace,
+                should_trace=self.should_trace,
                 check_include=hypothesis_check_include,
                 concurrency='thread',
                 warn=escalate_warning,
@@ -647,7 +634,28 @@ class StateForActualGivenExecution(object):
         else:
             self.collector = None
 
+    def should_trace(self, original_filename, frame):  # pragma: no cover
+        disp = FileDisposition()
+        assert original_filename is not None
+        disp.original_filename = original_filename
+        disp.canonical_filename = encoded_filepath(
+            canonical_filename(original_filename))
+        disp.source_filename = disp.canonical_filename
+        disp.reason = ''
+        disp.file_tracer = None
+        disp.has_dynamic_filename = False
+        disp.trace = hypothesis_check_include(disp.canonical_filename)
+        if not disp.trace:
+            disp.reason = 'hypothesis internal reasons'
+        elif self.__existing_collector is not None:
+            check = self.__existing_collector.should_trace(
+                original_filename, frame)
+            if check.trace:
+                self.files_to_propagate.add(check.canonical_filename)
+        return disp
+
     def hijack_collector(self, collector):  # pragma: no cover
+        self.__existing_collector = collector
         original_save_data = collector.save_data
 
         def save_data(covdata):
@@ -657,14 +665,14 @@ class StateForActualGivenExecution(object):
                     filename: {
                         arc: None
                         for arc in self.coverage_data.arcs(filename)}
-                    for filename in self.coverage_data.measured_files()
+                    for filename in self.files_to_propagate
                 })
             else:
                 covdata.add_lines({
                     filename: {
                         line: None
                         for line in self.coverage_data.lines(filename)}
-                    for filename in self.coverage_data.measured_files()
+                    for filename in self.files_to_propagate
                 })
             collector.save_data = original_save_data
         collector.save_data = save_data
