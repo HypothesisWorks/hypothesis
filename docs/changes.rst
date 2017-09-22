@@ -22,6 +22,14 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.30.1 - 2017-09-22
+-------------------
+
+This release fixes a bug where when running with use_coverage=True inside an
+existing running instance of coverage, Hypothesis would frequently put files
+that the coveragerc excluded in the report for the enclosing coverage.
+
+-------------------
 3.30.0 - 2017-09-20
 -------------------
 
