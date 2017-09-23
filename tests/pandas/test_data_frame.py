@@ -61,7 +61,7 @@ def test_can_specify_just_column_count(df):
     rows=st.fixed_dictionaries({'A': st.integers(1, 10), 'B': st.floats()}))
 )
 def test_gets_the_correct_data_shape_for_just_rows(table):
-    assert table['A'].dtype == np.dtype(int)
+    assert table['A'].dtype == np.dtype('int64')
     assert table['B'].dtype == np.dtype(float)
 
 
