@@ -26,6 +26,12 @@ Hypothesis is extremely practical and advances the state of the art of
 unit testing by some way. It's easy to use, stable, and powerful. If
 you're not using Hypothesis to test your project then you're missing out.
 
+.. raw:: html
+
+  <a target='_blank' rel='nofollow' href='https://app.codesponsor.io/link/RnoR9h5skxJydAS44yLZWFjV/HypothesisWorks/hypothesis-python'>
+    <img alt='Sponsor' width='888' height='68' src='https://app.codesponsor.io/embed/RnoR9h5skxJydAS44yLZWFjV/HypothesisWorks/hypothesis-python.svg' />
+  </a>
+
 ------------------------
 Quick Start/Installation
 ------------------------
