@@ -100,6 +100,13 @@ class LazyStrategy(SearchStrategy):
     def calc_has_reusable_values(self, recur):
         return recur(self.wrapped_strategy)
 
+    def calc_is_cacheable(self, recur):
+        for source in (self.__args, self.__kwargs.values()):
+            for v in source:
+                if isinstance(v, SearchStrategy) and not v.is_cacheable:
+                    return False
+        return True
+
     @property
     def wrapped_strategy(self):
         if self.__wrapped_strategy is None:

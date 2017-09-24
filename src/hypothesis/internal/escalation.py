@@ -45,11 +45,18 @@ def belongs_to(package):
     return accept
 
 
+PREVENT_ESCALATION = os.getenv('HYPOTHESIS_DO_NOT_ESCALATE') == 'true'
+
+FILE_CACHE = {}
+
+
 is_hypothesis_file = belongs_to(hypothesis)
 is_coverage_file = belongs_to(coverage)
 
 
 def escalate_hypothesis_internal_error():
+    if PREVENT_ESCALATION:
+        return
     error_type, _, tb = sys.exc_info()
     import traceback
     filepath = traceback.extract_tb(tb)[-1][0]

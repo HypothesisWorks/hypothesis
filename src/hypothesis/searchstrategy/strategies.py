@@ -204,6 +204,12 @@ class SearchStrategy(object):
     # this causing unexpected behaviour.
     has_reusable_values = recursive_property('has_reusable_values', True)
 
+    # Whether this strategy is suitable for holding onto in a cache.
+    is_cacheable = recursive_property('is_cacheable', True)
+
+    def calc_is_cacheable(self, recur):
+        return True
+
     def calc_is_empty(self, recur):
         # Note: It is correct and significant that the default return value
         # from calc_is_empty is False despite the default value for is_empty
@@ -384,6 +390,9 @@ class OneOfStrategy(SearchStrategy):
     def calc_has_reusable_values(self, recur):
         return all(recur(e) for e in self.original_strategies)
 
+    def calc_is_cacheable(self, recur):
+        return all(recur(e) for e in self.original_strategies)
+
     @property
     def element_strategies(self):
         from hypothesis.strategies import check_strategy
@@ -455,6 +464,9 @@ class MappedSearchStrategy(SearchStrategy):
     def calc_is_empty(self, recur):
         return recur(self.mapped_strategy)
 
+    def calc_is_cacheable(self, recur):
+        return recur(self.mapped_strategy)
+
     def __repr__(self):
         if not hasattr(self, '_cached_repr'):
             self._cached_repr = '%r.map(%s)' % (
@@ -498,6 +510,9 @@ class FilteredStrategy(SearchStrategy):
         self.filtered_strategy = strategy
 
     def calc_is_empty(self, recur):
+        return recur(self.filtered_strategy)
+
+    def calc_is_cacheable(self, recur):
         return recur(self.filtered_strategy)
 
     def __repr__(self):

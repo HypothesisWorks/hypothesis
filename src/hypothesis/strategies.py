@@ -28,6 +28,7 @@ from fractions import Fraction
 from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.control import assume
 from hypothesis._settings import note_deprecation
+from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import gcd, ceil, floor, hrange, \
     text_type, integer_types, get_type_hints, getfullargspec, \
@@ -85,9 +86,10 @@ def convert_value(v):
     return (type(v), v)
 
 
-def cacheable(fn):
-    cache = {}
+STRATEGY_CACHE = LRUReusedCache(1024)
 
+
+def cacheable(fn):
     @proxies(fn)
     def cached_strategy(*args, **kwargs):
         kwargs_cache_key = set()
@@ -97,16 +99,18 @@ def cacheable(fn):
         except TypeError:
             return fn(*args, **kwargs)
         cache_key = (
+            fn,
             tuple(map(convert_value, args)), frozenset(kwargs_cache_key))
         try:
-            return cache[cache_key]
+            return STRATEGY_CACHE[cache_key]
         except TypeError:
             return fn(*args, **kwargs)
         except KeyError:
             result = fn(*args, **kwargs)
-            cache[cache_key] = result
+            if not isinstance(result, SearchStrategy) or result.is_cacheable:
+                STRATEGY_CACHE[cache_key] = result
             return result
-    cached_strategy.__clear_cache = cache.clear
+    cached_strategy.__clear_cache = STRATEGY_CACHE.clear
     return cached_strategy
 
 
@@ -1742,6 +1746,7 @@ def check_valid_sizes(min_size, average_size, max_size):
 _AVERAGE_LIST_LENGTH = 5.0
 
 
+@cacheable
 def deferred(definition):
     """A deferred strategy allows you to write a strategy that references other
     strategies that have not yet been defined. This allows for the easy
