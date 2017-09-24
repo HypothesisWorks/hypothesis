@@ -22,6 +22,20 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.30.2 - 2017-09-24
+-------------------
+
+This release changes Hypothesis's caching approach for functions in
+``hypothesis.strategies``. Previously it would have cached extremely
+aggressively and cache entries would never be evicted. Now it adopts a
+least-frequently used, least recently used key invalidation policy, and is
+somewhat more conservative about which strategies it caches.
+
+This should cause some workloads (anything that creates strategies based on
+dynamic values, e.g. using flatmap or composite) to see a significantly lower
+memory usage.
+
+-------------------
 3.30.1 - 2017-09-22
 -------------------
 
