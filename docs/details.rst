@@ -261,7 +261,7 @@ keep it happy.
 
 In general if you *can* shape your strategies better to your tests you should - for example
 :py:func:`integers(1, 1000) <hypothesis.strategies.integers>` is a lot better than
-``assume(1 <= x <= 1000)``, but assume will take you a long way if you can't.
+``assume(1 <= x <= 1000)``, but ``assume`` will take you a long way if you can't.
 
 ---------------------
 Defining strategies
