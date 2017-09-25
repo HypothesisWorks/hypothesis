@@ -105,7 +105,7 @@ You would see something like:
 
 .. autofunction:: hypothesis.event
 
-You can also mark custom events in a test using the 'event' function:
+You can also mark custom events in a test using the ``event`` function:
 
 
 .. code:: python
