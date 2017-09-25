@@ -77,7 +77,7 @@ You would see:
 The final "Stopped because" line is particularly important to note: It tells you the
 setting value that determined when the test should stop trying new examples. This
 can be useful for understanding the behaviour of your tests. Ideally you'd always want
-this to be max_examples.
+this to be ``max_examples``.
 
 In some cases (such as filtered and recursive strategies) you will see events mentioned
 which describe some aspect of the data generation:
