@@ -95,7 +95,7 @@ class Example(object):
 
 
 def example(*args, **kwargs):
-    """A decorator to that ensures a specific example is always tested."""
+    """A decorator which ensures a specific example is always tested."""
     if args and kwargs:
         raise InvalidArgument(
             'Cannot mix positional and keyword arguments for examples'
