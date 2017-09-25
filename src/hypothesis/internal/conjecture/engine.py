@@ -746,7 +746,10 @@ class ConjectureRunner(object):
         self.reuse_existing_examples()
         self.generate_new_examples()
 
-        if Phase.shrink not in self.settings.phases or self.last_data is None:
+        if (
+            Phase.shrink not in self.settings.phases or
+            not self.interesting_examples
+        ):
             self.exit_with(ExitReason.finished)
 
         assert self.last_data.status == Status.INTERESTING
