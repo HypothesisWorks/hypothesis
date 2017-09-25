@@ -246,3 +246,14 @@ def test_does_not_warn_if_quiet():
 @given(st.builds(lambda: settings.default))
 def test_settings_in_strategies_are_from_test_scope(s):
     assert s.max_examples == 7
+
+
+@pytest.mark.parametrize('value', ['spam', 21, object, None])
+@pytest.mark.parametrize('setting', [
+    'derandomize', 'perform_health_check', 'use_coverage'
+])
+def test_boolean_settings_dont_allow_non_boolean_values(setting, value):
+    kwargs = {setting: value}
+    with pytest.raises(InvalidArgument) as err:
+        settings(**kwargs)
+    assert 'Valid options:' in err.value.message
