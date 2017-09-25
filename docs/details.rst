@@ -230,7 +230,7 @@ counter-example, but that it finds enough examples at all.
 
 In order to make sure something interesting is happening, suppose we wanted to
 try this for long lists. e.g. suppose we added an ``assume(len(xs) > 10)`` to it.
-This should basically never find an example: A naive strategy would find fewer
+This should basically never find an example: a naive strategy would find fewer
 than one in a thousand examples, because if each element of the list is
 negative with probability one-half, you'd have to have ten of these go the right
 way by chance. In the default configuration Hypothesis gives up long before
