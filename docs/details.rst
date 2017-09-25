@@ -218,9 +218,9 @@ Suppose we had the following:
   def test_sum_is_positive(xs):
     assert sum(xs) > 0
 
-Unsurprisingly this fails and gives the falsifying example [].
+Unsurprisingly this fails and gives the falsifying example ``[]``.
 
-Adding ``assume(xs)`` to this removes the trivial empty example and gives us [0].
+Adding ``assume(xs)`` to this removes the trivial empty example and gives us ``[0]``.
 
 Adding ``assume(all(x > 0 for x in xs))`` and it passes: A sum of a list of
 positive integers is positive.
