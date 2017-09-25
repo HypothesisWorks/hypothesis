@@ -120,7 +120,7 @@ def event(value):
     runs with each event will be reported at the end if you run Hypothesis in
     statistics reporting mode.
 
-    Events should be strings or convertable to them.
+    Events should be strings or convertible to them.
 
     """
 

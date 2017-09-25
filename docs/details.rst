@@ -77,7 +77,7 @@ You would see:
 The final "Stopped because" line is particularly important to note: It tells you the
 setting value that determined when the test should stop trying new examples. This
 can be useful for understanding the behaviour of your tests. Ideally you'd always want
-this to be max_examples.
+this to be ``max_examples``.
 
 In some cases (such as filtered and recursive strategies) you will see events mentioned
 which describe some aspect of the data generation:
@@ -103,10 +103,9 @@ You would see something like:
       * 30.56%, Retried draw from integers().filter(lambda x: x % 2 == 0) to satisfy filter
       * 7.41%, Aborted test because unable to satisfy integers().filter(lambda x: x % 2 == 0)
 
+You can also mark custom events in a test using the ``event`` function:
+
 .. autofunction:: hypothesis.event
-
-You can also mark custom events in a test using the 'event' function:
-
 
 .. code:: python
 
@@ -134,8 +133,8 @@ You will then see output like:
       * 27.63%, i mod 3 = 0
       * 12.28%, Aborted test because unable to satisfy integers().filter(lambda x: x % 2 == 0)
 
-Arguments to event() can be any hashable type, but two events will be considered the same
-if they are the same when converted to a string with str().
+Arguments to ``event`` can be any hashable type, but two events will be considered the same
+if they are the same when converted to a string with ``str``.
 
 ------------------
 Making assumptions
@@ -150,7 +149,7 @@ it turns out 150 of those examples don't match your needs, that's a lot of waste
 
 .. autofunction:: hypothesis.assume
 
-For example suppose had the following test:
+For example suppose you had the following test:
 
 
 .. code:: python
@@ -219,21 +218,21 @@ Suppose we had the following:
   def test_sum_is_positive(xs):
     assert sum(xs) > 0
 
-Unsurprisingly this fails and gives the falsifying example [].
+Unsurprisingly this fails and gives the falsifying example ``[]``.
 
-Adding ``assume(xs)`` to this removes the trivial empty example and gives us [0].
+Adding ``assume(xs)`` to this removes the trivial empty example and gives us ``[0]``.
 
-Adding ``assume(all(x > 0 for x in xs))`` and it passes: A sum of a list of
+Adding ``assume(all(x > 0 for x in xs))`` and it passes: the sum of a list of
 positive integers is positive.
 
 The reason that this should be surprising is not that it doesn't find a
 counter-example, but that it finds enough examples at all.
 
 In order to make sure something interesting is happening, suppose we wanted to
-try this for long lists. e.g. suppose we added an assume(len(xs) > 10) to it.
-This should basically never find an example: A naive strategy would find fewer
+try this for long lists. e.g. suppose we added an ``assume(len(xs) > 10)`` to it.
+This should basically never find an example: a naive strategy would find fewer
 than one in a thousand examples, because if each element of the list is
-negative with probability half, you'd have to have ten of these go the right
+negative with probability one-half, you'd have to have ten of these go the right
 way by chance. In the default configuration Hypothesis gives up long before
 it's tried 1000 examples (by default it tries 200).
 
@@ -262,7 +261,7 @@ keep it happy.
 
 In general if you *can* shape your strategies better to your tests you should - for example
 :py:func:`integers(1, 1000) <hypothesis.strategies.integers>` is a lot better than
-``assume(1 <= x <= 1000)``, but assume will take you a long way if you can't.
+``assume(1 <= x <= 1000)``, but ``assume`` will take you a long way if you can't.
 
 ---------------------
 Defining strategies
@@ -283,7 +282,7 @@ If you want to see exactly what a strategy produces you can ask for an example:
   >>> integers(min_value=0, max_value=10).example()
   5
 
-Many strategies are build out of other strategies. For example, if you want
+Many strategies are built out of other strategies. For example, if you want
 to define a tuple you need to say what goes in each element:
 
 .. doctest::
@@ -301,7 +300,7 @@ The gory details of given parameters
 .. autofunction:: hypothesis.given
 
 The :func:`@given <hypothesis.given>` decorator may be used
-to specify what arguments of a function should
+to specify which arguments of a function should
 be parametrized over. You can use either positional or keyword arguments or a mixture
 of the two.
 
@@ -360,21 +359,21 @@ The following are not:
       pass
 
 
-The rules for determining what are valid uses of given are as follows:
+The rules for determining what are valid uses of ``given`` are as follows:
 
-1. You may pass any keyword argument to given.
-2. Positional arguments to given are equivalent to the rightmost named
+1. You may pass any keyword argument to ``given``.
+2. Positional arguments to ``given`` are equivalent to the rightmost named
    arguments for the test function.
 3. Positional arguments may not be used if the underlying test function has
    varargs, arbitrary keywords, or keyword-only arguments.
-4. Functions tested with given may not have any defaults.
+4. Functions tested with ``given`` may not have any defaults.
 
 The reason for the "rightmost named arguments" behaviour is so that
 using :func:`@given <hypothesis.given>` with instance methods works: ``self``
 will be passed to the function as normal and not be parametrized over.
 
 The function returned by given has all the same arguments as the original
-test, minus those that are filled in by given.
+test, minus those that are filled in by ``given``.
 
 -------------------------
 Custom function execution
@@ -414,7 +413,7 @@ the following executor runs all its code twice:
             return f()
 
 Note: The functions you use in map, etc. will run *inside* the executor. i.e.
-they will not be called until you invoke the function passed to setup\_example.
+they will not be called until you invoke the function passed to ``execute_example``.
 
 An executor must be able to handle being passed a function which returns None,
 otherwise it won't be able to run normal test cases. So for example the following
@@ -466,7 +465,7 @@ experimenting with conditions for filtering data.
   {0, 1, 9}
 
 The first argument to :func:`~hypothesis.find` describes data in the usual way for an argument to
-given, and supports :doc:`all the same data types <data>`. The second is a
+:func:`~hypothesis.given`, and supports :doc:`all the same data types <data>`. The second is a
 predicate it must satisfy.
 
 Of course not all conditions are satisfiable. If you ask Hypothesis for an
