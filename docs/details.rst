@@ -465,7 +465,7 @@ experimenting with conditions for filtering data.
   {0, 1, 9}
 
 The first argument to :func:`~hypothesis.find` describes data in the usual way for an argument to
-given, and supports :doc:`all the same data types <data>`. The second is a
+:func:`~hypothesis.given`, and supports :doc:`all the same data types <data>`. The second is a
 predicate it must satisfy.
 
 Of course not all conditions are satisfiable. If you ask Hypothesis for an
