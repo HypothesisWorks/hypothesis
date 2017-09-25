@@ -133,8 +133,8 @@ You will then see output like:
       * 27.63%, i mod 3 = 0
       * 12.28%, Aborted test because unable to satisfy integers().filter(lambda x: x % 2 == 0)
 
-Arguments to event() can be any hashable type, but two events will be considered the same
-if they are the same when converted to a string with str().
+Arguments to ``event`` can be any hashable type, but two events will be considered the same
+if they are the same when converted to a string with ``str``.
 
 ------------------
 Making assumptions
