@@ -282,7 +282,7 @@ If you want to see exactly what a strategy produces you can ask for an example:
   >>> integers(min_value=0, max_value=10).example()
   5
 
-Many strategies are build out of other strategies. For example, if you want
+Many strategies are built out of other strategies. For example, if you want
 to define a tuple you need to say what goes in each element:
 
 .. doctest::
