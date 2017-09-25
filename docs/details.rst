@@ -149,7 +149,7 @@ it turns out 150 of those examples don't match your needs, that's a lot of waste
 
 .. autofunction:: hypothesis.assume
 
-For example suppose had the following test:
+For example suppose you had the following test:
 
 
 .. code:: python
