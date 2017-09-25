@@ -625,6 +625,11 @@ settings.define_setting(
     description=u"""
 If set to True, Hypothesis will run a preliminary health check before
 attempting to actually execute your test.
+""",
+    deprecation_message=u"""
+This setting is unused, and will go away in a future version of Hypothesis.
+For now, a HypothesisDeprecationWarning will be emitted if you try to set
+the value of this setting.
 """
 )
 
