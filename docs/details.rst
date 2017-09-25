@@ -413,7 +413,7 @@ the following executor runs all its code twice:
             return f()
 
 Note: The functions you use in map, etc. will run *inside* the executor. i.e.
-they will not be called until you invoke the function passed to setup\_example.
+they will not be called until you invoke the function passed to ``execute_example``.
 
 An executor must be able to handle being passed a function which returns None,
 otherwise it won't be able to run normal test cases. So for example the following
