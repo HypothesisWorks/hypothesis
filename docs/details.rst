@@ -229,10 +229,10 @@ The reason that this should be surprising is not that it doesn't find a
 counter-example, but that it finds enough examples at all.
 
 In order to make sure something interesting is happening, suppose we wanted to
-try this for long lists. e.g. suppose we added an assume(len(xs) > 10) to it.
+try this for long lists. e.g. suppose we added an ``assume(len(xs) > 10)`` to it.
 This should basically never find an example: A naive strategy would find fewer
 than one in a thousand examples, because if each element of the list is
-negative with probability half, you'd have to have ten of these go the right
+negative with probability one-half, you'd have to have ten of these go the right
 way by chance. In the default configuration Hypothesis gives up long before
 it's tried 1000 examples (by default it tries 200).
 
