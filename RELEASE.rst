@@ -9,3 +9,11 @@ This release makes several changes:
    algorithm is sufficiently better at covering interesting behaviour that
    reducing the number of examples should not come with a regression in ability
    to find bugs.
+
+The new algorithm for 1 also makes some changes to Hypothesis's low level data
+generation which apply even with coverage turned off. They generally reduce the
+total amount of data generated, which should improve test performance somewhat
+even without the change to the number of examples run - where data generation
+costs dominates you should see anything between a slight slow down or a factor
+of two speed up (or something completely different if your data isn't
+represented well by our benchmarking).
