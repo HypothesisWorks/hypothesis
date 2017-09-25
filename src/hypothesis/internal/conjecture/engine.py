@@ -749,6 +749,7 @@ class ConjectureRunner(object):
         if Phase.shrink not in self.settings.phases or self.last_data is None:
             self.exit_with(ExitReason.finished)
 
+        assert self.last_data.buffer.status == Status.INTERESTING
         data = ConjectureData.for_buffer(self.last_data.buffer)
         self.test_function(data)
         if data.status != Status.INTERESTING:
