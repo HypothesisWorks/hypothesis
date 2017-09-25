@@ -222,7 +222,7 @@ Unsurprisingly this fails and gives the falsifying example ``[]``.
 
 Adding ``assume(xs)`` to this removes the trivial empty example and gives us ``[0]``.
 
-Adding ``assume(all(x > 0 for x in xs))`` and it passes: A sum of a list of
+Adding ``assume(all(x > 0 for x in xs))`` and it passes: the sum of a list of
 positive integers is positive.
 
 The reason that this should be surprising is not that it doesn't find a
