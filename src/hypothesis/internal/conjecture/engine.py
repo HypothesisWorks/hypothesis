@@ -752,11 +752,15 @@ class ConjectureRunner(object):
         ):
             self.exit_with(ExitReason.finished)
 
-        assert self.last_data.status == Status.INTERESTING
-        data = ConjectureData.for_buffer(self.last_data.buffer)
-        self.test_function(data)
-        if data.status != Status.INTERESTING:
-            self.exit_with(ExitReason.flaky)
+        for prev_data in sorted(
+            self.interesting_examples.values(),
+            key=lambda d: sort_key(d.buffer)
+        ):
+            assert prev_data.status == Status.INTERESTING
+            data = ConjectureData.for_buffer(prev_data.buffer)
+            self.test_function(data)
+            if data.status != Status.INTERESTING:
+                self.exit_with(ExitReason.flaky)
 
         while len(self.shrunk_examples) < len(self.interesting_examples):
             target, d = min([
