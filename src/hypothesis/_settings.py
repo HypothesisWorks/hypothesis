@@ -479,7 +479,7 @@ settings.define_setting(
     ),
     show_default=False,
     description="""
-    database: An instance of hypothesis.database.ExampleDatabase that will be
+    An instance of hypothesis.database.ExampleDatabase that will be
 used to save examples to and load previous examples from. May be None
 in which case no storage will be used.
 """
