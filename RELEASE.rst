@@ -9,11 +9,13 @@ This release makes several changes:
    needed to get the same testing and is sufficiently better at covering
    interesting behaviour, and offsets some of the performance problems of
    running under coverage.
+3. Hypothesis will always try to start its testing with an example that is near
+   minimized.
 
 The new algorithm for 1 also makes some changes to Hypothesis's low level data
 generation which apply even with coverage turned off. They generally reduce the
-total amount of data generated, which should improve test performance somewhat
-even without the change to the number of examples run - where data generation
-costs dominates you should see anything between a slight slow down or a factor
-of two speed up (or something completely different if your data isn't
-represented well by our benchmarking).
+total amount of data generated, which should improve test performance somewhat.
+Between this and 3 you should see a noticeable reduction in test runtime (how
+much so depends on your tests and how much example size affects their
+performance. On our benchmarks, where data generation dominates, we saw up to
+a factor of two performance improvement, but it's unlikely to be that large.
