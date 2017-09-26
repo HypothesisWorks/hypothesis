@@ -1173,7 +1173,7 @@ class TargetSelector(object):
        multiple lines in a conditional so that either all or none of them will
        be covered in a conditional) they are naturally deduplicated.
     2. Popular coverage targets will largely be ignored for considering what
-       test ot run - if every example exhibits a coverage target, picking an
+       test to run - if every example exhibits a coverage target, picking an
        example because of that target is rather pointless.
     3. When we discover new coverage targets we immediately exploit them until
        we get to the point where we've spent about as much time on them as the
