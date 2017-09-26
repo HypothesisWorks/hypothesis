@@ -35,6 +35,10 @@ def test_deterministic_examples_are_deterministic(seed):
             st.lists(st.integers()).example(Random(seed))
 
 
+def test_example_of_none_is_none():
+    assert st.none().example() is None
+
+
 def test_does_not_always_give_the_same_example():
     s = st.integers()
     assert len(set(

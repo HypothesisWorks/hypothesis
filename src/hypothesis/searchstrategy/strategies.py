@@ -256,10 +256,23 @@ class SearchStrategy(object):
                 )
 
         from hypothesis import find, settings, Verbosity
+
+        # Conjecture will always try the zero example first. This would result
+        # in us producing the same example each time, which is boring, so we
+        # deliberately skip the first example it feeds us.
+        first = []
+
+        def condition(x):
+            if first:
+                return x != first[0]
+            else:
+                first.append(x)
+                return False
+
         try:
             return find(
                 self,
-                lambda x: True,
+                condition,
                 random=random,
                 settings=settings(
                     max_shrinks=0,
@@ -269,6 +282,10 @@ class SearchStrategy(object):
                 )
             )
         except (NoSuchExample, Unsatisfiable):
+            # This can happen when a strategy has only one example. e.g.
+            # st.just(x). In that case we wanted the first example after all.
+            if first:
+                return first[0]
             raise NoExamples(
                 u'Could not find any valid examples in 100 tries'
             )
