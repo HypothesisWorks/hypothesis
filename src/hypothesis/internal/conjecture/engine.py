@@ -775,7 +775,7 @@ class ConjectureRunner(object):
                 self.exit_with(ExitReason.flaky)
 
         while len(self.shrunk_examples) < len(self.interesting_examples):
-            target, d = min([
+            target, self.last_data = min([
                 (k, v) for k, v in self.interesting_examples.items()
                 if k not in self.shrunk_examples],
                 key=lambda kv: (sort_key(kv[1].buffer), sort_key(repr(kv[0]))),
