@@ -23,8 +23,11 @@ from hypothesis import find, settings
 
 def test_max_shrinks():
     seen = set()
+    zero = b'\0' * 100
 
     def tracktrue(s):
+        if s == zero:
+            return False
         seen.add(s)
         return True
 
