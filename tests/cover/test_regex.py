@@ -144,8 +144,8 @@ def test_literals_with_ignorecase(pattern):
 
 
 @pytest.mark.parametrize('pattern', [
-    re.compile(u'[^a][^b]', re.IGNORECASE),
-    u'(?i)[^a][^b]'
+    re.compile(u'\A[^a][^b]\Z', re.IGNORECASE),
+    u'\A(?i)[^a][^b]\Z'
 ])
 def test_not_literal_with_ignorecase(pattern):
     assert_all_examples(
