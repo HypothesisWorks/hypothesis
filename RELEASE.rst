@@ -4,11 +4,11 @@ This release makes several changes:
 
 1. It significantly improves Hypothesis's ability to use coverage information
    to find interesting examples.
-2. It reduces the default ``max_examples`` setting to 100. This is intended to
-   offset some of the performance hit of running under coverage, and the new
-   algorithm is sufficiently better at covering interesting behaviour that
-   reducing the number of examples should not come with a regression in ability
-   to find bugs.
+2. It reduces the default ``max_examples`` setting from 200 to 100. This takes
+   advantage of the improved algorithm meaning fewer examples are typically
+   needed to get the same testing and is sufficiently better at covering
+   interesting behaviour, and offsets some of the performance problems of
+   running under coverage.
 
 The new algorithm for 1 also makes some changes to Hypothesis's low level data
 generation which apply even with coverage turned off. They generally reduce the
