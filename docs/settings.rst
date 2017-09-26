@@ -9,7 +9,7 @@ The mechanism for doing this is the :class:`~hypothesis.settings` object.
 You can set up a :func:`@given <hypothesis.given>` based test to use this using a settings
 decorator:
 
-:func:`@given <hypothesis.given>` invocation as follows:
+:func:`@given <hypothesis.given>` invocation is as follows:
 
 .. code:: python
 
@@ -131,7 +131,7 @@ values. Any absent ones will be set to defaults:
     10
 
 
-You can also copy settings off other settings:
+You can also copy settings from other settings:
 
 .. doctest::
 
