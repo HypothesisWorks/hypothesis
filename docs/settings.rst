@@ -61,8 +61,8 @@ Hypothesis divides tests into four logically distinct phases:
 4. Attempting to shrink an example found in phases 2 or 3 to a more manageable
    one (explicit examples cannot be shrunk).
 
-The phases setting provides you fine grained control over which of these run,
-with each phase corresponding to a value on the Phase enum:
+The phases setting provides you with fine grained control over which of these run,
+with each phase corresponding to a value on the :class:`~hypothesis._settings.Phase` enum:
 
 1. ``Phase.explicit`` controls whether explicit examples are run.
 2. ``Phase.reuse`` controls whether previous examples will be reused.
@@ -113,7 +113,7 @@ If you are using ``pytest``, you may also need to
 Building settings objects
 -------------------------
 
-settings can be created by calling settings with any of the available settings
+Settings can be created by calling :class:`~hypothesis.settings` with any of the available settings
 values. Any absent ones will be set to defaults:
 
 .. doctest::
@@ -153,7 +153,7 @@ Default settings
 ----------------
 
 At any given point in your program there is a current default settings,
-available as settings.default. As well as being a settings object in its own
+available as ``settings.default``. As well as being a settings object in its own
 right, all newly created settings objects which are not explicitly based off
 another settings are based off the default, so will inherit any values that are
 not explicitly set from it.
@@ -189,8 +189,8 @@ All settings objects created or tests defined inside the block will inherit thei
 defaults from the settings object used as the context. You can still override them
 with custom defined settings of course.
 
-Warning: If you use define test functions which don't use @given inside a context
-block, these will not use the enclosing settings. This is because the context
+Warning: If you use define test functions which don't use :func:`@given <hypothesis.given>`
+inside a context block, these will not use the enclosing settings. This is because the context
 manager only affects the definition, not the execution of the function.
 
 .. _settings_profiles:
