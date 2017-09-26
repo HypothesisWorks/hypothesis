@@ -644,6 +644,13 @@ class ConjectureRunner(object):
     def generate_new_examples(self):
         if Phase.generate not in self.settings.phases:
             return
+
+        zero_data = ConjectureData(
+            max_length=self.settings.buffer_size,
+            draw_bytes=lambda data, n: self.__rewrite_for_novelty(
+                data, hbytes(n)))
+        self.test_function(zero_data)
+
         count = 0
         while count < 10 and not self.interesting_examples:
             def draw_bytes(data, n):
