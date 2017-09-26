@@ -1,7 +1,7 @@
 ---
 layout: post
 tags: technical details python
-date: 2017-09-14 12:00
+date: 2017-09-26 12:00
 title: When multiple bugs attack
 published: true
 author: drmaciver
@@ -59,7 +59,7 @@ nearly as much information as you could be, and you're fixing bugs in
 Hypothesis's priority order rather than yours. Wouldn't it be better if Hypothesis
 just told you about all of the bugs it found and you could prioritise them yourself?
 
-Well, now you can.
+Well, as of Hypothesis 3.29.0, released a few weeks ago, now it does!
 
 If you run the above test now, you'll get the following:
 
@@ -152,7 +152,7 @@ The social ones are perhaps more interesting. Certainly I'm very pleased with ho
 out here.
 
 The first is that this work emerged tangentially from
-[the recent Stripe funded work](https://stripe.com/blog/hypothesis) - Stripe have paid me
+[the recent Stripe funded work](https://stripe.com/blog/hypothesis) - Stripe paid me
 to develop some initial support for testing Pandas code with Hypothesis, and I observed
 a bunch of bug slippage happening in the wild while I was testing that (it turns out there
 are quite a lot of ways to trigger exceptions from Pandas - they weren't really Pandas
@@ -183,7 +183,9 @@ and feedback I eventually hit on the design that lead to displaying all of the e
 
 Our [review handbook](https://github.com/HypothesisWorks/hypothesis-python/blob/master/guides/review.rst)
 emphasises that code review is a collaborative design process, and I feel this was
-a particularly good example of that.
+a particularly good example of that. We've created a great culture of code review,
+and we're reaping the benefits (and if you want to get in on it, we could always
+use more people able and willing to do review...).
 
 All told, I'm really pleased with how this turned out. I think it's a nice example
 of getting a lot of things right up front and this resulting in a really cool new
