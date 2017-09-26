@@ -6,7 +6,8 @@ Hypothesis tries to have good defaults for its behaviour, but sometimes that's
 not enough and you need to tweak it.
 
 The mechanism for doing this is the :class:`~hypothesis.settings` object.
-You can set up a @given based test to use this using a settings decorator:
+You can set up a :func:`@given <hypothesis.given>` based test to use this using a settings
+decorator:
 
 :func:`@given <hypothesis.given>` invocation as follows:
 
