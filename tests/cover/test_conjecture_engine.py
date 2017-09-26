@@ -42,8 +42,8 @@ def run_to_buffer(f):
         database=None,
     ))
     runner.run()
-    assert runner.last_data.status == Status.INTERESTING
-    return hbytes(runner.last_data.buffer)
+    assert len(runner.interesting_examples) == 1
+    return hbytes(runner.interesting_examples[None].buffer)
 
 
 def test_can_index_results():
@@ -380,17 +380,16 @@ def test_max_shrinks_can_disable_shrinking():
 
 
 def test_phases_can_disable_shrinking():
-    seen = set()
+    slow = slow_shrinker()
 
-    def f(data):
-        seen.add(hbytes(data.draw_bytes(32)))
-        data.mark_interesting()
+    max_examples = 10
 
-    runner = ConjectureRunner(f, settings=settings(
+    runner = ConjectureRunner(slow, settings=settings(
         database=None, phases=(Phase.reuse, Phase.generate),
+        max_shrinks=10**6, max_examples=max_examples
     ))
     runner.run()
-    assert len(seen) == 1
+    assert runner.valid_examples <= max_examples
 
 
 def test_saves_data_while_shrinking():
@@ -478,7 +477,8 @@ def test_garbage_collects_the_database():
 
     assert len(in_db()) == n + 1
     runner = ConjectureRunner(
-        lambda data: None, settings=local_settings, database_key=key)
+        lambda data: data.draw_bytes(8),
+        settings=local_settings, database_key=key)
     runner.run()
     assert 0 < len(in_db()) < n
 
@@ -593,3 +593,21 @@ def test_can_cover_without_a_database_key():
     runner = ConjectureRunner(tagged, settings=settings(), database_key=None)
     runner.run()
     assert len(runner.covering_examples) == 1
+
+
+def test_bails_out_quickly_if_not_finding_new_bugs():
+    seen = [None]
+
+    def tf(data):
+        b = data.draw_bytes(4)
+        if seen[0] is None:
+            seen[0] = b
+        if b == seen[0]:
+            data.mark_interesting()
+
+    runner = ConjectureRunner(tf, settings=settings(
+        database=None, phases=(Phase.reuse, Phase.generate),
+        max_examples=10**6,
+    ))
+    runner.run()
+    runner.valid_examples <= 200
