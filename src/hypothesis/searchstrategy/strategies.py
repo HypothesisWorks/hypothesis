@@ -264,7 +264,13 @@ class SearchStrategy(object):
 
         def condition(x):
             if first:
-                return x != first[0]
+                try:
+                    return bool(x != first[0])
+                except:
+                    # This could fail in essentially arbitrary ways, because
+                    # Python is hilarious. We simply swallow the exception if
+                    # that happens because there's no better way to handle it.
+                    return False
             else:
                 first.append(x)
                 return False

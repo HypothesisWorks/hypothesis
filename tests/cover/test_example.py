@@ -18,6 +18,7 @@
 from __future__ import division, print_function, absolute_import
 
 from random import Random
+from decimal import Decimal
 
 import pytest
 
@@ -37,6 +38,12 @@ def test_deterministic_examples_are_deterministic(seed):
 
 def test_example_of_none_is_none():
     assert st.none().example() is None
+
+
+def test_exception_in_compare_can_still_have_example():
+    st.one_of(
+        st.none().map(lambda n: Decimal('snan')),
+        st.just(Decimal(0))).example()
 
 
 def test_does_not_always_give_the_same_example():
