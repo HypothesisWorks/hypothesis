@@ -236,6 +236,11 @@ class ConjectureRunner(object):
 
             if self.shrinks >= self.settings.max_shrinks:
                 self.exit_with(ExitReason.max_shrinks)
+        elif (
+            self.last_data is None or
+            self.last_data.status < Status.INTERESTING
+        ):
+            self.last_data = data
         if (
             self.settings.timeout > 0 and
             time.time() >= self.start_time + self.settings.timeout
@@ -720,7 +725,7 @@ class ConjectureRunner(object):
                 self.test_function(data)
                 data.freeze()
             else:
-                target, self.last_data = self.target_selector.select()
+                target, last_data = self.target_selector.select()
                 mutations += 1
                 targets_found = len(self.covering_examples)
                 prev_data = self.last_data
@@ -776,7 +781,6 @@ class ConjectureRunner(object):
                 key=lambda kv: (sort_key(kv[1].buffer), sort_key(repr(kv[0]))),
             )
             self.debug('Shrinking %r' % (target,))
-            self.last_data = d
             assert self.last_data.interesting_origin == target
             self.shrink()
             self.shrunk_examples.add(target)
