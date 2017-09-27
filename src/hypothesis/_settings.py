@@ -356,7 +356,7 @@ search space.
 
 settings.define_setting(
     'max_examples',
-    default=200,
+    default=100,
     description="""
 Once this many satisfying examples have been considered without finding any
 counter-example, falsification will terminate.

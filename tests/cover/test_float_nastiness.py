@@ -59,10 +59,10 @@ def test_can_generate_both_zeros_when_in_interval(l, r):
     find(
         interval,
         lambda x: assume(x == 0) and math.copysign(1, x) == 1,
-        settings=settings(max_examples=10000))
+        settings=settings(max_iterations=20000))
     find(
         interval, lambda x: assume(x == 0) and math.copysign(1, x) == -1,
-        settings=settings(max_examples=10000))
+        settings=settings(max_iterations=20000))
 
 
 @given(st.floats(0.0, 1.0))

@@ -83,7 +83,7 @@ def define_test(specifier, predicate, condition=None):
             runner = ConConjectureRunner(
                 test_function,
                 settings=Settings(
-                    max_examples=200,
+                    max_examples=100,
                     max_iterations=1000,
                     max_shrinks=0
                 ))
@@ -141,7 +141,7 @@ test_can_produce_ascii_strings = define_test(
 )
 
 test_can_produce_long_strings_with_no_ascii = define_test(
-    text(min_size=10), lambda x: all(ord(c) > 127 for c in x),
+    text(min_size=5), lambda x: all(ord(c) > 127 for c in x),
 )
 
 test_can_produce_short_strings_with_some_non_ascii = define_test(

@@ -246,7 +246,7 @@ def test_can_find_large_sum_frozenset(xs):
 
 def test_prints_on_failure_by_default():
     @given(integers(), integers())
-    @settings(max_examples=200)
+    @settings(max_examples=100)
     def test_ints_are_sorted(balthazar, evans):
         assume(evans >= 0)
         assert balthazar <= evans
@@ -307,7 +307,7 @@ def test_can_test_kwargs_only_methods(**kwargs):
 
 @fails_with(UnicodeEncodeError)
 @given(text())
-@settings(max_examples=200)
+@settings(max_examples=100)
 def test_is_ascii(x):
     x.encode('ascii')
 
@@ -443,7 +443,7 @@ def test_when_set_to_no_simplifies_runs_failing_example_twice():
     failing = [0]
 
     @given(integers())
-    @settings(max_shrinks=0, max_examples=200)
+    @settings(max_shrinks=0, max_examples=100)
     def foo(x):
         if x > 11:
             note('Lo')

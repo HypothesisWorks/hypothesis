@@ -163,6 +163,7 @@ class ConjectureData(object):
             return
         self.frozen = True
         self.finish_time = benchmark_time()
+
         # Intervals are sorted as longest first, then by interval start.
         for l in self.intervals_by_level:
             for i in hrange(len(l) - 1):
