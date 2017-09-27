@@ -571,11 +571,18 @@ def test_will_save_covering_examples():
 
 
 def test_will_shrink_covering_examples():
-    seen = [hbytes([255] * 4)]
+    best = [None]
+    replaced = []
 
     def tagged(data):
-        seen[0] = min(seen[0], hbytes(data.draw_bytes(4)))
-        data.add_tag(0)
+        b = hbytes(data.draw_bytes(4))
+        if any(b):
+            data.add_tag('nonzero')
+            if best[0] is None:
+                best[0] = b
+            elif b < best[0]:
+                replaced.append(best[0])
+                best[0] = b
 
     db = InMemoryExampleDatabase()
     runner = ConjectureRunner(tagged, settings=settings(
@@ -584,7 +591,10 @@ def test_will_shrink_covering_examples():
         database=db,
     ), database_key=b'stuff')
     runner.run()
-    assert all_values(db) == set(seen)
+    saved = set(all_values(db))
+    assert best[0] in saved
+    for r in replaced:
+        assert r not in saved
 
 
 def test_can_cover_without_a_database_key():
