@@ -1681,7 +1681,7 @@ def try_convert(typ, value, name):
                 name, value, type(value).__name__, typ.__name__
             )
         )
-    except ValueError:
+    except (OverflowError, ValueError):
         raise InvalidArgument(
             'Cannot convert %s=%r to type %s' % (
                 name, value, typ.__name__

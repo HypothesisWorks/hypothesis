@@ -156,6 +156,8 @@ def range_indexes(min_size=0, max_size=None):
       it will default to some suitable value based on min_size.
 
     """
+    st.check_valid_size(min_size, 'min_size')
+    st.check_valid_size(max_size, 'max_size')
     st.check_valid_interval(min_size, max_size, 'min_size', 'max_size')
     if max_size is None:
         max_size = min_size + DEFAULT_MAX_SIZE
@@ -187,6 +189,8 @@ def indexes(
       should be distinct.
 
     """
+    st.check_valid_size(min_size, 'min_size')
+    st.check_valid_size(max_size, 'max_size')
     st.check_valid_interval(min_size, max_size, 'min_size', 'max_size')
     st.check_type(bool, unique, 'unique')
 
