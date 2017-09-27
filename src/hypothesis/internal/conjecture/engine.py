@@ -709,9 +709,6 @@ class ConjectureRunner(object):
                 self.random.shuffle(buffer)
                 buffer = hbytes(buffer)
 
-                if buffer == overdrawn.buffer:
-                    continue
-
                 def draw_bytes(data, n):
                     result = buffer[data.index:data.index + n]
                     if len(result) < n:
