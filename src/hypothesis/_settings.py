@@ -615,15 +615,6 @@ settings.define_setting(
 )
 
 settings.define_setting(
-    'report_statistics',
-    default=Statistics.interesting,
-    description=u"""
-If set to True, Hypothesis will run a preliminary health check before
-attempting to actually execute your test.
-"""
-)
-
-settings.define_setting(
     'deadline',
     default=not_set,
     description=u"""
