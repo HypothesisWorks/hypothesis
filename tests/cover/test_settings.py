@@ -190,12 +190,6 @@ def test_set_deprecated_settings():
     assert settings(timeout=3).timeout == 3
 
 
-@checks_deprecated_behaviour
-def test_set_report_statistics():
-    value = settings.Statistics.never
-    assert settings(report_statistics=value) == value
-
-
 def test_setting_to_future_value_gives_future_value_and_no_error():
     assert settings(timeout=unlimited).timeout == -1
 
