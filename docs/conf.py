@@ -19,14 +19,9 @@
 
 from __future__ import division, print_function, absolute_import
 
-# on_rtd is whether we are on readthedocs.org
 import os
 import sys
 import datetime
-
-from hypothesis import __version__
-
-on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
 sys.path.append(
     os.path.join(os.path.dirname(__file__), '..', 'src')
@@ -55,8 +50,12 @@ project = u'Hypothesis'
 copyright = u'2013-%s, David R. MacIver' % datetime.datetime.utcnow().year
 author = u'David R. MacIver'
 
-version = __version__
-release = __version__
+_d = {}
+with open(os.path.join(os.path.dirname(__file__), '..', 'src',
+                       'hypothesis', 'version.py')) as f:
+    exec(f.read(), _d)
+    version = _d['__version__']
+    release = _d['__version__']
 
 language = None
 
@@ -79,12 +78,11 @@ doctest_global_setup = '''
 # Some standard imports
 from hypothesis import *
 from hypothesis.strategies import *
-# Ensure that output (including from strategies) is deterministic
-import random
-random.seed(0)
-# don't save examples
-settings.register_profile('doctests', settings(database=None))
+# Run deterministically, and don't save examples
+doctest_settings = settings(database=None, derandomize=True)
+settings.register_profile('doctests', doctest_settings)
 settings.load_profile('doctests')
+# Never show deprecated behaviour in code examples
 import warnings
 warnings.filterwarnings('error', category=HypothesisDeprecationWarning)
 '''
@@ -92,17 +90,20 @@ warnings.filterwarnings('error', category=HypothesisDeprecationWarning)
 # This config value must be a dictionary of external sites, mapping unique
 # short alias names to a base URL and a prefix.
 # See http://sphinx-doc.org/ext/extlinks.html
+_repo = 'https://github.com/HypothesisWorks/hypothesis-python/'
 extlinks = {
-    'commit': ('https://github.com/HypothesisWorks/hypothesis-python/commit/%s', 'commit '),
-    'gh-file': ('https://github.com/HypothesisWorks/hypothesis-python/blob/master/%s', ''),
-    'gh-link': ('https://github.com/HypothesisWorks/hypothesis-python/%s', ''),
-    'issue': ('https://github.com/HypothesisWorks/hypothesis-python/issues/%s', 'issue #'),
-    'pull': ('https://github.com/HypothesisWorks/hypothesis-python/pulls/%s', 'pull request #'),
+    'commit': (_repo + 'commit/%s', 'commit '),
+    'gh-file': (_repo + 'blob/master/%s', ''),
+    'gh-link': (_repo + '%s', ''),
+    'issue': (_repo + 'issues/%s', 'issue #'),
+    'pull': (_repo + 'pulls/%s', 'pull request #'),
+    'pypi': ('https://pypi.python.org/pypi/%s', ''),
 }
 
 # -- Options for HTML output ----------------------------------------------
 
-if not on_rtd:  # only import and set the theme if we're building docs locally
+if os.environ.get('READTHEDOCS', None) != 'True':
+    # only import and set the theme if we're building docs locally
     import sphinx_rtd_theme
     html_theme = 'sphinx_rtd_theme'
     html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
