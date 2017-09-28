@@ -195,3 +195,10 @@ class MultipleFailures(HypothesisException):
 
 class DeadlineExceeded(HypothesisException):
     """Raised when an individual test body has taken too long to run."""
+
+    def __init__(self, runtime, deadline):
+        super(DeadlineExceeded, self).__init__((
+            'Test took %.2fms, which exceeds the deadline of '
+            '%.2fms') % (runtime, deadline))
+        self.runtime = runtime
+        self.deadline = deadline

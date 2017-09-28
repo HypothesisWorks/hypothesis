@@ -578,15 +578,19 @@ class StateForActualGivenExecution(object):
         self.random = random
         self.__warned_deadline = False
         self.__existing_collector = None
+        self.__test_runtime = None
+        self.__in_final_replay = False
 
         if self.settings.deadline is None:
             self.test = test
         else:
             @proxies(test)
             def timed_test(*args, **kwargs):
+                self.__test_runtime = None
                 start = time.time()
                 result = test(*args, **kwargs)
                 runtime = (time.time() - start) * 1000
+                self.__test_runtime = runtime
                 if self.settings.deadline is not_set:
                     if (
                         not self.__warned_deadline and
@@ -602,11 +606,8 @@ class StateForActualGivenExecution(object):
                             'it to None to disable this check entirely.') % (
                                 runtime, ceil(runtime / 100) * 100,
                         ))
-                elif runtime >= self.settings.deadline:
-                    raise DeadlineExceeded((
-                        'Test took %.2fms, which exceeds the deadline of '
-                        '%.2fms') % (runtime, self.settings.deadline)
-                    )
+                elif runtime >= self.current_deadline:
+                    raise DeadlineExceeded(runtime, self.settings.deadline)
                 return result
             self.test = timed_test
 
@@ -633,6 +634,14 @@ class StateForActualGivenExecution(object):
             self.collector._collectors = []
         else:
             self.collector = None
+
+    @property
+    def current_deadline(self):
+        base = self.settings.deadline
+        if self.__in_final_replay:
+            return base
+        else:
+            return base * 1.25
 
     def should_trace(self, original_filename, frame):  # pragma: no cover
         disp = FileDisposition()
@@ -732,10 +741,11 @@ class StateForActualGivenExecution(object):
             StopTest,
         ) + exceptions_to_reraise:
             raise
-        except Exception:
+        except Exception as e:
             escalate_hypothesis_internal_error()
-            data.__expected_exception = traceback.format_exc()
-            verbose_report(data.__expected_exception)
+            data.__expected_traceback = traceback.format_exc()
+            data.__expected_exception = e
+            verbose_report(data.__expected_traceback)
 
             error_class, _, tb = sys.exc_info()
 
@@ -822,6 +832,8 @@ class StateForActualGivenExecution(object):
 
         flaky = 0
 
+        self.__in_final_replay = True
+
         for falsifying_example in self.falsifying_examples:
             self.__was_flaky = False
             raised_exception = False
@@ -846,10 +858,28 @@ class StateForActualGivenExecution(object):
                 report(traceback.format_exc())
 
             if not raised_exception:
-                report(
-                    'Failed to reproduce exception. Expected: \n' +
-                    falsifying_example.__expected_exception,
-                )
+                if (
+                    isinstance(
+                        falsifying_example.__expected_exception,
+                        DeadlineExceeded
+                    ) and self.__test_runtime is not None
+                ):
+                    report((
+                        'Unreliable test timings! On an initial run, this '
+                        'test took %.2fms, which exceeded the deadline of '
+                        '%.2fms, but on a subsequent run it took %.2f ms, '
+                        'which did not. If you expect this sort of '
+                        'variability in your test timings, consider turning '
+                        'deadlines off for this test by setting deadline=None.'
+                    ) % (
+                        falsifying_example.__expected_exception.runtime,
+                        self.settings.deadline, self.__test_runtime
+                    ))
+                else:
+                    report(
+                        'Failed to reproduce exception. Expected: \n' +
+                        falsifying_example.__expected_traceback,
+                    )
 
                 filter_message = (
                     'Unreliable test data: Failed to reproduce a failure '

@@ -23,7 +23,7 @@ import warnings
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import given, settings
+from hypothesis import HealthCheck, given, settings, unlimited
 from hypothesis.errors import Flaky, DeadlineExceeded, \
     HypothesisDeprecationWarning
 from tests.common.utils import capture_out, checks_deprecated_behaviour
@@ -88,3 +88,48 @@ def test_deadlines_participate_in_shrinking():
         with pytest.raises(DeadlineExceeded):
             slow_if_large()
     assert 'slow_if_large(i=10000)' in o.getvalue()
+
+
+def test_keeps_you_well_above_the_deadline():
+    seen = set()
+    failed_once = [False]
+
+    @settings(deadline=100, timeout=unlimited, suppress_health_check=[
+        HealthCheck.hung_test
+    ])
+    @given(st.integers(0, 2000))
+    def slow(i):
+        # Make sure our initial failure isn't something that immediately goes
+        # flaky.
+        if not failed_once[0]:
+            if i * 0.9 <= 100:
+                return
+            else:
+                failed_once[0] = True
+
+        t = i / 1000
+        if i in seen:
+            time.sleep(0.9 * t)
+        else:
+            seen.add(i)
+            time.sleep(t)
+
+    with pytest.raises(DeadlineExceeded):
+        slow()
+
+
+def test_gives_a_deadline_specific_flaky_error_message():
+    once = [True]
+
+    @settings(deadline=100)
+    @given(st.integers())
+    def slow_once(i):
+        if once[0]:
+            once[0] = False
+            time.sleep(0.2)
+
+    with capture_out() as o:
+        with pytest.raises(Flaky):
+            slow_once()
+    assert 'Unreliable test timing' in o.getvalue()
+    assert 'took 2' in o.getvalue()
