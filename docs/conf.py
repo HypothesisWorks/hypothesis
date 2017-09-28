@@ -24,13 +24,13 @@ import os
 import sys
 import datetime
 
-from hypothesis import __version__
-
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
 sys.path.append(
     os.path.join(os.path.dirname(__file__), '..', 'src')
 )
+
+from hypothesis import __version__
 
 
 autodoc_member_order = 'bysource'
