@@ -74,7 +74,8 @@ Hypothesis thinking the test is flaky - it previously raised `DeadlineExceeded`,
 doesn't. This lead to [Issue 892](http://github.com/HypothesisWorks/hypothesis-python/issues/892),
 where Florian Bruhin ran into precisely this problem when testing [Qutebrowser](https://www.qutebrowser.org/).
 
-The solution I've ended up opting for there is to temporarily raise the deadline during shrinking
+The [solution I've ended up opting for there](https://github.com/HypothesisWorks/hypothesis-python/pull/899)
+is to temporarily raise the deadline during shrinking
 to something halfway between the actual deadline and the largest runtime we've seen. This
 ensures that we shrink to a larger threshold than the deadline, and then when we replay
 we should comfortably exceed the real deadline unless the test performance actually *is*
