@@ -41,7 +41,7 @@ snowballstemmer==1.2.1    # via sphinx
 sphinx-rtd-theme==0.2.4
 sphinx==1.6.4
 sphinxcontrib-websupport==1.0.1  # via sphinx
-tox==2.8.2
+tox==2.9.0
 tqdm==4.17.1              # via twine
 twine==1.9.1
 unify==0.2                # via pyformat
