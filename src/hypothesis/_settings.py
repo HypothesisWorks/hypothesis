@@ -633,9 +633,13 @@ settings.define_setting(
     default=not_set,
     description=u"""
 If set, a time in milliseconds (which may be a float to express
-smaller units of time) that a test is not allowed to exceed. Tests which take
-longer than that will be converted into errors. Set this to None to disable
-this behaviour entirely.
+smaller units of time) that each individual example (i.e. each time your test
+function is called, not the whole decorated test) within a test is not
+allowed to exceed. Tests which take longer than that may be converted into
+errors (but will not necessarily be if close to the deadline, to allow some
+variability in test run time).
+
+Set this to None to disable this behaviour entirely.
 
 In future this will default to 200. For now, a
 HypothesisDeprecationWarning will be emitted if you exceed that default
