@@ -299,3 +299,13 @@ def test_error_if_has_unresolvable_hints():
         pass
     with pytest.raises(InvalidArgument):
         inner()
+
+
+@pytest.mark.skipif(not hasattr(typing, 'NewType'), reason='test for NewType')
+def test_resolves_NewType():
+    for t in [
+        typing.NewType('T', int),
+        typing.NewType('UnionT', typing.Optional[int]),
+        typing.NewType('NestedT', typing.NewType('T', int)),
+    ]:
+        from_type(t).example()
