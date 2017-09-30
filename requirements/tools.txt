@@ -36,12 +36,12 @@ pytz==2017.2              # via babel
 requests-toolbelt==0.8.0  # via twine
 requests==2.18.4          # via requests-toolbelt, sphinx, twine
 restructuredtext-lint==1.1.1
-six==1.11.0               # via pip-tools, sphinx
+six==1.11.0               # via pip-tools, sphinx, tox
 snowballstemmer==1.2.1    # via sphinx
 sphinx-rtd-theme==0.2.4
 sphinx==1.6.4
 sphinxcontrib-websupport==1.0.1  # via sphinx
-tox==2.8.2
+tox==2.9.1
 tqdm==4.17.1              # via twine
 twine==1.9.1
 unify==0.2                # via pyformat
