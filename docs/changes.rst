@@ -22,6 +22,14 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.31.2 - 2017-09-30
+-------------------
+
+This release fixes some formatting and small typos/grammar issues in the
+documentation, specifically the page docs/settings.rst, and the inline docs
+for the various settings.
+
+-------------------
 3.31.1 - 2017-09-30
 -------------------
 
