@@ -266,8 +266,8 @@ class settings(settingsMeta('settings', (object,), {})):
         If this was explicitly set at settings instantiation then that
         value will be used (even if it was None). If not and the
         database_file setting is not None this will be lazily loaded as
-        an ExampleDatabase using that file the first time this property
-        is accessed on a particular thread.
+        an ExampleDatabase, using that file the first time that this
+        property is accessed on a particular thread.
 
         """
         if self._database is not_set and self.database_file is not None:
@@ -378,7 +378,7 @@ settings.define_setting(
     default=10,
     description="""
 Hypothesis will try this many variations on a single example before moving on
-to an entirely fresh start. If you've got hard to satisfy properties raising
+to an entirely fresh start. If you've got hard to satisfy properties, raising
 this might help, but you probably shouldn't touch this dial unless you really
 know what you're doing.
 """
@@ -479,7 +479,7 @@ settings.define_setting(
     ),
     show_default=False,
     description="""
-    database: An instance of hypothesis.database.ExampleDatabase that will be
+    An instance of hypothesis.database.ExampleDatabase that will be
 used to save examples to and load previous examples from. May be None
 in which case no storage will be used.
 """
@@ -616,7 +616,7 @@ attempting to actually execute your test.
 settings.define_setting(
     'suppress_health_check',
     default=[],
-    description="""A list of health checks to disable"""
+    description="""A list of health checks to disable."""
 )
 
 settings.define_setting(
