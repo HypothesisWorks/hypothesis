@@ -172,7 +172,12 @@ def nothing():
 def just(value):
     """Return a strategy which only generates value.
 
-    Note: value is not copied. Be wary of using mutable values.
+    If you are looking to convert the results of a function call to a strategy
+    then see :func:`~hypothesis.strategies.builds`
+
+    Note that value is not copied - you may wish to instead use
+    ``lambda: value`` with :func:`~hypothesis.strategies.builds` to ensure you
+    get a fresh value each time.
 
     """
     from hypothesis.searchstrategy.misc import JustStrategy
