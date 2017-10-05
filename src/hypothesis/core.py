@@ -134,7 +134,7 @@ def reify_and_execute(
                         test.__name__, arg_string(test, args, kwargs)))
             if collector is None:
                 return test(*args, **kwargs)
-            else:
+            else:  # pragma: no cover
                 try:
                     collector.start()
                     return test(*args, **kwargs)
