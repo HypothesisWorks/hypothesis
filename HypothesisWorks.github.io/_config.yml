@@ -16,7 +16,16 @@ permalink: /articles/:title/
 highlighter: rouge
 
 #Other Global Configuration
-exclude: ['README.md']
+exclude:
+  - README.md
+  - LICENSE.md
+  - CNAME
+  - Gemfile
+  - Gemfile.lock
+  - Makefile
+  - provision.sh
+  - Vagrantfile
+  - Dockerfile
 
 excerpt_separator: <!--more-->
 
