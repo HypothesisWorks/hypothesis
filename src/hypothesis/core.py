@@ -538,6 +538,8 @@ STDLIB = os.path.dirname(os.__file__)
 
 
 def hypothesis_check_include(filename):  # pragma: no cover
+    if is_hypothesis_file(filename):
+        return False
     return filename.endswith('.py')
 
 
