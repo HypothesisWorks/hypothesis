@@ -7,7 +7,7 @@ COPY Gemfile .
 COPY Gemfile.lock .
 
 RUN apk update && \
-    apk add build-base make nodejs
+    apk add build-base git make nodejs
 RUN bundle install
 
 WORKDIR /site
