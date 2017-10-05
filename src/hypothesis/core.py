@@ -116,17 +116,12 @@ def example(*args, **kwargs):
 def reify_and_execute(
     search_strategy, test,
     print_example=False,
-    is_final=False,
+    is_final=False, collector=None
 ):
     def run(data):
         with BuildContext(data, is_final=is_final):
-            orig = sys.gettrace()
-            try:  # pragma: no cover
-                sys.settrace(None)
-                import random as rnd_module
-                rnd_module.seed(0)
-            finally:  # pragma: no cover
-                sys.settrace(orig)
+            import random as rnd_module
+            rnd_module.seed(0)
             args, kwargs = data.draw(search_strategy)
 
             if print_example:
@@ -137,7 +132,15 @@ def reify_and_execute(
                 report(
                     lambda: 'Trying example: %s(%s)' % (
                         test.__name__, arg_string(test, args, kwargs)))
-            return test(*args, **kwargs)
+            if collector is None:
+                return test(*args, **kwargs)
+            else:
+                try:
+                    collector.start()
+                    return test(*args, **kwargs)
+                finally:
+                    collector.stop()
+
     return run
 
 
@@ -707,14 +710,11 @@ class StateForActualGivenExecution(object):
                 original = sys.gettrace()
                 sys.settrace(None)
                 try:
-                    try:
-                        self.collector.data = {}
-                        self.collector.start()
-                        result = self.test_runner(data, reify_and_execute(
-                            self.search_strategy, self.test,
-                        ))
-                    finally:
-                        self.collector.stop()
+                    self.collector.data = {}
+                    result = self.test_runner(data, reify_and_execute(
+                        self.search_strategy, self.test,
+                        collector=self.collector
+                    ))
                 finally:
                     sys.settrace(original)
                     covdata = CoverageData()
