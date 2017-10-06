@@ -116,17 +116,12 @@ def example(*args, **kwargs):
 def reify_and_execute(
     search_strategy, test,
     print_example=False,
-    is_final=False,
+    is_final=False, collector=None
 ):
     def run(data):
         with BuildContext(data, is_final=is_final):
-            orig = sys.gettrace()
-            try:  # pragma: no cover
-                sys.settrace(None)
-                import random as rnd_module
-                rnd_module.seed(0)
-            finally:  # pragma: no cover
-                sys.settrace(orig)
+            import random as rnd_module
+            rnd_module.seed(0)
             args, kwargs = data.draw(search_strategy)
 
             if print_example:
@@ -137,7 +132,15 @@ def reify_and_execute(
                 report(
                     lambda: 'Trying example: %s(%s)' % (
                         test.__name__, arg_string(test, args, kwargs)))
-            return test(*args, **kwargs)
+            if collector is None:
+                return test(*args, **kwargs)
+            else:  # pragma: no cover
+                try:
+                    collector.start()
+                    return test(*args, **kwargs)
+                finally:
+                    collector.stop()
+
     return run
 
 
@@ -535,6 +538,8 @@ STDLIB = os.path.dirname(os.__file__)
 
 
 def hypothesis_check_include(filename):  # pragma: no cover
+    if is_hypothesis_file(filename):
+        return False
     return filename.endswith('.py')
 
 
@@ -544,12 +549,6 @@ def escalate_warning(msg, slug=None):  # pragma: no cover
     raise AssertionError(
         'Unexpected warning from coverage: %s' % (msg,)
     )
-
-
-@attr.s(slots=True, frozen=True)
-class Line(object):
-    filename = attr.ib()
-    lineno = attr.ib()
 
 
 @attr.s(slots=True, frozen=True)
@@ -707,14 +706,11 @@ class StateForActualGivenExecution(object):
                 original = sys.gettrace()
                 sys.settrace(None)
                 try:
-                    try:
-                        self.collector.data = {}
-                        self.collector.start()
-                        result = self.test_runner(data, reify_and_execute(
-                            self.search_strategy, self.test,
-                        ))
-                    finally:
-                        self.collector.stop()
+                    self.collector.data = {}
+                    result = self.test_runner(data, reify_and_execute(
+                        self.search_strategy, self.test,
+                        collector=self.collector
+                    ))
                 finally:
                     sys.settrace(original)
                     covdata = CoverageData()
@@ -723,10 +719,10 @@ class StateForActualGivenExecution(object):
                     for filename in covdata.measured_files():
                         if is_hypothesis_file(filename):
                             continue
-                        for lineno in covdata.lines(filename):
-                            data.add_tag(Line(filename, lineno))
-                        for source, target in covdata.arcs(filename):
-                            data.add_tag(Arc(filename, source, target))
+                        data.tags.update(
+                            Arc(filename, source, target)
+                            for source, target in covdata.arcs(filename)
+                        )
             if result is not None and self.settings.perform_health_check:
                 fail_health_check(self.settings, (
                     'Tests run under @given should return None, but '
