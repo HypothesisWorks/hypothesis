@@ -169,36 +169,36 @@ their individual contributions.
 * `Adam Johnson <https://github.com/adamchainz>`_
 * `Adam Sven Johnson <https://www.github.com/pkqk>`_
 * `Alex Stapleton <https://www.github.com/public>`_
-* `Alex Willmer <https://github.com/moreati>`_ (`alex@moreati.org.uk <mailto:alex@moreati.org.uk>`_)
-* `Ben Peterson <https://github.com/killthrush>`_ (`killthrush@hotmail.com <mailto:killthrush@hotmail.com>`_)
+* `Alex Willmer <https://github.com/moreati>`_ (alex@moreati.org.uk)
+* `Ben Peterson <https://github.com/killthrush>`_ (killthrush@hotmail.com_)
 * `Charles O'Farrell <https://www.github.com/charleso>`_
 * `Chris Down  <https://chrisdown.name>`_
-* `Christopher Martin <https://www.github.com/chris-martin>`_ (`ch.martin@gmail.com <mailto:ch.martin@gmail.com>`_)
+* `Christopher Martin <https://www.github.com/chris-martin>`_ (ch.martin@gmail.com)
 * `Cory Benfield <https://www.github.com/Lukasa>`_
-* `Cristi Cobzarenco <https://github.com/cristicbz>`_ (`cristi@reinfer.io <mailto:cristi@reinfer.io>`_)
-* `David Bonner <https://github.com/rascalking>`_ (`dbonner@gmail.com <mailto:dbonner@gmail.com>`_)
+* `Cristi Cobzarenco <https://github.com/cristicbz>`_ (cristi@reinfer.io)
+* `David Bonner <https://github.com/rascalking>`_ (dbonner@gmail.com)
 * `Derek Gustafson <https://www.github.com/degustaf>`_
 * `Florian Bruhin <https://www.github.com/The-Compiler>`_
 * `follower <https://www.github.com/follower>`_
 * `Jeremy Thurgood <https://github.com/jerith>`_
-* `JP Viljoen <https://github.com/froztbyte>`_ (`froztbyte@froztbyte.net <mailto:froztbyte@froztbyte.net>`_)
-* `Jonty Wareing <https://www.github.com/Jonty>`_ (`jonty@jonty.co.uk <mailto:jonty@jonty.co.uk>`_)
+* `JP Viljoen <https://github.com/froztbyte>`_ (froztbyte@froztbyte.net)
+* `Jonty Wareing <https://www.github.com/Jonty>`_ (jonty@jonty.co.uk)
 * `jwg4 <https://www.github.com/jwg4>`_
 * `kbara <https://www.github.com/kbara>`_
 * `Lee Begg <https://www.github.com/llnz2>`_
 * `marekventur <https://www.github.com/marekventur>`_
-* `Marius Gedminas <https://www.github.com/mgedmin>`_ (`marius@gedmin.as <mailto:marius@gedmin.as>`_)
-* `Markus Unterwaditzer <http://github.com/untitaker/>`_ (`markus@unterwaditzer.net <mailto:markus@unterwaditzer.net>`_)
-* `Matt Bachmann <https://www.github.com/bachmann1234>`_ (`bachmann.matt@gmail.com <mailto:bachmann.matt@gmail.com>`_)
-* `Max Nordlund <https://www.github.com/maxnordlund>`_ (`max.nordlund@gmail.com <mailto:max.nordlund@gmail.com>`_)
-* `Maxim Kulkin <https://www.github.com/maximkulkin>`_ (`maxim.kulkin@gmail.com <mailto:maxim.kulkin@gmail.com>`_)
+* `Marius Gedminas <https://www.github.com/mgedmin>`_ (marius@gedmin.as)
+* `Markus Unterwaditzer <http://github.com/untitaker/>`_ (markus@unterwaditzer.net)
+* `Matt Bachmann <https://www.github.com/bachmann1234>`_ (bachmann.matt@gmail.com)
+* `Max Nordlund <https://www.github.com/maxnordlund>`_ (max.nordlund@gmail.com)
+* `Maxim Kulkin <https://www.github.com/maximkulkin>`_ (maxim.kulkin@gmail.com)
 * `mulkieran <https://www.github.com/mulkieran>`_
 * `Nicholas Chammas <https://www.github.com/nchammas>`_
-* `Peadar Coyle <http://www.github.com/springcoil>`_ (`peadarcoyle@gmail.com <mailto:peadarcoyle@gmail.com>`_)
-* `Richard Boulton <https://www.github.com/rboulton>`_ (`richard@tartarus.org <mailto:richard@tartarus.org>`_)
+* `Peadar Coyle <http://www.github.com/springcoil>`_ (peadarcoyle@gmail.com)
+* `Richard Boulton <https://www.github.com/rboulton>`_ (richard@tartarus.org)
 * `Sam Hames <https://www.github.com/SamHames>`_
-* `Saul Shanabrook <https://www.github.com/saulshanabrook>`_ (`s.shanabrook@gmail.com <mailto:s.shanabrook@gmail.com>`_)
-* `Tariq Khokhar <https://www.github.com/tkb>`_ (`tariq@khokhar.net <mailto:tariq@khokhar.net>`_)
-* `Will Hall <https://www.github.com/wrhall>`_ (`wrsh07@gmail.com <mailto:wrsh07@gmail.com>`_)
-* `Will Thompson <https://www.github.com/wjt>`_ (`will@willthompson.co.uk <mailto:will@willthompson.co.uk>`_)
-* `Zac Hatfield-Dodds <https://www.github.com/Zac-HD>`_ (`zac.hatfield.dodds@gmail.com <mailto:zac.hatfield.dodds@gmail.com>`_)
+* `Saul Shanabrook <https://www.github.com/saulshanabrook>`_ (s.shanabrook@gmail.com)
+* `Tariq Khokhar <https://www.github.com/tkb>`_ (tariq@khokhar.net)
+* `Will Hall <https://www.github.com/wrhall>`_ (wrsh07@gmail.com)
+* `Will Thompson <https://www.github.com/wjt>`_ (will@willthompson.co.uk)
+* `Zac Hatfield-Dodds <https://www.github.com/Zac-HD>`_ (zac.hatfield.dodds@gmail.com)
