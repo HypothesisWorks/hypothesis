@@ -292,6 +292,6 @@ def test_all_inferred_scalar_strategies_roundtrip(data, dtype):
     # values are safe, not known type coercion.
     arr = np.zeros(shape=1, dtype=dtype)
     ex = data.draw(nps.from_dtype(arr.dtype))
-    assume(ex == ex)  # NaN is uninteresting for this test
+    assume(ex == ex)  # If not, the roundtrip test *should* fail!  (eg NaN)
     arr[0] = ex
     assert arr[0] == ex
