@@ -1267,21 +1267,27 @@ def decimals(min_value=None, max_value=None,
     # required precision for lossless operation and use context methods.
     if places is not None:
         # Fixed-point decimals are basically integers with a scale factor
-        def ctx(val):
+        def ctx(val, name=None):
             """Return a context in which this value is lossless."""
-            precision = ceil(math.log10(abs(val) or 1)) + places + 1
-            return Context(prec=max([precision, 1]))
+            prec = max([2, abs(val or Decimal(1)).adjusted() + places + 1])
+            if name is not None and prec > 10 ** 4:
+                raise InvalidArgument(
+                    'To represent %s_value=%r with %s places would take %s '
+                    'digits, and Hypothesis does not support Decimals with '
+                    'more than 10^4 digits.' % (name, val, places, prec)
+                )
+            return Context(prec=prec)
 
         def int_to_decimal(val):
-            context = ctx(val)
+            context = ctx(Decimal(val))
             return context.quantize(context.multiply(val, factor), factor)
 
         factor = Decimal(10) ** -places
         min_num, max_num = None, None
         if min_value is not None:
-            min_num = ceil(ctx(min_value).divide(min_value, factor))
+            min_num = ceil(ctx(min_value, 'min').divide(min_value, factor))
         if max_value is not None:
-            max_num = floor(ctx(max_value).divide(max_value, factor))
+            max_num = floor(ctx(max_value, 'max').divide(max_value, factor))
         if None not in (min_num, max_num) and min_num > max_num:
             raise InvalidArgument(
                 'There are no decimals with %d places between min_value=%r '
@@ -1290,10 +1296,10 @@ def decimals(min_value=None, max_value=None,
     else:
         # Otherwise, they're like fractions featuring a power of ten
         def fraction_to_decimal(val):
-            precision = ceil(math.log10(abs(val.numerator) or 1) +
-                             math.log10(val.denominator)) + 1
-            return Context(prec=precision or 1).divide(
-                Decimal(val.numerator), val.denominator)
+            precision = ceil(Decimal(abs(val.numerator) or 1).adjusted() +
+                             Decimal(val.denominator).adjusted()) + 1
+            return Context(prec=precision).divide(
+                val.numerator, val.denominator)
 
         strat = fractions(min_value, max_value).map(fraction_to_decimal)
     # Compose with sampled_from for infinities and NaNs as appropriate
