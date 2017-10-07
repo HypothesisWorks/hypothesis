@@ -101,7 +101,11 @@ for var in "$@"; do
       install 3.6.1 python3.6
       ;;
     pypy)
-      install pypy2.7-portable-5.8.0 pypy
+      if [[ "$(uname -s)" == 'Darwin' ]]; then
+          install pypy2.7-5.8.0 pypy
+      else
+          install pypy2.7-portable-5.8.0 pypy
+      fi
       ;;
   esac
 done
