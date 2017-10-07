@@ -138,10 +138,7 @@ class ConjectureRunner(object):
 
         self.debug_data(data)
 
-        tags = frozenset(
-            self.tag_intern_table.setdefault(t, t)
-            for t in data.tags
-        )
+        tags = frozenset(data.tags)
         data.tags = self.tag_intern_table.setdefault(tags, tags)
 
         if data.status == Status.VALID:
