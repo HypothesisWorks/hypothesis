@@ -97,7 +97,10 @@ def test_generate_arbitrary_indices(data):
         else:
             raise
     if dtype is None:
-        assert index.dtype == inferred_dtype
+        if pandas.__version__ >= '0.19':
+            assert index.dtype == inferred_dtype
+        else:
+            assert inferred_dtype in (index.dtype, np.dtype(object))
     else:
         assert index.dtype == converted_dtype
 
