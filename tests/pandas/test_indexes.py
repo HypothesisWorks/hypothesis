@@ -48,7 +48,7 @@ def test_unique_indexes_of_small_values(ix):
 
 
 # Sizes that fit into an int64 without overflow
-range_sizes = st.integers(0, 2 ** 63 - 100)
+range_sizes = st.integers(0, 2 ** 63 - 1)
 
 
 @given(range_sizes, range_sizes | st.none(), st.data())
