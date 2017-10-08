@@ -47,10 +47,11 @@ def test_unique_indexes_of_small_values(ix):
     assert len(set(ix)) == len(ix)
 
 
-int64s = npst.from_dtype(np.dtype(int))
+# Sizes that fit into an int64 without overflow
+range_sizes = st.integers(0, 2 ** 63 - 1)
 
 
-@given(int64s, int64s | st.none(), st.data())
+@given(range_sizes, range_sizes | st.none(), st.data())
 def test_arbitrary_range_index(i, j, data):
     if j is not None:
         i, j = sorted((i, j))
@@ -70,6 +71,10 @@ def test_generate_arbitrary_indices(data):
     unique = data.draw(st.booleans(), 'unique')
     dtype = data.draw(npst.scalar_dtypes(), 'dtype')
     assume(supported_by_pandas(dtype))
+
+    # Pandas bug: https://github.com/pandas-dev/pandas/pull/14916 until 0.20;
+    # then int64 indexes are inferred from uint64 values.
+    assume(dtype.kind != 'u')
 
     pass_elements = data.draw(st.booleans(), 'pass_elements')
 

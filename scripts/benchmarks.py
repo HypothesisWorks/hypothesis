@@ -534,9 +534,9 @@ def cli(
             sys.exit(1)
         for r in different:
             if update == CHANGED:
-                write_data(r.name, r.new_data)
+                write_data(r.name, BenchmarkData(r.new_data, r.new_seed))
             elif update == IMPROVED and r.new_mean < r.old_mean:
-                write_data(r.name, r.new_data)
+                write_data(r.name, BenchmarkData(r.new_data, r.new_seed))
     else:
         click.echo('No significant differences')
 
