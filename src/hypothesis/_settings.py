@@ -439,6 +439,7 @@ away).
 settings.define_setting(
     'derandomize',
     default=False,
+    options=[True, False],
     description="""
 If this is True then hypothesis will run in deterministic mode
 where each falsification uses a random number generator that is seeded
@@ -607,6 +608,7 @@ Number of steps to run a stateful program for before giving up on it breaking.
 settings.define_setting(
     'perform_health_check',
     default=True,
+    options=[True, False],
     description=u"""
 If set to True, Hypothesis will run a preliminary health check before
 attempting to actually execute your test.
@@ -617,15 +619,6 @@ settings.define_setting(
     'suppress_health_check',
     default=[],
     description="""A list of health checks to disable."""
-)
-
-settings.define_setting(
-    'report_statistics',
-    default=Statistics.interesting,
-    description=u"""
-If set to True, Hypothesis will run a preliminary health check before
-attempting to actually execute your test.
-"""
 )
 
 settings.define_setting(
@@ -651,6 +644,7 @@ settings.define_setting(
     'use_coverage',
     default=not PYPY,
     show_default=False,
+    options=[True, False],
     description="""
 Whether to use coverage information to improve Hypothesis's ability to find
 bugs. You should generally leave this turned on unless your code performs
