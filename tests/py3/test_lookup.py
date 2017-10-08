@@ -28,7 +28,7 @@ from hypothesis import find, given, infer, assume
 from hypothesis.errors import NoExamples, InvalidArgument, ResolutionFailed
 from hypothesis.strategies import from_type
 from hypothesis.searchstrategy import types
-from hypothesis.internal.compat import get_type_hints
+from hypothesis.internal.compat import integer_types, get_type_hints
 
 typing = pytest.importorskip('typing')
 sentinel = object()
@@ -303,9 +303,9 @@ def test_error_if_has_unresolvable_hints():
 
 @pytest.mark.skipif(not hasattr(typing, 'NewType'), reason='test for NewType')
 def test_resolves_NewType():
-    for t in [
-        typing.NewType('T', int),
-        typing.NewType('UnionT', typing.Optional[int]),
-        typing.NewType('NestedT', typing.NewType('T', int)),
-    ]:
-        from_type(t).example()
+    typ = typing.NewType('T', int)
+    nested = typing.NewType('NestedT', typ)
+    uni = typing.NewType('UnionT', typing.Optional[int])
+    assert isinstance(from_type(typ).example(), integer_types)
+    assert isinstance(from_type(nested).example(), integer_types)
+    assert isinstance(from_type(uni).example(), integer_types + (type(None),))

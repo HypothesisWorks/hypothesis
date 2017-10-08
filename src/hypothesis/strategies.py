@@ -928,7 +928,7 @@ def from_type(thing):
     from hypothesis.searchstrategy import types
     if not isinstance(thing, type):
         try:
-            # At runtime, `typing.NewType` returns the identity function rather
+            # At runtime, `typing.NewType` returns an identity function rather
             # than an actual type, but we can check that for a possible match
             # and then read the magic attribute to unwrap it.
             import typing
