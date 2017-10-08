@@ -24,8 +24,6 @@ from random import Random, getrandbits
 from weakref import WeakKeyDictionary
 from collections import defaultdict
 
-import attr
-
 from hypothesis import settings as Settings
 from hypothesis import Phase
 from hypothesis.reporting import debug_report
