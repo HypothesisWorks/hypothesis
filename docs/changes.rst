@@ -90,7 +90,7 @@ This release makes several changes:
 
 1. It significantly improves Hypothesis's ability to use coverage information
    to find interesting examples.
-2. It reduces the default ``max_examples`` setting from 200 to 100. This takes
+2. It reduces the default :attr:`~hypothesis.settings.max_examples` setting from 200 to 100. This takes
    advantage of the improved algorithm meaning fewer examples are typically
    needed to get the same testing and is sufficiently better at covering
    interesting behaviour, and offsets some of the performance problems of
@@ -124,15 +124,16 @@ aggressively and cache entries would never be evicted. Now it adopts a
 least-frequently used, least recently used key invalidation policy, and is
 somewhat more conservative about which strategies it caches.
 
-This should cause some workloads (anything that creates strategies based on
-dynamic values, e.g. using flatmap or composite) to see a significantly lower
-memory usage.
+Workloads which create strategies based on dynamic values, e.g. by using
+:ref:`flatmap <flatmap>` or :func:`~hypothesis.strategies.composite`,
+will use significantly less memory.
 
 -------------------
 3.30.1 - 2017-09-22
 -------------------
 
-This release fixes a bug where when running with use_coverage=True inside an
+This release fixes a bug where when running with
+:attr:`use_coverage=True <hypothesis.settings.use_coverage>` inside an
 existing running instance of coverage, Hypothesis would frequently put files
 that the coveragerc excluded in the report for the enclosing coverage.
 
@@ -142,13 +143,12 @@ that the coveragerc excluded in the report for the enclosing coverage.
 
 This release introduces two new features:
 
-* pytest users can specify a seed to use for ``@given`` based tests by passing
-  the ``--hypothesis-seed`` command line argument.
 * When a test fails, either with a health check failure or a falsifying example,
   Hypothesis will print out a seed that led to that failure, if the test is not
   already running with a fixed seed. You can then recreate that failure using either
-  the ``@seed`` decorator or (if you are running pytest) with ``--hypothesis-seed``.
-
+  the :func:`@seed <hypothesis.seed>` decorator or (if you are running pytest) with ``--hypothesis-seed``.
+* :pypi:`pytest` users can specify a seed to use for :func:`@given <hypothesis.given>` based tests by passing
+  the ``--hypothesis-seed`` command line argument.
 
 This work was funded by `Smarkets <https://smarkets.com/>`_.
 
@@ -173,7 +173,7 @@ The main benefits of this feature are:
 
 This also has the following side-effects:
 
-* Hypothesis now has an install time dependency on the coverage package.
+* Hypothesis now has an install time dependency on the :pypi:`coverage` package.
 * Tests that are already running Hypothesis under coverage will likely get
   faster.
 * Tests that are not running under coverage now run their test bodies under
@@ -207,14 +207,16 @@ Unsatisfiable.
 3.28.2 - 2017-09-18
 -------------------
 
-This is a patch release that fixes a bug in the `hypothesis.extra.pandas` documentation where it incorrectly referred to column instead of columns.
+This is a patch release that fixes a bug in the :mod:`hypothesis.extra.pandas`
+documentation where it incorrectly referred to :func:`~hypothesis.extra.pandas.column`
+instead of :func:`~hypothesis.extra.pandas.columns`.
 
 -------------------
 3.28.1 - 2017-09-16
 -------------------
 
 This is a refactoring release. It moves a number of internal uses
-of nametuple over to using attrs based classes, and removes a couple
+of :func:`~python:collections.namedtuple` over to using attrs based classes, and removes a couple
 of internal namedtuple classes that were no longer in use.
 
 It should have no user visible impact.
@@ -223,10 +225,10 @@ It should have no user visible impact.
 3.28.0 - 2017-09-15
 -------------------
 
-This release adds support for testing pandas via the :ref:`hypothesis.extra.pandas <hypothesis-pandas>`
+This release adds support for testing :pypi:`pandas` via the :ref:`hypothesis.extra.pandas <hypothesis-pandas>`
 module.
 
-It also adds a dependency on attrs.
+It also adds a dependency on :pypi:`attrs`.
 
 This work was funded by `Stripe <https://stripe.com/>`_.
 
@@ -263,7 +265,7 @@ status, only that we warn about it.
 3.25.1 - 2017-09-12
 -------------------
 
-This release fixes a bug with generating numpy datetime and timedelta types:
+This release fixes a bug with generating :doc:`numpy datetime and timedelta types <numpy:reference/arrays.datetime>`:
 When inferring the strategy from the dtype, datetime and timedelta dtypes with
 sub-second precision would always produce examples with one second resolution.
 Inferring a strategy from a time dtype will now always produce example with the
@@ -301,7 +303,7 @@ case reduction in cases that have nothing to do with floating point numbers.
 3.24.0 - 2017-09-05
 -------------------
 
-Hypothesis now emits deprecation warnings if you use example() inside a
+Hypothesis now emits deprecation warnings if you use ``some_strategy.example()`` inside a
 test function or strategy definition (this was never intended to be supported,
 but is sufficiently widespread that it warrants a deprecation path).
 
@@ -422,7 +424,7 @@ This release fixes some minor bugs in argument validation:
 -------------------
 
 This release fixes a bug where test failures that were the result of
-an @example would print an extra stack trace before re-raising the
+an :func:`@example <hypothesis.example>` would print an extra stack trace before re-raising the
 exception.
 
 -------------------
@@ -456,7 +458,7 @@ handles shrinking.
 
 This should mostly be visible in terms of getting better examples for tests
 which make heavy use of :func:`~hypothesis.strategies.composite`,
-:ref:`data <interactive-draw>` or :ref:`flatmap <flatmap>` where the data
+:func:`~hypothesis.strategies.data` or :ref:`flatmap <flatmap>` where the data
 drawn depends a lot on previous choices, especially where size parameters are
 affected. Previously Hypothesis would have struggled to reliably produce
 good examples here. Now it should do much better. Performance should also be
@@ -470,7 +472,7 @@ to be significant enough to notice.
 3.19.2 - 2017-08-21
 -------------------
 
-This release fixes two bugs in ``hypothesis.extra.numpy``:
+This release fixes two bugs in :mod:`hypothesis.extra.numpy`:
 
 * :func:`~hypothesis.extra.numpy.unicode_string_dtypes` didn't work at all due
   to an incorrect dtype specifier. Now it does.
@@ -539,7 +541,7 @@ This release should improve the performance of some tests which
 experienced a slow down as a result of the 3.13.0 release.
 
 Tests most likely to benefit from this are ones that make extensive
-use of `min_size` parameters, but others may see some improvement
+use of ``min_size`` parameters, but others may see some improvement
 as well.
 
 -------------------
@@ -581,8 +583,8 @@ Thanks to Alex Willmer for these.
 3.17.0 - 2017-08-07
 -------------------
 
-This release documents :ref:`the previously undocumented phases feature <phases>`",
-making it part of the official public API. It also updates how the example
+This release documents :ref:`the previously undocumented phases feature <phases>`,
+making it part of the public API. It also updates how the example
 database is used. Principally:
 
 * A ``Phases.reuse`` argument will now correctly control whether examples
@@ -642,7 +644,7 @@ drawing in tests, and their use should be replaced with direct use of
 -------------------
 
 This fixes a bug where Hypothesis would not work correctly on Python 2.7 if you
-had the typing module backport installed.
+had the :mod:`python:typing` module :pypi:`backport <typing>` installed.
 
 -------------------
 3.14.1 - 2017-08-02

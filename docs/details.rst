@@ -526,6 +526,19 @@ other in another example if for some reason you really want to, but a single
 example must be consistent.
 
 
+-------------------------------------
+Reproducing a test run with ``@seed``
+-------------------------------------
+
+When a test fails, either with a health check failure or a falsifying example,
+Hypothesis will print out a seed that led to that failure, if the test is not
+already running with a fixed seed. You can then recreate that failure using either
+the ``@seed`` decorator or (if you are running pytest) with ``--hypothesis-seed``.
+This is often useful to locally reproduce test failures from other developers or CI.
+
+.. autofunction:: hypothesis.seed
+
+
 .. _type-inference:
 
 -------------------
