@@ -22,6 +22,17 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.31.5 - 2017-10-08
+-------------------
+
+This release fixes a performance problem in tests where
+ :attr:`~hypothesis.settings.use_coverage` is set to True.
+
+Tests experience a slow-down proportionate to the amount of code they cover.
+This is still the case, but the factor is now low enough that it should be
+unnoticeable. Previously it was large and became much larger in 3.28.4.
+
+-------------------
 3.31.4 - 2017-10-08
 -------------------
 
