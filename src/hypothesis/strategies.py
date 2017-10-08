@@ -21,7 +21,7 @@ import math
 import datetime as dt
 import operator
 from decimal import Context, Decimal
-from inspect import isclass
+from inspect import isclass, isfunction
 from numbers import Rational
 from fractions import Fraction
 
@@ -927,11 +927,18 @@ def from_type(thing):
     """
     from hypothesis.searchstrategy import types
     if not isinstance(thing, type):
-        # Under Python 3.6, Unions are not instances of `type` - but we still
-        # want to resolve them!  This __origin__ check only passes if thing is
-        # a Union with parameters; if it doesn't we can't resolve it anyway.
         try:
+            # At runtime, `typing.NewType` returns an identity function rather
+            # than an actual type, but we can check that for a possible match
+            # and then read the magic attribute to unwrap it.
             import typing
+            if all([
+                hasattr(thing, '__supertype__'), hasattr(typing, 'NewType'),
+                isfunction(thing), getattr(thing, '__module__', 0) == 'typing'
+            ]):
+                return from_type(thing.__supertype__)
+            # Under Python 3.6, Unions are not instances of `type` - but we
+            # still want to resolve them!
             if getattr(thing, '__origin__', None) is typing.Union:
                 args = sorted(thing.__args__, key=types.type_sorting_key)
                 return one_of([from_type(t) for t in args])
