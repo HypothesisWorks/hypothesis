@@ -551,11 +551,26 @@ def escalate_warning(msg, slug=None):  # pragma: no cover
     )
 
 
-@attr.s(slots=True, frozen=True)
 class Arc(object):
-    filename = attr.ib()
-    source = attr.ib()
-    target = attr.ib()
+    __slots__ = ('filename', 'source', 'target')
+
+    def __init__(self, filename, source, target):
+        self.filename = filename
+        self.source = source
+        self.target = target
+
+
+ARC_CACHE = {}
+
+
+def arc(filename, source, target):
+    try:
+        return ARC_CACHE[filename][source][target]
+    except KeyError:
+        result = Arc(filename, source, target)
+        ARC_CACHE.setdefault(
+            filename, {}).setdefault(source, {})[target] = result
+        return result
 
 
 in_given = False
@@ -720,7 +735,7 @@ class StateForActualGivenExecution(object):
                         if is_hypothesis_file(filename):
                             continue
                         data.tags.update(
-                            Arc(filename, source, target)
+                            arc(filename, source, target)
                             for source, target in covdata.arcs(filename)
                         )
             if result is not None and self.settings.perform_health_check:

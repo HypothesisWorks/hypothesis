@@ -24,8 +24,6 @@ from random import Random, getrandbits
 from weakref import WeakKeyDictionary
 from collections import defaultdict
 
-import attr
-
 from hypothesis import settings as Settings
 from hypothesis import Phase
 from hypothesis.reporting import debug_report
@@ -138,10 +136,7 @@ class ConjectureRunner(object):
 
         self.debug_data(data)
 
-        tags = frozenset(
-            self.tag_intern_table.setdefault(t, t)
-            for t in data.tags
-        )
+        tags = frozenset(data.tags)
         data.tags = self.tag_intern_table.setdefault(tags, tags)
 
         if data.status == Status.VALID:
@@ -1135,9 +1130,23 @@ class SampleSet(object):
         return random.choice(self.__values)
 
 
-@attr.s(slots=True, hash=True, cmp=True)
 class Negated(object):
-    tag = attr.ib()
+    __slots__ = ('tag',)
+
+    def __init__(self, tag):
+        self.tag = tag
+
+
+NEGATED_CACHE = {}
+
+
+def negated(tag):
+    try:
+        return NEGATED_CACHE[tag]
+    except KeyError:
+        result = Negated(tag)
+        NEGATED_CACHE[tag] = result
+        return result
 
 
 universal = UniqueIdentifier('universal')
@@ -1232,7 +1241,7 @@ class TargetSelector(object):
 
         for t in new_tags:
             self.non_universal_tags.add(t)
-            self.examples_by_tags[Negated(t)] = list(
+            self.examples_by_tags[negated(t)] = list(
                 self.examples_by_tags[universal]
             )
 
@@ -1254,7 +1263,7 @@ class TargetSelector(object):
             yield t
         for t in self.non_universal_tags:
             if t not in data.tags:
-                yield Negated(t)
+                yield negated(t)
 
     def rescore(self, tag):
         new_score = (

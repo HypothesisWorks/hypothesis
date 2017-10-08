@@ -24,6 +24,7 @@ from flaky import flaky
 
 import hypothesis.strategies as s
 from hypothesis import find, given, reject, settings
+from hypothesis.core import arc
 from hypothesis.errors import NoSuchExample, Unsatisfiable
 from tests.common.utils import checks_deprecated_behaviour
 
@@ -98,3 +99,7 @@ def test_settings_are_default_in_find():
     find(
         s.booleans(), lambda x: settings.default is some_normal_settings,
         settings=some_normal_settings)
+
+
+def test_arc_is_memoized():
+    assert arc('foo', 1, 2) is arc('foo', 1, 2)
