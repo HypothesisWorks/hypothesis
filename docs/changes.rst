@@ -22,6 +22,14 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.31.4 - 2017-10-08
+-------------------
+
+:func:`~hypothesis.strategies.from_type` failed with a very confusing error
+if passed a :func:`~python:typing.NewType` (:issue:`901`).  These psudeo-types
+are now unwrapped correctly, and strategy inference works as expected.
+
+-------------------
 3.31.3 - 2017-10-06
 -------------------
 
