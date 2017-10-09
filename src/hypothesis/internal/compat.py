@@ -294,22 +294,6 @@ if PY2:
 else:
     from inspect import getfullargspec, FullArgSpec
 
-    if sys.version_info[:2] == (3, 5):
-        # silence deprecation warnings on Python 3.5
-        # (un-deprecated in 3.6 to allow single-source 2/3 code like this)
-        def silence_warnings(func):
-            import warnings
-            import functools
-
-            @functools.wraps(func)
-            def inner(*args, **kwargs):
-                with warnings.catch_warnings():
-                    warnings.simplefilter('ignore', DeprecationWarning)
-                    return func(*args, **kwargs)
-            return inner
-
-        getfullargspec = silence_warnings(getfullargspec)
-
 
 if sys.version_info[:2] < (3, 6):
     def get_type_hints(thing):
