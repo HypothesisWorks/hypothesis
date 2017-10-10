@@ -22,15 +22,17 @@ import warnings
 from tempfile import mkdtemp
 
 from hypothesis import settings, unlimited
-from hypothesis.errors import HypothesisDeprecationWarning
 from hypothesis.configuration import set_hypothesis_home_dir
 from hypothesis.internal.charmap import charmap, charmap_file
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 
 
-def run():
+def run(deprecations_as_errors=True):
     warnings.filterwarnings('error', category=UnicodeWarning)
-    warnings.filterwarnings('error', category=HypothesisDeprecationWarning)
+    # This catches deprecations in our dependencies, as well as internally
+    # (because HypothesisDeprecationWarning subclasses DeprecationWarning)
+    if deprecations_as_errors:  # disabled for old versions of Django
+        warnings.filterwarnings('error', category=DeprecationWarning)
 
     set_hypothesis_home_dir(mkdtemp())
 
