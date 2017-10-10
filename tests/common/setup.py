@@ -24,7 +24,6 @@ from tempfile import mkdtemp
 from hypothesis import settings, unlimited
 from hypothesis.errors import HypothesisDeprecationWarning
 from hypothesis.configuration import set_hypothesis_home_dir
-from hypothesis.internal.compat import PYPY
 from hypothesis.internal.charmap import charmap, charmap_file
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 
@@ -54,7 +53,7 @@ def run():
             )
 
     settings.register_profile('default', settings(
-        timeout=unlimited, use_coverage=not (IN_COVERAGE_TESTS or PYPY)))
+        timeout=unlimited, use_coverage=not IN_COVERAGE_TESTS))
 
     settings.register_profile('with_coverage', settings(
         timeout=unlimited, use_coverage=True,
