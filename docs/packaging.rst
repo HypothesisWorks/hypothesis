@@ -49,6 +49,7 @@ Hypothesis has *mandatory* dependencies on the following libraries:
 
 * :pypi:`attrs`
 * :pypi:`coverage`
+* :pypi:`enum34` is required on Python 2.7
 
 Hypothesis has *optional* dependencies on the following libraries:
 
