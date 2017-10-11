@@ -17,6 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import enum
 import math
 import datetime as dt
 import operator
@@ -24,6 +25,7 @@ from decimal import Context, Decimal
 from inspect import isclass, isfunction
 from numbers import Rational
 from fractions import Fraction
+from functools import reduce
 
 from hypothesis.errors import InvalidArgument, ResolutionFailed
 from hypothesis.control import assume
@@ -401,23 +403,30 @@ def tuples(*args):
 
 @defines_strategy
 def sampled_from(elements):
-    """Returns a strategy which generates any value present in the iterable
-    elements.
+    """Returns a strategy which generates any value present in ``elements``.
 
-    Note that as with just, values will not be copied and thus you
-    should be careful of using mutable data.
+    Note that as with :func:`~hypotheses.strategies.just`, values will not be
+    copied and thus you should be careful of using mutable data.
+
+    ``sampled_from`` supports ordered collections, as well as
+    :class:`~python:enum.Enum` objects.  :class:`~python:enum.Flag` objects
+    may also generate any combination of their members.
 
     """
-
-    from hypothesis.searchstrategy.misc import SampledFromStrategy, \
-        JustStrategy
+    from hypothesis.searchstrategy.misc import SampledFromStrategy
     from hypothesis.internal.conjecture.utils import check_sample
-    elements = check_sample(elements)
-    if not elements:
+    values = check_sample(elements)
+    if not values:
         return nothing()
-    if len(elements) == 1:
-        return JustStrategy(elements[0])
-    return SampledFromStrategy(elements)
+    if len(values) == 1:
+        return just(values[0])
+    if hasattr(enum, 'Flag') and isclass(elements) and \
+            issubclass(elements, enum.Flag):
+        # Combinations of enum.Flag members are also members.  We generate
+        # these dynamically, because static allocation takes O(2^n) memory.
+        return sets(sampled_from(values), min_size=1).map(
+            lambda s: reduce(operator.or_, s))
+    return SampledFromStrategy(values)
 
 
 @cacheable
@@ -994,6 +1003,9 @@ def from_type(thing):
             and hasattr(thing, '_field_types'):
         kwargs = {k: from_type(thing._field_types[k]) for k in thing._fields}
         return builds(thing, **kwargs)
+    if issubclass(thing, enum.Enum):
+        assert len(thing), repr(thing) + ' has no members to sample'
+        return sampled_from(thing)
     # If the constructor has an annotation for every required argument,
     # we can (and do) use builds() without supplying additional arguments.
     required = required_args(thing)
