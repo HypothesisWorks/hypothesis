@@ -45,6 +45,11 @@ on either.
 Other Python libraries
 ~~~~~~~~~~~~~~~~~~~~~~
 
+Hypothesis has *mandatory* dependencies on the following libraries:
+
+* :pypi:`attrs`
+* :pypi:`coverage`
+
 Hypothesis has *optional* dependencies on the following libraries:
 
 * :pypi:`pytz` (almost any version should work)
