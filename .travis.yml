@@ -28,7 +28,7 @@ env:
 
     matrix:
         # Core tests that we want to run first.
-        - TASK=validate-pyup-yml
+        - TASK=check-pyup-yml
         - TASK=check-release-file
         - TASK=check-shellcheck
         - TASK=documentation
