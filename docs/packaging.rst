@@ -45,12 +45,19 @@ on either.
 Other Python libraries
 ~~~~~~~~~~~~~~~~~~~~~~
 
+Hypothesis has *mandatory* dependencies on the following libraries:
+
+* :pypi:`attrs`
+* :pypi:`coverage`
+* :pypi:`enum34` is required on Python 2.7
+
 Hypothesis has *optional* dependencies on the following libraries:
 
 * :pypi:`pytz` (almost any version should work)
 * :pypi:`faker`, version 0.7
 * `Django <https://www.djangoproject.com>`_, all supported versions
 * :pypi:`numpy`, 1.10 or later (earlier versions will probably work fine)
+* :pypi:`pandas`, 1.8 or later
 * :pypi:`py.test <pytest>` (2.8.0 or greater). This is a mandatory dependency for testing Hypothesis itself but optional for users.
 
 The way this works when installing Hypothesis normally is that these features become available if the relevant
