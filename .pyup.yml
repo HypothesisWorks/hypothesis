@@ -1,14 +1,14 @@
 requirements:
-  - requirements/tools.txt
+  - requirements/tools.txt:
       updates: all
       pin: True
-  - requirements/test.txt
+  - requirements/test.txt:
       updates: all
       pin: True
-  - requirements/benchmark.txt
+  - requirements/benchmark.txt:
       updates: all
       pin: True
-  - requirements/coverage.txt
+  - requirements/coverage.txt:
       updates: all
       pin: True
 
