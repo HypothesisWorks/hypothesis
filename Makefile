@@ -87,6 +87,10 @@ format: $(PYFORMAT) $(ISORT)
 lint: $(FLAKE8)
 	$(FLAKE8) src tests --exclude=compat.py,test_reflection.py,test_imports.py,tests/py2,test_lambda_formatting.py --ignore=E731,E721
 
+
+check-pyup-yml: $(TOOL_VIRTUALENV)
+	$(TOOL_PYTHON) scripts/validate_pyup.py
+
 check-release-file: $(BEST_PY3)
 	$(BEST_PY3) scripts/check-release-file.py
 

@@ -11,18 +11,21 @@ autopep8==1.3.3           # via pyformat
 babel==2.5.1              # via sphinx
 certifi==2017.7.27.1      # via requests
 chardet==3.0.4            # via requests
-click==6.7                # via pip-tools
+click==6.7                # via pip-tools, pyupio, safety
 coverage==4.4.1
 docformatter==0.8         # via pyformat
 docutils==0.14            # via restructuredtext-lint, sphinx
+dparse==0.2.1             # via pyupio, safety
 first==2.0.1              # via pip-tools
 flake8==3.4.1
+hashin-pyup==0.7.2        # via pyupio
 idna==2.6                 # via requests
 imagesize==0.7.1          # via sphinx
 isort==4.2.15
-jinja2==2.9.6             # via sphinx
+jinja2==2.9.6             # via pyupio, sphinx
 markupsafe==1.0           # via jinja2
 mccabe==0.6.1             # via flake8
+packaging==16.8           # via dparse, pyupio, safety
 pip-tools==1.10.1
 pkginfo==1.4.1            # via twine
 pluggy==0.5.2             # via tox
@@ -30,19 +33,26 @@ py==1.4.34                # via pytest, tox
 pycodestyle==2.3.1        # via autopep8, flake8
 pyflakes==1.5.0           # via autoflake, flake8
 pyformat==0.7
+pygithub==1.35            # via pyupio
 pygments==2.2.0           # via sphinx
+pyjwt==1.5.3              # via pygithub
+pyparsing==2.2.0          # via packaging
 pytest==3.2.3
+python-gitlab==1.0.2      # via pyupio
 pytz==2017.2              # via babel
+pyupio==0.8.2
+pyyaml==3.12              # via dparse, pyupio
 requests-toolbelt==0.8.0  # via twine
-requests==2.18.4          # via requests-toolbelt, sphinx, twine
+requests==2.18.4          # via python-gitlab, pyupio, requests-toolbelt, safety, sphinx, twine
 restructuredtext-lint==1.1.1
-six==1.11.0               # via pip-tools, sphinx, tox
+safety==1.5.1             # via pyupio
+six==1.11.0               # via dparse, packaging, pip-tools, python-gitlab, pyupio, sphinx, tox
 snowballstemmer==1.2.1    # via sphinx
 sphinx-rtd-theme==0.2.4
 sphinx==1.6.4
 sphinxcontrib-websupport==1.0.1  # via sphinx
 tox==2.9.1
-tqdm==4.19.2              # via twine
+tqdm==4.19.2              # via pyupio, twine
 twine==1.9.1
 unify==0.3                # via pyformat
 untokenize==0.1.1         # via docformatter, unify

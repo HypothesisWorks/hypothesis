@@ -10,3 +10,4 @@ tox
 twine
 attrs
 coverage
+pyupio
