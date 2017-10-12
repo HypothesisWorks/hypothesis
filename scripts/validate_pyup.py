@@ -19,14 +19,15 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesistooling import ROOT
-import yaml
-from pyup.config import Config
 import os
 import sys
 
+import yaml
+from pyup.config import Config
 
-PYUP_FILE = os.path.join(ROOT, ".pyup.yml")
+from hypothesistooling import ROOT
+
+PYUP_FILE = os.path.join(ROOT, '.pyup.yml')
 
 if __name__ == '__main__':
     with open(PYUP_FILE, 'r') as i:
@@ -35,5 +36,5 @@ if __name__ == '__main__':
     config.update_config(data)
 
     if not config.is_valid_schedule():
-        print("Schedule %r is invalid" % (config.schedule,))
+        print('Schedule %r is invalid' % (config.schedule,))
         sys.exit(1)
