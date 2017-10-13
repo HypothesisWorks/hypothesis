@@ -1,11 +1,14 @@
 RELEASE_TYPE: patch
 
-This patch has two improvements for strategies based on enumerations.
+This release enables direct use of keyword arguments in
+:func:`~hypothesis.settings.settings.register_profile`.
 
-- :func:`~hypothesis.strategies.from_type` now handles enumerations correctly,
-  delegating to :func:`~hypothesis.strategies.sampled_from`.  Previously it
-  noted that ``Enum.__init__`` has no required arguments and therefore delegated
-  to :func:`~hypothesis.strategies.builds`, which would subsequently fail.
-- When sampling from an :class:`python:enum.Flag`, we also generate combinations
-  of members. Eg for ``Flag('Permissions', 'READ, WRITE, EXECUTE')`` we can now
-  generate, ``Permissions.READ``, ``Permissions.READ|WRITE``, and so on.
+- :func:`~hypothesis.settings.settings.register_profile` no longer
+  requires a :class:`~hypothesis.settings.settings` instance to be
+  passed in: the keyword arguments used to construct the instance can
+  be passed in directly.
+
+  Alternatively, such an instance can be passed in, along with keyword
+  arguments which override any settings present in the instance.
+
+Thanks to Jacek Generowicz for this feature.
