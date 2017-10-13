@@ -180,6 +180,7 @@ their individual contributions.
 * `Derek Gustafson <https://www.github.com/degustaf>`_
 * `Florian Bruhin <https://www.github.com/The-Compiler>`_
 * `follower <https://www.github.com/follower>`_
+* `Jacek Generowicz <https://www.github.com/jacg>`_ (github@my-post-office.net)
 * `Jeremy Thurgood <https://github.com/jerith>`_
 * `JP Viljoen <https://github.com/froztbyte>`_ (froztbyte@froztbyte.net)
 * `Jonty Wareing <https://www.github.com/Jonty>`_ (jonty@jonty.co.uk)
