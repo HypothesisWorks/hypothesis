@@ -114,7 +114,9 @@ else:
     def check_function(f):
         return f
 
-    @contextmanager
+    # Mypy incorrectly reports 'Name already defined', due to the decorator
+    # Issue:  https://github.com/python/mypy/issues/4117
+    @contextmanager  # type: ignore
     def check(name):
         yield
 
