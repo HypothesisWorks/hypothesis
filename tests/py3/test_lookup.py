@@ -19,6 +19,8 @@ from __future__ import division, print_function, absolute_import
 
 import io
 import sys
+import enum
+import string
 import collections
 
 import pytest
@@ -309,3 +311,26 @@ def test_resolves_NewType():
     assert isinstance(from_type(typ).example(), integer_types)
     assert isinstance(from_type(nested).example(), integer_types)
     assert isinstance(from_type(uni).example(), integer_types + (type(None),))
+
+
+E = enum.Enum('E', 'a b c')
+
+
+@given(from_type(E))
+def test_resolves_enum(ex):
+    assert isinstance(ex, E)
+
+
+@pytest.mark.skipif(not hasattr(enum, 'Flag'), reason='test for Flag')
+@pytest.mark.parametrize('resolver', [from_type, st.sampled_from])
+def test_resolves_flag_enum(resolver):
+    # Storing all combinations takes O(2^n) memory.  Using an enum of 52
+    # members in this test ensures that we won't try!
+    F = enum.Flag('F', ' '.join(string.ascii_letters))
+    # Filter to check that we can generate compound members of enum.Flags
+
+    @given(resolver(F).filter(lambda ex: ex not in tuple(F)))
+    def inner(ex):
+        assert isinstance(ex, F)
+
+    inner()
