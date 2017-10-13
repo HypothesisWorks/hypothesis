@@ -290,7 +290,7 @@ class settings(settingsMeta('settings', (object,), {})):
         return default_context_manager.__exit__(*args, **kwargs)
 
     @staticmethod
-    def register_profile(name, settings):
+    def register_profile(name, parent=settings(), **kwds):
         """registers a collection of values to be used as a settings profile.
         These settings can be loaded in by name. Enable different defaults for
         different settings.
@@ -298,7 +298,7 @@ class settings(settingsMeta('settings', (object,), {})):
         - settings is a settings object
 
         """
-        settings._profiles[name] = settings
+        settings._profiles[name] = settings(parent=parent, **kwds)
 
     @staticmethod
     def get_profile(name):
