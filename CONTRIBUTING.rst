@@ -143,16 +143,8 @@ build currently takes more than an hour of total time (it runs in parallel on Tr
 quite that long). If you've got a multi-core machine you can run 'make -j 2' (or any higher number if you want
 more) to run 2 jobs in parallel, but to be honest you're probably better off letting Travis run this step.
 
-You can also run a number of finer grained make tasks:
-
-* check-fast runs a fast but reasonably comprehensive subset of make check. It's still not *that* fast, but it
-  takes a couple of minutes instead of a couple of hours.
-* You can run the tests just for a single version of Python using one of check-py26, check-py27, check-py34,
-  check-py35, check-pypy.
-* check-coverage will run a subset of the tests on python 3.5 and then assert that this gave 100% coverage
-* lint will just run some source code checks.
-* check-django will just run tests for the Django integration
-* check-pytest will just run tests for the pytest plugin
+You can also run a number of finer grained make tasks - check ``.travis.yml`` for a short list and
+the Makefile for details.
 
 Note: The build requires a lot of different versions of python, so rather than have you install them yourself,
 the makefile will install them itself in a local directory. This means that the first time you run a task you
