@@ -212,7 +212,8 @@ class settings(settingsMeta('settings', (object,), {})):  # type: ignore
         if future_default is not_set:
             future_default = default
 
-        all_settings[name] = Setting(
+        # Mypy is referring to the wrong 'Setting' type here
+        all_settings[name] = Setting(  # type: ignore
             name, description.strip(), default, options, validator,
             future_default, deprecation_message,
         )

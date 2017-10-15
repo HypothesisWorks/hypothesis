@@ -38,7 +38,7 @@ except ImportError:  # pragma: no cover
     from counter import Counter  # type: ignore
 
 if False:
-    from typing import Type  # noqa
+    from typing import Type, Tuple  # noqa
 
 
 PY2 = sys.version_info[0] == 2
@@ -73,7 +73,7 @@ if PY3:
     binary_type = bytes
     hrange = range
     ARG_NAME_ATTRIBUTE = 'arg'
-    integer_types = (int,)
+    integer_types = (int,)  # type: Tuple[type]
     hunichr = chr
     from functools import reduce
 

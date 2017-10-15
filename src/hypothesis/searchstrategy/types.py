@@ -29,6 +29,11 @@ import hypothesis.strategies as st
 from hypothesis.errors import ResolutionFailed
 from hypothesis.internal.compat import text_type, integer_types
 
+if False:
+    from typing import Dict, Union, Callable  # noqa
+    from hypothesis.strategies import SearchStrategy
+    Result = Union[SearchStrategy, Callable[[type], SearchStrategy]]  # noqa
+
 
 def type_sorting_key(t):
     """Minimise to None, then non-container types, then container types."""
@@ -125,7 +130,7 @@ _global_type_lookup = {
     bytearray: st.binary().map(bytearray),
     memoryview: st.binary().map(memoryview),
     # Pull requests with more types welcome!
-}
+}  # type: Dict[type, Result]
 for t in integer_types:
     _global_type_lookup[t] = st.integers()
 

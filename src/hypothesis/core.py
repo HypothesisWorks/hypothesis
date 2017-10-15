@@ -67,7 +67,7 @@ except ImportError:  # pragma: no cover
     from coverage.collector import FileDisposition
 
 if False:
-    from typing import Any, Dict  # noqa
+    from typing import Any, Set, Dict  # noqa
 
 
 running_under_pytest = False
@@ -629,7 +629,7 @@ class StateForActualGivenExecution(object):
             self.test = timed_test
 
         self.coverage_data = CoverageData()
-        self.files_to_propagate = set()
+        self.files_to_propagate = set()  # type: Set[str]
 
         if settings.use_coverage and not IN_COVERAGE_TESTS:  # pragma: no cover
             if Collector._collectors:

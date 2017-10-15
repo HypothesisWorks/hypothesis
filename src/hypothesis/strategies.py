@@ -42,6 +42,9 @@ from hypothesis.internal.renaming import renamed_arguments
 from hypothesis.utils.conventions import infer, not_set
 from hypothesis.internal.reflection import proxies, required_args
 
+if False:
+    from typing import List  # noqa
+
 __all__ = [
     'nothing',
     'just', 'one_of',
@@ -125,7 +128,7 @@ def base_defines_strategy(force_reusable):
         def accept(*args, **kwargs):
             result = LazyStrategy(strategy_definition, args, kwargs)
             if force_reusable:
-                result.force_has_reusable_values = True
+                result.force_has_reusable_values = True  # type: ignore
                 assert result.has_reusable_values
             return result
         return accept
@@ -497,7 +500,7 @@ def lists(
             max_size=max_size,
             min_size=min_size,
             key=unique_by
-        )
+        )  # type: SearchStrategy
     else:
         from hypothesis.searchstrategy.collections import ListStrategy
         if min_size is None:
@@ -912,6 +915,7 @@ def delay_error(func):
 @cacheable
 @delay_error
 def from_type(thing):
+    # type: (type) -> SearchStrategy
     """Looks up the appropriate search strategy for the given type.
 
     ``from_type`` is used internally to fill in missing arguments to
@@ -978,7 +982,7 @@ def from_type(thing):
     # subclass and instance checks.
     try:
         import typing
-        if isinstance(thing, typing.TypingMeta):
+        if isinstance(thing, typing.TypingMeta):  # type: ignore
             return types.from_typing_type(thing)
     except ImportError:  # pragma: no cover
         pass
@@ -1005,15 +1009,20 @@ def from_type(thing):
     # but we can still use builds(), if we work out the right kwargs.
     if issubclass(thing, tuple) and hasattr(thing, '_fields') \
             and hasattr(thing, '_field_types'):
-        kwargs = {k: from_type(thing._field_types[k]) for k in thing._fields}
+        # Here we know - but Mypy doesn't - that `thing` has these attributes
+        kwargs = {k: from_type(thing._field_types[k])  # type: ignore
+                  for k in thing._fields}  # type: ignore
         return builds(thing, **kwargs)
     if issubclass(thing, enum.Enum):
-        assert len(thing), repr(thing) + ' has no members to sample'
         return sampled_from(thing)
     # If the constructor has an annotation for every required argument,
     # we can (and do) use builds() without supplying additional arguments.
     required = required_args(thing)
-    if not required or required.issubset(get_type_hints(thing.__init__)):
+    if not required or required.issubset(get_type_hints(
+        # Mypy complains that we shouldn't access thing.__init__, but
+        # get_type_hints fails if thing is a class otherwise.
+        thing.__init__  # type: ignore
+    )):
         return builds(thing)
     # We have utterly failed, and might as well say so now.
     raise ResolutionFailed('Could not resolve %r to a strategy; consider '
@@ -1202,7 +1211,7 @@ def decimals(min_value=None, max_value=None,
 
         strat = fractions(min_value, max_value).map(fraction_to_decimal)
     # Compose with sampled_from for infinities and NaNs as appropriate
-    special = []
+    special = []  # type: List[Decimal]
     if allow_nan or (allow_nan is None and (None in (min_value, max_value))):
         special.extend(map(Decimal, ('NaN', '-NaN', 'sNaN', '-sNaN')))
     if allow_infinity or (allow_infinity is max_value is None):
