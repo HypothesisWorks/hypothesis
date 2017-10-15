@@ -22,6 +22,15 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.32.2 - 2017-10-15
+-------------------
+
+This patch removes the ``mergedb`` tool, introduced in Hypothesis 1.7.1
+on an experimental basis.  It has never actually worked, and the new
+:doc:`Hypothesis example database <database>` is designed to make such a
+tool unnecessary.
+
+-------------------
 3.32.1 - 2017-10-13
 -------------------
 
