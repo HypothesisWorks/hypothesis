@@ -22,6 +22,17 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.33.0 - 2017-10-16
+-------------------
+
+This release supports strategy inference for more field types in Django
+:func:`~hypothesis.extra.django.models` - you can now omit an argument for
+Date, Time, Duration, Slug, IP Address, and UUID fields.  (:issue:`642`)
+
+Strategy generation for fields with grouped choices now selects choices from
+each group, instead of selecting from the group names.
+
+-------------------
 3.32.2 - 2017-10-15
 -------------------
 
