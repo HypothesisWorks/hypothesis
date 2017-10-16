@@ -30,8 +30,8 @@ import hypothesis.strategies as st
 from hypothesis import reject
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.pytz import timezones
-from hypothesis.provisional import IP4_addr_strings, IP6_addr_strings, \
-    emails
+from hypothesis.provisional import emails, ip4_addr_strings, \
+    ip6_addr_strings
 from hypothesis.utils.conventions import UniqueIdentifier
 
 
@@ -119,8 +119,8 @@ def _get_strategy_for_field(f):
                            min_size=(None if f.blank else 1),
                            max_size=f.max_length)
     elif type(f) == dm.GenericIPAddressField:
-        lookup = {'both': IP4_addr_strings() | IP6_addr_strings(),
-                  'ipv4': IP4_addr_strings(), 'ipv6': IP6_addr_strings()}
+        lookup = {'both': ip4_addr_strings() | ip6_addr_strings(),
+                  'ipv4': ip4_addr_strings(), 'ipv6': ip6_addr_strings()}
         strategy = lookup[f.protocol.lower()]
     elif type(f) in (dm.TextField, dm.CharField):
         strategy = st.text(min_size=(None if f.blank else 1),

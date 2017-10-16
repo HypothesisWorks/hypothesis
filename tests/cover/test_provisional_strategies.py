@@ -20,8 +20,8 @@ from __future__ import division, print_function, absolute_import
 from binascii import unhexlify
 
 from hypothesis import given
-from hypothesis.provisional import IP4_addr_strings, IP6_addr_strings, \
-    emails
+from hypothesis.provisional import emails, ip4_addr_strings, \
+    ip6_addr_strings
 
 
 @given(emails())
@@ -32,14 +32,14 @@ def test_is_valid_email(address):
     assert domain
 
 
-@given(IP4_addr_strings())
+@given(ip4_addr_strings())
 def test_is_IP4_addr(address):
     as_num = [int(n) for n in address.split('.')]
     assert len(as_num) == 4
     assert all(0 <= n <= 255 for n in as_num)
 
 
-@given(IP6_addr_strings())
+@given(ip6_addr_strings())
 def test_is_IP6_addr(address):
     # Works for non-normalised addresses produced by this strategy, but not
     # a particularly general test
