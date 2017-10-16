@@ -26,6 +26,9 @@ from hypothesis.statistics import collector
 from hypothesis.internal.compat import OrderedDict, text_type
 from hypothesis.internal.detection import is_hypothesis_test
 
+if False:
+    from typing import List, Text  # noqa
+
 LOAD_PROFILE_OPTION = '--hypothesis-profile'
 PRINT_STATISTICS_OPTION = '--hypothesis-show-statistics'
 SEED_OPTION = '--hypothesis-seed'
@@ -35,7 +38,7 @@ class StoringReporter(object):
 
     def __init__(self, config):
         self.config = config
-        self.results = []
+        self.results = []  # type: List[Text]
 
     def __call__(self, msg):
         if self.config.getoption('capture', 'fd') == 'no':

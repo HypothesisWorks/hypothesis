@@ -128,7 +128,7 @@ class ArrayStrategy(SearchStrategy):
             # generate a fully dense array with a freshly drawn value for each
             # entry.
             if self.unique:
-                seen = set()
+                seen = set()  # type: set
                 elements = cu.many(
                     data,
                     min_size=self.array_size, max_size=self.array_size,
