@@ -11,3 +11,9 @@ twine
 attrs
 coverage
 pyupio
+
+# pyflakes has got to at least version 1.7.0, but flake8 3.4.1 restricts
+# its version as `pyflakes >= 1.5.0, < 1.7.0`.  To avoid pyup.io trying
+# to update pyflakes repeatedly, pin the version for now.
+# TODO: Remove this pin when flake8 is updated.
+pyflakes < 1.7.0
