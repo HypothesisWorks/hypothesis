@@ -19,6 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import string
 from decimal import Decimal
+from datetime import timedelta
 
 import django.db.models as dm
 from django.db import IntegrityError
@@ -26,32 +27,18 @@ from django.conf import settings as django_settings
 from django.core.exceptions import ValidationError
 
 import hypothesis.strategies as st
+from hypothesis import reject
 from hypothesis.errors import InvalidArgument
 from hypothesis.extra.pytz import timezones
+from hypothesis.provisional import emails, ip4_addr_strings, \
+    ip6_addr_strings
 from hypothesis.utils.conventions import UniqueIdentifier
-from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
-class ModelNotSupported(Exception):
-    pass
-
-
-def referenced_models(model, seen=None):
-    if seen is None:
-        seen = set()
-    for f in model._meta.concrete_fields:
-        if isinstance(f, dm.ForeignKey):
-            t = f.rel.to
-            if t not in seen:
-                seen.add(t)
-                referenced_models(t, seen)
-    return seen
-
-
-def get_datetime_strat():
+def get_tz_strat():
     if getattr(django_settings, 'USE_TZ', False):
-        return st.datetimes(timezones=timezones())
-    return st.datetimes()
+        return timezones()
+    return st.none()
 
 
 __default_field_mappings = None
@@ -61,6 +48,8 @@ def field_mappings():
     global __default_field_mappings
 
     if __default_field_mappings is None:
+        # Sized fields are handled in _get_strategy_for_field()
+        # URL fields are not yet handled
         __default_field_mappings = {
             dm.SmallIntegerField: st.integers(-32768, 32767),
             dm.IntegerField: st.integers(-2147483648, 2147483647),
@@ -70,10 +59,26 @@ def field_mappings():
             dm.PositiveSmallIntegerField: st.integers(0, 32767),
             dm.BinaryField: st.binary(),
             dm.BooleanField: st.booleans(),
-            dm.DateTimeField: get_datetime_strat(),
+            dm.DateField: st.dates(),
+            dm.DateTimeField: st.datetimes(timezones=get_tz_strat()),
+            dm.DurationField: st.timedeltas(),
+            dm.EmailField: emails(),
             dm.FloatField: st.floats(),
             dm.NullBooleanField: st.one_of(st.none(), st.booleans()),
+            dm.TimeField: st.times(timezones=get_tz_strat()),
+            dm.UUIDField: st.uuids(),
         }
+
+        # SQLite does not support timezone-aware times, or timedeltas that
+        # don't fit in six bytes of microseconds, so we override those
+        db = getattr(django_settings, 'DATABASES', {}).get('default', {})
+        if db.get('ENGINE', '').endswith('.sqlite3'):  # pragma: no branch
+            sqlite_delta = timedelta(microseconds=2 ** 47 - 1)
+            __default_field_mappings.update({
+                dm.TimeField: st.times(),
+                dm.DurationField: st.timedeltas(-sqlite_delta, sqlite_delta),
+            })
+
     return __default_field_mappings
 
 
@@ -82,10 +87,6 @@ def add_default_field_mapping(field_type, strategy):
 
 
 default_value = UniqueIdentifier(u'default_value')
-
-
-class UnmappedFieldError(Exception):
-    pass
 
 
 def validator_to_filter(f):
@@ -102,61 +103,34 @@ def validator_to_filter(f):
     return validate
 
 
-safe_letters = string.ascii_letters + string.digits + '_-'
-
-domains = st.builds(
-    lambda x, y: '.'.join(x + [y]),
-    st.lists(st.text(safe_letters, min_size=1), min_size=1), st.sampled_from([
-        'com', 'net', 'org', 'biz', 'info',
-    ])
-)
-
-
-email_domains = st.one_of(
-    domains,
-    st.sampled_from(['gmail.com', 'yahoo.com', 'hotmail.com'])
-)
-
-base_emails = st.text(safe_letters, min_size=1)
-
-emails_with_plus = st.builds(
-    lambda x, y: '%s+%s' % (x, y), base_emails, base_emails
-)
-
-emails = st.builds(
-    lambda x, y: '%s@%s' % (x, y),
-    st.one_of(base_emails, emails_with_plus), email_domains
-)
-
-
 def _get_strategy_for_field(f):
-    if isinstance(f, dm.AutoField):
-        return default_value
-    elif f.choices:
-        choices = [value for (value, name) in f.choices]
+    if f.choices:
+        choices = []
+        for value, name_or_optgroup in f.choices:
+            if isinstance(name_or_optgroup, (list, tuple)):
+                choices.extend(key for key, _ in name_or_optgroup)
+            else:
+                choices.append(value)
         if isinstance(f, (dm.CharField, dm.TextField)) and f.blank:
-            choices.append(u'')
+            choices.insert(0, u'')
         strategy = st.sampled_from(choices)
-    elif isinstance(f, dm.EmailField):
-        return emails
+    elif type(f) == dm.SlugField:
+        strategy = st.text(alphabet=string.ascii_letters + string.digits,
+                           min_size=(None if f.blank else 1),
+                           max_size=f.max_length)
+    elif type(f) == dm.GenericIPAddressField:
+        lookup = {'both': ip4_addr_strings() | ip6_addr_strings(),
+                  'ipv4': ip4_addr_strings(), 'ipv6': ip6_addr_strings()}
+        strategy = lookup[f.protocol.lower()]
     elif type(f) in (dm.TextField, dm.CharField):
         strategy = st.text(min_size=(None if f.blank else 1),
                            max_size=f.max_length)
     elif type(f) == dm.DecimalField:
-        m = 10 ** f.max_digits - 1
-        div = 10 ** f.decimal_places
-        q = Decimal('1.' + ('0' * f.decimal_places))
-        strategy = (
-            st.integers(min_value=-m, max_value=m)
-            .map(lambda n: (Decimal(n) / div).quantize(q)))
+        bound = Decimal(10 ** f.max_digits - 1) / (10 ** f.decimal_places)
+        strategy = st.decimals(min_value=-bound, max_value=bound,
+                               places=f.decimal_places)
     else:
-        try:
-            strategy = field_mappings()[type(f)]
-        except KeyError:
-            if f.null:
-                return None
-            else:
-                raise UnmappedFieldError(f)
+        strategy = field_mappings().get(type(f), st.nothing())
     if f.validators:
         strategy = strategy.filter(validator_to_filter(f))
     if f.null:
@@ -165,45 +139,25 @@ def _get_strategy_for_field(f):
 
 
 def models(model, **extra):
-    result = {}
-    mandatory = set()
+    """Return a strategy for instances of a model."""
+    result = {k: v for k, v in extra.items() if v is not default_value}
+    missed = []
     for f in model._meta.concrete_fields:
-        try:
-            strategy = _get_strategy_for_field(f)
-        except UnmappedFieldError:
-            mandatory.add(f.name)
-            continue
-        if strategy is not None:
-            result[f.name] = strategy
-    missed = {x for x in mandatory if x not in extra}
+        if not (f.name in extra or isinstance(f, dm.AutoField)):
+            result[f.name] = _get_strategy_for_field(f)
+            if result[f.name].is_empty:
+                missed.append(f.name)
     if missed:
-        raise InvalidArgument((
-            u'Missing arguments for mandatory field%s %s for model %s' % (
-                u's' if len(missed) > 1 else u'',
-                u', '.join(missed),
-                model.__name__,
-            )))
-    result.update(extra)
-    # Remove default_values so we don't try to generate anything for those.
-    result = {k: v for k, v in result.items() if v is not default_value}
-    return ModelStrategy(model, result)
+        raise InvalidArgument(
+            u'Missing arguments for mandatory field%s %s for model %s'
+            % (u's' if missed else u'', u', '.join(missed), model.__name__))
+    return _models_impl(st.builds(model.objects.get_or_create, **result))
 
 
-class ModelStrategy(SearchStrategy):
-
-    def __init__(self, model, mappings):
-        super(ModelStrategy, self).__init__()
-        self.model = model
-        self.arg_strategy = st.fixed_dictionaries(mappings)
-
-    def __repr__(self):
-        return u'ModelStrategy(%s)' % (self.model.__name__,)
-
-    def do_draw(self, data):
-        try:
-            result, _ = self.model.objects.get_or_create(
-                **self.arg_strategy.do_draw(data)
-            )
-            return result
-        except IntegrityError:
-            data.mark_invalid()
+@st.composite
+def _models_impl(draw, strat):
+    """Handle the nasty part of drawing a value for models()"""
+    try:
+        return draw(strat)[0]
+    except IntegrityError:
+        reject()

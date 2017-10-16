@@ -17,15 +17,20 @@
 
 from __future__ import division, print_function, absolute_import
 
+import datetime as dt
+from uuid import UUID
+
 from django.conf import settings as django_settings
 
 from hypothesis import given, assume
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import just, lists
 from hypothesis.extra.django import TestCase, TransactionTestCase
+from hypothesis.internal.compat import text_type
 from tests.django.toystore.models import Store, Company, Customer, \
-    SelfLoop, Customish, ManyNumerics, CustomishField, CouldBeCharming, \
-    CustomishDefault, RestrictedFields, MandatoryComputed
+    SelfLoop, Customish, ManyTimes, OddFields, ManyNumerics, \
+    CustomishField, CouldBeCharming, CustomishDefault, RestrictedFields, \
+    MandatoryComputed
 from hypothesis.extra.django.models import models, default_value, \
     add_default_field_mapping
 
@@ -105,6 +110,23 @@ class TestGetsBasicModels(TestCase):
     def test_customish_default_not_generated(self, x):
         assert x.customish == u'b'
 
+    @given(models(OddFields))
+    def test_odd_fields(self, x):
+        assert isinstance(x.uuid, UUID)
+        assert isinstance(x.slug, text_type)
+        assert u' ' not in x.slug
+        assert isinstance(x.ipv4, str)
+        assert len(x.ipv4.split('.')) == 4
+        assert all(int(i) in range(256) for i in x.ipv4.split('.'))
+        assert isinstance(x.ipv6, text_type)
+        assert set(x.ipv6).issubset(set(u'0123456789abcdefABCDEF:.'))
+
+    @given(models(ManyTimes))
+    def test_time_fields(self, x):
+        assert isinstance(x.time, dt.time)
+        assert isinstance(x.date, dt.date)
+        assert isinstance(x.duration, dt.timedelta)
+
 
 class TestsNeedingRollback(TransactionTestCase):
 
@@ -124,5 +146,7 @@ class TestRestrictedFields(TestCase):
         self.assertIn(instance.choice_field_text, ('foo', 'bar'))
         self.assertIn(instance.choice_field_int, (1, 2))
         self.assertIn(instance.null_choice_field_int, (1, 2, None))
+        self.assertEqual(instance.choice_field_grouped,
+                         instance.choice_field_grouped.lower())
         self.assertEqual(instance.even_number_field % 2, 0)
         self.assertTrue(instance.non_blank_text_field)

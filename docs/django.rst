@@ -14,7 +14,7 @@ Using it is quite straightforward: All you need to do is subclass
 :class:`hypothesis.extra.django.TransactionTestCase`
 and you can use :func:`@given <hypothesis.given>` as normal,
 and the transactions will be per example
-rather than per test function as they would be if you used @given with a normal
+rather than per test function as they would be if you used :func:`@given <hypothesis.given>` with a normal
 django test suite (this is important because your test function will be called
 multiple times and you don't want them to interfere with each other). Test cases
 on these classes that do not use
@@ -29,7 +29,7 @@ If you are using :class:`~hypothesis.extra.django.TransactionTestCase`,
 you may need to use ``@settings(suppress_health_check=[HealthCheck.too_slow])``
 to avoid :doc:`errors due to slow example generation </healthchecks>`.
 
-In addition to the above, Hypothesis has some limited support for automatically
+In addition to the above, Hypothesis has some support for automatically
 deriving strategies for your model types, which you can then customize further.
 
 .. warning::
