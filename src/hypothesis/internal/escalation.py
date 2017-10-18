@@ -28,12 +28,14 @@ from hypothesis.internal.compat import text_type, binary_type, \
     encoded_filepath
 
 if False:
-    from typing import Dict  # noqa
+    from typing import Any, Dict, Union  # noqa
 
 
 def belongs_to(package):
     root = os.path.dirname(package.__file__)
-    cache = {text_type: {}, binary_type: {}}
+    cache = {
+        text_type: {}, binary_type: {}
+    }  # type: Dict[type, Dict[Union[binary_type, text_type], bool]]
 
     def accept(filepath):
         try:

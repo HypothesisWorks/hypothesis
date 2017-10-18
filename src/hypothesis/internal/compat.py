@@ -439,7 +439,7 @@ class compatbytes(bytearray):
         return compatbytes(bytearray.__rmul__(self, value))
 
     def __getitem__(self, *args, **kwargs):
-        r = bytearray.__getitem__(self, *args, **kwargs)
+        r = bytearray.__getitem__(self, *args, **kwargs)  # type: ignore
         if isinstance(r, bytearray):
             return compatbytes(r)
         else:
