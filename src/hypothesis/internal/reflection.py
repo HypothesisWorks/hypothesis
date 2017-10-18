@@ -99,9 +99,9 @@ def required_args(target, args=(), kwargs=()):
         return None
     # For classes, self is present in the argspec but not really required
     posargs = spec.args[1:] if inspect.isclass(target) else spec.args
-    return set(posargs + spec.kwonlyargs) \
+    return set(posargs[len(args):] + spec.kwonlyargs) \
         - set(spec.args[len(spec.args) - len(spec.defaults or ()):]) \
-        - set(spec.kwonlydefaults or ()) - set(args) - set(kwargs)
+        - set(spec.kwonlydefaults or ()) - set(kwargs)
 
 
 def convert_keyword_arguments(function, args, kwargs):

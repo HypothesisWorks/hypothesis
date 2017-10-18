@@ -231,6 +231,11 @@ def annotated_func(a: int, b: int=2, *, c: int, d: int=4):
     return a + b + c + d
 
 
+def test_issue_946_regression():
+    # Turned type hints into kwargs even if the required posarg was passed
+    st.builds(annotated_func, st.integers()).example()
+
+
 @pytest.mark.parametrize('thing', [
     annotated_func,  # Works via typing.get_type_hints
     typing.NamedTuple('N', [('a', int)]),  # Falls back to inspection
