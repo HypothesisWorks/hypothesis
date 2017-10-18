@@ -339,3 +339,29 @@ def test_resolves_flag_enum(resolver):
         assert isinstance(ex, F)
 
     inner()
+
+
+class AnnotatedTarget(object):
+
+    def __init__(self, a: int, b: int):
+        pass
+
+    def method(self, a: int, b: int):
+        pass
+
+
+@pytest.mark.parametrize('target', [
+    AnnotatedTarget, AnnotatedTarget(1, 2).method
+])
+@pytest.mark.parametrize('args,kwargs', [
+    ((), {}),
+    ((1,), {}),
+    ((1, 2), {}),
+    ((), dict(a=1)),
+    ((), dict(b=2)),
+    ((), dict(a=1, b=2)),
+])
+def test_required_args(target, args, kwargs):
+    # Mostly checking that `self` (and only self) is correctly excluded
+    st.builds(target, *map(st.just, args),
+              **{k: st.just(v) for k, v in kwargs.items()}).example()

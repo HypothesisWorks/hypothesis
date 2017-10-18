@@ -91,15 +91,27 @@ def function_digest(function):
 
 
 def required_args(target, args=(), kwargs=()):
-    """Return a set of required args to target."""
+    """Return a set of names of required args to target that were not supplied
+    in args or kwargs.
+
+    This is used in builds() to determine which arguments to attempt to
+    fill from type hints.  target may be any callable (including classes
+    and bound methods).  args and kwargs should be as they are passed to
+    builds() - that is, a tuple of values and a dict of names: values.
+
+    """
     try:
         spec = getfullargspec(
             target.__init__ if inspect.isclass(target) else target)
     except TypeError:  # pragma: no cover
         return None
-    # For classes, self is present in the argspec but not really required
-    posargs = spec.args[1:] if inspect.isclass(target) else spec.args
-    return set(posargs[len(args):] + spec.kwonlyargs) \
+    # self appears in the argspec of __init__ and bound methods, but it's an
+    # error to explicitly supply it - so we might skip the first argument.
+    skip_self = int(inspect.isclass(target) or inspect.ismethod(target))
+    # Start with the args that were not supplied and all kwonly arguments,
+    # then remove all positional arguments with default values, and finally
+    # remove kwonly defaults and any supplied keyword arguments
+    return set(spec.args[skip_self + len(args):] + spec.kwonlyargs) \
         - set(spec.args[len(spec.args) - len(spec.defaults or ()):]) \
         - set(spec.kwonlydefaults or ()) - set(kwargs)
 
