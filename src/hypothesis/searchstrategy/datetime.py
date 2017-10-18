@@ -61,11 +61,11 @@ class DatetimeStrategy(SearchStrategy):
             cap_high = cap_high and val == high
         tz = data.draw(self.tz_strat)
         try:
-            result = dt.datetime(**result)
+            example = dt.datetime(**result)
             if is_pytz_timezone(tz):
                 # Can't just construct; see http://pytz.sourceforge.net
-                return tz.normalize(tz.localize(result))
-            return result.replace(tzinfo=tz)
+                return tz.normalize(tz.localize(example))
+            return example.replace(tzinfo=tz)
         except (ValueError, OverflowError):
             return None
 

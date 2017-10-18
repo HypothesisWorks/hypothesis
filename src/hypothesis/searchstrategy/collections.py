@@ -169,7 +169,7 @@ class UniqueListStrategy(SearchStrategy):
             min_size=self.min_size, max_size=self.max_size,
             average_size=self.average_size
         )
-        seen = set()
+        seen = set()  # type: set
         result = []
 
         while elements.more():

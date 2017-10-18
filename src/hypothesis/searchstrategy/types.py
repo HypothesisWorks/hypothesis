@@ -68,7 +68,7 @@ def from_typing_type(thing):
         if not args:
             raise ResolutionFailed('Cannot resolve Union of no types.')
         return st.one_of([st.from_type(t) for t in args])
-    if isinstance(thing, typing.TupleMeta):
+    if isinstance(thing, typing.TupleMeta):  # type: ignore  # private attr.
         elem_types = getattr(thing, '__tuple_params__', None) or ()
         elem_types += getattr(thing, '__args__', None) or ()
         if getattr(thing, '__tuple_use_ellipsis__', False) or \
@@ -91,7 +91,7 @@ def from_typing_type(thing):
         # instances of type T - and simplify the strategy for abstract types
         # such as Container
         for t in (typing.KeysView, typing.ValuesView, typing.ItemsView):
-            mapping.pop(t, None)
+            mapping.pop(t, None)  # type: ignore  # this does actually work...
     strategies = [v if isinstance(v, st.SearchStrategy) else v(thing)
                   for k, v in mapping.items()
                   if sum(try_issubclass(k, T) for T in mapping) == 1]

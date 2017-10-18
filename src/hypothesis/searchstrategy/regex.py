@@ -20,12 +20,18 @@ from __future__ import division, print_function, absolute_import
 import re
 import sys
 import operator
-import sre_parse as sre
+import sre_parse
 
 import hypothesis.strategies as st
 from hypothesis import reject
 from hypothesis.internal.compat import PY3, hrange, hunichr, text_type, \
     int_to_byte
+
+if False:
+    from typing import Any, Set, Text  # noqa
+
+# TODO: contribute stubs with sre_parse attributes to Typeshed
+sre = sre_parse  # type: Any
 
 HAS_SUBPATTERN_FLAGS = sys.version_info[:2] >= (3, 6)
 
@@ -51,12 +57,12 @@ BYTES_DIGIT = set(b for b in BYTES_ALL if re.match(b'\\d', b))
 BYTES_SPACE = set(b for b in BYTES_ALL if re.match(b'\\s', b))
 BYTES_WORD = set(b for b in BYTES_ALL if re.match(b'\\w', b))
 BYTES_LOOKUP = {
-    sre.CATEGORY_DIGIT: BYTES_DIGIT,  # type: ignore
-    sre.CATEGORY_SPACE: BYTES_SPACE,  # type: ignore
-    sre.CATEGORY_WORD: BYTES_WORD,  # type: ignore
-    sre.CATEGORY_NOT_DIGIT: BYTES_ALL - BYTES_DIGIT,  # type: ignore
-    sre.CATEGORY_NOT_SPACE: BYTES_ALL - BYTES_SPACE,  # type: ignore
-    sre.CATEGORY_NOT_WORD: BYTES_ALL - BYTES_WORD,  # type: ignore
+    sre.CATEGORY_DIGIT: BYTES_DIGIT,
+    sre.CATEGORY_SPACE: BYTES_SPACE,
+    sre.CATEGORY_WORD: BYTES_WORD,
+    sre.CATEGORY_NOT_DIGIT: BYTES_ALL - BYTES_DIGIT,
+    sre.CATEGORY_NOT_SPACE: BYTES_ALL - BYTES_SPACE,
+    sre.CATEGORY_NOT_WORD: BYTES_ALL - BYTES_WORD,
 }
 
 # On Python < 3.4 (including 2.7), the following unicode chars are weird.
@@ -124,9 +130,9 @@ class CharactersBuilder(object):
     """
 
     def __init__(self, negate=False, flags=0):
-        self._categories = set()
-        self._whitelist_chars = set()
-        self._blacklist_chars = set()
+        self._categories = set()  # type: Set[Text]
+        self._whitelist_chars = set()  # type: Set[Text]
+        self._blacklist_chars = set()  # type: Set[Text]
         self._negate = negate
         self._ignorecase = flags & re.IGNORECASE
         self._unicode = not bool(flags & re.ASCII) \
@@ -196,8 +202,8 @@ class CharactersBuilder(object):
 class BytesBuilder(CharactersBuilder):
 
     def __init__(self, negate=False, flags=0):
-        self._whitelist_chars = set()
-        self._blacklist_chars = set()
+        self._whitelist_chars = set()  # type: Set[bytes]
+        self._blacklist_chars = set()  # type: Set[bytes]
         self._negate = negate
         self._ignorecase = flags & re.IGNORECASE
         self.code_to_char = int_to_byte
@@ -328,7 +334,9 @@ def _strategy(codes, context, pattern):
         empty = u''
         to_char = hunichr
     else:
-        empty = b''
+        # Correctly annotating this function to distinguish string and bytes
+        # handling is more trouble than it's worth right now, so ignore it.
+        empty = b''  # type: ignore
         to_char = int_to_byte
         binary_char = st.binary(min_size=1, max_size=1)
 
