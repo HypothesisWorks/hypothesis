@@ -25,6 +25,9 @@ from hypothesis.internal.compat import ceil, floor, hbytes, hrange, \
 from hypothesis.internal.conjecture.floats import is_simple, \
     float_to_lex, lex_to_float
 
+if False:
+    from typing import Set  # noqa
+
 
 """
 This module implements a lexicographic minimizer for blocks of bytes.
@@ -54,7 +57,7 @@ class Minimizer(object):
         self.random = random
         self.full = full
         self.changes = 0
-        self.seen = set()
+        self.seen = set()  # type: Set[hbytes]
 
     def incorporate(self, buffer):
         """Consider this buffer as a possible replacement for the current best

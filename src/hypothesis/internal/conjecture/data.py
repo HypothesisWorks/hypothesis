@@ -25,6 +25,9 @@ from hypothesis.internal.compat import hbytes, hrange, text_type, \
     bit_length, benchmark_time, int_from_bytes, unicode_safe_repr
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 
+if False:
+    from typing import Set, Dict, List, Tuple, Union  # noqa
+
 
 class Status(IntEnum):
     OVERRUN = 0
@@ -63,24 +66,24 @@ class ConjectureData(object):
         self._draw_bytes = draw_bytes
         self.overdraw = 0
         self.level = 0
-        self.block_starts = {}
-        self.blocks = []
+        self.block_starts = {}  # type: Dict[int, List[int]]
+        self.blocks = []  # type: List[Tuple[int, int]]
         self.buffer = bytearray()
         self.output = u''
         self.status = Status.VALID
         self.frozen = False
-        self.intervals_by_level = []
-        self.intervals = []
-        self.interval_stack = []
+        self.intervals_by_level = []  # type: List[Tuple[int, int]]
+        self.intervals = []  # type: List[Tuple[int, int]]
+        self.interval_stack = []  # type: List[int]
         global global_test_counter
         self.testcounter = global_test_counter
         global_test_counter += 1
         self.start_time = benchmark_time()
-        self.events = set()
-        self.forced_indices = set()
-        self.capped_indices = {}
+        self.events = set()  # type: set
+        self.forced_indices = set()  # type: Set[int]
+        self.capped_indices = {}  # type: Dict[int, int]
         self.interesting_origin = None
-        self.tags = set()
+        self.tags = set()  # type: Union[set, frozenset]
 
     def __assert_not_frozen(self, name):
         if self.frozen:
@@ -191,9 +194,9 @@ class ConjectureData(object):
             mask = (1 << (n % 8)) - 1
             buf[0] &= mask
             self.capped_indices[self.index] = mask
-            buf = hbytes(buf)
-            self.__write(buf)
-            result = int_from_bytes(buf)
+            buffer = hbytes(buf)
+            self.__write(buffer)
+            result = int_from_bytes(buffer)
         assert bit_length(result) <= n
         return result
 

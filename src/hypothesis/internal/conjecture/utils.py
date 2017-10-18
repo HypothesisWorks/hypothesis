@@ -26,6 +26,9 @@ from hypothesis.internal.compat import floor, hbytes, bit_length, \
     int_from_bytes
 from hypothesis.internal.floats import int_to_float
 
+if False:
+    from typing import List  # noqa
+
 
 def integer_range(data, lower, upper, center=None):
     assert lower <= upper
@@ -220,6 +223,7 @@ class Sampler(object):
     """
 
     def __init__(self, weights):
+        # type: (Sequence[float]) -> None
         # We consider each weight expressed in terms of the average weight,
         # say t. We write the weight of i as nt + f, where n is an integer and
         # 0 <= f < 1. We then store n items for this weight which correspond
@@ -235,9 +239,9 @@ class Sampler(object):
         # and are sorted in order of decreasing acceptance probaility. This
         # ensures that shrinking lexicographically always results in drawing
         # less data.
-        self.table = []
-        self.extras = []
-        self.acceptance = []
+        self.table = []  # type: List[int]
+        self.extras = []  # type: List[int]
+        self.acceptance = []  # type: List[float]
         total = sum(weights)
         n = len(weights)
         for i, x in enumerate(weights):
