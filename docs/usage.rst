@@ -32,6 +32,7 @@ then it should be available on pypi.
 * `PyCEbox <https://github.com/AustinRochford/PyCEbox>`_
 * `PyPy <http://pypy.org>`_
 * `pyrsistent <https://github.com/tobgu/pyrsistent>`_
+* `python-humble-utils <https://github.com/webyneter/python-humble-utils>`_
 * `pyudev <https://github.com/pyudev/pyudev>`_
 * `qutebrowser <https://github.com/qutebrowser/qutebrowser>`_
 * `RubyMarshal <https://github.com/d9pouces/RubyMarshal>`_
