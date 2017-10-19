@@ -83,7 +83,7 @@ def _test_matching_pattern(pattern, isvalidchar, is_unicode=False):
         if isvalidchar(c):
             assert r.search(c), (
                 '"%s" supposed to match "%s" (%r, category "%s"), '
-                'but it doesnt' % (pattern, c, c, unicodedata.category(c))
+                "but it doesn't" % (pattern, c, c, unicodedata.category(c))
             )
         else:
             assert not r.search(c), (
