@@ -28,15 +28,15 @@ from hypothesis.internal.compat import WINDOWS
 from hypothesis.internal.floats import float_to_int, int_to_float
 
 
-@pytest.mark.parametrize((u'l', u'r'), [
+@pytest.mark.parametrize(('lower', 'upper'), [
     # Exact values don't matter, but they're large enough so that x + y = inf.
     (9.9792015476736e+291, 1.7976931348623157e+308),
     (-sys.float_info.max, sys.float_info.max)
 ])
-def test_floats_are_in_range(l, r):
-    @given(st.floats(l, r))
+def test_floats_are_in_range(lower, upper):
+    @given(st.floats(lower, upper))
     def test_is_in_range(t):
-        assert l <= t <= r
+        assert lower <= t <= upper
     test_is_in_range()
 
 

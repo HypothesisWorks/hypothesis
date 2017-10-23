@@ -30,9 +30,9 @@ def test_exhaustion():
     @given(st.lists(st.text(), min_size=10), st.choices())
     def test(ls, choice):
         while ls:
-            l = choice(ls)
-            assert l in ls
-            ls.remove(l)
+            s = choice(ls)
+            assert s in ls
+            ls.remove(s)
     test()
 
 
