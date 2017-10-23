@@ -17,7 +17,7 @@ docformatter==0.8         # via pyformat
 docutils==0.14            # via restructuredtext-lint, sphinx
 dparse==0.2.1             # via pyupio, safety
 first==2.0.1              # via pip-tools
-flake8==3.4.1
+flake8==3.5.0
 hashin-pyup==0.7.2        # via pyupio
 idna==2.6                 # via requests
 imagesize==0.7.1          # via sphinx
