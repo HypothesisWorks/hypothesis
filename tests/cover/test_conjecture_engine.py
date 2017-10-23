@@ -145,7 +145,7 @@ def slow_shrinker():
                 data.mark_interesting()
             else:
                 return
-        diffs = [i for i in hrange(len(x)) if x[i] != l[i]]
+        diffs = [i for i in hrange(len(x)) if x[i] != ls[i]]
         if len(diffs) == 1:
             i = diffs[0]
             if x[i] + 1 == ls[i]:
