@@ -145,9 +145,9 @@ class HypothesisSpec(RuleBasedStateMachine):
     def list_strategy(self, elements):
         return lists(elements, average_size=AVERAGE_LIST_LENGTH)
 
-    @rule(target=strategies, l=strategies, r=strategies)
-    def or_strategy(self, l, r):
-        return l | r
+    @rule(target=strategies, left=strategies, right=strategies)
+    def or_strategy(self, left, right):
+        return left | right
 
     @rule(target=varied_floats, source=floats())
     def float(self, source):
@@ -201,9 +201,9 @@ class HypothesisSpec(RuleBasedStateMachine):
     def single_tuple(self, source):
         return (source,)
 
-    @rule(target=strategy_tuples, l=strategy_tuples, r=strategy_tuples)
-    def cat_tuples(self, l, r):
-        return l + r
+    @rule(target=strategy_tuples, left=strategy_tuples, right=strategy_tuples)
+    def cat_tuples(self, left, right):
+        return left + right
 
     @rule(target=objects, strat=strategies, data=data())
     def get_example(self, strat, data):

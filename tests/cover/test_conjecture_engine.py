@@ -138,17 +138,17 @@ def slow_shrinker():
         x = data.draw_bytes(100)
         if x == last[0]:
             data.mark_interesting()
-        l = last[0]
-        if l is None:
+        ls = last[0]
+        if ls is None:
             if all(x):
                 last[0] = x
                 data.mark_interesting()
             else:
                 return
-        diffs = [i for i in hrange(len(x)) if x[i] != l[i]]
+        diffs = [i for i in hrange(len(x)) if x[i] != ls[i]]
         if len(diffs) == 1:
             i = diffs[0]
-            if x[i] + 1 == l[i]:
+            if x[i] + 1 == ls[i]:
                 last[0] = x
                 data.mark_interesting()
     return accept
@@ -204,9 +204,9 @@ def test_variadic_draw():
     def b(data):
         if any(all(d) for d in draw_list(data)):
             data.mark_interesting()
-    l = draw_list(ConjectureData.for_buffer(b))
-    assert len(l) == 1
-    assert len(l[0]) == 1
+    ls = draw_list(ConjectureData.for_buffer(b))
+    assert len(ls) == 1
+    assert len(ls[0]) == 1
 
 
 def test_draw_to_overrun():
