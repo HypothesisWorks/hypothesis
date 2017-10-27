@@ -111,7 +111,10 @@ def example(*args, **kwargs):
     def accept(test):
         if not hasattr(test, 'hypothesis_explicit_examples'):
             test.hypothesis_explicit_examples = []
-        test.hypothesis_explicit_examples.append(Example(tuple(args), kwargs))
+        test.hypothesis_explicit_examples.append(
+            # See https://github.com/python/mypy/issues/4132
+            Example(tuple(args), kwargs)  # type: ignore
+        )
         return test
     return accept
 

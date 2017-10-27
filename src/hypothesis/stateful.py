@@ -326,8 +326,10 @@ def rule(targets=(), target=None, **kwargs):
                 Settings.default,
             )
         precondition = getattr(f, PRECONDITION_MARKER, None)
-        rule = Rule(targets=tuple(converted_targets), arguments=kwargs,
-                    function=f, precondition=precondition)
+        # Mypy can't find __init__; https://github.com/python/mypy/issues/4132
+        rule = Rule(  # type: ignore
+            targets=tuple(converted_targets), arguments=kwargs,
+            function=f, precondition=precondition)
 
         @proxies(f)
         def rule_wrapper(*args, **kwargs):
@@ -373,14 +375,17 @@ def precondition(precond):
         if rule is None:
             setattr(precondition_wrapper, PRECONDITION_MARKER, precond)
         else:
-            new_rule = Rule(targets=rule.targets, arguments=rule.arguments,
-                            function=rule.function, precondition=precond)
+            # Again, see https://github.com/python/mypy/issues/4132
+            new_rule = Rule(  # type: ignore
+                targets=rule.targets, arguments=rule.arguments,
+                function=rule.function, precondition=precond)
             setattr(precondition_wrapper, RULE_MARKER, new_rule)
 
         invariant = getattr(f, INVARIANT_MARKER, None)
         if invariant is not None:
-            new_invariant = Invariant(function=invariant.function,
-                                      precondition=precond)
+            # Again, see https://github.com/python/mypy/issues/4132
+            new_invariant = Invariant(  # type: ignore
+                function=invariant.function, precondition=precond)
             setattr(precondition_wrapper, INVARIANT_MARKER, new_invariant)
 
         return precondition_wrapper
@@ -416,7 +421,8 @@ def invariant():
                 Settings.default,
             )
         precondition = getattr(f, PRECONDITION_MARKER, None)
-        rule = Invariant(function=f, precondition=precondition)
+        # Again, see https://github.com/python/mypy/issues/4132
+        rule = Invariant(function=f, precondition=precondition)  # type: ignore
 
         @proxies(f)
         def invariant_wrapper(*args, **kwargs):
@@ -529,7 +535,8 @@ class RuleBasedStateMachine(GenericStateMachine):
             target = cls._base_rules_per_class.setdefault(cls, [])
 
         return target.append(
-            Rule(
+            # Again, see https://github.com/python/mypy/issues/4132
+            Rule(  # type: ignore
                 targets, function, converted_arguments, precondition,
             )
         )
@@ -598,7 +605,10 @@ class RuleBasedStateMachine(GenericStateMachine):
                 id(result), lambda obj, p, cycle: p.text(name),
             )
             for target in rule.targets:
-                self.bundle(target).append(VarReference(name))
+                self.bundle(target).append(
+                    # Again, see https://github.com/python/mypy/issues/4132
+                    VarReference(name)  # type: ignore
+                )
 
     def check_invariants(self):
         for invar in self.invariants():

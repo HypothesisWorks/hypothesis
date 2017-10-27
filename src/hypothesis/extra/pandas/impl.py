@@ -321,7 +321,8 @@ def columns(
     except TypeError:
         names = [None] * names_or_number
     return [
-        column(
+        # Mypy can't find __init__; https://github.com/python/mypy/issues/4132
+        column(  # type: ignore
             name=n, dtype=dtype, elements=elements, fill=fill, unique=unique
         ) for n in names
     ]
