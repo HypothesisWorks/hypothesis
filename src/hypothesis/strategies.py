@@ -1301,7 +1301,59 @@ def decimals(min_value=None, max_value=None,
             return Context(prec=precision).divide(
                 val.numerator, val.denominator)
 
-        strat = fractions(min_value, max_value).map(fraction_to_decimal)
+        # Round bounding values to at most ten thousand digits of precision,
+        # so that casting to Fraction doesn't eat too much time and memory
+        exact_bounds = dict(min=min_value, max=max_value)
+        ctx = Context(prec=10000)
+        if min_value is not None:
+            min_value = ctx.add(min_value, 0)
+            if exact_bounds['min'] < min_value:
+                min_value = ctx.next_plus(min_value)
+        if max_value is not None:
+            max_value = ctx.add(max_value, 0)
+            if exact_bounds['max'] > max_value:
+                max_value = ctx.next_minus(max_value)
+        if None not in (min_value, max_value) and min_value > max_value:
+            raise InvalidArgument(
+                'There are no decimal values between the given minimum and '
+                'maximum values with at most ten thousand digits of precison.'
+            )
+
+        # We split this into several cases, so that we can handle very large
+        # exponents without the pathological time and memory usage
+        if min_value is None and max_value is None:
+            # The trivial case - just use default values.
+            strat = fractions().map(fraction_to_decimal)
+        elif max_value is None:
+            # With a single bound, we can scale so the exponent is zero,
+            # generate, and rescale the example.
+            scale = Decimal(10) ** min_value.adjusted()
+            strat = fractions(min_value=min_value / scale)\
+                .map(fraction_to_decimal).map(lambda d: d * scale)
+        elif min_value is None:
+            scale = Decimal(10) ** max_value.adjusted()
+            strat = fractions(max_value=max_value / scale)\
+                .map(fraction_to_decimal).map(lambda d: d * scale)
+        elif abs(min_value.adjusted()) < 99 and abs(max_value.adjusted()) < 99:
+            # If we have two bounds which are "not too large", the naive
+            # approach simplifies shrinking and handles the common use-cases.
+            strat = fractions(min_value, max_value).map(fraction_to_decimal)
+        else:
+            # Finally, for a very large bounded region we first pick an
+            # exponent, then create a strategy from it.  This is relatively
+            # expensive at runtime, but that's just the cost of precision!
+            def scaled_decimals(scale):
+                # This strategy can draw from a large but manageable region,
+                # bounded by the actual bounding values or "reasonable size"
+                return fractions(
+                    min_value=max([min_value / scale, Decimal(10) ** -99]),
+                    max_value=min([max_value / scale, Decimal(10) ** 99]),
+                ).map(fraction_to_decimal).map(lambda d: d * scale)
+
+            strat = integers(
+                min_value.adjusted(), max_value.adjusted()
+            ).map(lambda i: Decimal(10) ** i).flatmap(scaled_decimals)
+
     # Compose with sampled_from for infinities and NaNs as appropriate
     special = []
     if allow_nan or (allow_nan is None and (None in (min_value, max_value))):
