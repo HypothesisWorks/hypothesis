@@ -1244,6 +1244,10 @@ def decimals(min_value=None, max_value=None,
     If ``places`` is not None, all finite values drawn from the strategy will
     have that number of digits after the decimal place.
 
+    Regardless of their value, generated examples may have at most ten
+    thousand digits of precision.  Note that this does not exclude large
+    values - `Decimal(10) ** 99999` has only one digit of precision!
+
     Examples from this strategy do not have a well defined shrink order but
     try to maximize human readability when shrinking.
 
