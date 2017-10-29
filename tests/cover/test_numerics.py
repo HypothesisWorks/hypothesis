@@ -122,3 +122,9 @@ def test_issue_725_regression(x):
 @given(decimals(min_value='0.1', max_value='0.3'))
 def test_issue_739_regression(x):
     pass
+
+
+@given(decimals(min_value='10E99998', max_value='10E99999'))
+def test_issue_838_regression(x):
+    # If this hands forever, that's a regression
+    pass

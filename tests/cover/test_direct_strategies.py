@@ -88,6 +88,8 @@ def fn_ktest(*fnkwargs):
     (ds.decimals, {'max_value': 'inf', 'allow_infinity': False}),
     (ds.decimals, {'min_value': complex(1, 2)}),
     (ds.decimals, {'min_value': '0.1', 'max_value': '0.9', 'places': 0}),
+    (ds.decimals, {'min_value': decimal.Decimal('1' + 10000 * '0' + '1'),
+                   'max_value': decimal.Decimal('1' + 10000 * '0' + '9')}),
     (ds.dictionaries, {
         'keys': ds.booleans(), 'values': ds.booleans(),
         'min_size': 10, 'max_size': 1}),
@@ -160,6 +162,9 @@ def test_validates_keyword_arguments(fn, kwargs):
     (ds.decimals, {'min_value': 1.0, 'allow_nan': False}),
     (ds.decimals, {'max_value': 1.0, 'allow_nan': False}),
     (ds.decimals, {'max_value': 1.0, 'min_value': -1.0, 'allow_nan': False}),
+    (ds.decimals, {'max_value': 10 ** 120, 'min_value': 10 ** 110}),
+    (ds.decimals, {'min_value': decimal.Decimal('1' + 10000 * '0' + '9'),
+                   'max_value': decimal.Decimal('2' + 10000 * '0' + '1')}),
     (ds.decimals, {'min_value': '-inf'}),
     (ds.decimals, {'max_value': 'inf'}),
     (ds.fractions, {
