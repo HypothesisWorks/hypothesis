@@ -74,12 +74,12 @@ class settingsProperty(object):
 
     @property
     def __doc__(self):
+        description = all_settings[self.name].description
+        deprecation_message = all_settings[self.name].deprecation_message
         default = repr(getattr(settings.default, self.name)) if \
             self.show_default else '(dynamically calculated)'
-        return '\n'.join((
-            all_settings[self.name].description,
-            'default value: %s' % (default,)
-        ))
+        return '\n\n'.join([description, 'default value: %s' % (default,),
+                            (deprecation_message or '').strip()]).strip()
 
 
 default_variable = DynamicVariable(None)
@@ -421,13 +421,10 @@ if it has not found many examples. This is a soft rather than a hard
 limit - Hypothesis won't e.g. interrupt execution of the called
 function to stop it. If this value is <= 0 then no timeout will be
 applied.
-
-Note: This setting is deprecated. In future Hypothesis will be removing the
-timeout feature.
 """,
     deprecation_message="""
-The timeout feature will go away in a future version of Hypothesis. To get
-the future behaviour set timeout=hypothesis.unlimited instead (which will
+This setting is deprecated and will be removed in a future version. To get
+the future behaviour set ``timeout=hypothesis.unlimited`` instead (which will
 remain valid for a further deprecation period after this setting has gone
 away).
 """,
@@ -443,8 +440,8 @@ If this is True then hypothesis will run in deterministic mode
 where each falsification uses a random number generator that is seeded
 based on the hypothesis to falsify, which will be consistent across
 multiple runs. This has the advantage that it will eliminate any
-randomness from your tests, which may be preferable for some situations
-. It does have the disadvantage of making your tests less likely to
+randomness from your tests, which may be preferable for some situations.
+It does have the disadvantage of making your tests less likely to
 find novel breakages.
 """
 )
@@ -463,7 +460,6 @@ environment variable to the string 'true'.
 """,
     deprecation_message="""
 Strict mode is deprecated and will go away in a future version of Hypothesis.
-
 To get the same behaviour, use
 warnings.simplefilter('error', HypothesisDeprecationWarning).
 """,
