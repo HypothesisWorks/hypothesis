@@ -231,6 +231,11 @@ def annotated_func(a: int, b: int=2, *, c: int, d: int=4):
     return a + b + c + d
 
 
+def test_issue_946_regression():
+    # Turned type hints into kwargs even if the required posarg was passed
+    st.builds(annotated_func, st.integers()).example()
+
+
 @pytest.mark.parametrize('thing', [
     annotated_func,  # Works via typing.get_type_hints
     typing.NamedTuple('N', [('a', int)]),  # Falls back to inspection
@@ -334,3 +339,29 @@ def test_resolves_flag_enum(resolver):
         assert isinstance(ex, F)
 
     inner()
+
+
+class AnnotatedTarget(object):
+
+    def __init__(self, a: int, b: int):
+        pass
+
+    def method(self, a: int, b: int):
+        pass
+
+
+@pytest.mark.parametrize('target', [
+    AnnotatedTarget, AnnotatedTarget(1, 2).method
+])
+@pytest.mark.parametrize('args,kwargs', [
+    ((), {}),
+    ((1,), {}),
+    ((1, 2), {}),
+    ((), dict(a=1)),
+    ((), dict(b=2)),
+    ((), dict(a=1, b=2)),
+])
+def test_required_args(target, args, kwargs):
+    # Mostly checking that `self` (and only self) is correctly excluded
+    st.builds(target, *map(st.just, args),
+              **{k: st.just(v) for k, v in kwargs.items()}).example()

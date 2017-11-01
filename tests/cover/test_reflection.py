@@ -24,13 +24,13 @@ from functools import partial
 import pytest
 
 from mock import Mock, MagicMock, NonCallableMock, NonCallableMagicMock
-from tests.common.utils import raises, validate_deprecation
+from tests.common.utils import raises
 from hypothesis.internal.compat import PY3, FullArgSpec, getfullargspec
 from hypothesis.internal.reflection import is_mock, proxies, arg_string, \
-    unbind_method, eval_directory, function_digest, fully_qualified_name, \
-    source_exec_as_module, convert_keyword_arguments, \
-    define_function_signature, convert_positional_arguments, \
-    get_pretty_function_description
+    required_args, unbind_method, eval_directory, function_digest, \
+    fully_qualified_name, source_exec_as_module, \
+    convert_keyword_arguments, define_function_signature, \
+    convert_positional_arguments, get_pretty_function_description
 
 
 def do_conversion_test(f, args, kwargs):
@@ -576,3 +576,26 @@ def test_is_mock_with_positive_cases():
     assert is_mock(MagicMock())
     assert is_mock(NonCallableMock())
     assert is_mock(NonCallableMagicMock())
+
+
+class Target(object):
+
+    def __init__(self, a, b):
+        pass
+
+    def method(self, a, b):
+        pass
+
+
+@pytest.mark.parametrize('target', [Target, Target(1, 2).method])
+@pytest.mark.parametrize('args,kwargs,expected', [
+    ((), {}, set('ab')),
+    ((1,), {}, set('b')),
+    ((1, 2), {}, set()),
+    ((), dict(a=1), set('b')),
+    ((), dict(b=2), set('a')),
+    ((), dict(a=1, b=2), set()),
+])
+def test_required_args(target, args, kwargs, expected):
+    # Mostly checking that `self` (and only self) is correctly excluded
+    assert required_args(target, args, kwargs) == expected
