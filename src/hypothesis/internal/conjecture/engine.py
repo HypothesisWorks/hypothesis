@@ -125,7 +125,7 @@ class ConjectureRunner(object):
             if e.testcounter != data.testcounter:
                 self.save_buffer(data.buffer)
                 raise e
-        except:
+        except BaseException:
             self.save_buffer(data.buffer)
             raise
         finally:

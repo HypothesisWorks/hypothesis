@@ -32,7 +32,7 @@ from hypothesis.internal.compat import text_type, integer_types
 
 def type_sorting_key(t):
     """Minimise to None, then non-container types, then container types."""
-    if t is None or t is type(None):
+    if t is None or t is type(None):  # noqa: E721
         return -1
     return issubclass(t, collections.abc.Container)
 

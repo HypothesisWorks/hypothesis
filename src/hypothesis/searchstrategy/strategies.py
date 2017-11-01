@@ -361,7 +361,7 @@ class SearchStrategy(object):
             self.do_validate()
             self.is_empty
             self.has_reusable_values
-        except:
+        except Exception:
             self.validate_called = False
             raise
 

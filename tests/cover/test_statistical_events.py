@@ -33,9 +33,8 @@ def call_for_statistics(test_function):
     with collector.with_value(callback):
         try:
             test_function()
-        except:
+        except Exception:
             traceback.print_exc()
-            pass
     assert result[0] is not None
     return result[0]
 
