@@ -80,3 +80,12 @@ def test_error_if_infer_is_posarg():
         pass
     with pytest.raises(InvalidArgument):
         inner()
+
+
+def test_given_twice_deprecated():
+    @given(booleans())
+    @given(integers())
+    def inner(a, b):
+        pass
+    with validate_deprecation():
+        inner()
