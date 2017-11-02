@@ -37,9 +37,9 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  rake
-  rspec
-  rubocop
+  rake (~> 12.0)
+  rspec (~> 3.0)
+  rubocop (~> 0.51.0)
 
 BUNDLED WITH
    1.16.0
