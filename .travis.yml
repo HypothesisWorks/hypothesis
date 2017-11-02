@@ -13,4 +13,4 @@ env:
         - TASK=test
 
 script:
-    - rake $TASK
+    - bundle exec rake $TASK
