@@ -1,6 +1,6 @@
-RELEASE_TYPE: patch
+RELEASE_TYPE: minor
 
-This patch release contains some internal cleanup:
+This release adds a setting to the public API, and does some internal cleanup:
 
 - The `~hypothesis.settings.derandomize` setting is now documented (:issue:`890`)
 - Removed - and disallowed - all 'bare excepts' in Hypothesis (:issue:`953`)
