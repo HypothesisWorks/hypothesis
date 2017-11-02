@@ -1,5 +1,7 @@
+# frozen_string_literal: true
+
 module Hypothesis
-  class Error < Exception
+  class Error < RuntimeError
   end
 
   class UnsatisfiedAssumption < Error

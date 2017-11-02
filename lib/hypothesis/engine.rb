@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Hypothesis
   class Engine
     attr_reader :current_source
@@ -7,14 +9,17 @@ module Hypothesis
       @random = Random.new(options.fetch(:seed, Random.new_seed))
     end
 
-    def run(&test)
-      @max_examples.times do
+    def run
+      count = 0
+      while count < @max_examples
         @current_source = Source.new(@random)
+        count += 1
         begin
-          test.call(@current_source)
+          yield(@current_source)
         rescue UnsatisfiedAssumption
+          count -= 1
         end
-      end      
+      end
     end
   end
 
@@ -27,21 +32,19 @@ module Hypothesis
 
     def bits(n)
       if n <= 0
-        return 0
+        0
       else
-        return @random.rand(2 ** n)
+        @random.rand(2**n)
       end
     end
 
-    def given(provider=nil, &block)
+    def given(provider = nil, &block)
       provider ||= block
-      return provider.call(self)
+      provider.call(self)
     end
 
     def assume(condition)
-      if not condition
-        raise UnsatisfiedAssumption.new()
-      end
+      raise UnsatisfiedAssumption unless condition
     end
   end
 end

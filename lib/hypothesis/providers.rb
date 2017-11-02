@@ -1,8 +1,10 @@
+# frozen_string_literal: true
+
 module Hypothesis
   module Providers
     def integers
-      return Proc.new do |source|
-        if source.bits(1) > 0
+      proc do |source|
+        if source.bits(1).positive?
           source.bits(64)
         else
           0
@@ -11,11 +13,11 @@ module Hypothesis
     end
 
     def strings
-      return Proc.new do |source|
-        if source.bits(1) > 0
-          "a"
+      proc do |source|
+        if source.bits(1).positive?
+          'a'
         else
-          "b"
+          'b'
         end
       end
     end
