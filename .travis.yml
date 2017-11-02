@@ -1,0 +1,16 @@
+language: ruby
+
+sudo: false
+
+branches:
+  only:
+    - "master"
+
+env:
+    matrix:
+        # Core tests that we want to run first.
+        - TASK=rubocop
+        - TASK=test
+
+script:
+    - rake $TASK
