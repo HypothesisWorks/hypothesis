@@ -38,12 +38,8 @@ module Hypothesis
     attr_reader :current_source
 
     def initialize(options)
-      @max_examples = options.delete(:max_examples) || 200
-      seed = options.delete(:seed)
-      if seed == nil
-        seed = Random.new_seed
-      end
-      @random = Random.new(seed)
+      @max_examples = options.fetch(:max_examples, 200)
+      @random = Random.new(options.fetch(:seed, Random.new_seed))
     end
 
     def run(&test)
