@@ -14,7 +14,16 @@ RSpec.describe "some basic hypothesis tests" do
     hypothesis do 
       x = given integers
       y = given integers
-      expect(x + y).to be == y + x
+      expect(x + y).to eq(y + x)
+    end
+  end
+
+  it "should be able to find zero values" do
+    expect_failure do
+      hypothesis do
+        x = given integers
+        expect(x).not_to eq(0)
+      end
     end
   end
 
