@@ -22,6 +22,14 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.34.1 - 2017-11-02
+-------------------
+
+This patch updates the documentation to suggest
+:func:`builds(callable) <hypothesis.strategies.builds>` instead of
+:func:`just(callable()) <hypothesis.strategies.just>`.
+
+-------------------
 3.34.0 - 2017-11-02
 -------------------
 
