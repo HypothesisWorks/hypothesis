@@ -373,17 +373,6 @@ will terminate.
 )
 
 settings.define_setting(
-    'max_mutations',
-    default=10,
-    description="""
-Hypothesis will try this many variations on a single example before moving on
-to an entirely fresh start. If you've got hard to satisfy properties, raising
-this might help, but you probably shouldn't touch this dial unless you really
-know what you're doing.
-"""
-)
-
-settings.define_setting(
     'buffer_size',
     default=8 * 1024,
     description="""
