@@ -172,9 +172,13 @@ def nothing():
 
 
 def just(value):
-    """Return a strategy which only generates value.
+    """Return a strategy which only generates ``value``.
 
-    Note: value is not copied. Be wary of using mutable values.
+    Note: ``value`` is not copied. Be wary of using mutable values.
+
+    If ``value`` is the result of a callable, you can use
+    :func:`builds(callable) <hypothesis.strategies.builds>` instead
+    of ``just(callable())`` to get a fresh value each time.
 
     """
     from hypothesis.searchstrategy.misc import JustStrategy

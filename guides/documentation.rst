@@ -56,11 +56,11 @@ Changelog Entries
 where every pull request that touches ``./src`` results in a new release.
 That means every contributor gets to write their changelog!
 
-A changelog entry should:
+A changelog entry should be written in a new ``RELEASE.rst`` file in
+the repository root, and:
 
 - concisely describe what changed and why
 - use Sphinx cross-references to any functions or classes mentioned
-- include the current date and proposed version number (also updated in src/hypothesis/version.py)
 - if closing an issue, mention it with the issue role to generate a link
 - finish with a note of thanks from the maintainers:
   "Thanks to <your name> for this bug fix / feature / contribution"
