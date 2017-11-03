@@ -9,7 +9,9 @@ module Hypothesis
 
     def initialize(options)
       @max_examples = options.fetch(:max_examples, 200)
-      @core_engine = HypothesisCoreEngine.new(options[:seed] || Random.rand(2**64 - 1))
+      @core_engine = HypothesisCoreEngine.new(
+        options[:seed] || Random.rand(2**64 - 1)
+      )
     end
 
     def run
@@ -25,7 +27,7 @@ module Hypothesis
           count -= 1
         end
       end
-      raise Unsatisfiable if count == 0
+      raise Unsatisfiable if count.zero?
     end
   end
 
