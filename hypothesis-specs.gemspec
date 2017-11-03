@@ -10,10 +10,8 @@ Gem::Specification.new do |s|
 DESCRIPTION
   s.authors     = ['David R. Maciver']
   s.email       = 'david@drmaciver.com'
-  s.files       = [
-    'lib/hypothesis.rb',
-    'lib/hypothesis/*.rb'
-  ]
+  s.files       = Dir['{lib/**/*,[A-Z]*}']
   s.homepage    = 'http://github.com/HypothesisWorks/hypothesis-ruby'
   s.license     = 'MPL v2'
+  s.add_dependency 'helix_runtime', '~> 0.7.0'
 end

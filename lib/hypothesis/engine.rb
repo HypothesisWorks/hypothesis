@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require "helix_runtime"
+require "hypothesis/native"
+
 module Hypothesis
   class Engine
     attr_reader :current_source
