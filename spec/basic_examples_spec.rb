@@ -1,14 +1,7 @@
 # frozen_string_literal: true
 
-require 'hypothesis'
-
 def expect_failure(&block)
   expect(&block).to raise_exception(RSpec::Expectations::ExpectationNotMetError)
-end
-
-RSpec.configure do |c|
-  c.include(Hypothesis)
-  c.include(Hypothesis::Providers)
 end
 
 RSpec.describe 'some basic hypothesis tests' do

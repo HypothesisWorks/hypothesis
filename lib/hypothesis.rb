@@ -3,31 +3,32 @@
 require 'hypothesis/errors'
 require 'hypothesis/providers'
 require 'hypothesis/engine'
+require 'hypothesis/world'
 
 module Hypothesis
   def hypothesis(options = {}, &block)
-    unless @current_hypothesis_engine.nil?
+    unless World.current_engine.nil?
       raise UsageError, 'Cannot nest hypothesis calls'
     end
     begin
-      @current_hypothesis_engine = Engine.new(options)
-      @current_hypothesis_engine.run(&block)
+      World.current_engine = Engine.new(options)
+      World.current_engine.run(&block)
     ensure
-      @current_hypothesis_engine = nil
+      World.current_engine = nil
     end
   end
 
   def given(provider = nil, &block)
-    if @current_hypothesis_engine.nil?
+    if World.current_engine.nil?
       raise UsageError, 'Cannot call given outside of a hypothesis block'
     end
-    @current_hypothesis_engine.current_source.given(provider, &block)
+    World.current_engine.current_source.given(provider, &block)
   end
 
   def assume(condition)
-    if @current_hypothesis_engine.nil?
+    if World.current_engine.nil?
       raise UsageError, 'Cannot call assume outside of a hypothesis block'
     end
-    @current_hypothesis_engine.current_source.assume(condition)
+    World.current_engine.current_source.assume(condition)
   end
 end
