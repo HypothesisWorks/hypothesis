@@ -1,4 +1,4 @@
-*.swp
+*.sw*
 spec/examples.txt
 target/
 **/*.rs.bk

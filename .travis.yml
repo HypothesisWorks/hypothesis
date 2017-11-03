@@ -2,6 +2,15 @@ language: ruby
 
 sudo: false
 
+cache:
+    apt: true
+    directories:
+        - $HOME/.cargo
+        - $HOME/.rustup
+
+install:
+  - scripts/ensure-rustup.sh
+
 branches:
   only:
     - "master"

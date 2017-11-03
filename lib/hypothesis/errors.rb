@@ -4,6 +4,9 @@ module Hypothesis
   class Error < RuntimeError
   end
 
+  class Unsatisfiable < Error
+  end
+
   class UnsatisfiedAssumption < Error
   end
 
