@@ -2,12 +2,12 @@
 extern crate helix;
 extern crate rand;
 
-use rand::{Rng, SeedableRng, ChaChaRng};
+use rand::{ChaChaRng, Rng, SeedableRng};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 struct DataSource {
-  random: ChaChaRng,
+    random: ChaChaRng,
 }
 
 ruby! {
