@@ -2,7 +2,7 @@
 
 module Hypothesis
   module World
-    class <<self
+    class << self
         attr_accessor :current_engine
     end
   end
