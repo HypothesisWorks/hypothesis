@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require "helix_runtime"
-require "hypothesis/native"
+require 'helix_runtime'
+require 'hypothesis/native'
 
 module Hypothesis
   class Engine
@@ -9,13 +9,13 @@ module Hypothesis
 
     def initialize(options)
       @max_examples = options.fetch(:max_examples, 200)
-      @core_engine = HypothesisCoreEngine.new(options[:seed] || Random.rand(2 ** 64 - 1))
+      @core_engine = HypothesisCoreEngine.new(options[:seed] || Random.rand(2**64 - 1))
     end
 
     def run
       count = 0
       total_count = 0
-      while count < @max_examples and total_count < @max_examples * 10
+      while (count < @max_examples) && (total_count < @max_examples * 10)
         @current_source = Source.new(@core_engine, @core_engine.new_source)
         count += 1
         total_count += 1
@@ -25,9 +25,7 @@ module Hypothesis
           count -= 1
         end
       end
-      if count == 0
-        raise Unsatisfiable
-      end
+      raise Unsatisfiable if count == 0
     end
   end
 
