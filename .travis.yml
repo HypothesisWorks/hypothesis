@@ -8,6 +8,9 @@ cache:
         - $HOME/.cargo
         - $HOME/.rustup
 
+before_script:
+  - export PATH=$PATH:$HOME/.cargo/bin
+
 install:
   - scripts/ensure-rustup.sh
 
