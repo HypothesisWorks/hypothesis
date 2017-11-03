@@ -11,6 +11,7 @@ cache:
 install:
   - export PATH=$PATH:$HOME/.cargo/bin
   - scripts/ensure-rustup.sh
+  - bundle install
 
 branches:
   only:
