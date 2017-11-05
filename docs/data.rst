@@ -84,8 +84,7 @@ you wanted pairs of integers (x,y) such that x < y you could do the following:
 
 .. doctest::
 
-    >>> tuples(integers(), integers()).map(
-    ... lambda x: tuple(sorted(x))).filter(lambda x: x[0] != x[1]).example()
+    >>> tuples(integers(), integers()).map(sorted).filter(lambda x: x[0] < x[1]).example()
     (180, 241)
 
 .. _flatmap:
