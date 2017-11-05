@@ -84,7 +84,7 @@ settings.register_profile('doctests', doctest_settings)
 settings.load_profile('doctests')
 # Never show deprecated behaviour in code examples
 import warnings
-warnings.filterwarnings('error', category=HypothesisDeprecationWarning)
+warnings.filterwarnings('error', category=DeprecationWarning)
 '''
 
 # This config value must be a dictionary of external sites, mapping unique

@@ -279,17 +279,17 @@ If you want to see exactly what a strategy produces you can ask for an example:
 
 .. doctest::
 
-  >>> integers(min_value=0, max_value=10).example()
-  5
+    >>> integers(min_value=0, max_value=10).example()
+    5
 
 Many strategies are built out of other strategies. For example, if you want
 to define a tuple you need to say what goes in each element:
 
 .. doctest::
 
-  >>> from hypothesis.strategies import tuples
-  >>> tuples(integers(), integers()).example()
-  (50, 15)
+    >>> from hypothesis.strategies import tuples
+    >>> tuples(integers(), integers()).example()
+    (50, 15)
 
 Further details are :doc:`available in a separate document <data>`.
 
@@ -455,14 +455,14 @@ experimenting with conditions for filtering data.
 
 .. doctest::
 
-  >>> from hypothesis import find
-  >>> from hypothesis.strategies import sets, lists, integers
-  >>> find(lists(integers()), lambda x: sum(x) >= 10)
-  [10]
-  >>> find(lists(integers()), lambda x: sum(x) >= 10 and len(x) >= 3)
-  [0, 0, 10]
-  >>> find(sets(integers()), lambda x: sum(x) >= 10 and len(x) >= 3)
-  {0, 1, 9}
+    >>> from hypothesis import find
+    >>> from hypothesis.strategies import sets, lists, integers
+    >>> find(lists(integers()), lambda x: sum(x) >= 10)
+    [10]
+    >>> find(lists(integers()), lambda x: sum(x) >= 10 and len(x) >= 3)
+    [0, 0, 10]
+    >>> find(sets(integers()), lambda x: sum(x) >= 10 and len(x) >= 3)
+    {0, 1, 9}
 
 The first argument to :func:`~hypothesis.find` describes data in the usual way for an argument to
 :func:`~hypothesis.given`, and supports :doc:`all the same data types <data>`. The second is a
@@ -473,10 +473,10 @@ example to a condition that is always false it will raise an error:
 
 .. doctest::
 
-  >>> find(integers(), lambda x: False)
-  Traceback (most recent call last):
-  ...
-  hypothesis.errors.NoSuchExample: No examples of condition lambda x: <unknown>
+    >>> find(integers(), lambda x: False)
+    Traceback (most recent call last):
+        ...
+    hypothesis.errors.NoSuchExample: No examples of condition lambda x: <unknown>
 
 (The ``lambda x: unknown`` is because Hypothesis can't retrieve the source code
 of lambdas from the interactive python console. It gives a better error message

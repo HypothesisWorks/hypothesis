@@ -164,13 +164,13 @@ also override them locally by using a settings object as a :ref:`context manager
 
 .. doctest::
 
-  >>> with settings(max_examples=150):
-  ...     print(settings.default.max_examples)
-  ...     print(settings().max_examples)
-  150
-  150
-  >>> settings().max_examples
-  200
+    >>> with settings(max_examples=150):
+    ...     print(settings.default.max_examples)
+    ...     print(settings().max_examples)
+    150
+    150
+    >>> settings().max_examples
+    200
 
 Note that after the block exits the default is returned to normal.
 
@@ -225,10 +225,10 @@ specific tests.
 
 .. doctest::
 
-  >>> with settings.get_profile("ci"):
-  ...     print(settings().max_examples)
-  ...
-  1000
+    >>> with settings.get_profile("ci"):
+    ...     print(settings().max_examples)
+    ...
+    1000
 
 Optionally, you may define the environment variable to load a profile for you.
 This is the suggested pattern for running your tests on CI.
