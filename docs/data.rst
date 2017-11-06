@@ -43,7 +43,7 @@ e.g.:
 .. doctest::
 
     >>> lists(integers()).map(sorted).example()
-    [-224, -222, 16, 159, 120699286316048]
+    [-158104205405429173199472404790070005365, -131418136966037518992825706738877085689, -49279168042092131242764306881569217089, 2564476464308589627769617001898573635]
 
 Note that many things that you might use mapping for can also be done with
 :func:`~hypothesis.strategies.builds`.
@@ -60,9 +60,9 @@ example of ``s`` such that ``f(example)`` is truthy.
 .. doctest::
 
     >>> integers().filter(lambda x: x > 11).example()
-    1609027033942695427531
+    87034457550488036879331335314643907276
     >>> integers().filter(lambda x: x > 11).example()
-    251
+    145321388071838806577381808280858991039
 
 It's important to note that ``filter`` isn't magic and if your condition is too
 hard to satisfy then this can fail:
@@ -85,7 +85,7 @@ you wanted pairs of integers (x,y) such that x < y you could do the following:
 .. doctest::
 
     >>> tuples(integers(), integers()).map(sorted).filter(lambda x: x[0] < x[1]).example()
-    (180, 241)
+    [-145066798798423346485767563193971626126, -19139012562996970506504843426153630262]
 
 .. _flatmap:
 
@@ -155,23 +155,30 @@ returns a new strategy for it. So for example:
     >>> json = recursive(none() | booleans() | floats() | text(printable),
     ... lambda children: lists(children) | dictionaries(text(printable), children))
     >>> pprint(json.example())
-    {'': 'Me$',
-    "\r5qPZ%etF:vL'9gC": False,
-    '$KsT(( J/(wQ': [],
-    '0)G&31': False,
-    '7': [],
-    'C.i]A-I': {':?Xh>[;': None,
-                'YHT\r!\x0b': -6.801160220000663e+18,
-    ...
+    {'': 'wkP!4',
+     '\nLdy': None,
+     '"uHuds:8a{h\\:694K~{mY>a1yA:#CmDYb': {},
+     '#1J1': [')gnP',
+              inf,
+              ['6', 11881275561.716116, "v'A?qyp_sB\n$62g", ''],
+              -1e-05,
+              'aF\rl',
+              [-2.599459969184803e+250, True, True, None],
+              [True,
+               '9qP\x0bnUJH5',
+               3.0741121405774857e-131,
+               None,
+               '',
+               -inf,
+               'L&',
+               1.5,
+               False,
+               None]],
+     'cx.': None}
     >>> pprint(json.example())
-    [{"7_8'qyb": None,
-    ':': -0.3641507440748771,
-    'TI_^\n>L{T\x0c': -0.0,
-    'ZiOqQ\t': 'RKT*a]IjI/Zx2HB4ODiSUN)LsZ',
-    'n;E^^6|9=@g@@BmAi': '7j5\\'},
-    True]
+    [5.321430774293539e+16, [], 1.1045114769709281e-125]
     >>> pprint(json.example())
-    []
+    {'a': []}
 
 That is, we start with our leaf data and then we augment it by allowing lists and dictionaries of anything we can generate as JSON data.
 
@@ -185,7 +192,7 @@ we wanted to only generate really small JSON we could do this as:
     >>> small_lists.example()
     True
     >>> small_lists.example()
-    [True, False]
+    [False, False, True, True, True]
     >>> small_lists.example()
     True
 
@@ -221,12 +228,12 @@ accept all the others in the expected order. Defaults are preserved.
     >>> list_and_index()
     list_and_index()
     >>> list_and_index().example()
-    ([215, 112], 0)
+    ([-57328788235238539257894870261848707608], 0)
 
     >>> list_and_index(booleans())
     list_and_index(elements=booleans())
     >>> list_and_index(booleans()).example()
-    ([False, False], 1)
+    ([True], 0)
 
 Note that the repr will work exactly like it does for all the built-in
 strategies: it will be a function that you can call to get the strategy in

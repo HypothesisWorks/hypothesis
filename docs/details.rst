@@ -280,7 +280,7 @@ If you want to see exactly what a strategy produces you can ask for an example:
 .. doctest::
 
     >>> integers(min_value=0, max_value=10).example()
-    5
+    9
 
 Many strategies are built out of other strategies. For example, if you want
 to define a tuple you need to say what goes in each element:
@@ -289,7 +289,7 @@ to define a tuple you need to say what goes in each element:
 
     >>> from hypothesis.strategies import tuples
     >>> tuples(integers(), integers()).example()
-    (50, 15)
+    (-85296636193678268231691518597782489127, 68871684356256783618296489618877951982)
 
 Further details are :doc:`available in a separate document <data>`.
 
@@ -562,7 +562,7 @@ argument, to force this inference for arguments with a default value.
     >>> def func(a: int, b: str):
     ...     return [a, b]
     >>> builds(func).example()
-    [2132, 'jZFN;']
+    [72627971792323936471739212691379790782, '']
 
 :func:`@given <hypothesis.given>` does not perform any implicit inference
 for required arguments, as this would break compatibility with pytest fixtures.

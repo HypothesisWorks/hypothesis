@@ -1671,18 +1671,18 @@ def deferred(definition):
     >>> import hypothesis.strategies as st
     >>> x = st.deferred(lambda: st.booleans() | st.tuples(x, x))
     >>> x.example()
-    (False, (False, True))
+    (((False, (True, True)), (False, True)), (True, True))
     >>> x.example()
-    True
+    (True, True)
 
     Mutual recursion also works fine:
 
     >>> a = st.deferred(lambda: st.booleans() | b)
     >>> b = st.deferred(lambda: st.tuples(a, a))
     >>> a.example()
-    (((True, True), False), True)
+    (True, (True, False))
     >>> b.example()
-    (((( False, ((True, False), (True, True))), True), False), True)
+    (False, True)
 
     """
     from hypothesis.searchstrategy.deferred import DeferredStrategy
