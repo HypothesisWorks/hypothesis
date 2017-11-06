@@ -3,9 +3,8 @@ language: ruby
 sudo: false
 
 cache:
-    apt: true
+    cargo: true
     directories:
-        - $HOME/.cargo
         - $HOME/.rustup
 
 install:
@@ -21,7 +20,6 @@ env:
     matrix:
         # Core tests that we want to run first.
         - TASK=rubocop
-        - TASK=check_rust_fmt
         - TASK=test
 
 script:
