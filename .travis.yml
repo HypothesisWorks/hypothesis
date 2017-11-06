@@ -18,7 +18,6 @@ branches:
 
 env:
     matrix:
-        # Core tests that we want to run first.
         - TASK=rubocop
         - TASK=test
 
