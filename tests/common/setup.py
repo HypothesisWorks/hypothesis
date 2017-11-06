@@ -53,16 +53,17 @@ def run():
                 v, s.name, s.name, s.default,
             )
 
-    settings.register_profile('default', settings(
-        timeout=unlimited, use_coverage=not (IN_COVERAGE_TESTS or PYPY)))
+    default = settings(
+        database=None,
+        timeout=unlimited, use_coverage=not (IN_COVERAGE_TESTS or PYPY)
+    )
+
+    settings.register_profile('default', default)
 
     settings.register_profile('with_coverage', settings(
-        timeout=unlimited, use_coverage=True,
+        default, timeout=unlimited, use_coverage=True,
     ))
 
-    settings.register_profile(
-        'speedy', settings(
-            max_examples=5,
-        ))
+    settings.register_profile('speedy', settings(default, max_examples=5,))
 
     settings.load_profile(os.getenv('HYPOTHESIS_PROFILE', 'default'))
