@@ -1,3 +1,5 @@
+#![deny(warnings, missing_debug_implementations, missing_copy_implementations)]
+
 #[macro_use]
 extern crate helix;
 extern crate rand;
