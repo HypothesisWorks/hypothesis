@@ -1,5 +1,5 @@
 [package]
-name = "hypothesis"
+name = "hypothesis-ruby-core"
 version = "0.1.0"
 authors = ["David R. MacIver <david@drmaciver.com>"]
 
