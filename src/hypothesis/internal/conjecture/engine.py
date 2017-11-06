@@ -125,7 +125,7 @@ class ConjectureRunner(object):
             if e.testcounter != data.testcounter:
                 self.save_buffer(data.buffer)
                 raise e
-        except:
+        except BaseException:
             self.save_buffer(data.buffer)
             raise
         finally:
@@ -735,8 +735,11 @@ class ConjectureRunner(object):
                 elif (
                     data.status < prev_data.status or
                     not self.target_selector.has_tag(target, data) or
-                    mutations >= self.settings.max_mutations
+                    mutations >= 10
                 ):
+                    # Cap the variations of a single example and move on to
+                    # an entirely fresh start.  Ten is an entirely arbitrary
+                    # constant, but it's been working well for years.
                     mutations = 0
                     mutator = self._new_mutator()
             if getattr(data, 'hit_zero_bound', False):

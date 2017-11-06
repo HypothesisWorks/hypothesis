@@ -847,7 +847,6 @@ class StateForActualGivenExecution(object):
 
         for falsifying_example in self.falsifying_examples:
             self.__was_flaky = False
-            raised_exception = False
             try:
                 with self.settings:
                     self.test_runner(
@@ -862,13 +861,11 @@ class StateForActualGivenExecution(object):
                     'Unreliable assumption: An example which satisfied '
                     'assumptions on the first run now fails it.'
                 )
-            except:
+            except BaseException:
                 if len(self.falsifying_examples) <= 1:
                     raise
-                raised_exception = True
                 report(traceback.format_exc())
-
-            if not raised_exception:
+            else:
                 if (
                     isinstance(
                         falsifying_example.__expected_exception,
@@ -1028,7 +1025,7 @@ def given(*given_arguments, **given_kwargs):
                 state = StateForActualGivenExecution(
                     test_runner, search_strategy, test, settings, random)
                 state.run()
-            except:
+            except BaseException:
                 generated_seed = \
                     wrapped_test._hypothesis_internal_use_generated_seed
                 if generated_seed is not None:

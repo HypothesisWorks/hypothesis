@@ -81,7 +81,7 @@ class BuildContext(object):
         for task in self.tasks:
             try:
                 task()
-            except:
+            except BaseException:
                 any_failed = True
                 report(traceback.format_exc())
         return any_failed

@@ -22,7 +22,7 @@ from uuid import UUID
 
 from django.conf import settings as django_settings
 
-from hypothesis import given, assume
+from hypothesis import HealthCheck, given, assume, settings
 from hypothesis.errors import InvalidArgument
 from hypothesis.strategies import just, lists
 from hypothesis.extra.django import TestCase, TransactionTestCase
@@ -57,12 +57,14 @@ class TestGetsBasicModels(TestCase):
             len({c.pk for c in companies}), len({c.name for c in companies})
         )
 
+    @settings(suppress_health_check=[HealthCheck.too_slow])
     @given(models(Customer))
     def test_is_customer(self, customer):
         self.assertIsInstance(customer, Customer)
         self.assertIsNotNone(customer.pk)
         self.assertIsNotNone(customer.email)
 
+    @settings(suppress_health_check=[HealthCheck.too_slow])
     @given(models(Customer))
     def test_tz_presence(self, customer):
         if django_settings.USE_TZ:

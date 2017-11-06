@@ -172,7 +172,7 @@ class SQLiteExampleDatabase(ExampleDatabase):
                 yield cursor
             finally:
                 cursor.close()
-        except:
+        except BaseException:
             conn.rollback()
             raise
         else:
