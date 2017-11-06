@@ -22,6 +22,16 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.35.0 - 2017-11-06
+-------------------
+
+This minor release supports constraining :func:`~hypothesis.strategies.uuids`
+to generate :class:`~python:uuid.UUID`s of a particular version.
+(:issue:`721`)
+
+Thanks to Dion Misic for this feature.
+
+-------------------
 3.34.1 - 2017-11-02
 -------------------
 
