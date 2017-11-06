@@ -1511,16 +1511,25 @@ def choices():
 
 @cacheable
 @defines_strategy_with_reusable_values
-def uuids():
+def uuids(version=None):
     """Returns a strategy that generates :class:`UUIDs <uuid.UUID>`.
+
+    If the optional version argument is given, value is passed through
+    to :class:`~python:uuid.UUID` and only UUIDs of that version will
+    be generated.
 
     All returned values from this will be unique, so e.g. if you do
     ``lists(uuids())`` the resulting list will never contain duplicates.
 
     """
     from uuid import UUID
+    if version not in (None, 1, 2, 3, 4, 5):
+        raise InvalidArgument((
+            'version=%r, but version must be in (None, 1, 2, 3, 4, 5) '
+            'to pass to the uuid.UUID constructor.') % (version, )
+        )
     return shared(randoms(), key='hypothesis.strategies.uuids.generator').map(
-        lambda r: UUID(int=r.getrandbits(128))
+        lambda r: UUID(version=version, int=r.getrandbits(128))
     )
 
 

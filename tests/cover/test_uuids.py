@@ -17,6 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+import pytest
+
 import hypothesis.strategies as st
 from hypothesis import find, given
 
@@ -30,3 +32,12 @@ def test_are_unique(ls):
 def test_retains_uniqueness_in_simplify(ls, rnd):
     ts = find(st.lists(st.uuids()), lambda x: len(x) >= 5, random=rnd)
     assert len(ts) == len(set(ts)) == 5
+
+
+@pytest.mark.parametrize('version', (1, 2, 3, 4, 5))
+def test_can_generate_specified_version(version):
+    @given(st.uuids(version=version))
+    def inner(uuid):
+        assert version == uuid.version
+
+    inner()
