@@ -39,7 +39,7 @@ pyjwt==1.5.3              # via pygithub
 pyparsing==2.2.0          # via packaging
 pytest==3.2.3
 python-gitlab==1.0.2      # via pyupio
-pytz==2017.2              # via babel
+pytz==2017.3              # via babel
 pyupio==0.8.2
 pyyaml==3.12              # via dparse, pyupio
 requests-toolbelt==0.8.0  # via twine
