@@ -42,12 +42,12 @@ ruby! {
       match self.children.get_mut(&id) {
         None => return None,
         Some(source) => {
-          let n: u64 = source.random.next_u64();
+          let n = source.random.next_u64();
           if n_bits >= 64 {
             return Some(n);
           } else {
             let mask = (1 << n_bits) - 1;
-            let r: u64 = n & mask;
+            let r = n & mask;
             return Some(r);
           }
         }
