@@ -7,11 +7,12 @@ module Hypothesis
   class Engine
     attr_reader :current_source
 
-    def initialize(options)
-      @max_examples = options.fetch(:max_examples, 200)
-      @core_engine = HypothesisCoreEngine.new(
-        options[:seed] || Random.rand(2**64 - 1)
-      )
+    def initialize(max_examples: 200, seed: nil)
+      @max_examples = max_examples
+      if seed.nil?
+        seed = Random.rand(2**64 - 1)
+      end
+      @core_engine = HypothesisCoreEngine.new(seed)
     end
 
     def run

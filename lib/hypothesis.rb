@@ -11,7 +11,7 @@ module Hypothesis
       raise UsageError, 'Cannot nest hypothesis calls'
     end
     begin
-      World.current_engine = Engine.new(options)
+      World.current_engine = Engine.new(**options)
       World.current_engine.run(&block)
     ensure
       World.current_engine = nil
