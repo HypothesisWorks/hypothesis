@@ -1,2 +1,6 @@
-*.swp
+*.sw*
 spec/examples.txt
+target/
+**/*.rs.bk
+Cargo.lock
+*.so

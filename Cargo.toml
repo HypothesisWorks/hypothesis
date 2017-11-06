@@ -1,0 +1,11 @@
+[package]
+name = "hypothesis-ruby-core"
+version = "0.1.0"
+authors = ["David R. MacIver <david@drmaciver.com>"]
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+helix = '0.7.2'
+rand = '0.3'

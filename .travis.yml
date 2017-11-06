@@ -2,13 +2,22 @@ language: ruby
 
 sudo: false
 
+cache:
+    cargo: true
+    directories:
+        - $HOME/.rustup
+
+install:
+  - export PATH=$PATH:$HOME/.cargo/bin
+  - scripts/ensure-rustup.sh
+  - bundle install
+
 branches:
   only:
     - "master"
 
 env:
     matrix:
-        # Core tests that we want to run first.
         - TASK=rubocop
         - TASK=test
 

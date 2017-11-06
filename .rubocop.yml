@@ -2,3 +2,5 @@ Metrics/BlockLength:
   ExcludedMethods: ['describe', 'context']
 Documentation:
   Enabled: false
+Metrics/MethodLength:
+  Enabled: false
