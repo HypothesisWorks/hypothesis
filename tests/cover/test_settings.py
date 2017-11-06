@@ -107,7 +107,6 @@ def test_can_not_set_verbosity_to_non_verbosity():
 
 @pytest.mark.parametrize('db', [None, ExampleDatabase()])
 def test_inherits_an_empty_database(db):
-    assert settings.default.database is not None
     s = settings(database=db)
     assert s.database is db
     with s:
