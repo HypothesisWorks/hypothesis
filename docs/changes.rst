@@ -22,6 +22,17 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.36.0 - 2017-11-06
+-------------------
+
+This release adds a setting to the public API, and does some internal cleanup:
+
+- The :attr:`~hypothesis.settings.derandomize` setting is now documented (:issue:`890`)
+- Removed - and disallowed - all 'bare excepts' in Hypothesis (:issue:`953`)
+- Documented the :attr:`~hypothesis.settings.strict` setting as deprecated, and
+  updated the build so our docs always match deprecations in the code.
+
+-------------------
 3.35.0 - 2017-11-06
 -------------------
 
