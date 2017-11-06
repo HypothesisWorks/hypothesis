@@ -6,6 +6,6 @@
 #
 attrs==17.2.0
 click==6.7
-coverage==4.4.1
+coverage==4.4.2
 numpy==1.13.3
 scipy==1.0.0
