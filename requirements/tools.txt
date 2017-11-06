@@ -12,7 +12,7 @@ babel==2.5.1              # via sphinx
 certifi==2017.7.27.1      # via requests
 chardet==3.0.4            # via requests
 click==6.7                # via pip-tools, pyupio, safety
-coverage==4.4.1
+coverage==4.4.2
 docformatter==0.8         # via pyformat
 docutils==0.14            # via restructuredtext-lint, sphinx
 dparse==0.2.1             # via pyupio, safety
