@@ -1,4 +1,4 @@
-#![recursion_limit="128"]
+#![recursion_limit = "128"]
 #![deny(warnings, missing_debug_implementations, missing_copy_implementations)]
 
 #[macro_use]
@@ -94,7 +94,7 @@ impl Engine {
             && (self.interesting_examples == 0);
     }
 
-    fn mark_finished(&mut self, source: DataSource, status: Status) -> (){
+    fn mark_finished(&mut self, source: DataSource, status: Status) -> () {
         match status {
             Status::Overflow => (),
             Status::Valid => self.valid_examples += 1,
