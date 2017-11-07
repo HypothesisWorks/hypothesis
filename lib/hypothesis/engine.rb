@@ -22,6 +22,8 @@ module Hypothesis
           yield(@current_source)
         rescue UnsatisfiedAssumption
           @core_engine.finish_invalid(core_id)
+        rescue DataOverflow
+          @core_engine.finish_overflow(core_id)
         rescue Exception
           @core_engine.finish_interesting(core_id)
         else

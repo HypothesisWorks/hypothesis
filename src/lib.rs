@@ -1,3 +1,4 @@
+#![recursion_limit="128"]
 #![deny(warnings, missing_debug_implementations, missing_copy_implementations)]
 
 #[macro_use]
@@ -22,6 +23,7 @@ struct DataSource {
 
 #[derive(Debug, Clone)]
 enum Status {
+    Overflow,
     Invalid,
     Valid,
     Interesting,
@@ -92,8 +94,9 @@ impl Engine {
             && (self.interesting_examples == 0);
     }
 
-    fn mark_finished(&mut self, source: DataSource, status: Status) {
+    fn mark_finished(&mut self, source: DataSource, status: Status) -> (){
         match status {
+            Status::Overflow => (),
             Status::Valid => self.valid_examples += 1,
             Status::Invalid => self.invalid_examples += 1,
             Status::Interesting => {
@@ -157,6 +160,10 @@ ruby! {
 
     def should_continue(&self) -> bool {
       return self.engine.should_continue();
+    }
+
+    def finish_overflow(&mut self, id: u64){
+      mark_status_id(&mut self.engine, &mut self.children, id, Status::Overflow);
     }
 
     def finish_invalid(&mut self, id: u64){
