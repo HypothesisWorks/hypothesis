@@ -8,9 +8,7 @@ module Hypothesis
     attr_reader :current_source
 
     def initialize(max_examples: 200, seed: nil)
-      if seed.nil?
-        seed = Random.rand(2**64 - 1)
-      end
+      seed = Random.rand(2**64 - 1) if seed.nil?
       @core_engine = HypothesisCoreEngine.new(seed, max_examples)
     end
 
@@ -24,7 +22,7 @@ module Hypothesis
           @core_engine.finish_invalid(core_id)
         rescue DataOverflow
           @core_engine.finish_overflow(core_id)
-        rescue Exception
+        rescue StandardError
           @core_engine.finish_interesting(core_id)
         else
           @core_engine.finish_valid(core_id)
@@ -32,10 +30,10 @@ module Hypothesis
       end
       raise Unsatisfiable if @core_engine.was_unsatisfiable
       core_id = @core_engine.failing_example
-      if not core_id.nil?
-        @current_source = Source.new(@core_engine, core_id)
-        yield @current_source
-      end
+      return if core_id.nil?
+
+      @current_source = Source.new(@core_engine, core_id)
+      yield @current_source
     end
   end
 
@@ -47,10 +45,8 @@ module Hypothesis
 
     def bits(n)
       result = @core_engine.bits(@core_id, n)
-      if result.nil?
-        raise Hypothesis::DataOverflow.new
-      end
-      return result
+      raise Hypothesis::DataOverflow if result.nil?
+      result
     end
 
     def given(provider = nil, &block)
