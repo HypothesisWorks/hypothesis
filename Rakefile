@@ -14,6 +14,6 @@ HelixRuntime::BuildTask.new
 
 task test: :build
 
-task format: :ensure_rust_fmt do
+task :format do
   sh 'bundle exec rubocop -a'
 end
