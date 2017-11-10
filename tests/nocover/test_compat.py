@@ -17,8 +17,8 @@
 
 from __future__ import division, print_function, absolute_import
 
-import sys
 import inspect
+import warnings
 
 import pytest
 
@@ -74,7 +74,9 @@ def d(a1, a2=1, a3=2, a4=None):
 
 @pytest.mark.parametrize('f', [a, b, c, d])
 def test_agrees_on_argspec(f):
-    basic = inspect.getargspec(f)
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', DeprecationWarning)
+        basic = inspect.getargspec(f)
     full = getfullargspec(f)
     assert basic.args == full.args
     assert basic.varargs == full.varargs
@@ -106,13 +108,13 @@ def test_to_bytes_in_big_endian_order(x, y):
     assert int_to_bytes(x, 8) <= int_to_bytes(y, 8)
 
 
-@pytest.mark.skipif(sys.version_info[0] != 3 or sys.version_info[:2] == (3, 5),
-                    reason='getfullargspec was deprecated, so we wrap it')
+@pytest.mark.skipif(not hasattr(inspect, 'getfullargspec'),
+                    reason='inspect.getfullargspec only exists under Python 3')
 def test_inspection_compat():
     assert getfullargspec is inspect.getfullargspec
 
 
-@pytest.mark.skipif(sys.version_info[0] != 3,
+@pytest.mark.skipif(not hasattr(inspect, 'FullArgSpec'),
                     reason='inspect.FullArgSpec only exists under Python 3')
 def test_inspection_result_compat():
     assert FullArgSpec is inspect.FullArgSpec

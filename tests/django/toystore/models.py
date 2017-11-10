@@ -27,7 +27,7 @@ class Company(models.Model):
 
 class Store(models.Model):
     name = models.CharField(max_length=100, unique=True)
-    company = models.ForeignKey(Company, null=False)
+    company = models.ForeignKey(Company, null=False, on_delete=models.CASCADE)
 
 
 class CharmField(models.Field):
@@ -63,15 +63,15 @@ class CouldBeCharming(models.Model):
 
 
 class SelfLoop(models.Model):
-    me = models.ForeignKey(u'self', null=True)
+    me = models.ForeignKey(u'self', null=True, on_delete=models.SET_NULL)
 
 
 class LoopA(models.Model):
-    b = models.ForeignKey(u'LoopB', null=False)
+    b = models.ForeignKey(u'LoopB', null=False, on_delete=models.CASCADE)
 
 
 class LoopB(models.Model):
-    a = models.ForeignKey(u'LoopA', null=True)
+    a = models.ForeignKey(u'LoopA', null=True, on_delete=models.SET_NULL)
 
 
 class ManyNumerics(models.Model):
@@ -104,7 +104,7 @@ class CustomishDefault(models.Model):
 
 class MandatoryComputed(models.Model):
     name = models.CharField(max_length=100, unique=True)
-    company = models.ForeignKey(Company, null=False)
+    company = models.ForeignKey(Company, null=False, on_delete=models.CASCADE)
 
     def __init__(self, **kw):
         if u'company' in kw:

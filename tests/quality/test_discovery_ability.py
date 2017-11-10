@@ -46,7 +46,7 @@ RUNS = 100
 REQUIRED_RUNS = 50
 
 
-INITIAL_LAMBDA = re.compile(u'^lambda[^:]*:\s*')
+INITIAL_LAMBDA = re.compile(u'^lambda[^:]*:\\s*')
 
 
 def strip_lambda(s):

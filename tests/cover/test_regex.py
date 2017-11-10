@@ -120,8 +120,8 @@ def test_matching(category, predicate, invert, is_unicode):
     u'(foo)+', u'([\'"])[a-z]+\\1',
     u'(?:[a-z])([\'"])[a-z]+\\1', u'(?P<foo>[\'"])[a-z]+(?P=foo)',  # groups
     u'^abc',  # beginning
-    u'\d', u'[\d]', u'[^\D]', u'\w', u'[\w]', u'[^\W]',
-    u'\s', u'[\s]', u'[^\S]',  # categories
+    u'\\d', u'[\\d]', u'[^\\D]', u'\\w', u'[\\w]', u'[^\\W]',
+    u'\\s', u'[\\s]', u'[^\\S]',  # categories
 ])
 @pytest.mark.parametrize('encode', [False, True])
 def test_can_generate(pattern, encode):
@@ -144,8 +144,8 @@ def test_literals_with_ignorecase(pattern):
 
 
 @pytest.mark.parametrize('pattern', [
-    re.compile(u'\A[^a][^b]\Z', re.IGNORECASE),
-    u'\A(?i)[^a][^b]\Z'
+    re.compile(u'\\A[^a][^b]\\Z', re.IGNORECASE),
+    u'(?i)\\A[^a][^b]\\Z'
 ])
 def test_not_literal_with_ignorecase(pattern):
     assert_all_examples(
@@ -169,9 +169,9 @@ def test_any_with_dotall_generate_newline_binary(pattern):
 
 
 @pytest.mark.parametrize('pattern', [
-    u'\d', u'[\d]', u'[^\D]',
-    u'\w', u'[\w]', u'[^\W]',
-    u'\s', u'[\s]', u'[^\S]',
+    u'\\d', u'[\\d]', u'[^\\D]',
+    u'\\w', u'[\\w]', u'[^\\W]',
+    u'\\s', u'[\\s]', u'[^\\S]',
 ])
 @pytest.mark.parametrize('is_unicode', [False, True])
 @pytest.mark.parametrize('invert', [False, True])
@@ -210,7 +210,7 @@ def test_caret_in_the_middle_does_not_generate_anything():
 
 
 def test_end_with_terminator_does_not_pad():
-    assert_all_examples(st.from_regex(u'abc\Z'), lambda x: x[-3:] == u"abc")
+    assert_all_examples(st.from_regex(u'abc\\Z'), lambda x: x[-3:] == u"abc")
 
 
 def test_end():
@@ -345,14 +345,14 @@ def test_can_pad_strings_with_newlines():
 
 def test_given_multiline_regex_can_insert_after_dollar():
     find_any(
-        st.from_regex(re.compile(u"\Ahi$", re.MULTILINE)),
+        st.from_regex(re.compile(u"\\Ahi$", re.MULTILINE)),
         lambda x: '\n' in x and x.split(u"\n")[1]
     )
 
 
 def test_given_multiline_regex_can_insert_before_caret():
     find_any(
-        st.from_regex(re.compile(u"^hi\Z", re.MULTILINE)),
+        st.from_regex(re.compile(u"^hi\\Z", re.MULTILINE)),
         lambda x: '\n' in x and x.split(u"\n")[0]
     )
 
