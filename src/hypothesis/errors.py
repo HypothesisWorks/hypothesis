@@ -202,3 +202,10 @@ class DeadlineExceeded(HypothesisException):
             '%.2fms') % (runtime, deadline))
         self.runtime = runtime
         self.deadline = deadline
+
+
+class StopTest(BaseException):
+
+    def __init__(self, testcounter):
+        super(StopTest, self).__init__(repr(testcounter))
+        self.testcounter = testcounter

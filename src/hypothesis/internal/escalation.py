@@ -23,7 +23,8 @@ import sys
 import coverage
 
 import hypothesis
-from hypothesis.errors import DeadlineExceeded
+from hypothesis.errors import StopTest, DeadlineExceeded, \
+    HypothesisException, UnsatisfiedAssumption
 from hypothesis.internal.compat import text_type, binary_type, \
     encoded_filepath
 
@@ -53,15 +54,26 @@ FILE_CACHE = {}
 is_hypothesis_file = belongs_to(hypothesis)
 is_coverage_file = belongs_to(coverage)
 
+HYPOTHESIS_CONTROL_EXCEPTIONS = (
+    DeadlineExceeded, StopTest, UnsatisfiedAssumption
+)
+
+
+def mark_for_escalation(e):
+    if not isinstance(e, HYPOTHESIS_CONTROL_EXCEPTIONS):
+        e.hypothesis_internal_always_escalate = True
+
 
 def escalate_hypothesis_internal_error():
     if PREVENT_ESCALATION:
         return
-    error_type, _, tb = sys.exc_info()
+    error_type, e, tb = sys.exc_info()
+    if getattr(e, 'hypothesis_internal_always_escalate', False):
+        raise
     import traceback
     filepath = traceback.extract_tb(tb)[-1][0]
-    if is_hypothesis_file(filepath) and not issubclass(
-        error_type, DeadlineExceeded
+    if is_hypothesis_file(filepath) and not isinstance(
+        e, (HypothesisException,) + HYPOTHESIS_CONTROL_EXCEPTIONS,
     ):
         raise
     # This is so that if we do something wrong and trigger an internal Coverage

@@ -41,8 +41,7 @@ from hypothesis.control import BuildContext
 from hypothesis._settings import settings as Settings
 from hypothesis._settings import Phase, Verbosity, HealthCheck, \
     note_deprecation
-from hypothesis.executors import new_style_executor, \
-    default_new_style_executor
+from hypothesis.executors import new_style_executor
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.statistics import note_engine_for_statistics
 from hypothesis.internal.compat import ceil, str_to_bytes, \
@@ -323,7 +322,7 @@ def perform_health_checks(random, settings, test_runner, search_strategy):
                 lambda *args, **kwargs: None,
             ))
         except BaseException:
-            pass
+            escalate_hypothesis_internal_error()
     count = 0
     overruns = 0
     filtered_draws = 0
@@ -353,39 +352,7 @@ def perform_health_checks(random, settings, test_runner, search_strategy):
                 overruns += 1
         except InvalidArgument:
             raise
-        except Exception:
-            escalate_hypothesis_internal_error()
-            if (
-                HealthCheck.exception_in_generation in
-                settings.suppress_health_check
-            ):
-                raise
-            report(traceback.format_exc())
-            if test_runner is default_new_style_executor:
-                fail_health_check(
-                    settings,
-                    'An exception occurred during data '
-                    'generation in initial health check. '
-                    'This indicates a bug in the strategy. '
-                    'This could either be a Hypothesis bug or '
-                    "an error in a function you've passed to "
-                    'it to construct your data.',
-                    HealthCheck.exception_in_generation,
-                )
-            else:
-                fail_health_check(
-                    settings,
-                    'An exception occurred during data '
-                    'generation in initial health check. '
-                    'This indicates a bug in the strategy. '
-                    'This could either be a Hypothesis bug or '
-                    'an error in a function you\'ve passed to '
-                    'it to construct your data. Additionally, '
-                    'you have a custom executor, which means '
-                    'that this could be your executor failing '
-                    'to handle a function which returns None. ',
-                    HealthCheck.exception_in_generation,
-                )
+
     if overruns >= 20 or (
         not count and overruns > 0
     ):

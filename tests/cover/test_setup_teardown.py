@@ -95,15 +95,14 @@ def test_calls_setup_and_teardown_on_failure():
 def test_still_tears_down_on_failed_reify():
     x = HasSetupAndTeardown()
     with pytest.raises(AttributeError):
-        with settings(perform_health_check=False):
-            x.fail_in_reify()
+        x.fail_in_reify()
     assert x.setups > 0
     assert x.teardowns == x.setups
 
 
-def test_still_tears_down_on_failed_health_check():
+def test_still_tears_down_on_error_in_generation():
     x = HasSetupAndTeardown()
-    with pytest.raises(FailedHealthCheck):
+    with pytest.raises(AttributeError):
         x.fail_in_reify()
     assert x.setups > 0
     assert x.teardowns == x.setups
