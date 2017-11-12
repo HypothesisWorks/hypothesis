@@ -48,7 +48,7 @@ e.g.:
 Note that many things that you might use mapping for can also be done with
 :func:`~hypothesis.strategies.builds`.
 
-.. _filter
+.. _filtering:
 
 ---------
 Filtering

@@ -490,7 +490,7 @@ class HealthCheck(Enum):
 
     exception_in_generation = 0
     """Deprecated and no longer does anything. It used to convert errors in
-    data generation into FailedHealthCheck error"""
+    data generation into FailedHealthCheck error."""
 
     data_too_large = 1
     """Check for when the typical size of the examples you are generating
@@ -498,8 +498,8 @@ class HealthCheck(Enum):
 
     filter_too_much = 2
     """Check for when the test is filtering out too many examples, either
-    through use of :func:`~hypothesis.assume()` or `filter() <_filter>`, or
-    occasionally for Hypothesis internal reasons."""
+    through use of :func:`~hypothesis.assume()` or :ref:`filter() <filtering>`,
+    or occasionally for Hypothesis internal reasons."""
 
     too_slow = 3
     """Check for when your data generation is extremely slow and likely to hurt
@@ -642,7 +642,7 @@ def validate_health_check_suppressions(suppressions):
         ):
             note_deprecation((
                 '%s is now ignored and suppressing it is a no-op. This will '
-                'become an error in a fugure version of Hypothesis. Simply '
+                'become an error in a future version of Hypothesis. Simply '
                 'remove it from your list of suppressions to get the same '
                 'effect.') % (s,))
     return suppressions
