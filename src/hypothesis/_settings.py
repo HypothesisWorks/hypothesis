@@ -507,8 +507,8 @@ class HealthCheck(Enum):
 
     random_module = 4
     """Deprecated and no longer does anything. It used to check for whether
-    your tests used the global random module. Now tests automatically seed
-    random so this is no longer an error."""
+    your tests used the global random module. Now @given tests automatically
+    seed random so this is no longer an error."""
 
     return_value = 5
     """Checks if your tests return a non-None value (which will be ignored and
