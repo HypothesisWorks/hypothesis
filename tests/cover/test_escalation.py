@@ -19,7 +19,9 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 
+import hypothesis.strategies as st
 import hypothesis.internal.escalation as esc
+from hypothesis import given
 
 
 def test_does_not_escalate_errors_in_non_hypothesis_file():
@@ -47,3 +49,20 @@ def test_does_not_escalate_errors_in_hypothesis_file_if_disabled(monkeypatch):
         assert False
     except AssertionError:
         esc.escalate_hypothesis_internal_error()
+
+
+def test_immediately_escalates_errors_in_generation():
+    count = [0]
+
+    def explode(s):
+        count[0] += 1
+        raise ValueError()
+
+    @given(st.integers().map(explode))
+    def test(i):
+        pass
+
+    with pytest.raises(ValueError):
+        test()
+
+    assert count == [1]

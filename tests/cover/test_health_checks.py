@@ -19,14 +19,14 @@ from __future__ import division, print_function, absolute_import
 
 import time
 
+import pytest
 from pytest import raises
 
-import hypothesis.reporting as reporting
 import hypothesis.strategies as st
 from hypothesis import HealthCheck, given, settings
-from hypothesis.errors import FailedHealthCheck
+from hypothesis.errors import InvalidArgument, FailedHealthCheck
 from hypothesis.control import assume
-from tests.common.utils import capture_out
+from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.internal.compat import int_from_bytes
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
@@ -49,36 +49,6 @@ def test_default_health_check_can_weaken_specific():
 
     with settings(perform_health_check=False):
         test()
-
-
-def test_error_in_strategy_produces_health_check_error():
-    def boom(x):
-        raise ValueError()
-
-    @given(st.integers().map(boom))
-    def test(x):
-        pass
-
-    with raises(FailedHealthCheck) as e:
-        with reporting.with_reporter(reporting.default):
-            test()
-    assert 'executor' not in e.value.args[0]
-
-
-def test_suppressing_error_in_value_generation():
-    def boom(x):
-        raise ValueError()
-
-    @settings(suppress_health_check=[HealthCheck.exception_in_generation])
-    @given(st.integers().map(boom))
-    def test(x):
-        pass
-
-    with capture_out() as out:
-        with reporting.with_reporter(reporting.default):
-            with raises(ValueError):
-                test()
-    assert 'ValueError' not in out.getvalue()
 
 
 def test_suppressing_filtering_health_check():
@@ -105,25 +75,6 @@ def test_suppressing_filtering_health_check():
 
     with raises(ValueError):
         test2()
-
-
-def test_error_in_strategy_with_custom_executor():
-    def boom(x):
-        raise ValueError()
-
-    class Foo(object):
-
-        def execute_example(self, f):
-            return f()
-
-        @given(st.integers().map(boom))
-        @settings(database=None)
-        def test(self, x):
-            pass
-
-    with raises(FailedHealthCheck) as e:
-        Foo().test()
-    assert 'executor' in e.value.args[0]
 
 
 def test_filtering_everything_fails_a_health_check():
@@ -211,3 +162,20 @@ def test_returning_non_none_does_not_fail_if_health_check_disabled():
         return 1
 
     a()
+
+
+@pytest.mark.parametrize(
+    'check', [HealthCheck.random_module, HealthCheck.exception_in_generation])
+@checks_deprecated_behaviour
+def test_noop_health_checks(check):
+    settings(suppress_health_check=[check])
+
+
+def test_it_is_an_error_to_suppress_non_iterables():
+    with raises(InvalidArgument):
+        settings(suppress_health_check=1)
+
+
+@checks_deprecated_behaviour
+def test_is_is_deprecated_to_suppress_non_healthchecks():
+    settings(suppress_health_check=[1])

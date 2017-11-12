@@ -35,6 +35,7 @@ import attr
 from hypothesis.errors import InvalidArgument, HypothesisDeprecationWarning
 from hypothesis.configuration import hypothesis_home_dir
 from hypothesis.utils.conventions import UniqueIdentifier, not_set
+from hypothesis.internal.validation import try_convert
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
 __all__ = [
@@ -481,13 +482,40 @@ class Phase(IntEnum):
 
 @unique
 class HealthCheck(Enum):
+    """Arguments for :attr:`~hypothesis.settings.suppress_health_check`.
+
+    Each member of this enum is a type of health check to suppress.
+
+    """
+
     exception_in_generation = 0
+    """Deprecated and no longer does anything. It used to convert errors in
+    data generation into FailedHealthCheck error."""
+
     data_too_large = 1
+    """Check for when the typical size of the examples you are generating
+    exceeds the maximum allowed size too often."""
+
     filter_too_much = 2
+    """Check for when the test is filtering out too many examples, either
+    through use of :func:`~hypothesis.assume()` or :ref:`filter() <filtering>`,
+    or occasionally for Hypothesis internal reasons."""
+
     too_slow = 3
+    """Check for when your data generation is extremely slow and likely to hurt
+    testing."""
+
     random_module = 4
+    """Deprecated and no longer does anything. It used to check for whether
+    your tests used the global random module. Now @given tests automatically
+    seed random so this is no longer an error."""
+
     return_value = 5
+    """Checks if your tests return a non-None value (which will be ignored and
+    is unlikely to do what you want)."""
+
     hung_test = 6
+    """Checks if your tests have been running for a very long time."""
 
 
 @unique
@@ -598,10 +626,33 @@ attempting to actually execute your test.
 """
 )
 
+
+def validate_health_check_suppressions(suppressions):
+    suppressions = try_convert(list, suppressions, 'suppress_health_check')
+    for s in suppressions:
+        if not isinstance(s, HealthCheck):
+            note_deprecation((
+                'Non-HealthCheck value %r of type %s in suppress_health_check '
+                'will be ignored, and will become an error in a future '
+                'version of Hypothesis') % (
+                s, type(s).__name__,
+            ))
+        elif s in (
+            HealthCheck.exception_in_generation, HealthCheck.random_module
+        ):
+            note_deprecation((
+                '%s is now ignored and suppressing it is a no-op. This will '
+                'become an error in a future version of Hypothesis. Simply '
+                'remove it from your list of suppressions to get the same '
+                'effect.') % (s,))
+    return suppressions
+
+
 settings.define_setting(
     'suppress_health_check',
-    default=[],
-    description="""A list of health checks to disable."""
+    default=(),
+    description="""A list of health checks to disable.""",
+    validator=validate_health_check_suppressions
 )
 
 settings.define_setting(

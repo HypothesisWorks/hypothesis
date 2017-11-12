@@ -23,7 +23,6 @@ import datetime as dt
 import operator
 from decimal import Context, Decimal
 from inspect import isclass, isfunction
-from numbers import Rational
 from fractions import Fraction
 from functools import reduce
 
@@ -33,14 +32,15 @@ from hypothesis._settings import note_deprecation
 from hypothesis.internal.cache import LRUReusedCache
 from hypothesis.searchstrategy import SearchStrategy
 from hypothesis.internal.compat import gcd, ceil, floor, hrange, \
-    text_type, integer_types, get_type_hints, getfullargspec, \
-    implements_iterator
+    text_type, get_type_hints, getfullargspec, implements_iterator
 from hypothesis.internal.floats import is_negative, float_to_int, \
     int_to_float, count_between_floats
-from hypothesis.internal.coverage import check_function
 from hypothesis.internal.renaming import renamed_arguments
 from hypothesis.utils.conventions import infer, not_set
 from hypothesis.internal.reflection import proxies, required_args
+from hypothesis.internal.validation import check_type, try_convert, \
+    check_strategy, check_valid_bound, check_valid_sizes, \
+    check_valid_integer, check_valid_interval
 
 __all__ = [
     'nothing',
@@ -431,6 +431,9 @@ def sampled_from(elements):
         return sets(sampled_from(values), min_size=1).map(
             lambda s: reduce(operator.or_, s))
     return SampledFromStrategy(values)
+
+
+_AVERAGE_LIST_LENGTH = 5.0
 
 
 @cacheable
@@ -1651,131 +1654,6 @@ def register_type_strategy(custom_type, strategy):
         raise InvalidArgument('strategy=%r must not be empty')
     types._global_type_lookup[custom_type] = strategy
     from_type.__clear_cache()
-
-# Private API below here
-
-
-@check_function
-def check_type(typ, arg, name=''):
-    if name:
-        name += '='
-    if not isinstance(arg, typ):
-        if isinstance(typ, type):
-            typ_string = typ.__name__
-        else:
-            typ_string = 'one of %s' % (
-                ', '.join(t.__name__ for t in typ))
-        raise InvalidArgument('Expected %s but got %s%r (type=%s)'
-                              % (typ_string, name, arg, type(arg).__name__))
-
-
-@check_function
-def check_strategy(arg, name=''):
-    check_type(SearchStrategy, arg, name)
-
-
-@check_function
-def check_valid_integer(value):
-    """Checks that value is either unspecified, or a valid integer.
-
-    Otherwise raises InvalidArgument.
-
-    """
-    if value is None:
-        return
-    check_type(integer_types, value)
-
-
-@check_function
-def check_valid_bound(value, name):
-    """Checks that value is either unspecified, or a valid interval bound.
-
-    Otherwise raises InvalidArgument.
-
-    """
-    if value is None or isinstance(value, integer_types + (Rational,)):
-        return
-    if math.isnan(value):
-        raise InvalidArgument(u'Invalid end point %s=%r' % (name, value))
-
-
-@check_function
-def try_convert(typ, value, name):
-    if value is None:
-        return None
-    if isinstance(value, typ):
-        return value
-    try:
-        return typ(value)
-    except TypeError:
-        raise InvalidArgument(
-            'Cannot convert %s=%r of type %s to type %s' % (
-                name, value, type(value).__name__, typ.__name__
-            )
-        )
-    except (OverflowError, ValueError):
-        raise InvalidArgument(
-            'Cannot convert %s=%r to type %s' % (
-                name, value, typ.__name__
-            )
-        )
-
-
-@check_function
-def check_valid_size(value, name):
-    """Checks that value is either unspecified, or a valid non-negative size
-    expressed as an integer/float.
-
-    Otherwise raises InvalidArgument.
-
-    """
-    if value is None:
-        return
-    check_type(integer_types + (float,), value)
-    if value < 0:
-        raise InvalidArgument(u'Invalid size %s %r < 0' % (value, name))
-    if isinstance(value, float) and math.isnan(value):
-        raise InvalidArgument(u'Invalid size %s %r' % (value, name))
-
-
-@check_function
-def check_valid_interval(lower_bound, upper_bound, lower_name, upper_name):
-    """Checks that lower_bound and upper_bound are either unspecified, or they
-    define a valid interval on the number line.
-
-    Otherwise raises InvalidArgument.
-
-    """
-    if lower_bound is None or upper_bound is None:
-        return
-    if upper_bound < lower_bound:
-        raise InvalidArgument(
-            'Cannot have %s=%r < %s=%r' % (
-                upper_name, upper_bound, lower_name, lower_bound
-            ))
-
-
-@check_function
-def check_valid_sizes(min_size, average_size, max_size):
-    check_valid_size(min_size, 'min_size')
-    check_valid_size(max_size, 'max_size')
-    check_valid_size(average_size, 'average_size')
-    check_valid_interval(min_size, max_size, 'min_size', 'max_size')
-    check_valid_interval(average_size, max_size, 'average_size', 'max_size')
-    check_valid_interval(min_size, average_size, 'min_size', 'average_size')
-
-    if average_size is not None:
-        if (
-            (max_size is None or max_size > 0) and
-            average_size is not None and average_size <= 0.0
-        ):
-            raise InvalidArgument(
-                'Cannot have average_size=%r < min_size=%r' % (
-                    average_size, min_size
-                ))
-
-
-_AVERAGE_LIST_LENGTH = 5.0
 
 
 @cacheable

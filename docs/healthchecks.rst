@@ -23,3 +23,8 @@ the class-level attributes of the HealthCheck class.
 
 To disable all health checks, set the perform_health_check settings parameter
 to False.
+
+.. module:: hypothesis
+.. autoclass:: HealthCheck
+   :undoc-members:
+   :inherited-members:

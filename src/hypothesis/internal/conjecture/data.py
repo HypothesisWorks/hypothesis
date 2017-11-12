@@ -20,10 +20,11 @@ from __future__ import division, print_function, absolute_import
 import sys
 from enum import IntEnum
 
-from hypothesis.errors import Frozen, InvalidArgument
+from hypothesis.errors import Frozen, StopTest, InvalidArgument
 from hypothesis.internal.compat import hbytes, hrange, text_type, \
     bit_length, benchmark_time, int_from_bytes, unicode_safe_repr
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
+from hypothesis.internal.escalation import mark_for_escalation
 
 
 class Status(IntEnum):
@@ -31,13 +32,6 @@ class Status(IntEnum):
     INVALID = 1
     VALID = 2
     INTERESTING = 3
-
-
-class StopTest(BaseException):
-
-    def __init__(self, testcounter):
-        super(StopTest, self).__init__(repr(testcounter))
-        self.testcounter = testcounter
 
 
 global_test_counter = 0
@@ -129,9 +123,17 @@ class ConjectureData(object):
             return self.__draw(strategy)
 
     def __draw(self, strategy):
+        at_top_level = self.depth == 0
         self.start_example()
         try:
-            return strategy.do_draw(self)
+            if not at_top_level:
+                return strategy.do_draw(self)
+            else:
+                try:
+                    return strategy.do_draw(self)
+                except BaseException as e:
+                    mark_for_escalation(e)
+                    raise
         finally:
             if not self.frozen:
                 self.stop_example()
