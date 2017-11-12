@@ -31,7 +31,8 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.control import reject
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.coverage import check, check_function
-from hypothesis.internal.validation import check_valid_size
+from hypothesis.internal.validation import check_type, try_convert, \
+    check_strategy, check_valid_size, check_valid_interval
 
 try:
     from pandas.api.types import is_categorical_dtype
@@ -64,7 +65,7 @@ def elements_and_dtype(elements, dtype, source=None):
         prefix = '%s.' % (source,)
 
     if elements is not None:
-        st.check_strategy(elements, '%selements' % (prefix,))
+        check_strategy(elements, '%selements' % (prefix,))
     else:
         with check('dtype is not None'):
             if dtype is None:
@@ -79,7 +80,7 @@ def elements_and_dtype(elements, dtype, source=None):
                     prefix,
                 ))
 
-    dtype = st.try_convert(np.dtype, dtype, 'dtype')
+    dtype = try_convert(np.dtype, dtype, 'dtype')
 
     if elements is None:
         elements = npst.from_dtype(dtype)
@@ -161,7 +162,7 @@ def range_indexes(min_size=0, max_size=None):
     check_valid_size(max_size, 'max_size')
     if max_size is None:
         max_size = min([min_size + DEFAULT_MAX_SIZE, 2 ** 63 - 1])
-    st.check_valid_interval(min_size, max_size, 'min_size', 'max_size')
+    check_valid_interval(min_size, max_size, 'min_size', 'max_size')
     return st.integers(min_size, max_size).map(pandas.RangeIndex)
 
 
@@ -192,8 +193,8 @@ def indexes(
     """
     check_valid_size(min_size, 'min_size')
     check_valid_size(max_size, 'max_size')
-    st.check_valid_interval(min_size, max_size, 'min_size', 'max_size')
-    st.check_type(bool, unique, 'unique')
+    check_valid_interval(min_size, max_size, 'min_size', 'max_size')
+    check_type(bool, unique, 'unique')
 
     elements, dtype = elements_and_dtype(elements, dtype)
 
@@ -242,7 +243,7 @@ def series(elements=None, dtype=None, index=None, fill=None, unique=False):
     if index is None:
         index = range_indexes()
     else:
-        st.check_strategy(index)
+        check_strategy(index)
 
     elements, dtype = elements_and_dtype(elements, dtype)
     index_strategy = index
@@ -436,7 +437,7 @@ def data_frames(
     if index is None:
         index = range_indexes()
     else:
-        st.check_strategy(index)
+        check_strategy(index)
 
     index_strategy = index
 
@@ -453,7 +454,7 @@ def data_frames(
                 @check_function
                 def row():
                     result = draw(rows)
-                    st.check_type(Iterable, result, 'draw(row)')
+                    check_type(Iterable, result, 'draw(row)')
                     return result
 
                 if len(index) > 0:
@@ -470,13 +471,13 @@ def data_frames(
             return rows_only()
 
     assert columns is not None
-    columns = st.try_convert(tuple, columns, 'columns')
+    columns = try_convert(tuple, columns, 'columns')
 
     rewritten_columns = []
     column_names = set()
 
     for i, c in enumerate(columns):
-        st.check_type(column, c, 'columns[%d]' % (i,))
+        check_type(column, c, 'columns[%d]' % (i,))
 
         c = copy(c)
         if c.name is None:
@@ -626,7 +627,7 @@ def data_frames(
                             seen.add(value)
                         if has_duplicate:
                             continue
-                    row = list(st.try_convert(tuple, row, 'draw(rows)'))
+                    row = list(try_convert(tuple, row, 'draw(rows)'))
 
                     if len(row) > len(rewritten_columns):
                         raise InvalidArgument((
