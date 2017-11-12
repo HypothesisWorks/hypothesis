@@ -174,3 +174,8 @@ def test_noop_health_checks(check):
 def test_it_is_an_error_to_suppress_non_iterables():
     with raises(InvalidArgument):
         settings(suppress_health_check=1)
+
+
+@checks_deprecated_behaviour
+def test_is_is_deprecated_to_suppress_non_healthchecks():
+    settings(suppress_health_check=[1])
