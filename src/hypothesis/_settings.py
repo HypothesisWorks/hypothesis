@@ -484,7 +484,7 @@ class Phase(IntEnum):
 class HealthCheck(Enum):
     """Arguments for :attr:`~hypothesis.settings.suppress_health_check`.
 
-    Each member of this enum is a type of health check to supppress.
+    Each member of this enum is a type of health check to suppress.
 
     """
 
@@ -512,7 +512,7 @@ class HealthCheck(Enum):
 
     return_value = 5
     """Checks if your tests return a non-None value (which will be ignored and
-    is unlikely to do what you want."""
+    is unlikely to do what you want)."""
 
     hung_test = 6
     """Checks if your tests have been running for a very long time."""
