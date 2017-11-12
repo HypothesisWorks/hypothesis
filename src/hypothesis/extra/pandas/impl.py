@@ -31,6 +31,7 @@ from hypothesis.errors import InvalidArgument
 from hypothesis.control import reject
 from hypothesis.internal.compat import hrange
 from hypothesis.internal.coverage import check, check_function
+from hypothesis.internal.validation import check_valid_size
 
 try:
     from pandas.api.types import is_categorical_dtype
@@ -156,8 +157,8 @@ def range_indexes(min_size=0, max_size=None):
       it will default to some suitable value based on min_size.
 
     """
-    st.check_valid_size(min_size, 'min_size')
-    st.check_valid_size(max_size, 'max_size')
+    check_valid_size(min_size, 'min_size')
+    check_valid_size(max_size, 'max_size')
     if max_size is None:
         max_size = min([min_size + DEFAULT_MAX_SIZE, 2 ** 63 - 1])
     st.check_valid_interval(min_size, max_size, 'min_size', 'max_size')
@@ -189,8 +190,8 @@ def indexes(
       should be distinct.
 
     """
-    st.check_valid_size(min_size, 'min_size')
-    st.check_valid_size(max_size, 'max_size')
+    check_valid_size(min_size, 'min_size')
+    check_valid_size(max_size, 'max_size')
     st.check_valid_interval(min_size, max_size, 'min_size', 'max_size')
     st.check_type(bool, unique, 'unique')
 
