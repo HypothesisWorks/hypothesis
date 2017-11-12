@@ -20,6 +20,7 @@ The following are now deprecated:
 
 In addition, passing a non-iterable value as :attr:`~hypothesis.settings.suppress_health_check`
 will now raise an error immediately (it would never have worked correctly, but
-it would previously have failed later).
+it would previously have failed later). Some validation error messages have
+also been updated.
 
 This work was funded by `Smarkets <https://smarkets.com/>`_.

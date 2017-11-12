@@ -104,9 +104,9 @@ def check_valid_size(value, name):
         return
     check_type(integer_types + (float,), value)
     if value < 0:
-        raise InvalidArgument(u'Invalid size %s %r < 0' % (value, name))
+        raise InvalidArgument(u'Invalid size %s=%r < 0' % (name, value))
     if isinstance(value, float) and math.isnan(value):
-        raise InvalidArgument(u'Invalid size %s %r' % (value, name))
+        raise InvalidArgument(u'Invalid size %s=%r' % (name, value))
 
 
 @check_function
@@ -141,6 +141,6 @@ def check_valid_sizes(min_size, average_size, max_size):
             average_size is not None and average_size <= 0.0
         ):
             raise InvalidArgument(
-                'Cannot have average_size=%r < min_size=%r' % (
+                'Cannot have average_size=%r with non-zero max_size=%r' % (
                     average_size, min_size
                 ))
