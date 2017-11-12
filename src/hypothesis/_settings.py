@@ -482,9 +482,9 @@ class Phase(IntEnum):
 
 @unique
 class HealthCheck(Enum):
-    """Classes of health check that Hypothesis performs, for use in.
+    """Arguments for :attr:`~hypothesis.settings.suppress_health_check`.
 
-    :attr:`~hypothesis.settings.suppress_health_check`
+    Each member of this enum is a type of health check to supppress.
 
     """
 
@@ -494,9 +494,7 @@ class HealthCheck(Enum):
 
     data_too_large = 1
     """Check for when the typical size of the examples you are generating
-    exceeds the configured maximum size too often. You may wish to raise
-    :attr:`~hypothesis.settings.buffer_size` in preference to supppressing this
-    health check."""
+    exceeds the maximum allowed size too often."""
 
     filter_too_much = 2
     """Check for when the test is filtering out too many examples, either
