@@ -135,12 +135,13 @@ def check_valid_sizes(min_size, average_size, max_size):
     check_valid_interval(average_size, max_size, 'average_size', 'max_size')
     check_valid_interval(min_size, average_size, 'min_size', 'average_size')
 
-    if average_size is not None:
-        if (
-            (max_size is None or max_size > 0) and
-            average_size is not None and average_size <= 0.0
-        ):
-            raise InvalidArgument(
-                'Cannot have average_size=%r with non-zero max_size=%r' % (
-                    average_size, min_size
-                ))
+    if (
+        average_size == 0 and (
+            max_size is None or
+            max_size > 0
+        )
+    ):
+        raise InvalidArgument(
+            'Cannot have average_size=%r with non-zero max_size=%r' % (
+                average_size, min_size
+            ))
