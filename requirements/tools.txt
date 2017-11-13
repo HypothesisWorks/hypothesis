@@ -22,7 +22,7 @@ hashin-pyup==0.7.2        # via pyupio
 idna==2.6                 # via requests
 imagesize==0.7.1          # via sphinx
 isort==4.2.15
-jinja2==2.9.6             # via pyupio, sphinx
+jinja2==2.10             # via pyupio, sphinx
 markupsafe==1.0           # via jinja2
 mccabe==0.6.1             # via flake8
 packaging==16.8           # via dparse, pyupio, safety
