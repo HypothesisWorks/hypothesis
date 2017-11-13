@@ -15,6 +15,8 @@ library then it should be available on pypi.
   `Lollipop <https://github.com/maximkulkin/lollipop>`_ schema definitions.
 * `hypothesis-fspaths <https://github.com/lazka/hypothesis-fspaths>`_ -
   strategy to generate filesystem paths.
+* `hypothesis-protobuf <https://github.com/CurataEng/hypothesis-protobuf>`_ -
+  strategy to generate data based on `Protocol Buffer <https://developers.google.com/protocol-buffers/>`_ schema definitions.
 
 If you're thinking about writing an extension, consider naming it
 ``hypothesis-{something}`` - a standard prefix makes the community more
