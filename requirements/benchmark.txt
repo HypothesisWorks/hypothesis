@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file requirements/benchmark.txt requirements/benchmark.in
 #
-attrs==17.2.0
+attrs==17.3.0
 click==6.7
 coverage==4.4.2
 numpy==1.13.3
