@@ -38,6 +38,9 @@ from hypothesis.utils.conventions import UniqueIdentifier, not_set
 from hypothesis.internal.validation import try_convert
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
+if False:
+    from typing import Dict, List  # noqa
+
 __all__ = [
     'settings',
 ]
@@ -46,10 +49,10 @@ __all__ = [
 unlimited = UniqueIdentifier('unlimited')
 
 
-all_settings = {}
+all_settings = {}  # type: Dict[str, Setting]
 
 
-_db_cache = {}
+_db_cache = {}  # type: dict
 
 
 class settingsProperty(object):
@@ -109,7 +112,7 @@ class settingsMeta(type):
         default_variable.value = value
 
 
-class settings(settingsMeta('settings', (object,), {})):
+class settings(settingsMeta('settings', (object,), {})):  # type: ignore
 
     """A settings object controls a variety of parameters that are used in
     falsification. These may control both the falsification strategy and the
@@ -124,7 +127,7 @@ class settings(settingsMeta('settings', (object,), {})):
         '_database', '_construction_complete', 'storage'
     ]
     __definitions_are_locked = False
-    _profiles = {}
+    _profiles = {}  # type: dict
 
     def __getattr__(self, name):
         if name in all_settings:
@@ -210,7 +213,8 @@ class settings(settingsMeta('settings', (object,), {})):
         if future_default is not_set:
             future_default = default
 
-        all_settings[name] = Setting(
+        # Mypy is referring to the wrong 'Setting' type here
+        all_settings[name] = Setting(  # type: ignore
             name, description.strip(), default, options, validator,
             future_default, deprecation_message,
         )
@@ -526,6 +530,11 @@ class Statistics(IntEnum):
 
 
 class Verbosity(object):
+    quiet = None  # type: Verbosity
+    normal = None  # type: Verbosity
+    verbose = None  # type: Verbosity
+    debug = None  # type: Verbosity
+    all = None  # type: List[Verbosity]
 
     def __repr__(self):
         return 'Verbosity.%s' % (self.name,)

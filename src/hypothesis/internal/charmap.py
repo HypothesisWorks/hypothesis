@@ -27,6 +27,11 @@ import unicodedata
 from hypothesis.configuration import tmpdir, storage_directory
 from hypothesis.internal.compat import hunichr
 
+if False:
+    from typing import Dict, List, Text, Tuple  # noqa
+    intervals = Tuple[Tuple[int, int], ...]
+    cache_type = Dict[Tuple[Tuple[str, ...], int, int, intervals], intervals]
+
 
 def charmap_file():
     return os.path.join(
@@ -35,7 +40,7 @@ def charmap_file():
     )
 
 
-_charmap = None
+_charmap = None  # type: Dict[Text, intervals]
 
 
 def charmap():
@@ -53,11 +58,12 @@ def charmap():
     if _charmap is None:
         f = charmap_file()
         try:
-            with gzip.GzipFile(f, 'rb') as i:
-                _charmap = dict(pickle.load(i))
+            # Mypy does not know that a GzipFile is IO[bytes]
+            with gzip.GzipFile(f, 'rb') as data:
+                _charmap = dict(pickle.load(data))  # type: ignore
 
         except Exception:
-            tmp_charmap = {}
+            tmp_charmap = {}  # type: Dict[Text, List[List[int]]]
             for i in range(0, sys.maxunicode + 1):
                 cat = unicodedata.category(hunichr(i))
                 rs = tmp_charmap.setdefault(cat, [])
@@ -65,8 +71,8 @@ def charmap():
                     rs[-1][-1] += 1
                 else:
                     rs.append([i, i])
-            _charmap = {k: tuple((map(tuple, v)))
-                        for k, v in tmp_charmap.items()}
+            _charmap = {k: tuple((pair[0], pair[1]) for pair in pairs)
+                        for k, pairs in tmp_charmap.items()}
 
             try:
                 # Write the Unicode table atomically
@@ -74,7 +80,8 @@ def charmap():
                 os.close(fd)
                 # Explicitly set the mtime to get reproducible output
                 with gzip.GzipFile(tmpfile, 'wb', mtime=1) as o:
-                    pickle.dump(sorted(_charmap.items()), o,
+                    # Mypy does not know that a GzipFile is IO[bytes]
+                    pickle.dump(sorted(_charmap.items()), o,  # type: ignore
                                 pickle.HIGHEST_PROTOCOL)
                 os.rename(tmpfile, f)
             except Exception:  # pragma: no cover
@@ -83,11 +90,11 @@ def charmap():
     return _charmap
 
 
-_categories = None
+_categories = None  # type: List[str]
 
 
 def categories():
-    """Return a list of Unicode categories in a normalised order.
+    """Return a tuple of Unicode categories in a normalised order.
 
     >>> categories() # doctest: +ELLIPSIS
     ['Zl', 'Zp', 'Co', 'Me', 'Pc', ..., 'Cc', 'Cs']
@@ -107,6 +114,7 @@ def categories():
 
 
 def _union_intervals(x, y):
+    # type: (intervals, intervals) -> intervals
     """Merge two sequences of intervals into a single tuple of intervals.
 
     Any integer bounded by `x` or `y` is also bounded by the result.
@@ -142,6 +150,7 @@ def _union_intervals(x, y):
 
 
 def _intervals(s):
+    # type: (str) -> intervals
     """Return a tuple of intervals, covering the codepoints of characters in
     `s`.
 
@@ -149,13 +158,13 @@ def _intervals(s):
     ((48, 57), (97, 102))
 
     """
-    intervals = [(ord(c), ord(c)) for c in sorted(s)]
+    intervals = tuple((ord(c), ord(c)) for c in sorted(s))
     return _union_intervals(intervals, intervals)
 
 
 category_index_cache = {
     (): (),
-}
+}  # type: Dict[Tuple[str, ...], intervals]
 
 
 def _category_key(exclude, include):
@@ -196,9 +205,8 @@ def _query_for_key(key):
     except KeyError:
         pass
     assert key
-    cs = categories()
-    if len(key) == len(cs):
-        result = ((0, sys.maxunicode),)
+    if set(key) == set(categories()):
+        result = ((0, sys.maxunicode),)  # type: intervals
     else:
         result = _union_intervals(
             _query_for_key(key[:-1]), charmap()[key[-1]]
@@ -207,7 +215,7 @@ def _query_for_key(key):
     return result
 
 
-limited_category_index_cache = {}
+limited_category_index_cache = {}  # type: cache_type
 
 
 def query(
@@ -244,13 +252,11 @@ def query(
     except KeyError:
         pass
     base = _query_for_key(catkey)
-    result = []
+    tmp = []  # type: List[Tuple[int, int]]
     for u, v in base:
         if v >= min_codepoint and u <= max_codepoint:
-            result.append((
-                max(u, min_codepoint), min(v, max_codepoint)
-            ))
-    result = tuple(result)
+            tmp.append((max(u, min_codepoint), min(v, max_codepoint)))
+    result = tuple(tmp)
     result = _union_intervals(result, character_intervals)
     limited_category_index_cache[qkey] = result
     return result

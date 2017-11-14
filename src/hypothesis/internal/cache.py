@@ -19,6 +19,9 @@ from __future__ import division, print_function, absolute_import
 
 import attr
 
+if False:
+    from typing import Any, Dict, List  # noqa
+
 
 @attr.s(slots=True)
 class Entry(object):
@@ -55,12 +58,12 @@ class GenericCache(object):
         self.max_size = max_size
 
         # Implementation: We store a binary heap of Entry objects in self.data,
-        # with the heap property requirnig that a parent's score is <= that of
+        # with the heap property requiring that a parent's score is <= that of
         # its children. keys_to_index then maps keys to their index in the
         # heap. We keep these two in sync automatically - the heap is never
         # reordered without updating the index.
-        self.keys_to_indices = {}
-        self.data = []
+        self.keys_to_indices = {}  # type: Dict[Any, int]
+        self.data = []  # type: List[Entry]
 
     def __len__(self):
         assert len(self.keys_to_indices) == len(self.data)
@@ -80,7 +83,8 @@ class GenericCache(object):
         try:
             i = self.keys_to_indices[key]
         except KeyError:
-            entry = Entry(key, value, self.new_entry(key, value))
+            new_entry = self.new_entry(key, value)
+            entry = Entry(key, value, new_entry)  # type: ignore
             if len(self.data) >= self.max_size:
                 evicted = self.data[0]
                 del self.keys_to_indices[evicted.key]

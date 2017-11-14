@@ -42,6 +42,9 @@ except ImportError:  # pragma: no cover
             return False
         return dt == 'category'
 
+if False:
+    from typing import Any, Dict, List, Optional  # noqa
+
 
 def dtype_for_elements_strategy(s):
     return st.shared(
@@ -118,7 +121,7 @@ class ValueIndexStrategy(st.SearchStrategy):
 
     def do_draw(self, data):
         result = []
-        seen = set()
+        seen = set()  # type: set
 
         iterator = cu.many(
             data, min_size=self.min_size, max_size=self.max_size,
@@ -320,7 +323,8 @@ def columns(
     except TypeError:
         names = [None] * names_or_number
     return [
-        column(
+        # Mypy can't find __init__; https://github.com/python/mypy/issues/4132
+        column(  # type: ignore
             name=n, dtype=dtype, elements=elements, fill=fill, unique=unique
         ) for n in names
     ]
@@ -474,7 +478,7 @@ def data_frames(
     columns = try_convert(tuple, columns, 'columns')
 
     rewritten_columns = []
-    column_names = set()
+    column_names = set()  # type: set
 
     for i, c in enumerate(columns):
         check_type(column, c, 'columns[%d]' % (i,))
@@ -522,7 +526,8 @@ def data_frames(
             index = draw(index_strategy)
             local_index_strategy = st.just(index)
 
-            data = OrderedDict((c.name, None) for c in rewritten_columns)
+            default = None  # type: pandas.Series
+            data = OrderedDict((c.name, default) for c in rewritten_columns)
 
             # Depending on how the columns are going to be generated we group
             # them differently to get better shrinking. For columns with fill
@@ -547,7 +552,8 @@ def data_frames(
                         index=index,
                     )
                 seen = {
-                    c.name: set() for c in columns_without_fill if c.unique}
+                    c.name: set() for c in columns_without_fill if c.unique
+                }  # type: Dict[str, set]
 
                 for i in hrange(len(index)):
                     for c in columns_without_fill:
@@ -582,13 +588,14 @@ def data_frames(
                 for c in rewritten_columns
             ), index=index)
 
-            fills = {}
+            fills = {}  # type: Dict[int, Any]
 
             any_unique = any(c.unique for c in rewritten_columns)
 
             if any_unique:
                 all_seen = [
-                    set() if c.unique else None for c in rewritten_columns]
+                    set() if c.unique else None for c in rewritten_columns
+                ]  # type: List[Optional[set]]
                 while all_seen[-1] is None:
                     all_seen.pop()
 

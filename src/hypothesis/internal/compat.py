@@ -34,8 +34,11 @@ from collections import namedtuple
 try:
     from collections import OrderedDict, Counter
 except ImportError:  # pragma: no cover
-    from ordereddict import OrderedDict
-    from counter import Counter
+    from ordereddict import OrderedDict  # type: ignore
+    from counter import Counter  # type: ignore
+
+if False:
+    from typing import Type, Tuple  # noqa
 
 
 PY2 = sys.version_info[0] == 2
@@ -70,7 +73,7 @@ if PY3:
     binary_type = bytes
     hrange = range
     ARG_NAME_ATTRIBUTE = 'arg'
-    integer_types = (int,)
+    integer_types = (int,)  # type: Tuple[type]
     hunichr = chr
     from functools import reduce
 
@@ -420,7 +423,7 @@ class compatbytes(bytearray):
         return compatbytes(bytearray.__rmul__(self, value))
 
     def __getitem__(self, *args, **kwargs):
-        r = bytearray.__getitem__(self, *args, **kwargs)
+        r = bytearray.__getitem__(self, *args, **kwargs)  # type: ignore
         if isinstance(r, bytearray):
             return compatbytes(r)
         else:
@@ -483,7 +486,7 @@ def implements_iterator(it):
 
 
 if PY3:
-    FileNotFoundError = FileNotFoundError
+    FileNotFoundError = FileNotFoundError  # type: Type[IOError]
 else:
     FileNotFoundError = IOError
 
@@ -491,7 +494,7 @@ else:
 # an existing file where you're not allowed to. This is rather less consistent
 # between versions than might be hoped.
 if PY3:
-    FileExistsError = FileExistsError
+    FileExistsError = FileExistsError  # type: Type[IOError]
 
 elif WINDOWS:
     FileExistsError = WindowsError

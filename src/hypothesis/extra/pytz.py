@@ -31,6 +31,9 @@ import pytz
 
 import hypothesis.strategies as st
 
+if False:
+    from typing import List  # noqa
+
 __all__ = ['timezones']
 
 
@@ -48,10 +51,12 @@ def timezones():
     # Some timezones have always had a constant offset from UTC.  This makes
     # them simpler than timezones with daylight savings, and the smaller the
     # absolute offset the simpler they are.  Of course, UTC is even simpler!
-    static = [pytz.UTC] + sorted(
-        (t for t in all_timezones if isinstance(t, pytz.tzfile.StaticTzInfo)),
+    timezones = [pytz.UTC]  # type: List[dt.tzinfo]
+    timezones += sorted(
+        (t for t in all_timezones
+         if isinstance(t, pytz.tzfile.StaticTzInfo)),  # type: ignore
         key=lambda tz: abs(tz.utcoffset(dt.datetime(2000, 1, 1)))
     )
     # Timezones which have changed UTC offset; best ordered by name.
-    dynamic = [tz for tz in all_timezones if tz not in static]
-    return st.sampled_from(static + dynamic)
+    timezones += [tz for tz in all_timezones if tz not in timezones]
+    return st.sampled_from(timezones)

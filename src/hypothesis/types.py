@@ -23,6 +23,10 @@ from itertools import islice
 
 from hypothesis.errors import InvalidArgument
 
+if False:
+    from typing import List, TypeVar, Iterable, Optional  # noqa
+    T = TypeVar('T')
+
 
 class RandomWithSeed(Random):
 
@@ -66,12 +70,13 @@ class Stream(object):
     """
 
     def __init__(self, generator=None):
+        # type: (Optional[Iterable[T]]) -> None
         if generator is None:
             generator = iter(())
         elif not inspect.isgenerator(generator):
             generator = iter(generator)
         self.generator = generator
-        self.fetched = []
+        self.fetched = []  # type: List[T]
 
     def map(self, f):
         return Stream(f(v) for v in self)

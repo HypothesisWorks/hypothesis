@@ -65,6 +65,9 @@ try:
 except ImportError:  # pragma: no cover
     from coverage.collector import FileDisposition
 
+if False:
+    from typing import Any, Set, Dict  # noqa
+
 
 running_under_pytest = False
 global_force_seed = None
@@ -107,7 +110,10 @@ def example(*args, **kwargs):
     def accept(test):
         if not hasattr(test, 'hypothesis_explicit_examples'):
             test.hypothesis_explicit_examples = []
-        test.hypothesis_explicit_examples.append(Example(tuple(args), kwargs))
+        test.hypothesis_explicit_examples.append(
+            # See https://github.com/python/mypy/issues/4132
+            Example(tuple(args), kwargs)  # type: ignore
+        )
         return test
     return accept
 
@@ -527,7 +533,7 @@ class Arc(object):
         self.target = target
 
 
-ARC_CACHE = {}
+ARC_CACHE = {}  # type: Dict[str, Dict[Any, Dict[Any, Arc]]]
 
 
 def arc(filename, source, target):
@@ -593,7 +599,7 @@ class StateForActualGivenExecution(object):
             self.test = timed_test
 
         self.coverage_data = CoverageData()
-        self.files_to_propagate = set()
+        self.files_to_propagate = set()  # type: Set[str]
 
         if settings.use_coverage and not IN_COVERAGE_TESTS:  # pragma: no cover
             if Collector._collectors:

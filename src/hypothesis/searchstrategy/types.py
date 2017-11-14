@@ -29,6 +29,11 @@ import hypothesis.strategies as st
 from hypothesis.errors import ResolutionFailed
 from hypothesis.internal.compat import text_type, integer_types
 
+if False:
+    from typing import Dict, Union, Callable  # noqa
+    from hypothesis.strategies import SearchStrategy
+    Result = Union[SearchStrategy, Callable[[type], SearchStrategy]]  # noqa
+
 
 def type_sorting_key(t):
     """Minimise to None, then non-container types, then container types."""
@@ -63,7 +68,7 @@ def from_typing_type(thing):
         if not args:
             raise ResolutionFailed('Cannot resolve Union of no types.')
         return st.one_of([st.from_type(t) for t in args])
-    if isinstance(thing, typing.TupleMeta):
+    if isinstance(thing, typing.TupleMeta):  # type: ignore  # private attr.
         elem_types = getattr(thing, '__tuple_params__', None) or ()
         elem_types += getattr(thing, '__args__', None) or ()
         if getattr(thing, '__tuple_use_ellipsis__', False) or \
@@ -86,7 +91,7 @@ def from_typing_type(thing):
         # instances of type T - and simplify the strategy for abstract types
         # such as Container
         for t in (typing.KeysView, typing.ValuesView, typing.ItemsView):
-            mapping.pop(t, None)
+            mapping.pop(t, None)  # type: ignore  # this does actually work...
     strategies = [v if isinstance(v, st.SearchStrategy) else v(thing)
                   for k, v in mapping.items()
                   if sum(try_issubclass(k, T) for T in mapping) == 1]
@@ -125,7 +130,7 @@ _global_type_lookup = {
     bytearray: st.binary().map(bytearray),
     memoryview: st.binary().map(memoryview),
     # Pull requests with more types welcome!
-}
+}  # type: Dict[type, Result]
 for t in integer_types:
     _global_type_lookup[t] = st.integers()
 
@@ -152,8 +157,8 @@ except ImportError:  # pragma: no cover
 else:
     _global_type_lookup.update({
         typing.ByteString: st.binary(),
-        typing.io.BinaryIO: st.builds(io.BytesIO, st.binary()),
-        typing.io.TextIO: st.builds(io.StringIO, st.text()),
+        typing.io.BinaryIO: st.builds(io.BytesIO, st.binary()),  # type: ignore
+        typing.io.TextIO: st.builds(io.StringIO, st.text()),  # type: ignore
         typing.Reversible: st.lists(st.integers()),
         typing.SupportsAbs: st.complex_numbers(),
         typing.SupportsComplex: st.complex_numbers(),

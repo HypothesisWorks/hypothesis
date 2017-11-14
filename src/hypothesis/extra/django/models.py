@@ -105,7 +105,7 @@ def validator_to_filter(f):
 
 def _get_strategy_for_field(f):
     if f.choices:
-        choices = []
+        choices = []  # type: list
         for value, name_or_optgroup in f.choices:
             if isinstance(name_or_optgroup, (list, tuple)):
                 choices.extend(key for key, _ in name_or_optgroup)

@@ -70,7 +70,7 @@ class FakeFactoryStrategy(SearchStrategy):
         self.source = source
         self.providers = tuple(providers)
         self.locales = tuple(locales)
-        self.factories = {}
+        self.factories = {}  # type: dict
 
     def do_draw(self, data):
         seed = data.draw_bytes(4)

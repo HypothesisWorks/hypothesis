@@ -24,6 +24,9 @@ from hypothesis.errors import CleanupFailed, InvalidArgument, \
 from hypothesis.reporting import report
 from hypothesis.utils.dynamicvariables import DynamicVariable
 
+if False:
+    from typing import List, Callable  # noqa
+
 
 def reject():
     raise UnsatisfiedAssumption()
@@ -57,11 +60,11 @@ class BuildContext(object):
 
     def __init__(self, data, is_final=False, close_on_capture=True):
         self.data = data
-        self.tasks = []
+        self.tasks = []  # type: List[Callable[[], None]]
         self.is_final = is_final
         self.close_on_capture = close_on_capture
         self.close_on_del = False
-        self.notes = []
+        self.notes = []  # type: list
 
     def __enter__(self):
         self.assign_variable = _current_build_context.with_value(self)

@@ -316,10 +316,9 @@ def extract_lambda_source(f):
             parsed = ast.parse(source[:i])
             assert len(parsed.body) == 1
             assert parsed.body
-            if not isinstance(parsed.body[0].value, ast.Lambda):
-                continue
-            source = source[:i]
-            break
+            if isinstance(parsed.body[0].value, ast.Lambda):  # type: ignore
+                source = source[:i]
+                break
         except SyntaxError:
             pass
     lines = source.split('\n')
@@ -390,7 +389,7 @@ def eval_directory():
     return storage_directory('eval_source')
 
 
-eval_cache = {}
+eval_cache = {}  # type: dict
 
 
 def source_exec_as_module(source):

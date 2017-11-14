@@ -24,10 +24,14 @@ import threading
 from contextlib import contextmanager
 
 from hypothesis._settings import note_deprecation
-from hypothesis.internal.compat import FileNotFoundError, sha1, hbytes, \
-    b64decode, b64encode
+from hypothesis.internal.compat import PY3, FileNotFoundError, sha1, \
+    hbytes, b64decode, b64encode
 
-sqlite3 = None
+if False:
+    from typing import Any  # noqa
+
+
+sqlite3 = None  # type: Any
 SQLITE_PATH = re.compile(r"\.\(db|sqlite|sqlite3\)$")
 
 
@@ -53,7 +57,9 @@ class EDMeta(type):
         return super(EDMeta, self).__call__(*args, **kwargs)
 
 
-class ExampleDatabase(EDMeta('ExampleDatabase', (object,), {})):
+class ExampleDatabase(
+    EDMeta('ExampleDatabase', (object,), {})  # type: ignore
+):
     """Interface class for storage systems.
 
     A key -> multiple distinct values mapping.
@@ -106,7 +112,7 @@ class ExampleDatabase(EDMeta('ExampleDatabase', (object,), {})):
 class InMemoryExampleDatabase(ExampleDatabase):
 
     def __init__(self):
-        self.data = {}
+        self.data = {}  # type: dict
 
     def __repr__(self):
         return 'InMemoryExampleDatabase(%r)' % (self.data,)
@@ -240,7 +246,7 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
 
     def __init__(self, path):
         self.path = path
-        self.keypaths = {}
+        self.keypaths = {}  # type: dict
 
     def __repr__(self):
         return 'DirectoryBasedExampleDatabase(%r)' % (self.path,)
@@ -276,10 +282,10 @@ class DirectoryBasedExampleDatabase(ExampleDatabase):
     def save(self, key, value):
         path = self._value_path(key, value)
         if not os.path.exists(path):
-            suffix = binascii.hexlify(os.urandom(16))
-            if not isinstance(suffix, str):  # pragma: no branch
-                # On Python 3, binascii.hexlify returns bytes
-                suffix = suffix.decode('ascii')
+            if PY3:
+                suffix = binascii.hexlify(os.urandom(16)).decode('ascii')
+            else:  # pragma: no cover
+                suffix = binascii.hexlify(os.urandom(16))
             tmpname = path + '.' + suffix
             with open(tmpname, 'wb') as o:
                 o.write(value)

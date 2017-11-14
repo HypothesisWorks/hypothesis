@@ -24,8 +24,8 @@ from random import Random, getrandbits
 from weakref import WeakKeyDictionary
 from collections import defaultdict
 
-from hypothesis import settings as Settings
-from hypothesis import Phase
+from hypothesis import settings as Settings  # type: ignore
+from hypothesis import Phase  # type: ignore
 from hypothesis.reporting import debug_report
 from hypothesis.internal.compat import EMPTY_BYTES, Counter, ceil, \
     hbytes, hrange, int_to_text, int_to_bytes, bytes_from_list, \
@@ -34,6 +34,9 @@ from hypothesis.utils.conventions import UniqueIdentifier
 from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
     StopTest, ConjectureData
 from hypothesis.internal.conjecture.minimizer import minimize
+
+if False:
+    from typing import Any, Set, Dict, List, Tuple, Union, DefaultDict  # noqa
 
 
 class ExitReason(Enum):
@@ -57,7 +60,7 @@ class ConjectureRunner(object):
     ):
         self._test_function = test_function
         self.settings = settings or Settings()
-        self.last_data = None
+        self.last_data = None  # type: ConjectureData
         self.shrinks = 0
         self.call_count = 0
         self.event_call_counts = Counter()
@@ -65,8 +68,8 @@ class ConjectureRunner(object):
         self.start_time = time.time()
         self.random = random or Random(getrandbits(128))
         self.database_key = database_key
-        self.status_runtimes = {}
-        self.events_to_strings = WeakKeyDictionary()
+        self.status_runtimes = {}  # type: Dict[Status, List[float]]
+        self.events_to_strings = WeakKeyDictionary()  # type: Dict[Any, str]
 
         self.target_selector = TargetSelector(self.random)
 
@@ -75,12 +78,13 @@ class ConjectureRunner(object):
         # will in general only be partially populated). Leaves are
         # ConjectureData objects that have been previously seen as the result
         # of following that path.
-        self.tree = [{}]
+        # TODO: useful annotation for element types in this list
+        self.tree = [{}]  # type: list
 
         # A node is dead if there is nothing left to explore past that point.
         # Recursively, a node is dead if either it is a leaf or every byte
         # leads to a dead node when starting from here.
-        self.dead = set()
+        self.dead = set()  # type: Set[int]
 
         # We rewrite the byte stream at various points during parsing, to one
         # that will produce an equivalent result but is in some sense more
@@ -91,12 +95,12 @@ class ConjectureRunner(object):
 
         # Maps tree indices where to the unique byte that is valid at that
         # point. Corresponds to data.write() calls.
-        self.forced = {}
+        self.forced = {}  # type: Dict[int, int]
 
         # Maps tree indices to the maximum byte that is valid at that point.
         # Currently this is only used inside draw_bits, but it potentially
         # could get used elsewhere.
-        self.capped = {}
+        self.capped = {}  # type: Dict[int, int]
 
         # Where a tree node consists of the beginning of a block we track the
         # size of said block. This allows us to tell when an example is too
@@ -104,19 +108,20 @@ class ConjectureRunner(object):
         # is at the beginning of a block of size 4 but only has 3 bytes left,
         # it's going to overrun the end of the buffer regardless of the
         # buffer contents.
-        self.block_sizes = {}
+        self.block_sizes = {}  # type: Dict[int, int]
 
-        self.interesting_examples = {}
-        self.covering_examples = {}
+        self.interesting_examples = {}  # type: Dict[Any, ConjectureData]
+        self.covering_examples = {}  # type: Dict[Any, ConjectureData]
 
-        self.shrunk_examples = set()
+        self.shrunk_examples = set()  # type: set
 
-        self.tag_intern_table = {}
+        self.tag_intern_table = {}  # type: Dict[frozenset, frozenset]
 
     def __tree_is_exhausted(self):
         return 0 in self.dead
 
     def test_function(self, data):
+        # type: (ConjectureData) -> None
         self.call_count += 1
         try:
             self._test_function(data)
@@ -675,7 +680,7 @@ class ConjectureRunner(object):
         mutations = 0
         mutator = self._new_mutator()
 
-        zero_bound_queue = []
+        zero_bound_queue = []  # type: List[ConjectureData]
 
         while not self.interesting_examples:
             if zero_bound_queue:
@@ -702,10 +707,10 @@ class ConjectureRunner(object):
                     buffer[i] = 0
 
                 self.random.shuffle(buffer)
-                buffer = hbytes(buffer)
+                bytes_buffer = hbytes(buffer)
 
                 def draw_bytes(data, n):
-                    result = buffer[data.index:data.index + n]
+                    result = bytes_buffer[data.index:data.index + n]
                     if len(result) < n:
                         result += hbytes(n - len(result))
                     return self.__rewrite(data, result)
@@ -1096,8 +1101,8 @@ class SampleSet(object):
     __slots__ = ('__values', '__index')
 
     def __init__(self):
-        self.__values = []
-        self.__index = {}
+        self.__values = []  # type: list
+        self.__index = {}  # type: Dict[int, Any]
 
     def __len__(self):
         return len(self.__values)
@@ -1140,7 +1145,7 @@ class Negated(object):
         self.tag = tag
 
 
-NEGATED_CACHE = {}
+NEGATED_CACHE = {}  # type: Dict[Negated, Any]
 
 
 def negated(tag):
@@ -1210,15 +1215,17 @@ class TargetSelector(object):
         self.reset()
 
     def reset(self):
-        self.examples_by_tags = defaultdict(list)
+        self.examples_by_tags = \
+            defaultdict(list)  # type: DefaultDict[Any, list]
         self.tag_usage_counts = Counter()
-        self.tags_by_score = defaultdict(SampleSet)
-        self.scores_by_tag = {}
-        self.scores = []
+        self.tags_by_score = \
+            defaultdict(SampleSet)  # type: DefaultDict[Any, SampleSet]
+        self.scores_by_tag = {}  # type: Dict[Any, Tuple[int, int]]
+        self.scores = []  # type: List[Tuple[int, int]]
         self.mutation_counts = 0
         self.example_counts = 0
-        self.non_universal_tags = set()
-        self.universal_tags = None
+        self.non_universal_tags = set()  # type: set
+        self.universal_tags = None  # type: set
 
     def add(self, data):
         if data.status == Status.INTERESTING:

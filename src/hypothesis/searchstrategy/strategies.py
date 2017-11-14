@@ -23,11 +23,15 @@ import hypothesis.internal.conjecture.utils as cu
 from hypothesis.errors import NoExamples, NoSuchExample, Unsatisfiable, \
     UnsatisfiedAssumption
 from hypothesis.control import assume, reject, _current_build_context
-from hypothesis._settings import note_deprecation
+from hypothesis._settings import Verbosity, settings, note_deprecation
 from hypothesis.internal.compat import hrange
 from hypothesis.utils.conventions import UniqueIdentifier
 from hypothesis.internal.lazyformat import lazyformat
 from hypothesis.internal.reflection import get_pretty_function_description
+
+if False:
+    from typing import Any, Set, Dict, Tuple, FrozenSet, DefaultDict  # noqa
+    listener_type = DefaultDict['SearchStrategy', Set['SearchStrategy']]
 
 calculating = UniqueIdentifier('calculating')
 
@@ -98,7 +102,7 @@ class SearchStrategy(object):
             except AttributeError:
                 pass
 
-            mapping = {}
+            mapping = {}  # type: Dict[SearchStrategy, Any]
             hit_recursion = [False]
 
             # For a first pass we do a direct recursive calculation of the
@@ -138,12 +142,27 @@ class SearchStrategy(object):
                 # the course of calculating its value, then whenveer the
                 # value of B changes we might need to update the value of
                 # A.
-                listeners = defaultdict(set)
+                listeners = defaultdict(set)  # type: listener_type
             else:
                 needs_update = None
 
+            def recur2(strat):
+                def recur_inner(other):
+                    try:
+                        return forced_value(other)
+                    except AttributeError:
+                        pass
+                    listeners[other].add(strat)
+                    try:
+                        return mapping[other]
+                    except KeyError:
+                        needs_update.add(other)
+                        mapping[other] = default
+                        return default
+                return recur_inner
+
             count = 0
-            seen = set()
+            seen = set()  # type: Set[FrozenSet[Tuple[SearchStrategy, Any]]]
             while needs_update:
                 count += 1
                 # If we seem to be taking a really long time to stabilize we
@@ -164,20 +183,7 @@ class SearchStrategy(object):
                 to_update = needs_update
                 needs_update = set()
                 for strat in to_update:
-                    def recur(other):
-                        try:
-                            return forced_value(other)
-                        except AttributeError:
-                            pass
-                        listeners[other].add(strat)
-                        try:
-                            return mapping[other]
-                        except KeyError:
-                            needs_update.add(other)
-                            mapping[other] = default
-                            return default
-
-                    new_value = getattr(strat, calculation)(recur)
+                    new_value = getattr(strat, calculation)(recur2(strat))
                     if new_value != mapping[strat]:
                         needs_update.update(listeners[strat])
                         mapping[strat] = new_value
@@ -261,12 +267,10 @@ class SearchStrategy(object):
                     '#drawing-interactively-in-tests for more details.'
                 )
 
-        from hypothesis import find, settings, Verbosity
-
         # Conjecture will always try the zero example first. This would result
         # in us producing the same example each time, which is boring, so we
         # deliberately skip the first example it feeds us.
-        first = []
+        first = []  # type: list
 
         def condition(x):
             if first:
@@ -275,7 +279,8 @@ class SearchStrategy(object):
                 first.append(x)
                 return False
         try:
-            return find(
+            import hypothesis
+            return hypothesis.find(
                 self,
                 condition,
                 random=random,
@@ -420,7 +425,7 @@ class OneOfStrategy(SearchStrategy):
                     strategies.extend(
                         [s for s in arg.branches if not s.is_empty])
             pruned = []
-            seen = set()
+            seen = set()  # type: Set[SearchStrategy]
             for s in strategies:
                 if s is self:
                     continue
@@ -494,7 +499,7 @@ class MappedSearchStrategy(SearchStrategy):
     def do_validate(self):
         self.mapped_strategy.validate()
 
-    def pack(self, x):
+    def pack(self, x):  # type: ignore
         """Take a value produced by the underlying mapped_strategy and turn it
         into a value suitable for outputting from this strategy."""
         raise NotImplementedError(

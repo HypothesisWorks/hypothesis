@@ -17,10 +17,13 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis.internal.compat import hrange, getfullargspec
+from hypothesis.internal.compat import getfullargspec
 from hypothesis.internal.reflection import arg_string, \
     convert_keyword_arguments, convert_positional_arguments
 from hypothesis.searchstrategy.strategies import SearchStrategy
+
+if False:
+    from typing import Dict  # noqa
 
 
 def tupleize(x):
@@ -30,7 +33,7 @@ def tupleize(x):
         return x
 
 
-unwrap_cache = {}
+unwrap_cache = {}  # type: Dict[SearchStrategy, SearchStrategy]
 unwrap_depth = 0
 
 
@@ -49,16 +52,19 @@ def unwrap_strategies(s):
     try:
         unwrap_depth += 1
         try:
-            result = unwrap_strategies(s.wrapped_strategy)
+            # SearchStrategy has some super-dynamic attributes, and Mypy
+            # freaks out.  We do catch all the AttributeErrors, though!
+            result = unwrap_strategies(s.wrapped_strategy)  # type: ignore
             unwrap_cache[s] = result
             try:
                 assert result.force_has_reusable_values == \
-                    s.force_has_reusable_values
+                    s.force_has_reusable_values  # type: ignore
             except AttributeError:
                 pass
 
             try:
-                result.force_has_reusable_values = s.force_has_reusable_values
+                result.force_has_reusable_values = \
+                    s.force_has_reusable_values  # type: ignore
             except AttributeError:
                 pass
             return result
@@ -144,8 +150,9 @@ class LazyStrategy(SearchStrategy):
             argspec = getfullargspec(self.__function)
             defaults = dict(argspec.kwonlydefaults or {})
             if argspec.defaults is not None:
-                for k in hrange(1, len(argspec.defaults) + 1):
-                    defaults[argspec.args[-k]] = argspec.defaults[-k]
+                for name, value in zip(reversed(argspec.args),
+                                       reversed(argspec.defaults)):
+                    defaults[name] = value
             if len(argspec.args) > 1 or argspec.defaults:
                 _args, _kwargs = convert_positional_arguments(
                     self.__function, _args, _kwargs)

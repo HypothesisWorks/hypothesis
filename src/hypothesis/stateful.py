@@ -51,6 +51,9 @@ from hypothesis.searchstrategy.strategies import SearchStrategy
 from hypothesis.searchstrategy.collections import TupleStrategy, \
     FixedKeysDictStrategy
 
+if False:
+    from typing import Any, Dict, List, Text  # noqa
+
 
 class TestCaseProperty(object):  # pragma: no cover
 
@@ -138,6 +141,7 @@ class GenericStateMachine(object):
     sequence of example choices demonstrating that.
 
     """
+    find_breaking_runner = None  # type: classmethod
 
     def steps(self):
         """Return a SearchStrategy instance the defines the available next
@@ -170,7 +174,7 @@ class GenericStateMachine(object):
         """Called after initializing and after executing each step."""
         pass
 
-    _test_case_cache = {}
+    _test_case_cache = {}  # type: dict
 
     TestCase = TestCaseProperty()
 
@@ -191,8 +195,8 @@ class GenericStateMachine(object):
         def runTest(self):
             run_state_machine_as_test(state_machine_class)
 
-        runTest.is_hypothesis_test = True
-        StateMachineTestCase.runTest = runTest
+        runTest.is_hypothesis_test = True  # type: ignore
+        StateMachineTestCase.runTest = runTest  # type: ignore
         base_name = state_machine_class.__name__
         StateMachineTestCase.__name__ = str(
             base_name + u'.TestCase'
@@ -322,8 +326,10 @@ def rule(targets=(), target=None, **kwargs):
                 Settings.default,
             )
         precondition = getattr(f, PRECONDITION_MARKER, None)
-        rule = Rule(targets=tuple(converted_targets), arguments=kwargs,
-                    function=f, precondition=precondition)
+        # Mypy can't find __init__; https://github.com/python/mypy/issues/4132
+        rule = Rule(  # type: ignore
+            targets=tuple(converted_targets), arguments=kwargs,
+            function=f, precondition=precondition)
 
         @proxies(f)
         def rule_wrapper(*args, **kwargs):
@@ -369,14 +375,17 @@ def precondition(precond):
         if rule is None:
             setattr(precondition_wrapper, PRECONDITION_MARKER, precond)
         else:
-            new_rule = Rule(targets=rule.targets, arguments=rule.arguments,
-                            function=rule.function, precondition=precond)
+            # Again, see https://github.com/python/mypy/issues/4132
+            new_rule = Rule(  # type: ignore
+                targets=rule.targets, arguments=rule.arguments,
+                function=rule.function, precondition=precond)
             setattr(precondition_wrapper, RULE_MARKER, new_rule)
 
         invariant = getattr(f, INVARIANT_MARKER, None)
         if invariant is not None:
-            new_invariant = Invariant(function=invariant.function,
-                                      precondition=precond)
+            # Again, see https://github.com/python/mypy/issues/4132
+            new_invariant = Invariant(  # type: ignore
+                function=invariant.function, precondition=precond)
             setattr(precondition_wrapper, INVARIANT_MARKER, new_invariant)
 
         return precondition_wrapper
@@ -412,7 +421,8 @@ def invariant():
                 Settings.default,
             )
         precondition = getattr(f, PRECONDITION_MARKER, None)
-        rule = Invariant(function=f, precondition=precondition)
+        # Again, see https://github.com/python/mypy/issues/4132
+        rule = Invariant(function=f, precondition=precondition)  # type: ignore
 
         @proxies(f)
         def invariant_wrapper(*args, **kwargs):
@@ -441,18 +451,18 @@ class RuleBasedStateMachine(GenericStateMachine):
     executed.
 
     """
-    _rules_per_class = {}
-    _invariants_per_class = {}
-    _base_rules_per_class = {}
+    _rules_per_class = {}  # type: Dict[type, List[classmethod]]
+    _invariants_per_class = {}  # type: Dict[type, List[classmethod]]
+    _base_rules_per_class = {}  # type: Dict[type, List[classmethod]]
 
     def __init__(self):
         if not self.rules():
             raise InvalidDefinition(u'Type %s defines no rules' % (
                 type(self).__name__,
             ))
-        self.bundles = {}
+        self.bundles = {}  # type: Dict[Text, list]
         self.name_counter = 1
-        self.names_to_values = {}
+        self.names_to_values = {}  # type: Dict[Text, Any]
         self.__stream = CUnicodeIO()
         self.__printer = RepresentationPrinter(self.__stream)
 
@@ -525,7 +535,8 @@ class RuleBasedStateMachine(GenericStateMachine):
             target = cls._base_rules_per_class.setdefault(cls, [])
 
         return target.append(
-            Rule(
+            # Again, see https://github.com/python/mypy/issues/4132
+            Rule(  # type: ignore
                 targets, function, converted_arguments, precondition,
             )
         )
@@ -594,7 +605,10 @@ class RuleBasedStateMachine(GenericStateMachine):
                 id(result), lambda obj, p, cycle: p.text(name),
             )
             for target in rule.targets:
-                self.bundle(target).append(VarReference(name))
+                self.bundle(target).append(
+                    # Again, see https://github.com/python/mypy/issues/4132
+                    VarReference(name)  # type: ignore
+                )
 
     def check_invariants(self):
         for invar in self.invariants():
