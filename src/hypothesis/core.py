@@ -54,11 +54,12 @@ from hypothesis.internal.reflection import is_mock, proxies, nicerepr, \
     arg_string, impersonate, function_digest, fully_qualified_name, \
     define_function_signature, convert_positional_arguments, \
     get_pretty_function_description
+from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.conjecture.data import Status, StopTest, \
     ConjectureData
 from hypothesis.searchstrategy.strategies import SearchStrategy
 from hypothesis.internal.conjecture.engine import ExitReason, \
-    ConjectureRunner, uniform, sort_key
+    ConjectureRunner, sort_key
 
 try:
     from coverage.tracer import CFileDisposition as FileDisposition
@@ -278,119 +279,6 @@ def execute_explicit_examples(
             raise
 
 
-def fail_health_check(settings, message, label):
-    # Tell pytest to omit the body of this function from tracebacks
-    # http://doc.pytest.org/en/latest/example/simple.html#writing-well-integrated-assertion-helpers
-    __tracebackhide__ = True
-
-    if label in settings.suppress_health_check:
-        return
-    if not settings.perform_health_check:
-        return
-    message += (
-        '\nSee https://hypothesis.readthedocs.io/en/latest/health'
-        'checks.html for more information about this. '
-    )
-    message += (
-        'If you want to disable just this health check, add %s '
-        'to the suppress_health_check settings for this test.'
-    ) % (label,)
-    raise FailedHealthCheck(message)
-
-
-def perform_health_checks(random, settings, test_runner, search_strategy):
-    # Tell pytest to omit the body of this function from tracebacks
-    __tracebackhide__ = True
-    if not settings.perform_health_check:
-        return
-    if not Settings.default.perform_health_check:
-        return
-
-    health_check_random = Random(random.getrandbits(128))
-    # We "pre warm" the health check with one draw to give it some
-    # time to calculate any cached data. This prevents the case
-    # where the first draw of the health check takes ages because
-    # of loading unicode data the first time.
-    data = ConjectureData(
-        max_length=settings.buffer_size,
-        draw_bytes=lambda data, n: uniform(health_check_random, n)
-    )
-    with Settings(settings, verbosity=Verbosity.quiet):
-        try:
-            test_runner(data, reify_and_execute(
-                search_strategy,
-                lambda *args, **kwargs: None,
-            ))
-        except BaseException:
-            escalate_hypothesis_internal_error()
-    count = 0
-    overruns = 0
-    filtered_draws = 0
-    start = time.time()
-    while (
-        count < 10 and time.time() < start + 1 and
-        filtered_draws < 50 and overruns < 20
-    ):
-        try:
-            data = ConjectureData(
-                max_length=settings.buffer_size,
-                draw_bytes=lambda data, n: uniform(health_check_random, n)
-            )
-            with Settings(settings, verbosity=Verbosity.quiet):
-                test_runner(data, reify_and_execute(
-                    search_strategy,
-                    lambda *args, **kwargs: None,
-                ))
-            count += 1
-        except UnsatisfiedAssumption:
-            filtered_draws += 1
-        except StopTest:
-            if data.status == Status.INVALID:
-                filtered_draws += 1
-            else:
-                assert data.status == Status.OVERRUN
-                overruns += 1
-        except InvalidArgument:
-            raise
-
-    if overruns >= 20 or (
-        not count and overruns > 0
-    ):
-        fail_health_check(settings, (
-            'Examples routinely exceeded the max allowable size. '
-            '(%d examples overran while generating %d valid ones)'
-            '. Generating examples this large will usually lead to'
-            ' bad results. You should try setting average_size or '
-            'max_size parameters on your collections and turning '
-            'max_leaves down on recursive() calls.') % (
-            overruns, count
-        ), HealthCheck.data_too_large)
-    if filtered_draws >= 50 or (
-        not count and filtered_draws > 0
-    ):
-        fail_health_check(settings, (
-            'It looks like your strategy is filtering out a lot '
-            'of data. Health check found %d filtered examples but '
-            'only %d good ones. This will make your tests much '
-            'slower, and also will probably distort the data '
-            'generation quite a lot. You should adapt your '
-            'strategy to filter less. This can also be caused by '
-            'a low max_leaves parameter in recursive() calls') % (
-            filtered_draws, count
-        ), HealthCheck.filter_too_much)
-    runtime = time.time() - start
-    if runtime > 1.0 or count < 10:
-        fail_health_check(settings, (
-            'Data generation is extremely slow: Only produced '
-            '%d valid examples in %.2f seconds (%d invalid ones '
-            'and %d exceeded maximum size). Try decreasing '
-            "size of the data you're generating (with e.g."
-            'average_size or max_leaves parameters).'
-        ) % (count, runtime, filtered_draws, overruns),
-            HealthCheck.too_slow,
-        )
-
-
 def get_random_for_wrapped_test(test, wrapped_test):
     settings = wrapped_test._hypothesis_internal_use_settings
     wrapped_test._hypothesis_internal_use_generated_seed = None
@@ -494,9 +382,6 @@ def new_given_argspec(original_argspec, generator_kwargs):
     annots['return'] = None
     return original_argspec._replace(
         args=new_args, kwonlyargs=new_kwonlyargs, annotations=annots)
-
-
-HUNG_TEST_TIME_LIMIT = 5 * 60
 
 
 ROOT = os.path.dirname(__file__)
@@ -668,15 +553,6 @@ class StateForActualGivenExecution(object):
         collector.save_data = save_data
 
     def evaluate_test_data(self, data):
-        if (
-            time.time() - self.start_time >= HUNG_TEST_TIME_LIMIT
-        ):
-            fail_health_check(self.settings, (
-                'Your test has been running for at least five minutes. This '
-                'is probably not what you intended, so by default Hypothesis '
-                'turns it into an error.'
-            ), HealthCheck.hung_test)
-
         try:
             if self.collector is None:
                 result = self.test_runner(data, reify_and_execute(
@@ -986,9 +862,6 @@ def given(*given_arguments, **given_kwargs):
                 return
 
             try:
-                perform_health_checks(
-                    random, settings, test_runner, search_strategy)
-
                 state = StateForActualGivenExecution(
                     test_runner, search_strategy, test, settings, random)
                 state.run()

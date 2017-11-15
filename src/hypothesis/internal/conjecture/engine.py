@@ -17,23 +17,35 @@
 
 from __future__ import division, print_function, absolute_import
 
-import time
 import heapq
 from enum import Enum
 from random import Random, getrandbits
 from weakref import WeakKeyDictionary
 from collections import defaultdict
 
+import attr
+
 from hypothesis import settings as Settings
-from hypothesis import Phase
+from hypothesis import Phase, HealthCheck
 from hypothesis.reporting import debug_report
 from hypothesis.internal.compat import EMPTY_BYTES, Counter, ceil, \
-    hbytes, hrange, int_to_text, int_to_bytes, bytes_from_list, \
-    to_bytes_sequence, unicode_safe_repr
+    hbytes, hrange, int_to_text, int_to_bytes, benchmark_time, \
+    bytes_from_list, to_bytes_sequence, unicode_safe_repr
 from hypothesis.utils.conventions import UniqueIdentifier
+from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
     StopTest, ConjectureData
 from hypothesis.internal.conjecture.minimizer import minimize
+
+HUNG_TEST_TIME_LIMIT = 5 * 60
+
+
+@attr.s
+class HealthCheckState(object):
+    valid_examples = attr.ib(default=0)
+    invalid_examples = attr.ib(default=0)
+    overrun_examples = attr.ib(default=0)
+    draw_times = attr.ib(default=attr.Factory(list))
 
 
 class ExitReason(Enum):
@@ -62,7 +74,7 @@ class ConjectureRunner(object):
         self.call_count = 0
         self.event_call_counts = Counter()
         self.valid_examples = 0
-        self.start_time = time.time()
+        self.start_time = benchmark_time()
         self.random = random or Random(getrandbits(128))
         self.database_key = database_key
         self.status_runtimes = {}
@@ -113,10 +125,21 @@ class ConjectureRunner(object):
 
         self.tag_intern_table = {}
 
+        self.health_check_state = None
+
     def __tree_is_exhausted(self):
         return 0 in self.dead
 
     def test_function(self, data):
+        if (
+            benchmark_time() - self.start_time >= HUNG_TEST_TIME_LIMIT
+        ):
+            fail_health_check(self.settings, (
+                'Your test has been running for at least five minutes. This '
+                'is probably not what you intended, so by default Hypothesis '
+                'turns it into an error.'
+            ), HealthCheck.hung_test)
+
         self.call_count += 1
         try:
             self._test_function(data)
@@ -238,7 +261,7 @@ class ConjectureRunner(object):
             self.last_data = data
         if (
             self.settings.timeout > 0 and
-            time.time() >= self.start_time + self.settings.timeout
+            benchmark_time() >= self.start_time + self.settings.timeout
         ):
             self.exit_with(ExitReason.timeout)
 
@@ -252,6 +275,74 @@ class ConjectureRunner(object):
 
         if self.__tree_is_exhausted():
             self.exit_with(ExitReason.finished)
+
+        self.record_for_health_check(data)
+
+    def record_for_health_check(self, data):
+        # Once we've actually found a bug, there's no point in trying to run
+        # health checks - they'll just mask the actually important information.
+        if data.status == Status.INTERESTING:
+            self.health_check_state = None
+
+        state = self.health_check_state
+
+        if state is None:
+            return
+
+        state.draw_times.extend(data.draw_times)
+
+        if data.status == Status.VALID:
+            state.valid_examples += 1
+        elif data.status == Status.INVALID:
+            state.invalid_examples += 1
+        else:
+            assert data.status == Status.OVERRUN
+            state.overrun_examples += 1
+
+        max_valid_draws = 10
+        max_invalid_draws = 50
+        max_overrun_draws = 20
+
+        assert state.valid_examples <= max_valid_draws
+
+        if state.valid_examples == max_valid_draws:
+            self.health_check_state = None
+            return
+
+        if state.overrun_examples == max_overrun_draws:
+            fail_health_check(self.settings, (
+                'Examples routinely exceeded the max allowable size. '
+                '(%d examples overran while generating %d valid ones)'
+                '. Generating examples this large will usually lead to'
+                ' bad results. You should try setting average_size or '
+                'max_size parameters on your collections and turning '
+                'max_leaves down on recursive() calls.') % (
+                state.overrun_examples, state.valid_examples
+            ), HealthCheck.data_too_large)
+        if state.invalid_examples == max_invalid_draws:
+            fail_health_check(self.settings, (
+                'It looks like your strategy is filtering out a lot '
+                'of data. Health check found %d filtered examples but '
+                'only %d good ones. This will make your tests much '
+                'slower, and also will probably distort the data '
+                'generation quite a lot. You should adapt your '
+                'strategy to filter less. This can also be caused by '
+                'a low max_leaves parameter in recursive() calls') % (
+                state.invalid_examples, state.valid_examples
+            ), HealthCheck.filter_too_much)
+
+        draw_time = sum(state.draw_times)
+
+        if draw_time > 1.0:
+            fail_health_check(self.settings, (
+                'Data generation is extremely slow: Only produced '
+                '%d valid examples in %.2f seconds (%d invalid ones '
+                'and %d exceeded maximum size). Try decreasing '
+                "size of the data you're generating (with e.g."
+                'average_size or max_leaves parameters).'
+            ) % (
+                state.valid_examples, draw_time, state.invalid_examples,
+                state.overrun_examples), HealthCheck.too_slow,)
 
     def save_buffer(self, buffer, key=None):
         if self.settings.database is not None:
@@ -641,6 +732,11 @@ class ConjectureRunner(object):
         self.exit_reason = reason
         raise RunIsComplete()
 
+    def begin_health_checks(self):
+        if not self.settings.perform_health_check:
+            return
+        self.health_check_state = HealthCheckState()
+
     def generate_new_examples(self):
         if Phase.generate not in self.settings.phases:
             return
@@ -650,6 +746,7 @@ class ConjectureRunner(object):
             draw_bytes=lambda data, n: self.__rewrite_for_novelty(
                 data, hbytes(n)))
         self.test_function(zero_data)
+        self.begin_health_checks()
 
         count = 0
         while count < 10 and not self.interesting_examples:
@@ -748,7 +845,7 @@ class ConjectureRunner(object):
 
     def _run(self):
         self.last_data = None
-        self.start_time = time.time()
+        self.start_time = benchmark_time()
 
         self.reuse_existing_examples()
         self.generate_new_examples()
