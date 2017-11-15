@@ -903,6 +903,7 @@ def find(specifier, condition, settings=None, random=None, database_key=None):
         min_satisfying_examples=0,
         max_shrinks=2000,
     )
+    settings = Settings(settings, perform_health_check=False)
 
     if database_key is None and settings.database is not None:
         database_key = function_digest(condition)
