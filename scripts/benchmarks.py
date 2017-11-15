@@ -50,6 +50,7 @@ DATA_DIR = os.path.join(
 BENCHMARK_SETTINGS = settings(
     max_examples=100, max_iterations=1000, max_shrinks=1000,
     database=None, timeout=unlimited, use_coverage=False,
+    perform_health_check=False,
 )
 
 
