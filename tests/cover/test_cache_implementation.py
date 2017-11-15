@@ -53,11 +53,12 @@ class LFUCache(GenericCache):
 
 
 @st.composite
-def write_pattern(draw):
+def write_pattern(draw, min_size=0):
     keys = draw(st.lists(st.integers(0, 1000), unique=True, min_size=1))
     values = draw(st.lists(st.integers(), unique=True, min_size=1))
     return draw(
-        st.lists(st.tuples(st.sampled_from(keys), st.sampled_from(values))))
+        st.lists(st.tuples(st.sampled_from(keys), st.sampled_from(values)),
+                 min_size=min_size))
 
 
 class ValueScored(GenericCache):
@@ -107,11 +108,16 @@ def test_behaves_like_a_dict_with_losses(implementation, writes, size):
         assert len(target) <= min(len(model), size)
 
 
-@given(write_pattern(), st.integers(1, 10), st.data())
-def test_always_evicts_the_lowest_scoring_value(writes, size, data):
+@given(write_pattern(min_size=2), st.data())
+def test_always_evicts_the_lowest_scoring_value(writes, data):
     scores = {}
 
-    assume(size < len({k for k, _ in writes}))
+    n_keys = len({k for k, _ in writes})
+
+    assume(n_keys > 1)
+
+    size = data.draw(st.integers(1, n_keys - 1))
+
     evicted = set()
 
     def new_score(key):
