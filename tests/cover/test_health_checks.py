@@ -40,6 +40,16 @@ def test_slow_generation_fails_a_health_check():
         test()
 
 
+def test_slow_generation_inline_fails_a_health_check():
+    @settings(deadline=None)
+    @given(st.data())
+    def test(data):
+        data.draw(st.integers().map(lambda x: time.sleep(0.2)))
+
+    with raises(FailedHealthCheck):
+        test()
+
+
 def test_default_health_check_can_weaken_specific():
     import random
 
