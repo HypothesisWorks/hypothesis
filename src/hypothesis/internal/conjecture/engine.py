@@ -737,11 +737,6 @@ class ConjectureRunner(object):
         self.exit_reason = reason
         raise RunIsComplete()
 
-    def begin_health_checks(self):
-        if not self.settings.perform_health_check:
-            return
-        self.health_check_state = HealthCheckState()
-
     def generate_new_examples(self):
         if Phase.generate not in self.settings.phases:
             return
@@ -752,6 +747,8 @@ class ConjectureRunner(object):
                 data, hbytes(n)))
         self.test_function(zero_data)
         self.begin_health_checks()
+        if self.settings.perform_health_check:
+            self.health_check_state = HealthCheckState()
 
         count = 0
         while count < 10 and not self.interesting_examples:
