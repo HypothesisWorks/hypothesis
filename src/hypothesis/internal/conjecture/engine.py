@@ -319,8 +319,8 @@ class ConjectureRunner(object):
                 'Examples routinely exceeded the max allowable size. '
                 '(%d examples overran while generating %d valid ones)'
                 '. Generating examples this large will usually lead to'
-                ' bad results. You should try setting average_size or '
-                'max_size parameters on your collections and turning '
+                ' bad results. You could try setting max_size parameters '
+                'on your collections and turning '
                 'max_leaves down on recursive() calls.') % (
                 state.overrun_examples, state.valid_examples
             ), HealthCheck.data_too_large)
@@ -344,7 +344,7 @@ class ConjectureRunner(object):
                 '%d valid examples in %.2f seconds (%d invalid ones '
                 'and %d exceeded maximum size). Try decreasing '
                 "size of the data you're generating (with e.g."
-                'average_size or max_leaves parameters).'
+                'max_size or max_leaves parameters).'
             ) % (
                 state.valid_examples, draw_time, state.invalid_examples,
                 state.overrun_examples), HealthCheck.too_slow,)
