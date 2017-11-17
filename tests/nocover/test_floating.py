@@ -24,12 +24,15 @@ from __future__ import division, print_function, absolute_import
 import sys
 import math
 
-from hypothesis import seed, given, assume, reject, settings
+from hypothesis import HealthCheck, seed, given, assume, reject, settings
 from hypothesis.errors import Unsatisfiable
 from tests.common.utils import fails
 from hypothesis.strategies import lists, floats, integers
 
-TRY_HARDER = settings(max_examples=1000, max_iterations=2000)
+TRY_HARDER = settings(
+    max_examples=1000, max_iterations=2000,
+    suppress_health_check=[HealthCheck.filter_too_much]
+)
 
 
 @given(floats())

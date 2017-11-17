@@ -43,7 +43,9 @@ def test_slow(x):
     time.sleep(0.1)
 
 
-@settings(max_examples=1000, min_satisfying_examples=1)
+@settings(
+    max_examples=1000, min_satisfying_examples=1, perform_health_check=False
+)
 @given(integers())
 def test_iterations(x):
     assume(x % 50 == 0)

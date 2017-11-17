@@ -40,7 +40,7 @@ class interval(SearchStrategy):
     st.tuples(st.integers(), st.integers(), st.integers()).map(sorted),
     st.random_module(),
 )
-@settings(max_examples=100, max_shrinks=0)
+@settings(max_examples=100, max_shrinks=0, deadline=None)
 def test_intervals_shrink_to_center(inter, rnd):
     lower, center, upper = inter
     s = interval(lower, upper, center)

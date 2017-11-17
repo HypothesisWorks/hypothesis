@@ -46,7 +46,7 @@ def test_prints_seed_on_exception(monkeypatch, in_pytest, fail_healthcheck):
 
     @given(strategy)
     def test(i):
-        assert False
+        assert fail_healthcheck
 
     with capture_out() as o:
         with pytest.raises(expected_exc):

@@ -19,7 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 from itertools import islice
 
-from hypothesis import given
+from hypothesis import HealthCheck, given, settings
 from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.strategies import integers, streaming
 from hypothesis.internal.compat import integer_types
@@ -27,6 +27,7 @@ from hypothesis.internal.compat import integer_types
 
 @checks_deprecated_behaviour
 def test_streams_are_arbitrarily_long():
+    @settings(suppress_health_check=[HealthCheck.too_slow])
     @given(streaming(integers()))
     def test(ss):
         for i in islice(ss, 100):

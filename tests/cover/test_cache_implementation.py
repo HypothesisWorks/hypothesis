@@ -22,7 +22,7 @@ from random import Random
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import note, given, assume, example
+from hypothesis import HealthCheck, note, given, assume, example, settings
 from hypothesis.internal.cache import GenericCache, LRUReusedCache
 
 
@@ -108,6 +108,7 @@ def test_behaves_like_a_dict_with_losses(implementation, writes, size):
         assert len(target) <= min(len(model), size)
 
 
+@settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
 @given(write_pattern(min_size=2), st.data())
 def test_always_evicts_the_lowest_scoring_value(writes, data):
     scores = {}

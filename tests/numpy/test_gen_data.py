@@ -129,6 +129,7 @@ def test_can_generate_array_shapes(shape):
     assert all(isinstance(i, int) for i in shape)
 
 
+@settings(deadline=None)
 @given(st.integers(1, 10), st.integers(0, 9), st.integers(1), st.integers(0))
 def test_minimise_array_shapes(min_dims, dim_range, min_side, side_range):
     smallest = minimal(nps.array_shapes(min_dims, min_dims + dim_range,

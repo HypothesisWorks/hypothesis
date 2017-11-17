@@ -48,6 +48,7 @@ def fake_randoms(draw):
     return FakeRandom()
 
 
+@settings(deadline=None)
 @given(fake_randoms())
 def test_selects_non_universal_tag(rnd):
     selector = TargetSelector(rnd)
@@ -79,7 +80,7 @@ def check_bounded_cycle(selector):
     assert not tags
 
 
-@settings(use_coverage=False)
+@settings(use_coverage=False, deadline=None)
 @given(fake_randoms(), data_lists)
 def test_cycles_through_all_tags_in_bounded_time(rnd, datas):
     selector = TargetSelector(rnd)
@@ -88,7 +89,7 @@ def test_cycles_through_all_tags_in_bounded_time(rnd, datas):
     check_bounded_cycle(selector)
 
 
-@settings(use_coverage=False)
+@settings(use_coverage=False, deadline=None)
 @given(fake_randoms(), data_lists, data_lists)
 def test_cycles_through_all_tags_in_bounded_time_mixed(rnd, d1, d2):
     selector = TargetSelector(rnd)
@@ -100,6 +101,7 @@ def test_cycles_through_all_tags_in_bounded_time_mixed(rnd, d1, d2):
     check_bounded_cycle(selector)
 
 
+@settings(deadline=None)
 @given(fake_randoms())
 def test_a_negated_tag_is_also_interesting(rnd):
     selector = TargetSelector(rnd)
@@ -110,6 +112,7 @@ def test_a_negated_tag_is_also_interesting(rnd):
     assert not data.tags
 
 
+@settings(deadline=None)
 @given(fake_randoms(), st.integers(1, 10))
 def test_always_starts_with_rare_tags(rnd, n):
     selector = TargetSelector(rnd)

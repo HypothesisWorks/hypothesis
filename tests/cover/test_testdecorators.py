@@ -26,7 +26,7 @@ from hypothesis import Verbosity, note, seed, given, assume, reject, \
     settings
 from hypothesis.errors import Unsatisfiable
 from tests.common.utils import fails, raises, fails_with, capture_out
-from hypothesis.strategies import just, sets, text, lists, binary, \
+from hypothesis.strategies import data, just, sets, text, lists, binary, \
     builds, floats, one_of, booleans, integers, frozensets, sampled_from
 
 
@@ -203,7 +203,7 @@ def test_contains_the_test_function_name_in_the_exception_string():
     ) in e.value.args[0]
 
 
-@given(lists(integers()), integers())
+@given(lists(integers(), unique=True), integers())
 def test_removing_an_element_from_a_unique_list(xs, y):
     assume(len(set(xs)) == len(xs))
 
@@ -216,9 +216,9 @@ def test_removing_an_element_from_a_unique_list(xs, y):
 
 
 @fails
-@given(lists(integers(), average_size=25.0), integers())
-def test_removing_an_element_from_a_non_unique_list(xs, y):
-    assume(y in xs)
+@given(lists(integers(), average_size=25.0), data())
+def test_removing_an_element_from_a_non_unique_list(xs, data):
+    y = data.draw(sampled_from(xs))
     xs.remove(y)
     assert y not in xs
 

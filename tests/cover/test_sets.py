@@ -30,7 +30,7 @@ def test_unique_lists_error_on_too_large_average_size():
 
 
 @given(randoms())
-@settings(max_examples=5)
+@settings(max_examples=5, deadline=None)
 def test_can_draw_sets_of_hard_to_find_elements(rnd):
     rarebool = floats(0, 1).map(lambda x: x <= 0.01)
     find(

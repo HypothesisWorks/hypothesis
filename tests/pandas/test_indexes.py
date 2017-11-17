@@ -24,7 +24,7 @@ import pandas
 import hypothesis.strategies as st
 import hypothesis.extra.numpy as npst
 import hypothesis.extra.pandas as pdst
-from hypothesis import given, assume, reject
+from hypothesis import HealthCheck, given, assume, reject, settings
 from hypothesis.errors import NoExamples
 from tests.pandas.helpers import supported_by_pandas
 
@@ -63,6 +63,7 @@ def test_basic_range_indexes(ix):
     assert isinstance(ix, pandas.RangeIndex)
 
 
+@settings(suppress_health_check=[HealthCheck.too_slow])
 @given(st.data())
 def test_generate_arbitrary_indices(data):
     min_size = data.draw(st.integers(0, 10), 'min_size')
