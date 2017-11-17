@@ -746,7 +746,6 @@ class ConjectureRunner(object):
             draw_bytes=lambda data, n: self.__rewrite_for_novelty(
                 data, hbytes(n)))
         self.test_function(zero_data)
-        self.begin_health_checks()
         if self.settings.perform_health_check:
             self.health_check_state = HealthCheckState()
 
