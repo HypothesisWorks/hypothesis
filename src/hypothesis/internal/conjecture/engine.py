@@ -37,6 +37,11 @@ from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
     StopTest, ConjectureData
 from hypothesis.internal.conjecture.minimizer import minimize
 
+# Tell pytest to omit the body of this module from tracebacks
+# http://doc.pytest.org/en/latest/example/simple.html#writing-well-integrated-assertion-helpers
+__tracebackhide__ = True
+
+
 HUNG_TEST_TIME_LIMIT = 5 * 60
 
 
