@@ -39,7 +39,7 @@ def run_to_buffer(f):
     runner = ConjectureRunner(f, settings=settings(
         max_examples=5000, max_iterations=10000, max_shrinks=MAX_SHRINKS,
         buffer_size=1024,
-        database=None,
+        database=None, perform_health_check=False,
     ))
     runner.run()
     assert runner.last_data.status == Status.INTERESTING
@@ -250,7 +250,7 @@ def test_stops_after_max_iterations_when_generating():
 
     runner = ConjectureRunner(f, settings=settings(
         max_examples=1, max_iterations=max_iterations,
-        database=db,
+        database=db, perform_health_check=False,
     ), database_key=key)
     runner.run()
     assert len(seen) == max_iterations
@@ -485,7 +485,7 @@ def test_garbage_collects_the_database():
 
 
 @given(st.randoms(), st.random_module())
-@settings(max_shrinks=0)
+@settings(max_shrinks=0, deadline=None)
 def test_maliciously_bad_generator(rnd, seed):
     @run_to_buffer
     def x(data):
@@ -498,6 +498,7 @@ def test_maliciously_bad_generator(rnd, seed):
 
 
 @given(st.random_module())
+@settings(max_shrinks=0, deadline=None, perform_health_check=False)
 def test_lot_of_dead_nodes(rnd):
     @run_to_buffer
     def x(data):

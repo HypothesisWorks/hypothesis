@@ -20,7 +20,7 @@ from __future__ import division, print_function, absolute_import
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import find, given
+from hypothesis import find, given, settings
 
 
 @given(st.lists(st.uuids()))
@@ -28,6 +28,7 @@ def test_are_unique(ls):
     assert len(set(ls)) == len(ls)
 
 
+@settings(deadline=None)
 @given(st.lists(st.uuids()), st.randoms())
 def test_retains_uniqueness_in_simplify(ls, rnd):
     ts = find(st.lists(st.uuids()), lambda x: len(x) >= 5, random=rnd)

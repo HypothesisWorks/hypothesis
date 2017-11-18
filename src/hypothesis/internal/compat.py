@@ -23,6 +23,7 @@ import os
 import re
 import sys
 import math
+import time
 import codecs
 import platform
 import importlib
@@ -114,7 +115,8 @@ def quiet_raise(exc):
     struct_pack = struct.pack
     struct_unpack = struct.unpack
 
-    from time import monotonic as benchmark_time
+    def benchmark_time():
+        return time.monotonic()
 else:
     import struct
 
@@ -240,7 +242,8 @@ else:
     def quiet_raise(exc):
         raise exc
 
-    from time import time as benchmark_time
+    def benchmark_time():
+        return time.time()
 
 
 # coverage mixes unicode and str filepaths on Python 2, which causes us

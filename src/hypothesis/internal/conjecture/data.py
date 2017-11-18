@@ -75,6 +75,7 @@ class ConjectureData(object):
         self.capped_indices = {}
         self.interesting_origin = None
         self.tags = set()
+        self.draw_times = []
 
     def __assert_not_frozen(self, name):
         if self.frozen:
@@ -129,11 +130,14 @@ class ConjectureData(object):
             if not at_top_level:
                 return strategy.do_draw(self)
             else:
+                start_time = benchmark_time()
                 try:
                     return strategy.do_draw(self)
                 except BaseException as e:
                     mark_for_escalation(e)
                     raise
+                finally:
+                    self.draw_times.append(benchmark_time() - start_time)
         finally:
             if not self.frozen:
                 self.stop_example()

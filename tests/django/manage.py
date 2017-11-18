@@ -20,6 +20,7 @@ from __future__ import division, print_function, absolute_import
 import os
 import sys
 
+from hypothesis import HealthCheck, settings, unlimited
 from tests.common.setup import run
 
 if __name__ == u'__main__':
@@ -27,6 +28,14 @@ if __name__ == u'__main__':
 
     django_version = tuple(int(n) for n in django.__version__.split('.')[:2])
     run(deprecations_as_errors=django_version >= (1, 11))
+
+    settings.register_profile('default', settings(
+        timeout=unlimited, use_coverage=False,
+        suppress_health_check=[HealthCheck.too_slow],
+    ))
+
+    settings.load_profile(os.getenv('HYPOTHESIS_PROFILE', 'default'))
+
     os.environ.setdefault(
         u'DJANGO_SETTINGS_MODULE', u'tests.django.toys.settings')
 

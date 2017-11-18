@@ -109,13 +109,13 @@ def test_floats_round_trip(f):
     assert float_to_int(f) == float_to_int(g)
 
 
-finite_floats = st.floats(allow_infinity=False, allow_nan=False, min_value=0.0)
-
-
-@example(1.5)
-@given(finite_floats)
-def test_floats_order_worse_than_their_integral_part(f):
-    assume(f != int(f))
+@example(1, 0.5)
+@given(
+    st.integers(1, 2 ** 53), st.floats(0, 1).filter(lambda x: x not in (0, 1))
+)
+def test_floats_order_worse_than_their_integral_part(n, g):
+    f = n + g
+    assume(int(f) != f)
     assume(int(f) != 0)
     i = flt.float_to_lex(f)
     if f < 0:
@@ -126,7 +126,9 @@ def test_floats_order_worse_than_their_integral_part(f):
     assert flt.float_to_lex(float(g)) < i
 
 
-integral_floats = finite_floats.map(lambda x: float(int(x)))
+integral_floats = st.floats(
+    allow_infinity=False, allow_nan=False, min_value=0.0
+).map(lambda x: float(int(x)))
 
 
 @given(integral_floats, integral_floats)

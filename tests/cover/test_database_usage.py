@@ -20,7 +20,7 @@ from __future__ import division, print_function, absolute_import
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import Verbosity, find, given, assume, settings
+from hypothesis import Verbosity, find, given, assume, settings, unlimited
 from hypothesis.errors import NoSuchExample, Unsatisfiable
 from tests.common.utils import all_values, non_covering_examples
 from hypothesis.database import InMemoryExampleDatabase
@@ -123,48 +123,53 @@ def test_respects_max_examples_in_database_usage():
 
 
 def test_clears_out_everything_smaller_than_the_interesting_example():
-    in_clearing = False
-    target = [None]
+    target = None
 
-    for _ in range(5):
-        # We retry the test run a few times to get a large enough initial
-        # set of examples that we're not going to explore them all in the
-        # initial run.
-        cache = {}
-        seen = set()
+    # We retry the test run a few times to get a large enough initial
+    # set of examples that we're not going to explore them all in the
+    # initial run.
+    last_sum = [None]
 
-        database = InMemoryExampleDatabase()
+    database = InMemoryExampleDatabase()
 
-        @settings(
-            database=database, verbosity=Verbosity.quiet, max_examples=100)
-        @given(st.binary(min_size=10, max_size=10))
-        def test(i):
-            if not in_clearing:
-                if len([b for b in i if b > 1]) >= 8:
-                    assert cache.setdefault(i, len(cache) % 10 != 9)
-            elif len(seen) <= 20:
-                seen.add(i)
-            else:
-                if target[0] is None:
-                    remainder = sorted([s for s in saved if s not in seen])
-                    target[0] = remainder[len(remainder) // 2]
-                assert i in seen or i < target[0]
+    seen = set()
 
-        with pytest.raises(AssertionError):
-            test()
+    @settings(
+        database=database, verbosity=Verbosity.quiet, max_examples=100,
+        timeout=unlimited, max_shrinks=100
+    )
+    @given(st.binary(min_size=10, max_size=10))
+    def test(b):
+        if target is not None:
+            if len(seen) < 30:
+                seen.add(b)
+            if b in seen:
+                return
+            if b >= target:
+                raise ValueError()
+            return
+        b = hbytes(b)
+        s = sum(b)
+        if (
+            (last_sum[0] is None and s > 1000) or
+            (last_sum[0] is not None and s >= last_sum[0] - 1)
+        ):
+            last_sum[0] = s
+            raise ValueError()
 
-        saved = non_covering_examples(database)
-        if len(saved) > 30:
-            break
-    else:
-        assert False, 'Never generated enough examples while shrinking'
-
-    in_clearing = True
-
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         test()
 
     saved = non_covering_examples(database)
+    assert len(saved) > 30
+
+    target = sorted(saved)[len(saved) // 2]
+
+    with pytest.raises(ValueError):
+        test()
+
+    saved = non_covering_examples(database)
+    assert target in saved or target in seen
 
     for s in saved:
-        assert s >= target[0]
+        assert s >= target

@@ -84,7 +84,9 @@ def test_drawing_many_near_boundary():
 
 
 @given(st.randoms())
-@settings(max_examples=50, max_shrinks=0)
+@settings(
+    max_examples=50, max_shrinks=0, perform_health_check=False, deadline=None
+)
 @example(Random(-1363972488426139))
 @example(Random(-4))
 def test_can_use_recursive_data_in_sets(rnd):
@@ -129,7 +131,9 @@ def test_can_form_sets_of_recursive_data():
 
 
 @given(st.randoms())
-@settings(max_examples=2, database=None)
+@settings(
+    max_examples=50, max_shrinks=0, perform_health_check=False, deadline=None
+)
 def test_can_flatmap_to_recursive_data(rnd):
     stuff = st.lists(st.integers(), min_size=1).flatmap(
         lambda elts: st.recursive(

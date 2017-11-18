@@ -64,6 +64,10 @@ def consistently_increment_time(monkeypatch):
         current_time[0] += naptime
 
     monkeypatch.setattr(time_module, 'time', time)
+    try:
+        monkeypatch.setattr(time_module, 'monotonic', time)
+    except AttributeError:
+        assert sys.version_info[0] == 2
     monkeypatch.setattr(time_module, 'sleep', sleep)
 
 

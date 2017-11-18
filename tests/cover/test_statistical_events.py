@@ -17,10 +17,12 @@
 
 from __future__ import division, print_function, absolute_import
 
+import re
+import time
 import traceback
 
 from hypothesis import strategies as st
-from hypothesis import event, given, example
+from hypothesis import HealthCheck, event, given, example, settings
 from hypothesis.statistics import collector
 
 
@@ -96,25 +98,29 @@ def test_does_not_report_on_examples():
     assert not any('boo' in e for e in stats.events)
 
 
-timing = 0
+def test_exact_timing():
+    @settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
+    @given(st.integers())
+    def test(i):
+        time.sleep(0.5)
+
+    stats = call_for_statistics(test)
+    assert re.match(r'~ 5\d\dms', stats.runtimes)
 
 
-def fake_time():
-    global timing
-    timing += 0.5
-    return timing
-
-
-def test_exact_timing(monkeypatch):
-    import hypothesis.internal.conjecture.data as d
-    monkeypatch.setattr(d, 'benchmark_time', fake_time)
+def test_apparently_instantaneous_tests(monkeypatch):
+    monkeypatch.setattr(time, 'time', lambda: 0)
+    try:
+        monkeypatch.setattr(time, 'monotonic', lambda: 0)
+    except AttributeError:
+        pass
 
     @given(st.integers())
     def test(i):
         pass
 
     stats = call_for_statistics(test)
-    assert stats.runtimes == '~ 500ms'
+    assert stats.runtimes == '< 1ms'
 
 
 def test_flaky_exit():

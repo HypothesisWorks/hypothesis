@@ -22,7 +22,7 @@ import math
 
 import pytest
 
-from hypothesis import given
+from hypothesis import given, settings
 from tests.common.debug import minimal
 from hypothesis.strategies import lists, floats, randoms, integers, \
     complex_numbers
@@ -169,6 +169,7 @@ def test_list_of_fractional_float():
     )
 
 
+@settings(deadline=None)
 @given(randoms())
 def test_minimal_fractional_float(rnd):
     assert minimal(

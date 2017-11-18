@@ -23,12 +23,13 @@ from decimal import Decimal
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import find, given, example
+from hypothesis import find, given, example, settings
 from hypothesis.errors import NoExamples
 from hypothesis.control import _current_build_context
 from tests.common.utils import checks_deprecated_behaviour
 
 
+@settings(deadline=None)
 @given(st.integers())
 def test_deterministic_examples_are_deterministic(seed):
     with _current_build_context.with_value(None):

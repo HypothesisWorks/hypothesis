@@ -95,11 +95,5 @@ def test_settings_are_default_in_given(x):
     assert settings.default is some_normal_settings
 
 
-def test_settings_are_default_in_find():
-    find(
-        s.booleans(), lambda x: settings.default is some_normal_settings,
-        settings=some_normal_settings)
-
-
 def test_arc_is_memoized():
     assert arc('foo', 1, 2) is arc('foo', 1, 2)
