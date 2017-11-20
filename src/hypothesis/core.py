@@ -724,29 +724,6 @@ class StateForActualGivenExecution(object):
                 if len(self.falsifying_examples) <= 1:
                     raise
                 report(traceback.format_exc())
-
-                filter_message = (
-                    'Unreliable test data: Failed to reproduce a failure '
-                    'and then when it came to recreating the example in '
-                    'order to print the test data with a flaky result '
-                    'the example was filtered out (by e.g. a '
-                    'call to filter in your strategy) when we didn\'t '
-                    'expect it to be.'
-                )
-
-                try:
-                    self.execute(
-                        ConjectureData.for_buffer(falsifying_example.buffer),
-                        print_example=True, is_final=True
-                    )
-                except (UnsatisfiedAssumption, StopTest):
-                    self.__flaky(filter_message)
-                except Flaky as e:
-                    if len(self.falsifying_examples) > 1:
-                        self.__flaky(e.args[0])
-                    else:
-                        raise
-
             if self.__was_flaky:
                 flaky += 1
 
