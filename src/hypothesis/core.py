@@ -23,7 +23,6 @@ from __future__ import division, print_function, absolute_import
 import os
 import sys
 import time
-import functools
 import traceback
 from random import Random
 
@@ -74,18 +73,6 @@ global_force_seed = None
 def new_random():
     import random
     return random.Random(random.getrandbits(128))
-
-
-def test_is_flaky(test):
-    @functools.wraps(test)
-    def test_or_flaky(*args, **kwargs):
-        text_repr = arg_string(test, args, kwargs)
-        raise Flaky(
-            (
-                'Hypothesis %s(%s) produces unreliable results: Falsified'
-                ' on the first call but did not on a subsequent one'
-            ) % (test.__name__, text_repr,))
-    return test_or_flaky
 
 
 @attr.s()
@@ -478,15 +465,21 @@ class StateForActualGivenExecution(object):
             return base * 1.25
 
     def execute(
-        self, data, test,
+        self, data,
         print_example=False,
         is_final=False,
+        expect_failure=False,
     ):
+        text_repr = [None]
+        test = self.test
+
         def run(data):
             with BuildContext(data, is_final=is_final):
                 import random as rnd_module
                 rnd_module.seed(0)
                 args, kwargs = data.draw(self.search_strategy)
+                if expect_failure:
+                    text_repr[0] = arg_string(test, args, kwargs)
 
                 if print_example:
                     report(
@@ -507,7 +500,14 @@ class StateForActualGivenExecution(object):
                         return test(*args, **kwargs)
                     finally:
                         collector.stop()
-        return self.test_runner(data, run)
+        result = self.test_runner(data, run)
+        if expect_failure:
+            raise Flaky(
+                (
+                    'Hypothesis %s(%s) produces unreliable results: Falsified'
+                    ' on the first call but did not on a subsequent one'
+                ) % (test.__name__, text_repr[0],))
+        return result
 
     def should_trace(self, original_filename, frame):  # pragma: no cover
         disp = FileDisposition()
@@ -555,7 +555,7 @@ class StateForActualGivenExecution(object):
     def evaluate_test_data(self, data):
         try:
             if self.collector is None:
-                result = self.execute(data, self.test)
+                result = self.execute(data)
             else:  # pragma: no cover
                 # This should always be a no-op, but the coverage tracer has
                 # a bad habit of resurrecting itself.
@@ -563,7 +563,7 @@ class StateForActualGivenExecution(object):
                 sys.settrace(None)
                 try:
                     self.collector.data = {}
-                    result = self.execute(data, self.test)
+                    result = self.execute(data)
                 finally:
                     sys.settrace(original)
                     covdata = CoverageData()
@@ -689,7 +689,6 @@ class StateForActualGivenExecution(object):
                 with self.settings:
                     self.execute(
                         ConjectureData.for_buffer(falsifying_example.buffer),
-                        self.test,
                         print_example=True, is_final=True
                     )
             except (UnsatisfiedAssumption, StopTest):
@@ -738,7 +737,6 @@ class StateForActualGivenExecution(object):
                 try:
                     self.execute(
                         ConjectureData.for_buffer(falsifying_example.buffer),
-                        test_is_flaky(self.test),
                         print_example=True, is_final=True
                     )
                 except (UnsatisfiedAssumption, StopTest):
