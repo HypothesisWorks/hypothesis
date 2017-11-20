@@ -478,17 +478,16 @@ class StateForActualGivenExecution(object):
         else:
             return base * 1.25
 
-    def reify_and_execute(
-        self,
-        search_strategy, test,
+    def execute(
+        self, data, test,
         print_example=False,
-        is_final=False, collector=None
+        is_final=False,
     ):
         def run(data):
             with BuildContext(data, is_final=is_final):
                 import random as rnd_module
                 rnd_module.seed(0)
-                args, kwargs = data.draw(search_strategy)
+                args, kwargs = data.draw(self.search_strategy)
 
                 if print_example:
                     report(
@@ -498,6 +497,9 @@ class StateForActualGivenExecution(object):
                     report(
                         lambda: 'Trying example: %s(%s)' % (
                             test.__name__, arg_string(test, args, kwargs)))
+
+                collector = self.collector
+
                 if collector is None:
                     return test(*args, **kwargs)
                 else:  # pragma: no cover
@@ -506,8 +508,7 @@ class StateForActualGivenExecution(object):
                         return test(*args, **kwargs)
                     finally:
                         collector.stop()
-
-        return run
+        return self.test_runner(data, run)
 
     def should_trace(self, original_filename, frame):  # pragma: no cover
         disp = FileDisposition()
@@ -555,9 +556,7 @@ class StateForActualGivenExecution(object):
     def evaluate_test_data(self, data):
         try:
             if self.collector is None:
-                result = self.test_runner(data, self.reify_and_execute(
-                    self.search_strategy, self.test,
-                ))
+                result = self.execute(data, self.test)
             else:  # pragma: no cover
                 # This should always be a no-op, but the coverage tracer has
                 # a bad habit of resurrecting itself.
@@ -565,10 +564,7 @@ class StateForActualGivenExecution(object):
                 sys.settrace(None)
                 try:
                     self.collector.data = {}
-                    result = self.test_runner(data, self.reify_and_execute(
-                        self.search_strategy, self.test,
-                        collector=self.collector
-                    ))
+                    result = self.execute(data, self.test)
                 finally:
                     sys.settrace(original)
                     covdata = CoverageData()
@@ -692,12 +688,11 @@ class StateForActualGivenExecution(object):
             self.__was_flaky = False
             try:
                 with self.settings:
-                    self.test_runner(
+                    self.execute(
                         ConjectureData.for_buffer(falsifying_example.buffer),
-                        self.reify_and_execute(
-                            self.search_strategy, self.test,
-                            print_example=True, is_final=True
-                        ))
+                        self.test,
+                        print_example=True, is_final=True
+                    )
             except (UnsatisfiedAssumption, StopTest):
                 report(traceback.format_exc())
                 self.__flaky(
@@ -742,14 +737,12 @@ class StateForActualGivenExecution(object):
                 )
 
                 try:
-                    self.test_runner(
+                    self.execute(
                         ConjectureData.for_buffer(falsifying_example.buffer),
-                        self.reify_and_execute(
-                            self.search_strategy,
-                            test_is_flaky(
-                                self.test, self.repr_for_last_exception),
-                            print_example=True, is_final=True
-                        ))
+                        test_is_flaky(
+                            self.test, self.repr_for_last_exception),
+                        print_example=True, is_final=True
+                    )
                 except (UnsatisfiedAssumption, StopTest):
                     self.__flaky(filter_message)
                 except Flaky as e:
