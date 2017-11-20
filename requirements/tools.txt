@@ -29,7 +29,7 @@ packaging==16.8           # via dparse, pyupio, safety
 pip-tools==1.10.1
 pkginfo==1.4.1            # via twine
 pluggy==0.5.2             # via tox
-py==1.4.34                # via pytest, tox
+py==1.5.2                 # via pytest, tox
 pycodestyle==2.3.1        # via autopep8, flake8
 pyflakes==1.6.0           # via autoflake, flake8
 pyformat==0.7
@@ -37,14 +37,14 @@ pygithub==1.35            # via pyupio
 pygments==2.2.0           # via sphinx
 pyjwt==1.5.3              # via pygithub
 pyparsing==2.2.0          # via packaging
-pytest==3.2.3
+pytest==3.2.5
 python-gitlab==1.1.0      # via pyupio
 pytz==2017.3              # via babel
 pyupio==0.8.2
 pyyaml==3.12              # via dparse, pyupio
 requests-toolbelt==0.8.0  # via twine
 requests==2.18.4          # via python-gitlab, pyupio, requests-toolbelt, safety, sphinx, twine
-restructuredtext-lint==1.1.1
+restructuredtext-lint==1.1.2
 safety==1.6.1             # via pyupio
 six==1.11.0               # via dparse, packaging, pip-tools, python-gitlab, pyupio, sphinx, tox
 snowballstemmer==1.2.1    # via sphinx
