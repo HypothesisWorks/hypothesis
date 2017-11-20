@@ -1,0 +1,124 @@
+===========
+Don't Panic
+===========
+
+The Hypothesis test suite is large, but we've written these notes to help you
+out.  It's aimed at contributors (new and old!) who know they need to add tests
+*somewhere*, but aren't sure where - or maybe need some hints on what kinds of
+tests might be useful.  Others might just be interested in how a testing
+library tests itself!
+
+
+The very short version
+======================
+
+- To improve code coverage (eg because ``make check-coverage`` / the Travis
+  build is failing), go to ``cover/``
+- For longer / system / integration tests, look in ``nocover/``
+- For tests that require an optional dependency, look in the directory
+  named for that dependency.
+
+.. note::
+    If you get stuck, just ask a maintainer to help out by mentioning
+    ``@HypothesisWorks/hypothesis-python-contributors`` on GitHub.
+    We'd love to help - and also get feedback on how this document could
+    be better!
+
+
+Some scenarios
+==============
+
+**I'm adding or changing a strategy**
+    Check for a file specific to that strategy (eg ``test_uuids.py`` for
+    the ``uuids()`` strategy).  Write tests for all invalid argument handling
+    in ``test_direct_strategies.py``.  Strategies with optional dependencies
+    should go in ``hypothesis.extras``, and the tests in their own module
+    (ie not in ``cover``).  When you think you might be done, push and let
+    Travis point out any failing tests or non-covered code!
+
+**I've made some internal changes**
+    That's not very specific - you should probably refer to the test-finding
+    tips in the next section.  Remember that ``tests/cover`` is reasonably
+    quick unit-test style tests - you should consider writing more intensive
+    integration tests too, but put them in ``tests/nocover`` with the others.
+
+
+Finding particular tests
+========================
+
+With the sheer size and variety in this directory finding a specific thing
+can be tricky.  Tips:
+
+- Check for filenames that are relevant to your contribution.
+- Use ``git grep`` to search for keywords, e.g. the name of a strategy you've changed.
+- Deliberately break something related to your code, and see which tests fail.
+- Ask a maintainer!  Sometimes the structure is just arbitrary, and other tactics
+  don't work - but as I keep saying, we *want* to help!
+
+
+About each group of tests
+=========================
+
+Still here?  Here's a note on what to expect in each directory.
+
+``common/``
+    Useful shared testing code, including test setup and a few helper
+    functions in ``utils.py``.  Also read up on
+    `pytest <https://docs.pytest.org/en/latest/contents.html>`_
+    features such as ``mark.parametrize``, ``mark.skipif``, and ``raises``
+    for other functions that are often useful when writing tests.
+
+``cover/``
+    The home of enough tests to get 100% branch coverage - you'll probably
+    spend most of your time here.  Ideally this would be as quick as possible
+    while remaining comprehensive.  More details inside.
+
+    This directory alone has around two-thirds of the tests for Hypothesis
+    (~8k of ~12k lines of code).  If you're adding or fixing tests, chances
+    are therefore good that they're in here!
+
+    We require every change to come with tests in this directory that ensure
+    100% branch coverage.  This can be an intimidating target, but it's entirely
+    achievable and this document is here to help you out.
+
+``datetime/``
+    Tests for the deprecated ``hypothesis.extra.datetime`` module, which
+    depends on the ``pytz`` package.
+
+``django/``
+    Tests for the Django extra.  Includes a toy application, to give us lots
+    of models to generate.
+
+``fakefactory/``
+    Tests for the deprecated Faker extra.
+
+``nocover/``
+    More expensive and longer-running tests, typically used to test trickier
+    interactions or check for regressions in expensive bugs.  Lots of tests
+    about how values shrink, databases, compatibility, etc.
+
+``numpy/``
+    Tests for the Numpy extra.
+
+``pandas/``
+    Tests for the Pandas extra.
+
+``py2/``
+    Tests that require Python 2.  This is a small group, because almost all
+    of our code and tests are also compatible with Python 3.
+
+``py3/``
+    Tests that require Python 3.  Includes checking that unicode identifiers
+    and function annotations don't break anything, asyncio tests, and tests
+    for inference from type hints.
+
+``pytest/``
+    Hypothesis has excellent integration with ``py.test``, though we are careful
+    to support other test runners including unittest and nose.  This is where we
+    test that our pytest integration is working properly.
+
+``quality/``
+    Tests that various hard-to-find examples do in fact get found by Hypothesis,
+    as well as some stuff about example shrinking.  Mostly intended for tests
+    of the form "Hypothesis finds an example of this condition" + assertions
+    about which example it finds.
