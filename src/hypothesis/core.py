@@ -44,7 +44,7 @@ from hypothesis.executors import new_style_executor
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.statistics import note_engine_for_statistics
 from hypothesis.internal.compat import ceil, str_to_bytes, \
-    get_type_hints, getfullargspec, encoded_filepath
+    benchmark_time, get_type_hints, getfullargspec, encoded_filepath
 from hypothesis.internal.coverage import IN_COVERAGE_TESTS
 from hypothesis.utils.conventions import infer, not_set
 from hypothesis.internal.escalation import is_hypothesis_file, \
@@ -400,37 +400,8 @@ class StateForActualGivenExecution(object):
         self.__warned_deadline = False
         self.__existing_collector = None
         self.__test_runtime = None
-        self.__in_final_replay = False
 
-        if self.settings.deadline is None:
-            self.test = test
-        else:
-            @proxies(test)
-            def timed_test(*args, **kwargs):
-                self.__test_runtime = None
-                start = time.time()
-                result = test(*args, **kwargs)
-                runtime = (time.time() - start) * 1000
-                self.__test_runtime = runtime
-                if self.settings.deadline is not_set:
-                    if (
-                        not self.__warned_deadline and
-                        runtime >= 200
-                    ):
-                        self.__warned_deadline = True
-                        note_deprecation((
-                            'Test took %.2fms to run. In future the default '
-                            'deadline setting will be 200ms, which will '
-                            'make this an error. You can set deadline to '
-                            'an explicit value of e.g. %d to turn tests '
-                            'slower than this into an error, or you can set '
-                            'it to None to disable this check entirely.') % (
-                                runtime, ceil(runtime / 100) * 100,
-                        ))
-                elif runtime >= self.current_deadline:
-                    raise DeadlineExceeded(runtime, self.settings.deadline)
-                return result
-            self.test = timed_test
+        self.test = test
 
         self.coverage_data = CoverageData()
         self.files_to_propagate = set()
@@ -456,21 +427,48 @@ class StateForActualGivenExecution(object):
         else:
             self.collector = None
 
-    @property
-    def current_deadline(self):
-        base = self.settings.deadline
-        if self.__in_final_replay:
-            return base
-        else:
-            return base * 1.25
-
     def execute(
         self, data,
         print_example=False,
         is_final=False,
+        expected_failure=None,
     ):
         text_repr = [None]
-        test = self.test
+        if self.settings.deadline is None:
+            test = self.test
+        else:
+            @proxies(self.test)
+            def test(*args, **kwargs):
+                self.__test_runtime = None
+                initial_draws = len(data.draw_times)
+                start = benchmark_time()
+                result = self.test(*args, **kwargs)
+                finish = benchmark_time()
+                internal_draw_time = sum(data.draw_times[initial_draws:])
+                runtime = (finish - start - internal_draw_time) * 1000
+                self.__test_runtime = runtime
+                if self.settings.deadline is not_set:
+                    if (
+                        not self.__warned_deadline and
+                        runtime >= 200
+                    ):
+                        self.__warned_deadline = True
+                        note_deprecation((
+                            'Test took %.2fms to run. In future the default '
+                            'deadline setting will be 200ms, which will '
+                            'make this an error. You can set deadline to '
+                            'an explicit value of e.g. %d to turn tests '
+                            'slower than this into an error, or you can set '
+                            'it to None to disable this check entirely.') % (
+                                runtime, ceil(runtime / 100) * 100,
+                        ))
+                else:
+                    current_deadline = self.settings.deadline
+                    if not is_final:
+                        current_deadline *= 1.25
+                    if runtime >= current_deadline:
+                        raise DeadlineExceeded(runtime, self.settings.deadline)
+                return result
 
         def run(data):
             with self.settings:
@@ -478,7 +476,7 @@ class StateForActualGivenExecution(object):
                     import random as rnd_module
                     rnd_module.seed(0)
                     args, kwargs = data.draw(self.search_strategy)
-                    if is_final:
+                    if expected_failure is not None:
                         text_repr[0] = arg_string(test, args, kwargs)
 
                     if print_example:
@@ -502,8 +500,31 @@ class StateForActualGivenExecution(object):
                             collector.stop()
 
         result = self.test_runner(data, run)
-        if is_final:
-            raise Flaky((
+        if expected_failure is not None:
+            exception, traceback = expected_failure
+            if (
+                isinstance(
+                    exception,
+                    DeadlineExceeded
+                ) and self.__test_runtime is not None
+            ):
+                report((
+                    'Unreliable test timings! On an initial run, this '
+                    'test took %.2fms, which exceeded the deadline of '
+                    '%.2fms, but on a subsequent run it took %.2f ms, '
+                    'which did not. If you expect this sort of '
+                    'variability in your test timings, consider turning '
+                    'deadlines off for this test by setting deadline=None.'
+                ) % (
+                    exception.runtime,
+                    self.settings.deadline, self.__test_runtime
+                ))
+            else:
+                report(
+                    'Failed to reproduce exception. Expected: \n' +
+                    traceback,
+                )
+            self.__flaky((
                 'Hypothesis %s(%s) produces unreliable results: Falsified'
                 ' on the first call but did not on a subsequent one'
             ) % (test.__name__, text_repr[0],))
@@ -681,14 +702,17 @@ class StateForActualGivenExecution(object):
 
         flaky = 0
 
-        self.__in_final_replay = True
-
         for falsifying_example in self.falsifying_examples:
             self.__was_flaky = False
+            assert falsifying_example.__expected_exception is not None
             try:
                 self.execute(
                     ConjectureData.for_buffer(falsifying_example.buffer),
-                    print_example=True, is_final=True
+                    print_example=True, is_final=True,
+                    expected_failure=(
+                        falsifying_example.__expected_exception,
+                        falsifying_example.__expected_traceback,
+                    )
                 )
             except (UnsatisfiedAssumption, StopTest):
                 report(traceback.format_exc())
@@ -700,29 +724,6 @@ class StateForActualGivenExecution(object):
                 if len(self.falsifying_examples) <= 1:
                     raise
                 report(traceback.format_exc())
-            else:
-                if (
-                    isinstance(
-                        falsifying_example.__expected_exception,
-                        DeadlineExceeded
-                    ) and self.__test_runtime is not None
-                ):
-                    report((
-                        'Unreliable test timings! On an initial run, this '
-                        'test took %.2fms, which exceeded the deadline of '
-                        '%.2fms, but on a subsequent run it took %.2f ms, '
-                        'which did not. If you expect this sort of '
-                        'variability in your test timings, consider turning '
-                        'deadlines off for this test by setting deadline=None.'
-                    ) % (
-                        falsifying_example.__expected_exception.runtime,
-                        self.settings.deadline, self.__test_runtime
-                    ))
-                else:
-                    report(
-                        'Failed to reproduce exception. Expected: \n' +
-                        falsifying_example.__expected_traceback,
-                    )
 
                 filter_message = (
                     'Unreliable test data: Failed to reproduce a failure '
