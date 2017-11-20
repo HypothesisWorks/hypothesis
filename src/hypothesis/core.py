@@ -431,7 +431,7 @@ class StateForActualGivenExecution(object):
         self, data,
         print_example=False,
         is_final=False,
-        expected_failure=None,
+        expected_failure=None, collect=False,
     ):
         text_repr = [None]
         if self.settings.deadline is None:
@@ -488,16 +488,14 @@ class StateForActualGivenExecution(object):
                             lambda: 'Trying example: %s(%s)' % (
                                 test.__name__, arg_string(test, args, kwargs)))
 
-                    collector = self.collector
-
-                    if collector is None:
+                    if self.collector is None or not collect:
                         return test(*args, **kwargs)
                     else:  # pragma: no cover
                         try:
-                            collector.start()
+                            self.collector.start()
                             return test(*args, **kwargs)
                         finally:
-                            collector.stop()
+                            self.collector.stop()
 
         result = self.test_runner(data, run)
         if expected_failure is not None:
@@ -584,7 +582,7 @@ class StateForActualGivenExecution(object):
                 sys.settrace(None)
                 try:
                     self.collector.data = {}
-                    result = self.execute(data)
+                    result = self.execute(data, collect=True)
                 finally:
                     sys.settrace(original)
                     covdata = CoverageData()
