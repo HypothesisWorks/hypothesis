@@ -76,7 +76,7 @@ def new_random():
     return random.Random(random.getrandbits(128))
 
 
-def test_is_flaky(test, expected_repr):
+def test_is_flaky(test):
     @functools.wraps(test)
     def test_or_flaky(*args, **kwargs):
         text_repr = arg_string(test, args, kwargs)
@@ -407,7 +407,6 @@ class StateForActualGivenExecution(object):
         self.settings = settings
         self.at_least_one_success = False
         self.last_exception = None
-        self.repr_for_last_exception = None
         self.falsifying_examples = ()
         self.__was_flaky = False
         self.random = random
@@ -739,8 +738,7 @@ class StateForActualGivenExecution(object):
                 try:
                     self.execute(
                         ConjectureData.for_buffer(falsifying_example.buffer),
-                        test_is_flaky(
-                            self.test, self.repr_for_last_exception),
+                        test_is_flaky(self.test),
                         print_example=True, is_final=True
                     )
                 except (UnsatisfiedAssumption, StopTest):
