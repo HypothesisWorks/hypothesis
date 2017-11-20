@@ -44,6 +44,8 @@ The note is printed in the final run of the test in order to include any
 additional information you might need in your test.
 
 
+.. _statistics:
+
 ---------------
 Test Statistics
 ---------------
