@@ -80,15 +80,11 @@ class Statistics(object):
         if engine.total_drawtimes.sum == 0.0:
             self.draw_time_percentage = '~ 0%'
         else:
-            draw_time_percentage = 100.0 * (
-                engine.total_drawtimes.sum / engine.total_runtimes.sum)
-            if draw_time_percentage < 1:
-                self.draw_time_percentage = '< 1%'
-            elif draw_time_percentage > 99:
-                self.draw_time_percentage = '> 99%'
-            else:
-                self.draw_time_percentage = '~ %d%%' % (
-                    round(draw_time_percentage),)
+            draw_time_percentage = 100.0 * min(
+                1, engine.total_drawtimes.sum / engine.total_runtimes.sum)
+
+            self.draw_time_percentage = '~ %d%%' % (
+                round(draw_time_percentage),)
 
 
 def note_engine_for_statistics(engine):

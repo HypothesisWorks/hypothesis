@@ -25,7 +25,9 @@ class KahanSummation(object):
     get by just repeatedly doing += on a counter.
 
     See https://en.wikipedia.org/wiki/Kahan_summation_algorithm for details.
+
     """
+
     def __init__(self):
         self.sum = 0.0
         self.carry = 0.0
