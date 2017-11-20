@@ -113,37 +113,6 @@ def example(*args, **kwargs):
     return accept
 
 
-def reify_and_execute(
-    search_strategy, test,
-    print_example=False,
-    is_final=False, collector=None
-):
-    def run(data):
-        with BuildContext(data, is_final=is_final):
-            import random as rnd_module
-            rnd_module.seed(0)
-            args, kwargs = data.draw(search_strategy)
-
-            if print_example:
-                report(
-                    lambda: 'Falsifying example: %s(%s)' % (
-                        test.__name__, arg_string(test, args, kwargs)))
-            elif current_verbosity() >= Verbosity.verbose:
-                report(
-                    lambda: 'Trying example: %s(%s)' % (
-                        test.__name__, arg_string(test, args, kwargs)))
-            if collector is None:
-                return test(*args, **kwargs)
-            else:  # pragma: no cover
-                try:
-                    collector.start()
-                    return test(*args, **kwargs)
-                finally:
-                    collector.stop()
-
-    return run
-
-
 def seed(seed):
     """seed: Start the test execution from a specific seed.
 
@@ -509,6 +478,37 @@ class StateForActualGivenExecution(object):
         else:
             return base * 1.25
 
+    def reify_and_execute(
+        self,
+        search_strategy, test,
+        print_example=False,
+        is_final=False, collector=None
+    ):
+        def run(data):
+            with BuildContext(data, is_final=is_final):
+                import random as rnd_module
+                rnd_module.seed(0)
+                args, kwargs = data.draw(search_strategy)
+
+                if print_example:
+                    report(
+                        lambda: 'Falsifying example: %s(%s)' % (
+                            test.__name__, arg_string(test, args, kwargs)))
+                elif current_verbosity() >= Verbosity.verbose:
+                    report(
+                        lambda: 'Trying example: %s(%s)' % (
+                            test.__name__, arg_string(test, args, kwargs)))
+                if collector is None:
+                    return test(*args, **kwargs)
+                else:  # pragma: no cover
+                    try:
+                        collector.start()
+                        return test(*args, **kwargs)
+                    finally:
+                        collector.stop()
+
+        return run
+
     def should_trace(self, original_filename, frame):  # pragma: no cover
         disp = FileDisposition()
         assert original_filename is not None
@@ -555,7 +555,7 @@ class StateForActualGivenExecution(object):
     def evaluate_test_data(self, data):
         try:
             if self.collector is None:
-                result = self.test_runner(data, reify_and_execute(
+                result = self.test_runner(data, self.reify_and_execute(
                     self.search_strategy, self.test,
                 ))
             else:  # pragma: no cover
@@ -565,7 +565,7 @@ class StateForActualGivenExecution(object):
                 sys.settrace(None)
                 try:
                     self.collector.data = {}
-                    result = self.test_runner(data, reify_and_execute(
+                    result = self.test_runner(data, self.reify_and_execute(
                         self.search_strategy, self.test,
                         collector=self.collector
                     ))
@@ -694,7 +694,7 @@ class StateForActualGivenExecution(object):
                 with self.settings:
                     self.test_runner(
                         ConjectureData.for_buffer(falsifying_example.buffer),
-                        reify_and_execute(
+                        self.reify_and_execute(
                             self.search_strategy, self.test,
                             print_example=True, is_final=True
                         ))
@@ -744,7 +744,7 @@ class StateForActualGivenExecution(object):
                 try:
                     self.test_runner(
                         ConjectureData.for_buffer(falsifying_example.buffer),
-                        reify_and_execute(
+                        self.reify_and_execute(
                             self.search_strategy,
                             test_is_flaky(
                                 self.test, self.repr_for_last_exception),
