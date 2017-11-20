@@ -142,14 +142,14 @@ def test_should_only_fail_a_deadline_if_the_test_is_slow(
 ):
     s = st.integers()
     if slow_strategy:
-        s = s.map(lambda x: time.sleep(1))
+        s = s.map(lambda x: time.sleep(0.08))
 
-    @settings(deadline=200)
+    @settings(deadline=50)
     @given(st.data())
     def test(data):
         data.draw(s)
         if slow_test:
-            time.sleep(1)
+            time.sleep(0.1)
 
     if slow_test:
         with pytest.raises(DeadlineExceeded):
