@@ -135,6 +135,9 @@ def pytest_terminal_summary(terminalreporter):
             '  - Typical runtimes: %s' % (statistics.runtimes,)
         )
         terminalreporter.write_line(
+            '  - Fraction of time spent in data generation: %s' % (
+                statistics.draw_time_percentage,))
+        terminalreporter.write_line(
             '  - Stopped because %s' % (statistics.exit_reason,)
         )
         if statistics.events:
