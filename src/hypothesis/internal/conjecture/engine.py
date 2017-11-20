@@ -32,6 +32,7 @@ from hypothesis.internal.compat import EMPTY_BYTES, Counter, ceil, \
     hbytes, hrange, int_to_text, int_to_bytes, benchmark_time, \
     bytes_from_list, to_bytes_sequence, unicode_safe_repr
 from hypothesis.utils.conventions import UniqueIdentifier
+from hypothesis.internal.summation import KahanSummation
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
     StopTest, ConjectureData
@@ -83,6 +84,10 @@ class ConjectureRunner(object):
         self.random = random or Random(getrandbits(128))
         self.database_key = database_key
         self.status_runtimes = {}
+
+        self.total_runtimes = KahanSummation()
+        self.total_drawtimes = KahanSummation()
+
         self.events_to_strings = WeakKeyDictionary()
 
         self.target_selector = TargetSelector(self.random)
@@ -381,6 +386,9 @@ class ConjectureRunner(object):
             else:
                 self.save_buffer(data.buffer, self.secondary_key)
         runtime = max(data.finish_time - data.start_time, 0.0)
+        self.total_runtimes.add(runtime)
+        for draw_time in data.draw_times:
+            self.total_drawtimes.add(draw_time)
         self.status_runtimes.setdefault(data.status, []).append(runtime)
         for event in set(map(self.event_to_string, data.events)):
             self.event_call_counts[event] += 1

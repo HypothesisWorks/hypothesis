@@ -77,6 +77,19 @@ class Statistics(object):
                 engine.event_call_counts.items(), key=lambda x: -x[1])
         ]
 
+        if engine.total_drawtimes.sum == 0.0:
+            self.draw_time_percentage = '~ 0%'
+        else:
+            draw_time_percentage = 100.0 * (
+                engine.total_drawtimes.sum / engine.total_runtimes.sum)
+            if draw_time_percentage < 1:
+                self.draw_time_percentage = '< 1%'
+            elif draw_time_percentage > 99:
+                self.draw_time_percentage = '> 99%'
+            else:
+                self.draw_time_percentage = '~ %d%%' % (
+                    round(draw_time_percentage),)
+
 
 def note_engine_for_statistics(engine):
     callback = collector.value
