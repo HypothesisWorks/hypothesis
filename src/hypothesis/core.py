@@ -468,45 +468,45 @@ class StateForActualGivenExecution(object):
         self, data,
         print_example=False,
         is_final=False,
-        expect_failure=False,
     ):
         text_repr = [None]
         test = self.test
 
         def run(data):
-            with BuildContext(data, is_final=is_final):
-                import random as rnd_module
-                rnd_module.seed(0)
-                args, kwargs = data.draw(self.search_strategy)
-                if expect_failure:
-                    text_repr[0] = arg_string(test, args, kwargs)
+            with self.settings:
+                with BuildContext(data, is_final=is_final):
+                    import random as rnd_module
+                    rnd_module.seed(0)
+                    args, kwargs = data.draw(self.search_strategy)
+                    if is_final:
+                        text_repr[0] = arg_string(test, args, kwargs)
 
-                if print_example:
-                    report(
-                        lambda: 'Falsifying example: %s(%s)' % (
-                            test.__name__, arg_string(test, args, kwargs)))
-                elif current_verbosity() >= Verbosity.verbose:
-                    report(
-                        lambda: 'Trying example: %s(%s)' % (
-                            test.__name__, arg_string(test, args, kwargs)))
+                    if print_example:
+                        report(
+                            lambda: 'Falsifying example: %s(%s)' % (
+                                test.__name__, arg_string(test, args, kwargs)))
+                    elif current_verbosity() >= Verbosity.verbose:
+                        report(
+                            lambda: 'Trying example: %s(%s)' % (
+                                test.__name__, arg_string(test, args, kwargs)))
 
-                collector = self.collector
+                    collector = self.collector
 
-                if collector is None:
-                    return test(*args, **kwargs)
-                else:  # pragma: no cover
-                    try:
-                        collector.start()
+                    if collector is None:
                         return test(*args, **kwargs)
-                    finally:
-                        collector.stop()
+                    else:  # pragma: no cover
+                        try:
+                            collector.start()
+                            return test(*args, **kwargs)
+                        finally:
+                            collector.stop()
+
         result = self.test_runner(data, run)
-        if expect_failure:
-            raise Flaky(
-                (
-                    'Hypothesis %s(%s) produces unreliable results: Falsified'
-                    ' on the first call but did not on a subsequent one'
-                ) % (test.__name__, text_repr[0],))
+        if is_final:
+            raise Flaky((
+                'Hypothesis %s(%s) produces unreliable results: Falsified'
+                ' on the first call but did not on a subsequent one'
+            ) % (test.__name__, text_repr[0],))
         return result
 
     def should_trace(self, original_filename, frame):  # pragma: no cover
@@ -686,11 +686,10 @@ class StateForActualGivenExecution(object):
         for falsifying_example in self.falsifying_examples:
             self.__was_flaky = False
             try:
-                with self.settings:
-                    self.execute(
-                        ConjectureData.for_buffer(falsifying_example.buffer),
-                        print_example=True, is_final=True
-                    )
+                self.execute(
+                    ConjectureData.for_buffer(falsifying_example.buffer),
+                    print_example=True, is_final=True
+                )
             except (UnsatisfiedAssumption, StopTest):
                 report(traceback.format_exc())
                 self.__flaky(
