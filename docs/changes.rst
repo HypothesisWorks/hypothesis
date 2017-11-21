@@ -22,6 +22,13 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.38.1 - 2017-11-21
+-------------------
+
+This patch has a variety of non-user-visible refactorings, removing various
+minor warts ranging from indirect imports to typos in comments.
+
+-------------------
 3.38.0 - 2017-11-18
 -------------------
 
