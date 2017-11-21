@@ -22,6 +22,13 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.38.3 - 2017-11-21
+-------------------
+
+This is a documentation release, which ensures code examples are up to date
+by running them as doctests in CI (:issue:`711`).
+
+-------------------
 3.38.2 - 2017-11-21
 -------------------
 
