@@ -71,10 +71,10 @@ You would see:
 
   test_integers:
 
-    - 200 passing examples, 0 failing examples, 0 invalid examples
-    - Typical runtimes: < 1ms
-    - Stopped because settings.max_examples=200
-
+    - 100 passing examples, 0 failing examples, 0 invalid examples
+    - Typical runtimes: ~ 1ms
+    - Fraction of time spent in data generation: ~ 12%
+    - Stopped because settings.max_examples=100
 
 The final "Stopped because" line is particularly important to note: It tells you the
 setting value that determined when the test should stop trying new examples. This
