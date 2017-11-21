@@ -22,6 +22,20 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.38.2 - 2017-11-21
+-------------------
+
+This release changes the behaviour of the :attr:`~hypothesis.settings.deadline`
+setting when used with :func:`~hypothesis.strategies.data`: Time spent inside
+calls to ``data.draw`` will no longer be counted towards the deadline time.
+
+As a side effect of some refactoring required for this work, the way flaky
+tests are handled has changed slightly. You are unlikely to see much difference
+from this, but some error messages will have changed.
+
+This work was funded by `Smarkets <https://smarkets.com/>`_.
+
+-------------------
 3.38.1 - 2017-11-21
 -------------------
 
