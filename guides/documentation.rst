@@ -66,3 +66,17 @@ the repository root, and:
   "Thanks to <your name> for this bug fix / feature / contribution"
   (depending on which it is).  If this is your first contribution,
   don't forget to add yourself to contributors.rst!
+
+
+-----------------
+Updating Doctests
+-----------------
+
+We use the Sphinx `doctest` builder to ensure that all example code snippets
+are kept up to date.  To make this less tedious, you can run
+``scripts/fix_doctests.py`` (under Python 3) to... fix failing doctests.
+
+The script is pretty good, but doesn't handle ``+ELLIPSIS`` or
+``+NORMALIZE_WHITESPACE`` options.  Check that output is stable (running
+it again should give "All doctests are OK"), then review the diff before
+committing.

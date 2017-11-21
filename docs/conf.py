@@ -79,12 +79,14 @@ doctest_global_setup = '''
 from hypothesis import *
 from hypothesis.strategies import *
 # Run deterministically, and don't save examples
+import random
+random.seed(0)
 doctest_settings = settings(database=None, derandomize=True)
 settings.register_profile('doctests', doctest_settings)
 settings.load_profile('doctests')
 # Never show deprecated behaviour in code examples
 import warnings
-warnings.filterwarnings('error', category=HypothesisDeprecationWarning)
+warnings.filterwarnings('error', category=DeprecationWarning)
 '''
 
 # This config value must be a dictionary of external sites, mapping unique

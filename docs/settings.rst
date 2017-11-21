@@ -90,9 +90,34 @@ and :func:`@given <hypothesis.given>`.
     >>> from hypothesis import find, settings, Verbosity
     >>> from hypothesis.strategies import lists, booleans
     >>> find(lists(integers()), any, settings=settings(verbosity=Verbosity.verbose))
-    Found satisfying example [-208]
-    Shrunk example to [-208]
-    Shrunk example to [208]
+    Trying example []
+    Found satisfying example [-106641080167757791735701986170810016341,
+     -129665482689688858331316879188241401294,
+     -17902751879921353864928802351902980929,
+     86547910278013668694989468221154862503,
+     99789676068743906931733548810810835946,
+     -56833685188912180644827795048092269385,
+     -12891126493032945632804716628985598019,
+     57797823215504994933565345605235342532,
+     98214819714866425575119206029702237685]
+    Shrunk example to [-106641080167757791735701986170810016341,
+     -129665482689688858331316879188241401294,
+     -17902751879921353864928802351902980929,
+     86547910278013668694989468221154862503,
+     99789676068743906931733548810810835946,
+     -56833685188912180644827795048092269385,
+     -12891126493032945632804716628985598019,
+     57797823215504994933565345605235342532,
+     98214819714866425575119206029702237685]
+    Shrunk example to [-106641080167757791735701986170810016341,
+     -129665482689688858331316879188241401294,
+     -17902751879921353864928802351902980929,
+     86547910278013668694989468221154862503]
+    Shrunk example to [-106641080167757791735701986170810016341,
+     164695784672172929935660921670478470673]
+    Shrunk example to [164695784672172929935660921670478470673]
+    Shrunk example to [164695784672172929935660921670478470673]
+    Shrunk example to [164695784672172929935660921670478470673]
     Shrunk example to [1]
     [1]
 
@@ -120,13 +145,14 @@ values. Any absent ones will be set to defaults:
 
     >>> from hypothesis import settings
     >>> settings()  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-    settings(buffer_size=8192, database_file='...', derandomize=False,
-             max_examples=100, max_iterations=1000,
-             max_shrinks=500, min_satisfying_examples=5, perform_health_check=True,
-             phases=..., report_statistics=..., stateful_step_count=50, strict=...,
-             suppress_health_check=[], timeout=60, verbosity=Verbosity.normal)
+    settings(buffer_size=8192, database_file='...', deadline=not_set,
+             derandomize=True, max_examples=100, max_iterations=1000,
+             max_shrinks=500, min_satisfying_examples=5,
+             perform_health_check=True, phases=(...), stateful_step_count=50,
+             strict=False, suppress_health_check=(), timeout=60,
+             use_coverage=True, verbosity=Verbosity.normal)
     >>> settings().max_examples
-    200
+    100
     >>> settings(max_examples=10).max_examples
     10
 
@@ -164,13 +190,13 @@ also override them locally by using a settings object as a :ref:`context manager
 
 .. doctest::
 
-  >>> with settings(max_examples=150):
-  ...     print(settings.default.max_examples)
-  ...     print(settings().max_examples)
-  150
-  150
-  >>> settings().max_examples
-  200
+    >>> with settings(max_examples=150):
+    ...     print(settings.default.max_examples)
+    ...     print(settings().max_examples)
+    150
+    150
+    >>> settings().max_examples
+    100
 
 Note that after the block exits the default is returned to normal.
 
@@ -215,7 +241,7 @@ of tests that explicitly change the settings.
     >>> from hypothesis import settings
     >>> settings.register_profile("ci", settings(max_examples=1000))
     >>> settings().max_examples
-    200
+    100
     >>> settings.load_profile("ci")
     >>> settings().max_examples
     1000
@@ -225,10 +251,10 @@ specific tests.
 
 .. doctest::
 
-  >>> with settings.get_profile("ci"):
-  ...     print(settings().max_examples)
-  ...
-  1000
+    >>> with settings.get_profile("ci"):
+    ...     print(settings().max_examples)
+    ...
+    1000
 
 Optionally, you may define the environment variable to load a profile for you.
 This is the suggested pattern for running your tests on CI.
