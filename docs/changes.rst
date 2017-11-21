@@ -115,8 +115,7 @@ This release adds a setting to the public API, and does some internal cleanup:
 -------------------
 
 This minor release supports constraining :func:`~hypothesis.strategies.uuids`
-to generate :class:`~python:uuid.UUID`s of a particular version.
-(:issue:`721`)
+to generate a particular version of :class:`~python:uuid.UUID` (:issue:`721`).
 
 Thanks to Dion Misic for this feature.
 

@@ -316,10 +316,9 @@ def extract_lambda_source(f):
             parsed = ast.parse(source[:i])
             assert len(parsed.body) == 1
             assert parsed.body
-            if not isinstance(parsed.body[0].value, ast.Lambda):
-                continue
-            source = source[:i]
-            break
+            if isinstance(parsed.body[0].value, ast.Lambda):
+                source = source[:i]
+                break
         except SyntaxError:
             pass
     lines = source.split('\n')

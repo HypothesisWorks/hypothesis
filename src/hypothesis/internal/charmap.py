@@ -65,8 +65,8 @@ def charmap():
                     rs[-1][-1] += 1
                 else:
                     rs.append([i, i])
-            _charmap = {k: tuple((map(tuple, v)))
-                        for k, v in tmp_charmap.items()}
+            _charmap = {k: tuple(tuple(pair) for pair in pairs)
+                        for k, pairs in tmp_charmap.items()}
 
             try:
                 # Write the Unicode table atomically
@@ -87,10 +87,10 @@ _categories = None
 
 
 def categories():
-    """Return a list of Unicode categories in a normalised order.
+    """Return a tuple of Unicode categories in a normalised order.
 
     >>> categories() # doctest: +ELLIPSIS
-    ['Zl', 'Zp', 'Co', 'Me', 'Pc', ..., 'Cc', 'Cs']
+    ('Zl', 'Zp', 'Co', 'Me', 'Pc', ..., 'Cc', 'Cs')
 
     """
     global _categories
@@ -103,7 +103,7 @@ def categories():
         _categories.remove('Cs')  # Other, Surrogate
         _categories.append('Cc')
         _categories.append('Cs')
-    return _categories
+    return tuple(_categories)
 
 
 def _union_intervals(x, y):
@@ -149,7 +149,7 @@ def _intervals(s):
     ((48, 57), (97, 102))
 
     """
-    intervals = [(ord(c), ord(c)) for c in sorted(s)]
+    intervals = tuple((ord(c), ord(c)) for c in sorted(s))
     return _union_intervals(intervals, intervals)
 
 
@@ -184,8 +184,7 @@ def _query_for_key(key):
     """Return a tuple of codepoint intervals covering characters that match one
     or more categories in the tuple of categories `key`.
 
-    >>> all_categories = tuple(categories())
-    >>> _query_for_key(all_categories)
+    >>> _query_for_key(categories())
     ((0, 1114111),)
     >>> _query_for_key(('Zl', 'Zp', 'Co'))
     ((8232, 8233), (57344, 63743), (983040, 1048573), (1048576, 1114109))
@@ -196,8 +195,7 @@ def _query_for_key(key):
     except KeyError:
         pass
     assert key
-    cs = categories()
-    if len(key) == len(cs):
+    if set(key) == set(categories()):
         result = ((0, sys.maxunicode),)
     else:
         result = _union_intervals(

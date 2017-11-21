@@ -17,7 +17,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-from hypothesis.internal.compat import hrange, getfullargspec
+from hypothesis.internal.compat import getfullargspec
 from hypothesis.internal.reflection import arg_string, \
     convert_keyword_arguments, convert_positional_arguments
 from hypothesis.searchstrategy.strategies import SearchStrategy
@@ -144,8 +144,9 @@ class LazyStrategy(SearchStrategy):
             argspec = getfullargspec(self.__function)
             defaults = dict(argspec.kwonlydefaults or {})
             if argspec.defaults is not None:
-                for k in hrange(1, len(argspec.defaults) + 1):
-                    defaults[argspec.args[-k]] = argspec.defaults[-k]
+                for name, value in zip(reversed(argspec.args),
+                                       reversed(argspec.defaults)):
+                    defaults[name] = value
             if len(argspec.args) > 1 or argspec.defaults:
                 _args, _kwargs = convert_positional_arguments(
                     self.__function, _args, _kwargs)
