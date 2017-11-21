@@ -133,3 +133,26 @@ def test_gives_a_deadline_specific_flaky_error_message():
             slow_once()
     assert 'Unreliable test timing' in o.getvalue()
     assert 'took 2' in o.getvalue()
+
+
+@pytest.mark.parametrize('slow_strategy', [False, True])
+@pytest.mark.parametrize('slow_test', [False, True])
+def test_should_only_fail_a_deadline_if_the_test_is_slow(
+    slow_strategy, slow_test
+):
+    s = st.integers()
+    if slow_strategy:
+        s = s.map(lambda x: time.sleep(0.08))
+
+    @settings(deadline=50)
+    @given(st.data())
+    def test(data):
+        data.draw(s)
+        if slow_test:
+            time.sleep(0.1)
+
+    if slow_test:
+        with pytest.raises(DeadlineExceeded):
+            test()
+    else:
+        test()
