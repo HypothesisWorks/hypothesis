@@ -20,7 +20,8 @@ from __future__ import division, print_function, absolute_import
 import re
 import sys
 import operator
-import sre_parse as sre
+import sre_parse
+import sre_constants as sre
 
 import hypothesis.strategies as st
 from hypothesis import reject
@@ -231,7 +232,7 @@ def maybe_pad(draw, regex, strategy, left_pad_strategy, right_pad_strategy):
 
 def base_regex_strategy(regex, parsed=None):
     if parsed is None:
-        parsed = sre.parse(regex.pattern)
+        parsed = sre_parse.parse(regex.pattern)
     return clear_cache_after_draw(_strategy(
         parsed,
         Context(flags=regex.flags),
@@ -245,7 +246,7 @@ def regex_strategy(regex):
 
     is_unicode = isinstance(regex.pattern, text_type)
 
-    parsed = sre.parse(regex.pattern)
+    parsed = sre_parse.parse(regex.pattern)
 
     if not parsed:
         if is_unicode:

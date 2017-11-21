@@ -55,7 +55,7 @@ class GenericCache(object):
         self.max_size = max_size
 
         # Implementation: We store a binary heap of Entry objects in self.data,
-        # with the heap property requirnig that a parent's score is <= that of
+        # with the heap property requiring that a parent's score is <= that of
         # its children. keys_to_index then maps keys to their index in the
         # heap. We keep these two in sync automatically - the heap is never
         # reordered without updating the index.
