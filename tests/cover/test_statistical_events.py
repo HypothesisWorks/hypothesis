@@ -166,7 +166,6 @@ def test_has_lambdas_in_output():
         pass
 
     stats = call_for_statistics(test)
-    print(stats.events)
     assert any(
         'lambda x: x % 2 == 0' in e for e in stats.events
     )
