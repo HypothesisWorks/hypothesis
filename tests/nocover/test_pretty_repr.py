@@ -84,9 +84,7 @@ Strategies = st.recursive(
         builds_ignoring_invalid(
             st.dictionaries, x, x,
             dict_class=st.sampled_from([dict, OrderedDict]),
-            min_size=st.integers(min_value=0, max_value=100) | st.none(),
-            max_size=st.integers(min_value=0, max_value=100) | st.none(),
-            average_size=st.floats(min_value=0.0, max_value=100.0) | st.none()
+            **size_strategies
         ),
         st.builds(lambda s, f: s.map(f), x, st.sampled_from(fns)),
     )
