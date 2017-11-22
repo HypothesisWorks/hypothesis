@@ -22,6 +22,16 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.38.4 - 2017-11-22
+-------------------
+
+This release updates the reported :ref:`statistics <statistics>` so that they
+show approximately what fraction of your test run time is spent in data
+generation (as opposed to test execution).
+
+This work was funded by `Smarkets <https://smarkets.com/>`_.
+
+-------------------
 3.38.3 - 2017-11-21
 -------------------
 
