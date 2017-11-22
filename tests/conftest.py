@@ -54,14 +54,20 @@ def consistently_increment_time(monkeypatch):
     Replacing time with a fake version under our control avoids this problem.
 
     """
+    frozen = [False]
+
     current_time = [time_module.time()]
 
     def time():
-        current_time[0] += TIME_INCREMENT
+        if not frozen[0]:
+            current_time[0] += TIME_INCREMENT
         return current_time[0]
 
     def sleep(naptime):
         current_time[0] += naptime
+
+    def freeze():
+        frozen[0] = True
 
     monkeypatch.setattr(time_module, 'time', time)
     try:
@@ -69,6 +75,7 @@ def consistently_increment_time(monkeypatch):
     except AttributeError:
         assert sys.version_info[0] == 2
     monkeypatch.setattr(time_module, 'sleep', sleep)
+    monkeypatch.setattr(time_module, 'freeze', freeze, raising=False)
 
 
 if not IN_COVERAGE_TESTS:

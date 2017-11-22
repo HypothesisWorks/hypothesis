@@ -21,6 +21,8 @@ import re
 import time
 import traceback
 
+import pytest
+
 from hypothesis import strategies as st
 from hypothesis import HealthCheck, event, given, example, settings
 from hypothesis.statistics import collector
@@ -108,12 +110,8 @@ def test_exact_timing():
     assert re.match(r'~ 5\d\dms', stats.runtimes)
 
 
-def test_apparently_instantaneous_tests(monkeypatch):
-    monkeypatch.setattr(time, 'time', lambda: 0)
-    try:
-        monkeypatch.setattr(time, 'monotonic', lambda: 0)
-    except AttributeError:
-        pass
+def test_apparently_instantaneous_tests():
+    time.freeze()
 
     @given(st.integers())
     def test(i):
@@ -136,3 +134,27 @@ def test_flaky_exit():
 
     stats = call_for_statistics(test)
     assert stats.exit_reason == 'test was flaky'
+
+
+@pytest.mark.parametrize('draw_delay', [False, True])
+@pytest.mark.parametrize('test_delay', [False, True])
+def test_draw_time_percentage(draw_delay, test_delay):
+    time.freeze()
+
+    @st.composite
+    def s(draw):
+        if draw_delay:
+            time.sleep(0.05)
+
+    @given(s())
+    def test(_):
+        if test_delay:
+            time.sleep(0.05)
+
+    stats = call_for_statistics(test)
+    if not draw_delay:
+        assert stats.draw_time_percentage == '~ 0%'
+    elif test_delay:
+        assert stats.draw_time_percentage == '~ 50%'
+    else:
+        assert stats.draw_time_percentage == '~ 100%'

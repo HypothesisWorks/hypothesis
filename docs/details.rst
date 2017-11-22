@@ -44,6 +44,8 @@ The note is printed in the final run of the test in order to include any
 additional information you might need in your test.
 
 
+.. _statistics:
+
 ---------------
 Test Statistics
 ---------------
@@ -69,10 +71,10 @@ You would see:
 
   test_integers:
 
-    - 200 passing examples, 0 failing examples, 0 invalid examples
-    - Typical runtimes: < 1ms
-    - Stopped because settings.max_examples=200
-
+    - 100 passing examples, 0 failing examples, 0 invalid examples
+    - Typical runtimes: ~ 1ms
+    - Fraction of time spent in data generation: ~ 12%
+    - Stopped because settings.max_examples=100
 
 The final "Stopped because" line is particularly important to note: It tells you the
 setting value that determined when the test should stop trying new examples. This
@@ -96,12 +98,13 @@ You would see something like:
 
   test_even_integers:
 
-    - 200 passing examples, 0 failing examples, 16 invalid examples
-    - Typical runtimes: < 1ms
-    - Stopped because settings.max_examples=200
-    - Events:
-      * 30.56%, Retried draw from integers().filter(lambda x: x % 2 == 0) to satisfy filter
-      * 7.41%, Aborted test because unable to satisfy integers().filter(lambda x: x % 2 == 0)
+      - 100 passing examples, 0 failing examples, 36 invalid examples
+      - Typical runtimes: 0-1 ms
+      - Fraction of time spent in data generation: ~ 16%
+      - Stopped because settings.max_examples=100
+      - Events:
+        * 80.88%, Retried draw from integers().filter(lambda x: <unknown>) to satisfy filter
+        * 26.47%, Aborted test because unable to satisfy integers().filter(lambda x: <unknown>)
 
 You can also mark custom events in a test using the ``event`` function:
 
@@ -118,20 +121,20 @@ You can also mark custom events in a test using the ``event`` function:
 
 You will then see output like:
 
-
 .. code-block:: none
 
   test_even_integers:
 
-    - 200 passing examples, 0 failing examples, 28 invalid examples
-    - Typical runtimes: < 1ms
-    - Stopped because settings.max_examples=200
+    - 100 passing examples, 0 failing examples, 38 invalid examples
+    - Typical runtimes: 0-1 ms
+    - Fraction of time spent in data generation: ~ 16%
+    - Stopped because settings.max_examples=100
     - Events:
-      * 47.81%, Retried draw from integers().filter(lambda x: x % 2 == 0) to satisfy filter
-      * 31.14%, i mod 3 = 2
-      * 28.95%, i mod 3 = 1
-      * 27.63%, i mod 3 = 0
-      * 12.28%, Aborted test because unable to satisfy integers().filter(lambda x: x % 2 == 0)
+      * 80.43%, Retried draw from integers().filter(lambda x: <unknown>) to satisfy filter
+      * 31.88%, i mod 3 = 0
+      * 27.54%, Aborted test because unable to satisfy integers().filter(lambda x: <unknown>)
+      * 21.74%, i mod 3 = 1
+      * 18.84%, i mod 3 = 2
 
 Arguments to ``event`` can be any hashable type, but two events will be considered the same
 if they are the same when converted to a string with ``str``.
