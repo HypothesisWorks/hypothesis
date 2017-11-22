@@ -141,3 +141,15 @@ def test_can_extract_two_lambdas_from_a_decorator_if_args_differ():
     a, b = two_decorators
     assert get_pretty_function_description(a) == 'lambda x: x + 1'
     assert get_pretty_function_description(b) == 'lambda y: y * 2'
+
+
+@arg_decorator(
+    lambda x: x + 1
+)
+def decorator_with_space():
+    pass
+
+
+def test_can_extract_lambda_repr_in_a_decorator_with_spaces():
+    assert get_pretty_function_description(
+        decorator_with_space[0]) == 'lambda x: x + 1'
