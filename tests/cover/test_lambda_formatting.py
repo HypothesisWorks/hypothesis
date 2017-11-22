@@ -115,3 +115,18 @@ def test_lambda_source_break_after_def_with_line_continuation():
 
     source = get_pretty_function_description(f)
     assert source == "lambda n: 'aaa'"
+
+
+def arg_decorator(s):
+    def accept(f):
+        return s
+    return accept
+
+
+@arg_decorator(lambda x: x + 1)
+def plus_one():
+    pass
+
+
+def test_can_extract_lambda_repr_in_a_decorator():
+    assert get_pretty_function_description(plus_one) == 'lambda x: x + 1'
