@@ -282,6 +282,7 @@ def extract_lambda_source(f):
     source = LINE_CONTINUATION.sub(' ', source)
     source = WHITESPACE.sub(' ', source)
     source = source.strip()
+    assert 'lambda' in source
 
     tree = None
 
@@ -300,7 +301,12 @@ def extract_lambda_source(f):
                 continue
     if tree is None:
         if source.startswith('@'):
-            for i in hrange(len(source) + 1):
+            # This will always eventually find a valid expression because we
+            # the decorator must be a valid Python function call, so will
+            # eventually be syntactically valid and break out of the loop. Thus
+            # this loop can never terminate normally, so a no branch pragma is
+            # appropriate.
+            for i in hrange(len(source) + 1):  # pragma: no branch
                 p = source[1:i]
                 if 'lambda' in p:
                     try:
