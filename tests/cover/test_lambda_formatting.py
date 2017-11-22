@@ -42,6 +42,7 @@ def test_can_get_descriptions_of_nested_lambdas_with_different_names():
     assert get_pretty_function_description(ordered_pair) == \
         'lambda right: [].map(lambda length: ())'
 
+
 def test_does_not_error_on_unparsable_source():
     t = [
         lambda x: \
@@ -49,6 +50,7 @@ def test_does_not_error_on_unparsable_source():
         # parser to accept this lambda
         x][0]
     assert get_pretty_function_description(t) == 'lambda x: <unknown>'
+
 
 def test_source_of_lambda_is_pretty():
     assert get_pretty_function_description(
@@ -153,3 +155,26 @@ def decorator_with_space():
 def test_can_extract_lambda_repr_in_a_decorator_with_spaces():
     assert get_pretty_function_description(
         decorator_with_space[0]) == 'lambda x: x + 1'
+
+
+@arg_decorator(lambda: ())
+def to_brackets():
+    pass
+
+
+def test_can_handle_brackets_in_decorator_argument():
+    assert get_pretty_function_description(to_brackets[0]) == "lambda: ()"
+
+
+def identity(x):
+    return x
+
+
+@arg_decorator(identity(lambda x: x + 1))
+def decorator_with_wrapper():
+    pass
+
+
+def test_can_handle_nested_lambda_in_decorator_argument():
+    assert get_pretty_function_description(
+        decorator_with_wrapper[0]) == "lambda x: x + 1"

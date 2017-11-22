@@ -238,8 +238,6 @@ PROBABLY_A_COMMENT = re.compile("""#[^'"]*$""")
 SPACE_FOLLOWS_OPEN_BRACKET = re.compile(r"\( ")
 SPACE_PRECEDES_CLOSE_BRACKET = re.compile(r" \)")
 
-LAMBDA_INSIDE_DECORATOR = re.compile(r"@\w+(\s*\(lambda [^\)]+\))")
-
 
 def extract_lambda_source(f):
     """Extracts a single lambda expression from the string source. Returns a
@@ -301,12 +299,19 @@ def extract_lambda_source(f):
             except SyntaxError:
                 continue
     if tree is None:
-        extract_from_decorator = LAMBDA_INSIDE_DECORATOR.match(source)
-        if extract_from_decorator is not None:
-            source = extract_from_decorator.group(1)
-            tree = ast.parse(source)
-        else:
-            return if_confused
+        if source.startswith('@'):
+            for i in hrange(len(source) + 1):
+                p = source[1:i]
+                if 'lambda' in p:
+                    try:
+                        tree = ast.parse(p)
+                        source = p
+                        break
+                    except SyntaxError:
+                        pass
+
+    if tree is None:
+        return if_confused
 
     all_lambdas = extract_all_lambdas(tree)
     aligned_lambdas = [
