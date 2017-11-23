@@ -282,6 +282,9 @@ def extract_lambda_source(f):
     source = LINE_CONTINUATION.sub(' ', source)
     source = WHITESPACE.sub(' ', source)
     source = source.strip()
+    assert 'lambda' in source
+
+    tree = None
 
     try:
         tree = ast.parse(source)
@@ -289,15 +292,32 @@ def extract_lambda_source(f):
         for i in hrange(len(source) - 1, len('lambda'), -1):
             prefix = source[:i]
             if 'lambda' not in prefix:
-                return if_confused
+                break
             try:
                 tree = ast.parse(prefix)
                 source = prefix
                 break
             except SyntaxError:
                 continue
-        else:
-            return if_confused
+    if tree is None:
+        if source.startswith('@'):
+            # This will always eventually find a valid expression because
+            # the decorator must be a valid Python function call, so will
+            # eventually be syntactically valid and break out of the loop. Thus
+            # this loop can never terminate normally, so a no branch pragma is
+            # appropriate.
+            for i in hrange(len(source) + 1):  # pragma: no branch
+                p = source[1:i]
+                if 'lambda' in p:
+                    try:
+                        tree = ast.parse(p)
+                        source = p
+                        break
+                    except SyntaxError:
+                        pass
+
+    if tree is None:
+        return if_confused
 
     all_lambdas = extract_all_lambdas(tree)
     aligned_lambdas = [

@@ -158,3 +158,14 @@ def test_draw_time_percentage(draw_delay, test_delay):
         assert stats.draw_time_percentage == '~ 50%'
     else:
         assert stats.draw_time_percentage == '~ 100%'
+
+
+def test_has_lambdas_in_output():
+    @given(st.integers().filter(lambda x: x % 2 == 0))
+    def test(i):
+        pass
+
+    stats = call_for_statistics(test)
+    assert any(
+        'lambda x: x % 2 == 0' in e for e in stats.events
+    )
