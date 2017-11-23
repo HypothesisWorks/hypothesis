@@ -22,6 +22,18 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.38.5 - 2017-11-23
+-------------------
+
+This fixes the repr of strategies using lambda that are defined inside
+decorators to include the lambda source.
+
+This would mostly have been visible when using the
+:ref:`statistics <statistics>` functionality - lambdas used for e.g. filtering
+would have shown up with a ``<unknown>`` as their body. This can still happen,
+but it should happen less often now.
+
+-------------------
 3.38.4 - 2017-11-22
 -------------------
 
