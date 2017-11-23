@@ -301,7 +301,7 @@ def extract_lambda_source(f):
                 continue
     if tree is None:
         if source.startswith('@'):
-            # This will always eventually find a valid expression because we
+            # This will always eventually find a valid expression because
             # the decorator must be a valid Python function call, so will
             # eventually be syntactically valid and break out of the loop. Thus
             # this loop can never terminate normally, so a no branch pragma is
