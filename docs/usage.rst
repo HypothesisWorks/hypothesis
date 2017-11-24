@@ -7,6 +7,8 @@ any others please add them to the list! The only inclusion criterion right now i
 then it should be available on pypi.
 
 * `aur <https://github.com/cdown/aur>`_
+* `argon2_cffi <https://github.com/hynek/argon2_cffi>`_
+* `attrs <https://github.com/python-attrs/attrs>`_
 * `axelrod <https://github.com/Axelrod-Python/Axelrod>`_
 * `bidict <https://github.com/jab/bidict>`_
 * `binaryornot <https://github.com/audreyr/binaryornot>`_
