@@ -54,7 +54,7 @@ sphinxcontrib-websupport==1.0.1  # via sphinx
 tox==2.9.1
 tqdm==4.19.4              # via pyupio, twine
 twine==1.9.1
-unify==0.3                # via pyformat
+unify==0.4                # via pyformat
 untokenize==0.1.1         # via docformatter, unify
 urllib3==1.22             # via requests
 virtualenv==15.1.0        # via tox
