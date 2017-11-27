@@ -32,7 +32,7 @@ def has_a_non_zero_byte(x):
 
 
 def test_saves_incremental_steps_in_database():
-    key = b"a database key"
+    key = b'a database key'
     database = InMemoryExampleDatabase()
     find(
         st.binary(min_size=10), lambda x: has_a_non_zero_byte(x),
@@ -42,7 +42,7 @@ def test_saves_incremental_steps_in_database():
 
 
 def test_clears_out_database_as_things_get_boring():
-    key = b"a database key"
+    key = b'a database key'
     database = InMemoryExampleDatabase()
     do_we_care = True
 
@@ -73,7 +73,7 @@ def test_clears_out_database_as_things_get_boring():
 
 
 def test_trashes_invalid_examples():
-    key = b"a database key"
+    key = b'a database key'
     database = InMemoryExampleDatabase()
     finicky = False
 
@@ -96,7 +96,7 @@ def test_trashes_invalid_examples():
 
 
 def test_respects_max_examples_in_database_usage():
-    key = b"a database key"
+    key = b'a database key'
     database = InMemoryExampleDatabase()
     do_we_care = True
     counter = [0]
