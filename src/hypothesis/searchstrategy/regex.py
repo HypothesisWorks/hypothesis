@@ -236,7 +236,7 @@ def base_regex_strategy(regex, parsed=None):
     return clear_cache_after_draw(_strategy(
         parsed,
         Context(flags=regex.flags),
-        regex.pattern
+        isinstance(regex.pattern, text_type)
     ))
 
 
@@ -294,7 +294,7 @@ def regex_strategy(regex):
     return maybe_pad(regex, base, left_pad, right_pad)
 
 
-def _strategy(codes, context, pattern):
+def _strategy(codes, context, is_unicode):
     """Convert SRE regex parse tree to strategy that generates strings matching
     that regex represented by that parse tree.
 
@@ -323,9 +323,9 @@ def _strategy(codes, context, pattern):
 
     """
     def recurse(codes):
-        return _strategy(codes, context, pattern)
+        return _strategy(codes, context, is_unicode)
 
-    if isinstance(pattern, text_type):
+    if is_unicode:
         empty = u''
         to_char = hunichr
     else:
@@ -387,7 +387,7 @@ def _strategy(codes, context, pattern):
             if context.flags & re.IGNORECASE and \
                     re.match(c, c.swapcase(), re.IGNORECASE) is not None:
                 blacklist |= set(c.swapcase())
-            if isinstance(pattern, text_type):
+            if is_unicode:
                 return st.characters(blacklist_characters=blacklist)
             else:
                 return binary_char.filter(lambda c: c not in blacklist)
@@ -395,7 +395,7 @@ def _strategy(codes, context, pattern):
         elif code == sre.IN:
             # Regex '[abc0-9]' (set of characters)
             negate = value[0][0] == sre.NEGATE
-            if isinstance(pattern, text_type):
+            if is_unicode:
                 builder = CharactersBuilder(negate, context.flags)
             else:
                 builder = BytesBuilder(negate, context.flags)
@@ -425,7 +425,7 @@ def _strategy(codes, context, pattern):
 
         elif code == sre.ANY:
             # Regex '.' (any char)
-            if isinstance(pattern, text_type):
+            if is_unicode:
                 if context.flags & re.DOTALL:
                     return st.characters()
                 return st.characters(blacklist_characters=u'\n')
@@ -447,7 +447,7 @@ def _strategy(codes, context, pattern):
                 # This feature is available only in specific Python versions
                 context.flags = (context.flags | value[1]) & ~value[2]
 
-            strat = _strategy(value[-1], context, pattern)
+            strat = _strategy(value[-1], context, is_unicode)
 
             context.flags = old_flags
 
