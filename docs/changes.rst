@@ -22,6 +22,13 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.38.6 - 2017-11-28
+-------------------
+
+This patch changes a few byte-string literals from double to single quotes,
+thanks to an update in :pypi:`unify`.  There are no user-visible changes.
+
+-------------------
 3.38.5 - 2017-11-23
 -------------------
 
