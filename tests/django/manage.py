@@ -24,10 +24,7 @@ from hypothesis import HealthCheck, settings, unlimited
 from tests.common.setup import run
 
 if __name__ == u'__main__':
-    import django
-
-    django_version = tuple(int(n) for n in django.__version__.split('.')[:2])
-    run(deprecations_as_errors=django_version >= (1, 11))
+    run()
 
     settings.register_profile('default', settings(
         timeout=unlimited, use_coverage=False,
