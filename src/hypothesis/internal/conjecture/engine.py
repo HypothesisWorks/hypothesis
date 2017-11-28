@@ -368,11 +368,11 @@ class ConjectureRunner(object):
 
     @property
     def secondary_key(self):
-        return b'.'.join((self.database_key, b"secondary"))
+        return b'.'.join((self.database_key, b'secondary'))
 
     @property
     def covering_key(self):
-        return b'.'.join((self.database_key, b"coverage"))
+        return b'.'.join((self.database_key, b'coverage'))
 
     def note_details(self, data):
         if data.status == Status.INTERESTING:

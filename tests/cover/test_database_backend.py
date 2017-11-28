@@ -113,14 +113,14 @@ def test_selects_sqlite_database_if_name_matches(tmpdir):
 
 def test_selects_directory_based_if_already_directory(tmpdir):
     path = str(tmpdir.join('hi.sqlite3'))
-    DirectoryBasedExampleDatabase(path).save(b"foo", b"bar")
+    DirectoryBasedExampleDatabase(path).save(b'foo', b'bar')
     assert isinstance(ExampleDatabase(path), DirectoryBasedExampleDatabase)
 
 
 @checks_deprecated_behaviour
 def test_selects_sqlite_if_already_sqlite(tmpdir):
     path = str(tmpdir.join('hi'))
-    SQLiteExampleDatabase(path).save(b"foo", b"bar")
+    SQLiteExampleDatabase(path).save(b'foo', b'bar')
     assert isinstance(ExampleDatabase(path), SQLiteExampleDatabase)
 
 
@@ -169,13 +169,13 @@ def test_class_name_is_in_repr(exampledatabase):
 
 
 def test_an_absent_value_is_present_after_it_moves(exampledatabase):
-    exampledatabase.move(b"a", b"b", b"c")
-    assert next(exampledatabase.fetch(b"b")) == b'c'
+    exampledatabase.move(b'a', b'b', b'c')
+    assert next(exampledatabase.fetch(b'b')) == b'c'
 
 
 def test_an_absent_value_is_present_after_it_moves_to_self(exampledatabase):
-    exampledatabase.move(b"a", b"a", b"b")
-    assert next(exampledatabase.fetch(b"a")) == b'b'
+    exampledatabase.move(b'a', b'a', b'b')
+    assert next(exampledatabase.fetch(b'a')) == b'b'
 
 
 def test_two_directory_databases_can_interact(tmpdir):

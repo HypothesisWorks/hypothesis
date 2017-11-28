@@ -33,7 +33,7 @@ def current_branch():
 def tags():
     result = [t.decode('ascii') for t in subprocess.check_output([
         'git', 'tag'
-    ]).split(b"\n")]
+    ]).split(b'\n')]
     assert len(set(result)) == len(result)
     return set(result)
 
@@ -194,7 +194,7 @@ def modified_files():
         for l in diff_output.split('\n'):
             filepath = l.strip()
             if filepath:
-                assert os.path.exists(filepath)
+                assert os.path.exists(filepath), filepath
                 files.add(filepath)
     return files
 
