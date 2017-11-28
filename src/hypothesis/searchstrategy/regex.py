@@ -232,7 +232,7 @@ def maybe_pad(draw, regex, strategy, left_pad_strategy, right_pad_strategy):
 
 def base_regex_strategy(regex, parsed=None):
     if parsed is None:
-        parsed = sre_parse.parse(regex.pattern)
+        parsed = sre_parse.parse(regex.pattern, flags=regex.flags)
     return clear_cache_after_draw(_strategy(
         parsed,
         Context(flags=regex.flags),
@@ -246,7 +246,7 @@ def regex_strategy(regex):
 
     is_unicode = isinstance(regex.pattern, text_type)
 
-    parsed = sre_parse.parse(regex.pattern)
+    parsed = sre_parse.parse(regex.pattern, flags=regex.flags)
 
     if not parsed:
         if is_unicode:

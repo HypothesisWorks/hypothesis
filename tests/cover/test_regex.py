@@ -375,3 +375,12 @@ def test_shared_union():
     # interesting feature of which is that it contains empty sub-expressions
     # in the branch.
     find_any(st.from_regex('.|.'))
+
+
+@given(st.data())
+def test_issue_992_regression(data):
+    strat = st.from_regex(re.compile(
+        r"""\d +  # the integral part
+            \.    # the decimal point
+            \d *  # some fractional digits""", re.VERBOSE))
+    data.draw(strat)
