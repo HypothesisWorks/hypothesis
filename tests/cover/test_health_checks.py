@@ -174,6 +174,15 @@ def test_returning_non_none_does_not_fail_if_health_check_disabled():
     a()
 
 
+def test_large_base_example_fails_health_check():
+    @given(st.binary(min_size=7000, max_size=7000))
+    def test(b):
+        pass
+
+    with pytest.raises(FailedHealthCheck):
+        test()
+
+
 @pytest.mark.parametrize(
     'check', [HealthCheck.random_module, HealthCheck.exception_in_generation])
 @checks_deprecated_behaviour

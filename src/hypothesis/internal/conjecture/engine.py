@@ -747,11 +747,26 @@ class ConjectureRunner(object):
         if Phase.generate not in self.settings.phases:
             return
 
-        zero_data = ConjectureData(
-            max_length=self.settings.buffer_size,
-            draw_bytes=lambda data, n: self.__rewrite_for_novelty(
-                data, hbytes(n)))
-        self.test_function(zero_data)
+        zero_data = self.cached_test_function(b'', zero_extend=True)
+        if (
+            zero_data.status == Status.VALID and
+            len(zero_data.buffer) * 2 > self.settings.buffer_size
+        ):
+            fail_health_check(
+                self.settings,
+                'The smallest natural example for your test is extremely '
+                'large. This makes it difficult for Hypothesis to generate '
+                'good examples, especially when trying to reduce failing ones '
+                'at the end. Consider reducing the size of your data if it is '
+                'of a fixed size. You could also fix this by improving how '
+                'your data shrinks (see https://hypothesis.readthedocs.io/en/'
+                'latest/data.html#shrinking for details), or by introducing '
+                'default values inside your strategy. e.g. could you replace '
+                'some arguments with their defaults by using '
+                'one_of(none(), some_complex_strategy)?',
+                HealthCheck.large_base_example
+            )
+
         if self.settings.perform_health_check:
             self.health_check_state = HealthCheckState()
 
@@ -885,22 +900,39 @@ class ConjectureRunner(object):
             self.shrunk_examples.add(target)
         self.exit_with(ExitReason.finished)
 
-    def try_buffer_with_rewriting_from(self, initial_attempt, v):
-        initial_data = None
+    def cached_test_function(self, buffer, zero_extend=False):
         node_index = 0
-        for c in initial_attempt:
+        for i in hrange(self.settings.buffer_size):
+            try:
+                c = self.forced[node_index]
+            except KeyError:
+                if i < len(buffer):
+                    c = buffer[i]
+                else:
+                    c = 0
             try:
                 node_index = self.tree[node_index][c]
             except KeyError:
                 break
             node = self.tree[node_index]
             if isinstance(node, ConjectureData):
-                initial_data = node
-                break
+                return node
+        if not zero_extend:
+            result = ConjectureData.for_buffer(buffer)
+        else:
+            def draw_bytes(data, n):
+                b = hbytes(buffer[data.index:data.index + n])
+                if len(b) < n:
+                    b += hbytes(n - len(b))
+                return b
+            result = ConjectureData(
+                max_length=self.settings.buffer_size,
+                draw_bytes=draw_bytes)
+        self.test_function(result)
+        return result
 
-        if initial_data is None:
-            initial_data = ConjectureData.for_buffer(initial_attempt)
-            self.test_function(initial_data)
+    def try_buffer_with_rewriting_from(self, initial_attempt, v):
+        initial_data = self.cached_test_function(initial_attempt)
 
         if initial_data.status == Status.INTERESTING:
             return initial_data is self.last_data
