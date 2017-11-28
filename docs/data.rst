@@ -19,6 +19,26 @@ module. The salient functions from it are as follows:
 .. automodule:: hypothesis.strategies
   :members:
 
+.. _shrinking:
+
+~~~~~~~~~
+Shrinking
+~~~~~~~~~
+
+When using strategies it is worth thinking about how the data *shrinks*.
+Shrinking is the process by which Hypothesis tries to produce human readable
+examples when it finds a failure - it takes a complex example and turns it
+into a simpler one.
+
+Each strategy defines an order in which it shrinks - these aren't always
+straightforward, and are somewhat subject to change, but are worth being aware
+of.
+
+Possibly the most important one to be aware of is
+:func:`hypothesis.strategies.one_of`, which has a preference for values
+produced by strategies earlier in its argument list. Most of the others should
+largely "do the right thing" without you having to think about it.
+
 ~~~~~~~~~~~~~~~~~~~
 Adapting strategies
 ~~~~~~~~~~~~~~~~~~~
