@@ -748,7 +748,7 @@ class ConjectureRunner(object):
             return
 
         zero_data = self.cached_test_function(b'', zero_extend=True)
-        if (
+        if zero_data.status == Status.OVERRUN or (
             zero_data.status == Status.VALID and
             len(zero_data.buffer) * 2 > self.settings.buffer_size
         ):

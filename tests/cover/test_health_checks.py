@@ -179,8 +179,21 @@ def test_large_base_example_fails_health_check():
     def test(b):
         pass
 
-    with pytest.raises(FailedHealthCheck):
+    with pytest.raises(FailedHealthCheck) as exc:
         test()
+
+    assert exc.value.health_check == HealthCheck.large_base_example
+
+
+def test_example_that_shrinks_to_overrun_fails_health_check():
+    @given(st.binary(min_size=9000, max_size=9000) | st.none())
+    def test(b):
+        pass
+
+    with pytest.raises(FailedHealthCheck) as exc:
+        test()
+
+    assert exc.value.health_check == HealthCheck.large_base_example
 
 
 @pytest.mark.parametrize(
