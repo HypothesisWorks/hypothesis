@@ -20,12 +20,12 @@ from __future__ import division, print_function, absolute_import
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import Verbosity, find, given, assume, settings, unlimited
+from hypothesis import Verbosity, core, find, given, assume, settings, \
+    unlimited
 from hypothesis.errors import NoSuchExample, Unsatisfiable
 from tests.common.utils import all_values, non_covering_examples
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.compat import hbytes
-from hypothesis import core
 
 
 def has_a_non_zero_byte(x):
