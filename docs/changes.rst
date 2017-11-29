@@ -22,6 +22,13 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.38.9 - 2017-11-29
+-------------------
+
+This is a documentation release to improve the documentation of shrinking
+behaviour for Hypothesis's strategies.
+
+-------------------
 3.38.8 - 2017-11-29
 -------------------
 
