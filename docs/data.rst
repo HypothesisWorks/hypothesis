@@ -30,14 +30,24 @@ Shrinking is the process by which Hypothesis tries to produce human readable
 examples when it finds a failure - it takes a complex example and turns it
 into a simpler one.
 
-Each strategy defines an order in which it shrinks - these aren't always
-straightforward, and are somewhat subject to change, but are worth being aware
-of.
+Each strategy defines an order in which it shrinks - you won't usually need to
+care about this much, but it can be worth being aware of as it can affect what
+the best way to write your own strategies is.
+
+The exact shrinking behaviour is not a guaranteed part of the API, but it
+doesn't change that often and when it does it's usually because we think the
+new way produces nicer examples.
 
 Possibly the most important one to be aware of is
 :func:`hypothesis.strategies.one_of`, which has a preference for values
 produced by strategies earlier in its argument list. Most of the others should
 largely "do the right thing" without you having to think about it.
+
+This is especially important when using recursive strategies. e.g.
+``x = st.deferred(lambda: st.none() | st.tuples(x, x))`` will shrink well, but
+``x = st.deferred(lambda: st.tuples(x, x) | st.none())`` will shrink very
+badly indeed.
+
 
 ~~~~~~~~~~~~~~~~~~~
 Adapting strategies
