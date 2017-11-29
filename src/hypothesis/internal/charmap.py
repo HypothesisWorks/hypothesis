@@ -141,6 +141,40 @@ def _union_intervals(x, y):
     return tuple(result)
 
 
+def _subtract_intervals(x, y):
+    """Return a list of intervals that bounds everything bounded by x that is
+    not also bounded by y."""
+    if not y:
+        return x
+    x = list(map(list, x))
+    i = 0
+    j = 0
+    result = []
+    while i < len(x) and j < len(y):
+        xl, xr = x[i]
+        assert xl <= xr
+        yl, yr = y[j]
+        assert yl <= yr
+        if yr < xl:
+            j += 1
+        elif yl > xr:
+            result.append(x[i])
+            i += 1
+        elif yl <= xl:
+            if yr >= xr:
+                i += 1
+            else:
+                x[i][0] = yr + 1
+        else:
+            result.append((xl, yl - 1))
+            if yr + 1 <= xr:
+                x[i][0] = yr + 1
+            else:
+                i += 1
+    result.extend(x[i:])
+    return list(map(tuple, result))
+
+
 def _intervals(s):
     """Return a tuple of intervals, covering the codepoints of characters in
     `s`.
@@ -212,7 +246,8 @@ def query(
     exclude_categories=(), include_categories=None,
     min_codepoint=None,
     max_codepoint=None,
-    include_characters=''
+    include_characters='',
+    exclude_characters='',
 ):
     """Return a tuple of intervals covering the codepoints for all characters
     that meet the critera (min_codepoint <= codepoint(c) <= max_codepoint and
@@ -236,7 +271,11 @@ def query(
         max_codepoint = sys.maxunicode
     catkey = _category_key(exclude_categories, include_categories)
     character_intervals = _intervals(include_characters or '')
-    qkey = (catkey, min_codepoint, max_codepoint, character_intervals)
+    exclude_intervals = _intervals(exclude_characters or '')
+    qkey = (
+        catkey, min_codepoint, max_codepoint,
+        character_intervals, exclude_intervals
+    )
     try:
         return limited_category_index_cache[qkey]
     except KeyError:
@@ -250,5 +289,6 @@ def query(
             ))
     result = tuple(result)
     result = _union_intervals(result, character_intervals)
+    result = _subtract_intervals(result, exclude_intervals)
     limited_category_index_cache[qkey] = result
     return result

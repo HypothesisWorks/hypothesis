@@ -165,3 +165,7 @@ def test_regenerate_broken_charmap_file():
 
     cm._charmap = None
     cm.charmap()
+
+
+def test_exclude_characters_are_included_in_key():
+    assert cm.query() != cm.query(exclude_characters='0')
