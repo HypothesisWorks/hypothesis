@@ -22,6 +22,14 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.38.7 - 2017-11-29
+-------------------
+
+This is a patch release for :func:`~hypothesis.strategies.from_regex`, which
+had a bug in handling of the :obj:`python:re.VERBOSE` flag (:issue:`992`).
+Flags are now handled correctly when parsing regex.
+
+-------------------
 3.38.6 - 2017-11-28
 -------------------
 
