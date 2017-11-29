@@ -221,6 +221,7 @@ def one_of(*args):
     ``x = st.deferred(lambda: st.none() | st.tuples(x, x))`` will shrink well,
     but ``x = st.deferred(lambda: st.tuples(x, x) | st.none())`` will shrink
     very badly indeed.
+
     """
     if len(args) == 1 and not isinstance(args[0], SearchStrategy):
         try:
@@ -242,6 +243,7 @@ def integers(min_value=None, max_value=None):
 
     Examples from this strategy will shrink towards being positive (e.g. 1000
     is considered simpler than -1) and then towards zero.
+
     """
 
     check_valid_bound(min_value, 'min_value')
