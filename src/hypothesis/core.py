@@ -625,7 +625,10 @@ class StateForActualGivenExecution(object):
     def run(self):
         # Tell pytest to omit the body of this function from tracebacks
         __tracebackhide__ = True
-        database_key = str_to_bytes(fully_qualified_name(self.test))
+        if global_force_seed is None:
+            database_key = str_to_bytes(fully_qualified_name(self.test))
+        else:
+            database_key = None
         self.start_time = time.time()
         global in_given
         runner = ConjectureRunner(

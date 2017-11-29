@@ -25,6 +25,7 @@ from hypothesis.errors import NoSuchExample, Unsatisfiable
 from tests.common.utils import all_values, non_covering_examples
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.compat import hbytes
+from hypothesis import core
 
 
 def has_a_non_zero_byte(x):
@@ -173,3 +174,16 @@ def test_clears_out_everything_smaller_than_the_interesting_example():
 
     for s in saved:
         assert s >= target
+
+
+def test_does_not_use_database_when_seed_is_forced(monkeypatch):
+    monkeypatch.setattr(core, 'global_force_seed', 42)
+    database = InMemoryExampleDatabase()
+    database.fetch = None
+
+    @settings(database=database)
+    @given(st.integers())
+    def test(i):
+        pass
+
+    test()
