@@ -172,7 +172,7 @@ def _subtract_intervals(x, y):
             else:
                 i += 1
     result.extend(x[i:])
-    return list(map(tuple, result))
+    return tuple(map(tuple, result))
 
 
 def _intervals(s):
