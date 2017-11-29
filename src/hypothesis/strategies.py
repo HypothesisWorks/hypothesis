@@ -217,6 +217,10 @@ def one_of(*args):
     try to put simpler strategies first. e.g. ``one_of(none(), text())`` is
     better than ``one_of(text(), none())``.
 
+    This is especially important when using recursive strategies. e.g.
+    ``x = st.deferred(lambda: st.none() | st.tuples(x, x))`` will shrink well,
+    but ``x = st.deferred(lambda: st.tuples(x, x) | st.none())`` will shrink
+    very badly indeed.
     """
     if len(args) == 1 and not isinstance(args[0], SearchStrategy):
         try:

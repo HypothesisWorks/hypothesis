@@ -43,11 +43,6 @@ Possibly the most important one to be aware of is
 produced by strategies earlier in its argument list. Most of the others should
 largely "do the right thing" without you having to think about it.
 
-This is especially important when using recursive strategies. e.g.
-``x = st.deferred(lambda: st.none() | st.tuples(x, x))`` will shrink well, but
-``x = st.deferred(lambda: st.tuples(x, x) | st.none())`` will shrink very
-badly indeed.
-
 
 ~~~~~~~~~~~~~~~~~~~
 Adapting strategies
