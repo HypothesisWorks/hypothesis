@@ -104,7 +104,7 @@ def test_subtraction_of_intervals(x, y):
     ys = intervals_to_set(x)
     assume(not xs.isdisjoint(ys))
     z = _subtract_intervals(x, y)
-    assert z == sorted(z)
+    assert z == tuple(sorted(z))
     for a, b in z:
         assert a <= b
     assert intervals_to_set(z) == intervals_to_set(x) - intervals_to_set(y)
