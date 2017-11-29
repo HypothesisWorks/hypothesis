@@ -141,6 +141,82 @@ def _union_intervals(x, y):
     return tuple(result)
 
 
+def _subtract_intervals(x, y):
+    """Set difference for lists of intervals. That is, returns a list of
+    intervals that bounds all values bounded by x that are not also bounded by
+    y. x and y are expected to be in sorted order.
+
+    For example _subtract_intervals([(1, 10)], [(2, 3), (9, 15)]) would
+    return [(1, 1), (4, 8)], removing the values 2, 3, 9 and 10 from the
+    interval.
+
+    """
+    if not y:
+        return tuple(x)
+    x = list(map(list, x))
+    i = 0
+    j = 0
+    result = []
+    while i < len(x) and j < len(y):
+        # Iterate in parallel over x and y. j stays pointing at the smallest
+        # interval in the left hand side that could still overlap with some
+        # element of x at index >= i.
+        # Similarly, i is not incremented until we know that it does not
+        # overlap with any element of y at index >= j.
+
+        xl, xr = x[i]
+        assert xl <= xr
+        yl, yr = y[j]
+        assert yl <= yr
+
+        if yr < xl:
+            # The interval at y[j] is strictly to the left of the interval at
+            # x[i], so will not overlap with it or any later interval of x.
+            j += 1
+        elif yl > xr:
+            # The interval at y[j] is strictly to the right of the interval at
+            # x[i], so all of x[i] goes into the result as no further intervals
+            # in y will intersect it.
+            result.append(x[i])
+            i += 1
+        elif yl <= xl:
+            if yr >= xr:
+                # x[i] is contained entirely in y[j], so we just skip over it
+                # without adding it to the result.
+                i += 1
+            else:
+                # The beginning of x[i] is contained in y[j], so we update the
+                # left endpoint of x[i] to remove this, and increment j as we
+                # now have moved past it. Note that this is not added to the
+                # result as is, as more intervals from y may intersect it so it
+                # may need updating further.
+                x[i][0] = yr + 1
+                j += 1
+        else:
+            # yl > xl, so the left hand part of x[i] is not contained in y[j],
+            # so there are some values we should add to the result.
+            result.append((xl, yl - 1))
+
+            if yr + 1 <= xr:
+                # If y[j] finishes before x[i] does, there may be some values
+                # in x[i] left that should go in the result (or they may be
+                # removed by a later interval in y), so we update x[i] to
+                # reflect that and increment j because it no longer overlaps
+                # with any remaining element of x.
+                x[i][0] = yr + 1
+                j += 1
+            else:
+                # Every element of x[i] other than the initial part we have
+                # already added is contained in y[j], so we move to the next
+                # interval.
+                i += 1
+    # Any remaining intervals in x do not overlap with any of y, as if they did
+    # we would not have incremented j to the end, so can be added to the result
+    # as they are.
+    result.extend(x[i:])
+    return tuple(map(tuple, result))
+
+
 def _intervals(s):
     """Return a tuple of intervals, covering the codepoints of characters in
     `s`.
@@ -212,7 +288,8 @@ def query(
     exclude_categories=(), include_categories=None,
     min_codepoint=None,
     max_codepoint=None,
-    include_characters=''
+    include_characters='',
+    exclude_characters='',
 ):
     """Return a tuple of intervals covering the codepoints for all characters
     that meet the critera (min_codepoint <= codepoint(c) <= max_codepoint and
@@ -236,7 +313,11 @@ def query(
         max_codepoint = sys.maxunicode
     catkey = _category_key(exclude_categories, include_categories)
     character_intervals = _intervals(include_characters or '')
-    qkey = (catkey, min_codepoint, max_codepoint, character_intervals)
+    exclude_intervals = _intervals(exclude_characters or '')
+    qkey = (
+        catkey, min_codepoint, max_codepoint,
+        character_intervals, exclude_intervals
+    )
     try:
         return limited_category_index_cache[qkey]
     except KeyError:
@@ -250,5 +331,6 @@ def query(
             ))
     result = tuple(result)
     result = _union_intervals(result, character_intervals)
+    result = _subtract_intervals(result, exclude_intervals)
     limited_category_index_cache[qkey] = result
     return result

@@ -45,6 +45,7 @@ class OneCharStringStrategy(SearchStrategy):
             min_codepoint=min_codepoint,
             max_codepoint=max_codepoint,
             include_characters=whitelist_characters,
+            exclude_characters=blacklist_characters,
         )
         if not intervals:
             raise InvalidArgument(
@@ -55,28 +56,14 @@ class OneCharStringStrategy(SearchStrategy):
             self.whitelist_characters = set(whitelist_characters)
         else:
             self.whitelist_characters = set()
-        if blacklist_characters:
-            self.blacklist_characters = set(
-                b for b in blacklist_characters if ord(b) in self.intervals
-            )
-            if (len(self.whitelist_characters) == 0 and
-                    len(self.blacklist_characters) == len(self.intervals)):
-                raise InvalidArgument(
-                    'No valid characters in set'
-                )
-        else:
-            self.blacklist_characters = set()
         self.zero_point = self.intervals.index_above(ord('0'))
 
     def do_draw(self, data):
-        while True:
-            i = integer_range(
-                data, 0, len(self.intervals) - 1,
-                center=self.zero_point,
-            )
-            c = hunichr(self.intervals[i])
-            if c not in self.blacklist_characters:
-                return c
+        i = integer_range(
+            data, 0, len(self.intervals) - 1,
+            center=self.zero_point,
+        )
+        return hunichr(self.intervals[i])
 
 
 class StringStrategy(MappedSearchStrategy):

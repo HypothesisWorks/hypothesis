@@ -20,7 +20,8 @@ from __future__ import division, print_function, absolute_import
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import given, assume
+from hypothesis import given, assume, example
+from hypothesis.internal.charmap import _subtract_intervals
 from hypothesis.internal.intervalsets import IntervalSet
 
 
@@ -31,17 +32,19 @@ def build_intervals(ls):
         v = u + l
         if result:
             a, b = result[-1]
-            if u <= b:
+            if u <= b + 1:
                 result[-1] = (a, v)
                 continue
         result.append((u, v))
-    return IntervalSet(result)
+    return result
 
 
-Intervals = st.builds(
+IntervalLists = st.builds(
     build_intervals,
-    st.lists(st.tuples(st.integers(), st.integers(0, 20)))
+    st.lists(st.tuples(st.integers(0, 200), st.integers(0, 20)))
 )
+
+Intervals = st.builds(IntervalSet, IntervalLists)
 
 
 @given(Intervals)
@@ -86,3 +89,22 @@ def test_index_above_is_index_if_present():
 
 def test_index_above_is_length_if_higher():
     assert IntervalSet([[1, 10]]).index_above(100) == 10
+
+
+def intervals_to_set(ints):
+    return set(IntervalSet(ints))
+
+
+@example(x=[(0, 1), (3, 3)], y=[(1, 3)])
+@example(x=[(0, 1)], y=[(0, 0), (1, 1)])
+@example(x=[(0, 1)], y=[(1, 1)])
+@given(IntervalLists, IntervalLists)
+def test_subtraction_of_intervals(x, y):
+    xs = intervals_to_set(x)
+    ys = intervals_to_set(x)
+    assume(not xs.isdisjoint(ys))
+    z = _subtract_intervals(x, y)
+    assert z == tuple(sorted(z))
+    for a, b in z:
+        assert a <= b
+    assert intervals_to_set(z) == intervals_to_set(x) - intervals_to_set(y)
