@@ -211,8 +211,8 @@ def one_of(*args):
     strategy arguments. In which case one_of(x) and one_of(\*x) are
     equivalent.
 
-    Examples from this strategy will generally prefer strategies that are
-    earlier in the list, and try to shrink according to behaviour of the
+    Examples from this strategy will generally shrink to ones that come from
+    strategies earlier in the list, then shrink according to behaviour of the
     strategy that produced them. In order to get good shrinking behaviour,
     try to put simpler strategies first. e.g. ``one_of(none(), text())`` is
     better than ``one_of(text(), none())``.
@@ -236,6 +236,8 @@ def integers(min_value=None, max_value=None):
     If min_value is not None then all values will be >= min_value. If
     max_value is not None then all values will be <= max_value
 
+    Examples from this strategy will shrink towards being positive (e.g. 1000
+    is considered simpler than -1) and then towards zero.
     """
 
     check_valid_bound(min_value, 'min_value')
