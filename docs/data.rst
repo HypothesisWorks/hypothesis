@@ -39,7 +39,7 @@ doesn't change that often and when it does it's usually because we think the
 new way produces nicer examples.
 
 Possibly the most important one to be aware of is
-:func:`hypothesis.strategies.one_of`, which has a preference for values
+:func:`~hypothesis.strategies.one_of`, which has a preference for values
 produced by strategies earlier in its argument list. Most of the others should
 largely "do the right thing" without you having to think about it.
 
