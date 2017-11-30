@@ -188,6 +188,9 @@ check-pandas19: $(TOX)
 check-pandas20: $(TOX)
 	$(TOX) --recreate -e pandas20
 
+check-pandas21: $(TOX)
+	$(TOX) --recreate -e pandas21
+
 check-examples2: $(TOX) $(PY27)
 	$(TOX) --recreate -e examples2
 
