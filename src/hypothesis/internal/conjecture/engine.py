@@ -747,7 +747,8 @@ class ConjectureRunner(object):
         if Phase.generate not in self.settings.phases:
             return
 
-        zero_data = self.cached_test_function(b'', zero_extend=True)
+        zero_data = self.cached_test_function(
+            hbytes(self.settings.buffer_size))
         if zero_data.status == Status.OVERRUN or (
             zero_data.status == Status.VALID and
             len(zero_data.buffer) * 2 > self.settings.buffer_size
@@ -900,7 +901,7 @@ class ConjectureRunner(object):
             self.shrunk_examples.add(target)
         self.exit_with(ExitReason.finished)
 
-    def cached_test_function(self, buffer, zero_extend=False):
+    def cached_test_function(self, buffer):
         node_index = 0
         for i in hrange(self.settings.buffer_size):
             try:
@@ -917,17 +918,7 @@ class ConjectureRunner(object):
             node = self.tree[node_index]
             if isinstance(node, ConjectureData):
                 return node
-        if not zero_extend:
-            result = ConjectureData.for_buffer(buffer)
-        else:
-            def draw_bytes(data, n):
-                b = hbytes(buffer[data.index:data.index + n])
-                if len(b) < n:
-                    b += hbytes(n - len(b))
-                return b
-            result = ConjectureData(
-                max_length=self.settings.buffer_size,
-                draw_bytes=draw_bytes)
+        result = ConjectureData.for_buffer(buffer)
         self.test_function(result)
         return result
 
