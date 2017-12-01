@@ -140,6 +140,7 @@ def reproduce_failure(blob):
 
 
 def encode_failure(buffer):
+    buffer = bytes(buffer)
     compressed = zlib.compress(buffer)
     if len(compressed) < len(buffer):
         buffer = b'\1' + compressed
