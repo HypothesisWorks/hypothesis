@@ -903,6 +903,7 @@ class RandomSeeder(object):
 
 
 @cacheable
+@defines_strategy
 def random_module():
     """If your code depends on the global random module then you need to use
     this.
@@ -929,10 +930,7 @@ def random_module():
             cleanup(lambda: random.setstate(state))
             return RandomSeeder(seed)
 
-        def __repr__(self):
-            return 'random_module()'
-
-    return RandomModule()
+    return shared(RandomModule(), 'hypothesis.strategies.random_module()')
 
 
 @cacheable
