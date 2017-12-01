@@ -19,6 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import re
 import zlib
+import base64
 
 import pytest
 
@@ -26,13 +27,18 @@ import hypothesis.strategies as st
 from hypothesis import PrintSettings, given, reject, settings, \
     reproduce_failure
 from hypothesis.core import decode_failure, encode_failure
-from hypothesis.errors import DidNotReproduce
+from hypothesis.errors import DidNotReproduce, InvalidArgument
 from tests.common.utils import capture_out
 
 
 @given(st.binary() | st.binary(min_size=100))
 def test_encoding_loop(b):
     assert decode_failure(encode_failure(b)) == b
+
+
+def test_decoding_may_fail():
+    with pytest.raises(InvalidArgument):
+        decode_failure(base64.b64encode(b'\2\3\4'))
 
 
 def test_reproduces_the_failure():
@@ -139,10 +145,11 @@ def test_does_not_print_reproduction_for_large_data_examples_by_default():
     @given(st.data())
     def test(data):
         b = data.draw(st.binary(min_size=1000, max_size=1000))
-        assert len(zlib.compress(b)) <= 1000
+        if len(zlib.compress(b)) > 1000:
+            raise ValueError()
 
     with capture_out() as o:
-        with pytest.raises(AssertionError):
+        with pytest.raises(ValueError):
             test()
     assert '@reproduce_failure' not in o.getvalue()
 
@@ -162,3 +169,16 @@ def test_does_print_reproduction_given_an_invalid_repr():
             test()
 
     assert '@reproduce_failure' in o.getvalue()
+
+
+def test_does_not_print_reproduction_if_told_not_to():
+    @settings(print_blob=PrintSettings.NEVER)
+    @given(st.integers().map(lambda x: Foo()))
+    def test(i):
+        raise ValueError()
+
+    with capture_out() as o:
+        with pytest.raises(ValueError):
+            test()
+
+    assert '@reproduce_failure' not in o.getvalue()
