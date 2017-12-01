@@ -689,6 +689,28 @@ so.
 """
 )
 
+
+class PrintSettings(Enum):
+    """Flags to determine whether or not to print a detailed example blob to
+    use with :func:`~hypothesis.reproduce_failure` for failing test cases."""
+
+    NEVER = 0
+    """Never print a blob."""
+
+    INFER = 1
+    """Make an educated guess as to whether it would be appropriate to print
+    the blob.
+
+    The current rules are this will print if:
+
+    1. The output from Hypothesis appears to be unsuitable for use with
+       :func:`~hypothesis.example`.
+    2. The output is not too long."""
+
+    ALWAYS = 2
+    """Always print a blob on failure."""
+
+
 settings.lock_further_definitions()
 
 settings.register_profile('default', settings())

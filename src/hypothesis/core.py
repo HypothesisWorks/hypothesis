@@ -23,6 +23,8 @@ from __future__ import division, print_function, absolute_import
 import os
 import sys
 import time
+import zlib
+import base64
 import traceback
 from random import Random
 
@@ -33,8 +35,8 @@ from coverage.collector import Collector
 
 import hypothesis.strategies as st
 from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
-    Unsatisfiable, InvalidArgument, DeadlineExceeded, MultipleFailures, \
-    FailedHealthCheck, UnsatisfiedAssumption, \
+    Unsatisfiable, DidNotReproduce, InvalidArgument, DeadlineExceeded, \
+    MultipleFailures, FailedHealthCheck, UnsatisfiedAssumption, \
     HypothesisDeprecationWarning
 from hypothesis.control import BuildContext
 from hypothesis._settings import settings as Settings
@@ -115,6 +117,47 @@ def seed(seed):
         test._hypothesis_internal_use_seed = seed
         return test
     return accept
+
+
+def reproduce_failure(blob):
+    """run the example that corresponds to this data blob in order to reproduce
+    a failure.
+
+    A test with this decorator *always* fails. If the original failure does not
+    reproduce, then this will fail with a DidNotReproduce error.
+
+    This decorator is not intended to be a permanent addition to your test
+    suite. It's simply some code you can add to ease reproduction of a problem
+    in the event that you don't have access to the test database.
+
+    """
+    def accept(test):
+        test._hypothesis_internal_use_reproduce_failure = blob
+        return test
+    return accept
+
+
+def encode_failure(buffer):
+    compressed = zlib.compress(buffer)
+    if len(compressed) < len(buffer):
+        buffer = b'\1' + compressed
+    else:
+        buffer = b'\0' + buffer
+    return base64.b64encode(buffer)
+
+
+def decode_failure(blob):
+    buffer = base64.b64decode(blob)
+    prefix = buffer[:1]
+    if prefix == b'\0':
+        return buffer[1:]
+    elif prefix == b'\1':
+        return zlib.decompress(buffer[1:])
+    else:
+        raise InvalidArgument(
+            'Could not decode blob %r: Invalid start byte %r' % (
+                blob, prefix
+            ))
 
 
 class WithRunner(SearchStrategy):
@@ -839,6 +882,38 @@ def given(*given_arguments, **given_kwargs):
             )
             arguments, kwargs, test_runner, search_strategy = processed_args
 
+            state = StateForActualGivenExecution(
+                test_runner, search_strategy, test, settings, random,
+                had_seed=wrapped_test._hypothesis_internal_use_seed
+            )
+
+            reproduce_failure = \
+                wrapped_test._hypothesis_internal_use_reproduce_failure
+
+            if reproduce_failure is not None:
+                try:
+                    state.execute(ConjectureData.for_buffer(
+                        decode_failure(reproduce_failure)),
+                        print_example=True, is_final=True,
+                    )
+                    raise DidNotReproduce(
+                        'Expected the test to raise an error, but it '
+                        'completed successfully.'
+                    )
+                except StopTest:
+                    raise DidNotReproduce(
+                        'The shape of the test has changed in some way '
+                        'from where this blob was defined. Are you sure '
+                        "you're running the same test? This could also be "
+                        'caused by using different versions of Hypothesis.'
+                    )
+                except UnsatisfiedAssumption:
+                    raise DidNotReproduce(
+                        'The test data failed to satisfy an assumption in the '
+                        'test. Have you added it since this blob was '
+                        'generated?'
+                    )
+
             execute_explicit_examples(
                 test_runner, test, wrapped_test, settings, arguments, kwargs
             )
@@ -853,10 +928,6 @@ def given(*given_arguments, **given_kwargs):
                 return
 
             try:
-                state = StateForActualGivenExecution(
-                    test_runner, search_strategy, test, settings, random,
-                    had_seed=wrapped_test._hypothesis_internal_use_seed
-                )
                 state.run()
             except BaseException:
                 generated_seed = \
@@ -887,6 +958,9 @@ def given(*given_arguments, **given_kwargs):
         wrapped_test._hypothesis_internal_use_settings = getattr(
             test, '_hypothesis_internal_use_settings', None
         ) or Settings.default
+        wrapped_test._hypothesis_internal_use_reproduce_failure = getattr(
+            test, '_hypothesis_internal_use_reproduce_failure', None
+        )
         return wrapped_test
     return run_test_with_generator
 
