@@ -517,6 +517,9 @@ class HealthCheck(Enum):
     hung_test = 6
     """Checks if your tests have been running for a very long time."""
 
+    large_base_example = 7
+    """Checks if the natural example to shrink towards is very large."""
+
 
 @unique
 class Statistics(IntEnum):

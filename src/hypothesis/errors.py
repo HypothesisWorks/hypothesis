@@ -174,6 +174,10 @@ class FailedHealthCheck(HypothesisException, Warning):
     """Raised when a test fails a preliminary healthcheck that occurs before
     execution."""
 
+    def __init__(self, message, check):
+        super(FailedHealthCheck, self).__init__(message)
+        self.health_check = check
+
 
 class HypothesisDeprecationWarning(HypothesisException, DeprecationWarning):
     pass
