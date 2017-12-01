@@ -633,7 +633,7 @@ class ConjectureRunner(object):
                 assert False, (
                     'This should be impossible. If you see this error, please '
                     'report it as a bug (ideally with a reproducible test '
-                    'case.'
+                    'case).'
                 )
 
         for i, b in enumerate(result):

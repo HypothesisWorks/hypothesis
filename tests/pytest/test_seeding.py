@@ -78,6 +78,8 @@ def test_runs_repeatably_when_following_seed_instruction(testdir):
     script = testdir.makepyfile(TEST_SUITE)
     initial = testdir.runpytest(script, '--verbose', '--strict',)
 
+    print('\n'.join(initial.stdout.lines))
+
     match = CONTAINS_SEED_INSTRUCTION.search('\n'.join(initial.stdout.lines))
     assert match is not None
 
