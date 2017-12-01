@@ -31,7 +31,9 @@ from hypothesis.internal.compat import hrange
 
 @pytest.mark.parametrize('in_pytest', [False, True])
 @pytest.mark.parametrize('fail_healthcheck', [False, True])
-def test_prints_seed_on_exception(monkeypatch, in_pytest, fail_healthcheck):
+def test_prints_seed_only_on_healthcheck(
+    monkeypatch, in_pytest, fail_healthcheck
+):
     monkeypatch.setattr(core, 'running_under_pytest', in_pytest)
 
     strategy = st.integers()
@@ -57,9 +59,13 @@ def test_prints_seed_on_exception(monkeypatch, in_pytest, fail_healthcheck):
 
     seed = test._hypothesis_internal_use_generated_seed
     assert seed is not None
-    assert '@seed(%d)' % (seed,) in output
-    contains_pytest_instruction = ('--hypothesis-seed=%d' % (seed,)) in output
-    assert contains_pytest_instruction == in_pytest
+    if fail_healthcheck:
+        assert '@seed(%d)' % (seed,) in output
+        contains_pytest_instruction = (
+            '--hypothesis-seed=%d' % (seed,)) in output
+        assert contains_pytest_instruction == in_pytest
+    else:
+        assert '@seed' not in output
 
 
 def test_uses_global_force(monkeypatch):
