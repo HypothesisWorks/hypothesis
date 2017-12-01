@@ -29,7 +29,8 @@ from hypothesis.errors import InvalidState, InvalidArgument, \
 from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.database import ExampleDatabase, \
     DirectoryBasedExampleDatabase
-from hypothesis._settings import Verbosity, settings, note_deprecation
+from hypothesis._settings import Verbosity, settings, default_variable, \
+    note_deprecation
 
 
 def test_has_docstrings():
@@ -119,6 +120,12 @@ def test_inherits_an_empty_database(db):
 def test_can_assign_database(db):
     x = settings(database=db)
     assert x.database is db
+
+
+def test_will_reload_profile_when_default_is_absent():
+    original = settings.default
+    default_variable.value = None
+    assert settings.default is original
 
 
 def test_load_profile():
