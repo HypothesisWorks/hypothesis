@@ -483,8 +483,6 @@ class StateForActualGivenExecution(object):
         is_final=False,
         expected_failure=None, collect=False,
     ):
-        data.can_reproduce_example_from_repr = True
-
         text_repr = [None]
         if self.settings.deadline is None:
             test = self.test
@@ -523,6 +521,8 @@ class StateForActualGivenExecution(object):
                 return result
 
         def run(data):
+            assert not hasattr(data, 'can_reproduce_example_from_repr')
+            data.can_reproduce_example_from_repr = True
             with self.settings:
                 with BuildContext(data, is_final=is_final):
                     import random as rnd_module
@@ -781,11 +781,12 @@ class StateForActualGivenExecution(object):
         flaky = 0
 
         for falsifying_example in self.falsifying_examples:
+            ran_example = ConjectureData.for_buffer(falsifying_example.buffer)
             self.__was_flaky = False
             assert falsifying_example.__expected_exception is not None
             try:
                 self.execute(
-                    ConjectureData.for_buffer(falsifying_example.buffer),
+                    ran_example,
                     print_example=True, is_final=True,
                     expected_failure=(
                         falsifying_example.__expected_exception,
@@ -805,8 +806,10 @@ class StateForActualGivenExecution(object):
             finally:
                 if self.settings.print_blob is not PrintSettings.NEVER:
                     failure_blob = encode_failure(falsifying_example.buffer)
-                    can_use_repr = \
-                        falsifying_example.can_reproduce_example_from_repr
+                    # Have to use the example we actually ran, not the original
+                    # falsifying example! Otherwise we won't catch problems
+                    # where the repr of the generated example doesn't parse.
+                    can_use_repr = ran_example.can_reproduce_example_from_repr
                     if (
                         self.settings.print_blob is PrintSettings.ALWAYS or (
                             self.settings.print_blob is PrintSettings.INFER and

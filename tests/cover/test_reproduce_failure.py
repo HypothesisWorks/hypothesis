@@ -145,3 +145,20 @@ def test_does_not_print_reproduction_for_large_data_examples_by_default():
         with pytest.raises(AssertionError):
             test()
     assert '@reproduce_failure' not in o.getvalue()
+
+
+class Foo(object):
+    def __repr__(self):
+        return 'not a valid python expression'
+
+
+def test_does_print_reproduction_given_an_invalid_repr():
+    @given(st.integers().map(lambda x: Foo()))
+    def test(i):
+        raise ValueError()
+
+    with capture_out() as o:
+        with pytest.raises(ValueError):
+            test()
+
+    assert '@reproduce_failure' in o.getvalue()
