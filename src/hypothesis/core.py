@@ -21,6 +21,7 @@
 from __future__ import division, print_function, absolute_import
 
 import os
+import ast
 import sys
 import time
 import zlib
@@ -41,7 +42,7 @@ from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
 from hypothesis.control import BuildContext
 from hypothesis._settings import settings as Settings
 from hypothesis._settings import Phase, Verbosity, HealthCheck, \
-    note_deprecation
+    PrintSettings, note_deprecation
 from hypothesis.executors import new_style_executor
 from hypothesis.reporting import report, verbose_report, current_verbosity
 from hypothesis.statistics import note_engine_for_statistics
@@ -451,6 +452,7 @@ class StateForActualGivenExecution(object):
 
         self.coverage_data = CoverageData()
         self.files_to_propagate = set()
+        self.failed_normally = False
 
         self.used_examples_from_database = False
 
@@ -481,6 +483,8 @@ class StateForActualGivenExecution(object):
         is_final=False,
         expected_failure=None, collect=False,
     ):
+        data.can_reproduce_example_from_repr = True
+
         text_repr = [None]
         if self.settings.deadline is None:
             test = self.test
@@ -528,9 +532,13 @@ class StateForActualGivenExecution(object):
                         text_repr[0] = arg_string(test, args, kwargs)
 
                     if print_example:
-                        report(
-                            lambda: 'Falsifying example: %s(%s)' % (
-                                test.__name__, arg_string(test, args, kwargs)))
+                        example = '%s(%s)' % (
+                            test.__name__, arg_string(test, args, kwargs))
+                        try:
+                            ast.parse(example)
+                        except SyntaxError:
+                            data.can_reproduce_example_from_repr = False
+                        report('Falsifying example: %s' % (example,))
                     elif current_verbosity() >= Verbosity.verbose:
                         report(
                             lambda: 'Trying example: %s(%s)' % (
@@ -768,6 +776,8 @@ class StateForActualGivenExecution(object):
         if not self.falsifying_examples:
             return
 
+        self.failed_normally = True
+
         flaky = 0
 
         for falsifying_example in self.falsifying_examples:
@@ -792,6 +802,22 @@ class StateForActualGivenExecution(object):
                 if len(self.falsifying_examples) <= 1:
                     raise
                 report(traceback.format_exc())
+            finally:
+                if self.settings.print_blob is not PrintSettings.NEVER:
+                    failure_blob = encode_failure(falsifying_example.buffer)
+                    can_use_repr = \
+                        falsifying_example.can_reproduce_example_from_repr
+                    if (
+                        self.settings.print_blob is PrintSettings.ALWAYS or (
+                            self.settings.print_blob is PrintSettings.INFER and
+                            not can_use_repr and
+                            len(failure_blob) < 200
+                        )
+                    ):
+                        report((
+                            'You can reproduce this example by temporarily '
+                            'adding @reproduce_failure(%r) as a decorator on '
+                            'your test case') % (failure_blob,))
             if self.__was_flaky:
                 flaky += 1
 
@@ -934,7 +960,8 @@ def given(*given_arguments, **given_kwargs):
                     wrapped_test._hypothesis_internal_use_generated_seed
                 if (
                     generated_seed is not None and
-                    not state.used_examples_from_database
+                    not state.used_examples_from_database and
+                    not state.failed_normally
                 ):
                     if running_under_pytest:
                         report((

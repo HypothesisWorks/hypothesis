@@ -711,6 +711,17 @@ class PrintSettings(Enum):
     """Always print a blob on failure."""
 
 
+settings.define_setting(
+    'print_blob',
+    default=PrintSettings.INFER,
+    description="""
+Determines whether to print blobs after tests that can be used to reproduce
+failures. Valid values are PrintSettings.NEVER, PrintSettings.INFER and
+PrintSettings.ALWAYS. See :class:`~hypothesis.PrintSettings` for details of
+the meanings of each of these.
+"""
+)
+
 settings.lock_further_definitions()
 
 settings.register_profile('default', settings())

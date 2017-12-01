@@ -903,7 +903,6 @@ class RandomSeeder(object):
 
 
 @cacheable
-@defines_strategy
 def random_module():
     """If your code depends on the global random module then you need to use
     this.
@@ -921,16 +920,19 @@ def random_module():
     from hypothesis.control import cleanup
     import random
 
-    def seed_random(seed):
-        state = random.getstate()
-        random.seed(seed)
-        cleanup(lambda: random.setstate(state))
-        return RandomSeeder(seed)
+    class RandomModule(SearchStrategy):
+        def do_draw(self, data):
+            data.can_reproduce_example_from_repr = False
+            seed = data.draw(integers())
+            state = random.getstate()
+            random.seed(seed)
+            cleanup(lambda: random.setstate(state))
+            return RandomSeeder(seed)
 
-    return shared(
-        integers().map(seed_random),
-        'hypothesis.strategies.random_module()',
-    )
+        def __repr__(self):
+            return 'random_module()'
+
+    return RandomModule()
 
 
 @cacheable
@@ -1621,6 +1623,7 @@ def choices():
         supports_find = False
 
         def do_draw(self, data):
+            data.can_reproduce_example_from_repr = False
             return Chooser(current_build_context(), data)
 
     return shared(
@@ -1724,6 +1727,8 @@ def data():
         supports_find = False
 
         def do_draw(self, data):
+            data.can_reproduce_example_from_repr = False
+
             if not hasattr(data, 'hypothesis_shared_data_strategy'):
                 data.hypothesis_shared_data_strategy = DataObject(data)
             return data.hypothesis_shared_data_strategy

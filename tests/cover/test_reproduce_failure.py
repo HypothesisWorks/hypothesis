@@ -15,15 +15,19 @@
 #
 # END HEADER
 
-
 from __future__ import division, print_function, absolute_import
+
+import re
+import zlib
 
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import given, reject, reproduce_failure
+from hypothesis import PrintSettings, given, reject, settings, \
+    reproduce_failure
 from hypothesis.core import decode_failure, encode_failure
 from hypothesis.errors import DidNotReproduce
+from tests.common.utils import capture_out
 
 
 @given(st.binary() | st.binary(min_size=100))
@@ -81,3 +85,63 @@ def test_errors_with_did_not_reproduce_if_rejected():
 
     with pytest.raises(DidNotReproduce):
         test()
+
+
+def test_prints_reproduction_if_requested():
+    failing_example = [None]
+
+    @settings(print_blob=PrintSettings.ALWAYS, database=None)
+    @given(st.integers())
+    def test(i):
+        if failing_example[0] is None and i > 10 ** 6:
+            failing_example[0] = i
+        assert i not in failing_example
+
+    with capture_out() as o:
+        with pytest.raises(AssertionError):
+            test()
+    assert '@reproduce_failure' in o.getvalue()
+
+    exp = re.compile(r'reproduce_failure\(([^)]+)\)', re.MULTILINE)
+    extract = exp.search(o.getvalue())
+    blob = eval(extract.group(1))
+    test = reproduce_failure(blob)(test)
+
+    with pytest.raises(AssertionError):
+        test()
+
+
+def test_does_not_print_reproduction_for_simple_examples_by_default():
+    @given(st.integers())
+    def test(i):
+        assert False
+
+    with capture_out() as o:
+        with pytest.raises(AssertionError):
+            test()
+    assert '@reproduce_failure' not in o.getvalue()
+
+
+def test_does_print_reproduction_for_simple_data_examples_by_default():
+    @given(st.data())
+    def test(data):
+        data.draw(st.integers())
+        assert False
+
+    with capture_out() as o:
+        with pytest.raises(AssertionError):
+            test()
+    assert '@reproduce_failure' in o.getvalue()
+
+
+def test_does_not_print_reproduction_for_large_data_examples_by_default():
+    @settings(max_shrinks=0)
+    @given(st.data())
+    def test(data):
+        b = data.draw(st.binary(min_size=1000, max_size=1000))
+        assert len(zlib.compress(b)) <= 1000
+
+    with capture_out() as o:
+        with pytest.raises(AssertionError):
+            test()
+    assert '@reproduce_failure' not in o.getvalue()
