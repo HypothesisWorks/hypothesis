@@ -121,11 +121,12 @@ def seed(seed):
 
 
 def reproduce_failure(blob):
-    """run the example that corresponds to this data blob in order to reproduce
+    """Run the example that corresponds to this data blob in order to reproduce
     a failure.
 
-    A test with this decorator *always* fails. If the original failure does not
-    reproduce, then this will fail with a DidNotReproduce error.
+    A test with this decorator *always* runs only one example and always fails.
+    If the provided example does not cause a failure, or is in some way invalid
+    for this test, then this will fail with a DidNotReproduce error.
 
     This decorator is not intended to be a permanent addition to your test
     suite. It's simply some code you can add to ease reproduction of a problem

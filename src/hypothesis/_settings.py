@@ -716,9 +716,10 @@ settings.define_setting(
     default=PrintSettings.INFER,
     description="""
 Determines whether to print blobs after tests that can be used to reproduce
-failures. Valid values are PrintSettings.NEVER, PrintSettings.INFER and
-PrintSettings.ALWAYS. See :class:`~hypothesis.PrintSettings` for details of
-the meanings of each of these.
+failures.
+
+See :ref:`the documentation on @reproduce_failure <reproduce_failure>` for
+more details of this behaviour.
 """
 )
 
