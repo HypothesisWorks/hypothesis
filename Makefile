@@ -299,3 +299,6 @@ documentation: $(SPHINX_BUILD) docs/*.rst RELEASE.rst
 
 doctest: $(SPHINX_BUILD) docs/*.rst
 	PYTHONPATH=src $(SPHINX_BUILD) -W -b doctest -d docs/_build/doctrees docs docs/_build/html
+
+fix_doctests: $(TOOL_VIRTUALENV)
+	PYTHONPATH=src $(TOOL_PYTHON) scripts/fix_doctests.py
