@@ -16,6 +16,8 @@ and even harder to regularly test. Hypothesis is always tested against the lates
 compatible version and each package will note the expected compatibility range. If
 you run into a bug with any of these please specify the dependency version.
 
+There are seperate pages for :doc:`django` and :doc:`numpy`.
+
 --------------------
 hypothesis[pytz]
 --------------------
@@ -87,26 +89,3 @@ Generally you probably shouldn't do this unless you're reusing a provider you
 already have - Hypothesis's facilities for strategy generation are much more
 powerful and easier to use. This is only here to provide easy
 reuse of things you already have.
-
-------------------
-hypothesis[django]
-------------------
-
-hypothesis.extra.django adds support for testing your Django models with Hypothesis.
-
-It is tested extensively against all versions of Django in mainstream or
-extended support, including LTS releases.  It *may* be compatible with
-earlier versions too, but there's no support from us either and you really
-should update to get security patches.
-
-It's large enough that it is :doc:`documented elsewhere <django>`.
-
-------------------
-hypothesis[numpy]
-------------------
-
-hypothesis.extra.numpy adds support for testing your Numpy code with Hypothesis.
-
-This includes generating arrays, array shapes, and both scalar or compound dtypes.
-
-Like the Django extra, :doc:`Numpy has it's own page <numpy>`.
