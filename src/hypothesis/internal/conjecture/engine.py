@@ -629,9 +629,12 @@ class ConjectureRunner(object):
                 node_index = node[data.buffer[i]]
                 assert node_index not in self.dead
                 node = self.tree[node_index]
-            except KeyError:
-                data.__hit_novelty = True
-                return result
+            except KeyError:  # pragma: no cover
+                assert False, (
+                    'This should be impossible. If you see this error, please '
+                    'report it as a bug (ideally with a reproducible test '
+                    'case.'
+                )
 
         for i, b in enumerate(result):
             assert isinstance(b, int)
