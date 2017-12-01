@@ -22,6 +22,16 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.39.0 - 2017-12-01
+-------------------
+
+This release adds a new health check that checks if the smallest "natural"
+possible example of your test case is very large - this will tend to cause
+Hypothesis to generate bad examples and be quite slow.
+
+This work was funded by `Smarkets <https://smarkets.com/>`_.
+
+-------------------
 3.38.9 - 2017-11-29
 -------------------
 
