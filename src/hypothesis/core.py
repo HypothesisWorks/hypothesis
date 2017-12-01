@@ -523,8 +523,8 @@ class StateForActualGivenExecution(object):
                 return result
 
         def run(data):
-            assert not hasattr(data, 'can_reproduce_example_from_repr')
-            data.can_reproduce_example_from_repr = True
+            if not hasattr(data, 'can_reproduce_example_from_repr'):
+                data.can_reproduce_example_from_repr = True
             with self.settings:
                 with BuildContext(data, is_final=is_final):
                     import random as rnd_module
