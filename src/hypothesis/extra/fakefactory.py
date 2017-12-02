@@ -23,12 +23,18 @@ from random import Random
 import faker
 from faker.factory import AVAILABLE_LOCALES
 
+from hypothesis._settings import note_deprecation
 from hypothesis.internal.compat import text_type
 from hypothesis.internal.reflection import check_valid_identifier
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
 def fake_factory(source, locale=None, locales=None, providers=()):
+    note_deprecation(
+        'hypothesis.extra.fakefactory has been deprecated, because it does '
+        'not support example discovery or shrinking.  Consider using a lower-'
+        'level strategy (such as st.text()) instead.'
+    )
     check_valid_identifier(source)
     if source[0] == u'_':
         raise ValueError(u'Bad source name %s' % (source,))

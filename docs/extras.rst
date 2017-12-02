@@ -34,18 +34,33 @@ hypothesis[datetime]
    :members:
 
 
+.. _faker-extra:
+
 -----------------------
 hypothesis[fakefactory]
 -----------------------
 
-:pypi:`faker` is another Python
-library for data generation. hypothesis.extra.fakefactory is a package which
-lets you use Faker generators to parametrize tests.
-(tha name mismatch is because Faker used to be called fake-factory)
+.. note::
+    This extra package is deprecated.  We strongly recommend using native
+    Hypothesis strategies, which are more effective at both finding and
+    shrinking failing examples for your tests.
 
-The Faker API is extremely unstable, even between patch releases, and
-Hypothesis's support for it is unlikely to work with anything except the exact
-version it has been tested against.
+    The :func:`~hypothesis.strategies.from_regex`,
+    :func:`~hypothesis.strategies.text` (with some specific alphabet), and
+    :func:`~hypothesis.strategies.sampled_from` strategies may be particularly
+    useful.
+
+:pypi:`faker` (previously :pypi:`fake-factory`) is a Python package that
+generates fake data for you. It's great for bootstraping your database,
+creating good-looking XML documents, stress-testing a database, or anonymizing
+production data.  However, it's not designed for automated testing - data from
+Hypothesis looks less realistic, but produces minimal bug-triggering examples
+and uses coverage information to check more cases.
+
+``hypothesis.extra.fakefactory`` lets you use Faker generators to parametrize
+Hypothesis tests.  This was only ever meant to ease your transition to
+Hypothesis, but we've improved Hypothesis enough since then that we no longer
+recommend using Faker for automated tests under any circumstances.
 
 hypothesis.extra.fakefactory defines a function fake_factory which returns a
 strategy for producing text data from any Faker provider.
@@ -72,20 +87,13 @@ locales), either as a single locale or as several:
     >>> fake_factory('name', locales=['en_GB', 'cs_CZ']).example()
     'Harm Sanford'
 
-If you want to your own FakeFactory providers you can do that too, passing them
-in as a providers argument:
+You can use custom Faker providers via the ``providers`` argument:
 
 .. code-block:: pycon
 
     >>> from faker.providers import BaseProvider
     >>> class KittenProvider(BaseProvider):
     ...     def meows(self):
-    ...             return 'meow %d' % (self.random_number(digits=10),)
-    ...
+    ...         return 'meow %d' % (self.random_number(digits=10),)
     >>> fake_factory('meows', providers=[KittenProvider]).example()
     'meow 9139348419'
-
-Generally you probably shouldn't do this unless you're reusing a provider you
-already have - Hypothesis's facilities for strategy generation are much more
-powerful and easier to use. This is only here to provide easy
-reuse of things you already have.

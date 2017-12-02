@@ -165,8 +165,8 @@ check-pytest: check-pytest28 check-pytest30
 check-faker070: $(TOX)
 	$(TOX) --recreate -e faker070
 
-check-faker071: $(TOX)
-	$(TOX) --recreate -e faker071
+check-faker-latest: $(TOX)
+	$(TOX) --recreate -e faker-latest
 
 check-django18: $(TOX)
 	$(TOX) --recreate -e django18

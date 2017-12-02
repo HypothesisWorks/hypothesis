@@ -22,6 +22,7 @@ from faker.providers import BaseProvider
 
 from hypothesis import given
 from tests.common.debug import minimal
+from tests.common.utils import checks_deprecated_behaviour
 from hypothesis.extra.fakefactory import fake_factory
 
 
@@ -31,21 +32,34 @@ class KittenProvider(BaseProvider):
         return u'meow %d' % (self.random_number(digits=10),)
 
 
-@given(fake_factory(u'kittens', providers=[KittenProvider]))
-def test_kittens_meow(kitten):
-    assert u'meow' in kitten
+@checks_deprecated_behaviour
+def test_kittens_meow():
+    @given(fake_factory(u'kittens', providers=[KittenProvider]))
+    def inner(kitten):
+        assert u'meow' in kitten
+
+    inner()
 
 
-@given(fake_factory(u'email'))
-def test_email(email):
-    assert u'@' in email
+@checks_deprecated_behaviour
+def test_email():
+    @given(fake_factory(u'email'))
+    def inner(email):
+        assert u'@' in email
+
+    inner()
 
 
-@given(fake_factory(u'name', locale=u'en_US'))
-def test_english_names_are_ascii(name):
-    name.encode(u'ascii')
+@checks_deprecated_behaviour
+def test_english_names_are_ascii():
+    @given(fake_factory(u'name', locale=u'en_US'))
+    def inner(name):
+        name.encode(u'ascii')
+
+    inner()
 
 
+@checks_deprecated_behaviour
 def test_french_names_may_have_an_accent():
     minimal(
         fake_factory(u'name', locale=u'fr_FR'),
@@ -53,6 +67,7 @@ def test_french_names_may_have_an_accent():
     )
 
 
+@checks_deprecated_behaviour
 def test_fake_factory_errors_with_both_locale_and_locales():
     with pytest.raises(ValueError):
         fake_factory(
@@ -60,6 +75,7 @@ def test_fake_factory_errors_with_both_locale_and_locales():
         )
 
 
+@checks_deprecated_behaviour
 def test_fake_factory_errors_with_unsupported_locale():
     with pytest.raises(ValueError):
         fake_factory(
@@ -67,11 +83,13 @@ def test_fake_factory_errors_with_unsupported_locale():
         )
 
 
+@checks_deprecated_behaviour
 def test_factory_errors_with_source_for_unsupported_locale():
     with pytest.raises(ValueError):
         fake_factory(u'state', locale=u'ja_JP')
 
 
+@checks_deprecated_behaviour
 def test_fake_factory_errors_if_any_locale_is_unsupported():
     with pytest.raises(ValueError):
         fake_factory(
@@ -79,11 +97,13 @@ def test_fake_factory_errors_if_any_locale_is_unsupported():
         )
 
 
+@checks_deprecated_behaviour
 def test_fake_factory_errors_if_unsupported_method():
     with pytest.raises(ValueError):
         fake_factory(u'spoon')
 
 
+@checks_deprecated_behaviour
 def test_fake_factory_errors_if_private_ish_method():
     with pytest.raises(ValueError):
         fake_factory(u'_Generator__config')
