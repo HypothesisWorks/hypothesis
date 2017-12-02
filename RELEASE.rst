@@ -7,4 +7,5 @@ This release makes two changes:
   generation a bit because it no longer calculates information it doesn't need.
 * It improves the shrinker for certain classes of nested examples. e.g. when
   shrinking lists of lists, the shrinker is now able to concatenate two
-  adjacent lists together into a single list.
+  adjacent lists together into a single list. Shrinking may get somewhat slower
+  when the minimal example is large as a result of this change.
