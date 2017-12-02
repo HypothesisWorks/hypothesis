@@ -57,6 +57,7 @@ env:
         - TASK=check-pytest28
         - TASK=check-faker070
         - TASK=check-faker-latest
+        - TASK=check-django20
         - TASK=check-django18
         - TASK=check-django110
         - TASK=check-django111
