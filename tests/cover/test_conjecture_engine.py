@@ -32,7 +32,7 @@ from hypothesis.internal.compat import hbytes, hrange, int_from_bytes, \
 from hypothesis.internal.conjecture.data import Status, ConjectureData
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 
-MAX_SHRINKS = 2000
+MAX_SHRINKS = 1000
 
 
 def run_to_buffer(f):
