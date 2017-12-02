@@ -45,7 +45,7 @@ extras = {
     'datetime':  ['pytz'],
     'pytz':  ['pytz'],
     'fakefactory': ['Faker>=0.7'],
-    'django': ['pytz', 'django>=1.8,<2'],
+    'django': ['pytz', 'django>=1.8,!=1.9.*,!=1.10.*,<3'],
     'numpy': ['numpy>=1.9.0'],
     'pytest': ['pytest>=2.8.0'],
 }

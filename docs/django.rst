@@ -5,7 +5,7 @@ Hypothesis for Django users
 ===========================
 
 Hypothesis offers a number of features specific for Django testing, available
-in the :mod:`hypothesis[django]` :doc:`extra </extras>`.  This is tested
+in ``hypothesis.extra.django``.  This is tested
 against each supported series with mainstream or extended support -
 if you're still getting security patches, you can test with Hypothesis.
 
