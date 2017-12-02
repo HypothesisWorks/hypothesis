@@ -24,7 +24,7 @@ from random import Random
 import pytest
 
 from hypothesis import strategies as st
-from hypothesis import Phase, given, settings, unlimited
+from hypothesis import Phase, HealthCheck, given, settings, unlimited
 from tests.common.utils import all_values, checks_deprecated_behaviour
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from hypothesis.internal.compat import hbytes, hrange, int_from_bytes, \
@@ -485,7 +485,9 @@ def test_garbage_collects_the_database():
 
 
 @given(st.randoms(), st.random_module())
-@settings(max_shrinks=0, deadline=None)
+@settings(
+    max_shrinks=0, deadline=None, suppress_health_check=[HealthCheck.hung_test]
+)
 def test_maliciously_bad_generator(rnd, seed):
     @run_to_buffer
     def x(data):
