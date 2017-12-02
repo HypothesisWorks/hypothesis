@@ -695,21 +695,23 @@ class StateForActualGivenExecution(object):
             database_key=database_key,
         )
 
-        if in_given or self.collector is None:
-            runner.run()
-        else:  # pragma: no cover
-            in_given = True
-            original_trace = sys.gettrace()
-            try:
-                sys.settrace(None)
+        try:
+            if in_given or self.collector is None:
                 runner.run()
-            finally:
-                in_given = False
-                sys.settrace(original_trace)
-        note_engine_for_statistics(runner)
-        run_time = time.time() - self.start_time
-
-        self.used_examples_from_database = runner.used_examples_from_database
+            else:  # pragma: no cover
+                in_given = True
+                original_trace = sys.gettrace()
+                try:
+                    sys.settrace(None)
+                    runner.run()
+                finally:
+                    in_given = False
+                    sys.settrace(original_trace)
+            note_engine_for_statistics(runner)
+            run_time = time.time() - self.start_time
+        finally:
+            self.used_examples_from_database = \
+                runner.used_examples_from_database
 
         if runner.used_examples_from_database:
             if self.settings.derandomize:

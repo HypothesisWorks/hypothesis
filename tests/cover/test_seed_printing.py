@@ -23,9 +23,10 @@ import pytest
 
 import hypothesis.core as core
 import hypothesis.strategies as st
-from hypothesis import given, settings
+from hypothesis import given, assume, settings
 from hypothesis.errors import FailedHealthCheck
-from tests.common.utils import capture_out
+from tests.common.utils import all_values, capture_out
+from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.compat import hrange
 
 
@@ -88,18 +89,35 @@ def test_uses_global_force(monkeypatch):
 
 
 def test_does_not_print_on_reuse_from_database():
+    passes_healthcheck = False
+
+    database = InMemoryExampleDatabase()
+
+    @settings(database=database)
     @given(st.integers())
     def test(i):
+        assume(passes_healthcheck)
         raise ValueError()
+
+    with capture_out() as o:
+        with pytest.raises(FailedHealthCheck):
+            test()
+
+    assert '@seed' in o.getvalue()
+
+    passes_healthcheck = True
 
     with capture_out() as o:
         with pytest.raises(ValueError):
             test()
 
-    assert '@seed' in o.getvalue()
+    assert all_values(database)
+    assert '@seed' not in o.getvalue()
+
+    passes_healthcheck = False
 
     with capture_out() as o:
-        with pytest.raises(ValueError):
+        with pytest.raises(FailedHealthCheck):
             test()
 
     assert '@seed' not in o.getvalue()
