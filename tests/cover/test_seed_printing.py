@@ -23,7 +23,7 @@ import pytest
 
 import hypothesis.core as core
 import hypothesis.strategies as st
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis.errors import FailedHealthCheck
 from tests.common.utils import capture_out
 from hypothesis.internal.compat import hrange
@@ -44,6 +44,7 @@ def test_prints_seed_on_exception(monkeypatch, in_pytest, fail_healthcheck):
     else:
         expected_exc = AssertionError
 
+    @settings(database=None)
     @given(strategy)
     def test(i):
         assert fail_healthcheck
@@ -78,3 +79,21 @@ def test_uses_global_force(monkeypatch):
 
     assert output[0] == output[1]
     assert '@seed' not in output[0]
+
+
+def test_does_not_print_on_reuse_from_database():
+    @given(st.integers())
+    def test(i):
+        raise ValueError()
+
+    with capture_out() as o:
+        with pytest.raises(ValueError):
+            test()
+
+    assert '@seed' in o.getvalue()
+
+    with capture_out() as o:
+        with pytest.raises(ValueError):
+            test()
+
+    assert '@seed' not in o.getvalue()

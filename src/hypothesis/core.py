@@ -388,7 +388,9 @@ FORCE_PURE_TRACER = os.getenv('HYPOTHESIS_FORCE_PURE_TRACER') == 'true'
 
 class StateForActualGivenExecution(object):
 
-    def __init__(self, test_runner, search_strategy, test, settings, random):
+    def __init__(
+        self, test_runner, search_strategy, test, settings, random, had_seed
+    ):
         self.test_runner = test_runner
         self.search_strategy = search_strategy
         self.settings = settings
@@ -400,11 +402,14 @@ class StateForActualGivenExecution(object):
         self.__warned_deadline = False
         self.__existing_collector = None
         self.__test_runtime = None
+        self.__had_seed = had_seed
 
         self.test = test
 
         self.coverage_data = CoverageData()
         self.files_to_propagate = set()
+
+        self.used_examples_from_database = False
 
         if settings.use_coverage and not IN_COVERAGE_TESTS:  # pragma: no cover
             if Collector._collectors:
@@ -625,7 +630,10 @@ class StateForActualGivenExecution(object):
     def run(self):
         # Tell pytest to omit the body of this function from tracebacks
         __tracebackhide__ = True
-        database_key = str_to_bytes(fully_qualified_name(self.test))
+        if global_force_seed is None:
+            database_key = str_to_bytes(fully_qualified_name(self.test))
+        else:
+            database_key = None
         self.start_time = time.time()
         global in_given
         runner = ConjectureRunner(
@@ -647,6 +655,25 @@ class StateForActualGivenExecution(object):
                 sys.settrace(original_trace)
         note_engine_for_statistics(runner)
         run_time = time.time() - self.start_time
+
+        self.used_examples_from_database = runner.used_examples_from_database
+
+        if runner.used_examples_from_database:
+            if self.settings.derandomize:
+                note_deprecation(
+                    'In future derandomize will imply database=None, but your '
+                    'test is currently using examples from the database. To '
+                    'get the future behaviour, update your settings to '
+                    'include database=None.'
+                )
+            if self.__had_seed:
+                note_deprecation(
+                    'In future use of @seed will imply database=None in your '
+                    'settings, but your test is currently using examples from '
+                    'the database. To get the future behaviour, update your '
+                    'settings for this test to include database=None.'
+                )
+
         timed_out = runner.exit_reason == ExitReason.timeout
         if runner.last_data is None:
             return
@@ -827,12 +854,17 @@ def given(*given_arguments, **given_kwargs):
 
             try:
                 state = StateForActualGivenExecution(
-                    test_runner, search_strategy, test, settings, random)
+                    test_runner, search_strategy, test, settings, random,
+                    had_seed=wrapped_test._hypothesis_internal_use_seed
+                )
                 state.run()
             except BaseException:
                 generated_seed = \
                     wrapped_test._hypothesis_internal_use_generated_seed
-                if generated_seed is not None:
+                if (
+                    generated_seed is not None and
+                    not state.used_examples_from_database
+                ):
                     if running_under_pytest:
                         report((
                             'You can add @seed(%(seed)d) to this test or run '
