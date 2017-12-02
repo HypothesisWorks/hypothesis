@@ -64,7 +64,6 @@ class ConjectureData(object):
         self.status = Status.VALID
         self.frozen = False
         self.intervals_by_level = []
-        self.intervals = []
         self.interval_stack = []
         global global_test_counter
         self.testcounter = global_test_counter
@@ -76,6 +75,7 @@ class ConjectureData(object):
         self.interesting_origin = None
         self.tags = set()
         self.draw_times = []
+        self.__intervals = None
 
     def __assert_not_frozen(self, name):
         if self.frozen:
@@ -157,11 +157,29 @@ class ConjectureData(object):
         if k != self.index:
             t = (k, self.index)
             self.intervals_by_level[self.level].append(t)
-            if not self.intervals or self.intervals[-1] != t:
-                self.intervals.append(t)
 
     def note_event(self, event):
         self.events.add(event)
+
+    @property
+    def intervals(self):
+        assert self.frozen
+        if self.__intervals is None:
+            intervals = set(self.blocks)
+            for l in self.intervals_by_level:
+                intervals.update(l)
+                for i in hrange(len(l) - 1):
+                    if l[i][1] == l[i + 1][0]:
+                        intervals.add((l[i][0], l[i + 1][1]))
+            for i in hrange(len(self.blocks) - 1):
+                intervals.add((self.blocks[i][0], self.blocks[i + 1][1]))
+            # Intervals are sorted as longest first, then by interval start.
+            self.__intervals = tuple(sorted(
+                set(intervals),
+                key=lambda se: (se[0] - se[1], se[0])
+            ))
+            del self.intervals_by_level
+        return self.__intervals
 
     def freeze(self):
         if self.frozen:
@@ -170,15 +188,6 @@ class ConjectureData(object):
         self.frozen = True
         self.finish_time = benchmark_time()
 
-        # Intervals are sorted as longest first, then by interval start.
-        for l in self.intervals_by_level:
-            for i in hrange(len(l) - 1):
-                if l[i][1] == l[i + 1][0]:
-                    self.intervals.append((l[i][0], l[i + 1][1]))
-        self.intervals = sorted(
-            set(self.intervals),
-            key=lambda se: (se[0] - se[1], se[0])
-        )
         self.buffer = hbytes(self.buffer)
         self.events = frozenset(self.events)
         del self._draw_bytes
@@ -227,7 +236,6 @@ class ConjectureData(object):
         assert len(result) == n
         assert self.index == initial
         self.buffer.extend(result)
-        self.intervals.append((initial, self.index))
 
     def draw_bytes(self, n):
         self.__assert_not_frozen('draw_bytes')
