@@ -24,13 +24,15 @@ from fractions import Fraction
 import pytest
 from flaky import flaky
 
-from hypothesis import find, assume, settings
+import hypothesis.internal.conjecture.utils as cu
+from hypothesis import Verbosity, find, given, assume, settings, unlimited
 from tests.common import parametrize
 from tests.common.debug import minimal
 from hypothesis.strategies import just, sets, text, lists, tuples, \
-    booleans, integers, fractions, frozensets, dictionaries, \
+    randoms, booleans, integers, fractions, frozensets, dictionaries, \
     sampled_from
 from hypothesis.internal.compat import PY3, OrderedDict, hrange, reduce
+from hypothesis.searchstrategy.strategies import SearchStrategy
 
 
 def test_integers_from_minimizes_leftwards():
@@ -234,3 +236,39 @@ def test_duplicate_containment():
         lambda s: s[0].count(s[1]) > 1, timeout_after=100)
     assert ls == [0, 0]
     assert i == 0
+
+
+class UnlikelyResults(SearchStrategy):
+    def do_draw(self, data):
+        length = cu.integer_range(data, 0, 200)
+        return [cu.biased_coin(data, 0.01) for _ in hrange(length)]
+
+
+def test_can_minimize_unlikely_results():
+    assert minimal(UnlikelyResults(), any) == [True]
+
+
+class BinaryTree(SearchStrategy):
+    def do_draw(self, data):
+        p = 1.0 / (2 - 1.0 / 200)
+        if cu.biased_coin(data, p):
+            return (data.draw(self), data.draw(self))
+        else:
+            return cu.biased_coin(data, 0.01)
+
+
+def test_can_minimize_unlikely_tree():
+    def any_leaf(t):
+        stack = [t]
+        while stack:
+            p = stack.pop()
+            if p is True:
+                return True
+            elif isinstance(p, tuple):
+                stack.extend(p)
+        return False
+
+    assert minimal(
+        BinaryTree(), any_leaf,
+        settings=settings(verbosity=Verbosity.debug),
+    ) is True
