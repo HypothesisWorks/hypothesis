@@ -13,5 +13,5 @@ pbr==3.1.1                # via mock
 py==1.5.2                 # via pytest
 pytest-forked==0.2        # via pytest-xdist
 pytest-xdist==1.20.1
-pytest==3.2.5
+pytest==3.3.0
 six==1.11.0               # via mock
