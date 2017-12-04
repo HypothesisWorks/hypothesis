@@ -94,9 +94,6 @@ def quiet_raise(exc):
     def to_bytes_sequence(ls):
         return bytes(ls)
 
-    def zero_byte_sequence(n):
-        return bytes(n)
-
     def int_to_byte(i):
         return bytes([i])
 
@@ -119,9 +116,6 @@ else:
     else:
         def struct_unpack(fmt, string):
             return struct.unpack(fmt, str(string))
-
-    def zero_byte_sequence(n):
-        return hbytes(b'\0' * n)
 
     def int_from_bytes(data):
         assert isinstance(data, bytearray)
