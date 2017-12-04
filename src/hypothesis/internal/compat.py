@@ -27,7 +27,6 @@ import codecs
 import platform
 import importlib
 from base64 import b64encode
-from decimal import Context, Decimal, Inexact
 from collections import namedtuple
 
 try:
@@ -52,10 +51,6 @@ if sys.version_info[:2] <= (2, 6):
 
 def bit_length(n):
     return n.bit_length()
-
-
-def float_to_decimal(f):
-    return Decimal(f)
 
 
 if PY3:

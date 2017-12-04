@@ -27,7 +27,6 @@ from hypothesis.errors import InvalidArgument
 from tests.common.utils import fails
 from hypothesis.strategies import data, none, tuples, decimals, integers, \
     fractions
-from hypothesis.internal.compat import float_to_decimal
 
 
 @given(data())
@@ -77,7 +76,7 @@ def test_fuzz_decimals_bounds(data):
 @given(decimals())
 def test_all_decimals_can_be_exact_floats(x):
     assume(x.is_finite())
-    assert float_to_decimal(float(x)) == x
+    assert decimal.Decimal(float(x)) == x
 
 
 @given(fractions(), fractions(), fractions())
