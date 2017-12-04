@@ -66,7 +66,6 @@ if PY3:
     ARG_NAME_ATTRIBUTE = 'arg'
     integer_types = (int,)
     hunichr = chr
-    from functools import reduce
 
     def unicode_safe_repr(x):
         return repr(x)
@@ -210,7 +209,6 @@ else:
     ARG_NAME_ATTRIBUTE = 'id'
     integer_types = (int, long)
     hunichr = unichr
-    reduce = reduce
 
     def escape_unicode_characters(s):
         return codecs.encode(s, 'string_escape')
