@@ -26,7 +26,7 @@ jinja2==2.10              # via pyupio, sphinx
 markupsafe==1.0           # via jinja2
 mccabe==0.6.1             # via flake8
 packaging==16.8           # via dparse, pyupio, safety
-pip-tools==1.10.2
+pip-tools==1.11.0
 pkginfo==1.4.1            # via twine
 pluggy==0.6.0             # via tox
 py==1.5.2                 # via pytest, tox
