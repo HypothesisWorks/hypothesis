@@ -173,6 +173,18 @@ seconds.
 
 Hypothesis truly is a masterpiece. I can't thank you enough for building it.
 
+
+---------------------------------------------------
+`Merchise Autrement <https://github.com/merchise>`_
+---------------------------------------------------
+
+Just minutes after our first use of hypothesis `we uncovered a subtle bug`__
+in one of our most used library.  Since then, we have increasingly used
+hypothesis to improve the quality of our testing in libraries and applications
+as well.
+
+__ https://github.com/merchise/xoutil/commit/0a4a0f529812fed363efb653f3ade2d2bc203945
+
 -------------------------------------------
 `Your name goes here <http://example.com>`_
 -------------------------------------------
