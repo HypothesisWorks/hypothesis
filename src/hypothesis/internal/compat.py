@@ -19,7 +19,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import os
 import re
 import sys
 import math
