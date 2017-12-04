@@ -126,8 +126,8 @@ def boolean(data):
 
 
 def biased_coin(data, p):
-    """Return False with probability p (assuming a uniform generator),
-    shrinking towards False."""
+    """Return True with probability p (assuming a uniform generator), shrinking
+    towards False."""
     data.start_example()
     while True:
         # The logic here is a bit complicated and special cased to make it
