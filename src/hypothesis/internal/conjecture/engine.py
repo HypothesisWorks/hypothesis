@@ -142,9 +142,7 @@ class ConjectureRunner(object):
         return 0 in self.dead
 
     def test_function(self, data):
-        if (
-            benchmark_time() - self.start_time >= HUNG_TEST_TIME_LIMIT
-        ):
+        if benchmark_time() - self.start_time >= HUNG_TEST_TIME_LIMIT:
             fail_health_check(self.settings, (
                 'Your test has been running for at least five minutes. This '
                 'is probably not what you intended, so by default Hypothesis '
@@ -563,9 +561,7 @@ class ConjectureRunner(object):
         ]
 
         def draw_mutated(data, n):
-            if (
-                data.index + n > len(self.last_data.buffer)
-            ):
+            if data.index + n > len(self.last_data.buffer):
                 result = uniform(self.random, n)
             else:
                 result = self.random.choice(bits)(data, n)
