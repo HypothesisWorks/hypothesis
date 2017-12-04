@@ -197,9 +197,7 @@ class Minimizer(object):
         # ensures we can always move to integer boundaries and shrink past a
         # change that would require shifting the exponent while not changing
         # the float value much.
-        for g in [
-            floor(f), ceil(f),
-        ]:
+        for g in [floor(f), ceil(f)]:
             if self.incorporate_float(g):
                 return
 
@@ -311,6 +309,8 @@ def binsearch(_lo, _hi):
 
 
 def minimize_byte(c, f):
+    """Return the smallest byte for which a function `f` returns True, starting
+    with the byte `c` as an unsigned integer."""
     if f(0):
         return 0
     if c == 1 or f(1):
@@ -327,5 +327,4 @@ def minimize_byte(c, f):
             else:
                 lo = mid
         return hi
-    else:
-        return c
+    return c

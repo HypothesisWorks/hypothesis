@@ -937,8 +937,7 @@ class ConjectureRunner(object):
         if len(initial_data.buffer) < v:
             return False
 
-        lost_data = len(self.last_data.buffer) - \
-            len(initial_data.buffer)
+        lost_data = len(self.last_data.buffer) - len(initial_data.buffer)
 
         # If this did not in fact cause the data size to shrink we
         # bail here because it's not worth trying to delete stuff from
@@ -995,7 +994,6 @@ class ConjectureRunner(object):
 
     def greedy_interval_deletion(self):
         """Attempt to delete every interval in the example."""
-
         self.debug('greedy interval deletes')
         i = 0
         while i < len(self.last_data.intervals):
@@ -1025,9 +1023,7 @@ class ConjectureRunner(object):
             assert u < v
             block = buf[u:v]
             if any(block):
-                self.incorporate_new_buffer(
-                    buf[:u] + hbytes(v - u) + buf[v:]
-                )
+                self.incorporate_new_buffer(buf[:u] + hbytes(v - u) + buf[v:])
             i += 1
 
     def minimize_duplicated_blocks(self):
@@ -1038,11 +1034,7 @@ class ConjectureRunner(object):
         counts = Counter(
             self.last_data.buffer[u:v] for u, v in self.last_data.blocks
         )
-        blocks = [
-            k for k, count in
-            counts.items()
-            if count > 1
-        ]
+        blocks = [buffer for buffer, count in counts.items() if count > 1]
 
         thresholds = {}
         for u, v in self.last_data.blocks:
