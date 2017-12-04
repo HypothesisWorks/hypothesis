@@ -29,7 +29,6 @@ import platform
 import importlib
 from base64 import b64encode
 from decimal import Context, Decimal, Inexact
-from hashlib import sha1
 from collections import namedtuple
 
 try:
