@@ -1150,10 +1150,10 @@ class ConjectureRunner(object):
         while self.shrinks > change_counter:
             change_counter = self.shrinks
 
+            self.greedy_interval_deletion()
             self.minimize_duplicated_blocks()
             self.minimize_individual_blocks()
             self.reorder_blocks()
-            self.greedy_interval_deletion()
 
     def event_to_string(self, event):
         if isinstance(event, str):
