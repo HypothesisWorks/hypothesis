@@ -430,6 +430,9 @@ class ConjectureRunner(object):
         run. "return True" would be a valid but inefficient implementation.
 
         """
+        if sort_key(buffer) >= sort_key(self.last_data.buffer):
+            return False
+
         node_index = 0
         n = len(buffer)
         for k, b in enumerate(buffer):
@@ -464,7 +467,6 @@ class ConjectureRunner(object):
         start = self.last_data.interesting_origin
 
         buffer = hbytes(buffer[:self.last_data.index])
-        assert sort_key(buffer) < sort_key(self.last_data.buffer)
 
         if not self.prescreen_buffer(buffer):
             return False
@@ -971,34 +973,6 @@ class ConjectureRunner(object):
                     return True
         return False
 
-    def delta_interval_deletion(self):
-        """Attempt to delete every interval in the example."""
-
-        self.debug('delta interval deletes')
-
-        # We do a delta-debugging style thing here where we initially try to
-        # delete many intervals at once and prune it down exponentially to
-        # eventually only trying to delete one interval at a time.
-
-        # I'm a little skeptical that this is helpful in general, but we've
-        # got at least one benchmark where it does help.
-        k = len(self.last_data.intervals) // 2
-        while k > 0:
-            i = 0
-            while i + k <= len(self.last_data.intervals):
-                bitmask = [True] * len(self.last_data.buffer)
-
-                for u, v in self.last_data.intervals[i:i + k]:
-                    for t in range(u, v):
-                        bitmask[t] = False
-
-                if not self.incorporate_new_buffer(hbytes(
-                    b for b, v in zip(self.last_data.buffer, bitmask)
-                    if v
-                )):
-                    i += k
-            k //= 2
-
     def greedy_interval_deletion(self):
         """Attempt to delete every interval in the example."""
 
@@ -1010,31 +984,6 @@ class ConjectureRunner(object):
                 self.last_data.buffer[:u] + self.last_data.buffer[v:]
             ):
                 i += 1
-
-    def coarse_block_replacement(self):
-        """Attempts to zero every block. This is a very coarse pass that we
-        only run once to attempt to remove some irrelevant detail. The main
-        purpose of it is that if we manage to zero a lot of data then many
-        attempted deletes become duplicates of each other, so we run fewer
-        tests.
-
-        If more blocks become possible to zero later that will be
-        handled by minimize_individual_blocks. The point of this is
-        simply to provide a fairly fast initial pass.
-
-        """
-        self.debug('Zeroing blocks')
-        i = 0
-        while i < len(self.last_data.blocks):
-            buf = self.last_data.buffer
-            u, v = self.last_data.blocks[i]
-            assert u < v
-            block = buf[u:v]
-            if any(block):
-                self.incorporate_new_buffer(
-                    buf[:u] + hbytes(v - u) + buf[v:]
-                )
-            i += 1
 
     def minimize_duplicated_blocks(self):
         """Find blocks that have been duplicated in multiple places and attempt
@@ -1119,6 +1068,42 @@ class ConjectureRunner(object):
                         break
                 i += 1
 
+    def minimize_alphabet(self):
+        self.debug('Minimize alphabet')
+
+        def calc_alphabet():
+            a = set(self.last_data.buffer)
+            a.discard(0)
+            a.discard(1)
+            return sorted(a)
+
+        alphabet = calc_alphabet()
+        k = len(alphabet) // 2
+        while k > 0:
+            i = 0
+            while i < len(alphabet):
+                for d in (0, 1):
+                    targets = set(alphabet[i:i + k])
+                    if self.incorporate_new_buffer(hbytes(
+                        d if b in targets
+                        else b for b in self.last_data.buffer
+                    )):
+                        alphabet = calc_alphabet()
+                        break
+                i += k
+            k //= 2
+
+    def pass_to_subinterval(self):
+        self.debug('Passing to subintervals')
+        seen = set()
+        for u, v in reversed(self.last_data.intervals):
+            attempt = self.last_data.buffer[u:v]
+            if attempt in seen:
+                continue
+            seen.add(attempt)
+            if self.incorporate_new_buffer(attempt):
+                return
+
     def shrink(self):
         # We assume that if an all-zero block of bytes is an interesting
         # example then we're not going to do better than that.
@@ -1157,8 +1142,8 @@ class ConjectureRunner(object):
         # Coarse passes that are worth running once when the example is likely
         # to be "far from shrunk" but not worth repeating in a loop because
         # they are subsumed by more fine grained passes.
-        self.delta_interval_deletion()
-        self.coarse_block_replacement()
+        self.minimize_alphabet()
+        self.pass_to_subinterval()
 
         change_counter = -1
 
