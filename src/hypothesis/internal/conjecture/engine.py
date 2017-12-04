@@ -30,7 +30,7 @@ from hypothesis import Phase, HealthCheck
 from hypothesis.reporting import debug_report
 from hypothesis.internal.compat import EMPTY_BYTES, Counter, ceil, \
     hbytes, hrange, int_to_text, int_to_bytes, benchmark_time, \
-    bytes_from_list, to_bytes_sequence, unicode_safe_repr
+    to_bytes_sequence, unicode_safe_repr
 from hypothesis.utils.conventions import UniqueIdentifier
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
@@ -539,9 +539,7 @@ class ConjectureRunner(object):
             return hbytes([255]) * n
 
         def draw_constant(data, n):
-            return bytes_from_list([
-                self.random.randint(0, 255)
-            ] * n)
+            return hbytes([self.random.randint(0, 255)]) * n
 
         def redraw_last(data, n):
             u = self.last_data.blocks[-1][0]

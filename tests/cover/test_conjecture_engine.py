@@ -27,8 +27,7 @@ from hypothesis import strategies as st
 from hypothesis import Phase, HealthCheck, given, settings, unlimited
 from tests.common.utils import all_values, checks_deprecated_behaviour
 from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
-from hypothesis.internal.compat import hbytes, hrange, int_from_bytes, \
-    bytes_from_list
+from hypothesis.internal.compat import hbytes, hrange, int_from_bytes
 from hypothesis.internal.conjecture.data import Status, ConjectureData
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 
@@ -73,7 +72,7 @@ def test_duplicate_buffers():
         s = data.draw_bytes(10)
         if s == t:
             data.mark_interesting()
-    assert x == bytes_from_list([0] * 9 + [1]) * 2
+    assert x == hbytes([0] * 9 + [1]) * 2
 
 
 def test_clone_into_variable_draws():

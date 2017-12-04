@@ -98,9 +98,6 @@ def quiet_raise(exc):
     def int_to_bytes(i, size):
         return i.to_bytes(size, 'big')
 
-    def bytes_from_list(ls):
-        return bytes(ls)
-
     def to_bytes_sequence(ls):
         return bytes(ls)
 
@@ -164,9 +161,6 @@ else:
         return hbytes(result)
 
     int_to_byte = chr
-
-    def bytes_from_list(ls):
-        return hbytes(bytearray(ls))
 
     def to_bytes_sequence(ls):
         return bytearray(ls)
