@@ -28,7 +28,7 @@ mccabe==0.6.1             # via flake8
 packaging==16.8           # via dparse, pyupio, safety
 pip-tools==1.11.0
 pkginfo==1.4.1            # via twine
-pluggy==0.6.0             # via tox
+pluggy==0.6.0             # via pytest, tox
 py==1.5.2                 # via pytest, tox
 pycodestyle==2.3.1        # via autopep8, flake8
 pyflakes==1.6.0           # via autoflake, flake8
@@ -46,7 +46,7 @@ requests-toolbelt==0.8.0  # via twine
 requests==2.18.4          # via python-gitlab, pyupio, requests-toolbelt, safety, sphinx, twine
 restructuredtext-lint==1.1.2
 safety==1.6.1             # via pyupio
-six==1.11.0               # via dparse, packaging, pip-tools, python-gitlab, pyupio, sphinx, tox
+six==1.11.0               # via dparse, packaging, pip-tools, pytest, python-gitlab, pyupio, sphinx, tox
 snowballstemmer==1.2.1    # via sphinx
 sphinx-rtd-theme==0.2.4
 sphinx==1.6.5
