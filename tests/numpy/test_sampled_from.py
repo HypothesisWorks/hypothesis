@@ -19,24 +19,29 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 
-from hypothesis import given
+from hypothesis import given, assume
+from hypothesis.extra import numpy as npst
 from tests.common.utils import checks_deprecated_behaviour
-from hypothesis.strategies import sampled_from
-
-a_numpy_array = np.array([1, 2, 3])
-
-a_multi_dimensional_numpy_array = np.array([[1, 2, 3], [4, 5, 6]])
+from hypothesis.strategies import data, sampled_from
 
 
-@given(sampled_from(a_numpy_array))
-def test_can_sample_numpy_array_without_warning(member):
-    assert member in a_numpy_array
+@given(data(), npst.arrays(
+    dtype=npst.scalar_dtypes(),
+    shape=npst.array_shapes(max_dims=1)
+))
+def test_can_sample_1D_numpy_array_without_warning(data, arr):
+    elem = data.draw(sampled_from(arr))
+    try:
+        assume(not np.isnan(elem))
+    except TypeError:
+        pass
+    assert elem in arr
 
 
 @checks_deprecated_behaviour
-def test_multi_dimensional_arrays_are_a_no():
-    @given(sampled_from(a_multi_dimensional_numpy_array))
-    def test(member):
-        assert member in a_multi_dimensional_numpy_array
-
-    test()
+@given(data(), npst.arrays(
+    dtype=npst.scalar_dtypes(),
+    shape=npst.array_shapes(min_dims=2, max_dims=5)
+))
+def test_sampling_multi_dimensional_arrays_is_deprecated(data, arr):
+    data.draw(sampled_from(arr))
