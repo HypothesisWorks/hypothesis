@@ -164,6 +164,7 @@ their individual contributions.
 * `Alex Willmer <https://github.com/moreati>`_ (alex@moreati.org.uk)
 * `Ben Peterson <https://github.com/killthrush>`_ (killthrush@hotmail.com_)
 * `Charles O'Farrell <https://www.github.com/charleso>`_
+* `Charlie Tanksley <https://www.github.com/charlietanksley>`_
 * `Chris Down  <https://chrisdown.name>`_
 * `Christopher Martin <https://www.github.com/chris-martin>`_ (ch.martin@gmail.com)
 * `Cory Benfield <https://www.github.com/Lukasa>`_
