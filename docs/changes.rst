@@ -22,6 +22,13 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.42.0 - 2017-12-09
+-------------------
+
+This release deprecates :ref:`faker-extra`, which was designed as a transition
+strategy but does not support example shrinking or coverage-guided discovery.
+
+-------------------
 3.41.0 - 2017-12-06
 -------------------
 
