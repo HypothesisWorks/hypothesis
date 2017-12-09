@@ -25,10 +25,10 @@ information to the contrary.
 3.41.0 - 2017-12-06
 -------------------
 
-- :func:`~hypothesis.strategies.sampled_from` can now sample from
-  one-dimensional numpy ndarrays. Sampling from multi-dimensional
-  ndarrays still results in a deprecation warning. Thanks to Charlie
-  Tanksley for this patch.
+:func:`~hypothesis.strategies.sampled_from` can now sample from
+one-dimensional numpy ndarrays. Sampling from multi-dimensional
+ndarrays still results in a deprecation warning. Thanks to Charlie
+Tanksley for this patch.
 
 -------------------
 3.40.1 - 2017-12-04
