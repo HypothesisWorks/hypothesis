@@ -368,7 +368,7 @@ def changed_files_from_master():
 
 
 def should_run_ci_task(task, is_pull_request):
-    """Given a task name, should we run this task?  Returns True/False."""
+    """Given a task name, should we run this task?"""
     if not is_pull_request:
         print('We only skip tests if the job is a pull request.')
         return True
