@@ -330,18 +330,27 @@ def update_for_pending_release():
 
 
 def has_no_effect_on_tests(path):
-    """
-    Is this a file which has we can safely assume has no effect on tests?
-    """
+    """Is this a file which has we can safely assume has no effect on tests?"""
+    # RST files are the input to some tests -- in particular, the
+    # documentation build and doctests.  Both of those jobs are always run,
+    # so we can ignore their effect here.
+    #
+    # IPython notebooks aren't currently used in any tests.
     if path.endswith(('.rst', '.ipynb')):
         return True
-    
+
+    # These files exist but have no effect on tests.
     if path in ('CITATION', 'LICENSE.txt', ):
         return True
 
+    # All of these files definitely have an effect on tests, and we should
+    # always run tests if any of them have changed.
     if path.startswith(('src/', 'tests/', 'requirements/', 'setup.py')):
         return False
-    
+
+    # We default to marking a file "interesting" unless we know otherwise --
+    # it's better to run tests that could have been skipped than skip tests
+    # when they needed to be run.
     return False
 
 
@@ -366,7 +375,7 @@ def should_run_ci_task(task, is_pull_request):
     if not is_pull_request:
         print('We only skip tests if the job is a pull request.')
         return True
-    
+
     # These tests are usually fast; we always run them rather than trying
     # to keep up-to-date rules of exactly which changed files mean they
     # should run.
@@ -379,17 +388,17 @@ def should_run_ci_task(task, is_pull_request):
     ]:
         print('We always run the %s task.' % task)
         return True
-    
-    # The remaining tasks are all some sort of test of Hypothesis 
+
+    # The remaining tasks are all some sort of test of Hypothesis
     # functionality.  Since it's better to run tests when we don't need to
     # than skip tests when it was important, we remove any files which we
     # know are safe to ignore, and run tests if there's anything left.
     changed_files = changed_files_from_master()
-    
+
     interesting_changed_files = [
         f for f in changed_files if not has_no_effect_on_tests(f)
     ]
-    
+
     if interesting_changed_files:
         print(
             'Changes to the following files mean we need to run tests: %s' %
