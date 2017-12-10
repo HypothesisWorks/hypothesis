@@ -35,6 +35,8 @@ if __name__ == '__main__':
         print('We only run CI builds on the master branch or in pull requests')
         sys.exit(0)
     
+    is_pull_request = (os.environ['CI_PULL_REQUEST'] != '')
+    
     for task in ['check-pypy', 'check-py36', 'check-py27']:
-        if should_run_task(task=task, is_pull_request=True):
+        if should_run_task(task=task, is_pull_request=is_pull_request):
             subprocess.check_call(['make', task])
