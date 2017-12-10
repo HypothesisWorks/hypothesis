@@ -41,6 +41,9 @@ def _is_safe_file(path):
     """
     if path.endswith(('.rst', '.ipynb')):
         return True
+    
+    if path in ('CITATION', 'LICENSE.txt', ):
+        return True
 
     if path.startswith(('src/', 'tests/', 'requirements/', 'setup.py')):
         return False
