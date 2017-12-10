@@ -22,6 +22,13 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.42.1 - 2017-12-10
+-------------------
+
+This release has some internal cleanup, which makes reading the code
+more pleasant and may shrink large examples slightly faster.
+
+-------------------
 3.42.0 - 2017-12-09
 -------------------
 
