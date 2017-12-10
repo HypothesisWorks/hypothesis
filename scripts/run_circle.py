@@ -38,5 +38,5 @@ if __name__ == '__main__':
     is_pull_request = (os.environ['CI_PULL_REQUEST'] != '')
     
     for task in ['check-pypy', 'check-py36', 'check-py27']:
-        if should_run_task(task=task, is_pull_request=is_pull_request):
+        if should_run_ci_task(task=task, is_pull_request=is_pull_request):
             subprocess.check_call(['make', task])

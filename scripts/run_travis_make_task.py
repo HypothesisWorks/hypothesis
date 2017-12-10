@@ -29,5 +29,5 @@ if __name__ == '__main__':
     is_pull_request = (os.environ.get('TRAVIS_EVENT_TYPE') == 'pull_request')
     task = os.environ['TASK']
     
-    if should_run_task(task=task, is_pull_request=is_pull_request):
+    if should_run_ci_task(task=task, is_pull_request=is_pull_request):
         subprocess.check_call(['make', task])
