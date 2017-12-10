@@ -21,6 +21,7 @@ from __future__ import division, print_function, absolute_import
 
 import os
 import subprocess
+import sys
 
 from hypothesistooling import should_run_ci_task
 
@@ -32,7 +33,7 @@ if __name__ == '__main__':
         os.environ['CI_PULL_REQUEST'] != ''
     ):
         print('We only run CI builds on the master branch or in pull requests')
-        return
+        sys.exit(0)
     
     for task in ['check-pypy', 'check-py36', 'check-py27']:
         if should_run_task(task=task, is_pull_request=True):
