@@ -24,8 +24,14 @@ from hypothesistooling import should_run_ci_task
 
 
 if __name__ == '__main__':
-    is_pull_request = (os.environ.get('CI_PULL_REQUEST') != '')
-    task = os.environ['TASK']
     
-    if should_run_task(task=task, is_pull_request=is_pull_request):
-        subprocess.check_call(['make', task])
+    if (
+        os.environ['CIRCLE_BRANCH'] != 'master' and 
+        os.environ['CI_PULL_REQUEST'] != ''
+    ):
+        print('We only run CI builds on the master branch or in pull requests')
+        return
+    
+    for task in ['check-pypy', 'check-py36', 'check-py27']:
+        if should_run_task(task=task, is_pull_request=True):
+            subprocess.check_call(['make', task])

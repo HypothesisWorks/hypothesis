@@ -1,6 +1,6 @@
 test:
   override:
-    - scripts/run-circle.sh
+    - scripts/run_circle.py
 
 machine:
   # Courtesy of https://pewpewthespells.com/blog/building_python_on_circleci.html
