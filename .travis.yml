@@ -67,7 +67,7 @@ env:
         - TASK=deploy
 
 script:
-    - make $TASK
+    - python scripts/run_make_task.py
 
 matrix:
     fast_finish: true
