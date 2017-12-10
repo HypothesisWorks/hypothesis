@@ -151,9 +151,7 @@ class settings(settingsMeta('settings', (object,), {})):
                     kwargs[setting.name] = getattr(defaults, setting.name)
                 else:
                     if kwargs[setting.name] != setting.future_default:
-                        if (
-                            setting.deprecation_message is not None
-                        ):
+                        if setting.deprecation_message is not None:
                             deprecations.append(setting)
                     if setting.validator:
                         kwargs[setting.name] = setting.validator(

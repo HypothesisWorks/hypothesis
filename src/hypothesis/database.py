@@ -21,10 +21,11 @@ import os
 import re
 import binascii
 import threading
+from hashlib import sha1
 from contextlib import contextmanager
 
 from hypothesis._settings import note_deprecation
-from hypothesis.internal.compat import FileNotFoundError, sha1, hbytes, \
+from hypothesis.internal.compat import FileNotFoundError, hbytes, \
     b64decode, b64encode
 
 sqlite3 = None

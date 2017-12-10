@@ -27,7 +27,6 @@ import pytest
 import hypothesis.strategies as ds
 from hypothesis import find, given, settings
 from hypothesis.errors import InvalidArgument
-from hypothesis.internal.compat import float_to_decimal
 from hypothesis.internal.reflection import nicerepr
 
 
@@ -303,7 +302,7 @@ def test_decimals():
 def test_non_float_decimal():
     find(
         ds.decimals(),
-        lambda d: d.is_finite() and float_to_decimal(float(d)) != d)
+        lambda d: d.is_finite() and decimal.Decimal(float(d)) != d)
 
 
 def test_produces_dictionaries_of_at_least_minimum_size():

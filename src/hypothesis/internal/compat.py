@@ -19,7 +19,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import os
 import re
 import sys
 import math
@@ -28,8 +27,6 @@ import codecs
 import platform
 import importlib
 from base64 import b64encode
-from decimal import Context, Decimal, Inexact
-from hashlib import sha1
 from collections import namedtuple
 
 try:
@@ -56,10 +53,6 @@ def bit_length(n):
     return n.bit_length()
 
 
-def float_to_decimal(f):
-    return Decimal(f)
-
-
 if PY3:
     def str_to_bytes(s):
         return s.encode(a_good_encoding())
@@ -73,7 +66,6 @@ if PY3:
     ARG_NAME_ATTRIBUTE = 'arg'
     integer_types = (int,)
     hunichr = chr
-    from functools import reduce
 
     def unicode_safe_repr(x):
         return repr(x)
@@ -98,14 +90,8 @@ def quiet_raise(exc):
     def int_to_bytes(i, size):
         return i.to_bytes(size, 'big')
 
-    def bytes_from_list(ls):
-        return bytes(ls)
-
     def to_bytes_sequence(ls):
         return bytes(ls)
-
-    def zero_byte_sequence(n):
-        return bytes(n)
 
     def int_to_byte(i):
         return bytes([i])
@@ -129,9 +115,6 @@ else:
     else:
         def struct_unpack(fmt, string):
             return struct.unpack(fmt, str(string))
-
-    def zero_byte_sequence(n):
-        return hbytes(b'\0' * n)
 
     def int_from_bytes(data):
         assert isinstance(data, bytearray)
@@ -164,9 +147,6 @@ else:
         return hbytes(result)
 
     int_to_byte = chr
-
-    def bytes_from_list(ls):
-        return hbytes(bytearray(ls))
 
     def to_bytes_sequence(ls):
         return bytearray(ls)
@@ -229,7 +209,6 @@ else:
     ARG_NAME_ATTRIBUTE = 'id'
     integer_types = (int, long)
     hunichr = unichr
-    reduce = reduce
 
     def escape_unicode_characters(s):
         return codecs.encode(s, 'string_escape')

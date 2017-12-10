@@ -30,7 +30,7 @@ from hypothesis import Phase, HealthCheck
 from hypothesis.reporting import debug_report
 from hypothesis.internal.compat import EMPTY_BYTES, Counter, ceil, \
     hbytes, hrange, int_to_text, int_to_bytes, benchmark_time, \
-    bytes_from_list, to_bytes_sequence, unicode_safe_repr
+    to_bytes_sequence, unicode_safe_repr
 from hypothesis.utils.conventions import UniqueIdentifier
 from hypothesis.internal.healthcheck import fail_health_check
 from hypothesis.internal.conjecture.data import MAX_DEPTH, Status, \
@@ -142,9 +142,7 @@ class ConjectureRunner(object):
         return 0 in self.dead
 
     def test_function(self, data):
-        if (
-            benchmark_time() - self.start_time >= HUNG_TEST_TIME_LIMIT
-        ):
+        if benchmark_time() - self.start_time >= HUNG_TEST_TIME_LIMIT:
             fail_health_check(self.settings, (
                 'Your test has been running for at least five minutes. This '
                 'is probably not what you intended, so by default Hypothesis '
@@ -539,9 +537,7 @@ class ConjectureRunner(object):
             return hbytes([255]) * n
 
         def draw_constant(data, n):
-            return bytes_from_list([
-                self.random.randint(0, 255)
-            ] * n)
+            return hbytes([self.random.randint(0, 255)]) * n
 
         def redraw_last(data, n):
             u = self.last_data.blocks[-1][0]
@@ -565,9 +561,7 @@ class ConjectureRunner(object):
         ]
 
         def draw_mutated(data, n):
-            if (
-                data.index + n > len(self.last_data.buffer)
-            ):
+            if data.index + n > len(self.last_data.buffer):
                 result = uniform(self.random, n)
             else:
                 result = self.random.choice(bits)(data, n)
@@ -943,8 +937,7 @@ class ConjectureRunner(object):
         if len(initial_data.buffer) < v:
             return False
 
-        lost_data = len(self.last_data.buffer) - \
-            len(initial_data.buffer)
+        lost_data = len(self.last_data.buffer) - len(initial_data.buffer)
 
         # If this did not in fact cause the data size to shrink we
         # bail here because it's not worth trying to delete stuff from
@@ -1001,7 +994,6 @@ class ConjectureRunner(object):
 
     def greedy_interval_deletion(self):
         """Attempt to delete every interval in the example."""
-
         self.debug('greedy interval deletes')
         i = 0
         while i < len(self.last_data.intervals):
@@ -1031,9 +1023,7 @@ class ConjectureRunner(object):
             assert u < v
             block = buf[u:v]
             if any(block):
-                self.incorporate_new_buffer(
-                    buf[:u] + hbytes(v - u) + buf[v:]
-                )
+                self.incorporate_new_buffer(buf[:u] + hbytes(v - u) + buf[v:])
             i += 1
 
     def minimize_duplicated_blocks(self):
@@ -1044,11 +1034,7 @@ class ConjectureRunner(object):
         counts = Counter(
             self.last_data.buffer[u:v] for u, v in self.last_data.blocks
         )
-        blocks = [
-            k for k, count in
-            counts.items()
-            if count > 1
-        ]
+        blocks = [buffer for buffer, count in counts.items() if count > 1]
 
         thresholds = {}
         for u, v in self.last_data.blocks:

@@ -18,8 +18,8 @@
 from __future__ import division, print_function, absolute_import
 
 import sys
-import operator
 from fractions import Fraction
+from functools import reduce
 
 import pytest
 from flaky import flaky
@@ -30,7 +30,7 @@ from tests.common.debug import minimal
 from hypothesis.strategies import just, sets, text, lists, tuples, \
     booleans, integers, fractions, frozensets, dictionaries, \
     sampled_from
-from hypothesis.internal.compat import PY3, OrderedDict, hrange, reduce
+from hypothesis.internal.compat import PY3, OrderedDict, hrange
 
 
 def test_integers_from_minimizes_leftwards():
@@ -202,20 +202,16 @@ def test_minimize_long():
 
 def test_find_large_union_list():
     def large_mostly_non_overlapping(xs):
-        union = reduce(operator.or_, xs)
+        union = reduce(set.union, xs)
         return len(union) >= 30
 
     result = minimal(
         lists(sets(integers(), min_size=1), min_size=1),
         large_mostly_non_overlapping, timeout_after=120)
     assert len(result) == 1
-    union = reduce(operator.or_, result)
+    union = reduce(set.union, result)
     assert len(union) == 30
     assert max(union) == min(union) + len(union) - 1
-    for x in result:
-        for y in result:
-            if x is not y:
-                assert not (x & y)
 
 
 @pytest.mark.parametrize('n', [0, 1, 10, 100, 1000])
