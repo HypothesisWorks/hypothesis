@@ -30,7 +30,7 @@ if __name__ == '__main__':
     
     if (
         os.environ['CIRCLE_BRANCH'] != 'master' and 
-        os.environ['CI_PULL_REQUEST'] != ''
+        os.environ['CI_PULL_REQUEST'] == ''
     ):
         print('We only run CI builds on the master branch or in pull requests')
         sys.exit(0)
