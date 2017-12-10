@@ -355,9 +355,8 @@ def has_no_effect_on_tests(path):
 
 
 def changed_files_from_master():
-    """
-    Returns a list of files which have changed between a branch and master.
-    """
+    """Returns a list of files which have changed between a branch and
+    master."""
     files = set()
     command = ['git', 'diff', '--name-only', 'HEAD', 'master']
     diff_output = subprocess.check_output(command).decode('ascii')
@@ -369,9 +368,7 @@ def changed_files_from_master():
 
 
 def should_run_ci_task(task, is_pull_request):
-    """
-    Given a task name, should we run this task?  Returns True/False.
-    """
+    """Given a task name, should we run this task?  Returns True/False."""
     if not is_pull_request:
         print('We only skip tests if the job is a pull request.')
         return True
