@@ -37,8 +37,8 @@ def test_supports_positional_and_keyword_args_in_builds():
         'builds(hi, integers(), there=booleans())'
 
 
-def test_includes_a_trailing_comma_in_single_element_sampling():
-    assert repr(st.sampled_from([0])) == 'sampled_from((0,))'
+def test_preserves_sequence_type_of_argument():
+    assert repr(st.sampled_from([0])) == 'sampled_from([0])'
 
 
 class IHaveABadRepr(object):
