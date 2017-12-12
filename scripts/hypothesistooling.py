@@ -329,29 +329,24 @@ def update_for_pending_release():
     )
 
 
-def has_no_effect_on_tests(path):
-    """Is this a file which has we can safely assume has no effect on tests?"""
+def could_affect_tests(path):
+    """Does this file have any effect on test results?"""
     # RST files are the input to some tests -- in particular, the
     # documentation build and doctests.  Both of those jobs are always run,
     # so we can ignore their effect here.
     #
     # IPython notebooks aren't currently used in any tests.
     if path.endswith(('.rst', '.ipynb')):
-        return True
+        return False
 
     # These files exist but have no effect on tests.
     if path in ('CITATION', 'LICENSE.txt', ):
-        return True
-
-    # All of these files definitely have an effect on tests, and we should
-    # always run tests if any of them have changed.
-    if path.startswith(('src/', 'tests/', 'requirements/', 'setup.py')):
         return False
 
     # We default to marking a file "interesting" unless we know otherwise --
     # it's better to run tests that could have been skipped than skip tests
     # when they needed to be run.
-    return False
+    return True
 
 
 def changed_files_from_master():
@@ -393,7 +388,7 @@ def should_run_ci_task(task, is_pull_request):
     changed_files = changed_files_from_master()
 
     interesting_changed_files = [
-        f for f in changed_files if not has_no_effect_on_tests(f)
+        f for f in changed_files if could_affect_tests(f)
     ]
 
     if interesting_changed_files:
