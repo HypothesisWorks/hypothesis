@@ -22,6 +22,13 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.42.2 - 2017-12-12
+-------------------
+
+This patch fixes :issue:`1017`, where instances of a list or tuple subtype
+used as an argument to a strategy would be coerced to tuple.
+
+-------------------
 3.42.1 - 2017-12-10
 -------------------
 
