@@ -129,3 +129,18 @@ def test_can_shrink_matrices_with_length_param():
     assert len(value) == 2
     assert len(value[0]) == 2
     assert sorted(value[0] + value[1]) == [0, 0, 0, 1]
+
+
+class MyList(list):
+    pass
+
+
+@given(st.data(), st.lists(st.integers()).map(MyList))
+def test_does_not_change_arguments(data, ls):
+    # regression test for issue #1017 or other argument mutation
+    @st.composite
+    def strat(draw, arg):
+        return arg
+
+    ex = data.draw(strat(ls))
+    assert ex is ls

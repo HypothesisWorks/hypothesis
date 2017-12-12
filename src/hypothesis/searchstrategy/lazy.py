@@ -22,14 +22,6 @@ from hypothesis.internal.reflection import arg_string, \
     convert_keyword_arguments, convert_positional_arguments
 from hypothesis.searchstrategy.strategies import SearchStrategy
 
-
-def tupleize(x):
-    if isinstance(x, (tuple, list)):
-        return tuple(x)
-    else:
-        return x
-
-
 unwrap_cache = {}
 unwrap_depth = 0
 
@@ -85,10 +77,8 @@ class LazyStrategy(SearchStrategy):
         self.__wrapped_strategy = None
         self.__representation = None
         self.__function = function
-        self.__args = tuple(map(tupleize, args))
-        self.__kwargs = dict(
-            (k, tupleize(v)) for k, v in kwargs.items()
-        )
+        self.__args = args
+        self.__kwargs = kwargs
 
     @property
     def supports_find(self):
