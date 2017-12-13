@@ -74,7 +74,6 @@ class ConjectureRunner(object):
     ):
         self._test_function = test_function
         self.settings = settings or Settings()
-        self.last_data = None
         self.shrinks = 0
         self.call_count = 0
         self.event_call_counts = Counter()
@@ -229,14 +228,7 @@ class ConjectureRunner(object):
                 else:
                     break
 
-        last_data_is_interesting = (
-            self.last_data is not None and
-            self.last_data.status == Status.INTERESTING
-        )
-
         if data.status == Status.INTERESTING:
-            first_call = len(self.interesting_examples) == 0
-
             key = data.interesting_origin
             changed = False
             try:
@@ -245,6 +237,7 @@ class ConjectureRunner(object):
                 changed = True
             else:
                 if sort_key(data.buffer) < sort_key(existing.buffer):
+                    self.shrinks += 1
                     self.downgrade_buffer(existing.buffer)
                     changed = True
 
@@ -252,23 +245,9 @@ class ConjectureRunner(object):
                 self.save_buffer(data.buffer)
                 self.interesting_examples[key] = data
                 self.shrunk_examples.discard(key)
-                if last_data_is_interesting and not first_call:
-                    self.shrinks += 1
-
-            if not last_data_is_interesting or (
-                sort_key(data.buffer) < sort_key(self.last_data.buffer) and
-                data.interesting_origin ==
-                self.last_data.interesting_origin
-            ):
-                self.last_data = data
 
             if self.shrinks >= self.settings.max_shrinks:
                 self.exit_with(ExitReason.max_shrinks)
-        elif (
-            self.last_data is None or
-            self.last_data.status < Status.INTERESTING
-        ):
-            self.last_data = data
         if (
             self.settings.timeout > 0 and
             benchmark_time() >= self.start_time + self.settings.timeout
@@ -414,33 +393,31 @@ class ConjectureRunner(object):
                 self._run()
             except RunIsComplete:
                 pass
-            if self.interesting_examples:
-                self.last_data = max(
-                    self.interesting_examples.values(),
-                    key=lambda d: sort_key(d.buffer))
-            if self.last_data is not None:
-                self.debug_data(self.last_data)
+            for v in self.interesting_examples.values():
+                self.debug_data(v)
             self.debug(
                 u'Run complete after %d examples (%d valid) and %d shrinks' % (
                     self.call_count, self.valid_examples, self.shrinks,
                 ))
 
     def _new_mutator(self):
+        target_data = [None]
+
         def draw_new(data, n):
             return uniform(self.random, n)
 
         def draw_existing(data, n):
-            return self.last_data.buffer[data.index:data.index + n]
+            return target_data[0].buffer[data.index:data.index + n]
 
         def draw_smaller(data, n):
-            existing = self.last_data.buffer[data.index:data.index + n]
+            existing = target_data[0].buffer[data.index:data.index + n]
             r = uniform(self.random, n)
             if r <= existing:
                 return r
             return _draw_predecessor(self.random, existing)
 
         def draw_larger(data, n):
-            existing = self.last_data.buffer[data.index:data.index + n]
+            existing = target_data[0].buffer[data.index:data.index + n]
             r = uniform(self.random, n)
             if r >= existing:
                 return r
@@ -448,10 +425,10 @@ class ConjectureRunner(object):
 
         def reuse_existing(data, n):
             choices = data.block_starts.get(n, []) or \
-                self.last_data.block_starts.get(n, [])
+                target_data[0].block_starts.get(n, [])
             if choices:
                 i = self.random.choice(choices)
-                return self.last_data.buffer[i:i + n]
+                return target_data[0].buffer[i:i + n]
             else:
                 result = uniform(self.random, n)
                 assert isinstance(result, hbytes)
@@ -459,7 +436,7 @@ class ConjectureRunner(object):
 
         def flip_bit(data, n):
             buf = bytearray(
-                self.last_data.buffer[data.index:data.index + n])
+                target_data[0].buffer[data.index:data.index + n])
             i = self.random.randint(0, n - 1)
             k = self.random.randint(0, 7)
             buf[i] ^= (1 << k)
@@ -475,9 +452,9 @@ class ConjectureRunner(object):
             return hbytes([self.random.randint(0, 255)]) * n
 
         def redraw_last(data, n):
-            u = self.last_data.blocks[-1][0]
+            u = target_data[0].blocks[-1][0]
             if data.index + n <= u:
-                return self.last_data.buffer[data.index:data.index + n]
+                return target_data[0].buffer[data.index:data.index + n]
             else:
                 return uniform(self.random, n)
 
@@ -495,8 +472,12 @@ class ConjectureRunner(object):
             self.random.choice(options) for _ in hrange(3)
         ]
 
+        def mutate_from(origin):
+            target_data[0] = origin
+            return draw_mutated
+
         def draw_mutated(data, n):
-            if data.index + n > len(self.last_data.buffer):
+            if data.index + n > len(target_data[0].buffer):
                 result = uniform(self.random, n)
             else:
                 result = self.random.choice(bits)(data, n)
@@ -504,7 +485,7 @@ class ConjectureRunner(object):
             return self.__rewrite_for_novelty(
                 data, self.__zero_bound(data, result))
 
-        return draw_mutated
+        return mutate_from
 
     def __rewrite(self, data, result):
         return self.__rewrite_for_novelty(
@@ -665,11 +646,11 @@ class ConjectureRunner(object):
             self.used_examples_from_database = len(corpus) > 0
 
             for existing in corpus:
-                self.last_data = ConjectureData.for_buffer(existing)
+                last_data = ConjectureData.for_buffer(existing)
                 try:
-                    self.test_function(self.last_data)
+                    self.test_function(last_data)
                 finally:
-                    if self.last_data.status != Status.INTERESTING:
+                    if last_data.status != Status.INTERESTING:
                         self.settings.database.delete(
                             self.database_key, existing)
                         self.settings.database.delete(
@@ -718,12 +699,12 @@ class ConjectureRunner(object):
 
             targets_found = len(self.covering_examples)
 
-            self.last_data = ConjectureData(
+            last_data = ConjectureData(
                 max_length=self.settings.buffer_size,
                 draw_bytes=draw_bytes
             )
-            self.test_function(self.last_data)
-            self.last_data.freeze()
+            self.test_function(last_data)
+            last_data.freeze()
 
             if len(self.covering_examples) > targets_found:
                 count = 0
@@ -775,23 +756,22 @@ class ConjectureRunner(object):
                 self.test_function(data)
                 data.freeze()
             else:
-                target, last_data = self.target_selector.select()
+                target, origin = self.target_selector.select()
                 mutations += 1
                 targets_found = len(self.covering_examples)
-                prev_data = self.last_data
                 data = ConjectureData(
-                    draw_bytes=mutator,
+                    draw_bytes=mutator(origin),
                     max_length=self.settings.buffer_size
                 )
                 self.test_function(data)
                 data.freeze()
                 if (
-                    data.status > prev_data.status or
+                    data.status > origin.status or
                     len(self.covering_examples) > targets_found
                 ):
                     mutations = 0
                 elif (
-                    data.status < prev_data.status or
+                    data.status < origin.status or
                     not self.target_selector.has_tag(target, data) or
                     mutations >= 10
                 ):
@@ -805,7 +785,6 @@ class ConjectureRunner(object):
             mutations += 1
 
     def _run(self):
-        self.last_data = None
         self.start_time = benchmark_time()
 
         self.reuse_existing_examples()

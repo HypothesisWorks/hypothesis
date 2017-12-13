@@ -58,8 +58,7 @@ from hypothesis.internal.reflection import is_mock, proxies, nicerepr, \
     define_function_signature, convert_positional_arguments, \
     get_pretty_function_description
 from hypothesis.internal.healthcheck import fail_health_check
-from hypothesis.internal.conjecture.data import Status, StopTest, \
-    ConjectureData
+from hypothesis.internal.conjecture.data import StopTest, ConjectureData
 from hypothesis.searchstrategy.strategies import SearchStrategy
 from hypothesis.internal.conjecture.engine import ExitReason, \
     ConjectureRunner, sort_key
@@ -716,23 +715,23 @@ class StateForActualGivenExecution(object):
             database_key=database_key,
         )
 
-        try:
-            if in_given or self.collector is None:
+        if in_given or self.collector is None:
+            runner.run()
+        else:  # pragma: no cover
+            in_given = True
+            original_trace = sys.gettrace()
+            try:
+                sys.settrace(None)
                 runner.run()
-            else:  # pragma: no cover
-                in_given = True
-                original_trace = sys.gettrace()
-                try:
-                    sys.settrace(None)
-                    runner.run()
-                finally:
-                    in_given = False
-                    sys.settrace(original_trace)
-            note_engine_for_statistics(runner)
-            run_time = time.time() - self.start_time
-        finally:
-            self.used_examples_from_database = \
-                runner.used_examples_from_database
+            finally:
+                in_given = False
+                sys.settrace(original_trace)
+                self.used_examples_from_database = \
+                    runner.used_examples_from_database
+        note_engine_for_statistics(runner)
+        run_time = time.time() - self.start_time
+
+        self.used_examples_from_database = runner.used_examples_from_database
 
         if runner.used_examples_from_database:
             if self.settings.derandomize:
@@ -751,7 +750,7 @@ class StateForActualGivenExecution(object):
                 )
 
         timed_out = runner.exit_reason == ExitReason.timeout
-        if runner.last_data is None:
+        if runner.call_count == 0:
             return
         if runner.interesting_examples:
             self.falsifying_examples = sorted(
@@ -1097,8 +1096,9 @@ def find(specifier, condition, settings=None, random=None, database_key=None):
     runner.run()
     note_engine_for_statistics(runner)
     run_time = time.time() - start
-    if runner.last_data.status == Status.INTERESTING:
-        data = ConjectureData.for_buffer(runner.last_data.buffer)
+    if runner.interesting_examples:
+        data = ConjectureData.for_buffer(
+            list(runner.interesting_examples.values())[0].buffer)
         with BuildContext(data):
             return data.draw(search)
     if (
