@@ -38,7 +38,6 @@ from hypothesis import settings as Settings
 from hypothesis.errors import UnsatisfiedAssumption
 from hypothesis.strategies import just, sets, text, lists, floats, \
     one_of, tuples, booleans, integers, sampled_from
-from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import \
     ConjectureRunner as ConConjectureRunner
 
@@ -88,7 +87,7 @@ def define_test(specifier, predicate, condition=None):
                     max_shrinks=0
                 ))
             runner.run()
-            if runner.last_data.status == Status.INTERESTING:
+            if runner.interesting_examples:
                 successes += 1
                 if successes >= REQUIRED_RUNS:
                     return

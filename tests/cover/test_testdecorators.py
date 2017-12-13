@@ -385,17 +385,18 @@ def test_can_run_with_database_in_thread():
 
     @given(integers())
     def test_blah(x):
-        assert False
+        raise ValueError()
 
     def run_test():
         try:
             test_blah()
-        except AssertionError:
+        except ValueError:
             results.append('success')
 
     # Run once in the main thread and once in another thread. Execution is
     # strictly serial, so no need for locking.
     run_test()
+    assert results == ['success']
     thread = threading.Thread(target=run_test)
     thread.start()
     thread.join()

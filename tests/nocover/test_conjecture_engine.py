@@ -22,7 +22,6 @@ from hypothesis import HealthCheck, given, settings, unlimited
 from hypothesis.database import InMemoryExampleDatabase
 from hypothesis.internal.compat import hbytes
 from tests.cover.test_conjecture_engine import run_to_buffer, slow_shrinker
-from hypothesis.internal.conjecture.data import Status
 from hypothesis.internal.conjecture.engine import ConjectureRunner
 
 
@@ -54,7 +53,7 @@ def test_saves_data_while_shrinking():
     runner = ConjectureRunner(
         f, settings=settings(database=db), database_key=key)
     runner.run()
-    assert runner.last_data.status == Status.INTERESTING
+    assert runner.interesting_examples
     assert len(seen) == n
     in_db = set(
         v
@@ -91,7 +90,7 @@ def test_garbage_collects_the_database():
     runner = ConjectureRunner(
         slow_shrinker(), settings=local_settings, database_key=key)
     runner.run()
-    assert runner.last_data.status == Status.INTERESTING
+    assert runner.interesting_examples
 
     def in_db():
         return set(

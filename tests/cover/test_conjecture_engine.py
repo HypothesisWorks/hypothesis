@@ -30,7 +30,8 @@ from hypothesis.database import ExampleDatabase, InMemoryExampleDatabase
 from tests.common.strategies import SLOW, HardToShrink
 from hypothesis.internal.compat import hbytes, hrange, int_from_bytes
 from hypothesis.internal.conjecture.data import Status, ConjectureData
-from hypothesis.internal.conjecture.engine import ConjectureRunner
+from hypothesis.internal.conjecture.engine import Shrinker, \
+    ConjectureRunner
 
 MAX_SHRINKS = 1000
 
@@ -42,8 +43,9 @@ def run_to_buffer(f):
         database=None, perform_health_check=False,
     ))
     runner.run()
-    assert runner.last_data.status == Status.INTERESTING
-    return hbytes(runner.last_data.buffer)
+    assert runner.interesting_examples
+    last_data, = runner.interesting_examples.values()
+    return hbytes(last_data.buffer)
 
 
 def test_can_index_results():
@@ -102,8 +104,8 @@ def test_can_load_data_from_a_corpus():
     runner = ConjectureRunner(
         f, settings=settings(database=db), database_key=key)
     runner.run()
-    assert runner.last_data.status == Status.INTERESTING
-    assert runner.last_data.buffer == value
+    last_data, = runner.interesting_examples.values()
+    assert last_data.buffer == value
     assert len(list(db.fetch(key))) == 1
 
 
@@ -135,7 +137,8 @@ def test_terminates_shrinks(n, monkeypatch):
         database=db, timeout=unlimited,
     ), random=Random(0), database_key=b'key')
     runner.run()
-    assert runner.last_data.status == Status.INTERESTING
+    last_data, = runner.interesting_examples.values()
+    assert last_data.status == Status.INTERESTING
     assert runner.shrinks == n
     in_db = set(
         v
@@ -203,8 +206,7 @@ def test_can_navigate_to_a_valid_example():
         database=None,
     ))
     runner.run()
-    assert runner.last_data.status == Status.INTERESTING
-    return hbytes(runner.last_data.buffer)
+    assert runner.interesting_examples
 
 
 def test_stops_after_max_iterations_when_generating():
@@ -299,6 +301,8 @@ def test_interleaving_engines():
         runner = ConjectureRunner(g, random=rnd)
         children.append(runner)
         runner.run()
+        if runner.interesting_examples:
+            data.mark_interesting()
     assert x == b'\0'
     for c in children:
         assert not c.interesting_examples
@@ -317,7 +321,7 @@ def test_run_with_timeout_while_shrinking():
     start = time.time()
     runner.run()
     assert time.time() <= start + 1
-    assert runner.last_data.status == Status.INTERESTING
+    assert runner.interesting_examples
 
 
 @checks_deprecated_behaviour
@@ -330,7 +334,7 @@ def test_run_with_timeout_while_boring():
     start = time.time()
     runner.run()
     assert time.time() <= start + 1
-    assert runner.last_data.status == Status.VALID
+    assert runner.valid_examples > 0
 
 
 def test_max_shrinks_can_disable_shrinking():
@@ -727,7 +731,7 @@ def test_can_delete_intervals(monkeypatch):
     monkeypatch.setattr(
         ConjectureRunner, 'generate_new_examples', generate_new_examples)
     monkeypatch.setattr(
-        ConjectureRunner, 'shrink', ConjectureRunner.greedy_interval_deletion
+        Shrinker, 'shrink', Shrinker.greedy_interval_deletion
     )
 
     def f(data):
@@ -765,8 +769,7 @@ def test_reorder_blocks(monkeypatch):
 
     monkeypatch.setattr(
         ConjectureRunner, 'generate_new_examples', generate_new_examples)
-    monkeypatch.setattr(
-        ConjectureRunner, 'shrink', ConjectureRunner.reorder_blocks)
+    monkeypatch.setattr(Shrinker, 'shrink', Shrinker.reorder_blocks)
 
     @run_to_buffer
     def x(data):
