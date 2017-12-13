@@ -27,9 +27,6 @@ from hypothesistooling import should_run_ci_task
 
 if __name__ == '__main__':
 
-    from pprint import pprint
-    pprint(os.environ)
-
     if (
         os.environ['CIRCLE_BRANCH'] != 'master' and
         os.environ['CI_PULL_REQUESTS'] == ''
