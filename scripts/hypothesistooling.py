@@ -364,8 +364,6 @@ def changed_files_from_master():
 
 def should_run_ci_task(task, is_pull_request):
     """Given a task name, should we run this task?"""
-    print('Considering whether we should run make %s...' % task)
-
     if not is_pull_request:
         print('We only skip tests if the job is a pull request.')
         return True
@@ -388,8 +386,6 @@ def should_run_ci_task(task, is_pull_request):
     # than skip tests when it was important, we remove any files which we
     # know are safe to ignore, and run tests if there's anything left.
     changed_files = changed_files_from_master()
-
-    print('@@AWLC changed_files = %r' % changed_files)
 
     interesting_changed_files = [
         f for f in changed_files if could_affect_tests(f)
