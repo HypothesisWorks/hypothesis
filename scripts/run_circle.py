@@ -29,12 +29,12 @@ if __name__ == '__main__':
 
     if (
         os.environ['CIRCLE_BRANCH'] != 'master' and
-        os.environ['CI_PULL_REQUEST'] == ''
+        os.environ['CI_PULL_REQUESTS'] == ''
     ):
         print('We only run CI builds on the master branch or in pull requests')
         sys.exit(0)
 
-    is_pull_request = (os.environ['CI_PULL_REQUEST'] != '')
+    is_pull_request = (os.environ['CI_PULL_REQUESTS'] != '')
 
     for task in ['check-pypy', 'check-py36', 'check-py27']:
         if should_run_ci_task(task=task, is_pull_request=is_pull_request):
