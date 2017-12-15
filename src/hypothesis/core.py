@@ -35,6 +35,7 @@ from coverage.files import canonical_filename
 from coverage.collector import Collector
 
 import hypothesis.strategies as st
+from hypothesis import __version__
 from hypothesis.errors import Flaky, Timeout, NoSuchExample, \
     Unsatisfiable, DidNotReproduce, InvalidArgument, DeadlineExceeded, \
     MultipleFailures, FailedHealthCheck, UnsatisfiedAssumption, \
@@ -120,7 +121,7 @@ def seed(seed):
     return accept
 
 
-def reproduce_failure(blob):
+def reproduce_failure(version, blob):
     """Run the example that corresponds to this data blob in order to reproduce
     a failure.
 
@@ -130,11 +131,13 @@ def reproduce_failure(blob):
 
     This decorator is not intended to be a permanent addition to your test
     suite. It's simply some code you can add to ease reproduction of a problem
-    in the event that you don't have access to the test database.
+    in the event that you don't have access to the test database. Because of
+    this, *no* compatibility guarantees are made between different versions of
+    Hypothesis - its API may change arbitrarily from version to version.
 
     """
     def accept(test):
-        test._hypothesis_internal_use_reproduce_failure = blob
+        test._hypothesis_internal_use_reproduce_failure = (version, blob)
         return test
     return accept
 
@@ -832,8 +835,9 @@ class StateForActualGivenExecution(object):
                         report((
                             '\n'
                             'You can reproduce this example by temporarily '
-                            'adding @reproduce_failure(%r) as a decorator on '
-                            'your test case') % (failure_blob,))
+                            'adding @reproduce_failure(%r, %r) as a decorator '
+                            'on your test case') % (
+                                __version__, failure_blob,))
             if self.__was_flaky:
                 flaky += 1
 
@@ -933,9 +937,17 @@ def given(*given_arguments, **given_kwargs):
                 wrapped_test._hypothesis_internal_use_reproduce_failure
 
             if reproduce_failure is not None:
+                expected_version, failure = reproduce_failure
+                if expected_version != __version__:
+                    raise InvalidArgument((
+                        'Attempting to reproduce a failure from a different '
+                        'version of Hypothesis. This failure is from %s, but '
+                        'you are currently running %r. Please change your '
+                        'Hypothesis version to a matching one.'
+                    ) % (expected_version, __version__))
                 try:
                     state.execute(ConjectureData.for_buffer(
-                        decode_failure(reproduce_failure)),
+                        decode_failure(failure)),
                         print_example=True, is_final=True,
                     )
                     raise DidNotReproduce(
@@ -944,10 +956,9 @@ def given(*given_arguments, **given_kwargs):
                     )
                 except StopTest:
                     raise DidNotReproduce(
-                        'The shape of the test has changed in some way '
+                        'The shape of the test data has changed in some way '
                         'from where this blob was defined. Are you sure '
-                        "you're running the same test? This could also be "
-                        'caused by using different versions of Hypothesis.'
+                        "you're running the same test?"
                     )
                 except UnsatisfiedAssumption:
                     raise DidNotReproduce(

@@ -25,7 +25,7 @@ import pytest
 
 import hypothesis.strategies as st
 from hypothesis import PrintSettings, given, reject, settings, \
-    reproduce_failure
+    __version__, reproduce_failure
 from hypothesis.core import decode_failure, encode_failure
 from hypothesis.errors import DidNotReproduce, InvalidArgument
 from tests.common.utils import capture_out
@@ -45,7 +45,7 @@ def test_reproduces_the_failure():
     b = b'hello world'
     n = len(b)
 
-    @reproduce_failure(encode_failure(b))
+    @reproduce_failure(__version__, encode_failure(b))
     @given(st.binary(min_size=n, max_size=n))
     def test(x):
         assert x != b
@@ -58,7 +58,7 @@ def test_errors_if_provided_example_does_not_reproduce_failure():
     b = b'hello world'
     n = len(b)
 
-    @reproduce_failure(encode_failure(b))
+    @reproduce_failure(__version__, encode_failure(b))
     @given(st.binary(min_size=n, max_size=n))
     def test(x):
         assert x == b
@@ -71,7 +71,7 @@ def test_errors_with_did_not_reproduce_if_the_shape_changes():
     b = b'hello world'
     n = len(b)
 
-    @reproduce_failure(encode_failure(b))
+    @reproduce_failure(__version__, encode_failure(b))
     @given(st.binary(min_size=n + 1, max_size=n + 1))
     def test(x):
         assert x == b
@@ -84,7 +84,7 @@ def test_errors_with_did_not_reproduce_if_rejected():
     b = b'hello world'
     n = len(b)
 
-    @reproduce_failure(encode_failure(b))
+    @reproduce_failure(__version__, encode_failure(b))
     @given(st.binary(min_size=n, max_size=n))
     def test(x):
         reject()
@@ -110,8 +110,8 @@ def test_prints_reproduction_if_requested():
 
     exp = re.compile(r'reproduce_failure\(([^)]+)\)', re.MULTILINE)
     extract = exp.search(o.getvalue())
-    blob = eval(extract.group(1))
-    test = reproduce_failure(blob)(test)
+    reproduction = eval(extract.group(0))
+    test = reproduction(test)
 
     with pytest.raises(AssertionError):
         test()
@@ -182,3 +182,16 @@ def test_does_not_print_reproduction_if_told_not_to():
             test()
 
     assert '@reproduce_failure' not in o.getvalue()
+
+
+def test_raises_invalid_if_wrong_version():
+    b = b'hello world'
+    n = len(b)
+
+    @reproduce_failure('1.0.0', encode_failure(b))
+    @given(st.binary(min_size=n, max_size=n))
+    def test(x):
+        pass
+
+    with pytest.raises(InvalidArgument):
+        test()
