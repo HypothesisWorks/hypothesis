@@ -30,8 +30,8 @@ Hypothesis releases follow `semantic versioning <http://semver.org/>`_.
 
 We maintain backwards-compatibility wherever possible, and use deprecation
 warnings to mark features that have been superseded by a newer alternative.
-If you want to detect this, the :py:meth:`strict setting <hypothesis.settings.strict>`
-upgrades all Hypothesis warnings to errors.
+If you want to detect this, you can
+:mod:`upgrade warnings to errors in the usual ways <python:warnings>`.
 
 We use continuous deployment to ensure that you can always use our newest and
 shiniest features - every change to the source tree is automatically built and
