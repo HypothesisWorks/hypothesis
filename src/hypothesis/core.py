@@ -153,7 +153,10 @@ def encode_failure(buffer):
 
 
 def decode_failure(blob):
-    buffer = base64.b64decode(blob)
+    try:
+        buffer = base64.b64decode(blob)
+    except TypeError:
+        raise InvalidArgument('Invalid base64 encoded string: %r' % (blob,))
     prefix = buffer[:1]
     if prefix == b'\0':
         return buffer[1:]

@@ -24,7 +24,7 @@ import base64
 import pytest
 
 import hypothesis.strategies as st
-from hypothesis import PrintSettings, given, reject, settings, \
+from hypothesis import PrintSettings, given, reject, example, settings, \
     __version__, reproduce_failure
 from hypothesis.core import decode_failure, encode_failure
 from hypothesis.errors import DidNotReproduce, InvalidArgument
@@ -36,9 +36,15 @@ def test_encoding_loop(b):
     assert decode_failure(encode_failure(b)) == b
 
 
-def test_decoding_may_fail():
-    with pytest.raises(InvalidArgument):
-        decode_failure(base64.b64encode(b'\2\3\4'))
+@example(base64.b64encode(b'\2\3\4'))
+@example(b'\t')
+@given(st.binary())
+def test_decoding_may_fail(t):
+    try:
+        decode_failure(t)
+        reject()
+    except InvalidArgument:
+        pass
 
 
 def test_reproduces_the_failure():
