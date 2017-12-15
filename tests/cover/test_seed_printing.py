@@ -88,7 +88,7 @@ def test_uses_global_force(monkeypatch):
     assert '@seed' not in output[0]
 
 
-def test_does_not_print_on_reuse_from_database():
+def test_does_print_on_reuse_from_database():
     passes_healthcheck = False
 
     database = InMemoryExampleDatabase()
@@ -120,4 +120,4 @@ def test_does_not_print_on_reuse_from_database():
         with pytest.raises(FailedHealthCheck):
             test()
 
-    assert '@seed' not in o.getvalue()
+    assert '@seed' in o.getvalue()
