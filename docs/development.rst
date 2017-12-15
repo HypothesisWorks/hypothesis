@@ -2,7 +2,7 @@
 Ongoing Hypothesis Development
 ==============================
 
-Hypothesis development is managed by me, `David R. MacIver <http://www.drmaciver.com>`_.
+Hypothesis development is managed by me, `David R. MacIver <https://www.drmaciver.com>`_.
 I am the primary author of Hypothesis.
 
 *However*, I no longer do unpaid feature development on Hypothesis. My roles as leader of the project are:
@@ -26,7 +26,7 @@ details and :pull:`154` for an example of how the process goes). This isn't
 Release Policy
 ==============
 
-Hypothesis releases follow `semantic versioning <http://semver.org/>`_.
+Hypothesis releases follow `semantic versioning <https://semver.org/>`_.
 
 We maintain backwards-compatibility wherever possible, and use deprecation
 warnings to mark features that have been superseded by a newer alternative.

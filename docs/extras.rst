@@ -50,7 +50,7 @@ hypothesis[fakefactory]
     :func:`~hypothesis.strategies.sampled_from` strategies may be particularly
     useful.
 
-:pypi:`faker` (previously :pypi:`fake-factory`) is a Python package that
+:pypi:`Faker` (previously :pypi:`fake-factory`) is a Python package that
 generates fake data for you. It's great for bootstraping your database,
 creating good-looking XML documents, stress-testing a database, or anonymizing
 production data.  However, it's not designed for automated testing - data from
