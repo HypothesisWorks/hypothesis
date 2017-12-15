@@ -808,7 +808,13 @@ class StateForActualGivenExecution(object):
                     raise
                 report(traceback.format_exc())
             finally:
-                if self.settings.print_blob is not PrintSettings.NEVER:
+                # Both of the pragma branches in here are actually covered by
+                # tests in test_reproduce_failure, but they seem to be hitting
+                # a coverage bug.
+                # See https://bitbucket.org/ned/coveragepy/issues/623/
+                if (
+                    self.settings.print_blob is not PrintSettings.NEVER
+                ):  # pragma: no branch
                     failure_blob = encode_failure(falsifying_example.buffer)
                     # Have to use the example we actually ran, not the original
                     # falsifying example! Otherwise we won't catch problems
@@ -820,7 +826,7 @@ class StateForActualGivenExecution(object):
                             not can_use_repr and
                             len(failure_blob) < 200
                         )
-                    ):
+                    ):  # pragma: no branch
                         report((
                             '\n'
                             'You can reproduce this example by temporarily '
