@@ -807,14 +807,16 @@ class StateForActualGivenExecution(object):
                 if len(self.falsifying_examples) <= 1:
                     raise
                 report(traceback.format_exc())
-            finally:
-                # Both of the pragma branches in here are actually covered by
-                # tests in test_reproduce_failure, but they seem to be hitting
-                # a coverage bug.
+            finally:  # pragma: no cover
+                # This section is in fact entirely covered by the tests in
+                # test_reproduce_failure, but it seems to trigger a lovely set
+                # of coverage bugs: The branches show up as uncovered (despite
+                # definitely being covered - you can add an assert False else
+                # branch to verify this and see it fail - and additionally the
+                # second branch still complains about lack of coverage even if
+                # you add a pragma: no cover to it!
                 # See https://bitbucket.org/ned/coveragepy/issues/623/
-                if (
-                    self.settings.print_blob is not PrintSettings.NEVER
-                ):  # pragma: no branch
+                if self.settings.print_blob is not PrintSettings.NEVER:
                     failure_blob = encode_failure(falsifying_example.buffer)
                     # Have to use the example we actually ran, not the original
                     # falsifying example! Otherwise we won't catch problems
@@ -826,7 +828,7 @@ class StateForActualGivenExecution(object):
                             not can_use_repr and
                             len(failure_blob) < 200
                         )
-                    ):  # pragma: no branch
+                    ):
                         report((
                             '\n'
                             'You can reproduce this example by temporarily '
