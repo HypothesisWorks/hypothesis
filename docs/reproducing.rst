@@ -85,10 +85,37 @@ with the ``@reproduce_example`` decorator.
 
 .. autofunction:: hypothesis.reproduce_failure
 
+The intent is that you should never write this decorator by hand, but it is
+instead provided by Hypothesis.
 When a test fails with a falsifying example, Hypothesis may print out a
-suggestion to use ``@reproduce_failure`` on the test to recreate the problem.
+suggestion to use ``@reproduce_failure`` on the test to recreate the problem
+as follows:
+
+.. doctest::
+
+    >>> from hypothesis import settings, given, PrintSettings
+    >>> import hypothesis.strategies as st
+    >>> @given(st.floats())
+    ... @settings(print_blob=PrintSettings.ALWAYS)
+    ... def test(f):
+    ...     assert f == f
+    ...
+    >>> try:
+    ...     test()
+    ... except AssertionError:
+    ...     pass
+    Falsifying example: test(f=nan)
+    <BLANKLINE>
+    You can reproduce this example by temporarily adding @reproduce_failure('3.42.2', b'AAD/8AAAAAAAAQA=') as a decorator on your test case
+
+Adding the suggested decorator to the test should reproduce the failure (as
+long as everything else is the same - changing the versions of Python or
+anything else involved, might of course affect the behaviour of the test! Note
+that changing the version of Hypothesis will result in a different error -
+each ``@reproduce_failure`` invocation is specific to a Hypothesis version).
 
 When to do this is controlled by the :attr:`~hypothesis.settings.print_blob`
 setting, which may be one of the following values:
 
 .. autoclass:: hypothesis.PrintSettings
+
