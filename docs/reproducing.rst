@@ -54,11 +54,11 @@ styles will work as expected:
       def test_some_code(self, x):
           assert True
 
-It is *not* permitted for a single example to be a mix of positional and
-keyword arguments. Either are fine, and you can use one in one example and the
-other in another example if for some reason you really want to, but a single
-example must be consistent.
-
+As with ``@given``, it is not permitted for a single example to be a mix of
+positional and keyword arguments.
+Either are fine, and you can use one in one example and the other in another
+example if for some reason you really want to, but a single example must be
+consistent.
 
 -------------------------------------
 Reproducing a test run with ``@seed``
@@ -69,7 +69,8 @@ Reproducing a test run with ``@seed``
 When a test fails unexpectedly, usually due to a health check failure,
 Hypothesis will print out a seed that led to that failure, if the test is not
 already running with a fixed seed. You can then recreate that failure using either
-the ``@seed`` decorator or (if you are running pytest) with ``--hypothesis-seed``.
+the ``@seed`` decorator or (if you are running :pypi:`pytest`) with
+``--hypothesis-seed``.
 
 .. _reproduce_failure:
 
