@@ -972,11 +972,7 @@ def given(*given_arguments, **given_kwargs):
             except BaseException:
                 generated_seed = \
                     wrapped_test._hypothesis_internal_use_generated_seed
-                if (
-                    generated_seed is not None and
-                    not state.used_examples_from_database and
-                    not state.failed_normally
-                ):
+                if generated_seed is not None and not state.failed_normally:
                     if running_under_pytest:
                         report((
                             'You can add @seed(%(seed)d) to this test or run '

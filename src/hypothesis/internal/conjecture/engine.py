@@ -773,7 +773,9 @@ class ConjectureRunner(object):
             self.health_check_state = HealthCheckState()
 
         count = 0
-        while count < 10 and not self.interesting_examples:
+        while not self.interesting_examples and (
+            count < 10 or self.health_check_state is not None
+        ):
             def draw_bytes(data, n):
                 return self.__rewrite_for_novelty(
                     data, self.__zero_bound(data, uniform(self.random, n))
