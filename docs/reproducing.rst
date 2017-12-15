@@ -118,4 +118,3 @@ When to do this is controlled by the :attr:`~hypothesis.settings.print_blob`
 setting, which may be one of the following values:
 
 .. autoclass:: hypothesis.PrintSettings
-
