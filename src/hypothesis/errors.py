@@ -17,8 +17,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import warnings
-
 
 class HypothesisException(Exception):
 
@@ -179,11 +177,8 @@ class FailedHealthCheck(HypothesisException, Warning):
         self.health_check = check
 
 
-class HypothesisDeprecationWarning(HypothesisException, DeprecationWarning):
+class HypothesisDeprecationWarning(HypothesisException, FutureWarning):
     pass
-
-
-warnings.simplefilter('once', HypothesisDeprecationWarning)
 
 
 class Frozen(HypothesisException):
