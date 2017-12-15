@@ -54,7 +54,7 @@ Hypothesis has *mandatory* dependencies on the following libraries:
 Hypothesis has *optional* dependencies on the following libraries:
 
 * :pypi:`pytz` (almost any version should work)
-* :pypi:`faker`, version 0.7
+* :pypi:`Faker`, version 0.7 or later
 * `Django <https://www.djangoproject.com>`_, all supported versions
 * :pypi:`numpy`, 1.10 or later (earlier versions will probably work fine)
 * :pypi:`pandas`, 1.8 or later

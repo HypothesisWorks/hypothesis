@@ -304,7 +304,7 @@ are some good starting points:
    the same thing with multiple different examples? Can you generalise that to
    a single test using Hypothesis?
 3. `This piece is designed for an F# implementation
-   <http://fsharpforfunandprofit.com/posts/property-based-testing-2/>`_, but
+   <https://fsharpforfunandprofit.com/posts/property-based-testing-2/>`_, but
    is still very good advice which you may find helps give you good ideas for
    using Hypothesis.
 

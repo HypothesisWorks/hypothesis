@@ -8,7 +8,7 @@ on pip.
 
 Hypothesis APIs come in three flavours:
 
-* Public: Hypothesis releases since 1.0 are `semantically versioned <http://semver.org/>`_
+* Public: Hypothesis releases since 1.0 are `semantically versioned <https://semver.org/>`_
   with respect to these parts of the API. These will not break except between
   major version bumps. All APIs mentioned in this documentation are public unless
   explicitly noted otherwise.
