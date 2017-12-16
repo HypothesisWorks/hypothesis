@@ -354,10 +354,9 @@ class ConjectureRunner(object):
                 state.valid_examples, draw_time, state.invalid_examples,
                 state.overrun_examples), HealthCheck.too_slow,)
 
-    def save_buffer(self, buffer, key=None):
+    def save_buffer(self, buffer):
         if self.settings.database is not None:
-            if key is None:
-                key = self.database_key
+            key = self.database_key
             if key is None:
                 return
             self.settings.database.save(key, hbytes(buffer))
