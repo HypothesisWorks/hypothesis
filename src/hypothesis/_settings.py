@@ -701,7 +701,7 @@ class PrintSettings(Enum):
     """Make an educated guess as to whether it would be appropriate to print
     the blob.
 
-    The current rules are this will print if:
+    The current rules are that this will print if both:
 
     1. The output from Hypothesis appears to be unsuitable for use with
        :func:`~hypothesis.example`.
