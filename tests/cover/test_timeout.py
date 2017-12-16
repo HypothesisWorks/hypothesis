@@ -22,7 +22,7 @@ import time
 import pytest
 
 from hypothesis import given, settings
-from hypothesis.errors import Unsatisfiable
+from hypothesis.errors import Unsatisfiable, HypothesisDeprecationWarning
 from tests.common.utils import fails, fails_with, validate_deprecation
 from hypothesis.strategies import integers
 
@@ -86,13 +86,11 @@ def test_slow_failing_test_4(x):
 
 
 with validate_deprecation():
-    default_timeout_settings = settings(timeout=60)
+    strict_timeout_settings = settings(timeout=60)
 
 
-strict_timeout_settings = default_timeout_settings
-
-
-@fails_with(DeprecationWarning)
+# @checks_deprecated_behaviour only works if test passes otherwise
+@fails_with(HypothesisDeprecationWarning)
 @strict_timeout_settings
 @given(integers())
 def test_deprecated_behaviour(i):
