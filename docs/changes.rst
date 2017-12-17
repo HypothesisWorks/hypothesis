@@ -22,6 +22,17 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.43.0 - 2017-12-17
+-------------------
+
+:exc:`~hypothesis.errors.HypothesisDeprecationWarning` now inherits from
+:exc:`python:FutureWarning` instead of :exc:`python:DeprecationWarning`,
+as recommended by :pep:`565` for user-facing warnings (:issue:`618`).
+If you have not changed the default warnings settings, you will now see
+each distinct :exc:`~hypothesis.errors.HypothesisDeprecationWarning`
+instead of only the first.
+
+-------------------
 3.42.2 - 2017-12-12
 -------------------
 
