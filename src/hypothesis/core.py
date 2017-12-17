@@ -572,7 +572,7 @@ class StateForActualGivenExecution(object):
                 covdata.add_lines({
                     filename: {
                         line: None
-                        for line in self.coverage_data.lines(filename)}
+                        for line in self.coverage_data.lines(filename) or ()}
                     for filename in self.files_to_propagate
                 })
             collector.save_data = original_save_data
