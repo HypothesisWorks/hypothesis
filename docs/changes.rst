@@ -22,6 +22,15 @@ You should generally assume that an API is internal unless you have specific
 information to the contrary.
 
 -------------------
+3.44.1 - 2017-12-18
+-------------------
+
+This release fixes :issue:`997`, in which under some circumstances the body of
+tests run under Hypothesis would not show up when run under coverage even
+though the tests were run and the code they called outside of the test file
+would show up normally.
+
+-------------------
 3.44.0 - 2017-12-17
 -------------------
 
