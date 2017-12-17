@@ -466,7 +466,22 @@ class StateForActualGivenExecution(object):
 
         if settings.use_coverage and not IN_COVERAGE_TESTS:  # pragma: no cover
             if Collector._collectors:
-                self.hijack_collector(Collector._collectors[-1])
+                parent = Collector._collectors[-1]
+
+                # We include any files the collector has already decided to
+                # trace whether or not on re-investigation we still think it
+                # wants to trace them. The reason for this is that in some
+                # cases coverage gets the wrong answer when we run it
+                # ourselves due to reasons that are our fault but are hard to
+                # fix (we lie about where certain functions come from).
+                # This causes us to not record the actual test bodies as
+                # covered. But if we intended to trace test bodies then the
+                # file must already have been traced when getting to this point
+                # and so will already be in the collector's data. Hence we can
+                # use that information to get the correct answer here.
+                # See issue 997 for more context.
+                self.files_to_propagate = set(parent.data)
+                self.hijack_collector(parent)
 
             self.collector = Collector(
                 branch=True,
@@ -622,14 +637,14 @@ class StateForActualGivenExecution(object):
                 covdata.add_arcs({
                     filename: {
                         arc: None
-                        for arc in self.coverage_data.arcs(filename)}
+                        for arc in self.coverage_data.arcs(filename) or ()}
                     for filename in self.files_to_propagate
                 })
             else:
                 covdata.add_lines({
                     filename: {
                         line: None
-                        for line in self.coverage_data.lines(filename)}
+                        for line in self.coverage_data.lines(filename) or ()}
                     for filename in self.files_to_propagate
                 })
             collector.save_data = original_save_data
